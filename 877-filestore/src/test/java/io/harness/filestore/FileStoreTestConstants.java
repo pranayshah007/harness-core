@@ -17,6 +17,7 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class FileStoreTestConstants {
   public static final String ACCOUNT_IDENTIFIER = "accountIdentifier";
+  public static final String INVALID_ACCOUNT_IDENTIFIER = "invalidAccountIdentifier";
   public static final String ORG_IDENTIFIER = "orgIdentifier";
   public static final String PROJECT_IDENTIFIER = "projectIdentifier";
   public static final String IDENTIFIER = "identifier";

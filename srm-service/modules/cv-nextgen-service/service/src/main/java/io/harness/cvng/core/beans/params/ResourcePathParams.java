@@ -7,32 +7,51 @@
 
 package io.harness.cvng.core.beans.params;
 
+import static io.harness.cvng.core.services.CVNextGenConstants.ACCOUNT_IDENTIFIER_KEY;
+import static io.harness.cvng.core.services.CVNextGenConstants.ORG_IDENTIFIER_KEY;
+import static io.harness.cvng.core.services.CVNextGenConstants.PROJECT_IDENTIFIER_KEY;
 import static io.harness.cvng.core.services.CVNextGenConstants.RESOURCE_IDENTIFIER_KEY;
 
 import io.harness.NGCommonEntityConstants;
+import io.harness.accesscontrol.AccountIdentifier;
+import io.harness.accesscontrol.OrgIdentifier;
+import io.harness.accesscontrol.ProjectIdentifier;
 import io.harness.accesscontrol.ResourceIdentifier;
 
 import io.swagger.v3.oas.annotations.Parameter;
 import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 import javax.ws.rs.PathParam;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import lombok.experimental.SuperBuilder;
 
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Data
-@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(callSuper = true)
-public class ResourcePathParams extends ProjectPathParams {
+public class ResourcePathParams {
   @Parameter(description = NGCommonEntityConstants.IDENTIFIER_PARAM_MESSAGE)
   @ResourceIdentifier
   @PathParam(RESOURCE_IDENTIFIER_KEY)
   @Valid
   String identifier;
+  @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE)
+  @AccountIdentifier
+  @PathParam(ACCOUNT_IDENTIFIER_KEY)
+  @NotNull
+  @Valid
+  String accountIdentifier;
+  @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE)
+  @OrgIdentifier
+  @PathParam(ORG_IDENTIFIER_KEY)
+  @Valid
+  String orgIdentifier;
+  @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE)
+  @ProjectIdentifier
+  @PathParam(PROJECT_IDENTIFIER_KEY)
+  @Valid
+  String projectIdentifier;
 }

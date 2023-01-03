@@ -28,6 +28,7 @@ import io.harness.cvng.analysis.entities.CanaryLogAnalysisLearningEngineTask;
 import io.harness.cvng.analysis.entities.CanaryLogAnalysisLearningEngineTask.CanaryLogAnalysisLearningEngineTaskBuilder;
 import io.harness.cvng.analysis.entities.LearningEngineTask.LearningEngineTaskType;
 import io.harness.cvng.beans.CVMonitoringCategory;
+import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.MonitoredServiceDataSourceType;
 import io.harness.cvng.beans.MonitoredServiceType;
 import io.harness.cvng.beans.ThresholdConfigType;
@@ -120,8 +121,13 @@ import io.harness.cvng.core.entities.ErrorTrackingCVConfig.ErrorTrackingCVConfig
 import io.harness.cvng.core.entities.MetricPack;
 import io.harness.cvng.core.entities.NewRelicCVConfig;
 import io.harness.cvng.core.entities.NewRelicCVConfig.NewRelicCVConfigBuilder;
+import io.harness.cvng.core.entities.NextGenLogCVConfig;
+import io.harness.cvng.core.entities.NextGenLogCVConfig.NextGenLogCVConfigBuilder;
+import io.harness.cvng.core.entities.NextGenMetricCVConfig;
+import io.harness.cvng.core.entities.NextGenMetricCVConfig.NextGenMetricCVConfigBuilder;
 import io.harness.cvng.core.entities.PrometheusCVConfig;
 import io.harness.cvng.core.entities.PrometheusCVConfig.PrometheusCVConfigBuilder;
+import io.harness.cvng.core.entities.QueryParams;
 import io.harness.cvng.core.entities.SplunkCVConfig;
 import io.harness.cvng.core.entities.SplunkCVConfig.SplunkCVConfigBuilder;
 import io.harness.cvng.core.entities.SplunkMetricCVConfig;
@@ -130,10 +136,6 @@ import io.harness.cvng.core.entities.StackdriverCVConfig;
 import io.harness.cvng.core.entities.StackdriverCVConfig.StackdriverCVConfigBuilder;
 import io.harness.cvng.core.entities.StackdriverLogCVConfig;
 import io.harness.cvng.core.entities.StackdriverLogCVConfig.StackdriverLogCVConfigBuilder;
-import io.harness.cvng.core.entities.SumologicLogCVConfig;
-import io.harness.cvng.core.entities.SumologicLogCVConfig.SumologicLogCVConfigBuilder;
-import io.harness.cvng.core.entities.SumologicMetricCVConfig;
-import io.harness.cvng.core.entities.SumologicMetricCVConfig.SumologicMetricCVConfigBuilder;
 import io.harness.cvng.core.entities.TimeSeriesThreshold;
 import io.harness.cvng.core.entities.changeSource.HarnessCDChangeSource;
 import io.harness.cvng.core.entities.changeSource.HarnessCDChangeSource.HarnessCDChangeSourceBuilder;
@@ -520,26 +522,28 @@ public class BuilderFactory {
         .category(CVMonitoringCategory.PERFORMANCE);
   }
 
-  public SumologicMetricCVConfigBuilder sumologicMetricCVConfigBuilder() {
-    return SumologicMetricCVConfig.builder()
+  public NextGenMetricCVConfigBuilder nextGenMetricCVConfigBuilder(DataSourceType dataSourceType) {
+    return NextGenMetricCVConfig.builder()
         .accountId(context.getAccountId())
+        .dataSourceType(dataSourceType)
         .orgIdentifier(context.getOrgIdentifier())
         .projectIdentifier(context.getProjectIdentifier())
         .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
         .connectorIdentifier("connectorRef")
-        .identifier(context.getMonitoredServiceIdentifier() + "/" + generateUuid())
-        .category(CVMonitoringCategory.PERFORMANCE); // TODO Fix Typing.
+        .identifier(context.getMonitoredServiceIdentifier() + "/" + generateUuid());
   }
 
-  public SumologicLogCVConfigBuilder sumologicLogCVConfigBuilder() {
-    return SumologicLogCVConfig.builder()
+  public NextGenLogCVConfigBuilder nextGenLogCVConfigBuilder(DataSourceType dataSourceType) {
+    return NextGenLogCVConfig.builder()
         .accountId(context.getAccountId())
+        .dataSourceType(dataSourceType)
         .orgIdentifier(context.getOrgIdentifier())
+        .queryIdentifier(generateUuid())
         .projectIdentifier(context.getProjectIdentifier())
         .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
         .queryName(randomAlphabetic(10))
         .query(randomAlphabetic(10))
-        .serviceInstanceIdentifier("hostname")
+        .queryParams(QueryParams.builder().serviceInstanceField("hostname").build())
         .enabled(true)
         .category(CVMonitoringCategory.ERRORS)
         .connectorIdentifier("connectorRef")

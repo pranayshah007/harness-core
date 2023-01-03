@@ -473,6 +473,116 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
     assertThat(responseDto.getInfrastructureYaml()).isNotNull().isNotEmpty().isEqualTo(yaml);
   }
 
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testOrgLevelInfraCRUD() {
+    String filename = "infrastructure-at-org-level.yaml";
+    String yaml = readFile(filename);
+    for (int i = 1; i < 3; i++) {
+      InfrastructureEntity createInfraRequest = InfrastructureEntity.builder()
+                                                    .accountId(ACCOUNT_ID)
+                                                    .identifier("IDENTIFIER" + i)
+                                                    .orgIdentifier(ORG_ID)
+                                                    .envIdentifier("ENV_IDENTIFIER")
+                                                    .yaml(yaml)
+                                                    .build();
+
+      infrastructureEntityService.create(createInfraRequest);
+    }
+    InfrastructureEntity createInfraRequestDiffEnv = InfrastructureEntity.builder()
+                                                         .accountId(ACCOUNT_ID)
+                                                         .identifier("IDENTIFIER3")
+                                                         .orgIdentifier(ORG_ID)
+                                                         .envIdentifier("ENV_IDENTIFIER1")
+                                                         .yaml(yaml)
+                                                         .build();
+
+    infrastructureEntityService.create(createInfraRequestDiffEnv);
+
+    // List infra operations.
+    Criteria criteriaForInfraFilter = InfrastructureFilterHelper.createListCriteria(
+        ACCOUNT_ID, ORG_ID, null, "ENV_IDENTIFIER", "", Collections.emptyList(), null);
+    Pageable pageRequest = PageUtils.getPageRequest(0, 10, null);
+    Page<InfrastructureEntity> list = infrastructureEntityService.list(criteriaForInfraFilter, pageRequest);
+    assertThat(list.getContent()).isNotNull();
+    assertThat(list.getContent().size()).isEqualTo(2);
+
+    // delete operations
+    boolean delete = infrastructureEntityService.forceDeleteAllInEnv(ACCOUNT_ID, ORG_ID, null, "org.ENV_IDENTIFIER");
+    assertThat(delete).isTrue();
+    verify(infrastructureEntitySetupUsageHelper, times(2)).deleteSetupUsages(any());
+
+    // 1 infra remains
+    Criteria criteriaAllInProject = CoreCriteriaUtils.createCriteriaForGetList(ACCOUNT_ID, ORG_ID, null);
+    Page<InfrastructureEntity> listPostDeletion = infrastructureEntityService.list(criteriaAllInProject, pageRequest);
+    assertThat(listPostDeletion.getContent()).isNotNull();
+    assertThat(listPostDeletion.getContent().size()).isEqualTo(1);
+
+    boolean deleteProject = infrastructureEntityService.forceDeleteAllInProject(ACCOUNT_ID, ORG_ID, PROJECT_ID);
+    assertThat(deleteProject).isTrue();
+    verify(infrastructureEntitySetupUsageHelper, times(2)).deleteSetupUsages(any());
+
+    listPostDeletion = infrastructureEntityService.list(criteriaAllInProject, pageRequest);
+    assertThat(listPostDeletion.getContent()).isNotNull();
+    assertThat(listPostDeletion.getContent().size()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testAccountLevelInfraCRUD() {
+    String filename = "infrastructure-at-account-level.yaml";
+    String yaml = readFile(filename);
+    for (int i = 1; i < 3; i++) {
+      InfrastructureEntity createInfraRequest = InfrastructureEntity.builder()
+                                                    .accountId(ACCOUNT_ID)
+                                                    .identifier("IDENTIFIER" + i)
+                                                    .envIdentifier("ENV_IDENTIFIER")
+                                                    .yaml(yaml)
+                                                    .build();
+
+      infrastructureEntityService.create(createInfraRequest);
+    }
+    InfrastructureEntity createInfraRequestDiffEnv = InfrastructureEntity.builder()
+                                                         .accountId(ACCOUNT_ID)
+                                                         .identifier("IDENTIFIER3")
+                                                         .envIdentifier("ENV_IDENTIFIER1")
+                                                         .yaml(yaml)
+                                                         .build();
+
+    infrastructureEntityService.create(createInfraRequestDiffEnv);
+
+    // List infra operations.
+    Criteria criteriaForInfraFilter = InfrastructureFilterHelper.createListCriteria(
+        ACCOUNT_ID, null, null, "ENV_IDENTIFIER", "", Collections.emptyList(), null);
+    Pageable pageRequest = PageUtils.getPageRequest(0, 10, null);
+    Page<InfrastructureEntity> list = infrastructureEntityService.list(criteriaForInfraFilter, pageRequest);
+    assertThat(list.getContent()).isNotNull();
+    assertThat(list.getContent().size()).isEqualTo(2);
+
+    // delete operations
+    boolean delete =
+        infrastructureEntityService.forceDeleteAllInEnv(ACCOUNT_ID, ORG_ID, PROJECT_ID, "account.ENV_IDENTIFIER");
+    assertThat(delete).isTrue();
+    verify(infrastructureEntitySetupUsageHelper, times(2)).deleteSetupUsages(any());
+
+    // 1 infra remains
+    Criteria criteriaAllInProject = CoreCriteriaUtils.createCriteriaForGetList(ACCOUNT_ID, null, null);
+    Page<InfrastructureEntity> listPostDeletion = infrastructureEntityService.list(criteriaAllInProject, pageRequest);
+    assertThat(listPostDeletion.getContent()).isNotNull();
+    assertThat(listPostDeletion.getContent().size()).isEqualTo(1);
+
+    boolean deleteProject = infrastructureEntityService.forceDeleteAllInProject(ACCOUNT_ID, ORG_ID, PROJECT_ID);
+    assertThat(deleteProject).isTrue();
+    // no deletions
+    verify(infrastructureEntitySetupUsageHelper, times(2)).deleteSetupUsages(any());
+
+    listPostDeletion = infrastructureEntityService.list(criteriaAllInProject, pageRequest);
+    assertThat(listPostDeletion.getContent()).isNotNull();
+    assertThat(listPostDeletion.getContent().size()).isEqualTo(1);
+  }
+
   private String readFile(String filename) {
     ClassLoader classLoader = getClass().getClassLoader();
     try {

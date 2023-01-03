@@ -9,6 +9,7 @@ package software.wings.service.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.FeatureName.VALIDATE_PROVISIONER_EXPRESSION;
+import static io.harness.rule.OwnerRule.AKHIL_PANDEY;
 import static io.harness.rule.OwnerRule.ANSHUL;
 import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.BOJANA;
@@ -30,6 +31,7 @@ import static software.wings.utils.WingsTestConstants.INFRA_DEFINITION_ID;
 import static software.wings.utils.WingsTestConstants.INFRA_MAPPING_ID;
 import static software.wings.utils.WingsTestConstants.PROVISIONER_ID;
 import static software.wings.utils.WingsTestConstants.PROVISIONER_NAME;
+import static software.wings.utils.WingsTestConstants.S3_URI;
 import static software.wings.utils.WingsTestConstants.SERVICE_ID;
 import static software.wings.utils.WingsTestConstants.SETTING_ID;
 import static software.wings.utils.WingsTestConstants.WORKFLOW_EXECUTION_ID;
@@ -77,6 +79,7 @@ import software.wings.WingsBaseTest;
 import software.wings.api.PhaseElement;
 import software.wings.api.ServiceElement;
 import software.wings.api.TerraformExecutionData;
+import software.wings.beans.AwsConfig;
 import software.wings.beans.AwsInstanceFilter;
 import software.wings.beans.BlueprintProperty;
 import software.wings.beans.CloudFormationInfrastructureProvisioner;
@@ -97,6 +100,7 @@ import software.wings.beans.SettingAttribute;
 import software.wings.beans.SettingAttribute.SettingAttributeKeys;
 import software.wings.beans.TerraformInfrastructureProvisioner;
 import software.wings.beans.TerraformInputVariablesTaskResponse;
+import software.wings.beans.TerraformSourceType;
 import software.wings.beans.TerragruntInfrastructureProvisioner;
 import software.wings.beans.shellscript.provisioner.ShellScriptInfrastructureProvisioner;
 import software.wings.dl.WingsPersistence;
@@ -104,6 +108,7 @@ import software.wings.expression.ManagerExpressionEvaluator;
 import software.wings.infra.AwsEcsInfrastructure;
 import software.wings.infra.AwsInstanceInfrastructure;
 import software.wings.infra.InfrastructureDefinition;
+import software.wings.service.impl.aws.delegate.AwsS3HelperServiceDelegateImpl;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.DelegateService;
 import software.wings.service.intfc.InfrastructureDefinitionService;
@@ -114,6 +119,7 @@ import software.wings.service.intfc.ServiceResourceService;
 import software.wings.service.intfc.SettingsService;
 import software.wings.service.intfc.WorkflowExecutionService;
 import software.wings.service.intfc.aws.manager.AwsCFHelperServiceManager;
+import software.wings.service.intfc.security.EncryptionService;
 import software.wings.service.intfc.security.SecretManager;
 import software.wings.settings.SettingVariableTypes;
 import software.wings.sm.ExecutionContext;
@@ -170,6 +176,8 @@ public class InfrastructureProvisionerServiceImplTest extends WingsBaseTest {
   @Inject @InjectMocks InfrastructureProvisionerService infrastructureProvisionerService;
   @Inject @InjectMocks InfrastructureProvisionerServiceImpl infrastructureProvisionerServiceImpl;
   @Inject private HPersistence persistence;
+  @Mock private EncryptionService mockEncryptionService;
+  @Mock private AwsS3HelperServiceDelegateImpl awsS3HelperServiceDelegate;
 
   private String blankString = "     ";
   private static String SECRET_MANAGER_ID = "SECRET_MANAGER_ID";
@@ -973,8 +981,8 @@ public class InfrastructureProvisionerServiceImplTest extends WingsBaseTest {
     SettingAttribute attribute = aSettingAttribute().build();
     doReturn(attribute).when(settingService).get(SETTING_ID);
     assertThatThrownBy(()
-                           -> infrastructureProvisionerService.getTerraformVariables(
-                               APP_ID, SETTING_ID, ".", ACCOUNT_ID, "branch", null, "repo"))
+                           -> infrastructureProvisionerService.getTerraformVariables(APP_ID, SETTING_ID, ".",
+                               ACCOUNT_ID, "branch", null, "repo", TerraformSourceType.GIT, null, null))
         .isInstanceOf(InvalidRequestException.class);
   }
 
@@ -985,21 +993,21 @@ public class InfrastructureProvisionerServiceImplTest extends WingsBaseTest {
     SettingAttribute attribute = aSettingAttribute().build();
     doReturn(attribute).when(settingService).get(SETTING_ID);
     assertThatThrownBy(()
-                           -> infrastructureProvisionerService.getTerraformVariables(
-                               APP_ID, SETTING_ID, ".", ACCOUNT_ID, null, null, "repo"))
+                           -> infrastructureProvisionerService.getTerraformVariables(APP_ID, SETTING_ID, ".",
+                               ACCOUNT_ID, null, null, "repo", TerraformSourceType.GIT, null, null))
         .isInstanceOf(InvalidRequestException.class);
     assertThatThrownBy(()
-                           -> infrastructureProvisionerService.getTerraformVariables(
-                               APP_ID, SETTING_ID, ".", ACCOUNT_ID, null, null, "repo"))
+                           -> infrastructureProvisionerService.getTerraformVariables(APP_ID, SETTING_ID, ".",
+                               ACCOUNT_ID, null, null, "repo", TerraformSourceType.GIT, null, null))
         .hasMessage("Either sourceRepoBranch or commitId should be specified");
 
     assertThatThrownBy(()
-                           -> infrastructureProvisionerService.getTerraformVariables(
-                               APP_ID, SETTING_ID, ".", ACCOUNT_ID, "branch", "commitId", "repo"))
+                           -> infrastructureProvisionerService.getTerraformVariables(APP_ID, SETTING_ID, ".",
+                               ACCOUNT_ID, "branch", "commitId", "repo", TerraformSourceType.GIT, null, null))
         .isInstanceOf(InvalidRequestException.class);
     assertThatThrownBy(()
-                           -> infrastructureProvisionerService.getTerraformVariables(
-                               APP_ID, SETTING_ID, ".", ACCOUNT_ID, "branch", "commitId", "repo"))
+                           -> infrastructureProvisionerService.getTerraformVariables(APP_ID, SETTING_ID, ".",
+                               ACCOUNT_ID, "branch", "commitId", "repo", TerraformSourceType.GIT, null, null))
         .hasMessage("Cannot specify both sourceRepoBranch and commitId");
   }
 
@@ -1026,7 +1034,7 @@ public class InfrastructureProvisionerServiceImplTest extends WingsBaseTest {
             .build();
     doReturn(response).when(delegateService).executeTask(any(DelegateTask.class));
     List<NameValuePair> variables = infrastructureProvisionerService.getTerraformVariables(
-        APP_ID, SETTING_ID, ".", ACCOUNT_ID, "branch", null, repoName);
+        APP_ID, SETTING_ID, ".", ACCOUNT_ID, "branch", null, repoName, TerraformSourceType.GIT, null, null);
 
     assertThat(gitConfigArgumentCaptor.getValue()).isEqualTo(gitConfig);
     assertThat(repoNameArgumentCaptor.getValue()).isEqualTo(repoName);
@@ -1036,9 +1044,77 @@ public class InfrastructureProvisionerServiceImplTest extends WingsBaseTest {
     response.getTerraformExecutionData().setExecutionStatus(ExecutionStatus.FAILED);
     response.getTerraformExecutionData().setErrorMessage("error");
     assertThatThrownBy(()
-                           -> infrastructureProvisionerService.getTerraformVariables(
-                               APP_ID, SETTING_ID, ".", ACCOUNT_ID, "branch", null, repoName))
+                           -> infrastructureProvisionerService.getTerraformVariables(APP_ID, SETTING_ID, ".",
+                               ACCOUNT_ID, "branch", null, repoName, TerraformSourceType.GIT, null, null))
         .isInstanceOf(WingsException.class);
+  }
+
+  @Test
+  @Owner(developers = AKHIL_PANDEY)
+  @Category(UnitTests.class)
+  public void getS3TerraformVariablesTest() throws Exception {
+    AwsConfig awsConfig = AwsConfig.builder()
+                              .accountId("ACCT_ID")
+                              .accessKey("accessKeyId".toCharArray())
+                              .secretKey("secretAccessKey".toCharArray())
+                              .defaultRegion("us-east-1")
+                              .build();
+    SettingAttribute attribute = aSettingAttribute().withValue(awsConfig).build();
+    doReturn(attribute).when(settingService).get(SETTING_ID);
+
+    List<EncryptedDataDetail> awsConfigEncryptionDetails = new ArrayList<>();
+    List<NameValuePair> expectedVariables = singletonList(NameValuePair.builder().build());
+    TerraformInputVariablesTaskResponse response =
+        TerraformInputVariablesTaskResponse.builder()
+            .terraformExecutionData(TerraformExecutionData.builder().executionStatus(ExecutionStatus.SUCCESS).build())
+            .variablesList(expectedVariables)
+            .build();
+
+    doReturn(response).when(delegateService).executeTask(any(DelegateTask.class));
+    String s3SourceURI = "s3://iis-website-quickstart/terraform-manifest/variablesAndNullResources/";
+
+    List<NameValuePair> variables = infrastructureProvisionerService.getTerraformVariables(
+        APP_ID, null, ".", ACCOUNT_ID, null, null, null, TerraformSourceType.S3, s3SourceURI, SETTING_ID);
+    Mockito.verify(settingService, times(1)).get(any());
+    Mockito.verify(secretManager, times(1)).getEncryptionDetails(eq(awsConfig), eq(APP_ID), any());
+    assertThat(variables).isEqualTo(expectedVariables);
+  }
+
+  @Test
+  @Owner(developers = AKHIL_PANDEY)
+  @Category(UnitTests.class)
+  public void getS3TerraformTargetsTest() throws Exception {
+    String awsConfigId = "SETTING_ID";
+
+    InfrastructureProvisioner infrastructureProvisioner = TerraformInfrastructureProvisioner.builder()
+                                                              .appId(APP_ID)
+                                                              .uuid(ID_KEY)
+                                                              .terraformSourceType(TerraformSourceType.S3)
+                                                              .s3URI(S3_URI)
+                                                              .awsConfigId(awsConfigId)
+                                                              .build();
+    doReturn(infrastructureProvisioner)
+        .when(mockWingsPersistence)
+        .getWithAppId(eq(InfrastructureProvisioner.class), anyString(), anyString());
+
+    AwsConfig awsConfig = AwsConfig.builder()
+                              .accountId("ACCT_ID")
+                              .accessKey("accessKeyId".toCharArray())
+                              .secretKey("secretAccessKey".toCharArray())
+                              .defaultRegion("us-east-1")
+                              .build();
+    SettingAttribute attribute = aSettingAttribute().withValue(awsConfig).build();
+    doReturn(attribute).when(settingService).get(SETTING_ID);
+
+    List<EncryptedDataDetail> awsConfigEncryptionDetails = new ArrayList<>();
+    TerraformExecutionData response = TerraformExecutionData.builder().executionStatus(ExecutionStatus.SUCCESS).build();
+
+    doReturn(response).when(delegateService).executeTask(any(DelegateTask.class));
+
+    infrastructureProvisionerService.getTerraformTargets(APP_ID, ACCOUNT_ID, SETTING_ID);
+
+    Mockito.verify(settingService, times(1)).get(awsConfigId);
+    Mockito.verify(secretManager, times(1)).getEncryptionDetails(eq(awsConfig), eq(APP_ID), any());
   }
 
   @Test

@@ -12,15 +12,14 @@ import io.harness.cvng.beans.DataCollectionRequest;
 import io.harness.cvng.beans.DataCollectionRequestType;
 import io.harness.cvng.beans.sumologic.SumologicLogSampleDataRequest;
 import io.harness.cvng.beans.sumologic.SumologicMetricSampleDataRequest;
-import io.harness.cvng.core.beans.healthsource.HealthSourceQueryParams;
 import io.harness.cvng.core.beans.healthsource.HealthSourceRecordsRequest;
 import io.harness.cvng.core.beans.healthsource.QueryRecordsRequest;
-import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.MetricResponseMapping;
+import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.MetricPack;
-import io.harness.cvng.core.entities.SumologicLogCVConfig;
-import io.harness.cvng.core.entities.SumologicMetricCVConfig;
-import io.harness.cvng.core.entities.SumologicMetricInfo;
+import io.harness.cvng.core.entities.NextGenLogCVConfig;
+import io.harness.cvng.core.entities.NextGenMetricCVConfig;
+import io.harness.cvng.core.entities.NextGenMetricInfo;
 import io.harness.cvng.core.services.impl.MetricPackServiceImpl;
 import io.harness.delegate.beans.connector.sumologic.SumoLogicConnectorDTO;
 
@@ -30,7 +29,6 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -68,41 +66,38 @@ public class HealthSourceOnboardMappingUtils {
     return request;
   }
 
-  public static CVConfig getCvConfigForSumologicMetric(QueryRecordsRequest queryRecordsRequest,
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, List<MetricPack> metricPacks) {
-    SumologicMetricCVConfig sumologicMetricCVConfig =
-        SumologicMetricCVConfig.builder()
-            .accountId(accountIdentifier)
-            .orgIdentifier(orgIdentifier)
-            .projectIdentifier(projectIdentifier)
-            .groupName("Default_Group")
-            .monitoredServiceIdentifier("fetch_sample_data_test")
-            .connectorIdentifier(queryRecordsRequest.getConnectorIdentifier())
-            .category(CVMonitoringCategory.PERFORMANCE)
-            .build();
-    String serviceInstanceField = Optional.ofNullable(queryRecordsRequest.getHealthSourceQueryParams())
-                                      .map(HealthSourceQueryParams::getServiceInstanceField)
-                                      .orElse(null);
-    MetricResponseMapping responseMapping =
-        MetricResponseMapping.builder().serviceInstanceJsonPath(serviceInstanceField).build();
-    sumologicMetricCVConfig.setMetricInfos(Collections.singletonList(SumologicMetricInfo.builder()
-                                                                         .query(queryRecordsRequest.getQuery())
-                                                                         .identifier("sample_metric")
-                                                                         .metricName("sample_metric")
-                                                                         .responseMapping(responseMapping)
-                                                                         .build()));
-    sumologicMetricCVConfig.setMetricPack(metricPacks.get(0));
-    return sumologicMetricCVConfig;
+  public static CVConfig getCvConfigForNextGenMetric(
+      QueryRecordsRequest queryRecordsRequest, ProjectParams projectParams, List<MetricPack> metricPacks) {
+    NextGenMetricCVConfig nextGenMetricCVConfig = NextGenMetricCVConfig.builder()
+                                                      .accountId(projectParams.getAccountIdentifier())
+                                                      .orgIdentifier(projectParams.getOrgIdentifier())
+                                                      .projectIdentifier(projectParams.getProjectIdentifier())
+                                                      .dataSourceType(queryRecordsRequest.getProviderType())
+                                                      .groupName("Default_Group")
+                                                      .monitoredServiceIdentifier("fetch_sample_data_test")
+                                                      .connectorIdentifier(queryRecordsRequest.getConnectorIdentifier())
+                                                      .category(CVMonitoringCategory.PERFORMANCE)
+                                                      .build();
+    nextGenMetricCVConfig.setMetricInfos(Collections.singletonList(
+        NextGenMetricInfo.builder()
+            .query(queryRecordsRequest.getQuery())
+            .identifier("sample_metric")
+            .metricName("sample_metric")
+            .queryParams(queryRecordsRequest.getHealthSourceQueryParams().getQueryParamsEntity())
+            .build()));
+    nextGenMetricCVConfig.setMetricPack(metricPacks.get(0));
+    return nextGenMetricCVConfig;
   }
 
-  public static SumologicLogCVConfig getCVConfigForSumologicLog(QueryRecordsRequest queryRecordsRequest,
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceInstanceField) {
-    return SumologicLogCVConfig.builder()
-        .orgIdentifier(orgIdentifier)
-        .projectIdentifier(projectIdentifier)
-        .accountId(accountIdentifier)
+  public static NextGenLogCVConfig getCVConfigForNextGenLog(
+      QueryRecordsRequest queryRecordsRequest, ProjectParams projectParams) {
+    return NextGenLogCVConfig.builder()
+        .orgIdentifier(projectParams.getOrgIdentifier())
+        .projectIdentifier(projectParams.getProjectIdentifier())
+        .dataSourceType(queryRecordsRequest.getProviderType())
+        .accountId(projectParams.getAccountIdentifier())
         .monitoredServiceIdentifier("fetch_sample_data_MS")
-        .serviceInstanceIdentifier(serviceInstanceField)
+        .queryParams(queryRecordsRequest.getHealthSourceQueryParams().getQueryParamsEntity())
         .query(queryRecordsRequest.getQuery())
         .queryName("queryName")
         .connectorIdentifier(queryRecordsRequest.getConnectorIdentifier())

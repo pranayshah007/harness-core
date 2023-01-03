@@ -18,9 +18,7 @@ import io.harness.cvng.CVConstants;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.ng.DbAliases;
-import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
-import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UuidAware;
 import io.harness.serializer.JsonUtils;
 
@@ -53,10 +51,8 @@ import org.mongodb.morphia.annotations.Id;
 @StoreIn(DbAliases.CVNG)
 @Entity(value = "timeseriesShortTermHistory", noClassnameStored = true)
 @HarnessEntity(exportable = false)
-public final class TimeSeriesShortTermHistory implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware {
+public final class TimeSeriesShortTermHistory extends VerificationTaskBase implements PersistentEntity, UuidAware {
   @Id private String uuid;
-  @FdIndex private long createdAt;
-  @FdIndex private long lastUpdatedAt;
   @NotEmpty @FdIndex private String verificationTaskId;
   List<TransactionMetricHistory> transactionMetricHistories;
   private byte[] compressedMetricHistories;

@@ -9,6 +9,7 @@ package software.wings.service.impl.yaml.handler.workflow;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.FERNANDOD;
+import static io.harness.rule.OwnerRule.RAFAEL;
 
 import static software.wings.beans.WorkflowPhase.WorkflowPhaseBuilder.aWorkflowPhase;
 import static software.wings.service.impl.yaml.handler.workflow.WorkflowYamlHandlerValidator.validatePhaseAndRollbackPhase;
@@ -19,6 +20,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.rule.Owner;
 
+import software.wings.api.DeploymentType;
 import software.wings.beans.WorkflowPhase;
 
 import java.util.Collections;
@@ -41,9 +43,9 @@ public class WorkflowYamlHandlerValidatorTest {
   @Category(UnitTests.class)
   public void shouldVerifyEveryPhaseHasRollbackPhase() {
     Map<String, WorkflowPhase> workflowPhaseMap = new HashMap<>();
-    workflowPhaseMap.put("A", aWorkflowPhase().build());
-    workflowPhaseMap.put("B", aWorkflowPhase().build());
-    workflowPhaseMap.put("C", aWorkflowPhase().build());
+    workflowPhaseMap.put("A", aWorkflowPhase().deploymentType(DeploymentType.KUBERNETES).build());
+    workflowPhaseMap.put("B", aWorkflowPhase().deploymentType(DeploymentType.KUBERNETES).build());
+    workflowPhaseMap.put("C", aWorkflowPhase().deploymentType(DeploymentType.KUBERNETES).build());
 
     Map<String, WorkflowPhase> rollbackPhaseMap = new HashMap<>();
     rollbackPhaseMap.put(generateUuid(), aWorkflowPhase().phaseNameForRollback("B").build());
@@ -51,5 +53,22 @@ public class WorkflowYamlHandlerValidatorTest {
     assertThatCode(() -> validatePhaseAndRollbackPhase(workflowPhaseMap, rollbackPhaseMap))
         .isInstanceOf(InvalidArgumentsException.class)
         .hasMessage("Missing rollback phase for one or more phases: [A, C]");
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void shouldVerifyEveryPhaseHasRollbackWhenWorkflowHasBuildPhase() {
+    Map<String, WorkflowPhase> workflowPhaseMap = new HashMap<>();
+    workflowPhaseMap.put("k8s-1", aWorkflowPhase().deploymentType(DeploymentType.KUBERNETES).build());
+    workflowPhaseMap.put("BUILD", aWorkflowPhase().deploymentType(null).build());
+    workflowPhaseMap.put("k8s-2", aWorkflowPhase().deploymentType(DeploymentType.KUBERNETES).build());
+
+    Map<String, WorkflowPhase> rollbackPhaseMap = new HashMap<>();
+    rollbackPhaseMap.put(generateUuid(), aWorkflowPhase().phaseNameForRollback("k8s-1").build());
+
+    assertThatCode(() -> validatePhaseAndRollbackPhase(workflowPhaseMap, rollbackPhaseMap))
+        .isInstanceOf(InvalidArgumentsException.class)
+        .hasMessage("Missing rollback phase for one or more phases: [k8s-2]");
   }
 }

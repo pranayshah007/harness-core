@@ -20,7 +20,6 @@ import io.harness.mongo.iterator.filter.SpringFilterExpander;
 import com.mongodb.BasicDBObject;
 import java.time.Duration;
 import java.util.List;
-import org.apache.commons.lang3.NotImplementedException;
 import org.mongodb.morphia.query.FilterOperator;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Order;
@@ -98,6 +97,11 @@ public class SpringPersistenceRequiredProvider<T extends PersistentIterable>
 
   @Override
   public void recoverAfterPause(Class<T> clazz, String fieldName) {
-    throw new NotImplementedException("TODO");
+    Update updateNull = new Update();
+    updateNull.unset(fieldName);
+    persistence.updateFirst(new Query(Criteria.where(fieldName).is(null)), updateNull, clazz);
+    Update updateEmpty = new Update();
+    updateEmpty.unset(fieldName);
+    persistence.updateFirst(new Query(Criteria.where(fieldName).size(0)), updateEmpty, clazz);
   }
 }

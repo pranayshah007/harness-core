@@ -9,6 +9,7 @@ package io.harness.cvng.statemachine.entities;
 
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
+import io.harness.cvng.analysis.entities.VerificationTaskBase;
 import io.harness.cvng.statemachine.beans.AnalysisOrchestratorStatus;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.CompoundMongoIndex;
@@ -16,9 +17,7 @@ import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
-import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
-import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UuidAware;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -45,7 +44,7 @@ import org.mongodb.morphia.annotations.Id;
 @Entity(value = "analysisOrchestrators", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 public class AnalysisOrchestrator
-    implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware, PersistentRegularIterable {
+    extends VerificationTaskBase implements PersistentEntity, UuidAware, PersistentRegularIterable {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
@@ -60,8 +59,6 @@ public class AnalysisOrchestrator
   @FdIndex private String verificationTaskId;
   @Builder.Default private List<AnalysisStateMachine> analysisStateMachineQueue = new ArrayList<>();
   private AnalysisOrchestratorStatus status;
-  private long createdAt;
-  private long lastUpdatedAt;
   private String accountId;
 
   @FdTtlIndex private Date validUntil = Date.from(OffsetDateTime.now().plusDays(30).toInstant());

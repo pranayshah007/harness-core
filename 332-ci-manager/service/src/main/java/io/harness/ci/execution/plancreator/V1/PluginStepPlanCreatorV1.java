@@ -51,15 +51,15 @@ public class PluginStepPlanCreatorV1 extends CIPMSStepPlanCreatorV2<PluginStepNo
         .pluginStepInfo(PluginStepInfo.builder()
                             .image(stepInfo.getImage())
                             .uses(stepInfo.getUses())
-                            .envVariables(stepInfo.getEnv().getValue())
+                            .envVariables(stepInfo.getEnv())
                             .privileged(stepInfo.getPrivileged())
                             .resources(stepInfo.getResources())
                             .runAsUser(stepInfo.getUser())
                             .retry(stepInfo.getRetry())
                             .settings(stepInfo.getWith())
-                            .imagePullPolicy(stepInfo.getPull().getValue() != null
-                                    ? ParameterField.createValueField(stepInfo.getPull().getValue().toImagePullPolicy())
-                                    : ParameterField.ofNull())
+                            .imagePullPolicy(stepInfo.getPull() == null
+                                    ? ParameterField.ofNull()
+                                    : ParameterField.createValueField(stepInfo.getPull().toImagePullPolicy()))
                             .build())
         .build();
   }

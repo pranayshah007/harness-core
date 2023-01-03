@@ -24,6 +24,7 @@ import io.harness.mongo.CollationStrength;
 import io.harness.mongo.index.Collation;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.LogKeyUtils;
@@ -77,6 +78,11 @@ public class Application extends Base implements KeywordsAware, NameAccess, TagA
                  .field(ApplicationKeys.name)
                  .collation(
                      Collation.builder().locale(CollationLocale.ENGLISH).strength(CollationStrength.PRIMARY).build())
+                 .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("accountIdCreatedAt")
+                 .field(ApplicationKeys.accountId)
+                 .descSortField(ApplicationKeys.createdAt)
                  .build())
         .build();
   }

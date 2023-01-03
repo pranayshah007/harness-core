@@ -120,6 +120,7 @@ public class InvoicePaymentSucceedHandler implements StripeEventHandler {
         setBasicInfo(accountIdentifier, moduleType, cdModuleLicense);
         return cdModuleLicense;
       case CV:
+      case SRM:
         throw new IllegalStateException("CV license is not supported yet");
       case CF:
         CFModuleLicense cfModuleLicense = CFModuleLicense.builder().build();

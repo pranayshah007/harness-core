@@ -9,25 +9,40 @@ package io.harness.ngtriggers.validations;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.ADWAIT;
+import static io.harness.rule.OwnerRule.VINICIUS;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.beans.source.NGTriggerType;
 import io.harness.ngtriggers.buildtriggers.helpers.BuildTriggerHelper;
+import io.harness.ngtriggers.buildtriggers.helpers.generator.AcrPollingItemGenerator;
+import io.harness.ngtriggers.buildtriggers.helpers.generator.GeneratorFactory;
+import io.harness.ngtriggers.mapper.NGTriggerElementMapper;
 import io.harness.ngtriggers.validations.impl.ArtifactTriggerValidator;
 import io.harness.ngtriggers.validations.impl.ManifestTriggerValidator;
 import io.harness.ngtriggers.validations.impl.PipelineRefValidator;
 import io.harness.ngtriggers.validations.impl.TriggerIdentifierRefValidator;
+import io.harness.pipeline.remote.PipelineServiceClient;
+import io.harness.pms.pipeline.TemplatesResolvedPipelineResponseDTO;
 import io.harness.rule.Owner;
 
+import com.google.common.io.Resources;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
@@ -35,6 +50,8 @@ import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import retrofit2.Call;
+import retrofit2.Response;
 
 @OwnedBy(PIPELINE)
 public class TriggerValidationHandlerTest extends CategoryTest {
@@ -46,6 +63,9 @@ public class TriggerValidationHandlerTest extends CategoryTest {
   @InjectMocks TriggerValidationHandler triggerValidationHandler;
   NGTriggerEntity ngTriggerEntity;
   TriggerDetails triggerDetails;
+  @InjectMocks NGTriggerElementMapper ngTriggerElementMapper;
+  @Mock PipelineServiceClient pipelineServiceClient;
+  @Mock GeneratorFactory generatorFactory;
 
   @Before
   public void setUp() throws IOException {
@@ -120,6 +140,35 @@ public class TriggerValidationHandlerTest extends CategoryTest {
             + "PipelineIdentifier can not be null for trigger\n");
 
     validate = triggerIdentifierRefValidator.validate(triggerDetails);
+    assertThat(validate.isSuccess()).isTrue();
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testArtifactTriggerValidatorWithRemotePipeline() throws IOException {
+    BuildTriggerHelper validationHelper = new BuildTriggerHelper(pipelineServiceClient);
+    artifactTriggerValidator = spy(new ArtifactTriggerValidator(validationHelper, generatorFactory));
+    ClassLoader classLoader = getClass().getClassLoader();
+    String artifactTriggerYaml =
+        Resources.toString(Objects.requireNonNull(classLoader.getResource("ng-trigger-artifact-remote-pipeline.yaml")),
+            StandardCharsets.UTF_8);
+    TriggerDetails artifactTriggerDetails =
+        ngTriggerElementMapper.toTriggerDetails("accountId", "orgId", "projectId", artifactTriggerYaml, true);
+    String pipelineYaml =
+        Resources.toString(Objects.requireNonNull(classLoader.getResource("pipeline.yaml")), StandardCharsets.UTF_8);
+    Call<ResponseDTO<TemplatesResolvedPipelineResponseDTO>> templatesResolvedPipelineDTO = mock(Call.class);
+    when(pipelineServiceClient.getResolvedTemplatesPipelineByIdentifier(
+             artifactTriggerDetails.getNgTriggerEntity().getTargetIdentifier(), "accountId", "orgId", "projectId",
+             artifactTriggerDetails.getNgTriggerConfigV2().getPipelineBranchName(), null, false))
+        .thenReturn(templatesResolvedPipelineDTO);
+    when(templatesResolvedPipelineDTO.execute())
+        .thenReturn(Response.success(ResponseDTO.newResponse(
+            TemplatesResolvedPipelineResponseDTO.builder().resolvedTemplatesPipelineYaml(pipelineYaml).build())));
+    doNothing().when(artifactTriggerValidator).validateBasedOnArtifactType(any());
+    when(generatorFactory.retrievePollingItemGenerator(any()))
+        .thenReturn(new AcrPollingItemGenerator(validationHelper));
+    ValidationResult validate = artifactTriggerValidator.validate(artifactTriggerDetails);
     assertThat(validate.isSuccess()).isTrue();
   }
 }

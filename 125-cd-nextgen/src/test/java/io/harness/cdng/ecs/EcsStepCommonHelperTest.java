@@ -9,7 +9,9 @@ package io.harness.cdng.ecs;
 
 import static io.harness.pms.contracts.execution.failure.FailureType.APPLICATION_FAILURE;
 import static io.harness.rule.OwnerRule.ALLU_VAMSI;
+import static io.harness.rule.OwnerRule.SAINATH;
 
+import static junit.framework.TestCase.assertNull;
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -17,6 +19,7 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -38,6 +41,7 @@ import io.harness.cdng.ecs.beans.EcsS3FetchFailurePassThroughData;
 import io.harness.cdng.ecs.beans.EcsS3FetchPassThroughData;
 import io.harness.cdng.ecs.beans.EcsS3ManifestFileConfigs;
 import io.harness.cdng.ecs.beans.EcsStepExecutorParams;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.infra.beans.EcsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.manifest.steps.ManifestsOutcome;
@@ -50,6 +54,7 @@ import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.S3StoreConfig;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
+import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.TaskData;
@@ -127,6 +132,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnit;
@@ -165,6 +171,7 @@ public class EcsStepCommonHelperTest extends CategoryTest {
   @Mock private EcsRollingDeployStep ecsRollingDeployStep;
   @Mock private EcsCanaryDeployStep ecsCanaryDeployStep;
   @Mock private StepUtils stepUtils;
+  @Mock private CDExpressionResolver cdExpressionResolver;
 
   @Spy @InjectMocks private EcsStepCommonHelper ecsStepCommonHelper;
 
@@ -223,6 +230,7 @@ public class EcsStepCommonHelperTest extends CategoryTest {
     assertThat(taskChainResponse.isChainEnd()).isEqualTo(false);
     assertThat(ecsGitFetchPassThroughData.getInfrastructureOutcome())
         .isEqualTo(EcsInfrastructureOutcome.builder().build());
+    assertNull(ecsGitFetchPassThroughData.getEcsS3ManifestFileConfigs());
   }
 
   @Test
@@ -1395,5 +1403,30 @@ public class EcsStepCommonHelperTest extends CategoryTest {
                    .getEcsOtherStoreRunTaskContent()
                    .getRunTaskDefinitionFileContent())
         .isEqualTo(ecsGitFetchPassThroughData.getTaskDefinitionHarnessFileContent());
+  }
+
+  @Test(expected = InvalidRequestException.class)
+  @Owner(developers = SAINATH)
+  @Category(UnitTests.class)
+  public void testGetEcsGitFetchRunTaskFileConfigWithNonGit() {
+    StoreConfig storeConfig = HarnessStore.builder().build();
+    ManifestOutcome manifestOutcome = EcsTaskDefinitionManifestOutcome.builder().store(storeConfig).build();
+    ecsStepCommonHelper.getEcsGitFetchFilesConfigFromManifestOutcome(manifestOutcome, null, null);
+  }
+
+  @Test
+  @Owner(developers = SAINATH)
+  @Category(UnitTests.class)
+  public void testGetGitFetchFileRunTaskResponse() {
+    TaskRequest taskRequest = TaskRequest.getDefaultInstance();
+    EcsGitFetchPassThroughData ecsGitFetchPassThroughData = EcsGitFetchPassThroughData.builder().build();
+    MockedStatic<StepUtils> stepUtilsStaticMock = mockStatic(StepUtils.class);
+    stepUtilsStaticMock.when(() -> StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(taskRequest);
+    TaskChainResponse taskChainResponse = ecsStepCommonHelper.getGitFetchFileRunTaskResponse(
+        ambiance, false, stepElementParameters, ecsGitFetchPassThroughData, null, null);
+    assertThat(taskChainResponse.getTaskRequest()).isEqualTo(taskRequest);
+    assertThat(taskChainResponse.isChainEnd()).isFalse();
+    assertThat(taskChainResponse.getPassThroughData()).isEqualTo(ecsGitFetchPassThroughData);
   }
 }

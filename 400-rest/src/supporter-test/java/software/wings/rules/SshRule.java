@@ -21,6 +21,7 @@ import org.apache.sshd.common.file.virtualfs.VirtualFileSystemFactory;
 import org.apache.sshd.common.util.security.SecurityUtils;
 import org.apache.sshd.scp.server.ScpCommandFactory;
 import org.apache.sshd.server.SshServer;
+import org.apache.sshd.server.keyprovider.AbstractGeneratorHostKeyProvider;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.rules.MethodRule;
 import org.junit.rules.TemporaryFolder;
@@ -127,7 +128,9 @@ public class SshRule implements MethodRule {
     }
     sshd = SshServer.setUpDefaultServer();
     sshd.setPort(0);
-    sshd.setKeyPairProvider(SecurityUtils.createGeneratorHostKeyProvider(keyPath));
+    AbstractGeneratorHostKeyProvider generatorHostKeyProvider = SecurityUtils.createGeneratorHostKeyProvider(keyPath);
+    generatorHostKeyProvider.setAlgorithm("RSA");
+    sshd.setKeyPairProvider(generatorHostKeyProvider);
 
     sshd.setPasswordAuthenticator(
         (username, password,

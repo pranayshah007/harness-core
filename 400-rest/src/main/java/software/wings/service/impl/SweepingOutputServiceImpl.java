@@ -46,7 +46,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.CriteriaContainerImpl;
+import org.mongodb.morphia.query.CriteriaContainer;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.Sort;
 import org.mongodb.morphia.query.UpdateOperations;
@@ -257,7 +257,7 @@ public class SweepingOutputServiceImpl implements SweepingOutputService {
 
   private void addFiltersWithScope(
       SweepingOutputInquiry sweepingOutputInquiry, Query<SweepingOutputInstance> query, Scope scope) {
-    CriteriaContainerImpl criteria = null;
+    CriteriaContainer criteria = null;
     switch (scope) {
       case PIPELINE:
         if (sweepingOutputInquiry.getPipelineExecutionId() != null) {
@@ -286,33 +286,33 @@ public class SweepingOutputServiceImpl implements SweepingOutputService {
   }
 
   private void addFilters(SweepingOutputInquiry sweepingOutputInquiry, Query<SweepingOutputInstance> query) {
-    ArrayList<CriteriaContainerImpl> criteriaContainers = new ArrayList<>();
-    final CriteriaContainerImpl workflowCriteria = query.criteria(SweepingOutputInstanceKeys.workflowExecutionIds)
-                                                       .equal(sweepingOutputInquiry.getWorkflowExecutionId());
+    ArrayList<CriteriaContainer> criteriaContainers = new ArrayList<>();
+    final CriteriaContainer workflowCriteria = query.criteria(SweepingOutputInstanceKeys.workflowExecutionIds)
+                                                   .equal(sweepingOutputInquiry.getWorkflowExecutionId());
     criteriaContainers.add(workflowCriteria);
 
-    final CriteriaContainerImpl phaseCriteria =
+    final CriteriaContainer phaseCriteria =
         query.criteria(SweepingOutputInstanceKeys.phaseExecutionId).equal(sweepingOutputInquiry.getPhaseExecutionId());
     criteriaContainers.add(phaseCriteria);
 
-    final CriteriaContainerImpl stateCriteria =
+    final CriteriaContainer stateCriteria =
         query.criteria(SweepingOutputInstanceKeys.stateExecutionId).equal(sweepingOutputInquiry.getStateExecutionId());
     criteriaContainers.add(stateCriteria);
 
     if (sweepingOutputInquiry.getPipelineExecutionId() != null) {
-      final CriteriaContainerImpl pipelineCriteria = query.criteria(SweepingOutputInstanceKeys.pipelineExecutionId)
-                                                         .equal(sweepingOutputInquiry.getPipelineExecutionId());
+      final CriteriaContainer pipelineCriteria = query.criteria(SweepingOutputInstanceKeys.pipelineExecutionId)
+                                                     .equal(sweepingOutputInquiry.getPipelineExecutionId());
       criteriaContainers.add(pipelineCriteria);
     }
 
     if (sweepingOutputInquiry.getIsOnDemandRollback() != null && sweepingOutputInquiry.getIsOnDemandRollback()) {
       addFiltersForOnDemandRollback(sweepingOutputInquiry, query, criteriaContainers);
     }
-    query.or(criteriaContainers.toArray(new CriteriaContainerImpl[criteriaContainers.size()]));
+    query.or(criteriaContainers.toArray(new CriteriaContainer[criteriaContainers.size()]));
   }
 
   private void addFiltersForOnDemandRollback(SweepingOutputInquiry sweepingOutputInquiry,
-      Query<SweepingOutputInstance> query, ArrayList<CriteriaContainerImpl> criteriaContainers) {
+      Query<SweepingOutputInstance> query, ArrayList<CriteriaContainer> criteriaContainers) {
     final WorkflowExecution currentWorkflowExecution =
         workflowExecutionService.fetchWorkflowExecution(sweepingOutputInquiry.getAppId(),
             sweepingOutputInquiry.getWorkflowExecutionId(), WorkflowExecutionKeys.originalExecution);
@@ -323,7 +323,7 @@ public class SweepingOutputServiceImpl implements SweepingOutputService {
           WorkflowExecutionKeys.pipelineExecutionId);
       final String pipelineExecutionId = originalWorkflowExecution.getPipelineExecutionId();
       if (pipelineExecutionId != null) {
-        final CriteriaContainerImpl originalPipelineCriteria =
+        final CriteriaContainer originalPipelineCriteria =
             query.criteria(SweepingOutputInstanceKeys.pipelineExecutionId).equal(pipelineExecutionId);
         criteriaContainers.add(originalPipelineCriteria);
       }

@@ -19,7 +19,8 @@ public class InstanceStatsServiceImpl implements InstanceStatsService {
   private InstanceStatsRepository instanceStatsRepository;
 
   @Override
-  public Instant getLastSnapshotTime(String accountId, String orgId, String projectId, String serviceId) {
+  public Instant getLastSnapshotTime(String accountId, String orgId, String projectId, String serviceId)
+      throws Exception {
     InstanceStats record = instanceStatsRepository.getLatestRecord(accountId, orgId, projectId, serviceId);
     if (record == null) {
       // no record found

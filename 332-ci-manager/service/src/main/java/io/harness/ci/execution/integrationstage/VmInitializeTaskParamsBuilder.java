@@ -509,9 +509,8 @@ public class VmInitializeTaskParamsBuilder {
       throw new CIStageExecutionException(format("%s %s platform is not supported for hosted builds", os, arch));
     }
 
-    boolean isLinuxAmd64 = os == OSType.Linux && arch == ArchType.Amd64;
     String pool = format("%s-%s", os.toString().toLowerCase(), arch.toString().toLowerCase());
-    if (isLinuxAmd64 && ciExecutionServiceConfig.getHostedVmConfig().isSplitLinuxAmd64Pool()) {
+    if (isLinux && isSplitLinuxPool(arch)) {
       LicensesWithSummaryDTO licensesWithSummaryDTO = ciLicenseService.getLicenseSummary(accountId);
       if (licensesWithSummaryDTO != null && licensesWithSummaryDTO.getEdition() == Edition.FREE) {
         pool = format("%s-free-%s", os.toString().toLowerCase(), arch.toString().toLowerCase());
@@ -519,6 +518,15 @@ public class VmInitializeTaskParamsBuilder {
     }
 
     return pool;
+  }
+
+  private boolean isSplitLinuxPool(ArchType arch) {
+    if (arch == ArchType.Amd64) {
+      return ciExecutionServiceConfig.getHostedVmConfig().isSplitLinuxAmd64Pool();
+    } else if (arch == ArchType.Arm64) {
+      return ciExecutionServiceConfig.getHostedVmConfig().isSplitLinuxArm64Pool();
+    }
+    return false;
   }
 
   private SetupVmRequest convertHostedSetupParams(CIVmInitializeTaskParams params) {

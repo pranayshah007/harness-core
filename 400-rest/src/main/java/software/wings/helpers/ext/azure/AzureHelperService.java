@@ -45,7 +45,8 @@ import software.wings.infra.AzureInstanceInfrastructure;
 import software.wings.infra.InfrastructureDefinition;
 import software.wings.service.intfc.security.EncryptionService;
 
-import com.azure.core.http.policy.HttpLogDetailLevel;
+import com.azure.core.http.HttpClient;
+import com.azure.core.http.policy.RetryPolicy;
 import com.azure.core.management.AzureEnvironment;
 import com.azure.core.management.profile.AzureProfile;
 import com.azure.identity.ClientSecretCredential;
@@ -75,8 +76,6 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 @Slf4j
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)
 public class AzureHelperService {
-  private static final int CONNECT_TIMEOUT = 5; // TODO:: read from config
-  private static final int READ_TIMEOUT = 10;
   @Inject private EncryptionService encryptionService;
 
   private AzureConfig validateAndGetAzureConfig(SettingAttribute computeProviderSetting) {
@@ -112,23 +111,14 @@ public class AzureHelperService {
         throw new InvalidRequestException("Please input a valid encrypted key.");
       }
 
-      ClientSecretCredential clientSecretCredential = new ClientSecretCredentialBuilder()
-                                                          .clientId(azureConfig.getClientId())
-                                                          .tenantId(azureConfig.getTenantId())
-                                                          .clientSecret(String.valueOf(azureConfig.getKey()))
-                                                          .build();
+      AzureProfile azureProfile = AzureUtils.getAzureProfile(
+          azureConfig.getTenantId(), null, getAzureEnvironment(azureConfig.getAzureEnvironmentType()));
 
       AzureResourceManager.Authenticated authenticated =
-          AzureResourceManager.configure()
-              .withLogLevel(HttpLogDetailLevel.NONE)
-              .withRetryPolicy(
-                  AzureUtils.getRetryPolicy(AzureUtils.getRetryOptions(AzureUtils.getDefaultDelayOptions())))
-              .authenticate(clientSecretCredential,
-                  new AzureProfile(
-                      azureConfig.getTenantId(), null, getAzureEnvironment(azureConfig.getAzureEnvironmentType())));
+          AzureResourceManager.authenticate(AzureCGHelper.createCredentialsAndHttpPipeline(azureConfig), azureProfile);
 
       Subscription subscription = authenticated.subscriptions().list().stream().findFirst().get();
-      AzureResourceManager azureResourceManager = authenticated.withSubscription(subscription.subscriptionId());
+      authenticated.withSubscription(subscription.subscriptionId());
     } catch (Exception e) {
       handleAzureAuthenticationException(e);
     }
@@ -339,18 +329,22 @@ public class AzureHelperService {
   @VisibleForTesting
   protected AzureResourceManager getAzureClient(AzureConfig azureConfig, String subscriptionId) {
     try {
+      AzureEnvironment azureEnvironment = getAzureEnvironment(azureConfig.getAzureEnvironmentType());
+      HttpClient httpClient = AzureUtils.getAzureHttpClient();
+      AzureProfile azureProfile = AzureUtils.getAzureProfile(azureConfig.getTenantId(), null, azureEnvironment);
+      RetryPolicy retryPolicy =
+          AzureUtils.getRetryPolicy(AzureUtils.getRetryOptions(AzureUtils.getDefaultDelayOptions()));
+
       ClientSecretCredential clientSecretCredential = new ClientSecretCredentialBuilder()
                                                           .clientId(azureConfig.getClientId())
                                                           .tenantId(azureConfig.getTenantId())
                                                           .clientSecret(String.valueOf(azureConfig.getKey()))
+                                                          .httpClient(httpClient)
                                                           .build();
 
-      return AzureResourceManager.configure()
-          .withLogLevel(HttpLogDetailLevel.NONE)
-          .withRetryPolicy(AzureUtils.getRetryPolicy(AzureUtils.getRetryOptions(AzureUtils.getDefaultDelayOptions())))
-          .authenticate(clientSecretCredential,
-              new AzureProfile(
-                  azureConfig.getTenantId(), null, getAzureEnvironment(azureConfig.getAzureEnvironmentType())))
+      return AzureResourceManager
+          .authenticate(AzureUtils.getAzureHttpPipeline(clientSecretCredential, azureProfile, retryPolicy, httpClient),
+              azureProfile)
           .withSubscription(subscriptionId);
     } catch (Exception e) {
       handleAzureAuthenticationException(e);
@@ -402,21 +396,12 @@ public class AzureHelperService {
     AzureResourceManager azureResourceManager;
     List<Vault> vaultList = new ArrayList<>();
 
-    ClientSecretCredential clientSecretCredential = new ClientSecretCredentialBuilder()
-                                                        .clientId(azureVaultConfig.getClientId())
-                                                        .tenantId(azureVaultConfig.getTenantId())
-                                                        .clientSecret(azureVaultConfig.getSecretKey())
-                                                        .build();
-
     String subscriptionId = azureVaultConfig.getSubscription();
+    AzureProfile azureProfile = AzureUtils.getAzureProfile(azureVaultConfig.getTenantId(), subscriptionId,
+        getAzureEnvironment(azureVaultConfig.getAzureEnvironmentType()));
 
-    AzureResourceManager.Authenticated authenticate =
-        AzureResourceManager.configure()
-            .withLogLevel(HttpLogDetailLevel.NONE)
-            .withRetryPolicy(AzureUtils.getRetryPolicy(AzureUtils.getRetryOptions(AzureUtils.getDefaultDelayOptions())))
-            .authenticate(clientSecretCredential,
-                new AzureProfile(azureVaultConfig.getTenantId(), subscriptionId,
-                    getAzureEnvironment(azureVaultConfig.getAzureEnvironmentType())));
+    AzureResourceManager.Authenticated authenticate = AzureResourceManager.authenticate(
+        AzureCGHelper.createCredentialsAndHttpPipeline(azureVaultConfig), azureProfile);
 
     if (isEmpty(subscriptionId)) {
       Subscription subscription = authenticate.subscriptions().list().stream().findFirst().get();

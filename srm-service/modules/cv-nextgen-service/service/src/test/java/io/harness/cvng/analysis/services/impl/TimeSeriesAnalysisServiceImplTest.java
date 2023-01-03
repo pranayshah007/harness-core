@@ -12,6 +12,7 @@ import static io.harness.cvng.analysis.CVAnalysisConstants.TIMESERIES_SERVICE_GU
 import static io.harness.cvng.analysis.CVAnalysisConstants.TIMESERIES_SERVICE_GUARD_WINDOW_SIZE;
 import static io.harness.cvng.beans.DataSourceType.APP_DYNAMICS;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.rule.OwnerRule.ABHIJITH;
 import static io.harness.rule.OwnerRule.KAMAL;
 import static io.harness.rule.OwnerRule.KANHAIYA;
 import static io.harness.rule.OwnerRule.NAVEEN;
@@ -28,6 +29,7 @@ import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.CVConstants;
 import io.harness.cvng.analysis.beans.DeploymentTimeSeriesAnalysisDTO;
 import io.harness.cvng.analysis.beans.ServiceGuardTimeSeriesAnalysisDTO;
+import io.harness.cvng.analysis.beans.ServiceGuardTimeSeriesAnalysisDTO.ServiceGuardTimeSeriesAnalysisDTOBuilder;
 import io.harness.cvng.analysis.beans.ServiceGuardTxnMetricAnalysisDataDTO;
 import io.harness.cvng.analysis.beans.TimeSeriesAnomaliesDTO;
 import io.harness.cvng.analysis.beans.TimeSeriesRecordDTO;
@@ -293,7 +295,8 @@ public class TimeSeriesAnalysisServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = PRAVEEN)
   @Category(UnitTests.class)
   public void testSaveAnalysis_serviceGuard() {
-    timeSeriesAnalysisService.saveAnalysis(learningEngineTaskId, buildServiceGuardMetricAnalysisDTO());
+    timeSeriesAnalysisService.saveAnalysis(
+        learningEngineTaskId, generateServiceGuardMetricAnalysisDTOBuilder().build());
 
     TimeSeriesCumulativeSums cumulativeSums =
         hPersistence.createQuery(TimeSeriesCumulativeSums.class).filter("verificationTaskId", verificationTaskId).get();
@@ -309,6 +312,29 @@ public class TimeSeriesAnalysisServiceImplTest extends CvNextGenTestBase {
     List<HeatMap> heatMaps = hPersistence.createQuery(HeatMap.class).asList();
     heatMaps.forEach(
         heatMap -> assertThat(heatMap.getHeatMapRisks().iterator().next().getAnomalousMetricsCount()).isEqualTo(9));
+  }
+
+  @Test
+  @Owner(developers = ABHIJITH)
+  @Category(UnitTests.class)
+  public void testSaveAnalysis_serviceGuardNoData() {
+    ServiceGuardTimeSeriesAnalysisDTO serviceGuardTimeSeriesAnalysisDTO =
+        generateServiceGuardMetricAnalysisDTOBuilder().overallMetricScores(new HashMap<>()).build();
+    timeSeriesAnalysisService.saveAnalysis(learningEngineTaskId, serviceGuardTimeSeriesAnalysisDTO);
+
+    TimeSeriesCumulativeSums cumulativeSums =
+        hPersistence.createQuery(TimeSeriesCumulativeSums.class).filter("verificationTaskId", verificationTaskId).get();
+    assertThat(cumulativeSums).isNotNull();
+    TimeSeriesAnomalousPatterns anomalousPatterns = hPersistence.createQuery(TimeSeriesAnomalousPatterns.class)
+                                                        .filter("verificationTaskId", verificationTaskId)
+                                                        .get();
+    assertThat(anomalousPatterns).isNotNull();
+    TimeSeriesShortTermHistory shortTermHistory = hPersistence.createQuery(TimeSeriesShortTermHistory.class)
+                                                      .filter("verificationTaskId", verificationTaskId)
+                                                      .get();
+    assertThat(shortTermHistory).isNotNull();
+    List<HeatMap> heatMaps = hPersistence.createQuery(HeatMap.class).asList();
+    heatMaps.forEach(heatMap -> assertThat(heatMap.getHeatMapRisks().iterator().next().getRiskScore()).isEqualTo(-2.0));
   }
 
   @Test
@@ -348,7 +374,7 @@ public class TimeSeriesAnalysisServiceImplTest extends CvNextGenTestBase {
     assertThat(heatMaps.size()).isEqualTo(0);
   }
 
-  private ServiceGuardTimeSeriesAnalysisDTO buildServiceGuardMetricAnalysisDTO() {
+  private ServiceGuardTimeSeriesAnalysisDTOBuilder generateServiceGuardMetricAnalysisDTOBuilder() {
     Map<String, Double> overallMetricScores = new HashMap<>();
     overallMetricScores.put("Errors per Minute", 0.872);
     overallMetricScores.put("Average Response Time", 0.212);
@@ -385,11 +411,10 @@ public class TimeSeriesAnalysisServiceImplTest extends CvNextGenTestBase {
         .analysisStartTime(Instant.now().minus(10, ChronoUnit.MINUTES))
         .analysisEndTime(Instant.now().minus(5, ChronoUnit.MINUTES))
         .overallMetricScores(overallMetricScores)
-        .txnMetricAnalysisData(txnMetricMap)
-        .build();
+        .txnMetricAnalysisData(txnMetricMap);
   }
 
-  private ServiceGuardTimeSeriesAnalysisDTO buildServiceGuardMetricAnalysisDTO(
+  private ServiceGuardTimeSeriesAnalysisDTO generateServiceGuardMetricAnalysisDTOBuilder(
       List<String> metricNames, List<Double> scores) {
     Map<String, Double> overallMetricScores = new HashMap<>();
     overallMetricScores.put("Errors per Minute", 0.872);
@@ -725,8 +750,8 @@ public class TimeSeriesAnalysisServiceImplTest extends CvNextGenTestBase {
     String metricNames[] = {"metric1", "metric2", "metric3", "metrics4"};
     Double scores[] = {.1, .2, .3, .4};
     for (int i = 0; i < 2; i++) {
-      timeSeriesAnalysisService.saveAnalysis(
-          task.getUuid(), buildServiceGuardMetricAnalysisDTO(Arrays.asList(metricNames), Arrays.asList(scores)));
+      timeSeriesAnalysisService.saveAnalysis(task.getUuid(),
+          generateServiceGuardMetricAnalysisDTOBuilder(Arrays.asList(metricNames), Arrays.asList(scores)));
     }
     List<TransactionMetricRisk> transactionMetricRisks =
         timeSeriesAnalysisService.getTopTimeSeriesTransactionMetricRisk(Collections.singletonList(verificationTaskId),

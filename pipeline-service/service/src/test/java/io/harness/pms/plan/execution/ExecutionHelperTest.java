@@ -18,6 +18,7 @@ import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doNothing;
@@ -288,7 +289,7 @@ public class ExecutionHelperTest extends CategoryTest {
             pipelineEntity.getProjectIdentifier(), mergedYaml, true, false, BOOLEAN_FALSE_VALUE);
     ExecArgs execArgs =
         executionHelper.buildExecutionArgs(pipelineEntity, moduleType, runtimeInputYaml, Collections.emptyList(), null,
-            executionTriggerInfo, null, RetryExecutionParameters.builder().isRetry(false).build(), false);
+            executionTriggerInfo, null, RetryExecutionParameters.builder().isRetry(false).build(), false, false);
     executionMetadataAssertions(execArgs.getMetadata());
     assertThat(execArgs.getMetadata().getPipelineStoreType()).isEqualTo(PipelineStoreType.UNDEFINED);
     assertThat(execArgs.getMetadata().getPipelineConnectorRef()).isEmpty();
@@ -322,7 +323,7 @@ public class ExecutionHelperTest extends CategoryTest {
             inlinePipeline.getProjectIdentifier(), mergedYaml, true, false, BOOLEAN_FALSE_VALUE);
     ExecArgs execArgs =
         executionHelper.buildExecutionArgs(inlinePipeline, moduleType, runtimeInputYaml, Collections.emptyList(), null,
-            executionTriggerInfo, null, RetryExecutionParameters.builder().isRetry(false).build(), false);
+            executionTriggerInfo, null, RetryExecutionParameters.builder().isRetry(false).build(), false, false);
     executionMetadataAssertions(execArgs.getMetadata());
     assertThat(execArgs.getMetadata().getPipelineStoreType()).isEqualTo(PipelineStoreType.INLINE);
     assertThat(execArgs.getMetadata().getPipelineConnectorRef()).isEmpty();
@@ -356,7 +357,7 @@ public class ExecutionHelperTest extends CategoryTest {
             remotePipeline.getProjectIdentifier(), mergedYaml, true, false, BOOLEAN_FALSE_VALUE);
     ExecArgs execArgs =
         executionHelper.buildExecutionArgs(remotePipeline, moduleType, runtimeInputYaml, Collections.emptyList(), null,
-            executionTriggerInfo, null, RetryExecutionParameters.builder().isRetry(false).build(), false);
+            executionTriggerInfo, null, RetryExecutionParameters.builder().isRetry(false).build(), false, false);
     executionMetadataAssertions(execArgs.getMetadata());
     assertThat(execArgs.getMetadata().getPipelineStoreType()).isEqualTo(PipelineStoreType.REMOTE);
     assertThat(execArgs.getMetadata().getPipelineConnectorRef()).isEqualTo("conn");
@@ -388,7 +389,7 @@ public class ExecutionHelperTest extends CategoryTest {
             pipelineEntity.getProjectIdentifier(), mergedYaml, true, false, BOOLEAN_FALSE_VALUE);
     ExecArgs execArgs =
         executionHelper.buildExecutionArgs(pipelineEntity, moduleType, runtimeInputYaml, Collections.emptyList(), null,
-            executionTriggerInfo, null, RetryExecutionParameters.builder().isRetry(false).build(), false);
+            executionTriggerInfo, null, RetryExecutionParameters.builder().isRetry(false).build(), false, false);
     executionMetadataAssertions(execArgs.getMetadata());
     assertThat(execArgs.getMetadata().getPipelineStoreType()).isEqualTo(PipelineStoreType.UNDEFINED);
     assertThat(execArgs.getMetadata().getPipelineConnectorRef()).isEmpty();
@@ -429,7 +430,7 @@ public class ExecutionHelperTest extends CategoryTest {
             pipelineEntity.getProjectIdentifier(), mergedYaml, true, false, BOOLEAN_FALSE_VALUE);
     ExecArgs execArgs = executionHelper.buildExecutionArgs(pipelineEntity, moduleType, runtimeInputYaml,
         Collections.singletonList("s2"), null, executionTriggerInfo, null,
-        RetryExecutionParameters.builder().isRetry(false).build(), false);
+        RetryExecutionParameters.builder().isRetry(false).build(), false, false);
     executionMetadataAssertions(execArgs.getMetadata());
     assertThat(execArgs.getMetadata().getPipelineStoreType()).isEqualTo(PipelineStoreType.UNDEFINED);
     assertThat(execArgs.getMetadata().getPipelineConnectorRef()).isEmpty();
@@ -469,7 +470,7 @@ public class ExecutionHelperTest extends CategoryTest {
             pipelineYamlWithExpressions, true, true, BOOLEAN_FALSE_VALUE);
     ExecArgs execArgs = executionHelper.buildExecutionArgs(pipelineEntityWithExpressions, moduleType, null,
         Collections.singletonList("s2"), expressionValues, executionTriggerInfo, null,
-        RetryExecutionParameters.builder().isRetry(false).build(), false);
+        RetryExecutionParameters.builder().isRetry(false).build(), false, false);
     executionMetadataAssertions(execArgs.getMetadata());
     assertThat(execArgs.getMetadata().getPipelineStoreType()).isEqualTo(PipelineStoreType.UNDEFINED);
     assertThat(execArgs.getMetadata().getPipelineConnectorRef()).isEmpty();
@@ -548,6 +549,39 @@ public class ExecutionHelperTest extends CategoryTest {
         + "      description: desc\n";
     assertThatThrownBy(() -> executionHelper.getPipelineYamlAndValidate(wrongRuntimeInputYaml, pipelineEntity))
         .isInstanceOf(InvalidRequestException.class);
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testGetPipelineYamlAndValidateForRbacCheck() {
+    String pipelineYaml = "pipeline:\n"
+        + "  template:\n"
+        + "    templateInputs:\n"
+        + "      serviceRef: <+input>\n";
+    String mergedRuntimeInputYaml = "pipeline:\n"
+        + "  template:\n"
+        + "    templateInputs:\n"
+        + "      serviceRef: \"svc_v2\"\n";
+    String resolvedYaml = "pipeline:\n"
+        + "  stage:\n"
+        + "    serviceConfig:\n"
+        + "      serviceRef: \"svc_v2\"\n";
+    doReturn(TemplateMergeResponseDTO.builder().mergedPipelineYaml(resolvedYaml).build())
+        .when(pipelineTemplateHelper)
+        .resolveTemplateRefsInPipeline(any(), any(), any(), any(), anyBoolean(), anyBoolean(), any());
+    PipelineEntity pipelineEntity = PipelineEntity.builder()
+                                        .accountId(accountId)
+                                        .orgIdentifier(orgId)
+                                        .projectIdentifier(projectId)
+                                        .identifier(pipelineId)
+                                        .yaml(pipelineYaml)
+                                        .build();
+    executionHelper.getPipelineYamlAndValidate(mergedRuntimeInputYaml, pipelineEntity);
+    verify(pipelineRbacServiceImpl, times(1))
+        .extractAndValidateStaticallyReferredEntities(accountId, orgId, projectId, pipelineId, mergedRuntimeInputYaml);
+    verify(pipelineRbacServiceImpl, times(0))
+        .extractAndValidateStaticallyReferredEntities(accountId, orgId, projectId, pipelineId, resolvedYaml);
   }
 
   @Test

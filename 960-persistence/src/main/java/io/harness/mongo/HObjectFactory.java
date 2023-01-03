@@ -66,7 +66,7 @@ public class HObjectFactory extends DefaultCreator {
       if (morphiaMove != null) {
         for (String source : morphiaMove.getSources()) {
           try {
-            return Class.forName(source, true, getClassLoaderForClass());
+            return Class.forName(source, true, Thread.currentThread().getContextClassLoader());
           } catch (ClassNotFoundException ignore2) {
             // do nothing
           }
@@ -110,7 +110,7 @@ public class HObjectFactory extends DefaultCreator {
         return rollbackClass;
       }
       try {
-        return Class.forName(name, true, getClassLoaderForClass());
+        return Class.forName(name, true, Thread.currentThread().getContextClassLoader());
       } catch (ClassNotFoundException e) {
         log.warn("Class not found defined in dbObj: ", e);
       }

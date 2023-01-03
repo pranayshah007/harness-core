@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: rolesConfiguration
-version: 40
+version: 41
 roles:
     - identifier: _project_admin
       name: Project Admin
@@ -560,6 +560,15 @@ roles:
         - core_deploymentfreeze_manage
         - core_deploymentfreeze_override
         - core_deploymentfreeze_global
+        - ccm_cloudAssetGovernanceRule_edit
+        - ccm_cloudAssetGovernanceRule_view
+        - ccm_cloudAssetGovernanceRule_delete
+        - ccm_cloudAssetGovernanceRuleSet_edit
+        - ccm_cloudAssetGovernanceRuleSet_view
+        - ccm_cloudAssetGovernanceRuleSet_delete
+        - ccm_cloudAssetGovernanceEnforcement_edit
+        - ccm_cloudAssetGovernanceEnforcement_view
+        - ccm_cloudAssetGovernanceEnforcement_delete
       allowedScopeLevels:
         - account
       managed: true
@@ -623,6 +632,9 @@ roles:
         - ccm_loadBalancer_view
         - ccm_folder_view
         - ccm_currencyPreference_view
+        - ccm_cloudAssetGovernanceEnforcement_view
+        - ccm_cloudAssetGovernanceRuleSet_view
+        - ccm_cloudAssetGovernanceRule_view
       allowedScopeLevels:
         - account
       managed: true
@@ -796,6 +808,15 @@ roles:
         - ccm_overview_view
         - ccm_currencyPreference_view
         - ccm_currencyPreference_edit
+        - ccm_cloudAssetGovernanceRule_edit
+        - ccm_cloudAssetGovernanceRule_view
+        - ccm_cloudAssetGovernanceRule_delete
+        - ccm_cloudAssetGovernanceRuleSet_edit
+        - ccm_cloudAssetGovernanceRuleSet_view
+        - ccm_cloudAssetGovernanceRuleSet_delete
+        - ccm_cloudAssetGovernanceEnforcement_edit
+        - ccm_cloudAssetGovernanceEnforcement_view
+        - ccm_cloudAssetGovernanceEnforcement_delete
       managed: true
       allowedScopeLevels:
         - account
@@ -811,6 +832,9 @@ roles:
         - ccm_loadBalancer_view
         - ccm_overview_view
         - ccm_currencyPreference_view
+        - ccm_cloudAssetGovernanceEnforcement_view
+        - ccm_cloudAssetGovernanceRuleSet_view
+        - ccm_cloudAssetGovernanceRule_view
       managed: true
       allowedScopeLevels:
         - account

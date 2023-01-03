@@ -34,6 +34,7 @@ import lombok.extern.slf4j.Slf4j;
 public abstract class PmsAbstractRedisConsumer<T extends PmsAbstractMessageListener>
     extends RedisTraceConsumer implements PmsRedisConsumer {
   private static final int WAIT_TIME_IN_SECONDS = 10;
+  private static final int SLEEP_SECONDS = 10;
   private static final String CACHE_KEY = "%s_%s";
   private final Consumer redisConsumer;
   private final T messageListener;
@@ -60,7 +61,8 @@ public abstract class PmsAbstractRedisConsumer<T extends PmsAbstractMessageListe
       preThreadHandler();
       do {
         while (getMaintenanceFlag()) {
-          sleep(ofSeconds(1));
+          log.info("We are under maintenance, will try again after {} seconds", SLEEP_SECONDS);
+          sleep(ofSeconds(SLEEP_SECONDS));
         }
         if (queueController.isNotPrimary()) {
           log.info(this.getClass().getSimpleName()
@@ -109,7 +111,7 @@ public abstract class PmsAbstractRedisConsumer<T extends PmsAbstractMessageListe
   protected boolean processMessage(Message message) {
     AtomicBoolean success = new AtomicBoolean(true);
     if (messageListener.isProcessable(message) && !isAlreadyProcessed(message)) {
-      log.debug("Read message with message id {} from redis", message.getId());
+      log.info("Read message with message id {} from redis", message.getId());
       insertMessageInCache(message);
       if (!messageListener.handleMessage(message)) {
         success.set(false);

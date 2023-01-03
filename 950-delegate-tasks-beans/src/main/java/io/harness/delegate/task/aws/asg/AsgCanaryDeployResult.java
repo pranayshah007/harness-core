@@ -18,5 +18,5 @@ import lombok.Data;
 @OwnedBy(HarnessTeam.CDP)
 public class AsgCanaryDeployResult {
   private String region;
-  private String canaryAsgName;
+  private AutoScalingGroupContainer autoScalingGroupContainer;
 }

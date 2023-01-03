@@ -32,5 +32,6 @@ public interface EnvironmentGroupService {
   void deleteAllEnvGroupInProject(String accountId, String orgIdentifier, String projectIdentifier);
 
   Criteria formCriteria(String accountId, String orgIdentifier, String projectIdentifier, boolean deleted,
-      String searchTerm, String filterIdentifier, EnvironmentGroupFilterPropertiesDTO filterProperties);
+      String searchTerm, String filterIdentifier, EnvironmentGroupFilterPropertiesDTO filterProperties,
+      boolean includeAllEnvGroupsAccessibleAtScope);
 }

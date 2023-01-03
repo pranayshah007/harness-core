@@ -18,6 +18,7 @@ import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.TimeSeriesMetricType;
 import io.harness.cvng.core.beans.DatadogMetricHealthDefinition;
+import io.harness.cvng.core.beans.monitoredService.MetricThreshold;
 import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.DatadogMetricHealthSourceSpec;
 import io.harness.cvng.core.beans.monitoredService.metricThresholdSpec.MetricThresholdActionType;
@@ -73,7 +74,7 @@ public class DatadogMetricHealthSourceSpecTransformerTest extends CvNextGenTestB
     TimeSeriesMetricPackDTO timeSeriesMetricPackDTO = datadogMetricHealthSourceSpec.getMetricPacks().iterator().next();
     assertThat(timeSeriesMetricPackDTO.getMetricThresholds()).hasSize(1);
     assertThat(timeSeriesMetricPackDTO.getIdentifier()).isEqualTo(CUSTOM_IDENTIFIER);
-    TimeSeriesMetricPackDTO.MetricThreshold metricThreshold = timeSeriesMetricPackDTO.getMetricThresholds().get(0);
+    MetricThreshold metricThreshold = timeSeriesMetricPackDTO.getMetricThresholds().get(0);
     assertThat(metricThreshold.getMetricType()).isEqualTo(CUSTOM_IDENTIFIER);
     assertThat(metricThreshold.getMetricName()).isEqualTo(MOCKED_METRIC_NAME);
     assertThat(metricThreshold.getGroupName()).isEqualTo(MOCKED_METRIC_GROUP_NAME);

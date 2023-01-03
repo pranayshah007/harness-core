@@ -37,6 +37,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.start.NodeStartEvent;
+import io.harness.pms.contracts.resume.ResponseDataProto;
 import io.harness.pms.contracts.steps.io.StepResponseProto;
 import io.harness.pms.events.base.PmsEventCategory;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -47,7 +48,6 @@ import io.harness.waiter.WaitNotifyEngine;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
-import com.google.protobuf.ByteString;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Objects;
@@ -198,7 +198,7 @@ public class IdentityNodeExecutionStrategy
   public void handleError(Ambiance ambiance, Exception exception) {}
 
   @Override
-  public void resumeNodeExecution(Ambiance ambiance, Map<String, ByteString> response, boolean asyncError) {
+  public void resumeNodeExecution(Ambiance ambiance, Map<String, ResponseDataProto> response, boolean asyncError) {
     String nodeExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
     NodeExecution nodeExecution =
         nodeExecutionService.getWithFieldsIncluded(nodeExecutionId, NodeProjectionUtils.fieldsForResume);

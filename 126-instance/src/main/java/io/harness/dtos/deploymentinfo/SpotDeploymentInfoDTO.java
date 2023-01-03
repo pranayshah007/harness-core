@@ -14,8 +14,7 @@ import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.util.InstanceSyncKey;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import java.util.Map;
-import java.util.Set;
+import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
@@ -26,7 +25,8 @@ import lombok.Data;
 @OwnedBy(CDP)
 public class SpotDeploymentInfoDTO extends DeploymentInfoDTO {
   @NotNull private String infrastructureKey;
-  @NotNull private Map<String, Set<String>> elastigroupEc2InstancesMap;
+  @NotNull private String elastigroupId;
+  @NotNull private List<String> ec2Instances;
 
   @Override
   public String getType() {
@@ -35,6 +35,6 @@ public class SpotDeploymentInfoDTO extends DeploymentInfoDTO {
 
   @Override
   public String prepareInstanceSyncHandlerKey() {
-    return InstanceSyncKey.builder().part(infrastructureKey).build().toString();
+    return InstanceSyncKey.builder().part(infrastructureKey).part(elastigroupId).build().toString();
   }
 }

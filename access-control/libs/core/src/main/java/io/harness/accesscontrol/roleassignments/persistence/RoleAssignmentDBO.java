@@ -141,6 +141,12 @@ public class RoleAssignmentDBO implements PersistentEntity, AccessControlEntity 
                  .field(RoleAssignmentDBOKeys.principalScopeLevel)
                  .field(RoleAssignmentDBOKeys.principalType)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("userGroupPrincipalIndex")
+                 .field(RoleAssignmentDBOKeys.principalIdentifier)
+                 .field(RoleAssignmentDBOKeys.principalType)
+                 .field(RoleAssignmentDBOKeys.scopeIdentifier)
+                 .build())
         .build();
   }
 }

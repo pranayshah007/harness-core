@@ -26,5 +26,8 @@ public class RecommendationItemDTO {
   Double monthlySaving;
   Double monthlyCost;
   @GraphQLNonNull @NotNull ResourceType resourceType;
+  String jiraConnectorRef;
+  String jiraIssueKey;
+  String jiraStatus;
   RecommendationDetailsDTO recommendationDetails;
 }

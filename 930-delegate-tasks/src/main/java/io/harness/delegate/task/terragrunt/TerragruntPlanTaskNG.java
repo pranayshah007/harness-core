@@ -164,7 +164,6 @@ public class TerragruntPlanTaskNG extends AbstractDelegateRunnableTask {
             planFile, planName, planTaskParameters.getPlanSecretManager(), planDelegateFile);
         planLogCallback.saveExecutionLog("Terraform plan command successfully encrypted.\n");
 
-        planLogCallback.saveExecutionLog("Uploading terraform state file");
         stateFileId = taskService.uploadStateFile(terragruntContext.getTerragruntWorkingDirectory(),
             planTaskParameters.getWorkspace(), planTaskParameters.getAccountId(), planTaskParameters.getEntityId(),
             getDelegateId(), getTaskId(), planLogCallback);
@@ -184,7 +183,8 @@ public class TerragruntPlanTaskNG extends AbstractDelegateRunnableTask {
             planLogCallback.saveExecutionLog(
                 "Terragrunt export json plan is not supported by current terraform version", LogLevel.WARN);
           }
-
+          planJsonLogOutputStream.flush();
+          planJsonLogOutputStream.close();
           String tfPlanJsonFilePath = planJsonLogOutputStream.getTfPlanJsonLocalPath();
           planLogCallback.saveExecutionLog(format("\nUploading json plan '%s' to file service", planName));
           planJsonFileId = terraformHelper.uploadTfPlanJson(planTaskParameters.getAccountId(), getDelegateId(),

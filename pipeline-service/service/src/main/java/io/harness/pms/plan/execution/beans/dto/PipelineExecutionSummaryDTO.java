@@ -10,6 +10,7 @@ package io.harness.pms.plan.execution.beans.dto;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.validator.Trimmed;
 import io.harness.dto.FailureInfoDTO;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.sdk.EntityGitDetails;
@@ -31,6 +32,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.FieldDefaults;
+import org.hibernate.validator.constraints.NotEmpty;
 
 @OwnedBy(PIPELINE)
 @Value
@@ -42,6 +44,8 @@ import lombok.experimental.FieldDefaults;
 @Schema(name = "PipelineExecutionSummary", description = "This is the view of the Pipeline Execution Summary")
 public class PipelineExecutionSummaryDTO {
   String pipelineIdentifier;
+  @NotEmpty String orgIdentifier;
+  @Trimmed @NotEmpty String projectIdentifier;
   String planExecutionId;
   String name;
 

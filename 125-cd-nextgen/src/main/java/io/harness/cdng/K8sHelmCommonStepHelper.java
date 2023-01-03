@@ -193,12 +193,8 @@ public class K8sHelmCommonStepHelper {
       }
     }
     if (ManifestStoreType.isInGitSubset(storeConfig.getKind())) {
-      GitStoreConfig gitStoreConfig = (GitStoreConfig) storeConfig;
-      if ((ManifestType.K8Manifest.equals(k8sManifestOutcome.getType()) && hasOnlyOne(gitStoreConfig.getPaths()))
-          || ManifestType.HelmChart.equals(k8sManifestOutcome.getType())) {
-        gitFetchFilesConfigs.addAll(
-            mapK8sOrHelmValuesManifestToGitFetchFileConfig(valuesManifestOutcome, ambiance, k8sManifestOutcome));
-      }
+      gitFetchFilesConfigs.addAll(
+          mapK8sOrHelmValuesManifestToGitFetchFileConfig(valuesManifestOutcome, ambiance, k8sManifestOutcome));
     }
 
     List<GitFetchFilesConfig> gitFetchFileConfigFromInheritFromManifest =
@@ -226,11 +222,6 @@ public class K8sHelmCommonStepHelper {
                 format("Values YAML with Id [%s]", valuesManifestOutcome.getIdentifier()), valuesManifestOutcome,
                 (GitStoreConfig) k8sManifestOutcome.getStore()))
         .collect(Collectors.toList());
-  }
-
-  private boolean hasOnlyOne(ParameterField<List<String>> pathsParameter) {
-    List<String> paths = getParameterFieldValue(pathsParameter);
-    return isNotEmpty(paths) && paths.size() == 1;
   }
 
   protected TaskChainResponse prepareCustomFetchManifestAndValuesTaskChainResponse(StoreConfig storeConfig,

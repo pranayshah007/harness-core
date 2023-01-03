@@ -134,7 +134,8 @@ public class WaitForExecutionInputCallbackTest extends CategoryTest {
     FailureInfo failureInfo = argumentCaptor.getValue();
 
     assertEquals(failureInfo.getFailureData(0).getCode(), ErrorCode.TIMEOUT_ENGINE_EXCEPTION.name());
-    assertEquals(failureInfo.getFailureData(0).getMessage(), "ExecutionInputExpired");
+    assertEquals(failureInfo.getFailureData(0).getMessage(),
+        "Pipeline has passed the time limit to take the user input. Please check the timeout configuration");
     assertEquals(failureInfo.getFailureData(0).getLevel(), Level.ERROR.name());
     assertEquals(failureInfo.getFailureData(0).getFailureTypes(0), FailureType.INPUT_TIMEOUT_FAILURE);
   }

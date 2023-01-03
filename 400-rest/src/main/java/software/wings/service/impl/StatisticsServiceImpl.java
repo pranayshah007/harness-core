@@ -49,6 +49,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
 import lombok.extern.slf4j.Slf4j;
+import org.mongodb.morphia.query.FindOptions;
 import org.mongodb.morphia.query.Query;
 
 @Singleton
@@ -176,20 +177,23 @@ public class StatisticsServiceImpl implements StatisticsService {
             .field(WorkflowExecutionKeys.status)
             .in(ExecutionStatus.finalStatuses())
             .project("pipelineExecution.pipelineStageExecutions.workflowExecutions.serviceExecutionSummaries", true)
-            .project("serviceExecutionSummaries", true)
-            .project("accountId", true)
-            .project("appId", true)
-            .project("appName", true)
-            .project("createdAt", true)
-            .project("envType", true)
-            .project("workflowType", true)
+            .project(WorkflowExecutionKeys.serviceExecutionSummaries, true)
+            .project(WorkflowExecutionKeys.accountId, true)
+            .project(WorkflowExecutionKeys.appId, true)
+            .project(WorkflowExecutionKeys.appName, true)
+            .project(WorkflowExecutionKeys.createdAt, true)
+            .project(WorkflowExecutionKeys.envType, true)
+            .project(WorkflowExecutionKeys.workflowType, true)
             .project(WorkflowExecutionKeys.status, true);
 
     if (isNotEmpty(appIds)) {
       query.field(WorkflowExecutionKeys.appId).in(appIds);
     }
 
-    List<WorkflowExecution> workflowExecutions = query.asList();
+    FindOptions findOptions = new FindOptions();
+    findOptions.modifier("$hint", "accountId_pipExecutionId_createdAt");
+
+    List<WorkflowExecution> workflowExecutions = query.asList(findOptions);
 
     if (isEmpty(workflowExecutions)) {
       return instanceStats;

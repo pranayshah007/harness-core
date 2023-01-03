@@ -62,6 +62,7 @@ import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.activity.ActivityType;
 import io.harness.cvng.beans.change.ChangeSourceType;
 import io.harness.cvng.cdng.beans.MonitoredServiceSpec.MonitoredServiceSpecType;
+import io.harness.cvng.cdng.resources.VerifyStepResourceImpl;
 import io.harness.cvng.cdng.services.api.CDStageMetaDataService;
 import io.harness.cvng.cdng.services.api.CVNGStepService;
 import io.harness.cvng.cdng.services.api.CVNGStepTaskService;
@@ -93,14 +94,14 @@ import io.harness.cvng.core.entities.DynatraceCVConfig.DynatraceCVConfigUpdatabl
 import io.harness.cvng.core.entities.ELKCVConfig.ELKCVConfigUpdatableEntity;
 import io.harness.cvng.core.entities.ErrorTrackingCVConfig.ErrorTrackingCVConfigUpdatableEntity;
 import io.harness.cvng.core.entities.NewRelicCVConfig.NewRelicCVConfigUpdatableEntity;
+import io.harness.cvng.core.entities.NextGenLogCVConfig;
+import io.harness.cvng.core.entities.NextGenMetricCVConfig;
 import io.harness.cvng.core.entities.PrometheusCVConfig.PrometheusUpdatableEntity;
 import io.harness.cvng.core.entities.SideKick;
 import io.harness.cvng.core.entities.SplunkCVConfig.SplunkCVConfigUpdatableEntity;
 import io.harness.cvng.core.entities.SplunkMetricCVConfig.SplunkMetricUpdatableEntity;
 import io.harness.cvng.core.entities.StackdriverCVConfig.StackDriverCVConfigUpdatableEntity;
 import io.harness.cvng.core.entities.StackdriverLogCVConfig.StackdriverLogCVConfigUpdatableEntity;
-import io.harness.cvng.core.entities.SumologicLogCVConfig;
-import io.harness.cvng.core.entities.SumologicMetricCVConfig;
 import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.core.entities.changeSource.ChangeSource;
 import io.harness.cvng.core.entities.changeSource.HarnessCDChangeSource;
@@ -271,6 +272,8 @@ import io.harness.cvng.core.utils.monitoredService.DynatraceHealthSourceSpecTran
 import io.harness.cvng.core.utils.monitoredService.ELKHealthSourceSpecTransformer;
 import io.harness.cvng.core.utils.monitoredService.ErrorTrackingHealthSourceSpecTransformer;
 import io.harness.cvng.core.utils.monitoredService.NewRelicHealthSourceSpecTransformer;
+import io.harness.cvng.core.utils.monitoredService.NextGenLogHealthSourceSpecTransformer;
+import io.harness.cvng.core.utils.monitoredService.NextGenMetricSourceSpecTransformer;
 import io.harness.cvng.core.utils.monitoredService.PrometheusHealthSourceSpecTransformer;
 import io.harness.cvng.core.utils.monitoredService.SplunkHealthSourceSpecTransformer;
 import io.harness.cvng.core.utils.monitoredService.SplunkMetricHealthSourceSpecTransformer;
@@ -315,6 +318,7 @@ import io.harness.cvng.notification.transformer.SlackNotificationMethodTransform
 import io.harness.cvng.outbox.CVServiceOutboxEventHandler;
 import io.harness.cvng.outbox.MonitoredServiceOutboxEventHandler;
 import io.harness.cvng.outbox.ServiceLevelObjectiveOutboxEventHandler;
+import io.harness.cvng.resources.VerifyStepResource;
 import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
@@ -385,7 +389,7 @@ import io.harness.cvng.statemachine.services.impl.DeploymentStateMachineServiceI
 import io.harness.cvng.statemachine.services.impl.LiveMonitoringStateMachineServiceImpl;
 import io.harness.cvng.statemachine.services.impl.OrchestrationServiceImpl;
 import io.harness.cvng.statemachine.services.impl.SLIAnalysisStateMachineServiceImpl;
-import io.harness.cvng.usage.impl.CVLicenseUsageImpl;
+import io.harness.cvng.usage.impl.SRMLicenseUsageImpl;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
 import io.harness.cvng.verificationjob.services.impl.VerificationJobInstanceServiceImpl;
 import io.harness.enforcement.client.EnforcementClientModule;
@@ -545,6 +549,12 @@ public class CVServiceModule extends AbstractModule {
     dataSourceTypeToHealthSourceTransformerMapBinder.addBinding(DataSourceType.ELASTICSEARCH)
         .to(ELKHealthSourceSpecTransformer.class)
         .in(Scopes.SINGLETON);
+    dataSourceTypeToHealthSourceTransformerMapBinder.addBinding(DataSourceType.SUMOLOGIC_METRICS)
+        .to(NextGenMetricSourceSpecTransformer.class)
+        .in(Scopes.SINGLETON);
+    dataSourceTypeToHealthSourceTransformerMapBinder.addBinding(DataSourceType.SUMOLOGIC_LOG)
+        .to(NextGenLogHealthSourceSpecTransformer.class)
+        .in(Scopes.SINGLETON);
     dataSourceTypeToHealthSourceTransformerMapBinder.addBinding(DataSourceType.CUSTOM_HEALTH_LOG)
         .to(CustomHealthSourceSpecLogTransformer.class)
         .in(Scopes.SINGLETON);
@@ -663,6 +673,7 @@ public class CVServiceModule extends AbstractModule {
         .to(TemplateVerifyStepMonitoredServiceResolutionServiceImpl.class)
         .in(Scopes.SINGLETON);
 
+    bind(VerifyStepResource.class).to(VerifyStepResourceImpl.class);
     bind(MetricPackService.class).to(MetricPackServiceImpl.class);
     bind(AppDynamicsService.class).to(AppDynamicsServiceImpl.class).in(Singleton.class);
     bind(LogRecordService.class).to(LogRecordServiceImpl.class);
@@ -672,7 +683,7 @@ public class CVServiceModule extends AbstractModule {
     bind(ActivityService.class).to(ActivityServiceImpl.class);
     bind(LogDashboardService.class).to(LogDashboardServiceImpl.class);
     bind(ErrorTrackingDashboardService.class).to(ErrorTrackingDashboardServiceImpl.class);
-    bind(LicenseUsageInterface.class).to(CVLicenseUsageImpl.class);
+    bind(LicenseUsageInterface.class).to(SRMLicenseUsageImpl.class);
     bind(DeploymentTimeSeriesAnalysisService.class).to(DeploymentTimeSeriesAnalysisServiceImpl.class);
     bind(NextGenService.class).to(NextGenServiceImpl.class);
     bind(HostRecordService.class).to(HostRecordServiceImpl.class);
@@ -782,10 +793,10 @@ public class CVServiceModule extends AbstractModule {
         .to(AwsPrometheusUpdatableEntity.class)
         .in(Scopes.SINGLETON);
     dataSourceTypeCVConfigMapBinder.addBinding(DataSourceType.SUMOLOGIC_METRICS)
-        .to(SumologicMetricCVConfig.UpdatableEntity.class)
+        .to(NextGenMetricCVConfig.UpdatableEntity.class)
         .in(Scopes.SINGLETON);
     dataSourceTypeCVConfigMapBinder.addBinding(DataSourceType.SUMOLOGIC_LOG)
-        .to(SumologicLogCVConfig.ConfigUpdatableEntity.class)
+        .to(NextGenLogCVConfig.ConfigUpdatableEntity.class)
         .in(Scopes.SINGLETON);
     MapBinder<SLIMetricType, ServiceLevelIndicatorUpdatableEntity> serviceLevelIndicatorMapBinder =
         MapBinder.newMapBinder(binder(), SLIMetricType.class, ServiceLevelIndicatorUpdatableEntity.class);

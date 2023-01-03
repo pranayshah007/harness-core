@@ -1,58 +1,29 @@
 [ {
   "txnName" : "default",
-  "metricName" : "sample",
-  "metricValue" : 13.271550535090656,
-  "timestamp" : 1668431100000
+  "metricName" : "Mem_UsedPercent",
+  "metricValue" : 11.932826052802167,
+  "timestamp" : 1671103020000
 },
   {
     "txnName" : "default",
-    "metricName" : "sample",
-    "metricValue" : 13.290952290081464,
-    "timestamp" : 1668431160000
+    "metricName" : "Mem_UsedPercent",
+    "metricValue" : 11.894973040846411,
+    "timestamp" : 1671103200000
   }, {
   "txnName" : "default",
-  "metricName" : "sample",
-  "metricValue" : 13.271006880347823,
-  "timestamp" : 1668431220000
+  "metricName" : "Mem_UsedPercent",
+  "metricValue" : 11.947571916935459,
+  "timestamp" : 1671102960000
 },
   {
     "txnName" : "default",
-    "metricName" : "sample",
-    "metricValue" : 13.281812781921635,
-    "timestamp" : 1668431280000
+    "metricName" : "Mem_UsedPercent",
+    "metricValue" : 11.898629575341108,
+    "timestamp" : 1671103080000
   }, {
   "txnName" : "default",
-  "metricName" : "sample",
-  "metricValue" : 13.288262115376487,
-  "timestamp" : 1668431340000
-},
-  {
-    "txnName" : "default",
-    "metricName" : "sample",
-    "metricValue" : 13.271550535090656,
-    "timestamp" : 1668431100000
-  }, {
-  "txnName" : "default",
-  "metricName" : "sample",
-  "metricValue" : 13.290952290081464,
-  "timestamp" : 1668431160000
-},
-  {
-    "txnName" : "default",
-    "metricName" : "sample",
-    "metricValue" : 13.271064300062234,
-    "timestamp" : 1668431220000
-  },
-  {
-    "txnName" : "default",
-    "metricName" : "sample",
-    "metricValue" : 13.281812781921635,
-    "timestamp" : 1668431280000
-  },
-  {
-    "txnName" : "default",
-    "metricName" : "sample",
-    "metricValue" : 13.288262115376487,
-    "timestamp" : 1668431340000
-  }
+  "metricName" : "Mem_UsedPercent",
+  "metricValue" : 11.887580561652495,
+  "timestamp" : 1671103140000
+}
 ]

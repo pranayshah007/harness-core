@@ -28,6 +28,7 @@ import static io.harness.rule.OwnerRule.ACHYUTH;
 import static io.harness.rule.OwnerRule.ANSHUL;
 import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.PRATYUSH;
+import static io.harness.rule.OwnerRule.TARUN_UBA;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 
 import static java.util.Arrays.asList;
@@ -74,7 +75,9 @@ import io.harness.cdng.manifest.yaml.HelmManifestCommandFlag;
 import io.harness.cdng.manifest.yaml.HttpStoreConfig;
 import io.harness.cdng.manifest.yaml.InheritFromManifestStoreConfig;
 import io.harness.cdng.manifest.yaml.InlineStoreConfig;
+import io.harness.cdng.manifest.yaml.K8sCommandFlagType;
 import io.harness.cdng.manifest.yaml.K8sManifestOutcome;
+import io.harness.cdng.manifest.yaml.K8sStepCommandFlag;
 import io.harness.cdng.manifest.yaml.KustomizeManifestOutcome;
 import io.harness.cdng.manifest.yaml.KustomizePatchesManifestOutcome;
 import io.harness.cdng.manifest.yaml.ManifestConfig;
@@ -2183,7 +2186,11 @@ public class K8sStepHelperTest extends CategoryTest {
     StepElementParameters stepElementParams =
         StepElementParameters.builder().spec(K8sRollingStepParameters.infoBuilder().build()).build();
 
-    StoreConfig store = GitStore.builder().build();
+    StoreConfig store = GitStore.builder()
+                            .branch(ParameterField.createValueField("master"))
+                            .paths(ParameterField.createValueField(asList("path/to/manifest/templates")))
+                            .connectorRef(ParameterField.createValueField("git-connector"))
+                            .build();
     ValuesManifestOutcome valuesManifestOutcome =
         ValuesManifestOutcome.builder().identifier("k8s").store(CustomRemoteStoreConfig.builder().build()).build();
     K8sStepPassThroughData passThroughData = K8sStepPassThroughData.builder()
@@ -2207,6 +2214,17 @@ public class K8sStepHelperTest extends CategoryTest {
     Map<String, ResponseData> responseDataMap =
         ImmutableMap.of("custom-manifest-values-fetch-response", customManifestValuesFetchResponse);
     ThrowingSupplier responseDataSuplier = StrategyHelper.buildResponseDataSupplier(responseDataMap);
+
+    doReturn(
+        Optional.of(ConnectorResponseDTO.builder()
+                        .connector(ConnectorInfoDTO.builder()
+                                       .connectorConfig(
+                                           GitConfigDTO.builder().gitAuthType(GitAuthType.HTTP).url(SOME_URL).build())
+                                       .name("test")
+                                       .build())
+                        .build()))
+        .when(connectorService)
+        .get(any(), any(), any(), any());
 
     TaskChainResponse taskChainResponse = k8sStepHelper.executeNextLink(
         k8sStepExecutor, ambiance, stepElementParams, passThroughData, responseDataSuplier);
@@ -4142,6 +4160,20 @@ public class K8sStepHelperTest extends CategoryTest {
     List<String> valuesFilesContent = valuesFilesContentCaptor.getValue();
     assertThat(valuesFilesContent).isEmpty();
     assertThat(valuesFilesContent.size()).isEqualTo(0);
+  }
+
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testGetDelegateK8sCommandFlag() {
+    List<K8sStepCommandFlag> commandFlags =
+        Collections.singletonList(K8sStepCommandFlag.builder()
+                                      .commandType(K8sCommandFlagType.Apply)
+                                      .flag(ParameterField.createValueField("--server-side"))
+                                      .build());
+    Map<String, String> k8sCommandFlagExpected = ImmutableMap.of("Apply", "--server-side");
+    Map<String, String> k8sCommandFlag = k8sStepHelper.getDelegateK8sCommandFlag(commandFlags);
+    assertThat(k8sCommandFlag).isEqualTo(k8sCommandFlagExpected);
   }
 
   private FileStoreNodeDTO getFileStoreNode(String path, String name) {

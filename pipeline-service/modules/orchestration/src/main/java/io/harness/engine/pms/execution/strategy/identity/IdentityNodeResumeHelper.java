@@ -12,9 +12,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.pms.resume.publisher.NodeResumeEventPublisher;
 import io.harness.engine.pms.resume.publisher.ResumeMetadata;
 import io.harness.execution.NodeExecution;
+import io.harness.pms.contracts.resume.ResponseDataProto;
 
 import com.google.inject.Inject;
-import com.google.protobuf.ByteString;
 import java.util.Map;
 
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -22,7 +22,7 @@ public class IdentityNodeResumeHelper {
   @Inject private NodeResumeEventPublisher nodeResumeEventPublisher;
 
   public void resume(
-      NodeExecution nodeExecution, Map<String, ByteString> responseMap, boolean isError, String serviceName) {
+      NodeExecution nodeExecution, Map<String, ResponseDataProto> responseMap, boolean isError, String serviceName) {
     ResumeMetadata resumeMetadata = ResumeMetadata.fromNodeExecution(nodeExecution);
     nodeResumeEventPublisher.publishEventForIdentityNode(resumeMetadata, responseMap, isError, serviceName);
   }

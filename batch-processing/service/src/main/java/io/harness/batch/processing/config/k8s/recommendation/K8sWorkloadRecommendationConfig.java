@@ -21,6 +21,7 @@ import io.harness.ccm.commons.dao.recommendation.RecommendationCrudService;
 import io.harness.ccm.commons.entities.events.PublishedMessage;
 import io.harness.ccm.commons.entities.k8s.recommendation.K8sWorkloadRecommendation;
 import io.harness.ccm.commons.entities.k8s.recommendation.K8sWorkloadRecommendation.K8sWorkloadRecommendationKeys;
+import io.harness.ccm.graphql.core.recommendation.RecommendationsIgnoreListService;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 
@@ -139,10 +140,11 @@ public class K8sWorkloadRecommendationConfig {
   public ComputedRecommendationWriter computedRecommendationWriter(WorkloadRecommendationDao workloadRecommendationDao,
       WorkloadCostService workloadCostService, WorkloadRepository workloadRepository,
       K8sLabelServiceInfoFetcher k8sLabelServiceInfoFetcher, RecommendationCrudService recommendationCrudService,
-      ClusterHelper clusterHelper, @Value("#{jobParameters[startDate]}") Long startDateMillis) {
+      ClusterHelper clusterHelper, RecommendationsIgnoreListService ignoreListService,
+      @Value("#{jobParameters[startDate]}") Long startDateMillis) {
     Instant jobStartDate = Instant.ofEpochMilli(startDateMillis);
     return new ComputedRecommendationWriter(workloadRecommendationDao, workloadCostService, workloadRepository,
-        k8sLabelServiceInfoFetcher, recommendationCrudService, clusterHelper, jobStartDate);
+        k8sLabelServiceInfoFetcher, recommendationCrudService, clusterHelper, ignoreListService, jobStartDate);
   }
 
   @Bean

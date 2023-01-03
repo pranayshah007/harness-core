@@ -21,7 +21,7 @@ import io.harness.controller.PrimaryVersionChangeScheduler;
 import io.harness.delegate.beans.DelegateAsyncTaskResponse;
 import io.harness.delegate.beans.DelegateSyncTaskResponse;
 import io.harness.delegate.beans.DelegateTaskProgressResponse;
-import io.harness.exception.ConstraintViolationExceptionMapper;
+import io.harness.exception.violation.ConstraintViolationExceptionMapper;
 import io.harness.ff.FeatureFlagConfig;
 import io.harness.govern.ProviderModule;
 import io.harness.health.HealthService;

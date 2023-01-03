@@ -36,6 +36,7 @@ import io.harness.cvng.activity.entities.Activity;
 import io.harness.cvng.activity.entities.Activity.ActivityKeys;
 import io.harness.cvng.activity.jobs.ActivityStatusJob;
 import io.harness.cvng.activity.jobs.HarnessCDCurrentGenEventsHandler;
+import io.harness.cvng.analysis.entities.VerificationTaskBase.VerificationTaskBaseKeys;
 import io.harness.cvng.beans.DataCollectionExecutionStatus;
 import io.harness.cvng.beans.activity.ActivityVerificationStatus;
 import io.harness.cvng.beans.change.ChangeSourceType;
@@ -171,7 +172,6 @@ import io.harness.pms.sdk.execution.events.orchestrationevent.OrchestrationEvent
 import io.harness.pms.sdk.execution.events.plan.CreatePartialPlanRedisConsumer;
 import io.harness.pms.sdk.execution.events.progress.ProgressEventRedisConsumer;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
-import io.harness.pms.yaml.YamlNode;
 import io.harness.queue.QueueListenerController;
 import io.harness.queue.QueuePublisher;
 import io.harness.reflection.HarnessReflections;
@@ -576,7 +576,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
     JsonExpansionInfo sloPolicyInfo =
         JsonExpansionInfo.newBuilder()
             .setExpansionType(ExpansionRequestType.LOCAL_FQN)
-            .setKey(YAMLFieldNameConstants.STAGE + YamlNode.PATH_SEP + YAMLFieldNameConstants.SPEC)
+            .setKey(YAMLFieldNameConstants.STAGE)
             .setExpansionKey(ExpansionKeysConstants.SLO_POLICY_EXPANSION_KEY)
             .setStageType(StepType.newBuilder().setType("Deployment").setStepCategory(StepCategory.STAGE).build())
             .build();
@@ -898,7 +898,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
                     query.or(query.criteria(DataCollectionTaskKeys.status).equal(DataCollectionExecutionStatus.QUEUED),
                         query.and(
                             query.criteria(DataCollectionTaskKeys.status).equal(DataCollectionExecutionStatus.RUNNING),
-                            query.criteria(DataCollectionTaskKeys.lastUpdatedAt)
+                            query.criteria(VerificationTaskBaseKeys.lastUpdatedAt)
                                 .lessThan(injector.getInstance(Clock.class)
                                               .instant()
                                               .minus(5, ChronoUnit.MINUTES)

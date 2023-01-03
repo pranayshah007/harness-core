@@ -117,6 +117,7 @@ import io.harness.migrations.all.InfraProvisionerFilteringTypeMigration;
 import io.harness.migrations.all.InitInfraProvisionerCounters;
 import io.harness.migrations.all.InitPipelineCounters;
 import io.harness.migrations.all.InitServiceCounters;
+import io.harness.migrations.all.InitTerraformProvisionersSourceType;
 import io.harness.migrations.all.InitUserCounters;
 import io.harness.migrations.all.InitWorkflowCounters;
 import io.harness.migrations.all.InstanceComputerProviderNameFixMigration;
@@ -463,6 +464,7 @@ public class MigrationList {
         .add(Pair.of(379, AddNGFieldToDelegateMigration.class))
         .add(Pair.of(380, AddImmutableDelegateEnabledFieldToAccountCollection.class))
         .add(Pair.of(381, AddRingDetailsToDelegateRing.class))
+        .add(Pair.of(382, InitTerraformProvisionersSourceType.class))
         .build();
   }
 }

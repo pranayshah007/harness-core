@@ -67,6 +67,7 @@ import lombok.extern.slf4j.Slf4j;
 public class IntegrationStagePMSPlanCreatorV3 extends ChildrenPlanCreator<IntegrationStageNodeV1> {
   @Inject private KryoSerializer kryoSerializer;
   @Inject private ConnectorUtils connectorUtils;
+  @Inject private CIPlanCreatorUtils ciPlanCreatorUtils;
 
   @Override
   public Class<IntegrationStageNodeV1> getFieldClass() {
@@ -78,12 +79,11 @@ public class IntegrationStagePMSPlanCreatorV3 extends ChildrenPlanCreator<Integr
     YamlField field = ctx.getCurrentField();
     IntegrationStageConfigImplV1 stageConfig = stageNode.getStageConfig();
     Infrastructure infrastructure =
-        CIPlanCreatorUtils.getInfrastructure(stageConfig.getRuntime(), stageConfig.getPlatform());
-    CodeBase codeBase = CIPlanCreatorUtils.getCodebase(ctx, stageConfig.getClone(), kryoSerializer).orElse(null);
-    ExecutionSource executionSource =
-        CIPlanCreatorUtils.buildExecutionSource(ctx, codeBase, connectorUtils, stageNode.getIdentifier());
+        ciPlanCreatorUtils.getInfrastructure(stageConfig.getRuntime(), stageConfig.getPlatform());
+    CodeBase codeBase = ciPlanCreatorUtils.getCodebase(ctx, stageConfig.getClone()).orElse(null);
+    ExecutionSource executionSource = ciPlanCreatorUtils.buildExecutionSource(ctx, codeBase, stageNode.getIdentifier());
     BuildStatusUpdateParameter buildStatusUpdateParameter =
-        CIPlanCreatorUtils.getBuildStatusUpdateParameter(stageNode, codeBase, executionSource);
+        ciPlanCreatorUtils.getBuildStatusUpdateParameter(stageNode, codeBase, executionSource);
     IntegrationStageStepParametersPMS params = IntegrationStageStepParametersPMS.builder()
                                                    .infrastructure(infrastructure)
                                                    .childNodeID(childrenNodeIds.get(0))
@@ -167,7 +167,7 @@ public class IntegrationStagePMSPlanCreatorV3 extends ChildrenPlanCreator<Integr
     YamlField stepsField = Preconditions.checkNotNull(specField.getNode().getField(YAMLFieldNameConstants.STEPS));
     IntegrationStageConfigImplV1 stageConfigImpl = stageNode.getStageConfig();
     Infrastructure infrastructure =
-        CIPlanCreatorUtils.getInfrastructure(stageConfigImpl.getRuntime(), stageConfigImpl.getPlatform());
+        ciPlanCreatorUtils.getInfrastructure(stageConfigImpl.getRuntime(), stageConfigImpl.getPlatform());
     createPlanForCodebase(ctx, stageConfigImpl.getClone(), planCreationResponseMap, metadataMap, stepsField.getUuid());
     dependenciesNodeMap.put(stepsField.getUuid(), stepsField);
     StrategyUtilsV1.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, stageNode.getUuid(), dependenciesNodeMap,
@@ -191,11 +191,11 @@ public class IntegrationStagePMSPlanCreatorV3 extends ChildrenPlanCreator<Integr
   private void createPlanForCodebase(PlanCreationContext ctx, Clone clone,
       LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, Map<String, ByteString> metadataMap,
       String childNodeID) {
-    Optional<CodeBase> optionalCodeBase = CIPlanCreatorUtils.getCodebase(ctx, clone, kryoSerializer);
+    Optional<CodeBase> optionalCodeBase = ciPlanCreatorUtils.getCodebase(ctx, clone);
     if (optionalCodeBase.isPresent()) {
       CodeBase codeBase = optionalCodeBase.get();
       ExecutionSource executionSource =
-          CIPlanCreatorUtils.buildExecutionSource(ctx, codeBase, connectorUtils, ctx.getCurrentField().getId());
+          ciPlanCreatorUtils.buildExecutionSource(ctx, codeBase, ctx.getCurrentField().getId());
       PlanNode codebasePlanNode = CodebasePlanCreatorV1.createPlanForCodeBase(
           ctx, kryoSerializer, codeBase, connectorUtils, executionSource, childNodeID);
       planCreationResponseMap.put(

@@ -18,11 +18,14 @@ import static io.harness.timescaledb.Tables.CE_RECOMMENDATIONS;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.retry.RetryOnException;
+import io.harness.ccm.commons.beans.recommendation.CCMJiraDetails;
+import io.harness.ccm.commons.beans.recommendation.RecommendationState;
 import io.harness.ccm.commons.beans.recommendation.ResourceType;
 import io.harness.ccm.commons.entities.ecs.recommendation.ECSPartialRecommendationHistogram;
 import io.harness.ccm.commons.entities.ecs.recommendation.ECSPartialRecommendationHistogram.ECSPartialRecommendationHistogramKeys;
 import io.harness.ccm.commons.entities.ecs.recommendation.ECSServiceRecommendation;
 import io.harness.ccm.commons.entities.ecs.recommendation.ECSServiceRecommendation.ECSServiceRecommendationKeys;
+import io.harness.ccm.commons.entities.recommendations.RecommendationECSServiceId;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
@@ -34,6 +37,7 @@ import javax.annotation.Nullable;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
+import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.UpdateOperations;
@@ -91,6 +95,14 @@ public class ECSRecommendationDAO {
                                    .filter(ECSServiceRecommendationKeys.accountId, accountIdentifier)
                                    .filter(ECSServiceRecommendationKeys.uuid, new ObjectId(id))
                                    .get());
+  }
+
+  public void updateJiraInECSRecommendation(@NonNull String accountId, @NonNull String id, CCMJiraDetails jiraDetails) {
+    hPersistence.upsert(hPersistence.createQuery(ECSServiceRecommendation.class, excludeValidate)
+                            .filter(ECSServiceRecommendationKeys.accountId, accountId)
+                            .filter(ECSServiceRecommendationKeys.uuid, new ObjectId(id)),
+        hPersistence.createUpdateOperations(ECSServiceRecommendation.class)
+            .set(ECSServiceRecommendationKeys.jiraDetails, jiraDetails));
   }
 
   public List<ECSPartialRecommendationHistogram> fetchPartialRecommendationHistograms(@NonNull String accountId,
@@ -199,5 +211,47 @@ public class ECSRecommendationDAO {
         .set(CE_RECOMMENDATIONS.LASTPROCESSEDAT, toOffsetDateTime(lastReceivedUntilAt))
         .set(CE_RECOMMENDATIONS.UPDATEDAT, offsetDateTimeNow())
         .execute();
+  }
+
+  @RetryOnException(retryCount = RETRY_COUNT, sleepDurationInMilliseconds = SLEEP_DURATION)
+  public void ignoreECSRecommendations(
+      @NonNull String accountId, @NonNull List<RecommendationECSServiceId> ecsServices) {
+    if (ecsServices.isEmpty()) {
+      return;
+    }
+    dslContext.update(CE_RECOMMENDATIONS)
+        .set(CE_RECOMMENDATIONS.RECOMMENDATIONSTATE, RecommendationState.IGNORED.name())
+        .where(CE_RECOMMENDATIONS.ACCOUNTID.eq(accountId)
+                   .and(CE_RECOMMENDATIONS.RECOMMENDATIONSTATE.eq(RecommendationState.OPEN.name()))
+                   .and(CE_RECOMMENDATIONS.RESOURCETYPE.eq(ResourceType.ECS_SERVICE.name()))
+                   .and(getECSCondition(ecsServices)))
+        .execute();
+  }
+
+  @RetryOnException(retryCount = RETRY_COUNT, sleepDurationInMilliseconds = SLEEP_DURATION)
+  public void unignoreECSRecommendations(
+      @NonNull String accountId, @NonNull List<RecommendationECSServiceId> ecsServices) {
+    if (ecsServices.isEmpty()) {
+      return;
+    }
+    dslContext.update(CE_RECOMMENDATIONS)
+        .set(CE_RECOMMENDATIONS.RECOMMENDATIONSTATE, RecommendationState.OPEN.name())
+        .where(CE_RECOMMENDATIONS.ACCOUNTID.eq(accountId)
+                   .and(CE_RECOMMENDATIONS.RECOMMENDATIONSTATE.eq(RecommendationState.IGNORED.name()))
+                   .and(CE_RECOMMENDATIONS.RESOURCETYPE.eq(ResourceType.ECS_SERVICE.name()))
+                   .and(getECSCondition(ecsServices)))
+        .execute();
+  }
+
+  private Condition getECSCondition(List<RecommendationECSServiceId> ecsServices) {
+    RecommendationECSServiceId ecsService = ecsServices.get(0);
+    Condition condition = CE_RECOMMENDATIONS.CLUSTERNAME.eq(ecsService.getClusterName())
+                              .and(CE_RECOMMENDATIONS.NAME.eq(ecsService.getEcsServiceName()));
+    for (int i = 1; i < ecsServices.size(); i++) {
+      ecsService = ecsServices.get(i);
+      condition.or(CE_RECOMMENDATIONS.CLUSTERNAME.eq(ecsService.getClusterName())
+                       .and(CE_RECOMMENDATIONS.NAME.eq(ecsService.getEcsServiceName())));
+    }
+    return condition;
   }
 }

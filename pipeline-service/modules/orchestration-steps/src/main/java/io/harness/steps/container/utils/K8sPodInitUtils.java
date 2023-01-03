@@ -492,10 +492,11 @@ public class K8sPodInitUtils {
   }
 
   public Pair<Integer, Integer> getStepRequest(ContainerStepInfo containerStepInfo, String accountId) {
-    Integer containerCpuLimit = getContainerCpuLimit(
-        containerStepInfo.getResources(), "Container", containerStepInfo.getIdentifier(), accountId);
-    Integer containerMemoryLimit = getContainerMemoryLimit(
-        containerStepInfo.getResources(), "Container", containerStepInfo.getIdentifier(), accountId);
+    ContainerResource resources = ((ContainerK8sInfra) containerStepInfo.getInfrastructure()).getSpec().getResources();
+    Integer containerCpuLimit =
+        getContainerCpuLimit(resources, "Container", containerStepInfo.getIdentifier(), accountId);
+    Integer containerMemoryLimit =
+        getContainerMemoryLimit(resources, "Container", containerStepInfo.getIdentifier(), accountId);
 
     return Pair.of(containerCpuLimit, containerMemoryLimit);
   }

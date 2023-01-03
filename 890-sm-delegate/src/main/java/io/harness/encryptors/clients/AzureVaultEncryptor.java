@@ -32,10 +32,8 @@ import io.harness.security.encryption.EncryptionConfig;
 
 import software.wings.beans.AzureVaultConfig;
 
-import com.azure.core.credential.TokenCredential;
 import com.azure.core.exception.HttpResponseException;
 import com.azure.core.exception.ResourceNotFoundException;
-import com.azure.core.http.HttpClient;
 import com.azure.core.http.rest.Response;
 import com.azure.core.util.Context;
 import com.azure.core.util.polling.LongRunningOperationStatus;
@@ -343,9 +341,9 @@ public class AzureVaultEncryptor implements VaultEncryptor {
   }
 
   private SecretClient getAzureVaultSecretsClient(AzureVaultConfig azureVaultConfig) {
-    HttpClient httpClient = KeyVaultAuthenticator.getAzureHttpClient();
-    TokenCredential credential = KeyVaultAuthenticator.getAuthenticationTokenCredentials(
-        azureVaultConfig.getClientId(), azureVaultConfig.getSecretKey(), azureVaultConfig.getTenantId());
-    return KeyVaultAuthenticator.getSecretsClient(azureVaultConfig.getVaultName(), credential, httpClient);
+    return KeyVaultAuthenticator.getSecretsClient(azureVaultConfig.getVaultName(),
+        KeyVaultAuthenticator.getAzureHttpPipeline(azureVaultConfig.getClientId(), azureVaultConfig.getSecretKey(),
+            azureVaultConfig.getTenantId(), azureVaultConfig.getSubscription(),
+            azureVaultConfig.getAzureEnvironmentType()));
   }
 }

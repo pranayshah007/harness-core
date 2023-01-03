@@ -18,6 +18,7 @@ import io.harness.cvng.analysis.entities.TimeSeriesAnomalousPatterns;
 import io.harness.cvng.analysis.entities.TimeSeriesCumulativeSums;
 import io.harness.cvng.analysis.entities.TimeSeriesRiskSummary;
 import io.harness.cvng.analysis.entities.TimeSeriesShortTermHistory;
+import io.harness.cvng.analysis.entities.VerificationTaskBase.VerificationTaskBaseKeys;
 import io.harness.cvng.core.beans.sidekick.VerificationTaskCleanupSideKickData;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.DataCollectionTask;
@@ -41,6 +42,8 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.time.Clock;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -73,10 +76,10 @@ public class VerificationTaskCleanupSideKickExecutor implements SideKickExecutor
     String verificationTaskId = sideKickInfo.getVerificationTaskId();
     if (StringUtils.isNotBlank(verificationTaskId)) {
       log.info("Triggering cleanup for VerificationTask {}", verificationTaskId);
-      ENTITIES_TO_DELETE_BY_VERIFICATION_ID.forEach(entity
-          -> hPersistence.delete(
-              hPersistence.createQuery(entity).filter(VerificationTask.VERIFICATION_TASK_ID_KEY, verificationTaskId)));
+      VerificationTask task = verificationTaskService.get(verificationTaskId);
+
       CVConfig cvConfig = sideKickInfo.getCvConfig();
+      // delete perp tasks first. We do not want new data to come in when we're deleting old data.
       if (Objects.nonNull(cvConfig)
           && verificationTaskService.get(verificationTaskId)
                  .getTaskInfo()
@@ -88,8 +91,30 @@ public class VerificationTaskCleanupSideKickExecutor implements SideKickExecutor
                  .isEmpty()) {
         deleteMonitoringSourcePerpetualTasks(cvConfig);
       }
+      // we want to add 6 hours to the end time since we anticipate some in-progress analyses that might come in while
+      // we're deleting.
+      cleanUpData(
+          verificationTaskId, Instant.ofEpochMilli(task.getCreatedAt()), clock.instant().plus(6, ChronoUnit.HOURS));
       verificationTaskService.deleteVerificationTask(verificationTaskId);
       log.info("Cleanup complete for VerificationTask {}", verificationTaskId);
+    }
+  }
+
+  // clean up data 2 days at a time
+  private void cleanUpData(String verificationTaskId, Instant startTime, Instant endTime) {
+    Instant curStartTime = startTime;
+    while (curStartTime.toEpochMilli() <= endTime.toEpochMilli()) {
+      for (Class<? extends PersistentEntity> clazz : ENTITIES_TO_DELETE_BY_VERIFICATION_ID) {
+        hPersistence.delete(hPersistence.createQuery(clazz)
+                                .filter(VerificationTask.VERIFICATION_TASK_ID_KEY, verificationTaskId)
+                                .field(VerificationTaskBaseKeys.createdAt)
+                                .lessThanOrEq(curStartTime));
+        log.info("Deleted all the records for {} until {}", verificationTaskId, curStartTime);
+      }
+      curStartTime = curStartTime.plus(2, ChronoUnit.DAYS);
+      if (curStartTime.toEpochMilli() > endTime.toEpochMilli()) {
+        curStartTime = endTime;
+      }
     }
   }
 

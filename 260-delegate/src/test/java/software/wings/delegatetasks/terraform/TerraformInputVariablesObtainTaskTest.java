@@ -9,11 +9,14 @@ package software.wings.delegatetasks.terraform;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.delegate.beans.TaskData.DEFAULT_ASYNC_CALL_TIMEOUT;
+import static io.harness.rule.OwnerRule.AKHIL_PANDEY;
 import static io.harness.rule.OwnerRule.YOGESH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
@@ -25,22 +28,28 @@ import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.TaskData;
 import io.harness.rule.Owner;
+import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.WingsBaseTest;
+import software.wings.beans.AwsConfig;
 import software.wings.beans.GitConfig;
 import software.wings.beans.GitOperationContext;
 import software.wings.beans.NameValuePair;
 import software.wings.beans.TerraformInputVariablesTaskResponse;
+import software.wings.beans.TerraformSourceType;
 import software.wings.beans.delegation.TerraformProvisionParameters;
 import software.wings.delegatetasks.TerraformInputVariablesObtainTask;
+import software.wings.service.impl.aws.delegate.AwsS3HelperServiceDelegateImpl;
 import software.wings.service.intfc.GitService;
 import software.wings.service.intfc.TerraformConfigInspectService;
 import software.wings.service.intfc.security.EncryptionService;
 import software.wings.utils.GitUtilsDelegate;
+import software.wings.utils.S3Utils;
 import software.wings.utils.WingsTestConstants;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -52,6 +61,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
@@ -63,6 +73,9 @@ public class TerraformInputVariablesObtainTaskTest extends WingsBaseTest {
   @Mock GitUtilsDelegate gitUtilsDelegate;
   @Mock EncryptionService encryptionService;
   @Mock TerraformConfigInspectService terraformConfigInspectService;
+
+  @Mock S3Utils s3UtilsDelegate;
+  @Mock AwsS3HelperServiceDelegateImpl awsS3HelperServiceDelegate;
 
   private TerraformProvisionParameters parameters;
 
@@ -102,6 +115,42 @@ public class TerraformInputVariablesObtainTaskTest extends WingsBaseTest {
     List<String> variableNames =
         inputVariables.getVariablesList().stream().map(NameValuePair::getName).collect(Collectors.toList());
     assertThat(variableNames).containsExactlyInAnyOrder("var_1", "var_2");
+  }
+
+  @Test
+  @Owner(developers = AKHIL_PANDEY)
+  @Category(UnitTests.class)
+  public void testRunWithS3() throws IOException, InterruptedException {
+    String s3SourceURI =
+        "s3://iis-website-quickstart/terraform-manifest/variablesAndNullResources/nullResourceAndVariables.tf";
+
+    AwsConfig awsConfig = AwsConfig.builder()
+                              .accountId("ACCT_ID")
+                              .accessKey("accessKeyId".toCharArray())
+                              .secretKey("secretAccessKey".toCharArray())
+                              .defaultRegion("us-east-1")
+                              .build();
+    List<EncryptedDataDetail> awsConfigEncryptionDetails = new ArrayList<>();
+    TerraformProvisionParameters terraformProvisionParameters =
+        TerraformProvisionParameters.builder()
+            .sourceType(TerraformSourceType.S3)
+            .configFilesS3URI(s3SourceURI)
+            .configFilesAwsSourceConfig(awsConfig)
+            .configFileAWSEncryptionDetails(awsConfigEncryptionDetails)
+            .build();
+    String moduleDir = "some-dir";
+    doReturn(moduleDir).when(s3UtilsDelegate).buildS3FilePath(any(), any());
+    doReturn(null).when(encryptionService).decrypt(awsConfig, awsConfigEncryptionDetails, false);
+    when(awsS3HelperServiceDelegate.downloadS3Directory(any(), any(), any())).thenReturn(true);
+    when(FileUtils.listFiles(any(), any(), any())).thenReturn(Arrays.asList(new File(moduleDir)));
+    when(terraformConfigInspectService.parseFieldsUnderCategory(
+             any(String.class), any(String.class), any(Boolean.class)))
+        .thenReturn(Arrays.asList("var_1", "var_2"));
+
+    delegateRunnableTask.run(new Object[] {terraformProvisionParameters});
+    Mockito.verify(encryptionService, atLeastOnce()).decrypt(awsConfig, awsConfigEncryptionDetails, false);
+    Mockito.verify(awsS3HelperServiceDelegate, atLeastOnce())
+        .downloadS3Directory(awsConfig, s3SourceURI, new File(moduleDir));
   }
 
   @Test

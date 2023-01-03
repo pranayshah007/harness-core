@@ -132,6 +132,11 @@ aws_cur_table_schema = [
         "type": "FLOAT"
     },
     {
+        "mode": "NULLABLE",
+        "name": "ccmPreferredCurrency",
+        "type": "STRING"
+    },
+    {
         "fields": [
             {
                 "mode": "NULLABLE",
@@ -206,6 +211,11 @@ preAggreagtedTableSchema = [
         "mode": "NULLABLE",
         "name": "fxRateSrcToDest",
         "type": "FLOAT"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "ccmPreferredCurrency",
+        "type": "STRING"
     },
     {
         "mode": "NULLABLE",
@@ -588,6 +598,11 @@ unifiedTableTableSchema = [
         "mode": "NULLABLE",
         "name": "fxRateSrcToDest",
         "type": "FLOAT"
+    },
+    {
+        "mode": "NULLABLE",
+        "name": "ccmPreferredCurrency",
+        "type": "STRING"
     },
     {
         "mode": "NULLABLE",

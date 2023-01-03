@@ -10,6 +10,7 @@ package io.harness.ng;
 import static io.harness.audit.ResourceTypeConstants.API_KEY;
 import static io.harness.audit.ResourceTypeConstants.CONNECTOR;
 import static io.harness.audit.ResourceTypeConstants.DELEGATE_CONFIGURATION;
+import static io.harness.audit.ResourceTypeConstants.DEPLOYMENT_FREEZE;
 import static io.harness.audit.ResourceTypeConstants.ENVIRONMENT;
 import static io.harness.audit.ResourceTypeConstants.FILE;
 import static io.harness.audit.ResourceTypeConstants.ORGANIZATION;
@@ -44,6 +45,7 @@ import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCH
 import static java.lang.Boolean.TRUE;
 
 import io.harness.AccessControlClientModule;
+import io.harness.FreezeOutboxEventHandler;
 import io.harness.GitopsModule;
 import io.harness.Microservice;
 import io.harness.NgIteratorsConfig;
@@ -169,6 +171,8 @@ import io.harness.ng.core.entitysetupusage.event.SetupUsageChangeEventMessagePro
 import io.harness.ng.core.event.AccountSetupListener;
 import io.harness.ng.core.event.ConnectorEntityCRUDStreamListener;
 import io.harness.ng.core.event.EnvironmentGroupEntityCrudStreamListener;
+import io.harness.ng.core.event.FilterEventListener;
+import io.harness.ng.core.event.FreezeEventListener;
 import io.harness.ng.core.event.MessageListener;
 import io.harness.ng.core.event.MessageProcessor;
 import io.harness.ng.core.event.ProjectEntityCRUDStreamListener;
@@ -630,7 +634,7 @@ public class NextGenModule extends AbstractModule {
         return WaiterConfiguration.builder().persistenceLayer(WaiterConfiguration.PersistenceLayer.SPRING).build();
       }
     });
-    install(new GitSyncModule());
+    install(GitSyncModule.getInstance(getGitServiceConfiguration()));
     install(new GitSyncConfigClientModule(appConfig.getNgManagerClientConfig(),
         appConfig.getNextGenConfig().getNgManagerServiceSecret(), NG_MANAGER.getServiceId()));
     install(new CdLicenseUsageCgModule(appConfig.getManagerClientConfig(),
@@ -945,6 +949,7 @@ public class NextGenModule extends AbstractModule {
     outboxEventHandlerMapBinder.addBinding(TOKEN).to(TokenEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(VARIABLE).to(VariableEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(SETTING).to(SettingEventHandler.class);
+    outboxEventHandlerMapBinder.addBinding(DEPLOYMENT_FREEZE).to(FreezeOutboxEventHandler.class);
   }
 
   private void registerEventsFrameworkMessageListeners() {
@@ -971,6 +976,12 @@ public class NextGenModule extends AbstractModule {
     bind(MessageListener.class)
         .annotatedWith(Names.named(EventsFrameworkMetadataConstants.USER_GROUP + ENTITY_CRUD))
         .to(UserGroupEntityCRUDStreamListener.class);
+    bind(MessageListener.class)
+        .annotatedWith(Names.named(EventsFrameworkMetadataConstants.FREEZE_CONFIG + ENTITY_CRUD))
+        .to(FreezeEventListener.class);
+    bind(MessageListener.class)
+        .annotatedWith(Names.named(EventsFrameworkMetadataConstants.FILTER + ENTITY_CRUD))
+        .to(FilterEventListener.class);
     bind(MessageListener.class)
         .annotatedWith(Names.named(EventsFrameworkMetadataConstants.GITOPS_CLUSTER_ENTITY + ENTITY_CRUD))
         .to(ClusterCrudStreamListener.class);

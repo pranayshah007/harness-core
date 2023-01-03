@@ -173,6 +173,12 @@ paths:
           in: query
           name: load_from_fallback_branch
           description: Flag to load the pipeline from the created non default branch
+        - schema:
+            type: boolean
+            default: 'false'
+          in: query
+          name: validate_async
+          description: Flag to tell whether to start an asynchronous validation process or not
       tags:
         - Pipelines
       responses:
@@ -551,9 +557,9 @@ components:
         slug:
           type: string
           description: Pipeline identifier
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
         name:
           type: string
           description: Pipeline name
@@ -608,6 +614,9 @@ components:
           type: integer
           description: Last modification timestamp for Pipeline.
           format: int64
+        validation_uuid:
+          type: string
+          description: 'UUID of the asynchronous validation event started, if any'
     PipelineValidationResponseBody:
       title: Pipeline Validation Response Body
       description: Pipeline Validation Response Body
@@ -678,9 +687,9 @@ components:
         slug:
           type: string
           description: Pipeline identifier
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
         name:
           type: string
           description: Pipeline name
@@ -845,9 +854,9 @@ components:
           description: Pipeline YAML (to be passed as a String).
         slug:
           type: string
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
           description: Pipeline identifier
         name:
           type: string
@@ -884,9 +893,9 @@ components:
         slug:
           type: string
           description: Pipeline identifier
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
     YAMLSchemaErrorWrapper:
       title: YAML Schema Error Wrapper
       x-stoplight:
@@ -1256,9 +1265,9 @@ components:
           description: Pipeline YAML (to be passed as a String).
         slug:
           type: string
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
           description: Pipeline identifier
         name:
           type: string

@@ -388,7 +388,7 @@ public abstract class WorkflowHandler {
                          .environmentRef(ParameterField.createValueField("<+input>"))
                          .environmentInputs(getRuntimeInput())
                          .serviceOverrideInputs(getRuntimeInput())
-                         .infrastructureDefinition(ParameterField.createExpressionField(true, "<+input>", null, false))
+                         .infrastructureDefinitions(ParameterField.createExpressionField(true, "<+input>", null, false))
                          .build())
         .execution(ExecutionElementConfig.builder().steps(steps).rollbackSteps(rollbackSteps).build())
         .build();

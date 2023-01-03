@@ -7,8 +7,12 @@
 
 package io.harness.service.stats.usagemetrics.eventpublisher;
 
+import static io.harness.beans.FeatureName.CDP_PUBLISH_INSTANCE_STATS_FOR_ENV_NG;
 import static io.harness.eventsframework.EventsFrameworkConstants.INSTANCE_STATS;
 
+import static java.util.stream.Collectors.groupingBy;
+
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
@@ -19,6 +23,7 @@ import io.harness.eventsframework.producer.Message;
 import io.harness.eventsframework.schemas.instancestatstimeseriesevent.DataPoint;
 import io.harness.eventsframework.schemas.instancestatstimeseriesevent.TimeseriesBatchEventInfo;
 import io.harness.models.constants.TimescaleConstants;
+import io.harness.remote.client.CGRestUtils;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
@@ -28,6 +33,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
 @OwnedBy(HarnessTeam.DX)
@@ -37,10 +43,12 @@ public class UsageMetricsEventPublisherImpl implements UsageMetricsEventPublishe
   public static final String PROJECT_ID = "projectId";
   public static final String SERVICE_ID = "serviceId";
   private final Producer eventProducer;
+  private AccountClient accountClient;
 
   @Inject
-  public UsageMetricsEventPublisherImpl(@Named(INSTANCE_STATS) Producer eventProducer) {
+  public UsageMetricsEventPublisherImpl(@Named(INSTANCE_STATS) Producer eventProducer, AccountClient accountClient) {
     this.eventProducer = eventProducer;
+    this.accountClient = accountClient;
   }
 
   @Override
@@ -50,7 +58,7 @@ public class UsageMetricsEventPublisherImpl implements UsageMetricsEventPublishe
     }
 
     try {
-      List<DataPoint> dataPoints = collectInstanceStats(instances);
+      List<DataPoint> dataPoints = collectInstanceStats(accountId, instances);
       TimeseriesBatchEventInfo eventInfo = TimeseriesBatchEventInfo.newBuilder()
                                                .setAccountId(accountId)
                                                .setTimestamp(timestamp)
@@ -71,20 +79,41 @@ public class UsageMetricsEventPublisherImpl implements UsageMetricsEventPublishe
     }
   }
 
-  private List<DataPoint> collectInstanceStats(List<InstanceDTO> instances) {
+  private List<DataPoint> collectInstanceStats(String accountId, List<InstanceDTO> instances) {
     List<DataPoint> dataPointList = new ArrayList<>();
     if (EmptyPredicate.isEmpty(instances)) {
       return dataPointList;
     }
 
-    try {
-      int size = instances.size();
-      InstanceDTO instance = instances.get(0);
-      Map<String, String> data = populateInstanceData(instance, size);
-      log.info("Adding instance record {} to the list", data);
-      dataPointList.add(DataPoint.newBuilder().putAllData(data).build());
-    } catch (Exception e) {
-      log.error("Error adding instance record for service", e);
+    if (CGRestUtils.getResponse(
+            accountClient.isFeatureFlagEnabled(CDP_PUBLISH_INSTANCE_STATS_FOR_ENV_NG.name(), accountId))) {
+      // Add 1 data point for each env in the service
+      Map<String, List<InstanceDTO>> instancesByEnv =
+          instances.stream()
+              .filter(instanceDTO -> StringUtils.isNotBlank(instanceDTO.getEnvIdentifier()))
+              .collect(groupingBy(InstanceDTO::getEnvIdentifier));
+      instancesByEnv.forEach((String envIdentifier, List<InstanceDTO> instancesForEnv) -> {
+        try {
+          int size = instancesForEnv.size();
+          InstanceDTO instance = instancesForEnv.get(0);
+          Map<String, String> data = populateInstanceData(instance, size);
+          log.info("Adding instance record {} to the list", data);
+          dataPointList.add(DataPoint.newBuilder().putAllData(data).build());
+        } catch (Exception e) {
+          log.error("Error adding instance record for service", e);
+        }
+      });
+    } else {
+      // Add 1 data point per service
+      try {
+        int size = instances.size();
+        InstanceDTO instance = instances.get(0);
+        Map<String, String> data = populateInstanceData(instance, size);
+        log.info("Adding instance record {} to the list", data);
+        dataPointList.add(DataPoint.newBuilder().putAllData(data).build());
+      } catch (Exception e) {
+        log.error("Error adding instance record for service", e);
+      }
     }
     return dataPointList;
   }

@@ -66,6 +66,7 @@ import io.harness.pms.contracts.steps.StepInfo;
 import io.harness.pms.contracts.steps.StepMetaData;
 import io.harness.pms.pipelinestage.PipelineStageFilterCreator;
 import io.harness.pms.pipelinestage.plancreator.PipelineStagePlanCreator;
+import io.harness.pms.pipelinestage.v1.plancreator.PipelineStagePlanCreatorV1;
 import io.harness.pms.sdk.core.pipeline.filters.FilterJsonCreator;
 import io.harness.pms.sdk.core.pipeline.variables.ApprovalStageVariableCreator;
 import io.harness.pms.sdk.core.pipeline.variables.PipelineVariableCreator;
@@ -85,6 +86,7 @@ import io.harness.steps.approval.step.jira.JiraApprovalStepPlanCreator;
 import io.harness.steps.approval.step.jira.JiraApprovalStepVariableCreator;
 import io.harness.steps.approval.step.servicenow.ServiceNowApprovalStepPlanCreator;
 import io.harness.steps.approval.step.servicenow.ServiceNowApprovalStepVariableCreator;
+import io.harness.steps.barriers.BarrierStepVariableCreator;
 import io.harness.steps.cf.FlagConfigurationStep;
 import io.harness.steps.customstage.CustomStageFilterCreator;
 import io.harness.steps.customstage.CustomStagePlanCreator;
@@ -164,6 +166,7 @@ public class PipelineServiceInternalInfoProvider implements PipelineServiceInfoP
     planCreators.add(new SpecNodePlanCreator());
     planCreators.add(new WaitStepPlanCreator());
     planCreators.add(new PipelineStagePlanCreator());
+    planCreators.add(new PipelineStagePlanCreatorV1());
     planCreators.add(new ContainerStepPlanCreator());
     planCreators.add(new GroupPlanCreatorV1());
     injectorUtils.injectMembers(planCreators);
@@ -218,9 +221,9 @@ public class PipelineServiceInternalInfoProvider implements PipelineServiceInfoP
     variableCreators.add(new WaitStepVariableCreator());
     variableCreators.add(new EmptyAnyVariableCreator(ImmutableSet.of(GROUP, PARALLEL, STEPS, SPEC, STAGES)));
     variableCreators.add(new EmptyVariableCreator(STAGE, ImmutableSet.of(FEATURE_FLAG_SUPPORTED_TYPE)));
-    variableCreators.add(
-        new EmptyVariableCreator(STEP, ImmutableSet.of(FLAG_CONFIGURATION, BARRIER, RESOURCE_CONSTRAINT)));
+    variableCreators.add(new EmptyVariableCreator(STEP, ImmutableSet.of(FLAG_CONFIGURATION, RESOURCE_CONSTRAINT)));
     variableCreators.add(new ContainerStepVariableCreator());
+    variableCreators.add(new BarrierStepVariableCreator());
     injectorUtils.injectMembers(variableCreators);
     return variableCreators;
   }

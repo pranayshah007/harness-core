@@ -8,9 +8,12 @@
 package io.harness.cdng.k8s;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.delegate.task.k8s.K8sCanaryDeployRequest.K8sCanaryDeployRequestBuilder;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.k8s.K8sCanaryBaseStepInfo.K8sCanaryBaseStepInfoKeys;
@@ -56,6 +59,7 @@ import io.harness.tasks.ResponseData;
 import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -71,6 +75,7 @@ public class K8sCanaryStep extends TaskChainExecutableWithRollbackAndRbac implem
   @Inject private CDStepHelper cdStepHelper;
   @Inject ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private InstanceInfoService instanceInfoService;
+  @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
@@ -108,7 +113,7 @@ public class K8sCanaryStep extends TaskChainExecutableWithRollbackAndRbac implem
         k8sStepHelper.renderValues(k8sManifestOutcome, ambiance, manifestOverrideContents);
     boolean isOpenshiftTemplate = ManifestType.OpenshiftTemplate.equals(k8sManifestOutcome.getType());
 
-    K8sCanaryDeployRequest k8sCanaryDeployRequest =
+    K8sCanaryDeployRequestBuilder canaryRequestBuilder =
         K8sCanaryDeployRequest.builder()
             .skipDryRun(skipDryRun)
             .releaseName(releaseName)
@@ -131,9 +136,14 @@ public class K8sCanaryStep extends TaskChainExecutableWithRollbackAndRbac implem
             .useLatestKustomizeVersion(cdStepHelper.isUseLatestKustomizeVersion(accountId))
             .useNewKubectlVersion(cdStepHelper.isUseNewKubectlVersion(accountId))
             .cleanUpIncompleteCanaryDeployRelease(true)
-            .useK8sApiForSteadyStateCheck(cdStepHelper.shouldUseK8sApiForSteadyStateCheck(accountId))
-            .build();
+            .useK8sApiForSteadyStateCheck(cdStepHelper.shouldUseK8sApiForSteadyStateCheck(accountId));
 
+    if (cdFeatureFlagHelper.isEnabled(accountId, FeatureName.NG_K8_COMMAND_FLAGS)) {
+      Map<String, String> k8sCommandFlag =
+          k8sStepHelper.getDelegateK8sCommandFlag(canaryStepParameters.getCommandFlags());
+      canaryRequestBuilder.k8sCommandFlags(k8sCommandFlag);
+    }
+    K8sCanaryDeployRequest k8sCanaryDeployRequest = canaryRequestBuilder.build();
     k8sStepHelper.publishReleaseNameStepDetails(ambiance, releaseName);
     TaskChainResponse response =
         k8sStepHelper.queueK8sTask(stepElementParameters, k8sCanaryDeployRequest, ambiance, executionPassThroughData);

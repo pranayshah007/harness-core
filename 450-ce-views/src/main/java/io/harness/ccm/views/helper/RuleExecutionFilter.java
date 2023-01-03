@@ -25,7 +25,7 @@ import lombok.experimental.FieldDefaults;
 @Schema(name = "RuleExecutionFilter", description = "This has the query to list the RuleExecution")
 public class RuleExecutionFilter {
   @Schema(description = "accountId") String accountId;
-  @Schema(description = "Account Name") String targetAccount;
+  @Schema(description = "Account Name") List<String> targetAccount;
   @Schema(description = "Execution Status") ExecutionStatus executionStatus;
   @Schema(description = "region") List<String> region;
   @Schema(description = "cloudProvider") RuleCloudProviderType cloudProvider;
@@ -37,7 +37,7 @@ public class RuleExecutionFilter {
   @Schema(description = "offset") int offset;
 
   @Builder
-  public RuleExecutionFilter(String accountId, String accountName, List<String> region, List<String> rulesId,
+  public RuleExecutionFilter(String accountId, List<String> accountName, List<String> region, List<String> rulesId,
       List<String> rulePackId, RuleCloudProviderType cloudProvider, List<String> ruleEnforcementId,
       List<CCMTimeFilter> time, int limit, int offset, ExecutionStatus executionStatus) {
     this.accountId = accountId;

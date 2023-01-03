@@ -21,6 +21,7 @@ import io.harness.CategoryTest;
 import io.harness.beans.FileData;
 import io.harness.category.element.UnitTests;
 import io.harness.cli.CliResponse;
+import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.kustomize.KustomizeClient;
@@ -73,18 +74,27 @@ public class KustomizeTaskHelperTest extends CategoryTest {
     doReturn(cliResponse).when(kustomizeClient).build(RANDOM, RANDOM, RANDOM, logCallback);
 
     assertThatThrownBy(() -> kustomizeTaskHelper.build(RANDOM, RANDOM, null, RANDOM, logCallback))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("Kustomize build failed. Msg: " + RANDOM);
+        .isInstanceOf(HintException.class)
+        .hasMessage(
+            "Please validate the path to the folder that contains the correct kustomization yaml file.\n- Validate the files that are being used to build the kustomize manifest.")
+        .hasCauseInstanceOf(ExplanationException.class)
+        .hasRootCauseInstanceOf(InvalidRequestException.class)
+        .hasRootCauseMessage("Kustomize build failed. Msg: " + RANDOM);
   }
 
   private void testClientBuildFailureWithNoOutput() throws InterruptedException, IOException, TimeoutException {
     final String RANDOM = "RANDOM";
-    CliResponse cliResponse = CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.FAILURE).build();
+    CliResponse cliResponse =
+        CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.FAILURE).error(RANDOM).build();
     doReturn(cliResponse).when(kustomizeClient).build(RANDOM, RANDOM, RANDOM, logCallback);
 
     assertThatThrownBy(() -> kustomizeTaskHelper.build(RANDOM, RANDOM, null, RANDOM, logCallback))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("Kustomize build failed.");
+        .isInstanceOf(HintException.class)
+        .hasMessage(
+            "Please validate the path to the folder that contains the correct kustomization yaml file.\n- Validate the files that are being used to build the kustomize manifest.")
+        .hasCauseInstanceOf(ExplanationException.class)
+        .hasRootCauseInstanceOf(InvalidRequestException.class)
+        .hasRootCauseMessage(RANDOM);
   }
 
   private void shouldHandleInterrupedException() throws InterruptedException, IOException, TimeoutException {
@@ -101,8 +111,11 @@ public class KustomizeTaskHelperTest extends CategoryTest {
     doThrow(IOException.class).when(kustomizeClient).build(RANDOM, RANDOM, RANDOM, logCallback);
 
     assertThatThrownBy(() -> kustomizeTaskHelper.build(RANDOM, RANDOM, null, RANDOM, logCallback))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessageContaining("IO Failure occurred while running kustomize build");
+        .isInstanceOf(HintException.class)
+        .hasMessage(
+            "Please connect remotely to Harness delegate and verify network connection between Kubernetes cluster and Harness delegate.")
+        .hasCauseInstanceOf(ExplanationException.class)
+        .hasRootCauseInstanceOf(IOException.class);
   }
 
   private void shouldHandleTimeoutException() throws InterruptedException, IOException, TimeoutException {
@@ -110,8 +123,11 @@ public class KustomizeTaskHelperTest extends CategoryTest {
     doThrow(TimeoutException.class).when(kustomizeClient).build(RANDOM, RANDOM, RANDOM, logCallback);
 
     assertThatThrownBy(() -> kustomizeTaskHelper.build(RANDOM, RANDOM, null, RANDOM, logCallback))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessageContaining("Kustomize build timed out");
+        .isInstanceOf(HintException.class)
+        .hasMessage(
+            "Please connect remotely to Harness delegate and verify if Harness delegate is whitelisted to access Kubernetes API.")
+        .hasCauseInstanceOf(ExplanationException.class)
+        .hasRootCauseInstanceOf(TimeoutException.class);
   }
 
   private void shouldCallClientBuildWithPlugins() throws InterruptedException, IOException, TimeoutException {
@@ -193,6 +209,10 @@ public class KustomizeTaskHelperTest extends CategoryTest {
     assertThatThrownBy(() -> kustomizeTaskHelper.build(error, error, null, error, logCallback))
         .isInstanceOf(HintException.class)
         .hasMessage(
-            "All the resources that are required to compile the manifest must be present within Kustomize Base Path. Please check manifest(s) for any references to missing resources and create them.");
+            "All the resources that are required to compile the manifest must be present within Kustomize Base Path. Please check manifest(s) for any references to missing resources and create them.")
+        .hasCauseInstanceOf(ExplanationException.class)
+        .hasRootCauseInstanceOf(InvalidRequestException.class)
+        .hasRootCauseMessage(
+            "Error: accumulating resources: accumulating resources from '../../application': evalsymlink failure on '/application' : lstat /application: no such file or directory");
   }
 }

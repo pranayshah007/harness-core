@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.pms.contracts.resume.ResponseDataProto;
 import io.harness.serializer.KryoSerializer;
 import io.harness.tasks.BinaryResponseData;
 import io.harness.tasks.ResponseData;
@@ -26,15 +27,6 @@ import java.util.Map;
 public class ResponseDataMapper {
   @Inject private KryoSerializer kryoSerializer;
 
-  public Map<String, ResponseData> fromResponseDataProto(Map<String, ByteString> byteStringMap) {
-    Map<String, ResponseData> responseDataMap = new HashMap<>();
-    if (EmptyPredicate.isNotEmpty(byteStringMap)) {
-      byteStringMap.forEach(
-          (k, v) -> responseDataMap.put(k, (ResponseData) kryoSerializer.asInflatedObject(v.toByteArray())));
-    }
-    return responseDataMap;
-  }
-
   public Map<String, ByteString> toResponseDataProto(Map<String, ResponseData> responseDataMap) {
     Map<String, ByteString> byteStringMap = new HashMap<>();
     if (EmptyPredicate.isNotEmpty(responseDataMap)) {
@@ -48,5 +40,29 @@ public class ResponseDataMapper {
       });
     }
     return byteStringMap;
+  }
+
+  public Map<String, ResponseDataProto> toResponseDataProtoV2(Map<String, ResponseData> responseDataMap) {
+    Map<String, ResponseDataProto> responseDataProtoMap = new HashMap<>();
+    if (EmptyPredicate.isNotEmpty(responseDataMap)) {
+      responseDataMap.forEach((k, v) -> {
+        if (v instanceof BinaryResponseData) {
+          BinaryResponseData binaryResponseData = (BinaryResponseData) v;
+          // This implies this is coming from the PMS driver module. Eventually this will be the only way
+          responseDataProtoMap.put(k,
+              ResponseDataProto.newBuilder()
+                  .setResponse(ByteString.copyFrom(binaryResponseData.getData()))
+                  .setUsingKryoWithoutReference(binaryResponseData.getUsingKryoWithoutReference())
+                  .build());
+        } else {
+          responseDataProtoMap.put(k,
+              ResponseDataProto.newBuilder()
+                  .setResponse(ByteString.copyFrom(kryoSerializer.asDeflatedBytes(v)))
+                  .setUsingKryoWithoutReference(false)
+                  .build());
+        }
+      });
+    }
+    return responseDataProtoMap;
   }
 }

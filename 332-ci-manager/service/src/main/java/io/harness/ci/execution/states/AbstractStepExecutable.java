@@ -558,7 +558,8 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
     switch (ciStepInfo.getNonYamlInfo().getStepInfoType()) {
       case RUN:
         return runStepProtobufSerializer.serializeStepWithStepParameters((RunStepInfo) ciStepInfo, port, taskId, logKey,
-            stepIdentifier, ParameterField.createValueField(Timeout.fromString(timeout)), accountId, stepName);
+            stepIdentifier, ParameterField.createValueField(Timeout.fromString(timeout)), accountId, stepName,
+            ambiance);
       case BACKGROUND:
         return backgroundStepProtobufSerializer.serializeStepWithStepParameters(
             (BackgroundStepInfo) ciStepInfo, port, taskId, logKey, stepIdentifier, accountId, stepName);

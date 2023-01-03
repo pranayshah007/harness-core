@@ -16,6 +16,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EmbeddedUser;
 import io.harness.data.validator.Trimmed;
+import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
@@ -79,7 +80,7 @@ public abstract class InfrastructureProvisioner
 
   @NotEmpty @Trimmed private String name;
   private String description;
-  @NotEmpty private String infrastructureProvisionerType;
+  @FdIndex @NotEmpty private String infrastructureProvisionerType;
   private List<NameValuePair> variables;
   @Valid List<InfrastructureMappingBlueprint> mappingBlueprints;
   private String accountId;

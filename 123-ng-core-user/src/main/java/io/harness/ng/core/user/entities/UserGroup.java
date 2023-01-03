@@ -94,7 +94,7 @@ public class UserGroup implements PersistentEntity, NGAccountAccess {
 
   @CreatedDate long createdAt;
   @LastModifiedDate long lastModifiedAt;
-  @Version long version;
+  @Version Long version;
   boolean deleted;
 
   public boolean isExternallyManaged() {

@@ -8,6 +8,7 @@
 package io.harness.cvng.core.utils.analysisinfo;
 
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition.SLIDTO;
+import io.harness.cvng.core.beans.healthsource.QueryDefinition;
 import io.harness.cvng.core.entities.AnalysisInfo.SLI;
 
 import java.util.Objects;
@@ -18,6 +19,13 @@ public class SLIMetricTransformer {
   public static SLI transformDTOtoEntity(SLIDTO sliDto) {
     if (Objects.nonNull(sliDto)) {
       return SLI.builder().enabled(sliDto.getEnabled()).build();
+    }
+    return null;
+  }
+
+  public static SLI transformQueryDefinitiontoEntity(QueryDefinition queryDefinition) {
+    if (Objects.nonNull(queryDefinition) && Objects.nonNull(queryDefinition.getSliEnabled())) {
+      return SLI.builder().enabled(queryDefinition.getSliEnabled()).build();
     }
     return null;
   }

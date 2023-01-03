@@ -558,7 +558,7 @@ public class TimeSeriesAnalysisServiceImpl implements TimeSeriesAnalysisService 
   }
 
   private double getOverallRisk(ServiceGuardTimeSeriesAnalysisDTO analysis) {
-    return analysis.getOverallMetricScores().values().stream().mapToDouble(score -> score).max().orElse(0.0);
+    return analysis.getOverallMetricScores().values().stream().mapToDouble(score -> score).max().orElse(-2.0);
   }
 
   public void saveShortTermHistory(TimeSeriesShortTermHistory shortTermHistory) {

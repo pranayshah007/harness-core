@@ -20,6 +20,7 @@ import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.aws.AwsNgConfigMapper;
 import io.harness.delegate.task.ecs.EcsCommandTaskNGHelper;
+import io.harness.delegate.task.ecs.EcsCommandTypeNG;
 import io.harness.delegate.task.ecs.EcsInfraConfig;
 import io.harness.delegate.task.ecs.EcsInfraType;
 import io.harness.delegate.task.ecs.EcsLoadBalancerConfig;
@@ -88,6 +89,7 @@ public class EcsBlueGreenSwapTargetGroupsCommandTaskHandlerTest extends Category
                                                       .build();
     EcsBlueGreenSwapTargetGroupsRequest ecsBlueGreenSwapTargetGroupsRequest =
         EcsBlueGreenSwapTargetGroupsRequest.builder()
+            .ecsCommandType(EcsCommandTypeNG.ECS_BLUE_GREEN_SWAP_TARGET_GROUPS)
             .commandUnitsProgress(commandUnitsProgress)
             .ecsInfraConfig(ecsInfraConfig)
             .ecsLoadBalancerConfig(ecsLoadBalancerConfig)

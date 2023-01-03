@@ -16,6 +16,7 @@ import io.harness.eraro.ErrorCode;
 import io.harness.eraro.ResponseMessage;
 import io.harness.exception.ExceptionLogger;
 import io.harness.exception.ExceptionUtils;
+import io.harness.exception.ScmBadRequestException;
 import io.harness.exception.ScmException;
 import io.harness.exception.WingsException;
 import io.harness.exception.ngexception.ErrorMetadataDTO;
@@ -69,5 +70,9 @@ public class ScmExceptionUtils {
       return GitErrorMetadata.builder().build();
     }
     return (GitErrorMetadata) errorMetadata;
+  }
+
+  public static boolean isNestedScmBadRequestException(WingsException ex) {
+    return ExceptionUtils.cause(ScmBadRequestException.class, ex) != null;
   }
 }

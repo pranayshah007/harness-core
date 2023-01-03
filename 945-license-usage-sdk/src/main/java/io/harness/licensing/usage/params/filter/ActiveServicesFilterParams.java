@@ -9,6 +9,7 @@ package io.harness.licensing.usage.params.filter;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.validator.EntityIdentifier;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -31,7 +32,15 @@ import lombok.NoArgsConstructor;
 @ApiModel("ActiveServicesFilterParams")
 @Schema(name = "ActiveServicesFilterParams", description = "Active Services Filter Params")
 public class ActiveServicesFilterParams implements FilterParams {
-  @Schema(description = "Organization Name of the Entity.") private String orgName;
-  @Schema(description = "Project Name of the Entity.") private String projectName;
-  @Schema(description = "Service Name of the Entity.") private String serviceName;
+  @Schema(description = "Organization identifier of the Entity.")
+  @EntityIdentifier(allowBlank = true)
+  String orgIdentifier;
+
+  @Schema(description = "Project identifier of the Entity.")
+  @EntityIdentifier(allowBlank = true)
+  String projectIdentifier;
+
+  @Schema(description = "Service identifier of the Entity.")
+  @EntityIdentifier(allowBlank = true)
+  String serviceIdentifier;
 }

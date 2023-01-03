@@ -37,6 +37,7 @@ import static io.harness.beans.FeatureName.INFRA_MAPPING_BASED_ROLLBACK_ARTIFACT
 import static io.harness.beans.FeatureName.NEW_DEPLOYMENT_FREEZE;
 import static io.harness.beans.FeatureName.PIPELINE_PER_ENV_DEPLOYMENT_PERMISSION;
 import static io.harness.beans.FeatureName.RESOLVE_DEPLOYMENT_TAGS_BEFORE_EXECUTION;
+import static io.harness.beans.FeatureName.SPG_ALLOW_REFRESH_PIPELINE_EXECUTION_BEFORE_CONTINUE_PIPELINE;
 import static io.harness.beans.FeatureName.SPG_REDUCE_KEYWORDS_PERSISTENCE_ON_EXECUTIONS;
 import static io.harness.beans.FeatureName.SPG_SAVE_REJECTED_BY_FREEZE_WINDOWS;
 import static io.harness.beans.FeatureName.SPG_WFE_OPTIMIZE_UPDATE_PIPELINE_ESTIMATES;
@@ -407,7 +408,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.mongodb.morphia.query.CriteriaContainerImpl;
+import org.mongodb.morphia.query.CriteriaContainer;
 import org.mongodb.morphia.query.FindOptions;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.Sort;
@@ -4136,6 +4137,11 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
       String appId, WorkflowExecution pipelineExecution, String pipelineStageElementId, ExecutionArgs executionArgs) {
     validatePipelineExecution(pipelineExecution.getUuid(), pipelineExecution);
 
+    if (featureFlagService.isEnabled(
+            SPG_ALLOW_REFRESH_PIPELINE_EXECUTION_BEFORE_CONTINUE_PIPELINE, pipelineExecution.getAccountId())) {
+      refreshPipelineExecution(pipelineExecution);
+    }
+
     PipelineStageExecution pipelineStageExecution =
         pipelineExecution.getPipelineExecution()
             .getPipelineStageExecutions()
@@ -4653,8 +4659,8 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
 
     // SubGraphFilterId is the instance (host element) Id.
     // For older execution this will be null.
-    CriteriaContainerImpl nullCriteria = query.criteria(StateExecutionInstanceKeys.subGraphFilterId).doesNotExist();
-    CriteriaContainerImpl existsCriteria =
+    CriteriaContainer nullCriteria = query.criteria(StateExecutionInstanceKeys.subGraphFilterId).doesNotExist();
+    CriteriaContainer existsCriteria =
         query.criteria(StateExecutionInstanceKeys.subGraphFilterId).in(selectedInstances);
     query.or(nullCriteria, existsCriteria);
     return query;
