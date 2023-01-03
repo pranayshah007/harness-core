@@ -118,7 +118,7 @@ public class JiraCreateUpdateTest extends WingsBaseTest {
   @BeforeClass
   public static void setup() throws IOException {
     JSONObject jsonObject =
-        new ObjectMapper().readValue(new File("400-rest/src/test/resources/mock_create_meta"), JSONObject.class);
+        new ObjectMapper().readValue(new File("400-rest/src/test/resources/mock_create_meta.json"), JSONObject.class);
     createMetaResponse = new JiraCreateMetaResponse(jsonObject);
     projects = new ObjectMapper().readValue(new File("400-rest/src/test/resources/mock_projects"), JSONArray.class);
     statuses = new ObjectMapper().readValue(new File("400-rest/src/test/resources/mock_statuses"), JSONArray.class);
