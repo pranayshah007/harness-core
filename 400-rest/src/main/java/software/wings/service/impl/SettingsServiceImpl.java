@@ -1095,7 +1095,7 @@ public class SettingsServiceImpl implements SettingsService {
    */
   @Override
   public SettingAttribute get(String varId) {
-    SettingAttribute settingAttribute = getById(varId);
+    SettingAttribute settingAttribute = wingsPersistence.get(SettingAttribute.class, varId);
     setInternal(settingAttribute);
     setCertValidationRequired(settingAttribute);
     return settingAttribute;
