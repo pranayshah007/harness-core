@@ -74,6 +74,7 @@ java_binary(
     deps = shared_dependencies,
 )
 
+
 java_library(
     name = "supporter-test",
     testonly = True,
@@ -86,6 +87,12 @@ java_library(
         "@maven//:com_slack_api_slack_api_model",
         "@maven//:org_springframework_batch_spring_batch_core",
     ],
+)
+
+maven_jar(
+    name = "clickhouse-jdbc",
+    artifact = "ru.yandex.clickhouse:clickhouse-jdbc:0.2.6",
+    sha1 = "24b839ca14335123581d111d20dc90b390e60c0d",
 )
 
 filegroup(
