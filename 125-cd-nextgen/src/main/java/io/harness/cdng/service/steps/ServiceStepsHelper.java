@@ -13,6 +13,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.IdentifierRef;
 import io.harness.cdng.service.beans.ServiceDefinition;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
@@ -36,6 +37,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponseNotifyData;
 import io.harness.rbac.CDNGRbacPermissions;
 import io.harness.steps.EntityReferenceExtractorUtils;
 import io.harness.tasks.ResponseData;
+import io.harness.utils.IdentifierRefHelper;
 import io.harness.yaml.core.variables.NGVariable;
 
 import com.google.inject.Inject;
@@ -58,7 +60,7 @@ public class ServiceStepsHelper {
   @Inject @Named("PRIVILEGED") private AccessControlClient accessControlClient;
   @Inject EntityDetailProtoToRestMapper entityDetailProtoToRestMapper;
 
-  void checkForVariablesAccessOrThrow(Ambiance ambiance, NGServiceConfig serviceConfig) {
+  void checkForVariablesAccessOrThrow(Ambiance ambiance, NGServiceConfig serviceConfig, String serviceRef) {
     final ExecutionPrincipalInfo executionPrincipalInfo = ambiance.getMetadata().getPrincipalInfo();
     final String principal = executionPrincipalInfo.getPrincipal();
     if (isEmpty(principal)) {
@@ -69,11 +71,14 @@ public class ServiceStepsHelper {
         PrincipalTypeProtoToPrincipalTypeMapper.convertToAccessControlPrincipalType(
             executionPrincipalInfo.getPrincipalType());
 
+    IdentifierRef serviceIdentifierRef =
+        IdentifierRefHelper.getIdentifierRef(serviceRef, AmbianceUtils.getAccountId(ambiance),
+            AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance));
+
     accessControlClient.checkForAccessOrThrow(io.harness.accesscontrol.acl.api.Principal.of(principalType, principal),
-        io.harness.accesscontrol.acl.api.ResourceScope.of(AmbianceUtils.getAccountId(ambiance),
-            AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance)),
-        io.harness.accesscontrol.acl.api.Resource.of(
-            NGResourceType.SERVICE, serviceConfig.getNgServiceV2InfoConfig().getIdentifier()),
+        io.harness.accesscontrol.acl.api.ResourceScope.of(serviceIdentifierRef.getAccountIdentifier(),
+            serviceIdentifierRef.getOrgIdentifier(), serviceIdentifierRef.getProjectIdentifier()),
+        io.harness.accesscontrol.acl.api.Resource.of(NGResourceType.SERVICE, serviceIdentifierRef.getIdentifier()),
         CDNGRbacPermissions.SERVICE_RUNTIME_PERMISSION, "Validation for Service Step failed");
 
     List<NGVariable> serviceVariables =

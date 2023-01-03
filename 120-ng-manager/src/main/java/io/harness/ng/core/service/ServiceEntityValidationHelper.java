@@ -17,6 +17,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.ServiceEntityService;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.utils.IdentifierRefHelper;
 
 import com.google.inject.Inject;
@@ -40,8 +41,8 @@ public class ServiceEntityValidationHelper {
       service = serviceEntityService.get(accountIdentifier, orgIdentifier, projectIdentifier, serviceRef, false);
     } else {
       // org/account level
-      IdentifierRef serviceIdentifierRef =
-          IdentifierRefHelper.getIdentifierRef(serviceRef, accountIdentifier, orgIdentifier, projectIdentifier);
+      IdentifierRef serviceIdentifierRef = IdentifierRefHelper.getIdentifierRefOrThrowException(
+          serviceRef, accountIdentifier, orgIdentifier, projectIdentifier, YAMLFieldNameConstants.SERVICE);
       service =
           serviceEntityService.get(serviceIdentifierRef.getAccountIdentifier(), serviceIdentifierRef.getOrgIdentifier(),
               serviceIdentifierRef.getProjectIdentifier(), serviceIdentifierRef.getIdentifier(), false);
