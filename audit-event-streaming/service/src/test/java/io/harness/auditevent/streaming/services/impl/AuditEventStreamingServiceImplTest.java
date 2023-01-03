@@ -12,6 +12,7 @@ import static io.harness.audit.entities.AuditEvent.AuditEventKeys.createdAt;
 import static io.harness.auditevent.streaming.AuditEventStreamingConstants.ACCOUNT_IDENTIFIER_PARAMETER_KEY;
 import static io.harness.auditevent.streaming.AuditEventStreamingConstants.AWS_S3_STREAMING_PUBLISHER;
 import static io.harness.auditevent.streaming.AuditEventStreamingConstants.JOB_START_TIME_PARAMETER_KEY;
+import static io.harness.auditevent.streaming.entities.BatchStatus.FAILED;
 import static io.harness.auditevent.streaming.entities.BatchStatus.IN_PROGRESS;
 import static io.harness.auditevent.streaming.entities.BatchStatus.READY;
 import static io.harness.auditevent.streaming.entities.BatchStatus.SUCCESS;
@@ -31,6 +32,7 @@ import io.harness.audit.entities.AuditEvent;
 import io.harness.audit.entities.streaming.AwsS3StreamingDestination;
 import io.harness.audit.entities.streaming.StreamingDestination;
 import io.harness.auditevent.streaming.AuditEventRepository;
+import io.harness.auditevent.streaming.BatchConfig;
 import io.harness.auditevent.streaming.entities.BatchStatus;
 import io.harness.auditevent.streaming.entities.StreamingBatch;
 import io.harness.auditevent.streaming.entities.outgoing.OutgoingAuditMessage;
@@ -62,6 +64,7 @@ public class AuditEventStreamingServiceImplTest extends CategoryTest {
   @Mock private StreamingBatchService streamingBatchService;
   @Mock private AuditEventRepository auditEventRepository;
   @Mock private AwsS3StreamingPublisher awsS3StreamingPublisher;
+  @Mock private BatchConfig batchConfig;
   private Map<String, StreamingPublisher> streamingPublisherMap;
   private AuditEventStreamingServiceImpl auditEventStreamingService;
 
@@ -75,15 +78,16 @@ public class AuditEventStreamingServiceImplTest extends CategoryTest {
     MockitoAnnotations.openMocks(this);
     streamingPublisherMap = Map.of(AWS_S3_STREAMING_PUBLISHER, awsS3StreamingPublisher);
     this.auditEventStreamingService = new AuditEventStreamingServiceImpl(
-        batchProcessorService, streamingBatchService, auditEventRepository, streamingPublisherMap);
+        batchProcessorService, streamingBatchService, auditEventRepository, streamingPublisherMap, batchConfig);
   }
 
   @Test
   @Owner(developers = NISHANT)
   @Category(UnitTests.class)
   public void testStream_whenStatusInProgress() {
+    long now = System.currentTimeMillis();
     StreamingDestination streamingDestination = getStreamingDestination();
-    StreamingBatch streamingBatch = getStreamingBatch(streamingDestination, IN_PROGRESS);
+    StreamingBatch streamingBatch = getStreamingBatch(streamingDestination, IN_PROGRESS, now);
     JobParameters jobParameters = getJobParameters();
     when(streamingBatchService.getLastStreamingBatch(
              streamingDestination, jobParameters.getLong(JOB_START_TIME_PARAMETER_KEY)))
@@ -102,9 +106,34 @@ public class AuditEventStreamingServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = NISHANT)
   @Category(UnitTests.class)
-  public void testStream_whenStatusIsReadyAndNoNewAuditRecords() {
+  public void testStream_whenStatusFailedAndRetriesExhausted() {
+    long now = System.currentTimeMillis();
     StreamingDestination streamingDestination = getStreamingDestination();
-    StreamingBatch streamingBatch = getStreamingBatch(streamingDestination, READY);
+    StreamingBatch streamingBatch = getStreamingBatch(streamingDestination, FAILED, now);
+    streamingBatch.setRetryCount(1);
+    JobParameters jobParameters = getJobParameters();
+    when(streamingBatchService.getLastStreamingBatch(
+             streamingDestination, jobParameters.getLong(JOB_START_TIME_PARAMETER_KEY)))
+        .thenReturn(streamingBatch);
+    when(batchConfig.getMaxRetries()).thenReturn(1);
+    StreamingBatch streamingBatchAsReturned = auditEventStreamingService.stream(streamingDestination, jobParameters);
+
+    assertThat(streamingBatchAsReturned).isEqualToComparingFieldByField(streamingBatch);
+
+    verify(streamingBatchService, times(1))
+        .getLastStreamingBatch(streamingDestination, jobParameters.getLong(JOB_START_TIME_PARAMETER_KEY));
+    verify(auditEventRepository, times(0)).loadAuditEvents(any(), any());
+    verify(streamingBatchService, times(0)).update(ACCOUNT_IDENTIFIER, streamingBatch);
+    verify(batchProcessorService, times(0)).processAuditEvent(any());
+  }
+
+  @Test
+  @Owner(developers = NISHANT)
+  @Category(UnitTests.class)
+  public void testStream_whenStatusIsReadyAndNoNewAuditRecords() {
+    long now = System.currentTimeMillis();
+    StreamingDestination streamingDestination = getStreamingDestination();
+    StreamingBatch streamingBatch = getStreamingBatch(streamingDestination, READY, now);
     JobParameters jobParameters = getJobParameters();
     when(streamingBatchService.getLastStreamingBatch(
              streamingDestination, jobParameters.getLong(JOB_START_TIME_PARAMETER_KEY)))
@@ -125,8 +154,9 @@ public class AuditEventStreamingServiceImplTest extends CategoryTest {
   @Owner(developers = NISHANT)
   @Category(UnitTests.class)
   public void testStream_whenStatusIsReadyAndNewAuditRecordsFound() {
+    long now = System.currentTimeMillis();
     StreamingDestination streamingDestination = getStreamingDestination();
-    StreamingBatch streamingBatch = getStreamingBatch(streamingDestination, READY);
+    StreamingBatch streamingBatch = getStreamingBatch(streamingDestination, READY, now);
     streamingBatch.setLastSuccessfulRecordTimestamp(streamingBatch.getStartTime() + MINUTES_15_IN_MILLS);
     JobParameters jobParameters = getJobParameters();
     when(streamingBatchService.getLastStreamingBatch(
@@ -151,6 +181,70 @@ public class AuditEventStreamingServiceImplTest extends CategoryTest {
     assertThat(streamingBatchCaptured.getLastSuccessfulRecordTimestamp())
         .isEqualTo(streamingBatch.getStartTime() + MINUTES_10_IN_MILLS);
     assertThat(streamingBatchCaptured.getNumberOfRecordsPublished()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = NISHANT)
+  @Category(UnitTests.class)
+  public void testStream_whenStatusReadyAndNewAuditRecordsPublishFailed() {
+    long now = System.currentTimeMillis();
+    StreamingDestination streamingDestination = getStreamingDestination();
+    StreamingBatch streamingBatch = getStreamingBatch(streamingDestination, READY, now);
+    streamingBatch.setLastSuccessfulRecordTimestamp(streamingBatch.getStartTime() + MINUTES_15_IN_MILLS);
+    JobParameters jobParameters = getJobParameters();
+    when(streamingBatchService.getLastStreamingBatch(
+             streamingDestination, jobParameters.getLong(JOB_START_TIME_PARAMETER_KEY)))
+        .thenReturn(streamingBatch);
+    when(auditEventRepository.loadAuditEvents(any(), any()))
+        .thenReturn(
+            List.of(AuditEvent.builder().createdAt(streamingBatch.getStartTime() + MINUTES_10_IN_MILLS).build()));
+    when(batchProcessorService.processAuditEvent(any())).thenReturn(List.of(OutgoingAuditMessage.builder().build()));
+    when(awsS3StreamingPublisher.publish(any(), any())).thenReturn(false);
+    when(streamingBatchService.update(any(), any())).thenReturn(streamingBatch);
+
+    StreamingBatch streamingBatchAsReturned = auditEventStreamingService.stream(streamingDestination, jobParameters);
+
+    assertThat(streamingBatchAsReturned).isNotNull();
+    assertCriteria(streamingBatch, 1);
+
+    verify(streamingBatchService, times(1)).update(eq(ACCOUNT_IDENTIFIER), streamingBatchArgumentCaptor.capture());
+    StreamingBatch streamingBatchExpected = getStreamingBatch(streamingDestination, FAILED, now);
+    streamingBatchExpected.setLastSuccessfulRecordTimestamp(streamingBatch.getStartTime() + MINUTES_15_IN_MILLS);
+    StreamingBatch streamingBatchCaptured = streamingBatchArgumentCaptor.getValue();
+    assertThat(streamingBatchCaptured).isEqualToComparingFieldByField(streamingBatchExpected);
+  }
+
+  @Test
+  @Owner(developers = NISHANT)
+  @Category(UnitTests.class)
+  public void testStream_whenStatusFailedAndNewAuditRecordsPublishFailed() {
+    long now = System.currentTimeMillis();
+    StreamingDestination streamingDestination = getStreamingDestination();
+    StreamingBatch streamingBatch = getStreamingBatch(streamingDestination, FAILED, now);
+    streamingBatch.setLastSuccessfulRecordTimestamp(streamingBatch.getStartTime() + MINUTES_15_IN_MILLS);
+    JobParameters jobParameters = getJobParameters();
+    when(streamingBatchService.getLastStreamingBatch(
+             streamingDestination, jobParameters.getLong(JOB_START_TIME_PARAMETER_KEY)))
+        .thenReturn(streamingBatch);
+    when(auditEventRepository.loadAuditEvents(any(), any()))
+        .thenReturn(
+            List.of(AuditEvent.builder().createdAt(streamingBatch.getStartTime() + MINUTES_10_IN_MILLS).build()));
+    when(batchProcessorService.processAuditEvent(any())).thenReturn(List.of(OutgoingAuditMessage.builder().build()));
+    when(awsS3StreamingPublisher.publish(any(), any())).thenReturn(false);
+    when(streamingBatchService.update(any(), any())).thenReturn(streamingBatch);
+    when(batchConfig.getMaxRetries()).thenReturn(2);
+
+    StreamingBatch streamingBatchAsReturned = auditEventStreamingService.stream(streamingDestination, jobParameters);
+
+    assertThat(streamingBatchAsReturned).isNotNull();
+    assertCriteria(streamingBatch, 1);
+
+    verify(streamingBatchService, times(1)).update(eq(ACCOUNT_IDENTIFIER), streamingBatchArgumentCaptor.capture());
+    StreamingBatch streamingBatchExpected = getStreamingBatch(streamingDestination, FAILED, now);
+    streamingBatchExpected.setLastSuccessfulRecordTimestamp(streamingBatch.getStartTime() + MINUTES_15_IN_MILLS);
+    streamingBatchExpected.setRetryCount(1);
+    StreamingBatch streamingBatchCaptured = streamingBatchArgumentCaptor.getValue();
+    assertThat(streamingBatchCaptured).isEqualToComparingFieldByField(streamingBatchExpected);
   }
 
   private void assertCriteria(StreamingBatch streamingBatch, int times) {
@@ -185,14 +279,14 @@ public class AuditEventStreamingServiceImplTest extends CategoryTest {
     return new JobParameters(parameters);
   }
 
-  private StreamingBatch getStreamingBatch(StreamingDestination streamingDestination, BatchStatus status) {
-    long endTime = System.currentTimeMillis();
-    long startTime = endTime - MINUTES_30_IN_MILLS;
+  private StreamingBatch getStreamingBatch(
+      StreamingDestination streamingDestination, BatchStatus status, long currentTime) {
+    long startTime = currentTime - MINUTES_30_IN_MILLS;
     return StreamingBatch.builder()
         .accountIdentifier(ACCOUNT_IDENTIFIER)
         .streamingDestinationIdentifier(streamingDestination.getIdentifier())
         .startTime(startTime)
-        .endTime(endTime)
+        .endTime(currentTime)
         .status(status)
         .build();
   }
