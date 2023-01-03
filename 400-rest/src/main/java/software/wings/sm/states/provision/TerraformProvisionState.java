@@ -1271,7 +1271,7 @@ public abstract class TerraformProvisionState extends State {
                   S3FileConfig.builder()
                       .awsConfigId(backendAwsConfigId)
                       .s3URI((String) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_S3_URI_KEY))
-                      .s3URIList((List<String>) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_S3_URI_LIST_KEY))
+                      .s3URIList(getS3URIList(fileMetadata, REMOTE_BE_CONFIG_S3_URI_LIST_KEY))
                       .build();
 
               AwsConfig awsConfig = (AwsConfig) getAwsConfigSettingAttribute(backendAwsConfigId).getValue();
@@ -1303,12 +1303,11 @@ public abstract class TerraformProvisionState extends State {
 
           String tfVarS3FileConfigId = (String) fileMetadata.getMetadata().get(TF_VAR_FILES_S3_CONFIG_ID_KEY);
           if (isNotEmpty(tfVarS3FileConfigId)) {
-            S3FileConfig s3FileConfig =
-                S3FileConfig.builder()
-                    .awsConfigId(tfVarS3FileConfigId)
-                    .s3URI((String) fileMetadata.getMetadata().get(TF_VAR_FILES_S3_URI_KEY))
-                    .s3URIList((List<String>) fileMetadata.getMetadata().get(TF_VAR_FILES_S3_URI_LIST_KEY))
-                    .build();
+            S3FileConfig s3FileConfig = S3FileConfig.builder()
+                                            .awsConfigId(tfVarS3FileConfigId)
+                                            .s3URI((String) fileMetadata.getMetadata().get(TF_VAR_FILES_S3_URI_KEY))
+                                            .s3URIList(getS3URIList(fileMetadata, TF_VAR_FILES_S3_URI_LIST_KEY))
+                                            .build();
 
             setTfVarS3FileConfig(s3FileConfig);
           }
@@ -1601,6 +1600,14 @@ public abstract class TerraformProvisionState extends State {
       return tfVarFiles;
     }
     return tfVarFiles.stream().map(context::renderExpression).collect(toList());
+  }
+
+  private ArrayList<String> getS3URIList(FileMetadata fileMetadata, String key) {
+    Object uriListObject = fileMetadata.getMetadata().get(key);
+    if (uriListObject != null) {
+      return new ArrayList<>((List<String>) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_S3_URI_LIST_KEY));
+    }
+    return null;
   }
 
   protected List<String> resolveTargets(List<String> targets, ExecutionContext context) {
