@@ -2006,6 +2006,100 @@
                 "url": "http://jfrogdev.dev.harness.io:80/artifactory/portal-maven/com/carrotsearch/hppc/0.8.1/hppc-0.8.1.jar"
             },
             {
+                "coord": "com.clickhouse:clickhouse-cli-client:jar:shaded:0.3.2-patch11",
+                "dependencies": [],
+                "directDependencies": [],
+                "exclusions": [
+                    "com.clickhouse:clickhouse-client",
+                    "org.lz4:lz4-java",
+                    "org.apache.tomcat:annotations-api"
+                ],
+                "file": "v1/http/jfrogdev.dev.harness.io%3A80/artifactory/portal-maven/com/clickhouse/clickhouse-cli-client/0.3.2-patch11/clickhouse-cli-client-0.3.2-patch11-shaded.jar",
+                "mirror_urls": [
+                    "http://jfrogdev.dev.harness.io:80/artifactory/portal-maven/com/clickhouse/clickhouse-cli-client/0.3.2-patch11/clickhouse-cli-client-0.3.2-patch11-shaded.jar",
+                    "https://harness.jfrog.io/artifactory/harness-internal/com/clickhouse/clickhouse-cli-client/0.3.2-patch11/clickhouse-cli-client-0.3.2-patch11-shaded.jar",
+                    "https://harness.jfrog.io/harness/thirdparty-annonymous/com/clickhouse/clickhouse-cli-client/0.3.2-patch11/clickhouse-cli-client-0.3.2-patch11-shaded.jar"
+                ],
+                "sha256": "18f82239de66eb93b5bc1b7d4f23efd4c2ef48d2431434c8c9fef4cf83a89398",
+                "url": "http://jfrogdev.dev.harness.io:80/artifactory/portal-maven/com/clickhouse/clickhouse-cli-client/0.3.2-patch11/clickhouse-cli-client-0.3.2-patch11-shaded.jar"
+            },
+            {
+                "coord": "com.clickhouse:clickhouse-grpc-client:jar:shaded:0.3.2-patch11",
+                "dependencies": [],
+                "directDependencies": [],
+                "exclusions": [
+                    "com.clickhouse:clickhouse-client",
+                    "org.lz4:lz4-java",
+                    "org.apache.commons:commons-compress",
+                    "io.grpc:grpc-protobuf",
+                    "org.apache.tomcat:annotations-api",
+                    "com.google.code.gson:gson",
+                    "com.clickhouse:io.grpc"
+                ],
+                "file": "v1/http/jfrogdev.dev.harness.io%3A80/artifactory/portal-maven/com/clickhouse/clickhouse-grpc-client/0.3.2-patch11/clickhouse-grpc-client-0.3.2-patch11-shaded.jar",
+                "mirror_urls": [
+                    "http://jfrogdev.dev.harness.io:80/artifactory/portal-maven/com/clickhouse/clickhouse-grpc-client/0.3.2-patch11/clickhouse-grpc-client-0.3.2-patch11-shaded.jar",
+                    "https://harness.jfrog.io/artifactory/harness-internal/com/clickhouse/clickhouse-grpc-client/0.3.2-patch11/clickhouse-grpc-client-0.3.2-patch11-shaded.jar",
+                    "https://harness.jfrog.io/harness/thirdparty-annonymous/com/clickhouse/clickhouse-grpc-client/0.3.2-patch11/clickhouse-grpc-client-0.3.2-patch11-shaded.jar"
+                ],
+                "sha256": "0cfbfea71596df39871a6acb5da42e6e5b644ded636874a2cf4fee0b759cc149",
+                "url": "http://jfrogdev.dev.harness.io:80/artifactory/portal-maven/com/clickhouse/clickhouse-grpc-client/0.3.2-patch11/clickhouse-grpc-client-0.3.2-patch11-shaded.jar"
+            },
+            {
+                "coord": "com.clickhouse:clickhouse-http-client:jar:shaded:0.3.2-patch11",
+                "dependencies": [],
+                "directDependencies": [],
+                "exclusions": [
+                    "com.clickhouse:clickhouse-client",
+                    "org.lz4:lz4-java",
+                    "org.apache.tomcat:annotations-api",
+                    "com.google.code.gson:gson",
+                    "org.apache.httpcomponents:httpmime",
+                    "org.apache.httpcomponents:httpclient"
+                ],
+                "file": "v1/http/jfrogdev.dev.harness.io%3A80/artifactory/portal-maven/com/clickhouse/clickhouse-http-client/0.3.2-patch11/clickhouse-http-client-0.3.2-patch11-shaded.jar",
+                "mirror_urls": [
+                    "http://jfrogdev.dev.harness.io:80/artifactory/portal-maven/com/clickhouse/clickhouse-http-client/0.3.2-patch11/clickhouse-http-client-0.3.2-patch11-shaded.jar",
+                    "https://harness.jfrog.io/artifactory/harness-internal/com/clickhouse/clickhouse-http-client/0.3.2-patch11/clickhouse-http-client-0.3.2-patch11-shaded.jar",
+                    "https://harness.jfrog.io/harness/thirdparty-annonymous/com/clickhouse/clickhouse-http-client/0.3.2-patch11/clickhouse-http-client-0.3.2-patch11-shaded.jar"
+                ],
+                "sha256": "4db303d1aea0de41a7e8c5b828132827c43f2e4c226e54bb81a8b7f09c81db57",
+                "url": "http://jfrogdev.dev.harness.io:80/artifactory/portal-maven/com/clickhouse/clickhouse-http-client/0.3.2-patch11/clickhouse-http-client-0.3.2-patch11-shaded.jar"
+            },
+            {
+                "coord": "com.clickhouse:clickhouse-jdbc:0.3.2-patch11",
+                "dependencies": [
+                    "org.apache.httpcomponents:httpcore:4.4.14",
+                    "com.clickhouse:clickhouse-grpc-client:jar:shaded:0.3.2-patch11",
+                    "com.clickhouse:clickhouse-cli-client:jar:shaded:0.3.2-patch11",
+                    "commons-codec:commons-codec:1.15",
+                    "commons-logging:commons-logging:1.1.1",
+                    "org.apache.httpcomponents:httpclient:4.5.13",
+                    "org.apache.httpcomponents:httpmime:4.5.13",
+                    "com.clickhouse:clickhouse-http-client:jar:shaded:0.3.2-patch11",
+                    "com.google.code.gson:gson:2.8.9"
+                ],
+                "directDependencies": [
+                    "org.apache.httpcomponents:httpcore:4.4.14",
+                    "com.clickhouse:clickhouse-grpc-client:jar:shaded:0.3.2-patch11",
+                    "com.clickhouse:clickhouse-cli-client:jar:shaded:0.3.2-patch11",
+                    "commons-codec:commons-codec:1.15",
+                    "commons-logging:commons-logging:1.1.1",
+                    "org.apache.httpcomponents:httpclient:4.5.13",
+                    "org.apache.httpcomponents:httpmime:4.5.13",
+                    "com.clickhouse:clickhouse-http-client:jar:shaded:0.3.2-patch11",
+                    "com.google.code.gson:gson:2.8.9"
+                ],
+                "file": "v1/http/jfrogdev.dev.harness.io%3A80/artifactory/portal-maven/com/clickhouse/clickhouse-jdbc/0.3.2-patch11/clickhouse-jdbc-0.3.2-patch11.jar",
+                "mirror_urls": [
+                    "http://jfrogdev.dev.harness.io:80/artifactory/portal-maven/com/clickhouse/clickhouse-jdbc/0.3.2-patch11/clickhouse-jdbc-0.3.2-patch11.jar",
+                    "https://harness.jfrog.io/artifactory/harness-internal/com/clickhouse/clickhouse-jdbc/0.3.2-patch11/clickhouse-jdbc-0.3.2-patch11.jar",
+                    "https://harness.jfrog.io/harness/thirdparty-annonymous/com/clickhouse/clickhouse-jdbc/0.3.2-patch11/clickhouse-jdbc-0.3.2-patch11.jar"
+                ],
+                "sha256": "0b184a96a60c918c6d09a74318f9562abb3b98f388f7854d669d4b0edbc2228c",
+                "url": "http://jfrogdev.dev.harness.io:80/artifactory/portal-maven/com/clickhouse/clickhouse-jdbc/0.3.2-patch11/clickhouse-jdbc-0.3.2-patch11.jar"
+            },
+            {
                 "coord": "com.coveo:saml-client:3.0.2",
                 "dependencies": [
                     "org.opensaml:opensaml-saml-impl:3.4.3",

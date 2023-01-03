@@ -256,3 +256,8 @@ governanceConfig:
 
 currencyPreferences:
   historicalUpdateMonthsCount: 3
+
+clickHouseConfig:
+  url: "jdbc:ch:http://localhost:8123"
+  username: "default"
+  password: ""
