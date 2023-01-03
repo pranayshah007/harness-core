@@ -27,8 +27,8 @@
             "system" : "components"
           },
           "allowedValues" : [
-            {"id" : "multiselect_id_1", "name" : "MultiselectName1"},
-            {"id" : "multiselect_id_2", "name" : "MultiselectName2"}
+            {"id" : "multiselect_id_1", "name" : "MultiselectName1", "value": ""},
+            {"id" : "multiselect_id_2", "name" : "MultiselectName2", "value": ""}
           ],
           "custom" : "false"
         },
