@@ -54,7 +54,7 @@ public class ScopeAccessHelper {
 
   private List<Scope> checkAccess(List<Scope> scopes) {
     List<PermissionCheckDTO> permissionChecks =
-        scopes.stream().map(this::buildPermissionCheckObject).collect(Collectors.toList());
+        scopes.stream().map(this::getPermissionCheckDtoForViewAccessForScope).collect(Collectors.toList());
 
     AccessCheckResponseDTO accessCheckResponse = accessControlClient.checkForAccess(permissionChecks);
     Set<Scope> permittedScopes = accessCheckResponse.getAccessControlList()
@@ -82,7 +82,7 @@ public class ScopeAccessHelper {
     return Scope.builder().accountIdentifier(accessControlDTO.getResourceIdentifier()).build();
   }
 
-  private PermissionCheckDTO buildPermissionCheckObject(Scope scope) {
+  public PermissionCheckDTO getPermissionCheckDtoForViewAccessForScope(Scope scope) {
     if (StringUtils.isNotBlank(scope.getProjectIdentifier())) {
       return PermissionCheckDTO.builder()
           .permission(VIEW_PROJECT_PERMISSION)

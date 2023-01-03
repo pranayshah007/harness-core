@@ -264,6 +264,8 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
 
     if (isNotEmpty(serviceRef.getValue()) && !serviceRef.isExpression()) {
       outputProperties.addAll(handleServiceStepOutcome());
+
+      // scoped service ref used here
       Optional<ServiceEntity> optionalService =
           serviceEntityService.get(accountIdentifier, orgIdentifier, projectIdentifier, serviceRef.getValue(), false);
 
@@ -398,6 +400,7 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
     final ParameterField<String> environmentRef = environmentYamlV2.getEnvironmentRef();
 
     if (isNotEmpty(environmentRef.getValue()) && !environmentRef.isExpression()) {
+      // scoped environment ref provided here
       Optional<Environment> optionalEnvironment =
           environmentService.get(accountIdentifier, orgIdentifier, projectIdentifier, environmentRef.getValue(), false);
       if (optionalEnvironment.isPresent()) {

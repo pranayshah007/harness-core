@@ -15,6 +15,8 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
+        "//930-ng-core-clients:module",
+        "//940-secret-manager-client:module",
         "//950-ng-authentication-service:module",
         "//954-connector-beans:module",
         "//959-psql-database-models:module",

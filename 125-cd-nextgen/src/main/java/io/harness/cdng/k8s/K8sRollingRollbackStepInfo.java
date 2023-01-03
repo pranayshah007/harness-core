@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.manifest.yaml.K8sStepCommandFlag;
 import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.K8sRollingRollbackStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
@@ -53,8 +54,9 @@ public class K8sRollingRollbackStepInfo extends K8sRollingRollbackBaseStepInfo i
 
   @Builder(builderMethodName = "infoBuilder")
   public K8sRollingRollbackStepInfo(ParameterField<Boolean> pruningEnabled,
-      ParameterField<List<TaskSelectorYaml>> delegateSelectors, String rollingStepFqn) {
-    super(pruningEnabled, delegateSelectors, rollingStepFqn);
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors, String rollingStepFqn,
+      List<K8sStepCommandFlag> commandFlags) {
+    super(pruningEnabled, delegateSelectors, rollingStepFqn, commandFlags);
   }
 
   @Override
@@ -73,6 +75,7 @@ public class K8sRollingRollbackStepInfo extends K8sRollingRollbackBaseStepInfo i
         .pruningEnabled(pruningEnabled)
         .delegateSelectors(delegateSelectors)
         .rollingStepFqn(rollingStepFqn)
+        .commandFlags(commandFlags)
         .build();
   }
 

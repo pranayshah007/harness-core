@@ -27,6 +27,7 @@ import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperD
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitaware.helper.GitImportInfoDTO;
+import io.harness.gitaware.helper.MoveConfigRequestDTO;
 import io.harness.gitsync.interceptor.GitEntityCreateInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityDeleteInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
@@ -484,5 +485,11 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
       String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     return ResponseDTO.newResponse(
         pmsPipelineService.getListOfRepos(accountIdentifier, orgIdentifier, projectIdentifier));
+  }
+
+  @Override
+  public ResponseDTO<MoveConfigResponse> moveConfig(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String pipelineIdentifier, MoveConfigRequestDTO moveConfigRequestDTO) {
+    return ResponseDTO.newResponse(MoveConfigResponse.builder().build());
   }
 }

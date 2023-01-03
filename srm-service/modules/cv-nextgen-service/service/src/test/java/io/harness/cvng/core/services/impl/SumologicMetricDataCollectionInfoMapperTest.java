@@ -20,7 +20,7 @@ import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.SumologicMetricDataCollectionInfo;
 import io.harness.cvng.core.beans.RiskProfile;
 import io.harness.cvng.core.beans.healthsource.QueryDefinition;
-import io.harness.cvng.core.beans.healthsource.QueryParams;
+import io.harness.cvng.core.beans.healthsource.QueryParamsDTO;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.NextGenMetricCVConfig;
 import io.harness.rule.Owner;
@@ -79,9 +79,7 @@ public class SumologicMetricDataCollectionInfoMapperTest extends CvNextGenTestBa
   @Owner(developers = ANSUMAN)
   @Category(UnitTests.class)
   public void testToDataCollectionInfo_withHostCollection() {
-    // TODO there are no setters now
-
-    queryDefinitions.get(0).setQueryParams(QueryParams.builder().serviceInstanceField("_sourcehost").build());
+    queryDefinitions.get(0).setQueryParams(QueryParamsDTO.builder().serviceInstanceField("_sourcehost").build());
     NextGenMetricCVConfig cvConfig =
         (NextGenMetricCVConfig) createCVConfig(groupName1, DataSourceType.SUMOLOGIC_METRICS);
     cvConfig.addMetricPackAndInfo(queryDefinitions);

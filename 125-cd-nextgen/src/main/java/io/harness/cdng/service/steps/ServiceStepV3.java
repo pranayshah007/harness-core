@@ -121,6 +121,8 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
   public static final String FREEZE_SWEEPING_OUTPUT = "freezeSweepingOutput";
   public static final String SERVICE_MANIFESTS_SWEEPING_OUTPUT = "serviceManifestsSweepingOutput";
   public static final String SERVICE_CONFIG_FILES_SWEEPING_OUTPUT = "serviceConfigFilesSweepingOutput";
+  public static final String SERVICE_APP_SETTINGS_SWEEPING_OUTPUT = "serviceAppSettingsSweepingOutput";
+  public static final String SERVICE_CONNECTION_STRINGS_SWEEPING_OUTPUT = "serviceConnectionStringsSweepingOutput";
   public static final String PIPELINE_EXECUTION_EXPRESSION = "<+pipeline.execution.url>";
 
   @Inject private ServiceEntityService serviceEntityService;
@@ -266,6 +268,12 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
 
     serviceStepOverrideHelper.prepareAndSaveFinalConfigFilesMetadataToSweepingOutput(
         servicePartResponse.getNgServiceConfig(), null, null, ambiance, SERVICE_CONFIG_FILES_SWEEPING_OUTPUT);
+
+    serviceStepOverrideHelper.prepareAndSaveFinalAppServiceMetadataToSweepingOutput(
+        servicePartResponse.getNgServiceConfig(), null, null, ambiance, SERVICE_APP_SETTINGS_SWEEPING_OUTPUT);
+
+    serviceStepOverrideHelper.prepareAndSaveFinalConnectionStringsMetadataToSweepingOutput(
+        servicePartResponse.getNgServiceConfig(), null, null, ambiance, SERVICE_CONNECTION_STRINGS_SWEEPING_OUTPUT);
   }
 
   private List<Environment> getEnvironmentsFromEnvRef(Ambiance ambiance, List<ParameterField<String>> envRefs) {
@@ -303,7 +311,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
           environmentService.get(AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
               AmbianceUtils.getProjectIdentifier(ambiance), envRef.getValue(), false);
       if (environment.isEmpty()) {
-        throw new InvalidRequestException("Environment " + envRef.getValue() + " not found");
+        throw new InvalidRequestException(String.format("Environment with ref: [%s] not found", envRef.getValue()));
       }
 
       NGEnvironmentConfig ngEnvironmentConfig;
@@ -355,6 +363,14 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
       serviceStepOverrideHelper.prepareAndSaveFinalConfigFilesMetadataToSweepingOutput(
           servicePartResponse.getNgServiceConfig(), ngServiceOverrides, ngEnvironmentConfig, ambiance,
           SERVICE_CONFIG_FILES_SWEEPING_OUTPUT);
+
+      serviceStepOverrideHelper.prepareAndSaveFinalAppServiceMetadataToSweepingOutput(
+          servicePartResponse.getNgServiceConfig(), ngServiceOverrides, ngEnvironmentConfig, ambiance,
+          SERVICE_APP_SETTINGS_SWEEPING_OUTPUT);
+
+      serviceStepOverrideHelper.prepareAndSaveFinalConnectionStringsMetadataToSweepingOutput(
+          servicePartResponse.getNgServiceConfig(), ngServiceOverrides, ngEnvironmentConfig, ambiance,
+          SERVICE_CONNECTION_STRINGS_SWEEPING_OUTPUT);
     }
   }
 
@@ -488,9 +504,10 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
     final Optional<ServiceEntity> serviceOpt =
         serviceEntityService.get(AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
             AmbianceUtils.getProjectIdentifier(ambiance), stepParameters.getServiceRef().getValue(), false);
+
     if (serviceOpt.isEmpty()) {
       throw new InvalidRequestException(
-          format("service with identifier %s not found", stepParameters.getServiceRef().fetchFinalValue()));
+          format("service with ref: [%s] not found", stepParameters.getServiceRef().fetchFinalValue()));
     }
 
     final ServiceEntity serviceEntity = serviceOpt.get();
@@ -525,10 +542,11 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
           "Service Definition is not defined for service : " + serviceEntity.getIdentifier());
     }
 
-    serviceStepsHelper.validateResources(ambiance, ngServiceConfig);
+    serviceStepsHelper.checkForVariablesAccessOrThrow(ambiance, ngServiceConfig);
 
     entityMap.put(FreezeEntityType.ORG, Lists.newArrayList(serviceEntity.getOrgIdentifier()));
     entityMap.put(FreezeEntityType.PROJECT, Lists.newArrayList(serviceEntity.getProjectIdentifier()));
+    // serviceRef instead of identifier to be passed here
     entityMap.put(FreezeEntityType.SERVICE, Lists.newArrayList(serviceEntity.getIdentifier()));
 
     // Add the reason in serviceOutcome;

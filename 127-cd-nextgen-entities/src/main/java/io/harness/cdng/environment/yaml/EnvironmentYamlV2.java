@@ -30,6 +30,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
@@ -60,8 +61,7 @@ public class EnvironmentYamlV2 implements Visitable {
   @YamlSchemaTypes({runtime})
   ParameterField<Boolean> deployToAll;
 
-  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
-  @ApiModelProperty(dataType = SwaggerConstants.FILTER_YAML_LIST_CLASSPATH, hidden = true)
+  @ApiModelProperty(dataType = SwaggerConstants.FILTER_YAML_LIST_CLASSPATH)
   @YamlSchemaTypes(runtime)
   ParameterField<List<FilterYaml>> filters;
 
@@ -88,6 +88,8 @@ public class EnvironmentYamlV2 implements Visitable {
   @YamlSchemaTypes({runtime})
   ParameterField<List<ClusterYaml>> gitOpsClusters;
 
+  List<ServiceOverrideInputsYaml> servicesOverrides;
+
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
@@ -98,5 +100,24 @@ public class EnvironmentYamlV2 implements Visitable {
     }
     return !deployToAll.isExpression() && deployToAll.getValue() == null ? ParameterField.createValueField(false)
                                                                          : deployToAll;
+  }
+
+  public EnvironmentYamlV2 clone() {
+    ParameterField<List<FilterYaml>> filtersCloned = null;
+    if (ParameterField.isNotNull(this.filters) && this.filters.getValue() != null) {
+      filtersCloned = ParameterField.createValueField(
+          this.filters.getValue().stream().map(FilterYaml::clone).collect(Collectors.toList()));
+    }
+    return EnvironmentYamlV2.builder()
+        .environmentInputs(this.environmentInputs)
+        .environmentRef(this.environmentRef)
+        .deployToAll(this.deployToAll)
+        .filters(filtersCloned)
+        .gitOpsClusters(this.gitOpsClusters)
+        .infrastructureDefinition(this.infrastructureDefinition)
+        .infrastructureDefinitions(this.infrastructureDefinitions)
+        .provisioner(this.provisioner)
+        .serviceOverrideInputs(this.serviceOverrideInputs)
+        .build();
   }
 }

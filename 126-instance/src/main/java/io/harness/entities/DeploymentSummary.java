@@ -65,6 +65,8 @@ public class DeploymentSummary implements PersistentEntity {
   private String deployedByName;
   private String infrastructureMappingId;
   private String infrastructureIdentifier;
+
+  private String envGroupRef;
   private String infrastructureName;
   private String instanceSyncKey;
   private long deployedAt;

@@ -32,6 +32,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Stream;
+import lombok.NonNull;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -79,9 +80,6 @@ public class BuildCleaner {
     SymbolDependencyMap harnessSymbolMap = buildHarnessSymbolMap();
     logger.debug("Total Java classes found: " + harnessSymbolMap.getCacheSize());
 
-    harnessSymbolMap.serializeToFile(indexFilePath().toString());
-    logger.info("Index creation complete.");
-
     // If recursive option is set, generate build file for each folder inside.
     Files
         .find(workspace().resolve(module()), options.hasOption("recursive") ? Integer.MAX_VALUE : 0,
@@ -125,27 +123,51 @@ public class BuildCleaner {
    */
   @VisibleForTesting
   protected SymbolDependencyMap buildHarnessSymbolMap() throws IOException, ClassNotFoundException {
-    if (indexFileExists() && !options.hasOption("overrideIndex")) {
-      logger.info("Loading the already existing index file: " + indexFilePath().toString());
-      return SymbolDependencyMap.deserializeFromFile(indexFilePath().toString());
+    final var harnessSymbolMap = initDependencyMap();
+
+    // if symbol map exists and no options specified then don't update it
+    if (!harnessSymbolMap.getSymbolToTargetMap().isEmpty() && !options.hasOption("indexSourceGlob")) {
+      return harnessSymbolMap;
     }
-    logger.info("Creating index using sources matching: " + indexSourceGlob());
+
+    logger.info("Creating index using sources matching: {}", indexSourceGlob());
 
     // Parse proto and BUILD files to construct Proto specific java symbols to proto target map.
-    ProtoBuildMapper protoBuildMapper = new ProtoBuildMapper(workspace());
-    SymbolDependencyMap harnessSymbolMap = protoBuildMapper.protoToBuildTargetDependencyMap(indexSourceGlob());
+    final ProtoBuildMapper protoBuildMapper = new ProtoBuildMapper(workspace());
+    protoBuildMapper.protoToBuildTargetDependencyMap(indexSourceGlob(), harnessSymbolMap);
 
     // Parse java classes.
-    ClasspathParser classpathParser = packageParser.getClassPathParser();
+    final ClasspathParser classpathParser = packageParser.getClassPathParser();
     classpathParser.parseClasses(indexSourceGlob(), assumedPackagePrefixesWithBuildFile());
 
     // Update symbol dependency map with the parsed java code.
-    Set<ClassMetadata> fullyQualifiedClassNames = classpathParser.getFullyQualifiedClassNames();
+    final Set<ClassMetadata> fullyQualifiedClassNames = classpathParser.getFullyQualifiedClassNames();
     for (ClassMetadata metadata : fullyQualifiedClassNames) {
       harnessSymbolMap.addSymbolTarget(metadata.getFullyQualifiedClassName(), metadata.getBuildModulePath());
     }
 
+    harnessSymbolMap.serializeToFile(indexFilePath().toString());
+    logger.info("Index creation complete.");
+
     return harnessSymbolMap;
+  }
+
+  /**
+   * If user wants to override index partially to make the scan faster (e.g. changed just couple of modules)
+   * they can include <b>indexSourcesGlob</b> option to specify just certain packages to be scanned
+   * <pre>--indexSourceGlob {260-delegate-service,980-commons}/src&#47;**&#47;*"}</pre>
+   * @return
+   * @throws IOException
+   * @throws ClassNotFoundException
+   */
+  @NonNull
+  private SymbolDependencyMap initDependencyMap() throws IOException, ClassNotFoundException {
+    if (indexFileExists() && !options.hasOption("overrideIndex")) {
+      logger.info("Loading the existing index file {} to init dependency map", indexFilePath());
+      return SymbolDependencyMap.deserializeFromFile(indexFilePath().toString());
+    } else {
+      return new SymbolDependencyMap();
+    }
   }
 
   /**
@@ -161,12 +183,19 @@ public class BuildCleaner {
   @VisibleForTesting
   protected Optional<BuildFile> generateBuildForModule(Path path, SymbolDependencyMap harnessSymbolMap)
       throws IOException, FileNotFoundException {
+    // Create build for the package.
+    Set<String> sourceFiles = getSourceFiles(workspace().resolve(path));
+    if (sourceFiles.isEmpty()) {
+      logger.warn("No sources found for {}", path);
+      return Optional.empty();
+    }
+
     // Setup classpath parser to get imports for java files for the module in context and try
     // resolving each of the imports.
     // Set "findBuildInParent" to false, as we only need import statements for the files in this folder
     // and don't care about the BUILD file paths.
     ClasspathParser classpathParser = this.packageParser.getClassPathParser();
-    String parseClassPattern = path.toString().isEmpty() ? srcsGlob() : path.toString() + "/" + srcsGlob();
+    String parseClassPattern = path.toString().isEmpty() ? srcsGlob() : path + "/" + srcsGlob();
     classpathParser.parseClasses(parseClassPattern, new HashSet<>());
 
     Set<String> dependencies = new TreeSet<>();
@@ -185,15 +214,9 @@ public class BuildCleaner {
       }
 
       resolvedSymbol.ifPresent(dependencies::add);
-      if (!resolvedSymbol.isPresent()) {
-        logger.info("No build dependency found for " + importStatement);
+      if (resolvedSymbol.isEmpty()) {
+        logger.error("No build dependency found for {}", importStatement);
       }
-    }
-
-    // Create build for the package.
-    Set<String> sourceFiles = getSourceFiles(workspace().resolve(path));
-    if (sourceFiles.isEmpty()) {
-      return Optional.empty();
     }
 
     BuildFile buildFile = new BuildFile();
@@ -230,6 +253,16 @@ public class BuildCleaner {
       }
     }
 
+    // Look up symbol in the harness symbol map.
+    resolvedSymbol = harnessSymbolMap.getTarget(importStatement);
+    if (resolvedSymbol.isPresent()) {
+      // For Java targets, we don't have java_library name in the Symbol dependency map.
+      if (!resolvedSymbol.get().contains(":")) {
+        return Optional.of(String.format("//%s:%s", resolvedSymbol.get(), DEFAULT_JAVA_LIBRARY_NAME));
+      }
+      return resolvedSymbol;
+    }
+
     // Look up symbol in the maven manifest.
     if (mavenManifest != null) {
       resolvedSymbol = mavenManifest.getTarget(importStatement);
@@ -237,19 +270,7 @@ public class BuildCleaner {
         return resolvedSymbol;
       }
     }
-
-    // Look up symbol in the harness symbol map.
-    resolvedSymbol = harnessSymbolMap.getTarget(importStatement);
-    if (!resolvedSymbol.isPresent()) {
-      return Optional.empty();
-    }
-
-    // For Java targets, we don't have java_library name in the Symbol dependency map.
-    if (!resolvedSymbol.get().contains(":")) {
-      return Optional.of(String.format("//%s:%s", resolvedSymbol.get(), DEFAULT_JAVA_LIBRARY_NAME));
-    }
-
-    return Optional.of(resolvedSymbol.get());
+    return Optional.empty();
   }
 
   /**
@@ -259,10 +280,11 @@ public class BuildCleaner {
    * @throws IOException
    */
   private Set<String> getSourceFiles(Path directory) throws IOException {
-    PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher("glob:" + directory + "/" + srcsGlob());
+    final var syntaxAndPattern = "glob:" + directory + "/" + srcsGlob();
+    logger.info("Scanning for files using pattern {}", syntaxAndPattern);
+    PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher(syntaxAndPattern);
     Set<String> sourceFileNames = new HashSet<>();
-    try (Stream<Path> paths =
-             Files.find(directory, Integer.MAX_VALUE, (path, f) -> { return pathMatcher.matches(path); })) {
+    try (Stream<Path> paths = Files.find(directory, Integer.MAX_VALUE, (path, f) -> pathMatcher.matches(path))) {
       paths.forEach(path -> sourceFileNames.add(path.getFileName().toString()));
     }
     return sourceFileNames;

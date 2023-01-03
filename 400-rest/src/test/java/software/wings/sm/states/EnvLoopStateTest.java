@@ -33,6 +33,7 @@ import software.wings.WingsBaseTest;
 import software.wings.service.intfc.WorkflowService;
 import software.wings.sm.ExecutionContextImpl;
 import software.wings.sm.ExecutionResponse;
+import software.wings.sm.State;
 import software.wings.sm.StateExecutionInstance;
 import software.wings.sm.StateExecutionInstanceHelper;
 import software.wings.sm.StateType;
@@ -113,7 +114,7 @@ public class EnvLoopStateTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldGetTimeout() {
     Integer timeoutMillis = envLoopState.getTimeoutMillis();
-    assertThat(timeoutMillis).isEqualTo(EnvState.ENV_STATE_TIMEOUT_MILLIS);
+    assertThat(timeoutMillis).isEqualTo(State.INFINITE_TIMEOUT);
   }
 
   @Test

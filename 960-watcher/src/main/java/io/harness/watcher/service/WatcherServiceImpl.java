@@ -1372,7 +1372,7 @@ public class WatcherServiceImpl implements WatcherService {
 
   @VisibleForTesting
   void checkForWatcherUpgrade() {
-    log.info("Checking for watcher upgrade");
+    log.debug("Checking for watcher upgrade");
     try {
       if (!watcherConfiguration.isDoUpgrade()) {
         log.info("Auto upgrade is disabled in watcher configuration");
@@ -1403,7 +1403,7 @@ public class WatcherServiceImpl implements WatcherService {
           log.error("Failed to download run scripts before upgrading watcher to {}", latestWatcherVersion);
         }
       } else {
-        log.info("Watcher up to date");
+        log.debug("Watcher up to date");
       }
     } catch (Exception e) {
       log.error("Exception while checking for upgrade", e);

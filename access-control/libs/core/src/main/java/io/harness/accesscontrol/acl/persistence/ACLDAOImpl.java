@@ -75,7 +75,8 @@ public class ACLDAOImpl implements ACLDAO {
     return false;
   }
 
-  private Set<String> getQueryStrings(PermissionCheck permissionCheck, Principal principal) {
+  @Override
+  public Set<String> getQueryStrings(PermissionCheck permissionCheck, Principal principal) {
     String scope =
         Optional.ofNullable(permissionCheck.getResourceScope()).flatMap(rs -> Optional.of(rs.toString())).orElse("");
     Set<String> queryStrings = new HashSet<>();

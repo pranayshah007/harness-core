@@ -7,6 +7,8 @@
 
 package io.harness.ccm.graphql.dto.recommendation;
 
+import io.harness.ccm.commons.beans.recommendation.CCMJiraDetails;
+
 import io.leangen.graphql.annotations.GraphQLNonNull;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
@@ -24,4 +26,5 @@ public class EC2RecommendationDTO implements RecommendationDetailsDTO {
   EC2InstanceDTO sameFamilyRecommendation;
   @Schema(name = "CrossFamilyRecommendation", description = "Recommendation with cross instance family")
   EC2InstanceDTO crossFamilyRecommendation;
+  CCMJiraDetails jiraDetails;
 }

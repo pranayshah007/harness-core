@@ -7,13 +7,18 @@
 
 package io.harness.cvng.analysis.services.impl;
 
+import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.getFilteredAnalysedTestDataNodes;
+import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.getMetricTypeFromCvConfigAndMetricDefinition;
+import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.isAnalysisResultExcluded;
+import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.isTransactionGroupExcluded;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.cvng.activity.beans.DeploymentActivityResultDTO.TimeSeriesAnalysisSummary;
-import io.harness.cvng.analysis.beans.DeploymentTimeSeriesAnalysisDTO;
+import io.harness.cvng.analysis.beans.DeploymentTimeSeriesAnalysisDTO.HostData;
+import io.harness.cvng.analysis.beans.DeploymentTimeSeriesAnalysisDTO.TransactionMetricHostData;
 import io.harness.cvng.analysis.beans.NodeRiskCountDTO;
 import io.harness.cvng.analysis.beans.Risk;
 import io.harness.cvng.analysis.beans.TransactionMetricInfo;
@@ -22,16 +27,23 @@ import io.harness.cvng.analysis.entities.DeploymentTimeSeriesAnalysis;
 import io.harness.cvng.analysis.entities.DeploymentTimeSeriesAnalysis.DeploymentTimeSeriesAnalysisKeys;
 import io.harness.cvng.analysis.services.api.DeploymentTimeSeriesAnalysisService;
 import io.harness.cvng.beans.DataSourceType;
+import io.harness.cvng.cdng.beans.v2.AnalysisResult;
+import io.harness.cvng.cdng.beans.v2.MetricsAnalysis;
+import io.harness.cvng.cdng.beans.v2.MetricsAnalysisOverview;
 import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.core.beans.TimeRange;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.filterParams.DeploymentTimeSeriesAnalysisFilter;
+import io.harness.cvng.core.entities.AnalysisInfo;
 import io.harness.cvng.core.entities.CVConfig;
+import io.harness.cvng.core.entities.MetricCVConfig;
+import io.harness.cvng.core.entities.MetricPack.MetricDefinition;
 import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.core.entities.VerificationTask.DeploymentInfo;
 import io.harness.cvng.core.entities.VerificationTask.TaskType;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.utils.CVNGObjectUtils;
+import io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
 import io.harness.persistence.HPersistence;
@@ -53,6 +65,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
@@ -143,6 +156,54 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
     return TimeSeriesAnalysisSummary.builder()
         .numAnomMetrics(anomMetricCounts.stream().mapToInt(Integer::intValue).sum())
         .totalNumMetrics(totalMetricCounts.stream().mapToInt(Integer::intValue).sum())
+        .build();
+  }
+
+  @Override
+  public MetricsAnalysisOverview getMetricsAnalysisOverview(String verifyStepExecutionId) {
+    VerificationJobInstance verificationJobInstance =
+        verificationJobInstanceService.getVerificationJobInstance(verifyStepExecutionId);
+    List<TransactionMetricInfo> transactionMetricInfos = getMetrics(verificationJobInstance.getAccountId(),
+        verifyStepExecutionId, DeploymentTimeSeriesAnalysisFilter.builder().build());
+    int noAnalysis = 0;
+    int healthy = 0;
+    int warning = 0;
+    int unhealthy = 0;
+    for (TransactionMetricInfo transactionMetricInfo : transactionMetricInfos) {
+      if (Objects.isNull(transactionMetricInfo.getTransactionMetric().getRisk())) {
+        noAnalysis++;
+        continue;
+      }
+      switch (transactionMetricInfo.getTransactionMetric().getRisk()) {
+        case NO_DATA:
+          noAnalysis++;
+          break;
+        case NO_ANALYSIS:
+          noAnalysis++;
+          break;
+        case HEALTHY:
+          healthy++;
+          break;
+        case OBSERVE:
+          warning++;
+          break;
+        case NEED_ATTENTION:
+          warning++;
+          break;
+        case UNHEALTHY:
+          unhealthy++;
+          break;
+        default:
+          throw new IllegalArgumentException(
+              "Unrecognised Risk " + transactionMetricInfo.getTransactionMetric().getRisk());
+      }
+    }
+
+    return MetricsAnalysisOverview.builder()
+        .noAnalysis(noAnalysis)
+        .healthy(healthy)
+        .warning(warning)
+        .unhealthy(unhealthy)
         .build();
   }
 
@@ -250,7 +311,7 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
                   deploymentTimeSeriesAnalysisFilter.isAnomalousMetricsOnly()))
           .forEach(transactionMetricHostData -> {
             Map<Risk, Integer> nodeCountByRiskStatusMap = new HashMap<>();
-            SortedSet<DeploymentTimeSeriesAnalysisDTO.HostData> nodeDataSet = new TreeSet();
+            SortedSet<HostData> nodeDataSet = new TreeSet();
             transactionMetricHostData.getHostData()
                 .stream()
                 .filter(hostData
@@ -282,6 +343,69 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
     return transactionMetricInfoList;
   }
 
+  @Override
+  public List<MetricsAnalysis> getFilteredMetricAnalysesForVerifyStepExecutionId(String accountId,
+      String verifyStepExecutionId, DeploymentTimeSeriesAnalysisFilter deploymentTimeSeriesAnalysisFilter) {
+    List<DeploymentTimeSeriesAnalysis> latestDeploymentTimeSeriesAnalysis =
+        getLatestDeploymentTimeSeriesAnalysis(accountId, verifyStepExecutionId, deploymentTimeSeriesAnalysisFilter);
+    Set<String> requestedHealthSources = new HashSet<>(deploymentTimeSeriesAnalysisFilter.getHealthSourceIdentifiers());
+    Set<String> requestedTransactionGroups = new HashSet<>(deploymentTimeSeriesAnalysisFilter.getTransactionNames());
+    VerificationJobInstance verificationJobInstance =
+        verificationJobInstanceService.getVerificationJobInstance(verifyStepExecutionId);
+
+    List<CVConfig> cvConfigs = verificationJobInstance.getResolvedJob().getCvConfigs();
+    Map<String, CVConfig> cvConfigMap =
+        cvConfigs.stream().collect(Collectors.toMap(CVConfig::getUuid, cvConfig -> cvConfig, (u, v) -> v));
+
+    List<MetricsAnalysis> metricsAnalyses = new ArrayList<>();
+
+    for (DeploymentTimeSeriesAnalysis timeSeriesAnalysis : latestDeploymentTimeSeriesAnalysis) {
+      VerificationTask verificationTask = verificationTaskService.get(timeSeriesAnalysis.getVerificationTaskId());
+      Preconditions.checkArgument(verificationTask.getTaskInfo().getTaskType() == TaskType.DEPLOYMENT,
+          "VerificationTask should be of Deployment type");
+
+      MetricCVConfig<? extends AnalysisInfo> cvConfig = (MetricCVConfig<? extends AnalysisInfo>) cvConfigMap.get(
+          ((DeploymentInfo) verificationTask.getTaskInfo()).getCvConfigId());
+      String healthSourceIdentifier = cvConfig.getFullyQualifiedIdentifier();
+      if (deploymentTimeSeriesAnalysisFilter.filterByHealthSourceIdentifiers()
+          && !requestedHealthSources.contains(healthSourceIdentifier)) {
+        continue;
+      }
+      Set<MetricDefinition> metricDefinitions = cvConfig.getMetricPack().getMetrics();
+      Map<String, MetricDefinition> metricDefinitionMap = metricDefinitions.stream().collect(
+          Collectors.toMap(MetricDefinition::getName, metricDefinition -> metricDefinition, (u, v) -> v));
+      for (TransactionMetricHostData transactionMetricHostData : timeSeriesAnalysis.getTransactionMetricSummaries()) {
+        String metricName = transactionMetricHostData.getMetricName();
+        MetricDefinition metricDefinition = metricDefinitionMap.get(metricName);
+        AnalysisResult analysisResult = AnalysisResult.fromRisk(transactionMetricHostData.getRisk());
+        String transactionGroup = transactionMetricHostData.getTransactionName();
+        if (isAnalysisResultExcluded(deploymentTimeSeriesAnalysisFilter, analysisResult)
+            || isTransactionGroupExcluded(
+                deploymentTimeSeriesAnalysisFilter, requestedTransactionGroups, transactionGroup)) {
+          continue;
+        }
+        MetricsAnalysis metricsAnalysis =
+            MetricsAnalysis.builder()
+                .metricName(metricName)
+                .metricIdentifier(metricDefinition.getIdentifier())
+                .healthSourceIdentifier(healthSourceIdentifier)
+                .metricType(getMetricTypeFromCvConfigAndMetricDefinition(cvConfig, metricDefinition))
+                .transactionGroup(transactionGroup)
+                .thresholds(metricDefinition.getThresholds()
+                                .stream()
+                                .map(VerifyStepMetricsAnalysisUtils::getMetricThresholdFromTimeSeriesThreshold)
+                                .collect(Collectors.toList()))
+                .analysisResult(analysisResult)
+                .testDataNodes(
+                    getFilteredAnalysedTestDataNodes(transactionMetricHostData, deploymentTimeSeriesAnalysisFilter))
+                .build();
+
+        metricsAnalyses.add(metricsAnalysis);
+      }
+    }
+    return metricsAnalyses;
+  }
+
   private NodeRiskCountDTO getNodeRiskCountDTO(Map<Risk, Integer> nodeCountByRiskStatusMap) {
     Integer totalNodeCount = 0;
     List<NodeRiskCountDTO.NodeRiskCount> nodeRiskCounts = new ArrayList<>();
@@ -303,8 +427,7 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
         .build();
   }
 
-  private boolean filterHostData(
-      DeploymentTimeSeriesAnalysisDTO.HostData hostData, List<String> hostNames, boolean anomalousMetricsOnly) {
+  private boolean filterHostData(HostData hostData, List<String> hostNames, boolean anomalousMetricsOnly) {
     if (isEmpty(hostNames)) {
       return true;
     } else if (hostData.getHostName().isPresent()) {
@@ -315,15 +438,14 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
   }
 
   private boolean filterAnomalousMetrics(
-      DeploymentTimeSeriesAnalysisDTO.TransactionMetricHostData transactionMetricHostData, boolean hostFilterExists,
-      boolean anomalousMetricsOnly) {
+      TransactionMetricHostData transactionMetricHostData, boolean hostFilterExists, boolean anomalousMetricsOnly) {
     if (hostFilterExists) {
       return true; // need to filter at host data level.
     }
     return !anomalousMetricsOnly || transactionMetricHostData.isAnomalous();
   }
 
-  private boolean filterAnomalousNodes(DeploymentTimeSeriesAnalysisDTO.HostData hostData, boolean anomalousNodesOnly) {
+  private boolean filterAnomalousNodes(HostData hostData, boolean anomalousNodesOnly) {
     if (!anomalousNodesOnly || (anomalousNodesOnly && hostData.isAnomalous())) {
       return true;
     }
@@ -331,7 +453,7 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
   }
 
   private TransactionMetricInfo.TransactionMetric createTransactionMetric(
-      DeploymentTimeSeriesAnalysisDTO.TransactionMetricHostData transactionMetricHostData) {
+      TransactionMetricHostData transactionMetricHostData) {
     return TransactionMetricInfo.TransactionMetric.builder()
         .transactionName(transactionMetricHostData.getTransactionName())
         .metricName(transactionMetricHostData.getMetricName())
@@ -367,6 +489,7 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
       return Optional.of(deploymentTimeSeriesAnalysis.getRisk());
     }
   }
+
   @Override
   @Nullable
   public DeploymentTimeSeriesAnalysis getRecentHighestDeploymentTimeSeriesAnalysis(

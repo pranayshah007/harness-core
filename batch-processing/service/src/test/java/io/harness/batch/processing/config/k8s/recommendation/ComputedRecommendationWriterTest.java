@@ -32,6 +32,7 @@ import io.harness.ccm.commons.dao.recommendation.RecommendationCrudService;
 import io.harness.ccm.commons.entities.k8s.K8sWorkload;
 import io.harness.ccm.commons.entities.k8s.recommendation.K8sWorkloadRecommendation;
 import io.harness.ccm.commons.entities.k8s.recommendation.PartialRecommendationHistogram;
+import io.harness.ccm.graphql.core.recommendation.RecommendationsIgnoreListService;
 import io.harness.histogram.HistogramCheckpoint;
 import io.harness.rule.Owner;
 
@@ -78,6 +79,7 @@ public class ComputedRecommendationWriterTest extends CategoryTest {
   private K8sLabelServiceInfoFetcher k8sLabelServiceInfoFetcher;
   private RecommendationCrudService recommendationCrudService;
   private ClusterHelper clusterHelper;
+  private RecommendationsIgnoreListService ignoreListService;
 
   @Before
   public void setUp() throws Exception {
@@ -87,6 +89,7 @@ public class ComputedRecommendationWriterTest extends CategoryTest {
     k8sLabelServiceInfoFetcher = mock(K8sLabelServiceInfoFetcher.class);
     recommendationCrudService = mock(RecommendationCrudService.class);
     clusterHelper = mock(ClusterHelper.class);
+    ignoreListService = mock(RecommendationsIgnoreListService.class);
 
     when(workloadRecommendationDao.save(any(K8sWorkloadRecommendation.class))).thenReturn(UUID);
     when(workloadRepository.getWorkload(any())).thenReturn(Optional.empty());
@@ -95,8 +98,9 @@ public class ComputedRecommendationWriterTest extends CategoryTest {
     doNothing().when(recommendationCrudService).upsertWorkloadRecommendation(any(), any(), any(), any());
     when(clusterHelper.fetchClusterName(eq(CLUSTER_ID))).thenReturn(CLUSTER_NAME);
 
-    computedRecommendationWriter = new ComputedRecommendationWriter(workloadRecommendationDao, workloadCostService,
-        workloadRepository, k8sLabelServiceInfoFetcher, recommendationCrudService, clusterHelper, JOB_START_DATE);
+    computedRecommendationWriter =
+        new ComputedRecommendationWriter(workloadRecommendationDao, workloadCostService, workloadRepository,
+            k8sLabelServiceInfoFetcher, recommendationCrudService, clusterHelper, ignoreListService, JOB_START_DATE);
     captor = ArgumentCaptor.forClass(K8sWorkloadRecommendation.class);
     stringCaptor = ArgumentCaptor.forClass(String.class);
   }

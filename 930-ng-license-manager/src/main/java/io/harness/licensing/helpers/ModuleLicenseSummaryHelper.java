@@ -12,8 +12,8 @@ import io.harness.licensing.beans.modules.CDModuleLicenseDTO;
 import io.harness.licensing.beans.modules.CEModuleLicenseDTO;
 import io.harness.licensing.beans.modules.CFModuleLicenseDTO;
 import io.harness.licensing.beans.modules.CIModuleLicenseDTO;
-import io.harness.licensing.beans.modules.CVModuleLicenseDTO;
 import io.harness.licensing.beans.modules.ModuleLicenseDTO;
+import io.harness.licensing.beans.modules.SRMModuleLicenseDTO;
 import io.harness.licensing.beans.modules.STOModuleLicenseDTO;
 import io.harness.licensing.beans.summary.CDLicenseSummaryDTO;
 import io.harness.licensing.beans.summary.CELicenseSummaryDTO;
@@ -72,9 +72,10 @@ public class ModuleLicenseSummaryHelper {
         };
         break;
       case CV:
+      case SRM:
         licensesWithSummaryDTO = CVLicenseSummaryDTO.builder().build();
         summaryHandler = (moduleLicenseDTO, summaryDTO, current) -> {
-          CVModuleLicenseDTO temp = (CVModuleLicenseDTO) moduleLicenseDTO;
+          SRMModuleLicenseDTO temp = (SRMModuleLicenseDTO) moduleLicenseDTO;
           CVLicenseSummaryDTO cvLicenseSummaryDTO = (CVLicenseSummaryDTO) summaryDTO;
           if (current < temp.getExpiryTime()) {
             if (temp.getNumberOfServices() != null) {

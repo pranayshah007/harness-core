@@ -62,7 +62,7 @@ public class K8sGlobalConfigServiceImpl implements K8sGlobalConfigService {
       log.error("Did not expect null value of helmVersion, defaulting to V2");
       helmVersion = V2;
     }
-    log.info("[HELM]: picked helm binary corresponding to version {}", helmVersion);
+    log.debug("[HELM]: picked helm binary corresponding to version {}", helmVersion);
     switch (helmVersion) {
       case V2:
         return getToolPath(HELM, io.harness.delegate.clienttools.HelmVersion.V2);

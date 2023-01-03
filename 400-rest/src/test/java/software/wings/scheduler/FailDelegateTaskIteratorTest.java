@@ -472,6 +472,36 @@ public class FailDelegateTaskIteratorTest extends WingsBaseTest {
   }
 
   @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testHandleWithAllDelegateValidationCompletedV2() {
+    Account account = new Account();
+    account.setUuid(generateUuid());
+    persistence.save(account);
+    long validationStarted = System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(3);
+    DelegateTask delegateTask =
+        DelegateTask.builder()
+            .accountId(account.getUuid())
+            .waitId(generateUuid())
+            .status(QUEUED)
+            .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, APP_ID)
+            .validationStartedAt(validationStarted)
+            .eligibleToExecuteDelegateIds(new LinkedList<>(Arrays.asList("del1", "del2", "del3")))
+            .taskDataV2(
+                TaskDataV2.builder()
+                    .async(true)
+                    .taskType(TaskType.HTTP.name())
+                    .parameters(new Object[] {HttpTaskParameters.builder().url("https://www.google.com").build()})
+                    .timeout(1)
+                    .build())
+            .validationCompleteDelegateIds(ImmutableSet.of("del1", "del2", "del3"))
+            .build();
+    persistence.save(delegateTask);
+    failDelegateTaskIterator.failValidationCompletedQueuedTask(delegateTask);
+    assertThat(persistence.createQuery(DelegateTask.class).get()).isNull();
+  }
+
+  @Test
   @Owner(developers = JENNY)
   @Category(UnitTests.class)
   public void testHandle_withAllDelegateValidationCompleted_ButFoundConnectedWhitelistedOnes() {

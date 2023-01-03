@@ -320,8 +320,11 @@ public interface AzureConstants {
 
   double INVALID_TRAFFIC = -1;
   // Azure REST client settings
-  int REST_CLIENT_CONNECT_TIMEOUT = 5;
-  int REST_CLIENT_READ_TIMEOUT = 10;
+  int REST_CLIENT_CONNECT_TIMEOUT_SECONDS = 15;
+  int REST_CLIENT_READ_TIMEOUT_SECONDS = 30;
+  int REST_CLIENT_WRITE_TIMEOUT_SECONDS = 30;
+  int REST_CLIENT_IDLE_TIMEOUT_SECONDS = 60;
+  int REST_CONNECTION_POOL_SIZE = 10;
   Duration REST_CLIENT_RESPONSE_TIMEOUT = Duration.ofSeconds(30);
 
   String MANAGEMENT_GROUP_PROVIDERS_PREFIX = "/providers/Microsoft.Management/managementGroups/";

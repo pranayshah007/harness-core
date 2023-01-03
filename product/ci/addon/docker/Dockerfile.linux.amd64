@@ -28,6 +28,15 @@ COPY split_tests /usr/local/bin/
 RUN chmod +x /usr/local/bin/ci-addon-linux \
     && chmod +x /usr/local/bin/split_tests
 
+# Install tmate
+RUN  microdnf install -y wget \
+  && microdnf install -y tar \
+  && microdnf install -y xz \
+  && wget https://github.com/tmate-io/tmate/releases/download/2.4.0/tmate-2.4.0-static-linux-amd64.tar.xz \
+  && tar -xf tmate-2.4.0-static-linux-amd64.tar.xz \
+  && mv tmate-2.4.0-static-linux-amd64/tmate /usr/local/bin/tmate \
+  && chmod +x /usr/local/bin/tmate
+
 RUN groupadd harness && adduser -g harness -s /bin/sh -u 1000 harness
 USER harness:harness
 

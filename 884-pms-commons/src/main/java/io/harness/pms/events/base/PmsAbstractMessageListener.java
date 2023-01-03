@@ -55,8 +55,6 @@ public abstract class PmsAbstractMessageListener<T extends com.google.protobuf.M
   @Override
   public boolean handleMessage(Message message) {
     long readTs = System.currentTimeMillis();
-    log.info("[PMS_MESSAGE_LISTENER] Starting Handling for {} event with messageId {}", entityClass.getSimpleName(),
-        message.getId());
     if (isProcessable(message)) {
       executorService.submit(() -> {
         try (AutoLogContext ignore = new MessageLogContext(message)) {

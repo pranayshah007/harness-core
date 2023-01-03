@@ -25,6 +25,7 @@ import io.harness.account.services.AccountService;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.k8s.beans.K8sExecutionPassThroughData;
 import io.harness.cdng.k8s.beans.K8sRollingReleaseOutput;
@@ -72,6 +73,7 @@ public class K8sRollingRollbackStepTest extends CategoryTest {
   private final Ambiance ambiance = Ambiance.newBuilder().addLevels(level).build();
   private final StepInputPackage stepInputPackage = StepInputPackage.builder().build();
 
+  @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
   @Mock private OutcomeService outcomeService;
   @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
   @Mock private K8sStepHelper k8sStepHelper;

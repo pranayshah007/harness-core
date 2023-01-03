@@ -1705,7 +1705,11 @@ public class NativeHelmStepHelperTest extends CategoryTest {
     StepElementParameters stepElementParams =
         StepElementParameters.builder().spec(K8sRollingStepParameters.infoBuilder().build()).build();
 
-    StoreConfig store = GitStore.builder().build();
+    StoreConfig store = GitStore.builder()
+                            .branch(ParameterField.createValueField("master"))
+                            .paths(ParameterField.createValueField(asList("path/to/manifest/templates")))
+                            .connectorRef(ParameterField.createValueField("git-connector"))
+                            .build();
     ValuesManifestOutcome valuesManifestOutcome =
         ValuesManifestOutcome.builder().identifier("k8s").store(CustomRemoteStoreConfig.builder().build()).build();
     K8sStepPassThroughData passThroughData = K8sStepPassThroughData.builder()
@@ -1729,6 +1733,17 @@ public class NativeHelmStepHelperTest extends CategoryTest {
 
     Map<String, ResponseData> responseDataMap =
         ImmutableMap.of("custom-manifest-values-fetch-response", customManifestValuesFetchResponse);
+
+    doReturn(
+        Optional.of(ConnectorResponseDTO.builder()
+                        .connector(ConnectorInfoDTO.builder()
+                                       .connectorConfig(
+                                           GitConfigDTO.builder().gitAuthType(GitAuthType.HTTP).url(SOME_URL).build())
+                                       .name("test")
+                                       .build())
+                        .build()))
+        .when(connectorService)
+        .get(any(), any(), any(), any());
     ThrowingSupplier responseDataSuplier = StrategyHelper.buildResponseDataSupplier(responseDataMap);
 
     TaskChainResponse taskChainResponse = nativeHelmStepHelper.executeNextLink(

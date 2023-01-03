@@ -21,6 +21,7 @@ import io.harness.data.validator.EntityName;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAware;
@@ -76,6 +77,11 @@ public class InfrastructureDefinition
         .add(CompoundMongoIndex.builder()
                  .name("infrastructure_cloudProviderId")
                  .field(InfrastructureDefinitionKeys.infrastructure + ".cloudProviderId")
+                 .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("accountIdCreatedAt")
+                 .field(InfrastructureDefinitionKeys.accountId)
+                 .descSortField(InfrastructureDefinitionKeys.createdAt)
                  .build())
         .build();
   }

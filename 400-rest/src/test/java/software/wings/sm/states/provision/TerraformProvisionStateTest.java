@@ -9,15 +9,19 @@ package software.wings.sm.states.provision;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.EnvironmentType.ALL;
+import static io.harness.beans.FeatureName.CDS_TERRAFORM_S3_SUPPORT;
 import static io.harness.beans.FeatureName.TERRAFORM_AWS_CP_AUTHENTICATION;
+import static io.harness.beans.FeatureName.TERRAFORM_REMOTE_BACKEND_CONFIG;
 import static io.harness.beans.SweepingOutputInstance.Scope;
 import static io.harness.beans.SweepingOutputInstance.builder;
 import static io.harness.context.ContextElementType.TERRAFORM_INHERIT_PLAN;
+import static io.harness.provision.TerraformConstants.S3_STORE_TYPE;
 import static io.harness.provision.TerraformConstants.TF_NAME_PREFIX;
 import static io.harness.provision.TerraformConstants.TF_PLAN_RESOURCES_ADD;
 import static io.harness.provision.TerraformConstants.TF_PLAN_RESOURCES_CHANGE;
 import static io.harness.provision.TerraformConstants.TF_PLAN_RESOURCES_DESTROY;
 import static io.harness.rule.OwnerRule.ABOSII;
+import static io.harness.rule.OwnerRule.AKHIL_PANDEY;
 import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.BOJANA;
 import static io.harness.rule.OwnerRule.GEORGE;
@@ -29,12 +33,15 @@ import static io.harness.rule.OwnerRule.YOGESH;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.beans.CGConstants.GLOBAL_ENV_ID;
+import static software.wings.beans.TaskType.TERRAFORM_PROVISION_TASK;
+import static software.wings.beans.TaskType.TERRAFORM_PROVISION_TASK_V2;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.ACTIVITY_ID;
 import static software.wings.utils.WingsTestConstants.APP_ID;
 import static software.wings.utils.WingsTestConstants.ENV_ID;
 import static software.wings.utils.WingsTestConstants.ENV_NAME;
 import static software.wings.utils.WingsTestConstants.PROVISIONER_ID;
+import static software.wings.utils.WingsTestConstants.S3_URI;
 import static software.wings.utils.WingsTestConstants.SETTING_ID;
 import static software.wings.utils.WingsTestConstants.SOURCE_REPO_SETTINGS_ID;
 import static software.wings.utils.WingsTestConstants.USER_EMAIL;
@@ -106,6 +113,7 @@ import software.wings.api.TerraformOutputInfoElement;
 import software.wings.api.terraform.TerraformOutputVariables;
 import software.wings.api.terraform.TerraformProvisionInheritPlanElement;
 import software.wings.api.terraform.TfVarGitSource;
+import software.wings.api.terraform.TfVarS3Source;
 import software.wings.beans.Activity;
 import software.wings.beans.Application;
 import software.wings.beans.AwsConfig;
@@ -116,9 +124,11 @@ import software.wings.beans.InfrastructureProvisioner;
 import software.wings.beans.KmsConfig;
 import software.wings.beans.NameValuePair;
 import software.wings.beans.PhaseStep;
+import software.wings.beans.S3FileConfig;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.TemplateExpression;
 import software.wings.beans.TerraformInfrastructureProvisioner;
+import software.wings.beans.TerraformSourceType;
 import software.wings.beans.delegation.TerraformProvisionParameters;
 import software.wings.beans.infrastructure.TerraformConfig;
 import software.wings.common.TemplateExpressionProcessor;
@@ -195,6 +205,8 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
 
   private final Answer<String> answer = invocation -> invocation.getArgument(0, String.class) + "-rendered";
   GitConfig gitConfig = GitConfig.builder().branch("master").build();
+
+  AwsConfig awsConfig = AwsConfig.builder().accountId(SETTING_ID).build();
   private static final String REPO_NAME = "TF_REPO_NAME";
   private static final String CONNECTOR_ID = "CONNECTOR_ID";
 
@@ -355,6 +367,34 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
   }
 
   @Test
+  @Owner(developers = AKHIL_PANDEY)
+  @Category(UnitTests.class)
+  public void geTaskTypeV2Test() {
+    String acctId = "ACCT_ID";
+    ExecutionContext context = Mockito.mock(ExecutionContext.class);
+    doReturn(acctId).when(context).getAccountId();
+    doReturn(true).when(featureFlagService).isEnabled(FeatureName.CDS_TERRAFORM_S3_SUPPORT, acctId);
+
+    TerraformProvisionParameters terraformProvisionParameters =
+        TerraformProvisionParameters.builder().sourceType(TerraformSourceType.S3).build();
+    assertThat(state.getTaskType(terraformProvisionParameters)).isEqualTo(TERRAFORM_PROVISION_TASK_V2.name());
+  }
+
+  @Test
+  @Owner(developers = AKHIL_PANDEY)
+  @Category(UnitTests.class)
+  public void geTaskTypeV1Test() {
+    String acctId = "ACCT_ID";
+    ExecutionContext context = Mockito.mock(ExecutionContext.class);
+    doReturn(acctId).when(context).getAccountId();
+    doReturn(false).when(featureFlagService).isEnabled(FeatureName.CDS_TERRAFORM_S3_SUPPORT, acctId);
+
+    TerraformProvisionParameters terraformProvisionParameters =
+        TerraformProvisionParameters.builder().sourceType(TerraformSourceType.GIT).build();
+    assertThat(state.getTaskType(terraformProvisionParameters)).isEqualTo(TERRAFORM_PROVISION_TASK.name());
+  }
+
+  @Test
   @Owner(developers = ABOSII)
   @Category(UnitTests.class)
   public void testExecuteTerraformDestroyStateWithConfiguration() {
@@ -364,6 +404,7 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
     TerraformInfrastructureProvisioner provisioner = TerraformInfrastructureProvisioner.builder()
                                                          .appId(APP_ID)
                                                          .repoName(REPO_NAME)
+                                                         .terraformSourceType(TerraformSourceType.GIT)
                                                          .path("current/working/directory")
                                                          .variables(getTerraformVariables())
                                                          .skipRefreshBeforeApplyingPlan(true)
@@ -401,6 +442,7 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
     TerraformInfrastructureProvisioner provisioner = TerraformInfrastructureProvisioner.builder()
                                                          .appId(APP_ID)
                                                          .repoName(REPO_NAME)
+                                                         .terraformSourceType(TerraformSourceType.GIT)
                                                          .path("current/working/directory")
                                                          .variables(getTerraformVariables())
                                                          .kmsId("kmsId")
@@ -445,6 +487,7 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
     TerraformInfrastructureProvisioner provisioner = TerraformInfrastructureProvisioner.builder()
                                                          .appId(APP_ID)
                                                          .repoName(REPO_NAME)
+                                                         .terraformSourceType(TerraformSourceType.GIT)
                                                          .path("current/working/directory")
                                                          .variables(getTerraformVariables())
                                                          .kmsId("kmsId")
@@ -489,6 +532,7 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
     TerraformInfrastructureProvisioner provisioner = TerraformInfrastructureProvisioner.builder()
                                                          .appId(APP_ID)
                                                          .repoName(REPO_NAME)
+                                                         .terraformSourceType(TerraformSourceType.GIT)
                                                          .path("current/working/directory")
                                                          .variables(getTerraformVariables())
                                                          .skipRefreshBeforeApplyingPlan(true)
@@ -553,6 +597,7 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
     TerraformInfrastructureProvisioner provisioner = TerraformInfrastructureProvisioner.builder()
                                                          .appId(APP_ID)
                                                          .repoName(REPO_NAME)
+                                                         .terraformSourceType(TerraformSourceType.GIT)
                                                          .path("current/working/directory")
                                                          .variables(getTerraformVariables())
                                                          .skipRefreshBeforeApplyingPlan(false)
@@ -624,6 +669,7 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
     TerraformInfrastructureProvisioner provisioner = TerraformInfrastructureProvisioner.builder()
                                                          .appId(APP_ID)
                                                          .repoName(REPO_NAME)
+                                                         .terraformSourceType(TerraformSourceType.GIT)
                                                          .path("current/working/directory")
                                                          .sourceRepoBranch("sourceRepoBranch")
                                                          .kmsId("kmsId")
@@ -702,6 +748,7 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
     TerraformInfrastructureProvisioner provisioner = TerraformInfrastructureProvisioner.builder()
                                                          .appId(APP_ID)
                                                          .repoName(REPO_NAME)
+                                                         .terraformSourceType(TerraformSourceType.GIT)
                                                          .path("current/working/directory")
                                                          .sourceRepoBranch("sourceRepoBranch")
                                                          .kmsId("kmsId")
@@ -745,6 +792,7 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
     TerraformInfrastructureProvisioner provisioner = TerraformInfrastructureProvisioner.builder()
                                                          .appId(APP_ID)
                                                          .repoName(REPO_NAME)
+                                                         .terraformSourceType(TerraformSourceType.GIT)
                                                          .path("current/working/directory")
                                                          .variables(getTerraformVariables())
                                                          .build();
@@ -791,6 +839,297 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
     assertThatThrownBy(() -> state.execute(executionContext))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageContaining("No commit id found in context inherit tf plan element");
+  }
+
+  @Test
+  @Owner(developers = AKHIL_PANDEY)
+  @Category(UnitTests.class)
+  public void testExecuteInternalInheritedWithInvalidS3() {
+    state.setInheritApprovedPlan(true);
+    state.setProvisionerId(PROVISIONER_ID);
+
+    TerraformInfrastructureProvisioner provisioner = TerraformInfrastructureProvisioner.builder()
+                                                         .appId(APP_ID)
+                                                         .repoName(REPO_NAME)
+                                                         .terraformSourceType(TerraformSourceType.S3)
+                                                         .s3URI(S3_URI)
+                                                         .variables(getTerraformVariables())
+                                                         .build();
+    doReturn(provisioner).when(infrastructureProvisionerService).get(APP_ID, PROVISIONER_ID);
+
+    // No previous terraform plan executed
+    doReturn(Collections.emptyList()).when(executionContext).getContextElementList(TERRAFORM_INHERIT_PLAN);
+    assertThatThrownBy(() -> state.execute(executionContext))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining("No previous Terraform plan execution found");
+
+    // No previous terraform plan executed for PROVISIONER_ID
+    doReturn(Collections.singletonList(TerraformProvisionInheritPlanElement.builder()
+                                           .sourceRepoSettingId(SOURCE_REPO_SETTINGS_ID)
+                                           .provisionerId("NOT_THIS_ID")
+                                           .build()))
+        .when(executionContext)
+        .getContextElementList(TERRAFORM_INHERIT_PLAN);
+    assertThatThrownBy(() -> state.execute(executionContext))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining("No Terraform provision command found with current provisioner");
+
+    // Invalid provisioner path
+    doReturn(Collections.singletonList(TerraformProvisionInheritPlanElement.builder()
+                                           .sourceRepoSettingId(SOURCE_REPO_SETTINGS_ID)
+                                           .provisionerId(PROVISIONER_ID)
+                                           .build()))
+        .when(executionContext)
+        .getContextElementList(TERRAFORM_INHERIT_PLAN);
+    assertThatThrownBy(() -> state.execute(executionContext))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining(
+            "Unable to execute this workflow because either the input Terraform config files or tfvars files or backend config are stored in S3, and are unreachable due to a disabled feature flag CDS_TERRAFORM_S3_SUPPORT");
+  }
+
+  @Test
+  @Owner(developers = AKHIL_PANDEY)
+  @Category(UnitTests.class)
+  public void testExecuteRegularWithInvalidS3() {
+    state.setProvisionerId(PROVISIONER_ID);
+
+    TerraformInfrastructureProvisioner provisioner = TerraformInfrastructureProvisioner.builder()
+                                                         .appId(APP_ID)
+                                                         .terraformSourceType(TerraformSourceType.S3)
+                                                         .s3URI(S3_URI)
+                                                         .awsConfigId(SETTING_ID)
+                                                         .skipRefreshBeforeApplyingPlan(true)
+                                                         .build();
+
+    List<EncryptedDataDetail> encryptionDetails = new ArrayList();
+    SettingAttribute settingAttribute = new SettingAttribute();
+    settingAttribute.setUuid("UUID");
+    settingAttribute.setValue(new AwsConfig());
+
+    doReturn(provisioner).when(infrastructureProvisionerService).get(APP_ID, PROVISIONER_ID);
+    doReturn(settingAttribute).when(settingsService).get(any());
+    doReturn(encryptionDetails).when(secretManager).getEncryptionDetails(any(), any(), any());
+    assertThatThrownBy(() -> state.execute(executionContext))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining(
+            "Unable to execute this workflow because either the input Terraform config files or tfvars files or backend config are stored in S3, and are unreachable due to a disabled feature flag CDS_TERRAFORM_S3_SUPPORT");
+  }
+
+  @Test
+  @Owner(developers = AKHIL_PANDEY)
+  @Category(UnitTests.class)
+  public void testExecuteRegularWithS3ConfigAndVarSource() {
+    S3FileConfig s3FileConfig = S3FileConfig.builder().awsConfigId(SETTING_ID).s3URI(WingsTestConstants.S3_URI).build();
+
+    state.setProvisionerId(PROVISIONER_ID);
+    state.setTfVarS3FileConfig(s3FileConfig);
+
+    SettingAttribute settingAttribute = new SettingAttribute();
+    settingAttribute.setUuid("UUID");
+    settingAttribute.setValue(new AwsConfig());
+    doReturn(settingAttribute).when(settingsService).get(any());
+
+    TerraformInfrastructureProvisioner provisioner = TerraformInfrastructureProvisioner.builder()
+                                                         .appId(APP_ID)
+                                                         .terraformSourceType(TerraformSourceType.S3)
+                                                         .s3URI(S3_URI)
+                                                         .awsConfigId(SETTING_ID)
+                                                         .skipRefreshBeforeApplyingPlan(true)
+                                                         .build();
+    when(featureFlagService.isEnabled(CDS_TERRAFORM_S3_SUPPORT, ACCOUNT_ID)).thenReturn(true);
+    doReturn(provisioner).when(infrastructureProvisionerService).get(APP_ID, PROVISIONER_ID);
+    doReturn("taskId").when(delegateService).queueTask(any(DelegateTask.class));
+
+    ExecutionResponse response = state.execute(executionContext);
+
+    ArgumentCaptor<DelegateTask> taskCaptor = ArgumentCaptor.forClass(DelegateTask.class);
+    verify(delegateService).queueTask(taskCaptor.capture());
+    DelegateTask createdTask = taskCaptor.getValue();
+
+    assertThat(response.isAsync()).isTrue();
+    assertThat(createdTask.getData().getParameters()).isNotEmpty();
+    TerraformProvisionParameters parameters = (TerraformProvisionParameters) createdTask.getData().getParameters()[0];
+    assertThat(parameters.getEnvironmentVariables()).isNull();
+    assertThat(parameters.isSkipRefreshBeforeApplyingPlan()).isTrue();
+  }
+  @Test
+  @Owner(developers = AKHIL_PANDEY)
+  @Category(UnitTests.class)
+  public void testExecuteInternalInheritedS3Config() {
+    state.setInheritApprovedPlan(true);
+    List<ContextElement> terraformProvisionInheritPlanElements = new ArrayList<>();
+    List<EncryptedDataDetail> encryptedRecordDataList = null;
+    S3FileConfig s3FileConfig = S3FileConfig.builder().awsConfigId(SETTING_ID).s3URI(WingsTestConstants.S3_URI).build();
+    state.setTfVarS3FileConfig(s3FileConfig);
+    SettingAttribute settingAttribute = new SettingAttribute();
+    settingAttribute.setUuid("UUID");
+    settingAttribute.setValue(new AwsConfig());
+    doReturn(settingAttribute).when(settingsService).get(any());
+    when(featureFlagService.isEnabled(CDS_TERRAFORM_S3_SUPPORT, ACCOUNT_ID)).thenReturn(true);
+
+    TfVarS3Source tfVarS3Source = TfVarS3Source.builder()
+                                      .s3FileConfig(s3FileConfig)
+                                      .awsConfig(awsConfig)
+                                      .encryptedDataDetails(encryptedRecordDataList)
+                                      .build();
+    TerraformProvisionInheritPlanElement terraformProvisionInheritPlanElement =
+        TerraformProvisionInheritPlanElement.builder()
+            .provisionerId(PROVISIONER_ID)
+            .workspace("workspace")
+            .targets(Arrays.asList("target1"))
+            .variables(getTerraformVariables())
+            .remoteBackendS3Config(s3FileConfig)
+            .tfVarSource(tfVarS3Source)
+            .build();
+    terraformProvisionInheritPlanElements.add(terraformProvisionInheritPlanElement);
+    when(executionContext.getContextElementList(TERRAFORM_INHERIT_PLAN))
+        .thenReturn(terraformProvisionInheritPlanElements);
+
+    when(executionContext.getAppId()).thenReturn(APP_ID);
+    state.setProvisionerId(PROVISIONER_ID);
+    TerraformInfrastructureProvisioner provisioner = TerraformInfrastructureProvisioner.builder()
+                                                         .appId(APP_ID)
+                                                         .terraformSourceType(TerraformSourceType.S3)
+                                                         .s3URI(S3_URI)
+                                                         .awsConfigId(SETTING_ID)
+                                                         .skipRefreshBeforeApplyingPlan(true)
+                                                         .build();
+
+    doReturn(provisioner).when(infrastructureProvisionerService).get(APP_ID, PROVISIONER_ID);
+    doReturn("fileId").when(fileService).getLatestFileId(anyString(), eq(FileBucket.TERRAFORM_STATE));
+    doReturn(ACCOUNT_ID).when(executionContext).getAccountId();
+
+    when(executionContext.prepareSweepingOutputInquiryBuilder()).thenReturn(SweepingOutputInquiry.builder());
+
+    ExecutionResponse executionResponse = state.execute(executionContext);
+    ArgumentCaptor<DelegateTask> delegateTaskCaptor = ArgumentCaptor.forClass(DelegateTask.class);
+
+    verify(infrastructureProvisionerService, times(1)).get(APP_ID, PROVISIONER_ID);
+    verify(fileService, times(1)).getLatestFileId(anyString(), any(FileBucket.class));
+    verify(infrastructureProvisionerService, times(1))
+        .extractEncryptedTextVariables(anyList(), eq(APP_ID), anyString());
+    verify(secretManager, times(1))
+        .getEncryptionDetails(any(AwsConfig.class), eq(GLOBAL_APP_ID), eq(WORKFLOW_EXECUTION_ID));
+    verify(delegateService, times(1)).queueTask(delegateTaskCaptor.capture());
+    assertThat(executionResponse.getCorrelationIds().get(0)).isEqualTo("uuid");
+    assertThat(((ScriptStateExecutionData) executionResponse.getStateExecutionData()).getActivityId())
+        .isEqualTo("uuid");
+    assertThat(delegateTaskCaptor.getValue().getData()).isNotNull();
+    assertThat(delegateTaskCaptor.getValue().getData().getParameters().length).isEqualTo(1);
+    TerraformProvisionParameters parameters =
+        (TerraformProvisionParameters) delegateTaskCaptor.getValue().getData().getParameters()[0];
+    assertThat(parameters.isUseActivityIdBasedTfBaseDir()).isTrue();
+  }
+
+  @Test
+  @Owner(developers = AKHIL_PANDEY)
+  @Category(UnitTests.class)
+  public void testHandleAsyncResponseInternalInheritedForS3() {
+    state.setRunPlanOnly(true);
+    state.setProvisionerId(PROVISIONER_ID);
+    when(executionContext.getAppId()).thenReturn(APP_ID);
+    Map<String, ResponseData> response = new HashMap<>();
+    S3FileConfig s3FileConfig = S3FileConfig.builder().awsConfigId(SETTING_ID).s3URI(WingsTestConstants.S3_URI).build();
+    AwsConfig awsConfig = new AwsConfig();
+    List<EncryptedDataDetail> encryptedRecordDataList = null;
+
+    //    Set both FF to true
+    when(featureFlagService.isEnabled(TERRAFORM_REMOTE_BACKEND_CONFIG, ACCOUNT_ID)).thenReturn(true);
+    when(featureFlagService.isEnabled(CDS_TERRAFORM_S3_SUPPORT, ACCOUNT_ID)).thenReturn(true);
+
+    doReturn(ACCOUNT_ID).when(executionContext).getAccountId();
+
+    TfVarS3Source remoteS3BackendConfig = TfVarS3Source.builder()
+                                              .s3FileConfig(s3FileConfig)
+                                              .awsConfig(awsConfig)
+                                              .encryptedDataDetails(encryptedRecordDataList)
+                                              .build();
+
+    TerraformExecutionData terraformExecutionData = TerraformExecutionData.builder()
+                                                        .executionStatus(ExecutionStatus.SUCCESS)
+                                                        .entityId("entityId")
+                                                        .remoteS3BackendConfig(remoteS3BackendConfig)
+                                                        .backendConfigStoreType(S3_STORE_TYPE)
+                                                        .tfPlanJson("")
+                                                        .environmentVariables(getTerraformPlanSummaryVariables(true))
+                                                        .build();
+    response.put("activityId", terraformExecutionData);
+    TerraformInfrastructureProvisioner provisioner =
+        TerraformInfrastructureProvisioner.builder().appId(APP_ID).repoName(REPO_NAME).build();
+    doReturn(provisioner).when(infrastructureProvisionerService).get(APP_ID, PROVISIONER_ID);
+
+    doReturn(SweepingOutputInstance.builder())
+        .when(executionContext)
+        .prepareSweepingOutputBuilder(any(SweepingOutputInstance.Scope.class));
+
+    ExecutionResponse executionResponse = state.handleAsyncResponse(executionContext, response);
+    TerraformProvisionInheritPlanElement terraformProvisionInheritPlanElement =
+        (TerraformProvisionInheritPlanElement) executionResponse.getNotifyElements().get(0);
+    assertThat(executionResponse.getStateExecutionData()).isEqualTo(terraformExecutionData);
+    assertThat(terraformProvisionInheritPlanElement.getEntityId()).isEqualTo(terraformExecutionData.getEntityId());
+    assertThat(executionResponse.getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);
+
+    assertThat(
+        ((TerraformProvisionInheritPlanElement) executionResponse.getContextElements().get(0)).getProvisionerId())
+        .isEqualTo(PROVISIONER_ID);
+    assertThat(((TerraformProvisionInheritPlanElement) executionResponse.getContextElements().get(0))
+                   .getRemoteBackendS3Config())
+        .isEqualTo(s3FileConfig);
+    verify(infrastructureProvisionerService, times(1)).get(APP_ID, PROVISIONER_ID);
+    verify(sweepingOutputService, times(1)).save(any(SweepingOutputInstance.class));
+    verify(executionContext, times(1)).prepareSweepingOutputBuilder(eq(Scope.PIPELINE));
+  }
+
+  @Test
+  @Owner(developers = AKHIL_PANDEY)
+  @Category(UnitTests.class)
+  public void testHandleAsyncResponseInternalRegularForS3() {
+    state.setRunPlanOnly(false);
+    state.setProvisionerId(PROVISIONER_ID);
+    when(executionContext.getAppId()).thenReturn(APP_ID);
+    Map<String, ResponseData> response = new HashMap<>();
+    S3FileConfig s3FileConfig = S3FileConfig.builder()
+                                    .awsConfigId(SETTING_ID)
+                                    .s3URI(WingsTestConstants.S3_URI)
+                                    .s3URIList(List.of(S3_URI))
+                                    .build();
+    AwsConfig awsConfig = new AwsConfig();
+    List<EncryptedDataDetail> encryptedRecordDataList = null;
+
+    //    Set both FF to true
+    when(featureFlagService.isEnabled(TERRAFORM_REMOTE_BACKEND_CONFIG, ACCOUNT_ID)).thenReturn(true);
+    when(featureFlagService.isEnabled(CDS_TERRAFORM_S3_SUPPORT, ACCOUNT_ID)).thenReturn(true);
+
+    doReturn(ACCOUNT_ID).when(executionContext).getAccountId();
+
+    TfVarS3Source remoteS3BackendConfig = TfVarS3Source.builder()
+                                              .s3FileConfig(s3FileConfig)
+                                              .awsConfig(awsConfig)
+                                              .encryptedDataDetails(encryptedRecordDataList)
+                                              .build();
+
+    TerraformExecutionData terraformExecutionData = TerraformExecutionData.builder()
+                                                        .executionStatus(ExecutionStatus.SUCCESS)
+                                                        .entityId("entityId")
+                                                        .remoteS3BackendConfig(remoteS3BackendConfig)
+                                                        .backendConfigStoreType(S3_STORE_TYPE)
+                                                        .tfPlanJson("")
+                                                        .environmentVariables(getTerraformPlanSummaryVariables(true))
+                                                        .build();
+    response.put("activityId", terraformExecutionData);
+    TerraformInfrastructureProvisioner provisioner =
+        TerraformInfrastructureProvisioner.builder().appId(APP_ID).repoName(REPO_NAME).build();
+    doReturn(provisioner).when(infrastructureProvisionerService).get(APP_ID, PROVISIONER_ID);
+
+    doReturn(SweepingOutputInstance.builder())
+        .when(executionContext)
+        .prepareSweepingOutputBuilder(any(SweepingOutputInstance.Scope.class));
+
+    ExecutionResponse executionResponse = state.handleAsyncResponse(executionContext, response);
+    assertThat(executionResponse.getStateExecutionData()).isEqualTo(terraformExecutionData);
+    assertThat(executionResponse.getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);
+    verify(infrastructureProvisionerService, times(1)).get(APP_ID, PROVISIONER_ID);
+    verify(sweepingOutputService, times(1)).save(any(SweepingOutputInstance.class));
   }
 
   @Test
@@ -902,6 +1241,7 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
     TerraformInfrastructureProvisioner provisioner = TerraformInfrastructureProvisioner.builder()
                                                          .appId(APP_ID)
                                                          .repoName(REPO_NAME)
+                                                         .terraformSourceType(TerraformSourceType.GIT)
                                                          .path("current/working/directory")
                                                          .environmentVariables(getTerraformEnvironmentVariables())
                                                          .skipRefreshBeforeApplyingPlan(true)
@@ -941,6 +1281,7 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
     TerraformInfrastructureProvisioner provisioner = TerraformInfrastructureProvisioner.builder()
                                                          .appId(APP_ID)
                                                          .repoName(REPO_NAME)
+                                                         .terraformSourceType(TerraformSourceType.GIT)
                                                          .path("current/working/directory")
                                                          .environmentVariables(getTerraformEnvironmentVariables())
                                                          .skipRefreshBeforeApplyingPlan(true)
@@ -994,6 +1335,7 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
     TerraformInfrastructureProvisioner provisioner = TerraformInfrastructureProvisioner.builder()
                                                          .appId(APP_ID)
                                                          .repoName(REPO_NAME)
+                                                         .terraformSourceType(TerraformSourceType.GIT)
                                                          .path("current/working/directory")
                                                          .environmentVariables(getTerraformEnvironmentVariables())
                                                          .skipRefreshBeforeApplyingPlan(true)
@@ -1076,6 +1418,7 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
     TerraformInfrastructureProvisioner provisioner = TerraformInfrastructureProvisioner.builder()
                                                          .appId(APP_ID)
                                                          .repoName(REPO_NAME)
+                                                         .terraformSourceType(TerraformSourceType.GIT)
                                                          .path("current/working/directory")
                                                          .sourceRepoBranch("sourceRepoBranch")
                                                          .kmsId("kmsId")
@@ -1286,6 +1629,7 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
     TerraformInfrastructureProvisioner provisioner = TerraformInfrastructureProvisioner.builder()
                                                          .appId(APP_ID)
                                                          .repoName(REPO_NAME)
+                                                         .terraformSourceType(TerraformSourceType.GIT)
                                                          .path("current/working/directory")
                                                          .variables(getTerraformVariables())
                                                          .build();
@@ -1367,6 +1711,7 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
     TerraformInfrastructureProvisioner provisioner = TerraformInfrastructureProvisioner.builder()
                                                          .appId(APP_ID)
                                                          .repoName(REPO_NAME)
+                                                         .terraformSourceType(TerraformSourceType.GIT)
                                                          .path("current/working/directory")
                                                          .variables(getTerraformVariables())
                                                          .build();
@@ -1531,6 +1876,29 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
         " /path/to/file1.tfvar , /path/to/file2.tfvar", expectedPaths, spyState, gitFileConfig, context, gitConfig);
     validateGitSource(
         ", /path/to/file1.tfvar , /path/to/file2.tfvar", expectedPaths, spyState, gitFileConfig, context, gitConfig);
+  }
+
+  @Test
+  @Owner(developers = AKHIL_PANDEY)
+  @Category(UnitTests.class)
+  public void testGetTfVarS3Source() {
+    ExecutionContext context = Mockito.mock(ExecutionContext.class);
+    when(context.renderExpression(anyString())).thenAnswer(answer);
+    TerraformProvisionState spyState = spy(state);
+    S3FileConfig s3FileConfig = S3FileConfig.builder().awsConfigId(SETTING_ID).s3URI(WingsTestConstants.S3_URI).build();
+    spyState.setTfVarS3FileConfig(s3FileConfig);
+    doReturn(new ArrayList<>()).when(secretManager).getEncryptionDetails(eq(awsConfig), eq(GLOBAL_APP_ID), any());
+    SettingAttribute settingAttribute = new SettingAttribute();
+    settingAttribute.setUuid("UUID");
+
+    settingAttribute.setValue(AwsConfig.builder().accountId(SETTING_ID).build());
+    doReturn(settingAttribute).when(settingsService).get(any());
+    List<String> expectedPaths = Arrays.asList(
+        "s3://cdng-terraform-state/env/path/to/file1.tfvar", "s3://cdng-terraform-state/env/path/to/file2.tfvar");
+
+    validateS3Source(
+        "s3://cdng-terraform-state/env/path/to/file1.tfvar,s3://cdng-terraform-state/env/path/to/file2.tfvar",
+        expectedPaths, spyState, s3FileConfig, context, awsConfig);
   }
 
   @Test
@@ -1828,6 +2196,19 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
     assertThat(source.getEncryptedDataDetails()).hasSize(0);
   }
 
+  private void validateS3Source(String input, List<String> expectedList, TerraformProvisionState spyState,
+      S3FileConfig s3FileConfig, ExecutionContext context, AwsConfig awsConfig) {
+    s3FileConfig.setS3URI(input);
+    s3FileConfig.setS3URIList(null);
+
+    TfVarS3Source source = spyState.fetchTfVarS3Source(context);
+    assertThat(source).isNotNull();
+    assertThat(source.getAwsConfig()).isEqualTo(awsConfig);
+    assertThat(source.getS3FileConfig().getS3URIList())
+        .containsExactlyInAnyOrder(expectedList.get(0), expectedList.get(1));
+    assertThat(source.getEncryptedDataDetails()).hasSize(0);
+  }
+
   @Test
   @Owner(developers = TATHAGAT)
   @Category(UnitTests.class)
@@ -1838,6 +2219,7 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
     TerraformInfrastructureProvisioner provisioner = TerraformInfrastructureProvisioner.builder()
                                                          .appId(APP_ID)
                                                          .repoName(REPO_NAME)
+                                                         .terraformSourceType(TerraformSourceType.GIT)
                                                          .path("current/working/directory")
                                                          .sourceRepoBranch("sourceRepoBranch")
                                                          .kmsId("kmsId")
@@ -1873,6 +2255,7 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
     state.setVariables(nameValuePairList);
     TerraformInfrastructureProvisioner provisioner = TerraformInfrastructureProvisioner.builder()
                                                          .repoName(REPO_NAME)
+                                                         .terraformSourceType(TerraformSourceType.GIT)
                                                          .appId(APP_ID)
                                                          .repoName(REPO_NAME)
                                                          .path("current/working/directory")
@@ -1915,6 +2298,7 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
         TerraformInfrastructureProvisioner.builder()
             .appId(APP_ID)
             .repoName(REPO_NAME)
+            .terraformSourceType(TerraformSourceType.GIT)
             .path("current/working/directory")
             .variables(asList(NameValuePair.builder().name("TF_LOG").valueType("TEXT").build(),
                 NameValuePair.builder().name("access_token").valueType("ENCRYPTED_TEXT").build(),
@@ -1957,6 +2341,7 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
     TerraformInfrastructureProvisioner provisioner = TerraformInfrastructureProvisioner.builder()
                                                          .appId(APP_ID)
                                                          .repoName(REPO_NAME)
+                                                         .terraformSourceType(TerraformSourceType.GIT)
                                                          .path("current/working/directory")
                                                          .backendConfigs(null)
                                                          .skipRefreshBeforeApplyingPlan(true)
@@ -1996,6 +2381,7 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
     TerraformInfrastructureProvisioner provisioner = TerraformInfrastructureProvisioner.builder()
                                                          .appId(APP_ID)
                                                          .repoName(REPO_NAME)
+                                                         .terraformSourceType(TerraformSourceType.GIT)
                                                          .path("current/working/directory")
                                                          .environmentVariables(null)
                                                          .skipRefreshBeforeApplyingPlan(true)
@@ -2037,6 +2423,7 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
     infrastructureProvisioner = TerraformInfrastructureProvisioner.builder()
                                     .appId(APP_ID)
                                     .repoName(REPO_NAME)
+                                    .terraformSourceType(TerraformSourceType.GIT)
                                     .path("path/path")
                                     .sourceRepoBranch("branch/branch")
                                     .build();
@@ -2047,6 +2434,7 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
     infrastructureProvisioner = TerraformInfrastructureProvisioner.builder()
                                     .appId(APP_ID)
                                     .repoName(REPO_NAME)
+                                    .terraformSourceType(TerraformSourceType.GIT)
                                     .path("")
                                     .sourceRepoBranch("branch")
                                     .build();
@@ -2057,6 +2445,7 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
     infrastructureProvisioner = TerraformInfrastructureProvisioner.builder()
                                     .appId(APP_ID)
                                     .repoName(REPO_NAME)
+                                    .terraformSourceType(TerraformSourceType.GIT)
                                     .path("path/path")
                                     .sourceRepoBranch("")
                                     .build();
@@ -2067,6 +2456,7 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
     infrastructureProvisioner = TerraformInfrastructureProvisioner.builder()
                                     .appId(APP_ID)
                                     .repoName(REPO_NAME)
+                                    .terraformSourceType(TerraformSourceType.GIT)
                                     .path("")
                                     .sourceRepoBranch("")
                                     .build();
@@ -2076,6 +2466,7 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
     infrastructureProvisioner = TerraformInfrastructureProvisioner.builder()
                                     .appId(APP_ID)
                                     .repoName(REPO_NAME)
+                                    .terraformSourceType(TerraformSourceType.GIT)
                                     .path("")
                                     .sourceRepoBranch("")
                                     .build();
@@ -2085,6 +2476,7 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
     infrastructureProvisioner = TerraformInfrastructureProvisioner.builder()
                                     .appId(APP_ID)
                                     .repoName(REPO_NAME)
+                                    .terraformSourceType(TerraformSourceType.GIT)
                                     .path("path/path")
                                     .sourceRepoBranch("branch")
                                     .build();
@@ -2094,6 +2486,7 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
     infrastructureProvisioner = TerraformInfrastructureProvisioner.builder()
                                     .appId(APP_ID)
                                     .repoName(REPO_NAME)
+                                    .terraformSourceType(TerraformSourceType.GIT)
                                     .path("")
                                     .sourceRepoBranch("branch")
                                     .build();
@@ -2103,6 +2496,7 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
     infrastructureProvisioner = TerraformInfrastructureProvisioner.builder()
                                     .appId(APP_ID)
                                     .repoName(REPO_NAME)
+                                    .terraformSourceType(TerraformSourceType.GIT)
                                     .path("path/path")
                                     .sourceRepoBranch("")
                                     .build();
@@ -2112,6 +2506,7 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
     infrastructureProvisioner = TerraformInfrastructureProvisioner.builder()
                                     .appId(APP_ID)
                                     .repoName(REPO_NAME)
+                                    .terraformSourceType(TerraformSourceType.GIT)
                                     .path("")
                                     .sourceRepoBranch("")
                                     .build();
@@ -2121,6 +2516,7 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
     infrastructureProvisioner = TerraformInfrastructureProvisioner.builder()
                                     .appId(APP_ID)
                                     .repoName(REPO_NAME)
+                                    .terraformSourceType(TerraformSourceType.GIT)
                                     .path("")
                                     .sourceRepoBranch("")
                                     .build();

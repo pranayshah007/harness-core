@@ -309,7 +309,7 @@ public class TerragruntStepHelper {
       gitConfigDTO.setGitConnectionType(GitConnectionType.REPO);
     }
     List<String> paths = new ArrayList<>();
-    if (TG_CONFIG_FILES.equals(identifier)) {
+    if (TG_CONFIG_FILES.equals(identifier) || TF_BACKEND_CONFIG_FILE.equals(identifier)) {
       paths.add(ParameterFieldHelper.getParameterFieldValue(gitStoreConfig.getFolderPath()));
     } else {
       paths.addAll(ParameterFieldHelper.getParameterFieldValue(gitStoreConfig.getPaths()));
@@ -408,42 +408,6 @@ public class TerragruntStepHelper {
     return Collections.emptyList();
   }
 
-  private List<StoreDelegateConfig> toStoreDelegateVarFilesWithCommitId(
-      Map<String, TerragruntVarFile> varFilesMap, Map<String, String> varFilesSourceReference, Ambiance ambiance) {
-    if (EmptyPredicate.isNotEmpty(varFilesMap)) {
-      List<StoreDelegateConfig> varFileInfo = new ArrayList<>();
-
-      for (TerragruntVarFile file : varFilesMap.values()) {
-        if (file != null) {
-          TerragruntVarFileSpec spec = file.getSpec();
-          if (spec instanceof InlineTerragruntVarFileSpec) {
-            String content =
-                ParameterFieldHelper.getParameterFieldValue(((InlineTerragruntVarFileSpec) spec).getContent());
-            if (EmptyPredicate.isNotEmpty(content)) {
-              List<InlineFileConfig> files = new ArrayList<>();
-              files.add(InlineFileConfig.builder().content(content).name(TERRAGRUNT_FILE_NAME_FORMAT).build());
-              varFileInfo.add(InlineStoreDelegateConfig.builder().files(files).build());
-            }
-          } else if (spec instanceof RemoteTerragruntVarFileSpec) {
-            StoreConfigWrapper storeConfigWrapper = ((RemoteTerragruntVarFileSpec) spec).getStore();
-            if (storeConfigWrapper != null) {
-              StoreConfig storeConfig = storeConfigWrapper.getSpec();
-
-              String identifier = file.getIdentifier();
-              GitStoreConfig gitStoreConfig =
-                  getStoreConfigAtCommitId(storeConfig, varFilesSourceReference.get(identifier));
-
-              varFileInfo.add(getGitFetchFilesConfig(gitStoreConfig, ambiance, TerragruntStepHelper.TF_VAR_FILES));
-            }
-          }
-        }
-      }
-
-      return varFileInfo;
-    }
-    return Collections.emptyList();
-  }
-
   private List<TerragruntVarFileConfig> toTerragruntVarFilesConfigWithCommitId(
       Map<String, TerragruntVarFile> varFilesMap, Map<String, String> varFilesSourceReference) {
     if (EmptyPredicate.isNotEmpty(varFilesMap)) {
@@ -472,7 +436,9 @@ public class TerragruntStepHelper {
               GitStoreConfig gitStoreConfig =
                   getStoreConfigAtCommitId(storeConfig, varFilesSourceReference.get(identifier));
 
-              varFileInfo.add((TerragruntRemoteVarFileConfig) gitStoreConfig.toGitStoreConfigDTO());
+              varFileInfo.add(TerragruntRemoteVarFileConfig.builder()
+                                  .gitStoreConfigDTO(gitStoreConfig.toGitStoreConfigDTO())
+                                  .build());
             }
           }
         }
@@ -546,7 +512,9 @@ public class TerragruntStepHelper {
         StoreConfig storeConfig = storeConfigWrapper.getSpec();
 
         GitStoreConfig gitStoreConfig = getStoreConfigAtCommitId(storeConfig, backendConfigCommitItReference);
-        return (TerragruntRemoteBackendConfigFileConfig) gitStoreConfig.toGitStoreConfigDTO();
+        return TerragruntRemoteBackendConfigFileConfig.builder()
+            .gitStoreConfigDTO(gitStoreConfig.toGitStoreConfigDTO())
+            .build();
       }
     }
     return null;
@@ -915,5 +883,24 @@ public class TerragruntStepHelper {
       throw new InvalidRequestException(format("Terragrunt config for Last Apply not found: [%s]", entityId));
     }
     return terragruntConfig;
+  }
+
+  public void saveTerragruntConfig(TerragruntConfig rollbackConfig, Ambiance ambiance) {
+    TerragruntConfig terragruntConfig = TerragruntConfig.builder()
+                                            .accountId(AmbianceUtils.getAccountId(ambiance))
+                                            .orgId(AmbianceUtils.getOrgIdentifier(ambiance))
+                                            .projectId(AmbianceUtils.getProjectIdentifier(ambiance))
+                                            .entityId(rollbackConfig.getEntityId())
+                                            .pipelineExecutionId(ambiance.getPlanExecutionId())
+                                            .configFiles(rollbackConfig.getConfigFiles())
+                                            .varFileConfigs(rollbackConfig.getVarFileConfigs())
+                                            .backendConfigFile(rollbackConfig.getBackendConfigFile())
+                                            .environmentVariables(rollbackConfig.getEnvironmentVariables())
+                                            .workspace(rollbackConfig.getWorkspace())
+                                            .targets(rollbackConfig.getTargets())
+                                            .runConfiguration(rollbackConfig.getRunConfiguration())
+                                            .build();
+
+    terragruntConfigDAL.saveTerragruntConfig(terragruntConfig);
   }
 }

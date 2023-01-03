@@ -254,10 +254,10 @@ public class ResourceGroupSyncConciliationJobTest extends ResourceGroupTestBase 
                                         .build();
       resourceGroup.setResourceFilter(
           ResourceFilter.builder()
-              .resources(singletonList(ResourceSelector.builder()
-                                           .resourceType(resourceType)
-                                           .identifiers(Lists.newArrayList(resourceIdentifier))
-                                           .build()))
+              .resources(Lists.newArrayList(ResourceSelector.builder()
+                                                .resourceType(resourceType)
+                                                .identifiers(Lists.newArrayList(resourceIdentifier))
+                                                .build()))
               .build());
 
       resourceGroups.add(resourceGroup);

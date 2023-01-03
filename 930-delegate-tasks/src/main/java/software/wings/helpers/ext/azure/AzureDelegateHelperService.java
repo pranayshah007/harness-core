@@ -13,7 +13,6 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.AZURE_SERVICE_EXCEPTION;
 import static io.harness.eraro.ErrorCode.CLUSTER_NOT_FOUND;
 import static io.harness.exception.WingsException.USER;
-import static io.harness.network.Http.getOkHttpClientBuilder;
 import static io.harness.validation.Validator.notNullCheck;
 
 import static com.google.common.base.Charsets.UTF_8;
@@ -35,7 +34,6 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.k8s.KubeConfigHelper;
 import io.harness.k8s.model.KubernetesConfig;
-import io.harness.network.Http;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.beans.AzureConfig;
@@ -47,8 +45,9 @@ import software.wings.beans.AzureKubernetesCluster;
 import software.wings.beans.AzureTagDetails;
 import software.wings.service.intfc.security.EncryptionService;
 
-import com.azure.core.http.policy.HttpLogDetailLevel;
+import com.azure.core.http.HttpClient;
 import com.azure.core.management.AzureEnvironment;
+import com.azure.core.management.profile.AzureProfile;
 import com.azure.identity.ClientSecretCredential;
 import com.azure.identity.ClientSecretCredentialBuilder;
 import com.azure.identity.implementation.util.ScopeUtil;
@@ -69,22 +68,15 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.OkHttpClient;
 import org.apache.http.HttpStatus;
 import retrofit2.Response;
-import retrofit2.Retrofit;
-import retrofit2.converter.jackson.JacksonConverterFactory;
 
 @OwnedBy(CDC)
 @Singleton
 @Slf4j
 public class AzureDelegateHelperService {
-  private static final int CONNECT_TIMEOUT = 5; // TODO:: read from config
-  private static final int READ_TIMEOUT = 10;
-
   @Inject private EncryptionService encryptionService;
 
   public boolean isValidKubernetesCluster(AzureConfig azureConfig, List<EncryptedDataDetail> encryptionDetails,
@@ -366,19 +358,8 @@ public class AzureDelegateHelperService {
   }
 
   AzureManagementRestClient getAzureManagementRestClient(AzureEnvironmentType azureEnvironmentType) {
-    String url = getAzureEnvironment(azureEnvironmentType).getResourceManagerEndpoint();
-    OkHttpClient okHttpClient = getOkHttpClientBuilder()
-                                    .connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
-                                    .readTimeout(READ_TIMEOUT, TimeUnit.SECONDS)
-                                    .proxy(Http.checkAndGetNonProxyIfApplicable(url))
-                                    .retryOnConnectionFailure(true)
-                                    .build();
-    Retrofit retrofit = new Retrofit.Builder()
-                            .client(okHttpClient)
-                            .baseUrl(url)
-                            .addConverterFactory(JacksonConverterFactory.create())
-                            .build();
-    return retrofit.create(AzureManagementRestClient.class);
+    return AzureUtils.getAzureRestClient(
+        getAzureEnvironment(azureEnvironmentType).getResourceManagerEndpoint(), AzureManagementRestClient.class);
   }
 
   private AzureEnvironment getAzureEnvironment(AzureEnvironmentType azureEnvironmentType) {
@@ -399,18 +380,21 @@ public class AzureDelegateHelperService {
   @VisibleForTesting
   String getAzureBearerAuthToken(AzureConfig azureConfig) {
     try {
+      AzureEnvironment azureEnvironment = getAzureEnvironment(azureConfig.getAzureEnvironmentType());
+      HttpClient httpClient = AzureUtils.getAzureHttpClient();
+
       ClientSecretCredential clientSecretCredential = new ClientSecretCredentialBuilder()
                                                           .clientId(azureConfig.getClientId())
                                                           .tenantId(azureConfig.getTenantId())
                                                           .clientSecret(String.valueOf(azureConfig.getKey()))
+                                                          .httpClient(httpClient)
                                                           .build();
 
-      String token =
-          clientSecretCredential
-              .getToken(AzureUtils.getTokenRequestContext(ScopeUtil.resourceToScopes(
-                  AzureUtils.getAzureEnvironment(azureConfig.getAzureEnvironmentType()).getManagementEndpoint())))
-              .block()
-              .getToken();
+      String token = clientSecretCredential
+                         .getToken(AzureUtils.getTokenRequestContext(
+                             ScopeUtil.resourceToScopes(azureEnvironment.getManagementEndpoint())))
+                         .block()
+                         .getToken();
       return format("Bearer %s", token);
     } catch (Exception e) {
       handleAzureAuthenticationException(e);
@@ -419,38 +403,17 @@ public class AzureDelegateHelperService {
   }
 
   private AcrRestClient getAcrRestClient(String registryHostName) {
-    String url = getUrl(registryHostName);
-    OkHttpClient okHttpClient = getOkHttpClientBuilder()
-                                    .connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
-                                    .readTimeout(READ_TIMEOUT, TimeUnit.SECONDS)
-                                    .proxy(Http.checkAndGetNonProxyIfApplicable(url))
-                                    .retryOnConnectionFailure(true)
-                                    .build();
-    Retrofit retrofit = new Retrofit.Builder()
-                            .client(okHttpClient)
-                            .baseUrl(url)
-                            .addConverterFactory(JacksonConverterFactory.create())
-                            .build();
-    return retrofit.create(AcrRestClient.class);
+    return AzureUtils.getAzureRestClient(getUrl(registryHostName), AcrRestClient.class);
   }
 
   @VisibleForTesting
   protected AzureResourceManager getAzureClient(AzureConfig azureConfig) {
     try {
-      AzureEnvironment azureEnvironment = getAzureEnvironment(azureConfig.getAzureEnvironmentType());
-      ClientSecretCredential clientSecretCredential = new ClientSecretCredentialBuilder()
-                                                          .clientId(azureConfig.getClientId())
-                                                          .tenantId(azureConfig.getTenantId())
-                                                          .clientSecret(String.valueOf(azureConfig.getKey()))
-                                                          .build();
+      AzureProfile azureProfile = AzureUtils.getAzureProfile(
+          azureConfig.getTenantId(), null, getAzureEnvironment(azureConfig.getAzureEnvironmentType()));
 
       AzureResourceManager.Authenticated authenticated =
-          AzureResourceManager.configure()
-              .withLogLevel(HttpLogDetailLevel.NONE)
-              .withRetryPolicy(
-                  AzureUtils.getRetryPolicy(AzureUtils.getRetryOptions(AzureUtils.getDefaultDelayOptions())))
-              .authenticate(clientSecretCredential,
-                  AzureUtils.getAzureProfile(azureConfig.getTenantId(), null, azureEnvironment));
+          AzureResourceManager.authenticate(AzureCGHelper.createCredentialsAndHttpPipeline(azureConfig), azureProfile);
 
       Subscription subscription = authenticated.subscriptions().list().stream().findFirst().get();
       return authenticated.withSubscription(subscription.subscriptionId());
@@ -463,17 +426,11 @@ public class AzureDelegateHelperService {
   @VisibleForTesting
   protected AzureResourceManager getAzureClient(AzureConfig azureConfig, String subscriptionId) {
     try {
-      AzureEnvironment azureEnvironment = getAzureEnvironment(azureConfig.getAzureEnvironmentType());
-      ClientSecretCredential clientSecretCredential = new ClientSecretCredentialBuilder()
-                                                          .clientId(azureConfig.getClientId())
-                                                          .tenantId(azureConfig.getTenantId())
-                                                          .clientSecret(String.valueOf(azureConfig.getKey()))
-                                                          .build();
-      return AzureResourceManager.configure()
-          .withLogLevel(HttpLogDetailLevel.NONE)
-          .withRetryPolicy(AzureUtils.getRetryPolicy(AzureUtils.getRetryOptions(AzureUtils.getDefaultDelayOptions())))
-          .authenticate(clientSecretCredential,
-              AzureUtils.getAzureProfile(azureConfig.getTenantId(), subscriptionId, azureEnvironment))
+      AzureProfile azureProfile = AzureUtils.getAzureProfile(
+          azureConfig.getTenantId(), subscriptionId, getAzureEnvironment(azureConfig.getAzureEnvironmentType()));
+
+      return AzureResourceManager
+          .authenticate(AzureCGHelper.createCredentialsAndHttpPipeline(azureConfig, subscriptionId), azureProfile)
           .withSubscription(subscriptionId);
     } catch (Exception e) {
       handleAzureAuthenticationException(e);

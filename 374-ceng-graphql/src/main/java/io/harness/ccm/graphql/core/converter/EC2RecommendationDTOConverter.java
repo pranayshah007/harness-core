@@ -62,6 +62,7 @@ public class EC2RecommendationDTOConverter extends Converter<EC2RecommendationDT
         .crossFamilyRecommendation((crossFamilyRecommendation.isPresent())
                 ? instanceConverter.convertFromEntity(crossFamilyRecommendation.get())
                 : null)
+        .jiraDetails(recommendation.getJiraDetails())
         .build();
   }
 

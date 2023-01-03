@@ -68,12 +68,17 @@ public class EcsRollingDeployCommandTaskHandler extends EcsCommandTaskNGHandler 
     LogCallback deployLogCallback = ecsTaskHelperBase.getLogCallback(
         iLogStreamingTaskClient, EcsCommandUnitConstants.deploy.toString(), true, commandUnitsProgress);
     try {
+      deployLogCallback.saveExecutionLog(format("Deploying..%n%n"), LogLevel.INFO);
       String ecsTaskDefinitionManifestContent = ecsRollingDeployRequest.getEcsTaskDefinitionManifestContent();
       String ecsServiceDefinitionManifestContent = ecsRollingDeployRequest.getEcsServiceDefinitionManifestContent();
       List<String> ecsScalableTargetManifestContentList =
           ecsRollingDeployRequest.getEcsScalableTargetManifestContentList();
       List<String> ecsScalingPolicyManifestContentList =
           ecsRollingDeployRequest.getEcsScalingPolicyManifestContentList();
+
+      ecsCommandTaskHelper.printEcsManifestsContent(ecsTaskDefinitionManifestContent,
+          ecsServiceDefinitionManifestContent, ecsScalableTargetManifestContentList,
+          ecsScalingPolicyManifestContentList, deployLogCallback);
 
       RegisterTaskDefinitionRequest.Builder registerTaskDefinitionRequestBuilder =
           ecsCommandTaskHelper.parseYamlAsObject(
@@ -118,7 +123,7 @@ public class EcsRollingDeployCommandTaskHandler extends EcsCommandTaskNGHandler 
 
       deployLogCallback.saveExecutionLog(color(format("%n Deployment Successful."), LogColor.Green, LogWeight.Bold),
           LogLevel.INFO, CommandExecutionStatus.SUCCESS);
-
+      log.info("Completed task execution for command: {}", ecsCommandRequest.getEcsCommandType().name());
       return ecsRollingDeployResponse;
 
     } catch (Exception ex) {

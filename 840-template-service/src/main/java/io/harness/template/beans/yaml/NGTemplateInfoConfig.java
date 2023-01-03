@@ -12,8 +12,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.EntityName;
+import io.harness.jackson.JsonNodeUtils;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.template.beans.NGTemplateConstants;
 import io.harness.validator.NGRegexValidatorConstants;
 import io.harness.yaml.core.variables.NGVariable;
 
@@ -23,6 +25,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
 import java.util.Map;
+import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import lombok.AccessLevel;
@@ -64,4 +67,15 @@ public class NGTemplateInfoConfig {
   String icon;
 
   List<NGVariable> variables;
+
+  @Nullable
+  public String fetchChildType() {
+    if (getSpec() == null) {
+      return null;
+    }
+    if (type == TemplateEntityType.STEPGROUP_TEMPLATE) {
+      return JsonNodeUtils.getString(getSpec(), NGTemplateConstants.STAGE_TYPE);
+    }
+    return JsonNodeUtils.getString(getSpec(), NGTemplateConstants.TYPE);
+  }
 }

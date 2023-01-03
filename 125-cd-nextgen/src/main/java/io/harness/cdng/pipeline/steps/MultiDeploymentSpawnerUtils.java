@@ -7,6 +7,9 @@
 
 package io.harness.cdng.pipeline.steps;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import io.harness.cdng.creator.plan.stage.DeploymentStageConfig;
 import io.harness.cdng.creator.plan.stage.DeploymentStageNode;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
@@ -38,7 +41,7 @@ public class MultiDeploymentSpawnerUtils {
 
   private static final String ENVIRONMENT_REF_EXPRESSION = String.format(MATRIX_EXPRESSION, "environmentRef");
   private static final String ENVIRONMENT_INPUTS_EXPRESSION = String.format(MATRIX_EXPRESSION, "environmentInputs");
-  private static final String SERVICE_OVERRIDE_INPUTS_EXPRESSION =
+  public static final String SERVICE_OVERRIDE_INPUTS_EXPRESSION =
       String.format(MATRIX_EXPRESSION, "serviceOverrideInputs");
   private static final String GIT_OPS_CLUSTERS_EXPRESSION = String.format(MATRIX_EXPRESSION, "gitOpsClusters");
 
@@ -66,6 +69,10 @@ public class MultiDeploymentSpawnerUtils {
     return matrixMetadataMap;
   }
 
+  public String getServiceRef(Map<String, String> serviceMap) {
+    return serviceMap.get(SERVICE_REF);
+  }
+
   Map<String, String> getMapFromEnvironmentYaml(
       EnvironmentYamlV2 environmentYamlV2, InfraStructureDefinitionYaml infraStructureDefinitionYaml) {
     Map<String, String> matrixMetadataMap = new HashMap<>();
@@ -87,6 +94,12 @@ public class MultiDeploymentSpawnerUtils {
       matrixMetadataMap.put(INFRA_INPUTS, JsonUtils.asJson(infraStructureDefinitionYaml.getInputs().getValue()));
     }
     return matrixMetadataMap;
+  }
+
+  public void addServiceOverridesToMap(Map<String, String> environmentsMap, Map<String, Object> serviceOverrideInputs) {
+    if (EmptyPredicate.isNotEmpty(serviceOverrideInputs)) {
+      environmentsMap.put(SERVICE_OVERRIDE_INPUTS, JsonUtils.asJson(serviceOverrideInputs));
+    }
   }
 
   public String getUuidForMultiDeployment(DeploymentStageNode node) {
@@ -126,28 +139,46 @@ public class MultiDeploymentSpawnerUtils {
     if (stageConfig.getServices() != null
         && (ParameterField.isNull(stageConfig.getServices().getValues())
             || (!stageConfig.getServices().getValues().isExpression()
-                && EmptyPredicate.isEmpty(stageConfig.getServices().getValues().getValue())))) {
+                && isEmpty(stageConfig.getServices().getValues().getValue())))) {
       throw new InvalidRequestException("No value of services provided, please provide at least one value of service");
     }
     if (stageConfig.getEnvironments() != null && ParameterField.isNotNull(stageConfig.getEnvironments().getValues())
         && !stageConfig.getEnvironments().getValues().isExpression()) {
-      if (EmptyPredicate.isEmpty(stageConfig.getEnvironments().getValues().getValue())) {
+      if (ParameterField.isNotNull(stageConfig.getEnvironments().getFilters())
+          && EmptyPredicate.isNotEmpty(stageConfig.getEnvironments().getFilters().getValue())) {
+        return;
+      }
+      if (isEmpty(stageConfig.getEnvironments().getValues().getValue())) {
         throw new InvalidRequestException(
             "No value of environments provided, please provide at least one value of environment");
       }
       for (EnvironmentYamlV2 environmentYamlV2 : stageConfig.getEnvironments().getValues().getValue()) {
+        if (ParameterField.isNotNull(environmentYamlV2.getFilters())
+            && isNotEmpty(environmentYamlV2.getFilters().getValue())) {
+          return;
+        }
         if (ParameterField.isNull(environmentYamlV2.getInfrastructureDefinitions())) {
-          throw new InvalidRequestException(
-              String.format("No value of infrastructures provided for infrastructure [%s], please provide"
-                      + " at least one value of environment",
-                  environmentYamlV2.getEnvironmentRef()));
+          if (environmentYamlV2.getEnvironmentRef().getValue() != null) {
+            throw new InvalidRequestException(
+                String.format("No value of infrastructures provided for infrastructure [%s], please provide"
+                        + " at least one value of environment",
+                    environmentYamlV2.getEnvironmentRef().getValue()));
+          } else {
+            throw new InvalidRequestException(
+                "No value of infrastructures provided for infrastructure, please provide at least one value of environment");
+          }
         }
         if (!environmentYamlV2.getInfrastructureDefinitions().isExpression()
-            && EmptyPredicate.isEmpty(environmentYamlV2.getInfrastructureDefinitions().getValue())) {
-          throw new InvalidRequestException(
-              String.format("No value of infrastructures provided for infrastructure [%s], please provide"
-                      + " at least one value of environment",
-                  environmentYamlV2.getEnvironmentRef()));
+            && isEmpty(environmentYamlV2.getInfrastructureDefinitions().getValue())) {
+          if (environmentYamlV2.getEnvironmentRef().getValue() != null) {
+            throw new InvalidRequestException(
+                String.format("No value of infrastructures provided for infrastructure [%s], please provide"
+                        + " at least one value of environment",
+                    environmentYamlV2.getEnvironmentRef().getValue()));
+          } else {
+            throw new InvalidRequestException(
+                "No value of infrastructures provided for infrastructure, please provide at least one value of environment");
+          }
         }
       }
     }

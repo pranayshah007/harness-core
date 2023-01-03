@@ -9,6 +9,8 @@ package software.wings.service.impl.instance.stats;
 
 import static software.wings.resources.stats.model.InstanceTimeline.top;
 
+import static org.mongodb.morphia.aggregation.Projection.projection;
+
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.WingsException;
 import io.harness.persistence.HIterator;
@@ -22,7 +24,6 @@ import software.wings.dl.WingsMongoPersistence;
 import software.wings.resources.stats.model.InstanceTimeline;
 import software.wings.resources.stats.rbac.TimelineRbacFilters;
 import software.wings.security.UserThreadLocal;
-import software.wings.service.impl.instance.stats.collector.SimplePercentile;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.UserService;
 import software.wings.service.intfc.instance.DashboardStatisticsService;
@@ -32,13 +33,13 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.mongodb.AggregationOptions;
 import java.time.Instant;
-import java.util.Comparator;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import lombok.extern.slf4j.Slf4j;
@@ -195,21 +196,34 @@ public class InstanceStatServiceImpl implements InstanceStatService {
   public double percentile(String accountId, Instant from, Instant to, double p) {
     Preconditions.checkArgument(to.isAfter(from), "'to' timestamp should be after 'from'");
 
-    List<InstanceStatsSnapshot> dataPoints = persistence.createQuery(InstanceStatsSnapshot.class, HQuery.excludeCount)
-                                                 .filter("accountId", accountId)
-                                                 .field("timestamp")
-                                                 .greaterThanOrEq(from)
-                                                 .field("timestamp")
-                                                 .lessThan(to)
-                                                 .project("total", true)
-                                                 .project("_id", false)
-                                                 .asList(persistence.analyticNodePreferenceOptions())
-                                                 .stream()
-                                                 .sorted(Comparator.comparingInt(InstanceStatsSnapshot::getTotal))
-                                                 .collect(Collectors.toList());
+    Query<InstanceStatsSnapshot> query =
+        persistence.createAnalyticsQuery(InstanceStatsSnapshot.class, HQuery.excludeCount)
+            .filter("accountId", accountId)
+            .field("timestamp")
+            .greaterThanOrEq(from)
+            .field("timestamp")
+            .lessThan(to);
+    long totalSnapshots = query.count();
+    if (totalSnapshots == 0) {
+      return 0;
+    }
+    p = p / 100.0;
+    int index = (int) Math.floor(p * totalSnapshots);
+    List<Double> count = new ArrayList<>();
+    persistence.getDefaultAnalyticsDatastore(InstanceStatsSnapshot.class)
+        .createAggregation(InstanceStatsSnapshot.class)
+        .match(query)
+        .project(projection("total"))
+        .sort(Sort.ascending("total"))
+        .skip(index)
+        .limit(1)
+        .aggregate(InstanceStatsSnapshot.class,
+            AggregationOptions.builder()
+                .maxTime(persistence.getMaxTimeMs(InstanceStatsSnapshot.class), TimeUnit.MILLISECONDS)
+                .build())
+        .forEachRemaining(instanceStatsSnapshot -> count.add((double) instanceStatsSnapshot.getTotal()));
 
-    List<Integer> counts = dataPoints.stream().map(InstanceStatsSnapshot::getTotal).collect(Collectors.toList());
-    return new SimplePercentile(counts).evaluate(p);
+    return count.isEmpty() ? 0 : count.get(0);
   }
 
   @Override

@@ -96,6 +96,8 @@ import io.harness.serializer.spring.converters.orchestrationMap.OrchestrationMap
 import io.harness.serializer.spring.converters.orchestrationMap.OrchestrationMapWriteConverter;
 import io.harness.serializer.spring.converters.outcomes.PmsOutcomeReadConverter;
 import io.harness.serializer.spring.converters.outcomes.PmsOutcomeWriteConverter;
+import io.harness.serializer.spring.converters.pipelinechaining.PipelineStageInfoReadConverter;
+import io.harness.serializer.spring.converters.pipelinechaining.PipelineStageInfoWriteConverter;
 import io.harness.serializer.spring.converters.plannode.PlanNodeProtoReadConverter;
 import io.harness.serializer.spring.converters.plannode.PlanNodeProtoWriteConverter;
 import io.harness.serializer.spring.converters.principal.ExecutionPrincipalInfoReadConverter;
@@ -229,7 +231,8 @@ public class OrchestrationRegistrars {
       PolicySetMetadataReadConverter.class, PolicySetMetadataWriteConverter.class,
       GovernanceMetadataReadConverter.class, GovernanceMetadataWriteConverter.class,
       JsonExpansionInfoReadConverter.class, JsonExpansionInfoWriteConverter.class, StrategyMetadataReadConverter.class,
-      MatrixMetadataReadConverter.class, StrategyMetadataWriteConverter.class, MatrixMetadataWriteConverter.class);
+      MatrixMetadataReadConverter.class, StrategyMetadataWriteConverter.class, MatrixMetadataWriteConverter.class,
+      PipelineStageInfoReadConverter.class, PipelineStageInfoWriteConverter.class);
 
   public static final List<Class<? extends Converter<?, ?>>> springConverters =
       ImmutableList.<Class<? extends Converter<?, ?>>>builder()

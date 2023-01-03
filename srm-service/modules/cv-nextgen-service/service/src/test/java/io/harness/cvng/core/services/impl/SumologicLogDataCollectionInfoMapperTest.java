@@ -14,8 +14,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.beans.SumologicLogDataCollectionInfo;
-import io.harness.cvng.core.beans.healthsource.QueryParams;
 import io.harness.cvng.core.entities.NextGenLogCVConfig;
+import io.harness.cvng.core.entities.QueryParams;
 import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.rule.Owner;
 

@@ -21,6 +21,7 @@ import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.aws.AwsNgConfigMapper;
 import io.harness.delegate.task.ecs.EcsCommandTaskNGHelper;
+import io.harness.delegate.task.ecs.EcsCommandTypeNG;
 import io.harness.delegate.task.ecs.EcsInfraConfig;
 import io.harness.delegate.task.ecs.EcsInfraType;
 import io.harness.delegate.task.ecs.EcsLoadBalancerConfig;
@@ -105,6 +106,7 @@ public class EcsBlueGreenPrepareRollbackCommandTaskHandlerTest extends CategoryT
             .timeoutIntervalInMin(10)
             .ecsServiceDefinitionManifestContent("serviceDef")
             .ecsLoadBalancerConfig(ecsLoadBalancerConfig)
+            .ecsCommandType(EcsCommandTypeNG.ECS_BLUE_GREEN_PREPARE_ROLLBACK_DATA)
             .build();
     CreateServiceRequest.Builder createServiceRequestBuilder =
         CreateServiceRequest.builder().serviceName("ecs").cluster(cluster);
@@ -165,6 +167,7 @@ public class EcsBlueGreenPrepareRollbackCommandTaskHandlerTest extends CategoryT
             .ecsInfraConfig(ecsInfraConfig)
             .timeoutIntervalInMin(10)
             .ecsServiceDefinitionManifestContent("serviceDef")
+            .ecsCommandType(EcsCommandTypeNG.ECS_BLUE_GREEN_PREPARE_ROLLBACK_DATA)
             .ecsLoadBalancerConfig(ecsLoadBalancerConfig)
             .build();
     CreateServiceRequest.Builder createServiceRequestBuilder =
@@ -232,6 +235,7 @@ public class EcsBlueGreenPrepareRollbackCommandTaskHandlerTest extends CategoryT
             .timeoutIntervalInMin(10)
             .ecsServiceDefinitionManifestContent("serviceDef")
             .ecsLoadBalancerConfig(ecsLoadBalancerConfig)
+            .ecsCommandType(EcsCommandTypeNG.ECS_BLUE_GREEN_PREPARE_ROLLBACK_DATA)
             .build();
     CreateServiceRequest.Builder createServiceRequestBuilder =
         CreateServiceRequest.builder().serviceName(serviceName).cluster(cluster);
@@ -259,7 +263,8 @@ public class EcsBlueGreenPrepareRollbackCommandTaskHandlerTest extends CategoryT
     Service service = optionalService.get();
 
     // Get createServiceRequestBuilderString from service
-    String createServiceRequestBuilderString = EcsMapper.createCreateServiceRequestFromService(service);
+    String createServiceRequestBuilderString =
+        ecsCommandTaskHelper.toYaml(EcsMapper.createCreateServiceRequestBuilderFromService(service));
     assertThat(ecsBlueGreenPrepareRollbackDataResponse.getCommandExecutionStatus())
         .isEqualTo(CommandExecutionStatus.SUCCESS);
     assertThat(ecsBlueGreenPrepareRollbackDataResponse.getEcsBlueGreenPrepareRollbackDataResult()

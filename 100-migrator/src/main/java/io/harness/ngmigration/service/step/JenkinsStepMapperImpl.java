@@ -10,6 +10,7 @@ package io.harness.ngmigration.service.step;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepInfo;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepNode;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsParameterField;
+import io.harness.cdng.jenkins.jenkinsstep.JenkinsParameterFieldType;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.ngmigration.beans.NGYamlFile;
@@ -55,6 +56,7 @@ public class JenkinsStepMapperImpl implements StepMapper {
                           -> JenkinsParameterField.builder()
                                  .name(param.getKey())
                                  .value(ParameterField.createValueField(param.getValue()))
+                                 .type(ParameterField.createValueField(JenkinsParameterFieldType.STRING))
                                  .build())
                       .collect(Collectors.toList());
     }

@@ -17,4 +17,12 @@ public class Utils {
   public static <T1, T2 extends T1> T2 getFirstInstance(List<T1> inputs, Class<T2> cls) {
     return (T2) inputs.stream().filter(cls::isInstance).findFirst().orElse(null);
   }
+
+  public static boolean isInstanceOf(Class<?> type, Object obj) {
+    return type.isInstance(obj);
+  }
+
+  public static boolean isNotInstanceOf(Class<?> type, Object obj) {
+    return !isInstanceOf(type, obj);
+  }
 }

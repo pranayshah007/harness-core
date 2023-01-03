@@ -12,13 +12,12 @@ import static io.harness.cvng.core.utils.ErrorMessageUtils.generateErrorMessageF
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import io.harness.cvng.beans.DataSourceType;
-import io.harness.cvng.core.beans.healthsource.QueryParams;
+import io.harness.cvng.core.beans.healthsource.QueryParamsDTO;
+import io.harness.cvng.core.services.impl.DataCollectionDSLFactory;
 import io.harness.cvng.exception.NotImplementedForHealthSourceException;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
-import com.google.common.io.Resources;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import javax.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -33,14 +32,15 @@ import org.mongodb.morphia.query.UpdateOperations;
 @FieldNameConstants(innerTypeName = "CVConfigKeys")
 @EqualsAndHashCode(callSuper = true)
 public class NextGenLogCVConfig extends LogCVConfig {
+  @NotNull String queryIdentifier;
   QueryParams queryParams;
-  DataSourceType dataSourceType;
+  @NotNull DataSourceType dataSourceType;
 
   @Override
   protected void validateParams() {
     checkNotNull(queryParams, generateErrorMessageFromParam(CVConfigKeys.queryParams));
     checkNotNull(queryParams.getServiceInstanceField(),
-        generateErrorMessageFromParam(QueryParams.QueryParamKeys.serviceInstanceField));
+        generateErrorMessageFromParam(QueryParamsDTO.QueryParamKeys.serviceInstanceField));
   }
 
   @Override
@@ -50,21 +50,7 @@ public class NextGenLogCVConfig extends LogCVConfig {
 
   @Override
   public String getDataCollectionDsl() {
-    return readLogDSL(dataSourceType);
-  }
-
-  public static String readLogDSL(DataSourceType dataSourceType) {
-    // TODO dont read repeatedly and also move it from here
-    if (dataSourceType == DataSourceType.SUMOLOGIC_LOG) {
-      try {
-        return Resources.toString(
-            NextGenLogCVConfig.class.getResource("sumologic-log.datacollection"), StandardCharsets.UTF_8);
-      } catch (IOException e) {
-        throw new IllegalStateException(e);
-      }
-    } else {
-      throw new NotImplementedForHealthSourceException("Not Implemented.");
-    }
+    return DataCollectionDSLFactory.readLogDSL(dataSourceType);
   }
 
   @Override

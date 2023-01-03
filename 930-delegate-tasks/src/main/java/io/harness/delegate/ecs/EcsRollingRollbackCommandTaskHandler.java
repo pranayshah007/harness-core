@@ -72,6 +72,7 @@ public class EcsRollingRollbackCommandTaskHandler extends EcsCommandTaskNGHandle
         iLogStreamingTaskClient, EcsCommandUnitConstants.rollback.toString(), true, commandUnitsProgress);
 
     try {
+      rollbackLogCallback.saveExecutionLog(format("Rolling Back..%n%n"), LogLevel.INFO);
       EcsRollingRollbackConfig ecsRollingRollbackConfig = ecsRollingRollbackRequest.getEcsRollingRollbackConfig();
 
       boolean isFirstDeployment = ecsRollingRollbackConfig.isFirstDeployment();
@@ -144,7 +145,7 @@ public class EcsRollingRollbackCommandTaskHandler extends EcsCommandTaskNGHandle
 
       rollbackLogCallback.saveExecutionLog(color(format("%n Rollback Successful."), LogColor.Green, LogWeight.Bold),
           LogLevel.INFO, CommandExecutionStatus.SUCCESS);
-
+      log.info("Completed task execution for command: {}", ecsCommandRequest.getEcsCommandType().name());
       return ecsRollingRollbackResponse;
 
     } catch (Exception ex) {

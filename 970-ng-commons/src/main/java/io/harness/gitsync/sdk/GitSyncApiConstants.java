@@ -63,4 +63,9 @@ public class GitSyncApiConstants {
       "Identifier of Connector needed for CRUD operations on the respective Entity";
   public static final String STORE_TYPE_PARAM_MESSAGE = "Tells whether the Entity is to be saved on Git or not";
   public static final String STORE_TYPE_RESPONSE_PARAM_MESSAGE = "Tells whether the Entity is saved on Git or not";
+
+  public static final String MOVE_CONFIG_PARAM_MESSAGE =
+      "Tells weather the entity has to be moved from inline to remote or remote to inline";
+
+  public static final String MOVE_CONFIG_KEY = "Move config type";
 }

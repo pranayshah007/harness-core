@@ -20,11 +20,13 @@ message CgInstanceSyncResponse {
 }
 
 message InstanceSyncData {
+  reserved 2;
   string task_details_id = 1;
-  repeated bytes instance_data = 2;
   string execution_status = 3;
   string error_message = 4;
   google.protobuf.Any release_details = 5;
+  bytes task_response = 6;
+  int32 instance_count = 7;
 }
 
 message DirectK8sReleaseDetails {

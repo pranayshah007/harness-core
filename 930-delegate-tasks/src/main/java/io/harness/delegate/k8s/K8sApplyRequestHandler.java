@@ -41,6 +41,8 @@ import io.harness.delegate.task.k8s.client.K8sClient;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.KubernetesTaskException;
 import io.harness.exception.NestedExceptionUtils;
+import io.harness.k8s.K8sCliCommandType;
+import io.harness.k8s.K8sCommandFlagsUtils;
 import io.harness.k8s.exception.KubernetesExceptionExplanation;
 import io.harness.k8s.exception.KubernetesExceptionHints;
 import io.harness.k8s.exception.KubernetesExceptionMessages;
@@ -60,6 +62,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -104,11 +107,12 @@ public class K8sApplyRequestHandler extends K8sRequestHandler {
     k8sApplyBaseHandler.prepare(
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Prepare, true, commandUnitsProgress),
         k8sApplyRequest.isSkipSteadyStateCheck(), k8sApplyHandlerConfig, isErrorFrameworkSupported());
-
+    Map<String, String> k8sCommandFlag = k8sApplyRequest.getK8sCommandFlags();
+    String commandFlags = K8sCommandFlagsUtils.getK8sCommandFlags(K8sCliCommandType.Apply.name(), k8sCommandFlag);
     k8sTaskHelperBase.applyManifests(k8sApplyHandlerConfig.getClient(), k8sApplyHandlerConfig.getResources(),
         k8sDelegateTaskParams,
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Apply, true, commandUnitsProgress), true,
-        isErrorFrameworkSupported());
+        isErrorFrameworkSupported(), commandFlags);
     final LogCallback waitForSteadyStateLogCallback =
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, WaitForSteadyState, true, commandUnitsProgress);
 

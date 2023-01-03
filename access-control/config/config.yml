@@ -203,6 +203,7 @@ aggregatorModuleConfig:
     database.include.list: ${DATABASE_INCLUDE_LIST:-accesscontrol}
     collection.include.list: ${COLLECTION_INCLUDE_LIST:-accesscontrol.roles,accesscontrol.roleassignments,accesscontrol.resourcegroups,accesscontrol.usergroups}
     snapshot.fetch.size: ${SNAPSHOT_FETCH_SIZE:-2000}
+    max.batch.size: ${MAX_STREAM_BATCH_SIZE:-512}
   enabled: ${AGGREGATOR_ENABLED:-true}
   exportMetricsToStackDriver: ${EXPORT_METRICS_TO_STACK_DRIVER:-false}
 

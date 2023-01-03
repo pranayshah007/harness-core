@@ -42,7 +42,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName(StepSpecTypeConstants.ASG_CANARY_DEPLOY)
 @TypeAlias("asgCanaryDeployStepInfo")
 @RecasterAlias("io.harness.cdng.aws.asg.AsgCanaryDeployStepInfo")
-public class AsgCanaryDeployStepInfo extends AsgCanaryBaseStepInfo implements CDStepInfo, Visitable {
+public class AsgCanaryDeployStepInfo extends AsgCanaryDeployBaseStepInfo implements CDStepInfo, Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)

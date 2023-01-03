@@ -100,13 +100,13 @@ public class CgK8sInstancesDetailsFetcherTest {
         fetcher.fetchRunningInstanceDetails("perpetualTaskId", cgDeploymentReleaseDetails);
     assertThat(instanceSyncData.getTaskDetailsId()).isEqualTo("taskDetailsId");
     assertThat(instanceSyncData.getExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS.name());
-    assertThat(instanceSyncData.getInstanceDataCount()).isEqualTo(1);
+    assertThat(instanceSyncData.getInstanceCount()).isEqualTo(1);
   }
 
   @Test
   @Owner(developers = OwnerRule.NAMAN_TALAYCHA)
   @Category(UnitTests.class)
-  public void testFetchRunningInstanceDetailsHelmDeploy() throws Exception {
+  public void testFetchRunningInstanceDetailsHelmDeploy() {
     CgDeploymentReleaseDetails cgDeploymentReleaseDetails =
         CgDeploymentReleaseDetails.newBuilder()
             .setTaskDetailsId("taskDetailsId")
@@ -147,6 +147,6 @@ public class CgK8sInstancesDetailsFetcherTest {
         fetcher.fetchRunningInstanceDetails("perpetualTaskId", cgDeploymentReleaseDetails);
     assertThat(instanceSyncData.getTaskDetailsId()).isEqualTo("taskDetailsId");
     assertThat(instanceSyncData.getExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS.name());
-    assertThat(instanceSyncData.getInstanceDataCount()).isEqualTo(1);
+    assertThat(instanceSyncData.getInstanceCount()).isEqualTo(1);
   }
 }

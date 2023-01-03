@@ -17,6 +17,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.TimeSeriesMetricType;
+import io.harness.cvng.core.beans.monitoredService.MetricThreshold;
 import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.DynatraceHealthSourceSpec;
 import io.harness.cvng.core.beans.monitoredService.metricThresholdSpec.MetricThresholdActionType;
@@ -89,8 +90,8 @@ public class DynatraceHealthSourceSpecTransformerTest extends CvNextGenTestBase 
     assertThat(metricPackTwo).isNotNull();
     assertThat(metricPackOne.getMetricThresholds()).hasSize(1);
     assertThat(metricPackTwo.getMetricThresholds()).hasSize(1);
-    TimeSeriesMetricPackDTO.MetricThreshold metricThresholdOne = metricPackOne.getMetricThresholds().get(0);
-    TimeSeriesMetricPackDTO.MetricThreshold metricThresholdTwo = metricPackTwo.getMetricThresholds().get(0);
+    MetricThreshold metricThresholdOne = metricPackOne.getMetricThresholds().get(0);
+    MetricThreshold metricThresholdTwo = metricPackTwo.getMetricThresholds().get(0);
     assertThat(new HashSet<>(Arrays.asList(metricThresholdOne.getMetricName(), metricThresholdTwo.getMetricName())))
         .isEqualTo(new HashSet<>(Arrays.asList(MOCKED_METRIC_NAME_ONE, MOCKED_METRIC_NAME_TWO)));
     assertThat(metricThresholdOne.getGroupName()).isEqualTo(MOCKED_METRIC_GROUP_NAME);

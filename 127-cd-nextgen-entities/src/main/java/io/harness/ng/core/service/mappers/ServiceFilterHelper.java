@@ -11,13 +11,13 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.System.currentTimeMillis;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 
 import io.harness.NGResourceFilterConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.visitor.YamlTypes;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceEntity.ServiceEntityKeys;
@@ -130,7 +130,7 @@ public class ServiceFilterHelper {
       // select services at levels accessible at that level
       Criteria includeAllServicesCriteria = null;
       if (includeAllServicesAccessibleAtScope) {
-        includeAllServicesCriteria = getCriteriaToReturnAllServicesAccessible(orgIdentifier, projectIdentifier);
+        includeAllServicesCriteria = getCriteriaToReturnAllAccessibleServicesAtScope(orgIdentifier, projectIdentifier);
       } else {
         criteria.and(ORG_ID).is(orgIdentifier);
         criteria.and(PROJECT_ID).is(projectIdentifier);
@@ -145,29 +145,29 @@ public class ServiceFilterHelper {
       criteria.and(DELETED).is(deleted);
       return criteria;
     } else {
-      throw new InvalidRequestException("Account identifier cannot be null");
+      throw new InvalidRequestException("Account identifier cannot be null for services list");
     }
   }
 
-  private Criteria getCriteriaToReturnAllServicesAccessible(String orgIdentifier, String projectIdentifier) {
-    if (EmptyPredicate.isNotEmpty(projectIdentifier)) {
-      return new Criteria().orOperator(Criteria.where(ServiceEntityKeys.projectIdentifier)
-                                           .is(projectIdentifier)
-                                           .and(ServiceEntityKeys.orgIdentifier)
-                                           .is(orgIdentifier),
-          Criteria.where(ServiceEntityKeys.orgIdentifier)
-              .is(orgIdentifier)
-              .and(ServiceEntityKeys.projectIdentifier)
-              .is(null),
-          Criteria.where(ServiceEntityKeys.orgIdentifier).is(null).and(ServiceEntityKeys.projectIdentifier).is(null));
-    } else if (EmptyPredicate.isNotEmpty(orgIdentifier)) {
-      return new Criteria().orOperator(Criteria.where(ServiceEntityKeys.orgIdentifier)
-                                           .is(orgIdentifier)
-                                           .and(ServiceEntityKeys.projectIdentifier)
-                                           .is(null),
-          Criteria.where(ServiceEntityKeys.orgIdentifier).is(null).and(ServiceEntityKeys.projectIdentifier).is(null));
+  private Criteria getCriteriaToReturnAllAccessibleServicesAtScope(String orgIdentifier, String projectIdentifier) {
+    Criteria criteria = new Criteria();
+    Criteria accountCriteria =
+        Criteria.where(ServiceEntityKeys.orgIdentifier).is(null).and(ServiceEntityKeys.projectIdentifier).is(null);
+    Criteria orgCriteria = Criteria.where(ServiceEntityKeys.orgIdentifier)
+                               .is(orgIdentifier)
+                               .and(ServiceEntityKeys.projectIdentifier)
+                               .is(null);
+    Criteria projectCriteria = Criteria.where(ServiceEntityKeys.orgIdentifier)
+                                   .is(orgIdentifier)
+                                   .and(ServiceEntityKeys.projectIdentifier)
+                                   .is(projectIdentifier);
+
+    if (isNotBlank(projectIdentifier)) {
+      return criteria.orOperator(projectCriteria, orgCriteria, accountCriteria);
+    } else if (isNotBlank(orgIdentifier)) {
+      return criteria.orOperator(orgCriteria, accountCriteria);
     } else {
-      return Criteria.where(ServiceEntityKeys.orgIdentifier).is(null).and(ServiceEntityKeys.projectIdentifier).is(null);
+      return criteria.orOperator(accountCriteria);
     }
   }
 }

@@ -319,7 +319,7 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
     } else {
       persistence.save(DelegateSyncTaskResponse.builder()
                            .uuid(delegateTask.getUuid())
-                           .usingKryoWithoutReference(true)
+                           .usingKryoWithoutReference(false)
                            .responseData(kryoSerializer.asDeflatedBytes(response.getResponse()))
                            .build());
     }

@@ -25,9 +25,9 @@ import software.wings.beans.TaskType;
 import software.wings.beans.alert.AlertType;
 import software.wings.beans.alert.EmailSendingFailedAlert;
 import software.wings.helpers.ext.external.comm.EmailRequest;
-import software.wings.helpers.ext.mail.EmailData;
 import software.wings.helpers.ext.mail.Mailer;
 import software.wings.helpers.ext.mail.SmtpConfig;
+import software.wings.persistence.mail.EmailData;
 import software.wings.service.impl.email.EmailNotificationCallBack;
 import software.wings.service.intfc.AlertService;
 import software.wings.service.intfc.DelegateService;
@@ -66,7 +66,7 @@ public class EmailNotificationServiceImpl implements EmailNotificationService {
     return sendCeMail(emailData, false);
   }
 
-  private boolean sendMail(SmtpConfig config, EmailData emailData, boolean isCeMail) {
+  private boolean sendMail(SmtpConfig config, software.wings.helpers.ext.mail.EmailData emailData, boolean isCeMail) {
     List<EncryptedDataDetail> encryptionDetails = config.equals(mainConfiguration.getSmtpConfig())
         ? Collections.emptyList()
         : secretManager.getEncryptionDetails(config, emailData.getAppId(), emailData.getWorkflowExecutionId());
@@ -89,18 +89,18 @@ public class EmailNotificationServiceImpl implements EmailNotificationService {
     }
   }
 
-  private void sendEmailNotSentAlert(EmailData emailData) {
+  private void sendEmailNotSentAlert(software.wings.helpers.ext.mail.EmailData emailData) {
     String errorString = emailUtils.getErrorString(emailData);
     alertService.openAlert(emailData.getAccountId(), GLOBAL_APP_ID, AlertType.EMAIL_NOT_SENT_ALERT,
         EmailSendingFailedAlert.builder().emailAlertData(errorString).build());
   }
 
-  private void closeEmailNotSentAlert(EmailData emailData) {
+  private void closeEmailNotSentAlert(software.wings.helpers.ext.mail.EmailData emailData) {
     alertService.closeAlertsOfType(emailData.getAccountId(), GLOBAL_APP_ID, AlertType.EMAIL_NOT_SENT_ALERT);
   }
 
-  private boolean sendEmailAsDelegateTask(
-      SmtpConfig config, List<EncryptedDataDetail> encryptionDetails, EmailData emailData) {
+  private boolean sendEmailAsDelegateTask(SmtpConfig config, List<EncryptedDataDetail> encryptionDetails,
+      software.wings.helpers.ext.mail.EmailData emailData) {
     String waitId = generateUuid();
     try {
       EmailRequest request =
@@ -148,17 +148,18 @@ public class EmailNotificationServiceImpl implements EmailNotificationService {
     boolean isFallBackSMTPConfigValid = emailHelperUtils.isSmtpConfigValid(fallBackSMTPConfig);
 
     boolean mailSentSuccessFully = false;
+    software.wings.helpers.ext.mail.EmailData emailDataDto = emailData.toDTO();
     if (!isDefaultSMTPConfigValid && !isFallBackSMTPConfigValid) {
-      sendEmailNotSentAlert(emailData);
+      sendEmailNotSentAlert(emailDataDto);
     } else if (isDefaultSMTPConfigValid) {
       mailSentSuccessFully = true;
-      if (!sendMail(defaultSMTPConfig, emailData, isCeMail)
-          && (!isFallBackSMTPConfigValid || !sendMail(fallBackSMTPConfig, emailData, isCeMail))) {
-        sendEmailNotSentAlert(emailData);
+      if (!sendMail(defaultSMTPConfig, emailDataDto, isCeMail)
+          && (!isFallBackSMTPConfigValid || !sendMail(fallBackSMTPConfig, emailDataDto, isCeMail))) {
+        sendEmailNotSentAlert(emailDataDto);
         mailSentSuccessFully = false;
       }
     } else if (isFallBackSMTPConfigValid) {
-      mailSentSuccessFully = sendMail(fallBackSMTPConfig, emailData, isCeMail);
+      mailSentSuccessFully = sendMail(fallBackSMTPConfig, emailDataDto, isCeMail);
     }
 
     return mailSentSuccessFully;

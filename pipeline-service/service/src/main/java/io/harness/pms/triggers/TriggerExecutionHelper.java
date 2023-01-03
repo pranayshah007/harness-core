@@ -219,16 +219,9 @@ public class TriggerExecutionHelper {
         }
 
         GitSyncBranchContext gitSyncContextWithRepoAndFilePath =
-            GitSyncBranchContext.builder()
-                .gitBranchInfo(GitEntityInfo.builder()
-                                   .repoName(pipelineEntityToExecute.get().getRepo())
-                                   .filePath(pipelineEntityToExecute.get().getFilePath())
-                                   .branch(branch)
-                                   .build())
-                .build();
+            getGitSyncContextWithRepoAndFilePath(pipelineEntityToExecute.get(), branch);
         gitSyncBranchContextByteString =
             pmsGitSyncHelper.serializeGitSyncBranchContext(gitSyncContextWithRepoAndFilePath);
-
         log.info(
             "Triggering execution for pipeline with identifier:  {} , in org: {} , ProjectId: {} , accountIdentifier: {} , For Trigger: {},  in branch {}, repo {} , filePath {}",
             ngTriggerEntity.getTargetIdentifier(), ngTriggerEntity.getOrgIdentifier(),
@@ -603,5 +596,18 @@ public class TriggerExecutionHelper {
     } else {
       return PipelineStoreType.UNDEFINED;
     }
+  }
+
+  @VisibleForTesting
+  GitSyncBranchContext getGitSyncContextWithRepoAndFilePath(PipelineEntity pipelineEntityToExecute, String branch) {
+    return GitSyncBranchContext.builder()
+        .gitBranchInfo(GitEntityInfo.builder()
+                           .repoName(pipelineEntityToExecute.getRepo())
+                           .filePath(pipelineEntityToExecute.getFilePath())
+                           .branch(branch)
+                           .yamlGitConfigId(pipelineEntityToExecute.getRepo())
+                           .connectorRef(pipelineEntityToExecute.getConnectorRef())
+                           .build())
+        .build();
   }
 }

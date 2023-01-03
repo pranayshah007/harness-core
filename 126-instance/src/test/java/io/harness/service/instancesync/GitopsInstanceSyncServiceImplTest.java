@@ -15,6 +15,7 @@ import io.harness.cdng.gitops.beans.GitOpsInstanceRequest;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.dtos.InstanceDTO;
 import io.harness.dtos.instanceinfo.GitOpsInstanceInfoDTO;
+import io.harness.k8s.model.K8sContainer;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.service.instance.InstanceService;
@@ -23,6 +24,7 @@ import io.harness.util.InstanceSyncKey;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -46,8 +48,9 @@ public class GitopsInstanceSyncServiceImplTest extends InstancesTestBase {
     String orgId = "orgId";
     String projId = UUIDGenerator.generateUuid();
 
+    K8sContainer container = K8sContainer.builder().image("nginx:1.15").build();
     List<InstanceDTO> instanceList =
-        buildInstanceList(accountId, orgId, projId, "s1", "e1", "app1", "agent1", "default", "test-1", 3);
+        buildInstanceList(accountId, orgId, projId, "s1", "e1", "app1", "agent1", "default", "test-1", 3, container);
 
     gitopsInstanceSyncService.processInstanceSync(accountId, orgId, projId, instanceList);
 
@@ -55,8 +58,8 @@ public class GitopsInstanceSyncServiceImplTest extends InstancesTestBase {
 
     assertThat(instancesSaved).hasSize(3);
     assertThat(instancesSaved.stream().map(InstanceDTO::getInstanceKey).collect(Collectors.toSet()))
-        .containsExactlyInAnyOrder("GitOpsInstanceRequest_default_test-12", "GitOpsInstanceRequest_default_test-11",
-            "GitOpsInstanceRequest_default_test-10");
+        .containsExactlyInAnyOrder("GitOpsInstanceRequest_default_test-12_nginx:1.15",
+            "GitOpsInstanceRequest_default_test-11_nginx:1.15", "GitOpsInstanceRequest_default_test-10_nginx:1.15");
   }
 
   @Test
@@ -67,10 +70,11 @@ public class GitopsInstanceSyncServiceImplTest extends InstancesTestBase {
     String orgId = "orgId";
     String projId = UUIDGenerator.generateUuid();
 
+    K8sContainer container = K8sContainer.builder().image("nginx:1.15").build();
     List<InstanceDTO> instanceList_1 =
-        buildInstanceList(accountId, orgId, projId, "s1", "e1", "app1", "agent1", "default", "test-2", 3);
+        buildInstanceList(accountId, orgId, projId, "s1", "e1", "app1", "agent1", "default", "test-2", 3, container);
     List<InstanceDTO> instanceList_2 =
-        buildInstanceList(accountId, orgId, projId, "s2", "e1", "app1", "agent2", "harness", "test-2", 3);
+        buildInstanceList(accountId, orgId, projId, "s2", "e1", "app1", "agent2", "harness", "test-2", 3, container);
 
     gitopsInstanceSyncService.processInstanceSync(accountId, orgId, projId, instanceList_1);
     gitopsInstanceSyncService.processInstanceSync(accountId, orgId, projId, instanceList_2);
@@ -80,16 +84,16 @@ public class GitopsInstanceSyncServiceImplTest extends InstancesTestBase {
 
     assertThat(instancesSavedForS1).hasSize(3);
     assertThat(instancesSavedForS1.stream().map(InstanceDTO::getInstanceKey).collect(Collectors.toSet()))
-        .containsExactlyInAnyOrder("GitOpsInstanceRequest_default_test-20", "GitOpsInstanceRequest_default_test-21",
-            "GitOpsInstanceRequest_default_test-22");
+        .containsExactlyInAnyOrder("GitOpsInstanceRequest_default_test-20_nginx:1.15",
+            "GitOpsInstanceRequest_default_test-21_nginx:1.15", "GitOpsInstanceRequest_default_test-22_nginx:1.15");
 
     List<InstanceDTO> instancesSavedForS2 =
         instanceService.getActiveInstancesByServiceId(accountId, orgId, projId, "s2");
 
     assertThat(instancesSavedForS2).hasSize(3);
     assertThat(instancesSavedForS2.stream().map(InstanceDTO::getInstanceKey).collect(Collectors.toSet()))
-        .containsExactlyInAnyOrder("GitOpsInstanceRequest_harness_test-20", "GitOpsInstanceRequest_harness_test-21",
-            "GitOpsInstanceRequest_harness_test-22");
+        .containsExactlyInAnyOrder("GitOpsInstanceRequest_harness_test-20_nginx:1.15",
+            "GitOpsInstanceRequest_harness_test-21_nginx:1.15", "GitOpsInstanceRequest_harness_test-22_nginx:1.15");
   }
 
   @Test
@@ -100,8 +104,9 @@ public class GitopsInstanceSyncServiceImplTest extends InstancesTestBase {
     String orgId = "orgId";
     String projId = UUIDGenerator.generateUuid();
 
+    K8sContainer container = K8sContainer.builder().image("nginx:1.15").build();
     List<InstanceDTO> instanceList =
-        buildInstanceList(accountId, orgId, projId, "s1", "e1", "app1", "agent1", "gitops", "test-2", 3);
+        buildInstanceList(accountId, orgId, projId, "s1", "e1", "app1", "agent1", "gitops", "test-2", 3, container);
 
     gitopsInstanceSyncService.processInstanceSync(accountId, orgId, projId, instanceList);
     gitopsInstanceSyncService.processInstanceSync(accountId, orgId, projId, instanceList);
@@ -111,8 +116,8 @@ public class GitopsInstanceSyncServiceImplTest extends InstancesTestBase {
 
     assertThat(instancesSaved).hasSize(3);
     assertThat(instancesSaved.stream().map(InstanceDTO::getInstanceKey).collect(Collectors.toSet()))
-        .containsExactlyInAnyOrder("GitOpsInstanceRequest_gitops_test-22", "GitOpsInstanceRequest_gitops_test-21",
-            "GitOpsInstanceRequest_gitops_test-20");
+        .containsExactlyInAnyOrder("GitOpsInstanceRequest_gitops_test-22_nginx:1.15",
+            "GitOpsInstanceRequest_gitops_test-21_nginx:1.15", "GitOpsInstanceRequest_gitops_test-20_nginx:1.15");
   }
 
   @Test
@@ -123,8 +128,9 @@ public class GitopsInstanceSyncServiceImplTest extends InstancesTestBase {
     String orgId = "orgId";
     String projId = UUIDGenerator.generateUuid();
 
+    K8sContainer container = K8sContainer.builder().image("nginx:1.15").build();
     List<InstanceDTO> instanceList =
-        buildInstanceList(accountId, orgId, projId, "s1", "e1", "app1", "agent1", "default", "test-4", 3);
+        buildInstanceList(accountId, orgId, projId, "s1", "e1", "app1", "agent1", "default", "test-4", 3, container);
 
     gitopsInstanceSyncService.processInstanceSync(accountId, orgId, projId, instanceList);
     gitopsInstanceSyncService.processInstanceSync(
@@ -134,7 +140,7 @@ public class GitopsInstanceSyncServiceImplTest extends InstancesTestBase {
 
     assertThat(instancesSaved).hasSize(1);
     assertThat(instancesSaved.stream().map(InstanceDTO::getInstanceKey).collect(Collectors.toSet()))
-        .containsExactlyInAnyOrder("GitOpsInstanceRequest_default_test-40");
+        .containsExactlyInAnyOrder("GitOpsInstanceRequest_default_test-40_nginx:1.15");
   }
 
   @Test
@@ -145,13 +151,14 @@ public class GitopsInstanceSyncServiceImplTest extends InstancesTestBase {
     String orgId = "orgId";
     String projId = UUIDGenerator.generateUuid();
 
+    K8sContainer container = K8sContainer.builder().image("nginx:1.15").build();
     List<InstanceDTO> instanceList_1 =
-        buildInstanceList(accountId, orgId, projId, "s1", "e1", "app1", "agent1", "default", "test-4", 3);
+        buildInstanceList(accountId, orgId, projId, "s1", "e1", "app1", "agent1", "default", "test-4", 3, container);
 
     gitopsInstanceSyncService.processInstanceSync(accountId, orgId, projId, instanceList_1);
 
     instanceList_1.addAll(
-        buildInstanceList(accountId, orgId, projId, "s1", "e1", "app1", "agent1", "harness", "test-4", 2));
+        buildInstanceList(accountId, orgId, projId, "s1", "e1", "app1", "agent1", "harness", "test-4", 2, container));
 
     gitopsInstanceSyncService.processInstanceSync(accountId, orgId, projId, instanceList_1);
 
@@ -159,13 +166,13 @@ public class GitopsInstanceSyncServiceImplTest extends InstancesTestBase {
 
     assertThat(instancesSaved).hasSize(5);
     assertThat(instancesSaved.stream().map(InstanceDTO::getInstanceKey).collect(Collectors.toSet()))
-        .containsExactlyInAnyOrder("GitOpsInstanceRequest_harness_test-40", "GitOpsInstanceRequest_harness_test-41",
-            "GitOpsInstanceRequest_default_test-42", "GitOpsInstanceRequest_default_test-41",
-            "GitOpsInstanceRequest_default_test-40");
+        .containsExactlyInAnyOrder("GitOpsInstanceRequest_harness_test-40_nginx:1.15",
+            "GitOpsInstanceRequest_harness_test-41_nginx:1.15", "GitOpsInstanceRequest_default_test-42_nginx:1.15",
+            "GitOpsInstanceRequest_default_test-41_nginx:1.15", "GitOpsInstanceRequest_default_test-40_nginx:1.15");
   }
 
   List<InstanceDTO> buildInstanceList(String accountId, String orgId, String projectId, String serviceId, String envId,
-      String appId, String agentId, String namespace, String prefix, int n) {
+      String appId, String agentId, String namespace, String prefix, int n, K8sContainer container) {
     List<InstanceDTO> ans = new ArrayList<>();
     for (int i = 0; i < n; i++) {
       ans.add(InstanceDTO.builder()
@@ -178,6 +185,7 @@ public class GitopsInstanceSyncServiceImplTest extends InstancesTestBase {
                                    .clazz(GitOpsInstanceRequest.class)
                                    .part(namespace)
                                    .part(prefix + i)
+                                   .part(container.getImage())
                                    .build()
                                    .toString())
                   .instanceInfoDTO(GitOpsInstanceInfoDTO.builder()
@@ -186,6 +194,7 @@ public class GitopsInstanceSyncServiceImplTest extends InstancesTestBase {
                                        .podName(prefix + i)
                                        .podId(prefix + i)
                                        .namespace(namespace)
+                                       .containerList(Arrays.asList(container))
                                        .build())
                   .build());
     }

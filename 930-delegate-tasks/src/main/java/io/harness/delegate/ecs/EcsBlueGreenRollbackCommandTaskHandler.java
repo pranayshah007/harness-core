@@ -69,6 +69,7 @@ public class EcsBlueGreenRollbackCommandTaskHandler extends EcsCommandTaskNGHand
         iLogStreamingTaskClient, EcsCommandUnitConstants.rollback.toString(), true, commandUnitsProgress);
 
     try {
+      rollbackCallback.saveExecutionLog(format("Rolling Back..%n%n"), LogLevel.INFO);
       AwsInternalConfig awsInternalConfig =
           awsNgConfigMapper.createAwsInternalConfig(ecsInfraConfig.getAwsConnectorDTO());
 
@@ -218,6 +219,7 @@ public class EcsBlueGreenRollbackCommandTaskHandler extends EcsCommandTaskNGHand
           ecsBlueGreenRollbackRequest.getEcsLoadBalancerConfig().getStageTargetGroupArn());
       rollbackCallback.saveExecutionLog(color(format("Rollback Successful. %n"), LogColor.Green, LogWeight.Bold),
           LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+      log.info("Completed task execution for command: {}", ecsCommandRequest.getEcsCommandType().name());
       return EcsBlueGreenRollbackResponse.builder()
           .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
           .ecsBlueGreenRollbackResult(ecsBlueGreenRollbackResultBuilder.build())

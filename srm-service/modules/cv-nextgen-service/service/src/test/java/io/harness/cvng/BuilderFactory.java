@@ -74,7 +74,6 @@ import io.harness.cvng.core.beans.CustomHealthRequestDefinition;
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition;
 import io.harness.cvng.core.beans.HealthSourceQueryType;
 import io.harness.cvng.core.beans.RiskProfile;
-import io.harness.cvng.core.beans.healthsource.QueryParams;
 import io.harness.cvng.core.beans.monitoredService.ChangeSourceDTO;
 import io.harness.cvng.core.beans.monitoredService.ChangeSourceDTO.ChangeSourceDTOBuilder;
 import io.harness.cvng.core.beans.monitoredService.HealthSource;
@@ -128,6 +127,7 @@ import io.harness.cvng.core.entities.NextGenMetricCVConfig;
 import io.harness.cvng.core.entities.NextGenMetricCVConfig.NextGenMetricCVConfigBuilder;
 import io.harness.cvng.core.entities.PrometheusCVConfig;
 import io.harness.cvng.core.entities.PrometheusCVConfig.PrometheusCVConfigBuilder;
+import io.harness.cvng.core.entities.QueryParams;
 import io.harness.cvng.core.entities.SplunkCVConfig;
 import io.harness.cvng.core.entities.SplunkCVConfig.SplunkCVConfigBuilder;
 import io.harness.cvng.core.entities.SplunkMetricCVConfig;
@@ -530,7 +530,7 @@ public class BuilderFactory {
         .projectIdentifier(context.getProjectIdentifier())
         .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
         .connectorIdentifier("connectorRef")
-        .identifier(context.getMonitoredServiceIdentifier() + "/" + generateUuid()); // TODO Fix Typing.
+        .identifier(context.getMonitoredServiceIdentifier() + "/" + generateUuid());
   }
 
   public NextGenLogCVConfigBuilder nextGenLogCVConfigBuilder(DataSourceType dataSourceType) {
@@ -538,13 +538,14 @@ public class BuilderFactory {
         .accountId(context.getAccountId())
         .dataSourceType(dataSourceType)
         .orgIdentifier(context.getOrgIdentifier())
+        .queryIdentifier(generateUuid())
         .projectIdentifier(context.getProjectIdentifier())
         .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
         .queryName(randomAlphabetic(10))
         .query(randomAlphabetic(10))
         .queryParams(QueryParams.builder().serviceInstanceField("hostname").build())
         .enabled(true)
-        .category(CVMonitoringCategory.ERRORS) // TODO Why fix it.
+        .category(CVMonitoringCategory.ERRORS)
         .connectorIdentifier("connectorRef")
         .productName(generateUuid())
         .createdAt(clock.millis());

@@ -21,6 +21,8 @@ import lombok.Data;
 public class IndividualEnvData {
   String envName;
   String envRef;
+
+  String type;
   boolean deployToAll;
   Set<String> gitOpsClusterRefs;
 }

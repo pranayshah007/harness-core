@@ -31,4 +31,6 @@ public class ElastigroupSetupResult {
   boolean useCurrentRunningInstanceCount;
   ElastiGroup elastigroupOriginalConfig;
   List<LoadBalancerDetailsForBGDeployment> loadBalancerDetailsForBGDeployments;
+  List<String> ec2InstanceIdsAdded;
+  List<String> ec2InstanceIdsExisting;
 }

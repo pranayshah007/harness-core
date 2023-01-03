@@ -9,6 +9,7 @@ package io.harness.cdng.ssh;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.ACASIAN;
+import static io.harness.rule.OwnerRule.IVAN;
 import static io.harness.rule.OwnerRule.VITALIE;
 import static io.harness.utils.PageUtils.getPageRequest;
 
@@ -35,6 +36,7 @@ import io.harness.cdng.infra.beans.host.dto.HostAttributesFilterDTO;
 import io.harness.cdng.infra.beans.host.dto.HostFilterDTO;
 import io.harness.cdng.infra.beans.host.dto.HostNamesFilterDTO;
 import io.harness.cdng.serverless.ServerlessEntityHelper;
+import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
@@ -53,12 +55,14 @@ import io.harness.delegate.task.ssh.PdcSshInfraDelegateConfig;
 import io.harness.delegate.task.ssh.PdcWinRmInfraDelegateConfig;
 import io.harness.delegate.task.ssh.SshInfraDelegateConfig;
 import io.harness.delegate.task.ssh.WinRmInfraDelegateConfig;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
 import io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO;
+import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.pms.yaml.ParameterField;
@@ -90,6 +94,47 @@ import retrofit2.Response;
 
 @OwnedBy(CDP)
 public class SshEntityHelperTest extends CategoryTest {
+  public static final String infraWithSshCredentialsYaml = ""
+      + "infrastructureDefinition:\n"
+      + "  name: PDC infra\n"
+      + "  identifier: PDCInfra\n"
+      + "  description: \"\"\n"
+      + "  tags: {}\n"
+      + "  orgIdentifier: SSH_Organization\n"
+      + "  projectIdentifier: SSHProject\n"
+      + "  environmentRef: ProdValid\n"
+      + "  deploymentType: Ssh\n"
+      + "  type: Pdc\n"
+      + "  spec:\n"
+      + "    credentialsRef: account.sshCredentials\n"
+      + "    hostFilter:\n"
+      + "      type: All\n"
+      + "      spec: {}\n"
+      + "    hosts:\n"
+      + "      - ec2-52-201-252-114.compute-1.amazonaws.com\n"
+      + "      - ec2-54-167-41-15.compute-1.amazonaws.com\n"
+      + "  allowSimultaneousDeployments: false";
+
+  public static final String infraWithWinRmCredentialsYaml = ""
+      + "infrastructureDefinition:\n"
+      + "  name: WinRmInfra\n"
+      + "  identifier: WinRmInfra\n"
+      + "  description: \"\"\n"
+      + "  tags: {}\n"
+      + "  orgIdentifier: Org_Identifier\n"
+      + "  projectIdentifier: Project_Identifier\n"
+      + "  environmentRef: prod\n"
+      + "  deploymentType: WinRm\n"
+      + "  type: Pdc\n"
+      + "  spec:\n"
+      + "    credentialsRef: account.winRmCredentials\n"
+      + "    hostFilter:\n"
+      + "      type: All\n"
+      + "      spec: {}\n"
+      + "    hosts:\n"
+      + "      - ec2-52-201-252-114.compute-1.amazonaws.com\n"
+      + "  allowSimultaneousDeployments: false";
+
   @Mock private SecretNGManagerClient secretManagerClient;
   @Mock private ConnectorService connectorService;
   @Mock private SshKeySpecDTOHelper sshKeySpecDTOHelper;
@@ -613,5 +658,125 @@ public class SshEntityHelperTest extends CategoryTest {
     assertThat(awsWinrmInfraDelegateConfig.getConnectorEncryptionDataDetails()).isNotEmpty();
     assertThat(awsWinrmInfraDelegateConfig.getTags()).isNotEmpty();
     assertThat(awsWinrmInfraDelegateConfig.getAutoScalingGroupName()).isNullOrEmpty();
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testValidateInfrastructureYamlInvalidDeploymentType() {
+    InfrastructureEntity infrastructureEntity =
+        InfrastructureEntity.builder().deploymentType(ServiceDefinitionType.AZURE_WEBAPP).build();
+    helper.validateInfrastructureYaml(infrastructureEntity);
+
+    verify(secretManagerClient, times(0)).getSecret(anyString(), anyString(), anyString(), anyString());
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testValidateInfrastructureYamlEmptyYaml() {
+    InfrastructureEntity infrastructureEntity =
+        InfrastructureEntity.builder().deploymentType(ServiceDefinitionType.SSH).build();
+    helper.validateInfrastructureYaml(infrastructureEntity);
+
+    verify(secretManagerClient, times(0)).getSecret(anyString(), anyString(), anyString(), anyString());
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testValidateInfrastructureYamlSshCredentials() throws IOException {
+    InfrastructureEntity infrastructureEntity = InfrastructureEntity.builder()
+                                                    .deploymentType(ServiceDefinitionType.SSH)
+                                                    .accountId(accountId)
+                                                    .orgIdentifier(orgId)
+                                                    .projectIdentifier(projectId)
+                                                    .yaml(infraWithSshCredentialsYaml)
+                                                    .build();
+
+    Call<ResponseDTO<SecretResponseWrapper>> getSecretCall = mock(Call.class);
+    ResponseDTO<SecretResponseWrapper> responseDTO =
+        ResponseDTO.newResponse(SecretResponseWrapper.builder()
+                                    .secret(SecretDTOV2.builder().type(SecretType.SSHKey).spec(sshKeySpecDTO).build())
+                                    .build());
+    doReturn(Response.success(responseDTO)).when(getSecretCall).execute();
+    doReturn(getSecretCall).when(secretManagerClient).getSecret(anyString(), anyString(), any(), any());
+
+    helper.validateInfrastructureYaml(infrastructureEntity);
+    verify(secretManagerClient, times(1)).getSecret("sshCredentials", accountId, null, null);
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testValidateInfrastructureYamlSshCredentialsInvalidSecretType() throws IOException {
+    InfrastructureEntity infrastructureEntity = InfrastructureEntity.builder()
+                                                    .deploymentType(ServiceDefinitionType.SSH)
+                                                    .accountId(accountId)
+                                                    .orgIdentifier(orgId)
+                                                    .projectIdentifier(projectId)
+                                                    .yaml(infraWithSshCredentialsYaml)
+                                                    .build();
+
+    Call<ResponseDTO<SecretResponseWrapper>> getSecretCall = mock(Call.class);
+    ResponseDTO<SecretResponseWrapper> responseDTO = ResponseDTO.newResponse(
+        SecretResponseWrapper.builder()
+            .secret(SecretDTOV2.builder().type(SecretType.WinRmCredentials).spec(winRmCredentials).build())
+            .build());
+    doReturn(Response.success(responseDTO)).when(getSecretCall).execute();
+    doReturn(getSecretCall).when(secretManagerClient).getSecret(anyString(), anyString(), any(), any());
+
+    assertThatThrownBy(() -> helper.validateInfrastructureYaml(infrastructureEntity))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Not found SSH credentials, type: WinRmCredentials");
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testValidateInfrastructureYamlWinRmCredentials() throws IOException {
+    InfrastructureEntity infrastructureEntity = InfrastructureEntity.builder()
+                                                    .deploymentType(ServiceDefinitionType.WINRM)
+                                                    .accountId(accountId)
+                                                    .orgIdentifier(orgId)
+                                                    .projectIdentifier(projectId)
+                                                    .yaml(infraWithWinRmCredentialsYaml)
+                                                    .build();
+
+    Call<ResponseDTO<SecretResponseWrapper>> getSecretCall = mock(Call.class);
+    ResponseDTO<SecretResponseWrapper> responseDTO = ResponseDTO.newResponse(
+        SecretResponseWrapper.builder()
+            .secret(SecretDTOV2.builder().type(SecretType.WinRmCredentials).spec(winRmCredentials).build())
+            .build());
+    doReturn(Response.success(responseDTO)).when(getSecretCall).execute();
+    doReturn(getSecretCall).when(secretManagerClient).getSecret(anyString(), anyString(), any(), any());
+
+    helper.validateInfrastructureYaml(infrastructureEntity);
+    verify(secretManagerClient, times(1)).getSecret("winRmCredentials", accountId, null, null);
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testValidateInfrastructureYamlWinRmCredentialsInvalidSecretType() throws IOException {
+    InfrastructureEntity infrastructureEntity = InfrastructureEntity.builder()
+                                                    .deploymentType(ServiceDefinitionType.WINRM)
+                                                    .accountId(accountId)
+                                                    .orgIdentifier(orgId)
+                                                    .projectIdentifier(projectId)
+                                                    .yaml(infraWithWinRmCredentialsYaml)
+                                                    .build();
+
+    Call<ResponseDTO<SecretResponseWrapper>> getSecretCall = mock(Call.class);
+    ResponseDTO<SecretResponseWrapper> responseDTO =
+        ResponseDTO.newResponse(SecretResponseWrapper.builder()
+                                    .secret(SecretDTOV2.builder().type(SecretType.SSHKey).spec(sshKeySpecDTO).build())
+                                    .build());
+    doReturn(Response.success(responseDTO)).when(getSecretCall).execute();
+    doReturn(getSecretCall).when(secretManagerClient).getSecret(anyString(), anyString(), any(), any());
+
+    assertThatThrownBy(() -> helper.validateInfrastructureYaml(infrastructureEntity))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Not found WinRm credentials, type: SSHKey");
   }
 }

@@ -314,7 +314,7 @@ public class ServiceStepV3Test {
             .build(),
         null);
 
-    verify(serviceStepsHelper).validateResources(any(Ambiance.class), any(NGServiceConfig.class));
+    verify(serviceStepsHelper).checkForVariablesAccessOrThrow(any(Ambiance.class), any(NGServiceConfig.class));
 
     ArgumentCaptor<ExecutionSweepingOutput> captor = ArgumentCaptor.forClass(ExecutionSweepingOutput.class);
     ArgumentCaptor<String> stringCaptor = ArgumentCaptor.forClass(String.class);

@@ -46,6 +46,8 @@ import io.harness.ccm.audittrails.eventhandler.RuleEventHandler;
 import io.harness.ccm.audittrails.eventhandler.RuleSetEventHandler;
 import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.bigQuery.BigQueryServiceImpl;
+import io.harness.ccm.budgetGroup.service.BudgetGroupService;
+import io.harness.ccm.budgetGroup.service.BudgetGroupServiceImpl;
 import io.harness.ccm.commons.beans.config.GcpConfig;
 import io.harness.ccm.commons.service.impl.ClusterRecordServiceImpl;
 import io.harness.ccm.commons.service.impl.EntityMetadataServiceImpl;
@@ -60,6 +62,8 @@ import io.harness.ccm.graphql.core.budget.BudgetService;
 import io.harness.ccm.graphql.core.budget.BudgetServiceImpl;
 import io.harness.ccm.graphql.core.currency.CurrencyPreferenceService;
 import io.harness.ccm.graphql.core.currency.CurrencyPreferenceServiceImpl;
+import io.harness.ccm.jira.CCMJiraHelper;
+import io.harness.ccm.jira.CCMJiraHelperImpl;
 import io.harness.ccm.perpetualtask.K8sWatchTaskResourceClientModule;
 import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.rbac.CCMRbacHelperImpl;
@@ -160,6 +164,8 @@ import io.harness.threading.ExecutorModule;
 import io.harness.time.TimeModule;
 import io.harness.timescaledb.JooqModule;
 import io.harness.timescaledb.TimeScaleDBConfig;
+import io.harness.timescaledb.TimeScaleDBService;
+import io.harness.timescaledb.TimeScaleDBServiceImpl;
 import io.harness.timescaledb.metrics.HExecuteListener;
 import io.harness.timescaledb.metrics.QueryStatsPrinter;
 import io.harness.token.TokenClientModule;
@@ -355,7 +361,15 @@ public class CENextGenModule extends AbstractModule {
     bind(RuleEnforcementService.class).to(RuleEnforcementServiceImpl.class);
     bind(RuleExecutionService.class).to(RuleExecutionServiceImpl.class);
     bind(CCMActiveSpendService.class).to(CCMActiveSpendServiceImpl.class);
+    bind(CCMJiraHelper.class).to(CCMJiraHelperImpl.class);
     bind(CurrencyPreferenceService.class).to(CurrencyPreferenceServiceImpl.class);
+    bind(BudgetGroupService.class).to(BudgetGroupServiceImpl.class);
+    try {
+      bind(TimeScaleDBService.class)
+          .toConstructor(TimeScaleDBServiceImpl.class.getConstructor(TimeScaleDBConfig.class));
+    } catch (NoSuchMethodException e) {
+      log.error("TimeScaleDbServiceImpl Initialization Failed in due to missing constructor", e);
+    }
 
     registerEventsFrameworkMessageListeners();
 
@@ -370,7 +384,7 @@ public class CENextGenModule extends AbstractModule {
     filterPropertiesMapper.addBinding(FilterType.CCMRECOMMENDATION.toString())
         .to(CCMRecommendationFilterPropertiesMapper.class);
     filterPropertiesMapper.addBinding(FilterType.ANOMALY.toString()).to(AnomalyFilterPropertiesMapper.class);
-    filterPropertiesMapper.addBinding(FilterType.POLICYEXECUTION.toString()).to(ExecutionFilterPropertyMapper.class);
+    filterPropertiesMapper.addBinding(FilterType.RULEEXECUTION.toString()).to(ExecutionFilterPropertyMapper.class);
   }
 
   private void bindAccountLogContextInterceptor() {
