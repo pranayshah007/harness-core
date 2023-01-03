@@ -7,6 +7,7 @@
 
 package io.harness.data.validator;
 
+import static io.harness.rule.OwnerRule.JIMIT_GANDHI;
 import static io.harness.rule.OwnerRule.KARAN;
 import static io.harness.rule.OwnerRule.YUVRAJ;
 
@@ -35,7 +36,6 @@ public class NGEntityNameValidatorTest extends CategoryTest {
 
   private static final String ALLOWED_CHARS_STRING =
       "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_. ";
-  private static final int MAX_ALLOWED_LENGTH = 64;
 
   @Builder
   static class EntityNameValidatorTestStructure {
@@ -63,9 +63,9 @@ public class NGEntityNameValidatorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testEntityNameValidator() {
     for (int i = 0; i < 5000; i++) {
-      String name = generateRandomAsciiString();
+      String name = generateRandomAsciiString(100);
       int violationsCount = validator.validate(EntityNameValidatorTestStructure.builder().name(name).build()).size();
-      if (isValidEntityName(name)) {
+      if (isValidEntityName(name, 64)) {
         assertEquals("name : " + name, 0, violationsCount);
       } else {
         assertTrue("name : " + name, violationsCount > 0);
@@ -82,13 +82,34 @@ public class NGEntityNameValidatorTest extends CategoryTest {
     assertEquals("name : " + name, 0, violationsCount);
   }
 
-  private static String generateRandomAsciiString() {
-    String random = RandomStringUtils.randomAscii(100);
-    return random.substring(0, new Random().nextInt(100));
+  private static String generateRandomAsciiString(int maxLength) {
+    String random = RandomStringUtils.randomAscii(maxLength);
+    return random.substring(0, new Random().nextInt(maxLength));
   }
 
-  private static boolean isValidEntityName(String name) {
-    return !isBlank(name) && name.length() <= MAX_ALLOWED_LENGTH
+  private static boolean isValidEntityName(String name, int maxLength) {
+    return !isBlank(name) && name.length() <= maxLength
         && Sets.newHashSet(Lists.charactersOf(ALLOWED_CHARS_STRING)).containsAll(Lists.charactersOf(name));
+  }
+
+  @Builder
+  static class EntityNameValidatorWithCustomMaxSize {
+    @NGEntityName(maxLength = 128) String name;
+  }
+
+  @Test
+  @Owner(developers = JIMIT_GANDHI)
+  @Category(UnitTests.class)
+  public void testCustomMaxLengthForEntityNameValidator() {
+    for (int i = 0; i < 5000; i++) {
+      String name = generateRandomAsciiString(200);
+      int violationsCount =
+          validator.validate(EntityNameValidatorWithCustomMaxSize.builder().name(name).build()).size();
+      if (isValidEntityName(name, 128)) {
+        assertEquals("name : " + name, 0, violationsCount);
+      } else {
+        assertTrue("name : " + name, violationsCount > 0);
+      }
+    }
   }
 }
