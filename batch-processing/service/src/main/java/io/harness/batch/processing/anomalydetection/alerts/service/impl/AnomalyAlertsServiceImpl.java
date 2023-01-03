@@ -20,11 +20,11 @@ import io.harness.batch.processing.anomalydetection.alerts.SlackMessageGenerator
 import io.harness.batch.processing.anomalydetection.alerts.service.itfc.AnomalyAlertsService;
 import io.harness.batch.processing.config.BatchMainConfig;
 import io.harness.batch.processing.shard.AccountShardService;
+import io.harness.batch.processing.tasklet.util.CurrencyPreferenceHelper;
 import io.harness.ccm.anomaly.entities.AnomalyEntity;
 import io.harness.ccm.anomaly.service.itfc.AnomalyService;
 import io.harness.ccm.anomaly.url.HarnessNgUrl;
 import io.harness.ccm.anomaly.utility.AnomalyUtility;
-import io.harness.ccm.commons.dao.CEMetadataRecordDao;
 import io.harness.ccm.commons.dao.notifications.CCMNotificationsDao;
 import io.harness.ccm.commons.entities.anomaly.AnomalyData;
 import io.harness.ccm.commons.entities.notifications.CCMNotificationChannel;
@@ -79,7 +79,7 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
   @Autowired private CCMNotificationsDao notificationSettingsDao;
   @Autowired private NotificationResourceClient notificationResourceClient;
   @Autowired private BatchMainConfig mainConfiguration;
-  @Autowired private CEMetadataRecordDao ceMetadataRecordDao;
+  @Autowired private CurrencyPreferenceHelper currencyPreferenceHelper;
 
   int MAX_RETRY = 3;
 
@@ -106,7 +106,7 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
       return;
     }
     try {
-      sendDailyReportViaSlack(slackWebhook, date, getDestinationCurrency(accountId));
+      sendDailyReportViaSlack(slackWebhook, date, currencyPreferenceHelper.getDestinationCurrency(accountId));
     } catch (IOException | SlackApiException e) {
       log.error("Unable to send slack daily notification  for account : [{}] Exception : [{}]", accountId, e);
     }
@@ -207,7 +207,7 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
     String perspectiveUrl = HarnessNgUrl.getPerspectiveUrl(accountId, perspectiveNotificationSetting.getPerspectiveId(),
         perspectiveNotificationSetting.getPerspectiveName(), mainConfiguration.getBaseUrl());
 
-    Currency currency = getDestinationCurrency(accountId);
+    Currency currency = currencyPreferenceHelper.getDestinationCurrency(accountId);
 
     Map<String, String> templateData = new HashMap<>();
     templateData.put("perspective_name", perspectiveNotificationSetting.getPerspectiveName());
@@ -281,13 +281,5 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
     List<String> channelUrls = new ArrayList<>();
     relevantChannels.forEach(channel -> channelUrls.addAll(channel.getChannelUrls()));
     return channelUrls;
-  }
-
-  private Currency getDestinationCurrency(String accountId) {
-    Currency currency = ceMetadataRecordDao.getDestinationCurrency(accountId);
-    if (Currency.NONE.equals(currency)) {
-      currency = Currency.USD;
-    }
-    return currency;
   }
 }

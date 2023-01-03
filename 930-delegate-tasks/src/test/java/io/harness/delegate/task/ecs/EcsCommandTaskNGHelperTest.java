@@ -23,6 +23,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
@@ -30,18 +31,22 @@ import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.aws.v2.ecs.EcsV2Client;
 import io.harness.aws.v2.ecs.ElbV2Client;
 import io.harness.category.element.UnitTests;
+import io.harness.concurrent.HTimeLimiter;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.ecs.EcsMapper;
 import io.harness.delegate.beans.ecs.EcsTask;
 import io.harness.delegate.task.aws.AwsNgConfigMapper;
 import io.harness.delegate.task.ecs.request.EcsBlueGreenCreateServiceRequest;
 import io.harness.exception.HintException;
+import io.harness.exception.TimeoutException;
+import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
 import io.harness.rule.Owner;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.util.concurrent.TimeLimiter;
+import com.google.common.util.concurrent.UncheckedTimeoutException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -53,6 +58,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
@@ -70,6 +76,7 @@ import software.amazon.awssdk.services.applicationautoscaling.model.ScalableDime
 import software.amazon.awssdk.services.applicationautoscaling.model.ScalableTarget;
 import software.amazon.awssdk.services.applicationautoscaling.model.ScalingPolicy;
 import software.amazon.awssdk.services.applicationautoscaling.model.ServiceNamespace;
+import software.amazon.awssdk.services.ecs.model.Container;
 import software.amazon.awssdk.services.ecs.model.CreateServiceRequest;
 import software.amazon.awssdk.services.ecs.model.CreateServiceResponse;
 import software.amazon.awssdk.services.ecs.model.DeleteServiceRequest;
@@ -1037,6 +1044,20 @@ public class EcsCommandTaskNGHelperTest extends CategoryTest {
   @Test
   @Owner(developers = SAINATH)
   @Category(UnitTests.class)
+  public void testIsEcsTaskContainerFailed() {
+    Container container1 = Container.builder().exitCode(0).build();
+    assertThat(ecsCommandTaskNGHelper.isEcsTaskContainerFailed(container1)).isFalse();
+
+    Container container2 = Container.builder().exitCode(null).build();
+    assertThat(ecsCommandTaskNGHelper.isEcsTaskContainerFailed(container2)).isFalse();
+
+    Container container3 = Container.builder().exitCode(null).lastStatus("STOPPED").build();
+    assertThat(ecsCommandTaskNGHelper.isEcsTaskContainerFailed(container3)).isTrue();
+  }
+
+  @Test
+  @Owner(developers = SAINATH)
+  @Category(UnitTests.class)
   public void testGetDefaultListenerRuleForListener() {
     String defaultRuleArn = "defaultRuleArn";
     List<Rule> rules = Arrays.asList(Rule.builder().ruleArn(defaultRuleArn).isDefault(true).build(),
@@ -1058,6 +1079,27 @@ public class EcsCommandTaskNGHelperTest extends CategoryTest {
     doReturn(rules).when(ecsCommandTaskNGHelper).getListenerRulesForListener(any(), any(), any());
 
     ecsCommandTaskNGHelper.getDefaultListenerRuleForListener(awsInternalConfig, ecsInfraConfig, "listenerRuleArn");
+  }
+
+  @Test
+  @Owner(developers = SAINATH)
+  @Category(UnitTests.class)
+  public void testWaitAndDoSteadyStateCheck() {
+    MockedStatic<HTimeLimiter> hTimeLimiterMockedStatic = mockStatic(HTimeLimiter.class);
+    hTimeLimiterMockedStatic.when(() -> HTimeLimiter.callInterruptible(any(), any(), any())).thenReturn(null);
+    ecsCommandTaskNGHelper.waitAndDoSteadyStateCheck(null, 10l, awsConnectorDTO, "region", "clusterName", logCallback);
+    verify(logCallback)
+        .saveExecutionLog("All Tasks completed successfully.", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+  }
+
+  @Test(expected = TimeoutException.class)
+  @Owner(developers = SAINATH)
+  @Category(UnitTests.class)
+  public void testWaitAndDoSteadyStateCheckTimeoutFailure() {
+    MockedStatic<HTimeLimiter> hTimeLimiterMockedStatic = mockStatic(HTimeLimiter.class);
+    hTimeLimiterMockedStatic.when(() -> HTimeLimiter.callInterruptible(any(), any(), any()))
+        .thenThrow(UncheckedTimeoutException.class);
+    ecsCommandTaskNGHelper.waitAndDoSteadyStateCheck(null, 10l, awsConnectorDTO, "region", "clusterName", logCallback);
   }
 
   @Test

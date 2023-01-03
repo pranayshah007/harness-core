@@ -15,6 +15,7 @@ import io.harness.delegate.beans.connector.awsconnector.outcome.AwsConnectorOutc
 import io.harness.delegate.beans.connector.azureconnector.outcome.AzureConnectorOutcomeDTO;
 import io.harness.delegate.beans.connector.gcpconnector.outcome.GcpConnectorOutcomeDTO;
 import io.harness.delegate.beans.connector.k8Connector.outcome.KubernetesClusterConfigOutcomeDTO;
+import io.harness.delegate.beans.connector.pdcconnector.outcome.PhysicalDataCenterConnectorOutcomeDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.outcome.GitConfigOutcomeDTO;
 import io.harness.delegate.beans.connector.scm.github.outcome.GithubConnectorOutcomeDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.outcome.GitlabConnectorOutcomeDTO;
@@ -36,6 +37,7 @@ import java.util.List;
       @JsonSubTypes.Type(value = GitConfigOutcomeDTO.class, name = "GitOutcome"),
       @JsonSubTypes.Type(value = GithubConnectorOutcomeDTO.class, name = "GithubOutcome"),
       @JsonSubTypes.Type(value = GitlabConnectorOutcomeDTO.class, name = "GitlabOutcome"),
+      @JsonSubTypes.Type(value = PhysicalDataCenterConnectorOutcomeDTO.class, name = "PdcOutcome"),
       @JsonSubTypes.Type(value = TasConnectorOutcomeDTO.class, name = "TasConnectorOutcome")
 })
 @OwnedBy(DX)

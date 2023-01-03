@@ -114,6 +114,42 @@ public class AzureResource {
   }
 
   @GET
+  @Path("v2/app-services-names")
+  @ApiOperation(value = "Gets azure app services names V2", nickname = "getAzureWebAppNamesV2")
+  public ResponseDTO<AzureWebAppNamesDTO> getAppServiceNamesV2(
+      @QueryParam("connectorRef") String azureConnectorIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam("subscriptionId") String subscriptionId, @QueryParam("resourceGroup") String resourceGroup,
+      @Parameter(description = NGCommonEntityConstants.ENV_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ENVIRONMENT_KEY) String envId,
+      @Parameter(description = NGCommonEntityConstants.INFRADEF_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.INFRA_DEFINITION_KEY) String infraDefinitionId) {
+    Infrastructure spec = null;
+    if (isEmpty(azureConnectorIdentifier) || isEmpty(subscriptionId) || isEmpty(resourceGroup)) {
+      InfrastructureDefinitionConfig infrastructureDefinitionConfig =
+          getInfrastructureDefinitionConfig(accountId, orgIdentifier, projectIdentifier, envId, infraDefinitionId);
+      spec = infrastructureDefinitionConfig.getSpec();
+    }
+    if (isEmpty(azureConnectorIdentifier) && spec != null) {
+      azureConnectorIdentifier = spec.getConnectorReference().getValue();
+    }
+    if (isEmpty(subscriptionId) && spec != null) {
+      AzureInfrastructure azureInfrastructure = (AzureInfrastructure) spec;
+      subscriptionId = azureInfrastructure.getSubscriptionId().getValue();
+    }
+    if (isEmpty(resourceGroup) && spec != null) {
+      AzureInfrastructure azureInfrastructure = (AzureInfrastructure) spec;
+      resourceGroup = azureInfrastructure.getResourceGroup().getValue();
+    }
+    IdentifierRef connectorRef = IdentifierRefHelper.getConnectorIdentifierRef(
+        azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+    return ResponseDTO.newResponse(azureResourceService.getWebAppNames(
+        connectorRef, orgIdentifier, projectIdentifier, subscriptionId, resourceGroup));
+  }
+
+  @GET
   @Path("subscriptions/{subscriptionId}/resourceGroups/{resourceGroup}/app-services/{webAppName}/slots")
   @ApiOperation(value = "Gets azure webApp deployment slots", nickname = "getAzureWebAppDeploymentSlots")
   public ResponseDTO<AzureDeploymentSlotsDTO> getAppServiceDeploymentSlotNames(
@@ -124,6 +160,43 @@ public class AzureResource {
       @NotNull @NotEmpty @PathParam("subscriptionId") String subscriptionId,
       @NotNull @NotEmpty @PathParam("resourceGroup") String resourceGroup,
       @NotNull @NotEmpty @PathParam("webAppName") String webAppName) {
+    IdentifierRef connectorRef = IdentifierRefHelper.getConnectorIdentifierRef(
+        azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+    return ResponseDTO.newResponse(azureResourceService.getAppServiceDeploymentSlots(
+        connectorRef, orgIdentifier, projectIdentifier, subscriptionId, resourceGroup, webAppName));
+  }
+
+  @GET
+  @Path("v2/slots")
+  @ApiOperation(value = "Gets azure webApp deployment slots V2", nickname = "getAzureWebAppDeploymentSlotsV2")
+  public ResponseDTO<AzureDeploymentSlotsDTO> getAppServiceDeploymentSlotNamesV2(
+      @QueryParam("connectorRef") String azureConnectorIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam("subscriptionId") String subscriptionId, @QueryParam("resourceGroup") String resourceGroup,
+      @Parameter(description = NGCommonEntityConstants.ENV_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ENVIRONMENT_KEY) String envId,
+      @Parameter(description = NGCommonEntityConstants.INFRADEF_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.INFRA_DEFINITION_KEY) String infraDefinitionId,
+      @NotNull @PathParam("webAppName") String webAppName) {
+    Infrastructure spec = null;
+    if (isEmpty(azureConnectorIdentifier) || isEmpty(subscriptionId) || isEmpty(resourceGroup)) {
+      InfrastructureDefinitionConfig infrastructureDefinitionConfig =
+          getInfrastructureDefinitionConfig(accountId, orgIdentifier, projectIdentifier, envId, infraDefinitionId);
+      spec = infrastructureDefinitionConfig.getSpec();
+    }
+    if (isEmpty(azureConnectorIdentifier) && spec != null) {
+      azureConnectorIdentifier = spec.getConnectorReference().getValue();
+    }
+    if (isEmpty(subscriptionId) && spec != null) {
+      AzureInfrastructure azureInfrastructure = (AzureInfrastructure) spec;
+      subscriptionId = azureInfrastructure.getSubscriptionId().getValue();
+    }
+    if (isEmpty(resourceGroup) && spec != null) {
+      AzureInfrastructure azureInfrastructure = (AzureInfrastructure) spec;
+      resourceGroup = azureInfrastructure.getResourceGroup().getValue();
+    }
     IdentifierRef connectorRef = IdentifierRefHelper.getConnectorIdentifierRef(
         azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(azureResourceService.getAppServiceDeploymentSlots(

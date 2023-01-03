@@ -15,10 +15,12 @@ import io.harness.filestore.service.FileActivityService;
 import io.harness.filestore.service.FileFailsafeService;
 import io.harness.filestore.service.FileStoreService;
 import io.harness.filestore.service.FileStructureService;
+import io.harness.filestore.service.FileValidationService;
 import io.harness.filestore.service.impl.FileActivityServiceImpl;
 import io.harness.filestore.service.impl.FileFailsafeServiceImpl;
 import io.harness.filestore.service.impl.FileStoreServiceImpl;
 import io.harness.filestore.service.impl.FileStructureServiceImpl;
+import io.harness.filestore.service.impl.FileValidationServiceImpl;
 import io.harness.filter.FilterType;
 import io.harness.filter.mapper.FilterPropertiesMapper;
 import io.harness.persistence.HPersistence;
@@ -51,6 +53,7 @@ public class NgFileStoreModule extends AbstractModule {
     bind(FileFailsafeService.class).to(FileFailsafeServiceImpl.class);
     bind(FileActivityService.class).to(FileActivityServiceImpl.class);
     bind(FileStructureService.class).to(FileStructureServiceImpl.class);
+    bind(FileValidationService.class).to(FileValidationServiceImpl.class);
 
     MapBinder<String, FilterPropertiesMapper> filterPropertiesMapper =
         MapBinder.newMapBinder(binder(), String.class, FilterPropertiesMapper.class);

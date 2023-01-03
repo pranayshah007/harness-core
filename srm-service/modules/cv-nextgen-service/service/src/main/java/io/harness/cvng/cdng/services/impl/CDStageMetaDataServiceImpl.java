@@ -19,7 +19,6 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.pms.yaml.YamlNode;
 
 import com.esotericsoftware.minlog.Log;
-import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.Objects;
@@ -30,14 +29,26 @@ public class CDStageMetaDataServiceImpl implements CDStageMetaDataService {
 
   @Override
   public ResponseDTO<CDStageMetaDataDTO> getServiceAndEnvironmentRef(YamlNode stageLevelYamlNode) {
-    return getServiceAndEnvironmentRef(
-        stageLevelYamlNode.getIdentifier(), getPipelineYamlNode(stageLevelYamlNode).toString());
+    YamlNode pipelineYamlNode = getPipelineYamlNode(stageLevelYamlNode);
+    if (Objects.isNull(pipelineYamlNode)) {
+      Log.error("Pipeline not found in given Yaml, By passing validation check");
+      return null;
+    }
+    return getServiceAndEnvironmentRef(stageLevelYamlNode.getIdentifier(), pipelineYamlNode.toString());
   }
 
   @Override
   public ResponseDTO<CDStageMetaDataDTO> getServiceAndEnvironmentRef(String stageIdentifier, String pipelineYaml) {
-    ResponseDTO<CDStageMetaDataDTO> responseDTO = requestExecutor.execute(nextGenClient.getCDStageMetaData(
-        CdDeployStageMetadataRequestDTO.builder().stageIdentifier(stageIdentifier).pipelineYaml(pipelineYaml).build()));
+    ResponseDTO<CDStageMetaDataDTO> responseDTO;
+    try {
+      responseDTO = requestExecutor.execute(nextGenClient.getCDStageMetaData(CdDeployStageMetadataRequestDTO.builder()
+                                                                                 .stageIdentifier(stageIdentifier)
+                                                                                 .pipelineYaml(pipelineYaml)
+                                                                                 .build()));
+    } catch (Exception e) {
+      Log.error("Exception occurred while fetching service and environment reference, Exception: " + e.getMessage());
+      return null;
+    }
     if (Objects.isNull(responseDTO) || Objects.isNull(responseDTO.getData().getServiceRef())
         || Objects.isNull(responseDTO.getData().getEnvironmentRef())) {
       Log.error("Invalid Response for Service Ref and Environment Ref in pipeline: " + pipelineYaml);
@@ -58,7 +69,9 @@ public class CDStageMetaDataServiceImpl implements CDStageMetaDataService {
   }
 
   private YamlNode getPipelineYamlNode(YamlNode yamlNode) {
-    Preconditions.checkNotNull(yamlNode, "Invalid yaml. Can't find pipeline.");
+    if (Objects.isNull(yamlNode)) {
+      return null;
+    }
     if (yamlNode.getField(CVNGStepUtils.PIPELINE) != null) {
       return yamlNode;
     }

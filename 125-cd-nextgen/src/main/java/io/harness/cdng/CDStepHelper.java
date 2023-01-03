@@ -51,6 +51,7 @@ import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.mappers.ManifestOutcomeValidator;
 import io.harness.cdng.manifest.steps.ManifestsOutcome;
+import io.harness.cdng.manifest.yaml.AzureRepoStore;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.S3StoreConfig;
@@ -214,6 +215,7 @@ public class CDStepHelper {
       "[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*";
 
   public static final Pattern releaseNamePattern = Pattern.compile(RELEASE_NAME_VALIDATION_REGEX);
+  public static final String GIT = "/_git/";
 
   // Optimised (SCM based) file fetch methods:
   public boolean isGitlabTokenAuth(ScmConnector scmConnector) {
@@ -357,12 +359,32 @@ public class CDStepHelper {
     return purgedRepoUrl + "/" + purgedRepoName;
   }
 
+  public String getGitRepoUrlForAzureProject(ScmConnector scmConnector, String repoName) {
+    repoName = trimToEmpty(repoName);
+    notEmptyCheck("Repo name cannot be empty for Account level git connector", repoName);
+    String purgedRepoUrl = scmConnector.getUrl().replaceAll("/*$", "");
+    String purgedRepoName = repoName.replaceAll("^/*", "");
+    return purgedRepoUrl + GIT + purgedRepoName;
+  }
+
+  public String convertGitAccountProjectUrlToRepoUrl(
+      GitConfigDTO gitConfigDTO, GitStoreConfig gitStoreConfig, String repoName) {
+    if (gitConfigDTO.getGitConnectionType() == GitConnectionType.ACCOUNT) {
+      return getGitRepoUrl(gitConfigDTO, repoName);
+    } else if (gitStoreConfig instanceof AzureRepoStore
+        && gitConfigDTO.getGitConnectionType() == GitConnectionType.PROJECT) {
+      return getGitRepoUrlForAzureProject(gitConfigDTO, repoName);
+    } else {
+      return "";
+    }
+  }
+
   public void convertToRepoGitConfig(GitStoreConfig gitstoreConfig, ScmConnector scmConnector) {
     String repoName = gitstoreConfig.getRepoName() != null ? gitstoreConfig.getRepoName().getValue() : null;
     if (scmConnector instanceof GitConfigDTO) {
       GitConfigDTO gitConfigDTO = (GitConfigDTO) scmConnector;
-      if (gitConfigDTO.getGitConnectionType() == GitConnectionType.ACCOUNT) {
-        String repoUrl = getGitRepoUrl(gitConfigDTO, repoName);
+      String repoUrl = convertGitAccountProjectUrlToRepoUrl(gitConfigDTO, gitstoreConfig, repoName);
+      if (isNotEmpty(repoUrl)) {
         gitConfigDTO.setUrl(repoUrl);
         gitConfigDTO.setGitConnectionType(GitConnectionType.REPO);
       }
@@ -390,7 +412,7 @@ public class CDStepHelper {
     } else if (scmConnector instanceof AzureRepoConnectorDTO) {
       AzureRepoConnectorDTO azureRepoConnectorDTO = (AzureRepoConnectorDTO) scmConnector;
       if (azureRepoConnectorDTO.getConnectionType() == AzureRepoConnectionTypeDTO.PROJECT) {
-        String repoUrl = getGitRepoUrl(azureRepoConnectorDTO, repoName);
+        String repoUrl = getGitRepoUrlForAzureProject(azureRepoConnectorDTO, repoName);
         azureRepoConnectorDTO.setUrl(repoUrl);
         azureRepoConnectorDTO.setConnectionType(AzureRepoConnectionTypeDTO.REPO);
       }

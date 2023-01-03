@@ -10,6 +10,8 @@ package io.harness;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.debezium.DebeziumEngineModule;
 import io.harness.debezium.DebeziumEngineModuleConfig;
+import io.harness.debezium.DebeziumService;
+import io.harness.debezium.DebeziumServiceImpl;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
 import io.harness.metrics.modules.MetricsModule;
@@ -58,6 +60,7 @@ public class DebeziumServiceModule extends AbstractModule {
     install(PersistentLockModule.getInstance());
     install(new MetricsModule());
     bind(HPersistence.class).to(MongoPersistence.class);
+    bind(DebeziumService.class).to(DebeziumServiceImpl.class);
     bind(ExecutorService.class)
         .toInstance(ThreadPool.create(1, 10, 120, TimeUnit.SECONDS,
             new ThreadFactoryBuilder().setNameFormat("DebeziumServiceExecutor-%d").build()));

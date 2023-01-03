@@ -20,8 +20,8 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.batch.processing.config.BatchMainConfig;
 import io.harness.batch.processing.config.BillingDataPipelineConfig;
-import io.harness.batch.processing.mail.CEMailNotificationService;
 import io.harness.batch.processing.shard.AccountShardService;
+import io.harness.batch.processing.tasklet.util.CurrencyPreferenceHelper;
 import io.harness.category.element.UnitTests;
 import io.harness.ccm.budget.AlertThreshold;
 import io.harness.ccm.budget.AlertThresholdBase;
@@ -30,14 +30,11 @@ import io.harness.ccm.budget.EnvironmentType;
 import io.harness.ccm.budget.dao.BudgetDao;
 import io.harness.ccm.budgetGroup.BudgetGroup;
 import io.harness.ccm.budgetGroup.dao.BudgetGroupDao;
-import io.harness.ccm.commons.dao.CEMetadataRecordDao;
 import io.harness.ccm.commons.entities.billing.Budget;
 import io.harness.ccm.communication.CESlackWebhookService;
 import io.harness.ccm.communication.entities.CESlackWebhook;
 import io.harness.ccm.currency.Currency;
-import io.harness.notification.notificationclient.NotificationResult;
 import io.harness.notifications.NotificationResourceClient;
-import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.timescaledb.TimeScaleDBService;
 
@@ -45,7 +42,6 @@ import software.wings.beans.User;
 import software.wings.beans.security.UserGroup;
 import software.wings.graphql.datafetcher.billing.CloudBillingHelper;
 import software.wings.graphql.datafetcher.budget.BudgetTimescaleQueryHelper;
-import software.wings.service.intfc.SlackMessageSender;
 import software.wings.service.intfc.instance.CloudToHarnessMappingService;
 
 import com.google.common.collect.Lists;
@@ -53,8 +49,8 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -63,14 +59,21 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.runners.MockitoJUnitRunner;
-import retrofit2.Response;
 
 @RunWith(MockitoJUnitRunner.class)
 public class BudgetAlertsServiceImplTest extends CategoryTest {
+  private static final String ACCOUNT_ID = "ACCOUNT_ID";
+  private static final String BUDGET_ID = "BUDGET_ID";
+  private static final String APPLICATION_ID_1 = "APPLICATION_ID_1";
+  private static final String APPLICATION_ID_2 = "APPLICATION_ID_2";
+  private static final String[] USER_GROUP_IDS = {"USER_GROUP_ID"};
+  private static final String MEMBER_ID = "MEMBER_ID";
+  private static final String BASE_URL = "BASE_URL";
+  private static final String WEBHOOK_URL = "WEBHOOK_URL";
+  private static final double ALERT_THRESHOLD_PERCENTAGE = 0.5;
+
   @Mock private TimeScaleDBService timeScaleDBService;
-  @Mock private CEMailNotificationService emailNotificationService;
   @Mock private NotificationResourceClient notificationResourceClient;
-  @Mock private SlackMessageSender slackMessageSender;
   @Mock private BudgetTimescaleQueryHelper budgetTimescaleQueryHelper;
   @Mock private CESlackWebhookService ceSlackWebhookService;
   @Mock private BatchMainConfig mainConfiguration;
@@ -79,26 +82,11 @@ public class BudgetAlertsServiceImplTest extends CategoryTest {
   @Mock private CloudBillingHelper cloudBillingHelper;
   @Mock private BudgetDao budgetDao;
   @Mock private BudgetGroupDao budgetGroupDao;
-  @Mock private CEMetadataRecordDao ceMetadataRecordDao;
+  @Mock private CurrencyPreferenceHelper currencyPreferenceHelper;
+  @Mock private Statement statement;
+  @Mock private ResultSet resultSet;
   @InjectMocks private BudgetAlertsServiceImpl budgetAlertsService;
 
-  @Mock Statement statement;
-  @Mock ResultSet resultSet;
-
-  private static final String ACCOUNT_ID = "ACCOUNT_ID";
-  private String BUDGET_ID = "BUDGET_ID";
-  private String APPLICATION_ID_1 = "APPLICATION_ID_1";
-  private String APPLICATION_ID_2 = "APPLICATION_ID_2";
-  private AlertThreshold alertThreshold;
-  private String[] userGroupIds = {"USER_GROUP_ID"};
-  private String MEMBER_ID = "MEMBER_ID";
-  private String BASE_URL = "BASE_URL";
-  private String WEBHOOK_URL = "WEBHOOK_URL";
-  private UserGroup userGroup;
-  private User user;
-  private Budget budget;
-  private CESlackWebhook ceSlackWebhook;
-  private Response<RestResponse<NotificationResult>> response;
   @Before
   public void setup() throws SQLException {
     MockitoAnnotations.initMocks(this);
@@ -108,46 +96,47 @@ public class BudgetAlertsServiceImplTest extends CategoryTest {
     when(timeScaleDBService.isValid()).thenReturn(true);
     when(mockConnection.createStatement()).thenReturn(mockStatement);
     when(notificationResourceClient.sendNotification(any(), any())).thenReturn(null);
-    when(accountShardService.getCeEnabledAccountIds()).thenReturn(Arrays.asList(ACCOUNT_ID));
-    alertThreshold = AlertThreshold.builder().percentage(0.5).basedOn(AlertThresholdBase.ACTUAL_COST).build();
-    budget = Budget.builder()
-                 .uuid(BUDGET_ID)
-                 .accountId(ACCOUNT_ID)
-                 .name("test_budget")
-                 .scope(ApplicationBudgetScope.builder()
-                            .applicationIds(new String[] {APPLICATION_ID_1, APPLICATION_ID_2})
-                            .environmentType(EnvironmentType.ALL)
-                            .build())
-                 .type(SPECIFIED_AMOUNT)
-                 .budgetAmount(1000.0)
-                 .actualCost(600.0)
-                 .forecastCost(800.0)
-                 .alertThresholds(new AlertThreshold[] {alertThreshold})
-                 .userGroupIds(userGroupIds)
-                 .build();
+    when(accountShardService.getCeEnabledAccountIds()).thenReturn(List.of(ACCOUNT_ID));
+    AlertThreshold alertThreshold =
+        AlertThreshold.builder().percentage(ALERT_THRESHOLD_PERCENTAGE).basedOn(AlertThresholdBase.ACTUAL_COST).build();
+    Budget budget = Budget.builder()
+                        .uuid(BUDGET_ID)
+                        .accountId(ACCOUNT_ID)
+                        .name("test_budget")
+                        .scope(ApplicationBudgetScope.builder()
+                                   .applicationIds(new String[] {APPLICATION_ID_1, APPLICATION_ID_2})
+                                   .environmentType(EnvironmentType.ALL)
+                                   .build())
+                        .type(SPECIFIED_AMOUNT)
+                        .budgetAmount(1000.0)
+                        .actualCost(600.0)
+                        .forecastCost(800.0)
+                        .alertThresholds(new AlertThreshold[] {alertThreshold})
+                        .userGroupIds(USER_GROUP_IDS)
+                        .build();
 
-    ceSlackWebhook =
+    CESlackWebhook ceSlackWebhook =
         CESlackWebhook.builder().accountId(ACCOUNT_ID).sendCostReport(true).webhookUrl(WEBHOOK_URL).build();
-    userGroup = UserGroup.builder().accountId(ACCOUNT_ID).memberIds(Arrays.asList(MEMBER_ID)).build();
-    user = User.Builder.anUser().email("user@harness.io").build();
+    UserGroup userGroup = UserGroup.builder().accountId(ACCOUNT_ID).memberIds(List.of(MEMBER_ID)).build();
+    User user = User.Builder.anUser().email("user@harness.io").build();
 
     when(mainConfiguration.getBaseUrl()).thenReturn(BASE_URL);
     when(mainConfiguration.getBillingDataPipelineConfig())
         .thenReturn(BillingDataPipelineConfig.builder().gcpProjectId("projectId").build());
     when(budgetDao.list(ACCOUNT_ID)).thenReturn(Collections.singletonList(budget));
     when(budgetGroupDao.list(ACCOUNT_ID, Integer.MAX_VALUE, 0)).thenReturn(Lists.newArrayList(new BudgetGroup[0]));
-    when(cloudToHarnessMappingService.getUserGroup(ACCOUNT_ID, userGroupIds[0], true)).thenReturn(userGroup);
+    when(cloudToHarnessMappingService.getUserGroup(ACCOUNT_ID, USER_GROUP_IDS[0], true)).thenReturn(userGroup);
     when(cloudToHarnessMappingService.getUser(MEMBER_ID)).thenReturn(user);
     when(ceSlackWebhookService.getByAccountId(budget.getAccountId())).thenReturn(ceSlackWebhook);
     when(cloudBillingHelper.getCloudProviderTableName(anyString(), anyString(), anyString()))
         .thenReturn("cloudProviderTable");
+    when(currencyPreferenceHelper.getDestinationCurrency(anyString())).thenReturn(Currency.USD);
   }
 
   @Test
   @Owner(developers = SHUBHANSHU)
   @Category(UnitTests.class)
   public void shouldSendBudgetAlerts() {
-    when(ceMetadataRecordDao.getDestinationCurrency(anyString())).thenReturn(Currency.USD);
     budgetAlertsService.sendBudgetAndBudgetGroupAlerts();
     verify(notificationResourceClient, times(1)).sendNotification(any(), any());
   }
