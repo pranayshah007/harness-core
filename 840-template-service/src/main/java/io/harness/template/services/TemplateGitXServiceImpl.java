@@ -187,12 +187,12 @@ public class TemplateGitXServiceImpl implements TemplateGitXService {
     Map<String, String> changedFields = new HashMap<>();
 
     String identifierFromGit = templateInnerField.getNode().getIdentifier();
-    if (!templateIdentifier.equals(identifierFromGit)) {
+    if (EmptyPredicate.isNotEmpty(templateIdentifier) && !templateIdentifier.equals(identifierFromGit)) {
       changedFields.put(YAMLMetadataFieldNameConstants.IDENTIFIER, identifierFromGit);
     }
 
     String nameFromGit = templateInnerField.getNode().getName();
-    if (!EmptyPredicate.isEmpty(templateImportRequest.getTemplateName())
+    if (EmptyPredicate.isNotEmpty(templateImportRequest.getTemplateName())
         && !templateImportRequest.getTemplateName().equals(nameFromGit)) {
       changedFields.put(YAMLMetadataFieldNameConstants.NAME, nameFromGit);
     }

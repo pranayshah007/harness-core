@@ -20,7 +20,6 @@ import static org.mockito.Mockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.doReturn;
 import static org.powermock.api.mockito.PowerMockito.when;
 
-import io.harness.beans.Scope;
 import io.harness.category.element.UnitTests;
 import io.harness.context.GlobalContext;
 import io.harness.exception.DuplicateFileImportException;
@@ -41,6 +40,7 @@ import io.harness.template.entity.TemplateEntity;
 import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
 
 import java.io.IOException;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -96,11 +96,19 @@ public class TemplateGitXServiceImplTest {
       + "      environmentVariables: []\n"
       + "      outputVariables: []\n";
 
+  private AutoCloseable mocks;
   @Before
   public void setUp() throws IOException {
-    MockitoAnnotations.initMocks(this);
+    mocks = MockitoAnnotations.openMocks(this);
     templateGitXService = new TemplateGitXServiceImpl(scmGitSyncHelper, ngTemplateFeatureFlagHelperService,
         gitSyncSdkService, templateRepository, gitAwareEntityHelper);
+  }
+
+  @After
+  public void tearDown() throws Exception {
+    if (mocks != null) {
+      mocks.close();
+    }
   }
 
   @Test
@@ -116,7 +124,6 @@ public class TemplateGitXServiceImplTest {
                                    .parentEntityProjectIdentifier(PROJECT_IDENTIFIER)
                                    .build();
     setupGitContext(branchInfo);
-    Scope scope = Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
     doReturn(ScmGetRepoUrlResponse.builder().repoUrl(ENTITY_REPO_URL).build())
         .when(scmGitSyncHelper)
         .getRepoUrl(any(), any(), any(), any());
@@ -128,7 +135,7 @@ public class TemplateGitXServiceImplTest {
                      .parentEntityConnectorRef(PARENT_ENTITY_CONNECTOR_REF)
                      .build();
     setupGitContext(branchInfo);
-    assertThat(templateGitXService.getWorkingBranch("random repo url")).isEqualTo("");
+    assertThat(templateGitXService.getWorkingBranch("random repo url")).isEmpty();
     branchInfo = GitEntityInfo.builder().branch(BranchName).parentEntityRepoUrl(ENTITY_REPO_URL).build();
     setupGitContext(branchInfo);
     assertThat(templateGitXService.getWorkingBranch(ENTITY_REPO_URL)).isEqualTo(BranchName);
@@ -140,7 +147,6 @@ public class TemplateGitXServiceImplTest {
   public void testGetWorkingBranchInline() {
     GitEntityInfo branchInfo = GitEntityInfo.builder().branch(BranchName).build();
     setupGitContext(branchInfo);
-    Scope scope = Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
     assertThat(templateGitXService.getWorkingBranch(ENTITY_REPO_URL)).isEqualTo(BranchName);
   }
 
@@ -210,10 +216,10 @@ public class TemplateGitXServiceImplTest {
     TemplateImportRequestDTO templateImportRequestDTO =
         TemplateImportRequestDTO.builder().templateName("importT7").templateVersion("v1").build();
 
-    Exception exception = assertThrows(InvalidRequestException.class, () -> {
-      templateGitXService.performImportFlowYamlValidations(
-          ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, templateImportRequestDTO, IMPORTED_YAML);
-    });
+    Exception exception = assertThrows(InvalidRequestException.class,
+        ()
+            -> templateGitXService.performImportFlowYamlValidations(
+                ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, templateImportRequestDTO, IMPORTED_YAML));
 
     assertEquals(thrownException.getMessage(), exception.getMessage());
   }
@@ -229,7 +235,7 @@ public class TemplateGitXServiceImplTest {
                                                             .build();
 
     templateGitXService.performImportFlowYamlValidations(
-        "default", "GitX_Remote", "importT7", templateImportRequestDTO, IMPORTED_YAML);
+        "default", "GitX_Remote", null, templateImportRequestDTO, IMPORTED_YAML);
   }
 
   @Test
@@ -238,18 +244,21 @@ public class TemplateGitXServiceImplTest {
   public void testGetRepoUrlAndCheckForFileUniqueness() {
     String repoUrl = "repoUrl";
     GitEntityInfo gitEntityInfo = GitEntityInfo.builder().filePath("filePath").build();
-    MockedStatic<GitAwareContextHelper> utilities = mockStatic(GitAwareContextHelper.class);
-    utilities.when(GitAwareContextHelper::getGitRequestParamsInfo).thenReturn(gitEntityInfo);
+    try (MockedStatic<GitAwareContextHelper> utilities = mockStatic(GitAwareContextHelper.class)) {
+      utilities.when(GitAwareContextHelper::getGitRequestParamsInfo).thenReturn(gitEntityInfo);
 
-    doReturn(repoUrl).when(gitAwareEntityHelper).getRepoUrl(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
-    doReturn(10L).when(templateRepository).countFileInstances(ACCOUNT_IDENTIFIER, repoUrl, gitEntityInfo.getFilePath());
-    assertThatThrownBy(()
-                           -> templateGitXService.checkForFileUniquenessAndGetRepoURL(
-                               ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, TEMPLATE_ID, false))
-        .isInstanceOf(DuplicateFileImportException.class);
+      doReturn(repoUrl).when(gitAwareEntityHelper).getRepoUrl(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+      doReturn(10L)
+          .when(templateRepository)
+          .countFileInstances(ACCOUNT_IDENTIFIER, repoUrl, gitEntityInfo.getFilePath());
+      assertThatThrownBy(()
+                             -> templateGitXService.checkForFileUniquenessAndGetRepoURL(
+                                 ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, TEMPLATE_ID, false))
+          .isInstanceOf(DuplicateFileImportException.class);
 
-    assertThat(templateGitXService.checkForFileUniquenessAndGetRepoURL(
-                   ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, TEMPLATE_ID, true))
-        .isEqualTo(repoUrl);
+      assertThat(templateGitXService.checkForFileUniquenessAndGetRepoURL(
+                     ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, TEMPLATE_ID, true))
+          .isEqualTo(repoUrl);
+    }
   }
 }
