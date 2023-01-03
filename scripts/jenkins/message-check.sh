@@ -19,7 +19,7 @@ PROJFILE="$SHDIR/jira-projects.txt"
 check_file_present $PROJFILE
 PROJECTS=$(<$PROJFILE)
 
-COMMIT_CONTENT="\[feat]|\[fix]|\[techdebt]|feat|fix|techdebt"
+COMMIT_CONTENT="\[feat]|\[fix]|\[techdebt]\[HotfixPreQA]|feat|fix|techdebt|HotfixPreQA"
 SHDIR=`dirname "$0"`
 PROJECTS=$(<$SHDIR/jira-projects.txt)
 
