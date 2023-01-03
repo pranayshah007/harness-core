@@ -25,6 +25,7 @@ import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
 import io.harness.cdng.creator.plan.environment.EnvironmentMapper;
 import io.harness.cdng.creator.plan.environment.EnvironmentPlanCreatorHelper;
+import io.harness.cdng.creator.plan.environment.EnvironmentStepsUtils;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.envGroup.services.EnvironmentGroupService;
 import io.harness.cdng.expressions.CDExpressionResolver;
@@ -221,6 +222,8 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
 
     List<Environment> environments = getEnvironmentsFromEnvRef(ambiance, parameters.getEnvRefs());
 
+    EnvironmentStepsUtils.checkForAllEnvsAccessOrThrow(accessControlClient, ambiance, environments);
+
     log.info("Starting execution for Environments: [{}]", Arrays.toString(environments.toArray()));
     for (Environment environment : environments) {
       NGEnvironmentConfig ngEnvironmentConfig;
@@ -306,6 +309,9 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
     }
 
     log.info("Starting execution for Environment Step [{}]", envRef.getValue());
+
+    EnvironmentStepsUtils.checkForEnvAccessOrThrow(accessControlClient, ambiance, envRef);
+
     if (envRef.fetchFinalValue() != null) {
       Optional<Environment> environment =
           environmentService.get(AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),

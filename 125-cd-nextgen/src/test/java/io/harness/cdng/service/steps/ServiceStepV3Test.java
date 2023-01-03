@@ -18,6 +18,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.harness.accesscontrol.acl.api.AccessCheckResponseDTO;
 import io.harness.accesscontrol.acl.api.Principal;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
@@ -132,6 +133,10 @@ public class ServiceStepV3Test {
     doReturn(OptionalSweepingOutput.builder().found(false).build())
         .when(sweepingOutputService)
         .resolveOptional(any(Ambiance.class), any());
+
+    doReturn(AccessCheckResponseDTO.builder().accessControlList(List.of()).build())
+        .when(accessControlClient)
+        .checkForAccess(any(Principal.class), anyList());
   }
   @After
   public void tearDown() throws Exception {
