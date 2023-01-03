@@ -43,3 +43,15 @@ fi
 if [[ "" != "$MONGO_MAX_OPERATION_TIME_IN_MILLIS" ]]; then
   export MONGO_MAX_OPERATION_TIME_IN_MILLIS; yq -i '.events-mongo.maxOperationTimeInMillis=env(MONGO_MAX_OPERATION_TIME_IN_MILLIS)' $CONFIG_FILE
 fi
+
+if [[ "" != "$BATCH_CURSOR_SIZE" ]]; then
+  export BATCH_CURSOR_SIZE; yq -i '.jobCommonConfig.batchConfig.cursorBatchSize=env(BATCH_CURSOR_SIZE)' $CONFIG_FILE
+fi
+
+if [[ "" != "$BATCH_LIMIT" ]]; then
+  export BATCH_LIMIT; yq -i '.jobCommonConfig.batchConfig.cursorBatchSize=env(BATCH_LIMIT)' $CONFIG_FILE
+fi
+
+if [[ "" != "$BATCH_MAX_RETRIES" ]]; then
+  export BATCH_MAX_RETRIES; yq -i '.jobCommonConfig.batchConfig.cursorBatchSize=env(BATCH_MAX_RETRIES)' $CONFIG_FILE
+fi

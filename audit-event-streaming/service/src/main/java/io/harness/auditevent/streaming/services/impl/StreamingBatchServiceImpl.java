@@ -80,6 +80,7 @@ public class StreamingBatchServiceImpl implements StreamingBatchService {
     switch (status) {
       case READY:
       case IN_PROGRESS:
+      case FAILED:
         streamingBatch = lastStreamingBatch.get();
         break;
       case SUCCESS:

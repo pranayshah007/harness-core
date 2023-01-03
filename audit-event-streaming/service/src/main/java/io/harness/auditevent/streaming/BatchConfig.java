@@ -17,4 +17,5 @@ import org.springframework.context.annotation.Configuration;
 public class BatchConfig {
   private int cursorBatchSize;
   private int limit;
+  private int maxRetries;
 }
