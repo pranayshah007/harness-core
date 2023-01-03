@@ -1915,6 +1915,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     if (delegateTaskEvent.getTaskType() != null) {
       if (!supportedTaskTypes.contains(delegateTaskEvent.getTaskType())) {
         log.error("Task {} of type {} not supported by delegate", delegateTaskId, delegateTaskEvent.getTaskType());
+        return;
       }
     } else {
       log.warn("Task type not available for Task {}", delegateTaskId);
