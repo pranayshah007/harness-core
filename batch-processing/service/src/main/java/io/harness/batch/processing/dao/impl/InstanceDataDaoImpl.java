@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.query.FindOptions;
+import org.mongodb.morphia.query.MorphiaIterator;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.Sort;
 import org.mongodb.morphia.query.UpdateOperations;
@@ -207,10 +208,14 @@ public class InstanceDataDaoImpl implements InstanceDataDao {
                                     .in(instanceState)
                                     .field(InstanceDataKeys.usageStartTime)
                                     .lessThanOrEq(startTime)
-                                    .project(InstanceDataKeys.uuid, false)
                                     .project(InstanceDataKeys.instanceId, true)
-                                    .project(InstanceDataKeys.usageStopTime, true);
-    try (HIterator<InstanceData> instanceItr = new HIterator<>(query.fetch())) {
+                                    .project(InstanceDataKeys.usageStopTime, true)
+                                    .project(InstanceDataKeys.uuid, false);
+    log.info(":::::::::::::::: QUERY :::::::  " + query.toString());
+    MorphiaIterator<InstanceData, InstanceData> itr = query.fetch();
+    log.info("::::::::::::::::: fetch ::::::: " + itr);
+
+    try (HIterator<InstanceData> instanceItr = new HIterator<>(itr)) {
       for (InstanceData instanceData : instanceItr) {
         if (null == instanceData.getUsageStopTime()) {
           instanceIds.add(instanceData.getInstanceId());
