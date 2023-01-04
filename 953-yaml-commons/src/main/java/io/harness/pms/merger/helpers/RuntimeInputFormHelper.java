@@ -145,8 +145,10 @@ public class RuntimeInputFormHelper {
       String value = fullMap.get(key).toString().replace("\\\"", "").replace("\"", "");
       if (NGExpressionUtils.matchesExecutionInputPattern(value)) {
         templateMap.put(key, fullMap.get(key));
+        // Passing the flag true so that they key having Hyphen will be surrounded by '.
+        // Example: artifact.hello-world -> artifact.'hello-world'
         fullMap.put(key,
-            EXPR_START + NGExpressionUtils.EXPRESSION_INPUT_CONSTANT + "." + key.getExpressionFqnWithoutIgnoring()
+            EXPR_START + NGExpressionUtils.EXPRESSION_INPUT_CONSTANT + "." + key.getExpressionFqnWithoutIgnoring(true)
                 + EXPR_END_ESC);
       } else if (NGExpressionUtils.matchesUpdatedExecutionInputPattern(value)) {
         templateMap.put(key, fullMap.get(key));
@@ -169,7 +171,7 @@ public class RuntimeInputFormHelper {
         if (NGExpressionUtils.matchesExecutionInputPattern(value)) {
           templateMap.put(key, fullMap.get(key));
           fullMap.put(key,
-              EXPR_START + NGExpressionUtils.EXPRESSION_INPUT_CONSTANT + "." + key.getExpressionFqnWithoutIgnoring()
+              EXPR_START + NGExpressionUtils.EXPRESSION_INPUT_CONSTANT + "." + key.getExpressionFqnWithoutIgnoring(true)
                   + EXPR_END_ESC);
         } else if (NGExpressionUtils.matchesUpdatedExecutionInputPattern(value)) {
           templateMap.put(key, fullMap.get(key));

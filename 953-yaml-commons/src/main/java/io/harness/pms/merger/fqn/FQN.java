@@ -93,16 +93,24 @@ public class FQN {
   // This method return the ExpressionFQN without ignoring the ignorableStringForQualifiedName. We need full path in a
   // step/stage/pipeline yaml as expression because we convert the user input yaml to map and use it for expression
   // evaluation.
+
   public String getExpressionFqnWithoutIgnoring() {
+    return getExpressionFqnWithoutIgnoring(false);
+  }
+
+  public String getExpressionFqnWithoutIgnoring(boolean surroundKeyInQuotesIfHyphenPresent) {
     StringBuilder res = new StringBuilder();
     for (int i = 0; i < fqnList.size(); i++) {
       FQNNode currNode = fqnList.get(i);
       if (currNode.getNodeType() == FQNNode.NodeType.KEY) {
-        res.append(currNode.getKey()).append('.');
+        res.append(surroundKeyInQuotesIfHyphenPresent(currNode.getKey(), surroundKeyInQuotesIfHyphenPresent))
+            .append('.');
       } else if (currNode.getNodeType() == FQNNode.NodeType.KEY_WITH_UUID) {
-        res.append(currNode.getUuidValue()).append('.');
+        res.append(surroundKeyInQuotesIfHyphenPresent(currNode.getUuidValue(), surroundKeyInQuotesIfHyphenPresent))
+            .append('.');
       } else if (currNode.getNodeType() == FQNNode.NodeType.UUID) {
-        res.append(currNode.getUuidValue()).append('.');
+        res.append(surroundKeyInQuotesIfHyphenPresent(currNode.getUuidValue(), surroundKeyInQuotesIfHyphenPresent))
+            .append('.');
         if (i < fqnList.size() - 1 && shouldSkipNextNode(currNode, fqnList.get(i + 1))) {
           i++;
         }
@@ -110,6 +118,15 @@ public class FQN {
     }
     String temp = res.toString();
     return temp.substring(0, temp.length() - 1);
+  }
+
+  // When hyphen is present in the key, the expression evaluation will not work normally. But if we surround the key
+  // with single-quotes, then expression evaluation starts working.
+  private String surroundKeyInQuotesIfHyphenPresent(String key, boolean flag) {
+    if (flag && key.contains("-")) {
+      return "'" + key + "'";
+    }
+    return key;
   }
 
   /**
