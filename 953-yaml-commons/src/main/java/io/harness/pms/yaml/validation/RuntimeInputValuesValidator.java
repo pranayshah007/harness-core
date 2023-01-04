@@ -72,10 +72,22 @@ public class RuntimeInputValuesValidator {
         && !NGExpressionUtils.isRuntimeOrExpressionField(inputSetFieldValue)) {
       try {
         ParameterField<?> templateField = YamlUtils.read(templateValue, ParameterField.class);
-        if (templateField.getInputSetValidator() == null) {
+        // InputSet validators can be provided During the Run Pipeline as well. So consider inputSetValidators from
+        // inputSetField as well for validations.
+        if (templateField.getInputSetValidator() == null
+            && (inputSetField == null || inputSetField.getInputSetValidator() == null)) {
           return error;
         }
-        InputSetValidator inputSetValidator = templateField.getInputSetValidator();
+        InputSetValidator inputSetValidator = null;
+        // If inputSetField has inputSetValidators then use it instead of templateField.getInputSetValidators().
+        // Because templateField is defined in pipeline while inputSetField is provided during Run pipeline. So it has
+        // more priority over templateField.
+        if (inputSetField != null) {
+          inputSetValidator = inputSetField.getInputSetValidator();
+        }
+        if (inputSetValidator == null) {
+          inputSetValidator = templateField.getInputSetValidator();
+        }
         if (inputSetValidator.getValidatorType() == REGEX) {
           boolean matchesPattern =
               NGExpressionUtils.matchesPattern(Pattern.compile(inputSetValidator.getParameters()), inputSetFieldValue);
