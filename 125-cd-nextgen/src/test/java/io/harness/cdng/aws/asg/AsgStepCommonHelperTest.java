@@ -91,13 +91,13 @@ public class AsgStepCommonHelperTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
   private final Ambiance ambiance = Ambiance.newBuilder()
-          .putSetupAbstractions(SetupAbstractionKeys.accountId, "test-account")
-          .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "test-org")
-          .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "test-project")
-          .build();
+                                        .putSetupAbstractions(SetupAbstractionKeys.accountId, "test-account")
+                                        .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "test-org")
+                                        .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "test-project")
+                                        .build();
   private final AsgRollingDeployStepParameters asgSpecParameters = AsgRollingDeployStepParameters.infoBuilder().build();
   private final StepElementParameters stepElementParameters =
-          StepElementParameters.builder().spec(asgSpecParameters).timeout(ParameterField.createValueField("10m")).build();
+      StepElementParameters.builder().spec(asgSpecParameters).timeout(ParameterField.createValueField("10m")).build();
 
   private final String content = "content";
   @Mock private OutcomeService outcomeService;
@@ -118,17 +118,17 @@ public class AsgStepCommonHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void startChainLinkTest() {
     HarnessStore harnessStoreConfig =
-            HarnessStore.builder()
-                    .files(ParameterField.<List<String>>builder().value(Arrays.asList("Asg/sample/asg.yaml")).build())
-                    .build();
+        HarnessStore.builder()
+            .files(ParameterField.<List<String>>builder().value(Arrays.asList("Asg/sample/asg.yaml")).build())
+            .build();
     ManifestOutcome launchTemplateManifestOutcome =
-            AsgLaunchTemplateManifestOutcome.builder().identifier("sadf").store(harnessStoreConfig).build();
+        AsgLaunchTemplateManifestOutcome.builder().identifier("sadf").store(harnessStoreConfig).build();
     ManifestOutcome configurationManifestOutcome =
-            AsgConfigurationManifestOutcome.builder().identifier("sadf").store(harnessStoreConfig).build();
+        AsgConfigurationManifestOutcome.builder().identifier("sadf").store(harnessStoreConfig).build();
     ManifestOutcome scalingPolicyManifestOutcome =
-            AsgScalingPolicyManifestOutcome.builder().identifier("sadf").store(harnessStoreConfig).build();
+        AsgScalingPolicyManifestOutcome.builder().identifier("sadf").store(harnessStoreConfig).build();
     ManifestOutcome scheduledUpdateGroupActionManifestOutcome =
-            AsgScheduledUpdateGroupActionManifestOutcome.builder().identifier("sadf").store(harnessStoreConfig).build();
+        AsgScheduledUpdateGroupActionManifestOutcome.builder().identifier("sadf").store(harnessStoreConfig).build();
 
     Map<String, ManifestOutcome> manifestOutcomeMap = new HashMap<>();
     manifestOutcomeMap.put("lauchTemplate", launchTemplateManifestOutcome);
@@ -138,8 +138,8 @@ public class AsgStepCommonHelperTest extends CategoryTest {
     ManifestsOutcome manifestsOutcome = new ManifestsOutcome(manifestOutcomeMap);
     doReturn(manifestsOutcome).when(asgStepCommonHelper).resolveAsgManifestsOutcome(ambiance);
     doReturn(logCallback)
-            .when(asgStepCommonHelper)
-            .getLogCallback(AsgCommandUnitConstants.fetchManifests.toString(), ambiance, true);
+        .when(asgStepCommonHelper)
+        .getLogCallback(AsgCommandUnitConstants.fetchManifests.toString(), ambiance, true);
     doNothing().when(asgStepCommonHelper).validateManifestsOutcome(ambiance, manifestsOutcome);
     OptionalOutcome optionalOutcome = OptionalOutcome.builder().found(true).outcome(manifestsOutcome).build();
     InfrastructureOutcome infrastructureOutcome = AsgInfrastructureOutcome.builder().build();
@@ -148,16 +148,16 @@ public class AsgStepCommonHelperTest extends CategoryTest {
 
     Mockito.mockStatic(StepUtils.class);
     PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
-            .thenReturn(TaskRequest.newBuilder().build());
+        .thenReturn(TaskRequest.newBuilder().build());
 
     TaskChainResponse taskChainResponse =
-            asgStepCommonHelper.startChainLink(asgStepExecutor, ambiance, stepElementParameters);
+        asgStepCommonHelper.startChainLink(asgStepExecutor, ambiance, stepElementParameters);
 
     PowerMockito.verifyStatic(StepUtils.class, times(1));
     StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any());
 
     AsgExecutionPassThroughData asgExecutionPassThroughData =
-            (AsgExecutionPassThroughData) taskChainResponse.getPassThroughData();
+        (AsgExecutionPassThroughData) taskChainResponse.getPassThroughData();
     assertThat(taskChainResponse.isChainEnd()).isEqualTo(false);
     assertThat(asgExecutionPassThroughData.getInfrastructure()).isEqualTo(AsgInfrastructureOutcome.builder().build());
   }
@@ -167,17 +167,17 @@ public class AsgStepCommonHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void startChainLinkLocalStoreEcsCanaryDeployStepTest() {
     HarnessStore harnessStoreConfig =
-            HarnessStore.builder()
-                    .files(ParameterField.<List<String>>builder().value(Arrays.asList("Asg/sample/asg.yaml")).build())
-                    .build();
+        HarnessStore.builder()
+            .files(ParameterField.<List<String>>builder().value(Arrays.asList("Asg/sample/asg.yaml")).build())
+            .build();
     ManifestOutcome launchTemplateManifestOutcome =
-            AsgLaunchTemplateManifestOutcome.builder().identifier("sadf").store(harnessStoreConfig).build();
+        AsgLaunchTemplateManifestOutcome.builder().identifier("sadf").store(harnessStoreConfig).build();
     ManifestOutcome configurationManifestOutcome =
-            AsgConfigurationManifestOutcome.builder().identifier("sadf").store(harnessStoreConfig).build();
+        AsgConfigurationManifestOutcome.builder().identifier("sadf").store(harnessStoreConfig).build();
     ManifestOutcome scalingPolicyManifestOutcome =
-            AsgScalingPolicyManifestOutcome.builder().identifier("sadf").store(harnessStoreConfig).build();
+        AsgScalingPolicyManifestOutcome.builder().identifier("sadf").store(harnessStoreConfig).build();
     ManifestOutcome scheduledUpdateGroupActionManifestOutcome =
-            AsgScheduledUpdateGroupActionManifestOutcome.builder().identifier("sadf").store(harnessStoreConfig).build();
+        AsgScheduledUpdateGroupActionManifestOutcome.builder().identifier("sadf").store(harnessStoreConfig).build();
 
     Map<String, ManifestOutcome> manifestOutcomeMap = new HashMap<>();
     manifestOutcomeMap.put("lauchTemplate", launchTemplateManifestOutcome);
@@ -187,8 +187,8 @@ public class AsgStepCommonHelperTest extends CategoryTest {
     ManifestsOutcome manifestsOutcome = new ManifestsOutcome(manifestOutcomeMap);
     doReturn(manifestsOutcome).when(asgStepCommonHelper).resolveAsgManifestsOutcome(ambiance);
     doReturn(logCallback)
-            .when(asgStepCommonHelper)
-            .getLogCallback(AsgCommandUnitConstants.fetchManifests.toString(), ambiance, true);
+        .when(asgStepCommonHelper)
+        .getLogCallback(AsgCommandUnitConstants.fetchManifests.toString(), ambiance, true);
     doNothing().when(asgStepCommonHelper).validateManifestsOutcome(ambiance, manifestsOutcome);
     OptionalOutcome optionalOutcome = OptionalOutcome.builder().found(true).outcome(manifestsOutcome).build();
     InfrastructureOutcome infrastructureOutcome = AsgInfrastructureOutcome.builder().build();
@@ -204,28 +204,28 @@ public class AsgStepCommonHelperTest extends CategoryTest {
 
     UnitProgressData unitProgressData = UnitProgressData.builder().build();
     doReturn(unitProgressData)
-            .when(asgStepCommonHelper)
-            .getCommandUnitProgressData(AsgCommandUnitConstants.fetchManifests.toString(), CommandExecutionStatus.SUCCESS);
+        .when(asgStepCommonHelper)
+        .getCommandUnitProgressData(AsgCommandUnitConstants.fetchManifests.toString(), CommandExecutionStatus.SUCCESS);
 
     asgStepCommonHelper.startChainLink(asgCanaryDeployStep, ambiance, stepElementParameters);
 
     AsgExecutionPassThroughData executionPassThroughData = AsgExecutionPassThroughData.builder()
-            .infrastructure(infrastructureOutcome)
-            .lastActiveUnitProgressData(unitProgressData)
-            .build();
+                                                               .infrastructure(infrastructureOutcome)
+                                                               .lastActiveUnitProgressData(unitProgressData)
+                                                               .build();
 
     Map<String, List<String>> asgStoreManifestsContent = new HashMap<>();
     asgStoreManifestsContent.put("AsgLaunchTemplate", Collections.singletonList(content));
     asgStoreManifestsContent.put("AsgConfiguration", Collections.singletonList(content));
 
     AsgStepExecutorParams asgStepExecutorParams = AsgStepExecutorParams.builder()
-            .shouldOpenFetchFilesLogStream(false)
-            .asgStoreManifestsContent(asgStoreManifestsContent)
-            .build();
+                                                      .shouldOpenFetchFilesLogStream(false)
+                                                      .asgStoreManifestsContent(asgStoreManifestsContent)
+                                                      .build();
 
     verify(asgCanaryDeployStep)
-            .executeAsgTask(
-                    ambiance, stepElementParameters, executionPassThroughData, unitProgressData, asgStepExecutorParams);
+        .executeAsgTask(
+            ambiance, stepElementParameters, executionPassThroughData, unitProgressData, asgStepExecutorParams);
   }
 
   @Test
@@ -234,9 +234,9 @@ public class AsgStepCommonHelperTest extends CategoryTest {
   public void handleTaskExceptionTest() throws Exception {
     AsgInfrastructureOutcome infrastructureOutcome = AsgInfrastructureOutcome.builder().build();
     AsgExecutionPassThroughData asgExecutionPassThroughData =
-            AsgExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build();
+        AsgExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build();
     StepResponse stepResponse =
-            asgStepCommonHelper.handleTaskException(ambiance, asgExecutionPassThroughData, new GeneralException("ex"));
+        asgStepCommonHelper.handleTaskException(ambiance, asgExecutionPassThroughData, new GeneralException("ex"));
     assertThat(stepResponse.getStatus()).isEqualTo(Status.FAILED);
     assertThat(stepResponse.getFailureInfo().getFailureTypes(0)).isEqualTo(APPLICATION_FAILURE);
   }
@@ -247,13 +247,13 @@ public class AsgStepCommonHelperTest extends CategoryTest {
   public void handleTaskThrowExceptionTest() throws Exception {
     AsgInfrastructureOutcome infrastructureOutcome = AsgInfrastructureOutcome.builder().build();
     AsgExecutionPassThroughData asgExecutionPassThroughData =
-            AsgExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build();
+        AsgExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build();
 
     UnitProgressData unitProgressData =
-            UnitProgressDataMapper.toUnitProgressData(CommandUnitsProgress.builder().build());
+        UnitProgressDataMapper.toUnitProgressData(CommandUnitsProgress.builder().build());
     Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(new GeneralException("ex"));
     StepResponse stepResponse = asgStepCommonHelper.handleTaskException(
-            ambiance, asgExecutionPassThroughData, new TaskNGDataException(unitProgressData, sanitizedException));
+        ambiance, asgExecutionPassThroughData, new TaskNGDataException(unitProgressData, sanitizedException));
     assertThat(stepResponse.getStatus()).isEqualTo(Status.FAILED);
   }
 
@@ -263,14 +263,14 @@ public class AsgStepCommonHelperTest extends CategoryTest {
   public void queueAsgTaskTest() {
     AsgCanaryDeployRequest asgCommandRequest = AsgCanaryDeployRequest.builder().commandName("command").build();
     AsgPrepareRollbackDataPassThroughData asgPrepareRollbackDataPassThroughData =
-            AsgPrepareRollbackDataPassThroughData.builder().build();
+        AsgPrepareRollbackDataPassThroughData.builder().build();
 
     Mockito.mockStatic(StepUtils.class);
     PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
-            .thenReturn(TaskRequest.newBuilder().build());
+        .thenReturn(TaskRequest.newBuilder().build());
 
     TaskChainResponse taskChainResponse = asgStepCommonHelper.queueAsgTask(stepElementParameters, asgCommandRequest,
-            ambiance, asgPrepareRollbackDataPassThroughData, false, TaskType.AWS_ASG_PREPARE_ROLLBACK_DATA_TASK_NG);
+        ambiance, asgPrepareRollbackDataPassThroughData, false, TaskType.AWS_ASG_PREPARE_ROLLBACK_DATA_TASK_NG);
 
     PowerMockito.verifyStatic(StepUtils.class, times(1));
     StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any());

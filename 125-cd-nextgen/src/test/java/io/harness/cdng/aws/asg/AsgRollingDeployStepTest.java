@@ -7,25 +7,25 @@
 
 package io.harness.cdng.aws.asg;
 
+import static io.harness.rule.OwnerRule.LOVISH_BANSAL;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.Mockito.doReturn;
+
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
-import io.harness.cdng.common.capacity.Capacity;
-import io.harness.cdng.common.capacity.CapacitySpec;
-import io.harness.cdng.common.capacity.CountCapacitySpec;
-import io.harness.cdng.ecs.beans.EcsGitFetchPassThroughData;
 import io.harness.cdng.infra.beans.AsgInfrastructureOutcome;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.task.aws.asg.AsgCanaryDeployResponse;
-import io.harness.delegate.task.aws.asg.AsgCanaryDeployResult;
 import io.harness.delegate.task.aws.asg.AsgInfraConfig;
 import io.harness.delegate.task.aws.asg.AsgPrepareRollbackDataResponse;
 import io.harness.delegate.task.aws.asg.AsgPrepareRollbackDataResult;
+import io.harness.delegate.task.aws.asg.AsgRollingDeployResponse;
+import io.harness.delegate.task.aws.asg.AsgRollingDeployResult;
 import io.harness.delegate.task.aws.asg.AutoScalingGroupContainer;
-import io.harness.delegate.task.ecs.response.EcsGitFetchResponse;
-import io.harness.delegate.task.git.TaskStatus;
-import io.harness.git.model.FetchFilesResult;
-import io.harness.git.model.GitFile;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.UnitProgress;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -38,13 +38,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.tasks.ResponseData;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.mockito.InjectMocks;
-import org.mockito.Spy;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+
 import software.wings.beans.TaskType;
 
 import java.util.Arrays;
@@ -52,36 +46,36 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import static io.harness.rule.OwnerRule.ALLU_VAMSI;
-import static io.harness.rule.OwnerRule.LOVISH_BANSAL;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.Mockito.doReturn;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.mockito.InjectMocks;
+import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 public class AsgRollingDeployStepTest extends CategoryTest {
-  @Rule
-  public MockitoRule mockitoRule = MockitoJUnit.rule();
-
+  @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   private final Ambiance ambiance = Ambiance.newBuilder()
-          .putSetupAbstractions(SetupAbstractionKeys.accountId, "test-account")
-          .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "test-org")
-          .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "test-project")
-          .build();
+                                        .putSetupAbstractions(SetupAbstractionKeys.accountId, "test-account")
+                                        .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "test-org")
+                                        .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "test-project")
+                                        .build();
 
-  private final ParameterField<Integer> count = ParameterField.createValueField(1);
-  private final CapacitySpec spec = CountCapacitySpec.builder().count(count).build();
-  private final Capacity instanceSelection = Capacity.builder().spec(spec).build();
-  private final AsgCanaryDeployStepParameters asgSpecParameters = AsgCanaryDeployStepParameters.infoBuilder().instanceSelection(instanceSelection).build();
+  private final AsgRollingDeployStepParameters asgSpecParameters = AsgRollingDeployStepParameters.infoBuilder()
+                                                                       .skipMatching(true)
+                                                                       .useAlreadyRunningInstances(false)
+                                                                       .instanceWarmup(50)
+                                                                       .minimumHealthyPercentage(40)
+                                                                       .build();
   private final StepElementParameters stepElementParameters =
-          StepElementParameters.builder().spec(asgSpecParameters).timeout(ParameterField.createValueField("10m")).build();
+      StepElementParameters.builder().spec(asgSpecParameters).timeout(ParameterField.createValueField("10m")).build();
 
+  UnitProgressData unitProgressData =
+      UnitProgressData.builder().unitProgresses(Arrays.asList(UnitProgress.newBuilder().build())).build();
 
-  @Spy
-  private AsgStepCommonHelper asgStepCommonHelper;
-  @Spy @InjectMocks
-  private AsgRollingDeployStep asgRollingDeployStep;
+  @Spy private AsgStepCommonHelper asgStepCommonHelper;
+  @Spy @InjectMocks private AsgRollingDeployStep asgRollingDeployStep;
 
   @Test
   @Owner(developers = LOVISH_BANSAL)
@@ -89,41 +83,41 @@ public class AsgRollingDeployStepTest extends CategoryTest {
   public void executeNextLinkWithSecurityContextTest() throws Exception {
     StepInputPackage inputPackage = StepInputPackage.builder().build();
 
-    AsgExecutionPassThroughData asgExecutionPassThroughData =
-            AsgExecutionPassThroughData.builder()
-                    .infrastructure(AsgInfrastructureOutcome.builder().infrastructureKey("infraKey").build())
-                    .build();
-
     Map<String, List<String>> asgStoreManifestsContent = new HashMap<>();
     asgStoreManifestsContent.put("AsgLaunchTemplate", Collections.singletonList("asgLaunchTemplate"));
     asgStoreManifestsContent.put("AsgConfiguration", Collections.singletonList("asgConfiguration"));
     asgStoreManifestsContent.put("AsgScalingPolicy", Collections.singletonList("asgScalingPolicy"));
 
-    AsgPrepareRollbackDataResult asgPrepareRollbackDataResult = AsgPrepareRollbackDataResult.builder().asgName("asg").asgStoreManifestsContent(asgStoreManifestsContent).build();
+    AsgExecutionPassThroughData asgExecutionPassThroughData =
+        AsgExecutionPassThroughData.builder()
+            .infrastructure(AsgInfrastructureOutcome.builder().infrastructureKey("infraKey").build())
+            .build();
+
+    AsgPrepareRollbackDataResult asgPrepareRollbackDataResult = AsgPrepareRollbackDataResult.builder()
+                                                                    .asgName("asg")
+                                                                    .asgStoreManifestsContent(asgStoreManifestsContent)
+                                                                    .build();
 
     ResponseData responseData = AsgPrepareRollbackDataResponse.builder()
-            .asgPrepareRollbackDataResult(asgPrepareRollbackDataResult)
-            .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
-            .build();
+                                    .asgPrepareRollbackDataResult(asgPrepareRollbackDataResult)
+                                    .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                                    .build();
 
     TaskChainResponse taskChainResponse1 = TaskChainResponse.builder()
-            .chainEnd(true)
-            .taskRequest(TaskRequest.newBuilder().build())
-            .passThroughData(asgExecutionPassThroughData)
-            .build();
+                                               .chainEnd(true)
+                                               .taskRequest(TaskRequest.newBuilder().build())
+                                               .passThroughData(asgExecutionPassThroughData)
+                                               .build();
 
-    doReturn(taskChainResponse1)
-            .when(asgStepCommonHelper)
-            .executeNextLinkRolling(any(), any(), any(), any(), any());
+    doReturn(taskChainResponse1).when(asgStepCommonHelper).executeNextLinkRolling(any(), any(), any(), any(), any());
 
     TaskChainResponse taskChainResponse = asgRollingDeployStep.executeNextLinkWithSecurityContext(
-            ambiance, stepElementParameters, inputPackage, asgExecutionPassThroughData, () -> responseData);
+        ambiance, stepElementParameters, inputPackage, asgExecutionPassThroughData, () -> responseData);
     assertThat(taskChainResponse.isChainEnd()).isEqualTo(true);
     assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(AsgExecutionPassThroughData.class);
     assertThat(taskChainResponse.getPassThroughData()).isEqualTo(asgExecutionPassThroughData);
     assertThat(taskChainResponse.getTaskRequest()).isEqualTo(TaskRequest.newBuilder().build());
   }
-
 
   @Test
   @Owner(developers = LOVISH_BANSAL)
@@ -131,29 +125,31 @@ public class AsgRollingDeployStepTest extends CategoryTest {
   public void executeAsgTaskTest() {
     AsgInfrastructureOutcome infrastructureOutcome = AsgInfrastructureOutcome.builder().build();
     AsgExecutionPassThroughData asgExecutionPassThroughData =
-            AsgExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build();
-    UnitProgressData unitProgressData =
-            UnitProgressData.builder().unitProgresses(Arrays.asList(UnitProgress.newBuilder().build())).build();
+        AsgExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build();
+
     Map<String, List<String>> asgStoreManifestsContent = new HashMap<>();
     asgStoreManifestsContent.put("AsgLaunchTemplate", Collections.singletonList("asgLaunchTemplate"));
     asgStoreManifestsContent.put("AsgConfiguration", Collections.singletonList("asgConfiguration"));
-    AsgStepExecutorParams asgStepExecutorParams = AsgStepExecutorParams.builder()
-            .asgStoreManifestsContent(asgStoreManifestsContent)
-            .build();
+    asgStoreManifestsContent.put("AsgScalingPolicy", Collections.singletonList("asgScalingPolicy"));
+
+    AsgStepExecutorParams asgStepExecutorParams =
+        AsgStepExecutorParams.builder().asgStoreManifestsContent(asgStoreManifestsContent).build();
 
     AsgInfraConfig asgInfraConfig = AsgInfraConfig.builder().build();
     doReturn(asgInfraConfig).when(asgStepCommonHelper).getAsgInfraConfig(infrastructureOutcome, ambiance);
 
     TaskChainResponse taskChainResponse1 = TaskChainResponse.builder()
-            .chainEnd(true)
-            .taskRequest(TaskRequest.newBuilder().build())
-            .passThroughData(asgExecutionPassThroughData)
-            .build();
+                                               .chainEnd(true)
+                                               .taskRequest(TaskRequest.newBuilder().build())
+                                               .passThroughData(asgExecutionPassThroughData)
+                                               .build();
 
-    doReturn(taskChainResponse1).when(asgStepCommonHelper).queueAsgTask(any(), any(), any(), any(), anyBoolean(), any(TaskType.class));
+    doReturn(taskChainResponse1)
+        .when(asgStepCommonHelper)
+        .queueAsgTask(any(), any(), any(), any(), anyBoolean(), any(TaskType.class));
 
     TaskChainResponse taskChainResponse = asgRollingDeployStep.executeAsgTask(
-            ambiance, stepElementParameters, asgExecutionPassThroughData, unitProgressData, asgStepExecutorParams);
+        ambiance, stepElementParameters, asgExecutionPassThroughData, unitProgressData, asgStepExecutorParams);
 
     assertThat(taskChainResponse.isChainEnd()).isEqualTo(true);
     assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(AsgExecutionPassThroughData.class);
@@ -167,26 +163,24 @@ public class AsgRollingDeployStepTest extends CategoryTest {
   public void executeAsgPrepareRollbackTaskTest() {
     AsgInfrastructureOutcome infrastructureOutcome = AsgInfrastructureOutcome.builder().build();
     AsgPrepareRollbackDataPassThroughData asgPrepareRollbackDataPassThroughData =
-            AsgPrepareRollbackDataPassThroughData.builder().build();
-    UnitProgressData unitProgressData =
-            UnitProgressData.builder().unitProgresses(Arrays.asList(UnitProgress.newBuilder().build())).build();
-    Map<String, List<String>> asgStoreManifestsContent = new HashMap<>();
-    asgStoreManifestsContent.put("AsgLaunchTemplate", Collections.singletonList("asgLaunchTemplate"));
-    asgStoreManifestsContent.put("AsgConfiguration", Collections.singletonList("asgConfiguration"));
+        AsgPrepareRollbackDataPassThroughData.builder().build();
+    ;
 
     AsgInfraConfig asgInfraConfig = AsgInfraConfig.builder().build();
     doReturn(asgInfraConfig).when(asgStepCommonHelper).getAsgInfraConfig(infrastructureOutcome, ambiance);
 
     TaskChainResponse taskChainResponse1 = TaskChainResponse.builder()
-            .chainEnd(false)
-            .taskRequest(TaskRequest.newBuilder().build())
-            .passThroughData(asgPrepareRollbackDataPassThroughData)
-            .build();
+                                               .chainEnd(false)
+                                               .taskRequest(TaskRequest.newBuilder().build())
+                                               .passThroughData(asgPrepareRollbackDataPassThroughData)
+                                               .build();
 
-    doReturn(taskChainResponse1).when(asgStepCommonHelper).queueAsgTask(any(), any(), any(), any(), anyBoolean(), any(TaskType.class));
+    doReturn(taskChainResponse1)
+        .when(asgStepCommonHelper)
+        .queueAsgTask(any(), any(), any(), any(), anyBoolean(), any(TaskType.class));
 
     TaskChainResponse taskChainResponse = asgRollingDeployStep.executeAsgPrepareRollbackDataTask(
-            ambiance, stepElementParameters, asgPrepareRollbackDataPassThroughData, unitProgressData);
+        ambiance, stepElementParameters, asgPrepareRollbackDataPassThroughData, unitProgressData);
 
     assertThat(taskChainResponse.isChainEnd()).isEqualTo(false);
     assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(AsgPrepareRollbackDataPassThroughData.class);
@@ -194,21 +188,16 @@ public class AsgRollingDeployStepTest extends CategoryTest {
     assertThat(taskChainResponse.getTaskRequest()).isEqualTo(TaskRequest.newBuilder().build());
   }
 
-
   @Test
   @Owner(developers = LOVISH_BANSAL)
   @Category(UnitTests.class)
   public void finalizeExecutionWithSecurityContextAsgStepExceptionPassThroughDataTest() throws Exception {
     AsgStepExceptionPassThroughData asgStepExceptionPassThroughData =
-            AsgStepExceptionPassThroughData.builder()
-                    .unitProgressData(
-                            UnitProgressData.builder().unitProgresses(Arrays.asList(UnitProgress.newBuilder().build())).build())
-                    .errorMessage("error")
-                    .build();
+        AsgStepExceptionPassThroughData.builder().unitProgressData(unitProgressData).errorMessage("error").build();
     ResponseData responseData = AsgCanaryDeployResponse.builder().build();
 
-    StepResponse stepResponse = asgCanaryDeployStep.finalizeExecutionWithSecurityContext(
-            ambiance, stepElementParameters, asgStepExceptionPassThroughData, () -> responseData);
+    StepResponse stepResponse = asgRollingDeployStep.finalizeExecutionWithSecurityContext(
+        ambiance, stepElementParameters, asgStepExceptionPassThroughData, () -> responseData);
 
     assertThat(stepResponse.getUnitProgressList()).isEqualTo(Arrays.asList(UnitProgress.newBuilder().build()));
     assertThat(stepResponse.getStatus()).isEqualTo(Status.FAILED);
@@ -219,29 +208,42 @@ public class AsgRollingDeployStepTest extends CategoryTest {
   @Category(UnitTests.class)
   public void finalizeExecutionWithSecurityContextCommandExecutionStatusSuccessTest() throws Exception {
     AsgExecutionPassThroughData asgExecutionPassThroughData =
-            AsgExecutionPassThroughData.builder()
-                    .infrastructure(AsgInfrastructureOutcome.builder().infrastructureKey("infraKey").build())
-                    .build();
+        AsgExecutionPassThroughData.builder()
+            .infrastructure(AsgInfrastructureOutcome.builder().infrastructureKey("infraKey").build())
+            .build();
+
+    Map<String, List<String>> asgStoreManifestsContent = new HashMap<>();
+    asgStoreManifestsContent.put("AsgLaunchTemplate", Collections.singletonList("asgLaunchTemplate"));
+    asgStoreManifestsContent.put("AsgConfiguration", Collections.singletonList("asgConfiguration"));
+    asgStoreManifestsContent.put("AsgScalingPolicy", Collections.singletonList("asgScalingPolicy"));
 
     ResponseData responseData =
-            AsgCanaryDeployResponse.builder()
-                    .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
-                    .asgCanaryDeployResult(AsgCanaryDeployResult.builder().autoScalingGroupContainer(AutoScalingGroupContainer.builder().autoScalingGroupName("asg").build()).build())
-                    .unitProgressData(
-                            UnitProgressData.builder().unitProgresses(Arrays.asList(UnitProgress.newBuilder().build())).build())
-                    .errorMessage("error")
-                    .build();
+        AsgRollingDeployResponse.builder()
+            .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+            .asgRollingDeployResult(
+                AsgRollingDeployResult.builder()
+                    .autoScalingGroupContainer(AutoScalingGroupContainer.builder().autoScalingGroupName("asg").build())
+                    .asgStoreManifestsContent(asgStoreManifestsContent)
+                    .build())
+            .unitProgressData(unitProgressData)
+            .errorMessage("error")
+            .build();
 
-    AsgCanaryDeployOutcome asgCanaryDeployOutcome =
-            AsgCanaryDeployOutcome.builder().canaryAsgName("asg").build();
+    AutoScalingGroupContainer autoScalingGroupContainer =
+        AutoScalingGroupContainer.builder().autoScalingGroupName("asg").build();
 
-    StepResponse stepResponse = asgCanaryDeployStep.finalizeExecutionWithSecurityContext(
-            ambiance, stepElementParameters, asgExecutionPassThroughData, () -> responseData);
+    AsgRollingDeployOutcome asgRollingDeployOutcome = AsgRollingDeployOutcome.builder()
+                                                          .autoScalingGroupContainer(autoScalingGroupContainer)
+                                                          .asgStoreManifestsContent(asgStoreManifestsContent)
+                                                          .build();
+
+    StepResponse stepResponse = asgRollingDeployStep.finalizeExecutionWithSecurityContext(
+        ambiance, stepElementParameters, asgExecutionPassThroughData, () -> responseData);
 
     StepResponse.StepOutcome stepOutcome = stepResponse.getStepOutcomes().stream().findFirst().get();
 
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
-    assertThat(stepOutcome.getOutcome()).isEqualTo(asgCanaryDeployOutcome);
+    assertThat(stepOutcome.getOutcome()).isEqualTo(asgRollingDeployOutcome);
     assertThat(stepOutcome.getName()).isEqualTo("output");
   }
 }

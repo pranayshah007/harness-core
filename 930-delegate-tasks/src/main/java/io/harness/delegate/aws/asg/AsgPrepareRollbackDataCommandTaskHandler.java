@@ -133,8 +133,7 @@ public class AsgPrepareRollbackDataCommandTaskHandler extends AsgCommandTaskNGHa
         }
       };
 
-      return AsgPrepareRollbackDataResult
-          .builder()
+      return AsgPrepareRollbackDataResult.builder()
           .asgName(asgName)
           .asgStoreManifestsContent(prepareRollbackDataAsgStoreManifestsContent)
           .build();
