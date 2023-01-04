@@ -20,6 +20,7 @@ import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
 import io.harness.ng.core.mapper.TagMapper;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
 import io.harness.steps.environment.EnvironmentOutcome;
+import io.harness.utils.FullyQualifiedIdentifierHelper;
 import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.utils.NGVariablesUtils;
 
@@ -100,12 +101,18 @@ public class EnvironmentMapper {
     final Map<String, Object> variables =
         overrideVariables(ngEnvironmentConfig.getNgEnvironmentInfoConfig().getVariables(), svcOverrideVariables);
     return EnvironmentOutcome.builder()
-        .identifier(environment.getIdentifier())
+        .identifier(FullyQualifiedIdentifierHelper
+                        .getIdentifierRefWithScope(environment.getAccountId(), environment.getOrgIdentifier(),
+                            environment.getProjectIdentifier(), environment.getIdentifier())
+                        .buildScopedIdentifier())
         .name(StringUtils.defaultIfBlank(environment.getName(), ""))
         .description(StringUtils.defaultIfBlank(environment.getDescription(), ""))
         .tags(TagMapper.convertToMap(environment.getTags()))
         .type(environment.getType())
-        .environmentRef(environment.getIdentifier())
+        .environmentRef(FullyQualifiedIdentifierHelper
+                            .getIdentifierRefWithScope(environment.getAccountId(), environment.getOrgIdentifier(),
+                                environment.getProjectIdentifier(), environment.getIdentifier())
+                            .buildScopedIdentifier())
         .variables(variables)
         .envGroupRef(envGroup != null ? envGroup.getIdentifier() : null)
         .envGroupName(envGroup != null ? envGroup.getName() : null)

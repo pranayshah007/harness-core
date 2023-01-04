@@ -87,6 +87,7 @@ import io.harness.steps.SdkCoreStepUtils;
 import io.harness.steps.StepUtils;
 import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.tasks.ResponseData;
+import io.harness.utils.FullyQualifiedIdentifierHelper;
 import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.YamlPipelineUtils;
 import io.harness.yaml.core.variables.NGVariable;
@@ -459,7 +460,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
     stepOutcomes.add(
         StepResponse.StepOutcome.builder()
             .name(OutcomeExpressionConstants.SERVICE)
-            .outcome(ServiceStepOutcome.fromServiceStepV2(ngServiceV2InfoConfig.getIdentifier(),
+            .outcome(ServiceStepOutcome.fromServiceStepV2(stepParameters.getServiceRef().getValue(),
                 ngServiceV2InfoConfig.getName(), ngServiceV2InfoConfig.getServiceDefinition().getType().getYamlName(),
                 ngServiceV2InfoConfig.getDescription(), ngServiceV2InfoConfig.getTags(),
                 ngServiceV2InfoConfig.getGitOpsEnabled()))
@@ -551,7 +552,11 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
     entityMap.put(FreezeEntityType.SERVICE, Lists.newArrayList(serviceEntity.getIdentifier()));
 
     // Add the reason in serviceOutcome;
-    ServiceStepOutcome outcome = ServiceStepOutcome.fromServiceStepV2(serviceEntity.getIdentifier(),
+    ServiceStepOutcome outcome = ServiceStepOutcome.fromServiceStepV2(
+        FullyQualifiedIdentifierHelper
+            .getIdentifierRefWithScope(serviceEntity.getAccountId(), serviceEntity.getOrgIdentifier(),
+                serviceEntity.getProjectIdentifier(), serviceEntity.getIdentifier())
+            .buildScopedIdentifier(),
         serviceEntity.getName(), ngServiceV2InfoConfig.getServiceDefinition().getType().getYamlName(),
         serviceEntity.getDescription(), ngServiceV2InfoConfig.getTags(), serviceEntity.getGitOpsEnabled());
 
