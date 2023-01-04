@@ -43,6 +43,7 @@ import com.google.inject.Singleton;
 import com.google.protobuf.util.Durations;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -273,12 +274,19 @@ public class CgInstanceSyncServiceV2 {
   public InstanceSyncTrackedDeploymentDetails fetchTaskDetails(String perpetualTaskId, String accountId) {
     List<InstanceSyncTaskDetails> instanceSyncTaskDetails =
         taskDetailsService.fetchAllForPerpetualTask(accountId, perpetualTaskId);
-    Map<String, SettingAttribute> cloudProviders = new ConcurrentHashMap<>();
+    Set<String> uniqueCloudProviders = new HashSet<>();
+    for (InstanceSyncTaskDetails taskDetails : instanceSyncTaskDetails) {
+      uniqueCloudProviders.add(taskDetails.getCloudProviderId());
+    }
+    Map<String, SettingAttribute> cloudProviders = new HashMap<>();
+    for (String cloudProviderId : uniqueCloudProviders) {
+      SettingAttribute cloudProvider = cloudProviderService.get(cloudProviderId);
+      cloudProviders.put(cloudProviderId, cloudProvider);
+    }
 
     List<CgDeploymentReleaseDetails> deploymentReleaseDetails = new ArrayList<>();
     instanceSyncTaskDetails.parallelStream().forEach(taskDetails -> {
-      SettingAttribute cloudProvider =
-          cloudProviders.computeIfAbsent(taskDetails.getCloudProviderId(), cloudProviderService::get);
+      SettingAttribute cloudProvider = cloudProviders.get(taskDetails.getCloudProviderId());
       CgInstanceSyncV2Handler instanceSyncHandler =
           handlerFactory.getHandler(cloudProvider.getValue().getSettingType());
       deploymentReleaseDetails.addAll(instanceSyncHandler.getDeploymentReleaseDetails(taskDetails));
