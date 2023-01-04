@@ -169,6 +169,13 @@ public class BudgetDao {
     persistence.update(query, updateOperations);
   }
 
+  public void updateParentId(String parentId, List<String> budgetIds) {
+    Query<Budget> query = persistence.createQuery(Budget.class).field(BudgetKeys.uuid).in(budgetIds);
+    UpdateOperations<Budget> updateOperations =
+        persistence.createUpdateOperations(Budget.class).set(BudgetKeys.parentBudgetGroupId, parentId);
+    persistence.update(query, updateOperations);
+  }
+
   public boolean delete(String budgetId, String accountId) {
     Budget budget = get(budgetId, accountId);
     if (budget != null) {

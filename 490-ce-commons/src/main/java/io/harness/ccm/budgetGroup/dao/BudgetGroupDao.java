@@ -63,6 +63,14 @@ public class BudgetGroupDao {
     hPersistence.update(query, updateOperations);
   }
 
+  public void updateParentId(String parentId, List<String> budgetGroupIds) {
+    Query<BudgetGroup> query =
+        hPersistence.createQuery(BudgetGroup.class).field(BudgetGroupKeys.uuid).in(budgetGroupIds);
+    UpdateOperations<BudgetGroup> updateOperations =
+        hPersistence.createUpdateOperations(BudgetGroup.class).set(BudgetGroupKeys.parentBudgetGroupId, parentId);
+    hPersistence.update(query, updateOperations);
+  }
+
   public BudgetGroup get(String uuid, String accountId) {
     Query<BudgetGroup> query = hPersistence.createQuery(BudgetGroup.class)
                                    .field(BudgetGroupKeys.uuid)
