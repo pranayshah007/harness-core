@@ -310,3 +310,10 @@ totp:
     count: 10
     duration: 5
     durationUnit: MINUTES
+
+delegateQueueServiceConfig:
+  queueServiceConfig:
+    baseUrl: http://localhost:9091/
+    connectTimeOutSeconds: 15
+    readTimeOutSeconds: 15
+  topic: "delegate-service"
