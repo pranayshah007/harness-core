@@ -41,6 +41,7 @@ import io.harness.instancesyncmonitoring.service.InstanceSyncMonitoringService;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
 import io.harness.perpetualtask.PerpetualTaskService;
+import io.harness.perpetualtask.PerpetualTaskType;
 import io.harness.perpetualtask.internal.PerpetualTaskRecord;
 import io.harness.queue.QueuePublisher;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -794,8 +795,10 @@ public class InstanceHelper {
       }
       if (!status.isSuccess()) {
         log.info("Sync Failure. Reset Perpetual Task. Infrastructure Mapping : [{}]", infrastructureMapping.getUuid());
-        instanceSyncPerpetualTaskService.resetPerpetualTask(
-            infrastructureMapping.getAccountId(), perpetualTaskRecord.getUuid());
+        if (!perpetualTaskRecord.getPerpetualTaskType().equals(PerpetualTaskType.CONTAINER_INSTANCE_SYNC)) {
+          instanceSyncPerpetualTaskService.resetPerpetualTask(
+              infrastructureMapping.getAccountId(), perpetualTaskRecord.getUuid());
+        }
       }
       instanceSyncMonitoringService.recordMetrics(
           infrastructureMapping.getAccountId(), false, false, System.currentTimeMillis() - startTime);
