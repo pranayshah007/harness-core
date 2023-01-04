@@ -40,4 +40,5 @@ public class TasExecutionPassThroughData implements PassThroughData {
   String rawScript;
   List<String> commandUnits;
   List<String> pathsFromScript;
+  int desiredCountInFinalYaml;
 }

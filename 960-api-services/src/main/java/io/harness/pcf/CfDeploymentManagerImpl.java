@@ -55,6 +55,10 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -219,24 +223,30 @@ public class CfDeploymentManagerImpl implements CfDeploymentManager {
     executionLogCallback.saveExecutionLog(color("\n# Streaming Logs From PCF -", White, Bold));
     StartedProcess startedProcess = startTailingLogsIfNeeded(cfRequestConfig, executionLogCallback, null);
 
-    ApplicationDetail applicationDetail = createApplication(requestData, executionLogCallback);
-    List<DeploymentResource> deploymentResourceList = cfSdkClient.listDeployments(cfRequestConfig);
-    String deploymentId = deploymentResourceList.get(0).getId();
-    GetDeploymentResponse getDeploymentResponse = cfSdkClient.getDeployment(cfRequestConfig, deploymentId);
+    ApplicationDetail applicationDetail = null;
+    ExecutorService executorService = Executors.newFixedThreadPool(1);
+    Future<ApplicationDetail> future = executorService.submit(
+            new CreateApplicationTask(cfCliClient, cfSdkClient, requestData, executionLogCallback));
+    executorService.shutdown();
+
     while (!steadyStateReached && System.currentTimeMillis() < expiryTime) {
       try {
         startedProcess = startTailingLogsIfNeeded(cfRequestConfig, executionLogCallback, startedProcess);
-
-        getDeploymentResponse = cfSdkClient.getDeployment(cfRequestConfig, deploymentId);
-        if (DeploymentStatusValue.FINALIZED.equals(getDeploymentResponse.getStatus().getValue())) {
+        applicationDetail = cfSdkClient.getApplicationByName(cfRequestConfig);
+        if (future.isDone() || future.isCancelled()) {
           steadyStateReached = true;
+          if(!future.isCancelled()) {
+            applicationDetail = future.get();
+          }
           destroyProcess(startedProcess);
-        } else if(DeploymentStatusValue.ACTIVE.equals(getDeploymentResponse.getStatus().getValue())){
+        } else {
           Thread.sleep(THREAD_SLEEP_INTERVAL_FOR_STEADY_STATE_CHECK);
         }
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt(); // restore the flag
         throw new PivotalClientApiException("Thread Was Interrupted, stopping execution");
+      } catch (ExecutionException executionException) {
+        throw new PivotalClientApiException(PIVOTAL_CLOUD_FOUNDRY_CLIENT_EXCEPTION + ExceptionUtils.getMessage(executionException), executionException);
       } catch (Exception e) {
         executionLogCallback.saveExecutionLog(
                 "Error while waiting for steadyStateCheck." + e.getMessage() + ", Continuing with steadyStateCheck");
@@ -244,19 +254,10 @@ public class CfDeploymentManagerImpl implements CfDeploymentManager {
     }
 
     if (!steadyStateReached) {
+      future.cancel(true);
       executionLogCallback.saveExecutionLog(color("# Steady State Check Failed", White, Bold));
       destroyProcess(startedProcess);
       throw new PivotalClientApiException(PIVOTAL_CLOUD_FOUNDRY_CLIENT_EXCEPTION + "Failed to reach steady state");
-    }
-
-    if(DeploymentStatusReason.CANCELED.equals(getDeploymentResponse.getStatus().getReason())) {
-      throw new PivotalClientApiException(PIVOTAL_CLOUD_FOUNDRY_CLIENT_EXCEPTION + "The deployment was cancelled.");
-    } else if(DeploymentStatusReason.SUPERSEDED.equals(getDeploymentResponse.getStatus().getReason())) {
-      throw new PivotalClientApiException(PIVOTAL_CLOUD_FOUNDRY_CLIENT_EXCEPTION + "The deployment was stopped and did not finish deploying because there was another deployment created for the app.");
-    } else if(DeploymentStatusReason.DEGENERATE.equals(getDeploymentResponse.getStatus().getReason())) {
-      throw new PivotalClientApiException(PIVOTAL_CLOUD_FOUNDRY_CLIENT_EXCEPTION + "The deployment was created incorrectly by the system.");
-    } else if(DeploymentStatusReason.DEPLOYED.equals(getDeploymentResponse.getStatus().getReason())) {
-      return applicationDetail;
     }
 
     return applicationDetail;
@@ -287,7 +288,7 @@ public class CfDeploymentManagerImpl implements CfDeploymentManager {
     if (desiredCount == 0 && applicationDetail.getRunningInstances() == 0) {
       return true;
     }
-    if (applicationDetail.getRunningInstances() != desiredCount) {
+      if (applicationDetail.getRunningInstances() != desiredCount) {
       return false;
     }
 
@@ -363,6 +364,24 @@ public class CfDeploymentManagerImpl implements CfDeploymentManager {
               applicationSummary -> matchesPrefix(prefix, applicationSummary) && applicationSummary.getInstances() > 0)
           .sorted(comparingInt(applicationSummary -> getRevisionFromServiceName(applicationSummary.getName())))
           .collect(toList());
+
+    } catch (Exception e) {
+      throw new PivotalClientApiException(PIVOTAL_CLOUD_FOUNDRY_CLIENT_EXCEPTION + ExceptionUtils.getMessage(e), e);
+    }
+  }
+
+  @Override
+  public List<ApplicationSummary> getPreviousReleasesForRolling(CfRequestConfig cfRequestConfig, String prefix)
+          throws PivotalClientApiException {
+    try {
+      List<ApplicationSummary> applicationSummaries = cfSdkClient.getApplications(cfRequestConfig);
+      if (CollectionUtils.isEmpty(applicationSummaries)) {
+        return Collections.emptyList();
+      }
+
+      return applicationSummaries.stream()
+              .filter(applicationSummary -> applicationSummary.getName().toLowerCase().equals(prefix))
+              .collect(toList());
 
     } catch (Exception e) {
       throw new PivotalClientApiException(PIVOTAL_CLOUD_FOUNDRY_CLIENT_EXCEPTION + ExceptionUtils.getMessage(e), e);

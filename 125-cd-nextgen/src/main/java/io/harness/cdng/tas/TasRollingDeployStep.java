@@ -30,12 +30,14 @@ import io.harness.cdng.tas.outcome.TasSetupVariablesOutcome.TasSetupVariablesOut
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
+import io.harness.delegate.beans.pcf.TasResizeStrategyType;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.pcf.CfCommandTypeNG;
 import io.harness.delegate.task.pcf.request.CfBasicSetupRequestNG;
 import io.harness.delegate.task.pcf.request.CfRollingDeployRequestNG;
 import io.harness.delegate.task.pcf.response.CfBasicSetupResponseNG;
 import io.harness.delegate.task.pcf.response.CfRollingDeployResponseNG;
+import io.harness.delegate.task.pcf.response.TasInfraConfig;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.AccessDeniedException;
 import io.harness.exception.ExceptionUtils;
@@ -114,12 +116,14 @@ public class TasRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
         StepExceptionPassThroughData stepExceptionPassThroughData = (StepExceptionPassThroughData) passThroughData;
         return StepResponse.builder()
                 .status(Status.FAILED)
-                .unitProgressList(stepExceptionPassThroughData.getUnitProgressData().getUnitProgresses())
+                .unitProgressList(tasStepHelper
+                        .completeUnitProgressData(stepExceptionPassThroughData.getUnitProgressData(), ambiance, stepExceptionPassThroughData.getErrorMessage()).getUnitProgresses())
                 .failureInfo(
                         FailureInfo.newBuilder().setErrorMessage(stepExceptionPassThroughData.getErrorMessage()).build())
                 .build();
       }
       CfRollingDeployResponseNG response;
+      TasExecutionPassThroughData tasExecutionPassThroughData = (TasExecutionPassThroughData) passThroughData;
       try {
         response = (CfRollingDeployResponseNG) responseDataSupplier.get();
       } catch (Exception ex) {
@@ -127,22 +131,47 @@ public class TasRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
         throw ex;
       }
       if (!response.getCommandExecutionStatus().equals(CommandExecutionStatus.SUCCESS)) {
+        TasRollingDeployOutcome tasRollingDeployOutcome = TasRollingDeployOutcome.builder()
+                .appName(tasExecutionPassThroughData.getApplicationName())
+                .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
+                .isFirstDeployment(response.getCurrentProdInfo() == null)
+                .cfCliVersion(tasExecutionPassThroughData.getCfCliVersion())
+                .deploymentStarted(response.isDeploymentStarted())
+                .build();
+        executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.TAS_ROLLING_DEPLOY_OUTCOME,
+                tasRollingDeployOutcome, StepCategory.STEP.name());
         return StepResponse.builder()
                 .status(Status.FAILED)
                 .failureInfo(FailureInfo.newBuilder().setErrorMessage(response.getErrorMessage()).build())
-                .unitProgressList(response.getUnitProgressData().getUnitProgresses())
+                .unitProgressList(tasStepHelper
+                        .completeUnitProgressData(response.getUnitProgressData(), ambiance, response.getErrorMessage())
+                        .getUnitProgresses())
                 .build();
       }
-      TasExecutionPassThroughData tasExecutionPassThroughData = (TasExecutionPassThroughData) passThroughData;
-
+      InfrastructureOutcome infrastructureOutcome = cdStepHelper.getInfrastructureOutcome(ambiance);
+      TasInfraConfig tasInfraConfig = cdStepHelper.getTasInfraConfig(infrastructureOutcome, ambiance);
+      String appName = response.getNewApplicationInfo().getApplicationName();
       TasRollingDeployOutcome tasRollingDeployOutcome = TasRollingDeployOutcome.builder()
               .appName(response.getNewApplicationInfo().getApplicationName())
               .appGuid(response.getNewApplicationInfo().getApplicationGuid())
               .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
+              .isFirstDeployment(response.getCurrentProdInfo() == null)
+              .cfCliVersion(tasExecutionPassThroughData.getCfCliVersion())
+              .deploymentStarted(response.isDeploymentStarted())
               .build();
-      tasStepHelper.updateManifestFiles(ambiance, tasExecutionPassThroughData.getPcfManifestsPackage());
-      tasStepHelper.updateAutoscalarEnabledField(ambiance, response.isUseAppAutoScalar());
-      tasStepHelper.updateRouteMapsField(ambiance, response.getRouteMaps());
+      TasRollingDeployStepParameters tasRollingDeployStepParameters = (TasRollingDeployStepParameters) stepParameters.getSpec();
+      List<String> routeMaps =
+              tasStepHelper.getRouteMaps(tasExecutionPassThroughData.getPcfManifestsPackage().getManifestYml(),
+                      getParameterFieldValue(tasRollingDeployStepParameters.getAdditionalRoutes()));
+      tasStepHelper.updateManifestFiles(ambiance, tasExecutionPassThroughData.getPcfManifestsPackage(), appName, tasInfraConfig);
+      tasStepHelper.updateAutoscalarEnabledField(ambiance, !isNull(tasExecutionPassThroughData.getPcfManifestsPackage().getAutoscalarManifestYml()), appName, tasInfraConfig);
+      tasStepHelper.updateRouteMapsField(ambiance, routeMaps, appName, tasInfraConfig);
+      tasStepHelper.updateDesiredCountField(ambiance, tasExecutionPassThroughData.getDesiredCountInFinalYaml(), appName, tasInfraConfig);
+      tasStepHelper.updateIsFirstDeploymentField(ambiance, response.getCurrentProdInfo() == null, appName, tasInfraConfig);
+
+      executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.TAS_ROLLING_DEPLOY_OUTCOME,
+              tasRollingDeployOutcome, StepCategory.STEP.name());
+
       return StepResponse.builder()
               .status(Status.SUCCEEDED)
               .unitProgressList(response.getUnitProgressData().getUnitProgresses())
@@ -177,19 +206,25 @@ public class TasRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
     ArtifactOutcome artifactOutcome = cdStepHelper.resolveArtifactsOutcome(ambiance).orElseThrow(
             () -> new InvalidArgumentsException(Pair.of("artifacts", "Primary artifact is required for PCF")));
     InfrastructureOutcome infrastructureOutcome = cdStepHelper.getInfrastructureOutcome(ambiance);
+    List<String> routeMaps =
+            tasStepHelper.getRouteMaps(executionPassThroughData.getPcfManifestsPackage().getManifestYml(),
+                    getParameterFieldValue(tasRollingDeployStepParameters.getAdditionalRoutes()));
     TaskParameters taskParameters =
             CfRollingDeployRequestNG.builder()
+                    .applicationName(executionPassThroughData.getApplicationName())
                     .accountId(AmbianceUtils.getAccountId(ambiance))
                     .cfCommandTypeNG(CfCommandTypeNG.TAS_ROLLING_DEPLOY)
                     .commandName(CfCommandUnitConstants.Deploy)
                     .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
                     .tasInfraConfig(cdStepHelper.getTasInfraConfig(infrastructureOutcome, ambiance))
                     .useCfCLI(true)
+                    .routeMaps(routeMaps)
                     .tasArtifactConfig(tasStepHelper.getPrimaryArtifactConfig(ambiance, artifactOutcome))
                     .cfCliVersion(tasStepHelper.cfCliVersionNGMapper(executionPassThroughData.getCfCliVersion()))
                     .pcfManifestsPackage(executionPassThroughData.getPcfManifestsPackage())
                     .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
                     .useAppAutoScalar(!isNull(executionPassThroughData.getPcfManifestsPackage().getAutoscalarManifestYml()))
+                    .desiredCount(executionPassThroughData.getDesiredCountInFinalYaml())
                     .build();
 
     TaskData taskData = TaskData.builder()
@@ -198,12 +233,8 @@ public class TasRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
             .timeout(CDStepHelper.getTimeoutInMillis(stepParameters))
             .async(true)
             .build();
-    List<String> units =
-            unitProgressData.getUnitProgresses().stream().map(UnitProgress::getUnitName).collect(Collectors.toList());
-    units.add(CfCommandUnitConstants.Deploy);
-    units.add(CfCommandUnitConstants.Wrapup);
     final TaskRequest taskRequest =
-            prepareCDTaskRequest(ambiance, taskData, kryoSerializer, units, TaskType.TAS_ROLLING_DEPLOY.getDisplayName(),
+            prepareCDTaskRequest(ambiance, taskData, kryoSerializer, executionPassThroughData.getCommandUnits(), TaskType.TAS_ROLLING_DEPLOY.getDisplayName(),
                     TaskSelectorYaml.toTaskSelector(tasRollingDeployStepParameters.getDelegateSelectors()),
                     stepHelper.getEnvironmentType(ambiance));
     return TaskChainResponse.builder()

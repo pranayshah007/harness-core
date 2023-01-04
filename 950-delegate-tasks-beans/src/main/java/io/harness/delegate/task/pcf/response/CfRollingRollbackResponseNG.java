@@ -27,7 +27,7 @@ import static io.harness.expression.Expression.ALLOW_SECRETS;
 @Data
 @Builder
 @OwnedBy(HarnessTeam.CDP)
-public class CfRollingDeployResponseNG implements CfCommandResponseNG {
+public class CfRollingRollbackResponseNG implements CfCommandResponseNG {
   TasArtifactConfig tasArtifactConfig;
   @Expression(ALLOW_SECRETS)
   List<String> routeMaps;
@@ -38,7 +38,7 @@ public class CfRollingDeployResponseNG implements CfCommandResponseNG {
   private TasApplicationInfo currentProdInfo;
   private TasApplicationInfo newApplicationInfo;
   PcfManifestsPackage pcfManifestsPackage;
-  boolean deploymentStarted;
+  boolean useAppAutoScalar;
 
   @Override
   public void setDelegateMetaInfo(DelegateMetaInfo metaInfo) {

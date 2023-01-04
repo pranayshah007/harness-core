@@ -363,6 +363,8 @@ import io.harness.delegate.task.tas.TasBasicSetupTask;
 import io.harness.delegate.task.tas.TasCommandTask;
 import io.harness.delegate.task.tas.TasDataFetchTask;
 import io.harness.delegate.task.tas.TasRollbackTask;
+import io.harness.delegate.task.tas.TasRollingDeploymentTask;
+import io.harness.delegate.task.tas.TasRollingRollbackTask;
 import io.harness.delegate.task.tas.TasSwapRollbackTask;
 import io.harness.delegate.task.tas.TasSwapRouteTask;
 import io.harness.delegate.task.terraform.TFTaskType;
@@ -2012,6 +2014,9 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.TAS_SWAP_ROLLBACK).toInstance(TasSwapRollbackTask.class);
     mapBinder.addBinding(TaskType.TANZU_COMMAND).toInstance(TasCommandTask.class);
     mapBinder.addBinding(TaskType.TAS_DATA_FETCH).toInstance(TasDataFetchTask.class);
+    mapBinder.addBinding(TaskType.TAS_ROLLING_DEPLOY).toInstance(TasRollingDeploymentTask.class);
+    mapBinder.addBinding(TaskType.TAS_ROLLING_ROLLBACK).toInstance(TasRollingRollbackTask.class);
+
   }
 
   private void registerSecretManagementBindings() {

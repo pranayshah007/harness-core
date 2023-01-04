@@ -50,13 +50,14 @@ public class CfRollingRollbackRequestNG extends AbstractTasTaskRequest {
   boolean useAppAutoScalar;
   PcfManifestsPackage pcfManifestsPackage;
   boolean isFirstDeployment;
+  int desiredCount;
 
   @Builder
   public CfRollingRollbackRequestNG(String accountId, CfCommandTypeNG cfCommandTypeNG, String commandName,
                                   CommandUnitsProgress commandUnitsProgress, TasInfraConfig tasInfraConfig, boolean useCfCLI,
                                   CfCliVersion cfCliVersion, Integer timeoutIntervalInMin,
                                   TasArtifactConfig tasArtifactConfig, List<String> routeMaps, boolean useAppAutoScalar,
-                                  PcfManifestsPackage pcfManifestsPackage, String applicationName) {
+                                  PcfManifestsPackage pcfManifestsPackage, String applicationName, int desiredCount, boolean isFirstDeployment) {
     super(timeoutIntervalInMin, accountId, commandName, cfCommandTypeNG, commandUnitsProgress, tasInfraConfig, useCfCLI,
             cfCliVersion);
     this.applicationName = applicationName;
@@ -64,6 +65,8 @@ public class CfRollingRollbackRequestNG extends AbstractTasTaskRequest {
     this.routeMaps = routeMaps;
     this.useAppAutoScalar = useAppAutoScalar;
     this.pcfManifestsPackage = pcfManifestsPackage;
+    this.isFirstDeployment = isFirstDeployment;
+    this.desiredCount = desiredCount;
   }
 
   @Override

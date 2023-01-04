@@ -270,7 +270,7 @@ public class TasStepHelper {
     tasStepPassThroughData.setShouldCloseFetchFilesStream(false);
     tasStepPassThroughData.setShouldOpenFetchFilesStream(
         shouldOpenFetchFilesStream(tasStepPassThroughData.getShouldOpenFetchFilesStream()));
-    tasStepPassThroughData.setCommandUnits(getCommandUnits(tasStepPassThroughData));
+    tasStepPassThroughData.setCommandUnits(getCommandUnits(tasStepExecutor, tasStepPassThroughData));
 
     return prepareManifests(tasStepExecutor, ambiance, stepElementParameters, tasStepPassThroughData);
   }
@@ -366,9 +366,9 @@ public class TasStepHelper {
   }
 
   @NotNull
-  private TanzuApplicationServiceInfrastructureOutcome getAzureWebAppInfrastructureOutcome(Ambiance ambiance) {
+  private TanzuApplicationServiceInfrastructureOutcome getTanzuApplicationServiceInfrastructureOutcome(Ambiance ambiance) {
     InfrastructureOutcome infrastructureOutcome = cdStepHelper.getInfrastructureOutcome(ambiance);
-    if (!(infrastructureOutcome instanceof AzureWebAppInfrastructureOutcome)) {
+    if (!(infrastructureOutcome instanceof TanzuApplicationServiceInfrastructureOutcome)) {
       throw new InvalidArgumentsException(Pair.of("infrastructure",
               format("Invalid infrastructure type: %s, expected: %s", infrastructureOutcome.getKind(),
                       InfrastructureKind.AZURE_WEB_APP)));
@@ -384,7 +384,7 @@ public class TasStepHelper {
     ServiceStepOutcome serviceOutcome = (ServiceStepOutcome) outcomeService.resolve(
             ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE));
 
-    TanzuApplicationServiceInfrastructureOutcome infrastructure = getAzureWebAppInfrastructureOutcome(ambiance);
+    TanzuApplicationServiceInfrastructureOutcome infrastructure = getTanzuApplicationServiceInfrastructureOutcome(ambiance);
 
     Scope scope = Scope.builder()
             .accountIdentifier(AmbianceUtils.getAccountId(ambiance))
@@ -418,33 +418,63 @@ public class TasStepHelper {
     return null;
   }
 
-  public void updateManifestFiles(Ambiance ambiance, PcfManifestsPackage pcfManifestsPackage) {
+  public void updateManifestFiles(Ambiance ambiance, PcfManifestsPackage pcfManifestsPackage, String appName, TasInfraConfig tasInfraConfig) {
     Scope scope = Scope.of(AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
             AmbianceUtils.getProjectIdentifier(ambiance));
     Map<String, Object> updates = new HashMap<>();
+    updates.put(StageExecutionInfo.StageExecutionInfoKeys.deploymentIdentifier,
+            getDeploymentIdentifier(tasInfraConfig, appName));
     updates.put(String.format(
                     "%s.%s", StageExecutionInfo.StageExecutionInfoKeys.executionDetails, TasStageExecutionDetails.TasStageExecutionDetailsKeys.pcfManifestsPackage),
             pcfManifestsPackage);
     stageExecutionInfoService.update(scope, ambiance.getStageExecutionId(), updates);
   }
 
-  public void updateAutoscalarEnabledField(Ambiance ambiance, boolean autoscalarEnabled) {
+  public void updateAutoscalarEnabledField(Ambiance ambiance, boolean autoscalarEnabled, String appName, TasInfraConfig tasInfraConfig) {
     Scope scope = Scope.of(AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
             AmbianceUtils.getProjectIdentifier(ambiance));
     Map<String, Object> updates = new HashMap<>();
+    updates.put(StageExecutionInfo.StageExecutionInfoKeys.deploymentIdentifier,
+            getDeploymentIdentifier(tasInfraConfig, appName));
     updates.put(String.format(
-                    "%s.%s", StageExecutionInfo.StageExecutionInfoKeys.executionDetails, TasStageExecutionDetails.TasStageExecutionDetailsKeys.autoscalarEnabled),
+                    "%s.%s", StageExecutionInfo.StageExecutionInfoKeys.executionDetails, TasStageExecutionDetails.TasStageExecutionDetailsKeys.isAutoscalarEnabled),
             autoscalarEnabled);
     stageExecutionInfoService.update(scope, ambiance.getStageExecutionId(), updates);
   }
 
-  public void updateRouteMapsField(Ambiance ambiance, List<String> routeMaps) {
+  public void updateRouteMapsField(Ambiance ambiance, List<String> routeMaps, String appName, TasInfraConfig tasInfraConfig) {
     Scope scope = Scope.of(AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
             AmbianceUtils.getProjectIdentifier(ambiance));
     Map<String, Object> updates = new HashMap<>();
+    updates.put(StageExecutionInfo.StageExecutionInfoKeys.deploymentIdentifier,
+            getDeploymentIdentifier(tasInfraConfig, appName));
     updates.put(String.format(
                     "%s.%s", StageExecutionInfo.StageExecutionInfoKeys.executionDetails, TasStageExecutionDetails.TasStageExecutionDetailsKeys.routeMaps),
             routeMaps);
+    stageExecutionInfoService.update(scope, ambiance.getStageExecutionId(), updates);
+  }
+
+  public void updateDesiredCountField(Ambiance ambiance, int desiredCount, String appName, TasInfraConfig tasInfraConfig) {
+    Scope scope = Scope.of(AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
+            AmbianceUtils.getProjectIdentifier(ambiance));
+    Map<String, Object> updates = new HashMap<>();
+    updates.put(StageExecutionInfo.StageExecutionInfoKeys.deploymentIdentifier,
+            getDeploymentIdentifier(tasInfraConfig, appName));
+    updates.put(String.format(
+                    "%s.%s", StageExecutionInfo.StageExecutionInfoKeys.executionDetails, TasStageExecutionDetails.TasStageExecutionDetailsKeys.desiredCount),
+            desiredCount);
+    stageExecutionInfoService.update(scope, ambiance.getStageExecutionId(), updates);
+  }
+
+  public void updateIsFirstDeploymentField(Ambiance ambiance, boolean isFirstDeployment, String appName, TasInfraConfig tasInfraConfig) {
+    Scope scope = Scope.of(AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
+            AmbianceUtils.getProjectIdentifier(ambiance));
+    Map<String, Object> updates = new HashMap<>();
+    updates.put(StageExecutionInfo.StageExecutionInfoKeys.deploymentIdentifier,
+            getDeploymentIdentifier(tasInfraConfig, appName));
+    updates.put(String.format(
+                    "%s.%s", StageExecutionInfo.StageExecutionInfoKeys.executionDetails, TasStageExecutionDetails.TasStageExecutionDetailsKeys.isFirstDeployment),
+            isFirstDeployment);
     stageExecutionInfoService.update(scope, ambiance.getStageExecutionId(), updates);
   }
 
@@ -941,7 +971,7 @@ public class TasStepHelper {
         .build();
   }
 
-  public List<String> getCommandUnits(TasStepPassThroughData tasStepPassThroughData) {
+  public List<String> getCommandUnits(TasStepExecutor tasStepExecutor, TasStepPassThroughData tasStepPassThroughData) {
     List<String> commandUnits = new ArrayList<>();
     if (tasStepPassThroughData.getShouldExecuteHarnessStoreFetch()) {
       commandUnits.add(CfCommandUnitConstants.FetchFiles);
@@ -952,7 +982,12 @@ public class TasStepHelper {
     if (tasStepPassThroughData.getShouldExecuteGitStoreFetch()) {
       commandUnits.add(K8sCommandUnitConstants.FetchFiles);
     }
-    commandUnits.addAll(Arrays.asList(CfCommandUnitConstants.PcfSetup, CfCommandUnitConstants.Wrapup));
+
+    if(tasStepExecutor instanceof TasRollingDeployStep) {
+      commandUnits.addAll(Arrays.asList(CfCommandUnitConstants.Deploy, CfCommandUnitConstants.Wrapup));
+    } else {
+      commandUnits.addAll(Arrays.asList(CfCommandUnitConstants.PcfSetup, CfCommandUnitConstants.Wrapup));
+    }
     return commandUnits;
   }
 
@@ -1119,6 +1154,7 @@ public class TasStepHelper {
             .allFilesFetched(allFilesFetched)
             .commandUnits(tasStepPassThroughData.getCommandUnits())
             .rawScript(tasStepPassThroughData.getRawScript())
+            .desiredCountInFinalYaml(fetchTasInstaceCountInYaml(pcfManifestsPackage))
             .build(),
         tasStepPassThroughData.getShouldOpenFetchFilesStream(),
         UnitProgressData.builder().unitProgresses(tasStepPassThroughData.getUnitProgresses()).build());
@@ -1274,6 +1310,15 @@ public class TasStepHelper {
       throw new InvalidArgumentsException(Pair.of("Manifest", "contains no application name"));
     }
     return finalizeSubstitution(pcfManifestsPackage, name);
+  }
+
+  public int fetchTasInstaceCountInYaml(PcfManifestsPackage pcfManifestsPackage) {
+    Map<String, Object> applicationYamlMap = getApplicationYamlMap(pcfManifestsPackage.getManifestYml());
+    String instances = (String) applicationYamlMap.get(INSTANCE_MANIFEST_YML_ELEMENT);
+    if (isBlank(instances)) {
+      throw new InvalidArgumentsException(Pair.of("Manifest", "contains no instances info"));
+    }
+    return Integer.valueOf(finalizeSubstitution(pcfManifestsPackage, instances));
   }
 
   String finalizeSubstitution(PcfManifestsPackage pcfManifestsPackage, String name) {

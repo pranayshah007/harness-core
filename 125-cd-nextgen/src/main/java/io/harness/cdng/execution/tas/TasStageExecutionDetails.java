@@ -34,6 +34,8 @@ public class TasStageExecutionDetails implements ExecutionDetails {
   private Map<String, Object> outVariables;
   private PcfManifestsPackage pcfManifestsPackage;
   private String pipelineExecutionId;
-  private boolean autoscalarEnabled;
+  private Boolean isAutoscalarEnabled;
   private List<String> routeMaps;
+  private Integer desiredCount;
+  private Boolean isFirstDeployment;
 }

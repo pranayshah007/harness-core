@@ -49,16 +49,18 @@ public class CfRollingDeployRequestNG extends AbstractTasTaskRequest {
   @Expression(ALLOW_SECRETS) List<String> routeMaps;
   boolean useAppAutoScalar;
   PcfManifestsPackage pcfManifestsPackage;
+  int desiredCount;
 
   @Builder
   public CfRollingDeployRequestNG(String accountId, CfCommandTypeNG cfCommandTypeNG, String commandName,
                                   CommandUnitsProgress commandUnitsProgress, TasInfraConfig tasInfraConfig, boolean useCfCLI,
                                   CfCliVersion cfCliVersion, Integer timeoutIntervalInMin,
                                   TasArtifactConfig tasArtifactConfig, List<String> routeMaps, boolean useAppAutoScalar,
-                                  PcfManifestsPackage pcfManifestsPackage, String applicationName) {
+                                  PcfManifestsPackage pcfManifestsPackage, String applicationName, int desiredCount) {
     super(timeoutIntervalInMin, accountId, commandName, cfCommandTypeNG, commandUnitsProgress, tasInfraConfig, useCfCLI,
         cfCliVersion);
     this.applicationName = applicationName;
+    this.desiredCount = desiredCount;
     this.tasArtifactConfig = tasArtifactConfig;
     this.routeMaps = routeMaps;
     this.useAppAutoScalar = useAppAutoScalar;

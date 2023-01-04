@@ -13,9 +13,14 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.task.tas.TasNgConfigMapper;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
+import io.harness.delegate.beans.pcf.CfDeployCommandResult;
+import io.harness.delegate.beans.pcf.CfInternalInstanceElement;
+import io.harness.delegate.beans.pcf.CfServiceData;
 import io.harness.delegate.beans.pcf.TasApplicationInfo;
+import io.harness.delegate.beans.pcf.TasResizeStrategyType;
 import io.harness.delegate.cf.PcfCommandTaskBaseHelper;
 import io.harness.delegate.task.cf.CfCommandTaskHelperNG;
 import io.harness.delegate.task.cf.TasArtifactDownloadContext;
@@ -26,11 +31,16 @@ import io.harness.delegate.task.pcf.PcfManifestsPackage;
 import io.harness.delegate.task.pcf.TasTaskHelperBase;
 import io.harness.delegate.task.pcf.artifact.TasContainerArtifactConfig;
 import io.harness.delegate.task.pcf.artifact.TasPackageArtifactConfig;
+import io.harness.delegate.task.pcf.request.CfBasicSetupRequestNG;
 import io.harness.delegate.task.pcf.request.CfCommandRequestNG;
+import io.harness.delegate.task.pcf.request.CfDeployCommandRequestNG;
 import io.harness.delegate.task.pcf.request.CfRollingDeployRequestNG;
 import io.harness.delegate.task.pcf.request.CfRollingRollbackRequestNG;
+import io.harness.delegate.task.pcf.response.CfBasicSetupResponseNG;
 import io.harness.delegate.task.pcf.response.CfCommandResponseNG;
+import io.harness.delegate.task.pcf.response.CfDeployCommandResponseNG;
 import io.harness.delegate.task.pcf.response.CfRollingDeployResponseNG;
+import io.harness.delegate.task.pcf.response.CfRollingRollbackResponseNG;
 import io.harness.delegate.task.pcf.response.TasInfraConfig;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArgumentsException;
@@ -53,6 +63,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.cloudfoundry.operations.applications.ApplicationDetail;
+import org.cloudfoundry.operations.applications.ApplicationSummary;
 
 import java.io.File;
 import java.io.IOException;
@@ -71,7 +82,9 @@ import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
+import static io.harness.pcf.CfCommandUnitConstants.Deploy;
 import static io.harness.pcf.CfCommandUnitConstants.Downsize;
+import static io.harness.pcf.CfCommandUnitConstants.Rollback;
 import static io.harness.pcf.CfCommandUnitConstants.Upsize;
 import static io.harness.pcf.CfCommandUnitConstants.Wrapup;
 import static io.harness.pcf.PcfUtils.encodeColor;
@@ -118,122 +131,140 @@ public class CfRollingRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandle
     }
 
     LogCallback logCallback = tasTaskHelperBase.getLogCallback(
-            iLogStreamingTaskClient, cfCommandRequestNG.getCommandName(), true, commandUnitsProgress);
+            iLogStreamingTaskClient, Rollback, true, commandUnitsProgress);
     CfManifestFileData pcfManifestFileData = CfManifestFileData.builder().varFiles(new ArrayList<>()).build();
 
-    CfRollingDeployRequestNG cfRollingDeployRequestNG = (CfRollingDeployRequestNG) cfCommandRequestNG;
-    TasInfraConfig tasInfraConfig = cfRollingDeployRequestNG.getTasInfraConfig();
+    CfRollingRollbackRequestNG cfRollingRollbackRequestNG = (CfRollingRollbackRequestNG) cfCommandRequestNG;
+    TasInfraConfig tasInfraConfig = cfRollingRollbackRequestNG.getTasInfraConfig();
     CloudFoundryConfig cfConfig = tasNgConfigMapper.mapTasConfigWithDecryption(
             tasInfraConfig.getTasConnectorDTO(), tasInfraConfig.getEncryptionDataDetails());
-    CfRequestConfig cfRequestConfig = getCfRequestConfig(cfRollingDeployRequestNG, cfConfig);
+    CfRequestConfig cfRequestConfig = getCfRequestConfig(cfRollingRollbackRequestNG, cfConfig);
 
     File artifactFile = null;
     File workingDirectory = null;
     TasApplicationInfo currentProdInfo = null;
     try {
-      workingDirectory = generateWorkingDirectoryOnDelegate(cfRollingDeployRequestNG);
-      currentProdInfo = getCurrentProdInfo(clonePcfRequestConfig(cfRequestConfig).build(),
-              workingDirectory, ((CfRollingDeployRequestNG) cfCommandRequestNG).getTimeoutIntervalInMin(), logCallback);
+      List<ApplicationSummary> previousReleases =
+              cfDeploymentManager.getPreviousReleasesForRolling(cfRequestConfig, ((CfRollingRollbackRequestNG) cfCommandRequestNG).getApplicationName());
+      workingDirectory = generateWorkingDirectoryOnDelegate(cfRollingRollbackRequestNG);
+      currentProdInfo = getCurrentProdInfo(previousReleases, clonePcfRequestConfig(cfRequestConfig).build(),
+              workingDirectory, ((CfRollingRollbackRequestNG) cfCommandRequestNG).getTimeoutIntervalInMin(), logCallback);
 
       CfAppAutoscalarRequestData cfAppAutoscalarRequestData =
               CfAppAutoscalarRequestData.builder()
                       .cfRequestConfig(cfRequestConfig)
                       .configPathVar(workingDirectory.getAbsolutePath())
-                      .timeoutInMins(cfRollingDeployRequestNG.getTimeoutIntervalInMin())
+                      .timeoutInMins(cfRollingRollbackRequestNG.getTimeoutIntervalInMin())
                       .build();
 
-      artifactFile = downloadArtifactFile(cfRollingDeployRequestNG, workingDirectory, logCallback);
+      CfRollingRollbackResponseNG cfRollingRollbackResponseNG;
 
-      boolean varsYmlPresent = checkIfVarsFilePresent(cfRollingDeployRequestNG);
-      CfCreateApplicationRequestData requestData =
-              CfCreateApplicationRequestData.builder()
-                      .cfRequestConfig(clonePcfRequestConfig(cfRequestConfig)
-                              .applicationName(cfRollingDeployRequestNG.getApplicationName())
-                              .routeMaps(cfRollingDeployRequestNG.getRouteMaps())
-                              .build())
-                      .artifactPath(artifactFile == null ? null : artifactFile.getAbsolutePath())
-                      .configPathVar(workingDirectory.getAbsolutePath())
-                      .newReleaseName(cfRollingDeployRequestNG.getApplicationName())
-                      .pcfManifestFileData(pcfManifestFileData)
-                      .varsYmlFilePresent(varsYmlPresent)
-                      .dockerBasedDeployment(isDockerArtifact(cfRollingDeployRequestNG.getTasArtifactConfig()))
-                      .build();
-
-      requestData.setFinalManifestYaml(generateManifestYamlForPush(cfRollingDeployRequestNG, requestData));
-      // Create manifest.yaml file
-      prepareManifestYamlFile(requestData);
-
-      if (varsYmlPresent) {
-        prepareVarsYamlFile(requestData, cfRollingDeployRequestNG);
-      }
-
-      logCallback.saveExecutionLog(color("\n# Creating new Application", White, Bold));
-
-      if (currentProdInfo.isAutoScalarEnabled()) {
+      if (currentProdInfo != null && currentProdInfo.isAutoScalarEnabled()) {
         cfAppAutoscalarRequestData.setApplicationName(currentProdInfo.getApplicationName());
         cfAppAutoscalarRequestData.setApplicationGuid(currentProdInfo.getApplicationGuid());
         cfAppAutoscalarRequestData.setExpectedEnabled(true);
         pcfCommandTaskBaseHelper.disableAutoscalarSafe(cfAppAutoscalarRequestData, logCallback);
       }
 
-      ApplicationDetail applicationDetail = createAppAndPrintDetails(logCallback, requestData);
+      if(currentProdInfo != null && cfRollingRollbackRequestNG.isFirstDeployment()) {
+        // Deleting
+        logCallback.saveExecutionLog(color("\n# Deleting the app which was created ", White, Bold));
+        cfDeploymentManager.deleteApplication(cfRequestConfig);
+        cfRollingRollbackResponseNG = CfRollingRollbackResponseNG.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                .newApplicationInfo(null)
+                .currentProdInfo(null)
+                .build();
+        logCallback.saveExecutionLog(color("\n# Deleting successfully", White, Bold));
+        logCallback.saveExecutionLog("\n ----------  PCF Rolling Rollback completed successfully", INFO, SUCCESS);
+        return cfRollingRollbackResponseNG;
 
-      configureAutoscalarIfNeeded(cfRollingDeployRequestNG,
-              applicationDetail, cfAppAutoscalarRequestData, logCallback);
-      if(cfRollingDeployRequestNG.isUseAppAutoScalar()) {
-        cfCommandTaskHelperNG.enableAutoscalerIfNeeded(applicationDetail, cfAppAutoscalarRequestData, logCallback);
       }
 
-      CfRollingDeployResponseNG cfRollingDeployResponseNG =
-              CfRollingDeployResponseNG.builder()
-                      .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
-                      .newApplicationInfo(TasApplicationInfo.builder()
-                              .applicationGuid(applicationDetail.getId())
-                              .applicationName(applicationDetail.getName())
-                              .attachedRoutes(new ArrayList<>(applicationDetail.getUrls()))
-                              .runningCount(applicationDetail.getRunningInstances())
+      artifactFile = downloadArtifactFile(cfRollingRollbackRequestNG, workingDirectory, logCallback);
+
+      boolean varsYmlPresent = checkIfVarsFilePresent(cfRollingRollbackRequestNG);
+      CfCreateApplicationRequestData requestData =
+              CfCreateApplicationRequestData.builder()
+                      .cfRequestConfig(clonePcfRequestConfig(cfRequestConfig)
+                              .applicationName(cfRollingRollbackRequestNG.getApplicationName())
+                              .routeMaps(cfRollingRollbackRequestNG.getRouteMaps())
                               .build())
-                      .currentProdInfo(currentProdInfo)
-                      .useAppAutoScalar(cfRollingDeployRequestNG.isUseAppAutoScalar())
+                      .artifactPath(artifactFile == null ? null : artifactFile.getAbsolutePath())
+                      .configPathVar(workingDirectory.getAbsolutePath())
+                      .newReleaseName(cfRollingRollbackRequestNG.getApplicationName())
+                      .pcfManifestFileData(pcfManifestFileData)
+                      .varsYmlFilePresent(varsYmlPresent)
+                      .dockerBasedDeployment(isDockerArtifact(cfRollingRollbackRequestNG.getTasArtifactConfig()))
+                      .strategy("rolling")
                       .build();
 
-      logCallback.saveExecutionLog("\n ----------  PCF Rolling Deployment completed successfully", INFO, SUCCESS);
-      return cfRollingDeployResponseNG;
+      requestData.setFinalManifestYaml(generateManifestYamlForPush(cfRollingRollbackRequestNG, requestData));
+      // Create manifest.yaml file
+      prepareManifestYamlFile(requestData);
+
+      if (varsYmlPresent) {
+        prepareVarsYamlFile(requestData, cfRollingRollbackRequestNG);
+      }
+
+      logCallback.saveExecutionLog(color("\n# Starting Rollback", White, Bold));
+
+        ApplicationDetail applicationDetail = createAppAndPrintDetails(logCallback, requestData);
+
+        configureAutoscalarIfNeeded(cfRollingRollbackRequestNG,
+                applicationDetail, cfAppAutoscalarRequestData, logCallback);
+        if (cfRollingRollbackRequestNG.isUseAppAutoScalar()) {
+          cfCommandTaskHelperNG.enableAutoscalerIfNeeded(applicationDetail, cfAppAutoscalarRequestData, logCallback);
+        }
+
+        cfRollingRollbackResponseNG =
+                CfRollingRollbackResponseNG.builder()
+                        .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                        .newApplicationInfo(TasApplicationInfo.builder()
+                                .applicationGuid(applicationDetail.getId())
+                                .applicationName(applicationDetail.getName())
+                                .attachedRoutes(new ArrayList<>(applicationDetail.getUrls()))
+                                .runningCount(applicationDetail.getRunningInstances())
+                                .build())
+                        .currentProdInfo(currentProdInfo)
+                        .build();
+
+      logCallback.saveExecutionLog("\n ----------  PCF Rolling Rollback completed successfully", INFO, SUCCESS);
+      return cfRollingRollbackResponseNG;
 
     } catch (RuntimeException | PivotalClientApiException | IOException e) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
-      log.error(PIVOTAL_CLOUD_FOUNDRY_LOG_PREFIX + "Exception in processing PCF Rolling Deployment task [{}]", cfRollingDeployRequestNG,
+      log.error(PIVOTAL_CLOUD_FOUNDRY_LOG_PREFIX + "Exception in processing PCF Rolling Rollback task [{}]", cfRollingRollbackRequestNG,
               sanitizedException);
       logCallback.saveExecutionLog(
-              "\n\n ----------  PCF Rolling Deployment failed to complete successfully", ERROR, CommandExecutionStatus.FAILURE);
+              "\n\n ----------  PCF Rolling Rollback failed to complete successfully", ERROR, CommandExecutionStatus.FAILURE);
 
       Misc.logAllMessages(sanitizedException, logCallback);
-      return CfRollingDeployResponseNG.builder()
+      return CfRollingRollbackResponseNG.builder()
               .currentProdInfo(currentProdInfo)
               .commandExecutionStatus(CommandExecutionStatus.FAILURE)
               .errorMessage(ExceptionUtils.getMessage(sanitizedException))
               .build();
     } finally {
       logCallback = tasTaskHelperBase.getLogCallback(iLogStreamingTaskClient, Wrapup, true, commandUnitsProgress);
-      removeTempFilesCreated(cfRollingDeployRequestNG, logCallback, artifactFile, workingDirectory, pcfManifestFileData);
+      removeTempFilesCreated(cfRollingRollbackRequestNG, logCallback, artifactFile, workingDirectory, pcfManifestFileData);
       logCallback.saveExecutionLog("#----------  Cleaning up temporary files completed", INFO, SUCCESS);
     }
   }
 
-  private void configureAutoscalarIfNeeded(CfRollingDeployRequestNG cfCommandDeployRequest,
+  private void configureAutoscalarIfNeeded(CfRollingRollbackRequestNG cfRollingRollbackRequestNG,
                                            ApplicationDetail applicationDetail, CfAppAutoscalarRequestData appAutoscalarRequestData,
                                            LogCallback executionLogCallback) throws PivotalClientApiException, IOException {
-    if (cfCommandDeployRequest.isUseAppAutoScalar() && cfCommandDeployRequest.getPcfManifestsPackage() != null
-            && isNotEmpty(cfCommandDeployRequest.getPcfManifestsPackage().getAutoscalarManifestYml())) {
+    if (cfRollingRollbackRequestNG.isUseAppAutoScalar() && cfRollingRollbackRequestNG.getPcfManifestsPackage() != null
+            && isNotEmpty(cfRollingRollbackRequestNG.getPcfManifestsPackage().getAutoscalarManifestYml())) {
       // This is autoscalar file inside workingDirectory
       String filePath =
               appAutoscalarRequestData.getConfigPathVar() + "/autoscalar_" + System.currentTimeMillis() + ".yml";
-      cfCommandTaskHelperNG.createYamlFileLocally(filePath, cfCommandDeployRequest.getPcfManifestsPackage().getAutoscalarManifestYml());
+      cfCommandTaskHelperNG.createYamlFileLocally(filePath, cfRollingRollbackRequestNG.getPcfManifestsPackage().getAutoscalarManifestYml());
 
       // upload autoscalar config
       appAutoscalarRequestData.setApplicationName(applicationDetail.getName());
       appAutoscalarRequestData.setApplicationGuid(applicationDetail.getId());
-      appAutoscalarRequestData.setTimeoutInMins(cfCommandDeployRequest.getTimeoutIntervalInMin());
+      appAutoscalarRequestData.setTimeoutInMins(cfRollingRollbackRequestNG.getTimeoutIntervalInMin());
       appAutoscalarRequestData.setAutoscalarFilePath(filePath);
       cfDeploymentManager.performConfigureAutoscalar(appAutoscalarRequestData, executionLogCallback);
     }
@@ -241,7 +272,7 @@ public class CfRollingRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandle
 
 
   // Remove downloaded artifact and generated yaml files
-  private void removeTempFilesCreated(CfRollingDeployRequestNG cfRollingDeployRequestNG, LogCallback executionLogCallback,
+  private void removeTempFilesCreated(CfRollingRollbackRequestNG cfRollingRollbackRequestNG, LogCallback executionLogCallback,
                                       File artifactFile, File workingDirectory, CfManifestFileData pcfManifestFileData) {
     try {
       executionLogCallback.saveExecutionLog("# Deleting any temporary files created");
@@ -258,7 +289,7 @@ public class CfRollingRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandle
         filesToBeRemoved.add(artifactFile);
       }
 
-      if (cfRollingDeployRequestNG.isUseCfCLI() && manifestYamlFile != null) {
+      if (cfRollingRollbackRequestNG.isUseCfCLI() && manifestYamlFile != null) {
         filesToBeRemoved.add(
                 new File(pcfCommandTaskBaseHelper.generateFinalManifestFilePath(manifestYamlFile.getAbsolutePath())));
       }
@@ -290,13 +321,13 @@ public class CfRollingRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandle
     requestData.getPcfManifestFileData().setManifestFile(manifestYamlFile);
   }
 
-  void prepareVarsYamlFile(CfCreateApplicationRequestData requestData, CfRollingDeployRequestNG cfRollingDeployRequestNG)
+  void prepareVarsYamlFile(CfCreateApplicationRequestData requestData, CfRollingRollbackRequestNG cfRollingRollbackRequestNG)
           throws IOException {
     if (!requestData.isVarsYmlFilePresent()) {
       return;
     }
 
-    PcfManifestsPackage pcfManifestsPackage = cfRollingDeployRequestNG.getPcfManifestsPackage();
+    PcfManifestsPackage pcfManifestsPackage = cfRollingRollbackRequestNG.getPcfManifestsPackage();
     AtomicInteger varFileIndex = new AtomicInteger(0);
     pcfManifestsPackage.getVariableYmls().forEach(varFileYml -> {
       File varsYamlFile =
@@ -308,10 +339,10 @@ public class CfRollingRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandle
     });
   }
 
-  public String generateManifestYamlForPush(CfRollingDeployRequestNG cfRollingDeployRequestNG,
+  public String generateManifestYamlForPush(CfRollingRollbackRequestNG cfRollingRollbackRequestNG,
                                             CfCreateApplicationRequestData requestData) throws PivotalClientApiException {
     // Substitute name,
-    String manifestYaml = cfRollingDeployRequestNG.getPcfManifestsPackage().getManifestYml();
+    String manifestYaml = cfRollingRollbackRequestNG.getPcfManifestsPackage().getManifestYml();
 
     Map<String, Object> map;
     try {
@@ -335,7 +366,7 @@ public class CfRollingRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandle
 
     applicationToBeUpdated.put(NAME_MANIFEST_YML_ELEMENT, requestData.getNewReleaseName());
 
-    updateArtifactDetails(requestData, cfRollingDeployRequestNG, applicationToBeUpdated);
+    updateArtifactDetails(requestData, cfRollingRollbackRequestNG, applicationToBeUpdated);
 
 //    applicationToBeUpdated.put(INSTANCE_MANIFEST_YML_ELEMENT, 0);
 //
@@ -352,7 +383,7 @@ public class CfRollingRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandle
 //      }
 //    }
     // Update routes.
-    updateConfigWithRoutesIfRequired(requestData, applicationToBeUpdated, cfRollingDeployRequestNG);
+    updateConfigWithRoutesIfRequired(requestData, applicationToBeUpdated, cfRollingRollbackRequestNG);
     // We do not want to change order
 
     // remove "create-services" elements as it would have been used by cf cli plugin to create services.
@@ -376,7 +407,7 @@ public class CfRollingRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandle
   }
 
   private void updateConfigWithRoutesIfRequired(
-          CfCreateApplicationRequestData requestData, TreeMap applicationToBeUpdated, CfRollingDeployRequestNG cfRollingDeployRequestNG) {
+          CfCreateApplicationRequestData requestData, TreeMap applicationToBeUpdated, CfRollingRollbackRequestNG cfRollingRollbackRequestNG) {
     applicationToBeUpdated.remove(ROUTES_MANIFEST_YML_ELEMENT);
 
     // 1. Check and handle no-route scenario
@@ -389,13 +420,13 @@ public class CfRollingRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandle
 
     // 2. Check if random-route config is needed. This happens if random-route=true in manifest or
     // user has not provided any route value.
-    if (pcfCommandTaskBaseHelper.shouldUseRandomRoute(applicationToBeUpdated, cfRollingDeployRequestNG.getRouteMaps())) {
+    if (pcfCommandTaskBaseHelper.shouldUseRandomRoute(applicationToBeUpdated, cfRollingRollbackRequestNG.getRouteMaps())) {
       applicationToBeUpdated.put(RANDOM_ROUTE_MANIFEST_YML_ELEMENT, true);
       return;
     }
 
     // 3. Insert routes provided by user.
-    List<String> routesForUse = cfRollingDeployRequestNG.getRouteMaps();
+    List<String> routesForUse = cfRollingRollbackRequestNG.getRouteMaps();
     List<Map<String, String>> routeMapList = new ArrayList<>();
     routesForUse.forEach(routeString -> {
       Map<String, String> mapEntry = Collections.singletonMap(ROUTE_MANIFEST_YML_ELEMENT, routeString);
@@ -406,15 +437,15 @@ public class CfRollingRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandle
     applicationToBeUpdated.put(ROUTES_MANIFEST_YML_ELEMENT, routeMapList);
   }
 
-  void updateArtifactDetails(CfCreateApplicationRequestData requestData, CfRollingDeployRequestNG cfRollingDeployRequestNG,
+  void updateArtifactDetails(CfCreateApplicationRequestData requestData, CfRollingRollbackRequestNG cfRollingRollbackRequestNG,
                              TreeMap<String, Object> applicationToBeUpdated) {
-    if (isPackageArtifact(cfRollingDeployRequestNG.getTasArtifactConfig())) {
+    if (isPackageArtifact(cfRollingRollbackRequestNG.getTasArtifactConfig())) {
       if (!isNull(requestData.getArtifactPath())) {
         applicationToBeUpdated.put(PATH_MANIFEST_YML_ELEMENT, requestData.getArtifactPath());
       }
     } else {
       TasContainerArtifactConfig tasContainerArtifactConfig =
-              (TasContainerArtifactConfig) cfRollingDeployRequestNG.getTasArtifactConfig();
+              (TasContainerArtifactConfig) cfRollingRollbackRequestNG.getTasArtifactConfig();
       TasArtifactCreds tasArtifactCreds = tasRegistrySettingsAdapter.getContainerSettings(tasContainerArtifactConfig);
       Map<String, Object> dockerDetails = new HashMap<>();
       String dockerImagePath = tasContainerArtifactConfig.getImage();
@@ -429,7 +460,7 @@ public class CfRollingRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandle
     }
   }
 
-  boolean checkIfVarsFilePresent(CfRollingDeployRequestNG setupRequest) {
+  boolean checkIfVarsFilePresent(CfRollingRollbackRequestNG setupRequest) {
     if (setupRequest.getPcfManifestsPackage() == null) {
       return false;
     }
@@ -443,12 +474,12 @@ public class CfRollingRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandle
   }
 
   private File downloadArtifactFile(
-          CfRollingDeployRequestNG cfRollingDeployRequestNG, File workingDirectory, LogCallback logCallback) {
+          CfRollingRollbackRequestNG cfRollingRollbackRequestNG, File workingDirectory, LogCallback logCallback) {
     File artifactFile = null;
-    if (isPackageArtifact(cfRollingDeployRequestNG.getTasArtifactConfig())) {
+    if (isPackageArtifact(cfRollingRollbackRequestNG.getTasArtifactConfig())) {
       TasArtifactDownloadResponse tasArtifactDownloadResponse = cfCommandTaskHelperNG.downloadPackageArtifact(
               TasArtifactDownloadContext.builder()
-                      .artifactConfig((TasPackageArtifactConfig) cfRollingDeployRequestNG.getTasArtifactConfig())
+                      .artifactConfig((TasPackageArtifactConfig) cfRollingRollbackRequestNG.getTasArtifactConfig())
                       .workingDirectory(workingDirectory)
                       .build(),
               logCallback);
@@ -478,7 +509,10 @@ public class CfRollingRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandle
             .routeMaps(cfRequestConfig.getRouteMaps());
   }
 
-  private TasApplicationInfo getCurrentProdInfo(CfRequestConfig cfRequestConfig, File workingDirectory, int timeoutInMins, LogCallback logCallback) throws PivotalClientApiException {
+  private TasApplicationInfo getCurrentProdInfo(List<ApplicationSummary> previousReleases, CfRequestConfig cfRequestConfig, File workingDirectory, int timeoutInMins, LogCallback logCallback) throws PivotalClientApiException {
+    if (isEmpty(previousReleases)) {
+      return null;
+    }
     ApplicationDetail currentActiveApplication = cfCommandTaskHelperNG.getApplicationDetails(cfRequestConfig, cfDeploymentManager);
     if (currentActiveApplication == null) {
       return null;
@@ -507,7 +541,7 @@ public class CfRollingRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandle
             .build();
   }
 
-  private File generateWorkingDirectoryOnDelegate(CfRollingDeployRequestNG cfCommandSetupRequest)
+  private File generateWorkingDirectoryOnDelegate(CfRollingRollbackRequestNG cfCommandSetupRequest)
           throws PivotalClientApiException, IOException {
     File workingDirectory = pcfCommandTaskBaseHelper.generateWorkingDirectoryForDeployment();
     if (cfCommandSetupRequest.isUseCfCLI() || cfCommandSetupRequest.isUseAppAutoScalar()) {
@@ -518,18 +552,20 @@ public class CfRollingRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandle
     return workingDirectory;
   }
 
-  private CfRequestConfig getCfRequestConfig(CfRollingDeployRequestNG cfRollingDeployRequestNG, CloudFoundryConfig cfConfig) {
+  private CfRequestConfig getCfRequestConfig(CfRollingRollbackRequestNG cfRollingRollbackRequestNG, CloudFoundryConfig cfConfig) {
     return CfRequestConfig.builder()
             .userName(String.valueOf(cfConfig.getUserName()))
             .password(String.valueOf(cfConfig.getPassword()))
             .endpointUrl(cfConfig.getEndpointUrl())
-            .orgName(cfRollingDeployRequestNG.getTasInfraConfig().getOrganization())
-            .spaceName(cfRollingDeployRequestNG.getTasInfraConfig().getSpace())
-            .timeOutIntervalInMins(cfRollingDeployRequestNG.getTimeoutIntervalInMin())
-            .useCFCLI(cfRollingDeployRequestNG.isUseCfCLI())
+            .orgName(cfRollingRollbackRequestNG.getTasInfraConfig().getOrganization())
+            .spaceName(cfRollingRollbackRequestNG.getTasInfraConfig().getSpace())
+            .timeOutIntervalInMins(cfRollingRollbackRequestNG.getTimeoutIntervalInMin())
+            .useCFCLI(cfRollingRollbackRequestNG.isUseCfCLI())
             .cfCliPath(cfCommandTaskHelperNG.getCfCliPathOnDelegate(
-                    cfRollingDeployRequestNG.isUseCfCLI(), cfRollingDeployRequestNG.getCfCliVersion()))
-            .cfCliVersion(cfRollingDeployRequestNG.getCfCliVersion())
+                    cfRollingRollbackRequestNG.isUseCfCLI(), cfRollingRollbackRequestNG.getCfCliVersion()))
+            .cfCliVersion(cfRollingRollbackRequestNG.getCfCliVersion())
+            .applicationName(cfRollingRollbackRequestNG.getApplicationName())
+            .desiredCount(cfRollingRollbackRequestNG.getDesiredCount())
             .build();
   }
 }

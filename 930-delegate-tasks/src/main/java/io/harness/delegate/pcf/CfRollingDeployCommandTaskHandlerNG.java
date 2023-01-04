@@ -80,6 +80,7 @@ import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
+import static io.harness.pcf.CfCommandUnitConstants.Deploy;
 import static io.harness.pcf.CfCommandUnitConstants.Downsize;
 import static io.harness.pcf.CfCommandUnitConstants.Upsize;
 import static io.harness.pcf.CfCommandUnitConstants.Wrapup;
@@ -127,7 +128,7 @@ public class CfRollingDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler 
     }
 
     LogCallback logCallback = tasTaskHelperBase.getLogCallback(
-            iLogStreamingTaskClient, cfCommandRequestNG.getCommandName(), true, commandUnitsProgress);
+            iLogStreamingTaskClient, Deploy, true, commandUnitsProgress);
     CfManifestFileData pcfManifestFileData = CfManifestFileData.builder().varFiles(new ArrayList<>()).build();
 
     CfRollingDeployRequestNG cfRollingDeployRequestNG = (CfRollingDeployRequestNG) cfCommandRequestNG;
@@ -139,10 +140,14 @@ public class CfRollingDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler 
     File artifactFile = null;
     File workingDirectory = null;
     TasApplicationInfo currentProdInfo = null;
+    CfRollingDeployResponseNG.CfRollingDeployResponseNGBuilder cfRollingDeployResponseNGBuilder = CfRollingDeployResponseNG.builder();
     try {
+      List<ApplicationSummary> previousReleases =
+              cfDeploymentManager.getPreviousReleasesForRolling(cfRequestConfig, ((CfRollingDeployRequestNG) cfCommandRequestNG).getApplicationName());
       workingDirectory = generateWorkingDirectoryOnDelegate(cfRollingDeployRequestNG);
-      currentProdInfo = getCurrentProdInfo(clonePcfRequestConfig(cfRequestConfig).build(),
+      currentProdInfo = getCurrentProdInfo(previousReleases, clonePcfRequestConfig(cfRequestConfig).build(),
               workingDirectory, ((CfRollingDeployRequestNG) cfCommandRequestNG).getTimeoutIntervalInMin(), logCallback);
+      cfRollingDeployResponseNGBuilder.currentProdInfo(currentProdInfo);
 
       CfAppAutoscalarRequestData cfAppAutoscalarRequestData =
               CfAppAutoscalarRequestData.builder()
@@ -166,6 +171,7 @@ public class CfRollingDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler 
                       .pcfManifestFileData(pcfManifestFileData)
                       .varsYmlFilePresent(varsYmlPresent)
                       .dockerBasedDeployment(isDockerArtifact(cfRollingDeployRequestNG.getTasArtifactConfig()))
+                      .strategy("rolling")
                       .build();
 
       requestData.setFinalManifestYaml(generateManifestYamlForPush(cfRollingDeployRequestNG, requestData));
@@ -176,15 +182,16 @@ public class CfRollingDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler 
         prepareVarsYamlFile(requestData, cfRollingDeployRequestNG);
       }
 
-      logCallback.saveExecutionLog(color("\n# Creating new Application", White, Bold));
+      logCallback.saveExecutionLog(color("\n# Starting Deployment", White, Bold));
 
-      if (currentProdInfo.isAutoScalarEnabled()) {
+      if (currentProdInfo != null && currentProdInfo.isAutoScalarEnabled()) {
         cfAppAutoscalarRequestData.setApplicationName(currentProdInfo.getApplicationName());
         cfAppAutoscalarRequestData.setApplicationGuid(currentProdInfo.getApplicationGuid());
         cfAppAutoscalarRequestData.setExpectedEnabled(true);
         pcfCommandTaskBaseHelper.disableAutoscalarSafe(cfAppAutoscalarRequestData, logCallback);
       }
 
+      cfRollingDeployResponseNGBuilder.deploymentStarted(true);
       ApplicationDetail applicationDetail = createAppAndPrintDetails(logCallback, requestData);
 
       configureAutoscalarIfNeeded(cfRollingDeployRequestNG,
@@ -194,7 +201,7 @@ public class CfRollingDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler 
       }
 
       CfRollingDeployResponseNG cfRollingDeployResponseNG =
-              CfRollingDeployResponseNG.builder()
+              cfRollingDeployResponseNGBuilder
                       .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                       .newApplicationInfo(TasApplicationInfo.builder()
                               .applicationGuid(applicationDetail.getId())
@@ -202,8 +209,6 @@ public class CfRollingDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler 
                               .attachedRoutes(new ArrayList<>(applicationDetail.getUrls()))
                               .runningCount(applicationDetail.getRunningInstances())
                               .build())
-                      .currentProdInfo(currentProdInfo)
-                      .useAppAutoScalar(cfRollingDeployRequestNG.isUseAppAutoScalar())
                       .build();
 
       logCallback.saveExecutionLog("\n ----------  PCF Rolling Deployment completed successfully", INFO, SUCCESS);
@@ -217,8 +222,7 @@ public class CfRollingDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler 
               "\n\n ----------  PCF Rolling Deployment failed to complete successfully", ERROR, CommandExecutionStatus.FAILURE);
 
       Misc.logAllMessages(sanitizedException, logCallback);
-      return CfRollingDeployResponseNG.builder()
-              .currentProdInfo(currentProdInfo)
+      return cfRollingDeployResponseNGBuilder
               .commandExecutionStatus(CommandExecutionStatus.FAILURE)
               .errorMessage(ExceptionUtils.getMessage(sanitizedException))
               .build();
@@ -286,7 +290,7 @@ public class CfRollingDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler 
   ApplicationDetail createAppAndPrintDetails(
           LogCallback executionLogCallback, CfCreateApplicationRequestData requestData) throws PivotalClientApiException, InterruptedException {
     requestData.getCfRequestConfig().setLoggedin(false);
-    ApplicationDetail newApplication = cfDeploymentManager.createRollingApplicationWithSteadyStateCheck(requestData, executionLogCallback);
+      ApplicationDetail newApplication = cfDeploymentManager.createRollingApplicationWithSteadyStateCheck(requestData, executionLogCallback);
     executionLogCallback.saveExecutionLog(color("# Application created successfully", White, Bold));
     executionLogCallback.saveExecutionLog("# App Details: ");
     pcfCommandTaskBaseHelper.printApplicationDetail(newApplication, executionLogCallback);
@@ -487,7 +491,10 @@ public class CfRollingDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler 
             .routeMaps(cfRequestConfig.getRouteMaps());
   }
 
-  private TasApplicationInfo getCurrentProdInfo(CfRequestConfig cfRequestConfig, File workingDirectory, int timeoutInMins, LogCallback logCallback) throws PivotalClientApiException {
+  private TasApplicationInfo getCurrentProdInfo(List<ApplicationSummary> previousReleases, CfRequestConfig cfRequestConfig, File workingDirectory, int timeoutInMins, LogCallback logCallback) throws PivotalClientApiException {
+    if (isEmpty(previousReleases)) {
+      return null;
+    }
     ApplicationDetail currentActiveApplication = cfCommandTaskHelperNG.getApplicationDetails(cfRequestConfig, cfDeploymentManager);
     if (currentActiveApplication == null) {
       return null;
@@ -539,6 +546,8 @@ public class CfRollingDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler 
             .cfCliPath(cfCommandTaskHelperNG.getCfCliPathOnDelegate(
                     cfRollingDeployRequestNG.isUseCfCLI(), cfRollingDeployRequestNG.getCfCliVersion()))
             .cfCliVersion(cfRollingDeployRequestNG.getCfCliVersion())
+            .applicationName(cfRollingDeployRequestNG.getApplicationName())
+            .desiredCount(cfRollingDeployRequestNG.getDesiredCount())
             .build();
   }
 }

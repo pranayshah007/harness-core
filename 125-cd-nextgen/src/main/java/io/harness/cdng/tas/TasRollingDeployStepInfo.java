@@ -53,8 +53,8 @@ public class TasRollingDeployStepInfo extends TasRollingDeployBaseStepInfo imple
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
   @Builder(builderMethodName = "infoBuilder")
-  public TasRollingDeployStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
-    super(delegateSelectors);
+  public TasRollingDeployStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors, ParameterField<List<String>> additionalRoutes) {
+    super(delegateSelectors, additionalRoutes);
   }
 
   @Override
@@ -71,6 +71,7 @@ public class TasRollingDeployStepInfo extends TasRollingDeployBaseStepInfo imple
   public SpecParameters getSpecParameters() {
     return TasRollingDeployStepParameters.infoBuilder()
         .delegateSelectors(this.getDelegateSelectors())
+            .additionalRoutes(this.getAdditionalRoutes())
         .build();
   }
 

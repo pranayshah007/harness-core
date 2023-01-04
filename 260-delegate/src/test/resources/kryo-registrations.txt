@@ -2558,3 +2558,7 @@
 10000257:io.harness.delegate.beans.pcf.artifact.TasArtifactRegistryType
 10000258:io.harness.delegate.beans.pcf.TasResizeStrategyType
 10000259:io.harness.delegate.beans.pcf.TasConstants
+10000260:io.harness.delegate.task.pcf.request.CfRollingDeployRequestNG
+10000261:io.harness.delegate.task.pcf.response.CfRollingDeployResponseNG
+10000262:io.harness.delegate.task.pcf.request.CfRollingRollbackRequestNG
+10000263:io.harness.delegate.task.pcf.response.CfRollingRollbackResponseNG

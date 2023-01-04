@@ -32,7 +32,7 @@ import java.util.List;
 @RecasterAlias("io.harness.cdng.tas.TasRollingDeployStepParameters")
 public class TasRollingDeployStepParameters extends TasRollingDeployBaseStepInfo implements SpecParameters {
   @Builder(builderMethodName = "infoBuilder")
-  public TasRollingDeployStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
-    super(delegateSelectors);
+  public TasRollingDeployStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors, ParameterField<List<String>> additionalRoutes) {
+    super(delegateSelectors, additionalRoutes);
   }
 }

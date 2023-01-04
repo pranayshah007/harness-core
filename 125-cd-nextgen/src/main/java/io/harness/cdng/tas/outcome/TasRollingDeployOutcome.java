@@ -11,6 +11,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.pcf.model.CfCliVersionNG;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.data.Outcome;
 import lombok.Builder;
@@ -31,4 +32,7 @@ public class TasRollingDeployOutcome implements Outcome, ExecutionSweepingOutput
   @Setter @NonFinal String appName;
   @Setter @NonFinal String appGuid;
   @Setter @NonFinal Integer timeoutIntervalInMin;
+  @Setter @NonFinal boolean isFirstDeployment;
+  @Setter @NonFinal CfCliVersionNG cfCliVersion;
+  @Setter @NonFinal boolean deploymentStarted;
 }

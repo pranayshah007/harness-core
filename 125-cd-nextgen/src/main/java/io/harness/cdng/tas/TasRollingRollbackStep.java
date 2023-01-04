@@ -12,6 +12,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.execution.tas.TasStageExecutionDetails;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.TanzuApplicationServiceInfrastructureOutcome;
@@ -36,6 +37,7 @@ import io.harness.delegate.task.pcf.request.CfRollingRollbackRequestNG;
 import io.harness.delegate.task.pcf.request.CfSwapRollbackCommandRequestNG;
 import io.harness.delegate.task.pcf.response.CfCommandResponseNG;
 import io.harness.delegate.task.pcf.response.CfRollbackCommandResponseNG;
+import io.harness.delegate.task.pcf.response.CfRollingRollbackResponseNG;
 import io.harness.delegate.task.pcf.response.TasInfraConfig;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.AccessDeniedException;
@@ -116,13 +118,37 @@ public class TasRollingRollbackStep extends TaskExecutableWithRollbackAndRbac<Cf
             RefObjectUtils.getSweepingOutputRefObject(
                     tasRollingRollbackStepParameters.getTasRollingDeployFqn() + "." + OutcomeExpressionConstants.TAS_ROLLING_DEPLOY_OUTCOME));
 
+    if (tasRollingDeployOutcomeOptional.isFound() == false) {
+      return TaskRequest.newBuilder()
+              .setSkipTaskRequest(
+                      SkipTaskRequest.newBuilder().setMessage(" Outcome Not Found For Deploy Step, so skipping it ").build())
+              .build();
+    }
+
     TasRollingDeployOutcome tasRollingDeployOutcome = (TasRollingDeployOutcome) tasRollingDeployOutcomeOptional.getOutput();
 
+    if (tasRollingDeployOutcome.isDeploymentStarted() == false) {
+      return TaskRequest.newBuilder()
+              .setSkipTaskRequest(
+                      SkipTaskRequest.newBuilder().setMessage(" Deployment did not start , so skipping Rollback ").build())
+              .build();
+    }
+
     TasStageExecutionDetails tasStageExecutionDetails = tasStepHelper.findLastSuccessfulStageExecutionDetails(ambiance, tasInfraConfig, tasRollingDeployOutcome.getAppName());
-    TasArtifactConfig tasArtifactConfig = tasStepHelper.getPrimaryArtifactConfig(ambiance, tasStageExecutionDetails.getArtifactsOutcome().get(0));
+
+    if (tasRollingDeployOutcome.isFirstDeployment() == false && tasStageExecutionDetails ==  null) {
+      return TaskRequest.newBuilder()
+              .setSkipTaskRequest(
+                      SkipTaskRequest.newBuilder().setMessage("No successful deployment found for the particular app").build())
+              .build();
+    }
+
+    List<ArtifactOutcome> artifactOutcomes = tasStageExecutionDetails == null ? Collections.emptyList() : tasStageExecutionDetails.getArtifactsOutcome();
+    TasArtifactConfig tasArtifactConfig = artifactOutcomes.isEmpty() ? null : tasStepHelper.getPrimaryArtifactConfig(ambiance, artifactOutcomes.get(0));
 
     CfRollingRollbackRequestNG cfRollingRollbackRequestNG =
             CfRollingRollbackRequestNG.builder()
+                    .applicationName(tasRollingDeployOutcome.getAppName())
             .accountId(accountId)
             .useCfCLI(true)
             .commandName(CfCommandTypeNG.TAS_ROLLING_ROLLBACK.name())
@@ -130,9 +156,13 @@ public class TasRollingRollbackStep extends TaskExecutableWithRollbackAndRbac<Cf
             .tasInfraConfig(tasInfraConfig)
             .tasArtifactConfig(tasArtifactConfig)
             .cfCommandTypeNG(CfCommandTypeNG.TAS_ROLLING_ROLLBACK)
-            .pcfManifestsPackage(tasStageExecutionDetails.getPcfManifestsPackage())
-            .timeoutIntervalInMin(tasRollingDeployOutcome.getTimeoutIntervalInMin())
-            .routeMaps(tasStageExecutionDetails.getRouteMaps())
+            .pcfManifestsPackage(tasStageExecutionDetails == null ?  null : tasStageExecutionDetails.getPcfManifestsPackage())
+            .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
+            .isFirstDeployment(tasRollingDeployOutcome.isFirstDeployment())
+            .useAppAutoScalar(tasStageExecutionDetails != null && tasStageExecutionDetails.getIsAutoscalarEnabled())
+            .desiredCount(tasStageExecutionDetails == null ?  0 : tasStageExecutionDetails.getDesiredCount())
+            .routeMaps(tasStageExecutionDetails == null ?  null : tasStageExecutionDetails.getRouteMaps())
+            .cfCliVersion(tasStepHelper.cfCliVersionNGMapper(tasRollingDeployOutcome.getCfCliVersion()))
             .build();
 
     final TaskData taskData = TaskData.builder()
@@ -172,9 +202,9 @@ public class TasRollingRollbackStep extends TaskExecutableWithRollbackAndRbac<Cf
       throws Exception {
     StepResponseBuilder builder = StepResponse.builder();
 
-    CfRollbackCommandResponseNG response;
+    CfRollingRollbackResponseNG response;
     try {
-      response = (CfRollbackCommandResponseNG) responseDataSupplier.get();
+      response = (CfRollingRollbackResponseNG) responseDataSupplier.get();
     } catch (Exception ex) {
       log.error("Error while processing Tas response: {}", ExceptionUtils.getMessage(ex), ex);
       throw ex;
