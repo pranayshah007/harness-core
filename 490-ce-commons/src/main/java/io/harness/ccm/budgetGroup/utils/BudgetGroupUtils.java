@@ -22,6 +22,7 @@ import io.harness.ccm.budget.BudgetSummary;
 import io.harness.ccm.budget.ValueDataPoint;
 import io.harness.ccm.budget.utils.BudgetUtils;
 import io.harness.ccm.budgetGroup.BudgetGroup;
+import io.harness.ccm.budgetGroup.BudgetGroupChildEntityDTO;
 import io.harness.ccm.commons.entities.billing.Budget;
 import io.harness.exception.InvalidRequestException;
 
@@ -42,6 +43,8 @@ public class BudgetGroupUtils {
       "Error in performing operation. Some of the child entity IDs are invalid.";
   public static final String INVALID_CHILD_ENTITY_START_TIME_EXCEPTION =
       "Error in performing operation. StartTime of child entities don't match.";
+  public static final String INVALID_CHILD_ENTITY_TYPE_EXCEPTION =
+      "Error in performing operation. Type(budget/budget group) of child entities don't match.";
   public static final String CHILD_ENTITY_START_TIME_NOT_PRESENT_EXCEPTION =
       "Error in performing operation. Start time not found.";
   public static final String INVALID_CHILD_ENTITY_PERIOD_EXCEPTION =
@@ -52,13 +55,66 @@ public class BudgetGroupUtils {
       "Error in performing operation. Budget breakdown of child entities don't match.";
   public static final String CHILD_ENTITY_BUDGET_BREAKDOWN_NOT_PRESENT_EXCEPTION =
       "Error in performing operation. Budget breakdown not found.";
+  public static final String CHILD_ENTITY_TYPE_NOT_PRESENT_EXCEPTION =
+      "Error in performing operation. Child entity type not found.";
+  public static final String CHILD_ENTITY_NOT_PRESENT_EXCEPTION =
+      "Error in performing operation. Child entity not configured for budget group.";
 
   public static void validateBudgetGroup(BudgetGroup budgetGroup, List<BudgetGroup> existingBudgetGroups) {
     populateDefaultBudgetGroupBreakdown(budgetGroup);
     validateBudgetGroupName(budgetGroup, existingBudgetGroups);
   }
 
-  public static BudgetPeriod getStartOfPeriodForChildBudgets(List<Budget> childBudgets) {
+  public static void validateChildBudgets(List<Budget> childBudgets) {
+    validatePeriodForChildBudgets(childBudgets);
+    validateStartTimeForChildBudgets(childBudgets);
+    validateBreakdownForChildBudgets(childBudgets);
+  }
+
+  public static void validateChildBudgetGroups(List<BudgetGroup> childBudgetGroups) {
+    validatePeriodForChildBudgetGroups(childBudgetGroups);
+    validateStartTimeForChildBudgetGroups(childBudgetGroups);
+    validateBreakdownForChildBudgetGroups(childBudgetGroups);
+  }
+
+  public static boolean areChildEntitiesBudgetGroups(List<BudgetGroupChildEntityDTO> childEntities) {
+    Set<Boolean> childEntityType =
+        childEntities.stream().map(BudgetGroupChildEntityDTO::isBudgetGroup).collect(Collectors.toSet());
+    if (childEntityType.size() > 1) {
+      throw new InvalidRequestException(INVALID_CHILD_ENTITY_TYPE_EXCEPTION);
+    }
+    if (childEntityType.stream().findFirst().isPresent()) {
+      return childEntityType.stream().findFirst().get();
+    } else {
+      throw new InvalidRequestException(CHILD_ENTITY_TYPE_NOT_PRESENT_EXCEPTION);
+    }
+  }
+
+  public static void validatePeriodForChildBudgets(List<Budget> childBudgets) {
+    getPeriodForChildBudgets(childBudgets);
+  }
+
+  public static void validateStartTimeForChildBudgets(List<Budget> childBudgets) {
+    getStartTimeForChildBudgets(childBudgets);
+  }
+
+  public static void validateBreakdownForChildBudgets(List<Budget> childBudgets) {
+    getBudgetBreakdownForChildBudgets(childBudgets);
+  }
+
+  public static void validatePeriodForChildBudgetGroups(List<BudgetGroup> childBudgetGroups) {
+    getPeriodForChildBudgetGroups(childBudgetGroups);
+  }
+
+  public static void validateStartTimeForChildBudgetGroups(List<BudgetGroup> childBudgetGroups) {
+    getStartTimeForChildBudgetGroups(childBudgetGroups);
+  }
+
+  public static void validateBreakdownForChildBudgetGroups(List<BudgetGroup> childBudgetGroups) {
+    getBudgetBreakdownForChildBudgetGroups(childBudgetGroups);
+  }
+
+  public static BudgetPeriod getPeriodForChildBudgets(List<Budget> childBudgets) {
     Set<BudgetPeriod> timePeriods = childBudgets.stream().map(Budget::getPeriod).collect(Collectors.toSet());
     if (timePeriods.size() > 1) {
       throw new InvalidRequestException(INVALID_CHILD_ENTITY_PERIOD_EXCEPTION);
@@ -70,7 +126,7 @@ public class BudgetGroupUtils {
     }
   }
 
-  public static BudgetPeriod getStartOfPeriodForChildBudgetGroups(List<BudgetGroup> childBudgetGroups) {
+  public static BudgetPeriod getPeriodForChildBudgetGroups(List<BudgetGroup> childBudgetGroups) {
     Set<BudgetPeriod> timePeriods = childBudgetGroups.stream().map(BudgetGroup::getPeriod).collect(Collectors.toSet());
     if (timePeriods.size() > 1) {
       throw new InvalidRequestException(INVALID_CHILD_ENTITY_START_TIME_EXCEPTION);
@@ -106,7 +162,7 @@ public class BudgetGroupUtils {
     }
   }
 
-  public static BudgetBreakdown getBudgetBreakdownChildBudgets(List<Budget> childBudgets) {
+  public static BudgetBreakdown getBudgetBreakdownForChildBudgets(List<Budget> childBudgets) {
     Set<BudgetBreakdown> budgetBreakdowns = childBudgets.stream()
                                                 .map(budget -> budget.getBudgetMonthlyBreakdown().getBudgetBreakdown())
                                                 .collect(Collectors.toSet());
@@ -120,7 +176,7 @@ public class BudgetGroupUtils {
     }
   }
 
-  public static BudgetBreakdown getBudgetBreakdownChildBudgetGroups(List<BudgetGroup> childBudgetGroups) {
+  public static BudgetBreakdown getBudgetBreakdownForChildBudgetGroups(List<BudgetGroup> childBudgetGroups) {
     Set<BudgetBreakdown> budgetBreakdowns =
         childBudgetGroups.stream()
             .map(budgetGroup -> budgetGroup.getBudgetGroupMonthlyBreakdown().getBudgetBreakdown())
@@ -172,8 +228,8 @@ public class BudgetGroupUtils {
 
   public static List<ValueDataPoint> getAggregatedBudgetAmountOfChildBudgets(List<Budget> childBudgets) {
     long startTime = getStartTimeForChildBudgets(childBudgets);
-    BudgetPeriod period = getStartOfPeriodForChildBudgets(childBudgets);
-    BudgetBreakdown budgetBreakdown = getBudgetBreakdownChildBudgets(childBudgets);
+    BudgetPeriod period = getPeriodForChildBudgets(childBudgets);
+    BudgetBreakdown budgetBreakdown = getBudgetBreakdownForChildBudgets(childBudgets);
     boolean isMonthlyBreakdownPresent = period == YEARLY && budgetBreakdown == MONTHLY;
     if (isMonthlyBreakdownPresent) {
       return getAggregatedBudgetAmountForBudgets(childBudgets);
@@ -186,8 +242,8 @@ public class BudgetGroupUtils {
 
   public static List<ValueDataPoint> getAggregatedBudgetAmountOfChildBudgetGroups(List<BudgetGroup> childBudgetGroups) {
     long startTime = getStartTimeForChildBudgetGroups(childBudgetGroups);
-    BudgetPeriod period = getStartOfPeriodForChildBudgetGroups(childBudgetGroups);
-    BudgetBreakdown budgetBreakdown = getBudgetBreakdownChildBudgetGroups(childBudgetGroups);
+    BudgetPeriod period = getPeriodForChildBudgetGroups(childBudgetGroups);
+    BudgetBreakdown budgetBreakdown = getBudgetBreakdownForChildBudgetGroups(childBudgetGroups);
     boolean isMonthlyBreakdownPresent = period == YEARLY && budgetBreakdown == MONTHLY;
     if (isMonthlyBreakdownPresent) {
       return getAggregatedBudgetGroupAmountsForBudgetGroups(childBudgetGroups);

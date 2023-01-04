@@ -12,6 +12,7 @@ import io.harness.ccm.budget.ValueDataPoint;
 import io.harness.ccm.budget.dao.BudgetDao;
 import io.harness.ccm.budget.utils.BudgetUtils;
 import io.harness.ccm.budgetGroup.BudgetGroup;
+import io.harness.ccm.budgetGroup.BudgetGroupChildEntityDTO;
 import io.harness.ccm.budgetGroup.dao.BudgetGroupDao;
 import io.harness.ccm.budgetGroup.utils.BudgetGroupUtils;
 import io.harness.ccm.commons.entities.billing.Budget;
@@ -35,7 +36,28 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
   public String save(BudgetGroup budgetGroup) {
     BudgetGroupUtils.validateBudgetGroup(
         budgetGroup, budgetGroupDao.list(budgetGroup.getAccountId(), budgetGroup.getName()));
-    return budgetGroupDao.save(budgetGroup);
+
+    // Validating child entities
+    List<BudgetGroupChildEntityDTO> childEntities = budgetGroup.getChildEntities();
+    if (childEntities == null || childEntities.size() < 1) {
+      throw new InvalidRequestException(BudgetGroupUtils.CHILD_ENTITY_NOT_PRESENT_EXCEPTION);
+    }
+    boolean areChildEntitiesBudgetGroups =
+        BudgetGroupUtils.areChildEntitiesBudgetGroups(budgetGroup.getChildEntities());
+    List<String> childEntityIds =
+        budgetGroup.getChildEntities().stream().map(BudgetGroupChildEntityDTO::getId).collect(Collectors.toList());
+    validateChildEntities(budgetGroup, areChildEntitiesBudgetGroups, childEntityIds);
+
+    // Saving budget group
+    String budgetGroupId = budgetGroupDao.save(budgetGroup);
+
+    // Updating parent id for child entities
+    if (areChildEntitiesBudgetGroups) {
+      budgetGroupDao.updateParentId(budgetGroupId, childEntityIds);
+    } else {
+      budgetDao.updateParentId(budgetGroupId, childEntityIds);
+    }
+    return budgetGroupId;
   }
 
   @Override
@@ -152,5 +174,14 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
   @Override
   public void updateParentIdForBudgetGroups(String parentId, List<String> budgetIds) {
     budgetDao.updateParentId(parentId, budgetIds);
+  }
+
+  public void validateChildEntities(
+      BudgetGroup budgetGroup, boolean areChildEntitiesBudgetGroups, List<String> childEntityIds) {
+    if (areChildEntitiesBudgetGroups) {
+      BudgetGroupUtils.validateChildBudgetGroups(budgetGroupDao.list(budgetGroup.getAccountId(), childEntityIds));
+    } else {
+      BudgetGroupUtils.validateChildBudgets(budgetDao.list(budgetGroup.getAccountId(), childEntityIds));
+    }
   }
 }

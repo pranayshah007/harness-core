@@ -213,7 +213,7 @@ public class BudgetGroupsResource {
           description = "List of child budgets/budget groups") @NotNull @Valid List<String> childEntityIds) {
     rbacHelper.checkBudgetViewPermission(accountId, null, null);
     return ResponseDTO.newResponse(
-        budgetGroupService.getLastPeriodCost(accountId, areChildEntitiesBudgets, childEntityIds));
+        budgetGroupService.getAggregatedAmount(accountId, areChildEntitiesBudgets, childEntityIds));
   }
 
   @GET
