@@ -211,11 +211,7 @@ public class InstanceDataDaoImpl implements InstanceDataDao {
                                     .project(InstanceDataKeys.instanceId, true)
                                     .project(InstanceDataKeys.usageStopTime, true)
                                     .project(InstanceDataKeys.uuid, false);
-    log.info(":::::::::::::::: QUERY :::::::  " + query.toString());
-    MorphiaIterator<InstanceData, InstanceData> itr = query.fetch();
-    log.info("::::::::::::::::: fetch ::::::: " + itr);
-
-    try (HIterator<InstanceData> instanceItr = new HIterator<>(itr)) {
+    try (HIterator<InstanceData> instanceItr = new HIterator<>(query.fetch())) {
       for (InstanceData instanceData : instanceItr) {
         if (null == instanceData.getUsageStopTime()) {
           instanceIds.add(instanceData.getInstanceId());
