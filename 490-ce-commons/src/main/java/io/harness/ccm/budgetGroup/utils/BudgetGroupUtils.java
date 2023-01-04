@@ -26,9 +26,10 @@ import io.harness.ccm.commons.entities.billing.Budget;
 import io.harness.exception.InvalidRequestException;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -169,41 +170,32 @@ public class BudgetGroupUtils {
     return BudgetUtils.getStartOfMonth(false);
   }
 
-  public static List<ValueDataPoint> getLastPeriodCostOfChildBudgets(List<Budget> childBudgets) {
+  public static List<ValueDataPoint> getAggregatedBudgetAmountOfChildBudgets(List<Budget> childBudgets) {
     long startTime = getStartTimeForChildBudgets(childBudgets);
     BudgetPeriod period = getStartOfPeriodForChildBudgets(childBudgets);
     BudgetBreakdown budgetBreakdown = getBudgetBreakdownChildBudgets(childBudgets);
     boolean isMonthlyBreakdownPresent = period == YEARLY && budgetBreakdown == MONTHLY;
     if (isMonthlyBreakdownPresent) {
-      Double[] aggregatedLastPeriodCosts = getAggregatedLastPeriodCostsForBudgets(childBudgets);
-      return BudgetUtils.getYearlyMonthWiseKeyValuePairs(
-          BudgetUtils.getStartOfLastPeriod(startTime, period), aggregatedLastPeriodCosts);
+      return getAggregatedBudgetAmountForBudgets(childBudgets);
     } else {
-      Double aggregatedLastPeriodCost =
-          childBudgets.stream().map(Budget::getLastMonthCost).mapToDouble(Double::doubleValue).sum();
-      return Collections.singletonList(ValueDataPoint.builder()
-                                           .time(BudgetUtils.getStartOfLastPeriod(startTime, period))
-                                           .value(aggregatedLastPeriodCost)
-                                           .build());
+      Double aggregatedBudgetAmount =
+          childBudgets.stream().map(Budget::getBudgetAmount).mapToDouble(Double::doubleValue).sum();
+      return Collections.singletonList(ValueDataPoint.builder().time(startTime).value(aggregatedBudgetAmount).build());
     }
   }
 
-  public static List<ValueDataPoint> getLastPeriodCostOfChildBudgetGroups(List<BudgetGroup> childBudgetGroups) {
+  public static List<ValueDataPoint> getAggregatedBudgetAmountOfChildBudgetGroups(List<BudgetGroup> childBudgetGroups) {
     long startTime = getStartTimeForChildBudgetGroups(childBudgetGroups);
     BudgetPeriod period = getStartOfPeriodForChildBudgetGroups(childBudgetGroups);
     BudgetBreakdown budgetBreakdown = getBudgetBreakdownChildBudgetGroups(childBudgetGroups);
     boolean isMonthlyBreakdownPresent = period == YEARLY && budgetBreakdown == MONTHLY;
     if (isMonthlyBreakdownPresent) {
-      Double[] lastPeriodCosts = getAggregatedLastPeriodCostsForBudgetGroups(childBudgetGroups);
-      return BudgetUtils.getYearlyMonthWiseKeyValuePairs(
-          BudgetUtils.getStartOfLastPeriod(startTime, period), lastPeriodCosts);
+      return getAggregatedBudgetGroupAmountsForBudgetGroups(childBudgetGroups);
     } else {
-      Double aggregatedLastPeriodCost =
-          childBudgetGroups.stream().map(BudgetGroup::getLastMonthCost).mapToDouble(Double::doubleValue).sum();
-      return Collections.singletonList(ValueDataPoint.builder()
-                                           .time(BudgetUtils.getStartOfLastPeriod(startTime, period))
-                                           .value(aggregatedLastPeriodCost)
-                                           .build());
+      Double aggregatedBudgetGroupAmount =
+          childBudgetGroups.stream().map(BudgetGroup::getBudgetGroupAmount).mapToDouble(Double::doubleValue).sum();
+      return Collections.singletonList(
+          ValueDataPoint.builder().time(startTime).value(aggregatedBudgetGroupAmount).build());
     }
   }
   public static BudgetSummary buildBudgetGroupSummary(BudgetGroup budgetGroup, List<BudgetSummary> childEntities) {
@@ -227,28 +219,56 @@ public class BudgetGroupUtils {
         .build();
   }
 
-  private static Double[] getAggregatedLastPeriodCostsForBudgets(List<Budget> budgets) {
-    Double[] aggregatedCosts = new Double[12];
-    Arrays.fill(aggregatedCosts, 0.0);
+  private static List<ValueDataPoint> getAggregatedBudgetAmountForBudgets(List<Budget> budgets) {
+    List<ValueDataPoint> aggregatedBudgetAmounts = new ArrayList<>();
+    Map<Long, Double> aggregatedBudgetAmountPerTimestamp = new HashMap<>();
     for (Budget budget : budgets) {
-      Double[] budgetLastPeriodCosts = budget.getBudgetMonthlyBreakdown().getYearlyLastPeriodCost();
-      for (int index = 0; index < BudgetUtils.MONTHS; index++) {
-        aggregatedCosts[index] = aggregatedCosts[index] + budgetLastPeriodCosts[index];
-      }
+      List<ValueDataPoint> budgetAmounts = budget.getBudgetMonthlyBreakdown().getBudgetMonthlyAmount();
+      budgetAmounts.forEach(budgetAmount -> {
+        Long timestamp = budgetAmount.getTime();
+        if (aggregatedBudgetAmountPerTimestamp.containsKey(timestamp)) {
+          aggregatedBudgetAmountPerTimestamp.put(
+              timestamp, aggregatedBudgetAmountPerTimestamp.get(timestamp) + budgetAmount.getValue());
+        } else {
+          aggregatedBudgetAmountPerTimestamp.put(timestamp, budgetAmount.getValue());
+        }
+      });
     }
-    return aggregatedCosts;
+    if (aggregatedBudgetAmountPerTimestamp.keySet().size() != BudgetUtils.MONTHS) {
+      throw new InvalidRequestException(INVALID_CHILD_ENTITY_BUDGET_BREAKDOWN_EXCEPTION);
+    }
+    aggregatedBudgetAmountPerTimestamp.keySet().forEach(timestamp -> {
+      aggregatedBudgetAmounts.add(
+          ValueDataPoint.builder().time(timestamp).value(aggregatedBudgetAmountPerTimestamp.get(timestamp)).build());
+    });
+    return aggregatedBudgetAmounts;
   }
 
-  private static Double[] getAggregatedLastPeriodCostsForBudgetGroups(List<BudgetGroup> budgetGroups) {
-    Double[] aggregatedCosts = new Double[12];
-    Arrays.fill(aggregatedCosts, 0.0);
+  private static List<ValueDataPoint> getAggregatedBudgetGroupAmountsForBudgetGroups(List<BudgetGroup> budgetGroups) {
+    List<ValueDataPoint> aggregatedBudgetGroupAmounts = new ArrayList<>();
+    Map<Long, Double> aggregatedBudgetGroupAmountPerTimestamp = new HashMap<>();
     for (BudgetGroup budgetGroup : budgetGroups) {
-      Double[] budgetLastPeriodCosts = budgetGroup.getBudgetGroupMonthlyBreakdown().getYearlyLastPeriodCost();
-      for (int index = 0; index < BudgetUtils.MONTHS; index++) {
-        aggregatedCosts[index] = aggregatedCosts[index] + budgetLastPeriodCosts[index];
-      }
+      List<ValueDataPoint> budgetGroupAmounts = budgetGroup.getBudgetGroupMonthlyBreakdown().getBudgetMonthlyAmount();
+      budgetGroupAmounts.forEach(budgetGroupAmount -> {
+        Long timestamp = budgetGroupAmount.getTime();
+        if (aggregatedBudgetGroupAmountPerTimestamp.containsKey(timestamp)) {
+          aggregatedBudgetGroupAmountPerTimestamp.put(
+              timestamp, aggregatedBudgetGroupAmountPerTimestamp.get(timestamp) + budgetGroupAmount.getValue());
+        } else {
+          aggregatedBudgetGroupAmountPerTimestamp.put(timestamp, budgetGroupAmount.getValue());
+        }
+      });
     }
-    return aggregatedCosts;
+    if (aggregatedBudgetGroupAmountPerTimestamp.keySet().size() != BudgetUtils.MONTHS) {
+      throw new InvalidRequestException(INVALID_CHILD_ENTITY_BUDGET_BREAKDOWN_EXCEPTION);
+    }
+    aggregatedBudgetGroupAmountPerTimestamp.keySet().forEach(timestamp -> {
+      aggregatedBudgetGroupAmounts.add(ValueDataPoint.builder()
+                                           .time(timestamp)
+                                           .value(aggregatedBudgetGroupAmountPerTimestamp.get(timestamp))
+                                           .build());
+    });
+    return aggregatedBudgetGroupAmounts;
   }
 
   private static void populateDefaultBudgetGroupBreakdown(BudgetGroup budgetGroup) {

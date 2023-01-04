@@ -19,7 +19,9 @@ public interface BudgetGroupService {
   BudgetGroup get(String uuid, String accountId);
   List<BudgetGroup> list(String accountId);
   boolean delete(String uuid, String accountId);
-  List<ValueDataPoint> getLastPeriodCost(
+  List<ValueDataPoint> getAggregatedAmount(
       String accountId, boolean areChildEntitiesBudgets, List<String> childEntityIds);
   List<BudgetSummary> listBudgetsAndBudgetGroupsSummary(String accountId, String id);
+  void updateParentIdForBudgets(String parentId, List<String> budgetIds);
+  void updateParentIdForBudgetGroups(String parentId, List<String> budgetGroupIds);
 }

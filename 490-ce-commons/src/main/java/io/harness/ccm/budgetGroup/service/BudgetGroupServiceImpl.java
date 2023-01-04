@@ -61,20 +61,20 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
   }
 
   @Override
-  public List<ValueDataPoint> getLastPeriodCost(
+  public List<ValueDataPoint> getAggregatedAmount(
       String accountId, boolean areChildEntitiesBudgets, List<String> childEntityIds) {
     if (areChildEntitiesBudgets) {
       List<Budget> childBudgets = budgetDao.list(accountId, childEntityIds);
       if (childBudgets == null || childBudgets.size() != childEntityIds.size()) {
         throw new InvalidRequestException(BudgetGroupUtils.INVALID_CHILD_ENTITY_ID_EXCEPTION);
       }
-      return BudgetGroupUtils.getLastPeriodCostOfChildBudgets(childBudgets);
+      return BudgetGroupUtils.getAggregatedBudgetAmountOfChildBudgets(childBudgets);
     } else {
       List<BudgetGroup> childBudgetGroups = budgetGroupDao.list(accountId, childEntityIds);
       if (childBudgetGroups == null || childBudgetGroups.size() != childEntityIds.size()) {
         throw new InvalidRequestException(BudgetGroupUtils.INVALID_CHILD_ENTITY_ID_EXCEPTION);
       }
-      return BudgetGroupUtils.getLastPeriodCostOfChildBudgetGroups(childBudgetGroups);
+      return BudgetGroupUtils.getAggregatedBudgetAmountOfChildBudgetGroups(childBudgetGroups);
     }
   }
 
@@ -142,5 +142,15 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
 
     budgetsNotPartOfBudgetGroups.forEach(budget -> summaryList.add(BudgetUtils.buildBudgetSummary(budget)));
     return summaryList;
+  }
+
+  @Override
+  public void updateParentIdForBudgets(String parentId, List<String> budgetIds) {
+    budgetDao.updateParentId(parentId, budgetIds);
+  }
+
+  @Override
+  public void updateParentIdForBudgetGroups(String parentId, List<String> budgetIds) {
+    budgetDao.updateParentId(parentId, budgetIds);
   }
 }
