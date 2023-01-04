@@ -411,7 +411,7 @@ test_deps = [
     "@maven//:junit_junit",
     "@maven//:org_assertj_assertj_core",
     "@maven//:org_mockito_mockito_core",
-    "@maven//:org_mongodb_morphia_morphia",
+    "@maven//:dev_morphia_morphia_core",
 ]
 
 java_library(

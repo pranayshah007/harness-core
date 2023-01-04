@@ -42,6 +42,8 @@ import software.wings.service.intfc.WorkflowExecutionService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.Query;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -49,8 +51,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.FindOptions;
-import org.mongodb.morphia.query.Query;
 
 @Singleton
 @Slf4j
@@ -191,7 +191,7 @@ public class StatisticsServiceImpl implements StatisticsService {
     }
 
     FindOptions findOptions = new FindOptions();
-    findOptions.modifier("$hint", "accountId_pipExecutionId_createdAt");
+    findOptions.hintString("accountId_pipExecutionId_createdAt");
 
     List<WorkflowExecution> workflowExecutions = query.asList(findOptions);
 

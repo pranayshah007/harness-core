@@ -62,6 +62,8 @@ import io.harness.rule.Owner;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.lang.reflect.Field;
 import java.time.Clock;
 import java.time.Duration;
@@ -77,8 +79,6 @@ import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 public class OrchestrationServiceImplTest extends CvNextGenTestBase {
   @Inject HPersistence hPersistence;

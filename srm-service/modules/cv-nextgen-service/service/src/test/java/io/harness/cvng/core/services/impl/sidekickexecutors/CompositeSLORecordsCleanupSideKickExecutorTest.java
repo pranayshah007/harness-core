@@ -39,6 +39,7 @@ import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -51,7 +52,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.mongodb.morphia.query.Query;
 
 public class CompositeSLORecordsCleanupSideKickExecutorTest extends CvNextGenTestBase {
   @Inject private HPersistence hPersistence;

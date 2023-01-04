@@ -46,6 +46,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.query.UpdateOperations;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.net.URI;
@@ -59,7 +60,6 @@ import java.util.Map;
 import javax.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.client.utils.URIBuilder;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @OwnedBy(GTM)
 @TargetModule(_940_MARKETPLACE_INTEGRATIONS)

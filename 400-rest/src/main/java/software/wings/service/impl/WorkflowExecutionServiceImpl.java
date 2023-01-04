@@ -97,6 +97,7 @@ import static software.wings.sm.StateType.PHASE;
 import static software.wings.sm.StateType.PHASE_STEP;
 import static software.wings.sm.states.ArtifactCollectLoopState.ArtifactCollectLoopStateKeys;
 
+import static dev.morphia.mapping.Mapper.ID_KEY;
 import static io.fabric8.utils.Lists.isNullOrEmpty;
 import static java.lang.String.format;
 import static java.lang.System.currentTimeMillis;
@@ -112,7 +113,6 @@ import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.collections4.ListUtils.emptyIfNull;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
-import static org.mongodb.morphia.mapping.Mapper.ID_KEY;
 
 import io.harness.alert.AlertData;
 import io.harness.annotations.dev.HarnessModule;
@@ -375,6 +375,12 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
 import com.mongodb.ReadPreference;
+import dev.morphia.query.CriteriaContainer;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
+import dev.morphia.query.UpdateOperations;
+import dev.morphia.query.UpdateResults;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -408,12 +414,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.mongodb.morphia.query.CriteriaContainer;
-import org.mongodb.morphia.query.FindOptions;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
-import org.mongodb.morphia.query.UpdateOperations;
-import org.mongodb.morphia.query.UpdateResults;
 
 /**
  * The Class WorkflowExecutionServiceImpl.
@@ -1747,7 +1747,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     query.field(WorkflowExecutionKeys.startTs).greaterThanOrEq(sixtyDays);
     query.project("serviceIds", true);
     FindOptions findOptions = new FindOptions();
-    findOptions.modifier("$hint", "accountId_startTs_serviceIds");
+    findOptions.hintString("accountId_startTs_serviceIds");
     findOptions.readPreference(ReadPreference.secondaryPreferred());
     List<WorkflowExecution> workflowExecutions = query.asList(findOptions);
     Set<String> flattenedSvcSet = new HashSet<>();
@@ -5717,9 +5717,9 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     addressInefficientQueries(workflowExecutionQuery);
 
     if (isNotEmpty(workflowExecution.getInfraMappingIds())) {
-      findOptions.modifier("$hint", "appid_status_workflowid_infraMappingIds_createdat");
+      findOptions.hintString("appid_status_workflowid_infraMappingIds_createdat");
     } else {
-      findOptions.modifier("$hint", "appid_workflowid_status_createdat");
+      findOptions.hintString("appid_workflowid_status_createdat");
     }
     return workflowExecutionQuery.order("-createdAt").get(findOptions);
   }
@@ -5748,12 +5748,12 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
 
     if (isNotEmpty(infraMappingList)) {
       if (isInfraBasedArtifact) {
-        findOptions.modifier("$hint", "lastInfraMappingSearch");
+        findOptions.hintString("lastInfraMappingSearch");
       } else {
-        findOptions.modifier("$hint", "appid_status_workflowid_infraMappingIds_createdat");
+        findOptions.hintString("appid_status_workflowid_infraMappingIds_createdat");
       }
     } else {
-      findOptions.modifier("$hint", "appid_workflowid_status_createdat");
+      findOptions.hintString("appid_workflowid_status_deployedServices_createdat");
     }
     return workflowExecutionQuery.order("-createdAt").get(findOptions);
   }

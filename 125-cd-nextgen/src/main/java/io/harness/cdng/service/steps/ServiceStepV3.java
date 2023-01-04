@@ -8,6 +8,7 @@
 package io.harness.cdng.service.steps;
 
 import static io.harness.cdng.gitops.steps.GitopsClustersStep.GITOPS_ENV_OUTCOME;
+import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.FREEZE_EXCEPTION;
@@ -34,7 +35,6 @@ import io.harness.cdng.gitops.steps.GitOpsEnvOutCome;
 import io.harness.cdng.manifest.steps.ManifestsOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.cdng.visitor.YamlTypes;
-import io.harness.data.structure.CollectionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.eraro.Level;
 import io.harness.exception.InvalidRequestException;
@@ -91,6 +91,7 @@ import io.harness.tasks.ResponseData;
 import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.YamlPipelineUtils;
 import io.harness.yaml.core.variables.NGVariable;
+import io.harness.yaml.core.variables.SecretNGVariable;
 import io.harness.yaml.utils.NGVariablesUtils;
 
 import software.wings.beans.LogColor;
@@ -178,7 +179,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
       }
 
       return ChildrenExecutableResponse.newBuilder()
-          .addAllLogKeys(CollectionUtils.emptyIfNull(
+          .addAllLogKeys(emptyIfNull(
               StepUtils.generateLogKeys(StepUtils.generateLogAbstractions(ambiance), Collections.emptyList())))
           .addAllChildren(stepParameters.getChildrenNodeIds()
                               .stream()
@@ -215,7 +216,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
     Map<String, Map<String, Object>> envToEnvVariables = new HashMap<>();
     Map<String, Map<String, Object>> envToSvcVariables = new HashMap<>();
     List<NGVariable> svcOverrideVariables;
-
+    List<NGVariable> secretNGVariables = new ArrayList<>();
     if (isEmpty(parameters.getEnvRefs())) {
       throw new InvalidRequestException("No environments are found while handling deployment to multiple environments");
     }
@@ -243,7 +244,10 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
       }
       List<NGVariable> variables = ngEnvironmentConfig.getNgEnvironmentInfoConfig().getVariables();
       envToEnvVariables.put(environment.getIdentifier(), NGVariablesUtils.getMapOfVariables(variables));
-
+      if (variables != null) {
+        secretNGVariables.addAll(
+            variables.stream().filter(SecretNGVariable.class ::isInstance).collect(Collectors.toList()));
+      }
       final Optional<NGServiceOverridesEntity> ngServiceOverridesEntity =
           serviceOverrideService.get(AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
               AmbianceUtils.getProjectIdentifier(ambiance), environment.getIdentifier(),
@@ -254,9 +258,15 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
             parameters.getEnvToSvcOverrideInputs().get(environment.getIdentifier()));
 
         svcOverrideVariables = ngServiceOverrides.getServiceOverrideInfoConfig().getVariables();
+        if (svcOverrideVariables != null) {
+          secretNGVariables.addAll(
+              svcOverrideVariables.stream().filter(SecretNGVariable.class ::isInstance).collect(Collectors.toList()));
+        }
         envToSvcVariables.put(environment.getIdentifier(), NGVariablesUtils.getMapOfVariables(svcOverrideVariables));
       }
     }
+
+    serviceStepsHelper.checkForAccessOrThrow(ambiance, secretNGVariables);
 
     resolve(ambiance, envToEnvVariables, envToSvcVariables);
 
@@ -305,7 +315,11 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
     final ParameterField<String> envRef = parameters.getEnvRef();
     final ParameterField<Map<String, Object>> envInputs = parameters.getEnvInputs();
     if (ParameterField.isNull(envRef)) {
-      throw new InvalidRequestException("Environment ref not found in pipeline yaml");
+      throw new InvalidRequestException("Environment ref not found in stage yaml");
+    }
+
+    if (envRef.isExpression()) {
+      resolve(ambiance, envRef);
     }
 
     log.info("Starting execution for Environment Step [{}]", envRef.getValue());
@@ -343,7 +357,25 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
       }
 
       resolve(ambiance, ngEnvironmentConfig, ngServiceOverrides);
+      List<NGVariable> secretNGVariables = new ArrayList<>();
+      if (ngEnvironmentConfig != null && ngEnvironmentConfig.getNgEnvironmentInfoConfig() != null
+          && ngEnvironmentConfig.getNgEnvironmentInfoConfig().getVariables() != null) {
+        secretNGVariables.addAll(ngEnvironmentConfig.getNgEnvironmentInfoConfig()
+                                     .getVariables()
+                                     .stream()
+                                     .filter(SecretNGVariable.class ::isInstance)
+                                     .collect(Collectors.toList()));
+      }
 
+      if (ngServiceOverrides != null && ngServiceOverrides.getServiceOverrideInfoConfig() != null
+          && ngServiceOverrides.getServiceOverrideInfoConfig().getVariables() != null) {
+        secretNGVariables.addAll(ngServiceOverrides.getServiceOverrideInfoConfig()
+                                     .getVariables()
+                                     .stream()
+                                     .filter(SecretNGVariable.class ::isInstance)
+                                     .collect(Collectors.toList()));
+      }
+      serviceStepsHelper.checkForAccessOrThrow(ambiance, secretNGVariables);
       entityMap.put(FreezeEntityType.ENVIRONMENT, Lists.newArrayList(environment.get().getIdentifier()));
       entityMap.put(FreezeEntityType.ENV_TYPE, Lists.newArrayList(environment.get().getType().name()));
 
@@ -673,7 +705,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
         notificationHelper.sendNotificationForFreezeConfigs(
             manualFreezeConfigs, globalFreezeConfigs, ambiance, executionUrl, baseUrl);
         return ChildrenExecutableResponse.newBuilder()
-            .addAllLogKeys(CollectionUtils.emptyIfNull(
+            .addAllLogKeys(emptyIfNull(
                 StepUtils.generateLogKeys(StepUtils.generateLogAbstractions(ambiance), Collections.emptyList())))
             .addAllChildren(Collections.emptyList())
             .build();

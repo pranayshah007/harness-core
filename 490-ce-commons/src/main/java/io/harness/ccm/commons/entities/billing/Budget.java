@@ -21,6 +21,8 @@ import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UuidAware;
 
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
 import io.swagger.v3.oas.annotations.media.Schema;
 import javax.validation.constraints.Size;
 import lombok.AccessLevel;
@@ -29,8 +31,6 @@ import lombok.Data;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.NotBlank;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
 
 @Data
 @Builder

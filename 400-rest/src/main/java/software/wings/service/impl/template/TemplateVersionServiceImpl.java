@@ -27,12 +27,12 @@ import software.wings.service.intfc.template.TemplateVersionService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.query.Sort;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Sort;
 
 @Singleton
 @Slf4j

@@ -42,6 +42,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.inject.Inject;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -83,7 +84,9 @@ public class HealthSourceOnboardingServiceImpl implements HealthSourceOnboarding
     Object result = onboardingResponseDTO.getResult();
     HealthSourceRecordsResponse healthSourceRecordsResponse =
         HealthSourceRecordsResponse.builder().providerType(healthSourceRecordsRequest.getProviderType()).build();
-    healthSourceRecordsResponse.getRawRecords().add(result);
+    if (!(result instanceof Collection) || ((Collection<?>) result).size() > 0) {
+      healthSourceRecordsResponse.getRawRecords().add(result);
+    }
     return healthSourceRecordsResponse;
   }
 

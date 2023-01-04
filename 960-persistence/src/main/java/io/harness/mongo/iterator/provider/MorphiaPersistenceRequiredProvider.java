@@ -19,12 +19,12 @@ import io.harness.persistence.HPersistence;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.mongodb.BasicDBObject;
+import dev.morphia.query.FilterOperator;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
+import dev.morphia.query.UpdateOperations;
 import java.time.Duration;
 import java.util.List;
-import org.mongodb.morphia.query.FilterOperator;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @Singleton
 public class MorphiaPersistenceRequiredProvider<T extends PersistentIterable>

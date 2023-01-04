@@ -15,7 +15,7 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import org.mongodb.morphia.query.Sort;
+import dev.morphia.query.Sort;
 
 @Singleton
 public class TerraformConfigHelper {

@@ -11,10 +11,10 @@ import io.harness.annotations.StoreIn;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
 import lombok.Builder;
 import lombok.Value;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
 
 @Value
 @Builder

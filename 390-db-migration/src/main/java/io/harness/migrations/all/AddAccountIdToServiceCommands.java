@@ -16,10 +16,10 @@ import software.wings.beans.Application;
 import software.wings.beans.Application.ApplicationKeys;
 import software.wings.beans.command.ServiceCommand;
 
+import dev.morphia.Key;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.mongodb.morphia.Key;
 
 public class AddAccountIdToServiceCommands extends AddAccountIdToAppEntities {
   @Override

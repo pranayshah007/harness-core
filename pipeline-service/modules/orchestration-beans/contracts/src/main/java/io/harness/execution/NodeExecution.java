@@ -46,6 +46,7 @@ import io.harness.timeout.TimeoutDetails;
 
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
+import dev.morphia.annotations.Entity;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.Date;
@@ -61,7 +62,6 @@ import lombok.Value;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.UtilityClass;
 import lombok.experimental.Wither;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -81,7 +81,7 @@ public class NodeExecution implements PersistentEntity, UuidAccess, PmsNodeExecu
   public static final long TTL_MONTHS = 6;
 
   // Immutable
-  @Wither @Id @org.mongodb.morphia.annotations.Id String uuid;
+  @Wither @Id @dev.morphia.annotations.Id String uuid;
   @NotNull Ambiance ambiance;
   @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) Node planNode;
   @NotNull ExecutionMode mode;

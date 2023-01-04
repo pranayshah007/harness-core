@@ -28,6 +28,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.github.reinert.jjschema.Attributes;
 import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.common.base.MoreObjects;
+import dev.morphia.annotations.Transient;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -37,7 +38,6 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Transient;
 
 /**
  * Created by anubhaw on 5/25/16.

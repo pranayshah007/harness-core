@@ -10,7 +10,7 @@ package io.harness.cdng.tas;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.pipeline.CDStepInfo;
+import io.harness.cdng.pipeline.CDAbstractStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.TasAppResizeStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -43,7 +43,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName(StepSpecTypeConstants.TAS_APP_RESIZE)
 @TypeAlias("TasAppResizeStepInfo")
 @RecasterAlias("io.harness.cdng.tas.TasAppResizeStepInfo")
-public class TasAppResizeStepInfo extends TasAppResizeBaseStepInfo implements CDStepInfo, Visitable {
+public class TasAppResizeStepInfo extends TasAppResizeBaseStepInfo implements CDAbstractStepInfo, Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)

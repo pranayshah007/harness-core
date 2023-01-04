@@ -15,6 +15,7 @@ import io.harness.connector.entities.Connector;
 import io.harness.delegate.beans.connector.CEFeatures;
 import io.harness.ng.DbAliases;
 
+import dev.morphia.annotations.Entity;
 import java.util.List;
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
@@ -23,7 +24,6 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.Persistent;
 import org.springframework.data.annotation.TypeAlias;
 

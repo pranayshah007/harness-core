@@ -533,16 +533,16 @@ public class BuilderFactory {
         .identifier(context.getMonitoredServiceIdentifier() + "/" + generateUuid());
   }
 
-  public NextGenLogCVConfigBuilder nextGenLogCVConfigBuilder(DataSourceType dataSourceType) {
+  public NextGenLogCVConfigBuilder nextGenLogCVConfigBuilder(
+      DataSourceType dataSourceType, String groupName, String queryIdentifier) {
     return NextGenLogCVConfig.builder()
         .accountId(context.getAccountId())
         .dataSourceType(dataSourceType)
+        .groupName(groupName)
+        .queryIdentifier(queryIdentifier)
         .orgIdentifier(context.getOrgIdentifier())
-        .queryIdentifier(generateUuid())
         .projectIdentifier(context.getProjectIdentifier())
         .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
-        .queryName(randomAlphabetic(10))
-        .query(randomAlphabetic(10))
         .queryParams(QueryParams.builder().serviceInstanceField("hostname").build())
         .enabled(true)
         .category(CVMonitoringCategory.ERRORS)

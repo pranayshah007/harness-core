@@ -12,10 +12,10 @@ import io.harness.k8s.model.ImageDetails;
 import software.wings.beans.dto.ContainerTask;
 
 import com.mongodb.DBObject;
+import dev.morphia.annotations.PreLoad;
 import java.util.Objects;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.PreLoad;
 
 @Data
 @FieldNameConstants(innerTypeName = "ContainerSetupParamsKeys")

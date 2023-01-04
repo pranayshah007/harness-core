@@ -28,6 +28,8 @@ import software.wings.beans.entityinterface.ApplicationAccess;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.common.base.MoreObjects;
+import dev.morphia.annotations.Id;
+import dev.morphia.annotations.Transient;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -37,8 +39,6 @@ import lombok.Setter;
 import lombok.experimental.FieldNameConstants;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Id;
-import org.mongodb.morphia.annotations.Transient;
 
 /**
  * Created by anubhaw on 4/13/16.

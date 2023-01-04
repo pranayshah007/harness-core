@@ -26,6 +26,9 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.cloud.datastore.Datastore;
 import com.google.cloud.datastore.Key;
 import com.google.common.collect.Sets;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
+import dev.morphia.annotations.PrePersist;
 import java.util.List;
 import java.util.Set;
 import lombok.AllArgsConstructor;
@@ -33,9 +36,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
-import org.mongodb.morphia.annotations.PrePersist;
 
 /**
  * @author Praveen
@@ -76,7 +76,7 @@ public class LabeledLogRecord implements GoogleDataStoreAware, AccountAccess {
   public com.google.cloud.datastore.Entity convertToCloudStorageEntity(Datastore datastore) {
     onSave();
     Key taskKey = datastore.newKeyFactory()
-                      .setKind(this.getClass().getAnnotation(org.mongodb.morphia.annotations.Entity.class).value())
+                      .setKind(this.getClass().getAnnotation(dev.morphia.annotations.Entity.class).value())
                       .newKey(this.uuid == null ? generateUuid() : this.uuid);
     com.google.cloud.datastore.Entity.Builder recordBuilder = com.google.cloud.datastore.Entity.newBuilder(taskKey);
     addFieldIfNotEmpty(recordBuilder, LabeledLogRecordKeys.label, label, false);

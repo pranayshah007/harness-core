@@ -18,6 +18,7 @@ import io.harness.persistence.AccountAccess;
 import software.wings.beans.Base;
 
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -26,7 +27,6 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
 
 @FieldNameConstants(innerTypeName = "TemplateVersionKeys")
 // TODO(abhinav): May have to look at ordering for importedTemplateVersion later.

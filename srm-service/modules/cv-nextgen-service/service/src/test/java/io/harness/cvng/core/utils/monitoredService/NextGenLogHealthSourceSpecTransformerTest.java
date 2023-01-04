@@ -35,8 +35,10 @@ public class NextGenLogHealthSourceSpecTransformerTest extends CvNextGenTestBase
   private static final String MOCKED_CONNECTOR_IDENTIFIER = "mockedConnectorIdentifier";
   private static final int QUERY_COUNT = 5;
   private static final String MOCKED_GROUP_IDENTIFIER = "mockedGroupIdentifier";
+  private static final String GROUP_NAME = "g1";
   BuilderFactory builderFactory;
   List<QueryDefinition> queries;
+  String query;
   @Inject NextGenLogHealthSourceSpecTransformer classUnderTest;
 
   @Before
@@ -44,12 +46,13 @@ public class NextGenLogHealthSourceSpecTransformerTest extends CvNextGenTestBase
     builderFactory = BuilderFactory.getDefault();
     String queryDefinitionName = randomAlphabetic(10);
     String queryDefinitionIdentifier = randomAlphabetic(10);
-    String query = randomAlphabetic(10);
+    query = randomAlphabetic(10);
     queries = IntStream.range(1, QUERY_COUNT)
                   .mapToObj(index
                       -> QueryDefinition.builder()
                              .name(queryDefinitionName)
                              .identifier(queryDefinitionIdentifier)
+                             .groupName(GROUP_NAME)
                              .query(query)
                              .build())
                   .collect(Collectors.toList());
@@ -95,13 +98,18 @@ public class NextGenLogHealthSourceSpecTransformerTest extends CvNextGenTestBase
     assertThat(nextGenHealthSourceSpec.getConnectorRef()).isEqualTo(MOCKED_CONNECTOR_IDENTIFIER);
     assertThat(nextGenHealthSourceSpec.getQueryDefinitions().size()).isEqualTo(queries.size());
     assertThat(nextGenHealthSourceSpec.getDataSourceType()).isEqualTo(SUMOLOGIC_LOG);
-    nextGenHealthSourceSpec.getQueryDefinitions().forEach(query -> assertThat(query.getIdentifier()).isNotNull());
+    nextGenHealthSourceSpec.getQueryDefinitions().forEach(queryDefinition -> {
+      assertThat(queryDefinition.getIdentifier()).isNotNull();
+      assertThat(queryDefinition.getGroupName()).isEqualTo(GROUP_NAME);
+      assertThat(queryDefinition.getQuery()).isEqualTo(query);
+    });
   }
 
   private List<NextGenLogCVConfig> createCVConfigs() {
     return queries.stream()
         .map((QueryDefinition query)
-                 -> (NextGenLogCVConfig) builderFactory.nextGenLogCVConfigBuilder(SUMOLOGIC_LOG)
+                 -> (NextGenLogCVConfig) builderFactory
+                        .nextGenLogCVConfigBuilder(SUMOLOGIC_LOG, query.getGroupName(), query.getIdentifier())
                         .queryName(query.getName())
                         .query(query.getQuery())
                         .connectorIdentifier(MOCKED_CONNECTOR_IDENTIFIER)

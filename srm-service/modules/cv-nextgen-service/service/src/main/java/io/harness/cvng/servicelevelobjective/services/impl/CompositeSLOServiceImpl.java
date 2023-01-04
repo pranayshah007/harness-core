@@ -20,6 +20,7 @@ import io.harness.cvng.servicelevelobjective.services.api.CompositeSLOService;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
+import dev.morphia.query.UpdateOperations;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -30,7 +31,6 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @Slf4j
 public class CompositeSLOServiceImpl implements CompositeSLOService {

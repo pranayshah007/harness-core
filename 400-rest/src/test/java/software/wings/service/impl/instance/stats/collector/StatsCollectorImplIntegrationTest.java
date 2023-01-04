@@ -28,6 +28,7 @@ import software.wings.utils.WingsTestConstants;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
+import dev.morphia.Datastore;
 import java.net.URISyntaxException;
 import java.time.Instant;
 import java.util.Arrays;
@@ -44,7 +45,6 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mongodb.morphia.Datastore;
 
 /**
  * End-to-End test which tests:

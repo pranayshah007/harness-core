@@ -14,13 +14,13 @@ import io.harness.cvng.verificationjob.entities.VerificationJobInstance.Verifica
 import io.harness.mongo.index.FdIndex;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @JsonTypeName("INTERNAL_CHANGE")
 @FieldNameConstants(innerTypeName = "InternalChangeActivityKeys")

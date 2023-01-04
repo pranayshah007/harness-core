@@ -20,6 +20,7 @@ import software.wings.beans.Base;
 import software.wings.beans.EntityType;
 
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -33,7 +34,6 @@ import lombok.Value;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.NonFinal;
 import org.apache.commons.collections4.CollectionUtils;
-import org.mongodb.morphia.annotations.Entity;
 
 @Value
 @NoArgsConstructor(access = AccessLevel.PRIVATE)

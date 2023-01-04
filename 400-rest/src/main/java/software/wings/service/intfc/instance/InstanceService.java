@@ -27,12 +27,12 @@ import software.wings.service.intfc.ownership.OwnedByEnvironment;
 import software.wings.service.intfc.ownership.OwnedByInfrastructureMapping;
 import software.wings.service.intfc.ownership.OwnedByService;
 
+import dev.morphia.query.Query;
 import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 import javax.validation.Valid;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.query.Query;
 import ru.vyarus.guice.validator.group.annotation.ValidationGroups;
 
 @OwnedBy(CDP)

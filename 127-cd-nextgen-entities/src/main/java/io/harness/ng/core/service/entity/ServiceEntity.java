@@ -29,6 +29,7 @@ import io.harness.persistence.gitaware.GitAware;
 import io.harness.template.yaml.TemplateRefHelper;
 
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
 import java.util.List;
 import javax.validation.constraints.Size;
 import lombok.Builder;
@@ -39,7 +40,6 @@ import lombok.experimental.FieldNameConstants;
 import lombok.experimental.NonFinal;
 import lombok.experimental.Wither;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -80,7 +80,7 @@ public class ServiceEntity implements PersistentEntity, GitAware {
         .build();
   }
 
-  @Wither @Id @org.mongodb.morphia.annotations.Id String id;
+  @Wither @Id @dev.morphia.annotations.Id String id;
   @Trimmed @NotEmpty String accountId;
   @NotEmpty @EntityIdentifier String identifier;
   @Trimmed String orgIdentifier;

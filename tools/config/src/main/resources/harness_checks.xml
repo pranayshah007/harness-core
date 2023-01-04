@@ -102,15 +102,15 @@
 
             <!-- Do not use morphia Embedded. We do not need to change the name of the field and we
                  would like better control for the cdIndices. -->
-            <property name="illegalClasses" value="org.mongodb.morphia.annotations.Embedded"/>
+            <property name="illegalClasses" value="dev.morphia.annotations.Embedded"/>
 
             <!-- use io.harness.mongo.cdIndex instead -->
-            <property name="illegalClasses" value="org.mongodb.morphia.annotations.Field,
-                                                   org.mongodb.morphia.annotations.Index,
-                                                   org.mongodb.morphia.annotations.Indexed,
-                                                   org.mongodb.morphia.annotations.Indexes,
-                                                   org.mongodb.morphia.annotations.IndexOptions,
-                                                   org.mongodb.morphia.utils.IndexType"/>
+            <property name="illegalClasses" value="dev.morphia.annotations.Field,
+                                                   dev.morphia.annotations.Index,
+                                                   dev.morphia.annotations.Indexed,
+                                                   dev.morphia.annotations.Indexes,
+                                                   dev.morphia.annotations.IndexOptions,
+                                                   dev.morphia.utils.IndexType"/>
         </module>
 
         <module name="io.harness.checks.ExclusiveStaticImportCheck">

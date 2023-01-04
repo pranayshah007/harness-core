@@ -16,6 +16,7 @@ import io.harness.cvng.core.beans.CustomHealthLogDefinition.CustomHealthLogDefin
 import io.harness.cvng.core.beans.CustomHealthRequestDefinition;
 
 import com.google.common.io.Resources;
+import dev.morphia.query.UpdateOperations;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import lombok.AccessLevel;
@@ -26,7 +27,6 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @Data
 @SuperBuilder

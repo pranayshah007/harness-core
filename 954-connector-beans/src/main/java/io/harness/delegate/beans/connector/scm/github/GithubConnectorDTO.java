@@ -141,7 +141,7 @@ public class GithubConnectorDTO
   }
 
   @Override
-  public String getFileUrl(String branchName, String filePath, GitRepositoryDTO gitRepositoryDTO) {
+  public String getFileUrl(String branchName, String filePath, String commitId, GitRepositoryDTO gitRepositoryDTO) {
     ScmConnectorHelper.validateGetFileUrlParams(branchName, filePath);
     String repoUrl = removeStartingAndEndingSlash(getGitConnectionUrl(gitRepositoryDTO));
     String httpRepoUrl = GitClientHelper.getCompleteHTTPUrlForGithub(repoUrl);

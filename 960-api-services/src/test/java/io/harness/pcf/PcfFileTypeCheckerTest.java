@@ -74,6 +74,10 @@ public class PcfFileTypeCheckerTest extends CategoryTest {
   private String TEST_VAR = "  MY: order\n"
       + "  PCF_APP_NAME : prod";
 
+  private String NOT_VAR = "APP_NAME:${app.name}__${service.name}__${env.name}\n"
+      + "APP_MEMORY:750M\n"
+      + "INSTANCES:2";
+
   private String AUTOSCALAR_MANIFEST = "---\n"
       + "instance_limits:\n"
       + "  min: 6\n"
@@ -107,7 +111,7 @@ public class PcfFileTypeCheckerTest extends CategoryTest {
     assertThat(pcfFileTypeChecker.getManifestType(MANIFEST_YML_NO_MEM, null, logCallback))
         .isEqualTo(APPLICATION_MANIFEST);
     assertThat(pcfFileTypeChecker.getManifestType(TEST_VAR, null, logCallback)).isEqualTo(VARIABLE_MANIFEST);
-    assertThat(pcfFileTypeChecker.getManifestType("test:val", null, logCallback)).isNotEqualTo(VARIABLE_MANIFEST);
+    assertThat(pcfFileTypeChecker.getManifestType(NOT_VAR, null, logCallback)).isNotEqualTo(VARIABLE_MANIFEST);
     assertThat(pcfFileTypeChecker.getManifestType(MANIFEST_YML, null, logCallback)).isNotEqualTo(VARIABLE_MANIFEST);
     assertThat(pcfFileTypeChecker.getManifestType(AUTOSCALAR_MANIFEST, null, logCallback))
         .isNotEqualTo(AUTOSCALAR_MANIFEST);

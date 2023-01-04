@@ -18,6 +18,7 @@ import software.wings.beans.infrastructure.Host;
 import com.github.reinert.jjschema.Attributes;
 import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.common.base.MoreObjects;
+import dev.morphia.annotations.Transient;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -25,7 +26,6 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Transient;
 
 @FieldNameConstants(innerTypeName = "PhysicalInfrastructureMappingBaseKeys")
 @OwnedBy(CDP)

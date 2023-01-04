@@ -21,11 +21,11 @@ import software.wings.search.framework.TimeScaleEntity;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.MorphiaKeyIterator;
 import java.util.HashSet;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.FindOptions;
-import org.mongodb.morphia.query.MorphiaKeyIterator;
 
 @Singleton
 @Slf4j

@@ -60,6 +60,7 @@ import software.wings.sm.ExecutionInterrupt.ExecutionInterruptBuilder;
 import software.wings.sm.StateExecutionInstance;
 
 import com.google.inject.Inject;
+import dev.morphia.query.UpdateOperations;
 import java.sql.Array;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -72,7 +73,6 @@ import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.stubbing.Answer;
-import org.mongodb.morphia.query.UpdateOperations;
 
 public class DeploymentReconServiceImplTest extends WingsBaseTest {
   @Mock TimeScaleDBService timeScaleDBService;

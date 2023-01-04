@@ -11,7 +11,7 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
-import io.harness.cdng.pipeline.CDStepInfo;
+import io.harness.cdng.pipeline.CDAbstractStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.AzureWebAppSwapSlotStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -44,7 +44,8 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName(StepSpecTypeConstants.AZURE_SWAP_SLOT)
 @TypeAlias("azureWebAppSwapSlotStepInfo")
 @RecasterAlias("io.harness.cdng.azure.webapp.AzureWebAppSwapSlotStepInfo")
-public class AzureWebAppSwapSlotStepInfo extends AzureWebAppSwapSlotBaseStepInfo implements CDStepInfo, Visitable {
+public class AzureWebAppSwapSlotStepInfo
+    extends AzureWebAppSwapSlotBaseStepInfo implements CDAbstractStepInfo, Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)

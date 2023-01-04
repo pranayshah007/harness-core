@@ -26,11 +26,11 @@ import software.wings.graphql.schema.type.aggregation.cluster.QLClusterFilter;
 import software.wings.security.PermissionAttribute;
 import software.wings.security.annotations.AuthRule;
 
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
 import graphql.schema.DataFetchingEnvironment;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
 
 @Slf4j
 @TargetModule(HarnessModule._375_CE_GRAPHQL)

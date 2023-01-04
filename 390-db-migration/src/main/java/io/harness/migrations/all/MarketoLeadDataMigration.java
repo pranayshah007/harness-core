@@ -25,11 +25,11 @@ import software.wings.service.impl.LicenseUtils;
 import software.wings.service.intfc.UserService;
 
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
 import retrofit2.Retrofit;
 import retrofit2.converter.jackson.JacksonConverterFactory;
 

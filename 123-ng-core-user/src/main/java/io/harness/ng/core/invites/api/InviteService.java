@@ -10,6 +10,7 @@ package io.harness.ng.core.invites.api;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.Scope;
 import io.harness.invites.remote.InviteAcceptResponse;
 import io.harness.ng.accesscontrol.user.ACLAggregateFilter;
 import io.harness.ng.beans.PageRequest;
@@ -53,4 +54,5 @@ public interface InviteService {
   URI getRedirectUrl(InviteAcceptResponse inviteAcceptResponse, String email, String decodedEmail, String jwtToken);
 
   String getInviteLinkFromInviteId(String accountIdentifier, String inviteId);
+  void deleteAtAllScopes(Scope scope);
 }

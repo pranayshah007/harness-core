@@ -34,17 +34,17 @@ import static software.wings.beans.infrastructure.instance.Instance.InstanceKeys
 import static software.wings.features.DeploymentHistoryFeature.FEATURE_NAME;
 import static software.wings.sm.StateType.PHASE;
 
+import static dev.morphia.aggregation.Accumulator.accumulator;
+import static dev.morphia.aggregation.Group.first;
+import static dev.morphia.aggregation.Group.grouping;
+import static dev.morphia.aggregation.Group.sum;
+import static dev.morphia.aggregation.Projection.projection;
+import static dev.morphia.query.Sort.ascending;
+import static dev.morphia.query.Sort.descending;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
-import static org.mongodb.morphia.aggregation.Accumulator.accumulator;
-import static org.mongodb.morphia.aggregation.Group.first;
-import static org.mongodb.morphia.aggregation.Group.grouping;
-import static org.mongodb.morphia.aggregation.Group.sum;
-import static org.mongodb.morphia.aggregation.Projection.projection;
-import static org.mongodb.morphia.query.Sort.ascending;
-import static org.mongodb.morphia.query.Sort.descending;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
@@ -137,6 +137,11 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.mongodb.AggregationOptions;
 import com.mongodb.TagSet;
+import dev.morphia.aggregation.AggregationPipeline;
+import dev.morphia.aggregation.Group;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -155,11 +160,6 @@ import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
-import org.mongodb.morphia.aggregation.AggregationPipeline;
-import org.mongodb.morphia.aggregation.Group;
-import org.mongodb.morphia.query.FindOptions;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
 
 /**
  * @author rktummala on 8/13/17
@@ -420,7 +420,7 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
           .greaterThanOrEq(timestamp);
       FindOptions findOptions = wingsPersistence.analyticNodePreferenceOptions();
       if (featureFlagService.isEnabled(FeatureName.SPG_INSTANCE_ENABLE_HINT_ON_GET_INSTANCES, accountId)) {
-        findOptions.modifier("$hint", "instance_index7");
+        findOptions.hintString("instance_index7");
       }
       instanceSet.addAll(cloneQuery.asList(findOptions));
     }
@@ -463,7 +463,7 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
     }
 
     FindOptions findOptions = wingsPersistence.analyticNodePreferenceOptions();
-    findOptions.modifier("$hint", "instance_index7");
+    findOptions.hintString("instance_index7");
     Instance instance = query.get(findOptions);
     if (instance == null) {
       return timestamp;

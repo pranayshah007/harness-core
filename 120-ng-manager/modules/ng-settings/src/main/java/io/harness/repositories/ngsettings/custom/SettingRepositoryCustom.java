@@ -21,4 +21,5 @@ public interface SettingRepositoryCustom {
   Setting upsert(Setting setting);
   List<Setting> findAll(Criteria criteria);
   DeleteResult delete(Criteria criteria);
+  List<Setting> deleteAll(Criteria criteria);
 }

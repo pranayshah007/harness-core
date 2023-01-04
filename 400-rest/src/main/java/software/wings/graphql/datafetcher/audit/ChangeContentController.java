@@ -28,6 +28,7 @@ import software.wings.graphql.schema.type.audit.QLChangeContentConnection.QLChan
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.query.Query;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -37,7 +38,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.validation.constraints.NotNull;
-import org.mongodb.morphia.query.Query;
 
 @Singleton
 @TargetModule(HarnessModule._380_CG_GRAPHQL)

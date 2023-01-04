@@ -27,6 +27,7 @@ import software.wings.sm.StateExecutionData;
 import software.wings.sm.states.ApprovalState.ApprovalStateType;
 
 import com.google.inject.Inject;
+import dev.morphia.annotations.Transient;
 import java.util.List;
 import java.util.Map;
 import lombok.Builder;
@@ -34,7 +35,6 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.FieldNameConstants;
 import org.apache.commons.lang3.StringUtils;
-import org.mongodb.morphia.annotations.Transient;
 
 @OwnedBy(CDC)
 @Data

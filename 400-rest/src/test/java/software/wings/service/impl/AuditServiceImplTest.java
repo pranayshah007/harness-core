@@ -42,14 +42,14 @@ import software.wings.service.intfc.yaml.YamlResourceService;
 import software.wings.yaml.YamlPayload;
 
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
 
 public class AuditServiceImplTest extends WingsBaseTest {
   @Mock private EntityHelper mockEntityHelper;

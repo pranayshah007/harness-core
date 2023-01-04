@@ -102,6 +102,7 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.google.inject.Inject;
+import dev.morphia.AdvancedDatastore;
 import io.serializer.HObjectMapper;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -122,7 +123,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mongodb.morphia.AdvancedDatastore;
 import retrofit2.Call;
 import retrofit2.Response;
 

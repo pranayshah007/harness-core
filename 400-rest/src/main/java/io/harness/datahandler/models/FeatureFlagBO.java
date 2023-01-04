@@ -9,11 +9,11 @@ package io.harness.datahandler.models;
 
 import io.harness.beans.FeatureFlag;
 
+import dev.morphia.annotations.Id;
 import java.util.Objects;
 import java.util.Set;
 import lombok.Builder;
 import lombok.Data;
-import org.mongodb.morphia.annotations.Id;
 
 @Data
 @Builder

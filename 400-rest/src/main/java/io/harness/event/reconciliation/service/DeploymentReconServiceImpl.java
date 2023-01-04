@@ -33,6 +33,9 @@ import software.wings.search.framework.ExecutionEntity;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.query.CountOptions;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.Query;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -41,9 +44,6 @@ import java.util.Collections;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.CountOptions;
-import org.mongodb.morphia.query.FindOptions;
-import org.mongodb.morphia.query.Query;
 
 @Singleton
 @Slf4j

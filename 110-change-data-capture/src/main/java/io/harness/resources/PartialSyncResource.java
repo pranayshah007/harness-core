@@ -17,7 +17,7 @@ import static io.harness.NGCommonEntityConstants.PLAN_KEY;
 import static io.harness.NGCommonEntityConstants.PROJECT_KEY;
 import static io.harness.NGCommonEntityConstants.SERVICE_IDENTIFIER_KEY;
 
-import static org.mongodb.morphia.mapping.Mapper.ID_KEY;
+import static dev.morphia.mapping.Mapper.ID_KEY;
 
 import io.harness.ChangeDataCaptureBulkMigrationHelper;
 import io.harness.annotations.ExposeInternalException;

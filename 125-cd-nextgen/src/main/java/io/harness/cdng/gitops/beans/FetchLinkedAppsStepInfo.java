@@ -14,7 +14,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.gitops.steps.FetchLinkedAppsStep;
-import io.harness.cdng.pipeline.CDStepInfo;
+import io.harness.cdng.pipeline.CDAbstractStepInfo;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
@@ -36,7 +36,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName(StepSpecTypeConstants.GITOPS_FETCH_LINKED_APPS)
 @TypeAlias("FetchLinkedAppsStepInfo")
 @RecasterAlias("io.harness.cdng.gitops.beans.FetchLinkedAppsStepInfo")
-public class FetchLinkedAppsStepInfo implements CDStepInfo {
+public class FetchLinkedAppsStepInfo implements CDAbstractStepInfo {
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;

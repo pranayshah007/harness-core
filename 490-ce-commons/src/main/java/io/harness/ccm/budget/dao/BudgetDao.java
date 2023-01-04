@@ -14,10 +14,10 @@ import io.harness.ccm.commons.entities.billing.Budget.BudgetKeys;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.util.List;
-import org.mongodb.morphia.query.FindOptions;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 public class BudgetDao {
   @Inject private HPersistence persistence;

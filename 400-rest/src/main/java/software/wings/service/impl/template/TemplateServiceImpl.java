@@ -48,8 +48,8 @@ import static software.wings.common.TemplateConstants.LATEST_TAG;
 import static software.wings.common.TemplateConstants.PATH_DELIMITER;
 import static software.wings.exception.TemplateException.templateLinkedException;
 
+import static dev.morphia.mapping.Mapper.ID_KEY;
 import static java.lang.String.format;
-import static org.mongodb.morphia.mapping.Mapper.ID_KEY;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -122,6 +122,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.Key;
+import dev.morphia.query.Query;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -143,8 +145,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.jetbrains.annotations.NotNull;
-import org.mongodb.morphia.Key;
-import org.mongodb.morphia.query.Query;
 import ru.vyarus.guice.validator.group.annotation.ValidationGroups;
 
 @ValidateOnExecution

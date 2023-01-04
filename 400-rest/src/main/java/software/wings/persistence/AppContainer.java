@@ -20,11 +20,11 @@ import software.wings.utils.FileType;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
 import java.util.List;
 import java.util.Objects;
 import lombok.experimental.FieldNameConstants;
 import org.glassfish.jersey.media.multipart.FormDataParam;
-import org.mongodb.morphia.annotations.Entity;
 
 /**
  * Application bean class.

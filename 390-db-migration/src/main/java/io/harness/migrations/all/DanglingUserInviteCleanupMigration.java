@@ -18,8 +18,8 @@ import software.wings.dl.WingsPersistence;
 import software.wings.service.intfc.UserService;
 
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
 
 /**
  * Previously user invites are not deleted if the corresponding user with the same email address has been deleted.

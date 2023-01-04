@@ -71,7 +71,7 @@ shared_dependencies = [
     "@maven//:org_hibernate_validator_hibernate_validator",
     "@maven//:org_freemarker_freemarker",
     "@maven//:org_modelmapper_modelmapper",
-    "@maven//:org_mongodb_morphia_morphia",
+    "@maven//:dev_morphia_morphia_core",
     "@maven//:org_springframework_data_spring_data_mongodb",
     "@maven//:org_springframework_guice_spring_guice",
     "@maven//:org_springframework_spring_web",

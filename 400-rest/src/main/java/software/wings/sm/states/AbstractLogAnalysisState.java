@@ -69,6 +69,7 @@ import com.github.reinert.jjschema.Attributes;
 import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
+import dev.morphia.annotations.Transient;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -82,7 +83,6 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import org.apache.commons.io.IOUtils;
-import org.mongodb.morphia.annotations.Transient;
 
 /**
  * Created by rsingh on 7/6/17.

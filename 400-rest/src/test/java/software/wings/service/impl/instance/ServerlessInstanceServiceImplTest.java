@@ -31,6 +31,9 @@ import software.wings.service.impl.instance.ServerlessTestHelper.Mocks;
 import software.wings.service.intfc.AppService;
 
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
+import dev.morphia.query.UpdateResults;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
@@ -41,9 +44,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
-import org.mongodb.morphia.query.UpdateResults;
 
 public class ServerlessInstanceServiceImplTest extends CategoryTest {
   @Mock private WingsPersistence wingsPersistence;

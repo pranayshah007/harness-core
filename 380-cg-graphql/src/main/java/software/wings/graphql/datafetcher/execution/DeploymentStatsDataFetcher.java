@@ -102,6 +102,7 @@ import com.healthmarketscience.sqlbuilder.SqlObject;
 import com.healthmarketscience.sqlbuilder.UnaryCondition;
 import com.healthmarketscience.sqlbuilder.ValidationContext;
 import com.healthmarketscience.sqlbuilder.dbspec.basic.DbColumn;
+import dev.morphia.query.Query;
 import graphql.schema.DataFetchingEnvironment;
 import io.fabric8.utils.Lists;
 import java.io.IOException;
@@ -125,7 +126,6 @@ import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
 
 @Slf4j
 @OwnedBy(CDC)

@@ -46,13 +46,13 @@ import software.wings.dl.WingsPersistence;
 import software.wings.persistence.artifact.Artifact;
 
 import com.google.inject.Inject;
+import dev.morphia.query.FieldEnd;
+import dev.morphia.query.Query;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mongodb.morphia.query.FieldEnd;
-import org.mongodb.morphia.query.Query;
 
 @OwnedBy(CDC)
 public class ArtifactServiceImplTest extends WingsBaseTest {
