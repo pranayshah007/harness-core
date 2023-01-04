@@ -81,7 +81,6 @@ public class WorkflowExecutionMonitorHandlerTest extends WingsBaseTest {
   @Mock private ExecutionInterruptManager executionInterruptManager;
   @Mock private StateMachineExecutor stateMachineExecutor;
   @Mock private WorkflowExecutionZombieHandler zombieHandler;
-  @Mock private FeatureFlagService featureFlagService;
 
   @Inject private HPersistence persistence;
   @Inject @InjectMocks private WorkflowExecutionMonitorHandler workflowExecutionMonitorHandler;
@@ -284,7 +283,6 @@ public class WorkflowExecutionMonitorHandlerTest extends WingsBaseTest {
     StateExecutionInstance startingStateExecutionInstance = createStartingJiraStateExecutionInstance();
     ArgumentCaptor<ExecutionInterrupt> executionInterruptArgumentCaptor =
         ArgumentCaptor.forClass(ExecutionInterrupt.class);
-    when(featureFlagService.isEnabled(eq(FeatureName.ENABLE_CHECK_STATE_EXECUTION_STARTING), any())).thenReturn(true);
     workflowExecutionMonitorHandler.handle(workflowExecution);
     verify(executionInterruptManager, times(1)).registerExecutionInterrupt(executionInterruptArgumentCaptor.capture());
     ExecutionInterrupt executionInterrupt = executionInterruptArgumentCaptor.getValue();

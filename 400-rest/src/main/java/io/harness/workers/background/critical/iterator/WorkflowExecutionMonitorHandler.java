@@ -134,9 +134,7 @@ public class WorkflowExecutionMonitorHandler extends IteratorPumpModeHandler imp
           StateExecutionInstance stateExecutionInstance = stateExecutionInstances.next();
           long now = System.currentTimeMillis();
 
-          if (featureFlagService.isEnabled(FeatureName.ENABLE_CHECK_STATE_EXECUTION_STARTING, entity.getAccountId())) {
-            checkIfStateExecutionIsStartingOrRunningWithoutResponse(stateExecutionInstance, now, entity.getEnvId());
-          }
+          checkIfStateExecutionIsStartingOrRunningWithoutResponse(stateExecutionInstance, now, entity.getEnvId());
 
           if (shouldAvoidExpiringWithThreshold(stateExecutionInstance, now)) {
             continue;
