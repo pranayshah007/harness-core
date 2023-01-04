@@ -93,7 +93,6 @@ public class FQN {
   // This method return the ExpressionFQN without ignoring the ignorableStringForQualifiedName. We need full path in a
   // step/stage/pipeline yaml as expression because we convert the user input yaml to map and use it for expression
   // evaluation.
-
   public String getExpressionFqnWithoutIgnoring() {
     return getExpressionFqnWithoutIgnoring(false);
   }

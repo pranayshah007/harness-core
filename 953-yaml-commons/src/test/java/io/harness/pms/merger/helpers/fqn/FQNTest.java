@@ -56,5 +56,17 @@ public class FQNTest extends CategoryTest {
     fqn.setFqnList(Arrays.asList(FQNNode.builder().uuidValue("step").build(),
         FQNNode.builder().uuidValue("spec").nodeType(FQNNode.NodeType.UUID).build()));
     assertEquals(fqn.getExpressionFqnWithoutIgnoring(), "spec");
+
+    // Key having - in it. But flag is passed as false, so key hello-world will not be surrounded by '.
+    fqn.setFqnList(Arrays.asList(FQNNode.builder().uuidValue("step").nodeType(FQNNode.NodeType.KEY_WITH_UUID).build(),
+        FQNNode.builder().key("spec").nodeType(FQNNode.NodeType.KEY).build(),
+        FQNNode.builder().key("hello-world").nodeType(FQNNode.NodeType.KEY).build()));
+    assertEquals(fqn.getExpressionFqnWithoutIgnoring(false), "step.spec.hello-world");
+
+    // Key having - in it. And flag is passed as true, so key hello-world will be surrounded by '.
+    fqn.setFqnList(Arrays.asList(FQNNode.builder().uuidValue("step").nodeType(FQNNode.NodeType.KEY_WITH_UUID).build(),
+        FQNNode.builder().key("spec").nodeType(FQNNode.NodeType.KEY).build(),
+        FQNNode.builder().key("hello-world").nodeType(FQNNode.NodeType.KEY).build()));
+    assertEquals(fqn.getExpressionFqnWithoutIgnoring(true), "step.spec.'hello-world'");
   }
 }
