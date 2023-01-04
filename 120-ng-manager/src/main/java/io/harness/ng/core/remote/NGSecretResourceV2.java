@@ -147,7 +147,7 @@ public class NGSecretResourceV2 {
       })
   public ResponseDTO<Boolean>
   validateTheIdentifierIsUnique(@Parameter(description = "Secret Identifier") @NotNull @PathParam(
-                                    NGCommonEntityConstants.IDENTIFIER_KEY) @EntityIdentifier String identifier,
+                                    NGCommonEntityConstants.IDENTIFIER_KEY) String identifier,
       @Parameter(description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
@@ -616,7 +616,7 @@ public class NGSecretResourceV2 {
   @Hidden
   public ResponseDTO<DecryptedSecretValue> getDecryptedSecretValue(
       @Parameter(description = "Secret Identifier") @NotNull @PathParam(
-          NGCommonEntityConstants.IDENTIFIER_KEY) @EntityIdentifier String identifier,
+          NGCommonEntityConstants.IDENTIFIER_KEY) @EntityIdentifier(maxLength = 128) String identifier,
       @Parameter(description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,

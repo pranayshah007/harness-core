@@ -7,11 +7,15 @@
 
 package io.harness.engine;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
+
 import java.util.Iterator;
 import lombok.experimental.UtilityClass;
 import org.springframework.data.util.CloseableIterator;
 
 @UtilityClass
+@OwnedBy(HarnessTeam.PIPELINE)
 public class OrchestrationTestHelper {
   public static <T> CloseableIterator<T> createCloseableIterator(Iterator<T> iterator) {
     return new CloseableIterator<T>() {

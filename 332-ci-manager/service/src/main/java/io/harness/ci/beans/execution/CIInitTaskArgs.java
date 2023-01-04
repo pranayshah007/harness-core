@@ -15,7 +15,7 @@ import lombok.Value;
 
 @Value
 @Builder
-public class CIExecutionArgs {
+public class CIInitTaskArgs {
   Ambiance ambiance;
   StepElementParameters stepElementParameters;
   String callbackId;

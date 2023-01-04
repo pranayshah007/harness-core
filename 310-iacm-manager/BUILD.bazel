@@ -427,7 +427,9 @@ java_library(
 
 run_tests()
 
-run_analysis()
+run_analysis(
+    run_sonar = False,
+)
 
 exports_files([
     "keystore.jks",

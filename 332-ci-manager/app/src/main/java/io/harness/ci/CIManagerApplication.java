@@ -33,6 +33,7 @@ import io.harness.ci.enforcement.BuildsPerMonthRestrictionUsageImpl;
 import io.harness.ci.enforcement.TotalBuildsRestrictionUsageImpl;
 import io.harness.ci.execution.ObserverEventConsumer;
 import io.harness.ci.execution.OrchestrationExecutionEventHandlerRegistrar;
+import io.harness.ci.execution.queue.CIExecutionPoller;
 import io.harness.ci.plan.creator.CIModuleInfoProvider;
 import io.harness.ci.plan.creator.CIPipelineServiceInfoProvider;
 import io.harness.ci.plan.creator.filter.CIFilterCreationResponseMerger;
@@ -441,6 +442,7 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
     environment.lifecycle().manage(injector.getInstance(QueueListenerController.class));
     environment.lifecycle().manage(injector.getInstance(NotifierScheduledExecutorService.class));
     environment.lifecycle().manage(injector.getInstance(PipelineEventConsumerController.class));
+    environment.lifecycle().manage(injector.getInstance(CIExecutionPoller.class));
     // Do not remove as it's used for MaintenanceController for shutdown mode
     environment.lifecycle().manage(injector.getInstance(MaintenanceController.class));
   }

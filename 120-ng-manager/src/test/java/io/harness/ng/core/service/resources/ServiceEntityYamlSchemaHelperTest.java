@@ -47,8 +47,8 @@ public class ServiceEntityYamlSchemaHelperTest extends CategoryTest {
   @Owner(developers = UTKARSH_CHOUBEY)
   @Category(UnitTests.class)
   public void testValidateSchema() throws IOException {
-    when(featureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.CDS_SERVICE_ENV_SCHEMA_VALIDATION))
-        .thenReturn(true);
+    when(featureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.DISABLE_CDS_SERVICE_ENV_SCHEMA_VALIDATION))
+        .thenReturn(false);
     when(featureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.NG_SVC_ENV_REDESIGN)).thenReturn(true);
     when(yamlSchemaValidator.processAndHandleValidationMessage(any(), any(), any())).thenReturn(Collections.emptySet());
     String yaml = "service:\n"

@@ -1137,6 +1137,12 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
                 serviceDetailsDTOBuilder.failureRateChangeRate(workloadDeploymentInfo.getFailureRateChangeRate());
                 serviceDetailsDTOBuilder.frequency(workloadDeploymentInfo.getFrequency());
                 serviceDetailsDTOBuilder.frequencyChangeRate(workloadDeploymentInfo.getFrequencyChangeRate());
+              } else {
+                ChangeRate changeRate = calculateChangeRateV2(0, 0);
+                serviceDetailsDTOBuilder.totalDeploymentChangeRate(changeRate);
+                serviceDetailsDTOBuilder.successRateChangeRate(changeRate);
+                serviceDetailsDTOBuilder.failureRateChangeRate(changeRate);
+                serviceDetailsDTOBuilder.frequencyChangeRate(changeRate);
               }
 
               return serviceDetailsDTOBuilder.build();

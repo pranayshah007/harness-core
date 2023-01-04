@@ -7,6 +7,8 @@
 
 package io.harness.delegate.queueservice;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.maintenance.MaintenanceController.getMaintenanceFlag;
 
@@ -35,11 +37,13 @@ import io.harness.service.intfc.DelegateCache;
 import software.wings.beans.TaskType;
 import software.wings.service.intfc.DelegateTaskServiceClassic;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.io.IOException;
-import java.util.Base64;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -68,8 +72,7 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
     try (AutoLogContext ignore = new TaskLogContext(delegateTask.getUuid(), delegateTask.getData().getTaskType(),
              TaskType.valueOf(delegateTask.getData().getTaskType()).getTaskGroup().name(), OVERRIDE_ERROR)) {
       String topic = delegateQueueServiceConfig.getTopic();
-      String task = java.util.Base64.getEncoder().encodeToString(referenceFalseKryoSerializer.asBytes(delegateTask));
-
+      String task = referenceFalseKryoSerializer.asString(delegateTask);
       EnqueueRequest enqueueRequest = EnqueueRequest.builder()
                                           .topic(topic)
                                           .payload(task)
@@ -78,9 +81,8 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
                                           .build();
 
       EnqueueResponse response = hsqsServiceClient.enqueue(enqueueRequest, "sampleToken").execute().body();
-      assert response != null;
       log.info("Delegate task {} queued with item ID {}", delegateTask.getUuid(), response.getItemId());
-    } catch (IOException e) {
+    } catch (Exception e) {
       log.error("Error while queueing delegate task {}", delegateTask.getUuid(), e);
     }
   }
@@ -101,7 +103,8 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
       List<DequeueResponse> dequeueResponses =
           hsqsServiceClient.dequeue(dequeueRequest, "sampleToken").execute().body();
       List<DelegateTaskDequeue> delegateTasksDequeueList =
-          dequeueResponses.stream()
+          Objects.requireNonNull(dequeueResponses)
+              .stream()
               .map(dequeueResponse
                   -> DelegateTaskDequeue.builder()
                          .payload(dequeueResponse.getPayload())
@@ -126,49 +129,107 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
   @Override
   public String acknowledge(String itemId, String accountId) {
     try {
-      AckResponse response =
-          hsqsServiceClient
-              .ack(AckRequest.builder().consumerName(delegateQueueServiceConfig.getTopic()).subTopic(accountId).build(),
-                  "sampleToken")
-              .execute()
-              .body();
-      return response != null ? response.getItemID() : "";
+      AckResponse response = hsqsServiceClient
+                                 .ack(AckRequest.builder()
+                                          .itemID(itemId)
+                                          .topic(delegateQueueServiceConfig.getTopic())
+                                          .subTopic(accountId)
+                                          .build(),
+                                     "sampleToken")
+                                 .execute()
+                                 .body();
+      return Objects.requireNonNull(response).getItemID();
     } catch (IOException e) {
       log.error("Error while acknowledging delegate task ", e);
       return null;
     }
   }
-
   private boolean isResourceAvailableToAssignTask(DelegateTaskDequeue delegateTaskDequeue) {
-    TaskType taskType = TaskType.valueOf(delegateTaskDequeue.getDelegateTask().getTaskDataV2().getTaskType());
-    String accountId = delegateTaskDequeue.getDelegateTask().getAccountId();
-    List<Delegate> delegateList =
-        getDelegatesList(delegateTaskDequeue.getDelegateTask().getEligibleToExecuteDelegateIds(), accountId);
-    Optional<List<String>> filteredDelegateList =
-        delegateSelectionCheckForTask.perform(delegateList, taskType, accountId);
-    return filteredDelegateList.isPresent();
+    return isResourceAvailableToAssignTask(delegateTaskDequeue.getDelegateTask());
   }
 
-  private List<Delegate> getDelegatesList(List<String> eligibleDelegateId, String accountId) {
+  public boolean isResourceAvailableToAssignTask(DelegateTask delegateTask) {
+    if (delegateTask.getTaskDataV2() != null) {
+      return isResourceAvailableToAssignTaskV2(delegateTask);
+    }
+
+    TaskType taskType = TaskType.valueOf(delegateTask.getData().getTaskType());
+    String accountId = delegateTask.getAccountId();
+    List<Delegate> delegateList = getDelegatesList(delegateTask.getEligibleToExecuteDelegateIds(), accountId);
+    Optional<List<String>> filteredDelegateList =
+        delegateSelectionCheckForTask.perform(delegateList, taskType, accountId);
+    if (filteredDelegateList.isEmpty() || isEmpty(filteredDelegateList.get())) {
+      return false;
+    }
+    delegateTask.setEligibleToExecuteDelegateIds(new LinkedList<>(filteredDelegateList.get()));
+    return true;
+  }
+
+  @VisibleForTesting
+  boolean isResourceAvailableToAssignTaskV2(DelegateTask delegateTask) {
+    TaskType taskType = TaskType.valueOf(delegateTask.getTaskDataV2().getTaskType());
+    String accountId = delegateTask.getAccountId();
+    List<Delegate> delegateList = getDelegatesList(delegateTask.getEligibleToExecuteDelegateIds(), accountId);
+    Optional<List<String>> filteredDelegateList =
+        delegateSelectionCheckForTask.perform(delegateList, taskType, accountId);
+    if (filteredDelegateList.isEmpty() || isNotEmpty(filteredDelegateList.get())) {
+      return false;
+    }
+    delegateTask.setEligibleToExecuteDelegateIds(new LinkedList<>(filteredDelegateList.get()));
+    return true;
+  }
+
+  @VisibleForTesting
+  List<Delegate> getDelegatesList(List<String> eligibleDelegateId, String accountId) {
     return eligibleDelegateId.stream().map(id -> delegateCache.get(accountId, id, false)).collect(Collectors.toList());
   }
 
-  private void acknowledgeAndProcessDelegateTask(DelegateTaskDequeue delegateTaskDequeue) {
+  @VisibleForTesting
+  void acknowledgeAndProcessDelegateTask(DelegateTaskDequeue delegateTaskDequeue) {
     try {
-      if (delegateTaskDequeue.getDelegateTask() != null
-          && delegateTaskServiceClassic.saveAndBroadcastDelegateTaskV2(delegateTaskDequeue.getDelegateTask())) {
-        acknowledge(delegateTaskDequeue.getItemId(), delegateTaskDequeue.getDelegateTask().getAccountId());
+      if (delegateTaskDequeue.getDelegateTask() != null) {
+        if (delegateTaskDequeue.getDelegateTask().getTaskDataV2() != null) {
+          acknowledgeAndProcessDelegateTaskV2(delegateTaskDequeue);
+        }
+        String itemId =
+            acknowledge(delegateTaskDequeue.getItemId(), delegateTaskDequeue.getDelegateTask().getAccountId());
+        log.info("Delegate task {} acknowledge with item id {} from Queue Service",
+            delegateTaskDequeue.getDelegateTask().getUuid(), itemId);
+        if (isNotEmpty(itemId)) {
+          String taskId =
+              delegateTaskServiceClassic.saveAndBroadcastDelegateTask(delegateTaskDequeue.getDelegateTask());
+          log.info("Queued task {} broadcasting to delegate.", taskId);
+        }
       }
     } catch (Exception e) {
       log.error("Unable to acknowledge queue service on dequeue delegate task id {}, item Id {}",
           delegateTaskDequeue.getDelegateTask().getUuid(), delegateTaskDequeue.getItemId(), e);
     }
   }
-
-  public Optional<DelegateTask> convertToDelegateTask(String payload, String itemId) {
+  @VisibleForTesting
+  void acknowledgeAndProcessDelegateTaskV2(DelegateTaskDequeue delegateTaskDequeue) {
     try {
-      return Optional.ofNullable(
-          (DelegateTask) referenceFalseKryoSerializer.asObject(Base64.getDecoder().decode(payload)));
+      if (delegateTaskDequeue.getDelegateTask() != null) {
+        String itemId =
+            acknowledge(delegateTaskDequeue.getItemId(), delegateTaskDequeue.getDelegateTask().getAccountId());
+        log.info("Delegate task {} acknowledge with item id {} from Queue Service",
+            delegateTaskDequeue.getDelegateTask().getUuid(), itemId);
+        if (isNotEmpty(itemId)) {
+          String taskId =
+              delegateTaskServiceClassic.saveAndBroadcastDelegateTask(delegateTaskDequeue.getDelegateTask());
+          log.info("Queued task {} broadcasting to delegate.", taskId);
+        }
+      }
+    } catch (Exception e) {
+      log.error("Unable to acknowledge queue service on dequeue delegate task id {}, item Id {}",
+          delegateTaskDequeue.getDelegateTask().getUuid(), delegateTaskDequeue.getItemId(), e);
+    }
+  }
+  @VisibleForTesting
+  Optional<DelegateTask> convertToDelegateTask(String payload, String itemId) {
+    try {
+      DelegateTask delegateTask = (DelegateTask) referenceFalseKryoSerializer.asObject(payload);
+      return Optional.ofNullable(delegateTask);
     } catch (Exception e) {
       log.error("Error while decoding delegate task from queue, item Id {}. ", itemId, e);
     }

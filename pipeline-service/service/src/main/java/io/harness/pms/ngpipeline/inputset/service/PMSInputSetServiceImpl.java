@@ -40,13 +40,16 @@ import io.harness.gitsync.scm.beans.ScmGitMetaData;
 import io.harness.grpc.utils.StringValueUtils;
 import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
 import io.harness.pms.inputset.gitsync.InputSetYamlDTOMapper;
+import io.harness.pms.ngpipeline.inputset.api.InputSetsApiUtils;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity.InputSetEntityKeys;
+import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetImportRequestDTO;
 import io.harness.pms.ngpipeline.inputset.mappers.PMSInputSetElementMapper;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PipelineCRUDErrorResponse;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
@@ -80,6 +83,7 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
   @Inject private GitSyncSdkService gitSyncSdkService;
   @Inject private GitAwareEntityHelper gitAwareEntityHelper;
   @Inject private PMSPipelineRepository pmsPipelineRepository;
+  @Inject private InputSetsApiUtils inputSetsApiUtils;
 
   private static final String DUP_KEY_EXP_FORMAT_STRING =
       "Input set [%s] under Project[%s], Organization [%s] for Pipeline [%s] already exists";
@@ -426,9 +430,21 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
         accountIdentifier, orgIdentifier, projectIdentifier, inputSetIdentifier, isForceImport);
     String importedInputSetYAML =
         gitAwareEntityHelper.fetchYAMLFromRemote(accountIdentifier, orgIdentifier, projectIdentifier);
-    checkAndThrowMismatchInImportedInputSetMetadata(orgIdentifier, projectIdentifier, pipelineIdentifier,
-        inputSetIdentifier, inputSetImportRequestDTO, importedInputSetYAML);
-    InputSetEntity inputSetEntity = PMSInputSetElementMapper.toInputSetEntity(accountIdentifier, importedInputSetYAML);
+    String inputSetVersion = inputSetsApiUtils.inputSetVersion(accountIdentifier, importedInputSetYAML);
+    InputSetEntity inputSetEntity;
+    switch (inputSetVersion) {
+      case PipelineVersion.V1:
+        inputSetEntity = PMSInputSetElementMapper.toInputSetEntityV1(accountIdentifier, orgIdentifier,
+            projectIdentifier, pipelineIdentifier, importedInputSetYAML, InputSetEntityType.INPUT_SET);
+        break;
+      case PipelineVersion.V0:
+        checkAndThrowMismatchInImportedInputSetMetadata(orgIdentifier, projectIdentifier, pipelineIdentifier,
+            inputSetIdentifier, inputSetImportRequestDTO, importedInputSetYAML);
+        inputSetEntity = PMSInputSetElementMapper.toInputSetEntity(accountIdentifier, importedInputSetYAML);
+        break;
+      default:
+        throw new IllegalStateException("version not supported");
+    }
     inputSetEntity.setRepoURL(repoUrl);
     try {
       return inputSetRepository.saveForImportedYAML(inputSetEntity);

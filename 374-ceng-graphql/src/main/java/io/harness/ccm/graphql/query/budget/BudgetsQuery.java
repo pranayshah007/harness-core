@@ -11,13 +11,14 @@ import static io.harness.ccm.budget.AlertThresholdBase.ACTUAL_COST;
 import static io.harness.ccm.budget.AlertThresholdBase.FORECASTED_COST;
 
 import io.harness.ccm.budget.BudgetBreakdown;
+import io.harness.ccm.budget.BudgetSummary;
 import io.harness.ccm.budget.dao.BudgetDao;
 import io.harness.ccm.budget.utils.BudgetUtils;
+import io.harness.ccm.budgetGroup.service.BudgetGroupService;
 import io.harness.ccm.commons.entities.billing.Budget;
 import io.harness.ccm.commons.entities.budget.BudgetData;
 import io.harness.ccm.graphql.core.budget.BudgetCostService;
 import io.harness.ccm.graphql.core.budget.BudgetService;
-import io.harness.ccm.graphql.dto.budget.BudgetSummary;
 import io.harness.ccm.graphql.utils.GraphQLUtils;
 import io.harness.ccm.graphql.utils.annotations.GraphQLApi;
 import io.harness.ccm.rbac.CCMRbacHelper;
@@ -41,6 +42,7 @@ public class BudgetsQuery {
   @Inject private GraphQLUtils graphQLUtils;
   @Inject private BudgetDao budgetDao;
   @Inject private BudgetService budgetService;
+  @Inject private BudgetGroupService budgetGroupService;
   @Inject private BudgetCostService budgetCostService;
   @Inject private CCMRbacHelper rbacHelper;
 
@@ -152,6 +154,7 @@ public class BudgetsQuery {
         .startTime(BudgetUtils.getBudgetStartTime(budget))
         .type(budget.getType())
         .budgetMonthlyBreakdown(budget.getBudgetMonthlyBreakdown())
+        .isBudgetGroup(false)
         .build();
   }
 }

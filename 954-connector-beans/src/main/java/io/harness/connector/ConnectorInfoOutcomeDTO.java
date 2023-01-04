@@ -35,8 +35,8 @@ import org.hibernate.validator.constraints.NotBlank;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(DX)
 public class ConnectorInfoOutcomeDTO {
-  @NotNull @NotBlank @NGEntityName String name;
-  @NotNull @NotBlank @EntityIdentifier String identifier;
+  @NotNull @NotBlank @NGEntityName(maxLength = 128) String name;
+  @NotNull @NotBlank @EntityIdentifier(maxLength = 128) String identifier;
   String description;
   String orgIdentifier;
   String projectIdentifier;

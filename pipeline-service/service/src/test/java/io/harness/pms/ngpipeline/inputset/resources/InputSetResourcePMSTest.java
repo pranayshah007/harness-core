@@ -10,6 +10,7 @@ package io.harness.pms.ngpipeline.inputset.resources;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.NAMAN;
+import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.SAMARTH;
 
 import static junit.framework.TestCase.assertEquals;
@@ -60,6 +61,7 @@ import io.harness.pms.ngpipeline.inputset.service.PMSInputSetService;
 import io.harness.pms.ngpipeline.overlayinputset.beans.resource.OverlayInputSetResponseDTOPMS;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.rule.Owner;
 
 import com.google.common.io.Resources;
@@ -104,10 +106,13 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
   private String inputSetYaml;
   private String overlayInputSetYaml;
   private String pipelineYaml;
+  private String inputSetYamlV1;
 
   InputSetEntity inputSetEntity;
   InputSetEntity overlayInputSetEntity;
   PipelineEntity pipelineEntity;
+
+  InputSetEntity inputSetEntityV1;
 
   List<String> stages =
       Arrays.asList("using", "a", "list", "to", "ensure", "that", "this", "param", "is", "not", "ignored");
@@ -145,6 +150,21 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
                          .inputSetEntityType(InputSetEntityType.INPUT_SET)
                          .version(1L)
                          .build();
+
+    String inputSetV1Filename = "inputSetV1.yaml";
+    inputSetYamlV1 = readFile(inputSetV1Filename);
+    inputSetEntityV1 = InputSetEntity.builder()
+                           .accountId(ACCOUNT_ID)
+                           .orgIdentifier(ORG_IDENTIFIER)
+                           .projectIdentifier(PROJ_IDENTIFIER)
+                           .pipelineIdentifier(PIPELINE_IDENTIFIER)
+                           .identifier(INPUT_SET_ID)
+                           .name(INPUT_SET_ID)
+                           .yaml(inputSetYamlV1)
+                           .inputSetEntityType(InputSetEntityType.INPUT_SET)
+                           .harnessVersion(PipelineVersion.V1)
+                           .version(1L)
+                           .build();
 
     overlayInputSetEntity = InputSetEntity.builder()
                                 .accountId(ACCOUNT_ID)
@@ -381,6 +401,7 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
         .when(inputSetsApiUtils)
         .getPipelineYaml(any(), any(), any(), any(), any(), any(), any(), any());
     doReturn(inputSetEntity).when(pmsInputSetService).create(any(), any(), any(), anyBoolean());
+    doReturn(PipelineVersion.V0).when(inputSetsApiUtils).inputSetVersion(any(), any());
     ResponseDTO<InputSetResponseDTOPMS> responseDTO = inputSetResourcePMSImpl.createInputSet(
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, null, inputSetYaml);
     assertEquals(responseDTO.getData().getInputSetYaml(), inputSetYaml);
@@ -411,6 +432,7 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
         .when(inputSetsApiUtils)
         .getPipelineYaml(any(), any(), any(), any(), any(), any(), any(), any());
     doReturn(inputSetEntity).when(pmsInputSetService).update(any(), any(), any(), any(), anyBoolean());
+    doReturn(PipelineVersion.V0).when(inputSetsApiUtils).inputSetVersion(any(), any());
     ResponseDTO<InputSetResponseDTOPMS> responseDTO = inputSetResourcePMSImpl.updateInputSet(null, INPUT_SET_ID,
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, null, inputSetYaml);
     assertEquals(responseDTO.getData().getInputSetYaml(), inputSetYaml);
@@ -584,5 +606,71 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
     ResponseDTO<InputSetImportResponseDTO> inputSetImportResponse = inputSetResourcePMSImpl.importInputSetFromGit(
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_ID, gitImportInfoDTO, null);
     assertThat(inputSetImportResponse.getData().getIdentifier()).isEqualTo(INPUT_SET_ID);
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testGetInputSetV1() {
+    doReturn(Optional.of(inputSetEntityV1))
+        .when(pmsInputSetService)
+        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_ID, false, null, null, false);
+
+    ResponseDTO<InputSetResponseDTOPMS> responseDTO = inputSetResourcePMSImpl.getInputSet(
+        INPUT_SET_ID, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, null);
+
+    assertThat(responseDTO.getData().getVersion()).isEqualTo(1L);
+    assertThat(responseDTO.getData().getInputSetYaml()).isEqualTo(inputSetYamlV1);
+    getCallAssertions(responseDTO.getData().getName(), INPUT_SET_ID, responseDTO.getData().getIdentifier(),
+        responseDTO.getData().getPipelineIdentifier(), responseDTO.getData().getProjectIdentifier(),
+        responseDTO.getData().getOrgIdentifier(), responseDTO.getData().getAccountId());
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testCreateInputSetV1() {
+    doReturn(pipelineYaml)
+        .when(inputSetsApiUtils)
+        .getPipelineYaml(any(), any(), any(), any(), any(), any(), any(), any());
+    doReturn(inputSetEntityV1).when(pmsInputSetService).create(any(), any(), any(), anyBoolean());
+    doReturn(PipelineVersion.V1).when(inputSetsApiUtils).inputSetVersion(any(), any());
+    ResponseDTO<InputSetResponseDTOPMS> responseDTO = inputSetResourcePMSImpl.createInputSet(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, null, inputSetYamlV1);
+    assertEquals(responseDTO.getData().getInputSetYaml(), inputSetYamlV1);
+    assertEquals(responseDTO.getData().getAccountId(), inputSetEntity.getAccountIdentifier());
+    assertEquals(responseDTO.getData().getOrgIdentifier(), inputSetEntity.getOrgIdentifier());
+    assertEquals(responseDTO.getData().getProjectIdentifier(), inputSetEntity.getProjectIdentifier());
+    assertEquals(responseDTO.getData().getName(), inputSetEntity.getName());
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testUpdateInputSetV1() {
+    doReturn(pipelineYaml)
+        .when(inputSetsApiUtils)
+        .getPipelineYaml(any(), any(), any(), any(), any(), any(), any(), any());
+    doReturn(inputSetEntityV1).when(pmsInputSetService).update(any(), any(), any(), any(), anyBoolean());
+    doReturn(PipelineVersion.V1).when(inputSetsApiUtils).inputSetVersion(any(), any());
+    ResponseDTO<InputSetResponseDTOPMS> responseDTO = inputSetResourcePMSImpl.updateInputSet(null, INPUT_SET_ID,
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, null, inputSetYamlV1);
+    assertEquals(responseDTO.getData().getInputSetYaml(), inputSetYamlV1);
+    assertEquals(responseDTO.getData().getAccountId(), inputSetEntity.getAccountIdentifier());
+    assertEquals(responseDTO.getData().getOrgIdentifier(), inputSetEntity.getOrgIdentifier());
+    assertEquals(responseDTO.getData().getProjectIdentifier(), inputSetEntity.getProjectIdentifier());
+    assertEquals(responseDTO.getData().getName(), inputSetEntity.getName());
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testDeleteInputSetV1() {
+    doReturn(true)
+        .when(pmsInputSetService)
+        .delete(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_ID, null);
+    ResponseDTO<Boolean> responseDTO = inputSetResourcePMSImpl.delete(
+        null, INPUT_SET_ID, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null);
+    assertTrue(responseDTO.getData());
   }
 }

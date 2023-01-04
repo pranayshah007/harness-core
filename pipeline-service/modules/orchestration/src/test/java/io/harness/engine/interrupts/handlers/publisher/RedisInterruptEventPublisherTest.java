@@ -82,7 +82,7 @@ public class RedisInterruptEventPublisherTest extends OrchestrationTestBase {
             .resolvedStepParameters(RecastOrchestrationUtils.fromJson("{}"))
             .build();
 
-    when(nodeExecutionService.get(any())).thenReturn(nodeExecution);
+    when(nodeExecutionService.getWithFieldsIncluded(any(), any())).thenReturn(nodeExecution);
     when(eventSender.sendEvent(any(), any(), any(), any())).thenReturn(null);
 
     String notifyId = publisher.publishEvent(nodeExecutionId, interrupt, InterruptType.ABORT);

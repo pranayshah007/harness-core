@@ -9,6 +9,8 @@ package io.harness.ngmigration.api;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import static software.wings.security.PermissionAttribute.PermissionType.LOGGED_IN;
+
 import static java.lang.String.format;
 import static java.util.Calendar.DATE;
 import static java.util.Calendar.MONTH;
@@ -37,6 +39,7 @@ import software.wings.ngmigration.DiscoveryResult;
 import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.ngmigration.NGMigrationStatus;
 import software.wings.security.PermissionAttribute.ResourceType;
+import software.wings.security.annotations.ApiKeyAuthorized;
 import software.wings.security.annotations.Scope;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
@@ -79,6 +82,7 @@ public class NgMigrationResource {
   @Path("/discover-multi")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<DiscoveryResult> discoverMultipleEntities(@QueryParam("accountId") String accountId,
       @QueryParam("exportImg") boolean exportImage, DiscoveryInput discoveryInput) {
     discoveryInput.setExportImage(discoveryInput.isExportImage() || exportImage);
@@ -89,6 +93,7 @@ public class NgMigrationResource {
   @Path("/discover")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<DiscoveryResult> discoverEntities(@QueryParam("entityId") String entityId,
       @QueryParam("appId") String appId, @QueryParam("accountId") String accountId,
       @QueryParam("entityType") NGMigrationEntityType entityType, @QueryParam("exportImg") boolean exportImage) {
@@ -100,6 +105,7 @@ public class NgMigrationResource {
   @Path("/discover/summary")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<Map<NGMigrationEntityType, BaseSummary>> discoverySummary(@QueryParam("entityId") String entityId,
       @QueryParam("appId") String appId, @QueryParam("accountId") String accountId,
       @QueryParam("entityType") NGMigrationEntityType entityType) {
@@ -111,6 +117,7 @@ public class NgMigrationResource {
   @Path("/discover/summary/async")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<Map<String, String>> queueAccountLevelSummary(@QueryParam("accountId") String accountId) {
     String requestId = asyncDiscoveryHandler.queue(accountId);
     return new RestResponse<>(ImmutableMap.of("requestId", requestId));
@@ -120,6 +127,7 @@ public class NgMigrationResource {
   @Path("/discover/summary/async-result")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<MigrationAsyncTracker> getAccountLevelSummary(
       @QueryParam("requestId") String reqId, @QueryParam("accountId") String accountId) {
     return new RestResponse<>(asyncDiscoveryHandler.getTaskResult(accountId, reqId));
@@ -129,6 +137,7 @@ public class NgMigrationResource {
   @Path("/discover/viz")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public Response discoverEntitiesImg(@QueryParam("entityId") String entityId, @QueryParam("appId") String appId,
       @QueryParam("accountId") String accountId, @QueryParam("entityType") NGMigrationEntityType entityType,
       @QueryParam("exportImg") boolean exportImage) throws IOException {
@@ -142,6 +151,7 @@ public class NgMigrationResource {
   @Path("/discover/validate")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<NGMigrationStatus> findDiscoveryErrors(@QueryParam("entityId") String entityId,
       @QueryParam("appId") String appId, @QueryParam("accountId") String accountId,
       @QueryParam("entityType") NGMigrationEntityType entityType) {
@@ -153,6 +163,7 @@ public class NgMigrationResource {
   @Path("/save")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<SaveSummaryDTO> getMigratedFiles(@HeaderParam("Authorization") String auth,
       @QueryParam("entityId") String entityId, @QueryParam("appId") String appId,
       @QueryParam("accountId") String accountId, @QueryParam("entityType") NGMigrationEntityType entityType,
@@ -165,6 +176,7 @@ public class NgMigrationResource {
   @Path("/save/v2")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<SaveSummaryDTO> saveEntitiesV2(
       @HeaderParam("Authorization") String auth, @QueryParam("accountId") String accountId, ImportDTO importDTO) {
     importDTO.setAccountIdentifier(accountId);
@@ -175,6 +187,7 @@ public class NgMigrationResource {
   @Path("/user-group/save")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<SaveSummaryDTO> saveUserGroups(
       @HeaderParam("Authorization") String auth, @QueryParam("accountId") String accountId) {
     return new RestResponse<>(usergroupImportService.importUserGroups(auth, accountId));
@@ -184,6 +197,7 @@ public class NgMigrationResource {
   @Path("/export-yaml")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public Response exportZippedYamlFiles(@HeaderParam("Authorization") String auth,
       @QueryParam("entityId") String entityId, @QueryParam("appId") String appId,
       @QueryParam("accountId") String accountId, @QueryParam("entityType") NGMigrationEntityType entityType,
@@ -205,6 +219,7 @@ public class NgMigrationResource {
   @Path("/export-yaml/v2")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public Response exportZippedYamlFilesV2(
       @HeaderParam("Authorization") String auth, @QueryParam("accountId") String accountId, ImportDTO importDTO) {
     importDTO.setAccountIdentifier(accountId);
@@ -220,6 +235,7 @@ public class NgMigrationResource {
   @Path("/similar-workflows")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<List<Set<SimilarWorkflowDetail>>> getSimilarWorkflows(@QueryParam("accountId") String accountId) {
     return new RestResponse<>(migrationResourceService.listSimilarWorkflow(accountId));
   }
@@ -229,6 +245,7 @@ public class NgMigrationResource {
   @Path("/similar-workflows/async")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<Map<String, String>> queueSimilarWorkflows(@QueryParam("accountId") String accountId) {
     String requestId = asyncSimilarWorkflowHandler.queue(accountId);
     return new RestResponse<>(ImmutableMap.of("requestId", requestId));
@@ -238,6 +255,7 @@ public class NgMigrationResource {
   @Path("/similar-workflows/async-result")
   @Timed
   @ExceptionMetered
+  @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<MigrationAsyncTracker> getSimilarWorkflows(
       @QueryParam("requestId") String reqId, @QueryParam("accountId") String accountId) {
     return new RestResponse<>(asyncSimilarWorkflowHandler.getTaskResult(accountId, reqId));

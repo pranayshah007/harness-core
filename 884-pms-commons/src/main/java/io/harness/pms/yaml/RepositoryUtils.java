@@ -5,16 +5,17 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.utils;
+package io.harness.pms.yaml;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
-import io.harness.pms.yaml.YAMLFieldNameConstants;
-import io.harness.pms.yaml.YamlField;
-import io.harness.pms.yaml.YamlUtils;
+import io.harness.yaml.repository.Reference;
 import io.harness.yaml.repository.Repository;
+import io.harness.yaml.utils.JsonPipelineUtils;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.util.Optional;
 import lombok.experimental.UtilityClass;
@@ -46,5 +47,25 @@ public class RepositoryUtils {
       }
     }
     return Optional.ofNullable(repository);
+  }
+
+  public Optional<Reference> getReferenceFromInputPayload(String inputPayload) {
+    Reference reference = null;
+    if (EmptyPredicate.isNotEmpty(inputPayload)) {
+      JsonNode inputPayloadNode = JsonPipelineUtils.readTree(inputPayload);
+      if (inputPayloadNode != null && inputPayloadNode.has(YAMLFieldNameConstants.REPOSITORY)) {
+        JsonNode inputRepositoryNode = inputPayloadNode.get(YAMLFieldNameConstants.REPOSITORY);
+        if (inputRepositoryNode != null && inputRepositoryNode.isObject()
+            && inputRepositoryNode.has(YAMLFieldNameConstants.REFERENCE)) {
+          JsonNode inputReferenceNode = inputRepositoryNode.get(YAMLFieldNameConstants.REFERENCE);
+          try {
+            reference = JsonPipelineUtils.read(inputReferenceNode.toString(), Reference.class);
+          } catch (IOException e) {
+            log.warn(String.format("Invalid input payload provided for repository reference: %s", inputPayload));
+          }
+        }
+      }
+    }
+    return Optional.ofNullable(reference);
   }
 }

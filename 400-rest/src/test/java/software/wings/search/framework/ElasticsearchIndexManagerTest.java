@@ -78,7 +78,7 @@ public class ElasticsearchIndexManagerTest extends WingsBaseTest {
     String indexName = "indexName";
 
     when(elasticsearchClient.indexExists(any())).thenReturn(true);
-    AcknowledgedResponse acknowledgedResponse = AcknowledgedResponse.of(true);
+    AcknowledgedResponse acknowledgedResponse = new AcknowledgedResponse(true);
     when(elasticsearchClient.deleteIndex(any())).thenReturn(acknowledgedResponse);
 
     boolean isIndexDeleted = elasticsearchIndexManager.deleteIndex(indexName);
@@ -115,7 +115,7 @@ public class ElasticsearchIndexManagerTest extends WingsBaseTest {
     String indexName = "indexName";
 
     when(elasticsearchClient.indexExists(any())).thenReturn(true);
-    AcknowledgedResponse acknowledgedResponse = AcknowledgedResponse.of(true);
+    AcknowledgedResponse acknowledgedResponse = new AcknowledgedResponse(true);
     when(elasticsearchClient.updateAliases(any())).thenReturn(acknowledgedResponse);
 
     boolean isRemoved = elasticsearchIndexManager.removeIndexFromAlias(indexName);
@@ -145,7 +145,7 @@ public class ElasticsearchIndexManagerTest extends WingsBaseTest {
     String indexName = "indexName";
     String aliasName = "aliasName";
 
-    AcknowledgedResponse acknowledgedResponse = AcknowledgedResponse.of(true);
+    AcknowledgedResponse acknowledgedResponse = new AcknowledgedResponse(true);
     when(elasticsearchClient.updateAliases(any())).thenReturn(acknowledgedResponse);
 
     boolean isAttached = elasticsearchIndexManager.attachIndexToAlias(aliasName, indexName);

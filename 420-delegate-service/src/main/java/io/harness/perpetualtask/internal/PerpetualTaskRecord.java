@@ -74,11 +74,17 @@ public class PerpetualTaskRecord
                  .field(PerpetualTaskRecordKeys.assignIteration)
                  .field(PerpetualTaskRecordKeys.assignAfterMs)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("assigned_delegate")
+                 .field(PerpetualTaskRecordKeys.accountId)
+                 .field(PerpetualTaskRecordKeys.state)
+                 .field(PerpetualTaskRecordKeys.delegateId)
+                 .build())
         .build();
   }
 
   @Id String uuid;
-  @FdIndex String accountId;
+  String accountId;
   String perpetualTaskType;
   PerpetualTaskClientContext clientContext;
   long intervalSeconds;

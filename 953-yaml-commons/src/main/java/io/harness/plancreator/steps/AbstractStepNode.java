@@ -15,6 +15,7 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.EntityName;
+import io.harness.plancreator.policy.PolicyConfig;
 import io.harness.plancreator.strategy.StrategyConfig;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
@@ -64,6 +65,7 @@ public abstract class AbstractStepNode {
   ParameterField<List<String>> delegateSelectors;
 
   @VariableExpression(skipVariableExpression = true) @JsonProperty("strategy") StrategyConfig strategy;
+  @VariableExpression(skipVariableExpression = true) PolicyConfig enforce;
 
   @JsonIgnore public abstract String getType();
 

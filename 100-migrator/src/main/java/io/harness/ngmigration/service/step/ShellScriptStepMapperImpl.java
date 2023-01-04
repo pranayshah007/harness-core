@@ -19,17 +19,20 @@ import io.harness.steps.shellscript.ShellScriptSourceWrapper;
 import io.harness.steps.shellscript.ShellScriptStepInfo;
 import io.harness.steps.shellscript.ShellScriptStepNode;
 import io.harness.steps.shellscript.ShellType;
+import io.harness.steps.template.TemplateStepNode;
 import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.core.variables.NGVariableType;
 import io.harness.yaml.core.variables.StringNGVariable;
 
+import software.wings.beans.GraphNode;
 import software.wings.ngmigration.CgEntityId;
+import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.sm.State;
 import software.wings.sm.states.ShellScriptState;
-import software.wings.yaml.workflow.StepYaml;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -37,12 +40,22 @@ import org.apache.commons.lang3.StringUtils;
 
 public class ShellScriptStepMapperImpl implements StepMapper {
   @Override
-  public String getStepType(StepYaml stepYaml) {
+  public List<CgEntityId> getReferencedEntities(GraphNode graphNode) {
+    String templateId = graphNode.getTemplateUuid();
+    if (StringUtils.isNotBlank(templateId)) {
+      return Collections.singletonList(
+          CgEntityId.builder().id(templateId).type(NGMigrationEntityType.TEMPLATE).build());
+    }
+    return Collections.emptyList();
+  }
+
+  @Override
+  public String getStepType(GraphNode stepYaml) {
     return StepSpecTypeConstants.SHELL_SCRIPT;
   }
 
   @Override
-  public State getState(StepYaml stepYaml) {
+  public State getState(GraphNode stepYaml) {
     Map<String, Object> properties = StepMapper.super.getProperties(stepYaml);
     ShellScriptState state = new ShellScriptState(stepYaml.getName());
     state.parseProperties(properties);
@@ -50,10 +63,19 @@ public class ShellScriptStepMapperImpl implements StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(Map<CgEntityId, NGYamlFile> migratedEntities, StepYaml stepYaml) {
-    ShellScriptState state = (ShellScriptState) getState(stepYaml);
+  public TemplateStepNode getTemplateSpec(Map<CgEntityId, NGYamlFile> migratedEntities, GraphNode graphNode) {
+    return defaultTemplateSpecMapper(migratedEntities, graphNode);
+  }
+
+  @Override
+  public AbstractStepNode getSpec(Map<CgEntityId, NGYamlFile> migratedEntities, GraphNode graphNode) {
+    ShellScriptState state = (ShellScriptState) getState(graphNode);
     ShellScriptStepNode shellScriptStepNode = new ShellScriptStepNode();
-    baseSetup(stepYaml, shellScriptStepNode);
+    baseSetup(graphNode, shellScriptStepNode);
+
+    if (StringUtils.isNotBlank(graphNode.getTemplateUuid())) {
+      throw new IllegalStateException("Trying to map template step to actual step");
+    }
 
     ExecutionTarget executionTarget = null;
 
@@ -108,7 +130,7 @@ public class ShellScriptStepMapperImpl implements StepMapper {
   }
 
   @Override
-  public boolean areSimilar(StepYaml stepYaml1, StepYaml stepYaml2) {
+  public boolean areSimilar(GraphNode stepYaml1, GraphNode stepYaml2) {
     ShellScriptState state1 = (ShellScriptState) getState(stepYaml1);
     ShellScriptState state2 = (ShellScriptState) getState(stepYaml2);
     if (!state1.getScriptType().equals(state2.getScriptType())) {

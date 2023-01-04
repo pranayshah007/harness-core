@@ -181,6 +181,7 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
     String taskType = "CI_CLEANUP";
     SerializationFormat serializationFormat = SerializationFormat.KRYO;
     boolean executeOnHarnessHostedDelegates = false;
+    String stageId = ambiance.getStageExecutionId();
     List<String> eligibleToExecuteDelegateIds = new ArrayList<>();
 
     CICleanupTaskParams.Type type = ciCleanupTaskParams.getType();
@@ -188,7 +189,6 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
       taskType = TaskType.DLITE_CI_VM_CLEANUP_TASK.getDisplayName();
       executeOnHarnessHostedDelegates = true;
       serializationFormat = SerializationFormat.JSON;
-      String stageId = ambiance.getStageExecutionId();
       String delegateId = fetchDelegateId(ambiance);
       if (Strings.isNotBlank(delegateId)) {
         eligibleToExecuteDelegateIds.add(delegateId);
@@ -216,6 +216,7 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
     return DelegateTaskRequest.builder()
         .accountId(accountId)
         .executeOnHarnessHostedDelegates(executeOnHarnessHostedDelegates)
+        .stageId(stageId)
         .eligibleToExecuteDelegateIds(eligibleToExecuteDelegateIds)
         .taskSelectors(taskSelectors.stream().map(TaskSelector::getSelector).collect(Collectors.toList()))
         .taskSetupAbstractions(abstractions)

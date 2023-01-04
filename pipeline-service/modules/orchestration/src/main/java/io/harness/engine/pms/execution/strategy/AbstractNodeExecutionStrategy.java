@@ -54,6 +54,7 @@ public abstract class AbstractNodeExecutionStrategy<P extends Node, M extends Pm
   }
 
   @Override
+  // PrevExecution doesn't contain fields for nextId and endTs, if needed handle for projection in NextStepHandler
   public NodeExecution runNextNode(
       @NonNull Ambiance ambiance, @NonNull P node, NodeExecution prevExecution, M metadata) {
     try (AutoLogContext ignore = AmbianceUtils.autoLogContext(ambiance)) {

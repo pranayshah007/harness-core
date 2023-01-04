@@ -287,4 +287,71 @@ public class JenkinsArtifactTaskHelperTest extends CategoryTest {
     verify(jenkinsArtifactTaskHandler).decryptRequestDTOs(any());
     verify(jenkinsArtifactTaskHandler).pollTask(jenkinsArtifactDelegateRequest, null);
   }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testGetArtifactCollectResponseGetArtifactPath() {
+    doNothing().when(jenkinsArtifactTaskHandler).decryptRequestDTOs(any());
+    String jobName = "FIS_Cleared_Derivatives_Core/NextGen/Build Custom Branch Images/keepbranch%2Fbo-development";
+    JenkinsConnectorDTO jenkinsConnectorDTO =
+        JenkinsConnectorDTO.builder()
+            .jenkinsUrl("https://Jenkins.com")
+            .auth(JenkinsAuthenticationDTO.builder().authType(JenkinsAuthType.USER_PASSWORD).build())
+            .build();
+    JenkinsArtifactDelegateRequest jenkinsArtifactDelegateRequest =
+        JenkinsArtifactDelegateRequest.builder()
+            .artifactPaths(Collections.singletonList("artifactPath"))
+            .jobName(jobName)
+            .jenkinsConnectorDTO(jenkinsConnectorDTO)
+            .buildNumber("tag")
+            .build();
+    ArtifactTaskParameters artifactTaskParameters = ArtifactTaskParameters.builder()
+                                                        .attributes(jenkinsArtifactDelegateRequest)
+                                                        .artifactTaskType(ArtifactTaskType.GET_ARTIFACT_PATH)
+                                                        .build();
+    ArtifactTaskExecutionResponse artifactTaskExecutionResponse = ArtifactTaskExecutionResponse.builder().build();
+    when(jenkinsArtifactTaskHandler.getArtifactPaths(jenkinsArtifactDelegateRequest))
+        .thenReturn(artifactTaskExecutionResponse);
+
+    ArtifactTaskResponse artifactTaskResponse =
+        jenkinsArtifactTaskHelper.getArtifactCollectResponse(artifactTaskParameters);
+    assertThat(artifactTaskResponse).isNotNull();
+    assertThat(artifactTaskResponse.getArtifactTaskExecutionResponse()).isEqualTo(artifactTaskExecutionResponse);
+
+    verify(jenkinsArtifactTaskHandler).decryptRequestDTOs(any());
+    verify(jenkinsArtifactTaskHandler).getArtifactPaths(jenkinsArtifactDelegateRequest);
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testGetArtifactCollectResponseDefault() {
+    doNothing().when(jenkinsArtifactTaskHandler).decryptRequestDTOs(any());
+    String jobName = "FIS_Cleared_Derivatives_Core/NextGen/Build Custom Branch Images/keepbranch%2Fbo-development";
+    JenkinsConnectorDTO jenkinsConnectorDTO =
+        JenkinsConnectorDTO.builder()
+            .jenkinsUrl("https://Jenkins.com")
+            .auth(JenkinsAuthenticationDTO.builder().authType(JenkinsAuthType.USER_PASSWORD).build())
+            .build();
+    JenkinsArtifactDelegateRequest jenkinsArtifactDelegateRequest =
+        JenkinsArtifactDelegateRequest.builder()
+            .artifactPaths(Collections.singletonList("artifactPath"))
+            .jobName(jobName)
+            .jenkinsConnectorDTO(jenkinsConnectorDTO)
+            .buildNumber("tag")
+            .build();
+    ArtifactTaskParameters artifactTaskParameters = ArtifactTaskParameters.builder()
+                                                        .attributes(jenkinsArtifactDelegateRequest)
+                                                        .artifactTaskType(ArtifactTaskType.GET_AMI_TAGS)
+                                                        .build();
+    ArtifactTaskExecutionResponse artifactTaskExecutionResponse = ArtifactTaskExecutionResponse.builder().build();
+
+    ArtifactTaskResponse artifactTaskResponse =
+        jenkinsArtifactTaskHelper.getArtifactCollectResponse(artifactTaskParameters);
+    assertThat(artifactTaskResponse).isNotNull();
+    assertThat(artifactTaskResponse.getErrorMessage())
+        .isEqualTo("There is no Jenkins artifact task type impl defined for - "
+            + artifactTaskParameters.getArtifactTaskType().name());
+  }
 }

@@ -81,7 +81,7 @@ public class PipelineStagePlanCreator implements PartialPlanCreator<PipelineStag
   }
 
   public PipelineStageStepParameters getStepParameter(
-      PipelineStageConfig config, YamlField pipelineInputs, String stageNodeId) {
+      PipelineStageConfig config, YamlField pipelineInputs, String stageNodeId, String childPipelineVersion) {
     return PipelineStageStepParameters.builder()
         .pipeline(config.getPipeline())
         .org(config.getOrg())
@@ -89,7 +89,7 @@ public class PipelineStagePlanCreator implements PartialPlanCreator<PipelineStag
         .stageNodeId(stageNodeId)
         .inputSetReferences(config.getInputSetReferences())
         .outputs(ParameterField.createValueField(PipelineStageOutputs.getMapOfString(config.getOutputs())))
-        .pipelineInputs(pipelineStageHelper.getInputSetYaml(pipelineInputs))
+        .pipelineInputs(pipelineStageHelper.getInputSetYaml(pipelineInputs, childPipelineVersion))
         .build();
   }
 
@@ -147,7 +147,7 @@ public class PipelineStagePlanCreator implements PartialPlanCreator<PipelineStag
                     .getField(YAMLFieldNameConstants.SPEC)
                     .getNode()
                     .getField(YAMLFieldNameConstants.INPUTS),
-                planNodeId))
+                planNodeId, childPipelineEntity.get().getHarnessVersion()))
             .skipCondition(SkipInfoUtils.getSkipCondition(stageNode.getSkipCondition()))
             .whenCondition(RunInfoUtils.getRunCondition(stageNode.getWhen()))
             .facilitatorObtainment(

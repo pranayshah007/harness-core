@@ -74,6 +74,15 @@ public class BudgetDao {
     return query.asList();
   }
 
+  public List<Budget> list(String accountId, List<String> budgetIds) {
+    Query<Budget> query = persistence.createQuery(Budget.class)
+                              .field(BudgetKeys.accountId)
+                              .equal(accountId)
+                              .field(BudgetKeys.uuid)
+                              .in(budgetIds);
+    return query.asList();
+  }
+
   // Lists Current Gen budgets
   public List<Budget> listCgBudgets(String accountId, Integer count, Integer startIndex) {
     Query<Budget> query = persistence.createQuery(Budget.class)

@@ -25,6 +25,7 @@ import io.harness.logging.AutoLogContext;
 import io.harness.pms.async.plan.PartialPlanResponseCallback;
 import io.harness.pms.contracts.plan.CreatePartialPlanEvent;
 import io.harness.pms.contracts.plan.Dependencies;
+import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.ErrorResponse;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.PartialPlanResponse;
@@ -32,7 +33,6 @@ import io.harness.pms.contracts.plan.PlanCreationBlobRequest;
 import io.harness.pms.contracts.plan.PlanCreationBlobResponse;
 import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.contracts.plan.PlanCreationResponse;
-import io.harness.pms.contracts.triggers.TriggerPayload;
 import io.harness.pms.events.base.PmsEventCategory;
 import io.harness.pms.exception.PmsExceptionUtils;
 import io.harness.pms.plan.creation.validator.PlanCreationValidator;
@@ -42,6 +42,7 @@ import io.harness.pms.utils.PmsGrpcClientUtils;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.serializer.KryoSerializer;
 import io.harness.utils.PmsFeatureFlagService;
 import io.harness.waiter.WaitNotifyEngine;
 
@@ -76,13 +77,14 @@ public class PlanCreatorMergeService {
   PlanCreationValidator planCreationValidator;
   private final Integer planCreatorMergeServiceDependencyBatch;
   private final PmsFeatureFlagService pmsFeatureFlagService;
+  private final KryoSerializer kryoSerializer;
 
   @Inject
   public PlanCreatorMergeService(PmsSdkHelper pmsSdkHelper, PmsEventSender pmsEventSender,
       WaitNotifyEngine waitNotifyEngine, PlanCreationValidator planCreationValidator,
       @Named("PlanCreatorMergeExecutorService") Executor executor,
       @Named("planCreatorMergeServiceDependencyBatch") Integer planCreatorMergeServiceDependencyBatch,
-      PmsFeatureFlagService pmsFeatureFlagService) {
+      PmsFeatureFlagService pmsFeatureFlagService, KryoSerializer kryoSerializer) {
     this.pmsSdkHelper = pmsSdkHelper;
     this.pmsEventSender = pmsEventSender;
     this.waitNotifyEngine = waitNotifyEngine;
@@ -90,6 +92,7 @@ public class PlanCreatorMergeService {
     this.executor = executor;
     this.planCreatorMergeServiceDependencyBatch = planCreatorMergeServiceDependencyBatch;
     this.pmsFeatureFlagService = pmsFeatureFlagService;
+    this.kryoSerializer = kryoSerializer;
   }
 
   public String getPublisher() {
@@ -109,8 +112,8 @@ public class PlanCreatorMergeService {
             .build();
     pmsEventSender.sendEvent(CreatePartialPlanEvent.newBuilder()
                                  .setDeps(dependencies)
-                                 .putAllContext(createInitialPlanCreationContext(accountId, orgIdentifier,
-                                     projectIdentifier, metadata, planExecutionMetadata.getTriggerPayload()))
+                                 .putAllContext(createInitialPlanCreationContext(
+                                     accountId, orgIdentifier, projectIdentifier, metadata, planExecutionMetadata))
                                  .setNotifyId(notifyId)
                                  .build()
                                  .toByteString(),
@@ -155,8 +158,8 @@ public class PlanCreatorMergeService {
               .putDependencies(pipelineField.getNode().getUuid(), pipelineField.getNode().getYamlPath())
               .build();
 
-      PlanCreationBlobResponse finalResponse = createPlanForDependenciesRecursive(accountId, orgIdentifier,
-          projectIdentifier, services, dependencies, metadata, planExecutionMetadata.getTriggerPayload());
+      PlanCreationBlobResponse finalResponse = createPlanForDependenciesRecursive(
+          accountId, orgIdentifier, projectIdentifier, services, dependencies, metadata, planExecutionMetadata);
       planCreationValidator.validate(accountId, finalResponse);
       planExecutionMetadata.setExecutionInputConfigured(finalResponse.getNodesMap().values().stream().anyMatch(
           o -> !EmptyPredicate.isEmpty(o.getExecutionInputTemplate())));
@@ -166,7 +169,10 @@ public class PlanCreatorMergeService {
 
   @VisibleForTesting
   Map<String, PlanCreationContextValue> createInitialPlanCreationContext(String accountId, String orgIdentifier,
-      String projectIdentifier, ExecutionMetadata metadata, TriggerPayload triggerPayload) {
+      String projectIdentifier, ExecutionMetadata metadata, PlanExecutionMetadata planExecutionMetadata) {
+    String pipelineVersion = metadata != null && EmptyPredicate.isNotEmpty(metadata.getHarnessVersion())
+        ? metadata.getHarnessVersion()
+        : PipelineVersion.V0;
     Map<String, PlanCreationContextValue> planCreationContextMap = new HashMap<>();
     PlanCreationContextValue.Builder builder =
         PlanCreationContextValue.newBuilder()
@@ -177,8 +183,15 @@ public class PlanCreatorMergeService {
     if (metadata != null) {
       builder.setMetadata(metadata);
     }
-    if (triggerPayload != null) {
-      builder.setTriggerPayload(triggerPayload);
+    if (planExecutionMetadata != null) {
+      if (planExecutionMetadata.getTriggerPayload() != null) {
+        builder.setTriggerPayload(planExecutionMetadata.getTriggerPayload());
+      }
+      Dependency globalDependency = PlanCreatorUtils.createGlobalDependency(kryoSerializer, pipelineVersion,
+          planExecutionMetadata.getProcessedYaml(), planExecutionMetadata.getInputSetYaml());
+      if (globalDependency != null) {
+        builder.setGlobalDependency(globalDependency);
+      }
     }
     planCreationContextMap.put("metadata", builder.build());
     return planCreationContextMap;
@@ -186,7 +199,7 @@ public class PlanCreatorMergeService {
 
   private PlanCreationBlobResponse createPlanForDependenciesRecursive(String accountId, String orgIdentifier,
       String projectIdentifier, Map<String, PlanCreatorServiceInfo> services, Dependencies initialDependencies,
-      ExecutionMetadata metadata, TriggerPayload triggerPayload) {
+      ExecutionMetadata metadata, PlanExecutionMetadata planExecutionMetadata) {
     PlanCreationBlobResponse.Builder finalResponseBuilder =
         PlanCreationBlobResponse.newBuilder().setDeps(initialDependencies);
     if (EmptyPredicate.isEmpty(services) || EmptyPredicate.isEmpty(initialDependencies.getDependenciesMap())) {
@@ -194,7 +207,7 @@ public class PlanCreatorMergeService {
     }
 
     finalResponseBuilder.putAllContext(
-        createInitialPlanCreationContext(accountId, orgIdentifier, projectIdentifier, metadata, triggerPayload));
+        createInitialPlanCreationContext(accountId, orgIdentifier, projectIdentifier, metadata, planExecutionMetadata));
 
     try {
       for (int i = 0; i < MAX_DEPTH && EmptyPredicate.isNotEmpty(finalResponseBuilder.getDeps().getDependenciesMap());

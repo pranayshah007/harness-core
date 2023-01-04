@@ -112,6 +112,7 @@ public class WaitStepInfo implements PMSStepInfo, Visitable {
     stepBuilder.when(stepElementConfig.getWhen());
     stepBuilder.type(stepElementConfig.getType());
     stepBuilder.uuid(stepElementConfig.getUuid());
+    stepBuilder.enforce(stepElementConfig.getEnforce());
 
     return stepBuilder;
   }

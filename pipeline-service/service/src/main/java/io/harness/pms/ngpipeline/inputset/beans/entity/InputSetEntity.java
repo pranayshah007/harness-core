@@ -28,6 +28,7 @@ import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UuidAware;
 import io.harness.persistence.gitaware.GitAware;
+import io.harness.pms.yaml.PipelineVersion;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.github.reinert.jjschema.SchemaIgnore;
@@ -135,6 +136,8 @@ public class InputSetEntity
 
   @Wither @Builder.Default Boolean isInvalid = Boolean.FALSE;
 
+  @Setter @NonFinal String harnessVersion;
+
   public String getData() {
     return yaml;
   }
@@ -170,5 +173,12 @@ public class InputSetEntity
   @Override
   public String getInvalidYamlString() {
     return yaml;
+  }
+
+  public String getHarnessVersion() {
+    if (harnessVersion == null || harnessVersion.equals("0")) {
+      return PipelineVersion.V0;
+    }
+    return harnessVersion;
   }
 }

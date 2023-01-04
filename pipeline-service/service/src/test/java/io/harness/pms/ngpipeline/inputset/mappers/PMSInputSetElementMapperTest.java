@@ -9,6 +9,7 @@ package io.harness.pms.ngpipeline.inputset.mappers;
 
 import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.NAMAN;
+import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -27,9 +28,11 @@ import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.mapper.TagMapper;
 import io.harness.pms.inputset.InputSetErrorWrapperDTOPMS;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
+import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetResponseDTOPMS;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetSummaryResponseDTOPMS;
 import io.harness.pms.ngpipeline.overlayinputset.beans.resource.OverlayInputSetResponseDTOPMS;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.rule.Owner;
 
 import com.google.common.io.Resources;
@@ -58,6 +61,8 @@ public class PMSInputSetElementMapperTest extends CategoryTest {
   String inputSetYaml;
   String overlayInputSetYaml;
 
+  String inputSetYamlV1;
+
   @Before
   public void setUp() throws IOException {
     MockitoAnnotations.openMocks(this);
@@ -69,6 +74,11 @@ public class PMSInputSetElementMapperTest extends CategoryTest {
     String overlayInputSet = "overlaySet1.yml";
     overlayInputSetYaml =
         Resources.toString(Objects.requireNonNull(classLoader.getResource(overlayInputSet)), StandardCharsets.UTF_8);
+
+    String inputSetV1 = "inputSetV1.yaml";
+    inputSetYamlV1 =
+        Resources.toString(Objects.requireNonNull(classLoader.getResource(inputSetV1)), StandardCharsets.UTF_8);
+
     doReturn(false).when(gitSyncSdkService).isGitSyncEnabled(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER);
   }
 
@@ -303,5 +313,33 @@ public class PMSInputSetElementMapperTest extends CategoryTest {
     inputSetEntity = PMSInputSetElementMapper.toInputSetEntity("accountId", overlayInputSetYaml);
     assertEquals(inputSetEntity.getAccountId(), "accountId");
     assertEquals(inputSetEntity.getIdentifier(), "overlay1");
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testToInputSetEntityV1() {
+    InputSetEntity entity = PMSInputSetElementMapper.toInputSetEntityV1(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, inputSetYamlV1, InputSetEntityType.INPUT_SET);
+
+    assertThat(entity.getIdentifier()).isEqualTo("set1");
+    assertThat(entity.getName()).isEqualTo("set1");
+    assertThat(entity.getInputSetEntityType()).isEqualTo(InputSetEntityType.INPUT_SET);
+    assertThat(entity.getHarnessVersion()).isEqualTo(PipelineVersion.V1);
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testToInputSetEntityV1WithEmptyName() {
+    String emptyName = "version: 1\n"
+        + "name: \"\"\n"
+        + "inputs:\n"
+        + "    image: \"\"\n"
+        + "    repo: default\n";
+    assertThatThrownBy(()
+                           -> PMSInputSetElementMapper.toInputSetEntityV1(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+                               PIPELINE_IDENTIFIER, emptyName, InputSetEntityType.INPUT_SET))
+        .hasMessage("Input Set name cannot be empty or a runtime input");
   }
 }

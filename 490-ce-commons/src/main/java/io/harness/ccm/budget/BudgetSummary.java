@@ -5,12 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ccm.graphql.dto.budget;
-
-import io.harness.ccm.budget.AlertThreshold;
-import io.harness.ccm.budget.BudgetMonthlyBreakdown;
-import io.harness.ccm.budget.BudgetPeriod;
-import io.harness.ccm.budget.BudgetType;
+package io.harness.ccm.budget;
 
 import io.leangen.graphql.annotations.GraphQLNonNull;
 import java.util.List;
@@ -38,4 +33,6 @@ public class BudgetSummary {
   @GraphQLNonNull Double growthRate;
   @GraphQLNonNull long startTime;
   BudgetMonthlyBreakdown budgetMonthlyBreakdown;
+  List<BudgetSummary> childEntities;
+  boolean isBudgetGroup;
 }

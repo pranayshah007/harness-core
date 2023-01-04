@@ -784,18 +784,32 @@ def syncDataset(jsonData):
         """ % (jsonData["sourceGcpProjectId"], jsonData["sourceDataSetId"], jsonData["sourceGcpTableName"])
         # Configure the query job.
         print_(" Destination :%s" % destination)
-        job_config = bigquery.QueryJobConfig(
-            destination=destination,
-            write_disposition=bigquery.job.WriteDisposition.WRITE_TRUNCATE,
-            time_partitioning=bigquery.table.TimePartitioning(field=jsonData["gcpBillingExportTablePartitionColumnName"]),
-            query_parameters=[
-                bigquery.ScalarQueryParameter(
-                    "run_date",
-                    "DATE",
-                    datetime.datetime.utcnow().date(),
-                )
-            ]
-        )
+        if jsonData["gcpBillingExportTablePartitionColumnName"] == "usage_start_time":
+            job_config = bigquery.QueryJobConfig(
+                destination=destination,
+                write_disposition=bigquery.job.WriteDisposition.WRITE_TRUNCATE,
+                time_partitioning=bigquery.table.TimePartitioning(field=jsonData["gcpBillingExportTablePartitionColumnName"]),
+                query_parameters=[
+                    bigquery.ScalarQueryParameter(
+                        "run_date",
+                        "DATE",
+                        datetime.datetime.utcnow().date(),
+                    )
+                ]
+            )
+        else:
+            job_config = bigquery.QueryJobConfig(
+                destination=destination,
+                write_disposition=bigquery.job.WriteDisposition.WRITE_TRUNCATE,
+                time_partitioning=bigquery.table.TimePartitioning(),
+                query_parameters=[
+                    bigquery.ScalarQueryParameter(
+                        "run_date",
+                        "DATE",
+                        datetime.datetime.utcnow().date(),
+                    )
+                ]
+            )
     else:
         # keeping this 3 days for currency customers also
         # only tables other than gcp_billing_export require to be updated with current month currency factors

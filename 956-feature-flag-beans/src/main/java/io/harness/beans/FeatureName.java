@@ -253,11 +253,6 @@ public enum FeatureName {
   EXTERNAL_USERID_BASED_LOGIN,
   LDAP_SYNC_WITH_USERID,
   DISABLE_HARNESS_SM,
-  SECURITY("Enable the STO module on NG", HarnessTeam.STO),
-  SECURITY_STAGE("Enable the Security Tests stage on NG", HarnessTeam.STO),
-  STO_CI_PIPELINE_SECURITY("Enable the Security Tests execution results tab for CI on NG", HarnessTeam.STO),
-  STO_CD_PIPELINE_SECURITY("Enable the Security Tests execution results tab for CD on NG", HarnessTeam.STO),
-  STO_API_V2("Enable the new STO API version on NG", HarnessTeam.STO),
   REFACTOR_ARTIFACT_SELECTION,
   CCM_DEV_TEST("", HarnessTeam.CE),
   CV_FAIL_ON_EMPTY_NODES,
@@ -367,8 +362,6 @@ public enum FeatureName {
   TERRAFORM_REMOTE_BACKEND_CONFIG("Enables storing Terraform backend configuration in a remote repo", HarnessTeam.CDP),
   REMOVE_HINT_YAML_GIT_COMMITS("Removes the hint usage in GitCommits collection", HarnessTeam.SPG),
   FIXED_INSTANCE_ZERO_ALLOW("To allow user to set the fixed instance count to 0 for ECS Deployments", HarnessTeam.CDP),
-  USE_PAGINATED_ENCRYPT_FOR_VARIABLE_OVERRIDES(
-      "Enables PaginatedComponent & Formik for VariableOverrides in CG-UI", HarnessTeam.PL),
   ON_DEMAND_ROLLBACK_WITH_DIFFERENT_ARTIFACT(
       "Used to do on demand rollback to previously deployed different artifact on same inframapping", HarnessTeam.CDC),
   CG_GIT_POLLING("Poll git based on account config for git sync in CG.", HarnessTeam.SPG),
@@ -394,6 +387,7 @@ public enum FeatureName {
       HarnessTeam.CI),
   CHANGE_INSTANCE_QUERY_OPERATOR_TO_NE("Change instance service query operator from $exists to $ne", HarnessTeam.SPG),
   NEXUS3_RAW_REPOSITORY("Enable support for Nexus3 raw repository format on CG", HarnessTeam.SPG),
+  CD_TRIGGER_V2("Enable support for nexus3, nexus2, azure, ami trigger", HarnessTeam.CDC),
   NG_ARTIFACT_SOURCES("Flag to support multi artifact sources for service V2", HarnessTeam.CDC),
   UPDATE_EMAILS_VIA_SCIM("Will enable updating emails in Harness via SCIM", HarnessTeam.PL),
   ELK_HEALTH_SOURCE("Will enable ELK health source in SRM", HarnessTeam.CV),
@@ -537,8 +531,8 @@ public enum FeatureName {
   PL_SUPPORT_JWT_TOKEN_SCIM_API("Enable support for external OAuth JWT token for SCIM API calls", HarnessTeam.PL),
   CCM_INSTANCE_DATA_CLUSTERID_FILTER("Query from instanceData collection based on clusterId", HarnessTeam.CE),
   CDC_SEND_NOTIFICATION_FOR_FREEZE("Send notifications for deployment freeze", HarnessTeam.CDC),
-  CDS_SERVICE_ENV_SCHEMA_VALIDATION(
-      "Added support for Service Env schema validation for new service env redesign", HarnessTeam.CDC),
+  DISABLE_CDS_SERVICE_ENV_SCHEMA_VALIDATION(
+      "Used to disable Schema validation for Service Env for new service env redesign", HarnessTeam.CDC),
   DO_NOT_LOAD_SUPPORT_ACCOUNTS_UNLESS_REQUIRED(
       "Avoid loading unnecessary support accounts unnecessarily. Enabling it will reduce memory pressure",
       HarnessTeam.PL),

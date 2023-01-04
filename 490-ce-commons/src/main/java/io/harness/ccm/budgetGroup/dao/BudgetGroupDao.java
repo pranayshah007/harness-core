@@ -87,6 +87,15 @@ public class BudgetGroupDao {
     return query.asList();
   }
 
+  public List<BudgetGroup> list(String accountId, List<String> budgetGroupIds) {
+    Query<BudgetGroup> query = hPersistence.createQuery(BudgetGroup.class)
+                                   .field(BudgetGroupKeys.accountId)
+                                   .equal(accountId)
+                                   .field(BudgetGroupKeys.uuid)
+                                   .in(budgetGroupIds);
+    return query.asList();
+  }
+
   public boolean delete(String uuid, String accountId) {
     Query<BudgetGroup> query = hPersistence.createQuery(BudgetGroup.class)
                                    .field(BudgetGroupKeys.accountId)

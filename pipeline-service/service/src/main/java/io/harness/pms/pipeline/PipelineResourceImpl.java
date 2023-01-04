@@ -23,6 +23,7 @@ import io.harness.beans.ExecutionNode;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.governance.PolicyEvaluationFailureException;
 import io.harness.exception.EntityNotFoundException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperDTO;
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.helper.GitAwareContextHelper;
@@ -490,6 +491,24 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
   @Override
   public ResponseDTO<MoveConfigResponse> moveConfig(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String pipelineIdentifier, MoveConfigRequestDTO moveConfigRequestDTO) {
-    return ResponseDTO.newResponse(MoveConfigResponse.builder().build());
+    if (!pipelineIdentifier.equals(moveConfigRequestDTO.getPipelineIdentifier())) {
+      throw new InvalidRequestException("Identifiers given in path param and request body don't match.");
+    }
+    PipelineCRUDResult pipelineCRUDResult =
+        pmsPipelineService.moveConfig(accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier,
+            MoveConfigOperationDTO.builder()
+                .repoName(moveConfigRequestDTO.getRepoName())
+                .branch(moveConfigRequestDTO.getBranch())
+                .moveConfigOperationType(io.harness.gitaware.helper.MoveConfigOperationType.getMoveConfigType(
+                    moveConfigRequestDTO.getMoveConfigOperationType()))
+                .connectorRef(moveConfigRequestDTO.getConnectorRef())
+                .baseBranch(moveConfigRequestDTO.getBaseBranch())
+                .commitMessage(moveConfigRequestDTO.getCommitMsg())
+                .isNewBranch(moveConfigRequestDTO.getIsNewBranch())
+                .filePath(moveConfigRequestDTO.getFilePath())
+                .build());
+    PipelineEntity pipelineEntity = pipelineCRUDResult.getPipelineEntity();
+    return ResponseDTO.newResponse(
+        MoveConfigResponse.builder().pipelineIdentifier(pipelineEntity.getIdentifier()).build());
   }
 }

@@ -55,11 +55,6 @@ public class FailureInterruptCallback implements OldNotifyCallback {
   @Override
   public void notify(Map<String, ResponseData> response) {
     try {
-      if (originalStatus == null) {
-        NodeExecution nodeExecution =
-            nodeExecutionService.getWithFieldsIncluded(nodeExecutionId, NodeProjectionUtils.withStatusAndMode);
-        originalStatus = nodeExecution.getStatus();
-      }
       NodeExecution updatedNodeExecution = nodeExecutionService.update(nodeExecutionId,
           ops
           -> ops.addToSet(NodeExecutionKeys.interruptHistories,
@@ -68,7 +63,12 @@ public class FailureInterruptCallback implements OldNotifyCallback {
                   .tookEffectAt(System.currentTimeMillis())
                   .interruptType(interruptType)
                   .interruptConfig(interruptConfig)
-                  .build()));
+                  .build()),
+          NodeProjectionUtils.withStatus);
+
+      if (originalStatus == null) {
+        originalStatus = updatedNodeExecution.getStatus();
+      }
       orchestrationEngine.concludeNodeExecution(
           updatedNodeExecution.getAmbiance(), Status.FAILED, originalStatus, EnumSet.noneOf(Status.class));
     } catch (Exception ex) {

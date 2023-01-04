@@ -64,6 +64,7 @@ import io.harness.delegate.event.handler.DelegateProfileEventHandler;
 import io.harness.delegate.eventstream.EntityCRUDConsumer;
 import io.harness.delegate.heartbeat.polling.DelegatePollingHeartbeatService;
 import io.harness.delegate.heartbeat.stream.DelegateStreamHeartbeatService;
+import io.harness.delegate.queueservice.DelegateTaskQueueService;
 import io.harness.delegate.resources.DelegateTaskResource;
 import io.harness.delegate.resources.DelegateTaskResourceV2;
 import io.harness.delegate.service.intfc.DelegateNgTokenService;
@@ -1343,6 +1344,10 @@ public class WingsApplication extends Application<MainConfiguration> {
         new Schedulable("Failed while broadcasting perpetual tasks",
             () -> injector.getInstance(PerpetualTaskServiceImpl.class).broadcastToDelegate()),
         0L, 10L, TimeUnit.SECONDS);
+
+    delegateExecutor.scheduleWithFixedDelay(
+        new Schedulable("Failed to dequeue delegate task", injector.getInstance(DelegateTaskQueueService.class)), 0L,
+        15L, TimeUnit.SECONDS);
   }
 
   public void registerObservers(MainConfiguration configuration, Injector injector, Environment environment) {

@@ -14,6 +14,7 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import static org.mockito.Mockito.mock;
 
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.PrimaryVersionManagerModule;
 import io.harness.cache.CacheConfig;
@@ -195,6 +196,7 @@ public class PipelineServiceTestRule implements InjectorRuleMixin, MethodRule, M
             .toInstance(HarnessToGitPushInfoServiceGrpc.newBlockingStub(
                 InProcessChannelBuilder.forName(generateUuid()).build()));
         bind(PMSPipelineService.class).toInstance(mock(PMSPipelineService.class));
+        bind(AccountClient.class).toInstance(mock(AccountClient.class));
       }
     });
 

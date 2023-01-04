@@ -55,6 +55,7 @@ import java.util.List;
 import java.util.Optional;
 import javax.validation.Validation;
 import javax.validation.Validator;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -243,6 +244,33 @@ public class ConnectorResourceTest extends CategoryTest {
     String connectorType = "NewRelic";
     ResponseDTO responseDTO = ResponseDTO.newResponse(ConnectorAllowedFieldValues.TYPE_TO_FIELDS.get(connectorType));
     assertThat(responseDTO.getStatus().toString()).isEqualTo("SUCCESS");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.JIMIT_GANDHI)
+  @Category(UnitTests.class)
+  public void createWith128CharIdentifierAndName() {
+    String identifier = RandomStringUtils.randomAlphanumeric(128);
+    String name = RandomStringUtils.randomAlphanumeric(128);
+    connectorInfo = ConnectorInfoDTO.builder()
+                        .name(name)
+                        .identifier(identifier)
+                        .connectorType(KUBERNETES_CLUSTER)
+                        .connectorConfig(KubernetesClusterConfigDTO.builder()
+                                             .delegateSelectors(Collections.singleton("delegateName"))
+                                             .credential(KubernetesCredentialDTO.builder()
+                                                             .kubernetesCredentialType(INHERIT_FROM_DELEGATE)
+                                                             .config(null)
+                                                             .build())
+                                             .build())
+                        .build();
+    connectorRequest.setConnectorInfo(connectorInfo);
+    connectorResponse.setConnector(connectorInfo);
+    doReturn(connectorResponse).when(connectorService).create(any(), any());
+    ResponseDTO<ConnectorResponseDTO> connectorResponseDTO =
+        connectorResource.create(connectorRequest, accountIdentifier, null);
+    Mockito.verify(connectorService, times(1)).create(any(), any());
+    assertThat(connectorResponseDTO.getData()).isNotNull();
   }
 
   @Test

@@ -26,6 +26,7 @@ import lombok.Setter;
 import lombok.Value;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.NonFinal;
+import lombok.experimental.UtilityClass;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.Id;
@@ -74,4 +75,10 @@ public class PipelineMetadataV2 {
   List<RecentExecutionInfo> recentExecutionInfoList;
   Long lastExecutedAt;
   EntityGitDetails entityGitDetails;
+
+  @UtilityClass
+  public static class PipelineMetadataV2Keys {
+    public static final String branch = PipelineMetadataV2Keys.entityGitDetails + "."
+        + "branch";
+  }
 }
