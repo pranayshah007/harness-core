@@ -94,7 +94,6 @@ import com.amazonaws.services.ec2.model.RequestLaunchTemplateData;
 import com.google.common.util.concurrent.ExecutionError;
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.common.util.concurrent.UncheckedExecutionException;
-import com.google.inject.Inject;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -125,7 +124,6 @@ public class AsgSdkManager {
   private final Integer steadyStateTimeOutInMinutes;
   private final TimeLimiter timeLimiter;
   @Setter private LogCallback logCallback;
-  @Inject AsgMapper asgMapper;
 
   @Builder
   public AsgSdkManager(Supplier<AmazonEC2Client> ec2ClientSupplier, Supplier<AmazonAutoScalingClient> asgClientSupplier,
@@ -619,10 +617,7 @@ public class AsgSdkManager {
   private UpdateAutoScalingGroupRequest createAsgRequestToUpdateAsgRequestMapper(
       CreateAutoScalingGroupRequest createAutoScalingGroupRequest) {
     String createAutoScalingGroupRequestContent = AsgContentParser.toString(createAutoScalingGroupRequest, true);
-    UpdateAutoScalingGroupRequest updateAutoScalingGroupRequest =
-        AsgContentParser.parseJson(createAutoScalingGroupRequestContent, UpdateAutoScalingGroupRequest.class, false);
-
-    return updateAutoScalingGroupRequest;
+    return AsgContentParser.parseJson(createAutoScalingGroupRequestContent, UpdateAutoScalingGroupRequest.class, false);
   }
 
   public void info(String msg, Object... params) {

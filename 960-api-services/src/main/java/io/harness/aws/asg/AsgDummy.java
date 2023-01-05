@@ -18,7 +18,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @OwnedBy(CDP)
 public class AsgDummy implements ProgressListener {
-  public void progressChanged(ProgressEvent progressEvent) {
-    return;
-  }
+  public void progressChanged(ProgressEvent progressEvent) {}
 }

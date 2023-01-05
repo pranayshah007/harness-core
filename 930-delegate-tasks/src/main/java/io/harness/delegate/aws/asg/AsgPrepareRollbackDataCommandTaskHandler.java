@@ -25,7 +25,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.asg.AsgCommandUnitConstants;
 import io.harness.aws.asg.AsgContentParser;
-import io.harness.aws.asg.AsgMapper;
 import io.harness.aws.asg.AsgSdkManager;
 import io.harness.aws.asg.manifest.AsgManifestHandlerChainFactory;
 import io.harness.aws.asg.manifest.AsgManifestHandlerChainState;
@@ -61,7 +60,6 @@ import org.apache.commons.lang3.tuple.Pair;
 @Slf4j
 public class AsgPrepareRollbackDataCommandTaskHandler extends AsgCommandTaskNGHandler {
   @Inject private AsgTaskHelper asgTaskHelper;
-  @Inject private AsgMapper asgMapper;
 
   @Override
   protected AsgCommandResponse executeTaskInternal(AsgCommandRequest asgCommandRequest,
