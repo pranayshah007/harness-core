@@ -125,6 +125,7 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
                  .field(WorkflowExecutionKeys.status)
                  .field(WorkflowExecutionKeys.infraMappingIds)
                  .descSortField(WorkflowExecutionKeys.createdAt)
+                 .rangeField(WorkflowExecutionKeys.deployment)
                  .build())
         .add(CompoundMongoIndex.builder()
                  .name("workflowExecutionMonitor")
@@ -360,6 +361,7 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
   private HelmExecutionSummary helmExecutionSummary;
   private List<AwsLambdaExecutionSummary> awsLambdaExecutionSummaries;
   private ConcurrencyStrategy concurrencyStrategy;
+  private Boolean deployment;
 
   // For pipeline resume.
   //
