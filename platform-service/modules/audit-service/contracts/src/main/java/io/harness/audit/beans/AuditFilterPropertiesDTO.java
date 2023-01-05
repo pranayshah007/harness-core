@@ -62,7 +62,10 @@ public class AuditFilterPropertiesDTO extends FilterPropertiesDTO {
   Long endTime;
 
   @Override
-  public FilterType getFilterType() {
+  @Schema(description = "This specifies the corresponding Entity of the filter.", type = "string",
+      allowableValues = {"Audit"})
+  public FilterType
+  getFilterType() {
     return FilterType.AUDIT;
   }
 }

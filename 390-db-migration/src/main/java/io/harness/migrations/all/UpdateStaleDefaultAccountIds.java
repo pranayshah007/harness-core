@@ -22,11 +22,11 @@ import software.wings.dl.WingsPersistence;
 import software.wings.service.intfc.UserService;
 
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 /**
  * Migration script for updating default account ids for users which are not part of that account anymore

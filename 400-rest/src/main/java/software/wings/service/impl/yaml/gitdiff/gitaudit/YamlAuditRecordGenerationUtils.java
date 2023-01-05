@@ -13,9 +13,9 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static software.wings.audit.AuditHeader.Builder.anAuditHeader;
 import static software.wings.beans.User.Builder.anUser;
 
+import static dev.morphia.mapping.Mapper.ID_KEY;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
-import static org.mongodb.morphia.mapping.Mapper.ID_KEY;
 
 import io.harness.beans.EmbeddedUser;
 import io.harness.beans.FeatureName;
@@ -37,6 +37,7 @@ import software.wings.exception.YamlProcessingException.ChangeWithErrorMsg;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.query.UpdateOperations;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
@@ -44,7 +45,6 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @Singleton
 @Slf4j

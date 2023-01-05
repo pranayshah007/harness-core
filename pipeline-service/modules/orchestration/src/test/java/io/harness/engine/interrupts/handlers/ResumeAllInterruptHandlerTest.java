@@ -31,6 +31,7 @@ import io.harness.interrupts.Interrupt;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.interrupts.InterruptConfig;
 import io.harness.pms.contracts.interrupts.InterruptType;
+import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.rule.Owner;
 import io.harness.waiter.WaitNotifyEngine;
 
@@ -208,7 +209,8 @@ public class ResumeAllInterruptHandlerTest extends OrchestrationTestBase {
                               .planExecutionId(generateUuid())
                               .build();
 
-    when(nodeExecutionService.get(nodeExecutionId)).thenReturn(NodeExecution.builder().status(Status.RUNNING).build());
+    when(nodeExecutionService.getWithFieldsIncluded(nodeExecutionId, NodeProjectionUtils.withStatus))
+        .thenReturn(NodeExecution.builder().status(Status.RUNNING).build());
 
     resumeAllInterruptHandler.handleInterruptForNodeExecution(interrupt, nodeExecutionId);
 
@@ -227,7 +229,8 @@ public class ResumeAllInterruptHandlerTest extends OrchestrationTestBase {
                               .planExecutionId(generateUuid())
                               .build();
 
-    when(nodeExecutionService.get(nodeExecutionId)).thenReturn(NodeExecution.builder().status(Status.PAUSED).build());
+    when(nodeExecutionService.getWithFieldsIncluded(nodeExecutionId, NodeProjectionUtils.withStatus))
+        .thenReturn(NodeExecution.builder().status(Status.PAUSED).build());
 
     resumeAllInterruptHandler.handleInterruptForNodeExecution(interrupt, nodeExecutionId);
 

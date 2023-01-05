@@ -147,13 +147,17 @@ public class BitbucketConnectorDTO
   }
 
   @Override
-  public String getFileUrl(String branchName, String filePath, GitRepositoryDTO gitRepositoryDTO) {
+  public String getFileUrl(String branchName, String filePath, String commitId, GitRepositoryDTO gitRepositoryDTO) {
     ScmConnectorHelper.validateGetFileUrlParams(branchName, filePath);
     String repoUrl = removeStartingAndEndingSlash(getGitConnectionUrl(gitRepositoryDTO));
     filePath = removeStartingAndEndingSlash(filePath);
     if (GitClientHelper.isBitBucketSAAS(repoUrl)) {
       String httpRepoUrl = GitClientHelper.getCompleteHTTPUrlForBitbucketSaas(repoUrl);
-      return String.format("%s/src/%s/%s", httpRepoUrl, branchName, filePath);
+      if (isNotEmpty(commitId)) {
+        return String.format("%s/src/%s/%s?at=%s", httpRepoUrl, commitId, filePath, branchName);
+      } else {
+        return String.format("%s/src/%s/%s", httpRepoUrl, branchName, filePath);
+      }
     }
     return getFileUrlForBitbucketServer(repoUrl, branchName, filePath, gitRepositoryDTO);
   }

@@ -16,6 +16,8 @@ import io.harness.cvng.beans.change.KubernetesChangeEventMetadata.KubernetesReso
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance.VerificationJobInstanceBuilder;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -28,8 +30,6 @@ import lombok.Value;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @FieldNameConstants(innerTypeName = "KubernetesClusterActivityKeys")
 @Data

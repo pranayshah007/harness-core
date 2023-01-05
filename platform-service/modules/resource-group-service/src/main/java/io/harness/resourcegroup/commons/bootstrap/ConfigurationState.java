@@ -14,11 +14,11 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.FdIndex;
 import io.harness.ng.DbAliases;
 
+import dev.morphia.annotations.Entity;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -35,7 +35,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document("configurationState")
 @TypeAlias("configurationState")
 public class ConfigurationState {
-  @Id @org.mongodb.morphia.annotations.Id String id;
+  @Id @dev.morphia.annotations.Id String id;
   @FdIndex @NotEmpty String identifier;
   int configVersion;
   @CreatedDate Long createdAt;

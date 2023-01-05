@@ -58,6 +58,7 @@ public class StepParametersUtils {
     stepBuilder.when(stepElementConfig.getWhen());
     stepBuilder.type(stepElementConfig.getType());
     stepBuilder.uuid(stepElementConfig.getUuid());
+    stepBuilder.enforce(stepElementConfig.getEnforce());
 
     return stepBuilder;
   }

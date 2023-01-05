@@ -31,6 +31,7 @@ java_library(
     srcs = glob(["src/test/**/*.java"]),
     resources = [
         "//925-enforcement-service/src/main/resources:resource",
+        "//942-enforcement-sdk/src/test/resources:resource",
     ],
     visibility = ["//visibility:public"],
     deps = [

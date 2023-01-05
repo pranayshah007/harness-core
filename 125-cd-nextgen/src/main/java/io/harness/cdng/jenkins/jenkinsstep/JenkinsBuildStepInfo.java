@@ -13,7 +13,7 @@ import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
-import io.harness.cdng.pipeline.CDStepInfo;
+import io.harness.cdng.pipeline.CDAbstractStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.JenkinsBuildStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.filters.WithConnectorRef;
@@ -51,7 +51,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("jenkinsBuildStepInfo")
 @SimpleVisitorHelper(helperClass = JenkinsBuildStepInfoVisitorHelper.class)
 @RecasterAlias("io.harness.cdng.pipeline.stepinfo.JenkinsBuildStepInfo")
-public class JenkinsBuildStepInfo implements CDStepInfo, WithConnectorRef, WithDelegateSelector, Visitable {
+public class JenkinsBuildStepInfo implements CDAbstractStepInfo, WithConnectorRef, WithDelegateSelector, Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)

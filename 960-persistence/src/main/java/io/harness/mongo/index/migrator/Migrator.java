@@ -7,7 +7,7 @@
 
 package io.harness.mongo.index.migrator;
 
-import org.mongodb.morphia.AdvancedDatastore;
+import dev.morphia.AdvancedDatastore;
 
 public interface Migrator {
   void execute(AdvancedDatastore datastore);

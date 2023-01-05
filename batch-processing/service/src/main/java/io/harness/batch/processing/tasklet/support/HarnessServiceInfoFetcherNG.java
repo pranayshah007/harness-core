@@ -12,7 +12,7 @@ import static io.harness.batch.processing.writer.constants.K8sCCMConstants.RELEA
 import io.harness.batch.processing.tasklet.util.CacheUtils;
 import io.harness.ccm.HarnessServiceInfoNG;
 import io.harness.instanceng.InstanceNGResourceClient;
-import io.harness.utils.RestCallToNGManagerClientUtils;
+import io.harness.remote.client.NGRestUtils;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
@@ -68,8 +68,8 @@ public class HarnessServiceInfoFetcherNG extends CacheUtils {
     Optional<HarnessServiceInfoNG> harnessServiceInfoNG;
     log.info("Building cache. accountId: {}, podInfo.getPodName(): {}, podInfo.getNamespace(): {}", accountId, podName,
         namespace);
-    harnessServiceInfoNG = RestCallToNGManagerClientUtils.execute(
-        instanceNGResourceClient.getInstanceNGData(accountId, podName, namespace));
+    harnessServiceInfoNG =
+        NGRestUtils.getResponse(instanceNGResourceClient.getInstanceNGData(accountId, podName, namespace));
     return harnessServiceInfoNG;
   }
 }

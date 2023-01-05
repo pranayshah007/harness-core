@@ -7,7 +7,11 @@
 
 package io.harness.ccm.budgetGroup.service;
 
+import io.harness.ccm.budget.BudgetBreakdown;
+import io.harness.ccm.budget.BudgetSummary;
+import io.harness.ccm.budget.ValueDataPoint;
 import io.harness.ccm.budgetGroup.BudgetGroup;
+import io.harness.ccm.commons.entities.budget.BudgetData;
 
 import java.util.List;
 
@@ -17,4 +21,8 @@ public interface BudgetGroupService {
   BudgetGroup get(String uuid, String accountId);
   List<BudgetGroup> list(String accountId);
   boolean delete(String uuid, String accountId);
+  List<ValueDataPoint> getLastPeriodCost(
+      String accountId, boolean areChildEntitiesBudgets, List<String> childEntityIds);
+  List<BudgetSummary> listBudgetsAndBudgetGroupsSummary(String accountId, String id);
+  BudgetData getBudgetGroupTimeSeriesStats(BudgetGroup budgetGroup, BudgetBreakdown breakdown);
 }

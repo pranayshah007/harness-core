@@ -302,10 +302,10 @@ public class RoleServiceImplTest extends AccessControlCoreTestBase {
   public void testList() {
     PageRequest pageRequest = PageRequest.builder().pageIndex(0).build();
     RoleFilter roleFilter = RoleFilter.builder().scopeIdentifier(randomAlphabetic(10)).build();
-    when(roleDao.list(pageRequest, roleFilter)).thenReturn(PageResponse.getEmptyPageResponse(pageRequest));
-    PageResponse<Role> pageResponse = roleService.list(pageRequest, roleFilter);
+    when(roleDao.list(pageRequest, roleFilter, true)).thenReturn(PageResponse.getEmptyPageResponse(pageRequest));
+    PageResponse<Role> pageResponse = roleService.list(pageRequest, roleFilter, true);
     assertTrue(pageResponse.isEmpty());
-    verify(roleDao, times(1)).list(pageRequest, roleFilter);
+    verify(roleDao, times(1)).list(pageRequest, roleFilter, true);
   }
 
   @Test

@@ -16,8 +16,8 @@ import io.harness.migrations.Migration;
 import software.wings.dl.WingsPersistence;
 
 import com.google.inject.Inject;
+import dev.morphia.query.UpdateResults;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.UpdateResults;
 
 @Slf4j
 public class AddNgFieldToDelegateGroupMigration implements Migration {

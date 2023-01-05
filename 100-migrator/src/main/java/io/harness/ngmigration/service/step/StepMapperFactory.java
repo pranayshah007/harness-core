@@ -7,7 +7,7 @@
 
 package io.harness.ngmigration.service.step;
 
-import software.wings.yaml.workflow.StepYaml;
+import software.wings.beans.GraphNode;
 
 import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
@@ -72,7 +72,7 @@ public class StepMapperFactory {
     }
   }
 
-  public boolean areSimilar(StepYaml stepYaml1, StepYaml stepYaml2) {
+  public boolean areSimilar(GraphNode stepYaml1, GraphNode stepYaml2) {
     if (!stepYaml1.getType().equals(stepYaml2.getType())) {
       return false;
     }

@@ -23,6 +23,7 @@ import software.wings.integration.IntegrationTestUtils;
 import software.wings.service.impl.instance.stats.InstanceStatServiceImpl;
 
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import java.net.URISyntaxException;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -37,7 +38,6 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mongodb.morphia.query.Query;
 
 public class InstanceStatServiceIntegrationTest extends IntegrationTestBase {
   @Inject private InstanceStatServiceImpl statService;

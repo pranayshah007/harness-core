@@ -54,6 +54,10 @@ import software.wings.sm.states.HoldingScope;
 
 import com.google.inject.Inject;
 import com.mongodb.DuplicateKeyException;
+import dev.morphia.query.FieldEnd;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
+import dev.morphia.query.UpdateResults;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.Ignore;
@@ -61,10 +65,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mongodb.morphia.query.FieldEnd;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
-import org.mongodb.morphia.query.UpdateResults;
 
 public class ResourceConstraintServiceImplTest extends WingsBaseTest {
   private static final String RESOURCE_CONSTRAINT_ID = "RC_ID";

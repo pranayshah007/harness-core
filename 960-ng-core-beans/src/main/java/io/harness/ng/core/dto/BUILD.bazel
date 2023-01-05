@@ -19,12 +19,12 @@ java_library(
         "//980-commons:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
         "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:dev_morphia_morphia_core",
         "@maven//:io_swagger_core_v3_swagger_annotations",
         "@maven//:io_swagger_swagger_annotations",
         "@maven//:jakarta_validation_jakarta_validation_api",
         "@maven//:javax_validation_validation_api",
         "@maven//:org_hibernate_validator_hibernate_validator",
-        "@maven//:org_mongodb_morphia_morphia",
     ],
 )
 

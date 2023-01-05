@@ -10,6 +10,7 @@ package io.harness.engine;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.network.SafeHttpCall;
@@ -17,6 +18,7 @@ import io.harness.opaclient.OpaServiceClient;
 import io.harness.opaclient.model.OpaConstants;
 import io.harness.opaclient.model.OpaEvaluationResponseHolder;
 import io.harness.opaclient.model.PipelineOpaEvaluationContext;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
@@ -36,7 +38,14 @@ public class GovernanceServiceImpl implements GovernanceService {
 
   @Override
   public GovernanceMetadata evaluateGovernancePolicies(String expandedJson, String accountId, String orgIdentifier,
-      String projectIdentifier, String action, String planExecutionId) {
+      String projectIdentifier, String action, String planExecutionId, String pipelineVersion) {
+    pipelineVersion = EmptyPredicate.isEmpty(pipelineVersion) ? PipelineVersion.V0 : pipelineVersion;
+    switch (pipelineVersion) {
+      case PipelineVersion.V1:
+        return GovernanceMetadata.newBuilder().setDeny(false).build();
+      default:
+        break;
+    }
     long startTs = System.currentTimeMillis();
     try {
       if (!pmsFeatureFlagService.isEnabled(accountId, FeatureName.OPA_PIPELINE_GOVERNANCE)) {

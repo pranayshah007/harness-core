@@ -28,6 +28,8 @@ import software.wings.beans.infrastructure.instance.info.ServerlessInstanceInfo;
 import software.wings.beans.infrastructure.instance.key.AwsLambdaInstanceKey;
 
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
@@ -35,8 +37,6 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
 
 @Data
 @EqualsAndHashCode(of = {"uuid", "appId"}, callSuper = false)

@@ -20,6 +20,7 @@ import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -31,7 +32,6 @@ import lombok.ToString;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
@@ -54,7 +54,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document("serviceAccounts")
 @TypeAlias("serviceAccounts")
 public class ServiceAccountDBO implements PersistentRegularIterable, AccessControlEntity {
-  @Setter @Id @org.mongodb.morphia.annotations.Id String id;
+  @Setter @Id @dev.morphia.annotations.Id String id;
   @NotEmpty final String scopeIdentifier;
   @NotEmpty final String identifier;
 

@@ -7,6 +7,7 @@ package java
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/harness/harness-core/commons/go/lib/filesystem"
 	"github.com/harness/harness-core/commons/go/lib/utils"
@@ -138,4 +139,29 @@ func DetectPkgs(log *zap.SugaredLogger, fs filesystem.FileSystem) ([]string, err
 		}
 	}
 	return plist, nil
+}
+
+func parseBazelTestRule(r string) (types.RunnableTest, error) {
+	// r = //module:package.class
+	if r == "" {
+		return types.RunnableTest{}, fmt.Errorf("empty rule")
+	}
+	n := 2
+	if !strings.Contains(r, ":") || len(strings.Split(r, ":")) < n {
+		return types.RunnableTest{}, fmt.Errorf(fmt.Sprintf("rule does not follow the default format: %s", r))
+	}
+	// fullPkg = package.class
+	fullPkg := strings.Split(r, ":")[1]
+	for _, s := range bazelRuleSepList {
+		fullPkg = strings.Replace(fullPkg, s, ".", -1)
+	}
+	pkgList := strings.Split(fullPkg, ".")
+	if len(pkgList) < n {
+		return types.RunnableTest{}, fmt.Errorf(fmt.Sprintf("rule does not follow the default format: %s", r))
+	}
+	cls := pkgList[len(pkgList)-1]
+	pkg := strings.TrimSuffix(fullPkg, "."+cls)
+	test := types.RunnableTest{Pkg: pkg, Class: cls}
+	test.Autodetect.Rule = r
+	return test, nil
 }

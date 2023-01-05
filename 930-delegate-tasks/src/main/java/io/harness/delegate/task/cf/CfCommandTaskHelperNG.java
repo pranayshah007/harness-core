@@ -714,7 +714,6 @@ public class CfCommandTaskHelperNG {
     cfRequestConfig.setDesiredCount(cfServiceData.getDesiredCount());
 
     ApplicationDetail applicationDetail = pcfDeploymentManager.resizeApplication(cfRequestConfig);
-
     executionLogCallback.saveExecutionLog("# Downsizing successful");
     executionLogCallback.saveExecutionLog("\n# App details after downsize:");
     pcfCommandTaskBaseHelper.printApplicationDetail(applicationDetail, executionLogCallback);

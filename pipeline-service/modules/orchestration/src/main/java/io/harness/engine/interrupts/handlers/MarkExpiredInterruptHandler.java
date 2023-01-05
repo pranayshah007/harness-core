@@ -20,6 +20,7 @@ import io.harness.engine.interrupts.helpers.ExpiryHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
 import io.harness.interrupts.Interrupt;
+import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.execution.utils.StatusUtils;
 
 import com.google.inject.Inject;
@@ -45,7 +46,8 @@ public class MarkExpiredInterruptHandler implements InterruptHandler {
       throw new InvalidRequestException("NodeExecutionId Cannot be empty for MARK_EXPIRED interrupt");
     }
 
-    NodeExecution nodeExecution = nodeExecutionService.get(interrupt.getNodeExecutionId());
+    NodeExecution nodeExecution =
+        nodeExecutionService.getWithFieldsIncluded(interrupt.getNodeExecutionId(), NodeProjectionUtils.withStatus);
     if (!StatusUtils.finalizableStatuses().contains(nodeExecution.getStatus())) {
       throw new InvalidRequestException(
           "NodeExecution is not in a finalizable status. Current Status: " + nodeExecution.getStatus());

@@ -24,6 +24,7 @@ import io.harness.pms.contracts.plan.PlanNodeProto;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.data.stepparameters.PmsStepParameters;
 
+import dev.morphia.annotations.Entity;
 import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.List;
@@ -36,7 +37,6 @@ import lombok.Singular;
 import lombok.Value;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.Wither;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.TypeAlias;
@@ -67,7 +67,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class Plan implements PersistentEntity, Node {
   static final long TTL_MONTHS = 6;
 
-  @Default @Wither @Id @org.mongodb.morphia.annotations.Id String uuid = generateUuid();
+  @Default @Wither @Id @dev.morphia.annotations.Id String uuid = generateUuid();
   @Singular @Deprecated List<PlanNodeProto> nodes;
   @Wither @Singular List<Node> planNodes;
 

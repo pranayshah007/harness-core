@@ -40,6 +40,7 @@ import software.wings.service.intfc.ServiceResourceService;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.mongodb.DBObject;
+import dev.morphia.query.Sort;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -47,7 +48,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.mongodb.morphia.query.Sort;
 
 /**
  * Builder class to build Materialized View of

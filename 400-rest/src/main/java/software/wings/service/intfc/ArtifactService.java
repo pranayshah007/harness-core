@@ -25,6 +25,7 @@ import software.wings.persistence.artifact.Artifact.ContentStatus;
 import software.wings.persistence.artifact.ArtifactFile;
 import software.wings.service.intfc.ownership.OwnedByArtifactStream;
 
+import dev.morphia.query.Query;
 import java.io.File;
 import java.util.Collection;
 import java.util.List;
@@ -32,7 +33,6 @@ import java.util.Map;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.query.Query;
 
 /**
  * The Interface ArtifactService.

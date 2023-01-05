@@ -22,6 +22,7 @@ import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
 
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
 import java.util.List;
 import java.util.Set;
 import javax.validation.constraints.NotNull;
@@ -35,7 +36,6 @@ import lombok.ToString;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
@@ -58,7 +58,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document("resourcegroups")
 @TypeAlias("resourcegroups")
 public class ResourceGroupDBO implements PersistentRegularIterable, AccessControlEntity {
-  @Setter @Id @org.mongodb.morphia.annotations.Id String id;
+  @Setter @Id @dev.morphia.annotations.Id String id;
   @EqualsAndHashCode.Include final String scopeIdentifier;
   @EqualsAndHashCode.Include @NotEmpty final String identifier;
   @EqualsAndHashCode.Include @NotEmpty final String name;

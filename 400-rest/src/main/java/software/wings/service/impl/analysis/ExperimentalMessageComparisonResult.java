@@ -28,6 +28,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.cloud.datastore.Datastore;
 import com.google.cloud.datastore.Key;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
 import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -36,8 +38,6 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
 
 @Data
 @Builder
@@ -73,7 +73,7 @@ public class ExperimentalMessageComparisonResult
   @Override
   public com.google.cloud.datastore.Entity convertToCloudStorageEntity(Datastore datastore) {
     Key taskKey = datastore.newKeyFactory()
-                      .setKind(this.getClass().getAnnotation(org.mongodb.morphia.annotations.Entity.class).value())
+                      .setKind(this.getClass().getAnnotation(dev.morphia.annotations.Entity.class).value())
                       .newKey(this.getUuid() == null ? generateUuid() : this.getUuid());
     com.google.cloud.datastore.Entity.Builder recordBuilder = com.google.cloud.datastore.Entity.newBuilder(taskKey);
     addFieldIfNotEmpty(recordBuilder, ExperimentalMessageComparisonResultKeys.cvConfigId, cvConfigId, false);

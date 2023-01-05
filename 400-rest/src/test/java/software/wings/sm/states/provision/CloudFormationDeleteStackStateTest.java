@@ -74,6 +74,7 @@ import software.wings.sm.WorkflowStandardParams;
 import software.wings.sm.WorkflowStandardParamsExtensionService;
 
 import com.google.common.collect.ImmutableMap;
+import dev.morphia.query.Query;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -84,7 +85,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.stubbing.Answer;
-import org.mongodb.morphia.query.Query;
 
 @OwnedBy(CDP)
 public class CloudFormationDeleteStackStateTest extends WingsBaseTest {

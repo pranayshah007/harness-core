@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.steps.SdkCoreStepUtils.createStepResponseFromChildResponse;
 
 import io.harness.beans.FeatureName;
+import io.harness.cdng.creator.plan.environment.EnvironmentStepsUtils;
 import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
 import io.harness.cdng.environment.filters.FilterType;
 import io.harness.cdng.environment.filters.FilterYaml;
@@ -28,6 +29,7 @@ import io.harness.cdng.service.beans.ServiceYamlV2;
 import io.harness.cdng.service.beans.ServicesMetadata;
 import io.harness.cdng.service.beans.ServicesYaml;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
 import io.harness.ng.core.common.beans.NGTag;
@@ -488,7 +490,7 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
       throw new InvalidYamlException("Expression could not be resolved for environments yaml");
     }
     List<EnvironmentYamlV2> environments = environmentsYaml.getValues().getValue();
-    return getEnvironmentsMap(environments);
+    return getEnvironmentsMap(environments, null);
   }
 
   private List<EnvironmentMapResponse> getEnvironmentsGroupMap(EnvironmentGroupYaml environmentGroupYaml) {
@@ -499,11 +501,11 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
     if (EmptyPredicate.isEmpty(environments)) {
       throw new InvalidYamlException("Expected a value of environmentRefs to be provided but found empty");
     }
-
-    return getEnvironmentsMap(environments);
+    return getEnvironmentsMap(environments,
+        EnvironmentStepsUtils.getScopeForRef((String) environmentGroupYaml.getEnvGroupRef().fetchFinalValue()));
   }
 
-  private List<EnvironmentMapResponse> getEnvironmentsMap(List<EnvironmentYamlV2> environments) {
+  private List<EnvironmentMapResponse> getEnvironmentsMap(List<EnvironmentYamlV2> environments, Scope envGroupScope) {
     if (EmptyPredicate.isEmpty(environments)) {
       throw new InvalidYamlException("No value of environment provided. Please provide atleast one value");
     }
@@ -512,14 +514,14 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
       EnvironmentMapResponseBuilder environmentMapResponseBuilder = EnvironmentMapResponse.builder();
       if (ParameterField.isNull(environmentYamlV2.getInfrastructureDefinitions())) {
         environmentMapResponseBuilder.environmentsMapList(MultiDeploymentSpawnerUtils.getMapFromEnvironmentYaml(
-            environmentYamlV2, environmentYamlV2.getInfrastructureDefinition().getValue()));
+            environmentYamlV2, environmentYamlV2.getInfrastructureDefinition().getValue(), envGroupScope));
       } else {
         if (environmentYamlV2.getInfrastructureDefinitions().getValue() == null) {
           throw new InvalidYamlException("No infrastructure definition provided. Please provide atleast one value");
         }
         for (InfraStructureDefinitionYaml infra : environmentYamlV2.getInfrastructureDefinitions().getValue()) {
           environmentMapResponseBuilder.environmentsMapList(
-              MultiDeploymentSpawnerUtils.getMapFromEnvironmentYaml(environmentYamlV2, infra));
+              MultiDeploymentSpawnerUtils.getMapFromEnvironmentYaml(environmentYamlV2, infra, envGroupScope));
         }
       }
       if (EmptyPredicate.isNotEmpty(environmentYamlV2.getServicesOverrides())) {

@@ -31,6 +31,7 @@ public class NextGenLogHealthSourceSpecTransformer
                                        -> QueryDefinition.builder()
                                               .name(cv.getQueryName())
                                               .query(cv.getQuery())
+                                              .groupName(cv.getGroupName())
                                               .identifier(cv.getQueryIdentifier())
                                               .queryParams(QueryParamsDTO.getQueryParamsDTO(cv.getQueryParams()))
                                               .build())

@@ -21,9 +21,9 @@ import software.wings.graphql.schema.type.aggregation.k8sLabel.QLK8sLabelFilter;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.query.FieldEnd;
+import dev.morphia.query.Query;
 import java.util.List;
-import org.mongodb.morphia.query.FieldEnd;
-import org.mongodb.morphia.query.Query;
 
 @Singleton
 @TargetModule(HarnessModule._375_CE_GRAPHQL)

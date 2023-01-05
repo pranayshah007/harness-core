@@ -33,6 +33,7 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.data.stepparameters.PmsStepParameters;
 import io.harness.pms.events.base.PmsEventCategory;
+import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.rule.Owner;
 import io.harness.tasks.BinaryResponseData;
@@ -96,7 +97,9 @@ public class RedisProgressEventPublisherTest extends OrchestrationTestBase {
             .interruptHistories(new ArrayList<>())
             .startTs(System.currentTimeMillis())
             .build();
-    when(nodeExecutionService.get(nodeExecution.getUuid())).thenReturn(nodeExecution);
+    when(
+        nodeExecutionService.getWithFieldsIncluded(nodeExecution.getUuid(), NodeProjectionUtils.fieldsForProgressEvent))
+        .thenReturn(nodeExecution);
     ProgressEvent progressEvent =
         ProgressEvent.newBuilder()
             .setAmbiance(nodeExecution.getAmbiance())

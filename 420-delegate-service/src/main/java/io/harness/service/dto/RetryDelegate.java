@@ -9,9 +9,9 @@ package io.harness.service.dto;
 
 import io.harness.beans.DelegateTask;
 
+import dev.morphia.query.Query;
 import lombok.Builder;
 import lombok.Value;
-import org.mongodb.morphia.query.Query;
 
 @Value
 @Builder

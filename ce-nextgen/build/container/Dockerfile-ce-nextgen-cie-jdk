@@ -38,3 +38,5 @@ RUN /opt/harness/inject-saas-apm-bins-into-dockerimage.sh && rm -rf /opt/harness
 USER root
 RUN microdnf install -y dnf yum \
 && microdnf clean all
+RUN yum install -y procps vim hostname tar gzip python3 iputils nc
+RUN pip3 install c7n

@@ -45,6 +45,7 @@ import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
+import dev.morphia.query.UpdateOperations;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -56,7 +57,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.MockitoAnnotations;
-import org.mongodb.morphia.query.UpdateOperations;
 
 public class CompositeSLOMetricAnalysisStateExecutorTest extends CvNextGenTestBase {
   @Inject Map<StateType, AnalysisStateExecutor> stateTypeAnalysisStateExecutorMap;

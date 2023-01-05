@@ -12,10 +12,10 @@ import io.harness.annotations.StoreIn;
 import io.harness.beans.EmbeddedUser;
 import io.harness.ng.DbAliases;
 
+import dev.morphia.annotations.Entity;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import lombok.EqualsAndHashCode;
-import org.mongodb.morphia.annotations.Entity;
 
 /**
  * Created by peeyushaggarwal on 3/22/17.

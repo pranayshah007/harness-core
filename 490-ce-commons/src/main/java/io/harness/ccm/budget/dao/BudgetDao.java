@@ -14,10 +14,10 @@ import io.harness.ccm.commons.entities.billing.Budget.BudgetKeys;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.util.List;
-import org.mongodb.morphia.query.FindOptions;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 public class BudgetDao {
   @Inject private HPersistence persistence;
@@ -71,6 +71,15 @@ public class BudgetDao {
                               .equal(accountId)
                               .field(BudgetKeys.name)
                               .equal(budgetName);
+    return query.asList();
+  }
+
+  public List<Budget> list(String accountId, List<String> budgetIds) {
+    Query<Budget> query = persistence.createQuery(Budget.class)
+                              .field(BudgetKeys.accountId)
+                              .equal(accountId)
+                              .field(BudgetKeys.uuid)
+                              .in(budgetIds);
     return query.asList();
   }
 
@@ -136,6 +145,9 @@ public class BudgetDao {
         && null != budget.getBudgetMonthlyBreakdown().getYearlyLastPeriodCost()) {
       updateOperations.set(BUDGET_MONTHLY_BREAKDOWN_YEARLY_LAST_PERIOD_COST,
           budget.getBudgetMonthlyBreakdown().getYearlyLastPeriodCost());
+    }
+    if (null != budget.getBudgetHistory()) {
+      updateOperations.set(BudgetKeys.budgetHistory, budget.getBudgetHistory());
     }
     persistence.update(query, updateOperations);
   }

@@ -10,6 +10,7 @@ package io.harness.ng.core.api;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.Scope;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.common.beans.ApiKeyType;
 import io.harness.ng.core.dto.ApiKeyAggregateDTO;
@@ -43,6 +44,8 @@ public interface ApiKeyService {
 
   long deleteAllByParentIdentifier(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       ApiKeyType apiKeyType, String parentIdentifier);
+
+  void deleteAtAllScopes(Scope scope);
 
   void validateParentIdentifier(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       ApiKeyType apiKeyType, String parentIdentifier);

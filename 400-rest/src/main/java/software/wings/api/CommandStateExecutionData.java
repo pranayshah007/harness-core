@@ -37,13 +37,13 @@ import software.wings.sm.StepExecutionSummary;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.inject.Inject;
+import dev.morphia.annotations.Transient;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.annotations.Transient;
 
 /**
  * Created by peeyushaggarwal on 6/17/16.

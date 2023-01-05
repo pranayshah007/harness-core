@@ -23,11 +23,6 @@ import static io.harness.ccm.views.entities.ViewFieldIdentifier.BUSINESS_MAPPING
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.CLUSTER;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.LABEL;
 import static io.harness.ccm.views.graphql.ViewsQueryHelper.getPerspectiveIdFromMetadataFilter;
-import static io.harness.ccm.views.service.impl.ViewsBillingServiceImpl.constructQLCEViewFilterFromViewIdCondition;
-import static io.harness.ccm.views.service.impl.ViewsBillingServiceImpl.convertIdFilterToViewCondition;
-import static io.harness.ccm.views.service.impl.ViewsBillingServiceImpl.convertQLCEViewRuleToViewRule;
-import static io.harness.ccm.views.service.impl.ViewsBillingServiceImpl.getIdFilters;
-import static io.harness.ccm.views.service.impl.ViewsBillingServiceImpl.getRuleFilters;
 import static io.harness.ccm.views.utils.ClusterTableKeys.CLUSTER_TABLE_HOURLY_AGGREGRATED;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.timescaledb.Tables.CE_RECOMMENDATIONS;
@@ -63,6 +58,7 @@ import io.harness.ccm.views.graphql.QLCEViewRule;
 import io.harness.ccm.views.graphql.QLCEViewTimeFilter;
 import io.harness.ccm.views.graphql.ViewsQueryBuilder;
 import io.harness.ccm.views.graphql.ViewsQueryHelper;
+import io.harness.ccm.views.helper.ViewParametersHelper;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.queryconverter.SQLConverter;
@@ -118,6 +114,7 @@ public class RecommendationsOverviewQueryV2 {
   @Inject private ViewsQueryBuilder viewsQueryBuilder;
   @Inject private BigQueryService bigQueryService;
   @Inject private BigQueryHelper bigQueryHelper;
+  @Inject private ViewParametersHelper viewParametersHelper;
   private static final Set<String> RECOMMENDATION_RESOURCE_TYPE_COLUMNS =
       ImmutableSet.of(WORKLOAD_NAME_FIELD_ID, INSTANCE_NAME_FIELD_ID, CLOUD_SERVICE_NAME_FIELD_ID);
   private static final Set<String> RECOMMENDATION_FILTER_COLUMNS = ImmutableSet.of(CLUSTER_NAME_FIELD_ID,
@@ -247,14 +244,16 @@ public class RecommendationsOverviewQueryV2 {
     final BigQuery bigQuery = bigQueryService.get();
     final List<QLCEViewTimeFilter> qlCEViewTimeFilters = viewsQueryHelper.getTimeFilters(perspectiveFilters);
 
-    final List<QLCEViewRule> qlCeViewRules = getRuleFilters(perspectiveFilters);
-    final List<ViewRule> combinedViewRuleList = convertQLCEViewRuleToViewRule(qlCeViewRules);
+    final List<QLCEViewRule> qlCeViewRules = viewParametersHelper.getRuleFilters(perspectiveFilters);
+    final List<ViewRule> combinedViewRuleList =
+        viewParametersHelper.convertQLCEViewRuleListToViewRuleList(qlCeViewRules);
     combinedViewRuleList.addAll(getPerspectiveRuleList(perspectiveFilters));
 
     Condition ORConditions =
         constructViewRuleFilterCondition(bigQuery, combinedViewRuleList, accountId, qlCEViewTimeFilters);
 
-    final List<ViewCondition> viewIdConditions = convertIdFilterToViewCondition(getIdFilters(perspectiveFilters));
+    final List<ViewCondition> viewIdConditions =
+        viewParametersHelper.convertIdFilterToViewCondition(viewParametersHelper.getIdFilters(perspectiveFilters));
 
     Condition ANDConditions = constructViewFilterCondition(bigQuery, viewIdConditions, accountId, qlCEViewTimeFilters);
 
@@ -395,7 +394,7 @@ public class RecommendationsOverviewQueryV2 {
   private TableResult getWorkloadAndCloudServiceNamesTableResult(final BigQuery bigQuery, final String accountId,
       final List<QLCEViewTimeFilter> qlCEViewTimeFilters, final ViewIdCondition idCondition) {
     final List<QLCEViewFilter> qlCEViewFilters =
-        Collections.singletonList(constructQLCEViewFilterFromViewIdCondition(idCondition));
+        Collections.singletonList(viewParametersHelper.constructQLCEViewFilterFromViewIdCondition(idCondition));
     final String cloudProviderTableName =
         bigQueryHelper.getCloudProviderTableName(accountId, CLUSTER_TABLE_HOURLY_AGGREGRATED);
     final SelectQuery query = viewsQueryBuilder.getWorkloadAndCloudServiceNamesForLabels(

@@ -25,6 +25,7 @@ import com.google.inject.name.Named;
 import com.mongodb.ReadPreference;
 import com.mongodb.Tag;
 import com.mongodb.TagSet;
+import java.util.Arrays;
 import org.springframework.data.mongodb.UncategorizedMongoDbException;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.guice.module.BeanFactoryProvider;
@@ -61,7 +62,8 @@ public abstract class PersistenceModule extends AbstractModule {
   protected MongoTemplate getAnalyticsMongoTemplate(MongoTemplate mongoTemplate, MongoConfig primaryMongoConfig) {
     HMongoTemplate template =
         new HMongoTemplate(mongoTemplate.getMongoDbFactory(), mongoTemplate.getConverter(), primaryMongoConfig);
-    template.setReadPreference(ReadPreference.secondaryPreferred(new TagSet(new Tag("nodeType", "ANALYTICS"))));
+    template.setReadPreference(ReadPreference.secondaryPreferred(Arrays.asList(
+        new TagSet(new Tag("nodeType", "ANALYTICS")), new TagSet(new Tag("nodeType", "ELECTABLE")), new TagSet())));
     return template;
   }
 

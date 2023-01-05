@@ -21,11 +21,11 @@ import software.wings.beans.dto.SettingAttribute;
 import software.wings.delegatetasks.DelegateLogService;
 
 import com.google.inject.Inject;
+import dev.morphia.annotations.Transient;
 import java.util.List;
 import java.util.Map;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.mongodb.morphia.annotations.Transient;
 
 /**
  * Created by brett on 11/18/17

@@ -16,12 +16,12 @@ import io.harness.persistence.HPersistence;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.Sort;
+import dev.morphia.query.UpdateOperations;
 import javax.cache.Cache;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.FindOptions;
-import org.mongodb.morphia.query.Sort;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @Singleton
 @Slf4j
@@ -38,7 +38,7 @@ public class DeploymentReconRecordRepository {
       return deploymentReconRecord;
     }
     FindOptions findOptions = new FindOptions();
-    findOptions.modifier("$hint", "accountId_entityClass_durationEndTs_sorted");
+    findOptions.hintString("accountId_entityClass_durationEndTs_sorted");
     try (HIterator<DeploymentReconRecord> iterator =
              new HIterator<>(persistence.createQuery(DeploymentReconRecord.class)
                                  .field(DeploymentReconRecordKeys.accountId)

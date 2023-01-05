@@ -18,9 +18,9 @@ import io.harness.persistence.HPersistence;
 import io.harness.utils.PageUtils;
 
 import com.google.inject.Inject;
+import dev.morphia.query.Sort;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.mongodb.morphia.query.Sort;
 
 public class UserJourneyServiceImpl implements UserJourneyService {
   @Inject private HPersistence hPersistence;

@@ -853,45 +853,6 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "IACMTerraformPlanInfo": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/CIStepInfo"
-        },
-        {
-          "type": "object",
-          "properties": {
-            "env": {
-              "oneOf": [
-                {
-                  "$ref": "#/definitions/ParameterFieldMapStringString"
-                },
-                {
-                  "type": "string"
-                }
-              ]
-            },
-            "mode": {
-              "type": "string"
-            },
-            "operation": {
-              "type": "string"
-            },
-            "tfVars": {
-              "oneOf": [
-                {
-                  "$ref": "#/definitions/ParameterFieldMapStringString"
-                },
-                {
-                  "type": "string"
-                }
-              ]
-            }
-          }
-        }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
     "InputSetValidator": {
       "type": "object",
       "properties": {

@@ -33,11 +33,11 @@ import software.wings.stencils.DefaultValue;
 
 import com.github.reinert.jjschema.Attributes;
 import com.google.inject.Inject;
+import dev.morphia.annotations.Transient;
 import java.util.Map;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.annotations.Transient;
 
 /*
    The barrier is a primitive that will allow for multiple workflows that run in parallel to get aligned on particular

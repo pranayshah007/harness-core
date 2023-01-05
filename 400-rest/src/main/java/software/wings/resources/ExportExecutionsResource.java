@@ -35,6 +35,7 @@ import software.wings.service.intfc.WorkflowExecutionService;
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import io.swagger.annotations.Api;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
@@ -46,7 +47,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import org.mongodb.morphia.query.Query;
 
 @OwnedBy(CDC)
 @Api(ExportExecutionsRequestHelper.EXPORT_EXECUTIONS_RESOURCE)

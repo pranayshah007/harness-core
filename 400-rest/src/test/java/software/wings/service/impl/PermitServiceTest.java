@@ -32,6 +32,7 @@ import software.wings.dl.WingsPersistence;
 import software.wings.service.intfc.PermitService;
 
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 import org.junit.Before;
@@ -39,7 +40,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mongodb.morphia.query.Query;
 
 public class PermitServiceTest extends WingsBaseTest {
   @InjectMocks @Inject private PermitService permitService;

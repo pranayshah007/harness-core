@@ -23,6 +23,7 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.account.services.AccountService;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.Scope;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
@@ -282,6 +283,21 @@ public class ApiKeyServiceImpl implements ApiKeyService {
     return apiKeyRepository
         .deleteAllByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndApiKeyTypeAndParentIdentifier(
             accountIdentifier, orgIdentifier, projectIdentifier, apiKeyType, parentIdentifier);
+  }
+
+  private Criteria createScopeCriteria(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    Criteria criteria = new Criteria();
+    criteria.and(ApiKeyKeys.accountIdentifier).is(accountIdentifier);
+    criteria.and(ApiKeyKeys.orgIdentifier).is(orgIdentifier);
+    criteria.and(ApiKeyKeys.projectIdentifier).is(projectIdentifier);
+    return criteria;
+  }
+
+  @Override
+  public void deleteAtAllScopes(Scope scope) {
+    Criteria criteria =
+        createScopeCriteria(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier());
+    apiKeyRepository.deleteAll(criteria);
   }
 
   @Override

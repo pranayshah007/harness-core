@@ -22,6 +22,7 @@ import software.wings.sm.StateType;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
+import dev.morphia.annotations.Entity;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -32,7 +33,6 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
 
 @Data
 @Builder

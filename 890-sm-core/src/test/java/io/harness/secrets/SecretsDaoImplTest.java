@@ -38,11 +38,11 @@ import software.wings.settings.SettingVariableTypes;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
+import dev.morphia.query.UpdateOperations;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mongodb.morphia.query.UpdateOperations;
 
 public class SecretsDaoImplTest extends SMCoreTestBase {
   @Inject private SecretsDaoImpl secretsDao;

@@ -16,10 +16,10 @@ import software.wings.beans.security.HarnessUserGroup;
 import software.wings.dl.WingsPersistence;
 
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import java.util.HashSet;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
 
 /**
  * Create single Harness user group with all members, delete existing groups

@@ -25,12 +25,12 @@ import io.harness.persistence.AccountAccess;
 import software.wings.security.PermissionAttribute.PermissionType;
 
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.PostLoad;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.PostLoad;
 
 @StoreIn(DbAliases.HARNESS)
 @Entity(value = "roles", noClassnameStored = true)

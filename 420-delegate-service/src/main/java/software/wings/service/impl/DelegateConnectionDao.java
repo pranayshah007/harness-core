@@ -27,6 +27,8 @@ import software.wings.beans.DelegateConnection.DelegateConnectionKeys;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.List;
@@ -34,8 +36,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.jooq.tools.StringUtils;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @Slf4j
 @Singleton

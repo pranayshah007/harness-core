@@ -48,6 +48,8 @@ import software.wings.service.intfc.trigger.TriggerExecutionService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.query.Criteria;
+import dev.morphia.query.Query;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -55,8 +57,6 @@ import java.util.concurrent.TimeUnit;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.query.Criteria;
-import org.mongodb.morphia.query.Query;
 
 @OwnedBy(CDC)
 @Singleton

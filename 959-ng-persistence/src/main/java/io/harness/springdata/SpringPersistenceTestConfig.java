@@ -17,11 +17,11 @@ import io.harness.mongo.MongoConfig;
 
 import com.google.inject.Injector;
 import com.mongodb.MongoClient;
+import dev.morphia.AdvancedDatastore;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.mongodb.morphia.AdvancedDatastore;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;

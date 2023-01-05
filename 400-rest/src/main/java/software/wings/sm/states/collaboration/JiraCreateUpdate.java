@@ -70,6 +70,7 @@ import software.wings.sm.states.mixin.SweepingOutputStateMixin;
 
 import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.inject.Inject;
+import dev.morphia.annotations.Transient;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.DateTimeException;
@@ -101,7 +102,6 @@ import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang3.StringUtils;
 import org.atteo.evo.inflector.English;
-import org.mongodb.morphia.annotations.Transient;
 
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)
@@ -629,8 +629,9 @@ public class JiraCreateUpdate extends State implements SweepingOutputStateMixin 
             -> Arrays.stream(jiraField.getAllowedValues().toArray())
                    .map(json -> (JSONObject) json)
                    .collect(toMap(ob
-                       -> ob.get(VALUE) != null ? ((String) ob.get(VALUE)).toLowerCase()
-                                                : ((String) ob.get("name")).toLowerCase(),
+                       -> (ob.get(VALUE) != null && !((String) ob.get(VALUE)).isEmpty())
+                           ? ((String) ob.get(VALUE)).toLowerCase()
+                           : ((String) ob.get("name")).toLowerCase(),
                        ob -> ob.get("id"), (id, duplicateId) -> {
                          throw new HarnessJiraException(
                              String.format(

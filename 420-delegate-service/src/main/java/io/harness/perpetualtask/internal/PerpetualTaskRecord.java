@@ -29,6 +29,8 @@ import io.harness.persistence.UuidAware;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -38,8 +40,6 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
 
 @Data
 @Builder
@@ -74,11 +74,17 @@ public class PerpetualTaskRecord
                  .field(PerpetualTaskRecordKeys.assignIteration)
                  .field(PerpetualTaskRecordKeys.assignAfterMs)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("assigned_delegate")
+                 .field(PerpetualTaskRecordKeys.accountId)
+                 .field(PerpetualTaskRecordKeys.state)
+                 .field(PerpetualTaskRecordKeys.delegateId)
+                 .build())
         .build();
   }
 
   @Id String uuid;
-  @FdIndex String accountId;
+  String accountId;
   String perpetualTaskType;
   PerpetualTaskClientContext clientContext;
   long intervalSeconds;

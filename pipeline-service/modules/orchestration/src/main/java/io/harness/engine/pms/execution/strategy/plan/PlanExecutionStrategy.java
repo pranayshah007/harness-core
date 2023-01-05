@@ -92,9 +92,9 @@ public class PlanExecutionStrategy implements NodeExecutionStrategy<Plan, PlanEx
       PlanExecution planExecution;
       PlanExecutionSettingResponse planExecutionSettingResponse =
           pipelineSettingsService.shouldQueuePlanExecution(accountId, ambiance.getMetadata().getPipelineIdentifier());
-      GovernanceMetadata governanceMetadata =
-          governanceService.evaluateGovernancePolicies(expandedPipelineJson, accountId, orgIdentifier,
-              projectIdentifier, OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_RUN, ambiance.getPlanExecutionId());
+      GovernanceMetadata governanceMetadata = governanceService.evaluateGovernancePolicies(expandedPipelineJson,
+          accountId, orgIdentifier, projectIdentifier, OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_RUN,
+          ambiance.getPlanExecutionId(), ambiance.getMetadata().getHarnessVersion());
 
       planExecution = createPlanExecution(ambiance, metadata, governanceMetadata, planExecutionSettingResponse);
       if (governanceMetadata.getDeny()) {

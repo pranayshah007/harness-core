@@ -110,10 +110,10 @@ public class DelegateServiceGrpcClient {
     this.isDriverInstalledInNgService = isDriverInstalledInNgService.getAsBoolean();
   }
 
-  public String submitAsyncTask(
-      DelegateTaskRequest taskRequest, DelegateCallbackToken delegateCallbackToken, Duration holdFor) {
+  public String submitAsyncTask(DelegateTaskRequest taskRequest, DelegateCallbackToken delegateCallbackToken,
+      Duration holdFor, Boolean selectionTrackingLogEnabled) {
     final SubmitTaskResponse submitTaskResponse =
-        submitTaskInternal(TaskMode.ASYNC, taskRequest, delegateCallbackToken, holdFor);
+        submitTaskInternal(TaskMode.ASYNC, taskRequest, delegateCallbackToken, holdFor, selectionTrackingLogEnabled);
     return submitTaskResponse.getTaskId().getId();
   }
 
@@ -127,7 +127,7 @@ public class DelegateServiceGrpcClient {
   public <T extends DelegateResponseData> T executeSyncTask(
       DelegateTaskRequest taskRequest, DelegateCallbackToken delegateCallbackToken) {
     final SubmitTaskResponse submitTaskResponse =
-        submitTaskInternal(TaskMode.SYNC, taskRequest, delegateCallbackToken, Duration.ZERO);
+        submitTaskInternal(TaskMode.SYNC, taskRequest, delegateCallbackToken, Duration.ZERO, false);
     final String taskId = submitTaskResponse.getTaskId().getId();
     return delegateSyncService.waitForTask(taskId,
         Strings.defaultIfEmpty(taskRequest.getTaskDescription(), taskRequest.getTaskType()),
@@ -153,7 +153,7 @@ public class DelegateServiceGrpcClient {
   public <T extends ResponseData> T executeSyncTaskReturningResponseData(
       DelegateTaskRequest taskRequest, DelegateCallbackToken delegateCallbackToken) {
     final SubmitTaskResponse submitTaskResponse =
-        submitTaskInternal(TaskMode.SYNC, taskRequest, delegateCallbackToken, Duration.ZERO);
+        submitTaskInternal(TaskMode.SYNC, taskRequest, delegateCallbackToken, Duration.ZERO, false);
     final String taskId = submitTaskResponse.getTaskId().getId();
     return delegateSyncService.waitForTask(taskId,
         Strings.defaultIfEmpty(taskRequest.getTaskDescription(), taskRequest.getTaskType()),
@@ -174,7 +174,7 @@ public class DelegateServiceGrpcClient {
       TaskSetupAbstractions taskSetupAbstractions, TaskLogAbstractions taskLogAbstractions, TaskDetails taskDetails,
       List<ExecutionCapability> capabilities, List<String> taskSelectors, Duration holdFor, boolean forceExecute,
       boolean executeOnHarnessHostedDelegates, List<String> eligibleToExecuteDelegateIds, boolean emitEvent,
-      String stageId) {
+      String stageId, Boolean selectionTrackingLogEnabled) {
     try {
       if (taskSetupAbstractions == null || taskSetupAbstractions.getValuesCount() == 0) {
         Map<String, String> setupAbstractions = new HashMap<>();
@@ -204,6 +204,8 @@ public class DelegateServiceGrpcClient {
       if (Strings.isNotBlank(stageId)) {
         submitTaskRequestBuilder.setStageId(stageId);
       }
+
+      submitTaskRequestBuilder.setSelectionTrackingLogEnabled(selectionTrackingLogEnabled);
 
       if (isNotEmpty(capabilities)) {
         submitTaskRequestBuilder.addAllCapabilities(
@@ -320,7 +322,7 @@ public class DelegateServiceGrpcClient {
   }
 
   private SubmitTaskResponse submitTaskInternal(TaskMode taskMode, DelegateTaskRequest taskRequest,
-      DelegateCallbackToken delegateCallbackToken, Duration holdFor) {
+      DelegateCallbackToken delegateCallbackToken, Duration holdFor, Boolean selectionTrackingLogEnabled) {
     final TaskParameters taskParameters = taskRequest.getTaskParameters();
 
     final List<ExecutionCapability> capabilities = (taskParameters instanceof ExecutionCapabilityDemander)
@@ -354,7 +356,7 @@ public class DelegateServiceGrpcClient {
             .build(),
         taskDetailsBuilder.build(), capabilities, taskRequest.getTaskSelectors(), holdFor, taskRequest.isForceExecute(),
         taskRequest.isExecuteOnHarnessHostedDelegates(), taskRequest.getEligibleToExecuteDelegateIds(),
-        taskRequest.isEmitEvent(), taskRequest.getStageId());
+        taskRequest.isEmitEvent(), taskRequest.getStageId(), selectionTrackingLogEnabled);
   }
 
   private SubmitTaskResponse submitTaskInternalV2(TaskMode taskMode, DelegateTaskRequest taskRequest,

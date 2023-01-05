@@ -21,10 +21,10 @@ import io.harness.persistence.HIterator;
 import io.harness.remote.client.CGRestUtils;
 
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;

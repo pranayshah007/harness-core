@@ -19,6 +19,7 @@ import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertNull;
 import static junit.framework.TestCase.assertTrue;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -126,7 +127,7 @@ public class RoleDaoImplTest extends AccessControlCoreTestBase {
     when(roleRepository.findAll(any(), any())).thenReturn(PageTestUtils.getPage(dbResult, dbResult.size()));
     when(scopeService.buildScopeFromScopeIdentifier(roleFilter.getScopeIdentifier()))
         .thenReturn(Scope.builder().level(TestScopeLevels.TEST_SCOPE).build());
-    PageResponse<Role> result = roleDao.list(pageRequest, roleFilter);
+    PageResponse<Role> result = roleDao.list(pageRequest, roleFilter, true);
     assertEquals(dbResult.size(), result.getContent().size());
     for (int i = 0; i < dbResult.size(); i++) {
       assertEquals(dbResult.get(i).getIdentifier(), result.getContent().get(i).getIdentifier());
@@ -155,7 +156,7 @@ public class RoleDaoImplTest extends AccessControlCoreTestBase {
         when(roleRepository.findAll(any(), any())).thenReturn(PageTestUtils.getPage(emptyList(), 0));
         when(scopeService.buildScopeFromScopeIdentifier(roleFilter.getScopeIdentifier()))
             .thenReturn(Scope.builder().level(TestScopeLevels.TEST_SCOPE).build());
-        roleDao.list(pageRequest, roleFilter);
+        roleDao.list(pageRequest, roleFilter, false);
         verify(roleRepository, times(invocations)).findAll(criteriaArgumentCaptor.capture(), any());
         assertFilterCriteria(roleFilterClone, criteriaArgumentCaptor);
       }
@@ -357,11 +358,11 @@ public class RoleDaoImplTest extends AccessControlCoreTestBase {
     ArgumentCaptor<Criteria> criteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
     ArgumentCaptor<Update> updateArgumentCaptor = ArgumentCaptor.forClass(Update.class);
     when(roleRepository.updateMulti(any(), any())).thenReturn(UpdateResult.acknowledged(17L, 17L, null));
-    doReturn(new Criteria()).when(roleDao).createCriteriaFromFilter(any());
+    doReturn(new Criteria()).when(roleDao).createCriteriaFromFilter(any(), eq(false));
 
     roleDao.addPermissionToRoles(permissionIdentifier, RoleFilter.builder().build());
 
-    verify(roleDao, times(1)).createCriteriaFromFilter(any());
+    verify(roleDao, times(1)).createCriteriaFromFilter(any(), eq(false));
     verify(roleRepository, times(1)).updateMulti(criteriaArgumentCaptor.capture(), updateArgumentCaptor.capture());
     Criteria criteria = criteriaArgumentCaptor.getValue();
     Document criteriaDocument = criteria.getCriteriaObject();
@@ -384,11 +385,11 @@ public class RoleDaoImplTest extends AccessControlCoreTestBase {
     ArgumentCaptor<Criteria> criteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
     ArgumentCaptor<Update> updateArgumentCaptor = ArgumentCaptor.forClass(Update.class);
     when(roleRepository.updateMulti(any(), any())).thenReturn(UpdateResult.acknowledged(17L, 17L, null));
-    doReturn(new Criteria()).when(roleDao).createCriteriaFromFilter(any());
+    doReturn(new Criteria()).when(roleDao).createCriteriaFromFilter(any(), eq(false));
 
     roleDao.removePermissionFromRoles(permissionIdentifier, RoleFilter.builder().build());
 
-    verify(roleDao, times(1)).createCriteriaFromFilter(any());
+    verify(roleDao, times(1)).createCriteriaFromFilter(any(), eq(false));
     verify(roleRepository, times(1)).updateMulti(criteriaArgumentCaptor.capture(), updateArgumentCaptor.capture());
     Criteria criteria = criteriaArgumentCaptor.getValue();
     Document criteriaDocument = criteria.getCriteriaObject();

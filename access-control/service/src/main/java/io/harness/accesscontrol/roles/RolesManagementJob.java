@@ -67,7 +67,7 @@ public class RolesManagementJob {
     RoleFilter roleFilter = RoleFilter.builder().managedFilter(ManagedFilter.ONLY_MANAGED).build();
 
     Set<Role> latestRoles = rolesConfig.getRoles();
-    Set<Role> currentRoles = new HashSet<>(roleService.list(pageRequest, roleFilter).getContent());
+    Set<Role> currentRoles = new HashSet<>(roleService.list(pageRequest, roleFilter, false).getContent());
     Set<Role> addedOrUpdatedRoles = Sets.difference(latestRoles, currentRoles);
 
     Set<String> latestIdentifiers = latestRoles.stream().map(Role::getIdentifier).collect(Collectors.toSet());

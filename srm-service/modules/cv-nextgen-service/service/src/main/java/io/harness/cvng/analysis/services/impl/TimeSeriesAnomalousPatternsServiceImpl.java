@@ -19,6 +19,8 @@ import io.harness.cvng.analysis.services.api.TimeSeriesAnomalousPatternsService;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
@@ -26,8 +28,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @Slf4j
 public class TimeSeriesAnomalousPatternsServiceImpl implements TimeSeriesAnomalousPatternsService {

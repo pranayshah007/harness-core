@@ -29,6 +29,7 @@ import software.wings.integration.IntegrationTestBase;
 import software.wings.integration.IntegrationTestUtils;
 
 import com.google.inject.Inject;
+import dev.morphia.Datastore;
 import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.After;
@@ -37,7 +38,6 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mongodb.morphia.Datastore;
 
 @OwnedBy(PL)
 public class LimitsEnforcementIntegrationTest extends IntegrationTestBase {

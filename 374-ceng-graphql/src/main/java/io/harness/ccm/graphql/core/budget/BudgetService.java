@@ -30,4 +30,5 @@ public interface BudgetService {
 
   BudgetData getBudgetTimeSeriesStats(Budget budget, BudgetBreakdown breakdown);
   void updateBudgetCosts(Budget budget);
+  void updateBudgetHistory(Budget budget);
 }

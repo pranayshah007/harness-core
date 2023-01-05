@@ -315,7 +315,7 @@ public class CurrencyPreferenceServiceImpl implements CurrencyPreferenceService 
       final @NonNull CloudServiceProvider cloudServiceProvider, final @NonNull Currency sourceCurrency) {
     Double conversionFactor = 1.0D;
     final Currency currency = ceMetadataRecordDao.getDestinationCurrency(accountId);
-    if (!Currency.NONE.equals(currency)) {
+    if (Currency.NONE != currency && currency != sourceCurrency) {
       try {
         final List<CurrencyConversionFactorData> userEnteredConversionFactors =
             getUserEnteredCurrencyConversionFactors(accountId);

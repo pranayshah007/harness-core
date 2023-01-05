@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.git.model.ChangeType;
+import io.harness.pms.pipeline.MoveConfigOperationType;
 import io.harness.pms.pipeline.PipelineEntity;
 
 import java.util.List;
@@ -75,4 +76,7 @@ public interface PMSPipelineRepositoryCustom {
   Long countFileInstances(String accountId, String repoURL, String filePath);
 
   List<String> findAllUniqueRepos(Criteria criteria);
+
+  PipelineEntity updatePipelineEntity(PipelineEntity pipelineEntity, Update pipelineUpdate, Criteria pipelineCriteria,
+      Update metadataUpdate, Criteria metadataCriteria, MoveConfigOperationType moveConfigOperationType);
 }

@@ -69,13 +69,14 @@ public class CIDelegateTaskExecutor {
 
     return Failsafe.with(retryPolicy).get(() -> {
       return delegateServiceGrpcClient.submitAsyncTask(
-          delegateTaskRequest, delegateCallbackTokenSupplier.get(), Duration.ZERO);
+          delegateTaskRequest, delegateCallbackTokenSupplier.get(), Duration.ZERO, false);
     });
   }
 
   public String queueTask(Map<String, String> setupAbstractions, HDelegateTask task, List<String> taskSelectors,
       List<String> eligibleToExecuteDelegateIds, boolean executeOnHarnessHostedDelegates, boolean emitEvent,
-      String stageExecutionId, LinkedHashMap<String, String> logStreamingAbstractions, long expressionFunctorToken) {
+      String stageExecutionId, LinkedHashMap<String, String> logStreamingAbstractions, long expressionFunctorToken,
+      Boolean selectionTrackingLogEnabled) {
     String accountId = task.getAccountId();
     TaskData taskData = task.getData();
     final DelegateTaskRequest delegateTaskRequest =
@@ -102,7 +103,7 @@ public class CIDelegateTaskExecutor {
 
     return Failsafe.with(retryPolicy).get(() -> {
       return delegateServiceGrpcClient.submitAsyncTask(
-          delegateTaskRequest, delegateCallbackTokenSupplier.get(), Duration.ZERO);
+          delegateTaskRequest, delegateCallbackTokenSupplier.get(), Duration.ZERO, selectionTrackingLogEnabled);
     });
   }
 

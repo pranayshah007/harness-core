@@ -38,6 +38,9 @@ public class EventPayloadFunctor implements LateBindingValue {
               .orElseThrow(()
                                -> new IllegalStateException(
                                    "PlanExecution metadata null for planExecutionId " + ambiance.getPlanExecutionId()));
+      if (planExecutionMetadata.getTriggerJsonPayload() == null) {
+        return null;
+      }
       return JsonPipelineUtils.read(planExecutionMetadata.getTriggerJsonPayload(), HashMap.class);
     } catch (IOException e) {
       throw new InvalidRequestException("Event payload could not be converted to a hashmap");

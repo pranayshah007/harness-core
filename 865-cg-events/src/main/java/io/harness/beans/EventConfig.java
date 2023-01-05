@@ -14,12 +14,12 @@ import io.harness.persistence.UuidAware;
 import io.harness.validation.Update;
 
 import com.github.reinert.jjschema.SchemaIgnore;
+import dev.morphia.annotations.Id;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Id;
 
 @Data
 @NoArgsConstructor

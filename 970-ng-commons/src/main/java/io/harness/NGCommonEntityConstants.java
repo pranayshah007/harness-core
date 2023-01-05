@@ -149,7 +149,6 @@ public class NGCommonEntityConstants {
   public static final String INFRA_IDENTIFIER = "infraIdentifier";
 
   public static final String CLUSTER_IDENTIFIER = "clusterIdentifier";
-
   public static final String INFRA = "infra";
   public static final String OVERRIDES_ONLY = "overridesOnly";
   public static final String RUNTIME_INPUTS_TEMPLATE = "Runtime inputs template YAML";
@@ -168,4 +167,5 @@ public class NGCommonEntityConstants {
   public static final String PARENT_JOB_NAME = "parentJobName";
   public static final String HARNESS_IMAGE = "harnessImage";
   public static final String METHOD_NAME = "methodName";
+  public static final String AGENT_KEY = "agentIdentifier";
 }

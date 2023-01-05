@@ -40,7 +40,7 @@ public class ServiceEntityYamlSchemaHelper {
 
   void validateSchema(String accountId, String yaml) {
     if (featureFlagHelperService.isEnabled(accountId, FeatureName.NG_SVC_ENV_REDESIGN)
-        && featureFlagHelperService.isEnabled(accountId, FeatureName.CDS_SERVICE_ENV_SCHEMA_VALIDATION)
+        && !featureFlagHelperService.isEnabled(accountId, FeatureName.DISABLE_CDS_SERVICE_ENV_SCHEMA_VALIDATION)
         && isNotEmpty(yaml)) {
       long start = System.currentTimeMillis();
       try {

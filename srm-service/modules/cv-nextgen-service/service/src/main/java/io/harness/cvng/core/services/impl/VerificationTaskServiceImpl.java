@@ -36,6 +36,7 @@ import io.harness.persistence.HQuery.QueryChecks;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.query.Query;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -48,7 +49,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.groovy.util.Maps;
-import org.mongodb.morphia.query.Query;
 
 @Singleton
 public class VerificationTaskServiceImpl implements VerificationTaskService {
