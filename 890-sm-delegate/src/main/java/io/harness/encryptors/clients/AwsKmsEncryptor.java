@@ -271,7 +271,7 @@ public class AwsKmsEncryptor implements KmsEncryptor {
       throws InvalidKeyException, BadPaddingException, NoSuchAlgorithmException, IllegalBlockSizeException,
              NoSuchPaddingException {
     long startTime = System.currentTimeMillis();
-    log.info("Decrypting secret {} with KMS secret manager '{}'", data.getUuid(), kmsConfig.getName());
+    log.info("DEBUG_CACHE: Decrypting secret {} with KMS secret manager '{}'", data.getName(), kmsConfig.getName());
     KmsEncryptionKeyCacheKey cacheKey = new KmsEncryptionKeyCacheKey(data.getUuid(), data.getEncryptionKey());
     // HAR-9752: Caching KMS encryption key to plain text key mapping to reduce KMS decrypt call volume.
     byte[] encryptedPlainTextKey = kmsEncryptionKeyCache.get(cacheKey, key -> {
@@ -300,7 +300,8 @@ public class AwsKmsEncryptor implements KmsEncryptor {
     byte[] plainTextKey = decryptPlainTextKey(encryptedPlainTextKey, cacheKey.uuid);
     String decrypted = decrypt(data.getEncryptedValue(), new SecretKeySpec(plainTextKey, "AES"));
 
-    log.info("Finished decrypting secret {} in {} ms.", data.getUuid(), System.currentTimeMillis() - startTime);
+    log.info(
+        "DEBUG_CACHE: Finished decrypting secret {} in {} ms.", data.getName(), System.currentTimeMillis() - startTime);
     return decrypted == null ? null : decrypted.toCharArray();
   }
 

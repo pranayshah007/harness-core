@@ -329,7 +329,7 @@ public class AwsSecretsManagerEncryptor implements VaultEncryptor {
       decryptedValue = secretValue.toCharArray();
     }
 
-    log.info("Done decrypting AWS secret {} in {}ms", secretName, System.currentTimeMillis() - startTime);
+    log.info("DEBUG_CACHE: Done decrypting AWS secret {} in {}ms", secretName, System.currentTimeMillis() - startTime);
     return decryptedValue;
   }
 

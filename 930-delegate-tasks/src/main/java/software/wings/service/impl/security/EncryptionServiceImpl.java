@@ -153,6 +153,9 @@ public class EncryptionServiceImpl implements EncryptionService {
 
   @Override
   public char[] getDecryptedValue(EncryptedDataDetail encryptedDataDetail, boolean fromCache) {
+    log.info("DEBUG_CACHE: fromCache: {} | type: {} | name: {}", fromCache,
+        encryptedDataDetail.getEncryptionConfig().getEncryptionType(),
+        encryptedDataDetail.getEncryptedData().getName());
     if (fromCache && encryptedDataDetail.getEncryptionConfig().getType() == CUSTOM) {
       return secretsDelegateCacheService.get(encryptedDataDetail.getIdentifier(),
           secretUniqueIdentifier -> getDecryptedValueInternal(encryptedDataDetail));

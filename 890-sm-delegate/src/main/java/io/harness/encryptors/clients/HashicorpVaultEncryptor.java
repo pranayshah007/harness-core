@@ -232,14 +232,14 @@ public class HashicorpVaultEncryptor implements VaultEncryptor {
     String fullPath =
         isEmpty(data.getPath()) ? getFullPath(vaultConfig.getBasePath(), data.getEncryptionKey()) : data.getPath();
     long startTime = System.currentTimeMillis();
-    log.info("Reading secret {} from vault {}", fullPath, vaultConfig.getVaultUrl());
+    log.info("DEBUG_CACHE: Reading secret {} from vault {}", fullPath, vaultConfig.getVaultUrl());
     String vaultToken = getToken(vaultConfig);
     String value = VaultRestClientFactory.create(vaultConfig)
                        .readSecret(String.valueOf(vaultToken), vaultConfig.getNamespace(),
                            vaultConfig.getSecretEngineName(), fullPath);
 
     if (isNotEmpty(value)) {
-      log.info("Done reading secret {} from vault {} in {} ms.", fullPath, vaultConfig.getVaultUrl(),
+      log.info("DEBUG_CACHE: Done reading secret {} from vault {} in {} ms.", fullPath, vaultConfig.getVaultUrl(),
           System.currentTimeMillis() - startTime);
       return value.toCharArray();
     } else {

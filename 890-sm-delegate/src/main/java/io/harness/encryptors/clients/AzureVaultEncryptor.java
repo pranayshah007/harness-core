@@ -324,7 +324,7 @@ public class AzureVaultEncryptor implements VaultEncryptor {
             format("Retrieving Secret from Azure Vault has failed with response code [%d]", response.getStatusCode()),
             AZURE_KEY_VAULT_OPERATION_ERROR, USER_SRE);
       }
-      log.info("Done decrypting Azure secret {} in {} ms", parsedSecretReference.getSecretName(),
+      log.info("DEBUG_CACHE: Done decrypting Azure secret {} in {} ms", parsedSecretReference.getSecretName(),
           System.currentTimeMillis() - startTime);
       if (response.getValue() == null || response.getValue().getValue() == null) {
         throw new AzureKeyVaultOperationException("Received null value for " + parsedSecretReference.getSecretName(),
