@@ -36,21 +36,21 @@ public class DecryptionHelperViaManager implements DecryptionHelper {
   }
 
   private void validateSecretManager(List<EncryptedDataDetail> encryptionDetails) {
-    List<String> customManagedSecrets = new ArrayList<>();
+    List<String> nonHarnessBuiltInManagedSecrets = new ArrayList<>();
     for (EncryptedDataDetail encryptedDataDetail : encryptionDetails) {
       EncryptedRecordData encryptedRecordData = encryptedDataDetail.getEncryptedData();
 
       if (encryptedRecordData.getEncryptionType() != EncryptionType.LOCAL) {
-        if (!customManagedSecrets.contains(encryptedRecordData.getName())) {
-          customManagedSecrets.add(encryptedRecordData.getName());
+        if (!nonHarnessBuiltInManagedSecrets.contains(encryptedRecordData.getName())) {
+          nonHarnessBuiltInManagedSecrets.add(encryptedRecordData.getName());
         }
       }
     }
 
-    if (!customManagedSecrets.isEmpty()) {
+    if (!nonHarnessBuiltInManagedSecrets.isEmpty()) {
       throw new InvalidRequestException(
-          "Connection via Harness Platform is not allowed if secrets are saved using Custom Secret Manager. Review the following secrets to use Connection via Harness Platform : "
-          + customManagedSecrets);
+          "Connection via Harness Platform is allowed only if secrets used to connect to the service are saved in Harness Built-in Secret Manager. Review the following secrets to use Connection via Harness Platform : "
+          + nonHarnessBuiltInManagedSecrets);
     }
   }
 }

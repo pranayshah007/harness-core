@@ -110,6 +110,15 @@ public final class InstanceData implements PersistentEntity, UuidAware, CreatedA
                  .field(InstanceDataKeys.instanceType)
                  .field(InstanceDataKeys.usageStartTime)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountId_clusterId_instanceState_usageStartTime_instanceId_usageStopTime")
+                 .field(InstanceDataKeys.accountId)
+                 .field(InstanceDataKeys.clusterId)
+                 .field(InstanceDataKeys.instanceState)
+                 .field(InstanceDataKeys.usageStartTime)
+                 .field(InstanceDataKeys.instanceId)
+                 .field(InstanceDataKeys.usageStopTime)
+                 .build())
         .build();
   }
 

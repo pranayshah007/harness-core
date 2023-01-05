@@ -10,6 +10,7 @@ package io.harness.entities;
 import io.harness.ChangeHandler;
 import io.harness.changehandlers.ProjectsChangeDataHandler;
 import io.harness.changehandlers.TagsInfoCDChangeDataHandler;
+import io.harness.changehandlers.TagsInfoNGCDChangeDataHandler;
 import io.harness.ng.core.entities.Project;
 
 import com.google.inject.Inject;
@@ -17,11 +18,14 @@ import com.google.inject.Inject;
 public class ProjectEntity implements CDCEntity<Project> {
   @Inject private ProjectsChangeDataHandler projectsChangeDataHandler;
   @Inject private TagsInfoCDChangeDataHandler tagsInfoCDChangeDataHandler;
+  @Inject private TagsInfoNGCDChangeDataHandler tagsInfoNGCDChangeDataHandler;
 
   @Override
   public ChangeHandler getChangeHandler(String handlerClass) {
     if (handlerClass.contentEquals("TagsInfoCD")) {
       return tagsInfoCDChangeDataHandler;
+    } else if (handlerClass.contentEquals("TagsInfoNGCD")) {
+      return tagsInfoNGCDChangeDataHandler;
     }
     return projectsChangeDataHandler;
   }

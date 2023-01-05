@@ -106,6 +106,8 @@ import io.harness.datahandler.services.AdminUserService;
 import io.harness.datahandler.services.AdminUserServiceImpl;
 import io.harness.datahandler.utils.AccountSummaryHelper;
 import io.harness.datahandler.utils.AccountSummaryHelperImpl;
+import io.harness.dataretention.LongerDataRetentionService;
+import io.harness.dataretention.LongerDataRetentionServiceImpl;
 import io.harness.delegate.DelegateConfigurationServiceProvider;
 import io.harness.delegate.DelegatePropertiesServiceProvider;
 import io.harness.delegate.beans.StartupMode;
@@ -1686,6 +1688,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(SecretsRBACService.class).to(SecretsRBACServiceImpl.class);
     bind(SecretsManagerRBACService.class).to(SecretsManagerRBACServiceImpl.class);
     bind(SecretManagementDelegateService.class).to(SecretManagementDelegateServiceImpl.class);
+    bind(LongerDataRetentionService.class).to(LongerDataRetentionServiceImpl.class);
 
     binder()
         .bind(VaultEncryptor.class)

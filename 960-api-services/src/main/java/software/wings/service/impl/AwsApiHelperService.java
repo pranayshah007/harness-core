@@ -341,7 +341,6 @@ public class AwsApiHelperService {
       return buildDetailsList;
 
     } catch (WingsException e) {
-      e.excludeReportTarget(AWS_ACCESS_DENIED, EVERYBODY);
       throw new InvalidArtifactServerException(ExceptionUtils.getMessage(e), USER);
     } catch (RuntimeException e) {
       throw new InvalidArtifactServerException(ExceptionUtils.getMessage(e), USER);

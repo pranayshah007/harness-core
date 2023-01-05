@@ -18,7 +18,9 @@ import io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType;
 import io.harness.mongo.iterator.filter.SpringFilterExpander;
 
 import com.mongodb.BasicDBObject;
+import com.mongodb.BulkWriteResult;
 import dev.morphia.query.FilterOperator;
+import dev.morphia.query.MorphiaIterator;
 import java.time.Duration;
 import java.util.List;
 import org.springframework.data.domain.Sort;
@@ -105,5 +107,17 @@ public class SpringPersistenceProvider<T extends PersistentIterable>
     Update updateEmpty = new Update();
     updateEmpty.unset(fieldName);
     persistence.updateFirst(new Query(Criteria.where(fieldName).size(0)), updateEmpty, clazz);
+  }
+
+  @Override
+  public MorphiaIterator<T, T> obtainNextInstances(
+      Class<T> clazz, String fieldName, SpringFilterExpander filterExpander, int limit) {
+    return null;
+  }
+
+  @Override
+  public BulkWriteResult bulkWriteDocumentsMatchingIds(
+      Class<T> clazz, List<String> ids, String fieldName, long base, Duration targetInterval) {
+    return null;
   }
 }

@@ -44,14 +44,16 @@ import org.apache.commons.lang3.StringUtils;
 @OwnedBy(CDP)
 @UtilityClass
 public class TerragruntCommandUtils {
+  public static final String ECHO_YES_WITH_PLACEHOLDER = "echo \"y\" | %s";
   public String init(String backendConfigFilePath, TerragruntRunType runType) {
     File backendConfigFile = null;
     if (StringUtils.isNotBlank(backendConfigFilePath)) {
       backendConfigFile = new File(backendConfigFilePath);
     }
 
-    String initCommand =
-        runType == TerragruntRunType.RUN_ALL ? TERRAGRUNT_RUN_ALL_INIT_COMMAND_FORMAT : TERRAGRUNT_INIT_COMMAND_FORMAT;
+    String initCommand = runType == TerragruntRunType.RUN_ALL
+        ? format(ECHO_YES_WITH_PLACEHOLDER, TERRAGRUNT_RUN_ALL_INIT_COMMAND_FORMAT)
+        : TERRAGRUNT_INIT_COMMAND_FORMAT;
     return format(initCommand,
         backendConfigFile != null && backendConfigFile.exists() ? format(" -backend-config=%s", backendConfigFilePath)
                                                                 : "");
@@ -96,7 +98,8 @@ public class TerragruntCommandUtils {
   }
 
   public String runAllOutput(String outputFilePath) {
-    return format(TERRAGRUNT_RUN_ALL_OUTPUT_COMMAND_FORMAT, outputFilePath);
+    String runAllOutputWithFilePath = format(TERRAGRUNT_RUN_ALL_OUTPUT_COMMAND_FORMAT, outputFilePath);
+    return format(ECHO_YES_WITH_PLACEHOLDER, runAllOutputWithFilePath);
   }
 
   public String show(boolean json, String planName) {

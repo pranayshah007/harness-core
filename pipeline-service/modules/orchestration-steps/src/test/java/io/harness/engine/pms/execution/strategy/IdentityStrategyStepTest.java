@@ -88,6 +88,7 @@ public class IdentityStrategyStepTest extends CategoryTest {
   public void testObtainChildren() {
     String originalNodeExecutionId = "originalNodeExecutionId";
     String PLAN_EXECUTION_ID = "PLAN_EXECUTION_ID";
+    String ORIGINAL_PLAN_EXECUTION_ID = "originalPlanExecutionId";
     Ambiance oldAmbiance = buildAmbiance();
     Ambiance ambiance = Ambiance.newBuilder()
                             .putSetupAbstractions(SetupAbstractionKeys.accountId, "accId")
@@ -128,6 +129,7 @@ public class IdentityStrategyStepTest extends CategoryTest {
     NodeExecution strategyNodeExecution =
         NodeExecution.builder()
             .uuid("originalNodeExecutionId")
+            .ambiance(Ambiance.newBuilder().setPlanExecutionId(ORIGINAL_PLAN_EXECUTION_ID).build())
             .executableResponse(
                 ExecutableResponse.newBuilder()
                     .setChildren(
@@ -149,7 +151,7 @@ public class IdentityStrategyStepTest extends CategoryTest {
     doReturn(iterator)
         .when(nodeExecutionService)
         .fetchChildrenNodeExecutionsIterator(
-            PLAN_EXECUTION_ID, originalNodeExecutionId, NodeProjectionUtils.fieldsForIdentityStrategyStep);
+            ORIGINAL_PLAN_EXECUTION_ID, originalNodeExecutionId, NodeProjectionUtils.fieldsForIdentityStrategyStep);
 
     ArgumentCaptor<List> identityNodesCaptor = ArgumentCaptor.forClass(List.class);
 
@@ -163,6 +165,7 @@ public class IdentityStrategyStepTest extends CategoryTest {
     strategyNodeExecution =
         NodeExecution.builder()
             .uuid("originalNodeExecutionId")
+            .ambiance(Ambiance.newBuilder().setPlanExecutionId(ORIGINAL_PLAN_EXECUTION_ID).build())
             .executableResponse(
                 ExecutableResponse.newBuilder()
                     .setChildren(
@@ -182,7 +185,7 @@ public class IdentityStrategyStepTest extends CategoryTest {
     doReturn(iterator)
         .when(nodeExecutionService)
         .fetchChildrenNodeExecutionsIterator(
-            PLAN_EXECUTION_ID, originalNodeExecutionId, NodeProjectionUtils.fieldsForIdentityStrategyStep);
+            ORIGINAL_PLAN_EXECUTION_ID, originalNodeExecutionId, NodeProjectionUtils.fieldsForIdentityStrategyStep);
 
     doReturn(strategyNodeExecution).when(nodeExecutionService).get(originalNodeExecutionId);
     response = identityStrategyStep.obtainChildren(ambiance, stepParameters, null);
@@ -195,6 +198,7 @@ public class IdentityStrategyStepTest extends CategoryTest {
     strategyNodeExecution =
         NodeExecution.builder()
             .uuid("originalNodeExecutionId")
+            .ambiance(Ambiance.newBuilder().setPlanExecutionId(ORIGINAL_PLAN_EXECUTION_ID).build())
             .executableResponse(
                 ExecutableResponse.newBuilder()
                     .setChildren(
@@ -213,7 +217,7 @@ public class IdentityStrategyStepTest extends CategoryTest {
     doReturn(iterator)
         .when(nodeExecutionService)
         .fetchChildrenNodeExecutionsIterator(
-            PLAN_EXECUTION_ID, originalNodeExecutionId, NodeProjectionUtils.fieldsForIdentityStrategyStep);
+            ORIGINAL_PLAN_EXECUTION_ID, originalNodeExecutionId, NodeProjectionUtils.fieldsForIdentityStrategyStep);
 
     doReturn(strategyNodeExecution).when(nodeExecutionService).get(originalNodeExecutionId);
     response = identityStrategyStep.obtainChildren(ambiance, stepParameters, null);

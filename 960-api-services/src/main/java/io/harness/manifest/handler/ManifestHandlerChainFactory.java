@@ -10,16 +10,13 @@ package io.harness.manifest.handler;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.manifest.request.ManifestRequest;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
 import java.util.function.BiFunction;
 
 @OwnedBy(CDP)
 public abstract class ManifestHandlerChainFactory<S> {
   private final S initialChainState;
-
   private ManifestHandler currentHandler;
   private ManifestHandler firstHandler;
 
@@ -27,8 +24,7 @@ public abstract class ManifestHandlerChainFactory<S> {
     this.initialChainState = initialChainState;
   }
 
-  public abstract ManifestHandler createHandler(
-      String manifestType, List<String> manifestContentList, Map<String, Object> overrideProperties);
+  public abstract ManifestHandler createHandler(String manifestType, ManifestRequest manifestRequest);
 
   public ManifestHandlerChainFactory<S> addHandler(ManifestHandler handler) {
     if (firstHandler == null) {
@@ -41,15 +37,9 @@ public abstract class ManifestHandlerChainFactory<S> {
     return this;
   }
 
-  public ManifestHandlerChainFactory<S> addHandler(
-      String manifestType, List<String> manifestContentList, Map<String, Object> overrideProperties) {
-    ManifestHandler handler = createHandler(manifestType, manifestContentList, overrideProperties);
+  public ManifestHandlerChainFactory<S> addHandler(String manifestType, ManifestRequest manifestRequest) {
+    ManifestHandler handler = createHandler(manifestType, manifestRequest);
     return addHandler(handler);
-  }
-
-  public ManifestHandlerChainFactory<S> addHandler(
-      String manifestType, String manifestContent, Map<String, Object> overrideProperties) {
-    return addHandler(manifestType, Arrays.asList(manifestContent), overrideProperties);
   }
 
   public S executeUpsert() {
@@ -58,6 +48,10 @@ public abstract class ManifestHandlerChainFactory<S> {
 
   public S executeDelete() {
     return processChain((handler, chainState) -> (S) handler.delete(chainState));
+  }
+
+  public S getContent() {
+    return processChain((handler, chainState) -> (S) handler.getManifestTypeContent(chainState));
   }
 
   private S processChain(BiFunction<ManifestHandler, S, S> callHandlerOperation) {

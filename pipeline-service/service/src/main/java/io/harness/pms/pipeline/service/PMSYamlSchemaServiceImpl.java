@@ -56,6 +56,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
@@ -362,7 +363,7 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
     Set<String> nameSpaces = new HashSet<>();
     JsonNode mergedDefinition = null;
     Map<String, JsonNode> finalNameSpaceToDefinitionMap = new HashMap<>();
-    if (StepCategory.STAGE.toString().equals(yamlGroup)) {
+    if (StepCategory.STAGE.toString().equals(yamlGroup) || StepCategory.STEP_GROUP.toString().equals(yamlGroup)) {
       List<ModuleType> enabledModules = obtainEnabledModules(accountId);
       enabledModules.add(ModuleType.PMS);
       yamlSchemaWithDetailsList = fetchSchemaWithDetailsFromModules(accountId, enabledModules);
@@ -412,11 +413,11 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
         finalNameSpaceToDefinitionMap.put(entry.getKey(), nameSpaceDefinition);
       }
     }
-    JsonNode jsonNode = schemaFetcher.fetchStepYamlSchema(
-        accountId, projectIdentifier, orgIdentifier, scope, entityType, yamlGroup, yamlSchemaWithDetailsList);
+    JsonNode jsonNode = schemaFetcher.fetchStepYamlSchema(accountId, projectIdentifier, orgIdentifier, scope,
+        entityType, getYamlGroup(yamlGroup), yamlSchemaWithDetailsList);
 
-    if (StepCategory.STAGE.toString().equals(yamlGroup)) {
-      String stepNameSpace = null;
+    String stepNameSpace = null;
+    if (StepCategory.STAGE.toString().equals(yamlGroup) || StepCategory.STEP_GROUP.toString().equals(yamlGroup)) {
       if (jsonNode.get(DEFINITIONS_NODE).fields().hasNext()) {
         String nameSpace = jsonNode.get(DEFINITIONS_NODE).fields().next().getKey();
         if (nameSpaces.contains(nameSpace)) {
@@ -449,7 +450,21 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
       JsonNode stepSpecTypeNode = getStepSpecType();
       JsonNodeUtils.merge(jsonNode.get(DEFINITIONS_NODE), stepSpecTypeNode);
     }
+
+    if (StepCategory.STEP_GROUP.toString().equals(yamlGroup)) {
+      // create new jsonNode schema for stepGroup
+      ObjectNode stepGroupSchema = new ObjectNode(JsonNodeFactory.instance);
+      stepGroupSchema.putIfAbsent("type", jsonNode.get("type"));
+      stepGroupSchema.putIfAbsent("$schema", jsonNode.get("$schema"));
+      stepGroupSchema.putIfAbsent("definitions", jsonNode.get("definitions"));
+      stepGroupSchema.putIfAbsent("properties", getStepGroupProperties(stepNameSpace));
+      return stepGroupSchema;
+    }
     return jsonNode;
+  }
+
+  private String getYamlGroup(String yamlGroup) {
+    return StepCategory.STEP_GROUP.toString().equals(yamlGroup) ? StepCategory.STAGE.toString() : yamlGroup;
   }
 
   // TODO: Brijesh to look at the intermittent issue and remove this
@@ -462,6 +477,25 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
     ObjectMapper mapper = new ObjectMapper();
     try {
       return mapper.readTree(stepSpecTypeNodeString);
+    } catch (JsonProcessingException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private JsonNode getStepGroupProperties(String namespace) {
+    if (EmptyPredicate.isNotEmpty(namespace)) {
+      namespace = namespace + "/";
+    }
+    String stepGroupProperties = "{\"properties\": {\n"
+        + "    \"stepGroup\": {\n"
+        + "      \"readOnly\": true,\n"
+        + "      \"$ref\": \"#/definitions/" + namespace + "StepGroupElementConfig\"\n"
+        + "    }\n"
+        + "  }\n"
+        + "}";
+    ObjectMapper mapper = new ObjectMapper();
+    try {
+      return mapper.readTree(stepGroupProperties);
     } catch (JsonProcessingException e) {
       throw new RuntimeException(e);
     }

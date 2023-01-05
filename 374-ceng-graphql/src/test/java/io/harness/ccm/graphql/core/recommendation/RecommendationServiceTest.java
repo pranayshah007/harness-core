@@ -29,6 +29,7 @@ import io.harness.timescaledb.Tables;
 import io.harness.timescaledb.tables.pojos.CeRecommendations;
 
 import com.google.common.collect.ImmutableList;
+import java.time.OffsetDateTime;
 import java.util.Collections;
 import java.util.List;
 import org.assertj.core.data.Offset;
@@ -55,11 +56,20 @@ public class RecommendationServiceTest extends CategoryTest {
 
   private static final CeRecommendations ceRecommendation = new CeRecommendations()
                                                                 .setId(ID)
-                                                                .setResourcetype(ResourceType.WORKLOAD.name())
-                                                                .setClustername(CLUSTER_NAME)
                                                                 .setName(NAME)
+                                                                .setNamespace(NAME)
                                                                 .setMonthlycost(MONTHLY_COST)
-                                                                .setMonthlysaving(MONTHLY_SAVING);
+                                                                .setMonthlysaving(MONTHLY_SAVING)
+                                                                .setClustername(CLUSTER_NAME)
+                                                                .setResourcetype(ResourceType.WORKLOAD.name())
+                                                                .setAccountid(ACCOUNT_ID)
+                                                                .setIsvalid(true)
+                                                                .setLastprocessedat(OffsetDateTime.now())
+                                                                .setUpdatedat(OffsetDateTime.now())
+                                                                .setJiraconnectorref("TestJiraConnector")
+                                                                .setJiraissuekey("TJI-0000")
+                                                                .setJirastatus("Todo")
+                                                                .setRecommendationstate("OPEN");
 
   @Test
   @Owner(developers = UTSAV)

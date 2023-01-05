@@ -6,7 +6,8 @@
     "threadPoolIntervalInSeconds": 60,
     "nextIterationMode": "TARGET",
     "targetIntervalInSeconds": 600,
-    "throttleIntervalInSeconds": 0
+    "throttleIntervalInSeconds": 0,
+    "iteratorMode": "PUMP"
   },
   {
     "name": "ArtifactCollection",
@@ -15,7 +16,8 @@
     "threadPoolIntervalInSeconds": 10,
     "nextIterationMode": "TARGET",
     "targetIntervalInSeconds": 60,
-    "throttleIntervalInSeconds": 0
+    "throttleIntervalInSeconds": 0,
+    "iteratorMode": "REDIS_BATCH"
   },
   {
     "name": "ArtifactCleanup",
@@ -24,7 +26,8 @@
     "threadPoolIntervalInSeconds": 300,
     "nextIterationMode": "TARGET",
     "targetIntervalInSeconds": 7200,
-    "throttleIntervalInSeconds": 0
+    "throttleIntervalInSeconds": 0,
+    "iteratorMode": "REDIS_BATCH"
   },
   {
     "name": "EventDelivery",
@@ -33,7 +36,8 @@
     "threadPoolIntervalInSeconds": 60,
     "nextIterationMode": "TARGET",
     "targetIntervalInSeconds": 5,
-    "throttleIntervalInSeconds": 0
+    "throttleIntervalInSeconds": 0,
+    "iteratorMode": "PUMP"
   },
   {
     "name": "InstanceSync",
@@ -42,7 +46,8 @@
     "threadPoolIntervalInSeconds": 30,
     "nextIterationMode": "TARGET",
     "targetIntervalInSeconds": 600,
-    "throttleIntervalInSeconds": 0
+    "throttleIntervalInSeconds": 0,
+    "iteratorMode": "PUMP"
   },
   {
     "name": "LicenseExpiryCheck",
@@ -51,7 +56,8 @@
     "threadPoolIntervalInSeconds": 30,
     "nextIterationMode": "TARGET",
     "targetIntervalInSeconds": 3600,
-    "throttleIntervalInSeconds": 0
+    "throttleIntervalInSeconds": 0,
+    "iteratorMode": "PUMP"
   },
   {
     "name": "ApprovalPolling",
@@ -60,7 +66,8 @@
     "threadPoolIntervalInSeconds": 10,
     "nextIterationMode": "TARGET",
     "targetIntervalInSeconds": 60,
-    "throttleIntervalInSeconds": 0
+    "throttleIntervalInSeconds": 0,
+    "iteratorMode": "PUMP"
   },
   {
     "name": "GCPBilling",
@@ -69,7 +76,8 @@
     "threadPoolIntervalInSeconds": 1800,
     "nextIterationMode": "TARGET",
     "targetIntervalInSeconds": 3600,
-    "throttleIntervalInSeconds": 0
+    "throttleIntervalInSeconds": 0,
+    "iteratorMode": "PUMP"
   },
   {
     "name": "SegmentGroupEventJob",
@@ -78,7 +86,8 @@
     "threadPoolIntervalInSeconds": 1800,
     "nextIterationMode": "TARGET",
     "targetIntervalInSeconds": 86400,
-    "throttleIntervalInSeconds": 0
+    "throttleIntervalInSeconds": 0,
+    "iteratorMode": "PUMP"
   },
   {
     "name": "BarrierInstanceMonitor",
@@ -87,7 +96,8 @@
     "threadPoolIntervalInSeconds": 60,
     "nextIterationMode": "TARGET",
     "targetIntervalInSeconds": 60,
-    "throttleIntervalInSeconds": 0
+    "throttleIntervalInSeconds": 0,
+    "iteratorMode": "PUMP"
   },
   {
     "name": "EntityAuditRecordProcessor",
@@ -96,7 +106,8 @@
     "threadPoolIntervalInSeconds": 30,
     "nextIterationMode": "TARGET",
     "targetIntervalInSeconds": 1800,
-    "throttleIntervalInSeconds": 0
+    "throttleIntervalInSeconds": 0,
+    "iteratorMode": "PUMP"
   },
   {
     "name": "UsageMetricsHandler",
@@ -105,7 +116,8 @@
     "threadPoolIntervalInSeconds": 30,
     "nextIterationMode": "TARGET",
     "targetIntervalInSeconds": 86400,
-    "throttleIntervalInSeconds": 0
+    "throttleIntervalInSeconds": 0,
+    "iteratorMode": "PUMP"
   },
   {
     "name": "ResourceConstraint-Backup",
@@ -114,7 +126,8 @@
     "threadPoolIntervalInSeconds": 60,
     "nextIterationMode": "TARGET",
     "targetIntervalInSeconds": 30,
-    "throttleIntervalInSeconds": 0
+    "throttleIntervalInSeconds": 0,
+    "iteratorMode": "PUMP"
   },
   {
     "name": "WorkflowExecutionMonitor",
@@ -123,7 +136,8 @@
     "threadPoolIntervalInSeconds": 10,
     "nextIterationMode": "TARGET",
     "targetIntervalInSeconds": 60,
-    "throttleIntervalInSeconds": 0
+    "throttleIntervalInSeconds": 0,
+    "iteratorMode": "PUMP"
   },
   {
     "name": "SettingAttributeValidateConnectivity",
@@ -132,7 +146,8 @@
     "threadPoolIntervalInSeconds": 600,
     "nextIterationMode": "TARGET",
     "targetIntervalInSeconds": 10800,
-    "throttleIntervalInSeconds": 0
+    "throttleIntervalInSeconds": 0,
+    "iteratorMode": "PUMP"
   },
   {
     "name": "VaultSecretManagerRenewalHandler",
@@ -141,7 +156,8 @@
     "threadPoolIntervalInSeconds": 5,
     "nextIterationMode": "TARGET",
     "targetIntervalInSeconds": 31,
-    "throttleIntervalInSeconds": 0
+    "throttleIntervalInSeconds": 0,
+    "iteratorMode": "PUMP"
   },
   {
     "name": "SettingAttributesSecretsMigrationHandler",
@@ -150,7 +166,8 @@
     "threadPoolIntervalInSeconds": 30,
     "nextIterationMode": "TARGET",
     "targetIntervalInSeconds": 1800,
-    "throttleIntervalInSeconds": 0
+    "throttleIntervalInSeconds": 0,
+    "iteratorMode": "PUMP"
   },
   {
     "name": "GitSyncEntityExpiryCheck",
@@ -159,7 +176,8 @@
     "threadPoolIntervalInSeconds": 600,
     "nextIterationMode": "TARGET",
     "targetIntervalInSeconds": 43200,
-    "throttleIntervalInSeconds": 0
+    "throttleIntervalInSeconds": 0,
+    "iteratorMode": "PUMP"
   },
   {
     "name": "ExportExecutionsRequestHandler",
@@ -168,7 +186,8 @@
     "threadPoolIntervalInSeconds": 60,
     "nextIterationMode": "TARGET",
     "targetIntervalInSeconds": 1800,
-    "throttleIntervalInSeconds": 0
+    "throttleIntervalInSeconds": 0,
+    "iteratorMode": "PUMP"
   },
   {
     "name": "ExportExecutionsRequestCleanupHandler",
@@ -177,7 +196,8 @@
     "threadPoolIntervalInSeconds": 3600,
     "nextIterationMode": "TARGET",
     "targetIntervalInSeconds": 2700,
-    "throttleIntervalInSeconds": 0
+    "throttleIntervalInSeconds": 0,
+    "iteratorMode": "PUMP"
   },
   {
     "name": "DeploymentFreezeActivities",
@@ -186,7 +206,8 @@
     "threadPoolIntervalInSeconds": 0,
     "nextIterationMode": "THROTTLE",
     "targetIntervalInSeconds": 0,
-    "throttleIntervalInSeconds": 45
+    "throttleIntervalInSeconds": 45,
+    "iteratorMode": "LOOP"
   },
   {
     "name": "DeploymentFreezeDeactivation",
@@ -195,7 +216,8 @@
     "threadPoolIntervalInSeconds": 0,
     "nextIterationMode": "THROTTLE",
     "targetIntervalInSeconds": 0,
-    "throttleIntervalInSeconds": 45
+    "throttleIntervalInSeconds": 45,
+    "iteratorMode": "LOOP"
   },
   {
     "name": "CeLicenceExpiryProcessor",
@@ -204,7 +226,8 @@
     "threadPoolIntervalInSeconds": 86400,
     "nextIterationMode": "TARGET",
     "targetIntervalInSeconds": 86400,
-    "throttleIntervalInSeconds": 0
+    "throttleIntervalInSeconds": 0,
+    "iteratorMode": "PUMP"
   },
   {
     "name": "DeleteAccountIterator",
@@ -213,7 +236,8 @@
     "threadPoolIntervalInSeconds": 60,
     "nextIterationMode": "TARGET",
     "targetIntervalInSeconds": 18000,
-    "throttleIntervalInSeconds": 0
+    "throttleIntervalInSeconds": 0,
+    "iteratorMode": "PUMP"
   },
   {
     "name": "DeletedEntityIterator",
@@ -222,7 +246,8 @@
     "threadPoolIntervalInSeconds": 60,
     "nextIterationMode": "TARGET",
     "targetIntervalInSeconds": 43200,
-    "throttleIntervalInSeconds": 0
+    "throttleIntervalInSeconds": 0,
+    "iteratorMode": "PUMP"
   },
   {
     "name": "ResourceLookupTagLinkSync",
@@ -231,7 +256,8 @@
     "threadPoolIntervalInSeconds": 43200,
     "nextIterationMode": "TARGET",
     "targetIntervalInSeconds": 43200,
-    "throttleIntervalInSeconds": 0
+    "throttleIntervalInSeconds": 0,
+    "iteratorMode": "PUMP"
   },
   {
     "name": "AccessRequestHandler",
@@ -240,7 +266,8 @@
     "threadPoolIntervalInSeconds": 5,
     "nextIterationMode": "TARGET",
     "targetIntervalInSeconds": 15,
-    "throttleIntervalInSeconds": 0
+    "throttleIntervalInSeconds": 0,
+    "iteratorMode": "PUMP"
   },
   {
     "name": "ScheduledTrigger",
@@ -249,7 +276,8 @@
     "threadPoolIntervalInSeconds": 0,
     "nextIterationMode": "THROTTLE",
     "targetIntervalInSeconds": 0,
-    "throttleIntervalInSeconds": 45
+    "throttleIntervalInSeconds": 45,
+    "iteratorMode": "LOOP"
   },
   {
     "name": "LdapGroupScheduled",
@@ -258,7 +286,8 @@
     "threadPoolIntervalInSeconds": 0,
     "nextIterationMode": "THROTTLE",
     "targetIntervalInSeconds": 0,
-    "throttleIntervalInSeconds": 45
+    "throttleIntervalInSeconds": 45,
+    "iteratorMode": "LOOP"
   },
   {
     "name": "EncryptedDataLocalToGcpKmsMigrationHandler",
@@ -267,7 +296,8 @@
     "threadPoolIntervalInSeconds": 30,
     "nextIterationMode": "TARGET",
     "targetIntervalInSeconds": 72000,
-    "throttleIntervalInSeconds": 0
+    "throttleIntervalInSeconds": 0,
+    "iteratorMode": "PUMP"
   },
   {
     "name": "TimeoutEngine",
@@ -276,7 +306,8 @@
     "threadPoolIntervalInSeconds": 10,
     "nextIterationMode": "TARGET",
     "targetIntervalInSeconds": 10,
-    "throttleIntervalInSeconds": 0
+    "throttleIntervalInSeconds": 0,
+    "iteratorMode": "LOOP"
   },
   {
     "name": "GitSyncPollingIterator",
@@ -285,7 +316,8 @@
     "threadPoolIntervalInSeconds": 60,
     "nextIterationMode": "TARGET",
     "targetIntervalInSeconds": 300,
-    "throttleIntervalInSeconds": 0
+    "throttleIntervalInSeconds": 0,
+    "iteratorMode": "PUMP"
   },
   {
     "name": "PerpetualTaskAssignment",
@@ -294,7 +326,8 @@
     "threadPoolIntervalInSeconds": 60,
     "nextIterationMode": "TARGET",
     "targetIntervalInSeconds": 60,
-    "throttleIntervalInSeconds": 0
+    "throttleIntervalInSeconds": 0,
+    "iteratorMode": "PUMP"
   },
   {
     "name": "DelegateDisconnectDetector",
@@ -303,7 +336,8 @@
     "threadPoolIntervalInSeconds": 60,
     "nextIterationMode": "TARGET",
     "targetIntervalInSeconds": 60,
-    "throttleIntervalInSeconds": 0
+    "throttleIntervalInSeconds": 0,
+    "iteratorMode": "PUMP"
   },
   {
     "name": "DelegateTaskFail",
@@ -312,7 +346,8 @@
     "threadPoolIntervalInSeconds": 30,
     "nextIterationMode": "TARGET",
     "targetIntervalInSeconds": 30,
-    "throttleIntervalInSeconds": 0
+    "throttleIntervalInSeconds": 0,
+    "iteratorMode": "PUMP"
   },
   {
     "name": "DelegateTelemetryPublisherIteration",
@@ -321,6 +356,7 @@
     "threadPoolIntervalInSeconds": 600,
     "nextIterationMode": "TARGET",
     "targetIntervalInSeconds": 86400,
-    "throttleIntervalInSeconds": 0
+    "throttleIntervalInSeconds": 0,
+    "iteratorMode": "PUMP"
   }
 ]

@@ -8,12 +8,15 @@
 package io.harness.plancreator.steps.internal;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.String.format;
+import static java.util.Objects.isNull;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
+import io.harness.common.NGExpressionUtils;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.filters.GenericStepPMSFilterJsonCreatorV2;
@@ -21,11 +24,12 @@ import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.exception.runtime.InvalidYamlRuntimeException;
 import io.harness.pms.filter.creation.FilterCreationResponse;
 import io.harness.pms.sdk.core.filter.creation.beans.FilterCreationContext;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.approval.step.harness.HarnessApprovalSpecParameters;
 import io.harness.steps.approval.step.harness.HarnessApprovalStepNode;
-import io.harness.steps.approval.step.harness.beans.ApproversDTO;
+import io.harness.steps.approval.step.harness.beans.Approvers;
 import io.harness.utils.IdentifierRefHelper;
 
 import com.google.common.collect.Sets;
@@ -53,11 +57,18 @@ public class HarnessApprovalStepFilterJsonCreatorV2 extends GenericStepPMSFilter
                                   .orgIdentifier(filterCreationContext.getSetupMetadata().getOrgId())
                                   .projectIdentifier(filterCreationContext.getSetupMetadata().getProjectId())
                                   .build();
-    List<String> userGroupsIds =
-        ApproversDTO.fromApprovers(harnessApprovalSpecParameters.getApprovers()).getUserGroups();
+    Approvers approvers = harnessApprovalSpecParameters.getApprovers();
+    if (isNull(approvers) || ParameterField.isNull(approvers.getUserGroups())
+        || approvers.getUserGroups().isExpression() || isEmpty(approvers.getUserGroups().getValue())) {
+      return FilterCreationResponse.builder().build();
+    }
+    List<String> userGroupsIds = approvers.getUserGroups().getValue();
     List<String> userGroupsIdsWithInvalidScope = new ArrayList<>();
     userGroupsIds.forEach(ug -> {
       try {
+        if (NGExpressionUtils.isRuntimeOrExpressionField(ug)) {
+          return;
+        }
         IdentifierRefHelper.validateEntityScopes(contextScopeLevel.getAccountIdentifier(),
             contextScopeLevel.getOrgIdentifier(), contextScopeLevel.getProjectIdentifier(), ug, "user group");
       } catch (InvalidRequestException ex) {

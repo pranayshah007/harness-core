@@ -9,6 +9,7 @@ package io.harness.aws.asg;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
 import static io.harness.threading.Morpheus.sleep;
@@ -17,6 +18,7 @@ import static software.wings.beans.LogColor.White;
 import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
 
+import static com.google.common.collect.Lists.newArrayList;
 import static java.lang.String.format;
 import static java.time.Duration.ofSeconds;
 
@@ -30,21 +32,56 @@ import io.harness.logging.LogCallback;
 
 import com.amazonaws.AmazonWebServiceClient;
 import com.amazonaws.services.autoscaling.AmazonAutoScalingClient;
+import com.amazonaws.services.autoscaling.model.AttachLoadBalancerTargetGroupsRequest;
+import com.amazonaws.services.autoscaling.model.AttachLoadBalancersRequest;
 import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.amazonaws.services.autoscaling.model.AutoScalingInstanceDetails;
 import com.amazonaws.services.autoscaling.model.CreateAutoScalingGroupRequest;
 import com.amazonaws.services.autoscaling.model.CreateAutoScalingGroupResult;
+import com.amazonaws.services.autoscaling.model.CreateOrUpdateTagsRequest;
 import com.amazonaws.services.autoscaling.model.DeleteAutoScalingGroupRequest;
+import com.amazonaws.services.autoscaling.model.DeleteLifecycleHookRequest;
+import com.amazonaws.services.autoscaling.model.DeletePolicyRequest;
+import com.amazonaws.services.autoscaling.model.DeleteTagsRequest;
 import com.amazonaws.services.autoscaling.model.DescribeAutoScalingGroupsRequest;
 import com.amazonaws.services.autoscaling.model.DescribeAutoScalingGroupsResult;
 import com.amazonaws.services.autoscaling.model.DescribeAutoScalingInstancesRequest;
 import com.amazonaws.services.autoscaling.model.DescribeAutoScalingInstancesResult;
+import com.amazonaws.services.autoscaling.model.DescribeInstanceRefreshesRequest;
+import com.amazonaws.services.autoscaling.model.DescribeInstanceRefreshesResult;
+import com.amazonaws.services.autoscaling.model.DescribeLaunchConfigurationsRequest;
+import com.amazonaws.services.autoscaling.model.DescribeLaunchConfigurationsResult;
+import com.amazonaws.services.autoscaling.model.DescribeLifecycleHooksRequest;
+import com.amazonaws.services.autoscaling.model.DescribeLoadBalancerTargetGroupsRequest;
+import com.amazonaws.services.autoscaling.model.DescribeLoadBalancerTargetGroupsResult;
+import com.amazonaws.services.autoscaling.model.DescribeLoadBalancersRequest;
+import com.amazonaws.services.autoscaling.model.DescribeLoadBalancersResult;
+import com.amazonaws.services.autoscaling.model.DescribePoliciesRequest;
+import com.amazonaws.services.autoscaling.model.DescribePoliciesResult;
+import com.amazonaws.services.autoscaling.model.DescribeTagsRequest;
+import com.amazonaws.services.autoscaling.model.DescribeTagsResult;
+import com.amazonaws.services.autoscaling.model.DetachLoadBalancerTargetGroupsRequest;
+import com.amazonaws.services.autoscaling.model.DetachLoadBalancersRequest;
+import com.amazonaws.services.autoscaling.model.Filter;
 import com.amazonaws.services.autoscaling.model.Instance;
+import com.amazonaws.services.autoscaling.model.InstanceRefresh;
+import com.amazonaws.services.autoscaling.model.LaunchConfiguration;
 import com.amazonaws.services.autoscaling.model.LaunchTemplateSpecification;
+import com.amazonaws.services.autoscaling.model.LifecycleHook;
+import com.amazonaws.services.autoscaling.model.LifecycleHookSpecification;
+import com.amazonaws.services.autoscaling.model.LoadBalancerState;
+import com.amazonaws.services.autoscaling.model.LoadBalancerTargetGroupState;
+import com.amazonaws.services.autoscaling.model.PutLifecycleHookRequest;
+import com.amazonaws.services.autoscaling.model.PutScalingPolicyRequest;
+import com.amazonaws.services.autoscaling.model.PutScalingPolicyResult;
+import com.amazonaws.services.autoscaling.model.RefreshPreferences;
+import com.amazonaws.services.autoscaling.model.ScalingPolicy;
+import com.amazonaws.services.autoscaling.model.StartInstanceRefreshRequest;
+import com.amazonaws.services.autoscaling.model.StartInstanceRefreshResult;
+import com.amazonaws.services.autoscaling.model.Tag;
+import com.amazonaws.services.autoscaling.model.TagDescription;
 import com.amazonaws.services.autoscaling.model.UpdateAutoScalingGroupRequest;
-import com.amazonaws.services.autoscaling.model.UpdateAutoScalingGroupResult;
 import com.amazonaws.services.ec2.AmazonEC2Client;
-import com.amazonaws.services.ec2.model.AmazonEC2Exception;
 import com.amazonaws.services.ec2.model.CreateLaunchTemplateRequest;
 import com.amazonaws.services.ec2.model.CreateLaunchTemplateResult;
 import com.amazonaws.services.ec2.model.CreateLaunchTemplateVersionRequest;
@@ -58,8 +95,11 @@ import com.google.common.util.concurrent.ExecutionError;
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
@@ -74,6 +114,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(CDP)
 public class AsgSdkManager {
   public static final int STEADY_STATE_INTERVAL_IN_SECONDS = 20;
+  private static final String INSTANCE_REFRESH_STATUS_SUCCESSFUL = "Successful";
   private static final String INSTANCE_STATUS_IN_SERVICE = "InService";
 
   private enum AwsClientType { EC2, ASG }
@@ -129,7 +170,7 @@ public class AsgSdkManager {
 
     CreateLaunchTemplateResult createLaunchTemplateResult =
         ec2Call(ec2Client -> ec2Client.createLaunchTemplate(createLaunchTemplateRequest));
-    info("Operation `%s` ended successfully", operationName);
+    infoBold("Operation `%s` ended successfully", operationName);
     return createLaunchTemplateResult.getLaunchTemplate();
   }
 
@@ -144,7 +185,7 @@ public class AsgSdkManager {
         return null;
       }
       return resultList.get(0);
-    } catch (AmazonEC2Exception e) {
+    } catch (InvalidRequestException e) {
       // AmazonEC2Exception is thrown if LaunchTemplate is not found
       return null;
     }
@@ -163,7 +204,7 @@ public class AsgSdkManager {
     info("Operation `%s` has started", operationName);
     CreateLaunchTemplateVersionResult createLaunchTemplateVersionResult =
         ec2Call(ec2Client -> ec2Client.createLaunchTemplateVersion(createLaunchTemplateVersionRequest));
-    info("Operation `%s` ended successfully", operationName);
+    infoBold("Operation `%s` ended successfully", operationName);
 
     return createLaunchTemplateVersionResult.getLaunchTemplateVersion();
   }
@@ -176,15 +217,207 @@ public class AsgSdkManager {
     return asgCall(asgClient -> asgClient.createAutoScalingGroup(createAutoScalingGroupRequest));
   }
 
-  // TODO
-  public UpdateAutoScalingGroupResult updateASG(String asgName, String launchTemplateVersion) {
+  public void updateASG(
+      String asgName, String launchTemplateVersion, CreateAutoScalingGroupRequest createAutoScalingGroupRequest) {
     LaunchTemplateSpecification launchTemplateSpecification =
         new LaunchTemplateSpecification().withLaunchTemplateName(asgName).withVersion(launchTemplateVersion);
 
-    UpdateAutoScalingGroupRequest request =
-        new UpdateAutoScalingGroupRequest().withAutoScalingGroupName(asgName).withLaunchTemplate(
-            launchTemplateSpecification);
-    return asgCall(asgClient -> asgClient.updateAutoScalingGroup(request));
+    UpdateAutoScalingGroupRequest updateAutoScalingGroupRequest =
+        createAsgRequestToUpdateAsgRequestMapper(createAutoScalingGroupRequest);
+
+    updateAutoScalingGroupRequest.setAutoScalingGroupName(asgName);
+    updateAutoScalingGroupRequest.setLaunchTemplate(launchTemplateSpecification);
+    asgCall(asgClient -> asgClient.updateAutoScalingGroup(updateAutoScalingGroupRequest));
+
+    updateTags(asgName, createAutoScalingGroupRequest);
+
+    updateLifecyleHooks(asgName, createAutoScalingGroupRequest);
+
+    updateLoadBalancers(asgName, createAutoScalingGroupRequest);
+
+    updateLoadBalancerTargetGroups(asgName, createAutoScalingGroupRequest);
+  }
+
+  private void updateTags(String asgName, CreateAutoScalingGroupRequest createAutoScalingGroupRequest) {
+    List<TagDescription> currentTagDescriptionsList = new ArrayList<>();
+    String nextToken = null;
+    Filter filter = new Filter().withName("auto-scaling-group").withValues(asgName);
+
+    do {
+      DescribeTagsRequest describeTagsRequest = new DescribeTagsRequest().withFilters(filter).withNextToken(nextToken);
+
+      DescribeTagsResult describeTagsResult = asgCall(asgClient -> asgClient.describeTags(describeTagsRequest));
+      if (isNotEmpty(describeTagsResult.getTags())) {
+        currentTagDescriptionsList.addAll(describeTagsResult.getTags());
+      }
+      nextToken = describeTagsResult.getNextToken();
+    } while (nextToken != null);
+
+    List<Tag> currentTagsList = new ArrayList<>();
+    if (isNotEmpty(currentTagDescriptionsList)) {
+      currentTagDescriptionsList.forEach(currentTagDescription -> {
+        Tag tagTemp = new Tag();
+        tagTemp.setKey(currentTagDescription.getKey());
+        tagTemp.setResourceId(currentTagDescription.getResourceId());
+        tagTemp.setResourceType(currentTagDescription.getResourceType());
+        tagTemp.setValue(currentTagDescription.getValue());
+        tagTemp.setPropagateAtLaunch(currentTagDescription.getPropagateAtLaunch());
+        currentTagsList.add(tagTemp);
+      });
+    }
+
+    if (isNotEmpty(currentTagsList)) {
+      DeleteTagsRequest deleteTagsRequest = new DeleteTagsRequest().withTags(currentTagsList);
+      asgCall(asgClient -> asgClient.deleteTags(deleteTagsRequest));
+    }
+
+    List<Tag> tags = createAutoScalingGroupRequest.getTags();
+    List<Tag> tagsList = new ArrayList<>();
+    if (isNotEmpty(tags)) {
+      tags.forEach(tag -> {
+        if (tag.getPropagateAtLaunch() == null) {
+          tag.setPropagateAtLaunch(true);
+        }
+        if (tag.getResourceId() == null) {
+          tag.setResourceId(asgName);
+        }
+        if (tag.getResourceType() == null) {
+          tag.setResourceType("auto-scaling-group");
+        }
+        tagsList.add(tag);
+      });
+    }
+
+    CreateOrUpdateTagsRequest createOrUpdateTagsRequest = new CreateOrUpdateTagsRequest();
+    createOrUpdateTagsRequest.setTags(tagsList);
+    asgCall(asgClient -> asgClient.createOrUpdateTags(createOrUpdateTagsRequest));
+  }
+
+  private void updateLifecyleHooks(String asgName, CreateAutoScalingGroupRequest createAutoScalingGroupRequest) {
+    DescribeLifecycleHooksRequest describeLifecycleHooksRequest = new DescribeLifecycleHooksRequest();
+    describeLifecycleHooksRequest.setAutoScalingGroupName(asgName);
+
+    List<LifecycleHook> lifecycleHooks =
+        (asgCall(asgClient -> asgClient.describeLifecycleHooks(describeLifecycleHooksRequest))).getLifecycleHooks();
+    if (isNotEmpty(lifecycleHooks)) {
+      lifecycleHooks.forEach(lifecycleHook -> {
+        DeleteLifecycleHookRequest deleteLifecycleHookRequest = new DeleteLifecycleHookRequest();
+        deleteLifecycleHookRequest.setLifecycleHookName(lifecycleHook.getLifecycleHookName());
+        deleteLifecycleHookRequest.setAutoScalingGroupName(asgName);
+        asgCall(asgClient -> asgClient.deleteLifecycleHook(deleteLifecycleHookRequest));
+      });
+    }
+
+    List<LifecycleHookSpecification> lifecycleHooksSpecificationList =
+        createAutoScalingGroupRequest.getLifecycleHookSpecificationList();
+    if (isNotEmpty(lifecycleHooksSpecificationList)) {
+      lifecycleHooksSpecificationList.forEach(lifecycleHookSpecification -> {
+        PutLifecycleHookRequest putLifecycleHookRequest = new PutLifecycleHookRequest();
+        putLifecycleHookRequest.setAutoScalingGroupName(asgName);
+        putLifecycleHookRequest.setLifecycleHookName(lifecycleHookSpecification.getLifecycleHookName());
+        putLifecycleHookRequest.setLifecycleTransition(lifecycleHookSpecification.getLifecycleTransition());
+        putLifecycleHookRequest.setDefaultResult(lifecycleHookSpecification.getDefaultResult());
+        putLifecycleHookRequest.setHeartbeatTimeout(lifecycleHookSpecification.getHeartbeatTimeout());
+        putLifecycleHookRequest.setNotificationTargetARN(lifecycleHookSpecification.getNotificationTargetARN());
+        putLifecycleHookRequest.setNotificationMetadata(lifecycleHookSpecification.getNotificationMetadata());
+        putLifecycleHookRequest.setRoleARN(lifecycleHookSpecification.getRoleARN());
+        asgCall(asgClient -> asgClient.putLifecycleHook(putLifecycleHookRequest));
+      });
+    }
+  }
+
+  private void updateLoadBalancers(String asgName, CreateAutoScalingGroupRequest createAutoScalingGroupRequest) {
+    List<LoadBalancerState> loadBalancerStates = new ArrayList<>();
+    String nextToken = null;
+    do {
+      DescribeLoadBalancersRequest describeloadBalancersRequest =
+          new DescribeLoadBalancersRequest().withAutoScalingGroupName(asgName).withNextToken(nextToken);
+
+      DescribeLoadBalancersResult describeLoadBalancersResult =
+          asgCall(asgClient -> asgClient.describeLoadBalancers(describeloadBalancersRequest));
+      if (isNotEmpty(describeLoadBalancersResult.getLoadBalancers())) {
+        loadBalancerStates.addAll(describeLoadBalancersResult.getLoadBalancers());
+      }
+      nextToken = describeLoadBalancersResult.getNextToken();
+    } while (nextToken != null);
+
+    if (isNotEmpty(loadBalancerStates)) {
+      loadBalancerStates.forEach(loadBalancerState -> {
+        DetachLoadBalancersRequest detachLoadBalancersRequest =
+            new DetachLoadBalancersRequest().withAutoScalingGroupName(asgName).withLoadBalancerNames(
+                loadBalancerState.getLoadBalancerName());
+        asgCall(asgClient -> asgClient.detachLoadBalancers(detachLoadBalancersRequest));
+      });
+    }
+
+    List<String> loadBalancerNames = createAutoScalingGroupRequest.getLoadBalancerNames();
+    if (isNotEmpty(loadBalancerNames)) {
+      loadBalancerNames.forEach(loadBalancerName -> {
+        AttachLoadBalancersRequest attachLoadBalancersRequest =
+            new AttachLoadBalancersRequest().withAutoScalingGroupName(asgName).withLoadBalancerNames(loadBalancerName);
+        asgCall(asgClient -> asgClient.attachLoadBalancers(attachLoadBalancersRequest));
+      });
+    }
+  }
+  private void updateLoadBalancerTargetGroups(
+      String asgName, CreateAutoScalingGroupRequest createAutoScalingGroupRequest) {
+    List<LoadBalancerTargetGroupState> loadBalancerTargetGroupStates = new ArrayList<>();
+    String nextToken = null;
+    do {
+      DescribeLoadBalancerTargetGroupsRequest describeLoadBalancerTargetGroupsRequest =
+          new DescribeLoadBalancerTargetGroupsRequest().withAutoScalingGroupName(asgName).withNextToken(nextToken);
+
+      DescribeLoadBalancerTargetGroupsResult describeLoadBalancerTargetGroupsResult =
+          asgCall(asgClient -> asgClient.describeLoadBalancerTargetGroups(describeLoadBalancerTargetGroupsRequest));
+      if (isNotEmpty(describeLoadBalancerTargetGroupsResult.getLoadBalancerTargetGroups())) {
+        loadBalancerTargetGroupStates.addAll(describeLoadBalancerTargetGroupsResult.getLoadBalancerTargetGroups());
+      }
+      nextToken = describeLoadBalancerTargetGroupsResult.getNextToken();
+    } while (nextToken != null);
+
+    if (isNotEmpty(loadBalancerTargetGroupStates)) {
+      loadBalancerTargetGroupStates.forEach(loadBalancerTargetGroupState -> {
+        DetachLoadBalancerTargetGroupsRequest detachLoadBalancerTargetGroupsRequest =
+            new DetachLoadBalancerTargetGroupsRequest().withAutoScalingGroupName(asgName).withTargetGroupARNs(
+                loadBalancerTargetGroupState.getLoadBalancerTargetGroupARN());
+        asgCall(asgClient -> asgClient.detachLoadBalancerTargetGroups(detachLoadBalancerTargetGroupsRequest));
+      });
+    }
+
+    List<String> targetGroupARNs = createAutoScalingGroupRequest.getTargetGroupARNs();
+    if (isNotEmpty(targetGroupARNs)) {
+      targetGroupARNs.forEach(targetGroupARN -> {
+        AttachLoadBalancerTargetGroupsRequest attachLoadBalancerTargetGroupsRequest =
+            new AttachLoadBalancerTargetGroupsRequest().withAutoScalingGroupName(asgName).withTargetGroupARNs(
+                targetGroupARN);
+        asgCall(asgClient -> asgClient.attachLoadBalancerTargetGroups(attachLoadBalancerTargetGroupsRequest));
+      });
+    }
+  }
+
+  public List<LifecycleHookSpecification> getLifeCycleHookSpecificationList(String asgName) {
+    DescribeLifecycleHooksRequest describeLifecycleHooksRequest = new DescribeLifecycleHooksRequest();
+    describeLifecycleHooksRequest.setAutoScalingGroupName(asgName);
+
+    List<LifecycleHook> lifecycleHooks =
+        (asgCall(asgClient -> asgClient.describeLifecycleHooks(describeLifecycleHooksRequest))).getLifecycleHooks();
+
+    List<LifecycleHookSpecification> lifecycleHookSpecificationList = new ArrayList<>();
+
+    if (isNotEmpty(lifecycleHooks)) {
+      lifecycleHooks.forEach(lifecycleHook -> {
+        LifecycleHookSpecification lifecycleHookSpecification = new LifecycleHookSpecification();
+        lifecycleHookSpecification.setLifecycleHookName(lifecycleHook.getLifecycleHookName());
+        lifecycleHookSpecification.setLifecycleTransition(lifecycleHook.getLifecycleTransition());
+        lifecycleHookSpecification.setDefaultResult(lifecycleHook.getDefaultResult());
+        lifecycleHookSpecification.setNotificationMetadata(lifecycleHook.getNotificationMetadata());
+        lifecycleHookSpecification.setNotificationTargetARN(lifecycleHook.getNotificationTargetARN());
+        lifecycleHookSpecification.setHeartbeatTimeout(lifecycleHook.getHeartbeatTimeout());
+        lifecycleHookSpecification.setRoleARN(lifecycleHook.getRoleARN());
+        lifecycleHookSpecificationList.add(lifecycleHookSpecification);
+      });
+    }
+    return lifecycleHookSpecificationList;
   }
 
   public AutoScalingGroup getASG(String asgName) {
@@ -276,6 +509,115 @@ public class AsgSdkManager {
       error(errorMessage);
       throw new InvalidRequestException(errorMessage, e);
     }
+  }
+
+  public StartInstanceRefreshResult startInstanceRefresh(
+      String asgName, Boolean skipMatching, Integer instanceWarmup, Integer minimumHealthyPercentage) {
+    StartInstanceRefreshRequest startInstanceRefreshRequest =
+        new StartInstanceRefreshRequest().withAutoScalingGroupName(asgName).withPreferences(
+            new RefreshPreferences()
+                .withSkipMatching(skipMatching)
+                .withInstanceWarmup(instanceWarmup)
+                .withMinHealthyPercentage(minimumHealthyPercentage));
+
+    return asgCall(asgClient -> asgClient.startInstanceRefresh(startInstanceRefreshRequest));
+  }
+
+  public boolean checkInstanceRefreshReady(String asgName, String instanceRefreshId) {
+    DescribeInstanceRefreshesRequest describeInstanceRefreshesRequest =
+        new DescribeInstanceRefreshesRequest()
+            .withInstanceRefreshIds(Arrays.asList(instanceRefreshId))
+            .withAutoScalingGroupName(asgName);
+
+    DescribeInstanceRefreshesResult describeInstanceRefreshesResult =
+        asgCall(asgClient -> asgClient.describeInstanceRefreshes(describeInstanceRefreshesRequest));
+    List<InstanceRefresh> instanceRefreshList = describeInstanceRefreshesResult.getInstanceRefreshes();
+
+    Set<String> statuses = instanceRefreshList.stream().map(InstanceRefresh::getStatus).collect(Collectors.toSet());
+    return statuses.size() == 1 && statuses.contains(INSTANCE_REFRESH_STATUS_SUCCESSFUL);
+  }
+
+  public void waitInstanceRefreshSteadyState(String asgName, String instanceRefreshId, String operationName) {
+    info("Waiting for operation `%s` to reach steady state", operationName);
+    info("Polling every %d seconds", STEADY_STATE_INTERVAL_IN_SECONDS);
+    try {
+      HTimeLimiter.callInterruptible(timeLimiter, Duration.ofMinutes(steadyStateTimeOutInMinutes), () -> {
+        while (!checkInstanceRefreshReady(asgName, instanceRefreshId)) {
+          sleep(ofSeconds(STEADY_STATE_INTERVAL_IN_SECONDS));
+        }
+        return true;
+      });
+    } catch (ExecutionException | UncheckedExecutionException | ExecutionError e) {
+      String errorMessage = format("Exception while waiting for steady state for `%s` operation. Error message: [%s]",
+          operationName, e.getMessage());
+      error(errorMessage);
+      throw new InvalidRequestException(errorMessage, e.getCause());
+    } catch (TimeoutException | InterruptedException e) {
+      String errorMessage = format("Timed out while waiting for steady state for `%s` operation", operationName);
+      error(errorMessage);
+      throw new InvalidRequestException(errorMessage, e);
+    } catch (Exception e) {
+      String errorMessage = format("Exception while waiting for steady state for `%s` operation. Error message: [%s]",
+          operationName, e.getMessage());
+      error(errorMessage);
+      throw new InvalidRequestException(errorMessage, e);
+    }
+  }
+
+  public List<ScalingPolicy> listAllScalingPoliciesOfAsg(String asgName) {
+    List<ScalingPolicy> scalingPolicies = newArrayList();
+    String nextToken = null;
+    do {
+      DescribePoliciesRequest request =
+          new DescribePoliciesRequest().withAutoScalingGroupName(asgName).withNextToken(nextToken);
+      DescribePoliciesResult result = asgCall(asgClient -> asgClient.describePolicies(request));
+
+      if (isNotEmpty(result.getScalingPolicies())) {
+        scalingPolicies.addAll(result.getScalingPolicies());
+      }
+      nextToken = result.getNextToken();
+    } while (nextToken != null);
+    return scalingPolicies;
+  }
+
+  public void clearAllScalingPoliciesForAsg(String asgName) {
+    List<ScalingPolicy> scalingPolicies = listAllScalingPoliciesOfAsg(asgName);
+    if (isEmpty(scalingPolicies)) {
+      logCallback.saveExecutionLog(format("No policies found attached to Asg: [%s]", asgName));
+      return;
+    }
+    scalingPolicies.forEach(scalingPolicy -> {
+      DeletePolicyRequest deletePolicyRequest =
+          new DeletePolicyRequest().withAutoScalingGroupName(asgName).withPolicyName(scalingPolicy.getPolicyARN());
+      asgCall(asgClient -> asgClient.deletePolicy(deletePolicyRequest));
+    });
+  }
+
+  public void attachScalingPoliciesToAsg(String asgName, List<PutScalingPolicyRequest> putScalingPolicyRequestList) {
+    if (putScalingPolicyRequestList.isEmpty()) {
+      logCallback.saveExecutionLog(format("No scaling policy found which should be attached to Asg: %s", asgName));
+      return;
+    }
+    putScalingPolicyRequestList.forEach(putScalingPolicyRequest -> {
+      putScalingPolicyRequest.setAutoScalingGroupName(asgName);
+      PutScalingPolicyResult putScalingPolicyResult =
+          asgCall(asgClient -> asgClient.putScalingPolicy(putScalingPolicyRequest));
+      logCallback.saveExecutionLog(format("Attached policy with Arn: %s", putScalingPolicyResult.getPolicyARN()));
+    });
+  }
+
+  public LaunchConfiguration getLaunchConfiguration(String asgName) {
+    DescribeLaunchConfigurationsRequest describeLaunchConfigurationsRequest = new DescribeLaunchConfigurationsRequest();
+    describeLaunchConfigurationsRequest.setLaunchConfigurationNames(Collections.singleton(asgName));
+    DescribeLaunchConfigurationsResult describeLaunchConfigurationsResult =
+        asgCall(asgClient -> asgClient.describeLaunchConfigurations(describeLaunchConfigurationsRequest));
+    return describeLaunchConfigurationsResult.getLaunchConfigurations().get(0);
+  }
+
+  private UpdateAutoScalingGroupRequest createAsgRequestToUpdateAsgRequestMapper(
+      CreateAutoScalingGroupRequest createAutoScalingGroupRequest) {
+    String createAutoScalingGroupRequestContent = AsgContentParser.toString(createAutoScalingGroupRequest, true);
+    return AsgContentParser.parseJson(createAutoScalingGroupRequestContent, UpdateAutoScalingGroupRequest.class, false);
   }
 
   public void info(String msg, Object... params) {

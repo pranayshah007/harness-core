@@ -7,7 +7,7 @@
 
 package io.harness.event.timeseries.processor.instanceeventprocessor.instancereconservice;
 
-import io.harness.beans.FeatureName;
+import io.harness.dataretention.LongerDataRetentionService;
 import io.harness.event.timeseries.processor.EventProcessor;
 import io.harness.event.timeseries.processor.instanceeventprocessor.InstanceEventAggregator;
 import io.harness.event.timeseries.processor.utils.DateUtils;
@@ -15,9 +15,9 @@ import io.harness.exception.InstanceAggregationException;
 import io.harness.exception.InstanceMigrationException;
 import io.harness.timescaledb.TimeScaleDBService;
 
+import software.wings.beans.datatretention.LongerDataRetentionState;
 import software.wings.graphql.datafetcher.DataFetcherUtils;
 import software.wings.service.impl.event.timeseries.TimeSeriesBatchEventInfo;
-import software.wings.utils.FFUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -40,7 +40,7 @@ public class InstanceReconServiceImpl implements IInstanceReconService {
   @Inject private TimeScaleDBService timeScaleDBService;
   @Inject private DataFetcherUtils utils;
   @Inject private InstanceEventAggregator instanceEventAggregator;
-  @Inject private FFUtils ffUtils;
+  @Inject LongerDataRetentionService longerDataRetentionService;
 
   /**
    * Do data migration of existing instance stats data into aggregated form
@@ -120,9 +120,9 @@ public class InstanceReconServiceImpl implements IInstanceReconService {
         log.info("INSTANCE_DATA_MIGRATION_SUCCESS for account : {}", accountId);
         try {
           // Disable data migration for the account
-          ffUtils.updateFeatureFlagForAccount(
-              FeatureName.CUSTOM_DASHBOARD_ENABLE_CRON_INSTANCE_DATA_MIGRATION, accountId, false);
-          log.info("Instance data migration cron feature flag disabled for account : {}", accountId);
+          longerDataRetentionService.updateLongerDataRetentionState(
+              LongerDataRetentionState.INSTANCE_LONGER_RETENTION, true, accountId);
+          log.info("Instance data migration cron state disabled for account : {}", accountId);
         } catch (Exception exception) {
           String errorLog =
               String.format("Error while disabling instance data migration cron for account id : [%s]", accountId);

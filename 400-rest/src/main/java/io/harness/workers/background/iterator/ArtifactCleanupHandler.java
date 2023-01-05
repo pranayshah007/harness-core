@@ -46,6 +46,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ArtifactCleanupHandler extends IteratorPumpModeHandler implements Handler<ArtifactStream> {
   public static final String GROUP = "ARTIFACT_STREAM_CRON_GROUP";
+  private static final int ACCEPTABLE_NO_ALERT_DELAY = 15;
 
   @Inject private AccountService accountService;
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
@@ -65,7 +66,7 @@ public class ArtifactCleanupHandler extends IteratorPumpModeHandler implements H
                            .clazz(ArtifactStream.class)
                            .fieldName(ArtifactStreamKeys.nextCleanupIteration)
                            .targetInterval(targetInterval)
-                           .acceptableNoAlertDelay(ofMinutes(15))
+                           .acceptableNoAlertDelay(ofMinutes(ACCEPTABLE_NO_ALERT_DELAY))
                            .handler(this)
                            .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
                            .filterExpander(query
@@ -76,6 +77,26 @@ public class ArtifactCleanupHandler extends IteratorPumpModeHandler implements H
                            .schedulingType(REGULAR)
                            .persistenceProvider(persistenceProvider)
                            .redistribute(true));
+  }
+
+  @Override
+  public void createAndStartRedisBatchIterator(
+      PersistenceIteratorFactory.RedisBatchExecutorOptions executorOptions, Duration targetInterval) {
+    persistenceIteratorFactory.createRedisBatchIteratorWithDedicatedThreadPool(executorOptions,
+        ArtifactCleanupHandler.class,
+        MongoPersistenceIterator.<ArtifactStream, MorphiaFilterExpander<ArtifactStream>>builder()
+            .clazz(ArtifactStream.class)
+            .fieldName(ArtifactStreamKeys.nextCleanupIteration)
+            .targetInterval(targetInterval)
+            .acceptableNoAlertDelay(ofMinutes(ACCEPTABLE_NO_ALERT_DELAY))
+            .handler(this)
+            .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
+            .persistenceProvider(persistenceProvider)
+            .filterExpander(query
+                -> query.field(ArtifactStreamKeys.artifactStreamType)
+                       .in(DelegateArtifactCollectionUtils.SUPPORTED_ARTIFACT_CLEANUP_LIST)
+                       .field(ArtifactStreamKeys.collectionEnabled)
+                       .in(Arrays.asList(true, null))));
   }
 
   @Override

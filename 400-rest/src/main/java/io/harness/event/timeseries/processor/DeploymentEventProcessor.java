@@ -8,15 +8,16 @@
 package io.harness.event.timeseries.processor;
 
 import io.harness.beans.FeatureName;
+import io.harness.dataretention.LongerDataRetentionService;
 import io.harness.event.timeseries.processor.utils.DateUtils;
 import io.harness.exception.DeploymentMigrationException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.timescaledb.DBUtils;
 import io.harness.timescaledb.TimeScaleDBService;
 
+import software.wings.beans.datatretention.LongerDataRetentionState;
 import software.wings.graphql.datafetcher.DataFetcherUtils;
 import software.wings.service.impl.event.timeseries.TimeSeriesEventInfo;
-import software.wings.utils.FFUtils;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
@@ -90,7 +91,7 @@ public class DeploymentEventProcessor implements EventProcessor<TimeSeriesEventI
   @Inject private TimeScaleDBService timeScaleDBService;
   @Inject DataFetcherUtils utils;
   @Inject private FeatureFlagService featureFlagService;
-  @Inject private FFUtils ffUtils;
+  @Inject private LongerDataRetentionService longerDataRetentionService;
 
   @Override
   public void processEvent(TimeSeriesEventInfo eventInfo) {
@@ -217,8 +218,8 @@ public class DeploymentEventProcessor implements EventProcessor<TimeSeriesEventI
         log.info("DEPLOYMENT_DATA_MIGRATION_SUCCESS for account : {}", accountId);
         try {
           // Disable deployment data migration cron for the account
-          ffUtils.updateFeatureFlagForAccount(
-              FeatureName.CUSTOM_DASHBOARD_ENABLE_CRON_DEPLOYMENT_DATA_MIGRATION, accountId, false);
+          longerDataRetentionService.updateLongerDataRetentionState(
+              LongerDataRetentionState.DEPLOYMENT_LONGER_RETENTION, true, accountId);
           log.info("Deployment data migration feature flag disabled for account : {}", accountId);
         } catch (Exception exception) {
           String errorLog =

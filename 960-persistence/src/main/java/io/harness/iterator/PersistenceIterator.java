@@ -13,7 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 
 @OwnedBy(PL)
 public interface PersistenceIterator<T extends PersistentIterable> {
-  enum ProcessMode { LOOP, PUMP }
+  enum ProcessMode { LOOP, PUMP, REDIS_BATCH }
 
   void wakeup();
   void process();

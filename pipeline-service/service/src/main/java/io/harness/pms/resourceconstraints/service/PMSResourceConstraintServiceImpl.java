@@ -40,6 +40,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
@@ -64,26 +65,28 @@ public class PMSResourceConstraintServiceImpl implements PMSResourceConstraintSe
       throw new InvalidRequestException(String.format(NOT_FOUND_WITH_ARGUMENTS, accountId));
     }
 
-    List<ResourceRestraintInstance> instances =
-        resourceRestraintInstanceService.getAllByRestraintIdAndResourceUnitAndStates(
-            resourceConstraint.getUuid(), resourceUnit, Arrays.asList(ACTIVE, BLOCKED));
-    instances.sort(Comparator.comparingInt(ResourceRestraintInstance::getOrder));
+    try (AutoLogContext ignore1 = createAutoLogContext(accountId, resourceUnit)) {
+      List<ResourceRestraintInstance> instances =
+          resourceRestraintInstanceService.getAllByRestraintIdAndResourceUnitAndStates(
+              resourceConstraint.getUuid(), resourceUnit, Arrays.asList(ACTIVE, BLOCKED));
+      instances.sort(Comparator.comparingInt(ResourceRestraintInstance::getOrder));
 
-    // WE NEED TO KEEP THE RELATION BETWEEN releaseEntityId AND planExecutionId TO USE
-    // AFTER GET ALL CURRENT EXECUTIONS
-    Map<String, String> rrInstanceMap = instances.stream().collect(
-        Collectors.toMap(ResourceRestraintInstance::getReleaseEntityId, this::getPlanExecutionId, (m1, m2) -> m1));
+      // WE NEED TO KEEP THE RELATION BETWEEN releaseEntityId AND planExecutionId TO USE
+      // AFTER GET ALL CURRENT EXECUTIONS
+      Map<String, String> rrInstanceMap = instances.stream().collect(
+          Collectors.toMap(ResourceRestraintInstance::getReleaseEntityId, this::getPlanExecutionId, (m1, m2) -> m1));
 
-    Map<String, PlanExecution> planExecutionMap =
-        planExecutionService.findAllByPlanExecutionIdIn(new ArrayList<>(rrInstanceMap.values()))
-            .stream()
-            .collect(Collectors.toMap(PlanExecution::getUuid, Function.identity()));
+      Map<String, PlanExecution> planExecutionMap =
+          planExecutionService.findAllByPlanExecutionIdIn(new ArrayList<>(rrInstanceMap.values()))
+              .stream()
+              .collect(Collectors.toMap(PlanExecution::getUuid, Function.identity()));
 
-    return ResourceConstraintExecutionInfoDTO.builder()
-        .name(resourceConstraint.getName())
-        .capacity(resourceConstraint.getCapacity())
-        .resourceConstraints(createResourceConstraintDetails(instances, planExecutionMap, rrInstanceMap))
-        .build();
+      return ResourceConstraintExecutionInfoDTO.builder()
+          .name(resourceConstraint.getName())
+          .capacity(resourceConstraint.getCapacity())
+          .resourceConstraints(createResourceConstraintDetails(instances, planExecutionMap, rrInstanceMap))
+          .build();
+    }
   }
 
   /**
@@ -97,7 +100,8 @@ public class PMSResourceConstraintServiceImpl implements PMSResourceConstraintSe
         return nodeExecution.getAmbiance().getPlanExecutionId();
 
       } catch (InvalidRequestException e) {
-        log.error(String.format("Not found node execution of resource constraint [instance=%s]", instance), e);
+        log.error(
+            String.format("Not found node execution of resource constraint [id=%s]", instance.getReleaseEntityId()), e);
       }
     }
     return instance.getReleaseEntityId();
@@ -115,6 +119,11 @@ public class PMSResourceConstraintServiceImpl implements PMSResourceConstraintSe
     return instances.stream()
         .map(instance -> {
           PlanExecution planExecution = planExecutionMap.get(rrInstanceMap.get(instance.getReleaseEntityId()));
+          if (planExecution == null) {
+            log.warn("The planExecution not found using releaseEntityId: {} [planExecutionMap={},rrInstanceMap={}]",
+                instance.getReleaseEntityId(), planExecutionMap.keySet(), rrInstanceMap);
+            return null;
+          }
           return ResourceConstraintDetailDTO.builder()
               .pipelineName(getPipelineName(cache, planExecution))
               .pipelineIdentifier(planExecution.getMetadata().getPipelineIdentifier())
@@ -126,6 +135,7 @@ public class PMSResourceConstraintServiceImpl implements PMSResourceConstraintSe
               .orgIdentifier(SetupAbstractionUtils.getOrgIdentifier(planExecution.getSetupAbstractions()))
               .build();
         })
+        .filter(Objects::nonNull)
         .collect(Collectors.toList());
   }
 
@@ -157,5 +167,9 @@ public class PMSResourceConstraintServiceImpl implements PMSResourceConstraintSe
       log.warn("An error occurs when resource constraint try access the pipeline entity", e);
     }
     return PipelineEntity.builder().build();
+  }
+
+  private AutoLogContext createAutoLogContext(String accountId, String resourceUnit) {
+    return new AutoLogContext(Map.of("accountId", accountId, "resourceUnit", resourceUnit), OVERRIDE_ERROR);
   }
 }

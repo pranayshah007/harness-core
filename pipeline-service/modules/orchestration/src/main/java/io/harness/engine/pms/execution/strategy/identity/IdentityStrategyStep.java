@@ -48,12 +48,15 @@ public class IdentityStrategyStep implements ChildrenExecutable<IdentityStepPara
   @Override
   public ChildrenExecutableResponse obtainChildren(
       Ambiance ambiance, IdentityStepParameters stepParameters, StepInputPackage inputPackage) {
-    NodeExecution strategyNodeExecution = nodeExecutionService.getWithFieldsIncluded(
+    NodeExecution originalStrategyNodeExecution = nodeExecutionService.getWithFieldsIncluded(
         stepParameters.getOriginalNodeExecutionId(), NodeProjectionUtils.fieldsForIdentityStrategyStep);
     List<NodeExecution> childrenNodeExecutions = new ArrayList<>();
     try (CloseableIterator<NodeExecution> iterator =
-             nodeExecutionService.fetchChildrenNodeExecutionsIterator(ambiance.getPlanExecutionId(),
-                 stepParameters.getOriginalNodeExecutionId(), NodeProjectionUtils.fieldsForIdentityStrategyStep)) {
+             // Use original planExecutionId that belongs to the originalNodeExecutionId and not current
+             // planExecutionId(ambiance.getPlanExecutionId)
+        nodeExecutionService.fetchChildrenNodeExecutionsIterator(
+            originalStrategyNodeExecution.getAmbiance().getPlanExecutionId(),
+            stepParameters.getOriginalNodeExecutionId(), NodeProjectionUtils.fieldsForIdentityStrategyStep)) {
       while (iterator.hasNext()) {
         NodeExecution next = iterator.next();
         // Don't want to include retried nodeIds
@@ -64,11 +67,12 @@ public class IdentityStrategyStep implements ChildrenExecutable<IdentityStepPara
     }
 
     String childNodeId =
-        strategyNodeExecution.getExecutableResponses().get(0).getChildren().getChildren(0).getChildNodeId();
+        originalStrategyNodeExecution.getExecutableResponses().get(0).getChildren().getChildren(0).getChildNodeId();
 
     List<ChildrenExecutableResponse.Child> children =
         getChildrenFromNodeExecutions(childrenNodeExecutions, childNodeId, ambiance.getPlanId());
-    long maxConcurrency = strategyNodeExecution.getExecutableResponses().get(0).getChildren().getMaxConcurrency();
+    long maxConcurrency =
+        originalStrategyNodeExecution.getExecutableResponses().get(0).getChildren().getMaxConcurrency();
 
     return ChildrenExecutableResponse.newBuilder().addAllChildren(children).setMaxConcurrency(maxConcurrency).build();
   }

@@ -49,6 +49,7 @@ public interface VerificationTaskService {
   String getSLIVerificationTaskId(String accountId, String sliId);
   String getCompositeSLOVerificationTaskId(String accountId, String sloId);
   List<String> getSLIVerificationTaskIds(String accountId, List<String> sliIds);
+  VerificationTask getLiveMonitoringTask(String accountId, String cvConfigId);
   VerificationTask getSLITask(String accountId, String sliId);
   VerificationTask getCompositeSLOTask(String accountId, String sloId);
   List<String> getServiceGuardVerificationTaskIds(String accountId, List<String> cvConfigIds);

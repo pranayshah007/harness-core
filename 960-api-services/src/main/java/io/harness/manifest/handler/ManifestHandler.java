@@ -8,50 +8,40 @@
 package io.harness.manifest.handler;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.manifest.request.ManifestRequest;
 
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.Setter;
 
 @OwnedBy(CDP)
 public abstract class ManifestHandler<M, S> {
-  private final List<M> manifestList;
+  private ManifestRequest manifestRequest;
 
   @Getter @Setter protected ManifestHandler nextHandler;
 
-  protected ManifestHandler(List<String> manifestContentList, Map<String, Object> overrideProperties) {
-    this.manifestList = createManifests(manifestContentList, overrideProperties);
+  protected ManifestHandler(ManifestRequest manifestRequest) {
+    this.manifestRequest = manifestRequest;
   }
 
   public abstract Class<M> getManifestContentUnmarshallClass();
-  public abstract void applyOverrideProperties(List<M> manifests, Map<String, Object> overrideProperties);
-  public abstract S upsert(S chainState, List<M> manifests);
-  public abstract S delete(S chainState, List<M> manifests);
+  public abstract S upsert(S chainState, ManifestRequest manifestRequest);
+  public abstract S delete(S chainState, ManifestRequest manifestRequest);
+  public abstract S getManifestTypeContent(S chainState, ManifestRequest manifestRequest);
 
   public S upsert(S chainState) {
-    return this.upsert(chainState, manifestList);
+    return this.upsert(chainState, manifestRequest);
   }
 
   public S delete(S chainState) {
-    return this.delete(chainState, manifestList);
-  }
-
-  protected List<M> createManifests(List<String> manifestContentList, Map<String, Object> overrideProperties) {
-    List<M> manifests = manifestContentList.stream().map(this::parseContentToManifest).collect(Collectors.toList());
-
-    if (isNotEmpty(overrideProperties)) {
-      applyOverrideProperties(manifests, overrideProperties);
-    }
-
-    return manifests;
+    return this.delete(chainState, manifestRequest);
   }
 
   protected M parseContentToManifest(String manifestContent) {
     return DefaultManifestContentParser.parseJson(manifestContent, getManifestContentUnmarshallClass());
+  }
+  public S getManifestTypeContent(S chainState) {
+    return this.getManifestTypeContent(chainState, manifestRequest);
   }
 }
