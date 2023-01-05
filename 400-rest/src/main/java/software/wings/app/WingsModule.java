@@ -529,6 +529,8 @@ import software.wings.service.impl.instance.InstanceSyncPerpetualTaskService;
 import software.wings.service.impl.instance.InstanceSyncPerpetualTaskServiceImpl;
 import software.wings.service.impl.instance.ServerlessDashboardServiceImpl;
 import software.wings.service.impl.instance.ServerlessInstanceServiceImpl;
+import software.wings.service.impl.instance.backup.InstanceSyncPTBackupService;
+import software.wings.service.impl.instance.backup.InstanceSyncPTBackupServiceImpl;
 import software.wings.service.impl.instance.licensing.InstanceLimitProviderImpl;
 import software.wings.service.impl.instance.licensing.InstanceUsageLimitCheckerImpl;
 import software.wings.service.impl.instance.licensing.InstanceUsageLimitExcessHandlerImpl;
@@ -1029,6 +1031,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(DashboardStatisticsService.class).to(DashboardStatisticsServiceImpl.class);
     bind(InstanceService.class).to(InstanceServiceImpl.class);
     bind(InstanceSyncPerpetualTaskService.class).to(InstanceSyncPerpetualTaskServiceImpl.class);
+    bind(InstanceSyncPTBackupService.class).to(InstanceSyncPTBackupServiceImpl.class);
     bind(InstanceHandlerFactoryService.class).to(InstanceHandlerFactory.class);
     bind(BuildSourceService.class).to(BuildSourceServiceImpl.class);
     bind(ServiceVariableService.class).to(ServiceVariableServiceImpl.class);
