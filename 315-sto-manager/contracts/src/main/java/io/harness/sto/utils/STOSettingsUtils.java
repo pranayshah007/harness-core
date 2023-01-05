@@ -41,6 +41,7 @@ import io.harness.beans.steps.stepinfo.security.shared.STOYamlZapToolData;
 import io.harness.exception.ngexception.CIStageExecutionUserException;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.sto.variables.STOYamlAuthType;
+import io.harness.yaml.sto.variables.STOYamlFailOnSeverity;
 import io.harness.yaml.sto.variables.STOYamlGenericConfig;
 import io.harness.yaml.sto.variables.STOYamlImageType;
 import io.harness.yaml.sto.variables.STOYamlLogLevel;
@@ -134,6 +135,10 @@ public final class STOSettingsUtils {
 
       map.put(getSTOKey("product_auth_type"),
           authType != null ? authType.getYamlName() : STOYamlAuthType.API_KEY.getYamlName());
+
+      Boolean authSsl = resolveBooleanParameter(authData.getSsl(), Boolean.TRUE);
+
+      map.put(getSTOKey("bypass_ssl_check"), String.valueOf(!authSsl));
       map.put(getSTOKey("product_domain"),
           resolveStringParameter("auth.domain", stepType, identifier, authData.getDomain(), false));
       map.put(getSTOKey("product_api_version"),
@@ -198,12 +203,8 @@ public final class STOSettingsUtils {
     Map<String, String> map = new HashMap<>();
 
     if (target != null) {
-      Boolean targetSsl = resolveBooleanParameter(target.getSsl(), Boolean.TRUE);
-
       map.put(getSTOKey("workspace"),
           resolveStringParameter("target.workspace", stepType, identifier, target.getWorkspace(), false));
-      map.put(getSTOKey("bypass_ssl_check"), String.valueOf(!targetSsl));
-
       STOYamlTargetType targetType = target.getType();
       map.put(getSTOKey("scan_type"),
           targetType != null ? targetType.getYamlName() : STOYamlTargetType.REPOSITORY.getYamlName());
@@ -261,13 +262,12 @@ public final class STOSettingsUtils {
             resolveStringParameter("args.passthrough", stepType, identifier, argsData.getPassthrough(), false));
       }
 
+      STOYamlFailOnSeverity failOnSeverity = advancedSettings.getFailOnSeverity();
+
       map.put(getSTOKey("fail_on_severity"),
-          String.valueOf(resolveIntegerParameter(advancedSettings.getFailOnSeverity(), 0)));
+          failOnSeverity != null ? failOnSeverity.getYamlName() : STOYamlFailOnSeverity.NONE.getYamlName());
       map.put(getSTOKey("include_raw"),
           String.valueOf(resolveBooleanParameter(advancedSettings.getIncludeRaw(), Boolean.TRUE)));
-
-      Boolean advancedSsl = resolveBooleanParameter(advancedSettings.getSsl(), Boolean.TRUE);
-      map.put(getSTOKey("verify_ssl"), String.valueOf(advancedSsl));
     }
 
     return map;

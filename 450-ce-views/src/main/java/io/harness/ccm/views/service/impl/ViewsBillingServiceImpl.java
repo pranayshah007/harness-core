@@ -37,9 +37,8 @@ import static io.harness.ccm.views.utils.ClusterTableKeys.PRICING_SOURCE;
 import static io.harness.ccm.views.utils.ClusterTableKeys.TIME_GRANULARITY;
 import static io.harness.ccm.views.utils.ClusterTableKeys.WORKLOAD_NAME;
 
-import static org.joda.time.Months.monthsBetween;
-
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ccm.budget.ValueDataPoint;
 import io.harness.ccm.budget.utils.BudgetUtils;
 import io.harness.ccm.commons.dao.CEMetadataRecordDao;
 import io.harness.ccm.commons.service.intf.EntityMetadataService;
@@ -117,7 +116,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.joda.time.DateTime;
 
 @Slf4j
 @Singleton
@@ -964,9 +962,9 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
         result, isClusterTableQuery, businessMappingFromGroupBy, sharedCostFromFiltersAndRules);
   }
 
-  public Double[] getActualCostGroupedByPeriod(BigQuery bigQuery, List<QLCEViewFilterWrapper> filters,
+  public List<ValueDataPoint> getActualCostGroupedByPeriod(BigQuery bigQuery, List<QLCEViewFilterWrapper> filters,
       List<QLCEViewGroupBy> groupBy, List<QLCEViewAggregation> aggregateFunction, String cloudProviderTableName,
-      ViewQueryParams queryParams, boolean lastPeriod, long startTime) {
+      ViewQueryParams queryParams) {
     boolean isClusterTableQuery = viewParametersHelper.isClusterTableQuery(filters, groupBy, queryParams);
     List<QLCEViewFilter> idFilters =
         viewParametersHelper.getModifiedIdFilters(viewParametersHelper.getIdFilters(filters), isClusterTableQuery);
@@ -986,28 +984,17 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     }
 
     String colName = isClusterTableQuery ? BILLING_AMOUNT : COST;
-    Double[] monthlyCosts = new Double[MONTHS];
-    Arrays.fill(monthlyCosts, 0.0D);
-    if (lastPeriod) {
-      boolean flag = true;
-      int monthDiff = 0;
-      for (FieldValueList row : result.iterateAll()) {
-        long timestamp = row.get(TIME_GRANULARITY).getTimestampValue() / 1000;
-        if (flag) {
-          monthDiff = monthsBetween(new DateTime(startTime), new DateTime(timestamp)).getMonths();
-          flag = false;
-        }
-        monthlyCosts[monthDiff] = BudgetUtils.getRoundedValue(row.get(colName).getNumericValue().doubleValue());
-        monthDiff++;
-      }
-    } else {
-      int startPosition = 0;
-      for (FieldValueList row : result.iterateAll()) {
-        monthlyCosts[startPosition] = BudgetUtils.getRoundedValue(row.get(colName).getNumericValue().doubleValue());
-        startPosition++;
-      }
+    List<ValueDataPoint> costs = new ArrayList<>();
+
+    for (FieldValueList row : result.iterateAll()) {
+      ValueDataPoint costData =
+          ValueDataPoint.builder()
+              .time(row.get(TIME_GRANULARITY).getTimestampValue() / 1000)
+              .value(BudgetUtils.getRoundedValue(row.get(colName).getNumericValue().doubleValue()))
+              .build();
+      costs.add(costData);
     }
-    return monthlyCosts;
+    return costs;
   }
 
   // ----------------------------------------------------------------------------------------------------------------

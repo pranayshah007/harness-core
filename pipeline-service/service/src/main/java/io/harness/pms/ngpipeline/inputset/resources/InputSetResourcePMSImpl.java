@@ -32,11 +32,7 @@ import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.pms.annotations.PipelineServiceAuth;
-import io.harness.pms.inputset.InputSetErrorWrapperDTOPMS;
-import io.harness.pms.inputset.MergeInputSetRequestDTOPMS;
-import io.harness.pms.inputset.MergeInputSetResponseDTOPMS;
-import io.harness.pms.inputset.MergeInputSetTemplateRequestDTO;
-import io.harness.pms.inputset.OverlayInputSetErrorWrapperDTOPMS;
+import io.harness.pms.inputset.*;
 import io.harness.pms.ngpipeline.inputset.api.InputSetsApiUtils;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity.InputSetEntityKeys;
@@ -360,6 +356,24 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
   @Override
   public ResponseDTO<InputSetMoveConfigResponseDTO> moveConfig(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String inputSetIdentifier, InputSetMoveConfigRequestDTO inputSetMoveConfigRequestDTO) {
-    return ResponseDTO.newResponse(InputSetMoveConfigResponseDTO.builder().build());
+    if (!inputSetIdentifier.equals(inputSetMoveConfigRequestDTO.getInputSetIdentifier())) {
+      throw new InvalidRequestException("Identifiers given in path param and request body don't match.");
+    }
+    InputSetEntity movedInputSet =
+        pmsInputSetService.moveConfig(accountIdentifier, orgIdentifier, projectIdentifier, inputSetIdentifier,
+            InputSetMoveConfigOperationDTO.builder()
+                .connectorRef(inputSetMoveConfigRequestDTO.getConnectorRef())
+                .repoName(inputSetMoveConfigRequestDTO.getRepoName())
+                .branch(inputSetMoveConfigRequestDTO.getBranch())
+                .filePath(inputSetMoveConfigRequestDTO.getFilePath())
+                .baseBranch(inputSetMoveConfigRequestDTO.getBaseBranch())
+                .commitMessage(inputSetMoveConfigRequestDTO.getCommitMsg())
+                .isNewBranch(inputSetMoveConfigRequestDTO.getIsNewBranch())
+                .pipelineIdentifier(inputSetMoveConfigRequestDTO.getPipelineIdentifier())
+                .moveConfigOperationType(io.harness.gitaware.helper.MoveConfigOperationType.getMoveConfigType(
+                    inputSetMoveConfigRequestDTO.getMoveConfigOperationType()))
+                .build());
+    return ResponseDTO.newResponse(
+        InputSetMoveConfigResponseDTO.builder().identifier(movedInputSet.getIdentifier()).build());
   }
 }

@@ -52,6 +52,7 @@ java_binary(
         "//959-timeout-engine:module",
         "//960-continuous-features:module",
         "//960-persistence:module",
+        "//965-api-key-filter:module",
         "//970-api-services-beans:module",
         "//970-grpc:module",
         "//970-ng-commons:module",

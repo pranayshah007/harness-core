@@ -8,6 +8,7 @@
 package io.harness.ccm.graphql.core.budget;
 
 import static io.harness.ccm.budget.BudgetPeriod.DAILY;
+import static io.harness.ccm.budget.utils.BudgetUtils.MONTHS;
 import static io.harness.ccm.commons.utils.BigQueryHelper.UNIFIED_TABLE;
 import static io.harness.ccm.views.graphql.QLCEViewTimeFilterOperator.AFTER;
 import static io.harness.ccm.views.graphql.QLCEViewTimeFilterOperator.BEFORE;
@@ -25,6 +26,7 @@ import static org.joda.time.Months.monthsBetween;
 import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.budget.BudgetBreakdown;
 import io.harness.ccm.budget.BudgetPeriod;
+import io.harness.ccm.budget.ValueDataPoint;
 import io.harness.ccm.budget.utils.BudgetUtils;
 import io.harness.ccm.commons.entities.billing.Budget;
 import io.harness.ccm.commons.entities.budget.BudgetCostData;
@@ -45,7 +47,9 @@ import io.harness.exception.InvalidRequestException;
 import com.google.inject.Inject;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
@@ -62,7 +66,7 @@ public class BudgetCostServiceImpl implements BudgetCostService {
   @Override
   public double getActualCost(Budget budget) {
     return getActualCost(budget.getAccountId(), BudgetUtils.getPerspectiveIdForBudget(budget),
-        BudgetUtils.getBudgetStartTime(budget), budget.getPeriod());
+        BudgetUtils.getBudgetStartTime(budget.getStartTime(), budget.getPeriod()), budget.getPeriod());
   }
 
   @Override
@@ -116,7 +120,7 @@ public class BudgetCostServiceImpl implements BudgetCostService {
   @Override
   public double getLastPeriodCost(Budget budget) {
     return getLastPeriodCost(budget.getAccountId(), budget.getScope().getEntityIds().get(0),
-        BudgetUtils.getBudgetStartTime(budget), budget.getPeriod());
+        BudgetUtils.getBudgetStartTime(budget.getStartTime(), budget.getPeriod()), budget.getPeriod());
   }
 
   @Override
@@ -134,59 +138,50 @@ public class BudgetCostServiceImpl implements BudgetCostService {
   @Override
   public Double[] getLastYearMonthlyCost(Budget budget) {
     return getLastYearMonthlyCost(budget.getAccountId(), budget.getScope().getEntityIds().get(0),
-        BudgetUtils.getBudgetStartTime(budget), budget.getPeriod());
+        BudgetUtils.getBudgetStartTime(budget.getStartTime(), budget.getPeriod()), budget.getPeriod());
   }
 
   @Override
   public Double[] getLastYearMonthlyCost(String accountId, String perspectiveId, long startTime, BudgetPeriod period) {
-    Double[] result;
-    String cloudProviderTableName = bigQueryHelper.getCloudProviderTableName(accountId, UNIFIED_TABLE);
-    List<QLCEViewGroupBy> groupBy = new ArrayList<>();
-    groupBy.add(
-        QLCEViewGroupBy.builder()
-            .timeTruncGroupBy(
-                QLCEViewTimeTruncGroupBy.builder().resolution(getTimeResolutionForBudget(BudgetPeriod.MONTHLY)).build())
-            .build());
     long updatedStartTime = BudgetUtils.getStartOfMonthGivenTime(startTime);
     long endTime = updatedStartTime - BudgetUtils.ONE_DAY_MILLIS;
     updatedStartTime = BudgetUtils.getStartOfLastPeriod(updatedStartTime, period);
-    List<QLCEViewFilterWrapper> filters = new ArrayList<>();
-    filters.add(viewsQueryHelper.getViewMetadataFilter(perspectiveId));
-    filters.add(viewsQueryHelper.getPerspectiveTimeFilter(updatedStartTime, AFTER));
-    filters.add(viewsQueryHelper.getPerspectiveTimeFilter(endTime, BEFORE));
-    result = viewsBillingService.getActualCostGroupedByPeriod(bigQueryService.get(), filters, groupBy,
-        viewsQueryHelper.getPerspectiveTotalCostAggregation(), cloudProviderTableName,
-        viewsQueryHelper.buildQueryParams(accountId, false), true, updatedStartTime);
-    return result;
+    List<ValueDataPoint> result =
+        actualCostGroupedByPeriod(accountId, BudgetPeriod.MONTHLY, perspectiveId, updatedStartTime, endTime);
+
+    Double[] lastYearMonthlyCost = new Double[MONTHS];
+    Arrays.fill(lastYearMonthlyCost, 0.0D);
+    int monthDiff = 0;
+    if (result.size() > 0) {
+      monthDiff = monthsBetween(new DateTime(updatedStartTime), new DateTime(result.get(0).getTime())).getMonths();
+    }
+    for (ValueDataPoint valueDataPoint : result) {
+      lastYearMonthlyCost[monthDiff] = valueDataPoint.getValue();
+      monthDiff++;
+    }
+    return lastYearMonthlyCost;
   }
 
   @Override
   public Double[] getActualMonthlyCost(Budget budget) {
     return getActualMonthlyCost(budget.getAccountId(), BudgetUtils.getPerspectiveIdForBudget(budget),
-        BudgetUtils.getBudgetStartTime(budget), budget.getPeriod());
+        BudgetUtils.getBudgetStartTime(budget.getStartTime(), budget.getPeriod()), budget.getPeriod());
   }
 
   @Override
   public Double[] getActualMonthlyCost(
       String accountId, String perspectiveId, long startOfPeriod, BudgetPeriod period) {
-    Double[] result;
-    String cloudProviderTableName = bigQueryHelper.getCloudProviderTableName(accountId, UNIFIED_TABLE);
-    List<QLCEViewGroupBy> groupBy = new ArrayList<>();
-    groupBy.add(
-        QLCEViewGroupBy.builder()
-            .timeTruncGroupBy(
-                QLCEViewTimeTruncGroupBy.builder().resolution(getTimeResolutionForBudget(BudgetPeriod.MONTHLY)).build())
-            .build());
     long startTime = BudgetUtils.getStartOfMonthGivenTime(startOfPeriod);
     long endTime = BudgetUtils.getEndTimeForBudget(startTime, period) - BudgetUtils.ONE_DAY_MILLIS;
-    List<QLCEViewFilterWrapper> filters = new ArrayList<>();
-    filters.add(viewsQueryHelper.getViewMetadataFilter(perspectiveId));
-    filters.add(viewsQueryHelper.getPerspectiveTimeFilter(startTime, AFTER));
-    filters.add(viewsQueryHelper.getPerspectiveTimeFilter(endTime, BEFORE));
-    result = viewsBillingService.getActualCostGroupedByPeriod(bigQueryService.get(), filters, groupBy,
-        viewsQueryHelper.getPerspectiveTotalCostAggregation(), cloudProviderTableName,
-        viewsQueryHelper.buildQueryParams(accountId, false), false, startTime);
-    return result;
+    List<ValueDataPoint> result =
+        actualCostGroupedByPeriod(accountId, BudgetPeriod.MONTHLY, perspectiveId, startTime, endTime);
+
+    Double[] actualMonthlyCost = new Double[MONTHS];
+    Arrays.fill(actualMonthlyCost, 0.0D);
+    for (int i = 0; i < result.size(); i++) {
+      actualMonthlyCost[i] = result.get(i).getValue();
+    }
+    return actualMonthlyCost;
   }
 
   @Override
@@ -204,8 +199,8 @@ public class BudgetCostServiceImpl implements BudgetCostService {
     // We will fit last year, first month of budget period cost on -12
     // Second month on -11, and so on upto -1...
     Double[] lastYearCost = getLastYearMonthlyCost(accountId, perspectiveId, startOfPeriod, period);
-    for (int lastYearMonth = 0; lastYearMonth < BudgetUtils.MONTHS; lastYearMonth++) {
-      regression.addData(-(BudgetUtils.MONTHS - lastYearMonth), lastYearCost[lastYearMonth]);
+    for (int lastYearMonth = 0; lastYearMonth < MONTHS; lastYearMonth++) {
+      regression.addData(-(MONTHS - lastYearMonth), lastYearCost[lastYearMonth]);
     }
 
     // Filling result with actual cost
@@ -222,7 +217,7 @@ public class BudgetCostServiceImpl implements BudgetCostService {
     // Fitting data points which are available that is actual cost
     // We will fit current year, first month of budget period cost on 0
     // Second month on 1, and so on up to 11 till we have actual cost.
-    for (int currentYearMonth = 0; currentYearMonth < monthDiff && monthDiff < BudgetUtils.MONTHS; currentYearMonth++) {
+    for (int currentYearMonth = 0; currentYearMonth < monthDiff && monthDiff < MONTHS; currentYearMonth++) {
       regression.addData(currentYearMonth, result[currentYearMonth]);
     }
 
@@ -237,7 +232,7 @@ public class BudgetCostServiceImpl implements BudgetCostService {
                    .getDays();
 
     // Forecasting for months for which we don't have actual cost
-    for (int currentYearMonth = monthDiff; currentYearMonth < BudgetUtils.MONTHS; currentYearMonth++) {
+    for (int currentYearMonth = monthDiff; currentYearMonth < MONTHS; currentYearMonth++) {
       if (daysDiff > 0 && daysDiff < days) {
         result[currentYearMonth] +=
             BudgetUtils.getRoundedValue((abs(regression.predict(currentYearMonth)) / days) * (days - daysDiff));
@@ -262,26 +257,26 @@ public class BudgetCostServiceImpl implements BudgetCostService {
 
     if (budget.getPeriod() == BudgetPeriod.YEARLY && breakdown == BudgetBreakdown.MONTHLY) {
       Double[] actualCost = budget.getBudgetMonthlyBreakdown().getActualMonthlyCost();
-      if (actualCost == null || actualCost.length != BudgetUtils.MONTHS) {
+      if (actualCost == null || actualCost.length != MONTHS) {
         log.error("Missing 12 entries in actualCost of yearly budget with id:" + budget.getUuid());
         throw new InvalidRequestException(BudgetUtils.MISSING_BUDGET_DATA_EXCEPTION);
       }
 
       Double[] budgetCost =
           BudgetUtils.getYearlyMonthWiseValues(budget.getBudgetMonthlyBreakdown().getBudgetMonthlyAmount());
-      if (budgetCost == null || budgetCost.length != BudgetUtils.MONTHS) {
+      if (budgetCost == null || budgetCost.length != MONTHS) {
         log.error("Missing 12 entries in budgetCost of yearly budget with id:" + budget.getUuid());
         throw new InvalidRequestException(BudgetUtils.MISSING_BUDGET_DATA_EXCEPTION);
       }
 
       Double[] forecastMonthlyCost = budget.getBudgetMonthlyBreakdown().getForecastMonthlyCost();
-      if (forecastMonthlyCost == null || forecastMonthlyCost.length != BudgetUtils.MONTHS) {
+      if (forecastMonthlyCost == null || forecastMonthlyCost.length != MONTHS) {
         log.error("Missing 12 entries in forecastCost of yearly budget with id:" + budget.getUuid());
         throw new InvalidRequestException(BudgetUtils.MISSING_BUDGET_DATA_EXCEPTION);
       }
 
       long startTime = budget.getStartTime();
-      for (int month = 0; month < BudgetUtils.MONTHS; month++) {
+      for (int month = 0; month < MONTHS; month++) {
         long endTime = BudgetUtils.getEndTimeForBudget(startTime, BudgetPeriod.MONTHLY) - BudgetUtils.ONE_DAY_MILLIS;
         double budgetVariance = BudgetUtils.getBudgetVariance(budgetCost[month], forecastMonthlyCost[month]);
         double budgetVariancePercentage = BudgetUtils.getBudgetVariancePercentage(budgetVariance, budgetCost[month]);
@@ -301,11 +296,13 @@ public class BudgetCostServiceImpl implements BudgetCostService {
     } else {
       String viewId = budget.getScope().getEntityIds().get(0);
       long timeFilterValue = BudgetUtils.getStartTimeForCostGraph(
-          BudgetUtils.getBudgetStartTime(budget), BudgetUtils.getBudgetPeriod(budget));
-      int timeOffsetInDays = BudgetUtils.getTimeOffsetInDays(budget);
+          BudgetUtils.getBudgetStartTime(budget.getStartTime(), budget.getPeriod()),
+          BudgetUtils.getBudgetPeriod(budget));
+      int timeOffsetInDays = BudgetUtils.getTimeOffsetInDays(budget.getStartTime(), budget.getPeriod());
       try {
-        List<TimeSeriesDataPoints> monthlyCostData = getPerspectiveBudgetTimeSeriesCostData(viewId,
-            budget.getAccountId(), timeFilterValue, getTimeResolutionForBudget(budget.getPeriod()), timeOffsetInDays);
+        List<TimeSeriesDataPoints> monthlyCostData =
+            getPerspectiveBudgetTimeSeriesCostData(viewId, budget.getAccountId(), timeFilterValue,
+                getTimeResolutionForBudget(budget.getPeriod()), timeOffsetInDays, 0L);
         for (TimeSeriesDataPoints data : monthlyCostData) {
           double actualCost =
               data.getValues().stream().map(dataPoint -> dataPoint.getValue().doubleValue()).reduce(0D, Double::sum);
@@ -340,8 +337,8 @@ public class BudgetCostServiceImpl implements BudgetCostService {
     return trendData.getCost();
   }
 
-  private List<TimeSeriesDataPoints> getPerspectiveBudgetTimeSeriesCostData(
-      String viewId, String accountId, long startTime, QLCEViewTimeGroupType period, int timeOffsetInDays) {
+  private List<TimeSeriesDataPoints> getPerspectiveBudgetTimeSeriesCostData(String viewId, String accountId,
+      long startTime, QLCEViewTimeGroupType period, int timeOffsetInDays, long endTime) {
     List<QLCEViewAggregation> aggregationFunction = viewsQueryHelper.getPerspectiveTotalCostAggregation();
     List<QLCEViewGroupBy> groupBy = new ArrayList<>();
     groupBy.add(QLCEViewGroupBy.builder()
@@ -350,6 +347,9 @@ public class BudgetCostServiceImpl implements BudgetCostService {
     List<QLCEViewFilterWrapper> filters = new ArrayList<>();
     filters.add(viewsQueryHelper.getViewMetadataFilter(viewId));
     filters.add(viewsQueryHelper.getPerspectiveTimeFilter(startTime, AFTER));
+    if (endTime != 0L) {
+      filters.add(viewsQueryHelper.getPerspectiveTimeFilter(endTime, BEFORE));
+    }
     String cloudProviderTable = bigQueryHelper.getCloudProviderTableName(accountId, UNIFIED_TABLE);
     return perspectiveTimeSeriesHelper
         .fetch(viewsBillingService.getTimeSeriesStatsNg(bigQueryService.get(), filters, groupBy, aggregationFunction,
@@ -377,5 +377,63 @@ public class BudgetCostServiceImpl implements BudgetCostService {
     } catch (Exception e) {
       return MONTH;
     }
+  }
+
+  @Override
+  public HashMap<Long, BudgetCostData> getBudgetHistory(Budget budget) {
+    return getBudgetHistory(budget.getAccountId(), budget.getScope().getEntityIds().get(0),
+        BudgetUtils.getBudgetStartTime(budget.getStartTime(), budget.getPeriod()), budget.getPeriod(),
+        budget.getBudgetAmount());
+  }
+
+  @Override
+  public HashMap<Long, BudgetCostData> getBudgetHistory(
+      String accountId, String perspectiveId, long startTime, BudgetPeriod period, Double budgetAmount) {
+    HashMap<Long, BudgetCostData> budgetHistory = new HashMap<>();
+    long endTime = startTime - BudgetUtils.ONE_DAY_MILLIS;
+    long updatedStartTime = BudgetUtils.getHistoryStartTime(startTime, period);
+    int timeOffsetInDays = BudgetUtils.getTimeOffsetInDays(startTime, period);
+    try {
+      List<TimeSeriesDataPoints> monthlyCostData = getPerspectiveBudgetTimeSeriesCostData(
+          perspectiveId, accountId, updatedStartTime, getTimeResolutionForBudget(period), timeOffsetInDays, endTime);
+      for (TimeSeriesDataPoints data : monthlyCostData) {
+        double actualCost =
+            data.getValues().stream().map(dataPoint -> dataPoint.getValue().doubleValue()).reduce(0D, Double::sum);
+        double budgetVariance = BudgetUtils.getBudgetVariance(budgetAmount, actualCost);
+        double budgetVariancePercentage = BudgetUtils.getBudgetVariancePercentage(budgetVariance, budgetAmount);
+        long startTimeData = data.getTime() + timeOffsetInDays * BudgetUtils.ONE_DAY_MILLIS;
+        long endTimeData = BudgetUtils.getEndTimeForBudget(startTimeData, period) - BudgetUtils.ONE_DAY_MILLIS;
+        BudgetCostData budgetCostData =
+            BudgetCostData.builder()
+                .actualCost(viewsQueryHelper.getRoundedDoubleValue(actualCost))
+                .budgeted(viewsQueryHelper.getRoundedDoubleValue(budgetAmount))
+                .budgetVariance(viewsQueryHelper.getRoundedDoubleValue(budgetVariance))
+                .budgetVariancePercentage(viewsQueryHelper.getRoundedDoubleValue(budgetVariancePercentage))
+                .time(startTimeData)
+                .endTime(endTimeData)
+                .build();
+        budgetHistory.put(startTime, budgetCostData);
+      }
+    } catch (Exception e) {
+      log.error("Error in generating data for budget having perspective Id: {}", perspectiveId);
+    }
+    return budgetHistory;
+  }
+
+  private List<ValueDataPoint> actualCostGroupedByPeriod(
+      String accountId, BudgetPeriod period, String perspectiveId, long startTime, long endTime) {
+    String cloudProviderTableName = bigQueryHelper.getCloudProviderTableName(accountId, UNIFIED_TABLE);
+    List<QLCEViewGroupBy> groupBy = new ArrayList<>();
+    groupBy.add(
+        QLCEViewGroupBy.builder()
+            .timeTruncGroupBy(QLCEViewTimeTruncGroupBy.builder().resolution(getTimeResolutionForBudget(period)).build())
+            .build());
+    List<QLCEViewFilterWrapper> filters = new ArrayList<>();
+    filters.add(viewsQueryHelper.getViewMetadataFilter(perspectiveId));
+    filters.add(viewsQueryHelper.getPerspectiveTimeFilter(startTime, AFTER));
+    filters.add(viewsQueryHelper.getPerspectiveTimeFilter(endTime, BEFORE));
+    return viewsBillingService.getActualCostGroupedByPeriod(bigQueryService.get(), filters, groupBy,
+        viewsQueryHelper.getPerspectiveTotalCostAggregation(), cloudProviderTableName,
+        viewsQueryHelper.buildQueryParams(accountId, false));
   }
 }

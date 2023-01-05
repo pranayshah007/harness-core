@@ -3433,6 +3433,34 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "IACMStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "outputVariables": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/OutputNGVariable"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "IACMTerraformPlanInfo": {
       "allOf": [
         {
@@ -3451,11 +3479,20 @@
                 }
               ]
             },
-            "mode": {
-              "type": "string"
-            },
-            "operation": {
-              "type": "string"
+            "outputVariables": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/OutputNGVariable"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
             },
             "tfVars": {
               "oneOf": [
@@ -7397,8 +7434,14 @@
         "failOnSeverity": {
           "oneOf": [
             {
-              "type": "integer",
-              "format": "int32"
+              "type": "string",
+              "enum": [
+                "critical",
+                "high",
+                "medium",
+                "low",
+                "none"
+              ]
             },
             {
               "type": "string",
@@ -7423,18 +7466,6 @@
           "oneOf": [
             {
               "$ref": "#/definitions/STOYamlLog"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
-        },
-        "ssl": {
-          "oneOf": [
-            {
-              "type": "boolean"
             },
             {
               "type": "string",
@@ -7510,6 +7541,18 @@
           "oneOf": [
             {
               "type": "string"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "ssl": {
+          "oneOf": [
+            {
+              "type": "boolean"
             },
             {
               "type": "string",
@@ -8057,18 +8100,6 @@
           "oneOf": [
             {
               "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
-        },
-        "ssl": {
-          "oneOf": [
-            {
-              "type": "boolean"
             },
             {
               "type": "string",
@@ -9588,6 +9619,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/GrypeStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "IACM"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/IACMStepInfo"
               }
             }
           }

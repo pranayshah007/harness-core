@@ -7,6 +7,7 @@
 
 package io.harness.ngmigration;
 
+import static io.harness.NGConstants.X_API_KEY;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.FeatureName.GLOBAL_DISABLE_HEALTH_CHECK;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
@@ -21,6 +22,7 @@ import static com.google.inject.name.Names.named;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.GraphQLModule;
+import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.cache.CacheModule;
 import io.harness.ccm.CEPerpetualTaskHandler;
 import io.harness.ccm.KubernetesClusterHandler;
@@ -78,8 +80,12 @@ import io.harness.perpetualtask.internal.PerpetualTaskRecordHandler;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.Store;
 import io.harness.persistence.UserProvider;
+import io.harness.pms.annotations.PipelineServiceAuth;
+import io.harness.pms.annotations.PipelineServiceAuthIfHasApiKey;
 import io.harness.queue.QueueListenerController;
 import io.harness.queue.TimerScheduledExecutorService;
+import io.harness.security.NextGenAuthenticationFilter;
+import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.serializer.AnnotationAwareJsonSubtypeResolver;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.service.DelegateServiceModule;
@@ -95,6 +101,7 @@ import io.harness.stream.StreamModule;
 import io.harness.threading.ExecutorModule;
 import io.harness.threading.ThreadPool;
 import io.harness.timescaledb.TimeScaleDBService;
+import io.harness.token.remote.TokenClient;
 import io.harness.tracing.MongoRedisTracer;
 import io.harness.waiter.NotifierScheduledExecutorService;
 
@@ -114,7 +121,6 @@ import software.wings.app.SignupModule;
 import software.wings.app.TemplateModule;
 import software.wings.app.WingsModule;
 import software.wings.app.YamlModule;
-import software.wings.beans.User;
 import software.wings.dl.WingsPersistence;
 import software.wings.exception.GenericExceptionMapper;
 import software.wings.exception.JsonProcessingExceptionMapper;
@@ -124,10 +130,6 @@ import software.wings.filter.AuditResponseFilter;
 import software.wings.jersey.JsonViews;
 import software.wings.jersey.KryoFeature;
 import software.wings.licensing.LicenseService;
-import software.wings.security.AuthResponseFilter;
-import software.wings.security.AuthRuleFilter;
-import software.wings.security.AuthenticationFilter;
-import software.wings.security.LoginRateLimitFilter;
 import software.wings.security.ThreadLocalUserProvider;
 import software.wings.security.authentication.totp.TotpModule;
 import software.wings.service.impl.AccountServiceImpl;
@@ -191,11 +193,11 @@ import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import com.google.inject.matcher.AbstractMatcher;
 import com.google.inject.name.Named;
+import com.google.inject.name.Names;
 import com.palominolabs.metrics.guice.MetricsInstrumentationModule;
 import dev.morphia.AdvancedDatastore;
 import dev.morphia.converters.TypeConverter;
 import io.dropwizard.Application;
-import io.dropwizard.auth.AuthValueFactoryProvider;
 import io.dropwizard.bundles.assets.AssetsConfiguration;
 import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
 import io.dropwizard.configuration.SubstitutingSourceProvider;
@@ -208,12 +210,14 @@ import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 import javax.cache.Cache;
 import javax.servlet.DispatcherType;
 import javax.servlet.FilterRegistration;
@@ -221,8 +225,11 @@ import javax.servlet.ServletRegistration;
 import javax.validation.Validation;
 import javax.validation.ValidatorFactory;
 import javax.ws.rs.Path;
+import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.container.ResourceInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.atmosphere.cpr.AtmosphereServlet;
 import org.atmosphere.cpr.BroadcasterFactory;
 import org.atmosphere.cpr.MetaBroadcaster;
@@ -377,7 +384,6 @@ public class NGMigrationApplication extends Application<MigratorConfig> {
 
     // common for both manager and dms
     registerCorsFilter(configuration, environment);
-    registerAuditResponseFilter(environment, injector);
     registerJerseyProviders(environment, injector);
     registerCharsetResponseFilter(environment, injector);
     // Authentication/Authorization filters
@@ -784,11 +790,30 @@ public class NGMigrationApplication extends Application<MigratorConfig> {
 
   private void registerAuthFilters(MainConfiguration configuration, Environment environment, Injector injector) {
     if (configuration.isEnableAuth()) {
-      environment.jersey().register(new AuthValueFactoryProvider.Binder<>(User.class));
-      environment.jersey().register(injector.getInstance(LoginRateLimitFilter.class));
-      environment.jersey().register(injector.getInstance(AuthRuleFilter.class));
-      environment.jersey().register(injector.getInstance(AuthResponseFilter.class));
-      environment.jersey().register(injector.getInstance(AuthenticationFilter.class));
+      Predicate<Pair<ResourceInfo, ContainerRequestContext>> predicate = resourceInfoAndRequest
+          -> (resourceInfoAndRequest.getKey().getResourceMethod() != null
+                 && resourceInfoAndRequest.getKey().getResourceMethod().getAnnotation(PipelineServiceAuth.class)
+                     != null)
+          || (resourceInfoAndRequest.getKey().getResourceClass() != null
+              && resourceInfoAndRequest.getKey().getResourceClass().getAnnotation(PipelineServiceAuth.class) != null)
+          || (resourceInfoAndRequest.getKey().getResourceMethod() != null
+              && resourceInfoAndRequest.getKey().getResourceMethod().getAnnotation(PipelineServiceAuthIfHasApiKey.class)
+                  != null
+              && resourceInfoAndRequest.getValue().getHeaders().get(X_API_KEY) != null)
+          || (resourceInfoAndRequest.getKey().getResourceMethod() != null
+              && resourceInfoAndRequest.getKey().getResourceMethod().getAnnotation(NextGenManagerAuth.class) != null)
+          || (resourceInfoAndRequest.getKey().getResourceClass() != null
+              && resourceInfoAndRequest.getKey().getResourceClass().getAnnotation(NextGenManagerAuth.class) != null);
+
+      Map<String, String> serviceToSecretMapping = new HashMap<>();
+      serviceToSecretMapping.put(
+          AuthorizationServiceHeader.BEARER.getServiceId(), configuration.getPortal().getJwtAuthSecret());
+      serviceToSecretMapping.put(AuthorizationServiceHeader.IDENTITY_SERVICE.getServiceId(),
+          configuration.getPortal().getJwtIdentityServiceSecret());
+      serviceToSecretMapping.put(
+          AuthorizationServiceHeader.DEFAULT.getServiceId(), configuration.getPortal().getJwtNextGenManagerSecret());
+      environment.jersey().register(new NextGenAuthenticationFilter(predicate, null, serviceToSecretMapping,
+          injector.getInstance(Key.get(TokenClient.class, Names.named("PRIVILEGED")))));
     }
   }
 

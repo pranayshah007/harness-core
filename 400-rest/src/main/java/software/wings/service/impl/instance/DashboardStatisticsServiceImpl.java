@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.beans.ExecutionStatus.FAILED;
 import static io.harness.beans.ExecutionStatus.SKIPPED;
 import static io.harness.beans.FeatureName.SPG_DASHBOARD_PROJECTION;
-import static io.harness.beans.FeatureName.SPG_INSTANCE_OPTIMIZE_DELETED_APPS;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.PageResponse.PageResponseBuilder.aPageResponse;
 import static io.harness.beans.SearchFilter.Operator.EQ;
@@ -419,9 +418,7 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
           .field(InstanceKeys.deletedAt)
           .greaterThanOrEq(timestamp);
       FindOptions findOptions = wingsPersistence.analyticNodePreferenceOptions();
-      if (featureFlagService.isEnabled(FeatureName.SPG_INSTANCE_ENABLE_HINT_ON_GET_INSTANCES, accountId)) {
-        findOptions.hintString("instance_index7");
-      }
+      findOptions.hintString("instance_index7");
       instanceSet.addAll(cloneQuery.asList(findOptions));
     }
 
@@ -1103,9 +1100,7 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
                                         .lessThanOrEq(rhsCreatedAt)
                                         .project(InstanceKeys.appId, true);
 
-    if (featureFlagService.isEnabled(SPG_INSTANCE_OPTIMIZE_DELETED_APPS, accountId)) {
-      instanceQuery.project(InstanceKeys.uuid, false);
-    }
+    instanceQuery.project(InstanceKeys.uuid, false);
 
     Set<String> appIdsFromInstances = new HashSet<>();
     try (HIterator<Instance> iterator =

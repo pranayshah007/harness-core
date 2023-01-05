@@ -202,7 +202,7 @@ def main(event, context):
 
 def trigger_historical_cost_update_in_preferred_currency(jsonData):
     current_timestamp = datetime.datetime.utcnow()
-    currentMonth = current_timestamp.month
+    currentMonth = f"{current_timestamp.month:02d}"
     currentYear = current_timestamp.year
     if "disableHistoricalUpdateForMonths" not in jsonData or not jsonData["disableHistoricalUpdateForMonths"]:
         jsonData["disableHistoricalUpdateForMonths"] = [f"{currentYear}-{currentMonth}-01"]
@@ -311,7 +311,7 @@ def get_preferred_currency(jsonData):
 def insert_currencies_with_unit_conversion_factors_in_bq(jsonData):
     # we are inserting these rows for showing active month's source_currencies to user
     current_timestamp = datetime.datetime.utcnow()
-    currentMonth = current_timestamp.month
+    currentMonth = f"{current_timestamp.month:02d}"
     currentYear = current_timestamp.year
 
     # update 1.0 rows in currencyConversionFactorDefault table only for current month
@@ -413,7 +413,7 @@ def fetch_default_conversion_factors_from_API(jsonData):
         return
 
     current_timestamp = datetime.datetime.utcnow()
-    currentMonth = current_timestamp.month
+    currentMonth = f"{current_timestamp.month:02d}"
     currentYear = current_timestamp.year
     date_start = "%s-%s-01" % (currentYear, currentMonth)
     date_end = "%s-%s-%s" % (currentYear, currentMonth, monthrange(int(currentYear), int(currentMonth))[1])

@@ -146,6 +146,9 @@ public class BudgetDao {
       updateOperations.set(BUDGET_MONTHLY_BREAKDOWN_YEARLY_LAST_PERIOD_COST,
           budget.getBudgetMonthlyBreakdown().getYearlyLastPeriodCost());
     }
+    if (null != budget.getBudgetHistory()) {
+      updateOperations.set(BudgetKeys.budgetHistory, budget.getBudgetHistory());
+    }
     persistence.update(query, updateOperations);
   }
 

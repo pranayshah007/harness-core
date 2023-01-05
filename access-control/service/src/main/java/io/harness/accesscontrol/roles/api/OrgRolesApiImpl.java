@@ -148,7 +148,7 @@ public class OrgRolesApiImpl implements OrganizationRolesApi {
     RoleFilter roleFilter =
         RoleFilter.builder().searchTerm(searchTerm).scopeIdentifier(scopeIdentifier).managedFilter(NO_FILTER).build();
     PageRequest pageRequest = ApiUtils.getPageRequest(page, limit, sort, order);
-    PageResponse<Role> pageResponse = roleService.list(pageRequest, roleFilter);
+    PageResponse<Role> pageResponse = roleService.list(pageRequest, roleFilter, true);
     ResponseBuilder responseBuilder = Response.ok();
     ResponseBuilder responseBuilderWithLinks = ApiUtils.addLinksHeader(
         responseBuilder, format("/v1/orgs/%s/roles)", org), pageResponse.getContent().size(), page, limit);

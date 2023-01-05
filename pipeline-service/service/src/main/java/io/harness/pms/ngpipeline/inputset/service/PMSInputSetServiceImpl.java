@@ -8,7 +8,10 @@
 package io.harness.pms.ngpipeline.inputset.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER_SRE;
+import static io.harness.pms.pipeline.MoveConfigOperationType.INLINE_TO_REMOTE;
+import static io.harness.pms.pipeline.MoveConfigOperationType.REMOTE_TO_INLINE;
 
 import static java.lang.String.format;
 
@@ -39,6 +42,7 @@ import io.harness.gitsync.scm.EntityObjectIdUtils;
 import io.harness.gitsync.scm.beans.ScmGitMetaData;
 import io.harness.grpc.utils.StringValueUtils;
 import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
+import io.harness.pms.inputset.InputSetMoveConfigOperationDTO;
 import io.harness.pms.inputset.gitsync.InputSetYamlDTOMapper;
 import io.harness.pms.ngpipeline.inputset.api.InputSetsApiUtils;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
@@ -46,6 +50,7 @@ import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity.InputSetEn
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetImportRequestDTO;
 import io.harness.pms.ngpipeline.inputset.mappers.PMSInputSetElementMapper;
+import io.harness.pms.ngpipeline.inputset.mappers.PMSInputSetFilterHelper;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PipelineCRUDErrorResponse;
@@ -461,6 +466,80 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
       throw new InvalidRequestException(
           String.format("Error while saving input set [%s]: %s", inputSetEntity.getIdentifier(), e.getMessage()));
     }
+  }
+
+  @Override
+  public InputSetEntity moveConfig(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String inputSetIdentifier, InputSetMoveConfigOperationDTO inputSetMoveConfigOperationDTO) {
+    Optional<InputSetEntity> optionalInputSetEntity = getWithoutValidations(accountIdentifier, orgIdentifier,
+        projectIdentifier, inputSetMoveConfigOperationDTO.getPipelineIdentifier(), inputSetIdentifier, false);
+    if (optionalInputSetEntity.isEmpty()) {
+      throw new InvalidRequestException(
+          String.format("InputSet with the given ID: %s does not exist or has been deleted", inputSetIdentifier));
+    }
+
+    return moveInputSetEntity(accountIdentifier, orgIdentifier, projectIdentifier, inputSetMoveConfigOperationDTO,
+        optionalInputSetEntity.get());
+  }
+
+  @VisibleForTesting
+  protected InputSetEntity moveInputSetEntity(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      InputSetMoveConfigOperationDTO inputSetMoveConfigOperationDTO, InputSetEntity inputSetToMove) {
+    Criteria criteria = PMSInputSetFilterHelper.getCriteriaForFind(accountIdentifier, orgIdentifier, projectIdentifier,
+        inputSetMoveConfigOperationDTO.getPipelineIdentifier(), inputSetToMove.getIdentifier(), true);
+    Update update;
+
+    if (INLINE_TO_REMOTE.equals(inputSetMoveConfigOperationDTO.getMoveConfigOperationType())) {
+      setupGitContext(inputSetMoveConfigOperationDTO);
+
+      update = getUpdateForInputSetInlineToRemote(
+          accountIdentifier, orgIdentifier, projectIdentifier, inputSetMoveConfigOperationDTO);
+    } else if (REMOTE_TO_INLINE.equals(inputSetMoveConfigOperationDTO.getMoveConfigOperationType())) {
+      update = getUpdateForInputSetRemoteToInline();
+    } else {
+      log.error("Invalid move config operation provided: {}",
+          inputSetMoveConfigOperationDTO.getMoveConfigOperationType().name());
+      throw new InvalidRequestException(String.format("Invalid move config operation specified [%s].",
+          inputSetMoveConfigOperationDTO.getMoveConfigOperationType().name()));
+    }
+    return inputSetRepository.updateInputSetEntity(
+        inputSetToMove, criteria, update, inputSetMoveConfigOperationDTO.getMoveConfigOperationType());
+  }
+
+  private void setupGitContext(InputSetMoveConfigOperationDTO inputSetMoveConfig) {
+    GitAwareContextHelper.populateGitDetails(
+        GitEntityInfo.builder()
+            .branch(inputSetMoveConfig.getBranch())
+            .filePath(inputSetMoveConfig.getFilePath())
+            .commitMsg(inputSetMoveConfig.getCommitMessage())
+            .isNewBranch(isNotEmpty(inputSetMoveConfig.getBranch()) && isNotEmpty(inputSetMoveConfig.getBaseBranch()))
+            .baseBranch(inputSetMoveConfig.getBaseBranch())
+            .connectorRef(inputSetMoveConfig.getConnectorRef())
+            .storeType(StoreType.REMOTE)
+            .repoName(inputSetMoveConfig.getRepoName())
+            .build());
+  }
+
+  private Update getUpdateForInputSetInlineToRemote(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, InputSetMoveConfigOperationDTO inputSetMoveConfigOperationDTO) {
+    Update update = new Update();
+    update.set(InputSetEntityKeys.storeType, StoreType.REMOTE);
+    update.set(InputSetEntityKeys.repo, inputSetMoveConfigOperationDTO.getRepoName());
+    update.set(InputSetEntityKeys.filePath, inputSetMoveConfigOperationDTO.getFilePath());
+    update.set(InputSetEntityKeys.connectorRef, inputSetMoveConfigOperationDTO.getConnectorRef());
+    update.set(InputSetEntityKeys.repoURL,
+        gitAwareEntityHelper.getRepoUrl(accountIdentifier, orgIdentifier, projectIdentifier));
+    return update;
+  }
+
+  private Update getUpdateForInputSetRemoteToInline() {
+    Update update = new Update();
+    update.set(InputSetEntityKeys.storeType, StoreType.INLINE);
+    update.unset(InputSetEntityKeys.repo);
+    update.unset(InputSetEntityKeys.filePath);
+    update.unset(InputSetEntityKeys.connectorRef);
+    update.unset(InputSetEntityKeys.repoURL);
+    return update;
   }
 
   // todo: move to helper class when created during refactoring

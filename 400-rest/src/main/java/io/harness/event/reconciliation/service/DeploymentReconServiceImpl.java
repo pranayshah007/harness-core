@@ -13,7 +13,6 @@ import static io.harness.event.reconciliation.service.DeploymentReconServiceHelp
 import static io.harness.persistence.HQuery.excludeAuthority;
 
 import io.harness.beans.ExecutionStatus;
-import io.harness.beans.FeatureName;
 import io.harness.event.reconciliation.ReconciliationStatus;
 import io.harness.event.reconciliation.deployment.DeploymentReconRecordRepository;
 import io.harness.event.timeseries.processor.DeploymentEventProcessor;
@@ -81,7 +80,9 @@ public class DeploymentReconServiceImpl implements DeploymentReconService {
                                                                  .field(WorkflowExecutionKeys.endTs)
                                                                  .lessThanOrEq(durationEndTs)
                                                                  .field(WorkflowExecutionKeys.status)
-                                                                 .in(ExecutionStatus.finalStatuses());
+                                                                 .in(ExecutionStatus.finalStatuses())
+                                                                 .field(WorkflowExecutionKeys.pipelineExecutionId)
+                                                                 .doesNotExist();
 
     Query<WorkflowExecution> runningWFExecutionCountQuery = persistence.createQuery(WorkflowExecution.class)
                                                                 .field(WorkflowExecutionKeys.accountId)
@@ -91,19 +92,14 @@ public class DeploymentReconServiceImpl implements DeploymentReconService {
                                                                 .field(WorkflowExecutionKeys.startTs)
                                                                 .lessThanOrEq(durationEndTs)
                                                                 .field(WorkflowExecutionKeys.status)
-                                                                .in(ExecutionStatus.persistedActiveStatuses());
+                                                                .in(ExecutionStatus.persistedActiveStatuses())
+                                                                .field(WorkflowExecutionKeys.pipelineExecutionId)
+                                                                .doesNotExist();
 
     CountOptions countOptionsEnd = new CountOptions();
     CountOptions countOptionsStart = new CountOptions();
-    if (featureFlagService.isEnabled(FeatureName.SPG_OPTIMIZE_CONCILIATION_QUERY, accountId)) {
-      finishedWFExecutionCountQuery.field(WorkflowExecutionKeys.pipelineExecutionId).equal(null);
-      runningWFExecutionCountQuery.field(WorkflowExecutionKeys.pipelineExecutionId).equal(null);
-      countOptionsEnd.hint(HINT_CONCILIATION_ENDTS);
-      countOptionsStart.hint(HINT_CONCILIATION_STARTTS);
-    } else {
-      finishedWFExecutionCountQuery.field(WorkflowExecutionKeys.pipelineExecutionId).doesNotExist();
-      runningWFExecutionCountQuery.field(WorkflowExecutionKeys.pipelineExecutionId).doesNotExist();
-    }
+    countOptionsEnd.hint(HINT_CONCILIATION_ENDTS);
+    countOptionsStart.hint(HINT_CONCILIATION_STARTTS);
 
     long finishedWFExecutionCount = finishedWFExecutionCountQuery.count(countOptionsEnd);
     long runningWFExecutionCount = runningWFExecutionCountQuery.count(countOptionsStart);

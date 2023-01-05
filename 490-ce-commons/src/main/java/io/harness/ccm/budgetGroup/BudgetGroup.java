@@ -11,6 +11,7 @@ import io.harness.annotations.StoreIn;
 import io.harness.ccm.budget.AlertThreshold;
 import io.harness.ccm.budget.BudgetMonthlyBreakdown;
 import io.harness.ccm.budget.BudgetPeriod;
+import io.harness.ccm.commons.entities.budget.BudgetCostData;
 import io.harness.mongo.index.FdIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
@@ -22,6 +23,7 @@ import io.harness.persistence.UuidAware;
 import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Id;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.HashMap;
 import java.util.List;
 import javax.validation.constraints.Size;
 import lombok.AccessLevel;
@@ -55,4 +57,5 @@ public final class BudgetGroup implements PersistentEntity, UuidAware, AccountAc
   long endTime;
   long createdAt;
   long lastUpdatedAt;
+  HashMap<Long, BudgetCostData> budgetGroupHistory;
 }

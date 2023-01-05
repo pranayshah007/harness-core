@@ -212,6 +212,7 @@ public class Instance {
   private long deletedAt;
   @CreatedDate Long createdAt;
   @LastModifiedDate Long lastModifiedAt;
+  private Long podCreatedAt;
 
   @UtilityClass
   public static class InstanceKeysAdditional {

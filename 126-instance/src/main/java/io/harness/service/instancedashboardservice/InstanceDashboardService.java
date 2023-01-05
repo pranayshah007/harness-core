@@ -36,10 +36,10 @@ public interface InstanceDashboardService {
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId);
   List<InstanceDetailsByBuildId> getActiveInstancesByServiceIdEnvIdAndBuildIds(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String serviceId, String envId, List<String> buildIds,
-      long timestampInMs, String infraId, String clusterId, String pipelineExecutionId, long lastDeployedAt);
+      long timestampInMs, String infraId, String clusterId, String pipelineExecutionId, Boolean isGitops);
   InstanceDetailsByBuildId getActiveInstanceDetails(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String serviceId, String envId, String infraId, String clusterIdentifier,
-      String pipelineExecutionId, String buildId);
+      String pipelineExecutionId, String buildId, Boolean isGitops);
   InstanceCountDetailsByEnvTypeAndServiceId getActiveServiceInstanceCountBreakdown(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, List<String> serviceId, long timestampInMs);
 }

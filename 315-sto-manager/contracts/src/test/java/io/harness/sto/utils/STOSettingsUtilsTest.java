@@ -53,7 +53,6 @@ public class STOSettingsUtilsTest {
     expected.put(getSTOKey("policy_type"), STOYamlScanMode.ORCHESTRATION.getPluginName());
     expected.put(getSTOKey("product_name"), emptyStep.getProductName());
     expected.put(getSTOKey("include_raw"), "true");
-    expected.put(getSTOKey("verify_ssl"), "true");
     expected.put(getSTOKey("container_type"), STOYamlImageType.AWS_ECR.getYamlName());
     expected.put(getSTOKey("fail_on_severity"), "0");
 

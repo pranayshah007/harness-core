@@ -21,7 +21,7 @@ import io.harness.delegate.beans.connector.CcmConnectorFilter;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.filter.FilterType;
 import io.harness.ng.beans.PageResponse;
-import io.harness.utils.RestCallToNGManagerClientUtils;
+import io.harness.remote.client.NGRestUtils;
 
 import com.google.inject.Singleton;
 import java.util.ArrayList;
@@ -67,7 +67,7 @@ public class ConnectorsHealthUpdateService {
     log.info("connector.getConnector().getIdentifier(): {}, accountId: {}", connector.getConnector().getIdentifier(),
         accountId);
     ConnectorValidationResult connectorValidationResult =
-        RestCallToNGManagerClientUtils.execute(connectorResourceClient.testConnectionInternal(
+        NGRestUtils.getResponse(connectorResourceClient.testConnectionInternal(
             connector.getConnector().getIdentifier(), accountId, null, null));
     log.info("connectorValidationResult {}", connectorValidationResult);
   }
@@ -99,7 +99,7 @@ public class ConnectorsHealthUpdateService {
 
   PageResponse getConnectors(
       String accountId, int page, int size, ConnectorFilterPropertiesDTO connectorFilterPropertiesDTO) {
-    return RestCallToNGManagerClientUtils.execute(
+    return NGRestUtils.getResponse(
         connectorResourceClient.listConnectors(accountId, null, null, page, size, connectorFilterPropertiesDTO, false));
   }
 }
