@@ -59,6 +59,7 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
     List<String> childEntityIds =
         budgetGroup.getChildEntities().stream().map(BudgetGroupChildEntityDTO::getId).collect(Collectors.toList());
     validateChildEntities(budgetGroup, areChildEntitiesBudgetGroups, childEntityIds);
+    validateParentOfChildEntities(budgetGroup, areChildEntitiesBudgetGroups, childEntityIds);
 
     // Saving budget group
     updateBudgetGroupCosts(budgetGroup);
@@ -76,9 +77,42 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
 
   @Override
   public void update(String uuid, String accountId, BudgetGroup budgetGroup) {
+    BudgetGroup oldBudgetGroup = budgetGroupDao.get(uuid, accountId);
+    log.info("Old budget group : {}", oldBudgetGroup);
+    budgetGroup.setUuid(uuid);
     BudgetGroupUtils.validateBudgetGroup(
         budgetGroup, budgetGroupDao.list(budgetGroup.getAccountId(), budgetGroup.getName()));
+
+    // Validating child entities
+    List<BudgetGroupChildEntityDTO> childEntities = budgetGroup.getChildEntities();
+    if (childEntities == null || childEntities.size() < 1) {
+      throw new InvalidRequestException(BudgetGroupUtils.CHILD_ENTITY_NOT_PRESENT_EXCEPTION);
+    }
+    boolean areChildEntitiesBudgetGroups =
+        BudgetGroupUtils.areChildEntitiesBudgetGroups(budgetGroup.getChildEntities());
+    List<String> childEntityIds =
+        budgetGroup.getChildEntities().stream().map(BudgetGroupChildEntityDTO::getId).collect(Collectors.toList());
+    List<String> oldChildEntityIds =
+        oldBudgetGroup.getChildEntities().stream().map(BudgetGroupChildEntityDTO::getId).collect(Collectors.toList());
+
+    validateChildEntities(budgetGroup, areChildEntitiesBudgetGroups, childEntityIds);
+
+    // Saving budget group
+    updateBudgetGroupCosts(budgetGroup);
+    updateBudgetGroupHistory(budgetGroup, budgetGroup.getAccountId());
     budgetGroupDao.update(uuid, accountId, budgetGroup);
+
+    // Updating parent id for child entities
+    // and also updating parent of child entities which are no longer part of this budget group
+    List<String> freeChildEntities =
+        oldChildEntityIds.stream().filter(id -> !childEntityIds.contains(id)).collect(Collectors.toList());
+    if (areChildEntitiesBudgetGroups) {
+      budgetGroupDao.updateParentId(uuid, childEntityIds);
+      budgetGroupDao.updateParentId(null, freeChildEntities);
+    } else {
+      budgetDao.updateParentId(uuid, childEntityIds);
+      budgetDao.updateParentId(null, freeChildEntities);
+    }
   }
 
   @Override
@@ -270,6 +304,17 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
       BudgetGroupUtils.validateChildBudgetGroups(budgetGroupDao.list(budgetGroup.getAccountId(), childEntityIds));
     } else {
       BudgetGroupUtils.validateChildBudgets(budgetDao.list(budgetGroup.getAccountId(), childEntityIds));
+    }
+  }
+
+  public void validateParentOfChildEntities(
+      BudgetGroup budgetGroup, boolean areChildEntitiesBudgetGroups, List<String> childEntityIds) {
+    if (areChildEntitiesBudgetGroups) {
+      BudgetGroupUtils.validateNoParentPresentForChildBudgetGroups(
+          budgetGroupDao.list(budgetGroup.getAccountId(), childEntityIds));
+    } else {
+      BudgetGroupUtils.validateNoParentPresentForChildBudgets(
+          budgetDao.list(budgetGroup.getAccountId(), childEntityIds));
     }
   }
 

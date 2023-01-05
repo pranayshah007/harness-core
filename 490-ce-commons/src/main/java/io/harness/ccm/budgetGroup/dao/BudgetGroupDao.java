@@ -48,7 +48,6 @@ public class BudgetGroupDao {
             .set(BudgetGroupKeys.actualCost, budgetGroup.getActualCost())
             .set(BudgetGroupKeys.forecastCost, budgetGroup.getForecastCost())
             .set(BudgetGroupKeys.lastMonthCost, budgetGroup.getLastMonthCost())
-            .set(BudgetGroupKeys.parentBudgetGroupId, budgetGroup.getParentBudgetGroupId())
             .set(BudgetGroupKeys.startTime, budgetGroup.getStartTime())
             .set(BudgetGroupKeys.endTime, budgetGroup.getEndTime());
 
@@ -74,8 +73,9 @@ public class BudgetGroupDao {
   public void updateParentId(String parentId, List<String> budgetGroupIds) {
     Query<BudgetGroup> query =
         hPersistence.createQuery(BudgetGroup.class).field(BudgetGroupKeys.uuid).in(budgetGroupIds);
-    UpdateOperations<BudgetGroup> updateOperations =
-        hPersistence.createUpdateOperations(BudgetGroup.class).set(BudgetGroupKeys.parentBudgetGroupId, parentId);
+    UpdateOperations<BudgetGroup> updateOperations = parentId != null
+        ? hPersistence.createUpdateOperations(BudgetGroup.class).set(BudgetGroupKeys.parentBudgetGroupId, parentId)
+        : hPersistence.createUpdateOperations(BudgetGroup.class).unset(BudgetGroupKeys.parentBudgetGroupId);
     hPersistence.update(query, updateOperations);
   }
 

@@ -79,13 +79,11 @@ public class BudgetGroupUtils {
     validatePeriodForChildBudgets(childBudgets);
     validateStartTimeForChildBudgets(childBudgets);
     validateBreakdownForChildBudgets(childBudgets);
-    validateNoParentPresentForChildBudget(childBudgets);
   }
 
   public static void validateChildBudgetGroups(List<BudgetGroup> childBudgetGroups) {
     validatePeriodForChildBudgetGroups(childBudgetGroups);
     validateStartTimeForChildBudgetGroups(childBudgetGroups);
-    validateBreakdownForChildBudgetGroups(childBudgetGroups);
     validateBreakdownForChildBudgetGroups(childBudgetGroups);
   }
 
@@ -114,7 +112,7 @@ public class BudgetGroupUtils {
     getBudgetBreakdownForChildBudgets(childBudgets);
   }
 
-  public static void validateNoParentPresentForChildBudget(List<Budget> childBudgets) {
+  public static void validateNoParentPresentForChildBudgets(List<Budget> childBudgets) {
     Set<String> parentIds = childBudgets.stream().map(Budget::getParentBudgetGroupId).collect(Collectors.toSet());
     if (parentIds.size() != 0) {
       throw new InvalidRequestException(CHILD_ENTITY_PARENT_PRESENT_EXCEPTION);
@@ -477,8 +475,10 @@ public class BudgetGroupUtils {
     }
   }
 
-  private static void validateBudgetGroupName(BudgetGroup budget, List<BudgetGroup> existingBudgetGroups) {
-    if (!existingBudgetGroups.isEmpty() && (!existingBudgetGroups.get(0).getUuid().equals(budget.getUuid()))) {
+  private static void validateBudgetGroupName(BudgetGroup budgetGroup, List<BudgetGroup> existingBudgetGroups) {
+    log.info("Existing budget groups: {}", existingBudgetGroups);
+    log.info("Budget groups: {}", budgetGroup.getUuid());
+    if (!existingBudgetGroups.isEmpty() && (!existingBudgetGroups.get(0).getUuid().equals(budgetGroup.getUuid()))) {
       throw new InvalidRequestException(BUDGET_GROUP_NAME_EXISTS_EXCEPTION);
     }
   }

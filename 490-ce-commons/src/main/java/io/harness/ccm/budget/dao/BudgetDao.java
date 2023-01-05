@@ -174,8 +174,9 @@ public class BudgetDao {
 
   public void updateParentId(String parentId, List<String> budgetIds) {
     Query<Budget> query = persistence.createQuery(Budget.class).field(BudgetKeys.uuid).in(budgetIds);
-    UpdateOperations<Budget> updateOperations =
-        persistence.createUpdateOperations(Budget.class).set(BudgetKeys.parentBudgetGroupId, parentId);
+    UpdateOperations<Budget> updateOperations = parentId != null
+        ? persistence.createUpdateOperations(Budget.class).set(BudgetKeys.parentBudgetGroupId, parentId)
+        : persistence.createUpdateOperations(Budget.class).unset(BudgetKeys.parentBudgetGroupId);
     persistence.update(query, updateOperations);
   }
 
