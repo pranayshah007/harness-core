@@ -7,11 +7,7 @@
 
 package io.harness.cdng.tas;
 
-import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
-import static io.harness.steps.StepUtils.prepareCDTaskRequest;
-
-import static java.util.Objects.isNull;
-
+import com.google.inject.Inject;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
@@ -25,23 +21,15 @@ import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.cdng.tas.outcome.TasRollingDeployOutcome;
-import io.harness.cdng.tas.outcome.TasSetupDataOutcome;
-import io.harness.cdng.tas.outcome.TasSetupVariablesOutcome;
-import io.harness.cdng.tas.outcome.TasSetupVariablesOutcome.TasSetupVariablesOutcomeBuilder;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.TasServerInstanceInfo;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
-import io.harness.delegate.beans.pcf.CfDeployCommandResult;
 import io.harness.delegate.beans.pcf.CfInternalInstanceElement;
-import io.harness.delegate.beans.pcf.TasResizeStrategyType;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.pcf.CfCommandTypeNG;
-import io.harness.delegate.task.pcf.request.CfBasicSetupRequestNG;
 import io.harness.delegate.task.pcf.request.CfRollingDeployRequestNG;
-import io.harness.delegate.task.pcf.response.CfBasicSetupResponseNG;
-import io.harness.delegate.task.pcf.response.CfDeployCommandResponseNG;
 import io.harness.delegate.task.pcf.response.CfRollingDeployResponseNG;
 import io.harness.delegate.task.pcf.response.TasInfraConfig;
 import io.harness.eraro.ErrorCode;
@@ -51,7 +39,6 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.WingsException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.logging.UnitProgress;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.pcf.CfCommandUnitConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -75,23 +62,24 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
-
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 import software.wings.beans.TaskType;
-
-import com.google.inject.Inject;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.tuple.Pair;
+
+import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
+import static io.harness.steps.StepUtils.prepareCDTaskRequest;
+import static java.util.Objects.isNull;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
-public class TasRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac implements TasStepExecutor {
+public class TasRouteMappingStep extends TaskChainExecutableWithRollbackAndRbac implements TasStepExecutor {
   public static final StepType STEP_TYPE = StepType.newBuilder()
-          .setType(ExecutionNodeType.TAS_ROLLING_DEPLOY.getYamlType())
+          .setType(ExecutionNodeType.ROUTE_MAPPING.getYamlType())
           .setStepCategory(StepCategory.STEP)
           .build();
   @Inject private OutcomeService outcomeService;

@@ -77,6 +77,7 @@ import io.harness.cdng.tas.TasCommandStepNode;
 import io.harness.cdng.tas.TasRollbackStepNode;
 import io.harness.cdng.tas.TasRollingDeployStepNode;
 import io.harness.cdng.tas.TasRollingRollbackStepNode;
+import io.harness.cdng.tas.TasRouteMappingStepNode;
 import io.harness.cdng.tas.TasSwapRollbackStepNode;
 import io.harness.cdng.tas.TasSwapRoutesStepNode;
 import io.harness.morphia.MorphiaRegistrar;
@@ -940,6 +941,18 @@ public class CDNGRegistrars {
                       .availableAtOrgLevel(false)
                       .availableAtAccountLevel(false)
                       .clazz(TasRollingRollbackStepNode.class)
+                      .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                              .namespace(SchemaNamespaceConstants.CD)
+                              .modulesSupported(Collections.singletonList(ModuleType.CD))
+                              .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                              .build())
+                      .build())
+              .add(YamlSchemaRootClass.builder()
+                      .entityType(EntityType.ROUTE_MAPPING)
+                      .availableAtProjectLevel(true)
+                      .availableAtOrgLevel(false)
+                      .availableAtAccountLevel(false)
+                      .clazz(TasRouteMappingStepNode.class)
                       .yamlSchemaMetadata(YamlSchemaMetadata.builder()
                               .namespace(SchemaNamespaceConstants.CD)
                               .modulesSupported(Collections.singletonList(ModuleType.CD))

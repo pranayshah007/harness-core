@@ -222,7 +222,9 @@ public class TasRollingRollbackStep extends TaskExecutableWithRollbackAndRbac<Cf
           .build();
     }
     List<ServerInstanceInfo> serverInstanceInfoList = getServerInstanceInfoList(response, ambiance);
-    tasStepHelper.saveInstancesOutcome(ambiance, serverInstanceInfoList);
+    StepResponse.StepOutcome stepOutcome =
+            instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfoList);
+    builder.stepOutcome(stepOutcome);
     builder.unitProgressList(response.getUnitProgressData().getUnitProgresses());
     builder.status(Status.SUCCEEDED);
     return builder.build();

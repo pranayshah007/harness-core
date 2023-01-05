@@ -197,7 +197,7 @@ public class CfRollingDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler 
 
       cfRollingDeployResponseNGBuilder.deploymentStarted(true);
       ApplicationDetail applicationDetail = createAppAndPrintDetails(logCallback, requestData);
-      List<CfInternalInstanceElement> cfInternalInstanceElements = Collections.emptyList();
+      List<CfInternalInstanceElement> cfInternalInstanceElements = new ArrayList<>();
       List<InstanceDetail> newUpsizedInstances = filterNewUpsizedAppInstances(detailsBeforeDeployment, applicationDetail);
       newUpsizedInstances.forEach(instance
               -> cfInternalInstanceElements.add(CfInternalInstanceElement.builder()

@@ -30,8 +30,7 @@ import static io.harness.expression.Expression.ALLOW_SECRETS;
 @OwnedBy(HarnessTeam.CDP)
 public class CfRollingRollbackResponseNG implements CfCommandResponseNG {
   TasArtifactConfig tasArtifactConfig;
-  @Expression(ALLOW_SECRETS)
-  List<String> routeMaps;
+  @Expression(ALLOW_SECRETS) List<String> routeMaps;
   @NonFinal DelegateMetaInfo delegateMetaInfo;
   @NonFinal UnitProgressData unitProgressData;
   CommandExecutionStatus commandExecutionStatus;
