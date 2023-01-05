@@ -8,9 +8,11 @@
 package io.harness.ng.core.service.services;
 
 import static io.harness.beans.FeatureName.CDS_FORCE_DELETE_ENTITIES;
+import static io.harness.beans.FeatureName.NG_SETTINGS;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
 
+import static java.lang.Boolean.parseBoolean;
 import static java.lang.Long.parseLong;
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isNumeric;
@@ -20,9 +22,13 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.dtos.InstanceDTO;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ngsettings.SettingIdentifiers;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.remote.client.CGRestUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.service.instance.InstanceService;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import java.util.List;
 import lombok.AllArgsConstructor;
@@ -33,6 +39,7 @@ public class ServiceEntityManagementServiceImpl implements ServiceEntityManageme
   private final InstanceService instanceService;
   private final ServiceEntityService serviceEntityService;
   private final AccountClient accountClient;
+  NGSettingsClient settingsClient;
   @Override
   public boolean deleteService(String accountId, String orgIdentifier, String projectIdentifier,
       String serviceIdentifier, String ifMatch, Boolean forceDelete) {
@@ -51,10 +58,30 @@ public class ServiceEntityManagementServiceImpl implements ServiceEntityManageme
       }
     }
     return serviceEntityService.delete(accountId, orgIdentifier, projectIdentifier, serviceIdentifier,
-        isNumeric(ifMatch) ? parseLong(ifMatch) : null, false);
+        isNumeric(ifMatch) ? parseLong(ifMatch) : null, forceDelete);
   }
   private boolean isForceDeleteEnabled(String accountIdentifier) {
+    boolean isForceDeleteFFEnabled = isForceDeleteFFEnabled(accountIdentifier);
+    boolean isForceDeleteEnabledBySettings =
+        isNgSettingsFFEnabled(accountIdentifier) && isForceDeleteFFEnabledViaSettings(accountIdentifier);
+    return isForceDeleteFFEnabled && isForceDeleteEnabledBySettings;
+  }
+  @VisibleForTesting
+  protected boolean isForceDeleteFFEnabledViaSettings(String accountIdentifier) {
+    return parseBoolean(NGRestUtils
+                            .getResponse(settingsClient.getSetting(
+                                SettingIdentifiers.ENABLE_FORCE_DELETE, accountIdentifier, null, null))
+                            .getValue());
+  }
+
+  @VisibleForTesting
+  protected boolean isForceDeleteFFEnabled(String accountIdentifier) {
     return CGRestUtils.getResponse(
         accountClient.isFeatureFlagEnabled(CDS_FORCE_DELETE_ENTITIES.name(), accountIdentifier));
+  }
+
+  @VisibleForTesting
+  protected boolean isNgSettingsFFEnabled(String accountIdentifier) {
+    return CGRestUtils.getResponse(accountClient.isFeatureFlagEnabled(NG_SETTINGS.name(), accountIdentifier));
   }
 }
