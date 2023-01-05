@@ -168,4 +168,5 @@ public class NGCommonEntityConstants {
   public static final String PARENT_JOB_NAME = "parentJobName";
   public static final String HARNESS_IMAGE = "harnessImage";
   public static final String METHOD_NAME = "methodName";
+  public static final String AGENT_KEY = "agentIdentifier";
 }

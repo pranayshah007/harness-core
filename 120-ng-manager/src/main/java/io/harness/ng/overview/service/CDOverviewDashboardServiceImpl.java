@@ -2274,12 +2274,12 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   public InstanceGroupedByServiceList.InstanceGroupedByService getInstanceGroupedByArtifactList(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId) {
     List<ActiveServiceInstanceInfoV2> activeServiceInstanceInfoList;
-    if (!Boolean.TRUE.equals(isGitopsEnabled(accountIdentifier, orgIdentifier, projectIdentifier, serviceId))) {
-      activeServiceInstanceInfoList = instanceDashboardService.getActiveServiceInstanceInfo(
-          accountIdentifier, orgIdentifier, projectIdentifier, null, serviceId, null, false);
-    } else {
+    if (Boolean.TRUE.equals(isGitopsEnabled(accountIdentifier, orgIdentifier, projectIdentifier, serviceId))) {
       activeServiceInstanceInfoList = instanceDashboardService.getActiveServiceInstanceInfo(
           accountIdentifier, orgIdentifier, projectIdentifier, null, serviceId, null, true);
+    } else {
+      activeServiceInstanceInfoList = instanceDashboardService.getActiveServiceInstanceInfo(
+          accountIdentifier, orgIdentifier, projectIdentifier, null, serviceId, null, false);
     }
 
     InstanceGroupedByServiceList instanceGroupedByServiceList =

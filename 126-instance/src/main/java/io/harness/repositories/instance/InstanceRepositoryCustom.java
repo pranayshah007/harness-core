@@ -16,6 +16,7 @@ import io.harness.models.CountByServiceIdAndEnvType;
 import io.harness.models.EnvBuildInstanceCount;
 import io.harness.models.InstancesByBuildId;
 
+import com.mongodb.client.result.UpdateResult;
 import java.util.List;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -85,4 +86,9 @@ public interface InstanceRepositoryCustom {
 
   long countDistinctActiveServicesDeployedInInterval(
       String accountId, String orgId, String projectId, long startTS, long endTS);
+
+  UpdateResult updateMany(Criteria criteria, Update update);
+
+  List<Instance> getActiveInstancesByServiceId(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String serviceIdentifier, String agentIdentifier);
 }
