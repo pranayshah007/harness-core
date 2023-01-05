@@ -66,10 +66,10 @@ public class S3ToClickHouseSyncTasklet implements Tasklet {
     log.info("Running the S3ToClickHouseSync job");
     final JobConstants jobConstants = CCMJobConstants.fromContext(chunkContext);
     //    String accountId = jobConstants.getAccountId();
-    Instant startTime = Instant.ofEpochMilli(jobConstants.getJobStartTime());
-    Instant endTime = Instant.ofEpochMilli(jobConstants.getJobEndTime());
-    //     Instant endTime = Instant.now();
-    //     Instant startTime = endTime.minus(4, ChronoUnit.HOURS);
+//    Instant startTime = Instant.ofEpochMilli(jobConstants.getJobStartTime());
+//    Instant endTime = Instant.ofEpochMilli(jobConstants.getJobEndTime());
+    Instant endTime = Instant.now();
+    Instant startTime = endTime.minus(15, ChronoUnit.HOURS);
 
     // 0. create database/dataset from accountid "if not exists" if possible using query. else use ccm db.
     //     - and then use this DB. or use ccm db.
