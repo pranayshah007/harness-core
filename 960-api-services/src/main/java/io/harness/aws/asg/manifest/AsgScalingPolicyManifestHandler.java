@@ -10,23 +10,25 @@ package io.harness.aws.asg.manifest;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgScalingPolicy;
 
+import static com.google.common.collect.Lists.newArrayList;
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.aws.asg.AsgMapper;
+import io.harness.aws.asg.AsgContentParser;
 import io.harness.aws.asg.AsgSdkManager;
 import io.harness.manifest.request.ManifestRequest;
 
 import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.amazonaws.services.autoscaling.model.PutScalingPolicyRequest;
 import com.amazonaws.services.autoscaling.model.ScalingPolicy;
-import com.google.inject.Inject;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @OwnedBy(CDP)
 public class AsgScalingPolicyManifestHandler extends AsgManifestHandler<PutScalingPolicyRequest> {
-  @Inject private AsgMapper asgMapper;
   public AsgScalingPolicyManifestHandler(AsgSdkManager asgSdkManager, ManifestRequest manifestRequest) {
     super(asgSdkManager, manifestRequest);
   }
@@ -65,11 +67,39 @@ public class AsgScalingPolicyManifestHandler extends AsgManifestHandler<PutScali
     AutoScalingGroup autoScalingGroup = chainState.getAutoScalingGroup();
     if (autoScalingGroup != null) {
       List<ScalingPolicy> scalingPoliciesList = asgSdkManager.listAllScalingPoliciesOfAsg(chainState.getAsgName());
-      List<String> scalingPolicies =
-          asgMapper.createScalingPolicyRequestsListFromScalingPoliciesList(scalingPoliciesList);
+      List<String> scalingPolicies = createScalingPolicyRequestsListFromScalingPoliciesList(scalingPoliciesList);
 
-      chainState.getPrepareRollbackDataAsgStoreManifestsContent().put(AsgScalingPolicy, scalingPolicies);
+      Map<String, List<String>> asgManifestsDataForRollback = chainState.getAsgManifestsDataForRollback();
+      if (asgManifestsDataForRollback == null) {
+        Map<String, List<String>> asgManifestsDataForRollback2 = new HashMap<>() {
+          { put(AsgScalingPolicy, scalingPolicies); }
+        };
+        chainState.setAsgManifestsDataForRollback(asgManifestsDataForRollback2);
+      } else {
+        asgManifestsDataForRollback.put(AsgScalingPolicy, scalingPolicies);
+        chainState.setAsgManifestsDataForRollback(asgManifestsDataForRollback);
+      }
     }
     return chainState;
+  }
+
+  private String createScalingPolicyRequestFromScalingPolicyMapper(ScalingPolicy scalingPolicy)
+      throws JsonProcessingException {
+    String scalingPolicyContent = AsgContentParser.toString(scalingPolicy, true);
+    PutScalingPolicyRequest putScalingPolicyRequest =
+        AsgContentParser.parseJson(scalingPolicyContent, PutScalingPolicyRequest.class, false);
+    return AsgContentParser.toString(putScalingPolicyRequest, false);
+  }
+
+  private List<String> createScalingPolicyRequestsListFromScalingPoliciesList(List<ScalingPolicy> scalingPolicies) {
+    List<String> createScalingPolicyRequestsList = newArrayList();
+    scalingPolicies.forEach(scalingPolicy -> {
+      try {
+        createScalingPolicyRequestsList.add(createScalingPolicyRequestFromScalingPolicyMapper(scalingPolicy));
+      } catch (JsonProcessingException e) {
+        throw new RuntimeException(e);
+      }
+    });
+    return createScalingPolicyRequestsList;
   }
 }

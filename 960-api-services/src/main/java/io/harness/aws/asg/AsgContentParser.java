@@ -11,17 +11,22 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
+import io.harness.serializer.YamlUtils;
 
+import com.amazonaws.event.ProgressListener;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import java.io.IOException;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
 @OwnedBy(CDP)
 public class AsgContentParser {
   private static final ObjectMapper defaultMapper = new ObjectMapper();
+  private YamlUtils yamlUtils = new YamlUtils();
   private static final ObjectMapper mapperWithFailOnUnknownPropertiesFalse = new ObjectMapper();
 
   static {
@@ -30,12 +35,17 @@ public class AsgContentParser {
 
   static {
     mapperWithFailOnUnknownPropertiesFalse.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    final var simpleModule = new SimpleModule().addAbstractTypeMapping(ProgressListener.class, AsgDummy.class);
+
+    mapperWithFailOnUnknownPropertiesFalse.registerModule(simpleModule);
   }
 
-  public <T> T parseJson(String json, Class<T> clazz) {
+  public <T> T parseJson(String json, Class<T> clazz, boolean failOnUnknownProperties) {
     try {
-      return defaultMapper.readValue(json, clazz);
-    } catch (JsonProcessingException e) {
+      ObjectMapper objectMapper = getMapper(failOnUnknownProperties);
+
+      return objectMapper.readValue(json, clazz);
+    } catch (IOException e) {
       throw new InvalidRequestException("Cannot parse json with error", e);
     }
   }
@@ -43,7 +53,7 @@ public class AsgContentParser {
   public String toString(Object object, boolean failOnUnknownProperties) {
     try {
       ObjectMapper objectMapper = getMapper(failOnUnknownProperties);
-      return objectMapper.writeValueAsString(object);
+      return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(object);
     } catch (JsonProcessingException e) {
       throw new InvalidRequestException("Cannot convert the request object to json due to following error:", e);
     }
@@ -51,9 +61,9 @@ public class AsgContentParser {
 
   private ObjectMapper getMapper(boolean failOnUnknownProperties) {
     if (failOnUnknownProperties) {
-      return mapperWithFailOnUnknownPropertiesFalse;
-    } else {
       return defaultMapper;
+    } else {
+      return mapperWithFailOnUnknownPropertiesFalse;
     }
   }
 }

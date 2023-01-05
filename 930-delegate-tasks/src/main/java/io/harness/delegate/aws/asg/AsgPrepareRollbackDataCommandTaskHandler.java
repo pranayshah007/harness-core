@@ -80,8 +80,21 @@ public class AsgPrepareRollbackDataCommandTaskHandler extends AsgCommandTaskNGHa
 
     try {
       AsgSdkManager asgSdkManager = asgTaskHelper.getAsgSdkManager(asgCommandRequest, logCallback);
+
+      String asgConfigurationContent = asgTaskHelper.getAsgConfigurationContent(asgStoreManifestsContent);
+      CreateAutoScalingGroupRequest createAutoScalingGroupRequest =
+          AsgContentParser.parseJson(asgConfigurationContent, CreateAutoScalingGroupRequest.class, true);
+      String asgName = createAutoScalingGroupRequest.getAutoScalingGroupName();
+
+      Map<String, List<String>> prepareRollbackDataAsgStoreManifestsContent =
+          executePrepareRollbackData(asgSdkManager, logCallback, asgName);
+
       AsgPrepareRollbackDataResult asgPrepareRollbackDataResult =
-          executePrepareRollbackData(asgSdkManager, asgStoreManifestsContent, logCallback);
+          AsgPrepareRollbackDataResult
+              .builder()
+              //      .asgName(asgName)
+              //.asgStoreManifestsContent(prepareRollbackDataAsgStoreManifestsContent)
+              .build();
 
       return AsgPrepareRollbackDataResponse.builder()
           .asgPrepareRollbackDataResult(asgPrepareRollbackDataResult)
@@ -90,20 +103,16 @@ public class AsgPrepareRollbackDataCommandTaskHandler extends AsgCommandTaskNGHa
 
     } catch (Exception e) {
       logCallback.saveExecutionLog(
-          color(format("Prepare Rollback Data Operation Failed."), LogColor.Red, LogWeight.Bold), ERROR,
-          CommandExecutionStatus.FAILURE);
+          color(format("Prepare Rollback Data Operation Failed with error: %s", asgTaskHelper.getExceptionMessage(e)),
+              LogColor.Red, LogWeight.Bold),
+          ERROR, CommandExecutionStatus.FAILURE);
       throw new AsgNGException(e);
     }
   }
 
-  private AsgPrepareRollbackDataResult executePrepareRollbackData(
-      AsgSdkManager asgSdkManager, Map<String, List<String>> asgStoreManifestsContent, LogCallback logCallback) {
+  private Map<String, List<String>> executePrepareRollbackData(
+      AsgSdkManager asgSdkManager, LogCallback logCallback, String asgName) {
     asgSdkManager.info("Prepare Rollback Data Operation Started");
-    // Get ASG name from asg configuration manifest
-    String asgConfigurationContent = asgTaskHelper.getAsgConfigurationContent(asgStoreManifestsContent);
-    CreateAutoScalingGroupRequest createAutoScalingGroupRequest =
-        AsgContentParser.parseJson(asgConfigurationContent, CreateAutoScalingGroupRequest.class);
-    String asgName = createAutoScalingGroupRequest.getAutoScalingGroupName();
     if (isEmpty(asgName)) {
       throw new InvalidArgumentsException(Pair.of("AutoScalingGroup name", "Must not be empty"));
     }
@@ -128,9 +137,6 @@ public class AsgPrepareRollbackDataCommandTaskHandler extends AsgCommandTaskNGHa
       logCallback.saveExecutionLog(color("Prepare Rollback Data Operation Finished Successfully", Green, Bold), INFO,
           CommandExecutionStatus.SUCCESS);
     }
-    return AsgPrepareRollbackDataResult
-        .builder()
-        //.asgStoreManifestsContent(chainState.getPrepareRollbackDataAsgStoreManifestsContent)
-        .build();
+    return chainState.getAsgManifestsDataForRollback();
   }
 }

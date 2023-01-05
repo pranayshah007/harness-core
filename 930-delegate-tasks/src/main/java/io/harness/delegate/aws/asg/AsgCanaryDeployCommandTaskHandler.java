@@ -108,7 +108,7 @@ public class AsgCanaryDeployCommandTaskHandler extends AsgCommandTaskNGHandler {
     String asgConfigurationContent = asgTaskHelper.getAsgConfigurationContent(asgStoreManifestsContent);
 
     CreateAutoScalingGroupRequest createAutoScalingGroupRequest =
-        AsgContentParser.parseJson(asgConfigurationContent, CreateAutoScalingGroupRequest.class);
+        AsgContentParser.parseJson(asgConfigurationContent, CreateAutoScalingGroupRequest.class, true);
     String asgName = createAutoScalingGroupRequest.getAutoScalingGroupName();
     if (isEmpty(asgName)) {
       throw new InvalidArgumentsException(Pair.of("AutoScalingGroup name", "Must not be empty"));

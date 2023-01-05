@@ -14,14 +14,15 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.aws.asg.AsgMapper;
+import io.harness.aws.asg.AsgContentParser;
 import io.harness.aws.asg.AsgSdkManager;
 import io.harness.aws.asg.manifest.request.AsgConfigurationManifestRequest;
 import io.harness.manifest.request.ManifestRequest;
 
 import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.amazonaws.services.autoscaling.model.CreateAutoScalingGroupRequest;
-import com.google.inject.Inject;
+import com.amazonaws.services.autoscaling.model.LifecycleHookSpecification;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -30,7 +31,6 @@ import java.util.stream.Collectors;
 
 @OwnedBy(CDP)
 public class AsgConfigurationManifestHandler extends AsgManifestHandler<CreateAutoScalingGroupRequest> {
-  @Inject private AsgMapper asgMapper;
   public interface OverrideProperties {
     String minSize = "minSize";
     String maxSize = "maxSize";
@@ -136,12 +136,40 @@ public class AsgConfigurationManifestHandler extends AsgManifestHandler<CreateAu
 
     AutoScalingGroup autoScalingGroup = chainState.getAutoScalingGroup();
     if (autoScalingGroup != null) {
-      String asgConfiguration =
-          asgMapper.createAutoScalingGroupRequestFromAutoScalingGroupConfiguration(autoScalingGroup);
+      List<LifecycleHookSpecification> lifecycleHookSpecificationList =
+          asgSdkManager.getLifeCycleHookSpecificationList(chainState.getAsgName());
+      String asgConfiguration = createAutoScalingGroupRequestFromAutoScalingGroupConfiguration(
+          autoScalingGroup, lifecycleHookSpecificationList);
 
-      chainState.getPrepareRollbackDataAsgStoreManifestsContent().put(
-          AsgConfiguration, Collections.singletonList(asgConfiguration));
+      Map<String, List<String>> asgManifestsDataForRollback = chainState.getAsgManifestsDataForRollback();
+      if (asgManifestsDataForRollback == null) {
+        Map<String, List<String>> asgManifestsDataForRollback2 = new HashMap<>() {
+          { put(AsgConfiguration, Collections.singletonList(asgConfiguration)); }
+        };
+        chainState.setAsgManifestsDataForRollback(asgManifestsDataForRollback2);
+      } else {
+        asgManifestsDataForRollback.put(AsgConfiguration, Collections.singletonList(asgConfiguration));
+        chainState.setAsgManifestsDataForRollback(asgManifestsDataForRollback);
+      }
     }
     return chainState;
+  }
+  private String createAutoScalingGroupRequestFromAutoScalingGroupConfigurationMapper(AutoScalingGroup autoScalingGroup,
+      List<LifecycleHookSpecification> lifecycleHookSpecificationList) throws JsonProcessingException {
+    String autoScalingGroupContent = AsgContentParser.toString(autoScalingGroup, true);
+    CreateAutoScalingGroupRequest createAutoScalingGroupRequest =
+        AsgContentParser.parseJson(autoScalingGroupContent, CreateAutoScalingGroupRequest.class, false);
+    createAutoScalingGroupRequest.setLifecycleHookSpecificationList(lifecycleHookSpecificationList);
+    return AsgContentParser.toString(createAutoScalingGroupRequest, false);
+  }
+
+  private String createAutoScalingGroupRequestFromAutoScalingGroupConfiguration(
+      AutoScalingGroup autoScalingGroup, List<LifecycleHookSpecification> lifecycleHookSpecificationList) {
+    try {
+      return createAutoScalingGroupRequestFromAutoScalingGroupConfigurationMapper(
+          autoScalingGroup, lifecycleHookSpecificationList);
+    } catch (JsonProcessingException e) {
+      throw new RuntimeException(e);
+    }
   }
 }

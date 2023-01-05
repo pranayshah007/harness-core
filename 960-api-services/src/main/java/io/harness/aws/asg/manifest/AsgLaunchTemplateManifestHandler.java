@@ -19,7 +19,9 @@ import com.amazonaws.services.ec2.model.CreateLaunchTemplateRequest;
 import com.amazonaws.services.ec2.model.LaunchTemplate;
 import com.amazonaws.services.ec2.model.LaunchTemplateVersion;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @OwnedBy(CDP)
@@ -74,8 +76,16 @@ public class AsgLaunchTemplateManifestHandler extends AsgManifestHandler<CreateL
     if (autoScalingGroup != null) {
       String launchTemplateVersion = autoScalingGroup.getLaunchTemplate().getVersion();
 
-      chainState.getPrepareRollbackDataAsgStoreManifestsContent().put(
-          AsgLaunchTemplate, Collections.singletonList(launchTemplateVersion));
+      Map<String, List<String>> asgManifestsDataForRollback = chainState.getAsgManifestsDataForRollback();
+      if (asgManifestsDataForRollback == null) {
+        Map<String, List<String>> asgManifestsDataForRollback2 = new HashMap<>() {
+          { put(AsgLaunchTemplate, Collections.singletonList(launchTemplateVersion)); }
+        };
+        chainState.setAsgManifestsDataForRollback(asgManifestsDataForRollback2);
+      } else {
+        asgManifestsDataForRollback.put(AsgLaunchTemplate, Collections.singletonList(launchTemplateVersion));
+        chainState.setAsgManifestsDataForRollback(asgManifestsDataForRollback);
+      }
     }
     return chainState;
   }

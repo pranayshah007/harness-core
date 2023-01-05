@@ -94,6 +94,7 @@ import com.amazonaws.services.ec2.model.RequestLaunchTemplateData;
 import com.google.common.util.concurrent.ExecutionError;
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.common.util.concurrent.UncheckedExecutionException;
+import com.google.inject.Inject;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -124,6 +125,7 @@ public class AsgSdkManager {
   private final Integer steadyStateTimeOutInMinutes;
   private final TimeLimiter timeLimiter;
   @Setter private LogCallback logCallback;
+  @Inject AsgMapper asgMapper;
 
   @Builder
   public AsgSdkManager(Supplier<AmazonEC2Client> ec2ClientSupplier, Supplier<AmazonAutoScalingClient> asgClientSupplier,
@@ -395,6 +397,31 @@ public class AsgSdkManager {
     }
   }
 
+  public List<LifecycleHookSpecification> getLifeCycleHookSpecificationList(String asgName) {
+    DescribeLifecycleHooksRequest describeLifecycleHooksRequest = new DescribeLifecycleHooksRequest();
+    describeLifecycleHooksRequest.setAutoScalingGroupName(asgName);
+
+    List<LifecycleHook> lifecycleHooks =
+        (asgCall(asgClient -> asgClient.describeLifecycleHooks(describeLifecycleHooksRequest))).getLifecycleHooks();
+
+    List<LifecycleHookSpecification> lifecycleHookSpecificationList = new ArrayList<>();
+
+    if (isNotEmpty(lifecycleHooks)) {
+      lifecycleHooks.forEach(lifecycleHook -> {
+        LifecycleHookSpecification lifecycleHookSpecification = new LifecycleHookSpecification();
+        lifecycleHookSpecification.setLifecycleHookName(lifecycleHook.getLifecycleHookName());
+        lifecycleHookSpecification.setLifecycleTransition(lifecycleHook.getLifecycleTransition());
+        lifecycleHookSpecification.setDefaultResult(lifecycleHook.getDefaultResult());
+        lifecycleHookSpecification.setNotificationMetadata(lifecycleHook.getNotificationMetadata());
+        lifecycleHookSpecification.setNotificationTargetARN(lifecycleHook.getNotificationTargetARN());
+        lifecycleHookSpecification.setHeartbeatTimeout(lifecycleHook.getHeartbeatTimeout());
+        lifecycleHookSpecification.setRoleARN(lifecycleHook.getRoleARN());
+        lifecycleHookSpecificationList.add(lifecycleHookSpecification);
+      });
+    }
+    return lifecycleHookSpecificationList;
+  }
+
   public AutoScalingGroup getASG(String asgName) {
     DescribeAutoScalingGroupsRequest describeAutoScalingGroupsRequest =
         new DescribeAutoScalingGroupsRequest().withAutoScalingGroupNames(asgName);
@@ -589,79 +616,15 @@ public class AsgSdkManager {
     return describeLaunchConfigurationsResult.getLaunchConfigurations().get(0);
   }
 
-  public UpdateAutoScalingGroupRequest createAsgRequestToUpdateAsgRequestMapper(
+  private UpdateAutoScalingGroupRequest createAsgRequestToUpdateAsgRequestMapper(
       CreateAutoScalingGroupRequest createAutoScalingGroupRequest) {
-    UpdateAutoScalingGroupRequest updateAutoScalingGroupRequest = new UpdateAutoScalingGroupRequest();
-    updateAutoScalingGroupRequest.setAutoScalingGroupName(createAutoScalingGroupRequest.getAutoScalingGroupName());
-    updateAutoScalingGroupRequest.setLaunchConfigurationName(
-        createAutoScalingGroupRequest.getLaunchConfigurationName());
-    updateAutoScalingGroupRequest.setLaunchTemplate(createAutoScalingGroupRequest.getLaunchTemplate());
-    updateAutoScalingGroupRequest.setMixedInstancesPolicy(createAutoScalingGroupRequest.getMixedInstancesPolicy());
-    updateAutoScalingGroupRequest.setMinSize(createAutoScalingGroupRequest.getMinSize());
-    updateAutoScalingGroupRequest.setMaxSize(createAutoScalingGroupRequest.getMaxSize());
-    updateAutoScalingGroupRequest.setDesiredCapacity(createAutoScalingGroupRequest.getDesiredCapacity());
-    updateAutoScalingGroupRequest.setDefaultCooldown(createAutoScalingGroupRequest.getDefaultCooldown());
-    updateAutoScalingGroupRequest.setAvailabilityZones(createAutoScalingGroupRequest.getAvailabilityZones());
-    updateAutoScalingGroupRequest.setHealthCheckType(createAutoScalingGroupRequest.getHealthCheckType());
-    updateAutoScalingGroupRequest.setHealthCheckGracePeriod(createAutoScalingGroupRequest.getHealthCheckGracePeriod());
-    updateAutoScalingGroupRequest.setPlacementGroup(createAutoScalingGroupRequest.getPlacementGroup());
-    updateAutoScalingGroupRequest.setVPCZoneIdentifier(createAutoScalingGroupRequest.getVPCZoneIdentifier());
-    updateAutoScalingGroupRequest.setTerminationPolicies(createAutoScalingGroupRequest.getTerminationPolicies());
-    updateAutoScalingGroupRequest.setNewInstancesProtectedFromScaleIn(
-        createAutoScalingGroupRequest.getNewInstancesProtectedFromScaleIn());
-    updateAutoScalingGroupRequest.setServiceLinkedRoleARN(createAutoScalingGroupRequest.getServiceLinkedRoleARN());
-    updateAutoScalingGroupRequest.setMaxInstanceLifetime(createAutoScalingGroupRequest.getMaxInstanceLifetime());
-    updateAutoScalingGroupRequest.setCapacityRebalance(createAutoScalingGroupRequest.getCapacityRebalance());
-    updateAutoScalingGroupRequest.setContext(createAutoScalingGroupRequest.getContext());
-    updateAutoScalingGroupRequest.setDesiredCapacity(createAutoScalingGroupRequest.getDesiredCapacity());
-    updateAutoScalingGroupRequest.setDefaultInstanceWarmup(createAutoScalingGroupRequest.getDefaultInstanceWarmup());
+    String createAutoScalingGroupRequestContent = AsgContentParser.toString(createAutoScalingGroupRequest, true);
+    UpdateAutoScalingGroupRequest updateAutoScalingGroupRequest =
+        AsgContentParser.parseJson(createAutoScalingGroupRequestContent, UpdateAutoScalingGroupRequest.class, false);
 
     return updateAutoScalingGroupRequest;
   }
-  /*
-    public CreateLaunchTemplateRequest createLaunchTemplateRequestfromAsgName(String asgName) {
-      CreateLaunchTemplateRequest createLaunchTemplateRequest = new CreateLaunchTemplateRequest();
-      return createLaunchTemplateRequest;
 
-      LaunchTemplate launchTemplate = getLaunchTemplate(asgName);
-      CreateLaunchTemplateRequest createLaunchTemplateRequest = new CreateLaunchTemplateRequest();
-      createLaunchTemplateRequest.setLaunchTemplateName(launchTemplate.getLaunchTemplateName());
-
-              DescribeAutoScalingInstancesRequest describeAutoScalingInstancesRequest = new
-      DescribeAutoScalingInstancesRequest(); List<AutoScalingInstanceDetails> autoScalingInstanceDetails =
-      (asgCall(asgClient ->
-      asgClient.describeAutoScalingInstances(describeAutoScalingInstancesRequest))).getAutoScalingInstances();
-
-      AutoScalingInstanceDetails autoScalingInstanceDetails1 = new AutoScalingInstanceDetails();
-      if (isNotEmpty(autoScalingInstanceDetails)) {
-        autoScalingInstanceDetails1 =
-                autoScalingInstanceDetails.stream()
-                        .filter(autoScalingInstance ->
-      asgName.equalsIgnoreCase(autoScalingInstance.getAutoScalingGroupName())) .findFirst().get();
-      }
-
-      String InstanceId = autoScalingInstanceDetails1.getInstanceId();
-      DescribeInstancesRequest describeInstancesRequest = new DescribeInstancesRequest().withInstanceIds(InstanceId);
-      DescribeInstancesResult describeInstancesResult = ec2Call(ec2Client ->
-      ec2Client.describeInstances(describeInstancesRequest));
-
-
-      Reservation reservation = (Reservation) describeInstancesResult.getReservations();
-      com.amazonaws.services.ec2.model.Instance instance = (com.amazonaws.services.ec2.model.Instance)
-      reservation.getInstances();
-
-      RequestLaunchTemplateData requestLaunchTemplateData = new RequestLaunchTemplateData();
-      requestLaunchTemplateData.setKernelId(instance.getKernelId());
-      requestLaunchTemplateData.setKernelId(instance.getKernelId());
-      requestLaunchTemplateData.setKernelId(instance.getKernelId());
-      requestLaunchTemplateData.setKernelId(instance.getKernelId());
-      requestLaunchTemplateData.setKernelId(instance.getKernelId());
-      requestLaunchTemplateData.setKernelId(instance.getKernelId());
-      requestLaunchTemplateData.setKernelId(instance.getKernelId());
-      requestLaunchTemplateData.setKernelId(instance.getKernelId());
-
-    }
-  */
   public void info(String msg, Object... params) {
     info(msg, false, params);
   }
