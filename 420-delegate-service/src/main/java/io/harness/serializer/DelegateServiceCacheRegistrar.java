@@ -41,7 +41,7 @@ public class DelegateServiceCacheRegistrar extends AbstractModule {
   }
   private void bindCaches() {
     MapBinder<String, RLocalCachedMap<?, ?>> rmapBinder =
-        MapBinder.newMapBinder(binder(), TypeLiteral.get(String.class), new TypeLiteral<>() {});
+        MapBinder.newMapBinder(binder(), TypeLiteral.get(String.class), new TypeLiteral<RLocalCachedMap<?, ?>>() {});
     rmapBinder.addBinding(TASK_CACHE).to(Key.get(new TypeLiteral<RLocalCachedMap<String, AtomicInteger>>() {
     }, Names.named(TASK_CACHE)));
   }

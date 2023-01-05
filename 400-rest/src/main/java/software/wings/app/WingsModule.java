@@ -233,7 +233,6 @@ import io.harness.secrets.setupusage.builders.TriggerSetupUsageBuilder;
 import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.seeddata.SampleDataProviderService;
 import io.harness.seeddata.SampleDataProviderServiceImpl;
-import io.harness.serializer.DelegateServiceCacheRegistrar;
 import io.harness.serializer.YamlUtils;
 import io.harness.service.CgEventHelper;
 import io.harness.service.DelegateServiceDriverModule;
@@ -1248,7 +1247,6 @@ public class WingsModule extends AbstractModule implements ServersModule {
     buildServiceMapBinder.addBinding(AzureArtifactsPATConfig.class).toInstance(AzureArtifactsBuildService.class);
 
     install(new ManagerCacheRegistrar());
-    install(new DelegateServiceCacheRegistrar());
     install(new FactoryModuleBuilder().implement(Jenkins.class, JenkinsImpl.class).build(JenkinsFactory.class));
     install(SecretManagementCoreModule.getInstance());
     install(new InstanceSyncMonitoringModule());
