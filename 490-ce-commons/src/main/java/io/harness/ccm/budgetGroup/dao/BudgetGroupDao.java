@@ -7,6 +7,7 @@
 
 package io.harness.ccm.budgetGroup.dao;
 
+import io.harness.ccm.budget.BudgetMonthlyBreakdown.BudgetMonthlyBreakdownKeys;
 import io.harness.ccm.budgetGroup.BudgetGroup;
 import io.harness.ccm.budgetGroup.BudgetGroup.BudgetGroupKeys;
 import io.harness.persistence.HPersistence;
@@ -19,6 +20,13 @@ import java.util.List;
 
 public class BudgetGroupDao {
   @Inject private HPersistence hPersistence;
+
+  private static final String BUDGET_GROUP_MONTHLY_BREAKDOWN_ACTUAL_MONTHLY_COST =
+      BudgetGroupKeys.budgetGroupMonthlyBreakdown + "." + BudgetMonthlyBreakdownKeys.actualMonthlyCost;
+  private static final String BUDGET_GROUP_MONTHLY_BREAKDOWN_FORECAST_MONTHLY_COST =
+      BudgetGroupKeys.budgetGroupMonthlyBreakdown + "." + BudgetMonthlyBreakdownKeys.forecastMonthlyCost;
+  private static final String BUDGET_GROUP_MONTHLY_BREAKDOWN_YEARLY_LAST_PERIOD_COST =
+      BudgetGroupKeys.budgetGroupMonthlyBreakdown + "." + BudgetMonthlyBreakdownKeys.yearlyLastPeriodCost;
 
   public String save(BudgetGroup budgetGroup) {
     return hPersistence.save(budgetGroup);
@@ -68,6 +76,17 @@ public class BudgetGroupDao {
         hPersistence.createQuery(BudgetGroup.class).field(BudgetGroupKeys.uuid).in(budgetGroupIds);
     UpdateOperations<BudgetGroup> updateOperations =
         hPersistence.createUpdateOperations(BudgetGroup.class).set(BudgetGroupKeys.parentBudgetGroupId, parentId);
+    hPersistence.update(query, updateOperations);
+  }
+
+  public void updateBreakdownCosts(
+      String uuid, Double[] actualCosts, Double[] forecastCosts, Double[] lastPeriodCosts) {
+    Query<BudgetGroup> query = hPersistence.createQuery(BudgetGroup.class).field(BudgetGroupKeys.uuid).equal(uuid);
+    UpdateOperations<BudgetGroup> updateOperations =
+        hPersistence.createUpdateOperations(BudgetGroup.class)
+            .set(BUDGET_GROUP_MONTHLY_BREAKDOWN_ACTUAL_MONTHLY_COST, actualCosts)
+            .set(BUDGET_GROUP_MONTHLY_BREAKDOWN_FORECAST_MONTHLY_COST, forecastCosts)
+            .set(BUDGET_GROUP_MONTHLY_BREAKDOWN_YEARLY_LAST_PERIOD_COST, lastPeriodCosts);
     hPersistence.update(query, updateOperations);
   }
 

@@ -27,6 +27,7 @@ import io.harness.ccm.commons.entities.billing.Budget;
 import io.harness.exception.InvalidRequestException;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -65,6 +66,9 @@ public class BudgetGroupUtils {
       "Error in performing operation. Parent for child entities not found.";
   public static final String CHILD_ENTITY_PARENT_PRESENT_EXCEPTION =
       "Error in performing operation. Parent for child entities already configured.";
+  public static final String COST_TYPE_ACTUAL = "Actual cost";
+  public static final String COST_TYPE_FORECASTED = "Forecasted cost";
+  public static final String COST_TYPE_LAST_PERIOD = "Last period cost";
 
   public static void validateBudgetGroup(BudgetGroup budgetGroup, List<BudgetGroup> existingBudgetGroups) {
     populateDefaultBudgetGroupBreakdown(budgetGroup);
@@ -274,12 +278,60 @@ public class BudgetGroupUtils {
     return BudgetUtils.getStartOfMonth(false);
   }
 
+  public static Double getAggregatedCostsForBudgets(List<Budget> budgets, String costType) {
+    switch (costType) {
+      case COST_TYPE_ACTUAL:
+        return budgets.stream().map(Budget::getActualCost).mapToDouble(Double::doubleValue).sum();
+      case COST_TYPE_FORECASTED:
+        return budgets.stream().map(Budget::getForecastCost).mapToDouble(Double::doubleValue).sum();
+      case COST_TYPE_LAST_PERIOD:
+        return budgets.stream().map(Budget::getLastMonthCost).mapToDouble(Double::doubleValue).sum();
+      default:
+        return 0.0;
+    }
+  }
+
+  public static Double getAggregatedCostsForBudgetGroups(List<BudgetGroup> budgetGroups, String costType) {
+    switch (costType) {
+      case COST_TYPE_ACTUAL:
+        return budgetGroups.stream().map(BudgetGroup::getActualCost).mapToDouble(Double::doubleValue).sum();
+      case COST_TYPE_FORECASTED:
+        return budgetGroups.stream().map(BudgetGroup::getForecastCost).mapToDouble(Double::doubleValue).sum();
+      case COST_TYPE_LAST_PERIOD:
+        return budgetGroups.stream().map(BudgetGroup::getLastMonthCost).mapToDouble(Double::doubleValue).sum();
+      default:
+        return 0.0;
+    }
+  }
+
+  public static Double[] getAggregatedCostsForBudgetsWithBreakdown(List<Budget> budgets, String costType) {
+    Double[] aggregatedCosts = new Double[12];
+    Arrays.fill(aggregatedCosts, 0.0);
+    for (Budget budget : budgets) {
+      Double[] budgetCosts = getCostForBudgetWithBreakdown(budget, costType);
+      for (int index = 0; index < BudgetUtils.MONTHS; index++) {
+        aggregatedCosts[index] = aggregatedCosts[index] + budgetCosts[index];
+      }
+    }
+    return aggregatedCosts;
+  }
+
+  public static Double[] getAggregatedCostsForBudgetGroupsWithBreakdown(
+      List<BudgetGroup> budgetGroups, String costType) {
+    Double[] aggregatedCosts = new Double[12];
+    Arrays.fill(aggregatedCosts, 0.0);
+    for (BudgetGroup budgetGroup : budgetGroups) {
+      Double[] budgetGroupCosts = getCostForBudgetGroupWithBreakdown(budgetGroup, costType);
+      for (int index = 0; index < BudgetUtils.MONTHS; index++) {
+        aggregatedCosts[index] = aggregatedCosts[index] + budgetGroupCosts[index];
+      }
+    }
+    return aggregatedCosts;
+  }
+
   public static List<ValueDataPoint> getAggregatedBudgetAmountOfChildBudgets(List<Budget> childBudgets) {
     long startTime = getStartTimeForChildBudgets(childBudgets);
-    BudgetPeriod period = getPeriodForChildBudgets(childBudgets);
-    BudgetBreakdown budgetBreakdown = getBudgetBreakdownForChildBudgets(childBudgets);
-    boolean isMonthlyBreakdownPresent = period == YEARLY && budgetBreakdown == MONTHLY;
-    if (isMonthlyBreakdownPresent) {
+    if (isMonthlyBreakdownPresentForChildBudgets(childBudgets)) {
       return getAggregatedBudgetAmountForBudgets(childBudgets);
     } else {
       Double aggregatedBudgetAmount =
@@ -290,10 +342,7 @@ public class BudgetGroupUtils {
 
   public static List<ValueDataPoint> getAggregatedBudgetAmountOfChildBudgetGroups(List<BudgetGroup> childBudgetGroups) {
     long startTime = getStartTimeForChildBudgetGroups(childBudgetGroups);
-    BudgetPeriod period = getPeriodForChildBudgetGroups(childBudgetGroups);
-    BudgetBreakdown budgetBreakdown = getBudgetBreakdownForChildBudgetGroups(childBudgetGroups);
-    boolean isMonthlyBreakdownPresent = period == YEARLY && budgetBreakdown == MONTHLY;
-    if (isMonthlyBreakdownPresent) {
+    if (isMonthlyBreakdownPresentForChildBudgetGroups(childBudgetGroups)) {
       return getAggregatedBudgetGroupAmountsForBudgetGroups(childBudgetGroups);
     } else {
       Double aggregatedBudgetGroupAmount =
@@ -302,6 +351,19 @@ public class BudgetGroupUtils {
           ValueDataPoint.builder().time(startTime).value(aggregatedBudgetGroupAmount).build());
     }
   }
+
+  public static boolean isMonthlyBreakdownPresentForChildBudgets(List<Budget> childBudgets) {
+    BudgetPeriod period = getPeriodForChildBudgets(childBudgets);
+    BudgetBreakdown budgetBreakdown = getBudgetBreakdownForChildBudgets(childBudgets);
+    return period == YEARLY && budgetBreakdown == MONTHLY;
+  }
+
+  public static boolean isMonthlyBreakdownPresentForChildBudgetGroups(List<BudgetGroup> childBudgetGroups) {
+    BudgetPeriod period = getPeriodForChildBudgetGroups(childBudgetGroups);
+    BudgetBreakdown budgetBreakdown = getBudgetBreakdownForChildBudgetGroups(childBudgetGroups);
+    return period == YEARLY && budgetBreakdown == MONTHLY;
+  }
+
   public static BudgetSummary buildBudgetGroupSummary(BudgetGroup budgetGroup, List<BudgetSummary> childEntities) {
     return BudgetSummary.builder()
         .id(budgetGroup.getUuid())
@@ -373,6 +435,32 @@ public class BudgetGroupUtils {
                                            .build());
     });
     return aggregatedBudgetGroupAmounts;
+  }
+
+  private static Double[] getCostForBudgetWithBreakdown(Budget budget, String costType) {
+    switch (costType) {
+      case COST_TYPE_ACTUAL:
+        return budget.getBudgetMonthlyBreakdown().getActualMonthlyCost();
+      case COST_TYPE_FORECASTED:
+        return budget.getBudgetMonthlyBreakdown().getForecastMonthlyCost();
+      case COST_TYPE_LAST_PERIOD:
+        return budget.getBudgetMonthlyBreakdown().getYearlyLastPeriodCost();
+      default:
+        return new Double[12];
+    }
+  }
+
+  private static Double[] getCostForBudgetGroupWithBreakdown(BudgetGroup budgetGroup, String costType) {
+    switch (costType) {
+      case COST_TYPE_ACTUAL:
+        return budgetGroup.getBudgetGroupMonthlyBreakdown().getActualMonthlyCost();
+      case COST_TYPE_FORECASTED:
+        return budgetGroup.getBudgetGroupMonthlyBreakdown().getForecastMonthlyCost();
+      case COST_TYPE_LAST_PERIOD:
+        return budgetGroup.getBudgetGroupMonthlyBreakdown().getYearlyLastPeriodCost();
+      default:
+        return new Double[12];
+    }
   }
 
   private static void populateDefaultBudgetGroupBreakdown(BudgetGroup budgetGroup) {

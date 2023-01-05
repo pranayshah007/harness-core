@@ -7,9 +7,12 @@
 
 package io.harness.ccm.budgetGroup.service;
 
+import static io.harness.ccm.budget.BudgetBreakdown.MONTHLY;
+import static io.harness.ccm.budget.BudgetPeriod.YEARLY;
 import static io.harness.ccm.budget.utils.BudgetUtils.MONTHS;
 
 import io.harness.ccm.budget.BudgetBreakdown;
+import io.harness.ccm.budget.BudgetMonthlyBreakdown;
 import io.harness.ccm.budget.BudgetPeriod;
 import io.harness.ccm.budget.BudgetSummary;
 import io.harness.ccm.budget.ValueDataPoint;
@@ -57,6 +60,7 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
     validateChildEntities(budgetGroup, areChildEntitiesBudgetGroups, childEntityIds);
 
     // Saving budget group
+    updateBudgetGroupCosts(budgetGroup);
     updateBudgetGroupHistory(budgetGroup, budgetGroup.getAccountId());
     String budgetGroupId = budgetGroupDao.save(budgetGroup);
 
@@ -183,6 +187,66 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
   @Override
   public void updateParentIdForBudgetGroups(String parentId, List<String> budgetIds) {
     budgetDao.updateParentId(parentId, budgetIds);
+  }
+
+  @Override
+  public void cascadeBudgetGroupAmount(BudgetGroup budgetGroup) {}
+
+  @Override
+  public void updateBudgetGroupCosts(BudgetGroup budgetGroup) {
+    boolean areChildEntitiesBudgetGroups =
+        BudgetGroupUtils.areChildEntitiesBudgetGroups(budgetGroup.getChildEntities());
+    List<String> childEntityIds =
+        budgetGroup.getChildEntities().stream().map(BudgetGroupChildEntityDTO::getId).collect(Collectors.toList());
+    boolean isBreakdownMonthly = budgetGroup.getPeriod() == YEARLY
+        && budgetGroup.getBudgetGroupMonthlyBreakdown().getBudgetBreakdown() == MONTHLY;
+    if (areChildEntitiesBudgetGroups) {
+      List<BudgetGroup> childBudgetGroups = budgetGroupDao.list(budgetGroup.getAccountId(), childEntityIds);
+      if (isBreakdownMonthly) {
+        BudgetMonthlyBreakdown breakdown =
+            BudgetMonthlyBreakdown.builder()
+                .budgetBreakdown(budgetGroup.getBudgetGroupMonthlyBreakdown().getBudgetBreakdown())
+                .budgetMonthlyAmount(budgetGroup.getBudgetGroupMonthlyBreakdown().getBudgetMonthlyAmount())
+                .actualMonthlyCost(BudgetGroupUtils.getAggregatedCostsForBudgetGroupsWithBreakdown(
+                    childBudgetGroups, BudgetGroupUtils.COST_TYPE_ACTUAL))
+                .forecastMonthlyCost(BudgetGroupUtils.getAggregatedCostsForBudgetGroupsWithBreakdown(
+                    childBudgetGroups, BudgetGroupUtils.COST_TYPE_FORECASTED))
+                .yearlyLastPeriodCost(BudgetGroupUtils.getAggregatedCostsForBudgetGroupsWithBreakdown(
+                    childBudgetGroups, BudgetGroupUtils.COST_TYPE_LAST_PERIOD))
+                .build();
+        budgetGroup.setBudgetGroupMonthlyBreakdown(breakdown);
+      } else {
+        budgetGroup.setActualCost(
+            BudgetGroupUtils.getAggregatedCostsForBudgetGroups(childBudgetGroups, BudgetGroupUtils.COST_TYPE_ACTUAL));
+        budgetGroup.setForecastCost(BudgetGroupUtils.getAggregatedCostsForBudgetGroups(
+            childBudgetGroups, BudgetGroupUtils.COST_TYPE_FORECASTED));
+        budgetGroup.setLastMonthCost(BudgetGroupUtils.getAggregatedCostsForBudgetGroups(
+            childBudgetGroups, BudgetGroupUtils.COST_TYPE_LAST_PERIOD));
+      }
+    } else {
+      List<Budget> childBudgets = budgetDao.list(budgetGroup.getAccountId(), childEntityIds);
+      if (isBreakdownMonthly) {
+        BudgetMonthlyBreakdown breakdown =
+            BudgetMonthlyBreakdown.builder()
+                .budgetBreakdown(budgetGroup.getBudgetGroupMonthlyBreakdown().getBudgetBreakdown())
+                .budgetMonthlyAmount(budgetGroup.getBudgetGroupMonthlyBreakdown().getBudgetMonthlyAmount())
+                .actualMonthlyCost(BudgetGroupUtils.getAggregatedCostsForBudgetsWithBreakdown(
+                    childBudgets, BudgetGroupUtils.COST_TYPE_ACTUAL))
+                .forecastMonthlyCost(BudgetGroupUtils.getAggregatedCostsForBudgetsWithBreakdown(
+                    childBudgets, BudgetGroupUtils.COST_TYPE_FORECASTED))
+                .yearlyLastPeriodCost(BudgetGroupUtils.getAggregatedCostsForBudgetsWithBreakdown(
+                    childBudgets, BudgetGroupUtils.COST_TYPE_LAST_PERIOD))
+                .build();
+        budgetGroup.setBudgetGroupMonthlyBreakdown(breakdown);
+      } else {
+        budgetGroup.setActualCost(
+            BudgetGroupUtils.getAggregatedCostsForBudgets(childBudgets, BudgetGroupUtils.COST_TYPE_ACTUAL));
+        budgetGroup.setForecastCost(
+            BudgetGroupUtils.getAggregatedCostsForBudgets(childBudgets, BudgetGroupUtils.COST_TYPE_FORECASTED));
+        budgetGroup.setLastMonthCost(
+            BudgetGroupUtils.getAggregatedCostsForBudgets(childBudgets, BudgetGroupUtils.COST_TYPE_LAST_PERIOD));
+      }
+    }
   }
 
   public void validateChildEntities(

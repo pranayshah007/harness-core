@@ -27,4 +27,6 @@ public interface BudgetGroupService {
   BudgetData getBudgetGroupTimeSeriesStats(BudgetGroup budgetGroup, BudgetBreakdown breakdown);
   void updateParentIdForBudgets(String parentId, List<String> budgetIds);
   void updateParentIdForBudgetGroups(String parentId, List<String> budgetGroupIds);
+  void cascadeBudgetGroupAmount(BudgetGroup budgetGroup);
+  void updateBudgetGroupCosts(BudgetGroup budgetGroup);
 }
