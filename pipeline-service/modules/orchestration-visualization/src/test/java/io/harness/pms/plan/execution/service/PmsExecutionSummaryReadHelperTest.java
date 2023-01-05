@@ -8,44 +8,119 @@
 package io.harness.pms.plan.execution.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.SHALINI;
 
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static junit.framework.TestCase.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.OrchestrationVisualizationTestBase;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.rule.Owner;
+import io.harness.testlib.RealMongo;
 
+import com.google.inject.Inject;
+import java.util.List;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 
 @OwnedBy(PIPELINE)
 public class PmsExecutionSummaryReadHelperTest extends OrchestrationVisualizationTestBase {
-  @Mock MongoTemplate mongoTemplate;
-  @InjectMocks PmsExecutionSummaryReadHelper pmsExecutionSummaryReadHelper;
+  @Inject PmsExecutionSummaryReadHelper pmsExecutionSummaryReadHelper;
+  @Inject MongoTemplate mongoTemplate;
+  PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity1;
+  PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity2;
+  PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity3;
+  Query query;
+  String REPO_NAME = "repo1";
+  String BRANCH_NAME = "branch1";
+
+  @Before
+  public void setup() {
+    String ACCOUNT_ID = "accountId";
+    String ORG_ID = "orgId";
+    String PROJECT_ID = "projectId";
+    pipelineExecutionSummaryEntity1 =
+        PipelineExecutionSummaryEntity.builder()
+            .uuid(generateUuid())
+            .accountId(ACCOUNT_ID)
+            .projectIdentifier(PROJECT_ID)
+            .orgIdentifier(ORG_ID)
+            .pipelineIdentifier("pip1")
+            .planExecutionId("planExecutionId1")
+            .entityGitDetails(EntityGitDetails.builder().branch(BRANCH_NAME).repoName(REPO_NAME).build())
+            .build();
+    pipelineExecutionSummaryEntity2 =
+        PipelineExecutionSummaryEntity.builder()
+            .uuid(generateUuid())
+            .accountId(ACCOUNT_ID)
+            .projectIdentifier(PROJECT_ID)
+            .orgIdentifier(ORG_ID)
+            .pipelineIdentifier("pip2")
+            .planExecutionId("planExecutionId2")
+            .entityGitDetails(EntityGitDetails.builder().branch(BRANCH_NAME).repoName(REPO_NAME).build())
+            .build();
+    pipelineExecutionSummaryEntity3 =
+        PipelineExecutionSummaryEntity.builder()
+            .uuid(generateUuid())
+            .accountId(ACCOUNT_ID)
+            .projectIdentifier(PROJECT_ID)
+            .orgIdentifier(ORG_ID)
+            .pipelineIdentifier("pip1")
+            .planExecutionId("planExecutionId3")
+            .entityGitDetails(EntityGitDetails.builder().branch("branch2").repoName("repo2").build())
+            .build();
+    Criteria criteria =
+        Criteria.where(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.pipelineIdentifier).is("pip1");
+    query = new Query(criteria);
+    mongoTemplate.save(pipelineExecutionSummaryEntity1);
+    mongoTemplate.save(pipelineExecutionSummaryEntity3);
+    mongoTemplate.save(pipelineExecutionSummaryEntity2);
+  }
 
   @Test
+  @RealMongo
   @Owner(developers = SHALINI)
   @Category(UnitTests.class)
   public void testFindCount() {
-    Query query = new Query();
-    pmsExecutionSummaryReadHelper.findCount(query);
-    verify(mongoTemplate, times(1)).count(Query.of(query).limit(-1).skip(-1), PipelineExecutionSummaryEntity.class);
+    long count = pmsExecutionSummaryReadHelper.findCount(query);
+    assertEquals(count, 2);
   }
 
   @Test
   @Owner(developers = SHALINI)
   @Category(UnitTests.class)
   public void testFind() {
-    Query query = new Query();
-    pmsExecutionSummaryReadHelper.find(query);
-    verify(mongoTemplate, times(1)).find(query, PipelineExecutionSummaryEntity.class);
+    List<PipelineExecutionSummaryEntity> pipelineExecutionSummaryEntityList = pmsExecutionSummaryReadHelper.find(query);
+    assertEquals(pipelineExecutionSummaryEntityList.size(), 2);
+    assertThat(pipelineExecutionSummaryEntityList.contains(pipelineExecutionSummaryEntity1));
+    assertThat(pipelineExecutionSummaryEntityList.contains(pipelineExecutionSummaryEntity3));
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testFindListOfUniqueBranches() {
+    List<String> branches = pmsExecutionSummaryReadHelper.findListOfUniqueBranches(query);
+    assertEquals(branches.size(), 2);
+    assertThat(branches.contains(BRANCH_NAME));
+    assertThat(branches.contains("branch2"));
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testFindListOfUniqueRepositories() {
+    List<String> repos = pmsExecutionSummaryReadHelper.findListOfUniqueRepositories(query);
+    assertEquals(repos.size(), 2);
+    assertThat(repos.contains(REPO_NAME));
+    assertThat(repos.contains("repo2"));
   }
 }

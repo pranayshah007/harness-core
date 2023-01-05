@@ -60,6 +60,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.util.CloseableIterator;
 
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -280,8 +281,8 @@ public class IdentityStrategyInternalStepTest extends CategoryTest {
             .iterator());
     doReturn(iterator)
         .when(nodeExecutionService)
-        .fetchChildrenNodeExecutionsIterator(
-            ORIGINAL_PLAN_EXECUTION_ID, originalNodeExecutionId, NodeProjectionUtils.fieldsForIdentityStrategyStep);
+        .fetchChildrenNodeExecutionsIterator(ORIGINAL_PLAN_EXECUTION_ID, originalNodeExecutionId, Direction.ASC,
+            NodeProjectionUtils.fieldsForIdentityStrategyStep);
 
     ChildExecutableResponse response = identityStrategyInternalStep.obtainChild(ambiance, stepParameters, null);
 
@@ -306,8 +307,8 @@ public class IdentityStrategyInternalStepTest extends CategoryTest {
             .iterator());
     doReturn(iterator)
         .when(nodeExecutionService)
-        .fetchChildrenNodeExecutionsIterator(
-            ORIGINAL_PLAN_EXECUTION_ID, originalNodeExecutionId, NodeProjectionUtils.fieldsForIdentityStrategyStep);
+        .fetchChildrenNodeExecutionsIterator(ORIGINAL_PLAN_EXECUTION_ID, originalNodeExecutionId, Direction.ASC,
+            NodeProjectionUtils.fieldsForIdentityStrategyStep);
 
     ArgumentCaptor<List> argumentCaptor = ArgumentCaptor.forClass(List.class);
 

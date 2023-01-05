@@ -38,6 +38,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.util.CloseableIterator;
 
 /**
@@ -72,7 +73,7 @@ public class IdentityStrategyInternalStep
              // planExecutionId(ambiance.getPlanExecutionId)
         nodeExecutionService.fetchChildrenNodeExecutionsIterator(
             originalNodeExecution.getAmbiance().getPlanExecutionId(), identityParams.getOriginalNodeExecutionId(),
-            NodeProjectionUtils.fieldsForIdentityStrategyStep)) {
+            Direction.ASC, NodeProjectionUtils.fieldsForIdentityStrategyStep)) {
       while (iterator.hasNext()) {
         NodeExecution next = iterator.next();
         if (Boolean.FALSE.equals(next.getOldRetry())) {

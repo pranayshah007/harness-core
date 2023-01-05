@@ -247,6 +247,19 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
 
   @Override
   public CloseableIterator<NodeExecution> fetchChildrenNodeExecutionsIterator(
+      String planExecutionId, String parentId, Direction sortOrderOfCreatedAt, Set<String> fieldsToBeIncluded) {
+    // Uses planExecutionId_parentId_createdAt_idx
+    Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
+                      .addCriteria(where(NodeExecutionKeys.parentId).is(parentId))
+                      .with(Sort.by(sortOrderOfCreatedAt, NodeExecutionKeys.createdAt));
+    for (String field : fieldsToBeIncluded) {
+      query.fields().include(field);
+    }
+    return nodeExecutionReadHelper.fetchNodeExecutions(query);
+  }
+
+  @Override
+  public CloseableIterator<NodeExecution> fetchChildrenNodeExecutionsIterator(
       String parentId, Set<String> fieldsToBeIncluded) {
     // Uses planExecutionId_parentId_createdAt_idx
     Query query = query(where(NodeExecutionKeys.parentId).is(parentId));

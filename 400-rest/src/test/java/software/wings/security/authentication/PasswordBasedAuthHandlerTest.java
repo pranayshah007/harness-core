@@ -14,7 +14,6 @@ import static io.harness.rule.OwnerRule.RUSHABH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
-import static org.mindrot.jbcrypt.BCrypt.hashpw;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
@@ -26,6 +25,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
+import static org.springframework.security.crypto.bcrypt.BCrypt.hashpw;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessModule;
@@ -52,11 +52,11 @@ import com.google.inject.Inject;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mindrot.jbcrypt.BCrypt;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
+import org.springframework.security.crypto.bcrypt.BCrypt;
 
 @OwnedBy(PL)
 @TargetModule(HarnessModule._950_NG_AUTHENTICATION_SERVICE)

@@ -560,7 +560,6 @@ shared_dependencies = [
     "@maven//:org_jvnet_mimepull_mimepull",
     "@maven//:org_jvnet_staxex_stax_ex",
     "@maven//:org_ldaptive_ldaptive",
-    "@maven//:org_mindrot_jbcrypt",
     "@maven//:org_modelmapper_modelmapper",
     "@maven//:org_mongodb_mongo_java_driver",
     "@maven//:dev_morphia_morphia_core",
