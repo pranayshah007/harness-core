@@ -37,6 +37,7 @@ import io.harness.delegate.task.pcf.request.CfRollingRollbackRequestNG;
 import io.harness.delegate.task.pcf.request.CfSwapRollbackCommandRequestNG;
 import io.harness.delegate.task.pcf.response.CfCommandResponseNG;
 import io.harness.delegate.task.pcf.response.CfRollbackCommandResponseNG;
+import io.harness.delegate.task.pcf.response.CfRollingDeployResponseNG;
 import io.harness.delegate.task.pcf.response.CfRollingRollbackResponseNG;
 import io.harness.delegate.task.pcf.response.TasInfraConfig;
 import io.harness.eraro.ErrorCode;
@@ -163,6 +164,7 @@ public class TasRollingRollbackStep extends TaskExecutableWithRollbackAndRbac<Cf
             .desiredCount(tasStageExecutionDetails == null ?  0 : tasStageExecutionDetails.getDesiredCount())
             .routeMaps(tasStageExecutionDetails == null ?  null : tasStageExecutionDetails.getRouteMaps())
             .cfCliVersion(tasStepHelper.cfCliVersionNGMapper(tasRollingDeployOutcome.getCfCliVersion()))
+            .failedDeploymentRouteMaps(tasRollingDeployOutcome.getRouteMaps())
             .build();
 
     final TaskData taskData = TaskData.builder()
@@ -219,6 +221,8 @@ public class TasRollingRollbackStep extends TaskExecutableWithRollbackAndRbac<Cf
                   .getUnitProgresses())
           .build();
     }
+    List<ServerInstanceInfo> serverInstanceInfoList = getServerInstanceInfoList(response, ambiance);
+    tasStepHelper.saveInstancesOutcome(ambiance, serverInstanceInfoList);
     builder.unitProgressList(response.getUnitProgressData().getUnitProgresses());
     builder.status(Status.SUCCEEDED);
     return builder.build();
@@ -227,5 +231,34 @@ public class TasRollingRollbackStep extends TaskExecutableWithRollbackAndRbac<Cf
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
     return StepElementParameters.class;
+  }
+
+  private List<ServerInstanceInfo> getServerInstanceInfoList(CfRollingRollbackResponseNG response, Ambiance ambiance) {
+    TanzuApplicationServiceInfrastructureOutcome infrastructureOutcome =
+            (TanzuApplicationServiceInfrastructureOutcome) outcomeService.resolve(
+                    ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
+    if (response == null) {
+      log.error("Could not generate server instance info for rolling deploy step");
+      return Collections.emptyList();
+    }
+    List<CfInternalInstanceElement> instances = response.getNewAppInstances();
+    if (!isNull(instances)) {
+      return instances.stream()
+              .map(instance -> getServerInstance(instance, infrastructureOutcome))
+              .collect(Collectors.toList());
+    }
+    return new ArrayList<>();
+  }
+
+  private ServerInstanceInfo getServerInstance(
+          CfInternalInstanceElement instance, TanzuApplicationServiceInfrastructureOutcome infrastructureOutcome) {
+    return TasServerInstanceInfo.builder()
+            .id(instance.getApplicationId() + ":" + instance.getInstanceIndex())
+            .instanceIndex(instance.getInstanceIndex())
+            .tasApplicationName(instance.getDisplayName())
+            .tasApplicationGuid(instance.getApplicationId())
+            .organization(infrastructureOutcome.getOrganization())
+            .space(infrastructureOutcome.getSpace())
+            .build();
   }
 }

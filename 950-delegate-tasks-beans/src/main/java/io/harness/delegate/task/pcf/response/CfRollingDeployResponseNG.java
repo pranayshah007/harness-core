@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateMetaInfo;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
+import io.harness.delegate.beans.pcf.CfInternalInstanceElement;
 import io.harness.delegate.beans.pcf.TasApplicationInfo;
 import io.harness.delegate.task.pcf.PcfManifestsPackage;
 import io.harness.delegate.task.pcf.artifact.TasArtifactConfig;
@@ -39,6 +40,7 @@ public class CfRollingDeployResponseNG implements CfCommandResponseNG {
   private TasApplicationInfo newApplicationInfo;
   PcfManifestsPackage pcfManifestsPackage;
   boolean deploymentStarted;
+  private List<CfInternalInstanceElement> newAppInstances;
 
   @Override
   public void setDelegateMetaInfo(DelegateMetaInfo metaInfo) {

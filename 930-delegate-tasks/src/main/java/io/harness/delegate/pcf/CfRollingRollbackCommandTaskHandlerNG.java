@@ -64,6 +64,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.cloudfoundry.operations.applications.ApplicationDetail;
 import org.cloudfoundry.operations.applications.ApplicationSummary;
+import org.cloudfoundry.operations.applications.InstanceDetail;
 
 import java.io.File;
 import java.io.IOException;
@@ -74,6 +75,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -149,6 +151,8 @@ public class CfRollingRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandle
       workingDirectory = generateWorkingDirectoryOnDelegate(cfRollingRollbackRequestNG);
       currentProdInfo = getCurrentProdInfo(previousReleases, clonePcfRequestConfig(cfRequestConfig).build(),
               workingDirectory, ((CfRollingRollbackRequestNG) cfCommandRequestNG).getTimeoutIntervalInMin(), logCallback);
+      ApplicationDetail detailsBeforeDeployment = isEmpty(previousReleases) ? null : cfCommandTaskHelperNG.getApplicationDetails(
+              cfRequestConfig, cfDeploymentManager);
 
       CfAppAutoscalarRequestData cfAppAutoscalarRequestData =
               CfAppAutoscalarRequestData.builder()
@@ -208,7 +212,28 @@ public class CfRollingRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandle
 
       logCallback.saveExecutionLog(color("\n# Starting Rollback", White, Bold));
 
-        ApplicationDetail applicationDetail = createAppAndPrintDetails(logCallback, requestData);
+      ApplicationDetail applicationDetail = createAppAndPrintDetails(logCallback, requestData);
+      List<CfInternalInstanceElement> cfInternalInstanceElements = Collections.emptyList();
+      List<InstanceDetail> newUpsizedInstances = filterNewUpsizedAppInstances(detailsBeforeDeployment, applicationDetail);
+      newUpsizedInstances.forEach(instance
+              -> cfInternalInstanceElements.add(CfInternalInstanceElement.builder()
+              .uuid(applicationDetail.getId() + instance.getIndex())
+              .applicationId(applicationDetail.getId())
+              .displayName(applicationDetail.getName())
+              .instanceIndex(instance.getIndex())
+              .isUpsize(true)
+              .build()));
+
+        if(cfRollingRollbackRequestNG.getFailedDeploymentRouteMaps() != null) {
+          List<String> routesToBeRemoved = new ArrayList<>();
+          for(String route : cfRollingRollbackRequestNG.getFailedDeploymentRouteMaps()) {
+            if(!cfRollingRollbackRequestNG.getRouteMaps().contains(route)) {
+              routesToBeRemoved.add(route);
+            }
+          }
+          cfCommandTaskHelperNG.unmapRouteMaps(
+                  cfRollingRollbackRequestNG.getApplicationName(), routesToBeRemoved, cfRequestConfig, logCallback);
+        }
 
         configureAutoscalarIfNeeded(cfRollingRollbackRequestNG,
                 applicationDetail, cfAppAutoscalarRequestData, logCallback);
@@ -226,6 +251,7 @@ public class CfRollingRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandle
                                 .runningCount(applicationDetail.getRunningInstances())
                                 .build())
                         .currentProdInfo(currentProdInfo)
+                        .newAppInstances(cfInternalInstanceElements)
                         .build();
 
       logCallback.saveExecutionLog("\n ----------  PCF Rolling Rollback completed successfully", INFO, SUCCESS);
@@ -249,6 +275,21 @@ public class CfRollingRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandle
       removeTempFilesCreated(cfRollingRollbackRequestNG, logCallback, artifactFile, workingDirectory, pcfManifestFileData);
       logCallback.saveExecutionLog("#----------  Cleaning up temporary files completed", INFO, SUCCESS);
     }
+  }
+
+  private List<InstanceDetail> filterNewUpsizedAppInstances(
+          ApplicationDetail appDetailsBeforeUpsize, ApplicationDetail appDetailsAfterUpsize) {
+    if (appDetailsBeforeUpsize == null || isEmpty(appDetailsBeforeUpsize.getInstanceDetails()) || isEmpty(appDetailsAfterUpsize.getInstanceDetails())) {
+      return appDetailsAfterUpsize.getInstanceDetails();
+    }
+
+    List<String> alreadyUpsizedInstances =
+            appDetailsBeforeUpsize.getInstanceDetails().stream().map(InstanceDetail::getIndex).collect(toList());
+
+    return appDetailsAfterUpsize.getInstanceDetails()
+            .stream()
+            .filter(instanceDetail -> !alreadyUpsizedInstances.contains(instanceDetail.getIndex()))
+            .collect(Collectors.toList());
   }
 
   private void configureAutoscalarIfNeeded(CfRollingRollbackRequestNG cfRollingRollbackRequestNG,

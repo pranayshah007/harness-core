@@ -35,4 +35,5 @@ public class TasRollingDeployOutcome implements Outcome, ExecutionSweepingOutput
   @Setter @NonFinal boolean isFirstDeployment;
   @Setter @NonFinal CfCliVersionNG cfCliVersion;
   @Setter @NonFinal boolean deploymentStarted;
+  @Setter @NonFinal List<String> routeMaps;
 }

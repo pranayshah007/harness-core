@@ -62,6 +62,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.cloudfoundry.operations.applications.ApplicationDetail;
 import org.cloudfoundry.operations.applications.ApplicationSummary;
+import org.cloudfoundry.operations.applications.InstanceDetail;
 
 import java.io.File;
 import java.io.IOException;
@@ -72,6 +73,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -145,6 +147,8 @@ public class CfRollingDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler 
       List<ApplicationSummary> previousReleases =
               cfDeploymentManager.getPreviousReleasesForRolling(cfRequestConfig, ((CfRollingDeployRequestNG) cfCommandRequestNG).getApplicationName());
       workingDirectory = generateWorkingDirectoryOnDelegate(cfRollingDeployRequestNG);
+      ApplicationDetail detailsBeforeDeployment = isEmpty(previousReleases) ? null : cfCommandTaskHelperNG.getApplicationDetails(
+              cfRequestConfig, cfDeploymentManager);
       currentProdInfo = getCurrentProdInfo(previousReleases, clonePcfRequestConfig(cfRequestConfig).build(),
               workingDirectory, ((CfRollingDeployRequestNG) cfCommandRequestNG).getTimeoutIntervalInMin(), logCallback);
       cfRollingDeployResponseNGBuilder.currentProdInfo(currentProdInfo);
@@ -193,7 +197,16 @@ public class CfRollingDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler 
 
       cfRollingDeployResponseNGBuilder.deploymentStarted(true);
       ApplicationDetail applicationDetail = createAppAndPrintDetails(logCallback, requestData);
-
+      List<CfInternalInstanceElement> cfInternalInstanceElements = Collections.emptyList();
+      List<InstanceDetail> newUpsizedInstances = filterNewUpsizedAppInstances(detailsBeforeDeployment, applicationDetail);
+      newUpsizedInstances.forEach(instance
+              -> cfInternalInstanceElements.add(CfInternalInstanceElement.builder()
+              .uuid(applicationDetail.getId() + instance.getIndex())
+              .applicationId(applicationDetail.getId())
+              .displayName(applicationDetail.getName())
+              .instanceIndex(instance.getIndex())
+              .isUpsize(true)
+              .build()));
       configureAutoscalarIfNeeded(cfRollingDeployRequestNG,
               applicationDetail, cfAppAutoscalarRequestData, logCallback);
       if(cfRollingDeployRequestNG.isUseAppAutoScalar()) {
@@ -209,6 +222,7 @@ public class CfRollingDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler 
                               .attachedRoutes(new ArrayList<>(applicationDetail.getUrls()))
                               .runningCount(applicationDetail.getRunningInstances())
                               .build())
+                      .newAppInstances(cfInternalInstanceElements)
                       .build();
 
       logCallback.saveExecutionLog("\n ----------  PCF Rolling Deployment completed successfully", INFO, SUCCESS);
@@ -231,6 +245,21 @@ public class CfRollingDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler 
       removeTempFilesCreated(cfRollingDeployRequestNG, logCallback, artifactFile, workingDirectory, pcfManifestFileData);
       logCallback.saveExecutionLog("#----------  Cleaning up temporary files completed", INFO, SUCCESS);
     }
+  }
+
+  private List<InstanceDetail> filterNewUpsizedAppInstances(
+          ApplicationDetail appDetailsBeforeUpsize, ApplicationDetail appDetailsAfterUpsize) {
+    if (appDetailsBeforeUpsize == null || isEmpty(appDetailsBeforeUpsize.getInstanceDetails()) || isEmpty(appDetailsAfterUpsize.getInstanceDetails())) {
+      return appDetailsAfterUpsize.getInstanceDetails();
+    }
+
+    List<String> alreadyUpsizedInstances =
+            appDetailsBeforeUpsize.getInstanceDetails().stream().map(InstanceDetail::getIndex).collect(toList());
+
+    return appDetailsAfterUpsize.getInstanceDetails()
+            .stream()
+            .filter(instanceDetail -> !alreadyUpsizedInstances.contains(instanceDetail.getIndex()))
+            .collect(Collectors.toList());
   }
 
   private void configureAutoscalarIfNeeded(CfRollingDeployRequestNG cfCommandDeployRequest,

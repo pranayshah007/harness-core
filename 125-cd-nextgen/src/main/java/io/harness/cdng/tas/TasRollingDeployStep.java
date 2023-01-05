@@ -19,6 +19,7 @@ import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.infra.beans.TanzuApplicationServiceInfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
@@ -28,14 +29,19 @@ import io.harness.cdng.tas.outcome.TasSetupDataOutcome;
 import io.harness.cdng.tas.outcome.TasSetupVariablesOutcome;
 import io.harness.cdng.tas.outcome.TasSetupVariablesOutcome.TasSetupVariablesOutcomeBuilder;
 import io.harness.delegate.beans.TaskData;
+import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
+import io.harness.delegate.beans.instancesync.info.TasServerInstanceInfo;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
+import io.harness.delegate.beans.pcf.CfDeployCommandResult;
+import io.harness.delegate.beans.pcf.CfInternalInstanceElement;
 import io.harness.delegate.beans.pcf.TasResizeStrategyType;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.pcf.CfCommandTypeNG;
 import io.harness.delegate.task.pcf.request.CfBasicSetupRequestNG;
 import io.harness.delegate.task.pcf.request.CfRollingDeployRequestNG;
 import io.harness.delegate.task.pcf.response.CfBasicSetupResponseNG;
+import io.harness.delegate.task.pcf.response.CfDeployCommandResponseNG;
 import io.harness.delegate.task.pcf.response.CfRollingDeployResponseNG;
 import io.harness.delegate.task.pcf.response.TasInfraConfig;
 import io.harness.eraro.ErrorCode;
@@ -58,6 +64,8 @@ import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.sdk.core.resolver.RefObjectUtils;
+import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
@@ -71,6 +79,9 @@ import io.harness.tasks.ResponseData;
 import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
+
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -83,6 +94,7 @@ public class TasRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
           .setType(ExecutionNodeType.TAS_ROLLING_DEPLOY.getYamlType())
           .setStepCategory(StepCategory.STEP)
           .build();
+  @Inject private OutcomeService outcomeService;
   @Inject private TasStepHelper tasStepHelper;
   @Inject private KryoSerializer kryoSerializer;
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
@@ -158,14 +170,13 @@ public class TasRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
               .isFirstDeployment(response.getCurrentProdInfo() == null)
               .cfCliVersion(tasExecutionPassThroughData.getCfCliVersion())
               .deploymentStarted(response.isDeploymentStarted())
+              .routeMaps(response.getNewApplicationInfo().getAttachedRoutes())
               .build();
-      TasRollingDeployStepParameters tasRollingDeployStepParameters = (TasRollingDeployStepParameters) stepParameters.getSpec();
-      List<String> routeMaps =
-              tasStepHelper.getRouteMaps(tasExecutionPassThroughData.getPcfManifestsPackage().getManifestYml(),
-                      getParameterFieldValue(tasRollingDeployStepParameters.getAdditionalRoutes()));
+      List<ServerInstanceInfo> serverInstanceInfoList = getServerInstanceInfoList(response, ambiance);
+      tasStepHelper.saveInstancesOutcome(ambiance, serverInstanceInfoList);
       tasStepHelper.updateManifestFiles(ambiance, tasExecutionPassThroughData.getPcfManifestsPackage(), appName, tasInfraConfig);
       tasStepHelper.updateAutoscalarEnabledField(ambiance, !isNull(tasExecutionPassThroughData.getPcfManifestsPackage().getAutoscalarManifestYml()), appName, tasInfraConfig);
-      tasStepHelper.updateRouteMapsField(ambiance, routeMaps, appName, tasInfraConfig);
+      tasStepHelper.updateRouteMapsField(ambiance, response.getNewApplicationInfo().getAttachedRoutes(), appName, tasInfraConfig);
       tasStepHelper.updateDesiredCountField(ambiance, tasExecutionPassThroughData.getDesiredCountInFinalYaml(), appName, tasInfraConfig);
       tasStepHelper.updateIsFirstDeploymentField(ambiance, response.getCurrentProdInfo() == null, appName, tasInfraConfig);
 
@@ -241,6 +252,35 @@ public class TasRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
             .taskRequest(taskRequest)
             .chainEnd(true)
             .passThroughData(executionPassThroughData)
+            .build();
+  }
+
+  private List<ServerInstanceInfo> getServerInstanceInfoList(CfRollingDeployResponseNG response, Ambiance ambiance) {
+    TanzuApplicationServiceInfrastructureOutcome infrastructureOutcome =
+            (TanzuApplicationServiceInfrastructureOutcome) outcomeService.resolve(
+                    ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
+    if (response == null) {
+      log.error("Could not generate server instance info for rolling deploy step");
+      return Collections.emptyList();
+    }
+    List<CfInternalInstanceElement> instances = response.getNewAppInstances();
+    if (!isNull(instances)) {
+      return instances.stream()
+              .map(instance -> getServerInstance(instance, infrastructureOutcome))
+              .collect(Collectors.toList());
+    }
+    return new ArrayList<>();
+  }
+
+  private ServerInstanceInfo getServerInstance(
+          CfInternalInstanceElement instance, TanzuApplicationServiceInfrastructureOutcome infrastructureOutcome) {
+    return TasServerInstanceInfo.builder()
+            .id(instance.getApplicationId() + ":" + instance.getInstanceIndex())
+            .instanceIndex(instance.getInstanceIndex())
+            .tasApplicationName(instance.getDisplayName())
+            .tasApplicationGuid(instance.getApplicationId())
+            .organization(infrastructureOutcome.getOrganization())
+            .space(infrastructureOutcome.getSpace())
             .build();
   }
 }
