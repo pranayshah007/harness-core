@@ -53,9 +53,9 @@ import software.wings.service.intfc.SettingsService;
 import software.wings.utils.ArtifactType;
 import software.wings.yaml.handler.YamlHandlerTestBase;
 
+import dev.morphia.Key;
 import java.util.Optional;
 import org.mockito.Mock;
-import org.mongodb.morphia.Key;
 
 public class BaseInfraMappingYamlHandlerTestBase extends YamlHandlerTestBase {
   protected Service service =

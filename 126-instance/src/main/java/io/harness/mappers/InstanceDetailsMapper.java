@@ -40,16 +40,16 @@ import org.apache.commons.lang3.StringUtils;
 public class InstanceDetailsMapper {
   private final InstanceSyncHandlerFactoryService instanceSyncHandlerFactoryService;
 
-  public List<InstanceDetailsDTO> toInstanceDetailsDTOList(List<InstanceDTO> instanceDTOList) {
+  public List<InstanceDetailsDTO> toInstanceDetailsDTOList(List<InstanceDTO> instanceDTOList, Boolean isGitops) {
     if (instanceDTOList == null) {
       return new ArrayList<>();
     }
     List<InstanceDetailsDTO> instanceDetailsDTOList = new ArrayList<>();
-    instanceDTOList.forEach(instanceDTO -> instanceDetailsDTOList.add(toInstanceDetailsDTO(instanceDTO)));
+    instanceDTOList.forEach(instanceDTO -> instanceDetailsDTOList.add(toInstanceDetailsDTO(instanceDTO, isGitops)));
     return instanceDetailsDTOList;
   }
 
-  private InstanceDetailsDTO toInstanceDetailsDTO(InstanceDTO instanceDTO) {
+  private InstanceDetailsDTO toInstanceDetailsDTO(InstanceDTO instanceDTO, Boolean isGitops) {
     AbstractInstanceSyncHandler instanceSyncHandler = instanceSyncHandlerFactoryService.getInstanceSyncHandler(
         getInstanceInfoDTOType(instanceDTO), instanceDTO.getInfrastructureKind());
     String artifactDisplayName = instanceDTO.getPrimaryArtifact().getDisplayName();
@@ -58,7 +58,7 @@ public class InstanceDetailsMapper {
     return InstanceDetailsDTO.builder()
         .artifactName(artifactName)
         .connectorRef(instanceDTO.getConnectorRef())
-        .deployedAt(instanceDTO.getLastDeployedAt())
+        .deployedAt(isGitops ? instanceDTO.getPodCreatedAt() : instanceDTO.getLastDeployedAt())
         .deployedById(instanceDTO.getLastDeployedById())
         .deployedByName(instanceDTO.getLastDeployedByName())
         .infrastructureDetails(instanceSyncHandler.getInfrastructureDetails(instanceDTO.getInstanceInfoDTO()))

@@ -19,6 +19,7 @@ import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doNothing;
@@ -51,6 +52,7 @@ import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.manage.GlobalContextManager;
+import io.harness.pms.inputset.InputSetMoveConfigOperationDTO;
 import io.harness.pms.inputset.gitsync.InputSetYamlDTO;
 import io.harness.pms.inputset.gitsync.InputSetYamlDTOMapper;
 import io.harness.pms.ngpipeline.inputset.api.InputSetsApiUtils;
@@ -61,6 +63,7 @@ import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetListTypePMS;
 import io.harness.pms.ngpipeline.inputset.exceptions.InvalidInputSetException;
 import io.harness.pms.ngpipeline.inputset.mappers.PMSInputSetElementMapper;
 import io.harness.pms.ngpipeline.inputset.mappers.PMSInputSetFilterHelper;
+import io.harness.pms.pipeline.MoveConfigOperationType;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.yaml.PipelineVersion;
@@ -918,5 +921,36 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
     InputSetEntity savedEntity = pmsInputSetServiceMock.importInputSetFromRemote(
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, identifier, inputSetImportRequest, true);
     assertThat(savedEntity).isEqualTo(inputSetEntityV1);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testMoveConfigInlineToRemote() {
+    doReturn("repoUrl").when(gitAwareEntityHelper).getRepoUrl(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER);
+    InputSetMoveConfigOperationDTO inputSetMoveConfigOperationDTO =
+        InputSetMoveConfigOperationDTO.builder()
+            .moveConfigOperationType(MoveConfigOperationType.INLINE_TO_REMOTE)
+            .build();
+    doReturn(inputSetEntity).when(inputSetRepository).updateInputSetEntity(any(), any(), any(), any());
+    InputSetEntity movedInputSet = pmsInputSetServiceMock.moveInputSetEntity(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, inputSetMoveConfigOperationDTO, inputSetEntity);
+    assertEquals(movedInputSet.getIdentifier(), INPUT_SET_IDENTIFIER);
+    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+    assertEquals(StoreType.REMOTE, gitEntityInfo.getStoreType());
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testMoveConfigRemoteToInline() {
+    InputSetMoveConfigOperationDTO inputSetMoveConfigOperationDTO =
+        InputSetMoveConfigOperationDTO.builder()
+            .moveConfigOperationType(MoveConfigOperationType.REMOTE_TO_INLINE)
+            .build();
+    doReturn(inputSetEntity).when(inputSetRepository).updateInputSetEntity(any(), any(), any(), any());
+    InputSetEntity movedInputSet = pmsInputSetServiceMock.moveInputSetEntity(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, inputSetMoveConfigOperationDTO, inputSetEntity);
+    assertEquals(movedInputSet.getIdentifier(), INPUT_SET_IDENTIFIER);
   }
 }

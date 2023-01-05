@@ -43,6 +43,7 @@ import software.wings.service.intfc.UserGroupService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
@@ -60,7 +61,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
-import org.mongodb.morphia.query.Query;
 
 public class ExportExecutionsResourceServiceTest extends CategoryTest {
   private static final String ACCOUNT_ID = "aid";

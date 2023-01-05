@@ -39,12 +39,12 @@ import io.harness.security.encryption.EncryptionType;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.query.MorphiaIterator;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.util.Optional;
 import java.util.Set;
 import javax.validation.executable.ValidateOnExecution;
-import org.mongodb.morphia.query.MorphiaIterator;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @ValidateOnExecution
 @Singleton

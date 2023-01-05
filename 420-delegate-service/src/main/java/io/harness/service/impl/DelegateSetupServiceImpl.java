@@ -60,6 +60,9 @@ import software.wings.service.intfc.ownership.OwnedByAccount;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.query.Criteria;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -82,9 +85,6 @@ import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Criteria;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @Singleton
 @ValidateOnExecution

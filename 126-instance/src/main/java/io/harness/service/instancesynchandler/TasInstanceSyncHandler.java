@@ -95,7 +95,6 @@ public class TasInstanceSyncHandler extends AbstractInstanceSyncHandler {
   @Override
   public InstanceDTO updateInstance(InstanceDTO instanceDTO, InstanceInfoDTO instanceInfoFromServer) {
     instanceDTO.setInstanceInfoDTO(instanceInfoFromServer);
-    instanceDTO.setLastDeployedAt(System.currentTimeMillis());
     return instanceDTO;
   }
 }

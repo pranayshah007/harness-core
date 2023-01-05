@@ -16,6 +16,7 @@ import static io.harness.utils.PageUtils.getNGPageResponse;
 import static junit.framework.TestCase.assertEquals;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -176,7 +177,8 @@ public class RolesApiImplTest extends CategoryTest {
                                 .managedFilter(NO_FILTER)
                                 .build();
 
-    when(roleService.list(any(), any())).thenReturn(getNGPageResponse(getPage(Collections.singletonList(role), 1)));
+    when(roleService.list(any(), any(), eq(true)))
+        .thenReturn(getNGPageResponse(getPage(Collections.singletonList(role), 1)));
 
     Response response = accountRolesApi.listRolesAcc(page, limit, searchTerm, account, "slug", "ASC");
     List<RolesResponse> entity = (List<RolesResponse>) response.getEntity();
@@ -304,7 +306,8 @@ public class RolesApiImplTest extends CategoryTest {
                                 .managedFilter(NO_FILTER)
                                 .build();
 
-    when(roleService.list(any(), any())).thenReturn(getNGPageResponse(getPage(Collections.singletonList(role), 1)));
+    when(roleService.list(any(), any(), eq(true)))
+        .thenReturn(getNGPageResponse(getPage(Collections.singletonList(role), 1)));
 
     Response response = orgRolesApi.listRolesOrg(org, page, limit, searchTerm, account, "name", "desc");
     List<RolesResponse> entity = (List<RolesResponse>) response.getEntity();
@@ -442,7 +445,8 @@ public class RolesApiImplTest extends CategoryTest {
                                 .managedFilter(NO_FILTER)
                                 .build();
 
-    when(roleService.list(any(), any())).thenReturn(getNGPageResponse(getPage(Collections.singletonList(role), 1)));
+    when(roleService.list(any(), any(), eq(true)))
+        .thenReturn(getNGPageResponse(getPage(Collections.singletonList(role), 1)));
 
     Response response =
         projectRolesApi.listRolesProject(org, project, page, limit, searchTerm, account, "updated", "asc");

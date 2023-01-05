@@ -36,6 +36,7 @@ import static software.wings.utils.WingsTestConstants.TEMPLATE_ID;
 import static software.wings.utils.WingsTestConstants.TEMPLATE_NAME;
 
 import static com.google.common.collect.ImmutableMap.of;
+import static dev.morphia.mapping.Mapper.ID_KEY;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
@@ -44,7 +45,6 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mongodb.morphia.mapping.Mapper.ID_KEY;
 
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
@@ -75,6 +75,8 @@ import software.wings.service.intfc.ServiceVariableService;
 import software.wings.utils.ArtifactType;
 
 import com.google.inject.Inject;
+import dev.morphia.query.FieldEnd;
+import dev.morphia.query.Query;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.Before;
@@ -84,8 +86,6 @@ import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
-import org.mongodb.morphia.query.FieldEnd;
-import org.mongodb.morphia.query.Query;
 
 /**
  * Created by anubhaw on 4/29/16.

@@ -66,6 +66,8 @@ import io.harness.timescaledb.tables.records.CeRecommendationsRecord;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
@@ -89,8 +91,6 @@ import org.jooq.TableField;
 import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
 import org.jooq.types.YearToSecond;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @Slf4j
 @Singleton

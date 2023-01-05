@@ -36,6 +36,9 @@ import software.wings.graphql.schema.type.aggregation.QLIdFilter;
 import software.wings.graphql.schema.type.aggregation.QLIdOperator;
 
 import com.google.inject.Inject;
+import dev.morphia.query.CriteriaContainer;
+import dev.morphia.query.FieldEnd;
+import dev.morphia.query.Query;
 import graphql.schema.DataFetchingEnvironment;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -46,9 +49,6 @@ import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mongodb.morphia.query.CriteriaContainer;
-import org.mongodb.morphia.query.FieldEnd;
-import org.mongodb.morphia.query.Query;
 
 public class ExportExecutionsDataFetcherTest extends AbstractDataFetcherTestBase {
   private static final String ACCOUNT_ID = "ACCOUNT_ID";

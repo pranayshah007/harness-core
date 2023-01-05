@@ -17,10 +17,10 @@ import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
 import com.mongodb.BasicDBObject;
+import dev.morphia.FindAndModifyOptions;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.util.Objects;
-import org.mongodb.morphia.FindAndModifyOptions;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 public class CEMetadataRecordDao {
   private final HPersistence persistence;

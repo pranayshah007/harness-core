@@ -22,11 +22,11 @@ import static software.wings.settings.SettingVariableTypes.JENKINS;
 import static software.wings.utils.WingsTestConstants.ENV_ID;
 import static software.wings.utils.WingsTestConstants.TEMPLATE_ID;
 
+import static dev.morphia.mapping.Mapper.ID_KEY;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.mongodb.morphia.mapping.Mapper.ID_KEY;
 
 import io.harness.beans.EncryptedData;
 import io.harness.beans.PageRequest;
@@ -58,6 +58,9 @@ import software.wings.utils.WingsTestConstants;
 
 import com.google.common.base.MoreObjects;
 import com.google.inject.Inject;
+import dev.morphia.annotations.Reference;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
@@ -74,9 +77,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.assertj.core.util.Lists;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mongodb.morphia.annotations.Reference;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 /**
  * The Class WingsPersistenceTest.

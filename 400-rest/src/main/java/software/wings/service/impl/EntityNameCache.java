@@ -7,8 +7,8 @@
 
 package software.wings.service.impl;
 
+import static dev.morphia.mapping.Mapper.ID_KEY;
 import static org.apache.commons.lang3.StringUtils.isBlank;
-import static org.mongodb.morphia.mapping.Mapper.ID_KEY;
 
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.WingsException;

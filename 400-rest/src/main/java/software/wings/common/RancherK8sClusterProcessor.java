@@ -17,6 +17,7 @@ import software.wings.sm.ExpressionProcessor;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.google.inject.Inject;
+import dev.morphia.annotations.Transient;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -25,7 +26,6 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
-import org.mongodb.morphia.annotations.Transient;
 
 @NoArgsConstructor
 @AllArgsConstructor

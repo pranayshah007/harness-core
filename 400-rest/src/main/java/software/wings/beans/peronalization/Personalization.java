@@ -19,14 +19,14 @@ import software.wings.beans.peronalization.PersonalizationSteps.PersonalizationS
 import software.wings.beans.peronalization.PersonalizationTemplates.PersonalizationTemplatesKeys;
 
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
 import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.UtilityClass;
 import org.bson.types.ObjectId;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
 
 @Value
 @Builder

@@ -22,13 +22,13 @@ import io.harness.persistence.AccountAccess;
 import software.wings.beans.Base;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import dev.morphia.annotations.Entity;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
 
 /**
  * @author rktummala on 04/06/2018

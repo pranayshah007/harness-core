@@ -68,6 +68,7 @@ import software.wings.utils.WingsTestConstants;
 import software.wings.yaml.handler.YamlHandlerTestBase;
 
 import com.google.inject.Inject;
+import dev.morphia.Key;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -82,7 +83,6 @@ import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mongodb.morphia.Key;
 
 /**
  * @author rktummala on 1/9/18

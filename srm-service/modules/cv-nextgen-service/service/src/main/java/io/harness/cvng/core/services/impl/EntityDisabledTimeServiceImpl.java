@@ -14,9 +14,9 @@ import io.harness.cvng.core.services.api.EntityDisabledTimeService;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
+import dev.morphia.query.Sort;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Sort;
 
 @Slf4j
 public class EntityDisabledTimeServiceImpl implements EntityDisabledTimeService {

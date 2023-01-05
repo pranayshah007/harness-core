@@ -27,6 +27,7 @@ import software.wings.service.intfc.UserGroupService;
 import software.wings.service.intfc.WorkflowService;
 
 import com.google.inject.Inject;
+import dev.morphia.query.UpdateOperations;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -35,7 +36,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @Slf4j
 public class AddNotificationGroupReferenceToUserGroups implements Migration {

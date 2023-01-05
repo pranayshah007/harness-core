@@ -91,6 +91,7 @@ import software.wings.sm.states.k8s.K8sStateHelper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
+import dev.morphia.Key;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -98,7 +99,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.Key;
 
 @Slf4j
 public abstract class ContainerServiceDeploy extends State {

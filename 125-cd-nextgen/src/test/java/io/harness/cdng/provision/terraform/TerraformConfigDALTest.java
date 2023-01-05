@@ -22,6 +22,7 @@ import io.harness.persistence.HPersistence;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.rule.Owner;
 
+import dev.morphia.query.Query;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -31,7 +32,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
-import org.mongodb.morphia.query.Query;
 
 @OwnedBy(HarnessTeam.CDP)
 public class TerraformConfigDALTest extends CategoryTest {

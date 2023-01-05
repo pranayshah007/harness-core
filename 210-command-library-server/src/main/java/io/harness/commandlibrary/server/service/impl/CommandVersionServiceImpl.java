@@ -31,6 +31,7 @@ import software.wings.dl.WingsPersistence;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.query.Sort;
 import java.util.List;
 import java.util.Optional;
 import java.util.Scanner;
@@ -38,7 +39,6 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
-import org.mongodb.morphia.query.Sort;
 
 @Singleton
 @Slf4j

@@ -34,6 +34,7 @@ import software.wings.security.PermissionAttribute;
 import software.wings.security.annotations.AuthRule;
 
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -42,7 +43,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
 
 @Slf4j
 @TargetModule(HarnessModule._375_CE_GRAPHQL)

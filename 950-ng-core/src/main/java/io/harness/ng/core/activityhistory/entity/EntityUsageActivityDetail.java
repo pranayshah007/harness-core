@@ -13,6 +13,7 @@ import io.harness.ng.DbAliases;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.dto.ErrorDetail;
 
+import dev.morphia.annotations.Entity;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
@@ -21,7 +22,6 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.validator.constraints.NotBlank;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.Persistent;
 import org.springframework.data.annotation.TypeAlias;
 

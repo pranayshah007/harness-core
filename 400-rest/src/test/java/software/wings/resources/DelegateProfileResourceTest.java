@@ -15,6 +15,7 @@ import static io.harness.rule.OwnerRule.VUK;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.DELEGATE_PROFILE_ID;
 
+import static dev.morphia.mapping.Mapper.ID_KEY;
 import static java.util.Arrays.asList;
 import static javax.ws.rs.client.Entity.entity;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -24,7 +25,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mongodb.morphia.mapping.Mapper.ID_KEY;
 
 import io.harness.CategoryTest;
 import io.harness.beans.PageRequest;

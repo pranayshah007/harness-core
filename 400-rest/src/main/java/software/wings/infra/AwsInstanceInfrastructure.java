@@ -38,6 +38,7 @@ import software.wings.service.impl.yaml.handler.InfraDefinition.CloudProviderInf
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.google.common.collect.ImmutableSet;
+import dev.morphia.annotations.Transient;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -48,7 +49,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Transient;
 
 @JsonTypeName("AWS_SSH")
 @Data

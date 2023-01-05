@@ -23,13 +23,13 @@ import software.wings.dl.WingsPersistence;
 import software.wings.service.intfc.instance.InstanceService;
 
 import com.google.inject.Inject;
+import dev.morphia.Key;
+import dev.morphia.query.Query;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.Key;
-import org.mongodb.morphia.query.Query;
 
 /**
  * Migration script to cleanup instances if inframapping/env/service/app was deleted

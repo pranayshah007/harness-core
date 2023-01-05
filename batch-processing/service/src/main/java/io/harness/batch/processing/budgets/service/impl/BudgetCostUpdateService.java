@@ -40,6 +40,7 @@ public class BudgetCostUpdateService {
     accountIds.forEach(accountId -> {
       List<Budget> budgets = budgetDao.list(accountId);
       budgets.forEach(budget -> {
+        updateBudgetHistory(budget);
         updateBudgetAmount(budget);
         budgetService.updateBudgetCosts(budget);
         budgetDao.update(budget.getUuid(), budget);
@@ -50,6 +51,7 @@ public class BudgetCostUpdateService {
   public void updateBudgetAmount(Budget budget) {
     try {
       if (BudgetUtils.getStartOfCurrentDay() >= budget.getEndTime() && budget.getStartTime() != 0) {
+        budget.setBudgetHistory(BudgetUtils.adjustBudgetHistory(budget));
         budget.setStartTime(budget.getEndTime());
         budget.setEndTime(BudgetUtils.getEndTimeForBudget(budget.getStartTime(), budget.getPeriod()));
         budget.setBudgetAmount(BudgetUtils.getUpdatedBudgetAmount(budget));
@@ -63,6 +65,18 @@ public class BudgetCostUpdateService {
       }
     } catch (Exception e) {
       log.info("Failed to update budget amount for budget {}", budget.getUuid());
+    }
+  }
+
+  // In case a future budget is created we would want to update history of budget
+  public void updateBudgetHistory(Budget budget) {
+    try {
+      if (BudgetUtils.getStartOfCurrentDay() < budget.getStartTime()) {
+        budgetService.updateBudgetHistory(budget);
+        budgetDao.update(budget.getUuid(), budget);
+      }
+    } catch (Exception e) {
+      log.info("Failed to update budget history for budget {}", budget.getUuid());
     }
   }
 }

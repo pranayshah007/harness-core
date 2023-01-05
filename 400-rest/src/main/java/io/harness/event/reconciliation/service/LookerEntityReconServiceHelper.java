@@ -29,6 +29,7 @@ import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 import com.mongodb.client.model.DBCollectionFindOptions;
+import dev.morphia.query.UpdateOperations;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -40,7 +41,6 @@ import java.util.List;
 import java.util.Set;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @Slf4j
 public class LookerEntityReconServiceHelper {

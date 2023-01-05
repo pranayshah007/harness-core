@@ -16,12 +16,12 @@ import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
 
 /**
  * A representation of a single agent mTLS endpoint.

@@ -578,7 +578,8 @@ public class NexusThreeClientImplTest {
 
     wireMockRule.stubFor(
         get(urlEqualTo("/service/rest/v1/search?sort=version&direction=desc&repository=" + repoKey
-                + "&maven.groupId=groupId&maven.artifactId=" + URLEncoder.encode(artifactPath, "UTF-8")))
+                + "&maven.groupId=groupId&maven.artifactId=" + URLEncoder.encode(artifactPath, "UTF-8")
+                + "&maven.extension=war&maven.classifier=ex"))
             .willReturn(aResponse().withStatus(200).withBody("{\n"
                 + "    \"items\": [\n"
                 + "{\n"
@@ -640,6 +641,67 @@ public class NexusThreeClientImplTest {
   @Test
   @Owner(developers = SHIVAM)
   @Category(UnitTests.class)
+  public void testGetVersionsForClassifierNotFound() throws UnsupportedEncodingException {
+    NexusRequest nexusConfig = NexusRequest.builder()
+                                   .nexusUrl(url)
+                                   .username("username")
+                                   .password("password".toCharArray())
+                                   .hasCredentials(true)
+                                   .artifactRepositoryUrl(artifactRepoUrl)
+                                   .version("3.x")
+                                   .build();
+
+    String repoKey = "TestRepoKey1";
+    String artifactPath = "test/artifact";
+
+    wireMockRule.stubFor(get(urlEqualTo("/service/rest/v1/repositories"))
+                             .willReturn(aResponse().withStatus(200).withBody("[\n"
+                                 + "    {\n"
+                                 + "        \"name\": \"repo1\",\n"
+                                 + "        \"format\": \"docker\",\n"
+                                 + "        \"type\": \"group\",\n"
+                                 + "        \"url\": \"https://nexus3.dev.harness.io/repository/repo1\",\n"
+                                 + "        \"attributes\": {}\n"
+                                 + "    },\n"
+                                 + "    {\n"
+                                 + "        \"name\": \"testrepo1\",\n"
+                                 + "        \"format\": \"docker\",\n"
+                                 + "        \"type\": \"hosted\",\n"
+                                 + "        \"url\": \"https://nexus3.dev.harness.io/repository/testrepo1\",\n"
+                                 + "        \"attributes\": {}\n"
+                                 + "    },\n"
+                                 + "    {\n"
+                                 + "        \"name\": \"" + repoKey + "\",\n"
+                                 + "        \"format\": \"docker\",\n"
+                                 + "        \"type\": \"hosted\",\n"
+                                 + "        \"url\": \"https://nexus3.dev.harness.io/repository/" + repoKey + "\",\n"
+                                 + "        \"attributes\": {}\n"
+                                 + "    }\n"
+                                 + "]")));
+
+    wireMockRule.stubFor(get(urlEqualTo("/repository/" + repoKey + "/v2/_catalog"))
+                             .willReturn(aResponse().withStatus(200).withBody("{\n"
+                                 + "    \"repositories\": [\n"
+                                 + "        \"busybox\",\n"
+                                 + "        \"nginx\",\n"
+                                 + "        \"" + artifactPath + "\"\n"
+                                 + "    ]\n"
+                                 + "}")));
+
+    wireMockRule.stubFor(get(urlEqualTo("/service/rest/v1/search?sort=version&direction=desc&repository=" + repoKey
+                                 + "&maven.groupId=groupId&maven.artifactId=" + URLEncoder.encode(artifactPath, "UTF-8")
+                                 + "&maven.extension=war&maven.classifier=ex"))
+                             .willReturn(aResponse().withStatus(200).withBody("{\n"
+                                 + "    \"items\": [],\n"
+                                 + "\"continuationToken\": null\n"
+                                 + "}")));
+    assertThatThrownBy(() -> nexusThreeService.getVersions(nexusConfig, repoKey, "groupId", artifactPath, "war", "ex"))
+        .isInstanceOf(HintException.class);
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
   public void testGetVersionsNoCredentials() throws UnsupportedEncodingException {
     NexusRequest nexusConfig = NexusRequest.builder()
                                    .nexusUrl(url)
@@ -689,7 +751,8 @@ public class NexusThreeClientImplTest {
 
     wireMockRule.stubFor(
         get(urlEqualTo("/service/rest/v1/search?sort=version&direction=desc&repository=" + repoKey
-                + "&maven.groupId=groupId&maven.artifactId=" + URLEncoder.encode(artifactPath, "UTF-8")))
+                + "&maven.groupId=groupId&maven.artifactId=" + URLEncoder.encode(artifactPath, "UTF-8")
+                + "&maven.extension=war&maven.classifier=ex"))
             .willReturn(aResponse().withStatus(200).withBody("{\n"
                 + "    \"items\": [\n"
                 + "{\n"

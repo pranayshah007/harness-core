@@ -32,6 +32,7 @@ import io.harness.request.RequestMetadata;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
 import java.time.Instant;
 import java.util.List;
 import javax.validation.Valid;
@@ -41,7 +42,6 @@ import lombok.Data;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.UtilityClass;
 import org.hibernate.validator.constraints.NotBlank;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.TypeAlias;
@@ -58,7 +58,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @JsonInclude(NON_NULL)
 public class AuditEvent {
   @NotNull @NotBlank String insertId;
-  @Id @org.mongodb.morphia.annotations.Id String id;
+  @Id @dev.morphia.annotations.Id String id;
 
   @Valid @NotNull ResourceScope resourceScope;
 

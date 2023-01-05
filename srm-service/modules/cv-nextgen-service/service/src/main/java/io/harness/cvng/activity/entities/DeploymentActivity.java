@@ -18,6 +18,8 @@ import io.harness.mongo.index.FdSparseIndex;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.google.common.base.Preconditions;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Set;
@@ -29,8 +31,6 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @JsonTypeName("DEPLOYMENT")
 @FieldNameConstants(innerTypeName = "DeploymentActivityKeys")

@@ -23,6 +23,8 @@ import software.wings.yaml.errorhandling.GitToHarnessErrorDetails.GitToHarnessEr
 import software.wings.yaml.errorhandling.HarnessToGitErrorDetails.HarnessToGitErrorDetailsKeys;
 
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Transient;
 import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.List;
@@ -33,8 +35,6 @@ import lombok.EqualsAndHashCode;
 import lombok.Setter;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.UtilityClass;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Transient;
 
 /**
  * @author rktummala on 12/15/17

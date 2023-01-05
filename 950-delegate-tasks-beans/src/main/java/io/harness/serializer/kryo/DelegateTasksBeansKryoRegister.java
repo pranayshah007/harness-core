@@ -331,6 +331,7 @@ import io.harness.delegate.beans.pcf.CfInternalInstanceElement;
 import io.harness.delegate.beans.pcf.CfRollbackCommandResult;
 import io.harness.delegate.beans.pcf.CfRouteUpdateRequestConfigData;
 import io.harness.delegate.beans.pcf.CfServiceData;
+import io.harness.delegate.beans.pcf.CfSwapRouteCommandResult;
 import io.harness.delegate.beans.pcf.ResizeStrategy;
 import io.harness.delegate.beans.pcf.TasApplicationInfo;
 import io.harness.delegate.beans.pcf.TasConstants;
@@ -1484,6 +1485,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(TasResizeStrategyType.class, 10000258);
     kryo.register(TasConstants.class, 10000259);
     kryo.register(TasManifestsPackage.class, 10000260);
+    kryo.register(CfSwapRouteCommandResult.class, 10000261);
 
     kryo.register(SecretType.class, 543214);
     kryo.register(ValueType.class, 543215);

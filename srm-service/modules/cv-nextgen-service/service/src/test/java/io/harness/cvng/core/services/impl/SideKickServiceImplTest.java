@@ -35,6 +35,7 @@ import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
+import dev.morphia.query.Sort;
 import java.net.SocketTimeoutException;
 import java.time.Clock;
 import java.time.Instant;
@@ -47,7 +48,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.Mockito;
-import org.mongodb.morphia.query.Sort;
 
 @Slf4j
 public class SideKickServiceImplTest extends CvNextGenTestBase {

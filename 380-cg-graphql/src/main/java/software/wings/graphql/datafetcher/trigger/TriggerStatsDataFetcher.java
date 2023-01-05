@@ -31,12 +31,12 @@ import software.wings.graphql.utils.nameservice.NameService;
 import software.wings.service.intfc.AppService;
 
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import graphql.schema.DataFetchingEnvironment;
 import java.util.ArrayList;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
 
 @Slf4j
 @OwnedBy(CDC)

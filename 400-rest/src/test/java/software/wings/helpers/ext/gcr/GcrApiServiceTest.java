@@ -124,7 +124,7 @@ public class GcrApiServiceTest extends WingsBaseTest {
   public void shouldGetBuildFailure() {
     assertThatThrownBy(() -> gcrService.getBuilds(gcpInternalConfig, "noImage", 100))
         .isInstanceOf(HintException.class)
-        .hasMessage("Image name [noImage] does not exist in Google Container Registry.");
+        .hasMessage("Invalid request: Image name [noImage] does not exist in Google Container Registry.");
 
     assertThatThrownBy(() -> gcrService.getBuilds(gcpInternalConfig, "invalidProject", 100))
         .extracting(ex -> ((WingsException) ex).getParams().get("message"))
@@ -168,6 +168,19 @@ public class GcrApiServiceTest extends WingsBaseTest {
       gcrService.fetchImage(restClient, "authHeader", "realm-value", "tag");
     } catch (Exception e) {
       verify(restClient, times(5)).getImageManifest("authHeader", "realm-value", "tag");
+    }
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void shouldRetryListTag() {
+    final GcrRestClient restClient = Mockito.spy(gcrRestClient);
+    doThrow(RuntimeException.class).when(restClient).listImageTags("authHeader", "realm-value");
+    try {
+      gcrService.listImageTag(restClient, "authHeader", "realm-value");
+    } catch (Exception e) {
+      verify(restClient, times(5)).listImageTags("authHeader", "realm-value");
     }
   }
 }

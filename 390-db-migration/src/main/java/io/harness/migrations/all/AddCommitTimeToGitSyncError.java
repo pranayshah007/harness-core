@@ -22,10 +22,10 @@ import software.wings.yaml.errorhandling.GitSyncError.GitSyncErrorKeys;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import java.util.Arrays;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
 
 @Slf4j
 public class AddCommitTimeToGitSyncError implements Migration {

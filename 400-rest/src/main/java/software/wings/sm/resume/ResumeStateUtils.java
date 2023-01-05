@@ -37,6 +37,10 @@ import software.wings.sm.WorkflowStandardParams;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.annotations.Transient;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -45,10 +49,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.annotations.Transient;
-import org.mongodb.morphia.query.FindOptions;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @OwnedBy(CDC)
 @Singleton
@@ -155,7 +155,7 @@ public class ResumeStateUtils {
     try (
         HIterator<SweepingOutputInstance> instancesHIterator = new HIterator<>(
             sweepingOutputService.prepareApprovalStateOutputsQuery(appId, fromPipelineExecutionId, fromStateExecutionId)
-                .fetch(new FindOptions().modifier("$hint", "pipelineStateExecution")))) {
+                .fetch(new FindOptions().hintString("pipelineStateExecution")))) {
       for (SweepingOutputInstance instance : instancesHIterator) {
         instances.add(instance);
       }

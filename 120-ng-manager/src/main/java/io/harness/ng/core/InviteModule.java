@@ -8,10 +8,14 @@
 package io.harness.ng.core;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 
 import io.harness.accesscontrol.AccessControlAdminClient;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.eventsframework.EventsFrameworkMetadataConstants;
 import io.harness.ng.NextGenConfiguration;
+import io.harness.ng.core.event.MessageListener;
+import io.harness.ng.core.events.InviteEventListener;
 import io.harness.ng.core.invites.api.InviteService;
 import io.harness.ng.core.invites.api.impl.InviteServiceImpl;
 import io.harness.persistence.HPersistence;
@@ -35,6 +39,9 @@ public class InviteModule extends AbstractModule {
   @Override
   protected void configure() {
     bind(InviteService.class).to(InviteServiceImpl.class);
+    bind(MessageListener.class)
+        .annotatedWith(Names.named(EventsFrameworkMetadataConstants.INVITE + ENTITY_CRUD))
+        .to(InviteEventListener.class);
     registerRequiredBindings();
   }
 

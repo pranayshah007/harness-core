@@ -13,6 +13,8 @@ import io.harness.cvng.beans.activity.KubernetesActivityDTO;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance.VerificationJobInstanceBuilder;
 import io.harness.mongo.index.FdIndex;
 
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.time.Instant;
 import java.util.Set;
 import lombok.Data;
@@ -20,8 +22,6 @@ import lombok.EqualsAndHashCode;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
 import org.apache.commons.lang3.NotImplementedException;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @Data
 @FieldNameConstants(innerTypeName = "KubernetesActivityKeys")

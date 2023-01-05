@@ -21,6 +21,7 @@ import io.harness.service.stats.usagemetrics.eventpublisher.UsageMetricsEventPub
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.query.Query;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -29,7 +30,6 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
 
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j

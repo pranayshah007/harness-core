@@ -46,6 +46,12 @@ import com.google.inject.Inject;
 import com.mongodb.ReadPreference;
 import com.mongodb.Tag;
 import com.mongodb.TagSet;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.MorphiaIterator;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
+import dev.morphia.query.UpdateOperations;
+import dev.morphia.query.UpdateResults;
 import java.time.Instant;
 import java.util.Collections;
 import org.junit.Before;
@@ -55,12 +61,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
-import org.mongodb.morphia.query.FindOptions;
-import org.mongodb.morphia.query.MorphiaIterator;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
-import org.mongodb.morphia.query.UpdateOperations;
-import org.mongodb.morphia.query.UpdateResults;
 
 public class ServerlessInstanceStatServiceImplTest extends CategoryTest {
   @Mock private WingsMongoPersistence wingsPersistence;

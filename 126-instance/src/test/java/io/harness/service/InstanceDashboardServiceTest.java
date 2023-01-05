@@ -181,23 +181,23 @@ public class InstanceDashboardServiceTest extends InstancesTestBase {
 
     result = instanceDashboardService.getActiveInstancesByServiceIdEnvIdAndBuildIds(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER,
         PROJECT_IDENTIFIER, "randomServiceId", inputEnvName, inputBuildIds, 5, infraId, null, pipelineExecutionId,
-        lastDeployedAt);
+        false);
     assertThat(result.size()).isEqualTo(0);
 
     result = instanceDashboardService.getActiveInstancesByServiceIdEnvIdAndBuildIds(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER,
         PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, "randomEnvName", inputBuildIds, 5, infraId, null, pipelineExecutionId,
-        lastDeployedAt);
+        false);
     assertThat(result.size()).isEqualTo(0);
 
     result = instanceDashboardService.getActiveInstancesByServiceIdEnvIdAndBuildIds(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER,
         PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, inputEnvName, Arrays.asList("randomBuildId"), 5, infraId, null,
-        pipelineExecutionId, lastDeployedAt);
+        pipelineExecutionId, false);
     assertThat(result.size()).isEqualTo(0);
 
     // Valid case
 
     result = instanceDashboardService.getActiveInstancesByServiceIdEnvIdAndBuildIds(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER,
-        PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, inputEnvName, inputBuildIds, 5, null, null, null, 0);
+        PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, inputEnvName, inputBuildIds, 5, null, null, null, false);
     assertThat(result.size()).isEqualTo(2);
 
     for (int i = 0; i < inputBuildIds.size(); i++) {

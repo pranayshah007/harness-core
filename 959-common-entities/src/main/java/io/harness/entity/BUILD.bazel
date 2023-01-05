@@ -19,8 +19,8 @@ java_library(
         "//960-persistence/src/main/java/io/harness/persistence/api:module",
         "//980-commons/src/main/java/io/harness/annotations:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
+        "@maven//:dev_morphia_morphia_core",
         "@maven//:org_hibernate_validator_hibernate_validator",
-        "@maven//:org_mongodb_morphia_morphia",
     ],
 )
 

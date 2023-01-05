@@ -20,7 +20,7 @@ import software.wings.dl.WingsPersistence;
 import software.wings.service.intfc.AccountService;
 
 import com.google.inject.Inject;
-import org.mongodb.morphia.query.Query;
+import dev.morphia.query.Query;
 
 public class FetchAndSaveAccounts implements Migration {
   @Inject private AccountService accountService;

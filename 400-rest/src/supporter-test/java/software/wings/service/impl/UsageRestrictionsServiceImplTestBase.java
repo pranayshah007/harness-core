@@ -35,6 +35,7 @@ import software.wings.service.intfc.UserGroupService;
 import software.wings.service.intfc.UserService;
 import software.wings.service.intfc.security.SecretManager;
 
+import dev.morphia.query.Query;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -44,7 +45,6 @@ import java.util.stream.Collectors;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.mongodb.morphia.query.Query;
 
 /**
  * @author rktummala on 06/08/18

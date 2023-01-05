@@ -28,6 +28,9 @@ import io.harness.persistence.HPersistence;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.rule.Owner;
 
+import dev.morphia.query.FieldEnd;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.Rule;
@@ -37,9 +40,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
-import org.mongodb.morphia.query.FieldEnd;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
 
 public class CloudformationConfigDALTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();

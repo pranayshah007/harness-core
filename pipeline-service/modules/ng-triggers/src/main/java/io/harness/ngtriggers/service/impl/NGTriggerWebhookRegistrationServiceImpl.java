@@ -20,6 +20,7 @@ import io.harness.beans.HookEventType;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
+import io.harness.exception.ExceptionUtils;
 import io.harness.git.GitClientHelper;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.webhook.UpsertWebhookRequestDTO;
@@ -57,8 +58,20 @@ public class NGTriggerWebhookRegistrationServiceImpl implements NGTriggerWebhook
                                 .orgIdentifier(ngTriggerEntity.getOrgIdentifier())
                                 .projectIdentifier(ngTriggerEntity.getProjectIdentifier())
                                 .build();
-    ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(
-        ngAccess, ngTriggerEntity.getMetadata().getWebhook().getGit().getConnectorIdentifier());
+    ConnectorDetails connectorDetails;
+    try {
+      connectorDetails = connectorUtils.getConnectorDetails(
+          ngAccess, ngTriggerEntity.getMetadata().getWebhook().getGit().getConnectorIdentifier());
+    } catch (Exception ex) {
+      log.error("Failed to register webhook, could not fetch connector details", ex);
+      WebhookRegistrationStatusDataBuilder metadataBuilder = WebhookRegistrationStatusData.builder();
+      metadataBuilder.webhookAutoRegistrationStatus(
+          WebhookAutoRegistrationStatus.builder()
+              .detailedMessage("Failed to fetch connector details: " + ExceptionUtils.getMessage(ex))
+              .registrationResult(WebhookRegistrationStatus.ERROR)
+              .build());
+      return metadataBuilder.build();
+    }
     String url = connectorUtils.retrieveURL(connectorDetails);
     String repoName = ngTriggerEntity.getMetadata().getWebhook().getGit().getRepoName();
 

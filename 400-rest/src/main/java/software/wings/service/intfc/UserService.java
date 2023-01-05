@@ -48,6 +48,7 @@ import software.wings.security.authentication.TwoFactorAuthenticationSettings;
 import software.wings.security.authentication.oauth.OauthUserInfo;
 import software.wings.service.intfc.ownership.OwnedByAccount;
 
+import dev.morphia.query.UpdateOperations;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
@@ -60,7 +61,6 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import org.hibernate.validator.constraints.NotBlank;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.query.UpdateOperations;
 import ru.vyarus.guice.validator.group.annotation.ValidationGroups;
 
 /**

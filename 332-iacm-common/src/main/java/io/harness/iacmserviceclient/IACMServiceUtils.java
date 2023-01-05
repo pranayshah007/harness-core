@@ -9,8 +9,8 @@ package io.harness.iacmserviceclient;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.entities.IACMServiceConfig;
 import io.harness.exception.GeneralException;
-import io.harness.iacm.beans.entities.IACMServiceConfig;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;

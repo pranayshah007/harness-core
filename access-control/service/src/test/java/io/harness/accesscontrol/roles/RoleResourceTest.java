@@ -17,6 +17,7 @@ import static io.harness.rule.OwnerRule.KARAN;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
@@ -102,11 +103,11 @@ public class RoleResourceTest extends AccessControlTestBase {
     String scopeIdentifier = ScopeMapper.fromParams(harnessScopeParams).toString();
     RoleFilter roleFilter =
         RoleFilter.builder().searchTerm(searchTerm).scopeIdentifier(scopeIdentifier).managedFilter(NO_FILTER).build();
-    when(roleService.list(pageRequest, roleFilter)).thenReturn(PageResponse.getEmptyPageResponse(pageRequest));
+    when(roleService.list(pageRequest, roleFilter, true)).thenReturn(PageResponse.getEmptyPageResponse(pageRequest));
     ResponseDTO<PageResponse<RoleResponseDTO>> response = roleResource.get(pageRequest, harnessScopeParams, searchTerm);
     assertTrue(response.getData().isEmpty());
     verify(accessControlClient, times(1)).checkForAccessOrThrow(any(), any(), any());
-    verify(roleService, times(1)).list(any(), any());
+    verify(roleService, times(1)).list(any(), any(), eq(true));
   }
 
   @Test

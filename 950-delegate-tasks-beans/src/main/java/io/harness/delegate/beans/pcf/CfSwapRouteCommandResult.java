@@ -21,4 +21,6 @@ public class CfSwapRouteCommandResult {
   private List<CfServiceData> instanceDataUpdated;
   private List<CfInternalInstanceElement> cfInstanceElements;
   private CfInBuiltVariablesUpdateValues updatedValues;
+  private List<CfInternalInstanceElement> newAppInstances;
+  private List<CfInternalInstanceElement> inactiveAppInstances;
 }

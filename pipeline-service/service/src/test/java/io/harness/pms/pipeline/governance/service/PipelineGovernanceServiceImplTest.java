@@ -8,6 +8,7 @@
 package io.harness.pms.pipeline.governance.service;
 
 import static io.harness.rule.OwnerRule.NAMAN;
+import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.doReturn;
@@ -91,5 +92,15 @@ public class PipelineGovernanceServiceImplTest extends CategoryTest {
     verify(gitSyncHelper, times(1)).getGitSyncBranchContextBytesThreadLocal();
     verify(expansionRequestsExtractor, times(1)).fetchExpansionRequests(dummyYaml);
     verify(jsonExpander, times(1)).fetchExpansionResponses(dummyRequestSet, expansionRequestMetadata);
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testFetchExpandedPipelineJSONForV1Yaml() {
+    String dummyYaml = "\"version: 1\"";
+    String noExp = pipelineGovernanceService.fetchExpandedPipelineJSONFromYaml(
+        accountIdentifier, orgIdentifier, projectIdentifier, dummyYaml, false);
+    assertThat(noExp).isEqualTo(dummyYaml);
   }
 }

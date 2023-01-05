@@ -35,6 +35,8 @@ import software.wings.verification.VerificationStateAnalysisExecutionData;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -47,8 +49,6 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @Slf4j
 public class CVTaskServiceImpl implements CVTaskService {

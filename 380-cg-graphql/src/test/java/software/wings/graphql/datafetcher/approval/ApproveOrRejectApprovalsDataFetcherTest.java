@@ -49,6 +49,7 @@ import software.wings.service.impl.AuthServiceImpl;
 import software.wings.service.intfc.UserService;
 import software.wings.service.intfc.WorkflowExecutionService;
 
+import dev.morphia.query.Query;
 import graphql.GraphQLContext;
 import graphql.schema.DataFetchingEnvironment;
 import java.util.LinkedList;
@@ -60,7 +61,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
-import org.mongodb.morphia.query.Query;
 
 @OwnedBy(CDC)
 public class ApproveOrRejectApprovalsDataFetcherTest extends AbstractDataFetcherTestBase {

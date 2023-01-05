@@ -29,6 +29,8 @@ import software.wings.utils.ArtifactType;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Transient;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -37,8 +39,6 @@ import lombok.Setter;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.UtilityClass;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Transient;
 
 @TargetModule(HarnessModule._957_CG_BEANS)
 @OwnedBy(CDC)

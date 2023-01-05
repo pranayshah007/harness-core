@@ -64,6 +64,7 @@ import com.google.common.collect.Sets;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.google.inject.Inject;
+import dev.morphia.query.Sort;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -91,7 +92,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.Mock;
-import org.mongodb.morphia.query.Sort;
 
 @OwnedBy(HarnessTeam.CV)
 public class TimeSeriesRecordServiceImplTest extends CvNextGenTestBase {

@@ -20,6 +20,7 @@ import io.harness.rule.Owner;
 
 import software.wings.beans.Schema;
 
+import dev.morphia.annotations.Entity;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.util.Set;
@@ -28,7 +29,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.eclipse.jetty.util.ConcurrentHashSet;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mongodb.morphia.annotations.Entity;
 import org.reflections.Reflections;
 
 /**

@@ -27,6 +27,7 @@ import io.harness.ng.core.common.beans.NGTag;
 import io.harness.persistence.PersistentEntity;
 
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
@@ -36,7 +37,6 @@ import lombok.Singular;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.Wither;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -103,7 +103,7 @@ public class Project implements PersistentEntity, NGAccountAccess {
         .build();
   }
 
-  @Wither @Id @org.mongodb.morphia.annotations.Id String id;
+  @Wither @Id @dev.morphia.annotations.Id String id;
   String accountIdentifier;
   @EntityIdentifier(allowBlank = false) String identifier;
   @EntityIdentifier(allowBlank = false) String orgIdentifier;

@@ -71,6 +71,10 @@ import software.wings.sm.states.mixin.SweepingOutputStateMixin;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
+import dev.morphia.annotations.PostLoad;
+import dev.morphia.annotations.Transient;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -88,10 +92,6 @@ import lombok.experimental.FieldNameConstants;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
-import org.mongodb.morphia.annotations.PostLoad;
-import org.mongodb.morphia.annotations.Transient;
 
 /**
  * Describes a StateMachine.

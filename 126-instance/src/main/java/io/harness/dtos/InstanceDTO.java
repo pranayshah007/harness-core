@@ -54,4 +54,5 @@ public class InstanceDTO {
   long createdAt;
   long lastModifiedAt;
   Map<String, String> metadata;
+  Long podCreatedAt;
 }

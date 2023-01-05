@@ -124,7 +124,7 @@ public class PlanExecutionStrategyTest extends OrchestrationTestBase {
                     .build();
     doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())
         .when(governanceService)
-        .evaluateGovernancePolicies(any(), any(), any(), any(), any(), any());
+        .evaluateGovernancePolicies(any(), any(), any(), any(), any(), any(), any());
     doReturn(PlanExecutionSettingResponse.builder().useNewFlow(false).shouldQueue(true).build())
         .when(pipelineSettingsService)
         .shouldQueuePlanExecution(any(), any());
@@ -167,7 +167,7 @@ public class PlanExecutionStrategyTest extends OrchestrationTestBase {
     // Governance will deny. So planExecution should have status errored.
     doReturn(GovernanceMetadata.newBuilder().setDeny(true).build())
         .when(governanceService)
-        .evaluateGovernancePolicies(any(), any(), any(), any(), any(), any());
+        .evaluateGovernancePolicies(any(), any(), any(), any(), any(), any(), any());
     planExecutionId = generateUuid();
     planExecution = executionStrategy.runNode(ambiance.setPlanExecutionId(planExecutionId).build(), plan,
         PlanExecutionMetadata.builder().planExecutionId(planExecutionId).build());

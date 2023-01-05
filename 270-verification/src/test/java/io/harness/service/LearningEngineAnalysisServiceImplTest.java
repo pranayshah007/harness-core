@@ -46,6 +46,7 @@ import software.wings.sm.StateExecutionInstance;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
@@ -59,7 +60,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.Mock;
-import org.mongodb.morphia.query.Query;
 
 public class LearningEngineAnalysisServiceImplTest extends VerificationBase {
   @Inject private WingsPersistence wingsPersistence;

@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.GITOPS;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.pipeline.CDStepInfo;
+import io.harness.cdng.pipeline.CDAbstractStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.MergePRStepVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -42,7 +42,7 @@ import org.springframework.data.annotation.TypeAlias;
 @SimpleVisitorHelper(helperClass = MergePRStepVisitorHelper.class)
 @TypeAlias("MergePRStepInfo")
 @RecasterAlias("io.harness.cdng.gitops.MergePRStepInfo")
-public class MergePRStepInfo extends MergePRBaseStepInfo implements CDStepInfo, Visitable {
+public class MergePRStepInfo extends MergePRBaseStepInfo implements CDAbstractStepInfo, Visitable {
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
   List<NGVariable> variables;

@@ -39,10 +39,10 @@ import software.wings.sm.StateType;
 
 import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.inject.Inject;
+import dev.morphia.annotations.Transient;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.mongodb.morphia.annotations.Transient;
 
 @OwnedBy(CDP)
 public class AwsLambdaRollback extends AwsLambdaState {

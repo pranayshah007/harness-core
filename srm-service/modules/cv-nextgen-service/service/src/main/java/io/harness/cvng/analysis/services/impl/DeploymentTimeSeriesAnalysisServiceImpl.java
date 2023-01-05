@@ -55,6 +55,7 @@ import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.io.Resources;
 import com.google.inject.Inject;
+import dev.morphia.query.Sort;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
@@ -72,7 +73,6 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
-import org.mongodb.morphia.query.Sort;
 
 public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSeriesAnalysisService {
   public static final int DEFAULT_PAGE_SIZE = 10;

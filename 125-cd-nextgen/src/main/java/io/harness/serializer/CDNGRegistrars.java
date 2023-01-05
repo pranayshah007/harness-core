@@ -52,7 +52,7 @@ import io.harness.cdng.k8s.K8sDeleteStepNode;
 import io.harness.cdng.k8s.K8sRollingRollbackStepNode;
 import io.harness.cdng.k8s.K8sRollingStepNode;
 import io.harness.cdng.k8s.K8sScaleStepNode;
-import io.harness.cdng.pipeline.CDStepInfo;
+import io.harness.cdng.pipeline.CDAbstractStepInfo;
 import io.harness.cdng.provision.azure.AzureARMRollbackStepNode;
 import io.harness.cdng.provision.azure.AzureCreateARMResourceStepNode;
 import io.harness.cdng.provision.azure.AzureCreateBPStepNode;
@@ -152,7 +152,7 @@ public class CDNGRegistrars {
                    .availableAtProjectLevel(true)
                    .availableAtOrgLevel(false)
                    .availableAtAccountLevel(false)
-                   .clazz(CDStepInfo.class)
+                   .clazz(CDAbstractStepInfo.class)
                    .build())
           .add(YamlSchemaRootClass.builder()
                    .entityType(EntityType.TEMPLATE_CUSTOM_DEPLOYMENT)

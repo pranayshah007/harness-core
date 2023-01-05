@@ -99,11 +99,11 @@ import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
+import dev.morphia.annotations.Transient;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import org.mongodb.morphia.annotations.Transient;
 
 /**
  * Created by rishi on 1/12/17.

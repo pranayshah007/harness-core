@@ -44,6 +44,7 @@ import software.wings.utils.EmailParams;
 import com.github.reinert.jjschema.Attributes;
 import com.google.common.base.Splitter;
 import com.google.inject.Inject;
+import dev.morphia.annotations.Transient;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -53,7 +54,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.mongodb.morphia.annotations.Transient;
 
 /**
  * The Class EmailState.

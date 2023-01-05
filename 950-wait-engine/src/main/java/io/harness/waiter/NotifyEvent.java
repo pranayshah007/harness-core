@@ -14,11 +14,11 @@ import io.harness.ng.DbAliases;
 import io.harness.queue.Queuable;
 
 import com.google.common.base.MoreObjects;
+import dev.morphia.annotations.Entity;
 import java.util.Date;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Data

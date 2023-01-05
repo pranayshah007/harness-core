@@ -24,9 +24,9 @@ import io.harness.testlib.RealMongo;
 
 import com.google.inject.Inject;
 import com.mongodb.BasicDBObject;
+import dev.morphia.Morphia;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mongodb.morphia.Morphia;
 
 public class IndexManagerTest extends PersistenceTestBase {
   @Inject HPersistence persistence;

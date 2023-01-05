@@ -16,6 +16,7 @@ import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependency;
+import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.contracts.plan.GraphLayoutNode;
 import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -141,6 +142,9 @@ public class PipelineStagePlanCreator implements PartialPlanCreator<PipelineStag
             .identifier(stageNode.getIdentifier())
             .group(StepCategory.STAGE.name())
             .stepType(PipelineStageStep.STEP_TYPE)
+            .expressionMode(
+                ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED) // Do not want null if expression is
+                                                                         // unresolved. Used in envV2 implementation
             .stepParameters(getStepParameter(config,
                 ctx.getCurrentField()
                     .getNode()

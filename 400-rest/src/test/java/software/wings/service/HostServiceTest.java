@@ -33,6 +33,7 @@ import static software.wings.utils.WingsTestConstants.SERVICE_TEMPLATE_ID;
 import static software.wings.utils.WingsTestConstants.USER_NAME;
 import static software.wings.utils.WingsTestConstants.UUID;
 
+import static dev.morphia.mapping.Mapper.ID_KEY;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
@@ -42,7 +43,6 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mongodb.morphia.mapping.Mapper.ID_KEY;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
@@ -68,6 +68,8 @@ import software.wings.utils.WingsTestConstants;
 import com.amazonaws.services.ec2.model.Instance;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
+import dev.morphia.query.FieldEnd;
+import dev.morphia.query.UpdateOperations;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
@@ -78,8 +80,6 @@ import org.mockito.Answers;
 import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mongodb.morphia.query.FieldEnd;
-import org.mongodb.morphia.query.UpdateOperations;
 
 /**
  * Created by anubhaw on 6/7/16.

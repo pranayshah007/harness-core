@@ -17,7 +17,7 @@ import io.harness.licensing.LicenseType;
 import io.harness.licensing.beans.modules.ModuleLicenseDTO;
 import io.harness.licensing.remote.NgLicenseHttpClient;
 import io.harness.ng.core.dto.ResponseDTO;
-import io.harness.utils.RestCallToNGManagerClientUtils;
+import io.harness.remote.client.NGRestUtils;
 
 import software.wings.beans.Account;
 import software.wings.service.intfc.instance.CloudToHarnessMappingService;
@@ -121,7 +121,7 @@ public class AccountShardService {
     try {
       Call<ResponseDTO<List<ModuleLicenseDTO>>> moduleLicensesByModuleType =
           ngLicenseHttpClient.getModuleLicensesByModuleType(ModuleType.CE, expiryTime);
-      return RestCallToNGManagerClientUtils.execute(moduleLicensesByModuleType);
+      return NGRestUtils.getResponse(moduleLicensesByModuleType);
     } catch (Exception ex) {
       log.error("Exception in account shard ", ex);
     }

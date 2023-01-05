@@ -277,7 +277,7 @@ public class TasSwapRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCom
       log.error("Could not generate server instance info for app resize step");
       return Collections.emptyList();
     }
-    List<CfInternalInstanceElement> instances = cfRollbackCommandResult.getCfInstanceElements();
+    List<CfInternalInstanceElement> instances = cfRollbackCommandResult.getNewAppInstances();
     if (!isNull(instances)) {
       return instances.stream()
           .map(instance -> getServerInstance(instance, infrastructureOutcome))

@@ -66,7 +66,7 @@ public class NextGenHealthSourceSpec extends MetricHealthSourceSpec {
   private Key getKeyFromCVConfig(@NotNull NextGenLogCVConfig cvConfig) {
     return Key.builder()
         .monitoredServiceIdentifier(cvConfig.getMonitoredServiceIdentifier())
-        .queryIdentifier(cvConfig.getQueryName())
+        .queryIdentifier(cvConfig.getQueryIdentifier())
         .build();
   }
 
@@ -126,6 +126,9 @@ public class NextGenHealthSourceSpec extends MetricHealthSourceSpec {
     queryDefinitions.forEach((QueryDefinition query) -> {
       Preconditions.checkArgument(
           StringUtils.isNotBlank(query.getIdentifier()), "Query identifier does not match the expected pattern.");
+      Preconditions.checkArgument(StringUtils.isNotBlank(query.getGroupName()), "Query Group Name must be present.");
+      Preconditions.checkArgument(StringUtils.isNotBlank(query.getName()), "Query Name must be present.");
+
       if (uniqueQueryNames.contains(query.getName())) {
         throw new InvalidRequestException(String.format("Duplicate query name present %s", query.getName()));
       }
@@ -138,8 +141,6 @@ public class NextGenHealthSourceSpec extends MetricHealthSourceSpec {
                                        "Metric Thresholds should not be present for logs."));
     } else {
       queryDefinitions.forEach((QueryDefinition query) -> {
-        Preconditions.checkArgument(
-            StringUtils.isNotBlank(query.getGroupName()), "GroupName must be present for metrics");
         if (Objects.nonNull(query.getContinuousVerificationEnabled()) && query.getContinuousVerificationEnabled()) {
           Preconditions.checkArgument(Objects.nonNull(query.getQueryParams())
                   && StringUtils.isNotEmpty(query.getQueryParams().getServiceInstanceField()),
@@ -205,6 +206,8 @@ public class NextGenHealthSourceSpec extends MetricHealthSourceSpec {
                        .monitoringSourceName(name)
                        .queryName(queryDefinition.getName())
                        .query(queryDefinition.getQuery())
+                       .groupName(queryDefinition.getGroupName())
+                       .queryIdentifier(queryDefinition.getIdentifier())
                        .queryParams(queryDefinition.getQueryParams().getQueryParamsEntity())
                        .category(CVMonitoringCategory.ERRORS)
                        .monitoredServiceIdentifier(monitoredServiceIdentifier)

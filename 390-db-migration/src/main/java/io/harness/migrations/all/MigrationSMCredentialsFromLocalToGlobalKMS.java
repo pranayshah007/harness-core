@@ -33,11 +33,11 @@ import software.wings.service.impl.security.AbstractSecretServiceImpl;
 import software.wings.settings.SettingVariableTypes;
 
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import java.util.Arrays;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
-import org.mongodb.morphia.query.Query;
 
 @Slf4j
 public class MigrationSMCredentialsFromLocalToGlobalKMS implements Migration {

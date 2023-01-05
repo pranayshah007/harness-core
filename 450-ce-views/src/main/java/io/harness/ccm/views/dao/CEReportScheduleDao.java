@@ -14,12 +14,12 @@ import io.harness.ccm.views.entities.CEReportSchedule.CEReportScheduleKeys;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.util.Date;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.FindOptions;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @OwnedBy(HarnessTeam.CE)
 @Slf4j

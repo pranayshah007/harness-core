@@ -20,6 +20,8 @@ import io.harness.persistence.UuidAware;
 import software.wings.graphql.datafetcher.ce.recommendation.entity.ContainerCheckpoint;
 
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -29,8 +31,6 @@ import lombok.Data;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
 
 /*
 Stores histogram data for a single day

@@ -12,10 +12,10 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import dev.morphia.annotations.Id;
 import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
-import org.mongodb.morphia.annotations.Id;
 import org.springframework.data.annotation.TypeAlias;
 
 @Data

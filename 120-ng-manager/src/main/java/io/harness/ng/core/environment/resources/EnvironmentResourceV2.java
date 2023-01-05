@@ -180,6 +180,7 @@ public class EnvironmentResourceV2 {
   private final CDOverviewDashboardService cdOverviewDashboardService;
   private final NGFeatureFlagHelperService featureFlagHelperService;
   private final ScopeAccessHelper scopeAccessHelper;
+  private EnvironmentEntityYamlSchemaHelper environmentEntityYamlSchemaHelper;
 
   public static final String ENVIRONMENT_YAML_METADATA_INPUT_PARAM_MESSAGE =
       "Lists of Environment Identifiers and service identifiers for the entities";
@@ -248,6 +249,7 @@ public class EnvironmentResourceV2 {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, environmentRequestDTO.getOrgIdentifier(),
                                                   environmentRequestDTO.getProjectIdentifier()),
         Resource.of(ENVIRONMENT, null, environmentAttributes), ENVIRONMENT_CREATE_PERMISSION);
+    environmentEntityYamlSchemaHelper.validateSchema(accountId, environmentRequestDTO.getYaml());
     Environment environmentEntity = EnvironmentMapper.toEnvironmentEntity(accountId, environmentRequestDTO);
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(environmentEntity.getOrgIdentifier(),
         environmentEntity.getProjectIdentifier(), environmentEntity.getAccountId());
@@ -304,7 +306,7 @@ public class EnvironmentResourceV2 {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, environmentRequestDTO.getOrgIdentifier(),
                                                   environmentRequestDTO.getProjectIdentifier()),
         Resource.of(ENVIRONMENT, environmentRequestDTO.getIdentifier()), ENVIRONMENT_UPDATE_PERMISSION);
-
+    environmentEntityYamlSchemaHelper.validateSchema(accountId, environmentRequestDTO.getYaml());
     Environment requestEnvironment = EnvironmentMapper.toEnvironmentEntity(accountId, environmentRequestDTO);
     requestEnvironment.setVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
     Environment updatedEnvironment = environmentService.update(requestEnvironment);
@@ -333,7 +335,7 @@ public class EnvironmentResourceV2 {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, environmentRequestDTO.getOrgIdentifier(),
                                                   environmentRequestDTO.getProjectIdentifier()),
         Resource.of(ENVIRONMENT, environmentRequestDTO.getIdentifier()), ENVIRONMENT_UPDATE_PERMISSION);
-
+    environmentEntityYamlSchemaHelper.validateSchema(accountId, environmentRequestDTO.getYaml());
     Environment requestEnvironment = EnvironmentMapper.toEnvironmentEntity(accountId, environmentRequestDTO);
     requestEnvironment.setVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(requestEnvironment.getOrgIdentifier(),

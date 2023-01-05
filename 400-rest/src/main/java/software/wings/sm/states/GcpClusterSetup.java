@@ -40,9 +40,9 @@ import software.wings.sm.WorkflowStandardParamsExtensionService;
 import com.github.reinert.jjschema.Attributes;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
+import dev.morphia.annotations.Transient;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.annotations.Transient;
 
 /**
  * Created by brett on 4/14/17

@@ -13,10 +13,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.FdUniqueIndex;
 import io.harness.ng.DbAliases;
 
+import dev.morphia.annotations.Entity;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -30,7 +30,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @TypeAlias("waitStepInstance")
 @OwnedBy(HarnessTeam.PIPELINE)
 public class WaitStepInstance {
-  @Id @org.mongodb.morphia.annotations.Id String waitStepInstanceId;
+  @Id @dev.morphia.annotations.Id String waitStepInstanceId;
   @FdUniqueIndex String nodeExecutionId;
   Long createdAt;
   int duration;

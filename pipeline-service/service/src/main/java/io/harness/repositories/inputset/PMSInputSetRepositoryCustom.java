@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.git.model.ChangeType;
 import io.harness.pms.inputset.gitsync.InputSetYamlDTO;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
+import io.harness.pms.pipeline.MoveConfigOperationType;
 
 import java.util.List;
 import java.util.Optional;
@@ -61,4 +62,7 @@ public interface PMSInputSetRepositoryCustom {
       String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier, boolean notDeleted);
 
   boolean checkIfInputSetWithGivenFilePathExists(String accountId, String repoURL, String filePath);
+
+  InputSetEntity updateInputSetEntity(
+      InputSetEntity inputSetToMove, Criteria criteria, Update update, MoveConfigOperationType moveConfigOperationType);
 }

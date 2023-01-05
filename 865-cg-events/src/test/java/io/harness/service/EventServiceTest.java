@@ -34,6 +34,8 @@ import io.harness.ff.FeatureFlagService;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.util.Arrays;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Rule;
@@ -45,8 +47,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @Slf4j
 @OwnedBy(CDC)

@@ -33,6 +33,9 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.cloud.datastore.Datastore;
 import com.google.cloud.datastore.Key;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
+import dev.morphia.annotations.PrePersist;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -40,9 +43,6 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
-import org.mongodb.morphia.annotations.PrePersist;
 
 @Data
 @Builder
@@ -119,7 +119,7 @@ public class CVFeedbackRecord implements GoogleDataStoreAware, AccountAccess {
   public com.google.cloud.datastore.Entity convertToCloudStorageEntity(Datastore datastore) {
     onSave();
     Key taskKey = datastore.newKeyFactory()
-                      .setKind(this.getClass().getAnnotation(org.mongodb.morphia.annotations.Entity.class).value())
+                      .setKind(this.getClass().getAnnotation(dev.morphia.annotations.Entity.class).value())
                       .newKey(this.getUuid() == null ? generateUuid() : this.getUuid());
     com.google.cloud.datastore.Entity.Builder recordBuilder = com.google.cloud.datastore.Entity.newBuilder(taskKey);
 

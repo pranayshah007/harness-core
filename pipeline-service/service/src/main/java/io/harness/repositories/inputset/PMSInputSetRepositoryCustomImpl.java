@@ -8,6 +8,7 @@
 package io.harness.repositories.inputset;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.pms.pipeline.MoveConfigOperationType.INLINE_TO_REMOTE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
@@ -22,6 +23,7 @@ import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.persistance.GitAwarePersistence;
 import io.harness.gitsync.persistance.GitSyncSdkService;
+import io.harness.gitsync.scm.beans.ScmCreateFileGitResponse;
 import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.OutboxService;
 import io.harness.pms.events.InputSetCreateEvent;
@@ -31,9 +33,11 @@ import io.harness.pms.inputset.gitsync.InputSetYamlDTO;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity.InputSetEntityKeys;
 import io.harness.pms.ngpipeline.inputset.mappers.PMSInputSetFilterHelper;
+import io.harness.pms.pipeline.MoveConfigOperationType;
 import io.harness.springdata.PersistenceUtils;
 import io.harness.springdata.TransactionHelper;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.List;
@@ -105,18 +109,7 @@ public class PMSInputSetRepositoryCustomImpl implements PMSInputSetRepositoryCus
     if (gitSyncSdkService.isGitSimplificationEnabled(
             entityToSave.getAccountIdentifier(), entityToSave.getOrgIdentifier(), entityToSave.getProjectIdentifier())
         && isRemoteFlow) {
-      Scope scope = Scope.builder()
-                        .accountIdentifier(entityToSave.getAccountIdentifier())
-                        .orgIdentifier(entityToSave.getOrgIdentifier())
-                        .projectIdentifier(entityToSave.getProjectIdentifier())
-                        .build();
-      String yamlToPush = entityToSave.getYaml();
-      entityToSave.setStoreType(StoreType.REMOTE);
-      entityToSave.setConnectorRef(gitEntityInfo.getConnectorRef());
-      entityToSave.setRepo(gitEntityInfo.getRepoName());
-      entityToSave.setFilePath(gitEntityInfo.getFilePath());
-      setRepoUrlForSave(entityToSave);
-      gitAwareEntityHelper.createEntityOnGit(entityToSave, yamlToPush, scope);
+      createRemoteEntity(entityToSave);
     } else {
       entityToSave.setStoreType(StoreType.INLINE);
     }
@@ -386,10 +379,51 @@ public class PMSInputSetRepositoryCustomImpl implements PMSInputSetRepositoryCus
     return !listOfInputSetEntities.isEmpty();
   }
 
+  @Override
+  public InputSetEntity updateInputSetEntity(InputSetEntity inputSetToMove, Criteria criteria, Update update,
+      MoveConfigOperationType moveConfigOperationType) {
+    return transactionHelper.performTransaction(
+        () -> moveConfigOperations(inputSetToMove, criteria, update, moveConfigOperationType));
+  }
+
+  @VisibleForTesting
+  InputSetEntity moveConfigOperations(InputSetEntity inputSetToMove, Criteria criteria, Update update,
+      MoveConfigOperationType moveConfigOperationType) {
+    //   create file if inline to remote
+    if (INLINE_TO_REMOTE.equals(moveConfigOperationType)) {
+      createRemoteEntity(inputSetToMove);
+    }
+    //    update the mongo db
+    return updateInputSetInDB(new Query(criteria), update, inputSetToMove, System.currentTimeMillis());
+  }
+
   void setRepoUrlForSave(InputSetEntity entityToSave) {
     if (EmptyPredicate.isEmpty(entityToSave.getRepoURL())) {
       entityToSave.setRepoURL(gitAwareEntityHelper.getRepoUrl(
           entityToSave.getAccountId(), entityToSave.getOrgIdentifier(), entityToSave.getProjectIdentifier()));
     }
+  }
+
+  private ScmCreateFileGitResponse createRemoteEntity(InputSetEntity inputSetEntity) {
+    GitAwareContextHelper.initDefaultScmGitMetaData();
+    GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
+
+    Scope scope = Scope.builder()
+                      .accountIdentifier(inputSetEntity.getAccountIdentifier())
+                      .orgIdentifier(inputSetEntity.getOrgIdentifier())
+                      .projectIdentifier(inputSetEntity.getProjectIdentifier())
+                      .build();
+
+    String yamlToPush = inputSetEntity.getYaml();
+    addGitParamsToInputSetEntity(inputSetEntity, gitEntityInfo);
+    return gitAwareEntityHelper.createEntityOnGit(inputSetEntity, yamlToPush, scope);
+  }
+
+  private void addGitParamsToInputSetEntity(InputSetEntity inputSetEntity, GitEntityInfo gitEntityInfo) {
+    inputSetEntity.setStoreType(StoreType.REMOTE);
+    inputSetEntity.setConnectorRef(gitEntityInfo.getConnectorRef());
+    inputSetEntity.setRepo(gitEntityInfo.getRepoName());
+    inputSetEntity.setFilePath(gitEntityInfo.getFilePath());
+    setRepoUrlForSave(inputSetEntity);
   }
 }

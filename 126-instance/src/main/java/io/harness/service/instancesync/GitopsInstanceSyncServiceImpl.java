@@ -39,8 +39,8 @@ public class GitopsInstanceSyncServiceImpl implements GitopsInstanceSyncService 
   @Inject private InstanceSyncServiceUtils utils;
   @Inject private InstanceSyncHandlerFactoryService instanceSyncHandlerFactoryService;
   @Override
-  public void processInstanceSync(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, List<InstanceDTO> instanceList) {
+  public Boolean processInstanceSync(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String agentIdentifier, List<InstanceDTO> instanceList) {
     try (AutoLogContext ignore1 = new NGProjectLogContext(
              accountIdentifier, orgIdentifier, projectIdentifier, AutoLogContext.OverrideBehavior.OVERRIDE_ERROR);
          AutoLogContext ignore2 = InstanceSyncLogContext.builder()
@@ -55,20 +55,32 @@ public class GitopsInstanceSyncServiceImpl implements GitopsInstanceSyncService 
       for (Map.Entry<String, List<InstanceDTO>> instanceDTOList : instancesGroupedByService.entrySet()) {
         List<InstanceDTO> instances = instanceDTOList.getValue();
         Map<OperationsOnInstances, List<InstanceDTO>> instancesToBeModified =
-            handleInstanceSync(instances, instanceSyncHandler);
+            handleInstanceSync(agentIdentifier, instances, instanceSyncHandler);
         utils.processInstances(instancesToBeModified);
       }
       log.info("Instance Sync completed");
+      return true;
     } catch (Exception exception) {
       log.error("Exception occurred during instance sync", exception);
+      return false;
     }
   }
 
+  @Override
+  public void deleteInstancesForAgent(
+      String accountId, String orgIdentifier, String projectIdentifier, String agentIdentifier) {
+    log.info(
+        "Deleting service instances for account {}, org {}, project {} and agent {} since no instance data was published",
+        accountId, orgIdentifier, projectIdentifier, agentIdentifier);
+    instanceService.deleteForAgent(accountId, orgIdentifier, projectIdentifier, agentIdentifier);
+  }
+
   private Map<OperationsOnInstances, List<InstanceDTO>> handleInstanceSync(
-      List<InstanceDTO> instancesFromServer, AbstractInstanceSyncHandler instanceSyncHandler) {
+      String agentIdentifier, List<InstanceDTO> instancesFromServer, AbstractInstanceSyncHandler instanceSyncHandler) {
     InstanceDTO instanceDTO = instancesFromServer.get(0);
     List<InstanceDTO> instancesInDB = instanceService.getActiveInstancesByServiceId(instanceDTO.getAccountIdentifier(),
-        instanceDTO.getOrgIdentifier(), instanceDTO.getProjectIdentifier(), instanceDTO.getServiceIdentifier());
+        instanceDTO.getOrgIdentifier(), instanceDTO.getProjectIdentifier(), instanceDTO.getServiceIdentifier(),
+        agentIdentifier);
     // map all instances and server instances infos to instance sync handler key (corresponding to deployment info)
     // basically trying to group instances corresponding to a "cluster" together
     Map<String, List<InstanceDTO>> syncKeyToInstancesInDBMap =
@@ -85,7 +97,23 @@ public class GitopsInstanceSyncServiceImpl implements GitopsInstanceSyncService 
     processInstanceSyncForSyncKeysFromServerInstances(
         instanceSyncHandler, syncKeyToInstancesInDBMap, syncKeyToInstancesFromServerMap, instancesToBeModified);
 
+    processInstanceSyncForSyncKeysFromDBInstances(
+        instanceSyncHandler, syncKeyToInstancesInDBMap, syncKeyToInstancesFromServerMap, instancesToBeModified);
+
     return instancesToBeModified;
+  }
+
+  private void processInstanceSyncForSyncKeysFromDBInstances(AbstractInstanceSyncHandler instanceSyncHandler,
+      Map<String, List<InstanceDTO>> syncKeyToInstancesInDBMap,
+      Map<String, List<InstanceDTO>> syncKeyToInstancesFromServerMap,
+      Map<OperationsOnInstances, List<InstanceDTO>> instancesToBeModified) {
+    Sets.SetView<String> syncKeyToInstancesInDB =
+        Sets.difference(syncKeyToInstancesInDBMap.keySet(), syncKeyToInstancesFromServerMap.keySet());
+    syncKeyToInstancesInDB.forEach(instanceSyncHandlerKey
+        -> processInstancesByInstanceSyncHandlerKey(instanceSyncHandler,
+            syncKeyToInstancesInDBMap.getOrDefault(instanceSyncHandlerKey, new ArrayList<>()),
+            syncKeyToInstancesFromServerMap.getOrDefault(instanceSyncHandlerKey, new ArrayList<>()),
+            instancesToBeModified));
   }
 
   private void processInstanceSyncForSyncKeysFromServerInstances(AbstractInstanceSyncHandler instanceSyncHandler,

@@ -28,13 +28,13 @@ import io.harness.validation.Update;
 import software.wings.beans.marketplace.MarketPlaceType;
 
 import com.github.reinert.jjschema.SchemaIgnore;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
 import java.util.Date;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
 
 @OwnedBy(PL)
 @Data

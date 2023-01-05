@@ -250,6 +250,21 @@ public class SettingsServiceImpl implements SettingsService {
     settingRepository.delete(criteria);
   }
 
+  @Override
+  public void deleteAtAllScopes(Scope scope) {
+    Criteria criteria =
+        createScopeCriteria(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier());
+    settingRepository.deleteAll(criteria);
+  }
+
+  private Criteria createScopeCriteria(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    Criteria criteria = new Criteria();
+    criteria.and(SettingKeys.accountIdentifier).is(accountIdentifier);
+    criteria.and(SettingKeys.orgIdentifier).is(orgIdentifier);
+    criteria.and(SettingKeys.projectIdentifier).is(projectIdentifier);
+    return criteria;
+  }
+
   private Map<Pair<String, Scope>, Setting> getSettings(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, SettingCategory category, String groupIdentifier) {
     List<Setting> settings;

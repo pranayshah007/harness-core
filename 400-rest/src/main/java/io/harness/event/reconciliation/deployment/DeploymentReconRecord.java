@@ -22,6 +22,8 @@ import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAware;
 
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
 import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.List;
@@ -30,8 +32,6 @@ import lombok.Builder.Default;
 import lombok.Data;
 import lombok.ToString;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
 
 @Data
 @Builder

@@ -26,11 +26,14 @@ import io.harness.cvng.core.services.api.SideKickService;
 import io.harness.cvng.core.services.api.UpdatableEntity;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.encryption.Scope;
+import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.mongodb.BasicDBObject;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -43,8 +46,6 @@ import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @Slf4j
 public class CVConfigServiceImpl implements CVConfigService {
@@ -118,12 +119,17 @@ public class CVConfigServiceImpl implements CVConfigService {
   @Override
   public void deleteByIdentifier(
       String accountId, String orgIdentifier, String projectIdentifier, String monitoringSourceIdentifier) {
-    hPersistence.createQuery(CVConfig.class, excludeAuthority)
-        .filter(CVConfigKeys.accountId, accountId)
-        .filter(CVConfigKeys.orgIdentifier, orgIdentifier)
-        .filter(CVConfigKeys.projectIdentifier, projectIdentifier)
-        .filter(CVConfigKeys.identifier, monitoringSourceIdentifier)
-        .forEach(cvConfig -> delete(cvConfig.getUuid()));
+    try (
+        HIterator<CVConfig> cvConfigs = new HIterator<>(hPersistence.createQuery(CVConfig.class, excludeAuthority)
+                                                            .filter(CVConfigKeys.accountId, accountId)
+                                                            .filter(CVConfigKeys.orgIdentifier, orgIdentifier)
+                                                            .filter(CVConfigKeys.projectIdentifier, projectIdentifier)
+                                                            .filter(CVConfigKeys.identifier, monitoringSourceIdentifier)
+                                                            .fetch())) {
+      for (CVConfig cvConfig : cvConfigs) {
+        delete(cvConfig.getUuid());
+      }
+    }
   }
 
   @Override
