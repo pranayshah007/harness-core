@@ -32,18 +32,25 @@ import static java.util.Collections.emptyList;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.bigQuery.BigQueryService;
+import io.harness.ccm.commons.beans.recommendation.CCMJiraDetails;
 import io.harness.ccm.commons.beans.recommendation.RecommendationOverviewStats;
 import io.harness.ccm.commons.beans.recommendation.RecommendationState;
 import io.harness.ccm.commons.beans.recommendation.ResourceType;
 import io.harness.ccm.commons.utils.BigQueryHelper;
 import io.harness.ccm.graphql.core.recommendation.RecommendationService;
+import io.harness.ccm.graphql.dto.recommendation.EC2RecommendationDTO;
+import io.harness.ccm.graphql.dto.recommendation.ECSRecommendationDTO;
 import io.harness.ccm.graphql.dto.recommendation.FilterStatsDTO;
 import io.harness.ccm.graphql.dto.recommendation.K8sRecommendationFilterDTO;
+import io.harness.ccm.graphql.dto.recommendation.NodeRecommendationDTO;
 import io.harness.ccm.graphql.dto.recommendation.RecommendationDetailsDTO;
 import io.harness.ccm.graphql.dto.recommendation.RecommendationItemDTO;
 import io.harness.ccm.graphql.dto.recommendation.RecommendationsDTO;
+import io.harness.ccm.graphql.dto.recommendation.WorkloadRecommendationDTO;
 import io.harness.ccm.graphql.utils.GraphQLUtils;
 import io.harness.ccm.graphql.utils.annotations.GraphQLApi;
+import io.harness.ccm.jira.CCMJiraHelper;
+import io.harness.ccm.jira.CCMJiraUtils;
 import io.harness.ccm.views.businessMapping.entities.BusinessMapping;
 import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingService;
 import io.harness.ccm.views.entities.CEView;
@@ -61,6 +68,7 @@ import io.harness.ccm.views.graphql.ViewsQueryHelper;
 import io.harness.ccm.views.helper.ViewParametersHelper;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.exception.InvalidRequestException;
+import io.harness.jira.JiraIssueNG;
 import io.harness.queryconverter.SQLConverter;
 import io.harness.timescaledb.tables.records.CeRecommendationsRecord;
 
@@ -95,6 +103,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.jooq.Condition;
 import org.jooq.Table;
 import org.jooq.TableField;
@@ -115,6 +124,7 @@ public class RecommendationsOverviewQueryV2 {
   @Inject private BigQueryService bigQueryService;
   @Inject private BigQueryHelper bigQueryHelper;
   @Inject private ViewParametersHelper viewParametersHelper;
+  @Inject private CCMJiraHelper jiraHelper;
   private static final Set<String> RECOMMENDATION_RESOURCE_TYPE_COLUMNS =
       ImmutableSet.of(WORKLOAD_NAME_FIELD_ID, INSTANCE_NAME_FIELD_ID, CLOUD_SERVICE_NAME_FIELD_ID);
   private static final Set<String> RECOMMENDATION_FILTER_COLUMNS = ImmutableSet.of(CLUSTER_NAME_FIELD_ID,
@@ -135,26 +145,108 @@ public class RecommendationsOverviewQueryV2 {
 
     List<RecommendationItemDTO> items =
         recommendationService.listAll(accountId, condition, filter.getOffset(), filter.getLimit());
-    items = items.stream()
-                .map(item
-                    -> item.getRecommendationDetails() != null
-                        ? item
-                        : RecommendationItemDTO.builder()
-                              .id(item.getId())
-                              .resourceName(item.getResourceName())
-                              .clusterName(item.getClusterName())
-                              .namespace(item.getNamespace())
-                              .resourceType(item.getResourceType())
-                              .recommendationDetails(getRecommendationDetails(item, env))
-                              .monthlyCost(item.getMonthlyCost())
-                              .monthlySaving(item.getMonthlySaving())
-                              .recommendationState(item.getRecommendationState())
-                              .jiraConnectorRef(item.getJiraConnectorRef())
-                              .jiraIssueKey(item.getJiraIssueKey())
-                              .jiraStatus(item.getJiraStatus())
-                              .build())
-                .collect(Collectors.toList());
-    return RecommendationsDTO.builder().items(items).offset(filter.getOffset()).limit(filter.getLimit()).build();
+
+    List<RecommendationItemDTO> listWithUpdatedJira = new ArrayList<>();
+    for (RecommendationItemDTO recommendation : items) {
+      if (!StringUtils.isEmpty(recommendation.getJiraConnectorRef())
+          && !StringUtils.isEmpty(recommendation.getJiraIssueKey())) {
+        JiraIssueNG jiraIssueNG =
+            jiraHelper.getIssue(accountId, recommendation.getJiraConnectorRef(), recommendation.getJiraIssueKey());
+        RecommendationDetailsDTO recommendationDetailsDTO = null;
+        switch (recommendation.getResourceType()) {
+          case WORKLOAD:
+            WorkloadRecommendationDTO workloadRecommendationDTO =
+                (WorkloadRecommendationDTO) getRecommendationDetails(recommendation, env);
+            recommendationDetailsDTO =
+                WorkloadRecommendationDTO.builder()
+                    .id(workloadRecommendationDTO.getId())
+                    .containerRecommendations(workloadRecommendationDTO.getContainerRecommendations())
+                    .items(workloadRecommendationDTO.getItems())
+                    .lastDayCost(workloadRecommendationDTO.getLastDayCost())
+                    .jiraDetails(CCMJiraDetails.builder()
+                                     .connectorRef(recommendation.getJiraConnectorRef())
+                                     .jiraIssue(jiraIssueNG)
+                                     .build())
+                    .build();
+            break;
+          case NODE_POOL:
+            NodeRecommendationDTO nodeRecommendationDTO =
+                (NodeRecommendationDTO) getRecommendationDetails(recommendation, env);
+            recommendationDetailsDTO = NodeRecommendationDTO.builder()
+                                           .id(nodeRecommendationDTO.getId())
+                                           .nodePoolId(nodeRecommendationDTO.getNodePoolId())
+                                           .resourceRequirement(nodeRecommendationDTO.getResourceRequirement())
+                                           .current(nodeRecommendationDTO.getCurrent())
+                                           .recommended(nodeRecommendationDTO.getRecommended())
+                                           .totalResourceUsage(nodeRecommendationDTO.getTotalResourceUsage())
+                                           .jiraDetails(CCMJiraDetails.builder()
+                                                            .connectorRef(recommendation.getJiraConnectorRef())
+                                                            .jiraIssue(jiraIssueNG)
+                                                            .build())
+                                           .build();
+            break;
+          case ECS_SERVICE:
+            ECSRecommendationDTO ecsRecommendationDTO =
+                (ECSRecommendationDTO) getRecommendationDetails(recommendation, env);
+            recommendationDetailsDTO = ECSRecommendationDTO.builder()
+                                           .id(ecsRecommendationDTO.getId())
+                                           .clusterName(ecsRecommendationDTO.getClusterName())
+                                           .serviceArn(ecsRecommendationDTO.getServiceArn())
+                                           .serviceName(ecsRecommendationDTO.getServiceName())
+                                           .launchType(ecsRecommendationDTO.getLaunchType())
+                                           .current(ecsRecommendationDTO.getCurrent())
+                                           .percentileBased(ecsRecommendationDTO.getPercentileBased())
+                                           .lastDayCost(ecsRecommendationDTO.getLastDayCost())
+                                           .cpuHistogram(ecsRecommendationDTO.getCpuHistogram())
+                                           .memoryHistogram(ecsRecommendationDTO.getMemoryHistogram())
+                                           .jiraDetails(CCMJiraDetails.builder()
+                                                            .connectorRef(recommendation.getJiraConnectorRef())
+                                                            .jiraIssue(jiraIssueNG)
+                                                            .build())
+                                           .build();
+            break;
+          case EC2_INSTANCE:
+            EC2RecommendationDTO ec2RecommendationDTO =
+                (EC2RecommendationDTO) getRecommendationDetails(recommendation, env);
+            recommendationDetailsDTO =
+                EC2RecommendationDTO.builder()
+                    .id(ec2RecommendationDTO.getId())
+                    .awsAccountId(ec2RecommendationDTO.getAwsAccountId())
+                    .current(ec2RecommendationDTO.getCurrent())
+                    .showTerminated(ec2RecommendationDTO.getShowTerminated())
+                    .sameFamilyRecommendation(ec2RecommendationDTO.getSameFamilyRecommendation())
+                    .crossFamilyRecommendation(ec2RecommendationDTO.getCrossFamilyRecommendation())
+                    .jiraDetails(CCMJiraDetails.builder()
+                                     .connectorRef(recommendation.getJiraConnectorRef())
+                                     .jiraIssue(jiraIssueNG)
+                                     .build())
+                    .build();
+            break;
+          default:
+            log.error("Unknown recommendation type: {} for recommendation: {}", recommendation.getResourceType(),
+                recommendation);
+        }
+        listWithUpdatedJira.add(RecommendationItemDTO.builder()
+                                    .id(recommendation.getId())
+                                    .resourceName(recommendation.getResourceName())
+                                    .clusterName(recommendation.getClusterName())
+                                    .namespace(recommendation.getNamespace())
+                                    .resourceType(recommendation.getResourceType())
+                                    .recommendationDetails(recommendationDetailsDTO)
+                                    .monthlyCost(recommendation.getMonthlyCost())
+                                    .monthlySaving(recommendation.getMonthlySaving())
+                                    .recommendationState(recommendation.getRecommendationState())
+                                    .jiraConnectorRef(recommendation.getJiraConnectorRef())
+                                    .jiraIssueKey(recommendation.getJiraIssueKey())
+                                    .jiraStatus(CCMJiraUtils.getStatus(jiraIssueNG))
+                                    .build());
+      }
+    }
+    return RecommendationsDTO.builder()
+        .items(listWithUpdatedJira)
+        .offset(filter.getOffset())
+        .limit(filter.getLimit())
+        .build();
   }
 
   @GraphQLQuery(name = "recommendationStatsV2", description = "Top panel stats API, aggregated")
