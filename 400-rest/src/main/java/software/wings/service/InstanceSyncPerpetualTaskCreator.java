@@ -18,6 +18,7 @@ import software.wings.api.DeploymentSummary;
 import software.wings.beans.InfrastructureMapping;
 
 import java.util.List;
+import java.util.Optional;
 
 @OwnedBy(CDP)
 @TargetModule(HarnessModule._441_CG_INSTANCE_SYNC)
@@ -26,4 +27,9 @@ public interface InstanceSyncPerpetualTaskCreator {
 
   List<String> createPerpetualTasksForNewDeployment(List<DeploymentSummary> deploymentSummaries,
       List<PerpetualTaskRecord> existingPerpetualTasks, InfrastructureMapping infrastructureMapping);
+
+  default Optional<String> restorePerpetualTask(
+      PerpetualTaskRecord perpetualTask, List<PerpetualTaskRecord> existingPerpetualTasks) {
+    throw new UnsupportedOperationException("Restore perpetual task is not yet implemented for this handler");
+  }
 }
