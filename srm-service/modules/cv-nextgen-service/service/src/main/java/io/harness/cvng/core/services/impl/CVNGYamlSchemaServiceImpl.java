@@ -53,7 +53,7 @@ public class CVNGYamlSchemaServiceImpl implements CVNGYamlSchemaService {
   @Override
   public PartialSchemaDTO getMergedDeploymentStageYamlSchema(
       String projectIdentifier, String orgIdentifier, Scope scope, List<YamlSchemaWithDetails> stepSchemaWithDetails) {
-    // Will return null once CV steps are moved to new schema because CV does not have its own stage.
+    // Will return null once SRM steps are moved to new schema because SRM does not have its own stage.
     return getDeploymentStageYamlSchemaUtil(projectIdentifier, orgIdentifier, scope, stepSchemaWithDetails);
   }
 
@@ -75,8 +75,8 @@ public class CVNGYamlSchemaServiceImpl implements CVNGYamlSchemaService {
     return Collections.singletonList(getDeploymentStageYamlSchemaUtil(projectIdentifier, orgIdentifier, scope, null));
   }
 
-  // stepSchemaWithDetails would be empty because CV is not a stage. No cross-functional step should ask to make it
-  // available to CV module.
+  // stepSchemaWithDetails would be empty because SRM is not a stage. No cross-functional step should ask to make it
+  // available to SRM module.
   public PartialSchemaDTO getDeploymentStageYamlSchemaUtil(
       String orgIdentifier, String projectIdentifier, Scope scope, List<YamlSchemaWithDetails> stepSchemaWithDetails) {
     JsonNode deploymentSteps =
