@@ -119,6 +119,11 @@ public class Artifact implements PersistentEntity, UuidAware, CreatedAtAware, Cr
                  .descSortField(ArtifactKeys.createdAt)
                  .rangeField(ArtifactKeys.artifactStreamId)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("artifactStream_status")
+                 .field(ArtifactKeys.artifactStreamId)
+                 .field(ArtifactKeys.status)
+                 .build())
         .build();
   }
 
