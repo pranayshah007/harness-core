@@ -28,7 +28,6 @@ import static io.harness.exception.WingsException.USER;
 import static io.harness.provision.TerraformConstants.BACKEND_CONFIGS_KEY;
 import static io.harness.provision.TerraformConstants.BACKEND_CONFIG_KEY;
 import static io.harness.provision.TerraformConstants.ENCRYPTED_BACKEND_CONFIGS_KEY;
-import static io.harness.provision.TerraformConstants.ENCRYPTED_BACKEND_CONFIG_KEY;
 import static io.harness.provision.TerraformConstants.ENCRYPTED_ENVIRONMENT_VARS_KEY;
 import static io.harness.provision.TerraformConstants.ENCRYPTED_VARIABLES_KEY;
 import static io.harness.provision.TerraformConstants.ENVIRONMENT_VARS_KEY;
@@ -651,8 +650,8 @@ public abstract class TerraformProvisionState extends State {
       if (featureFlagService.isEnabled(TERRAFORM_REMOTE_BACKEND_CONFIG, context.getAccountId()) && backendConfig != null
           && !backendConfig.getStoreType().equals(S3_STORE_TYPE)) {
         if (LOCAL_STORE_TYPE.equals(getBackendConfig().getStoreType())) {
-          collectVariables(others, terraformExecutionData.getBackendConfigs(), BACKEND_CONFIG_KEY,
-              ENCRYPTED_BACKEND_CONFIG_KEY, false);
+          collectVariables(others, terraformExecutionData.getBackendConfigs(), BACKEND_CONFIGS_KEY,
+              ENCRYPTED_BACKEND_CONFIGS_KEY, false);
         } else {
           // remote backend config
           if (backendConfig.getRemoteBackendConfig() != null) {
@@ -1564,10 +1563,9 @@ public abstract class TerraformProvisionState extends State {
 
   private Map<String, String> extractBackendConfigs(ExecutionContext context, FileMetadata fileMetadata) {
     Map<String, Object> rawBackendConfigs = null;
-    if (featureFlagService.isEnabled(TERRAFORM_REMOTE_BACKEND_CONFIG, context.getAccountId())) {
-      if (getBackendConfig() != null && LOCAL_STORE_TYPE.equals(getBackendConfig().getStoreType())) {
-        rawBackendConfigs = (Map<String, Object>) fileMetadata.getMetadata().get(BACKEND_CONFIG_KEY);
-      }
+    if (featureFlagService.isEnabled(TERRAFORM_REMOTE_BACKEND_CONFIG, context.getAccountId())
+        && getBackendConfig() != null && !LOCAL_STORE_TYPE.equals(getBackendConfig().getStoreType())) {
+      rawBackendConfigs = (Map<String, Object>) fileMetadata.getMetadata().get(BACKEND_CONFIG_KEY);
     } else {
       rawBackendConfigs = (Map<String, Object>) fileMetadata.getMetadata().get(BACKEND_CONFIGS_KEY);
     }
