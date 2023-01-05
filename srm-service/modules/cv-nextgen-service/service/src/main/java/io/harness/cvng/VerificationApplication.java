@@ -505,7 +505,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
 
   private void scheduleSidekickProcessing(Injector injector) {
     ScheduledThreadPoolExecutor workflowVerificationExecutor =
-        new ScheduledThreadPoolExecutor(1, new ThreadFactoryBuilder().setNameFormat("side-kick").build());
+        new ScheduledThreadPoolExecutor(3, new ThreadFactoryBuilder().setNameFormat("side-kick").build());
     workflowVerificationExecutor.scheduleWithFixedDelay(
         () -> injector.getInstance(SideKickService.class).processNext(), 5, 5, TimeUnit.SECONDS);
   }

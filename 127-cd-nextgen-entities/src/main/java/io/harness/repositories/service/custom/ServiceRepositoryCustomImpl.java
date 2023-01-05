@@ -19,6 +19,7 @@ import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 import java.time.Duration;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -146,6 +147,23 @@ public class ServiceRepositoryCustomImpl implements ServiceRepositoryCustom {
     Criteria filterDeleted = Criteria.where(ServiceEntityKeys.deleted).is(deleted);
     Query query = new Query(baseCriteria.andOperator(filterDeleted));
     return mongoTemplate.findById(query, ServiceEntity.class);
+  }
+
+  @Override
+  public List<String> getServiceIdentifiers(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    Criteria baseCriteria = Criteria.where(ServiceEntityKeys.accountId)
+                                .is(accountIdentifier)
+                                .and(ServiceEntityKeys.orgIdentifier)
+                                .is(orgIdentifier)
+                                .and(ServiceEntityKeys.projectIdentifier)
+                                .is(projectIdentifier);
+
+    Query query = new Query(baseCriteria);
+
+    query.fields().include(ServiceEntityKeys.identifier).exclude(ServiceEntityKeys.id);
+
+    List<ServiceEntity> serviceEntities = mongoTemplate.find(query, ServiceEntity.class);
+    return serviceEntities.stream().map(serviceEntity -> serviceEntity.getIdentifier()).collect(Collectors.toList());
   }
 
   private RetryPolicy<Object> getRetryPolicy(String failedAttemptMessage, String failureMessage) {

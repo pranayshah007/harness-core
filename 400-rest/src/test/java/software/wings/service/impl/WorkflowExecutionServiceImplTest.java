@@ -2012,6 +2012,7 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
     UpdateOperations<WorkflowExecution> updateOps1 =
         wingsPersistence.createUpdateOperations(WorkflowExecution.class)
             .set(WorkflowExecutionKeys.serviceExecutionSummaries, executionSummaries1)
+            .set(WorkflowExecutionKeys.deployment, true)
             .set(WorkflowExecutionKeys.artifacts, workflowExecution1.getArtifacts());
 
     UpdateOperations<WorkflowExecution> updateOps2 =

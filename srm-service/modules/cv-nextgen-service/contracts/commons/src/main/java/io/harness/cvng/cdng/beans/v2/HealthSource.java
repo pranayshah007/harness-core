@@ -9,11 +9,13 @@ package io.harness.cvng.cdng.beans.v2;
 
 import io.harness.cvng.beans.DataSourceType;
 
+import io.swagger.annotations.ApiModel;
 import lombok.Value;
 import lombok.experimental.SuperBuilder;
 
 @Value
 @SuperBuilder
+@ApiModel(value = "HealthSourceV2")
 public class HealthSource {
   String healthSourceIdentifier;
   String healthSourceName;

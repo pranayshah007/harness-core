@@ -9,20 +9,23 @@ package io.harness.delegate.task.aws.asg;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.aws.asg.AsgRollingDeployCommandTaskHandler;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
-import io.harness.logging.CommandExecutionStatus;
 import io.harness.secret.SecretSanitizerThreadLocal;
 
+import com.google.inject.Inject;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import org.apache.commons.lang3.NotImplementedException;
 
 @OwnedBy(HarnessTeam.CDP)
 public class AsgRollingDeployTaskNG extends AbstractDelegateRunnableTask {
+  @Inject private AsgDelegateTaskHelper asgDelegateTaskHelper;
+  @Inject private AsgRollingDeployCommandTaskHandler asgRollingDeployTaskHandler;
   public AsgRollingDeployTaskNG(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
       Consumer<DelegateTaskResponse> consumer, BooleanSupplier preExecute) {
     super(delegateTaskPackage, logStreamingTaskClient, consumer, preExecute);
@@ -38,7 +41,8 @@ public class AsgRollingDeployTaskNG extends AbstractDelegateRunnableTask {
   @Override
   public AsgCommandResponse run(TaskParameters parameters) {
     AsgCommandRequest asgCommandRequest = (AsgCommandRequest) parameters;
-    return AsgRollingDeployResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build();
+    return asgDelegateTaskHelper.getAsgCommandResponse(
+        asgRollingDeployTaskHandler, asgCommandRequest, getLogStreamingTaskClient());
   }
 
   @Override

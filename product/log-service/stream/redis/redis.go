@@ -67,7 +67,7 @@ func newTlSConfig(certPathForTLS string) (*tls.Config, error) {
 	return &tls.Config{RootCAs: roots}, nil
 }
 
-func New(endpoint, password string, useTLS bool, certPathForTLS string) *Redis {
+func New(endpoint, password string, useTLS, disableExpiryWatcher bool, certPathForTLS string) *Redis {
 	opt := &redis.Options{
 		Addr:     endpoint,
 		Password: password,
@@ -86,10 +86,13 @@ func New(endpoint, password string, useTLS bool, certPathForTLS string) *Redis {
 	rc := &Redis{
 		Client: rdb,
 	}
-	logrus.Infof("starting expiry watcher thread on Redis instance")
-	s := gocron.NewScheduler(time.UTC)
-	s.Every(defaultKeyExpiryTimeSeconds).Seconds().Do(rc.expiryWatcher, defaultKeyExpiryTimeSeconds*time.Second)
-	s.StartAsync()
+
+	if !disableExpiryWatcher {
+		logrus.Infof("starting expiry watcher thread on Redis instance")
+		s := gocron.NewScheduler(time.UTC)
+		s.Every(defaultKeyExpiryTimeSeconds).Seconds().Do(rc.expiryWatcher, defaultKeyExpiryTimeSeconds*time.Second)
+		s.StartAsync()
+	}
 	return rc
 }
 

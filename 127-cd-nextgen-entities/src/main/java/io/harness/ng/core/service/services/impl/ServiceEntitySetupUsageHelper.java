@@ -57,6 +57,23 @@ public class ServiceEntitySetupUsageHelper {
     setupUsageHelper.deleteServiceSetupUsages(getOwnerEntity(entity));
   }
 
+  /**
+   * Delete all setup usages where the 'referred by' is the current service entity,Here we have only service id, service
+   * name in the entity
+   */
+  protected void deleteSetupUsagesWithOnlyIdentifierInfo(
+      String serviceId, String accountId, String orgIdentifier, String projectIdentifier) {
+    SetupUsageOwnerEntity entitySetupUsage = SetupUsageOwnerEntity.builder()
+                                                 .accountId(accountId)
+                                                 .orgIdentifier(orgIdentifier)
+                                                 .projectIdentifier(projectIdentifier)
+                                                 .identifier(serviceId)
+                                                 .type(EntityTypeProtoEnum.SERVICE)
+                                                 .build();
+
+    setupUsageHelper.deleteServiceSetupUsages(entitySetupUsage);
+  }
+
   private Set<EntityDetailProtoDTO> getAllReferredEntities(String rootName, ServiceEntity entity) {
     List<String> qualifiedNameList = List.of(rootName);
     EntityReferenceExtractorVisitor visitor = simpleVisitorFactory.obtainEntityReferenceExtractorVisitor(

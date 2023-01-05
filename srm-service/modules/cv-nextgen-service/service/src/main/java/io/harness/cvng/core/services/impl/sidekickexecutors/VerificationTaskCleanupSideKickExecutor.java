@@ -102,19 +102,21 @@ public class VerificationTaskCleanupSideKickExecutor implements SideKickExecutor
 
   // clean up data 2 days at a time
   private void cleanUpData(String verificationTaskId, Instant startTime, Instant endTime) {
-    Instant curStartTime = startTime;
-    while (curStartTime.toEpochMilli() <= endTime.toEpochMilli()) {
+    for (Instant curStartTime = startTime; endTime.isAfter(curStartTime);) {
+      Instant currEndTime = curStartTime.plus(2, ChronoUnit.DAYS);
+      if (currEndTime.isAfter(endTime)) {
+        currEndTime = endTime;
+      }
       for (Class<? extends PersistentEntity> clazz : ENTITIES_TO_DELETE_BY_VERIFICATION_ID) {
         hPersistence.delete(hPersistence.createQuery(clazz)
                                 .filter(VerificationTask.VERIFICATION_TASK_ID_KEY, verificationTaskId)
                                 .field(VerificationTaskBaseKeys.createdAt)
-                                .lessThanOrEq(curStartTime));
-        log.info("Deleted all the records for {} until {}", verificationTaskId, curStartTime);
+                                .greaterThanOrEq(curStartTime)
+                                .field(VerificationTaskBaseKeys.createdAt)
+                                .lessThanOrEq(currEndTime));
+        log.info("Deleted all the records for {} from {} until {}", verificationTaskId, curStartTime, currEndTime);
       }
-      curStartTime = curStartTime.plus(2, ChronoUnit.DAYS);
-      if (curStartTime.toEpochMilli() > endTime.toEpochMilli()) {
-        curStartTime = endTime;
-      }
+      curStartTime = currEndTime.plusMillis(1);
     }
   }
 

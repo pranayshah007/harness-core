@@ -104,7 +104,6 @@ public class ServiceEntitySetupUsageHelperTest extends CDNGEntitiesTestBase {
                                              .setScope(ScopeProtoEnum.PROJECT)
                                              .build())
                        .setType(EntityTypeProtoEnum.SERVICE)
-                       .setName(entity.getName())
                        .build());
 
     assertThat(metadataMap.get("accountId")).isEqualTo("accountId");
@@ -299,7 +298,6 @@ public class ServiceEntitySetupUsageHelperTest extends CDNGEntitiesTestBase {
                                              .setScope(ScopeProtoEnum.ORG)
                                              .build())
                        .setType(EntityTypeProtoEnum.SERVICE)
-                       .setName(entity.getName())
                        .build());
 
     assertThat(metadataMap.get("accountId")).isEqualTo("accountId");
@@ -332,7 +330,6 @@ public class ServiceEntitySetupUsageHelperTest extends CDNGEntitiesTestBase {
                                              .setScope(ScopeProtoEnum.ACCOUNT)
                                              .build())
                        .setType(EntityTypeProtoEnum.SERVICE)
-                       .setName(entity.getName())
                        .build());
 
     assertThat(metadataMap.get("accountId")).isEqualTo("accountId");

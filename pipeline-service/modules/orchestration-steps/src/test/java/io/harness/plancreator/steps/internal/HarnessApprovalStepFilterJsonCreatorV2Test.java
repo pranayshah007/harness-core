@@ -130,4 +130,53 @@ public class HarnessApprovalStepFilterJsonCreatorV2Test extends CategoryTest {
         .hasMessageContaining(
             "User groups [invalid.xxx] provided for step  are either in invalid format or belong to scope higher than the current scope. Please correct them & try again.");
   }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testHarnessApprovalFilterJsonWithProjectLevelContextAndRunTimeInput() {
+    FilterCreationContext context =
+        FilterCreationContext.builder()
+            .currentField(new YamlField("harnessApproval", new YamlNode(null)))
+            .setupMetadata(
+                SetupMetadata.newBuilder().setAccountId("accId").setOrgId("orgId").setProjectId("projId").build())
+            .build();
+    HarnessApprovalStepNode harnessApprovalStepNode = new HarnessApprovalStepNode();
+
+    harnessApprovalStepNode.setHarnessApprovalStepInfo(
+        HarnessApprovalStepInfo.builder()
+            .approvers(Approvers.builder()
+                           .minimumCount(ParameterField.createExpressionField(true, "<+input>", null, true))
+                           .disallowPipelineExecutor(ParameterField.createValueField(false))
+                           .userGroups(ParameterField.createExpressionField(true, "<+input>", null, true))
+                           .build())
+            .build());
+    creator.handleNode(context, harnessApprovalStepNode);
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testHarnessApprovalFilterJsonWithProjectLevelContextAnExpressionTimeInput() {
+    FilterCreationContext context =
+        FilterCreationContext.builder()
+            .currentField(new YamlField("harnessApproval", new YamlNode(null)))
+            .setupMetadata(
+                SetupMetadata.newBuilder().setAccountId("accId").setOrgId("orgId").setProjectId("projId").build())
+            .build();
+    HarnessApprovalStepNode harnessApprovalStepNode = new HarnessApprovalStepNode();
+
+    harnessApprovalStepNode.setHarnessApprovalStepInfo(
+        HarnessApprovalStepInfo.builder()
+            .approvers(
+                Approvers.builder()
+                    .minimumCount(ParameterField.createExpressionField(true, "<+input>", null, true))
+                    .disallowPipelineExecutor(ParameterField.createValueField(false))
+                    .userGroups(ParameterField.<List<String>>builder()
+                                    .value(Arrays.asList("projLevel", "org.orgLevel", "account.acccLevel", "<+b>"))
+                                    .build())
+                    .build())
+            .build());
+    creator.handleNode(context, harnessApprovalStepNode);
+  }
 }

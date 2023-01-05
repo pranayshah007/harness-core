@@ -8,6 +8,9 @@
 package io.harness.delegate.task.aws.asg;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.aws.asg.manifest.AsgManifestType.AsgConfiguration;
+import static io.harness.aws.asg.manifest.AsgManifestType.AsgLaunchTemplate;
+import static io.harness.aws.asg.manifest.AsgManifestType.AsgScalingPolicy;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.asg.AsgSdkManager;
@@ -15,6 +18,8 @@ import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
+import io.harness.exception.ExceptionUtils;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.logging.LogCallback;
 
 import software.wings.service.impl.AwsUtils;
@@ -45,11 +50,15 @@ public class AsgTaskHelper {
   }
 
   public String getAsgLaunchTemplateContent(Map<String, List<String>> asgStoreManifestsContent) {
-    return asgStoreManifestsContent.get("AsgLaunchTemplate").get(0);
+    return asgStoreManifestsContent.get(AsgLaunchTemplate).get(0);
   }
 
   public String getAsgConfigurationContent(Map<String, List<String>> asgStoreManifestsContent) {
-    return asgStoreManifestsContent.get("AsgConfiguration").get(0);
+    return asgStoreManifestsContent.get(AsgConfiguration).get(0);
+  }
+
+  public List<String> getAsgScalingPolicyContent(Map<String, List<String>> asgStoreManifestsContent) {
+    return asgStoreManifestsContent.get(AsgScalingPolicy);
   }
 
   public AutoScalingGroupContainer mapToAutoScalingGroupContainer(AutoScalingGroup autoScalingGroup) {
@@ -90,5 +99,10 @@ public class AsgTaskHelper {
         .steadyStateTimeOutInMinutes(timeoutInMinutes)
         .timeLimiter(timeLimiter)
         .build();
+  }
+
+  public String getExceptionMessage(Exception e) {
+    Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
+    return ExceptionUtils.getMessage(sanitizedException);
   }
 }

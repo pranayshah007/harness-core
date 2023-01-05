@@ -261,6 +261,7 @@ import software.wings.beans.container.HelmChartSpecification;
 import software.wings.beans.container.KubernetesContainerTask;
 import software.wings.beans.container.PcfServiceSpecification;
 import software.wings.beans.container.UserDataSpecification;
+import software.wings.beans.datatretention.LongerDataRetentionState;
 import software.wings.beans.entityinterface.TagAware;
 import software.wings.beans.governance.GovernanceConfig;
 import software.wings.beans.infrastructure.CloudFormationRollbackConfig;
@@ -871,6 +872,7 @@ public class ManagerMorphiaRegistrar implements MorphiaRegistrar {
     set.add(Artifact.class);
     set.add(BaseFile.class);
     set.add(AppContainer.class);
+    set.add(LongerDataRetentionState.class);
   }
 
   @Override
