@@ -1075,15 +1075,25 @@ public class WatcherServiceImpl implements WatcherService {
       return;
     }
 
-    RestResponse<String> restResponse = callInterruptible21(timeLimiter, ofSeconds(30),
-        ()
-            -> SafeHttpCall.execute(
-                managerClient.getDelegateDownloadUrl(minorVersion, watcherConfiguration.getAccountId())));
-    if (restResponse == null) {
-      return;
+    String downloadUrl;
+    if (multiVersion) {
+      // Fetch delegate download location from manager in case of saas.
+      RestResponse<String> restResponse = callInterruptible21(timeLimiter, ofSeconds(30),
+          ()
+              -> SafeHttpCall.execute(
+                  managerClient.getDelegateDownloadUrl(minorVersion, watcherConfiguration.getAccountId())));
+      if (restResponse == null) {
+        return;
+      }
+      downloadUrl = restResponse.getResource();
+    } else {
+      // In case of on-prem, construct download url.
+      final String storageUrl = System.getenv().get("WATCHER_STORAGE_URL");
+      final String delegateMetadata =
+          Http.getResponseStringFromUrl(watcherConfiguration.getDelegateCheckLocation(), 10, 10);
+      downloadUrl = storageUrl + "/" + substringAfter(delegateMetadata, " ").trim();
     }
 
-    String downloadUrl = restResponse.getResource();
     log.info("Downloading delegate jar version {} and download url {}", version, substringBefore(downloadUrl, "?"));
     File downloadFolder = new File(version);
     if (!downloadFolder.exists()) {
