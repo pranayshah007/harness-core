@@ -32,6 +32,7 @@ import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.billing.bigquery.BigQueryServiceImpl;
 import io.harness.ccm.clickHouse.ClickHouseService;
 import io.harness.ccm.clickHouse.ClickHouseServiceImpl;
+import io.harness.ccm.commons.beans.config.ClickHouseConfig;
 import io.harness.ccm.commons.dao.recommendation.RecommendationCrudService;
 import io.harness.ccm.commons.dao.recommendation.RecommendationCrudServiceImpl;
 import io.harness.ccm.commons.service.impl.ClusterRecordServiceImpl;
@@ -137,6 +138,13 @@ public class BatchProcessingModule extends AbstractModule {
   @Named("dbAliases")
   public List<String> getDbAliases() {
     return batchMainConfig.getDbAliases();
+  }
+
+  @Provides
+  @Singleton
+  @Named("clickHouseConfig")
+  public ClickHouseConfig clickHouseConfig() {
+    return batchMainConfig.getClickHouseConfig();
   }
 
   @Override
