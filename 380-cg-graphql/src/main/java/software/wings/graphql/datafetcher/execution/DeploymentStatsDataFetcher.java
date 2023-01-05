@@ -14,7 +14,6 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.dataretention.LongerDataRetentionService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
@@ -139,7 +138,6 @@ public class DeploymentStatsDataFetcher extends AbstractStatsDataFetcherWithTags
   @Inject TagHelper tagHelper;
   @Inject FeatureFlagService featureFlagService;
   @Inject WingsPersistence wingsPersistence;
-  @Inject LongerDataRetentionService longerDataRetentionService;
 
   private DeploymentTableSchema schema = new DeploymentTableSchema();
   private static final long weekOffset = 7 * 24 * 60 * 60 * 1000;

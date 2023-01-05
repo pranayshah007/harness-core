@@ -39,8 +39,6 @@ import io.harness.azure.impl.AzureComputeClientImpl;
 import io.harness.azure.impl.AzureMonitorClientImpl;
 import io.harness.azure.impl.AzureNetworkClientImpl;
 import io.harness.cache.HarnessCacheManager;
-import io.harness.dataretention.LongerDataRetentionService;
-import io.harness.dataretention.LongerDataRetentionServiceImpl;
 import io.harness.delegate.DelegateConfigurationServiceProvider;
 import io.harness.delegate.DelegatePropertiesServiceProvider;
 import io.harness.delegate.beans.DelegateFileManagerBase;
@@ -259,7 +257,6 @@ public class WingsTestModule extends AbstractModule {
     bind(DelegateFileManagerBase.class).toInstance(mock(DelegateFileManagerBase.class));
     bind(AWSCloudformationClient.class).to(AWSCloudformationClientImpl.class);
     bind(CloudformationBaseHelper.class).to(CloudformationBaseHelperImpl.class);
-    bind(LongerDataRetentionService.class).to(LongerDataRetentionServiceImpl.class);
 
     bind(ExecutorService.class)
         .annotatedWith(Names.named("systemExecutor"))
