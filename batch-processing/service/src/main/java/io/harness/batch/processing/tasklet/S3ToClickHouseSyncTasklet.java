@@ -59,15 +59,17 @@ public class S3ToClickHouseSyncTasklet implements Tasklet {
   private static final String createPreAggregatedTableQuery =
       "CREATE TABLE IF NOT EXISTS ccm.preAggregated ( `cost` Float NULL, `gcpProduct` String NULL, `gcpSkuId` String NULL, `gcpSkuDescription` String NULL, `startTime` DateTime('UTC') NULL, `gcpProjectId` String NULL, `region` String NULL, `zone` String NULL, `gcpBillingAccountId` String NULL, `cloudProvider` String NULL, `awsBlendedRate` String NULL, `awsBlendedCost` Float NULL, `awsUnblendedRate` String NULL, `awsUnblendedCost` Float NULL, `awsServicecode` String NULL, `awsAvailabilityzone` String NULL, `awsUsageaccountid` String NULL, `awsInstancetype` String NULL, `awsUsagetype` String NULL, `discount` Float NULL, `azureServiceName` String NULL, `azureResourceRate` Float NULL, `azureSubscriptionGuid` String NULL, `azureTenantId` String NULL ) ENGINE = MergeTree ORDER BY tuple(startTime) SETTINGS allow_nullable_key = 1;";
   private static final String createCostAggregatedTableQuery =
-      "CREATE TABLE IF NOT EXISTS ccm.costAggregated ( `accountId` String NOT NULL, `cloudProvider` String NOT NULL, `cost` Float NOT NULL, `day` DateTime('UTC') NOT NULL ) ENGINE = MergeTree ORDER BY tuple(day) SETTINGS allow_nullable_key = 1;";
+      "CREATE TABLE IF NOT EXISTS ccm.costAggregated ( `accountId` String NULL, `cloudProvider` String NOT NULL, `cost` Float NOT NULL, `day` DateTime('UTC') NOT NULL ) ENGINE = MergeTree ORDER BY tuple(day) SETTINGS allow_nullable_key = 1;";
+  private static final String createConnectorDataSyncStatusTableQuery =
+      "CREATE TABLE IF NOT EXISTS ccm.connectorDataSyncStatus ( `accountId` String NULL, `connectorId` String NOT NULL, `jobType` String NULL, `cloudProviderId` String NULL, `lastSuccessfullExecutionAt` DateTime('UTC') NOT NULL ) ENGINE = MergeTree ORDER BY tuple(lastSuccessfullExecutionAt) SETTINGS allow_nullable_key = 1;";
 
   @Override
   public RepeatStatus execute(StepContribution stepContribution, ChunkContext chunkContext) throws Exception {
     log.info("Running the S3ToClickHouseSync job");
     final JobConstants jobConstants = CCMJobConstants.fromContext(chunkContext);
     //    String accountId = jobConstants.getAccountId();
-//    Instant startTime = Instant.ofEpochMilli(jobConstants.getJobStartTime());
-//    Instant endTime = Instant.ofEpochMilli(jobConstants.getJobEndTime());
+    //    Instant startTime = Instant.ofEpochMilli(jobConstants.getJobStartTime());
+    //    Instant endTime = Instant.ofEpochMilli(jobConstants.getJobEndTime());
     Instant endTime = Instant.now();
     Instant startTime = endTime.minus(15, ChronoUnit.HOURS);
 
@@ -155,8 +157,7 @@ public class S3ToClickHouseSyncTasklet implements Tasklet {
     }
     List<String> foldersToIngest = new ArrayList<String>(foldersToIngestSet);
 
-    log.info("\nFollowing folders will be ingested:\n");
-    log.info(String.join(", ", foldersToIngest));
+    log.info("\nFollowing folders will be ingested:\n" + String.join(", ", foldersToIngest));
 
     for (String folderPath : foldersToIngest) {
       String jsonString = fetchSchemaFromManifestFileInFolder(folderPath);
@@ -230,11 +231,18 @@ public class S3ToClickHouseSyncTasklet implements Tasklet {
       ingestDataIntoPreAgg(usageAccountIds, "" + reportYear + "-" + reportMonth + "-01");
 
       // todo: update connector data sync status in CH table. ensure that table is created first.
-
+      updateConnectorDataSyncStatus(connectorId);
       ingestDataIntoCostAgg(usageAccountIds, "" + reportYear + "-" + reportMonth + "-01");
     }
 
     return null;
+  }
+
+  public void updateConnectorDataSyncStatus(String connectorId) throws Exception {
+    String insertQuery =
+        "INSERT INTO ccm.connectorDataSyncStatus (connectorId, lastSuccessfullExecutionAt, jobType, cloudProviderId)  "
+        + "  VALUES ('" + connectorId + "', '" + Instant.now().toString() + "', 'cloudfunction', 'AWS');";
+    clickHouseService.executeClickHouseQuery(configuration.getClickHouseConfig(), insertQuery, Boolean.FALSE);
   }
 
   public void ingestDataIntoCostAgg(List<String> usageAccountIds, String month) throws Exception {
@@ -312,7 +320,7 @@ public class S3ToClickHouseSyncTasklet implements Tasklet {
   public void ingestDataIntoAwsCur(String awsBillingTableId, List<String> usageAccountIds, String month)
       throws Exception {
     String tagColumnsQuery = "SELECT column_name FROM INFORMATION_SCHEMA.COLUMNS "
-        + "WHERE (column_name LIKE 'TAG_%') AND (table_schema = 'ccm') AND (table_name = '" + awsBillingTableId + "')";
+        + "WHERE (column_name LIKE 'TAG_%') AND (table_schema = 'ccm') AND (table_name = '" + awsBillingTableId + "');";
     List<String> tagColumns =
         clickHouseService.executeClickHouseQuery(configuration.getClickHouseConfig(), tagColumnsQuery, Boolean.TRUE);
     String tagsQueryStatement1 = "";
@@ -361,13 +369,11 @@ public class S3ToClickHouseSyncTasklet implements Tasklet {
         + "        blendedrate, "
         + "        multiIf(lineitemtype = 'SavingsPlanNegation', 0, lineitemtype = 'SavingsPlanUpfrontFee', 0, lineitemtype = 'SavingsPlanCoveredUsage', savingsplaneffectivecost, lineitemtype = 'SavingsPlanRecurringFee', totalcommitmenttodate - usedcommitment, lineitemtype = 'DiscountedUsage', effectivecost, lineitemtype = 'RIFee', unusedamortizedupfrontfeeforbillingperiod + unusedrecurringfee, unblendedcost) AS amortisedCost, "
         + "        multiIf(lineitemtype = 'SavingsPlanNegation', 0, lineitemtype = 'SavingsPlanUpfrontFee', 0, lineitemtype = 'SavingsPlanRecurringFee', totalcommitmenttodate - usedcommitment, 0) AS netAmortisedCost, "
-        + "        array() AS tagsKey, " +
-        //             "        arrayFilter(x -> isNotNull(x), arrayMap(i -> if((tagsPresent[i]) = 0, toString(NULL),
-        //             tagsAllKey[i]), arrayEnumerate(tagsPresent))) AS tagsKey, " +
-        "        array(" + tagsQueryStatement1 + ") AS tagsAllKey, "
+        + "        arrayFilter(x -> isNotNull(x), arrayMap(i -> if((tagsPresent[i]) = 0, toString(NULL), tagsAllKey[i]), arrayEnumerate(tagsPresent))) AS tagsKey, "
+        + "        array(" + tagsQueryStatement1 + ") AS tagsAllKey, "
         + "        arrayFilter(x -> isNotNull(x), array(" + tagsQueryStatement2 + ") ) AS tagsValue, "
         + "        arrayMap(x -> isNotNull(x), array(" + tagsQueryStatement2 + ") ) AS tagsPresent, "
-        + "        map() AS tags "
+        + "        CAST((tagsKey, tagsValue), 'Map(String, String)') AS tags "
         + "    FROM " + awsBillingTableId
         + "    WHERE DATE_TRUNC('month', usagestartdate) = DATE_TRUNC('month', toDateTime('" + month + " 00:00:00') ) "
         + ");";
@@ -480,5 +486,7 @@ public class S3ToClickHouseSyncTasklet implements Tasklet {
         configuration.getClickHouseConfig(), createPreAggregatedTableQuery, Boolean.FALSE);
     clickHouseService.executeClickHouseQuery(
         configuration.getClickHouseConfig(), createCostAggregatedTableQuery, Boolean.FALSE);
+    clickHouseService.executeClickHouseQuery(
+        configuration.getClickHouseConfig(), createConnectorDataSyncStatusTableQuery, Boolean.FALSE);
   }
 }
