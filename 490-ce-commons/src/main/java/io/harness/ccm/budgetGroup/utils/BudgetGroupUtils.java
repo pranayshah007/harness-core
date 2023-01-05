@@ -32,6 +32,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -113,7 +114,8 @@ public class BudgetGroupUtils {
   }
 
   public static void validateNoParentPresentForChildBudgets(List<Budget> childBudgets) {
-    Set<String> parentIds = childBudgets.stream().map(Budget::getParentBudgetGroupId).collect(Collectors.toSet());
+    Set<String> parentIds =
+        childBudgets.stream().map(Budget::getParentBudgetGroupId).filter(Objects::nonNull).collect(Collectors.toSet());
     if (parentIds.size() != 0) {
       throw new InvalidRequestException(CHILD_ENTITY_PARENT_PRESENT_EXCEPTION);
     }
@@ -132,8 +134,10 @@ public class BudgetGroupUtils {
   }
 
   public static void validateNoParentPresentForChildBudgetGroups(List<BudgetGroup> childBudgetGroups) {
-    Set<String> parentIds =
-        childBudgetGroups.stream().map(BudgetGroup::getParentBudgetGroupId).collect(Collectors.toSet());
+    Set<String> parentIds = childBudgetGroups.stream()
+                                .map(BudgetGroup::getParentBudgetGroupId)
+                                .filter(Objects::nonNull)
+                                .collect(Collectors.toSet());
     if (parentIds.size() != 0) {
       throw new InvalidRequestException(CHILD_ENTITY_PARENT_PRESENT_EXCEPTION);
     }
