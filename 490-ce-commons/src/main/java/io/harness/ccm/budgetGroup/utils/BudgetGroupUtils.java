@@ -53,12 +53,18 @@ public class BudgetGroupUtils {
       "Error in performing operation. Period not found.";
   public static final String INVALID_CHILD_ENTITY_BUDGET_BREAKDOWN_EXCEPTION =
       "Error in performing operation. Budget breakdown of child entities don't match.";
+  public static final String INVALID_CHILD_ENTITY_PARENT_EXCEPTION =
+      "Error in performing operation. Parent of child entities don't match.";
   public static final String CHILD_ENTITY_BUDGET_BREAKDOWN_NOT_PRESENT_EXCEPTION =
       "Error in performing operation. Budget breakdown not found.";
   public static final String CHILD_ENTITY_TYPE_NOT_PRESENT_EXCEPTION =
       "Error in performing operation. Child entity type not found.";
   public static final String CHILD_ENTITY_NOT_PRESENT_EXCEPTION =
       "Error in performing operation. Child entity not configured for budget group.";
+  public static final String CHILD_ENTITY_PARENT_NOT_PRESENT_EXCEPTION =
+      "Error in performing operation. Parent for child entities not found.";
+  public static final String CHILD_ENTITY_PARENT_PRESENT_EXCEPTION =
+      "Error in performing operation. Parent for child entities already configured.";
 
   public static void validateBudgetGroup(BudgetGroup budgetGroup, List<BudgetGroup> existingBudgetGroups) {
     populateDefaultBudgetGroupBreakdown(budgetGroup);
@@ -69,11 +75,13 @@ public class BudgetGroupUtils {
     validatePeriodForChildBudgets(childBudgets);
     validateStartTimeForChildBudgets(childBudgets);
     validateBreakdownForChildBudgets(childBudgets);
+    validateNoParentPresentForChildBudget(childBudgets);
   }
 
   public static void validateChildBudgetGroups(List<BudgetGroup> childBudgetGroups) {
     validatePeriodForChildBudgetGroups(childBudgetGroups);
     validateStartTimeForChildBudgetGroups(childBudgetGroups);
+    validateBreakdownForChildBudgetGroups(childBudgetGroups);
     validateBreakdownForChildBudgetGroups(childBudgetGroups);
   }
 
@@ -102,6 +110,13 @@ public class BudgetGroupUtils {
     getBudgetBreakdownForChildBudgets(childBudgets);
   }
 
+  public static void validateNoParentPresentForChildBudget(List<Budget> childBudgets) {
+    Set<String> parentIds = childBudgets.stream().map(Budget::getParentBudgetGroupId).collect(Collectors.toSet());
+    if (parentIds.size() != 0) {
+      throw new InvalidRequestException(CHILD_ENTITY_PARENT_PRESENT_EXCEPTION);
+    }
+  }
+
   public static void validatePeriodForChildBudgetGroups(List<BudgetGroup> childBudgetGroups) {
     getPeriodForChildBudgetGroups(childBudgetGroups);
   }
@@ -112,6 +127,14 @@ public class BudgetGroupUtils {
 
   public static void validateBreakdownForChildBudgetGroups(List<BudgetGroup> childBudgetGroups) {
     getBudgetBreakdownForChildBudgetGroups(childBudgetGroups);
+  }
+
+  public static void validateNoParentPresentForChildBudgetGroups(List<BudgetGroup> childBudgetGroups) {
+    Set<String> parentIds =
+        childBudgetGroups.stream().map(BudgetGroup::getParentBudgetGroupId).collect(Collectors.toSet());
+    if (parentIds.size() != 0) {
+      throw new InvalidRequestException(CHILD_ENTITY_PARENT_PRESENT_EXCEPTION);
+    }
   }
 
   public static BudgetPeriod getPeriodForChildBudgets(List<Budget> childBudgets) {
@@ -188,6 +211,31 @@ public class BudgetGroupUtils {
       return budgetBreakdowns.stream().findFirst().get();
     } else {
       throw new InvalidRequestException(CHILD_ENTITY_BUDGET_BREAKDOWN_NOT_PRESENT_EXCEPTION);
+    }
+  }
+
+  public static String getParentIdForChildBudgets(List<Budget> childBudgets) {
+    Set<String> parentIds = childBudgets.stream().map(Budget::getParentBudgetGroupId).collect(Collectors.toSet());
+    if (parentIds.size() > 1) {
+      throw new InvalidRequestException(INVALID_CHILD_ENTITY_PARENT_EXCEPTION);
+    }
+    if (parentIds.stream().findFirst().isPresent()) {
+      return parentIds.stream().findFirst().get();
+    } else {
+      throw new InvalidRequestException(CHILD_ENTITY_PARENT_NOT_PRESENT_EXCEPTION);
+    }
+  }
+
+  public static String getParentIdForChildBudgetGroups(List<BudgetGroup> childBudgetGroups) {
+    Set<String> parentIds =
+        childBudgetGroups.stream().map(BudgetGroup::getParentBudgetGroupId).collect(Collectors.toSet());
+    if (parentIds.size() > 1) {
+      throw new InvalidRequestException(INVALID_CHILD_ENTITY_PARENT_EXCEPTION);
+    }
+    if (parentIds.stream().findFirst().isPresent()) {
+      return parentIds.stream().findFirst().get();
+    } else {
+      throw new InvalidRequestException(CHILD_ENTITY_PARENT_NOT_PRESENT_EXCEPTION);
     }
   }
 
