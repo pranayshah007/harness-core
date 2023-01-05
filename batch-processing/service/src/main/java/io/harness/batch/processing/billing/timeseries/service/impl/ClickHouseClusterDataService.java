@@ -24,13 +24,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class ClickHouseClusterDataService {
   @Autowired private ClickHouseService clickHouseService;
-  //  @Autowired private ClickHouseConfig clickHouseConfig;
-
-  ClickHouseConfig clickHouseConfig;
-  public ClickHouseClusterDataService() {
-    clickHouseConfig =
-        ClickHouseConfig.builder().url("jdbc:ch:http://localhost:8123").username("default").password("").build();
-  }
+  @Autowired ClickHouseConfig clickHouseConfig;
 
   public void deleteExistingDataFromClusterDataTable(JobConstants jobConstants, String tableName) throws Exception {
     if (!tableName.contains("Aggregated")) {
