@@ -21,9 +21,9 @@ import software.wings.service.impl.analysis.ContinuousVerificationExecutionMetaD
 import software.wings.service.impl.analysis.ContinuousVerificationExecutionMetaData.ContinuousVerificationExecutionMetaDataKeys;
 
 import com.google.inject.Inject;
+import dev.morphia.query.UpdateOperations;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @Slf4j
 public class MigrateCVMetadataApplicationId implements Migration {

@@ -21,6 +21,8 @@ import io.harness.ng.DbAliases;
 import io.harness.persistence.CreatedAtAccess;
 
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.Date;
@@ -31,8 +33,6 @@ import lombok.Value;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.NonFinal;
 import lombok.experimental.Wither;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
 

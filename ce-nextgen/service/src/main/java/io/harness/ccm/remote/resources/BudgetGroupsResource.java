@@ -13,6 +13,8 @@ import static io.harness.annotations.dev.HarnessTeam.CE;
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ccm.budget.BudgetSummary;
+import io.harness.ccm.budget.ValueDataPoint;
 import io.harness.ccm.budgetGroup.BudgetGroup;
 import io.harness.ccm.budgetGroup.service.BudgetGroupService;
 import io.harness.ccm.rbac.CCMRbacHelper;
@@ -186,5 +188,53 @@ public class BudgetGroupsResource {
           "id") String budgetGroupId) {
     rbacHelper.checkBudgetDeletePermission(accountId, null, null);
     return ResponseDTO.newResponse(budgetGroupService.delete(budgetGroupId, accountId));
+  }
+
+  @POST
+  @Path("aggregatedAmount")
+  @Timed
+  @LogAccountIdentifier
+  @ExceptionMetered
+  @ApiOperation(value = "Get aggregated amount for given budget groups/budgets", nickname = "aggregatedAmount")
+  @Operation(operationId = "getLastPeriodCost",
+      description = "Returns list of value dataPoints specifying aggregated amount",
+      summary = "Get aggregated amount for given budget groups/budgets",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "Returns list of value dataPoints specifying aggregated amount",
+            content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+      })
+  public ResponseDTO<List<ValueDataPoint>>
+  getAggregatedAmount(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+                          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
+      @QueryParam("areChildEntitiesBudgets") @NotNull @Valid boolean areChildEntitiesBudgets,
+      @RequestBody(required = true,
+          description = "List of child budgets/budget groups") @NotNull @Valid List<String> childEntityIds) {
+    rbacHelper.checkBudgetViewPermission(accountId, null, null);
+    return ResponseDTO.newResponse(
+        budgetGroupService.getLastPeriodCost(accountId, areChildEntitiesBudgets, childEntityIds));
+  }
+
+  @GET
+  @Path("summary")
+  @Timed
+  @LogAccountIdentifier
+  @ExceptionMetered
+  @ApiOperation(value = "Get list of budget and budget group summaries", nickname = "budgetAndBudgetGroupsList")
+  @Operation(operationId = "getBudgetAndBudgetGroupsList", description = "Returns list of budgetSummary",
+      summary = "Get list of budget and budget group summaries",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "Returns list of value dataPoints specifying cost",
+            content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+      })
+  public ResponseDTO<List<BudgetSummary>>
+  getBudgetAndBudgetGroupsList(
+      @Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY)
+      @AccountIdentifier @NotNull @Valid String accountId, @QueryParam("budgetGroupId") @Valid String budgetGroupId) {
+    rbacHelper.checkBudgetViewPermission(accountId, null, null);
+    return ResponseDTO.newResponse(budgetGroupService.listBudgetsAndBudgetGroupsSummary(accountId, budgetGroupId));
   }
 }

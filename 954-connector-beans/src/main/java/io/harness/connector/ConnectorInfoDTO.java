@@ -40,10 +40,14 @@ import org.hibernate.validator.constraints.NotBlank;
 @OwnedBy(DX)
 @Schema(name = "ConnectorInfo", description = "This has the Connector details defined in Harness")
 public class ConnectorInfoDTO {
-  @NotNull @NotBlank @NGEntityName @Schema(description = ConnectorConstants.CONNECTOR_NAME) String name;
   @NotNull
   @NotBlank
-  @EntityIdentifier
+  @NGEntityName(maxLength = 128)
+  @Schema(description = ConnectorConstants.CONNECTOR_NAME)
+  String name;
+  @NotNull
+  @NotBlank
+  @EntityIdentifier(maxLength = 128)
   @Schema(description = ConnectorConstants.CONNECTOR_IDENTIFIER_MSG)
   String identifier;
   @Schema(description = NGCommonEntityConstants.DESCRIPTION) String description;

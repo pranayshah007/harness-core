@@ -20,10 +20,10 @@ import software.wings.persistence.artifact.Artifact.ArtifactKeys;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.query.FieldEnd;
+import dev.morphia.query.Query;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.FieldEnd;
-import org.mongodb.morphia.query.Query;
 
 @OwnedBy(CDC)
 @Singleton

@@ -17,6 +17,9 @@ import javax.validation.constraints.NotNull;
 
 @OwnedBy(HarnessTeam.GITOPS)
 public interface GitopsInstanceSyncService {
-  void processInstanceSync(@NotEmpty String accountIdentifier, @NotEmpty String orgIdentifier,
-      @NotEmpty String projectIdentifier, @NotNull List<InstanceDTO> instanceList);
+  Boolean processInstanceSync(@NotEmpty String accountIdentifier, @NotEmpty String orgIdentifier,
+      @NotEmpty String projectIdentifier, @NotEmpty String agentIdentifier, @NotNull List<InstanceDTO> instanceList);
+
+  void deleteInstancesForAgent(
+      String accountId, String orgIdentifier, String projectIdentifier, String agentIdentifier);
 }

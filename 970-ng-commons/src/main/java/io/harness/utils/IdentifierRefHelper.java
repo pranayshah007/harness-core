@@ -53,7 +53,7 @@ public class IdentifierRefHelper {
    * Project Scope -> Identifer
    * Invalid Scope -> xyz.Identifer
    */
-  private void validateEntityScopes(
+  public void validateEntityScopes(
       String accountId, String orgIdentifier, String projectIdentifier, String entityIdentifierRef, String fieldName) {
     int parentEntityScope;
     int childEntityScope;

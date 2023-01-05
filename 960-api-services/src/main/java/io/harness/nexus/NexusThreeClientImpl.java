@@ -10,6 +10,7 @@ package io.harness.nexus;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.exception.WingsException.USER;
 import static io.harness.nexus.NexusHelper.isRequestSuccessful;
 import static io.harness.nexus.NexusHelper.isSuccessful;
 
@@ -22,7 +23,9 @@ import io.harness.artifact.ArtifactUtilities;
 import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.artifact.ArtifactFileMetadataInternal;
+import io.harness.exception.HintException;
 import io.harness.exception.InvalidArtifactServerException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.NexusRegistryException;
 import io.harness.exception.WingsException;
@@ -401,13 +404,15 @@ public class NexusThreeClientImpl {
         hasMoreResults = false;
         if (nexusConfig.isHasCredentials()) {
           response = nexusThreeRestClient
-                         .getArtifactVersions(
+                         .getArtifactVersionsWithExtensionAndClassifier(
                              Credentials.basic(nexusConfig.getUsername(), new String(nexusConfig.getPassword())),
-                             repoId, groupId, artifactName, continuationToken)
+                             repoId, groupId, artifactName, extension, classifier, continuationToken)
                          .execute();
         } else {
-          response =
-              nexusThreeRestClient.getArtifactVersions(repoId, groupId, artifactName, continuationToken).execute();
+          response = nexusThreeRestClient
+                         .getArtifactVersionsWithExtensionAndClassifier(
+                             repoId, groupId, artifactName, extension, classifier, continuationToken)
+                         .execute();
         }
         if (isSuccessful(response)) {
           if (response.body() != null) {
@@ -424,6 +429,9 @@ public class NexusThreeClientImpl {
                 }
                 versionToArtifactDownloadUrls.put(version, artifactFileMetadata);
               }
+            } else {
+              throw new HintException(HintException.HINT_NEXUS_ISSUE,
+                  new InvalidRequestException("No versions found matching the provided extension/classifier", USER));
             }
             if (response.body().getContinuationToken() != null) {
               continuationToken = response.body().getContinuationToken();
@@ -438,7 +446,6 @@ public class NexusThreeClientImpl {
       }
       return constructBuildDetails(repoId, groupId, artifactName, versions, versionToArtifactUrls,
           versionToArtifactDownloadUrls, extension, classifier);
-
     } catch (IOException | NexusRegistryException e) {
       throw NestedExceptionUtils.hintWithExplanationException(
           "Please check Nexus artifact configuration and verify that repository is valid.",

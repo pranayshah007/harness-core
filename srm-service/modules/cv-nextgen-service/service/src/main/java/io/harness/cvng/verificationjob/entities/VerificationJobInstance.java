@@ -37,6 +37,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
@@ -60,8 +62,6 @@ import lombok.Value;
 import lombok.experimental.Accessors;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
 
 @Data
 @Builder(buildMethodName = "unsafeBuild")

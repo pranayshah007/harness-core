@@ -25,6 +25,7 @@ import static software.wings.utils.WingsTestConstants.ARTIFACT_STREAM_ID;
 import static software.wings.utils.WingsTestConstants.DELEGATE_ID;
 import static software.wings.utils.WingsTestConstants.STATE_EXECUTION_ID;
 
+import static dev.morphia.mapping.Mapper.ID_KEY;
 import static java.util.Collections.singletonList;
 import static javax.ws.rs.client.Entity.entity;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -36,7 +37,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
-import static org.mongodb.morphia.mapping.Mapper.ID_KEY;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessModule;

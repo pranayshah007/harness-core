@@ -67,6 +67,8 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonStreamParser;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -82,8 +84,6 @@ import java.util.stream.Stream;
 import javax.validation.constraints.NotNull;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
 
 @OwnedBy(CDP)
 @Singleton

@@ -333,9 +333,9 @@ public class InstanceRepositoryCustomImplTest extends InstancesTestBase {
         new AggregationResults<>(Arrays.asList(instancesByBuildId), new Document());
     when(secondaryMongoTemplate.aggregate(any(Aggregation.class), eq(Instance.class), eq(InstancesByBuildId.class)))
         .thenReturn(aggregationResults);
-    assertThat(instanceRepositoryCustom.getActiveInstancesByServiceIdEnvIdAndBuildIds(ACCOUNT_ID, ORGANIZATION_ID,
-                   PROJECT_ID, SERVICE_ID, ENVIRONMENT_ID, buildIds, TIMESTAMP, limit, null, clusterId,
-                   pipelineExecutionId, System.currentTimeMillis()))
+    assertThat(
+        instanceRepositoryCustom.getActiveInstancesByServiceIdEnvIdAndBuildIds(ACCOUNT_ID, ORGANIZATION_ID, PROJECT_ID,
+            SERVICE_ID, ENVIRONMENT_ID, buildIds, TIMESTAMP, limit, null, clusterId, pipelineExecutionId))
         .isEqualTo(aggregationResults);
   }
 

@@ -24,14 +24,14 @@ import software.wings.service.impl.instance.InstanceSyncPerpetualTaskService;
 import software.wings.service.intfc.AccountService;
 
 import com.google.inject.Inject;
+import dev.morphia.Key;
+import dev.morphia.query.Query;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
-import org.mongodb.morphia.Key;
-import org.mongodb.morphia.query.Query;
 
 @OwnedBy(HarnessTeam.CDP)
 public class DeleteOrphanPerpetualTaskMigration implements Migration {

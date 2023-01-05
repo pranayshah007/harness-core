@@ -26,9 +26,9 @@ import software.wings.sm.StateType;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
+import dev.morphia.query.Sort;
 import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Sort;
 
 /**
  * Utility files used by Verification services

@@ -15,6 +15,7 @@ import io.harness.git.model.ChangeType;
 import io.harness.pms.governance.PipelineSaveResponse;
 import io.harness.pms.pipeline.ClonePipelineDTO;
 import io.harness.pms.pipeline.ExecutionSummaryInfo;
+import io.harness.pms.pipeline.MoveConfigOperationDTO;
 import io.harness.pms.pipeline.PMSPipelineListRepoResponse;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineImportRequestDTO;
@@ -131,4 +132,7 @@ public interface PMSPipelineService {
   String pipelineVersion(String accountId, String yaml);
 
   PMSPipelineListRepoResponse getListOfRepos(String accountIdentifier, String orgIdentifier, String projectIdentifier);
+
+  PipelineCRUDResult moveConfig(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, MoveConfigOperationDTO moveConfigDTO);
 }

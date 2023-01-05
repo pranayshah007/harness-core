@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.invites.entities.Invite;
 
+import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -22,4 +23,6 @@ public interface InviteRepositoryCustom {
   Page<Invite> findAll(Criteria criteria, Pageable pageable);
 
   Invite updateInvite(String inviteId, Update update);
+
+  List<Invite> deleteAll(Criteria criteria);
 }

@@ -13,6 +13,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.service.ServiceResourceClientModule;
+import io.harness.token.TokenClientModule;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
@@ -54,6 +55,8 @@ public class MigratorModule extends AbstractModule {
   public void configure() {
     try {
       install(new ServiceResourceClientModule(migratorConfig.getNgClientConfig(),
+          migratorConfig.getCg().getPortal().getJwtNextGenManagerSecret(), MIGRATOR.getServiceId()));
+      install(new TokenClientModule(migratorConfig.getNgClientConfig(),
           migratorConfig.getCg().getPortal().getJwtNextGenManagerSecret(), MIGRATOR.getServiceId()));
     } catch (Exception ex) {
       log.info("Could not create the service resource client module", ex);

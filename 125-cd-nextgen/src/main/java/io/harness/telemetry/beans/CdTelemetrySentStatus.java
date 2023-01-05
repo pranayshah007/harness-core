@@ -21,13 +21,13 @@ import io.harness.persistence.UuidAware;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -45,7 +45,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @RecasterAlias("io.harness.telemetry.beans.CdTelemetrySentStatus")
 @HarnessEntity(exportable = false)
 public class CdTelemetrySentStatus implements UuidAware, PersistentEntity {
-  @Id @org.mongodb.morphia.annotations.Id private String uuid;
+  @Id @dev.morphia.annotations.Id private String uuid;
   private String accountId;
   private long lastSent; // timestamp
   public static List<MongoIndex> mongoIndexes() {

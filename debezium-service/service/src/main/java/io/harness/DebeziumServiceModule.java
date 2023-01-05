@@ -31,9 +31,9 @@ import com.google.inject.Singleton;
 import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Named;
 import com.mongodb.MongoClient;
+import dev.morphia.AdvancedDatastore;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
-import org.mongodb.morphia.AdvancedDatastore;
 
 public class DebeziumServiceModule extends AbstractModule {
   private static DebeziumServiceModule instance;

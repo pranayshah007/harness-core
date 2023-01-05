@@ -26,8 +26,8 @@ import software.wings.beans.Workflow.WorkflowBuilder;
 import software.wings.dl.WingsPersistence;
 import software.wings.search.framework.SearchDistributedLock.SearchDistributedLockKeys;
 
+import dev.morphia.query.Query;
 import lombok.AllArgsConstructor;
-import org.mongodb.morphia.query.Query;
 
 @OwnedBy(PL)
 @AllArgsConstructor

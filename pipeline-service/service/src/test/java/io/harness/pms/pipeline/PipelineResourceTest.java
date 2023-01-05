@@ -43,6 +43,7 @@ import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperD
 import io.harness.execution.NodeExecution;
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.helper.GitImportInfoDTO;
+import io.harness.gitaware.helper.MoveConfigRequestDTO;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -779,5 +780,28 @@ public class PipelineResourceTest extends CategoryTest {
     PMSPipelineListRepoResponse pmsPipelineListRepoResponse =
         pmsPipelineService.getListOfRepos(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER);
     assertEquals(pmsPipelineListRepoResponse, repoResponse);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testMoveConfigs() {
+    MoveConfigOperationDTO moveConfigOperationDTO =
+        MoveConfigOperationDTO.builder().moveConfigOperationType(MoveConfigOperationType.INLINE_TO_REMOTE).build();
+    doReturn(PipelineCRUDResult.builder().pipelineEntity(entityWithVersion).build())
+        .when(pmsPipelineService)
+        .moveConfig(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, moveConfigOperationDTO);
+
+    MoveConfigRequestDTO moveConfigRequestDTO =
+        MoveConfigRequestDTO.builder()
+            .pipelineIdentifier(PIPELINE_IDENTIFIER)
+            .isNewBranch(false)
+            .moveConfigOperationType(io.harness.gitaware.helper.MoveConfigOperationType.INLINE_TO_REMOTE)
+            .build();
+
+    ResponseDTO<MoveConfigResponse> responseDTO = pipelineResource.moveConfig(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, moveConfigRequestDTO);
+
+    assertEquals(responseDTO.getData().getPipelineIdentifier(), PIPELINE_IDENTIFIER);
   }
 }

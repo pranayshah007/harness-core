@@ -19,7 +19,7 @@ package io.harness.cdng.provision.terragrunt;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.pipeline.CDStepInfo;
+import io.harness.cdng.pipeline.CDAbstractStepInfo;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.filters.WithConnectorRef;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -52,7 +52,7 @@ import lombok.experimental.FieldDefaults;
 @JsonTypeName(StepSpecTypeConstants.TERRAGRUNT_PLAN)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @RecasterAlias("io.harness.cdng.provision.terragrunt.TerragruntPlanStepInfo")
-public class TerragruntPlanStepInfo extends TerragruntPlanBaseStepInfo implements CDStepInfo, WithConnectorRef {
+public class TerragruntPlanStepInfo extends TerragruntPlanBaseStepInfo implements CDAbstractStepInfo, WithConnectorRef {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)

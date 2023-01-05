@@ -77,6 +77,7 @@ import software.wings.sm.ExecutionResponse;
 import software.wings.sm.states.ManagerExecutionLogCallback;
 import software.wings.utils.GitUtilsManager;
 
+import dev.morphia.query.Query;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -91,7 +92,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.stubbing.Answer;
-import org.mongodb.morphia.query.Query;
 
 @OwnedBy(CDP)
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)

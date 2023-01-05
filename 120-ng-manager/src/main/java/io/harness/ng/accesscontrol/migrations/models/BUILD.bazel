@@ -15,7 +15,7 @@ java_library(
         "//960-persistence:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
         "@maven//:com_google_guava_guava",
-        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:dev_morphia_morphia_core",
         "@maven//:org_springframework_data_spring_data_commons",
         "@maven//:org_springframework_data_spring_data_mongodb",
     ],

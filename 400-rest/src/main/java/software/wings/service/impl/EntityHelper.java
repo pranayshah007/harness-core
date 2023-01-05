@@ -21,10 +21,10 @@ import static software.wings.beans.yaml.YamlConstants.TAGS_YAML;
 import static software.wings.beans.yaml.YamlConstants.USER_DATA_SPEC_YAML_FILE_NAME;
 import static software.wings.beans.yaml.YamlConstants.YAML_EXTENSION;
 
+import static dev.morphia.mapping.Mapper.ID_KEY;
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
-import static org.mongodb.morphia.mapping.Mapper.ID_KEY;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;

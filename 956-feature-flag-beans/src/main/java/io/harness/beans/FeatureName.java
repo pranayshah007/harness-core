@@ -253,11 +253,6 @@ public enum FeatureName {
   EXTERNAL_USERID_BASED_LOGIN,
   LDAP_SYNC_WITH_USERID,
   DISABLE_HARNESS_SM,
-  SECURITY("Enable the STO module on NG", HarnessTeam.STO),
-  SECURITY_STAGE("Enable the Security Tests stage on NG", HarnessTeam.STO),
-  STO_CI_PIPELINE_SECURITY("Enable the Security Tests execution results tab for CI on NG", HarnessTeam.STO),
-  STO_CD_PIPELINE_SECURITY("Enable the Security Tests execution results tab for CD on NG", HarnessTeam.STO),
-  STO_API_V2("Enable the new STO API version on NG", HarnessTeam.STO),
   REFACTOR_ARTIFACT_SELECTION,
   CCM_DEV_TEST("", HarnessTeam.CE),
   CV_FAIL_ON_EMPTY_NODES,
@@ -367,8 +362,6 @@ public enum FeatureName {
   TERRAFORM_REMOTE_BACKEND_CONFIG("Enables storing Terraform backend configuration in a remote repo", HarnessTeam.CDP),
   REMOVE_HINT_YAML_GIT_COMMITS("Removes the hint usage in GitCommits collection", HarnessTeam.SPG),
   FIXED_INSTANCE_ZERO_ALLOW("To allow user to set the fixed instance count to 0 for ECS Deployments", HarnessTeam.CDP),
-  USE_PAGINATED_ENCRYPT_FOR_VARIABLE_OVERRIDES(
-      "Enables PaginatedComponent & Formik for VariableOverrides in CG-UI", HarnessTeam.PL),
   ON_DEMAND_ROLLBACK_WITH_DIFFERENT_ARTIFACT(
       "Used to do on demand rollback to previously deployed different artifact on same inframapping", HarnessTeam.CDC),
   CG_GIT_POLLING("Poll git based on account config for git sync in CG.", HarnessTeam.SPG),
@@ -394,6 +387,7 @@ public enum FeatureName {
       HarnessTeam.CI),
   CHANGE_INSTANCE_QUERY_OPERATOR_TO_NE("Change instance service query operator from $exists to $ne", HarnessTeam.SPG),
   NEXUS3_RAW_REPOSITORY("Enable support for Nexus3 raw repository format on CG", HarnessTeam.SPG),
+  CD_TRIGGER_V2("Enable support for nexus3, nexus2, azure, ami trigger", HarnessTeam.CDC),
   NG_ARTIFACT_SOURCES("Flag to support multi artifact sources for service V2", HarnessTeam.CDC),
   UPDATE_EMAILS_VIA_SCIM("Will enable updating emails in Harness via SCIM", HarnessTeam.PL),
   ELK_HEALTH_SOURCE("Will enable ELK health source in SRM", HarnessTeam.CV),
@@ -439,8 +433,6 @@ public enum FeatureName {
   SPG_USE_NEW_METADATA("To use new metadata endpoint for jira server version greater than 9.0", HarnessTeam.SPG),
   SPG_OPTIMIZE_WORKFLOW_EXECUTIONS_LISTING(
       "Make the workflowExecutions listing better providing appId for children ids", HarnessTeam.SPG),
-  SPG_OPTIMIZE_CONCILIATION_QUERY(
-      "Change the conciliation query from using notExists to use equal null", HarnessTeam.SPG),
   CD_TRIGGER_CATALOG("Enables UI for Trigger catalog for Nexus ", HarnessTeam.CDC),
   SRM_HOST_SAMPLING_ENABLE("Enables Host Sampling feature for Learning Engine.", HarnessTeam.CV),
   SRM_LOG_HOST_SAMPLING_ENABLE("Enables Host Sampling for log for Learning Engine.", HarnessTeam.CV),
@@ -505,16 +497,12 @@ public enum FeatureName {
   GITOPS_RECONCILER_ENABLED("Enable reconcile processing", HarnessTeam.GITOPS),
   CE_RERUN_HOURLY_JOBS("Rerunning Hourly billing jobs", HarnessTeam.CE),
   CCM_MONTHLY_BUDGET_BREAKDOWN("Use monthly breakdown feature in Yearly Period Budget", HarnessTeam.CE),
-  SPG_WFE_OPTIMIZE_WORKFLOW_LISTING("Optimizes the wfe fetching from wf page.", HarnessTeam.SPG),
-  SPG_INSTANCE_OPTIMIZE_DELETED_APPS("Optimizes the instance deleted apps fetching.", HarnessTeam.SPG),
   SPG_OPTIMIZE_PIPELINE_QUERY_ON_AUTH("Optimizes auth on pipelines making the query more efficient.", HarnessTeam.SPG),
   GITOPS_FETCH_LINKED_APPS("Fetch Linked Apps Step and new Manifest in GitOps", HarnessTeam.GITOPS),
   SRM_SUMO("Will enable Sumologic health source in SRM", HarnessTeam.CV),
   SPG_SAVE_REJECTED_BY_FREEZE_WINDOWS(
       "Flag that enables populating WorkflowExecution with ids of freeze windows that rejected the execution",
       HarnessTeam.SPG),
-  SPG_INSTANCE_ENABLE_HINT_ON_GET_INSTANCES(
-      "Enable db hint on getInstancesForAccount for performance stability", HarnessTeam.SPG),
   TERRAGRUNT_PROVISION_NG("FF to enable Terragrunt provision in NG", HarnessTeam.CDP),
   LANDING_OVERVIEW_PAGE_V2("Supports new entities for landing overview page", HarnessTeam.SPG),
   CDS_STEPGROUP_TEMPLATE("Added support for Step group templates", HarnessTeam.CDC),
@@ -537,8 +525,8 @@ public enum FeatureName {
   PL_SUPPORT_JWT_TOKEN_SCIM_API("Enable support for external OAuth JWT token for SCIM API calls", HarnessTeam.PL),
   CCM_INSTANCE_DATA_CLUSTERID_FILTER("Query from instanceData collection based on clusterId", HarnessTeam.CE),
   CDC_SEND_NOTIFICATION_FOR_FREEZE("Send notifications for deployment freeze", HarnessTeam.CDC),
-  CDS_SERVICE_ENV_SCHEMA_VALIDATION(
-      "Added support for Service Env schema validation for new service env redesign", HarnessTeam.CDC),
+  DISABLE_CDS_SERVICE_ENV_SCHEMA_VALIDATION(
+      "Used to disable Schema validation for Service Env for new service env redesign", HarnessTeam.CDC),
   DO_NOT_LOAD_SUPPORT_ACCOUNTS_UNLESS_REQUIRED(
       "Avoid loading unnecessary support accounts unnecessarily. Enabling it will reduce memory pressure",
       HarnessTeam.PL),

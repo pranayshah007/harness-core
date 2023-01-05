@@ -40,6 +40,8 @@ import com.spotify.docker.client.messages.ContainerConfig;
 import com.spotify.docker.client.messages.ContainerCreation;
 import com.spotify.docker.client.messages.ExecCreation;
 import com.spotify.docker.client.messages.HostConfig;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -50,8 +52,6 @@ import java.util.List;
 import javax.ws.rs.core.GenericType;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @Singleton
 @Slf4j

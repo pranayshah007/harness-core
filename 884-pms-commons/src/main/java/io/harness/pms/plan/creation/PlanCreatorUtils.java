@@ -13,15 +13,22 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.YamlException;
 import io.harness.logging.AutoLogContext;
+import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.YamlUpdates;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.RepositoryUtils;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.serializer.KryoSerializer;
+import io.harness.yaml.repository.Reference;
+import io.harness.yaml.repository.Repository;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -195,5 +202,26 @@ public class PlanCreatorUtils {
     logContextMap.put("projectIdentifier", projectIdentifier);
     logContextMap.put("sdkPlanCreatorRequestId", UUIDGenerator.generateUuid());
     return new AutoLogContext(logContextMap, AutoLogContext.OverrideBehavior.OVERRIDE_NESTS);
+  }
+
+  public Dependency createGlobalDependency(
+      KryoSerializer kryoSerializer, String pipelineVersion, String pipelineYaml, String inputSetYaml) {
+    switch (pipelineVersion) {
+      case PipelineVersion.V1:
+        return Dependency.newBuilder()
+            .putAllMetadata(getRepositoryDependency(kryoSerializer, pipelineYaml, inputSetYaml))
+            .build();
+      default:
+        return null;
+    }
+  }
+
+  private Map<String, ByteString> getRepositoryDependency(
+      KryoSerializer kryoSerializer, String pipelineYaml, String inputSetYaml) {
+    Optional<Repository> optionalRepository = RepositoryUtils.getRepositoryFromPipelineYaml(pipelineYaml);
+    Repository repository = optionalRepository.orElse(Repository.builder().build());
+    Optional<Reference> optionalReference = RepositoryUtils.getReferenceFromInputPayload(inputSetYaml);
+    repository.setReference(ParameterField.createValueField(optionalReference.orElse(null)));
+    return Map.of(YAMLFieldNameConstants.REPOSITORY, ByteString.copyFrom(kryoSerializer.asBytes(repository)));
   }
 }

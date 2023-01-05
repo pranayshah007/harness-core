@@ -61,6 +61,8 @@ import software.wings.utils.GitUtilsManager;
 
 import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -71,8 +73,6 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
 
 @Getter
 @Setter

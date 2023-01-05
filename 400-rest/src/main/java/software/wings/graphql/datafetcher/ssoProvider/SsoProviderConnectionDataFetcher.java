@@ -28,11 +28,11 @@ import software.wings.security.annotations.AuthRule;
 import software.wings.service.intfc.SSOService;
 
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import graphql.schema.DataFetchingEnvironment;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
 
 @Slf4j
 @TargetModule(HarnessModule._380_CG_GRAPHQL)

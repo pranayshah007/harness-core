@@ -40,6 +40,8 @@ import software.wings.service.intfc.SignupService;
 import software.wings.service.intfc.UserService;
 
 import com.google.inject.Inject;
+import dev.morphia.query.FieldEnd;
+import dev.morphia.query.Query;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
@@ -48,8 +50,6 @@ import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mongodb.morphia.query.FieldEnd;
-import org.mongodb.morphia.query.Query;
 
 @Slf4j
 @OwnedBy(PL)

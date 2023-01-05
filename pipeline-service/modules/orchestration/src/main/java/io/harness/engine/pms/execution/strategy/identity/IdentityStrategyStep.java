@@ -22,6 +22,7 @@ import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.sdk.core.steps.executables.ChildrenExecutable;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
@@ -33,6 +34,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.util.CloseableIterator;
 
 @Slf4j
 public class IdentityStrategyStep implements ChildrenExecutable<IdentityStepParameters> {
@@ -46,16 +48,18 @@ public class IdentityStrategyStep implements ChildrenExecutable<IdentityStepPara
   @Override
   public ChildrenExecutableResponse obtainChildren(
       Ambiance ambiance, IdentityStepParameters stepParameters, StepInputPackage inputPackage) {
-    List<NodeExecution> nodeExecutions = nodeExecutionService.fetchNodeExecutionsByParentIdWithAmbianceAndNode(
-        stepParameters.getOriginalNodeExecutionId(), true, true);
-
-    NodeExecution strategyNodeExecution = null;
+    NodeExecution strategyNodeExecution = nodeExecutionService.getWithFieldsIncluded(
+        stepParameters.getOriginalNodeExecutionId(), NodeProjectionUtils.fieldsForIdentityStrategyStep);
     List<NodeExecution> childrenNodeExecutions = new ArrayList<>();
-    for (NodeExecution nodeExecution : nodeExecutions) {
-      if (nodeExecution.getUuid().equals(stepParameters.getOriginalNodeExecutionId())) {
-        strategyNodeExecution = nodeExecution;
-      } else {
-        childrenNodeExecutions.add(nodeExecution);
+    try (CloseableIterator<NodeExecution> iterator =
+             nodeExecutionService.fetchChildrenNodeExecutionsIterator(ambiance.getPlanExecutionId(),
+                 stepParameters.getOriginalNodeExecutionId(), NodeProjectionUtils.fieldsForIdentityStrategyStep)) {
+      while (iterator.hasNext()) {
+        NodeExecution next = iterator.next();
+        // Don't want to include retried nodeIds
+        if (Boolean.FALSE.equals(next.getOldRetry())) {
+          childrenNodeExecutions.add(next);
+        }
       }
     }
 

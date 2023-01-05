@@ -10,7 +10,7 @@ package io.harness.cdng.ecs;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.pipeline.CDStepInfo;
+import io.harness.cdng.pipeline.CDAbstractStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.EcsRollingRollbackStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -41,7 +41,8 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName(StepSpecTypeConstants.ECS_ROLLING_ROLLBACK)
 @TypeAlias("ecsRollingRollbackStepInfo")
 @RecasterAlias("io.harness.cdng.ecs.EcsRollingRollbackStepInfo")
-public class EcsRollingRollbackStepInfo extends EcsRollingRollbackBaseStepInfo implements CDStepInfo, Visitable {
+public class EcsRollingRollbackStepInfo
+    extends EcsRollingRollbackBaseStepInfo implements CDAbstractStepInfo, Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)

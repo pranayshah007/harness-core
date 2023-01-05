@@ -35,19 +35,21 @@ public class NextStepHandler implements AdviserResponseHandler {
   @Inject private PlanService planService;
 
   @Override
-  public void handleAdvise(NodeExecution nodeExecution, AdviserResponse adviserResponse) {
+  public void handleAdvise(NodeExecution prevNodeExecution, AdviserResponse adviserResponse) {
     NextStepAdvise advise = adviserResponse.getNextStepAdvise();
     if (EmptyPredicate.isNotEmpty(advise.getNextNodeId())) {
       Node nextNode = Preconditions.checkNotNull(
-          planService.fetchNode(nodeExecution.getAmbiance().getPlanId(), advise.getNextNodeId()));
+          planService.fetchNode(prevNodeExecution.getAmbiance().getPlanId(), advise.getNextNodeId()));
       String runtimeId = generateUuid();
-      NodeExecution prevExecution = nodeExecutionService.update(nodeExecution.getUuid(),
+      // Update NodeExecution nextId and endTs
+      nodeExecutionService.updateV2(prevNodeExecution.getUuid(),
           ops -> ops.set(NodeExecutionKeys.nextId, runtimeId).set(NodeExecutionKeys.endTs, System.currentTimeMillis()));
       Ambiance cloned = AmbianceUtils.cloneForFinish(
-          nodeExecution.getAmbiance(), PmsLevelUtils.buildLevelFromNode(runtimeId, nextNode));
-      engine.runNextNode(cloned, nextNode, prevExecution, null);
+          prevNodeExecution.getAmbiance(), PmsLevelUtils.buildLevelFromNode(runtimeId, nextNode));
+      // prevNodeExecution will not contain nextId and endTs
+      engine.runNextNode(cloned, nextNode, prevNodeExecution, null);
     } else {
-      engine.endNodeExecution(nodeExecution.getAmbiance());
+      engine.endNodeExecution(prevNodeExecution.getAmbiance());
     }
   }
 }

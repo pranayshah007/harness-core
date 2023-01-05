@@ -31,12 +31,12 @@ import software.wings.graphql.utils.nameservice.NameService;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import graphql.schema.DataFetchingEnvironment;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
-import org.mongodb.morphia.query.Query;
 
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._380_CG_GRAPHQL)

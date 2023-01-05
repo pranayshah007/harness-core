@@ -21,6 +21,7 @@ import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UuidAccess;
 
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
 import java.util.Date;
 import java.util.List;
 import lombok.AccessLevel;
@@ -32,7 +33,6 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.Wither;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -50,7 +50,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @FieldNameConstants(innerTypeName = "GitFileCacheKeys")
 @OwnedBy(PIPELINE)
 public class GitFileCache implements PersistentEntity, CreatedAtAware, UuidAccess, UpdatedAtAware {
-  @Wither @Id @org.mongodb.morphia.annotations.Id String uuid;
+  @Wither @Id @dev.morphia.annotations.Id String uuid;
   String accountIdentifier;
   GitProvider gitProvider;
   String repoName;

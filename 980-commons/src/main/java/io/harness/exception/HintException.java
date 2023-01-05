@@ -140,6 +140,7 @@ public class HintException extends WingsException {
   public static final String HINT_AZURE_AUTHENTICATION_ISSUE =
       "Please check if you Azure credentials are valid and correct";
   public static final String HINT_AZURE_GENERIC_ISSUE = "Please check if you Azure configuration is valid and correct";
+  public static final String HINT_NEXUS_ISSUE = "Please ensure version exist for given classifier/extension";
 
   public HintException(String message) {
     super(message, null, HINT, INFO, null, null);

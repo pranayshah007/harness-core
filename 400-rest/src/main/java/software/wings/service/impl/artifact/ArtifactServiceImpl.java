@@ -46,11 +46,11 @@ import static software.wings.persistence.artifact.Artifact.Status.WAITING;
 import static software.wings.service.impl.artifact.ArtifactCollectionUtils.getArtifactKeyFn;
 import static software.wings.utils.ArtifactType.DOCKER;
 
+import static dev.morphia.mapping.Mapper.ID_KEY;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.regex.Pattern.compile;
 import static java.util.stream.Collectors.toList;
-import static org.mongodb.morphia.mapping.Mapper.ID_KEY;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
@@ -97,6 +97,10 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.mongodb.BulkWriteOperation;
 import com.mongodb.DBCollection;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
+import dev.morphia.query.UpdateOperations;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -114,10 +118,6 @@ import javax.validation.executable.ValidateOnExecution;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.beanutils.BeanUtils;
-import org.mongodb.morphia.query.FindOptions;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
-import org.mongodb.morphia.query.UpdateOperations;
 import ru.vyarus.guice.validator.group.annotation.ValidationGroups;
 
 /**

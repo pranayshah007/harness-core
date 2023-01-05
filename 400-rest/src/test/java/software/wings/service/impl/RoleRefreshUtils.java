@@ -28,12 +28,12 @@ import software.wings.service.intfc.UserService;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.util.List;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 /**
  * Created by rishi on 3/14/17.

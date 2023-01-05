@@ -23,9 +23,9 @@ import io.harness.yaml.schema.beans.YamlSchemaRootClass;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import dev.morphia.converters.TypeConverter;
 import io.serializer.registrars.NGCommonsRegistrars;
 import lombok.experimental.UtilityClass;
-import org.mongodb.morphia.converters.TypeConverter;
 import org.springframework.core.convert.converter.Converter;
 
 @UtilityClass

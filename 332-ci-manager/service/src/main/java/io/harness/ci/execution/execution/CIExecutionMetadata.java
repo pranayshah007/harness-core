@@ -21,12 +21,12 @@ import io.harness.ng.DbAliases;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.Wither;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -42,7 +42,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @TypeAlias("ciExecutionMetadata")
 @HarnessEntity(exportable = true)
 public class CIExecutionMetadata {
-  @Wither @Id @org.mongodb.morphia.annotations.Id String uuid;
+  @Wither @Id @dev.morphia.annotations.Id String uuid;
   @FdIndex String accountId;
   OSType buildType;
   String runtimeId;

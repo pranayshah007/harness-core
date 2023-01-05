@@ -82,6 +82,8 @@ import software.wings.graphql.schema.type.aggregation.workflow.QLOrchestrationWo
 
 import com.google.inject.Inject;
 import de.danielbechler.util.Collections;
+import dev.morphia.query.FieldEnd;
+import dev.morphia.query.Query;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -101,8 +103,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
-import org.mongodb.morphia.query.FieldEnd;
-import org.mongodb.morphia.query.Query;
 
 @OwnedBy(CDC)
 @FieldNameConstants(innerTypeName = "DeploymentStatsDataFetcherTestKeys")

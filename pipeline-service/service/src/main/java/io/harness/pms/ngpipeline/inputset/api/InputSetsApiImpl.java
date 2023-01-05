@@ -7,8 +7,6 @@
 
 package io.harness.pms.ngpipeline.inputset.api;
 
-import static io.harness.pms.merger.helpers.InputSetTemplateHelper.removeRuntimeInputFromYaml;
-
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.accesscontrol.OrgIdentifier;
@@ -74,9 +72,10 @@ public class InputSetsApiImpl implements InputSetsApi {
     GitAwareContextHelper.populateGitDetails(InputSetsApiUtils.populateGitCreateDetails(requestBody.getGitDetails()));
     final String pipelineYaml = inputSetsApiUtils.getPipelineYaml(
         account, org, project, pipeline, null, null, pipelineService, gitSyncSdkService);
-    String yaml = removeRuntimeInputFromYaml(pipelineYaml, requestBody.getInputSetYaml());
-    InputSetEntity entity = PMSInputSetElementMapper.toInputSetEntity(
-        InputSetsApiUtils.mapCreateToRequestInfoDTO(requestBody), account, org, project, pipeline, yaml);
+    String inputSetVersion = inputSetsApiUtils.inputSetVersion(account, requestBody.getInputSetYaml());
+    InputSetEntity entity =
+        PMSInputSetElementMapper.toInputSetEntityFromVersion(InputSetsApiUtils.mapCreateToRequestInfoDTO(requestBody),
+            account, org, project, pipeline, pipelineYaml, inputSetVersion);
     log.info(String.format("Create input set with identifier %s for pipeline %s in project %s, org %s, account %s",
         entity.getIdentifier(), pipeline, project, org, account));
     InputSetResponseBody inputSetResponse =
@@ -163,9 +162,10 @@ public class InputSetsApiImpl implements InputSetsApi {
         inputSet, pipeline, project, org, account));
     final String pipelineYaml = inputSetsApiUtils.getPipelineYaml(
         account, org, project, pipeline, null, null, pipelineService, gitSyncSdkService);
-    String yaml = removeRuntimeInputFromYaml(pipelineYaml, requestBody.getInputSetYaml());
-    InputSetEntity entity = PMSInputSetElementMapper.toInputSetEntity(
-        InputSetsApiUtils.mapUpdateToRequestInfoDTO(requestBody), account, org, project, pipeline, yaml);
+    String inputSetVersion = inputSetsApiUtils.inputSetVersion(account, requestBody.getInputSetYaml());
+    InputSetEntity entity =
+        PMSInputSetElementMapper.toInputSetEntityFromVersion(InputSetsApiUtils.mapUpdateToRequestInfoDTO(requestBody),
+            account, org, project, pipeline, pipelineYaml, inputSetVersion);
     InputSetEntity updatedEntity = pmsInputSetService.update(ChangeType.MODIFY, null, null, entity, true);
     InputSetResponseBody inputSetResponse = inputSetsApiUtils.getInputSetResponse(updatedEntity);
     return Response.ok().entity(inputSetResponse).build();

@@ -14,6 +14,7 @@ import io.harness.connector.entities.Connector;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthType;
 import io.harness.ng.DbAliases;
 
+import dev.morphia.annotations.Entity;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
@@ -22,7 +23,6 @@ import lombok.EqualsAndHashCode;
 import lombok.Value;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.Persistent;
 import org.springframework.data.annotation.TypeAlias;
 

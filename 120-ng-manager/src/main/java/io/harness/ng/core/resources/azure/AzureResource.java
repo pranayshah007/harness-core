@@ -79,8 +79,8 @@ public class AzureResource {
   public ResponseDTO<AzureSubscriptionsDTO> getAzureSubscriptions(
       @QueryParam("connectorRef") String azureConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @Parameter(description = NGCommonEntityConstants.ENV_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.ENVIRONMENT_KEY) String envId,
       @Parameter(description = NGCommonEntityConstants.INFRADEF_PARAM_MESSAGE) @QueryParam(
@@ -210,8 +210,8 @@ public class AzureResource {
   public ResponseDTO<AzureResourceGroupsDTO>
   getResourceGroupsBySubscription(@NotNull @QueryParam("connectorRef") String azureConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @PathParam("subscriptionId") String subscriptionId) {
     IdentifierRef connectorRef = IdentifierRefHelper.getConnectorIdentifierRef(
         azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
@@ -275,8 +275,8 @@ public class AzureResource {
   @ApiOperation(value = "Gets azure k8s clusters by subscription ", nickname = "getAzureClusters")
   public ResponseDTO<AzureClustersDTO> getClusters(@NotNull @QueryParam("connectorRef") String azureConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @PathParam("subscriptionId") String subscriptionId, @PathParam("resourceGroup") String resourceGroup) {
     IdentifierRef connectorRef = IdentifierRefHelper.getConnectorIdentifierRef(
         azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
@@ -329,8 +329,8 @@ public class AzureResource {
   public ResponseDTO<AzureTagsDTO> getSubscriptionTags(
       @NotNull @QueryParam("connectorRef") String azureConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @PathParam("subscriptionId") String subscriptionId) {
     IdentifierRef connectorRef = IdentifierRefHelper.getConnectorIdentifierRef(
         azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);

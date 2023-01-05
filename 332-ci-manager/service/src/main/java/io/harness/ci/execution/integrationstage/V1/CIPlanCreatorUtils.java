@@ -33,7 +33,6 @@ import io.harness.beans.yaml.extended.runtime.V1.VMRuntimeV1;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
 import io.harness.ci.states.codebase.ScmGitRefManager;
-import io.harness.ci.utils.RepositoryUtils;
 import io.harness.cimanager.stages.V1.IntegrationStageNodeV1;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
@@ -65,6 +64,7 @@ import io.harness.yaml.extended.ci.codebase.impl.BranchBuildSpec;
 import io.harness.yaml.extended.ci.codebase.impl.PRBuildSpec;
 import io.harness.yaml.extended.ci.codebase.impl.TagBuildSpec;
 import io.harness.yaml.repository.Reference;
+import io.harness.yaml.repository.ReferenceType;
 import io.harness.yaml.repository.Repository;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
@@ -86,9 +86,11 @@ public class CIPlanCreatorUtils {
   @Inject private ScmGitRefManager scmGitRefManager;
 
   public Optional<CodeBase> getCodebase(PlanCreationContext ctx, Clone clone) {
-    Optional<Repository> optionalRepository = RepositoryUtils.getRepositoryFromPipelineYaml(ctx.getYaml());
-    if ((optionalRepository.orElse(null) != null && optionalRepository.get().getDisabled())
-        || clone.getDisabled().getValue()) {
+    Dependency globalDependency = ctx.getMetadata().getGlobalDependency();
+    Optional<Object> optionalRepository =
+        getDeserializedObjectFromDependency(globalDependency, YAMLFieldNameConstants.REPOSITORY);
+    Repository repository = (Repository) optionalRepository.orElse(Repository.builder().build());
+    if (repository.getDisabled() || clone.getDisabled().getValue()) {
       return Optional.empty();
     }
     PipelineStoreType pipelineStoreType = ctx.getPipelineStoreType();
@@ -100,7 +102,6 @@ public class CIPlanCreatorUtils {
                                 .orgIdentifier(ctx.getOrgIdentifier())
                                 .projectIdentifier(ctx.getProjectIdentifier())
                                 .build();
-    Repository repository = optionalRepository.orElse(Repository.builder().build());
     CodeBaseBuilder codeBaseBuilder =
         CodeBase.builder()
             .uuid(clone.getUuid())
@@ -271,7 +272,9 @@ public class CIPlanCreatorUtils {
     ParameterField<Reference> referenceField = repository.getReference();
     // if reference is null, try to fetch default branch and clone with that
 
-    if (ParameterField.isNull(referenceField)) {
+    if (ParameterField.isNull(referenceField)
+        || (referenceField.getValue().getType() == ReferenceType.BRANCH
+            && isEmpty(referenceField.getValue().getValue()))) {
       Optional<String> optionalDefaultBranch = getDefaultBranchIfApplicable(ngAccess, repository);
       if (optionalDefaultBranch.isPresent()) {
         return builder.type(BuildType.BRANCH)
@@ -281,8 +284,11 @@ public class CIPlanCreatorUtils {
       }
     }
 
-    // TODO: to use reference from inputs payload
     Reference reference = referenceField.getValue();
+    if (isEmpty(reference.getValue()) || reference.getType() == null) {
+      throw new InvalidRequestException("Reference value and type cannot be empty");
+    }
+
     ParameterField<String> value = ParameterField.createValueField(reference.getValue());
     switch (reference.getType()) {
       case BRANCH:

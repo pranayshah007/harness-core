@@ -32,9 +32,9 @@ import static software.wings.beans.ServiceVariable.ServiceVariableKeys;
 import static software.wings.service.impl.security.AbstractSecretServiceImpl.checkState;
 import static software.wings.service.impl.security.AbstractSecretServiceImpl.encryptLocal;
 
+import static dev.morphia.aggregation.Group.grouping;
+import static dev.morphia.aggregation.Projection.projection;
 import static org.apache.commons.lang3.StringUtils.trim;
-import static org.mongodb.morphia.aggregation.Group.grouping;
-import static org.mongodb.morphia.aggregation.Projection.projection;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
@@ -103,6 +103,9 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.mongodb.AggregationOptions;
+import dev.morphia.aggregation.Accumulator;
+import dev.morphia.aggregation.AggregationPipeline;
+import dev.morphia.query.Query;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -131,9 +134,6 @@ import javax.cache.Cache;
 import lombok.Builder;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.aggregation.Accumulator;
-import org.mongodb.morphia.aggregation.AggregationPipeline;
-import org.mongodb.morphia.query.Query;
 
 @OwnedBy(PL)
 @Slf4j

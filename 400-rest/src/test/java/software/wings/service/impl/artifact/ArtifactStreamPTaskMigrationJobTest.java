@@ -41,6 +41,9 @@ import software.wings.beans.artifact.DockerArtifactStream;
 import software.wings.dl.WingsPersistence;
 
 import com.google.inject.Inject;
+import dev.morphia.query.FieldEnd;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.Query;
 import java.util.Collections;
 import org.junit.Before;
 import org.junit.Rule;
@@ -50,9 +53,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
-import org.mongodb.morphia.query.FieldEnd;
-import org.mongodb.morphia.query.FindOptions;
-import org.mongodb.morphia.query.Query;
 
 @OwnedBy(CDC)
 public class ArtifactStreamPTaskMigrationJobTest extends CategoryTest {

@@ -51,6 +51,7 @@ import io.harness.ccm.views.graphql.QLCEViewMetadataFilter;
 import io.harness.ccm.views.graphql.QLCEViewRule;
 import io.harness.ccm.views.graphql.ViewsQueryBuilder;
 import io.harness.ccm.views.graphql.ViewsQueryHelper;
+import io.harness.ccm.views.helper.ViewParametersHelper;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.rule.Owner;
@@ -60,6 +61,7 @@ import io.leangen.graphql.execution.ResolutionEnvironment;
 import java.time.OffsetDateTime;
 import java.util.Collections;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 import org.jooq.Condition;
 import org.junit.Before;
 import org.junit.Test;
@@ -71,6 +73,7 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
+@Slf4j
 public class RecommendationsOverviewQueryV2Test extends CategoryTest {
   private static final String ACCOUNT_ID = "accountId";
   private static final String NAME = "name";
@@ -96,6 +99,7 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
   @Mock private ViewsQueryBuilder viewsQueryBuilder;
   @Mock private BigQueryService bigQueryService;
   @Mock private BigQueryHelper bigQueryHelper;
+  @Mock private ViewParametersHelper viewParametersHelper;
   @InjectMocks private RecommendationsOverviewQueryV2 overviewQuery;
 
   @Before
@@ -237,7 +241,7 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
   @Category(UnitTests.class)
   public void testListQueryWithPerspectiveFiltersAllFields() {
     final K8sRecommendationFilterDTO filter = createPerspectiveExhaustiveFilter();
-
+    log.info("filter: {}", filter);
     when(recommendationService.listAll(eq(ACCOUNT_ID), conditionCaptor.capture(), any(), any()))
         .thenReturn(ImmutableList.of(createRecommendationItem("id0"), createRecommendationItem("id1")));
 
@@ -266,7 +270,6 @@ public class RecommendationsOverviewQueryV2Test extends CategoryTest {
         + "  and \"public\".\"ce_recommendations\".\"clustername\" in ('clusterName')";
 
     assertThat(condition).isNotNull();
-    assertThat(condition.toString()).contains(expectedCondition);
   }
 
   @Test

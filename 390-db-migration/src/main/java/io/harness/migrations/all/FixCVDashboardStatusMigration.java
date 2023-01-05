@@ -20,10 +20,10 @@ import software.wings.sm.StateExecutionInstance;
 import software.wings.sm.StateExecutionInstance.StateExecutionInstanceKeys;
 
 import com.google.inject.Inject;
+import dev.morphia.query.UpdateOperations;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @Slf4j
 public class FixCVDashboardStatusMigration implements Migration {

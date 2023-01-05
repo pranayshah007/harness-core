@@ -12,11 +12,11 @@ import io.harness.mongo.index.FdTtlIndex;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAccess;
 
+import dev.morphia.annotations.Id;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.mongodb.morphia.annotations.Id;
 
 @Data
 @Builder

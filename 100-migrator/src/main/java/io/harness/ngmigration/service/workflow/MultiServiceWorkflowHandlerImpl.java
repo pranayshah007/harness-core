@@ -16,10 +16,8 @@ import software.wings.beans.GraphNode;
 import software.wings.beans.MultiServiceOrchestrationWorkflow;
 import software.wings.beans.PhaseStep;
 import software.wings.beans.Workflow;
-import software.wings.beans.WorkflowPhase.Yaml;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.service.impl.yaml.handler.workflow.MultiServiceWorkflowYamlHandler;
-import software.wings.yaml.workflow.MultiServiceWorkflowYaml;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
@@ -29,13 +27,6 @@ import java.util.Map;
 public class MultiServiceWorkflowHandlerImpl extends WorkflowHandler {
   @Inject MultiServiceWorkflowYamlHandler multiServiceWorkflowYamlHandler;
   @Inject private StepMapperFactory stepMapperFactory;
-
-  @Override
-  public List<Yaml> getPhases(Workflow workflow) {
-    MultiServiceWorkflowYaml multiServiceWorkflowYaml =
-        multiServiceWorkflowYamlHandler.toYaml(workflow, workflow.getAppId());
-    return multiServiceWorkflowYaml.getPhases();
-  }
 
   @Override
   public TemplateEntityType getTemplateType(Workflow workflow) {
@@ -55,34 +46,18 @@ public class MultiServiceWorkflowHandlerImpl extends WorkflowHandler {
         orchestrationWorkflow.getPostDeploymentSteps());
   }
 
-  PhaseStep.Yaml getPreDeploymentPhase(Workflow workflow) {
-    MultiServiceWorkflowYaml workflowYaml = multiServiceWorkflowYamlHandler.toYaml(workflow, workflow.getAppId());
+  PhaseStep getPreDeploymentPhase(Workflow workflow) {
     CanaryOrchestrationWorkflow orchestrationWorkflow = (CanaryOrchestrationWorkflow) workflow.getOrchestration();
-    return PhaseStep.Yaml.builder()
-        .stepSkipStrategies(workflowYaml.getPreDeploymentStepSkipStrategy())
-        .stepsInParallel(orchestrationWorkflow.getPreDeploymentSteps().isStepsInParallel())
-        .steps(workflowYaml.getPreDeploymentSteps())
-        .build();
+    return orchestrationWorkflow.getPreDeploymentSteps();
   }
 
-  PhaseStep.Yaml getPostDeploymentPhase(Workflow workflow) {
-    MultiServiceWorkflowYaml workflowYaml = multiServiceWorkflowYamlHandler.toYaml(workflow, workflow.getAppId());
+  PhaseStep getPostDeploymentPhase(Workflow workflow) {
     CanaryOrchestrationWorkflow orchestrationWorkflow = (CanaryOrchestrationWorkflow) workflow.getOrchestration();
-    return PhaseStep.Yaml.builder()
-        .stepSkipStrategies(workflowYaml.getPreDeploymentStepSkipStrategy())
-        .stepsInParallel(orchestrationWorkflow.getPostDeploymentSteps().isStepsInParallel())
-        .steps(workflowYaml.getPostDeploymentSteps())
-        .build();
+    return orchestrationWorkflow.getPostDeploymentSteps();
   }
 
   @Override
   public JsonNode getTemplateSpec(Map<CgEntityId, NGYamlFile> migratedEntities, Workflow workflow) {
     return buildMultiStagePipelineTemplate(migratedEntities, stepMapperFactory, workflow);
-  }
-
-  @Override
-  List<Yaml> getRollbackPhases(Workflow workflow) {
-    MultiServiceWorkflowYaml workflowYaml = multiServiceWorkflowYamlHandler.toYaml(workflow, workflow.getAppId());
-    return workflowYaml.getRollbackPhases();
   }
 }

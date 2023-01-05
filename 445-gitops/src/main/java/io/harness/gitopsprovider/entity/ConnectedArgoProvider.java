@@ -14,13 +14,13 @@ import io.harness.delegate.beans.connector.GitOpsProviderType;
 import io.harness.gitopsprovider.SearchTerm;
 import io.harness.ng.DbAliases;
 
+import dev.morphia.annotations.Entity;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 import lombok.experimental.FieldDefaults;
 import org.hibernate.validator.constraints.NotBlank;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.Persistent;
 
 @Value

@@ -85,6 +85,7 @@ import com.github.reinert.jjschema.Attributes;
 import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.common.base.MoreObjects;
 import com.google.inject.Inject;
+import dev.morphia.annotations.Transient;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
@@ -101,7 +102,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.jexl3.JexlException;
 import org.apache.commons.jexl3.JexlException.Parsing;
 import org.apache.commons.jexl3.JexlException.Property;
-import org.mongodb.morphia.annotations.Transient;
 
 /**
  * Http state which makes a call to http service.

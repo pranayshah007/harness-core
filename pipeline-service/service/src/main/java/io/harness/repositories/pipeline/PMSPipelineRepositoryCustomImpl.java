@@ -10,6 +10,7 @@ package io.harness.repositories.pipeline;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.SCM_BAD_REQUEST;
+import static io.harness.pms.pipeline.MoveConfigOperationType.INLINE_TO_REMOTE;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
@@ -29,11 +30,13 @@ import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.persistance.GitAwarePersistence;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.persistance.GitSyncableHarnessRepo;
+import io.harness.gitsync.scm.beans.ScmCreateFileGitResponse;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.outbox.api.OutboxService;
 import io.harness.pms.events.PipelineCreateEvent;
 import io.harness.pms.events.PipelineDeleteEvent;
 import io.harness.pms.events.PipelineUpdateEvent;
+import io.harness.pms.pipeline.MoveConfigOperationType;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
 import io.harness.pms.pipeline.PipelineMetadataV2;
@@ -145,11 +148,7 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
     }
     if (gitSyncSdkService.isGitSimplificationEnabled(pipelineToSave.getAccountIdentifier(),
             pipelineToSave.getOrgIdentifier(), pipelineToSave.getProjectIdentifier())) {
-      Scope scope = buildScope(pipelineToSave);
-      String yamlToPush = pipelineToSave.getYaml();
-      addGitParamsToPipelineEntity(pipelineToSave, gitEntityInfo);
-
-      gitAwareEntityHelper.createEntityOnGit(pipelineToSave, yamlToPush, scope);
+      createRemoteEntity(pipelineToSave);
     } else {
       log.info(String.format(
           "Marking storeType as INLINE for Pipeline with ID [%s] because Git simplification was not enabled for Project [%s] in Account [%s]",
@@ -461,5 +460,45 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
   public List<String> findAllUniqueRepos(Criteria criteria) {
     Query query = new Query(criteria);
     return mongoTemplate.findDistinct(query, PipelineEntityKeys.repo, PipelineEntity.class, String.class);
+  }
+
+  @Override
+  public PipelineEntity updatePipelineEntity(PipelineEntity pipelineToSave, Update pipelineUpdate,
+      Criteria pipelineCriteria, Update metadataUpdate, Criteria metadataCriteria,
+      MoveConfigOperationType moveConfigOperationType) {
+    return transactionHelper.performTransaction(
+        ()
+            -> moveConfigOperations(pipelineToSave, pipelineUpdate, pipelineCriteria, metadataUpdate, metadataCriteria,
+                moveConfigOperationType));
+  }
+
+  @VisibleForTesting
+  PipelineEntity moveConfigOperations(PipelineEntity pipelineToMove, Update pipelineUpdate, Criteria pipelineCriteria,
+      Update metadataUpdate, Criteria metadataCriteria, MoveConfigOperationType moveConfigOperationType) {
+    //   create file if inline to remote
+    if (INLINE_TO_REMOTE.equals(moveConfigOperationType)) {
+      createRemoteEntity(pipelineToMove);
+    }
+    //    update the mongo db
+    PipelineEntity movedPipelineEntity = updatePipelineMetadata(pipelineToMove.getAccountId(),
+        pipelineToMove.getOrgIdentifier(), pipelineToMove.getProjectIdentifier(), pipelineCriteria, pipelineUpdate);
+    //    update the metadataV2 db
+    updatePipelineMetadataV2(metadataUpdate, metadataCriteria);
+    return movedPipelineEntity;
+  }
+
+  private PipelineMetadataV2 updatePipelineMetadataV2(Update update, Criteria criteria) {
+    return pipelineMetadataService.update(criteria, update);
+  }
+
+  private ScmCreateFileGitResponse createRemoteEntity(PipelineEntity pipelineEntity) {
+    GitAwareContextHelper.initDefaultScmGitMetaData();
+    GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
+
+    Scope scope = buildScope(pipelineEntity);
+    String yamlToPush = pipelineEntity.getYaml();
+    addGitParamsToPipelineEntity(pipelineEntity, gitEntityInfo);
+
+    return gitAwareEntityHelper.createEntityOnGit(pipelineEntity, yamlToPush, scope);
   }
 }

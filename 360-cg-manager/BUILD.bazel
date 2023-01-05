@@ -96,7 +96,7 @@ shared_dependencies = [
     "@maven//:org_glassfish_jersey_core_jersey_server",
     "@maven//:org_glassfish_jersey_media_jersey_media_multipart",
     "@maven//:org_hibernate_validator_hibernate_validator",
-    "@maven//:org_mongodb_morphia_morphia",
+    "@maven//:dev_morphia_morphia_core",
     "@maven//:org_reflections_reflections",
     "@maven//:org_slf4j_slf4j_api",
     "@maven//:org_springframework_spring_core",

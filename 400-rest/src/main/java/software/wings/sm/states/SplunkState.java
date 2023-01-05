@@ -28,6 +28,7 @@ import software.wings.sm.ExecutionResponse;
 import com.github.reinert.jjschema.Attributes;
 import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.inject.Inject;
+import dev.morphia.annotations.Transient;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -37,7 +38,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
-import org.mongodb.morphia.annotations.Transient;
 
 /**
  * Created by peeyushaggarwal on 7/15/16.

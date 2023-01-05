@@ -44,5 +44,6 @@ public interface ScmConnector {
 
   @JsonIgnore GitRepositoryDTO getGitRepositoryDetails();
 
-  @JsonIgnore String getFileUrl(String branchName, String filePath, GitRepositoryDTO gitRepositoryDTO);
+  // TODO: commitId isn't being used in all implementations, check later if required.
+  @JsonIgnore String getFileUrl(String branchName, String filePath, String commitId, GitRepositoryDTO gitRepositoryDTO);
 }

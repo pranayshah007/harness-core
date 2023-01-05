@@ -23,6 +23,9 @@ import io.harness.ccm.views.businessMapping.helper.BusinessMappingHelper;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 
+import dev.morphia.query.FieldEnd;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.util.Collections;
 import java.util.List;
 import org.junit.Before;
@@ -32,9 +35,6 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.mongodb.morphia.query.FieldEnd;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @RunWith(MockitoJUnitRunner.class)
 public class BusinessMappingDaoTest extends CategoryTest {

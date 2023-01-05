@@ -29,12 +29,12 @@ import com.google.inject.Inject;
 import com.mongodb.BasicDBObject;
 import com.mongodb.BulkWriteOperation;
 import com.mongodb.DBCollection;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Function;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
 
 @Slf4j
 public class AddArtifactIdentityMigration implements Migration {

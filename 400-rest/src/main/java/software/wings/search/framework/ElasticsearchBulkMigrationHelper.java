@@ -17,6 +17,7 @@ import software.wings.dl.WingsPersistence;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
+import dev.morphia.query.FindOptions;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -29,7 +30,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
-import org.mongodb.morphia.query.FindOptions;
 
 @OwnedBy(PL)
 @Slf4j

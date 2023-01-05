@@ -22,12 +22,12 @@ import static software.wings.app.ManagerCacheRegistrar.APIKEY_CACHE;
 import static software.wings.app.ManagerCacheRegistrar.APIKEY_PERMISSION_CACHE;
 import static software.wings.app.ManagerCacheRegistrar.APIKEY_RESTRICTION_CACHE;
 
+import static dev.morphia.mapping.Mapper.ID_KEY;
 import static java.lang.System.currentTimeMillis;
 import static java.util.Collections.emptyList;
 import static java.util.function.Function.identity;
 import static org.apache.commons.collections4.ListUtils.emptyIfNull;
 import static org.apache.commons.lang3.StringUtils.isBlank;
-import static org.mongodb.morphia.mapping.Mapper.ID_KEY;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.PageRequest;
@@ -63,6 +63,8 @@ import com.google.common.base.Charsets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashSet;
@@ -76,8 +78,6 @@ import javax.cache.Cache;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.ListUtils;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @OwnedBy(PL)
 @Singleton

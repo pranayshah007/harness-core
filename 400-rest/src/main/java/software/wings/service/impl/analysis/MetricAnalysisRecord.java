@@ -26,6 +26,7 @@ import software.wings.sm.StateType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.github.reinert.jjschema.SchemaIgnore;
+import dev.morphia.annotations.Transient;
 import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.util.Date;
@@ -39,7 +40,6 @@ import lombok.Setter;
 import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.jetbrains.annotations.NotNull;
-import org.mongodb.morphia.annotations.Transient;
 
 /**
  * Common Class extended by TimeSeries and Experimental Analysis Record.

@@ -10,7 +10,7 @@ package io.harness.cdng.elastigroup;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.pipeline.CDStepInfo;
+import io.harness.cdng.pipeline.CDAbstractStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.ElastigroupSwapRouteStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -41,7 +41,8 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName(StepSpecTypeConstants.ELASTIGROUP_SWAP_ROUTE)
 @TypeAlias("elastigroupSwapRouteStepInfo")
 @RecasterAlias("io.harness.cdng.elastigroup.ElastigroupSwapRouteStepInfo")
-public class ElastigroupSwapRouteStepInfo extends ElastigroupSwapRouteBaseStepInfo implements CDStepInfo, Visitable {
+public class ElastigroupSwapRouteStepInfo
+    extends ElastigroupSwapRouteBaseStepInfo implements CDAbstractStepInfo, Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)

@@ -35,6 +35,7 @@ import static software.wings.service.intfc.analysis.LogAnalysisResource.ANALYSIS
 import static software.wings.service.intfc.analysis.LogAnalysisResource.ANALYSIS_STATE_SAVE_24X7_CLUSTERED_LOG_URL;
 import static software.wings.service.intfc.analysis.LogAnalysisResource.LOG_ANALYSIS;
 
+import static dev.morphia.mapping.Mapper.ID_KEY;
 import static java.time.Duration.ofMillis;
 import static org.apache.commons.lang3.reflect.FieldUtils.writeField;
 import static org.apache.cxf.ws.addressing.ContextUtils.generateUUID;
@@ -51,7 +52,6 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mongodb.morphia.mapping.Mapper.ID_KEY;
 
 import io.harness.VerificationBase;
 import io.harness.alert.AlertData;
@@ -152,6 +152,8 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -183,8 +185,6 @@ import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
 import retrofit2.Call;
 import retrofit2.Response;
 

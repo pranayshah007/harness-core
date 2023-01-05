@@ -459,19 +459,19 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
     NodeStartHelper nodeStartHelper = injector.getInstance(Key.get(NodeStartHelper.class));
 
     // NodeStatusUpdateObserver
-    nodeExecutionService.getStepStatusUpdateSubject().register(
+    nodeExecutionService.getNodeStatusUpdateSubject().register(
         injector.getInstance(Key.get(PlanExecutionService.class)));
-    nodeExecutionService.getStepStatusUpdateSubject().register(
+    nodeExecutionService.getNodeStatusUpdateSubject().register(
         injector.getInstance(Key.get(StageStatusUpdateNotificationEventHandler.class)));
-    nodeExecutionService.getStepStatusUpdateSubject().register(
+    nodeExecutionService.getNodeStatusUpdateSubject().register(
         injector.getInstance(Key.get(BarrierPositionHelperEventHandler.class)));
-    nodeExecutionService.getStepStatusUpdateSubject().register(injector.getInstance(Key.get(BarrierDropper.class)));
-    nodeExecutionService.getStepStatusUpdateSubject().register(
+    nodeExecutionService.getNodeStatusUpdateSubject().register(injector.getInstance(Key.get(BarrierDropper.class)));
+    nodeExecutionService.getNodeStatusUpdateSubject().register(
         injector.getInstance(Key.get(NodeExecutionStatusUpdateEventHandler.class)));
-    nodeExecutionService.getStepStatusUpdateSubject().register(
+    nodeExecutionService.getNodeStatusUpdateSubject().register(
         injector.getInstance(Key.get(ResourceRestraintObserver.class)));
 
-    nodeExecutionService.getStepStatusUpdateSubject().register(
+    nodeExecutionService.getNodeStatusUpdateSubject().register(
         injector.getInstance(Key.get(TimeoutInstanceRemover.class)));
 
     // NodeExecutionStartObserver

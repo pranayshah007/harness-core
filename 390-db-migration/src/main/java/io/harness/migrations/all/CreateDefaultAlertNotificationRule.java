@@ -18,8 +18,8 @@ import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.AlertNotificationRuleService;
 
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
 
 @Slf4j
 public class CreateDefaultAlertNotificationRule implements Migration {

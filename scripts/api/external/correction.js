@@ -16,7 +16,7 @@ function func() {
 
   fs.writeFile('_merged/merged.yaml', yamlStr, (err) => {
     if (err) {
-        throw err;
+      throw err;
     }
     console.log("YAML data is saved.");
   });

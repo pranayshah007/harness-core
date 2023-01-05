@@ -35,7 +35,7 @@ import com.amazonaws.regions.Regions;
 import com.github.reinert.jjschema.Attributes;
 import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.inject.Inject;
-import org.mongodb.morphia.annotations.Transient;
+import dev.morphia.annotations.Transient;
 
 /**
  * Created by peeyushaggarwal on 10/3/16.

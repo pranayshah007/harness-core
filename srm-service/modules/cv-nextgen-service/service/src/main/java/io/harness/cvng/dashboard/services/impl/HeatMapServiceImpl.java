@@ -35,6 +35,9 @@ import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.mongodb.BasicDBObject;
 import com.mongodb.client.model.DBCollectionUpdateOptions;
+import dev.morphia.UpdateOptions;
+import dev.morphia.query.Criteria;
+import dev.morphia.query.Query;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -52,9 +55,6 @@ import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
 import lombok.Value;
-import org.mongodb.morphia.UpdateOptions;
-import org.mongodb.morphia.query.Criteria;
-import org.mongodb.morphia.query.Query;
 
 public class HeatMapServiceImpl implements HeatMapService {
   private static final int RISK_TIME_BUFFER_MINS = 15;

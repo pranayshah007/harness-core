@@ -23,13 +23,13 @@ import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.NGMigrationEntity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import dev.morphia.annotations.Entity;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
 
 @OwnedBy(CDP)
 @Data

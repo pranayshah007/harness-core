@@ -20,13 +20,13 @@ import software.wings.infra.InfraMappingInfrastructureProvider;
 import software.wings.infra.InfrastructureDefinition;
 
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.jetbrains.annotations.NotNull;
-import org.mongodb.morphia.query.Query;
 
 @Slf4j
 // INFO:

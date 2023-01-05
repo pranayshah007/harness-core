@@ -26,6 +26,7 @@ import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.sdk.core.steps.executables.ChildExecutable;
 import io.harness.pms.sdk.core.steps.executables.ChildrenExecutable;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
@@ -35,10 +36,9 @@ import io.harness.tasks.ResponseData;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import org.springframework.data.util.CloseableIterator;
 
 /**
  * This step is used during retry-failed-pipeline for running any step/stage that is inside the strategy.
@@ -64,17 +64,19 @@ public class IdentityStrategyInternalStep
   @Override
   public ChildExecutableResponse obtainChild(
       Ambiance ambiance, IdentityStepParameters identityParams, StepInputPackage inputPackage) {
-    NodeExecution originalNodeExecution = null;
+    NodeExecution originalNodeExecution = nodeExecutionService.getWithFieldsIncluded(
+        identityParams.getOriginalNodeExecutionId(), NodeProjectionUtils.fieldsForIdentityStrategyStep);
     NodeExecution childNodeExecution = null;
-    List<NodeExecution> nodeExecutions = nodeExecutionService.fetchNodeExecutionsByParentIdWithAmbianceAndNode(
-        identityParams.getOriginalNodeExecutionId(), true, true);
-    nodeExecutions =
-        nodeExecutions.stream().sorted(Comparator.comparing(NodeExecution::getCreatedAt)).collect(Collectors.toList());
-    for (NodeExecution nodeExecution : nodeExecutions) {
-      if (nodeExecution.getUuid().equals(identityParams.getOriginalNodeExecutionId())) {
-        originalNodeExecution = nodeExecution;
-      } else if (childNodeExecution == null) {
-        childNodeExecution = nodeExecution;
+    try (CloseableIterator<NodeExecution> iterator =
+             nodeExecutionService.fetchChildrenNodeExecutionsIterator(ambiance.getPlanExecutionId(),
+                 identityParams.getOriginalNodeExecutionId(), NodeProjectionUtils.fieldsForIdentityStrategyStep)) {
+      while (iterator.hasNext()) {
+        NodeExecution next = iterator.next();
+        if (Boolean.FALSE.equals(next.getOldRetry())) {
+          // Getting first child with oldRetry false
+          childNodeExecution = next;
+          break;
+        }
       }
     }
 
@@ -90,22 +92,24 @@ public class IdentityStrategyInternalStep
   @Override
   public ChildrenExecutableResponse obtainChildren(
       Ambiance ambiance, IdentityStepParameters identityParams, StepInputPackage inputPackage) {
-    List<NodeExecution> nodeExecutions = nodeExecutionService.fetchNodeExecutionsByParentIdWithAmbianceAndNode(
-        identityParams.getOriginalNodeExecutionId(), true, true);
-    NodeExecution strategyNodeExecution = null;
+    NodeExecution strategyNodeExecution = nodeExecutionService.getWithFieldsIncluded(
+        identityParams.getOriginalNodeExecutionId(), NodeProjectionUtils.fieldsForIdentityStrategyStep);
     List<NodeExecution> childrenNodeExecutions = new ArrayList<>();
 
-    for (NodeExecution nodeExecution : nodeExecutions) {
-      if (nodeExecution.getUuid().equals(identityParams.getOriginalNodeExecutionId())) {
-        strategyNodeExecution = nodeExecution;
-      } else {
-        childrenNodeExecutions.add(nodeExecution);
+    try (CloseableIterator<NodeExecution> iterator =
+             nodeExecutionService.fetchChildrenNodeExecutionsIterator(ambiance.getPlanExecutionId(),
+                 identityParams.getOriginalNodeExecutionId(), NodeProjectionUtils.fieldsForIdentityStrategyStep)) {
+      while (iterator.hasNext()) {
+        NodeExecution next = iterator.next();
+        // Don't want to include retried nodeIds
+        if (Boolean.FALSE.equals(next.getOldRetry())) {
+          childrenNodeExecutions.add(next);
+        }
       }
     }
 
     List<ChildrenExecutableResponse.Child> children =
         getChildrenFromNodeExecutions(childrenNodeExecutions, ambiance.getPlanId());
-
     long maxConcurrency = strategyNodeExecution.getExecutableResponses().get(0).getChildren().getMaxConcurrency();
 
     return ChildrenExecutableResponse.newBuilder().addAllChildren(children).setMaxConcurrency(maxConcurrency).build();

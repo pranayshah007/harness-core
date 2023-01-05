@@ -34,7 +34,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.dependencies.ServiceDependency;
 import io.harness.beans.environment.ServiceDefinitionInfo;
-import io.harness.beans.execution.CIExecutionArgs;
+import io.harness.beans.execution.CIInitTaskArgs;
 import io.harness.beans.outcomes.DependencyOutcome;
 import io.harness.beans.outcomes.LiteEnginePodDetailsOutcome;
 import io.harness.beans.outcomes.VmDetailsOutcome;
@@ -126,6 +126,7 @@ import software.wings.beans.SerializationFormat;
 import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -189,18 +190,20 @@ public class InitializeTaskStepV2 implements AsyncExecutableWithRbac<StepElement
       log.info("start executeAsyncAfterRbac for initialize step with queue");
       taskId = generateUuid();
       String topic = "ci";
-      String payload = RecastOrchestrationUtils.toJson(CIExecutionArgs.builder()
-                                                           .ambiance(ambiance)
-                                                           .callbackId(taskId)
-                                                           .stepElementParameters(stepParameters)
-                                                           .build());
+      String payload = RecastOrchestrationUtils.toJson(
+          CIInitTaskArgs.builder().ambiance(ambiance).callbackId(taskId).stepElementParameters(stepParameters).build());
       EnqueueRequest enqueueRequest = EnqueueRequest.builder()
                                           .topic(topic)
                                           .subTopic(AmbianceUtils.getAccountId(ambiance))
                                           .producerName(topic)
                                           .payload(payload)
                                           .build();
-      hsqsServiceClient.enqueue(enqueueRequest, ciExecutionServiceConfig.getQueueServiceToken());
+      try {
+        hsqsServiceClient.enqueue(enqueueRequest, ciExecutionServiceConfig.getQueueServiceClient().getAuthToken())
+            .execute();
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
     } else {
       taskId = executeBuild(ambiance, stepParameters);
     }
@@ -215,7 +218,7 @@ public class InitializeTaskStepV2 implements AsyncExecutableWithRbac<StepElement
         .build();
   }
 
-  private String executeBuild(Ambiance ambiance, StepElementParameters stepParameters) {
+  public String executeBuild(Ambiance ambiance, StepElementParameters stepParameters) {
     log.info("start executeAsyncAfterRbac for initialize step async");
     InitializeStepInfo initializeStepInfo = (InitializeStepInfo) stepParameters.getSpec();
 
@@ -268,7 +271,7 @@ public class InitializeTaskStepV2 implements AsyncExecutableWithRbac<StepElement
     return ciDelegateTaskExecutor.queueTask(abstractions, task,
         taskSelectors.stream().map(TaskSelector::getSelector).collect(Collectors.toList()), new ArrayList<>(),
         executeOnHarnessHostedDelegates, emitEvent, stageExecutionId, generateLogAbstractions(ambiance),
-        ambiance.getExpressionFunctorToken());
+        ambiance.getExpressionFunctorToken(), true);
   }
 
   @Override

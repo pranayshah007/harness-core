@@ -111,7 +111,7 @@ public interface CDOverviewDashboardService {
 
   InstancesByBuildIdList getActiveInstancesByServiceIdEnvIdAndBuildIds(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String serviceId, String envId, List<String> buildIds, String infraId, String clusterId,
-      String pipelineExecutionId, long lastDeployedAt);
+      String pipelineExecutionId);
 
   InstanceDetailsByBuildId getActiveInstanceDetails(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String serviceIdentifier, String envIdentifier, String infraIdentifier,

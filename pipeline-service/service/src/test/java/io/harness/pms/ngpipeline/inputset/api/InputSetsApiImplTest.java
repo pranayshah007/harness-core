@@ -29,6 +29,7 @@ import io.harness.pms.ngpipeline.inputset.service.InputSetValidationHelper;
 import io.harness.pms.ngpipeline.inputset.service.PMSInputSetService;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.rule.Owner;
 import io.harness.spec.server.pipeline.v1.model.InputSetCreateRequestBody;
 import io.harness.spec.server.pipeline.v1.model.InputSetResponseBody;
@@ -133,6 +134,7 @@ public class InputSetsApiImplTest extends PipelineServiceTestBase {
     inputSetCreateRequestBody.setSlug(inputSet);
     inputSetCreateRequestBody.setName(inputSetName);
     inputSetCreateRequestBody.setInputSetYaml(inputSetYaml);
+    doReturn(PipelineVersion.V0).when(inputSetsApiUtils).inputSetVersion(any(), any());
     Response response = inputSetsApiImpl.createInputSet(inputSetCreateRequestBody, pipeline, org, project, account);
     InputSetResponseBody responseBody = (InputSetResponseBody) response.getEntity();
     assertEquals(responseBody.getInputSetYaml(), inputSetYaml);
@@ -180,6 +182,7 @@ public class InputSetsApiImplTest extends PipelineServiceTestBase {
         .when(inputSetsApiUtils)
         .getPipelineYaml(any(), any(), any(), any(), any(), any(), any(), any());
     doReturn(inputSetEntity).when(pmsInputSetService).update(any(), any(), any(), any(), anyBoolean());
+    doReturn(PipelineVersion.V0).when(inputSetsApiUtils).inputSetVersion(any(), any());
     doReturn(inputSetResponseBody).when(inputSetsApiUtils).getInputSetResponse(any());
     InputSetUpdateRequestBody inputSetUpdateRequestBody = new InputSetUpdateRequestBody();
     inputSetUpdateRequestBody.setSlug(inputSet);

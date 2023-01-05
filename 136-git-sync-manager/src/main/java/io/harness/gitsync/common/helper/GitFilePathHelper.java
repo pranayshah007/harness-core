@@ -36,11 +36,11 @@ public class GitFilePathHelper {
     validateFilePathFormat(filePath);
   }
 
-  public String getFileUrl(
-      Scope scope, String connectorRef, String branchName, String filePath, GitRepositoryDTO gitRepositoryDTO) {
+  public String getFileUrl(Scope scope, String connectorRef, String branchName, String filePath, String commitId,
+      GitRepositoryDTO gitRepositoryDTO) {
     ScmConnector scmConnector = gitSyncConnectorHelper.getScmConnectorForGivenRepo(scope.getAccountIdentifier(),
         scope.getOrgIdentifier(), scope.getProjectIdentifier(), connectorRef, gitRepositoryDTO.getName());
-    return scmConnector.getFileUrl(branchName, filePath, gitRepositoryDTO);
+    return scmConnector.getFileUrl(branchName, filePath, commitId, gitRepositoryDTO);
   }
 
   private static void validateFilePathFormat(String filePath) {

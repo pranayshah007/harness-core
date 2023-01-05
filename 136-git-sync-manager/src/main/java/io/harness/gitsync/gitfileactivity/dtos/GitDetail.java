@@ -13,9 +13,9 @@ import io.harness.annotations.dev.OwnedBy;
 
 import software.wings.beans.EntityType;
 
+import dev.morphia.annotations.Transient;
 import lombok.Builder;
 import lombok.Data;
-import org.mongodb.morphia.annotations.Transient;
 
 @Data
 @Builder

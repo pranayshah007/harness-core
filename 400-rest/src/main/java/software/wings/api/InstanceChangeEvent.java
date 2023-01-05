@@ -14,11 +14,11 @@ import io.harness.queue.Queuable;
 
 import software.wings.beans.infrastructure.instance.Instance;
 
+import dev.morphia.annotations.Entity;
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.mongodb.morphia.annotations.Entity;
 
 /**
  * This is a wrapper class of Instance to make it extend queuable.

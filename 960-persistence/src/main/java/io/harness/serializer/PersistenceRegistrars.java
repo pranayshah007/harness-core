@@ -14,9 +14,9 @@ import io.harness.serializer.kryo.PersistenceKryoRegistrar;
 import io.harness.serializer.morphia.PersistenceMorphiaRegistrar;
 
 import com.google.common.collect.ImmutableSet;
+import dev.morphia.converters.TypeConverter;
 import io.serializer.registrars.NGCommonsRegistrars;
 import lombok.experimental.UtilityClass;
-import org.mongodb.morphia.converters.TypeConverter;
 
 @UtilityClass
 public class PersistenceRegistrars {

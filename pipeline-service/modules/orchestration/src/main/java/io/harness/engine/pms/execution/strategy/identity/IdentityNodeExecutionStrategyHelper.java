@@ -195,16 +195,17 @@ public class IdentityNodeExecutionStrategyHelper {
     }
     nodeExecutionService.saveAll(
         clonedNodeExecutions.stream().map(NodeExecutionBuilder::build).collect(Collectors.toList()));
-    updateFinalRetriedNode(nodeExecution, originalOldRetryIds, originalRetryIdToNewRetryIdMap);
+    updateFinalRetriedNode(nodeExecution.getUuid(), nodeExecution.getInterruptHistories(), originalOldRetryIds,
+        originalRetryIdToNewRetryIdMap);
   }
 
-  private void updateFinalRetriedNode(NodeExecution finalNodeExecution, List<String> originalRetryIds,
-      Map<String, String> originalRetryIdToNewRetryIdMap) {
+  private void updateFinalRetriedNode(String nodeExecutionId, List<InterruptEffect> interruptHistories,
+      List<String> originalRetryIds, Map<String, String> originalRetryIdToNewRetryIdMap) {
     List<String> finalNodeRetryIds =
         getNewRetryIdsFromOriginalRetryIds(originalRetryIds, originalRetryIdToNewRetryIdMap);
     List<InterruptEffect> finalInterruptHistory =
-        getUpdatedInterruptHistory(finalNodeExecution.getInterruptHistories(), originalRetryIdToNewRetryIdMap);
-    nodeExecutionService.update(finalNodeExecution.getUuid(), update -> {
+        getUpdatedInterruptHistory(interruptHistories, originalRetryIdToNewRetryIdMap);
+    nodeExecutionService.updateV2(nodeExecutionId, update -> {
       update.set(NodeExecutionKeys.retryIds, finalNodeRetryIds);
       update.set(NodeExecutionKeys.interruptHistories, finalInterruptHistory);
       update.set(NodeExecutionKeys.startTs, System.currentTimeMillis());

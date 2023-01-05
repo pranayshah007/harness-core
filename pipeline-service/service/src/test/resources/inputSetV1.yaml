@@ -1,0 +1,9 @@
+version: 1
+name: set1
+inputs:
+  image: alpine
+  repo: harness-core
+  count: 1
+  repository:
+    type: branch
+    value: main

@@ -7,6 +7,8 @@
 
 package io.harness.ccm.budget.utils;
 
+import static io.harness.ccm.budget.AlertThresholdBase.ACTUAL_COST;
+import static io.harness.ccm.budget.AlertThresholdBase.FORECASTED_COST;
 import static io.harness.ccm.budget.BudgetPeriod.DAILY;
 import static io.harness.ccm.budget.BudgetScopeType.PERSPECTIVE;
 import static io.harness.ccm.budget.BudgetType.SPECIFIED_AMOUNT;
@@ -20,6 +22,7 @@ import io.harness.ccm.budget.BudgetBreakdown;
 import io.harness.ccm.budget.BudgetMonthlyBreakdown;
 import io.harness.ccm.budget.BudgetPeriod;
 import io.harness.ccm.budget.BudgetScope;
+import io.harness.ccm.budget.BudgetSummary;
 import io.harness.ccm.budget.ValueDataPoint;
 import io.harness.ccm.commons.entities.billing.Budget;
 import io.harness.exception.InvalidRequestException;
@@ -474,5 +477,29 @@ public class BudgetUtils {
 
   public static Double getRoundedValue(double value) {
     return Math.round(value * HUNDRED) / HUNDRED;
+  }
+
+  public static BudgetSummary buildBudgetSummary(Budget budget) {
+    return BudgetSummary.builder()
+        .id(budget.getUuid())
+        .name(budget.getName())
+        .perspectiveId(BudgetUtils.getPerspectiveIdForBudget(budget))
+        .perspectiveName(BudgetUtils.getPerspectiveNameForBudget(budget))
+        .budgetAmount(budget.getBudgetAmount())
+        .actualCost(budget.getActualCost())
+        .forecastCost(budget.getForecastCost())
+        .timeLeft(BudgetUtils.getTimeLeftForBudget(budget))
+        .timeUnit(BudgetUtils.DEFAULT_TIME_UNIT)
+        .timeScope(BudgetUtils.getBudgetPeriod(budget).toString().toLowerCase())
+        .actualCostAlerts(BudgetUtils.getAlertThresholdsForBudget(budget, ACTUAL_COST))
+        .forecastCostAlerts(BudgetUtils.getAlertThresholdsForBudget(budget, FORECASTED_COST))
+        .alertThresholds(budget.getAlertThresholds())
+        .growthRate(BudgetUtils.getBudgetGrowthRate(budget))
+        .period(BudgetUtils.getBudgetPeriod(budget))
+        .startTime(BudgetUtils.getBudgetStartTime(budget))
+        .type(budget.getType())
+        .budgetMonthlyBreakdown(budget.getBudgetMonthlyBreakdown())
+        .isBudgetGroup(false)
+        .build();
   }
 }

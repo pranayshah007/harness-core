@@ -16,6 +16,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.dtos.InstanceDTO;
 import io.harness.entities.Instance;
 import io.harness.entities.Instance.InstanceKeys;
+import io.harness.entities.Instance.InstanceKeysAdditional;
 import io.harness.mappers.InstanceMapper;
 import io.harness.models.ActiveServiceInstanceInfo;
 import io.harness.models.ActiveServiceInstanceInfoV2;
@@ -26,6 +27,7 @@ import io.harness.repositories.instance.InstanceRepository;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.mongodb.client.result.UpdateResult;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -236,11 +238,9 @@ public class InstanceServiceImpl implements InstanceService {
   @Override
   public AggregationResults<InstancesByBuildId> getActiveInstancesByServiceIdEnvIdAndBuildIds(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String serviceId, String envId, List<String> buildIds,
-      long timestampInMs, int limit, String infraId, String clusterId, String pipelineExecutionId,
-      long lastDeployedAt) {
+      long timestampInMs, int limit, String infraId, String clusterId, String pipelineExecutionId) {
     return instanceRepository.getActiveInstancesByServiceIdEnvIdAndBuildIds(accountIdentifier, orgIdentifier,
-        projectIdentifier, serviceId, envId, buildIds, timestampInMs, limit, infraId, clusterId, pipelineExecutionId,
-        lastDeployedAt);
+        projectIdentifier, serviceId, envId, buildIds, timestampInMs, limit, infraId, clusterId, pipelineExecutionId);
   }
 
   @Override
@@ -311,5 +311,36 @@ public class InstanceServiceImpl implements InstanceService {
     instance.setDeleted(false);
     instance.setDeletedAt(0);
     return instanceRepository.findAndReplace(criteria, instance);
+  }
+
+  @Override
+  public void deleteForAgent(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String agentIdentifier) {
+    Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier)
+                            .is(accountIdentifier)
+                            .and(InstanceKeys.orgIdentifier)
+                            .is(orgIdentifier)
+                            .and(InstanceKeys.projectIdentifier)
+                            .is(projectIdentifier)
+                            .and(InstanceKeysAdditional.instanceInfoAgentIdentifier)
+                            .is(agentIdentifier)
+                            .and(InstanceKeys.isDeleted)
+                            .is(false);
+    Update update =
+        new Update().set(InstanceKeys.isDeleted, true).set(InstanceKeys.deletedAt, System.currentTimeMillis());
+    UpdateResult updateResult = instanceRepository.updateMany(criteria, update);
+    if (updateResult == null || !updateResult.wasAcknowledged()) {
+      log.error("Failed to delete instances for agent {}", agentIdentifier);
+    } else {
+      log.info("Total instances count for agent {} is {} and instances deleted count is {}", agentIdentifier,
+          updateResult.getMatchedCount(), updateResult.getModifiedCount());
+    }
+  }
+
+  @Override
+  public List<InstanceDTO> getActiveInstancesByServiceId(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String serviceIdentifier, String agentIdentifier) {
+    return InstanceMapper.toDTO(instanceRepository.getActiveInstancesByServiceId(
+        accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, agentIdentifier));
   }
 }

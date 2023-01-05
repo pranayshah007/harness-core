@@ -34,6 +34,9 @@ import software.wings.graphql.schema.type.aggregation.application.QLApplicationT
 import software.wings.graphql.schema.type.aggregation.tag.QLTagInput;
 
 import com.google.common.collect.ImmutableMap;
+import dev.morphia.query.FieldEnd;
+import dev.morphia.query.MorphiaIterator;
+import dev.morphia.query.Query;
 import graphql.execution.MergedSelectionSet;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.DataFetchingFieldSelectionSet;
@@ -53,9 +56,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
-import org.mongodb.morphia.query.FieldEnd;
-import org.mongodb.morphia.query.MorphiaIterator;
-import org.mongodb.morphia.query.Query;
 
 public class ApplicationConnectionDataFetcherTest extends CategoryTest {
   @Mock FieldEnd<Query> field;

@@ -12,10 +12,10 @@ import io.harness.ccm.budgetGroup.BudgetGroup.BudgetGroupKeys;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.util.List;
-import org.mongodb.morphia.query.FindOptions;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 public class BudgetGroupDao {
   @Inject private HPersistence hPersistence;
@@ -84,6 +84,15 @@ public class BudgetGroupDao {
                                    .equal(accountId)
                                    .field(BudgetGroupKeys.name)
                                    .equal(budgetGroupName);
+    return query.asList();
+  }
+
+  public List<BudgetGroup> list(String accountId, List<String> budgetGroupIds) {
+    Query<BudgetGroup> query = hPersistence.createQuery(BudgetGroup.class)
+                                   .field(BudgetGroupKeys.accountId)
+                                   .equal(accountId)
+                                   .field(BudgetGroupKeys.uuid)
+                                   .in(budgetGroupIds);
     return query.asList();
   }
 

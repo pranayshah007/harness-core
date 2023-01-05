@@ -19,6 +19,7 @@ import io.harness.security.encryption.AccessType;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import dev.morphia.annotations.Entity;
 import java.util.Optional;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -28,7 +29,6 @@ import lombok.Setter;
 import lombok.Value;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.NonFinal;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.Persistent;
 import org.springframework.data.annotation.TypeAlias;
 

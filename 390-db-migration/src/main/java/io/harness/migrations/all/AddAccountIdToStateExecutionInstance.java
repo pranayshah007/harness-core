@@ -26,6 +26,7 @@ import com.mongodb.BulkWriteOperation;
 import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
+import dev.morphia.Key;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
@@ -33,7 +34,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.Key;
 
 @Slf4j
 public class AddAccountIdToStateExecutionInstance implements Migration {

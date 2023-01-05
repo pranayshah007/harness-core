@@ -16,11 +16,11 @@ import software.wings.instancesyncv2.model.InstanceSyncTaskDetails.InstanceSyncT
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.query.Query;
 import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
 
 @OwnedBy(HarnessTeam.CDP)
 @RequiredArgsConstructor(onConstructor = @__({ @Inject }))

@@ -16,12 +16,12 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.ng.DbAliases;
 import io.harness.queue.Queuable;
 
+import dev.morphia.annotations.Entity;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.Date;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
-import org.mongodb.morphia.annotations.Entity;
 
 @Value
 @EqualsAndHashCode(callSuper = true)

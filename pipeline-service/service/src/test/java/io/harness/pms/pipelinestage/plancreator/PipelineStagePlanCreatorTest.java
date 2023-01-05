@@ -17,6 +17,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import io.harness.category.element.UnitTests;
+import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
@@ -98,10 +99,10 @@ public class PipelineStagePlanCreatorTest {
                                      .project(PROJ)
                                      .inputSetReferences(Collections.singletonList("ref"))
                                      .build();
-    doReturn("inputYaml").when(pipelineStageHelper).getInputSetYaml(yamlField);
+    doReturn("inputYaml").when(pipelineStageHelper).getInputSetYaml(yamlField, PipelineVersion.V0);
 
     PipelineStageStepParameters stepParameters =
-        pipelineStagePlanCreator.getStepParameter(config, yamlField, "planNodeId");
+        pipelineStagePlanCreator.getStepParameter(config, yamlField, "planNodeId", PipelineVersion.V0);
     assertThat(stepParameters.getPipeline()).isEqualTo(PIPELINE);
     assertThat(stepParameters.getOrg()).isEqualTo(ORG);
     assertThat(stepParameters.getProject()).isEqualTo(PROJ);
@@ -150,6 +151,7 @@ public class PipelineStagePlanCreatorTest {
     assertThat(planNode.getGroup()).isEqualTo(StepCategory.STAGE.name());
     assertThat(planNode.getFacilitatorObtainments().get(0).getType().getType())
         .isEqualTo(OrchestrationFacilitatorType.ASYNC);
+    assertThat(planNode.getExpressionMode()).isEqualTo(ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
   }
 
   @Test

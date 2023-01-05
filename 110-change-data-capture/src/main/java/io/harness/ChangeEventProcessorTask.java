@@ -19,6 +19,8 @@ import io.harness.persistence.PersistentEntity;
 
 import software.wings.dl.WingsPersistence;
 
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutionException;
@@ -32,8 +34,6 @@ import java.util.stream.Collectors;
 import jodd.util.concurrent.ThreadFactoryBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.util.Strings;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CE)

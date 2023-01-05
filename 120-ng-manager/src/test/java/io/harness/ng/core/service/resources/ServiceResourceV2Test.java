@@ -126,8 +126,8 @@ public class ServiceResourceV2Test extends CategoryTest {
   @Owner(developers = UTKARSH_CHOUBEY)
   @Category(UnitTests.class)
   public void testCreateServiceWithSchemaValidationFlagOn() throws IOException {
-    when(featureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.CDS_SERVICE_ENV_SCHEMA_VALIDATION))
-        .thenReturn(true);
+    when(featureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.DISABLE_CDS_SERVICE_ENV_SCHEMA_VALIDATION))
+        .thenReturn(false);
     when(featureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.NG_SVC_ENV_REDESIGN)).thenReturn(true);
     String yaml = "service:\n"
         + "  name: das\n"
@@ -175,8 +175,8 @@ public class ServiceResourceV2Test extends CategoryTest {
   @Owner(developers = UTKARSH_CHOUBEY)
   @Category(UnitTests.class)
   public void testCreateServicesWithSchemaValidationFlagOn() throws IOException {
-    when(featureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.CDS_SERVICE_ENV_SCHEMA_VALIDATION))
-        .thenReturn(true);
+    when(featureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.DISABLE_CDS_SERVICE_ENV_SCHEMA_VALIDATION))
+        .thenReturn(false);
     when(featureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.NG_SVC_ENV_REDESIGN)).thenReturn(true);
     String yaml = "service:\n"
         + "  name: das\n"
@@ -243,8 +243,8 @@ public class ServiceResourceV2Test extends CategoryTest {
   @Owner(developers = UTKARSH_CHOUBEY)
   @Category(UnitTests.class)
   public void testUpdateServiceWithSchemeFfOn() {
-    when(featureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.CDS_SERVICE_ENV_SCHEMA_VALIDATION))
-        .thenReturn(true);
+    when(featureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.DISABLE_CDS_SERVICE_ENV_SCHEMA_VALIDATION))
+        .thenReturn(false);
     when(featureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.NG_SVC_ENV_REDESIGN)).thenReturn(true);
     when(orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
              ORG_IDENTIFIER, PROJ_IDENTIFIER, ACCOUNT_ID))
