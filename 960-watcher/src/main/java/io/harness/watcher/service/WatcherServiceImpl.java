@@ -1088,7 +1088,7 @@ public class WatcherServiceImpl implements WatcherService {
       downloadUrl = restResponse.getResource();
     } else {
       // In case of on-prem, construct download url.
-      final String storageUrl = System.getenv().get("WATCHER_STORAGE_URL");
+      final String storageUrl = System.getenv().get("DELEGATE_STORAGE_URL");
       final String delegateMetadata =
           Http.getResponseStringFromUrl(watcherConfiguration.getDelegateCheckLocation(), 10, 10);
       downloadUrl = storageUrl + "/" + substringAfter(delegateMetadata, " ").trim();
