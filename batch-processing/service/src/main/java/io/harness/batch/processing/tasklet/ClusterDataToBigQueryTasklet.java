@@ -128,8 +128,7 @@ public class ClusterDataToBigQueryTasklet implements Tasklet {
     JobParameters parameters = chunkContext.getStepContext().getStepExecution().getJobParameters();
     BatchJobType batchJobType = CCMJobConstants.getBatchJobTypeFromJobParams(parameters);
     final JobConstants jobConstants = new CCMJobConstants(chunkContext);
-    //    int batchSize = config.getBatchQueryConfig().getQueryBatchSize();
-    int batchSize = 100;
+    int batchSize = config.getBatchQueryConfig().getQueryBatchSize();
 
     BillingDataReader billingDataReader = new BillingDataReader(billingDataService, jobConstants.getAccountId(),
         Instant.ofEpochMilli(jobConstants.getJobStartTime()), Instant.ofEpochMilli(jobConstants.getJobEndTime()),
@@ -184,24 +183,29 @@ public class ClusterDataToBigQueryTasklet implements Tasklet {
         log.info("Ingestion Completed for ClusterDataTable");
       } while (instanceBillingDataList.size() == batchSize);
 
-      deleteExistingAndIngestToClickHouse(jobConstants, zdt, clusterDataTableName, clusterDataAggregatedTableName);
+      deleteExistingAndIngestToClickHouse(
+          jobConstants, zdt, clusterDataTableName, clusterDataAggregatedTableName, batchJobType);
     }
     return null;
   }
 
   private void deleteExistingAndIngestToClickHouse(JobConstants jobConstants, ZonedDateTime zdt,
-      String clusterDataTableName, String clusterDataAggregatedTableName) throws Exception {
-    clusterDataService.procesUnifiedTable(zdt, clusterDataTableName);
-    ingestUnifiedTable(zdt, clusterDataTableName);
-    log.info("Ingestion Completed for UnifiedTable");
+      String clusterDataTableName, String clusterDataAggregatedTableName, BatchJobType batchJobType) throws Exception {
+    if (batchJobType != BatchJobType.CLUSTER_DATA_HOURLY_TO_BIG_QUERY) {
+      clusterDataService.procesUnifiedTable(zdt, clusterDataTableName);
+      ingestUnifiedTable(zdt, clusterDataTableName);
+      log.info("Ingestion Completed for UnifiedTable");
+    }
 
     clusterDataService.processAggregatedTable(jobConstants, clusterDataAggregatedTableName);
     ingestAggregatedTable(jobConstants, clusterDataTableName, clusterDataAggregatedTableName);
     log.info("Ingestion Completed for AggregatedTable");
 
-    clusterDataService.processCostAggregaredData(jobConstants, zdt);
-    ingestCostAggregatedTable(zdt);
-    log.info("Ingestion Completed for CostAggregatedTable");
+    if (batchJobType != BatchJobType.CLUSTER_DATA_HOURLY_TO_BIG_QUERY) {
+      clusterDataService.processCostAggregaredData(jobConstants, zdt);
+      ingestCostAggregatedTable(zdt);
+      log.info("Ingestion Completed for CostAggregatedTable");
+    }
   }
 
   private void ingestCostAggregatedTable(ZonedDateTime zdt) throws Exception {
