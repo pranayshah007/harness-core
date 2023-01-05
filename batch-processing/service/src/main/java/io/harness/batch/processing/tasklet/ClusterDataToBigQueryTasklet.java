@@ -128,7 +128,8 @@ public class ClusterDataToBigQueryTasklet implements Tasklet {
     JobParameters parameters = chunkContext.getStepContext().getStepExecution().getJobParameters();
     BatchJobType batchJobType = CCMJobConstants.getBatchJobTypeFromJobParams(parameters);
     final JobConstants jobConstants = new CCMJobConstants(chunkContext);
-    int batchSize = config.getBatchQueryConfig().getQueryBatchSize();
+    //    int batchSize = config.getBatchQueryConfig().getQueryBatchSize();
+    int batchSize = 100;
 
     BillingDataReader billingDataReader = new BillingDataReader(billingDataService, jobConstants.getAccountId(),
         Instant.ofEpochMilli(jobConstants.getJobStartTime()), Instant.ofEpochMilli(jobConstants.getJobEndTime()),
@@ -172,78 +173,52 @@ public class ClusterDataToBigQueryTasklet implements Tasklet {
       Files.delete(billingDataFile.toPath());
 
     } else {
-      List<ClusterBillingData> allClusterBillingData = new ArrayList<>();
+      clusterDataService.deleteExistingDataFromClusterDataTable(jobConstants, clusterDataTableName);
       do {
         instanceBillingDataList = billingDataReader.getNext();
         List<ClusterBillingData> clusterBillingDataList =
             getClusterBillingDataForBatch(jobConstants.getAccountId(), batchJobType, instanceBillingDataList);
-        log.debug("clusterBillingDataList size: {}", clusterBillingDataList.size());
-        allClusterBillingData.addAll(clusterBillingDataList);
 
+        log.info("clusterBillingDataList size: {}", clusterBillingDataList.size());
+        ingestClusterDataTable(clusterDataTableName, clusterBillingDataList);
+        log.info("Ingestion Completed for ClusterDataTable");
       } while (instanceBillingDataList.size() == batchSize);
 
-      log.info("onPrem ::: allClusterBillingData size: {}", allClusterBillingData.size());
-
-      processClusterDataTable(jobConstants, clusterDataTableName, allClusterBillingData);
-
-      // Delete old data and ingest in unifiedTable
-      processUnifiedTable(zdt, clusterDataTableName);
-
-      // Ingest data to clusterDataAggregated/clusterDataHourlyAggregated
-      processAggregatedTable(jobConstants, clusterDataTableName, clusterDataAggregatedTableName);
-
-      // Ingest data to costAggregated Table
-      processCostAggregaredTable(jobConstants, zdt);
+      deleteExistingAndIngestToClickHouse(jobConstants, zdt, clusterDataTableName, clusterDataAggregatedTableName);
     }
     return null;
   }
 
-  private void processCostAggregaredTable(JobConstants jobConstants, ZonedDateTime zdt) throws Exception {
-    clickHouseService.getQueryResult(clickHouseConfig, getCreateCostAggregatedQuery());
-    clickHouseService.getQueryResult(clickHouseConfig,
-        deleteCostAggregatedDataFromClickHouse(zdt.toLocalDate().toString(), jobConstants.getAccountId()));
-    ingestToCostAggregatedTable(zdt.toLocalDate().toString());
-  }
-
-  private static String deleteCostAggregatedDataFromClickHouse(final String startTime, final String accountId) {
-    return "DELETE FROM ccm.costAggregated WHERE toDate(day) = toDate('" + startTime
-        + "') AND cloudProvider like 'K8S_%' AND accountId = '" + accountId + "';";
-  }
-
-  private void processAggregatedTable(
-      JobConstants jobConstants, String clusterDataTableName, String clusterDataAggregatedTableName) throws Exception {
-    clusterDataService.processAggregatedTable(jobConstants, clusterDataTableName, clusterDataAggregatedTableName);
-  }
-
-  private void processUnifiedTable(ZonedDateTime zdt, String clusterDataTableName) throws Exception {
+  private void deleteExistingAndIngestToClickHouse(JobConstants jobConstants, ZonedDateTime zdt,
+      String clusterDataTableName, String clusterDataAggregatedTableName) throws Exception {
     clusterDataService.procesUnifiedTable(zdt, clusterDataTableName);
+    ingestUnifiedTable(zdt, clusterDataTableName);
+    log.info("Ingestion Completed for UnifiedTable");
+
+    clusterDataService.processAggregatedTable(jobConstants, clusterDataAggregatedTableName);
+    ingestAggregatedTable(jobConstants, clusterDataTableName, clusterDataAggregatedTableName);
+    log.info("Ingestion Completed for AggregatedTable");
+
+    clusterDataService.processCostAggregaredData(jobConstants, zdt);
+    ingestCostAggregatedTable(zdt);
+    log.info("Ingestion Completed for CostAggregatedTable");
   }
 
-  private void ingestToCostAggregatedTable(String startTime) throws Exception {
-    String costAggregatedIngestionQuery =
-        "INSERT INTO ccm.costAggregated (day, cost, cloudProvider, accountId) SELECT date_trunc('day', startTime) AS day, sum(cost) AS cost, concat(clustertype, '_', clustercloudprovider) AS cloudProvider, accountid AS accountId FROM ccm.unifiedTable WHERE (toDate(startTime) = toDate('"
-        + startTime
-        + "')) AND (clustercloudprovider = 'CLUSTER') AND (clustertype = 'K8S') GROUP BY day, clustertype, accountid, clustercloudprovider";
-    clickHouseService.getQueryResult(clickHouseConfig, costAggregatedIngestionQuery);
+  private void ingestCostAggregatedTable(ZonedDateTime zdt) throws Exception {
+    clusterDataService.ingestToCostAggregatedTable(zdt.toLocalDate().toString());
   }
 
-  private static String getCreateCostAggregatedQuery() {
-    return "CREATE TABLE IF NOT EXISTS ccm.costAggregated"
-        + "              (\n"
-        + "                  `accountId` String NOT NULL, \n"
-        + "                  `cloudProvider` String NOT NULL, \n"
-        + "                  `cost` Float NOT NULL, \n"
-        + "                  `day` DateTime('UTC') NOT NULL \n"
-        + "              )\n"
-        + "              ENGINE = MergeTree \n"
-        + "              PARTITION BY toYYYYMMDD(day) \n"
-        + "              ORDER BY tuple()";
+  private void ingestAggregatedTable(
+      JobConstants jobConstants, String clusterDataTableName, String clusterDataAggregatedTableName) throws Exception {
+    clusterDataService.ingestAggregatedData(jobConstants, clusterDataTableName, clusterDataAggregatedTableName);
   }
 
-  private void processClusterDataTable(JobConstants jobConstants, String clusterDataTableName,
-      List<ClusterBillingData> allClusterBillingData) throws Exception {
-    // Ingesting data to clusterData/clusterDataHourly table in clickhouse.
-    clusterDataService.createOrDeleteExistingDataFromTable(jobConstants, clusterDataTableName);
+  private void ingestUnifiedTable(ZonedDateTime zdt, String clusterDataTableName) throws Exception {
+    clusterDataService.ingestIntoUnifiedTable(zdt, clusterDataTableName);
+  }
+
+  private void ingestClusterDataTable(String clusterDataTableName, List<ClusterBillingData> allClusterBillingData)
+      throws Exception {
     clusterDataService.ingestClusterData(clusterDataTableName, allClusterBillingData);
   }
 

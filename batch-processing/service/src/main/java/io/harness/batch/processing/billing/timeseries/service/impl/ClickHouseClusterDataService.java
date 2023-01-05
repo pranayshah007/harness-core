@@ -6,7 +6,6 @@ import io.harness.avro.ClusterBillingData;
 import io.harness.ccm.clickHouse.ClickHouseService;
 import io.harness.ccm.commons.beans.JobConstants;
 import io.harness.ccm.commons.beans.config.ClickHouseConfig;
-import io.harness.ccm.commons.utils.TimeUtils;
 
 import com.google.inject.Singleton;
 import java.math.BigDecimal;
@@ -33,7 +32,7 @@ public class ClickHouseClusterDataService {
         ClickHouseConfig.builder().url("jdbc:ch:http://localhost:8123").username("default").password("").build();
   }
 
-  public void createOrDeleteExistingDataFromTable(JobConstants jobConstants, String tableName) throws Exception {
+  public void deleteExistingDataFromClusterDataTable(JobConstants jobConstants, String tableName) throws Exception {
     if (!tableName.contains("Aggregated")) {
       clickHouseService.getQueryResult(clickHouseConfig, getClusterDataCreationQuery(tableName));
     } else {
@@ -55,8 +54,7 @@ public class ClickHouseClusterDataService {
         getBatchedPreparedStatement(prepareStatement, billingData);
       }
       int[] ints = prepareStatement.executeBatch();
-      log.info(":::::::::::::::::::::::::::::::::::::: Ingested in " + clusterDataTableName + ",  results length: {}",
-          ints.length);
+      log.info("Ingested in " + clusterDataTableName + ",  results length: {}", ints.length);
     }
   }
 
@@ -64,16 +62,46 @@ public class ClickHouseClusterDataService {
     clickHouseService.getQueryResult(clickHouseConfig, getUnifiedTableCreateQuery());
     clickHouseService.getQueryResult(
         clickHouseConfig, deleteDataFromClickHouseForUnifiedTable(zdt.toLocalDate().toString()));
-    ingestIntoUnifiedTable(zdt, clusterDataTableName);
   }
 
-  public void processAggregatedTable(
-      JobConstants jobConstants, String clusterDataTableName, String clusterDataAggregatedTableName) throws Exception {
-    createOrDeleteExistingDataFromTable(jobConstants, clusterDataAggregatedTableName);
-    ingestAggregatedData(jobConstants, clusterDataTableName, clusterDataAggregatedTableName);
+  public void processAggregatedTable(JobConstants jobConstants, String clusterDataAggregatedTableName)
+      throws Exception {
+    deleteExistingDataFromClusterDataTable(jobConstants, clusterDataAggregatedTableName);
   }
 
-  private void ingestAggregatedData(
+  public void processCostAggregaredData(JobConstants jobConstants, ZonedDateTime zdt) throws SQLException {
+    clickHouseService.getQueryResult(clickHouseConfig, getCreateCostAggregatedQuery());
+    clickHouseService.getQueryResult(clickHouseConfig,
+        deleteCostAggregatedDataFromClickHouse(zdt.toLocalDate().toString(), jobConstants.getAccountId()));
+  }
+
+  public void ingestToCostAggregatedTable(String startTime) throws Exception {
+    String costAggregatedIngestionQuery =
+        "INSERT INTO ccm.costAggregated (day, cost, cloudProvider, accountId) SELECT date_trunc('day', startTime) AS day, sum(cost) AS cost, concat(clustertype, '_', clustercloudprovider) AS cloudProvider, accountid AS accountId FROM ccm.unifiedTable WHERE (toDate(startTime) = toDate('"
+        + startTime
+        + "')) AND (clustercloudprovider = 'CLUSTER') AND (clustertype = 'K8S') GROUP BY day, clustertype, accountid, clustercloudprovider";
+    clickHouseService.getQueryResult(clickHouseConfig, costAggregatedIngestionQuery);
+  }
+
+  private static String getCreateCostAggregatedQuery() {
+    return "CREATE TABLE IF NOT EXISTS ccm.costAggregated"
+        + "              (\n"
+        + "                  `accountId` String NOT NULL, \n"
+        + "                  `cloudProvider` String NOT NULL, \n"
+        + "                  `cost` Float NOT NULL, \n"
+        + "                  `day` DateTime('UTC') NOT NULL \n"
+        + "              )\n"
+        + "              ENGINE = MergeTree \n"
+        + "              PARTITION BY toYYYYMMDD(day) \n"
+        + "              ORDER BY tuple()";
+  }
+
+  private static String deleteCostAggregatedDataFromClickHouse(final String startTime, final String accountId) {
+    return "DELETE FROM ccm.costAggregated WHERE toDate(day) = toDate('" + startTime
+        + "') AND cloudProvider like 'K8S_%' AND accountId = '" + accountId + "';";
+  }
+
+  public void ingestAggregatedData(
       JobConstants jobConstants, String clusterDataTableName, String clusterDataAggregatedTableName) throws Exception {
     String insertQueryForPods = "INSERT INTO ccm." + clusterDataAggregatedTableName
         + " (memoryactualidlecost, cpuactualidlecost, starttime, endtime, billingamount, actualidlecost, unallocatedcost, systemcost, storageactualidlecost, storageunallocatedcost, storageutilizationvalue, storagerequest, storagecost, memoryunallocatedcost, cpuunallocatedcost, cpubillingamount, memorybillingamount, accountid, clusterid, clustername, clustertype, region, namespace, workloadname, workloadtype, instancetype, appid, serviceid, envid, cloudproviderid, launchtype, cloudservicename, instancename, cloudprovider, networkcost, appname, servicename, envname, orgIdentifier, projectIdentifier, labels) SELECT\n"
@@ -228,7 +256,7 @@ public class ClickHouseClusterDataService {
         + "') AND cloudProvider = 'CLUSTER'";
   }
 
-  private void ingestIntoUnifiedTable(ZonedDateTime zdt, String clusterDataTableName) throws Exception {
+  public void ingestIntoUnifiedTable(ZonedDateTime zdt, String clusterDataTableName) throws Exception {
     String unifiedtableIngestQuery =
         "INSERT INTO ccm.unifiedTable (cloudProvider, product, startTime, endtime, cost, cpubillingamount, memorybillingamount, actualidlecost, systemcost, unallocatedcost, networkcost, clustercloudprovider, accountid, clusterid, clustername, clustertype, region, namespace, workloadname, workloadtype, instancetype, appid, serviceid, envid, cloudproviderid, launchtype, cloudservicename, orgIdentifier, projectIdentifier, labels)\n"
         + "  SELECT\n"
