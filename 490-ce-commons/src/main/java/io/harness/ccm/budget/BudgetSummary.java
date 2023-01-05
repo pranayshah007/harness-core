@@ -7,6 +7,8 @@
 
 package io.harness.ccm.budget;
 
+import io.harness.ccm.budgetGroup.CascadeType;
+
 import io.leangen.graphql.annotations.GraphQLNonNull;
 import java.util.List;
 import lombok.Builder;
@@ -35,4 +37,6 @@ public class BudgetSummary {
   BudgetMonthlyBreakdown budgetMonthlyBreakdown;
   List<BudgetSummary> childEntities;
   boolean isBudgetGroup;
+  CascadeType cascadeType;
+  String parentId;
 }

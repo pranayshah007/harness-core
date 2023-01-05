@@ -29,6 +29,7 @@ import io.harness.exception.InvalidRequestException;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -111,6 +112,20 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
       }
       return BudgetGroupUtils.getAggregatedBudgetAmountOfChildBudgetGroups(childBudgetGroups);
     }
+  }
+
+  public List<BudgetSummary> listAllEntities(String accountId) {
+    List<BudgetSummary> summaryList = new ArrayList<>();
+    List<BudgetGroup> budgetGroups = list(accountId);
+    budgetGroups.sort(Comparator.comparing(BudgetGroup::getLastUpdatedAt).reversed());
+    List<Budget> budgets = budgetDao.list(accountId);
+    budgets.sort(Comparator.comparing(Budget::getLastUpdatedAt).reversed());
+
+    budgets.forEach(budget -> summaryList.add(BudgetUtils.buildBudgetSummary(budget)));
+    budgetGroups.forEach(
+        budgetGroup -> summaryList.add(BudgetGroupUtils.buildBudgetGroupSummary(budgetGroup, Collections.emptyList())));
+
+    return summaryList;
   }
 
   @Override

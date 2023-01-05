@@ -382,6 +382,8 @@ public class BudgetGroupUtils {
         .budgetMonthlyBreakdown(budgetGroup.getBudgetGroupMonthlyBreakdown())
         .isBudgetGroup(true)
         .childEntities(childEntities)
+        .cascadeType(budgetGroup.getCascadeType())
+        .parentId(budgetGroup.getParentBudgetGroupId())
         .build();
   }
 

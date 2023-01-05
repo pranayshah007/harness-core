@@ -23,6 +23,7 @@ public interface BudgetGroupService {
   boolean delete(String uuid, String accountId);
   List<ValueDataPoint> getAggregatedAmount(
       String accountId, boolean areChildEntitiesBudgets, List<String> childEntityIds);
+  List<BudgetSummary> listAllEntities(String accountId);
   List<BudgetSummary> listBudgetsAndBudgetGroupsSummary(String accountId, String id);
   BudgetData getBudgetGroupTimeSeriesStats(BudgetGroup budgetGroup, BudgetBreakdown breakdown);
   void updateParentIdForBudgets(String parentId, List<String> budgetIds);

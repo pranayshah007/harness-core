@@ -233,8 +233,12 @@ public class BudgetGroupsResource {
   public ResponseDTO<List<BudgetSummary>>
   getBudgetAndBudgetGroupsList(
       @Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY)
-      @AccountIdentifier @NotNull @Valid String accountId, @QueryParam("budgetGroupId") @Valid String budgetGroupId) {
+      @AccountIdentifier @NotNull @Valid String accountId, @QueryParam("budgetGroupId") @Valid String budgetGroupId,
+      @QueryParam("showAllEntities") @NotNull @Valid boolean showAllEntities) {
     rbacHelper.checkBudgetViewPermission(accountId, null, null);
-    return ResponseDTO.newResponse(budgetGroupService.listBudgetsAndBudgetGroupsSummary(accountId, budgetGroupId));
+    List<BudgetSummary> summaryList = showAllEntities
+        ? budgetGroupService.listAllEntities(accountId)
+        : budgetGroupService.listBudgetsAndBudgetGroupsSummary(accountId, budgetGroupId);
+    return ResponseDTO.newResponse(summaryList);
   }
 }
