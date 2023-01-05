@@ -33,10 +33,10 @@ import software.wings.service.intfc.security.AwsSecretsManagerService;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.mongodb.DuplicateKeyException;
+import dev.morphia.query.Query;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.mongodb.morphia.query.Query;
 
 @OwnedBy(PL)
 @Singleton

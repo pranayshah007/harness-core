@@ -16,9 +16,9 @@ import software.wings.persistence.artifact.Artifact;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Reference;
 import java.util.Date;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Reference;
 
 @StoreIn(DbAliases.HARNESS)
 @Entity(value = "collectorQueue2", noClassnameStored = true)

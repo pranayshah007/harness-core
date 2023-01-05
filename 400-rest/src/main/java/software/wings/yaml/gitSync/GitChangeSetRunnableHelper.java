@@ -20,11 +20,11 @@ import software.wings.yaml.gitSync.YamlChangeSet.YamlChangeSetKeys;
 
 import com.google.inject.Singleton;
 import com.mongodb.BasicDBObject;
+import dev.morphia.query.UpdateResults;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.UpdateResults;
 
 @Singleton
 @Slf4j

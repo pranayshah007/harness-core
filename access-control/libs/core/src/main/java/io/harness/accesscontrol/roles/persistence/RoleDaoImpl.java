@@ -72,7 +72,7 @@ public class RoleDaoImpl implements RoleDao {
   }
 
   @Override
-  public PageResponse<Role> list(PageRequest pageRequest, RoleFilter roleFilter) {
+  public PageResponse<Role> list(PageRequest pageRequest, RoleFilter roleFilter, boolean hideInternal) {
     if (isEmpty(pageRequest.getSortOrders())) {
       SortOrder managedOrder =
           SortOrder.Builder.aSortOrder().withField(RoleDBOKeys.managed, SortOrder.OrderType.DESC).build();
@@ -81,7 +81,7 @@ public class RoleDaoImpl implements RoleDao {
       pageRequest.setSortOrders(ImmutableList.of(managedOrder, lastModifiedOrder));
     }
     Pageable pageable = PageUtils.getPageRequest(pageRequest);
-    Criteria criteria = createCriteriaFromFilter(roleFilter);
+    Criteria criteria = createCriteriaFromFilter(roleFilter, hideInternal);
     Page<RoleDBO> rolePages = roleRepository.findAll(criteria, pageable);
     return PageUtils.getNGPageResponse(rolePages.map(RoleDBOMapper::fromDBO));
   }
@@ -137,7 +137,7 @@ public class RoleDaoImpl implements RoleDao {
 
   @Override
   public boolean removePermissionFromRoles(String permissionIdentifier, RoleFilter roleFilter) {
-    Criteria criteria = createCriteriaFromFilter(roleFilter);
+    Criteria criteria = createCriteriaFromFilter(roleFilter, false);
     criteria.and(RoleDBOKeys.permissions).is(permissionIdentifier);
     Update update = new Update().pull(RoleDBOKeys.permissions, permissionIdentifier);
     UpdateResult updateResult = roleRepository.updateMulti(criteria, update);
@@ -146,7 +146,7 @@ public class RoleDaoImpl implements RoleDao {
 
   @Override
   public boolean addPermissionToRoles(String permissionIdentifier, RoleFilter roleFilter) {
-    Criteria criteria = createCriteriaFromFilter(roleFilter);
+    Criteria criteria = createCriteriaFromFilter(roleFilter, false);
     criteria.and(RoleDBOKeys.permissions).ne(permissionIdentifier);
     Update update = new Update().push(RoleDBOKeys.permissions, permissionIdentifier);
     UpdateResult updateResult = roleRepository.updateMulti(criteria, update);
@@ -155,27 +155,26 @@ public class RoleDaoImpl implements RoleDao {
 
   @Override
   public long deleteMulti(RoleFilter roleFilter) {
-    Criteria criteria = createCriteriaFromFilter(roleFilter);
+    Criteria criteria = createCriteriaFromFilter(roleFilter, false);
     return roleRepository.deleteMulti(criteria);
   }
 
   @VisibleForTesting
-  protected Criteria createCriteriaFromFilter(RoleFilter roleFilter) {
+  protected Criteria createCriteriaFromFilter(RoleFilter roleFilter, boolean hideInternal) {
     Criteria criteria = new Criteria();
-
     if (isNotBlank(roleFilter.getSearchTerm())) {
       criteria.orOperator(Criteria.where(RoleDBOKeys.name).regex(roleFilter.getSearchTerm(), "i"),
           Criteria.where(RoleDBOKeys.identifier).regex(roleFilter.getSearchTerm(), "i"));
     }
-
     if (!roleFilter.getIdentifierFilter().isEmpty()) {
       criteria.and(RoleDBOKeys.identifier).in(roleFilter.getIdentifierFilter());
     }
-
     if (!roleFilter.getScopeLevelsFilter().isEmpty()) {
       criteria.and(RoleDBOKeys.allowedScopeLevels).in(roleFilter.getScopeLevelsFilter());
     }
-
+    if (hideInternal) {
+      criteria.and(RoleDBOKeys.internal).ne(true);
+    }
     if (roleFilter.getManagedFilter().equals(ONLY_MANAGED)) {
       criteria.and(RoleDBOKeys.scopeIdentifier).is(null);
       criteria.and(RoleDBOKeys.managed).is(true);
@@ -189,16 +188,13 @@ public class RoleDaoImpl implements RoleDao {
       criteria.and(RoleDBOKeys.scopeIdentifier).is(roleFilter.getScopeIdentifier());
       criteria.and(RoleDBOKeys.managed).is(false);
     }
-
     if (isNotEmpty(roleFilter.getScopeIdentifier()) && !roleFilter.isIncludeChildScopes()) {
       Scope scope = scopeService.buildScopeFromScopeIdentifier(roleFilter.getScopeIdentifier());
       criteria.and(RoleDBOKeys.allowedScopeLevels).is(scope.getLevel().toString());
     }
-
     if (!roleFilter.getPermissionFilter().isEmpty()) {
       criteria.and(RoleDBOKeys.permissions).in(roleFilter.getPermissionFilter());
     }
-
     return criteria;
   }
 }

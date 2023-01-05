@@ -23,11 +23,11 @@ import software.wings.dl.WingsPersistence;
 import software.wings.integration.IntegrationTestBase;
 
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mongodb.morphia.query.Query;
 
 @OwnedBy(PL)
 public class StaticLimitVicinityCheckerMongoImplIntegrationTest extends IntegrationTestBase {

@@ -46,6 +46,7 @@ import software.wings.beans.CanaryOrchestrationWorkflow;
 import software.wings.beans.GraphNode;
 import software.wings.beans.PhaseStep;
 import software.wings.beans.Variable;
+import software.wings.beans.VariableType;
 import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowPhase;
 import software.wings.beans.workflow.StepSkipStrategy;
@@ -134,6 +135,7 @@ public abstract class WorkflowHandler {
       return Collections.emptyList();
     }
     return variables.stream()
+        .filter(variable -> variable.getType() != VariableType.ENTITY)
         .map(variable
             -> StringNGVariable.builder()
                    .name(variable.getName())

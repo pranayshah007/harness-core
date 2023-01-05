@@ -22,14 +22,14 @@ import software.wings.dl.WingsPersistence;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.mongodb.MongoCommandException;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import javax.annotation.Nonnull;
 import javax.annotation.ParametersAreNonnullByDefault;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 /**
  * MongoDB backed implementation of static limit checker

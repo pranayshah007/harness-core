@@ -16,8 +16,8 @@ import software.wings.yaml.gitSync.GitFileActivity;
 import software.wings.yaml.gitSync.GitFileActivity.GitFileActivityKeys;
 
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
 
 @Slf4j
 public class DeleteGitActivityWithoutProcCommitIdMigration implements Migration {

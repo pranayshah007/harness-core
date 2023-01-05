@@ -15,7 +15,7 @@ import software.wings.service.impl.analysis.MetricAnalysisRecord.MetricAnalysisR
 import software.wings.service.intfc.analysis.ExperimentalMetricAnalysisRecordService;
 
 import com.google.inject.Inject;
-import org.mongodb.morphia.query.Sort;
+import dev.morphia.query.Sort;
 
 public class ExperimentalMetricAnalysisRecordServiceImpl implements ExperimentalMetricAnalysisRecordService {
   @Inject private WingsPersistence wingsPersistence;

@@ -23,6 +23,16 @@ import io.harness.observer.Subject;
 import com.google.common.collect.Sets;
 import com.mongodb.DBCollection;
 import com.mongodb.MongoExecutionTimeoutException;
+import com.mongodb.client.MongoCursor;
+import dev.morphia.Datastore;
+import dev.morphia.Key;
+import dev.morphia.query.CountOptions;
+import dev.morphia.query.Criteria;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.MorphiaIterator;
+import dev.morphia.query.MorphiaKeyIterator;
+import dev.morphia.query.Query;
+import dev.morphia.query.QueryImpl;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -31,15 +41,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.Datastore;
-import org.mongodb.morphia.Key;
-import org.mongodb.morphia.query.CountOptions;
-import org.mongodb.morphia.query.Criteria;
-import org.mongodb.morphia.query.FindOptions;
-import org.mongodb.morphia.query.MorphiaIterator;
-import org.mongodb.morphia.query.MorphiaKeyIterator;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.QueryImpl;
 
 /**
  * The type H query.
@@ -92,9 +93,9 @@ public class HQuery<T> extends QueryImpl<T> {
     this.children = new ArrayList<>();
   }
 
-  public MorphiaIterator<T, T> iterator() {
+  public MongoCursor<T> iterator() {
     log.error("Do not use the query as iterator directly.", new Exception(""));
-    return this.fetch();
+    return this.find();
   }
 
   public List<Criteria> getChildren() {

@@ -10,7 +10,7 @@ package io.harness.cdng.provision.shellscript;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.pipeline.CDStepInfo;
+import io.harness.cdng.pipeline.CDAbstractStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.ShellScriptProvisionStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -44,7 +44,8 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName(StepSpecTypeConstants.SHELL_SCRIPT_PROVISION)
 @TypeAlias("shellScriptProvisionStepInfo")
 @RecasterAlias("io.harness.cdng.provision.shellscript.ShellScriptProvisionStepInfo")
-public class ShellScriptProvisionStepInfo extends ShellScriptProvisionBaseStepInfo implements CDStepInfo, Visitable {
+public class ShellScriptProvisionStepInfo
+    extends ShellScriptProvisionBaseStepInfo implements CDAbstractStepInfo, Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)

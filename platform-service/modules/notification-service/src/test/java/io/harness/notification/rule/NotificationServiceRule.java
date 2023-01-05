@@ -36,6 +36,9 @@ import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import com.google.inject.name.Named;
+import dev.morphia.ObjectFactory;
+import dev.morphia.converters.TypeConverter;
+import dev.morphia.mapping.DefaultCreator;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import java.io.Closeable;
 import java.lang.annotation.Annotation;
@@ -50,9 +53,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.rules.MethodRule;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
-import org.mongodb.morphia.ObjectFactory;
-import org.mongodb.morphia.converters.TypeConverter;
-import org.mongodb.morphia.mapping.DefaultCreator;
 
 @Slf4j
 public class NotificationServiceRule implements MethodRule, InjectorRuleMixin, MongoRuleMixin {

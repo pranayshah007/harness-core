@@ -61,7 +61,7 @@ java_library(
         "@maven//:org_springframework_spring_jcl",
         "@maven//:org_springframework_spring_tx",
         "@maven//:org_springframework_spring_web",
-        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:dev_morphia_morphia_core",
         "@maven//:org_reflections_reflections",
         "@maven//:org_slf4j_slf4j_api",
     ],

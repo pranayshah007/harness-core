@@ -25,9 +25,9 @@ import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.UserService;
 
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
 
 @OwnedBy(PL)
 @Slf4j

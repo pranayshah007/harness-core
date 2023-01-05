@@ -9,6 +9,7 @@ package io.harness.polling.service.intfc;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.polling.bean.PolledResponse;
 import io.harness.polling.bean.PollingDocument;
@@ -33,4 +34,6 @@ public interface PollingService {
   String subscribe(PollingItem pollingItem) throws InvalidRequestException;
 
   boolean unsubscribe(PollingItem pollingItem);
+
+  void deleteAtAllScopes(Scope scope);
 }

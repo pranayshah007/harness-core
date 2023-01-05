@@ -9,6 +9,7 @@ package io.harness.polling.service.impl;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.Scope;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.observer.Subject;
@@ -27,6 +28,7 @@ import com.mongodb.client.result.UpdateResult;
 import javax.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.mongodb.core.query.Criteria;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CDC)
@@ -126,6 +128,21 @@ public class PollingServiceImpl implements PollingService {
     PollingDocument pollingDocument = pollingDocumentMapper.toPollingDocument(pollingItem);
     delete(pollingDocument);
     return true;
+  }
+
+  @Override
+  public void deleteAtAllScopes(Scope scope) {
+    Criteria criteria =
+        createScopeCriteria(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier());
+    pollingRepository.deleteAll(criteria);
+  }
+
+  private Criteria createScopeCriteria(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    Criteria criteria = new Criteria();
+    criteria.and(PollingDocumentKeys.accountId).is(accountIdentifier);
+    criteria.and(PollingDocumentKeys.orgIdentifier).is(orgIdentifier);
+    criteria.and(PollingDocumentKeys.projectIdentifier).is(projectIdentifier);
+    return criteria;
   }
 
   private void createPerpetualTask(@NotNull PollingDocument pollingDocument) {

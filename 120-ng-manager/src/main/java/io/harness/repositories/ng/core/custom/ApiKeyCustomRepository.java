@@ -29,4 +29,5 @@ public interface ApiKeyCustomRepository {
 
   Map<String, Integer> getApiKeysPerParentIdentifier(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, ApiKeyType apiKeyType, List<String> parentIdentifiers);
+  List<ApiKey> deleteAll(Criteria criteria);
 }

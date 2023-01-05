@@ -20,6 +20,7 @@ import io.harness.ng.core.ResourceScope;
 import io.harness.persistence.PersistentEntity;
 
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
 import java.time.Instant;
 import java.util.List;
 import javax.validation.Valid;
@@ -28,7 +29,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.TypeAlias;
@@ -49,7 +49,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document("outboxEvents")
 @TypeAlias("outboxEvents")
 public class OutboxEvent implements PersistentEntity {
-  @Id @org.mongodb.morphia.annotations.Id String id;
+  @Id @dev.morphia.annotations.Id String id;
 
   @NotNull ResourceScope resourceScope;
   @NotNull @Valid Resource resource;

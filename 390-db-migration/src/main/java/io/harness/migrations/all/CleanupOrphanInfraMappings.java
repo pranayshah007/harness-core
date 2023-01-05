@@ -26,12 +26,12 @@ import software.wings.infra.InfrastructureDefinition.InfrastructureDefinitionKey
 import software.wings.service.intfc.AccountService;
 
 import com.google.inject.Inject;
+import dev.morphia.Key;
+import dev.morphia.query.Query;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.Key;
-import org.mongodb.morphia.query.Query;
 
 @Slf4j
 public class CleanupOrphanInfraMappings implements Migration {

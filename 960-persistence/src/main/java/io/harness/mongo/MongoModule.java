@@ -9,8 +9,8 @@ package io.harness.mongo;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import static dev.morphia.logging.MorphiaLoggerFactory.registerLogger;
 import static java.lang.String.format;
-import static org.mongodb.morphia.logging.MorphiaLoggerFactory.registerLogger;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -36,6 +36,9 @@ import com.mongodb.MongoClientURI;
 import com.mongodb.ReadPreference;
 import com.mongodb.Tag;
 import com.mongodb.TagSet;
+import dev.morphia.AdvancedDatastore;
+import dev.morphia.Morphia;
+import dev.morphia.ObjectFactory;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -48,9 +51,6 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.mongodb.morphia.AdvancedDatastore;
-import org.mongodb.morphia.Morphia;
-import org.mongodb.morphia.ObjectFactory;
 
 @OwnedBy(HarnessTeam.PL)
 @Slf4j

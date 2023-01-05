@@ -555,8 +555,8 @@ org.linguafranca.pwdb:database:jar:2.1.4
 org.mindrot:jbcrypt:jar:0.3m
 org.mockito:mockito-core:jar:1.10.19:test
 org.modelmapper:modelmapper:jar:0.7.5
-org.mongodb.morphia:morphia-logging-slf4j:jar:1.3.2
-org.mongodb.morphia:morphia:jar:1.3.2
+dev.morphia:morphia-logging-slf4j:jar:1.3.2
+dev.morphia:morphia:jar:1.3.2
 org.mongodb:mongo-java-driver:jar:3.12.2
 org.mortbay.jetty.alpn:alpn-boot:jar:8.1.13.v20181017
 org.mozilla:rhino:jar:1.7R4

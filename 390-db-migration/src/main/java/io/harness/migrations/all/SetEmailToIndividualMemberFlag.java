@@ -18,9 +18,9 @@ import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.UserGroupService;
 
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import java.util.Collections;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
 
 /**
  * Refer to https://harness.atlassian.net/browse/PL-1296 for context.

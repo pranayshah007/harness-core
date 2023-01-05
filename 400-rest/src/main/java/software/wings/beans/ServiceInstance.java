@@ -23,13 +23,13 @@ import software.wings.beans.infrastructure.Host;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Property;
 import java.util.Objects;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.UtilityClass;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Property;
 
 /**
  * The Class ServiceInstance.

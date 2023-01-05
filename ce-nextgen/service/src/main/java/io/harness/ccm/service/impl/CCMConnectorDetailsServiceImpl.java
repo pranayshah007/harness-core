@@ -8,7 +8,6 @@
 package io.harness.ccm.service.impl;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.utils.RestCallToNGManagerClientUtils.execute;
 
 import io.harness.ccm.commons.entities.CCMConnectorDetails;
 import io.harness.ccm.connectors.AbstractCEConnectorValidator;
@@ -24,6 +23,7 @@ import io.harness.delegate.beans.connector.CcmConnectorFilter;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.filter.FilterType;
 import io.harness.ng.beans.PageResponse;
+import io.harness.remote.client.NGRestUtils;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
@@ -52,7 +52,7 @@ public class CCMConnectorDetailsServiceImpl implements CCMConnectorDetailsServic
             .build();
     connectorFilterPropertiesDTO.setFilterType(FilterType.CONNECTOR);
     do {
-      response = execute(connectorResourceClient.listConnectors(
+      response = NGRestUtils.getResponse(connectorResourceClient.listConnectors(
           accountId, null, null, page, size, connectorFilterPropertiesDTO, false));
       if (response != null && isNotEmpty(response.getContent())) {
         nextGenConnectorResponses.addAll(response.getContent());

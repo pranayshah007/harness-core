@@ -31,6 +31,7 @@ import com.amazonaws.services.applicationautoscaling.model.ServiceNamespace;
 import com.amazonaws.services.ecs.model.Service;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.google.inject.Inject;
+import dev.morphia.annotations.Transient;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -40,7 +41,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.apache.commons.lang3.StringUtils;
-import org.mongodb.morphia.annotations.Transient;
 
 @JsonTypeName("RESIZE")
 public class ResizeCommandUnit extends ContainerResizeCommandUnit {

@@ -47,12 +47,12 @@ public class GitopsInstanceSyncServiceImplTest extends InstancesTestBase {
     String accountId = "accountId";
     String orgId = "orgId";
     String projId = UUIDGenerator.generateUuid();
-
+    String agentId = "agentId";
     K8sContainer container = K8sContainer.builder().image("nginx:1.15").build();
     List<InstanceDTO> instanceList =
-        buildInstanceList(accountId, orgId, projId, "s1", "e1", "app1", "agent1", "default", "test-1", 3, container);
+        buildInstanceList(accountId, orgId, projId, "s1", "e1", "app1", agentId, "default", "test-1", 3, container);
 
-    gitopsInstanceSyncService.processInstanceSync(accountId, orgId, projId, instanceList);
+    gitopsInstanceSyncService.processInstanceSync(accountId, orgId, projId, agentId, instanceList);
 
     List<InstanceDTO> instancesSaved = instanceService.getActiveInstancesByServiceId(accountId, orgId, projId, "s1");
 
@@ -69,15 +69,16 @@ public class GitopsInstanceSyncServiceImplTest extends InstancesTestBase {
     String accountId = "accountId";
     String orgId = "orgId";
     String projId = UUIDGenerator.generateUuid();
+    String agentId = "agentId";
 
     K8sContainer container = K8sContainer.builder().image("nginx:1.15").build();
     List<InstanceDTO> instanceList_1 =
-        buildInstanceList(accountId, orgId, projId, "s1", "e1", "app1", "agent1", "default", "test-2", 3, container);
+        buildInstanceList(accountId, orgId, projId, "s1", "e1", "app1", agentId, "default", "test-2", 3, container);
     List<InstanceDTO> instanceList_2 =
-        buildInstanceList(accountId, orgId, projId, "s2", "e1", "app1", "agent2", "harness", "test-2", 3, container);
+        buildInstanceList(accountId, orgId, projId, "s2", "e1", "app1", agentId, "harness", "test-2", 3, container);
 
-    gitopsInstanceSyncService.processInstanceSync(accountId, orgId, projId, instanceList_1);
-    gitopsInstanceSyncService.processInstanceSync(accountId, orgId, projId, instanceList_2);
+    gitopsInstanceSyncService.processInstanceSync(accountId, orgId, projId, agentId, instanceList_1);
+    gitopsInstanceSyncService.processInstanceSync(accountId, orgId, projId, agentId, instanceList_2);
 
     List<InstanceDTO> instancesSavedForS1 =
         instanceService.getActiveInstancesByServiceId(accountId, orgId, projId, "s1");
@@ -103,14 +104,15 @@ public class GitopsInstanceSyncServiceImplTest extends InstancesTestBase {
     String accountId = "accountId";
     String orgId = "orgId";
     String projId = UUIDGenerator.generateUuid();
+    String agentId = "agentId";
 
     K8sContainer container = K8sContainer.builder().image("nginx:1.15").build();
     List<InstanceDTO> instanceList =
-        buildInstanceList(accountId, orgId, projId, "s1", "e1", "app1", "agent1", "gitops", "test-2", 3, container);
+        buildInstanceList(accountId, orgId, projId, "s1", "e1", "app1", agentId, "gitops", "test-2", 3, container);
 
-    gitopsInstanceSyncService.processInstanceSync(accountId, orgId, projId, instanceList);
-    gitopsInstanceSyncService.processInstanceSync(accountId, orgId, projId, instanceList);
-    gitopsInstanceSyncService.processInstanceSync(accountId, orgId, projId, instanceList);
+    gitopsInstanceSyncService.processInstanceSync(accountId, orgId, projId, agentId, instanceList);
+    gitopsInstanceSyncService.processInstanceSync(accountId, orgId, projId, agentId, instanceList);
+    gitopsInstanceSyncService.processInstanceSync(accountId, orgId, projId, agentId, instanceList);
 
     List<InstanceDTO> instancesSaved = instanceService.getActiveInstancesByServiceId(accountId, orgId, projId, "s1");
 
@@ -127,14 +129,15 @@ public class GitopsInstanceSyncServiceImplTest extends InstancesTestBase {
     String accountId = "accountId";
     String orgId = "orgId";
     String projId = UUIDGenerator.generateUuid();
+    String agentId = "agentId";
 
     K8sContainer container = K8sContainer.builder().image("nginx:1.15").build();
     List<InstanceDTO> instanceList =
-        buildInstanceList(accountId, orgId, projId, "s1", "e1", "app1", "agent1", "default", "test-4", 3, container);
+        buildInstanceList(accountId, orgId, projId, "s1", "e1", "app1", agentId, "default", "test-4", 3, container);
 
-    gitopsInstanceSyncService.processInstanceSync(accountId, orgId, projId, instanceList);
+    gitopsInstanceSyncService.processInstanceSync(accountId, orgId, projId, agentId, instanceList);
     gitopsInstanceSyncService.processInstanceSync(
-        accountId, orgId, projId, Collections.singletonList(instanceList.get(0)));
+        accountId, orgId, projId, agentId, Collections.singletonList(instanceList.get(0)));
 
     List<InstanceDTO> instancesSaved = instanceService.getActiveInstancesByServiceId(accountId, orgId, projId, "s1");
 
@@ -150,17 +153,18 @@ public class GitopsInstanceSyncServiceImplTest extends InstancesTestBase {
     String accountId = "accountId";
     String orgId = "orgId";
     String projId = UUIDGenerator.generateUuid();
+    String agentId = "agentId";
 
     K8sContainer container = K8sContainer.builder().image("nginx:1.15").build();
     List<InstanceDTO> instanceList_1 =
-        buildInstanceList(accountId, orgId, projId, "s1", "e1", "app1", "agent1", "default", "test-4", 3, container);
+        buildInstanceList(accountId, orgId, projId, "s1", "e1", "app1", agentId, "default", "test-4", 3, container);
 
-    gitopsInstanceSyncService.processInstanceSync(accountId, orgId, projId, instanceList_1);
+    gitopsInstanceSyncService.processInstanceSync(accountId, orgId, projId, agentId, instanceList_1);
 
     instanceList_1.addAll(
-        buildInstanceList(accountId, orgId, projId, "s1", "e1", "app1", "agent1", "harness", "test-4", 2, container));
+        buildInstanceList(accountId, orgId, projId, "s1", "e1", "app1", agentId, "harness", "test-4", 2, container));
 
-    gitopsInstanceSyncService.processInstanceSync(accountId, orgId, projId, instanceList_1);
+    gitopsInstanceSyncService.processInstanceSync(accountId, orgId, projId, agentId, instanceList_1);
 
     List<InstanceDTO> instancesSaved = instanceService.getActiveInstancesByServiceId(accountId, orgId, projId, "s1");
 

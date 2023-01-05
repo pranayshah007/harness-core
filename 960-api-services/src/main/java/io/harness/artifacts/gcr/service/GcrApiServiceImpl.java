@@ -96,9 +96,8 @@ public class GcrApiServiceImpl implements GcrApiService {
   @Override
   public List<BuildDetailsInternal> getBuilds(GcrInternalConfig gcpConfig, String imageName, int maxNumberOfBuilds) {
     try {
-      Response<GcrImageTagResponse> response = getGcrRestClient(gcpConfig.getRegistryHostname())
-                                                   .listImageTags(gcpConfig.getBasicAuthHeader(), imageName)
-                                                   .execute();
+      Response<GcrImageTagResponse> response =
+          listImageTag(getGcrRestClient(gcpConfig.getRegistryHostname()), gcpConfig.getBasicAuthHeader(), imageName);
       checkValidImage(imageName, response);
       return processBuildResponse(gcpConfig.getRegistryHostname(), imageName, response.body());
     } catch (GcrImageNotFoundRuntimeException ex) {
@@ -111,7 +110,9 @@ public class GcrApiServiceImpl implements GcrApiService {
     } catch (IOException e) {
       throw handleIOException(gcpConfig, e);
     } catch (InvalidRequestException e) {
-      throw new HintException(e.getMessage());
+      throw new HintException(ExceptionUtils.getMessage(e));
+    } catch (Exception e) {
+      throw new HintException(ExceptionUtils.getMessage(e));
     }
   }
 
@@ -187,9 +188,11 @@ public class GcrApiServiceImpl implements GcrApiService {
   public boolean validateCredentials(GcrInternalConfig gcpConfig, String imageName) {
     try {
       GcrRestClient registryRestClient = getGcrRestClient(gcpConfig.getRegistryHostname());
-      Response response = registryRestClient.listImageTags(gcpConfig.getBasicAuthHeader(), imageName).execute();
-      return isSuccessful(response);
+      return isSuccessful(listImageTag(registryRestClient, gcpConfig.getBasicAuthHeader(), imageName));
     } catch (IOException e) {
+      throw NestedExceptionUtils.hintWithExplanationException(
+          ERROR_MESSAGE, CONNECTION_ERROR_MESSAGE, new ArtifactServerException(ExceptionUtils.getMessage(e), e, USER));
+    } catch (Exception e) {
       throw NestedExceptionUtils.hintWithExplanationException(
           ERROR_MESSAGE, CONNECTION_ERROR_MESSAGE, new ArtifactServerException(ExceptionUtils.getMessage(e), e, USER));
     }
@@ -235,6 +238,13 @@ public class GcrApiServiceImpl implements GcrApiService {
       GcrRestClient gcrRestClient, String basicAuthHeader, String imageName, String tag) throws Exception {
     return Retry
         .decorateCallable(retry, () -> gcrRestClient.getImageManifest(basicAuthHeader, imageName, tag).execute())
+        .call();
+  }
+
+  @VisibleForTesting
+  public Response<GcrImageTagResponse> listImageTag(
+      GcrRestClient gcrRestClient, String basicAuthHeader, String imageName) throws Exception {
+    return Retry.decorateCallable(retry, () -> gcrRestClient.listImageTags(basicAuthHeader, imageName).execute())
         .call();
   }
 

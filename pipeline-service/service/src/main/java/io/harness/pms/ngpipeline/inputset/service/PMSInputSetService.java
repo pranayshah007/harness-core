@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.git.model.ChangeType;
+import io.harness.pms.inputset.InputSetMoveConfigOperationDTO;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetImportRequestDTO;
 import io.harness.pms.pipeline.PipelineEntity;
@@ -64,4 +65,7 @@ public interface PMSInputSetService {
   InputSetEntity importInputSetFromRemote(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String inputSetIdentifier, InputSetImportRequestDTO inputSetImportRequestDTO,
       boolean isForceImport);
+
+  InputSetEntity moveConfig(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String inputSetIdentifier, InputSetMoveConfigOperationDTO inputSetMoveConfigOperationDTO);
 }

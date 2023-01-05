@@ -26,6 +26,7 @@ import io.harness.pms.data.output.PmsSweepingOutput;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.Date;
@@ -37,7 +38,6 @@ import lombok.NonNull;
 import lombok.Value;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.Wither;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.TypeAlias;
@@ -67,7 +67,7 @@ public class ExecutionSweepingOutputInstance implements PersistentEntity, UuidAc
         .add(CompoundMongoIndex.builder().name("producedByRuntime_Idx").field("producedBy.runtimeId").build())
         .build();
   }
-  @Wither @Id @org.mongodb.morphia.annotations.Id String uuid;
+  @Wither @Id @dev.morphia.annotations.Id String uuid;
   @NonNull String planExecutionId;
   String stageExecutionId;
   @NotNull @Trimmed String name;

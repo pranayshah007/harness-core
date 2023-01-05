@@ -38,14 +38,14 @@ import software.wings.utils.JsonUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
+import dev.morphia.query.FieldEnd;
+import dev.morphia.query.Query;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mongodb.morphia.query.FieldEnd;
-import org.mongodb.morphia.query.Query;
 
 public class ExecutionDataFetcherTest extends AbstractDataFetcherTestBase {
   public static final String EXECUTION_ID_1 = "EXECUTION_ID1";

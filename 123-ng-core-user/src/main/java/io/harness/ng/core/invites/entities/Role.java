@@ -26,7 +26,7 @@ import org.springframework.data.annotation.Version;
 @FieldNameConstants(innerTypeName = "RolesKeys")
 @OwnedBy(PL)
 public class Role implements NGAccountAccess {
-  @Wither @Id @org.mongodb.morphia.annotations.Id String id;
+  @Wither @Id @dev.morphia.annotations.Id String id;
   @Trimmed @NotEmpty String accountIdentifier;
   @Trimmed @NotEmpty String orgIdentifier;
   @Trimmed @NotEmpty String projectIdentifier;

@@ -23,6 +23,8 @@ import software.wings.persistence.artifact.Artifact;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.mongodb.ReadPreference;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.Sort;
 import io.fabric8.utils.Lists;
 import java.sql.Array;
 import java.sql.Connection;
@@ -37,8 +39,6 @@ import java.util.TimeZone;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
-import org.mongodb.morphia.query.FindOptions;
-import org.mongodb.morphia.query.Sort;
 
 /**
  * This will migrate the last 30 days of top level executions to TimeScaleDB

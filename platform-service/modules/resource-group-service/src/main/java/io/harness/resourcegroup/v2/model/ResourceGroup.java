@@ -26,6 +26,7 @@ import io.harness.resourcegroup.v2.model.ResourceFilter.ResourceFilterKeys;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
 import java.util.List;
 import java.util.Set;
 import javax.validation.constraints.NotNull;
@@ -35,7 +36,6 @@ import lombok.Data;
 import lombok.Singular;
 import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
@@ -77,7 +77,7 @@ public class ResourceGroup implements PersistentRegularIterable, PersistentEntit
         .build();
   }
 
-  @Id @org.mongodb.morphia.annotations.Id String id;
+  @Id @dev.morphia.annotations.Id String id;
   @NotEmpty String accountIdentifier;
   String orgIdentifier;
   String projectIdentifier;

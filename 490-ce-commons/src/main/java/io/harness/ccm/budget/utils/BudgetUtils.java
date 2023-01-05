@@ -25,6 +25,7 @@ import io.harness.ccm.budget.BudgetScope;
 import io.harness.ccm.budget.BudgetSummary;
 import io.harness.ccm.budget.ValueDataPoint;
 import io.harness.ccm.commons.entities.billing.Budget;
+import io.harness.ccm.commons.entities.budget.BudgetCostData;
 import io.harness.exception.InvalidRequestException;
 
 import java.time.Instant;
@@ -34,7 +35,9 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.TimeZone;
 import lombok.extern.slf4j.Slf4j;
@@ -270,12 +273,11 @@ public class BudgetUtils {
     return budget.getScope().getBudgetScopeType().equals(PERSPECTIVE);
   }
 
-  public static int getTimeLeftForBudget(Budget budget) {
-    return Math.toIntExact((budget.getEndTime() - getStartOfCurrentDay()) / ONE_DAY_MILLIS);
+  public static int getTimeLeftForBudget(long endTime) {
+    return Math.toIntExact((endTime - getStartOfCurrentDay()) / ONE_DAY_MILLIS);
   }
 
-  public static List<Double> getAlertThresholdsForBudget(Budget budget, AlertThresholdBase basedOn) {
-    AlertThreshold[] alertThresholds = budget.getAlertThresholds();
+  public static List<Double> getAlertThresholdsForBudget(AlertThreshold[] alertThresholds, AlertThresholdBase basedOn) {
     List<Double> costAlertsPercentage = new ArrayList<>();
     if (alertThresholds != null) {
       for (AlertThreshold alertThreshold : alertThresholds) {
@@ -307,6 +309,35 @@ public class BudgetUtils {
         return c.getTimeInMillis();
       default:
         return startOfCurrentPeriod;
+    }
+  }
+
+  /**
+   *
+   * @param startTime of budget
+   * @param period which is BudgetPeriod(DAILY, WEEKLY, MONTHLY, QUARTERLY, YEARLY)
+   * @return in case of DAILY return startTime for 12 days back
+   * in case of WEEKLY return startTime for 12 weeks back which is 12*7=84 days back
+   * in case of MONTHLY return startTime for 12 months/ 1 year back
+   * in case of QUARTERLY we dont go beyond a year hence return 1 year back startTime
+   * in case of YEARLY we again go only a year back
+   */
+  public static long getHistoryStartTime(long startTime, BudgetPeriod period) {
+    Calendar c = Calendar.getInstance();
+    c.setTimeZone(TimeZone.getTimeZone(DEFAULT_TIMEZONE));
+    c.setTimeInMillis(startTime);
+    switch (period) {
+      case DAILY:
+        return startTime - 12 * ONE_DAY_MILLIS;
+      case WEEKLY:
+        return startTime - 84 * ONE_DAY_MILLIS;
+      case MONTHLY:
+      case QUARTERLY:
+      case YEARLY:
+        c.add(Calendar.YEAR, -1);
+        return c.getTimeInMillis();
+      default:
+        return startTime;
     }
   }
 
@@ -356,10 +387,9 @@ public class BudgetUtils {
     }
   }
 
-  public static int getTimeOffsetInDays(Budget budget) {
+  public static int getTimeOffsetInDays(long startTime, BudgetPeriod period) {
     try {
-      return (
-          int) ((budget.getStartTime() - getStartOfPeriod(budget.getStartTime(), budget.getPeriod())) / ONE_DAY_MILLIS);
+      return (int) ((startTime - getStartOfPeriod(startTime, period)) / ONE_DAY_MILLIS);
     } catch (Exception e) {
       return 0;
     }
@@ -415,12 +445,12 @@ public class BudgetUtils {
     return 0D;
   }
 
-  public static long getBudgetStartTime(Budget budget) {
-    if (budget.getStartTime() != 0) {
-      if (budget.getPeriod() == DAILY) {
-        return budget.getStartTime() - 2 * ONE_DAY_MILLIS;
+  public static long getBudgetStartTime(long startTime, BudgetPeriod period) {
+    if (startTime != 0) {
+      if (period == DAILY) {
+        return startTime - 2 * ONE_DAY_MILLIS;
       }
-      return budget.getStartTime();
+      return startTime;
     }
     return getStartOfMonth(false);
   }
@@ -479,6 +509,43 @@ public class BudgetUtils {
     return Math.round(value * HUNDRED) / HUNDRED;
   }
 
+  public static HashMap<Long, BudgetCostData> adjustBudgetHistory(Budget budget) {
+    HashMap<Long, BudgetCostData> budgetHistory = budget.getBudgetHistory();
+    int maxAllowedSize;
+    switch (budget.getPeriod()) {
+      case DAILY:
+      case WEEKLY:
+      case MONTHLY:
+        maxAllowedSize = 12;
+        break;
+      case QUARTERLY:
+        maxAllowedSize = 4;
+        break;
+      case YEARLY:
+        maxAllowedSize = 1;
+        break;
+      default:
+        maxAllowedSize = 0;
+    }
+    while (budgetHistory.size() >= maxAllowedSize) {
+      Long minStartTime = Collections.min(budgetHistory.keySet());
+      budgetHistory.remove(minStartTime);
+    }
+    double budgetVariance = BudgetUtils.getBudgetVariance(budget.getBudgetAmount(), budget.getActualCost());
+    double budgetVariancePercentage = BudgetUtils.getBudgetVariancePercentage(budgetVariance, budget.getBudgetAmount());
+    BudgetCostData currentBudgetCostData = BudgetCostData.builder()
+                                               .time(budget.getStartTime())
+                                               .endTime(budget.getEndTime())
+                                               .budgeted(budget.getBudgetAmount())
+                                               .actualCost(budget.getActualCost())
+                                               .forecastCost(budget.getForecastCost())
+                                               .budgetVariance(budgetVariance)
+                                               .budgetVariancePercentage(budgetVariancePercentage)
+                                               .build();
+    budgetHistory.put(budget.getStartTime(), currentBudgetCostData);
+    return budgetHistory;
+  }
+
   public static BudgetSummary buildBudgetSummary(Budget budget) {
     return BudgetSummary.builder()
         .id(budget.getUuid())
@@ -488,15 +555,15 @@ public class BudgetUtils {
         .budgetAmount(budget.getBudgetAmount())
         .actualCost(budget.getActualCost())
         .forecastCost(budget.getForecastCost())
-        .timeLeft(BudgetUtils.getTimeLeftForBudget(budget))
+        .timeLeft(BudgetUtils.getTimeLeftForBudget(budget.getEndTime()))
         .timeUnit(BudgetUtils.DEFAULT_TIME_UNIT)
         .timeScope(BudgetUtils.getBudgetPeriod(budget).toString().toLowerCase())
-        .actualCostAlerts(BudgetUtils.getAlertThresholdsForBudget(budget, ACTUAL_COST))
-        .forecastCostAlerts(BudgetUtils.getAlertThresholdsForBudget(budget, FORECASTED_COST))
+        .actualCostAlerts(BudgetUtils.getAlertThresholdsForBudget(budget.getAlertThresholds(), ACTUAL_COST))
+        .forecastCostAlerts(BudgetUtils.getAlertThresholdsForBudget(budget.getAlertThresholds(), FORECASTED_COST))
         .alertThresholds(budget.getAlertThresholds())
         .growthRate(BudgetUtils.getBudgetGrowthRate(budget))
         .period(BudgetUtils.getBudgetPeriod(budget))
-        .startTime(BudgetUtils.getBudgetStartTime(budget))
+        .startTime(BudgetUtils.getBudgetStartTime(budget.getStartTime(), budget.getPeriod()))
         .type(budget.getType())
         .budgetMonthlyBreakdown(budget.getBudgetMonthlyBreakdown())
         .isBudgetGroup(false)

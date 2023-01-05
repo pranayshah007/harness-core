@@ -44,6 +44,7 @@ import io.harness.waiter.WaitInstance.WaitInstanceKeys;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import dev.morphia.query.Sort;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -56,7 +57,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mongodb.morphia.query.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 
 @Slf4j

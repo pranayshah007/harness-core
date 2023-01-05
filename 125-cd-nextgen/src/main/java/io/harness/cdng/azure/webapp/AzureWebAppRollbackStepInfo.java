@@ -10,7 +10,7 @@ package io.harness.cdng.azure.webapp;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.pipeline.CDStepInfo;
+import io.harness.cdng.pipeline.CDAbstractStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.AzureWebAppRollbackStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -41,7 +41,8 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName(StepSpecTypeConstants.AZURE_WEBAPP_ROLLBACK)
 @TypeAlias("azureWebAppRollbackStepInfo")
 @RecasterAlias("io.harness.cdng.azure.webapp.AzureWebAppRollbackStepInfo")
-public class AzureWebAppRollbackStepInfo extends AzureWebAppRollbackBaseStepInfo implements CDStepInfo, Visitable {
+public class AzureWebAppRollbackStepInfo
+    extends AzureWebAppRollbackBaseStepInfo implements CDAbstractStepInfo, Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)

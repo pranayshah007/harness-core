@@ -70,6 +70,8 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.segment.analytics.messages.TrackMessage;
 import com.segment.analytics.messages.TrackMessage.Builder;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -87,8 +89,6 @@ import javax.annotation.Nonnull;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.ListUtils;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 /**
  * @author rktummala on 02/04/19

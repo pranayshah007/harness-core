@@ -22,6 +22,7 @@ import io.harness.persistence.PersistentEntity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
 import java.util.Arrays;
 import java.util.List;
 import javax.validation.constraints.NotNull;
@@ -34,7 +35,6 @@ import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.UtilityClass;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
@@ -57,7 +57,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @TypeAlias("io.harness.entity.Filter")
 @OwnedBy(DX)
 public class Filter implements PersistentEntity {
-  @JsonIgnore @Id @org.mongodb.morphia.annotations.Id String id;
+  @JsonIgnore @Id @dev.morphia.annotations.Id String id;
   @JsonIgnore String accountIdentifier;
   @NotNull String name;
   @NotNull String identifier;

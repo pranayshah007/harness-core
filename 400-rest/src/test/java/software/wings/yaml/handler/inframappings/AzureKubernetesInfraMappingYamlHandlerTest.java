@@ -59,13 +59,13 @@ import software.wings.utils.ArtifactType;
 import software.wings.yaml.handler.YamlHandlerTestBase;
 
 import com.google.inject.Inject;
+import dev.morphia.Key;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.mongodb.morphia.Key;
 
 @OwnedBy(HarnessTeam.CDP)
 public class AzureKubernetesInfraMappingYamlHandlerTest extends YamlHandlerTestBase {

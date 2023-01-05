@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitsync.common.beans.GitToHarnessProgress;
 import io.harness.gitsync.common.beans.YamlChangeSetEventType;
 
+import java.util.List;
 import org.springframework.data.repository.CrudRepository;
 
 @HarnessRepo
@@ -26,4 +27,6 @@ public interface GitToHarnessProgressRepository
       String repoURL, String branch, YamlChangeSetEventType eventType);
 
   GitToHarnessProgress findByYamlChangeSetId(String yamlChangeSetId);
+
+  List<GitToHarnessProgress> findAllByAccountIdentifier(String accountIdentifier);
 }

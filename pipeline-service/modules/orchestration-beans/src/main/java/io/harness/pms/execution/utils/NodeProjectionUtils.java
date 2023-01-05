@@ -55,9 +55,10 @@ public class NodeProjectionUtils {
       Sets.newHashSet(NodeExecutionKeys.ambiance, NodeExecutionKeys.status, NodeExecutionKeys.resolvedParams,
           NodeExecutionKeys.endTs, NodeExecutionKeys.oldRetry, NodeExecutionKeys.timeoutInstanceIds);
 
-  public static final Set<String> fieldsForResume = Sets.newHashSet(NodeExecutionKeys.status,
-      NodeExecutionKeys.ambiance, NodeExecutionKeys.executableResponses, NodeExecutionKeys.mode,
-      NodeExecutionKeys.resolvedParams, NodeExecutionKeys.module, NodeExecutionKeys.stepType);
+  public static final Set<String> fieldsForResume =
+      Sets.newHashSet(NodeExecutionKeys.status, NodeExecutionKeys.ambiance, NodeExecutionKeys.executableResponses,
+          NodeExecutionKeys.mode, NodeExecutionKeys.resolvedParams, NodeExecutionKeys.module,
+          NodeExecutionKeys.stepType, NodeExecutionKeys.originalNodeExecutionId);
 
   public static final Set<String> fieldsForInterruptEventPublish = Sets.newHashSet(NodeExecutionKeys.status,
       NodeExecutionKeys.ambiance, NodeExecutionKeys.executableResponses, NodeExecutionKeys.mode,

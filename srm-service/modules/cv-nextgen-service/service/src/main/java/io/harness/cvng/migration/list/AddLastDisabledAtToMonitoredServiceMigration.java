@@ -14,9 +14,9 @@ import io.harness.cvng.migration.beans.ChecklistItem;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import java.time.Clock;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
 
 @Slf4j
 public class AddLastDisabledAtToMonitoredServiceMigration implements CVNGMigration {

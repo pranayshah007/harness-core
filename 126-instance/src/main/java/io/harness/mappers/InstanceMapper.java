@@ -50,6 +50,7 @@ public class InstanceMapper {
         .instanceKey(instance.getInstanceKey())
         .infraIdentifier(instance.getInfraIdentifier())
         .infraName(instance.getInfraName())
+        .podCreatedAt(instance.getPodCreatedAt())
         .build();
   }
 
@@ -89,6 +90,7 @@ public class InstanceMapper {
         .instanceKey(instanceDTO.getInstanceKey())
         .infraIdentifier(instanceDTO.getInfraIdentifier())
         .infraName(instanceDTO.getInfraName())
+        .podCreatedAt(instanceDTO.getPodCreatedAt())
         .build();
   }
 }

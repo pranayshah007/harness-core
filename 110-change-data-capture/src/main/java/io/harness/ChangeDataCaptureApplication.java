@@ -41,6 +41,7 @@ import com.google.inject.Module;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import dev.morphia.converters.TypeConverter;
 import io.dropwizard.Application;
 import io.dropwizard.setup.Environment;
 import java.util.ArrayList;
@@ -50,7 +51,6 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.glassfish.jersey.server.model.Resource;
-import org.mongodb.morphia.converters.TypeConverter;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CE)

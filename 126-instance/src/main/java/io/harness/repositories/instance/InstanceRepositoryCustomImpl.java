@@ -11,6 +11,7 @@ import static io.harness.entities.Instance.InstanceKeysAdditional;
 
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.group;
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.newAggregation;
+import static org.springframework.data.mongodb.core.query.Query.query;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -29,6 +30,7 @@ import io.harness.mongo.helper.SecondaryMongoTemplateHolder;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -345,8 +347,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
   @Override
   public AggregationResults<InstancesByBuildId> getActiveInstancesByServiceIdEnvIdAndBuildIds(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String serviceId, String envId, List<String> buildIds,
-      long timestampInMs, int limit, String infraId, String clusterId, String pipelineExecutionId,
-      long lastDeployedAt) {
+      long timestampInMs, int limit, String infraId, String clusterId, String pipelineExecutionId) {
     Criteria criteria =
         getCriteriaForActiveInstances(accountIdentifier, orgIdentifier, projectIdentifier, timestampInMs)
             .and(InstanceKeys.envIdentifier)
@@ -362,9 +363,6 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
     }
     if (pipelineExecutionId != null) {
       criteria.and(InstanceKeys.lastPipelineExecutionId).is(pipelineExecutionId);
-    }
-    if (lastDeployedAt > 0) {
-      criteria.and(InstanceKeys.lastDeployedAt).is(lastDeployedAt);
     }
 
     // in case artifact tag is missing
@@ -585,5 +583,24 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
             CountByOrgIdProjectIdAndServiceId.class)
         .getMappedResults()
         .size();
+  }
+
+  @Override
+  public UpdateResult updateMany(Criteria criteria, Update update) {
+    return mongoTemplate.updateMulti(query(criteria), update, Instance.class);
+  }
+
+  @Override
+  public List<Instance> getActiveInstancesByServiceId(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String serviceIdentifier, String agentIdentifier) {
+    Criteria criteria = getCriteriaForActiveInstances(accountIdentifier, orgIdentifier, projectIdentifier)
+                            .and(InstanceKeys.serviceIdentifier)
+                            .is(serviceIdentifier);
+
+    if (agentIdentifier != null) {
+      criteria.and(InstanceKeysAdditional.instanceInfoAgentIdentifier).is(agentIdentifier);
+    }
+    Query query = new Query(criteria);
+    return secondaryMongoTemplate.find(query, Instance.class);
   }
 }

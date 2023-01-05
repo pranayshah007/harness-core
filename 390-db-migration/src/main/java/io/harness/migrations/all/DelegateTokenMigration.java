@@ -20,8 +20,8 @@ import software.wings.beans.Account;
 import software.wings.beans.Account.AccountKeys;
 
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
 
 @Slf4j
 @OwnedBy(HarnessTeam.DEL)

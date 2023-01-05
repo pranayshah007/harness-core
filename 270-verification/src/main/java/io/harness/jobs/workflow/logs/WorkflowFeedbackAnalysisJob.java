@@ -25,12 +25,12 @@ import software.wings.service.intfc.DataStoreService;
 import software.wings.service.intfc.verification.CVActivityLogService;
 
 import com.google.inject.Inject;
+import dev.morphia.annotations.Transient;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.annotations.Transient;
 import org.quartz.DisallowConcurrentExecution;
 import org.quartz.JobExecutionContext;
 import org.quartz.SchedulerException;

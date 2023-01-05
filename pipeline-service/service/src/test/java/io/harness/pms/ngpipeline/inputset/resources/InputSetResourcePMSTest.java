@@ -8,6 +8,7 @@
 package io.harness.pms.ngpipeline.inputset.resources;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
@@ -40,6 +41,7 @@ import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.Status;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.pms.inputset.InputSetErrorWrapperDTOPMS;
+import io.harness.pms.inputset.InputSetMoveConfigOperationDTO;
 import io.harness.pms.inputset.MergeInputSetRequestDTOPMS;
 import io.harness.pms.inputset.MergeInputSetResponseDTOPMS;
 import io.harness.pms.inputset.OverlayInputSetErrorWrapperDTOPMS;
@@ -48,6 +50,8 @@ import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity.InputSetEntityKeys;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetImportResponseDTO;
+import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetMoveConfigRequestDTO;
+import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetMoveConfigResponseDTO;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetResponseDTOPMS;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetSummaryResponseDTOPMS;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetTemplateRequestDTO;
@@ -59,6 +63,7 @@ import io.harness.pms.ngpipeline.inputset.helpers.ValidateAndMergeHelper;
 import io.harness.pms.ngpipeline.inputset.service.InputSetValidationHelper;
 import io.harness.pms.ngpipeline.inputset.service.PMSInputSetService;
 import io.harness.pms.ngpipeline.overlayinputset.beans.resource.OverlayInputSetResponseDTOPMS;
+import io.harness.pms.pipeline.MoveConfigOperationType;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.yaml.PipelineVersion;
@@ -672,5 +677,31 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
     ResponseDTO<Boolean> responseDTO = inputSetResourcePMSImpl.delete(
         null, INPUT_SET_ID, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null);
     assertTrue(responseDTO.getData());
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testMoveConfig() {
+    InputSetMoveConfigOperationDTO inputSetMoveConfigOperationDTO =
+        InputSetMoveConfigOperationDTO.builder()
+            .moveConfigOperationType(MoveConfigOperationType.INLINE_TO_REMOTE)
+            .build();
+
+    doReturn(inputSetEntity)
+        .when(pmsInputSetService)
+        .moveConfig(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, INPUT_SET_ID, inputSetMoveConfigOperationDTO);
+
+    InputSetMoveConfigRequestDTO inputSetMoveConfigRequestDTO =
+        InputSetMoveConfigRequestDTO.builder()
+            .inputSetIdentifier(INPUT_SET_ID)
+            .moveConfigOperationType(io.harness.gitaware.helper.MoveConfigOperationType.INLINE_TO_REMOTE)
+            .isNewBranch(false)
+            .build();
+
+    ResponseDTO<InputSetMoveConfigResponseDTO> movedInputSet = inputSetResourcePMSImpl.moveConfig(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, INPUT_SET_ID, inputSetMoveConfigRequestDTO);
+
+    assertEquals(movedInputSet.getData().getIdentifier(), INPUT_SET_ID);
   }
 }

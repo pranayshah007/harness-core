@@ -330,19 +330,17 @@ public class InstanceServiceImplTest extends InstancesTestBase {
     String envId = "envId";
     String clusterId = "clusterId";
     String pipelineExecutionId = "pipelineExecutionId";
-    long lastDeployedAt = System.currentTimeMillis();
     int limit = 1;
     List<String> buildIds = Arrays.asList();
     InstancesByBuildId instancesByBuildId = new InstancesByBuildId("buildId", Arrays.asList());
     AggregationResults<InstancesByBuildId> idAggregationResults =
         new AggregationResults<>(Arrays.asList(instancesByBuildId), new Document());
     when(instanceRepository.getActiveInstancesByServiceIdEnvIdAndBuildIds(accountIdentifier, orgIdentifier,
-             projectIdentifier, serviceId, envId, buildIds, timestamp, limit, null, clusterId, pipelineExecutionId,
-             lastDeployedAt))
+             projectIdentifier, serviceId, envId, buildIds, timestamp, limit, null, clusterId, pipelineExecutionId))
         .thenReturn(idAggregationResults);
-    assertThat(instanceService.getActiveInstancesByServiceIdEnvIdAndBuildIds(accountIdentifier, orgIdentifier,
-                   projectIdentifier, serviceId, envId, buildIds, timestamp, limit, null, clusterId,
-                   pipelineExecutionId, lastDeployedAt))
+    assertThat(
+        instanceService.getActiveInstancesByServiceIdEnvIdAndBuildIds(accountIdentifier, orgIdentifier,
+            projectIdentifier, serviceId, envId, buildIds, timestamp, limit, null, clusterId, pipelineExecutionId))
         .isEqualTo(idAggregationResults);
   }
 
