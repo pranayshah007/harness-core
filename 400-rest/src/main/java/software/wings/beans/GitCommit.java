@@ -21,8 +21,12 @@ import software.wings.yaml.gitSync.GitFileProcessingSummary;
 import software.wings.yaml.gitSync.YamlChangeSet;
 
 import com.google.common.collect.ImmutableList;
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBObject;
 import dev.morphia.annotations.Entity;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -132,5 +136,22 @@ public class GitCommit extends Base implements AccountAccess {
     public static final String lastUpdatedAt = "lastUpdatedAt";
     public static final String createdAt = "createdAt";
     public static final String gitFileChanges = "yamlChangeSet.gitFileChanges";
+  }
+
+  public static DBObject getHint(String indexName) {
+    Map<String, Object> map = new LinkedHashMap<>();
+
+    switch (indexName) {
+      case "gitCommitAccountIdStatusYgcLastUpdatedIdx":
+        map.put(GitCommitKeys.accountId, 1);
+        map.put(GitCommitKeys.status, 1);
+        map.put(GitCommitKeys.yamlGitConfigIds, 1);
+        map.put(GitCommitKeys.lastUpdatedAt, -1);
+        break;
+      default:
+        break;
+    }
+
+    return new BasicDBObject(map);
   }
 }

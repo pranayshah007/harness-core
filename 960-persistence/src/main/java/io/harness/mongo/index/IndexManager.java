@@ -12,7 +12,7 @@ import static io.harness.mongo.IndexManager.Mode.INSPECT;
 import static io.harness.mongo.IndexManager.Mode.MANUAL;
 
 import io.harness.mongo.index.migrator.Migrator;
-import io.harness.persistence.Store;
+import io.harness.persistence.store.Store;
 
 import com.google.inject.Inject;
 import com.google.inject.Injector;

@@ -50,10 +50,10 @@ public class SortCompoundMongoIndex implements MongoIndex {
     BasicDBObject keys = buildBasicDBObject(id);
     BasicDBObject options = buildBasicDBObject();
     if (Objects.nonNull(collation)) {
-      io.harness.mongo.Collation collation1 = io.harness.mongo.Collation.builder()
-                                                  .locale(this.getCollation().getLocale().getCode())
-                                                  .strength(this.getCollation().getStrength().getCode())
-                                                  .build();
+      io.harness.mongo.collation.Collation collation1 = io.harness.mongo.collation.Collation.builder()
+                                                            .locale(this.getCollation().getLocale().getCode())
+                                                            .strength(this.getCollation().getStrength().getCode())
+                                                            .build();
       BasicDBObject basicDBObject = BasicDBObject.parse(JsonUtils.asJson(collation1));
       options.put("collation", basicDBObject);
     }

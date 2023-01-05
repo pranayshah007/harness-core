@@ -1748,7 +1748,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     query.field(WorkflowExecutionKeys.startTs).greaterThanOrEq(sixtyDays);
     query.project("serviceIds", true);
     FindOptions findOptions = new FindOptions();
-    findOptions.hintString("accountId_startTs_serviceIds");
+    findOptions.hint(WorkflowExecution.getHint("accountId_startTs_serviceIds"));
     findOptions.readPreference(ReadPreference.secondaryPreferred());
     List<WorkflowExecution> workflowExecutions = query.asList(findOptions);
     Set<String> flattenedSvcSet = new HashSet<>();
@@ -3292,7 +3292,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     if (featureFlagService.isEnabled(
             FeatureName.ON_DEMAND_ROLLBACK_WITH_DIFFERENT_ARTIFACT, workflowExecution.getAccountId())) {
       FindOptions findOptions = new FindOptions();
-      findOptions.hintString("lastInfraMappingSearch");
+      findOptions.hint(WorkflowExecution.getHint("lastInfraMappingSearch"));
       Query<WorkflowExecution> deploymentQuery = query.cloneQuery();
       deploymentQuery.filter(WorkflowExecutionKeys.deployment, true);
       WorkflowExecution existingWorkflow = deploymentQuery.get(findOptions);
@@ -5744,9 +5744,9 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     addressInefficientQueries(workflowExecutionQuery);
 
     if (isNotEmpty(workflowExecution.getInfraMappingIds())) {
-      findOptions.hintString("appid_status_workflowid_infraMappingIds_createdat");
+      findOptions.hint(WorkflowExecution.getHint("appid_status_workflowid_infraMappingIds_createdat"));
     } else {
-      findOptions.hintString("appid_workflowid_status_createdat");
+      findOptions.hint(WorkflowExecution.getHint("appid_workflowid_status_createdat"));
     }
     return workflowExecutionQuery.order("-createdAt").get(findOptions);
   }
@@ -5775,7 +5775,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
 
     if (isNotEmpty(infraMappingList)) {
       if (isInfraBasedArtifact) {
-        findOptions.hintString("lastInfraMappingSearch");
+        findOptions.hint(WorkflowExecution.getHint("lastInfraMappingSearch"));
 
         Query<WorkflowExecution> deploymentQuery = workflowExecutionQuery.cloneQuery();
         deploymentQuery.filter(WorkflowExecutionKeys.deployment, true);
@@ -5791,10 +5791,10 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
               .exists();
         }
       } else {
-        findOptions.hintString("appid_status_workflowid_infraMappingIds_createdat");
+        findOptions.hint(WorkflowExecution.getHint("appid_status_workflowid_infraMappingIds_createdat"));
       }
     } else {
-      findOptions.hintString("appid_workflowid_status_deployedServices_createdat");
+      findOptions.hint(WorkflowExecution.getHint("appid_workflowid_status_deployedServices_createdat"));
     }
     return workflowExecutionQuery.order(Sort.descending(WorkflowExecutionKeys.createdAt)).get(findOptions);
   }

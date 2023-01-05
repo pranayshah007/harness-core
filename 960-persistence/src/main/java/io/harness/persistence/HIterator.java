@@ -13,8 +13,8 @@ import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.logging.AutoLogContext;
-import io.harness.mongo.CollectionLogContext;
 import io.harness.mongo.ProcessTimeLogContext;
+import io.harness.mongo.log.CollectionLogContext;
 
 import dev.morphia.query.MorphiaIterator;
 import java.util.Iterator;

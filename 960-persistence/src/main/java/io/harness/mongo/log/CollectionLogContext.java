@@ -5,22 +5,14 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.mongo;
+package io.harness.mongo.log;
 
-public enum CollationStrength {
-  PRIMARY(1),
-  SECONDARY(2),
-  TERTIARY(3),
-  QUATERNARY(4),
-  IDENTICAL(5);
+import io.harness.logging.AutoLogContext;
 
-  private final int code;
+public class CollectionLogContext extends AutoLogContext {
+  public static final String ID = "collectionName";
 
-  public int getCode() {
-    return this.code;
-  }
-
-  CollationStrength(int code) {
-    this.code = code;
+  public CollectionLogContext(String collectionName, OverrideBehavior behavior) {
+    super(ID, collectionName, behavior);
   }
 }

@@ -155,7 +155,7 @@ public class ResumeStateUtils {
     try (
         HIterator<SweepingOutputInstance> instancesHIterator = new HIterator<>(
             sweepingOutputService.prepareApprovalStateOutputsQuery(appId, fromPipelineExecutionId, fromStateExecutionId)
-                .fetch(new FindOptions().hintString("pipelineStateExecution")))) {
+                .fetch(new FindOptions().hint(SweepingOutputInstance.getHint("pipelineStateExecution"))))) {
       for (SweepingOutputInstance instance : instancesHIterator) {
         instances.add(instance);
       }

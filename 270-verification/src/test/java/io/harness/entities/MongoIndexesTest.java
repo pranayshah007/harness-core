@@ -18,7 +18,7 @@ import io.harness.mongo.IndexCreator;
 import io.harness.mongo.IndexManagerSession;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.HPersistence;
-import io.harness.persistence.Store;
+import io.harness.persistence.store.Store;
 import io.harness.rule.Owner;
 
 import software.wings.beans.Account;

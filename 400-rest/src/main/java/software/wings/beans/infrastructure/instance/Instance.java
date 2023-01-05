@@ -31,8 +31,12 @@ import software.wings.beans.infrastructure.instance.key.PcfInstanceKey;
 import software.wings.beans.infrastructure.instance.key.PodInstanceKey;
 
 import com.google.common.collect.ImmutableList;
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBObject;
 import dev.morphia.annotations.Entity;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -270,5 +274,21 @@ public class Instance extends Base implements AccountAccess, ApplicationAccess {
     public static final String infraMappingId = "infraMappingId";
     public static final String infraMappingName = "infraMappingName";
     public static final String lastUpdatedAt = "lastUpdatedAt";
+  }
+
+  public static DBObject getHint(String indexName) {
+    Map<String, Object> map = new LinkedHashMap<>();
+
+    switch (indexName) {
+      case "instance_index7":
+        map.put(InstanceKeys.accountId, 1);
+        map.put(InstanceKeys.createdAt, 1);
+        map.put(InstanceKeys.deletedAt, 1);
+        break;
+      default:
+        break;
+    }
+
+    return new BasicDBObject(map);
   }
 }

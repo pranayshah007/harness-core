@@ -58,6 +58,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBObject;
 import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Id;
 import dev.morphia.annotations.PrePersist;
@@ -70,6 +72,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
@@ -460,5 +463,53 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
   public void onSave() {
     this.cdPageCandidate =
         calculateCdPageCandidate(this.pipelineExecutionId, this.pipelineResumeId, this.latestPipelineResume);
+  }
+
+  public static DBObject getHint(String indexName) {
+    Map<String, Object> map = new LinkedHashMap<>();
+
+    switch (indexName) {
+      case "accountId_pipExecutionId_createdAt":
+        map.put(WorkflowExecutionKeys.accountId, 1);
+        map.put(WorkflowExecutionKeys.pipelineExecutionId, 1);
+        map.put(WorkflowExecutionKeys.createdAt, -1);
+        break;
+      case "accountId_startTs_serviceIds":
+        map.put(WorkflowExecutionKeys.accountId, 1);
+        map.put(WorkflowExecutionKeys.startTs, 1);
+        map.put(WorkflowExecutionKeys.serviceIds, 1);
+        break;
+      case "appid_status_workflowid_infraMappingIds_createdat":
+        map.put(WorkflowExecutionKeys.appId, 1);
+        map.put(WorkflowExecutionKeys.status, 1);
+        map.put(WorkflowExecutionKeys.workflowId, 1);
+        map.put(WorkflowExecutionKeys.infraMappingIds, 1);
+        map.put(WorkflowExecutionKeys.createdAt, -1);
+        break;
+      case "appid_workflowid_status_createdat":
+        map.put(WorkflowExecutionKeys.appId, 1);
+        map.put(WorkflowExecutionKeys.workflowId, 1);
+        map.put(WorkflowExecutionKeys.status, 1);
+        map.put(WorkflowExecutionKeys.createdAt, -1);
+        break;
+      case "lastInfraMappingSearch":
+        map.put(WorkflowExecutionKeys.appId, 1);
+        map.put(WorkflowExecutionKeys.workflowType, 1);
+        map.put(WorkflowExecutionKeys.status, 1);
+        map.put(WorkflowExecutionKeys.infraMappingIds, 1);
+        map.put(WorkflowExecutionKeys.createdAt, -1);
+        break;
+      case "appid_workflowid_status_deployedServices_createdat":
+        map.put(WorkflowExecutionKeys.appId, 1);
+        map.put(WorkflowExecutionKeys.workflowId, 1);
+        map.put(WorkflowExecutionKeys.status, 1);
+        map.put(WorkflowExecutionKeys.deployedServices, 1);
+        map.put(WorkflowExecutionKeys.createdAt, -1);
+        break;
+      default:
+        break;
+    }
+
+    return new BasicDBObject(map);
   }
 }

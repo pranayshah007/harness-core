@@ -5,14 +5,13 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.mongo;
+package io.harness.persistence.store;
 
-import io.harness.logging.AutoLogContext;
+import lombok.Builder;
+import lombok.Value;
 
-public class CollectionLogContext extends AutoLogContext {
-  public static final String ID = "collectionName";
-
-  public CollectionLogContext(String collectionName, OverrideBehavior behavior) {
-    super(ID, collectionName, behavior);
-  }
+@Value
+@Builder
+public class Store {
+  private String name;
 }

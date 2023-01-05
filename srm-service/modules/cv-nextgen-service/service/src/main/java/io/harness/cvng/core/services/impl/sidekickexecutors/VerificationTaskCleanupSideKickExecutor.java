@@ -111,9 +111,9 @@ public class VerificationTaskCleanupSideKickExecutor implements SideKickExecutor
         hPersistence.delete(hPersistence.createQuery(clazz)
                                 .filter(VerificationTask.VERIFICATION_TASK_ID_KEY, verificationTaskId)
                                 .field(VerificationTaskBaseKeys.createdAt)
-                                .greaterThanOrEq(curStartTime)
+                                .greaterThanOrEq(curStartTime.toEpochMilli())
                                 .field(VerificationTaskBaseKeys.createdAt)
-                                .lessThanOrEq(currEndTime));
+                                .lessThanOrEq(currEndTime.toEpochMilli()));
         log.info("Deleted all the records for {} from {} until {}", verificationTaskId, curStartTime, currEndTime);
       }
       curStartTime = currEndTime.plusMillis(1);

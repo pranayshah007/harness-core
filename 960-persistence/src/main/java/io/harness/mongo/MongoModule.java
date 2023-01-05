@@ -21,7 +21,7 @@ import io.harness.mongo.index.migrator.Migrator;
 import io.harness.mongo.metrics.HarnessConnectionPoolListener;
 import io.harness.mongo.tracing.TracerModule;
 import io.harness.morphia.MorphiaModule;
-import io.harness.persistence.Store;
+import io.harness.persistence.store.Store;
 import io.harness.serializer.KryoModule;
 
 import com.google.common.base.Preconditions;

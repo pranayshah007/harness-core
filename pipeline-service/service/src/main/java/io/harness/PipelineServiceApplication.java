@@ -87,7 +87,7 @@ import io.harness.ng.core.filter.ApiResponseFilter;
 import io.harness.notification.module.NotificationClientModule;
 import io.harness.outbox.OutboxEventPollService;
 import io.harness.persistence.HPersistence;
-import io.harness.persistence.Store;
+import io.harness.persistence.store.Store;
 import io.harness.plancreator.pipeline.PipelineConfig;
 import io.harness.plancreator.strategy.StrategyConstants;
 import io.harness.plancreator.strategy.StrategyMaxConcurrencyRestrictionUsageImpl;

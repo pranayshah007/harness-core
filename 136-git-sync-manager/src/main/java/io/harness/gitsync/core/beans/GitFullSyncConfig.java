@@ -11,8 +11,8 @@ import static io.harness.annotations.dev.HarnessTeam.DX;
 
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.mongo.CollationLocale;
-import io.harness.mongo.CollationStrength;
+import io.harness.mongo.collation.CollationLocale;
+import io.harness.mongo.collation.CollationStrength;
 import io.harness.mongo.index.Collation;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
