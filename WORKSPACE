@@ -5514,7 +5514,7 @@ maven_install(
         maven_test_artifact("pl.pragmatists:JUnitParams:1.0.4"),
     ],
     excluded_artifacts = [],
-    maven_install_json = "//project:main_maven_install.json",
+#    maven_install_json = "//project:main_maven_install.json",
     override_targets = {
         "org.apache.commons:commons-io": "@maven//:commons_io_commons_io",
         "com.jcraft:jsch": "@maven//:com_jcraft_harness_jsch_0_1_54_harness_patch",
