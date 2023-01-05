@@ -15,7 +15,6 @@ import static javax.cache.Caching.getCachingProvider;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.govern.ProviderMethodInterceptor;
 import io.harness.govern.ServersModule;
-import io.harness.redis.RedisConfig;
 import io.harness.redis.RedissonKryoCodec;
 
 import com.google.common.io.Files;
@@ -58,7 +57,6 @@ import org.jsr107.ri.annotations.guice.CachePutInterceptor;
 import org.jsr107.ri.annotations.guice.CacheRemoveAllInterceptor;
 import org.jsr107.ri.annotations.guice.CacheRemoveEntryInterceptor;
 import org.jsr107.ri.annotations.guice.CacheResultInterceptor;
-import org.redisson.api.RedissonClient;
 import org.redisson.config.Config;
 
 /**
@@ -126,8 +124,6 @@ public class CacheModule extends AbstractModule implements ServersModule {
   private CacheManager cacheManager;
   private Optional<CacheManager> enterpriseRedisCacheManagerOptional;
   private CacheConfig cacheConfig;
-  private RedisConfig redisConfig;
-  private RedissonClient redissonClient;
 
   public CacheModule(@NonNull CacheConfig cacheConfig) {
     this.cacheConfig = cacheConfig;
@@ -197,15 +193,6 @@ public class CacheModule extends AbstractModule implements ServersModule {
         throw new UnsupportedOperationException();
     }
     return new HarnessCacheManagerImpl(cacheManager, enterpriseRedisCacheManagerOptional, cacheConfig);
-  }
-
-  @Provides
-  @Singleton
-  public DelegateRedissonCacheManager getDelegateServiceCacheManager(
-      @Named("redissonClient") RedissonClient redissonClient, RedisConfig redisConfig) {
-    this.redissonClient = redissonClient;
-    this.redisConfig = redisConfig;
-    return new DelegateRedissonCacheManagerImpl(redissonClient, redisConfig);
   }
 
   public static <T, R> Supplier<R> bind(Function<T, R> fn, T val) {

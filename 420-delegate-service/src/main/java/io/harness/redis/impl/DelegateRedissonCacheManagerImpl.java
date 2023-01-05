@@ -5,12 +5,13 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.cache;
+package io.harness.redis.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.DEL;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.redis.RedisConfig;
+import io.harness.redis.intfc.DelegateRedissonCacheManager;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;

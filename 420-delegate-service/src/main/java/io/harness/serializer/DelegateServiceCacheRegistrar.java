@@ -10,7 +10,7 @@ package io.harness.serializer;
 import static io.harness.annotations.dev.HarnessTeam.DEL;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cache.DelegateRedissonCacheManager;
+import io.harness.redis.intfc.DelegateRedissonCacheManager;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Key;
