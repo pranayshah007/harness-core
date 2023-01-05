@@ -38,7 +38,7 @@ public class DeploymentReconRecordRepository {
       return deploymentReconRecord;
     }
     FindOptions findOptions = new FindOptions();
-    findOptions.hintString("accountId_entityClass_durationEndTs_sorted");
+    findOptions.hint(DeploymentReconRecord.getHint("accountId_entityClass_durationEndTs_sorted"));
     try (HIterator<DeploymentReconRecord> iterator =
              new HIterator<>(persistence.createQuery(DeploymentReconRecord.class)
                                  .field(DeploymentReconRecordKeys.accountId)

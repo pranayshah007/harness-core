@@ -8,6 +8,7 @@
 package io.harness.pms.ngpipeline.inputset.helpers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.NAMAN;
 
 import static java.lang.String.format;
@@ -19,6 +20,8 @@ import io.harness.PipelineServiceTestBase;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.WingsException;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType;
@@ -31,6 +34,7 @@ import io.harness.rule.Owner;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -104,7 +108,7 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
         + "    - stage:\n"
         + "        identifier: s1\n"
         + "        description: desc\n";
-    PipelineEntity pipelineEntity = PipelineEntity.builder().yaml(pipelineYaml).build();
+    PipelineEntity pipelineEntity = PipelineEntity.builder().yaml(pipelineYaml).storeType(StoreType.REMOTE).build();
     doReturn(Optional.of(pipelineEntity))
         .when(pmsPipelineService)
         .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
@@ -114,6 +118,7 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
                                        .isInvalid(true)
                                        .identifier(invalidIdentifier)
                                        .inputSetEntityType(InputSetEntityType.INPUT_SET)
+                                       .storeType(StoreType.REMOTE)
                                        .build();
     doReturn(Optional.of(invalidEntity))
         .when(pmsInputSetService)
@@ -125,6 +130,7 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
                                      .identifier(validIdentifier)
                                      .inputSetEntityType(InputSetEntityType.INPUT_SET)
                                      .yaml(validInputSetYaml)
+                                     .storeType(StoreType.REMOTE)
                                      .build();
     doReturn(Optional.of(validEntity))
         .when(pmsInputSetService)
@@ -195,7 +201,7 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
         + "      key1: <+input>\n"
         + "      key2: <+input>\n"
         + "      key3: <+input>";
-    PipelineEntity pipeline = PipelineEntity.builder().yaml(pipelineYaml).build();
+    PipelineEntity pipeline = PipelineEntity.builder().yaml(pipelineYaml).storeType(StoreType.REMOTE).build();
     doReturn(Optional.of(pipeline))
         .when(pmsPipelineService)
         .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
@@ -206,8 +212,11 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
         + "    - stage:\n"
         + "        identifier: s1\n"
         + "        key: s1Value1";
-    InputSetEntity forS1 =
-        InputSetEntity.builder().yaml(yamlForS1).inputSetEntityType(InputSetEntityType.INPUT_SET).build();
+    InputSetEntity forS1 = InputSetEntity.builder()
+                               .yaml(yamlForS1)
+                               .inputSetEntityType(InputSetEntityType.INPUT_SET)
+                               .storeType(StoreType.REMOTE)
+                               .build();
     doReturn(Optional.of(forS1))
         .when(pmsInputSetService)
         .getWithoutValidations(accountId, orgId, projectId, pipelineId, "forS1", false);
@@ -223,8 +232,11 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
         + "        key1: s2Value1\n"
         + "        key2: s2Value2\n"
         + "        key3: s2Value3";
-    InputSetEntity forS1AndS2 =
-        InputSetEntity.builder().yaml(yamlForS1AndS2).inputSetEntityType(InputSetEntityType.INPUT_SET).build();
+    InputSetEntity forS1AndS2 = InputSetEntity.builder()
+                                    .yaml(yamlForS1AndS2)
+                                    .inputSetEntityType(InputSetEntityType.INPUT_SET)
+                                    .storeType(StoreType.REMOTE)
+                                    .build();
     doReturn(Optional.of(forS1AndS2))
         .when(pmsInputSetService)
         .getWithoutValidations(accountId, orgId, projectId, pipelineId, "forS1AndS2", false);
@@ -235,8 +247,11 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
         + "    - stage:\n"
         + "        identifier: s2\n"
         + "        key1: s2Value2FromForS2\n";
-    InputSetEntity forS2 =
-        InputSetEntity.builder().yaml(yamlForS2).inputSetEntityType(InputSetEntityType.INPUT_SET).build();
+    InputSetEntity forS2 = InputSetEntity.builder()
+                               .yaml(yamlForS2)
+                               .inputSetEntityType(InputSetEntityType.INPUT_SET)
+                               .storeType(StoreType.REMOTE)
+                               .build();
     doReturn(Optional.of(forS2))
         .when(pmsInputSetService)
         .getWithoutValidations(accountId, orgId, projectId, pipelineId, "forS2", false);
@@ -251,6 +266,46 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
             + "      key1: \"s2Value2FromForS2\"\n"
             + "      key2: \"s2Value2\"\n"
             + "      key3: \"s2Value3\"\n");
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testGetMergeInputSetFromPipelineTemplateWhenPipelineIsRemoteAndInputSetIsInline() {
+    String pipelineYaml = "pipeline:\n"
+        + "  stages:\n"
+        + "  - stage:\n"
+        + "      identifier: s1\n"
+        + "      key: <+input>\n"
+        + "  - stage:\n"
+        + "      identifier: s2\n"
+        + "      key1: <+input>";
+    PipelineEntity pipeline = PipelineEntity.builder().yaml(pipelineYaml).storeType(StoreType.REMOTE).build();
+    doReturn(Optional.of(pipeline))
+        .when(pmsPipelineService)
+        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
+
+    String yamlForS1 = "inputSet:\n"
+        + "  pipeline:\n"
+        + "    stages:\n"
+        + "    - stage:\n"
+        + "        identifier: s1\n"
+        + "        key: s1Value1";
+    InputSetEntity forS1 = InputSetEntity.builder()
+                               .identifier("s1")
+                               .yaml(yamlForS1)
+                               .inputSetEntityType(InputSetEntityType.INPUT_SET)
+                               .storeType(StoreType.INLINE)
+                               .build();
+    doReturn(Optional.of(forS1))
+        .when(pmsInputSetService)
+        .getWithoutValidations(accountId, orgId, projectId, pipelineId, "forS1", false);
+
+    assertThatThrownBy(()
+                           -> validateAndMergeHelper.getMergeInputSetFromPipelineTemplate(accountId, orgId, projectId,
+                               pipelineId, List.of("forS1"), null, null, Collections.singletonList("s2")))
+        .isInstanceOf(WingsException.class)
+        .hasMessage("Please move either the input-set inline to remote or pipeline remote to inline.");
   }
 
   private String getPipelineYamlWithNoRuntime() {

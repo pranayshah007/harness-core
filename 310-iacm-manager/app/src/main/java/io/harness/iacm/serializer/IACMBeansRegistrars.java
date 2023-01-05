@@ -42,7 +42,7 @@ public class IACMBeansRegistrars {
         .clazz(stepType.getNode())
         .build();
   }
-  private ImmutableList<YamlSchemaRootClass> createSecurityStepYamlDefinitions() {
+  private ImmutableList<YamlSchemaRootClass> createIACMStepYamlDefinitions() {
     ImmutableList.Builder<YamlSchemaRootClass> stepPaletteListBuilder = ImmutableList.<YamlSchemaRootClass>builder();
 
     Arrays.asList(IACMStepType.values()).forEach(e -> stepPaletteListBuilder.add(createStepYaml(e)));
@@ -81,6 +81,6 @@ public class IACMBeansRegistrars {
                    .availableAtAccountLevel(false)
                    .clazz(IACMStepInfo.class)
                    .build())
-          .addAll(createSecurityStepYamlDefinitions())
+          .addAll(createIACMStepYamlDefinitions())
           .build();
 }

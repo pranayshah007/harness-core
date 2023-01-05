@@ -29,12 +29,12 @@ import io.harness.persistence.HPersistence;
 import io.harness.persistence.HQuery;
 import io.harness.persistence.HQuery.QueryChecks;
 import io.harness.persistence.PersistentEntity;
-import io.harness.persistence.Store;
 import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UpdatedByAware;
 import io.harness.persistence.UserProvider;
 import io.harness.persistence.UuidAccess;
 import io.harness.persistence.UuidAware;
+import io.harness.persistence.store.Store;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;

@@ -38,6 +38,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.util.CloseableIterator;
 
 /**
@@ -68,8 +69,11 @@ public class IdentityStrategyInternalStep
         identityParams.getOriginalNodeExecutionId(), NodeProjectionUtils.fieldsForIdentityStrategyStep);
     NodeExecution childNodeExecution = null;
     try (CloseableIterator<NodeExecution> iterator =
-             nodeExecutionService.fetchChildrenNodeExecutionsIterator(ambiance.getPlanExecutionId(),
-                 identityParams.getOriginalNodeExecutionId(), NodeProjectionUtils.fieldsForIdentityStrategyStep)) {
+             // Use original planExecutionId that belongs to the originalNodeExecutionId and not current
+             // planExecutionId(ambiance.getPlanExecutionId)
+        nodeExecutionService.fetchChildrenNodeExecutionsIterator(
+            originalNodeExecution.getAmbiance().getPlanExecutionId(), identityParams.getOriginalNodeExecutionId(),
+            Direction.ASC, NodeProjectionUtils.fieldsForIdentityStrategyStep)) {
       while (iterator.hasNext()) {
         NodeExecution next = iterator.next();
         if (Boolean.FALSE.equals(next.getOldRetry())) {
@@ -92,13 +96,16 @@ public class IdentityStrategyInternalStep
   @Override
   public ChildrenExecutableResponse obtainChildren(
       Ambiance ambiance, IdentityStepParameters identityParams, StepInputPackage inputPackage) {
-    NodeExecution strategyNodeExecution = nodeExecutionService.getWithFieldsIncluded(
+    NodeExecution originalStrategyNodeExecution = nodeExecutionService.getWithFieldsIncluded(
         identityParams.getOriginalNodeExecutionId(), NodeProjectionUtils.fieldsForIdentityStrategyStep);
     List<NodeExecution> childrenNodeExecutions = new ArrayList<>();
 
     try (CloseableIterator<NodeExecution> iterator =
-             nodeExecutionService.fetchChildrenNodeExecutionsIterator(ambiance.getPlanExecutionId(),
-                 identityParams.getOriginalNodeExecutionId(), NodeProjectionUtils.fieldsForIdentityStrategyStep)) {
+             // Use original planExecutionId that belongs to the originalNodeExecutionId and not current
+             // planExecutionId(ambiance.getPlanExecutionId)
+        nodeExecutionService.fetchChildrenNodeExecutionsIterator(
+            originalStrategyNodeExecution.getAmbiance().getPlanExecutionId(),
+            identityParams.getOriginalNodeExecutionId(), NodeProjectionUtils.fieldsForIdentityStrategyStep)) {
       while (iterator.hasNext()) {
         NodeExecution next = iterator.next();
         // Don't want to include retried nodeIds
@@ -110,7 +117,8 @@ public class IdentityStrategyInternalStep
 
     List<ChildrenExecutableResponse.Child> children =
         getChildrenFromNodeExecutions(childrenNodeExecutions, ambiance.getPlanId());
-    long maxConcurrency = strategyNodeExecution.getExecutableResponses().get(0).getChildren().getMaxConcurrency();
+    long maxConcurrency =
+        originalStrategyNodeExecution.getExecutableResponses().get(0).getChildren().getMaxConcurrency();
 
     return ChildrenExecutableResponse.newBuilder().addAllChildren(children).setMaxConcurrency(maxConcurrency).build();
   }

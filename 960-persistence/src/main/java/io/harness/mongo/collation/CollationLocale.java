@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.mongo;
+package io.harness.mongo.collation;
 
 public enum CollationLocale {
   ENGLISH("en");

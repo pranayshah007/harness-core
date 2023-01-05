@@ -783,9 +783,19 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   @Override
   public boolean forceDeleteAllInProject(String accountId, String orgIdentifier, String projectIdentifier) {
     Criteria criteria = CoreCriteriaUtils.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier);
+    List<String> services = getServiceIdentifiers(accountId, orgIdentifier, projectIdentifier);
     return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
       DeleteResult deleteResult = serviceRepository.deleteMany(criteria);
-      if (!deleteResult.wasAcknowledged()) {
+      if (deleteResult.wasAcknowledged()) {
+        if (isEmpty(services)) {
+          return true;
+        }
+        for (String serviceId : services) {
+          entitySetupUsageHelper.deleteSetupUsagesWithOnlyIdentifierInfo(
+              serviceId, accountId, orgIdentifier, projectIdentifier);
+        }
+
+      } else {
         throw new InvalidRequestException(String.format(
             "Services under Project[%s], Organization [%s] couldn't be deleted.", projectIdentifier, orgIdentifier));
       }
@@ -902,6 +912,10 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
     }
 
     return serviceEntityList;
+  }
+  @Override
+  public List<String> getServiceIdentifiers(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    return serviceRepository.getServiceIdentifiers(accountIdentifier, orgIdentifier, projectIdentifier);
   }
 
   private void validateTheServicesList(List<ServiceEntity> serviceEntities) {

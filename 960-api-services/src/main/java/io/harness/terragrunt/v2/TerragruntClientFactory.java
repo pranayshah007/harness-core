@@ -21,6 +21,7 @@ import io.harness.exception.runtime.TerragruntCliRuntimeException;
 import io.harness.logging.NoopExecutionCallback;
 import io.harness.serializer.JsonUtils;
 import io.harness.terraform.beans.TerraformVersion;
+import io.harness.terragrunt.v2.request.TerragruntRunType;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -43,14 +44,20 @@ public class TerragruntClientFactory {
 
   @Inject private CliHelper cliHelper;
 
-  public TerragruntClient getClient(String tgScriptDirectory, long timeoutInMillis) {
-    String terragruntInfoJson = getTerragruntInfoJson(tgScriptDirectory, timeoutInMillis);
-    String terraformPath;
-    try {
-      terraformPath = JsonUtils.jsonPath(terragruntInfoJson, TERRAGRUNT_INFO_TF_BINARY_JSON_PATH);
-    } catch (Exception e) {
-      terraformPath = TERRAFORM_BINARY_VALUE;
+  public TerragruntClient getClient(String tgScriptDirectory, long timeoutInMillis, String runType) {
+    String terragruntInfoJson = "{}";
+    String terraformPath = TERRAFORM_BINARY_VALUE;
+    if (TerragruntRunType.RUN_MODULE.name().equalsIgnoreCase(runType)) {
+      // When run-all from outside concrete module we don't need to run terragrunt terragrunt-info, because there might
+      // be no terragrunt.hcl
+      terragruntInfoJson = getTerragruntInfoJson(tgScriptDirectory, timeoutInMillis);
+      try {
+        terraformPath = JsonUtils.jsonPath(terragruntInfoJson, TERRAGRUNT_INFO_TF_BINARY_JSON_PATH);
+      } catch (Exception e) {
+        terraformPath = TERRAFORM_BINARY_VALUE;
+      }
     }
+
     return TerragruntClientImpl.builder()
         .terragruntInfoJson(terragruntInfoJson)
         .terraformVersion(getTerraformVersion(tgScriptDirectory, terraformPath, timeoutInMillis))

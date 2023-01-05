@@ -14,6 +14,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.task.aws.asg.AsgPrepareRollbackDataRequest;
@@ -28,6 +29,8 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
+import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
@@ -52,6 +55,7 @@ public class AsgRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
 
   @Inject private AsgStepCommonHelper asgStepCommonHelper;
   @Inject private AsgStepHelper asgStepHelper;
+  @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
@@ -77,16 +81,16 @@ public class AsgRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
   public TaskChainResponse executeAsgTask(Ambiance ambiance, StepElementParameters stepElementParameters,
       AsgExecutionPassThroughData executionPassThroughData, UnitProgressData unitProgressData,
       AsgStepExecutorParams asgStepExecutorParams) {
-    InfrastructureOutcome infrastructureOutcome = executionPassThroughData.getInfrastructure();
     final String accountId = AmbianceUtils.getAccountId(ambiance);
+    InfrastructureOutcome infrastructureOutcome = executionPassThroughData.getInfrastructure();
 
     AsgRollingDeployStepParameters asgSpecParameters = (AsgRollingDeployStepParameters) stepElementParameters.getSpec();
 
     AsgRollingDeployRequest asgRollingDeployRequest =
         AsgRollingDeployRequest.builder()
             .commandName(ASG_ROLLING_DEPLOY_COMMAND_NAME)
-            .accountId(accountId)
             .asgInfraConfig(asgStepCommonHelper.getAsgInfraConfig(infrastructureOutcome, ambiance))
+            .accountId(accountId)
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
             .asgStoreManifestsContent(asgStepExecutorParams.getAsgStoreManifestsContent())
@@ -141,6 +145,17 @@ public class AsgRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
     if (asgRollingDeployResponse.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
       return AsgStepCommonHelper.getFailureResponseBuilder(asgRollingDeployResponse, stepResponseBuilder).build();
     }
+
+    AsgRollingDeployOutcome asgRollingDeployOutcome =
+        AsgRollingDeployOutcome.builder()
+            .asgStoreManifestsContent(
+                asgRollingDeployResponse.getAsgRollingDeployResult().getAsgStoreManifestsContent())
+            .autoScalingGroupContainer(
+                asgRollingDeployResponse.getAsgRollingDeployResult().getAutoScalingGroupContainer())
+            .build();
+
+    executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.ASG_ROLLING_DEPLOY_OUTCOME,
+        asgRollingDeployOutcome, StepOutcomeGroup.STEP.name());
 
     return stepResponseBuilder.status(Status.SUCCEEDED).build();
   }

@@ -12,7 +12,9 @@ import static io.harness.annotations.dev.HarnessTeam.IACM;
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
+import io.harness.beans.steps.nodes.iacm.IACMTemplateStepNode;
 import io.harness.beans.steps.nodes.iacm.IACMTerraformPlanStepNode;
+import io.harness.iacm.plan.creator.step.IACMTemplateStepPlanCreator;
 import io.harness.iacm.plan.creator.step.IACMTerraformPlanStepPlanCreator;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
@@ -27,7 +29,9 @@ import lombok.Getter;
 @OwnedBy(IACM)
 public enum IACMStepType {
   IACM_TERRAFORM_PLAN("IACMTerraformPlan", FeatureName.IACM_ENABLED, IACMTerraformPlanStepNode.class,
-      EntityType.IACM_TERRAFORM_PLAN, new IACMTerraformPlanStepPlanCreator(), new String[] {"IACM"});
+      EntityType.IACM_TERRAFORM_PLAN, new IACMTerraformPlanStepPlanCreator(), new String[] {"IACM"}),
+  IACM_TEMPLATE("IACMTemplate", FeatureName.IACM_ENABLED, IACMTemplateStepNode.class, EntityType.IACM_TEMPLATE,
+      new IACMTemplateStepPlanCreator(), new String[] {"IACM"});
   @Getter private String name;
   @Getter private FeatureName featureName;
   @Getter private Class<?> node;

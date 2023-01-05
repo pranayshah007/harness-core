@@ -112,7 +112,7 @@ public final class EventsFrameworkConstants {
   public static final int CD_DEPLOYMENT_EVENT_BATCH_SIZE = 1;
   public static final int CD_DEPLOYMENT_EVENT_MAX_TOPIC_SIZE = 5000;
 
-  public static final String INTERNAL_CHANGE_EVENT_FF = "feature_flag_change_event";
+  public static final String INTERNAL_CHANGE_EVENT_FF = "cf_svc_updates";
 
   public static final int INTERNAL_CHANGE_EVENT_FF_BATCH_SIZE = 1;
 

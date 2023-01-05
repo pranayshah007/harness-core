@@ -128,14 +128,16 @@ public class TasAppResizeStep extends TaskExecutableWithRollbackAndRbac<CfComman
             .instanceData(response.getCfDeployCommandResult().getInstanceDataUpdated())
             .cfInstanceElements(response.getCfDeployCommandResult().getNewAppInstances())
             .build();
-    List<ServerInstanceInfo> serverInstanceInfoList = getServerInstanceInfoList(response, ambiance);
-    StepResponse.StepOutcome stepOutcome =
-        instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfoList);
+    if (!response.getCfDeployCommandResult().isStandardBG()) {
+      List<ServerInstanceInfo> serverInstanceInfoList = getServerInstanceInfoList(response, ambiance);
+      StepResponse.StepOutcome stepOutcome =
+          instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfoList);
+      tasStepHelper.saveInstancesOutcome(ambiance, serverInstanceInfoList);
+      builder.stepOutcome(stepOutcome);
+    }
     executionSweepingOutputService.consume(
         ambiance, OutcomeExpressionConstants.TAS_APP_RESIZE_OUTCOME, tasAppResizeDataOutcome, StepCategory.STEP.name());
-    tasStepHelper.saveInstancesOutcome(ambiance, serverInstanceInfoList);
 
-    builder.stepOutcome(stepOutcome);
     builder.stepOutcome(StepResponse.StepOutcome.builder()
                             .name(OutcomeExpressionConstants.OUTPUT)
                             .outcome(tasAppResizeDataOutcome)

@@ -1359,7 +1359,7 @@ public class YamlGitServiceImpl implements YamlGitService {
 
     FindOptions findOptions = new FindOptions();
     if (featureFlagService.isNotEnabled(REMOVE_HINT_YAML_GIT_COMMITS, accountId)) {
-      findOptions.hintString("gitCommitAccountIdStatusYgcLastUpdatedIdx");
+      findOptions.hint(GitCommit.getHint("gitCommitAccountIdStatusYgcLastUpdatedIdx"));
     }
 
     GitCommit gitCommit = wingsPersistence.createQuery(GitCommit.class)
@@ -1374,7 +1374,7 @@ public class YamlGitServiceImpl implements YamlGitService {
     // This is to handle the old git commit records which doesn't have yamlGitConfigId
     if (gitCommit == null) {
       FindOptions findOptions_1 = new FindOptions();
-      findOptions_1.hintString("gitCommitAccountIdStatusYgLastUpdatedIdx");
+      findOptions_1.hint(GitCommit.getHint("gitCommitAccountIdStatusYgLastUpdatedIdx"));
 
       gitCommit = wingsPersistence.createQuery(GitCommit.class)
                       .filter(GitCommitKeys.accountId, accountId)

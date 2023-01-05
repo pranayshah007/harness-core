@@ -50,6 +50,7 @@ public class BudgetServiceImpl implements BudgetService {
     updateBudgetStartTime(budget);
     updateBudgetEndTime(budget);
     updateBudgetCosts(budget);
+    updateBudgetHistory(budget);
     return budgetDao.save(budget);
   }
 
@@ -76,6 +77,8 @@ public class BudgetServiceImpl implements BudgetService {
                              .isNgBudget(budget.isNgBudget())
                              .startTime(budget.getStartTime())
                              .endTime(budget.getEndTime())
+                             .budgetMonthlyBreakdown(budget.getBudgetMonthlyBreakdown())
+                             .budgetHistory(budget.getBudgetHistory())
                              .build();
     return create(cloneBudget);
   }
@@ -210,6 +213,11 @@ public class BudgetServiceImpl implements BudgetService {
     budget.setActualCost(actualCost);
     budget.setForecastCost(forecastCost);
     budget.setLastMonthCost(lastMonthCost);
+  }
+
+  @Override
+  public void updateBudgetHistory(Budget budget) {
+    budget.setBudgetHistory(budgetCostService.getBudgetHistory(budget));
   }
 
   private double getActualCostForPerspectiveBudget(Budget budget) {

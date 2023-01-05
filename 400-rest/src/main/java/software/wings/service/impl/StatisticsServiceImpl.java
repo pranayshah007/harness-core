@@ -191,7 +191,7 @@ public class StatisticsServiceImpl implements StatisticsService {
     }
 
     FindOptions findOptions = new FindOptions();
-    findOptions.hintString("accountId_pipExecutionId_createdAt");
+    findOptions.hint(WorkflowExecution.getHint("accountId_pipExecutionId_createdAt"));
 
     List<WorkflowExecution> workflowExecutions = query.asList(findOptions);
 

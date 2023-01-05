@@ -58,13 +58,11 @@ public class IACMTerraformPlanInfo extends IACMStepInfo {
   @Builder
   @ConstructorProperties({"identifier", "name", "retry", "settings", "resources", "outputVariables", "runAsUser",
       "privileged", "imagePullPolicy", "env", "tfVars"})
-  public IACMTerraformPlanInfo(String identifier, String name, Integer retry,
-      ParameterField<List<OutputNGVariable>> outputVariables, ParameterField<Map<String, String>> env,
+  public IACMTerraformPlanInfo(String identifier, String name, Integer retry, ParameterField<Map<String, String>> env,
       ParameterField<Map<String, String>> tfVars) {
     super.identifier = identifier;
     super.name = name;
     super.retry = Optional.ofNullable(retry).orElse(DEFAULT_RETRY);
-    super.outputVariables = outputVariables;
     this.env = env;
     this.tfVars = tfVars;
   }

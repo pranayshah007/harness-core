@@ -120,7 +120,6 @@ public class AsgCanaryDeployStep extends TaskChainExecutableWithRollbackAndRbac 
     log.info("Finalizing execution with passThroughData: " + passThroughData.getClass().getName());
 
     AsgExecutionPassThroughData asgExecutionPassThroughData = (AsgExecutionPassThroughData) passThroughData;
-    InfrastructureOutcome infrastructureOutcome = asgExecutionPassThroughData.getInfrastructure();
     AsgCanaryDeployResponse asgCanaryDeployResponse;
     try {
       asgCanaryDeployResponse = (AsgCanaryDeployResponse) responseDataSupplier.get();

@@ -12,6 +12,9 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import io.harness.annotations.dev.OwnedBy;
 
 import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 
@@ -22,4 +25,5 @@ public class AsgManifestHandlerChainState {
   private String asgName;
   private String launchTemplateVersion;
   private AutoScalingGroup autoScalingGroup;
+  private Map<String, List<String>> asgManifestsDataForRollback = new HashMap<>();
 }

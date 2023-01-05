@@ -175,7 +175,7 @@ public class ResourceLookupServiceImpl implements ResourceLookupService {
     Map<String, ResourceLookup> resourceLookupMap = new HashMap<>();
 
     FindOptions findOptions = new FindOptions();
-    findOptions.hintString("resourceIdResourceLookupIndex");
+    findOptions.hint(ResourceLookup.getHint("resourceIdResourceLookupIndex"));
 
     try (HIterator<ResourceLookup> iterator = new HIterator<>(query.fetch(findOptions))) {
       while (iterator.hasNext()) {

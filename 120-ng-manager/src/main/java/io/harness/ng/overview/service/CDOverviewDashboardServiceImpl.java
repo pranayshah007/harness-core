@@ -2331,7 +2331,6 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     Map<String, String> envIdToEnvNameMap = new HashMap<>();
     Map<String, String> infraIdToInfraNameMap = new HashMap<>();
     Map<String, String> clusterIdToAgentIdMap = new HashMap<>();
-    Map<String, Map<String, String>> serviceIdBuildIdToArtifactPathMap = new HashMap<>();
     Map<String, String> serviceIdToLatestBuildMap = new HashMap<>();
     Map<String, Long> serviceIdToLastDeployed = new HashMap<>();
     activeServiceInstanceInfoList.forEach(activeServiceInstanceInfo -> {
@@ -2354,21 +2353,23 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
       final String envName = activeServiceInstanceInfo.getEnvName();
       final String artifactPath = getArtifactPathFromDisplayName(activeServiceInstanceInfo.getDisplayName());
       final Integer count = activeServiceInstanceInfo.getCount();
+      final String displayName = getDisplayNameFromArtifact(artifactPath, buildId);
 
       if ((!serviceIdToLastDeployed.containsKey(serviceId))
           || (lastDeployedAt > serviceIdToLastDeployed.get(serviceId))) {
-        serviceIdToLatestBuildMap.put(serviceId, buildId);
+        serviceIdToLatestBuildMap.put(serviceId, displayName);
         serviceIdToLastDeployed.put(serviceId, lastDeployedAt);
       }
 
       serviceBuildEnvInfraMap.putIfAbsent(serviceId, new HashMap<>());
-      serviceBuildEnvInfraMap.get(serviceId).putIfAbsent(buildId, new HashMap<>());
-      serviceBuildEnvInfraMap.get(serviceId).get(buildId).putIfAbsent(
-          envId, new MutablePair<>(new HashMap<>(), new HashMap<>()));
+      serviceBuildEnvInfraMap.get(serviceId).putIfAbsent(displayName, new HashMap<>());
+      serviceBuildEnvInfraMap.get(serviceId)
+          .get(displayName)
+          .putIfAbsent(envId, new MutablePair<>(new HashMap<>(), new HashMap<>()));
 
       if (clusterIdentifier != null) {
         Map<String, List<InstanceGroupedByServiceList.InstanceGroupedByPipelineExecution>> map =
-            serviceBuildEnvInfraMap.get(serviceId).get(buildId).get(envId).getValue();
+            serviceBuildEnvInfraMap.get(serviceId).get(displayName).get(envId).getValue();
         map.putIfAbsent(clusterIdentifier, new ArrayList<>());
         map.get(clusterIdentifier)
             .add(new InstanceGroupedByServiceList.InstanceGroupedByPipelineExecution(
@@ -2376,7 +2377,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
         clusterIdToAgentIdMap.putIfAbsent(clusterIdentifier, agentIdentifier);
       } else {
         Map<String, List<InstanceGroupedByServiceList.InstanceGroupedByPipelineExecution>> map =
-            serviceBuildEnvInfraMap.get(serviceId).get(buildId).get(envId).getKey();
+            serviceBuildEnvInfraMap.get(serviceId).get(displayName).get(envId).getKey();
         map.putIfAbsent(infraIdentifier, new ArrayList<>());
         map.get(infraIdentifier)
             .add(new InstanceGroupedByServiceList.InstanceGroupedByPipelineExecution(
@@ -2386,12 +2387,10 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
 
       serviceIdToServiceNameMap.putIfAbsent(serviceId, serviceName);
       envIdToEnvNameMap.putIfAbsent(envId, envName);
-      serviceIdBuildIdToArtifactPathMap.putIfAbsent(serviceId, new HashMap<>());
-      serviceIdBuildIdToArtifactPathMap.get(serviceId).putIfAbsent(buildId, artifactPath);
     });
     List<InstanceGroupedByServiceList.InstanceGroupedByService> instanceGroupedByServiceList =
         groupedByServices(serviceBuildEnvInfraMap, envIdToEnvNameMap, infraIdToInfraNameMap, serviceIdToServiceNameMap,
-            clusterIdToAgentIdMap, serviceIdBuildIdToArtifactPathMap, serviceIdToLatestBuildMap);
+            clusterIdToAgentIdMap, serviceIdToLatestBuildMap);
 
     return InstanceGroupedByServiceList.builder().instanceGroupedByServiceList(instanceGroupedByServiceList).build();
   }
@@ -2405,7 +2404,6 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
           serviceBuildEnvInfraMap,
       Map<String, String> envIdToEnvNameMap, Map<String, String> infraIdToInfraNameMap,
       Map<String, String> serviceIdToServiceNameMap, Map<String, String> clusterIdAgentIdMap,
-      Map<String, Map<String, String>> serviceIdBuildIdToArtifactPathMap,
       Map<String, String> serviceIdToLatestBuildMap) {
     List<InstanceGroupedByServiceList.InstanceGroupedByService> instanceGroupedByServiceList = new ArrayList<>();
 
@@ -2419,8 +2417,8 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
       String serviceName = serviceIdToServiceNameMap.get(serviceId);
 
       List<InstanceGroupedByServiceList.InstanceGroupedByArtifactV2> instanceGroupedByArtifactList =
-          groupByArtifact(entry3.getValue(), serviceIdBuildIdToArtifactPathMap, serviceIdToLatestBuildMap, serviceId,
-              infraIdToInfraNameMap, envIdToEnvNameMap, clusterIdAgentIdMap);
+          groupByArtifact(entry3.getValue(), serviceIdToLatestBuildMap, serviceId, infraIdToInfraNameMap,
+              envIdToEnvNameMap, clusterIdAgentIdMap);
 
       instanceGroupedByServiceList.add(InstanceGroupedByServiceList.InstanceGroupedByService.builder()
                                            .serviceId(serviceId)
@@ -2449,17 +2447,17 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
               Pair<Map<String, List<InstanceGroupedByServiceList.InstanceGroupedByPipelineExecution>>,
                   Map<String, List<InstanceGroupedByServiceList.InstanceGroupedByPipelineExecution>>>>>
           artifactToEnvMap,
-      Map<String, Map<String, String>> serviceIdBuildIdToArtifactPathMap, Map<String, String> serviceIdToLatestBuildMap,
-      String serviceId, Map<String, String> infraIdToInfraNameMap, Map<String, String> envIdToEnvNameMap,
-      Map<String, String> clusterIdAgentIdMap) {
+      Map<String, String> serviceIdToLatestBuildMap, String serviceId, Map<String, String> infraIdToInfraNameMap,
+      Map<String, String> envIdToEnvNameMap, Map<String, String> clusterIdAgentIdMap) {
     List<InstanceGroupedByServiceList.InstanceGroupedByArtifactV2> instanceGroupedByArtifactList = new ArrayList<>();
     for (Map.Entry<String,
              Map<String,
                  Pair<Map<String, List<InstanceGroupedByServiceList.InstanceGroupedByPipelineExecution>>,
                      Map<String, List<InstanceGroupedByServiceList.InstanceGroupedByPipelineExecution>>>>> entry :
         artifactToEnvMap.entrySet()) {
-      String buildId = entry.getKey();
-      String artifactPath = serviceIdBuildIdToArtifactPathMap.get(serviceId).get(buildId);
+      String displayName = entry.getKey();
+      String artifactPath = getArtifactPathFromDisplayName(displayName);
+      String buildId = getTagFromDisplayName(displayName);
 
       List<InstanceGroupedByServiceList.InstanceGroupedByEnvironmentV2> instanceGroupedByEnvironmentList =
           groupByEnvironment(entry.getValue(), infraIdToInfraNameMap, envIdToEnvNameMap, clusterIdAgentIdMap);
@@ -2468,7 +2466,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
                                             .artifactVersion(buildId)
                                             .artifactPath(artifactPath)
                                             .lastDeployedAt(instanceGroupedByEnvironmentList.get(0).getLastDeployedAt())
-                                            .latest(serviceIdToLatestBuildMap.get(serviceId).equals(buildId))
+                                            .latest(serviceIdToLatestBuildMap.get(serviceId).equals(displayName))
                                             .instanceGroupedByEnvironmentList(instanceGroupedByEnvironmentList)
                                             .build());
     }
@@ -2630,6 +2628,29 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
       }
     }
     return "";
+  }
+
+  private String getTagFromDisplayName(String displayName) {
+    if (displayName != null) {
+      String[] res = displayName.split(":");
+      int count = res.length;
+      if (count > 1) {
+        return res[1];
+      } else {
+        return res[0];
+      }
+    }
+    return "";
+  }
+
+  private String getDisplayNameFromArtifact(String artifactPath, String buildId) {
+    if (EmptyPredicate.isEmpty(buildId)) {
+      return "";
+    }
+    if (EmptyPredicate.isEmpty(artifactPath)) {
+      return buildId;
+    }
+    return String.format("%s:%s", artifactPath, buildId);
   }
 
   private List<InstanceGroupedByArtifactList.InstanceGroupedByArtifact> groupedByArtifacts(
@@ -2971,7 +2992,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
       final String artifactPath = deploymentInfo.getArtifactPath();
       final String serviceId = deploymentInfo.getServiceId();
       final String serviceName = deploymentInfo.getServiceName();
-      final String displayName = artifactPath == null ? "" : String.format("%s:%s", artifactPath, artifact);
+      final String displayName = getDisplayNameFromArtifact(artifactPath, artifact);
 
       String lastPipelineExecutionId = null;
       String lastPipelineExecutionName = null;

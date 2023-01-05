@@ -29,6 +29,7 @@ import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.pcf.CfAppSetupTimeDetails;
 import io.harness.delegate.beans.pcf.CfInBuiltVariablesUpdateValues;
+import io.harness.delegate.beans.pcf.CfInternalInstanceElement;
 import io.harness.delegate.beans.pcf.CfRouteUpdateRequestConfigData;
 import io.harness.delegate.beans.pcf.CfSwapRouteCommandResult;
 import io.harness.delegate.beans.pcf.TasApplicationInfo;
@@ -57,6 +58,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -149,10 +151,14 @@ public class CfSwapRouteCommandTaskHandlerNG extends CfCommandTaskNGHandler {
           cfRequestConfig, pcfRouteUpdateConfigData, workingDirectory.getAbsolutePath(), iLogStreamingTaskClient,
           commandUnitsProgress);
 
+      getInstancesForNewApplication(
+          cfSwapRoutesRequestNG.getReleaseNamePrefix(), cfSwapRouteCommandResult, cfRequestConfig);
+
       cfSwapRouteCommandResult.setUpdatedValues(updateValues);
       cfSwapRouteCommandResponseNG.setErrorMessage(StringUtils.EMPTY);
       cfSwapRouteCommandResponseNG.setCommandExecutionStatus(CommandExecutionStatus.SUCCESS);
       cfSwapRouteCommandResponseNG.setNewApplicationName(cfSwapRoutesRequestNG.getReleaseNamePrefix());
+      cfSwapRouteCommandResponseNG.setCfSwapRouteCommandResult(cfSwapRouteCommandResult);
     } catch (Exception e) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
       log.error("Exception in processing PCF Route Update task", sanitizedException);
@@ -179,6 +185,23 @@ public class CfSwapRouteCommandTaskHandlerNG extends CfCommandTaskNGHandler {
     return cfSwapRouteCommandResponseNG;
   }
 
+  private void getInstancesForNewApplication(
+      String newApplicationName, CfSwapRouteCommandResult cfSwapRouteCommandResult, CfRequestConfig cfRequestConfig)
+      throws PivotalClientApiException {
+    cfRequestConfig.setApplicationName(newApplicationName);
+    ApplicationDetail newAppDetails = cfDeploymentManager.getApplicationByName(cfRequestConfig);
+    List<CfInternalInstanceElement> newAppInstances = new ArrayList<>();
+
+    newAppDetails.getInstanceDetails().forEach(instance
+        -> newAppInstances.add(CfInternalInstanceElement.builder()
+                                   .applicationId(newAppDetails.getId())
+                                   .displayName(newAppDetails.getName())
+                                   .instanceIndex(instance.getIndex())
+                                   .isUpsize(false)
+                                   .build()));
+    cfSwapRouteCommandResult.setNewAppInstances(newAppInstances);
+  }
+
   CfInBuiltVariablesUpdateValues downsizeOldAppDuringDeployAndRenameApps(LogCallback executionLogCallback,
       CfSwapRoutesRequestNG cfSwapRoutesRequestNG, CfRequestConfig cfRequestConfig,
       CfRouteUpdateRequestConfigData pcfRouteUpdateConfigData, String configVarPath,
@@ -195,6 +218,7 @@ public class CfSwapRouteCommandTaskHandlerNG extends CfCommandTaskNGHandler {
         iLogStreamingTaskClient, CfCommandUnitConstants.Rename, true, commandUnitsProgress);
     CfInBuiltVariablesUpdateValues cfInBuiltVariablesUpdateValues =
         renameApps(pcfRouteUpdateConfigData, cfRequestConfig, executionLogCallback);
+
     executionLogCallback.saveExecutionLog("Renaming of Apps Completed", INFO, CommandExecutionStatus.SUCCESS);
     return cfInBuiltVariablesUpdateValues;
   }

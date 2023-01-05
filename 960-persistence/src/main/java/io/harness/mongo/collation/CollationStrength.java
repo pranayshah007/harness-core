@@ -5,14 +5,22 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.mongo;
+package io.harness.mongo.collation;
 
-import lombok.Builder;
-import lombok.Data;
+public enum CollationStrength {
+  PRIMARY(1),
+  SECONDARY(2),
+  TERTIARY(3),
+  QUATERNARY(4),
+  IDENTICAL(5);
 
-@Data
-@Builder
-public class Collation {
-  String locale;
-  int strength;
+  private final int code;
+
+  public int getCode() {
+    return this.code;
+  }
+
+  CollationStrength(int code) {
+    this.code = code;
+  }
 }

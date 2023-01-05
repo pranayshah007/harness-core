@@ -94,7 +94,7 @@ import org.apache.commons.lang3.tuple.Pair;
 @Singleton
 @OwnedBy(CDP)
 public class TerragruntTaskService {
-  public static final String TERRAFORM_INTERNAL_TO_TERRAGRUNT = "./terraform";
+  public static final String TERRAFORM_INTERNAL_TO_TERRAGRUNT = "/.terraform";
   @Inject private TerragruntDownloadService terragruntDownloadService;
   @Inject private DelegateFileManager delegateFileManager;
   @Inject private TerragruntClientFactory terragruntClientFactory;
@@ -187,9 +187,9 @@ public class TerragruntTaskService {
                                  .toAbsolutePath()
                                  .toString();
 
-    TerragruntClient terragruntClient =
-        terragruntClientFactory.getClient(scriptDirectory, parameters.getTimeoutInMillis());
-    String terragruntWorkingDirectory = terragruntClient.terragruntWorkingDirectory();
+    TerragruntClient terragruntClient = terragruntClientFactory.getClient(
+        scriptDirectory, parameters.getTimeoutInMillis(), parameters.getRunConfiguration().getRunType().name());
+    String terragruntWorkingDirectory = null;
     String backendFile = null;
     if (parameters.getBackendFilesStore() != null) {
       log.info("Downloading terragrunt backend file from store type: {}", parameters.getBackendFilesStore().getType());
@@ -213,6 +213,10 @@ public class TerragruntTaskService {
     }
 
     cleanupTerragruntLocalFiles(scriptDirectory);
+
+    if (TerragruntTaskRunType.RUN_MODULE == parameters.getRunConfiguration().getRunType()) {
+      terragruntWorkingDirectory = terragruntClient.terragruntWorkingDirectory();
+    }
 
     if (isNotEmpty(parameters.getStateFileId())
         && TerragruntTaskRunType.RUN_MODULE == parameters.getRunConfiguration().getRunType()) {

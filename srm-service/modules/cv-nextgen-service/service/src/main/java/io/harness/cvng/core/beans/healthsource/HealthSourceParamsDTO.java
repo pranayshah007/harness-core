@@ -7,6 +7,10 @@
 
 package io.harness.cvng.core.beans.healthsource;
 
+import io.harness.cvng.core.entities.HealthSourceParams;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.util.Optional;
 import lombok.Builder;
 import lombok.Data;
 
@@ -14,4 +18,15 @@ import lombok.Data;
 @Builder
 public class HealthSourceParamsDTO {
   String region;
+
+  public static HealthSourceParamsDTO getHealthSourceParamsDTO(HealthSourceParams healthSourceParams) {
+    return HealthSourceParamsDTO.builder()
+        .region(Optional.ofNullable(healthSourceParams).orElse(HealthSourceParams.builder().build()).getRegion())
+        .build();
+  }
+
+  @JsonIgnore
+  public HealthSourceParams getHealthSourceParamsEntity() {
+    return HealthSourceParams.builder().region(region).build();
+  }
 }

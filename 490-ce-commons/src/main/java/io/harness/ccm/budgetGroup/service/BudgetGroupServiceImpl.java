@@ -7,14 +7,21 @@
 
 package io.harness.ccm.budgetGroup.service;
 
+import static io.harness.ccm.budget.utils.BudgetUtils.MONTHS;
+
+import io.harness.ccm.budget.BudgetBreakdown;
+import io.harness.ccm.budget.BudgetPeriod;
 import io.harness.ccm.budget.BudgetSummary;
 import io.harness.ccm.budget.ValueDataPoint;
 import io.harness.ccm.budget.dao.BudgetDao;
 import io.harness.ccm.budget.utils.BudgetUtils;
 import io.harness.ccm.budgetGroup.BudgetGroup;
+import io.harness.ccm.budgetGroup.BudgetGroupChildEntityDTO;
 import io.harness.ccm.budgetGroup.dao.BudgetGroupDao;
 import io.harness.ccm.budgetGroup.utils.BudgetGroupUtils;
 import io.harness.ccm.commons.entities.billing.Budget;
+import io.harness.ccm.commons.entities.budget.BudgetCostData;
+import io.harness.ccm.commons.entities.budget.BudgetData;
 import io.harness.exception.InvalidRequestException;
 
 import com.google.inject.Inject;
@@ -30,11 +37,14 @@ import lombok.extern.slf4j.Slf4j;
 public class BudgetGroupServiceImpl implements BudgetGroupService {
   @Inject BudgetGroupDao budgetGroupDao;
   @Inject BudgetDao budgetDao;
+  public static final String INVALID_BUDGET_GROUP_ID_EXCEPTION = "Invalid budget group id";
+  public static final String MISSING_BUDGET_GROUP_DATA_EXCEPTION = "Missing Budget Group data exception";
 
   @Override
   public String save(BudgetGroup budgetGroup) {
     BudgetGroupUtils.validateBudgetGroup(
         budgetGroup, budgetGroupDao.list(budgetGroup.getAccountId(), budgetGroup.getName()));
+    updateBudgetGroupHistory(budgetGroup, budgetGroup.getAccountId());
     return budgetGroupDao.save(budgetGroup);
   }
 
@@ -142,5 +152,115 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
 
     budgetsNotPartOfBudgetGroups.forEach(budget -> summaryList.add(BudgetUtils.buildBudgetSummary(budget)));
     return summaryList;
+  }
+
+  @Override
+  public BudgetData getBudgetGroupTimeSeriesStats(BudgetGroup budgetGroup, BudgetBreakdown breakdown) {
+    if (budgetGroup == null) {
+      throw new InvalidRequestException(INVALID_BUDGET_GROUP_ID_EXCEPTION);
+    }
+
+    List<BudgetCostData> budgetGroupCostDataList = new ArrayList<>();
+    Double budgetedGroupAmount = budgetGroup.getBudgetGroupAmount();
+    if (budgetedGroupAmount == null) {
+      budgetedGroupAmount = 0.0;
+    }
+
+    if (budgetGroup.getPeriod() == BudgetPeriod.YEARLY && breakdown == BudgetBreakdown.MONTHLY) {
+      Double[] actualCost = budgetGroup.getBudgetGroupMonthlyBreakdown().getActualMonthlyCost();
+      if (actualCost == null || actualCost.length != MONTHS) {
+        log.error("Missing monthly actualCost of yearly budget group with id:" + budgetGroup.getUuid());
+        throw new InvalidRequestException(MISSING_BUDGET_GROUP_DATA_EXCEPTION);
+      }
+
+      Double[] budgetGroupAmount =
+          BudgetUtils.getYearlyMonthWiseValues(budgetGroup.getBudgetGroupMonthlyBreakdown().getBudgetMonthlyAmount());
+      if (budgetGroupAmount == null || budgetGroupAmount.length != MONTHS) {
+        log.error("Missing monthly budgetCost of yearly budget group with id:" + budgetGroup.getUuid());
+        throw new InvalidRequestException(MISSING_BUDGET_GROUP_DATA_EXCEPTION);
+      }
+
+      Double[] forecastMonthlyCost = budgetGroup.getBudgetGroupMonthlyBreakdown().getForecastMonthlyCost();
+      if (forecastMonthlyCost == null || forecastMonthlyCost.length != MONTHS) {
+        log.error("Missing monthly forecastCost of yearly budget group with id:" + budgetGroup.getUuid());
+        throw new InvalidRequestException(MISSING_BUDGET_GROUP_DATA_EXCEPTION);
+      }
+
+      long startTime = budgetGroup.getStartTime();
+      for (int month = 0; month < MONTHS; month++) {
+        long endTime = BudgetUtils.getEndTimeForBudget(startTime, BudgetPeriod.MONTHLY) - BudgetUtils.ONE_DAY_MILLIS;
+        double budgetGroupVariance =
+            BudgetUtils.getBudgetVariance(budgetGroupAmount[month], forecastMonthlyCost[month]);
+        double budgetGroupVariancePercentage =
+            BudgetUtils.getBudgetVariancePercentage(budgetGroupVariance, budgetGroupAmount[month]);
+        BudgetCostData budgetCostData =
+            BudgetCostData.builder()
+                .actualCost(BudgetUtils.getRoundedValue(actualCost[month]))
+                .forecastCost(BudgetUtils.getRoundedValue(forecastMonthlyCost[month]))
+                .budgeted(BudgetUtils.getRoundedValue(budgetGroupAmount[month]))
+                .budgetVariance(BudgetUtils.getRoundedValue(budgetGroupVariance))
+                .budgetVariancePercentage(BudgetUtils.getRoundedValue(budgetGroupVariancePercentage))
+                .time(startTime)
+                .endTime(endTime)
+                .build();
+        budgetGroupCostDataList.add(budgetCostData);
+        startTime = endTime + BudgetUtils.ONE_DAY_MILLIS;
+      }
+    } else {
+      for (BudgetCostData historyBudgetGroupCostData : budgetGroup.getBudgetGroupHistory().values()) {
+        budgetGroupCostDataList.add(historyBudgetGroupCostData);
+      }
+      double budgetGroupAmount = budgetGroup.getBudgetGroupAmount();
+      double budgetGroupVariance = BudgetUtils.getBudgetVariance(budgetGroupAmount, budgetGroup.getActualCost());
+      double budgetGroupVariancePercentage =
+          BudgetUtils.getBudgetVariancePercentage(budgetGroupVariance, budgetGroupAmount);
+      BudgetCostData latestBudgetCostData = BudgetCostData.builder()
+                                                .time(budgetGroup.getStartTime())
+                                                .endTime(budgetGroup.getEndTime())
+                                                .actualCost(budgetGroup.getActualCost())
+                                                .forecastCost(budgetGroup.getForecastCost())
+                                                .budgeted(budgetGroupAmount)
+                                                .budgetVariance(budgetGroupVariance)
+                                                .budgetVariancePercentage(budgetGroupVariancePercentage)
+                                                .build();
+      budgetGroupCostDataList.add(latestBudgetCostData);
+    }
+    return BudgetData.builder().costData(budgetGroupCostDataList).forecastCost(budgetGroup.getForecastCost()).build();
+  }
+
+  private void updateBudgetGroupHistory(BudgetGroup budgetGroup, String accountId) {
+    HashMap<Long, BudgetCostData> budgetGroupHistory = new HashMap<>();
+    for (BudgetGroupChildEntityDTO budgetGroupChildEntityDTO : budgetGroup.getChildEntities()) {
+      HashMap<Long, BudgetCostData> childHistory;
+      if (budgetGroupChildEntityDTO.isBudgetGroup()) {
+        BudgetGroup childBudgetGroup = get(budgetGroupChildEntityDTO.getId(), accountId);
+        childHistory = childBudgetGroup != null ? childBudgetGroup.getBudgetGroupHistory() : null;
+      } else {
+        Budget childBudget = budgetDao.get(budgetGroupChildEntityDTO.getId(), accountId);
+        childHistory = childBudget != null ? childBudget.getBudgetHistory() : null;
+      }
+      for (Long startTime : childHistory.keySet()) {
+        double actualCost;
+        if (budgetGroupHistory.containsKey(startTime)) {
+          actualCost = budgetGroupHistory.get(startTime).getActualCost() + childHistory.get(startTime).getActualCost();
+        } else {
+          actualCost = childHistory.get(startTime).getActualCost();
+        }
+        double budgetVariance = BudgetUtils.getBudgetVariance(budgetGroup.getBudgetGroupAmount(), actualCost);
+        double budgetVariancePercentage =
+            BudgetUtils.getBudgetVariancePercentage(budgetVariance, budgetGroup.getBudgetGroupAmount());
+        BudgetCostData newBudgetGroupCostData = BudgetCostData.builder()
+                                                    .actualCost(actualCost)
+                                                    .time(startTime)
+                                                    .endTime(childHistory.get(startTime).getEndTime())
+                                                    .budgeted(budgetGroup.getBudgetGroupAmount())
+                                                    .forecastCost(0.0)
+                                                    .budgetVariance(budgetVariance)
+                                                    .budgetVariancePercentage(budgetVariancePercentage)
+                                                    .build();
+        budgetGroupHistory.put(startTime, newBudgetGroupCostData);
+      }
+    }
+    budgetGroup.setBudgetGroupHistory(budgetGroupHistory);
   }
 }
