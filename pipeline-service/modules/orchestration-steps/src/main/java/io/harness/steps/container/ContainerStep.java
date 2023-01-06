@@ -46,12 +46,14 @@ import io.harness.steps.container.execution.ContainerStepCleanupHelper;
 import io.harness.steps.container.execution.ContainerStepExecutionResponseHelper;
 import io.harness.steps.container.execution.ContainerStepRbacHelper;
 import io.harness.steps.executable.TaskChainExecutableWithRbac;
+import io.harness.steps.plugin.ContainerCommandUnitConstants;
 import io.harness.steps.plugin.ContainerStepInfo;
 import io.harness.steps.plugin.ContainerStepPassThroughData;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 import io.harness.yaml.core.timeout.Timeout;
 
+import software.wings.beans.LogHelper;
 import software.wings.beans.SerializationFormat;
 import software.wings.beans.TaskType;
 
@@ -123,11 +125,30 @@ public class ContainerStep implements TaskChainExecutableWithRbac<StepElementPar
 
     String stageId = ambiance.getStageExecutionId();
     List<TaskSelector> taskSelectors = new ArrayList<>();
+    //    LinkedHashMap<String, String> logAbstractionMap =
+    //            withLogs ? generateLogAbstractions(ambiance) : new LinkedHashMap<>();
+    LinkedHashMap<String, String> logAbstractionMap = generateLogAbstractions(ambiance);
+    List<String> logKeys = StepUtils.generateLogKeys(logAbstractionMap, containerStepInfo.getCommandUnits());
 
+    logAbstractionMap.entrySet().forEach(entry -> {
+      if (entry.getValue().equals(containerStepInfo.getIdentifier())) {
+        entry.setValue(entry.getValue()
+            + String.format(LogHelper.COMMAND_UNIT_PLACEHOLDER, ContainerCommandUnitConstants.InitContainer));
+      }
+    });
     TaskRequest taskRequest = StepUtils.prepareTaskRequest(ambiance, getTaskData(stepParameters, buildSetupTaskParams),
-        kryoSerializer, TaskCategory.DELEGATE_TASK_V2, containerStepInfo.getCommandUnits(), true,
-        TaskType.CONTAINER_INITIALIZATION.getDisplayName(), taskSelectors, Scope.PROJECT, EnvironmentType.ALL, false,
-        new ArrayList<>(), false, stageId);
+        kryoSerializer, TaskCategory.DELEGATE_TASK_V2,
+        //             Collections.singletonList(LogStreamingHelper.generateLogKeyGivenCommandUnit(logPrefix,
+        //             ContainerCommandUnitConstants.InitContainer)),
+        logKeys, containerStepInfo.getCommandUnits(), true, TaskType.CONTAINER_INITIALIZATION.getDisplayName(),
+        taskSelectors, Scope.PROJECT, EnvironmentType.ALL, false, new ArrayList<>(), false, stageId, null,
+        logAbstractionMap);
+
+    //    TaskRequest taskRequest = StepUtils.prepareTaskRequest(ambiance, getTaskData(stepParameters,
+    //    buildSetupTaskParams),
+    //        kryoSerializer, TaskCategory.DELEGATE_TASK_V2, containerStepInfo.getCommandUnits(), true,
+    //        TaskType.CONTAINER_INITIALIZATION.getDisplayName(), taskSelectors, Scope.PROJECT, EnvironmentType.ALL,
+    //        false, new ArrayList<>(), false, stageId);
     return TaskChainResponse.builder()
         .taskRequest(taskRequest)
         .passThroughData(ContainerStepPassThroughData.builder().firstStepStartTime(System.currentTimeMillis()).build())
@@ -168,11 +189,18 @@ public class ContainerStep implements TaskChainExecutableWithRbac<StepElementPar
     TaskData runStepTaskData = containerRunStepHelper.getRunStepTask(
         ambiance, containerStepInfo, AmbianceUtils.getAccountId(ambiance), logPrefix, timeoutForDelegateTask);
     String stageId = ambiance.getStageExecutionId();
-
-    TaskRequest taskRequest =
-        StepUtils.prepareTaskRequest(ambiance, runStepTaskData, kryoSerializer, TaskCategory.DELEGATE_TASK_V2,
-            containerStepInfo.getCommandUnits(), true, TaskType.CONTAINER_EXECUTE_STEP.getDisplayName(),
-            new ArrayList<>(), Scope.PROJECT, EnvironmentType.ALL, false, new ArrayList<>(), false, stageId);
+    LinkedHashMap<String, String> logAbstractionMap = generateLogAbstractions(ambiance);
+    List<String> logKeys = StepUtils.generateLogKeys(logAbstractionMap, containerStepInfo.getCommandUnits());
+    logAbstractionMap.entrySet().forEach(entry -> {
+      if (entry.getValue().equals(containerStepInfo.getIdentifier())) {
+        entry.setValue(entry.getValue()
+            + String.format(LogHelper.COMMAND_UNIT_PLACEHOLDER, ContainerCommandUnitConstants.ContainerStep));
+      }
+    });
+    TaskRequest taskRequest = StepUtils.prepareTaskRequest(ambiance, runStepTaskData, kryoSerializer,
+        TaskCategory.DELEGATE_TASK_V2, logKeys, containerStepInfo.getCommandUnits(), true,
+        TaskType.CONTAINER_EXECUTE_STEP.getDisplayName(), new ArrayList<>(), Scope.PROJECT, EnvironmentType.ALL, false,
+        new ArrayList<>(), false, stageId, null, logAbstractionMap);
 
     return TaskChainResponse.builder()
         .chainEnd(true)

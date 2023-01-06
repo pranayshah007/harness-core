@@ -237,18 +237,30 @@ public class StepUtils {
       List<TaskSelector> selectors, Scope taskScope, EnvironmentType environmentType,
       boolean executeOnHarnessHostedDelegates, List<String> eligibleToExecuteDelegateIds, boolean emitEvent,
       String stageId, ExpressionEvaluator maskingEvaluator) {
+    LinkedHashMap<String, String> logAbstractionMap =
+        withLogs ? generateLogAbstractions(ambiance) : new LinkedHashMap<>();
+    return prepareTaskRequest(ambiance, taskData, kryoSerializer, taskCategory, keys, units, withLogs, taskName,
+        selectors, taskScope, environmentType, executeOnHarnessHostedDelegates, eligibleToExecuteDelegateIds, emitEvent,
+        stageId, maskingEvaluator, logAbstractionMap);
+  }
+
+  public static TaskRequest prepareTaskRequest(Ambiance ambiance, TaskData taskData, KryoSerializer kryoSerializer,
+      TaskCategory taskCategory, List<String> keys, List<String> units, boolean withLogs, String taskName,
+      List<TaskSelector> selectors, Scope taskScope, EnvironmentType environmentType,
+      boolean executeOnHarnessHostedDelegates, List<String> eligibleToExecuteDelegateIds, boolean emitEvent,
+      String stageId, ExpressionEvaluator maskingEvaluator, LinkedHashMap<String, String> logAbstractionMap) {
     String accountId = Preconditions.checkNotNull(ambiance.getSetupAbstractionsMap().get("accountId"));
+
+    units = withLogs ? units : new ArrayList<>();
+    logCommandUnits(units);
+
     TaskParameters taskParameters = (TaskParameters) taskData.getParameters()[0];
     List<ExecutionCapability> capabilities = new ArrayList<>();
+
     if (taskParameters instanceof ExecutionCapabilityDemander) {
       capabilities = ListUtils.emptyIfNull(
           ((ExecutionCapabilityDemander) taskParameters).fetchRequiredExecutionCapabilities(maskingEvaluator));
     }
-    LinkedHashMap<String, String> logAbstractionMap =
-        withLogs ? generateLogAbstractions(ambiance) : new LinkedHashMap<>();
-    units = withLogs ? units : new ArrayList<>();
-    logCommandUnits(units);
-
     TaskDetails.Builder taskDetailsBuilder =
         TaskDetails.newBuilder()
             .setExecutionTimeout(Duration.newBuilder().setSeconds(taskData.getTimeout() / 1000).build())
