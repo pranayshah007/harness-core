@@ -29,6 +29,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.model.HarnessAnnotations;
 import io.harness.k8s.model.IstioDestinationWeight;
@@ -36,8 +37,8 @@ import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.Kind;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResourceId;
-import io.harness.k8s.releasehistory.K8sLegacyRelease;
-import io.harness.k8s.releasehistory.ReleaseHistory;
+import io.harness.k8s.releasehistory.IK8sRelease;
+import io.harness.k8s.releasehistory.IK8sReleaseHistory;
 import io.harness.logging.CommandExecutionStatus;
 
 import software.wings.beans.command.ExecutionLogCallback;
@@ -57,7 +58,6 @@ import java.util.List;
 import java.util.Map;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
 @NoArgsConstructor
@@ -70,8 +70,7 @@ public class K8sTrafficSplitTaskHandler extends K8sTaskHandler {
   @Inject private K8sTaskHelper k8sTaskHelper;
   @Inject private K8sTaskHelperBase k8sTaskHelperBase;
 
-  private ReleaseHistory releaseHistory;
-  private K8sLegacyRelease release;
+  private IK8sRelease release;
   private KubernetesConfig kubernetesConfig;
   private VirtualService virtualService;
 
@@ -143,24 +142,29 @@ public class K8sTrafficSplitTaskHandler extends K8sTaskHandler {
   }
 
   private boolean initBasedOnDefaultVirtualServiceName(K8sTrafficSplitTaskParameters k8sTrafficSplitTaskParameters,
-      ExecutionLogCallback executionLogCallback) throws IOException {
+      ExecutionLogCallback executionLogCallback) throws Exception {
     executionLogCallback.saveExecutionLog("Evaluating expression " + virtualServiceNameExpression);
     executionLogCallback.saveExecutionLog(
         color("\nRelease name: " + k8sTrafficSplitTaskParameters.getReleaseName(), White, Bold));
 
-    String releaseHistoryData = k8sTaskHelperBase.getReleaseHistoryDataFromConfigMap(
-        kubernetesConfig, k8sTrafficSplitTaskParameters.getReleaseName());
+    boolean useDeclarativeRollback = k8sTrafficSplitTaskParameters.isUseDeclarativeRollback();
+    K8sReleaseHandler releaseHandler = k8sTaskHelperBase.getReleaseHandler(useDeclarativeRollback);
+    IK8sReleaseHistory releaseHistory =
+        releaseHandler.getReleaseHistory(kubernetesConfig, k8sTrafficSplitTaskParameters.getReleaseName());
 
-    if (StringUtils.isEmpty(releaseHistoryData)) {
+    if (isEmpty(releaseHistory)) {
       executionLogCallback.saveExecutionLog("\nNo release history found for release ");
       executionLogCallback.saveExecutionLog("\nDone.", INFO, SUCCESS);
       return true;
     }
 
-    releaseHistory = ReleaseHistory.createFromData(releaseHistoryData);
     release = releaseHistory.getLatestRelease();
 
-    List<KubernetesResourceId> resources = release.getResources();
+    List<KubernetesResourceId> resources = new ArrayList<>();
+    if (release != null) {
+      resources = release.getResourceIds();
+    }
+
     if (isEmpty(resources)) {
       executionLogCallback.saveExecutionLog("\nNo resources found in release history");
       executionLogCallback.saveExecutionLog("\nDone.", INFO, SUCCESS);

@@ -1016,7 +1016,7 @@
         },
         {
           "type": "object",
-          "properties": {}
+          "properties": { }
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -4129,7 +4129,7 @@
         },
         {
           "type": "object",
-          "properties": {}
+          "properties": { }
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -7323,7 +7323,7 @@
         },
         {
           "type": "object",
-          "properties": {}
+          "properties": { }
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -8078,7 +8078,7 @@
         },
         {
           "type": "object",
-          "properties": {}
+          "properties": { }
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -9087,7 +9087,7 @@
         {
           "$ref": "#/definitions/Infrastructure"
         },
-        {}
+        { }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#",
       "oneOf": [
@@ -10071,7 +10071,7 @@
         },
         {
           "type": "object",
-          "properties": {}
+          "properties": { }
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -10949,7 +10949,7 @@
         },
         {
           "type": "object",
-          "properties": {}
+          "properties": { }
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -12249,110 +12249,74 @@
       ]
     },
     "StepGroupElementConfig": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "oneOf": [
-        {
-          "type": "object",
-          "required": [
-            "identifier",
-            "name",
-            "template"
-          ],
-          "properties": {
-            "delegateSelectors": {
-              "oneOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
-              ]
-            },
-            "failureStrategies": {
+      "type": "object",
+      "required": [
+        "identifier",
+        "name"
+      ],
+      "properties": {
+        "delegateSelectors": {
+          "oneOf": [
+            {
               "type": "array",
               "items": {
-                "$ref": "#/definitions/FailureStrategyConfig"
+                "type": "string"
               }
             },
-            "identifier": {
+            {
               "type": "string",
-              "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,63}$"
-            },
-            "name": {
-              "type": "string",
-              "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
-            },
-            "strategy": {
-              "$ref": "#/definitions/StrategyConfig"
-            },
-            "template": {
-              "$ref": "#/definitions/TemplateLinkConfig"
-            },
-            "when": {
-              "$ref": "#/definitions/StepWhenCondition"
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
             }
-          },
-          "additionalProperties": false
+          ]
         },
+        "failureStrategies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FailureStrategyConfig"
+          }
+        },
+        "identifier": {
+          "type": "string",
+          "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,63}$"
+        },
+        "name": {
+          "type": "string",
+          "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ExecutionWrapperConfig"
+          },
+          "maxItems": 2147483647,
+          "minItems": 1
+        },
+        "strategy": {
+          "$ref": "#/definitions/StrategyConfig"
+        },
+        "template": {
+          "$ref": "#/definitions/TemplateLinkConfig"
+        },
+        "when": {
+          "$ref": "#/definitions/StepWhenCondition"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
         {
-          "type": "object",
-          "required": [
-            "identifier",
-            "name",
-            "steps"
-          ],
-          "properties": {
-            "delegateSelectors": {
-              "oneOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
-                }
+          "oneOf": [
+            {
+              "required": [
+                "template"
               ]
             },
-            "failureStrategies": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/FailureStrategyConfig"
-              }
-            },
-            "identifier": {
-              "type": "string",
-              "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,63}$"
-            },
-            "name": {
-              "type": "string",
-              "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
-            },
-            "steps": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/ExecutionWrapperConfig"
-              },
-              "maxItems": 2147483647,
-              "minItems": 1
-            },
-            "strategy": {
-              "$ref": "#/definitions/StrategyConfig"
-            },
-            "when": {
-              "$ref": "#/definitions/StepWhenCondition"
+            {
+              "required": [
+                "steps"
+              ]
             }
-          },
-          "additionalProperties": false
+          ]
         }
       ]
     },
@@ -12883,7 +12847,7 @@
         },
         {
           "type": "object",
-          "properties": {}
+          "properties": { }
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"

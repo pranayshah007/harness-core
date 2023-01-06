@@ -12,6 +12,7 @@ import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class K8sReleaseConstants {
+  public static final String RELEASE_SECRET_NAME_PREFIX = "harness.release";
   public static final String RELEASE_KEY = "release";
   public static final String RELEASE_NAME_DELIMITER = ".";
   public static final String SECRET_LABEL_DELIMITER = ",";
@@ -22,11 +23,12 @@ public class K8sReleaseConstants {
   public static final String RELEASE_SECRET_TYPE_KEY = "type";
   public static final String RELEASE_SECRET_TYPE_VALUE = "harness.io/release/v2";
   public static final String RELEASE_PRUNING_ENABLED_KEY = "harness.io/pruning-enabled";
+  public static final String RELEASE_SECRET_RELEASE_COLOR_KEY = "color";
   public static final Map<String, String> RELEASE_SECRET_TYPE_MAP =
       Map.of(RELEASE_SECRET_TYPE_KEY, RELEASE_SECRET_TYPE_VALUE);
   public static final Map<String, String> RELEASE_SECRET_LABELS_MAP =
       Map.of(RELEASE_OWNER_LABEL_KEY, RELEASE_OWNER_LABEL_VALUE);
-  public static final int RELEASE_HISTORY_LIMIT = 5;
+  public static final int RELEASE_HISTORY_LIMIT = 2;
   public static final String RELEASE_LABEL_QUERY_SET_FORMAT = "%s in (%s)";
   public static final String RELEASE_LABEL_QUERY_LIST_FORMAT = "%s=%s";
 }

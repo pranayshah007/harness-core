@@ -24,6 +24,8 @@ public class IteratorExecutionHandlerImpl implements IteratorExecutionHandler {
   private final HashMap<String, IteratorBaseHandler> iteratorHandlerMap;
   @Getter private final HashMap<String, IteratorState> iteratorState;
 
+  public static final String REDIS_BATCH = "REDIS_BATCH";
+
   /**
    * Enum represents the different states that an iterator can be at -
    * 1. INIT: The iterator has been registered
@@ -168,14 +170,13 @@ public class IteratorExecutionHandlerImpl implements IteratorExecutionHandler {
     IteratorStateValues iteratorStateValue;
     if (configOption.isEnabled()) {
       log.info("Iterator {} is enabled - starting it up", configOption.getName());
-      switch (configOption.getIteratorMode()) {
-        case "REDIS_BATCH":
-          createAndStartRedisBatchModeIterator(configOption);
-          break;
-        default:
-          createAndStartPumpLoopModeIterator(configOption);
-          break;
+
+      if (REDIS_BATCH.equals(configOption.getIteratorMode())) {
+        createAndStartRedisBatchModeIterator(configOption);
+      } else {
+        createAndStartPumpLoopModeIterator(configOption);
       }
+
       iteratorStateValue = IteratorStateValues.RUNNING;
     } else {
       log.info("Iterator {} is not enabled - not starting it", configOption.getName());

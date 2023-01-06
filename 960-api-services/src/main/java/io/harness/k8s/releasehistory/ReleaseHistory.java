@@ -52,7 +52,7 @@ public class ReleaseHistory {
   }
 
   public K8sLegacyRelease createNewRelease(List<KubernetesResourceId> resources) {
-    int releaseNumber = getCurrentReleaseNumber();
+    int releaseNumber = getAndIncrementLatestReleaseNumber();
     this.getReleases().add(0,
         K8sLegacyRelease.builder()
             .number(releaseNumber)
@@ -64,7 +64,7 @@ public class ReleaseHistory {
   }
 
   public K8sLegacyRelease createNewReleaseWithResourceMap(List<KubernetesResource> resources) {
-    int releaseNumber = getCurrentReleaseNumber();
+    int releaseNumber = getAndIncrementLatestReleaseNumber();
     this.getReleases().add(0,
         K8sLegacyRelease.builder()
             .number(releaseNumber)
@@ -76,7 +76,12 @@ public class ReleaseHistory {
     return getLatestRelease();
   }
 
-  public int getCurrentReleaseNumber() {
+  public K8sLegacyRelease addReleaseToReleaseHistory(K8sLegacyRelease release) {
+    this.getReleases().add(0, release);
+    return release;
+  }
+
+  public int getAndIncrementLatestReleaseNumber() {
     int releaseNumber = 1;
     if (!this.getReleases().isEmpty()) {
       releaseNumber = getLatestRelease().getNumber() + 1;

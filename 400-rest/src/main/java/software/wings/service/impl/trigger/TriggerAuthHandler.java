@@ -38,6 +38,7 @@ import software.wings.security.UserPermissionInfo;
 import software.wings.security.UserThreadLocal;
 import software.wings.service.impl.security.auth.AuthHandler;
 import software.wings.service.impl.security.auth.DeploymentAuthHandler;
+import software.wings.service.impl.security.auth.WorkflowAuthHandler;
 import software.wings.service.intfc.AuthService;
 import software.wings.service.intfc.EnvironmentService;
 
@@ -56,6 +57,7 @@ public class TriggerAuthHandler {
   @Inject private EnvironmentService environmentService;
   @Inject private AuthService authService;
   @Inject private FeatureFlagService featureFlagService;
+  @Inject private WorkflowAuthHandler workflowAuthHandler;
 
   void authorizeEnvironment(Trigger trigger, String envId) {
     String appId = trigger.getAppId();
@@ -99,6 +101,21 @@ public class TriggerAuthHandler {
         }
       }
     }
+  }
+  public void authorizeDeletion(String appId, Trigger trigger) {
+    workflowAuthHandler.authorizeWorkflowAction(appId, trigger, Action.DELETE);
+  }
+
+  public void authorizeUpdate(String appId, Trigger trigger) {
+    workflowAuthHandler.authorizeWorkflowAction(appId, trigger, Action.UPDATE);
+  }
+
+  public void authorizeRead(String appId, Trigger trigger) {
+    workflowAuthHandler.authorizeWorkflowAction(appId, trigger, Action.READ);
+  }
+
+  public void authorizeCreate(String appId, Trigger trigger) {
+    workflowAuthHandler.authorizeWorkflowAction(appId, trigger, Action.CREATE);
   }
 
   void authorizeWorkflowOrPipeline(String appId, String workflowOrPipelineId, boolean existing) {

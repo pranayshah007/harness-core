@@ -18,6 +18,7 @@ import static java.util.Arrays.asList;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
+import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.model.HarnessLabelValues;
 import io.harness.k8s.model.HarnessLabels;
@@ -27,6 +28,8 @@ import io.harness.k8s.model.Kind;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
+import io.harness.k8s.releasehistory.IK8sRelease;
+import io.harness.k8s.releasehistory.IK8sReleaseHistory;
 import io.harness.k8s.releasehistory.K8sLegacyRelease;
 import io.harness.k8s.releasehistory.K8sLegacyRelease.KubernetesResourceIdRevision;
 import io.harness.logging.CommandExecutionStatus;
@@ -42,6 +45,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
@@ -204,5 +208,19 @@ public class K8sRollingBaseHandler {
     } else {
       addLabelsInDeploymentSelectorForCanary(inCanaryWorkflow, managedWorkloads, false);
     }
+  }
+
+  public IK8sRelease getLastSuccessfulRelease(boolean useDeclarativeRollback, IK8sReleaseHistory currentReleaseHistory,
+      int currentReleaseNumber, KubernetesConfig kubernetesConfig, String releaseName) throws Exception {
+    IK8sRelease lastSuccessfulRelease = currentReleaseHistory.getLastSuccessfulRelease(currentReleaseNumber);
+    if (useDeclarativeRollback && lastSuccessfulRelease == null) {
+      // check old release history for a rollback eligible release
+      K8sReleaseHandler legacyReleaseHandler = k8sTaskHelperBase.getReleaseHandler(false);
+      IK8sReleaseHistory oldReleaseHistory = legacyReleaseHandler.getReleaseHistory(kubernetesConfig, releaseName);
+      Optional<IK8sRelease> lastSuccessfulLegacyReleaseOptional =
+          Optional.ofNullable(oldReleaseHistory.getLastSuccessfulRelease(Integer.MAX_VALUE));
+      return lastSuccessfulLegacyReleaseOptional.orElse(null);
+    }
+    return lastSuccessfulRelease;
   }
 }
