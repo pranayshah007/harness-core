@@ -152,6 +152,7 @@ public class RecommendationsOverviewQueryV2 {
           && !StringUtils.isEmpty(recommendation.getJiraIssueKey())) {
         JiraIssueNG jiraIssueNG =
             jiraHelper.getIssue(accountId, recommendation.getJiraConnectorRef(), recommendation.getJiraIssueKey());
+        log.info("jiraIssueNG: {}", jiraIssueNG);
         RecommendationDetailsDTO recommendationDetailsDTO = null;
         switch (recommendation.getResourceType()) {
           case WORKLOAD:
@@ -238,7 +239,7 @@ public class RecommendationsOverviewQueryV2 {
                                     .recommendationState(recommendation.getRecommendationState())
                                     .jiraConnectorRef(recommendation.getJiraConnectorRef())
                                     .jiraIssueKey(recommendation.getJiraIssueKey())
-                                    .jiraStatus(CCMJiraUtils.getStatus(jiraIssueNG))
+                                    .jiraStatus((jiraIssueNG == null) ? null : CCMJiraUtils.getStatus(jiraIssueNG))
                                     .build());
       }
     }
