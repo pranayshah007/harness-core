@@ -72,9 +72,9 @@ public class TasRouteMappingStepInfo extends TasRouteMappingBaseStepInfo impleme
   public SpecParameters getSpecParameters() {
     return TasRouteMappingStepParameters.infoBuilder()
         .delegateSelectors(this.getDelegateSelectors())
-            .appName(this.getAppName())
-            .routeType(this.getRouteType())
-            .routes(this.getRoutes())
+        .appName(this.getAppName())
+        .routeType(this.getRouteType())
+        .routes(this.getRoutes())
         .build();
   }
 

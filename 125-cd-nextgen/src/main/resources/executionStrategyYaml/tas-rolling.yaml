@@ -13,8 +13,7 @@ spec:
           type: TasRollingDeploy
           timeout: 20m
           spec:
-            additionalRoutes:
-              - rishabh_basic_app_temporary.apps.pcf-harness.com
+            additionalRoutes: []
             delegateSelectors: []
     rollbackSteps:
       - step:
