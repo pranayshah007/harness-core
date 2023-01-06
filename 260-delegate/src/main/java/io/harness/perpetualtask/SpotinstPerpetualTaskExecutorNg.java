@@ -58,7 +58,7 @@ public class SpotinstPerpetualTaskExecutorNg implements PerpetualTaskExecutor {
   @Override
   public PerpetualTaskResponse runOnce(
       PerpetualTaskId taskId, PerpetualTaskExecutionParams params, Instant heartbeatTime) {
-    log.info("Running the Aws InstanceSync perpetual task executor for task id: {}", taskId);
+    log.info("Running the Spot InstanceSync perpetual task executor for task id: {}", taskId);
     SpotinstAmiInstanceSyncPerpetualTaskParamsNg taskParams =
         AnyUtils.unpack(params.getCustomizedParams(), SpotinstAmiInstanceSyncPerpetualTaskParamsNg.class);
 

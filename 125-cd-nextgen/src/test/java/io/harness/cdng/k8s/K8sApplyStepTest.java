@@ -23,14 +23,18 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.k8s.beans.GitFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.HelmValuesFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.K8sExecutionPassThroughData;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.steps.ManifestsOutcome;
+import io.harness.cdng.manifest.yaml.K8sCommandFlagType;
 import io.harness.cdng.manifest.yaml.K8sManifestOutcome;
+import io.harness.cdng.manifest.yaml.K8sStepCommandFlag;
 import io.harness.cdng.manifest.yaml.ManifestConfig;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.cdng.manifest.yaml.OpenshiftManifestOutcome;
@@ -48,28 +52,41 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
+import com.google.common.collect.ImmutableMap;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
 
 @OwnedBy(CDP)
 public class K8sApplyStepTest extends AbstractK8sStepExecutorTestBase {
   @InjectMocks private K8sApplyStep k8sApplyStep;
+  private static final String COMMAND_FLAG = "--server-side";
+  @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   @Test
   @Owner(developers = ABOSII)
   @Category(UnitTests.class)
   public void testExecuteTask() {
+    when(cdFeatureFlagHelper.isEnabled(any(), eq(FeatureName.NG_K8_COMMAND_FLAGS))).thenReturn(true);
     K8sApplyStepParameters stepParameters = new K8sApplyStepParameters();
+    Map<String, String> k8sCommandFlag = ImmutableMap.of("Apply", "--server-side");
+    List<K8sStepCommandFlag> commandFlags =
+        Collections.singletonList(K8sStepCommandFlag.builder()
+                                      .commandType(K8sCommandFlagType.Apply)
+                                      .flag(ParameterField.createValueField("--server-side"))
+                                      .build());
     stepParameters.setSkipDryRun(ParameterField.createValueField(true));
     stepParameters.setSkipSteadyStateCheck(ParameterField.createValueField(true));
     stepParameters.setFilePaths(ParameterField.createValueField(Arrays.asList("file1.yaml", "file2.yaml")));
+    stepParameters.setCommandFlags(commandFlags);
     final StepElementParameters stepElementParameters =
         StepElementParameters.builder().spec(stepParameters).timeout(ParameterField.createValueField("30m")).build();
-
     K8sApplyRequest request = executeTask(stepElementParameters, K8sApplyRequest.class);
     assertThat(request.getAccountId()).isEqualTo(accountId);
     assertThat(request.getFilePaths()).containsExactlyInAnyOrder("file1.yaml", "file2.yaml");
@@ -77,6 +94,7 @@ public class K8sApplyStepTest extends AbstractK8sStepExecutorTestBase {
     assertThat(request.isSkipDryRun()).isTrue();
     assertThat(request.isSkipSteadyStateCheck()).isTrue();
     assertThat(request.getTimeoutIntervalInMin()).isEqualTo(30);
+    assertThat(request.getK8sCommandFlags()).isEqualTo(k8sCommandFlag);
 
     ArgumentCaptor<String> releaseNameCaptor = ArgumentCaptor.forClass(String.class);
     verify(k8sStepHelper, times(1)).publishReleaseNameStepDetails(eq(ambiance), releaseNameCaptor.capture());
@@ -91,7 +109,7 @@ public class K8sApplyStepTest extends AbstractK8sStepExecutorTestBase {
     stepParameters.setSkipDryRun(ParameterField.ofNull());
     stepParameters.setSkipSteadyStateCheck(ParameterField.ofNull());
     stepParameters.setFilePaths(ParameterField.createValueField(Arrays.asList("file1.yaml", "file2.yaml")));
-
+    when(cdFeatureFlagHelper.isEnabled(any(), any())).thenReturn(true);
     final StepElementParameters stepElementParameters =
         StepElementParameters.builder().spec(stepParameters).timeout(ParameterField.ofNull()).build();
 

@@ -68,6 +68,7 @@ import software.wings.service.intfc.ServiceResourceService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.query.Query;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -77,7 +78,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.query.Query;
 
 @Singleton
 @OwnedBy(HarnessTeam.PL)

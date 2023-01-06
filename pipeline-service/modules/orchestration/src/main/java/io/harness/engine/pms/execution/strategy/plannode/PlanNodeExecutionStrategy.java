@@ -47,6 +47,7 @@ import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.ExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.facilitators.FacilitatorResponseProto;
+import io.harness.pms.contracts.resume.ResponseDataProto;
 import io.harness.pms.contracts.steps.io.StepResponseProto;
 import io.harness.pms.data.stepparameters.PmsStepParameters;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -65,7 +66,6 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
-import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -139,7 +139,7 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
         OrchestrationMapBackwardCompatibilityUtils.extractToOrchestrationMap(resolvedStepParameters));
     // TODO (prashant) : This is a hack right now to serialize in binary as findAndModify is not honoring converter
     // for maps Find a better way to do this
-    nodeExecutionService.update(nodeExecutionId,
+    nodeExecutionService.updateV2(nodeExecutionId,
         ops -> ops.set(NodeExecutionKeys.resolvedParams, kryoSerializer.asDeflatedBytes(resolvedParameters)));
     log.info("Resolved to step parameters");
   }
@@ -200,7 +200,7 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
   public void processStartEventResponse(Ambiance ambiance, ExecutableResponse executableResponse) {}
 
   @Override
-  public void resumeNodeExecution(Ambiance ambiance, Map<String, ByteString> response, boolean asyncError) {
+  public void resumeNodeExecution(Ambiance ambiance, Map<String, ResponseDataProto> response, boolean asyncError) {
     String nodeExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
     NodeExecution nodeExecution =
         nodeExecutionService.getWithFieldsIncluded(nodeExecutionId, NodeProjectionUtils.fieldsForResume);
@@ -212,8 +212,8 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
       }
       if (nodeExecution.getStatus() != RUNNING) {
         log.info("Marking the nodeExecution with id {} as RUNNING", nodeExecutionId);
-        nodeExecution = Preconditions.checkNotNull(nodeExecutionService.updateStatusWithOpsV2(
-            nodeExecutionId, RUNNING, null, EnumSet.noneOf(Status.class), NodeProjectionUtils.fieldsForResume));
+        nodeExecution = Preconditions.checkNotNull(
+            nodeExecutionService.updateStatusWithOps(nodeExecutionId, RUNNING, null, EnumSet.noneOf(Status.class)));
       } else {
         // This will happen if the node is not in any paused or waiting statuses.
         log.debug("NodeExecution with id {} is already in Running status", nodeExecutionId);
@@ -271,6 +271,7 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
         return;
       }
       log.info("Starting to handle Adviser Response of type: {}", adviserResponse.getType());
+      // Get all fields of NodeExecution as advisors may use any fields of NodeExecution
       NodeExecution updatedNodeExecution = nodeExecutionService.update(
           nodeExecutionId, ops -> ops.set(NodeExecutionKeys.adviserResponse, adviserResponse));
       AdviserResponseHandler adviserResponseHandler = adviseHandlerFactory.obtainHandler(adviserResponse.getType());
@@ -281,8 +282,10 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
   @Override
   public void endNodeExecution(Ambiance ambiance) {
     String nodeExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
-    NodeExecution nodeExecution = nodeExecutionService.update(
-        nodeExecutionId, ops -> ops.set(NodeExecutionKeys.endTs, System.currentTimeMillis()));
+    NodeExecution nodeExecution = nodeExecutionService.update(nodeExecutionId,
+        ops
+        -> ops.set(NodeExecutionKeys.endTs, System.currentTimeMillis()),
+        NodeProjectionUtils.fieldsForExecutionStrategy);
     if (isNotEmpty(nodeExecution.getNotifyId())) {
       Level level = AmbianceUtils.obtainCurrentLevel(ambiance);
       StepResponseNotifyData responseData = StepResponseNotifyData.builder()

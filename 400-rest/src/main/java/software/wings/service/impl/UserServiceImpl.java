@@ -48,17 +48,16 @@ import static software.wings.security.PermissionAttribute.ResourceType.WORKFLOW;
 
 import static com.google.common.base.Charsets.UTF_8;
 import static com.google.common.collect.Lists.newArrayList;
+import static dev.morphia.mapping.Mapper.ID_KEY;
 import static java.lang.String.format;
 import static java.sql.Date.from;
 import static java.util.Arrays.asList;
-import static java.util.regex.Pattern.quote;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
-import static org.mindrot.jbcrypt.BCrypt.checkpw;
-import static org.mindrot.jbcrypt.BCrypt.hashpw;
-import static org.mongodb.morphia.mapping.Mapper.ID_KEY;
+import static org.springframework.security.crypto.bcrypt.BCrypt.checkpw;
+import static org.springframework.security.crypto.bcrypt.BCrypt.hashpw;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -175,9 +174,9 @@ import software.wings.beans.sso.SamlSettings;
 import software.wings.beans.utm.UtmInfo;
 import software.wings.core.managerConfiguration.ConfigurationController;
 import software.wings.dl.WingsPersistence;
-import software.wings.helpers.ext.mail.EmailData;
 import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
 import software.wings.licensing.LicenseService;
+import software.wings.persistence.mail.EmailData;
 import software.wings.resources.UserResource;
 import software.wings.security.AccountPermissionSummary;
 import software.wings.security.JWT_CATEGORY;
@@ -240,6 +239,12 @@ import com.nimbusds.jose.JWSSigner;
 import com.nimbusds.jose.Payload;
 import com.nimbusds.jose.crypto.MACSigner;
 import com.nimbusds.jwt.JWTClaimsSet;
+import dev.morphia.FindAndModifyOptions;
+import dev.morphia.query.CriteriaContainer;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
+import dev.morphia.query.UpdateOperations;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -277,13 +282,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.message.BasicNameValuePair;
-import org.mindrot.jbcrypt.BCrypt;
-import org.mongodb.morphia.FindAndModifyOptions;
-import org.mongodb.morphia.query.CriteriaContainer;
-import org.mongodb.morphia.query.FindOptions;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
-import org.mongodb.morphia.query.UpdateOperations;
+import org.springframework.security.crypto.bcrypt.BCrypt;
 
 /**
  * Created by anubhaw on 3/9/16.
@@ -2666,7 +2665,7 @@ public class UserServiceImpl implements UserService {
    */
   @Override
   public boolean matchPassword(char[] password, String hash) {
-    return BCrypt.checkpw(new String(password), hash);
+    return checkpw(new String(password), hash);
   }
 
   @Override
@@ -3968,7 +3967,7 @@ public class UserServiceImpl implements UserService {
   }
 
   private CriteriaContainer getSearchCriterion(Query<?> query, String fieldName, String searchTerm) {
-    return query.criteria(fieldName).startsWithIgnoreCase(quote(searchTerm));
+    return query.criteria(fieldName).startsWithIgnoreCase(searchTerm);
   }
 
   @Override

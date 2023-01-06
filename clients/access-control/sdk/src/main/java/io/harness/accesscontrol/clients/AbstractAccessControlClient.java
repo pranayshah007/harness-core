@@ -117,6 +117,12 @@ public abstract class AbstractAccessControlClient implements AccessControlClient
 
   @Override
   public AccessCheckResponseDTO checkForAccessOrThrow(List<PermissionCheckDTO> permissionCheckDTOList) {
+    return checkForAccessOrThrow(permissionCheckDTOList, null);
+  }
+
+  @Override
+  public AccessCheckResponseDTO checkForAccessOrThrow(
+      List<PermissionCheckDTO> permissionCheckDTOList, String exceptionMessage) {
     List<AccessControlDTO> accessControlList = new ArrayList<>();
     if (isEmpty(permissionCheckDTOList)) {
       return AccessCheckResponseDTO.builder().accessControlList(accessControlList).build();
@@ -128,9 +134,14 @@ public abstract class AbstractAccessControlClient implements AccessControlClient
 
     accessCheckResponseDTOs.forEach(res -> accessControlList.addAll(res.getAccessControlList()));
     if (accessControlList.stream().noneMatch(AccessControlDTO::isPermitted)) {
-      String message = String.format("Missing permission %s on %s", accessControlList.get(0).getPermission(),
-          accessControlList.get(0).getResourceType().toLowerCase());
-      throw new NGAccessDeniedException(message, USER, emptyList());
+      String finalMessage;
+      if (!StringUtils.isEmpty(exceptionMessage)) {
+        finalMessage = exceptionMessage;
+      } else {
+        finalMessage = String.format("Missing permission %s on %s", accessControlList.get(0).getPermission(),
+            accessControlList.get(0).getResourceType().toLowerCase());
+      }
+      throw new NGAccessDeniedException(finalMessage, USER, emptyList());
     }
     return AccessCheckResponseDTO.builder()
         .principal(accessCheckResponseDTOs.get(0).getPrincipal())

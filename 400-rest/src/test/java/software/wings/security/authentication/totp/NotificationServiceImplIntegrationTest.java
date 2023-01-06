@@ -28,8 +28,8 @@ import software.wings.WingsBaseTest;
 import software.wings.app.MainConfiguration;
 import software.wings.beans.Account;
 import software.wings.beans.User;
-import software.wings.helpers.ext.mail.EmailData;
 import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
+import software.wings.persistence.mail.EmailData;
 import software.wings.service.intfc.EmailNotificationService;
 
 import com.auth0.jwt.JWT;

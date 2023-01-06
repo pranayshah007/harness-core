@@ -36,6 +36,8 @@ import lombok.experimental.SuperBuilder;
 @Schema(name = "ActiveService", description = "This is details of the Active Service entity defined in Harness.")
 public class ActiveServiceDTO extends LicenseUsageDTO {
   @Schema(description = "Active Service identifier.") @NotNull String identifier;
+  @Schema(description = "Organization identifier.") String orgIdentifier;
+  @Schema(description = "Project identifier.") String projectIdentifier;
   @Schema(description = "Active Service name.") String name;
   @Schema(description = "Organization name.") String orgName;
   @Schema(description = "Project name.") String projectName;

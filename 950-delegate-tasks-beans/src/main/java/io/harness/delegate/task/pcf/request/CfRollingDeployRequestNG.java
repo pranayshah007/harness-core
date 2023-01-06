@@ -48,7 +48,7 @@ public class CfRollingDeployRequestNG extends AbstractTasTaskRequest {
   TasArtifactConfig tasArtifactConfig;
   @Expression(ALLOW_SECRETS) List<String> routeMaps;
   boolean useAppAutoScalar;
-  PcfManifestsPackage pcfManifestsPackage;
+  TasManifestsPackage tasManifestsPackage;
   int desiredCount;
 
   @Builder
@@ -56,7 +56,7 @@ public class CfRollingDeployRequestNG extends AbstractTasTaskRequest {
                                   CommandUnitsProgress commandUnitsProgress, TasInfraConfig tasInfraConfig, boolean useCfCLI,
                                   CfCliVersion cfCliVersion, Integer timeoutIntervalInMin,
                                   TasArtifactConfig tasArtifactConfig, List<String> routeMaps, boolean useAppAutoScalar,
-                                  PcfManifestsPackage pcfManifestsPackage, String applicationName, int desiredCount) {
+                                  TasManifestsPackage tasManifestsPackage, String applicationName, int desiredCount) {
     super(timeoutIntervalInMin, accountId, commandName, cfCommandTypeNG, commandUnitsProgress, tasInfraConfig, useCfCLI,
         cfCliVersion);
     this.applicationName = applicationName;
@@ -64,7 +64,7 @@ public class CfRollingDeployRequestNG extends AbstractTasTaskRequest {
     this.tasArtifactConfig = tasArtifactConfig;
     this.routeMaps = routeMaps;
     this.useAppAutoScalar = useAppAutoScalar;
-    this.pcfManifestsPackage = pcfManifestsPackage;
+    this.tasManifestsPackage = tasManifestsPackage;
   }
 
   @Override

@@ -69,7 +69,9 @@ public class AwsLambdaInstanceSyncPerpetualTaskExecutor implements PerpetualTask
   @Override
   public PerpetualTaskResponse runOnce(
       PerpetualTaskId taskId, PerpetualTaskExecutionParams params, Instant heartbeatTime) {
-    log.info("Running the InstanceSync perpetual task executor for task id: {}", taskId);
+    if (log.isDebugEnabled()) {
+      log.debug("Running the InstanceSync perpetual task executor for task id: {}", taskId);
+    }
     final AwsLambdaInstanceSyncPerpetualTaskParams taskParams =
         AnyUtils.unpack(params.getCustomizedParams(), AwsLambdaInstanceSyncPerpetualTaskParams.class);
 

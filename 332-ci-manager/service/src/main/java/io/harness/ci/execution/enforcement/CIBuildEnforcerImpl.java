@@ -48,6 +48,7 @@ public class CIBuildEnforcerImpl implements CIBuildEnforcer {
       return currExecutionCount < executionLimitSpec.getDefaultTotalExecutionCount()
           && macExecutionsCount < executionLimitSpec.getDefaultMacExecutionCount();
     }
-    return false;
+    // in case of any failures in fetching the license, keeping the default behaviour as allowed
+    return true;
   }
 }

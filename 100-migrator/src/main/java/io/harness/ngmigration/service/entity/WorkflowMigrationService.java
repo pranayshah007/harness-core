@@ -144,7 +144,7 @@ public class WorkflowMigrationService extends NgMigrationService {
 
     Set<CgEntityId> children = new HashSet<>();
     List<CgEntityId> referencedEntities =
-        workflowHandlerFactory.getWorkflowHandler(workflow).getReferencedEntities(workflow);
+        workflowHandlerFactory.getWorkflowHandler(workflow).getReferencedEntities(stepMapperFactory, workflow);
     if (EmptyPredicate.isNotEmpty(referencedEntities)) {
       children.addAll(referencedEntities);
     }

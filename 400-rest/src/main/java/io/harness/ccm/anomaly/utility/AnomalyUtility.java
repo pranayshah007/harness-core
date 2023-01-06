@@ -17,6 +17,7 @@ import io.harness.ccm.anomaly.entities.AnomalyEntity.AnomalyEntityKeys;
 import io.harness.ccm.anomaly.url.HarnessNgUrl;
 import io.harness.ccm.anomaly.url.HarnessUrl;
 import io.harness.ccm.commons.entities.anomaly.AnomalyData;
+import io.harness.ccm.communication.entities.CommunicationMedium;
 import io.harness.ccm.currency.Currency;
 
 import java.net.URISyntaxException;
@@ -31,7 +32,9 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(CE)
 @TargetModule(HarnessModule._375_CE_GRAPHQL)
 public class AnomalyUtility {
-  public Map<String, String> getEntityMap(AnomalyEntity anomaly, Currency currency) {
+  public Map<String, String> getEntityMap(
+      AnomalyEntity anomaly, Currency currency, CommunicationMedium communicationMedium) {
+    String currencySymbol = getCurrencySymbol(currency, communicationMedium);
     Map<String, String> substitutes = new HashMap<>();
     substitutes.put(AnomalyEntityKeys.clusterName, anomaly.getClusterName());
     substitutes.put(AnomalyEntityKeys.namespace, anomaly.getNamespace());
@@ -43,13 +46,17 @@ public class AnomalyUtility {
     substitutes.put(AnomalyEntityKeys.awsAccount, anomaly.getAwsAccount());
     substitutes.put(AnomalyEntityKeys.awsService, anomaly.getAwsService());
     substitutes.put(
-        AnomalyEntityKeys.actualCost, currency.getSymbol() + getRoundedDoubleValue(anomaly.getActualCost()).toString());
-    substitutes.put(AnomalyEntityKeys.expectedCost,
-        currency.getSymbol() + getRoundedDoubleValue(anomaly.getExpectedCost()).toString());
-    substitutes.put("ANOMALY_COST", currency.getSymbol() + getAnomalousCost(anomaly).toString());
+        AnomalyEntityKeys.actualCost, currencySymbol + getRoundedDoubleValue(anomaly.getActualCost()).toString());
+    substitutes.put(
+        AnomalyEntityKeys.expectedCost, currencySymbol + getRoundedDoubleValue(anomaly.getExpectedCost()).toString());
+    substitutes.put("ANOMALY_COST", currencySymbol + getAnomalousCost(anomaly).toString());
     substitutes.put("ANOMALY_COST_PERCENTAGE",
         getPercentageRaise(anomaly.getActualCost(), anomaly.getExpectedCost(), true).toString() + "%");
     return substitutes;
+  }
+
+  private static String getCurrencySymbol(Currency currency, CommunicationMedium communicationMedium) {
+    return CommunicationMedium.EMAIL == communicationMedium ? currency.getUtf8HexSymbol() : currency.getSymbol();
   }
 
   public Map<String, String> getURLMap(AnomalyEntity anomaly, String baseUrl) {

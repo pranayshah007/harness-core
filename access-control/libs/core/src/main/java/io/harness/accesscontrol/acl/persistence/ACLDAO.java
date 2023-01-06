@@ -14,8 +14,11 @@ import io.harness.accesscontrol.acl.api.Principal;
 import io.harness.annotations.dev.OwnedBy;
 
 import java.util.List;
+import java.util.Set;
 
 @OwnedBy(PL)
 public interface ACLDAO {
+  Set<String> getQueryStrings(PermissionCheck permissionCheck, Principal principal);
+
   List<List<ACL>> getMatchingACLs(Principal principal, List<PermissionCheck> permissionChecks);
 }

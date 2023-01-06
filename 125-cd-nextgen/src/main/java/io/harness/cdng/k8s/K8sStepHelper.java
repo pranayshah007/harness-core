@@ -42,6 +42,7 @@ import io.harness.cdng.manifest.yaml.HelmChartManifestOutcome;
 import io.harness.cdng.manifest.yaml.HelmChartManifestOutcome.HelmChartManifestOutcomeKeys;
 import io.harness.cdng.manifest.yaml.K8sManifestOutcome;
 import io.harness.cdng.manifest.yaml.K8sManifestOutcome.K8sManifestOutcomeKeys;
+import io.harness.cdng.manifest.yaml.K8sStepCommandFlag;
 import io.harness.cdng.manifest.yaml.KustomizeManifestOutcome;
 import io.harness.cdng.manifest.yaml.KustomizeManifestOutcome.KustomizeManifestOutcomeKeys;
 import io.harness.cdng.manifest.yaml.KustomizePatchesManifestOutcome;
@@ -769,10 +770,13 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
       }
     }
     if (shouldExecuteGitFetchTask(aggregatedValuesManifest)) {
+      LinkedList<ValuesManifestOutcome> orderedValuesManifests = new LinkedList<>(aggregatedValuesManifest);
+      if (ManifestStoreType.HARNESS.equals(k8sManifest.getStore().getKind())) {
+        orderedValuesManifests.addFirst(valuesManifestOutcome);
+      }
       return executeValuesFetchTask(
-          ambiance, stepElementParameters, aggregatedValuesManifest, emptyMap(), updatedK8sStepPassThroughData);
+          ambiance, stepElementParameters, orderedValuesManifests, emptyMap(), updatedK8sStepPassThroughData);
     }
-
     LinkedList<ValuesManifestOutcome> orderedValuesManifests = new LinkedList<>(aggregatedValuesManifest);
     orderedValuesManifests.addFirst(valuesManifestOutcome);
     return executeK8sTask(ambiance, stepElementParameters, k8sStepExecutor, updatedK8sStepPassThroughData,
@@ -951,5 +955,18 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
       return prunedResourceIds == null ? Collections.emptyList() : prunedResourceIds;
     }
     return Collections.emptyList();
+  }
+
+  public Map<String, String> getDelegateK8sCommandFlag(List<K8sStepCommandFlag> commandFlags) {
+    if (commandFlags == null) {
+      return new HashMap<>();
+    }
+
+    Map<String, String> commandsValueMap = new HashMap<>();
+    for (K8sStepCommandFlag commandFlag : commandFlags) {
+      commandsValueMap.put(commandFlag.getCommandType().getSubCommandType(), commandFlag.getFlag().getValue());
+    }
+
+    return commandsValueMap;
   }
 }

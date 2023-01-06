@@ -85,19 +85,20 @@ public class MaintenanceController implements Managed {
 
   private void checkForMaintenance() {
     boolean isShutdown = new File(SHUTDOWN_FILENAME).exists();
+    boolean isMaintenance = isShutdown || currentMaintenanceState.get() || new File(MAINTENANCE_FILENAME).exists();
+
+    if (currentMaintenanceState.getAndSet(isMaintenance) != isMaintenance) {
+      log.info("{} maintenance mode", isMaintenance ? "Entering" : "Leaving");
+      maintenanceListenerSubject.fireInform(
+          isMaintenance ? MaintenanceListener::onEnterMaintenance : MaintenanceListener::onLeaveMaintenance);
+    }
+
     if (shutdown.getAndSet(isShutdown) != isShutdown) {
       // We don't expect to ever leave shutdown mode, but log either way
       log.info("{} shutdown mode", isShutdown ? "Entering" : "Leaving");
       if (isShutdown) {
         maintenanceListenerSubject.fireInform(MaintenanceListener::onShutdown);
       }
-    }
-
-    boolean isMaintenance = currentMaintenanceState.get() || new File(MAINTENANCE_FILENAME).exists() || isShutdown;
-    if (currentMaintenanceState.getAndSet(isMaintenance) != isMaintenance) {
-      log.info("{} maintenance mode", isMaintenance ? "Entering" : "Leaving");
-      maintenanceListenerSubject.fireInform(
-          isMaintenance ? MaintenanceListener::onEnterMaintenance : MaintenanceListener::onLeaveMaintenance);
     }
   }
 

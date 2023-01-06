@@ -3433,6 +3433,28 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "IACMStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object"
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "IACMTemplateInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object"
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "IACMTerraformPlanInfo": {
       "allOf": [
         {
@@ -3450,12 +3472,6 @@
                   "type": "string"
                 }
               ]
-            },
-            "mode": {
-              "type": "string"
-            },
-            "operation": {
-              "type": "string"
             },
             "tfVars": {
               "oneOf": [
@@ -3892,6 +3908,21 @@
         },
         "harnessImageConnectorRef": {
           "type": "string"
+        },
+        "hostNames": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
         },
         "initTimeout": {
           "type": "string"
@@ -5878,12 +5909,23 @@
                   }
                 },
                 {
-                  "type": "string"
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
                 }
               ]
             },
             "image": {
-              "type": "string"
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
             },
             "privileged": {
               "oneOf": [
@@ -5924,12 +5966,23 @@
                   "format": "int32"
                 },
                 {
-                  "type": "string"
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
                 }
               ]
             },
             "uses": {
-              "type": "string"
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
             },
             "with": {
               "oneOf": [
@@ -5937,7 +5990,9 @@
                   "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
                 },
                 {
-                  "type": "string"
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
                 }
               ]
             }
@@ -7163,8 +7218,14 @@
         "failOnSeverity": {
           "oneOf": [
             {
-              "type": "integer",
-              "format": "int32"
+              "type": "string",
+              "enum": [
+                "critical",
+                "high",
+                "medium",
+                "low",
+                "none"
+              ]
             },
             {
               "type": "string",
@@ -7189,18 +7250,6 @@
           "oneOf": [
             {
               "$ref": "#/definitions/STOYamlLog"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
-        },
-        "ssl": {
-          "oneOf": [
-            {
-              "type": "boolean"
             },
             {
               "type": "string",
@@ -7276,6 +7325,18 @@
           "oneOf": [
             {
               "type": "string"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "ssl": {
+          "oneOf": [
+            {
+              "type": "boolean"
             },
             {
               "type": "string",
@@ -7823,18 +7884,6 @@
           "oneOf": [
             {
               "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
-        },
-        "ssl": {
-          "oneOf": [
-            {
-              "type": "boolean"
             },
             {
               "type": "string",
@@ -9123,7 +9172,8 @@
       ],
       "properties": {
         "condition": {
-          "type": "string"
+          "type": "string",
+          "pattern": "^(?!<\\+input>.*\\.executionInput\\(\\)(.*)$)"
         },
         "pipelineStatus": {
           "type": "string",
@@ -9541,6 +9591,38 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/GrypeStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "IACM"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/IACMStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "IACMTemplate"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/IACMTemplateInfo"
               }
             }
           }
@@ -10076,58 +10158,112 @@
       ]
     },
     "StepGroupElementConfig": {
-      "type": "object",
-      "required": [
-        "identifier",
-        "name",
-        "steps"
-      ],
-      "properties": {
-        "delegateSelectors": {
-          "oneOf": [
-            {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "identifier",
+            "name",
+            "template"
+          ],
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "failureStrategies": {
               "type": "array",
               "items": {
-                "type": "string"
+                "$ref": "#/definitions/FailureStrategyConfig"
               }
             },
-            {
+            "identifier": {
               "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
+              "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,63}$"
+            },
+            "name": {
+              "type": "string",
+              "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
+            },
+            "strategy": {
+              "$ref": "#/definitions/StrategyConfig"
+            },
+            "template": {
+              "$ref": "#/definitions/TemplateLinkConfig"
+            },
+            "when": {
+              "$ref": "#/definitions/StepWhenCondition"
             }
-          ]
-        },
-        "failureStrategies": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/FailureStrategyConfig"
-          }
-        },
-        "identifier": {
-          "type": "string",
-          "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,63}$"
-        },
-        "name": {
-          "type": "string",
-          "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
-        },
-        "steps": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/ExecutionWrapperConfig"
           },
-          "maxItems": 2147483647,
-          "minItems": 1
+          "additionalProperties": false
         },
-        "strategy": {
-          "$ref": "#/definitions/StrategyConfig"
-        },
-        "when": {
-          "$ref": "#/definitions/StepWhenCondition"
+        {
+          "type": "object",
+          "required": [
+            "identifier",
+            "name",
+            "steps"
+          ],
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "failureStrategies": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/FailureStrategyConfig"
+              }
+            },
+            "identifier": {
+              "type": "string",
+              "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,63}$"
+            },
+            "name": {
+              "type": "string",
+              "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
+            },
+            "steps": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/ExecutionWrapperConfig"
+              },
+              "maxItems": 2147483647,
+              "minItems": 1
+            },
+            "strategy": {
+              "$ref": "#/definitions/StrategyConfig"
+            },
+            "when": {
+              "$ref": "#/definitions/StepWhenCondition"
+            }
+          },
+          "additionalProperties": false
         }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
+      ]
     },
     "StepGroupFailureActionConfig": {
       "allOf": [
@@ -10163,7 +10299,8 @@
       ],
       "properties": {
         "condition": {
-          "type": "string"
+          "type": "string",
+          "pattern": "^(?!<\\+input>.*\\.executionInput\\(\\)(.*)$)"
         },
         "stageStatus": {
           "type": "string",
@@ -10394,6 +10531,28 @@
           }
         }
       ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TemplateLinkConfig": {
+      "type": "object",
+      "required": [
+        "templateRef"
+      ],
+      "properties": {
+        "templateInputs": {
+          "$ref": "#/definitions/JsonNode"
+        },
+        "templateRef": {
+          "type": "string"
+        },
+        "templateVariables": {
+          "$ref": "#/definitions/JsonNode"
+        },
+        "versionLabel": {
+          "type": "string",
+          "pattern": "^[0-9a-zA-Z][^\\s]{0,63}$"
+        }
+      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "TenableStepInfo": {

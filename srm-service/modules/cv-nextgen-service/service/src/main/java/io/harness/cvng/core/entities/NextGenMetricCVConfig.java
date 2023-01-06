@@ -8,14 +8,16 @@
 package io.harness.cvng.core.entities;
 
 import static io.harness.cvng.core.utils.ErrorMessageUtils.generateErrorMessageFromParam;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
+import io.harness.cvng.beans.ThresholdConfigType;
 import io.harness.cvng.beans.TimeSeriesMetricType;
-import io.harness.cvng.core.beans.healthsource.HealthSourceParams;
 import io.harness.cvng.core.beans.healthsource.QueryDefinition;
+import io.harness.cvng.core.beans.monitoredService.MetricThreshold;
 import io.harness.cvng.core.services.CVNextGenConstants;
 import io.harness.cvng.core.utils.analysisinfo.AnalysisInfoUtility;
 import io.harness.cvng.core.utils.analysisinfo.DevelopmentVerificationTransformer;
@@ -24,6 +26,7 @@ import io.harness.cvng.core.utils.analysisinfo.SLIMetricTransformer;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.google.common.base.Preconditions;
+import dev.morphia.query.UpdateOperations;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -36,7 +39,6 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @JsonTypeName("NEXTGEN_METRIC")
 @Data
@@ -110,7 +112,7 @@ public class NextGenMetricCVConfig extends MetricCVConfig<NextGenMetricInfo> {
                                 .category(category)
                                 .accountId(getAccountId())
                                 .orgIdentifier(getOrgIdentifier())
-                                .dataSourceType(DataSourceType.SUMOLOGIC_METRICS)
+                                .dataSourceType(dataSourceType)
                                 .projectIdentifier(getProjectIdentifier())
                                 .identifier(CVNextGenConstants.CUSTOM_PACK_IDENTIFIER)
                                 .build();
@@ -126,16 +128,13 @@ public class NextGenMetricCVConfig extends MetricCVConfig<NextGenMetricInfo> {
                         .metricName(queryDefinition.getName())
                         .metricType(metricType)
                         .query(queryDefinition.getQuery())
-                        .queryParams(queryDefinition.getQueryParams())
+                        .queryParams(queryDefinition.getQueryParams().getQueryParamsEntity())
                         .identifier(queryDefinition.getIdentifier())
                         .sli(SLIMetricTransformer.transformQueryDefinitiontoEntity(queryDefinition))
                         .liveMonitoring(LiveMonitoringTransformer.transformQueryDefinitiontoEntity(queryDefinition))
                         .deploymentVerification(
                             DevelopmentVerificationTransformer.transformQueryDefinitiontoEntity(queryDefinition))
                         .build());
-
-    // add the relevant thresholds to metricPack
-    // TODO some funky business here , revisit
     Set<TimeSeriesThreshold> thresholds = getThresholdsToCreateOnSaveForCustomProviders(
         queryDefinition.getName(), metricType, queryDefinition.getRiskProfile().getThresholdTypes());
     metricPack.addToMetrics(MetricPack.MetricDefinition.builder()
@@ -158,23 +157,48 @@ public class NextGenMetricCVConfig extends MetricCVConfig<NextGenMetricInfo> {
     }
   }
 
-  // TODO understand if these can be removed like splunk , very Imp to revisit.
-  private MetricPack createMetricPack(CVMonitoringCategory category) {
-    return MetricPack.builder()
-        .identifier(CVNextGenConstants.CUSTOM_PACK_IDENTIFIER)
-        .accountId(getAccountId())
-        .orgIdentifier(getOrgIdentifier())
-        .projectIdentifier(getProjectIdentifier())
-        .category(category)
-        .dataSourceType(DataSourceType.SUMOLOGIC_METRICS)
-        .build();
+  public void addCustomMetricThresholds(List<QueryDefinition> queryDefinitions) {
+    getMetricPack().getMetrics().forEach(metric -> queryDefinitions.forEach(queryDefinition -> {
+      if (!isEmpty(queryDefinition.getMetricThresholds())) {
+        queryDefinition.getMetricThresholds()
+            .stream()
+            .filter(metricThreshold -> metric.getName().equals(metricThreshold.getMetricName()))
+            .forEach(metricThreshold -> setMetricThreshold(metric, metricThreshold));
+      }
+    }));
   }
 
-  // TODO remove
+  private void setMetricThreshold(MetricPack.MetricDefinition metric, MetricThreshold metricThreshold) {
+    metricThreshold.getTimeSeriesThresholdCriteria().forEach(criteria -> {
+      List<TimeSeriesThreshold> timeSeriesThresholds =
+          metric.getThresholds() != null ? metric.getThresholds() : new ArrayList<>();
+      TimeSeriesThreshold timeSeriesThreshold =
+          TimeSeriesThreshold.builder()
+              .accountId(getAccountId())
+              .projectIdentifier(getProjectIdentifier())
+              .dataSourceType(getType())
+              .metricIdentifier(metric.getIdentifier())
+              .metricType(metric.getType())
+              .metricName(metricThreshold.getMetricName())
+              .action(metricThreshold.getType().getTimeSeriesThresholdActionType())
+              .criteria(criteria)
+              .thresholdConfigType(ThresholdConfigType.USER_DEFINED)
+              .build();
+      timeSeriesThresholds.add(timeSeriesThreshold);
+      metric.setThresholds(timeSeriesThresholds);
+    });
+  }
 
   public void addMetricPackAndInfo(List<QueryDefinition> queryDefinitions) {
     CVMonitoringCategory category = queryDefinitions.get(0).getRiskProfile().getCategory();
-    MetricPack metricPack = createMetricPack(category);
+    MetricPack metricPack = MetricPack.builder()
+                                .identifier(CVNextGenConstants.CUSTOM_PACK_IDENTIFIER)
+                                .accountId(getAccountId())
+                                .orgIdentifier(getOrgIdentifier())
+                                .projectIdentifier(getProjectIdentifier())
+                                .category(category)
+                                .dataSourceType(dataSourceType)
+                                .build();
     this.metricInfos =
         queryDefinitions.stream()
             .map((QueryDefinition queryDefinition) -> {
@@ -183,7 +207,7 @@ public class NextGenMetricCVConfig extends MetricCVConfig<NextGenMetricInfo> {
                       .identifier(queryDefinition.getIdentifier())
                       .metricName(queryDefinition.getName())
                       .query(queryDefinition.getQuery())
-                      .queryParams(queryDefinition.getQueryParams())
+                      .queryParams(queryDefinition.getQueryParams().getQueryParamsEntity())
                       .sli(SLIMetricTransformer.transformQueryDefinitiontoEntity(queryDefinition))
                       .liveMonitoring(LiveMonitoringTransformer.transformQueryDefinitiontoEntity(queryDefinition))
                       .deploymentVerification(

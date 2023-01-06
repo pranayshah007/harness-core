@@ -124,7 +124,7 @@ import software.wings.beans.security.UserGroup;
 import software.wings.beans.security.UserGroup.UserGroupKeys;
 import software.wings.beans.security.UserGroupSearchTermType;
 import software.wings.features.api.UsageLimitedFeature;
-import software.wings.helpers.ext.mail.EmailData;
+import software.wings.persistence.mail.EmailData;
 import software.wings.security.AppFilter;
 import software.wings.security.EnvFilter;
 import software.wings.security.Filter;

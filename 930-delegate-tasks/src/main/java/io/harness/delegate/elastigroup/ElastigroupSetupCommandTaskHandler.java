@@ -45,6 +45,7 @@ import software.wings.beans.LogColor;
 import software.wings.beans.LogWeight;
 
 import com.google.inject.Inject;
+import java.util.Collections;
 import java.util.List;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -69,7 +70,7 @@ public class ElastigroupSetupCommandTaskHandler extends ElastigroupCommandTaskHa
         (ElastigroupSetupCommandRequest) elastigroupCommandRequest;
 
     LogCallback deployLogCallback = elastigroupCommandTaskNGHelper.getLogCallback(iLogStreamingTaskClient,
-        ElastigroupCommandUnitConstants.CREATE_ELASTIGROUP.toString(), true, commandUnitsProgress);
+        ElastigroupCommandUnitConstants.CREATE_ELASTIGROUP.toString(), false, commandUnitsProgress);
     try {
       // Handle canary and basic
       String prefix = format("%s__", elastigroupSetupCommandRequest.getElastigroupNamePrefix());
@@ -204,6 +205,9 @@ public class ElastigroupSetupCommandTaskHandler extends ElastigroupCommandTaskHa
         }
       }
     }
+    // Required for next cleanup stage
+    Collections.reverse(result);
+
     return result;
   }
 }

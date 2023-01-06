@@ -28,8 +28,6 @@ import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.rule.Owner;
 
 import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
@@ -80,11 +78,9 @@ public class SpotInstanceSyncHandlerTest extends InstancesTestBase {
     DeploymentInfoDTO deploymentInfo =
         spotInstanceSyncHandler.getDeploymentInfo(outcome, Collections.singletonList(serverInstanceInfo));
     assertThat(deploymentInfo.getType()).isEqualTo(ELASTIGROUP_SERVICE);
-    assertThat(((SpotDeploymentInfoDTO) deploymentInfo).getInfrastructureKey()).isEqualTo(INFRASTRUCTURE_KEY);
-
-    Map<String, Set<String>> elastigroupEc2InstancesMap =
-        ((SpotDeploymentInfoDTO) deploymentInfo).getElastigroupEc2InstancesMap();
-    assertThat(elastigroupEc2InstancesMap.size()).isEqualTo(1);
-    assertThat(elastigroupEc2InstancesMap.get(ELASTIGROUP_ID)).contains(EC2_INSTANCE_ID);
+    SpotDeploymentInfoDTO spotDeploymentInfo = (SpotDeploymentInfoDTO) deploymentInfo;
+    assertThat(spotDeploymentInfo.getInfrastructureKey()).isEqualTo(INFRASTRUCTURE_KEY);
+    assertThat(spotDeploymentInfo.getElastigroupId()).isEqualTo(ELASTIGROUP_ID);
+    assertThat(spotDeploymentInfo.getEc2Instances()).contains(EC2_INSTANCE_ID);
   }
 }

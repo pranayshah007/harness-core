@@ -25,6 +25,7 @@ import lombok.NoArgsConstructor;
 @TargetModule(HarnessModule._957_CG_BEANS)
 public class TerraformBackendConfig {
   private GitFileConfig remoteBackendConfig;
+  private S3FileConfig s3BackendConfig;
   private List<NameValuePair> inlineBackendConfig;
   private String storeType;
 }

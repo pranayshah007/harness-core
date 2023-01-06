@@ -9,6 +9,7 @@ package io.harness.dtos.instanceinfo;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.util.InstanceSyncKey;
 
 import javax.validation.constraints.NotNull;
@@ -33,7 +34,7 @@ public class SpotInstanceInfoDTO extends InstanceInfoDTO {
 
   @Override
   public String prepareInstanceSyncHandlerKey() {
-    return InstanceSyncKey.builder().part(infrastructureKey).build().toString();
+    return InstanceSyncKey.builder().part(infrastructureKey).part(elastigroupId).build().toString();
   }
 
   @Override
@@ -43,6 +44,6 @@ public class SpotInstanceInfoDTO extends InstanceInfoDTO {
 
   @Override
   public String getType() {
-    return "Spot";
+    return InfrastructureKind.ELASTIGROUP;
   }
 }

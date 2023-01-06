@@ -61,7 +61,7 @@ public class EcsStepUtils extends CDStepHelper {
   public boolean isAnyGitManifest(List<ManifestOutcome> ecsManifestsOutcomes) {
     Boolean isGitManifest = false;
     for (ManifestOutcome manifest : ecsManifestsOutcomes) {
-      if (ManifestStoreType.isInGitSubset(manifest.getStore().getKind())) {
+      if (manifest.getStore() != null && ManifestStoreType.isInGitSubset(manifest.getStore().getKind())) {
         isGitManifest = true;
       }
     }
@@ -71,7 +71,7 @@ public class EcsStepUtils extends CDStepHelper {
   public boolean isAnyS3Manifest(List<ManifestOutcome> ecsManifestsOutcomes) {
     Boolean isS3Manifest = false;
     for (ManifestOutcome manifest : ecsManifestsOutcomes) {
-      if (ManifestStoreType.S3.equals(manifest.getStore().getKind())) {
+      if (manifest.getStore() != null && ManifestStoreType.S3.equals(manifest.getStore().getKind())) {
         isS3Manifest = true;
       }
     }
@@ -115,7 +115,9 @@ public class EcsStepUtils extends CDStepHelper {
   public boolean areAllManifestsFromHarnessFileStore(List<? extends ManifestOutcome> manifestOutcomes) {
     boolean retVal = true;
     for (ManifestOutcome manifestOutcome : manifestOutcomes) {
-      retVal = retVal && ManifestStoreType.HARNESS.equals(manifestOutcome.getStore().getKind());
+      if (manifestOutcome.getStore() != null) {
+        retVal = retVal && ManifestStoreType.HARNESS.equals(manifestOutcome.getStore().getKind());
+      }
     }
     return retVal;
   }

@@ -128,6 +128,10 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     if (EmptyPredicate.isNotEmpty(pipelineIdentifier)) {
       criteria.and(PlanExecutionSummaryKeys.pipelineIdentifier).is(pipelineIdentifier);
     }
+    // To show non-child execution. First or condition is added for older execution which do not have parentStageInfo
+    if (EmptyPredicate.isEmpty(pipelineIdentifier)) {
+      criteria.and(PlanExecutionSummaryKeys.isChildPipeline).in(null, false);
+    }
     if (EmptyPredicate.isNotEmpty(statusList)) {
       criteria.and(PlanExecutionSummaryKeys.status).in(statusList);
     }

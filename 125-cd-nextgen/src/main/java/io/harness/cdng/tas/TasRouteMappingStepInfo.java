@@ -12,6 +12,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.pipeline.CDAbstractStepInfo;
 import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.TasRollingDeployStepInfoVisitorHelper;
 import io.harness.cdng.visitor.helpers.cdstepinfo.TasRouteMappingStepInfoVisitorHelper;
@@ -44,7 +45,7 @@ import java.util.List;
 @JsonTypeName(StepSpecTypeConstants.ROUTE_MAPPING)
 @TypeAlias("tasRouteMappingStepInfo")
 @RecasterAlias("io.harness.cdng.tas.TasRouteMappingStepInfo")
-public class TasRouteMappingStepInfo extends TasRouteMappingBaseStepInfo implements CDStepInfo, Visitable {
+public class TasRouteMappingStepInfo extends TasRouteMappingBaseStepInfo implements CDAbstractStepInfo, Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)

@@ -27,7 +27,6 @@ import io.harness.delegate.task.cf.TasArtifactDownloadContext;
 import io.harness.delegate.task.cf.TasArtifactDownloadResponse;
 import io.harness.delegate.task.cf.artifact.TasArtifactCreds;
 import io.harness.delegate.task.cf.artifact.TasRegistrySettingsAdapter;
-import io.harness.delegate.task.pcf.PcfManifestsPackage;
 import io.harness.delegate.task.pcf.TasTaskHelperBase;
 import io.harness.delegate.task.pcf.artifact.TasContainerArtifactConfig;
 import io.harness.delegate.task.pcf.artifact.TasPackageArtifactConfig;
@@ -36,6 +35,7 @@ import io.harness.delegate.task.pcf.request.CfCommandRequestNG;
 import io.harness.delegate.task.pcf.request.CfDeployCommandRequestNG;
 import io.harness.delegate.task.pcf.request.CfRollingDeployRequestNG;
 import io.harness.delegate.task.pcf.request.CfRollingRollbackRequestNG;
+import io.harness.delegate.task.pcf.request.TasManifestsPackage;
 import io.harness.delegate.task.pcf.response.CfBasicSetupResponseNG;
 import io.harness.delegate.task.pcf.response.CfCommandResponseNG;
 import io.harness.delegate.task.pcf.response.CfDeployCommandResponseNG;
@@ -295,12 +295,12 @@ public class CfRollingRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandle
   private void configureAutoscalarIfNeeded(CfRollingRollbackRequestNG cfRollingRollbackRequestNG,
                                            ApplicationDetail applicationDetail, CfAppAutoscalarRequestData appAutoscalarRequestData,
                                            LogCallback executionLogCallback) throws PivotalClientApiException, IOException {
-    if (cfRollingRollbackRequestNG.isUseAppAutoScalar() && cfRollingRollbackRequestNG.getPcfManifestsPackage() != null
-            && isNotEmpty(cfRollingRollbackRequestNG.getPcfManifestsPackage().getAutoscalarManifestYml())) {
+    if (cfRollingRollbackRequestNG.isUseAppAutoScalar() && cfRollingRollbackRequestNG.getTasManifestsPackage() != null
+            && isNotEmpty(cfRollingRollbackRequestNG.getTasManifestsPackage().getAutoscalarManifestYml())) {
       // This is autoscalar file inside workingDirectory
       String filePath =
               appAutoscalarRequestData.getConfigPathVar() + "/autoscalar_" + System.currentTimeMillis() + ".yml";
-      cfCommandTaskHelperNG.createYamlFileLocally(filePath, cfRollingRollbackRequestNG.getPcfManifestsPackage().getAutoscalarManifestYml());
+      cfCommandTaskHelperNG.createYamlFileLocally(filePath, cfRollingRollbackRequestNG.getTasManifestsPackage().getAutoscalarManifestYml());
 
       // upload autoscalar config
       appAutoscalarRequestData.setApplicationName(applicationDetail.getName());
@@ -368,9 +368,9 @@ public class CfRollingRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandle
       return;
     }
 
-    PcfManifestsPackage pcfManifestsPackage = cfRollingRollbackRequestNG.getPcfManifestsPackage();
+    TasManifestsPackage tasManifestsPackage = cfRollingRollbackRequestNG.getTasManifestsPackage();
     AtomicInteger varFileIndex = new AtomicInteger(0);
-    pcfManifestsPackage.getVariableYmls().forEach(varFileYml -> {
+    tasManifestsPackage.getVariableYmls().forEach(varFileYml -> {
       File varsYamlFile =
               pcfCommandTaskBaseHelper.createManifestVarsYamlFileLocally(requestData, varFileYml, varFileIndex.get());
       if (varsYamlFile != null) {
@@ -383,7 +383,7 @@ public class CfRollingRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandle
   public String generateManifestYamlForPush(CfRollingRollbackRequestNG cfRollingRollbackRequestNG,
                                             CfCreateApplicationRequestData requestData) throws PivotalClientApiException {
     // Substitute name,
-    String manifestYaml = cfRollingRollbackRequestNG.getPcfManifestsPackage().getManifestYml();
+    String manifestYaml = cfRollingRollbackRequestNG.getTasManifestsPackage().getManifestYml();
 
     Map<String, Object> map;
     try {
@@ -502,11 +502,11 @@ public class CfRollingRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandle
   }
 
   boolean checkIfVarsFilePresent(CfRollingRollbackRequestNG setupRequest) {
-    if (setupRequest.getPcfManifestsPackage() == null) {
+    if (setupRequest.getTasManifestsPackage() == null) {
       return false;
     }
 
-    List<String> varFiles = setupRequest.getPcfManifestsPackage().getVariableYmls();
+    List<String> varFiles = setupRequest.getTasManifestsPackage().getVariableYmls();
     if (isNotEmpty(varFiles)) {
       varFiles = varFiles.stream().filter(StringUtils::isNotBlank).collect(toList());
     }

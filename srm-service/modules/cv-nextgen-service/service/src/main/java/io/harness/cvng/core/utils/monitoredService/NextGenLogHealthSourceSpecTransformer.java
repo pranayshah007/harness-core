@@ -8,6 +8,7 @@
 package io.harness.cvng.core.utils.monitoredService;
 
 import io.harness.cvng.core.beans.healthsource.QueryDefinition;
+import io.harness.cvng.core.beans.healthsource.QueryParamsDTO;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.NextGenHealthSourceSpec;
 import io.harness.cvng.core.entities.NextGenLogCVConfig;
 
@@ -30,8 +31,9 @@ public class NextGenLogHealthSourceSpecTransformer
                                        -> QueryDefinition.builder()
                                               .name(cv.getQueryName())
                                               .query(cv.getQuery())
-                                              .identifier(cv.getIdentifier())
-                                              .queryParams(cv.getQueryParams())
+                                              .groupName(cv.getGroupName())
+                                              .identifier(cv.getQueryIdentifier())
+                                              .queryParams(QueryParamsDTO.getQueryParamsDTO(cv.getQueryParams()))
                                               .build())
                               .collect(Collectors.toList()))
         .build();

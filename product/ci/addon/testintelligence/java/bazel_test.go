@@ -42,15 +42,10 @@ func TestGetBazelCmd_DuplicateTests(t *testing.T) {
 	tests := []types.RunnableTest{t1, t2, t3}
 	expectedCmd := "bazel  --define=HARNESS_ARGS=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini //module1:pkg1.cls1 //module1:pkg2.cls2"
 
-	c := fmt.Sprintf("%s query 'attr(name, %s.%s, //...)'", bazelCmd, "pkg1", "cls1")
+	c := fmt.Sprintf("%s query 'attr(name, \"pkg1.cls1|pkg2.cls2\", //...)'", bazelCmd)
 	cmdArgs := append(make([]interface{}, 0), "-c", c)
 	cmdFactory.EXPECT().CmdContextWithSleep(ctx, time.Duration(0), "sh", cmdArgs...).Return(cmd)
-	cmd.EXPECT().Output().Return([]byte("//module1:pkg1.cls1"), nil)
-
-	c = fmt.Sprintf("%s query 'attr(name, %s.%s, //...)'", bazelCmd, "pkg2", "cls2")
-	cmdArgs = append(make([]interface{}, 0), "-c", c)
-	cmdFactory.EXPECT().CmdContextWithSleep(ctx, time.Duration(0), "sh", cmdArgs...).Return(cmd)
-	cmd.EXPECT().Output().Return([]byte("//module1:pkg2.cls2"), nil)
+	cmd.EXPECT().Output().Return([]byte("//module1:pkg1.cls1\n//module1:pkg2.cls2\n"), nil)
 
 	command, _ := runner.GetCmd(ctx, tests, "", "/test/tmp/config.ini", false, false)
 	assert.Equal(t, expectedCmd, command)
@@ -75,8 +70,60 @@ func TestGetBazelCmd_TestsWithRules(t *testing.T) {
 	tests := []types.RunnableTest{t1, t2, t3}
 	expectedCmd := "bazel  --define=HARNESS_ARGS=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini //module1:pkg1.cls1 //module1:pkg1.cls2 //module1:pkg2.cls2"
 
+	// Since all the tests have test rules, there won't be an additional bazel query call to find the test rules
 	cmd, _ := runner.GetCmd(ctx, tests, "", "/test/tmp/config.ini", false, false)
 	assert.Equal(t, expectedCmd, cmd)
+}
+
+func TestGetBazelCmd_GetBazelTestRules(t *testing.T) {
+	ctrl, ctx := gomock.WithContext(context.Background(), t)
+	defer ctrl.Finish()
+
+	log, _ := logs.GetObservedLogger(zap.InfoLevel)
+	fs := filesystem.NewMockFileSystem(ctrl)
+
+	cmdFactory := mexec.NewMockCmdContextFactory(ctrl)
+	cmd := mexec.NewMockCommand(ctrl)
+	runner := NewBazelRunner(log.Sugar(), fs, cmdFactory)
+
+	tests := []types.RunnableTest{
+		{
+			Pkg:   "io.harness",
+			Class: "GraphQLExceptionHandlingTest",
+		},
+		{
+			Pkg:   "io.harness",
+			Class: "GenerateOpenApiSpecCommandTest",
+		},
+		{
+			Pkg:   "io.harness.ng",
+			Class: "GenerateOpenApiSpecCommandTest",
+		},
+		{
+			Pkg:   "io.harness.mongo",
+			Class: "MongoIndexesTest",
+		},
+	}
+	expectedCmd := "bazel  --define=HARNESS_ARGS=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini //220-graphql-test:io.harness.GraphQLExceptionHandlingTest //pipeline-service/service:io.harness.GenerateOpenApiSpecCommandTest //120-ng-manager:io.harness.ng.GenerateOpenApiSpecCommandTest //400-rest:io.harness.mongo.tests"
+
+	c := fmt.Sprintf("%s query 'attr(name, \"io.harness.GraphQLExceptionHandlingTest|io.harness.GenerateOpenApiSpecCommandTest|io.harness.ng.GenerateOpenApiSpecCommandTest|io.harness.mongo.MongoIndexesTest\", //...)'", bazelCmd)
+	cmdArgs := append(make([]interface{}, 0), "-c", c)
+	cmdFactory.EXPECT().CmdContextWithSleep(ctx, time.Duration(0), "sh", cmdArgs...).Return(cmd)
+	cmd.EXPECT().Output().Return([]byte("//120-ng-manager:io.harness.ng.GenerateOpenApiSpecCommandTest\n//220-graphql-test:io.harness.GraphQLExceptionHandlingTest\n//pipeline-service/service:io.harness.GenerateOpenApiSpecCommandTest\n"), nil)
+
+	// No test rule found for MongoIndexesTest - Fail back query
+	c = fmt.Sprintf("find . -path '*io/harness/mongo/MongoIndexesTest*' | sed -e \"s/^\\.\\///g\"")
+	cmdArgs = append(make([]interface{}, 0), "-c", c)
+	cmdFactory.EXPECT().CmdContextWithSleep(ctx, time.Duration(0), "sh", cmdArgs...).Return(cmd)
+	cmd.EXPECT().Output().Return([]byte("400-rest/src/test/java/io/harness/mongo/MongoIndexesTest.java"), nil)
+
+	c = fmt.Sprintf("export fullname=$(%s query 400-rest/src/test/java/io/harness/mongo/MongoIndexesTest.java)\n%s query \"attr('srcs', $fullname, ${fullname//:*/}:*)\" --output=label_kind | grep 'java_test rule'", bazelCmd, bazelCmd)
+	cmdArgs = append(make([]interface{}, 0), "-c", c)
+	cmdFactory.EXPECT().CmdContextWithSleep(ctx, time.Duration(0), "sh", cmdArgs...).Return(cmd)
+	cmd.EXPECT().Output().Return([]byte("java_test rule //400-rest:io.harness.mongo.tests"), nil)
+
+	command, _ := runner.GetCmd(ctx, tests, "", "/test/tmp/config.ini", false, false)
+	assert.Equal(t, expectedCmd, command)
 }
 
 func TestBazelAutoDetectTests(t *testing.T) {

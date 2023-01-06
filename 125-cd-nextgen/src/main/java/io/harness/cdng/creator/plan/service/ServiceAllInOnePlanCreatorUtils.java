@@ -7,6 +7,8 @@
 
 package io.harness.cdng.creator.plan.service;
 
+import static io.harness.cdng.pipeline.steps.MultiDeploymentSpawnerUtils.SERVICE_OVERRIDE_INPUTS_EXPRESSION;
+import static io.harness.cdng.pipeline.steps.MultiDeploymentSpawnerUtils.SERVICE_REF_EXPRESSION;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.cdng.artifact.steps.ArtifactsStepV2;
@@ -80,17 +82,22 @@ public class ServiceAllInOnePlanCreatorUtils {
 
     // add nodes for artifacts/manifests/files
     final List<String> childrenNodeIds = addChildrenNodes(planCreationResponseMap, serviceType);
-    final ServiceStepV3Parameters stepParameters =
-        ServiceStepV3Parameters.builder()
-            .serviceRef(finalServiceYaml.getServiceRef())
-            .inputs(finalServiceYaml.getServiceInputs())
-            .envRef(environmentYamlV2.getEnvironmentRef())
-            .envInputs(environmentYamlV2.getEnvironmentInputs())
-            .childrenNodeIds(childrenNodeIds)
-            .serviceOverrideInputs(environmentYamlV2.getServiceOverrideInputs())
-            .deploymentType(serviceType)
-            .envGroupRef(envGroupRef)
-            .build();
+    ParameterField<Map<String, Object>> serviceOverrideInputs = environmentYamlV2.getServiceOverrideInputs();
+    if (finalServiceYaml.getServiceRef().isExpression()
+        && finalServiceYaml.getServiceRef().getExpressionValue().equals(SERVICE_REF_EXPRESSION)) {
+      serviceOverrideInputs =
+          ParameterField.createExpressionField(true, SERVICE_OVERRIDE_INPUTS_EXPRESSION, null, false);
+    }
+    final ServiceStepV3Parameters stepParameters = ServiceStepV3Parameters.builder()
+                                                       .serviceRef(finalServiceYaml.getServiceRef())
+                                                       .inputs(finalServiceYaml.getServiceInputs())
+                                                       .envRef(environmentYamlV2.getEnvironmentRef())
+                                                       .envInputs(environmentYamlV2.getEnvironmentInputs())
+                                                       .childrenNodeIds(childrenNodeIds)
+                                                       .serviceOverrideInputs(serviceOverrideInputs)
+                                                       .deploymentType(serviceType)
+                                                       .envGroupRef(envGroupRef)
+                                                       .build();
 
     return createPlanNode(kryoSerializer, serviceNodeId, nextNodeId, planCreationResponseMap, stepParameters);
   }

@@ -144,7 +144,7 @@ public class TasBasicAppSetupStep extends TaskChainExecutableWithRollbackAndRbac
           desiredCount = response.getCurrentProdInfo().getRunningCount();
         }
       } else {
-        desiredCount = tasStepHelper.fetchMaxCountFromManifest(tasExecutionPassThroughData.getPcfManifestsPackage());
+        desiredCount = tasStepHelper.fetchMaxCountFromManifest(tasExecutionPassThroughData.getTasManifestsPackage());
       }
 
       executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.TAS_APP_SETUP_OUTCOME,
@@ -155,12 +155,12 @@ public class TasBasicAppSetupStep extends TaskChainExecutableWithRollbackAndRbac
               .resizeStrategy(TasResizeStrategyType.DOWNSCALE_OLD_FIRST)
               .maxCount(desiredCount)
               .useAppAutoScalar(
-                  !isNull(tasExecutionPassThroughData.getPcfManifestsPackage().getAutoscalarManifestYml()))
+                  !isNull(tasExecutionPassThroughData.getTasManifestsPackage().getAutoscalarManifestYml()))
               .desiredActualFinalCount(desiredCount)
               .newReleaseName(response.getNewApplicationInfo().getApplicationName())
               .activeApplicationDetails(response.getCurrentProdInfo())
               .newApplicationDetails(response.getNewApplicationInfo())
-              .manifestsPackage(tasExecutionPassThroughData.getPcfManifestsPackage())
+              .manifestsPackage(tasExecutionPassThroughData.getTasManifestsPackage())
               .cfAppNamePrefix(tasExecutionPassThroughData.getApplicationName())
               .build(),
           StepCategory.STEP.name());
@@ -210,7 +210,7 @@ public class TasBasicAppSetupStep extends TaskChainExecutableWithRollbackAndRbac
         () -> new InvalidArgumentsException(Pair.of("artifacts", "Primary artifact is required for PCF")));
     InfrastructureOutcome infrastructureOutcome = cdStepHelper.getInfrastructureOutcome(ambiance);
     List<String> routeMaps =
-        tasStepHelper.getRouteMaps(executionPassThroughData.getPcfManifestsPackage().getManifestYml(),
+        tasStepHelper.getRouteMaps(executionPassThroughData.getTasManifestsPackage().getManifestYml(),
             getParameterFieldValue(tasBasicAppSetupStepParameters.getAdditionalRoutes()));
 
     Integer olderActiveVersionCountToKeep =
@@ -227,11 +227,11 @@ public class TasBasicAppSetupStep extends TaskChainExecutableWithRollbackAndRbac
             .useCfCLI(true)
             .tasArtifactConfig(tasStepHelper.getPrimaryArtifactConfig(ambiance, artifactOutcome))
             .cfCliVersion(tasStepHelper.cfCliVersionNGMapper(executionPassThroughData.getCfCliVersion()))
-            .pcfManifestsPackage(executionPassThroughData.getPcfManifestsPackage())
+            .tasManifestsPackage(executionPassThroughData.getTasManifestsPackage())
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
             .olderActiveVersionCountToKeep(olderActiveVersionCountToKeep)
             .routeMaps(routeMaps)
-            .useAppAutoScalar(!isNull(executionPassThroughData.getPcfManifestsPackage().getAutoscalarManifestYml()))
+            .useAppAutoScalar(!isNull(executionPassThroughData.getTasManifestsPackage().getAutoscalarManifestYml()))
             .build();
 
     TaskData taskData = TaskData.builder()

@@ -17,6 +17,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.core.beans.StackdriverDefinition;
+import io.harness.cvng.core.beans.monitoredService.MetricThreshold;
 import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.StackdriverMetricHealthSourceSpec;
 import io.harness.cvng.core.beans.monitoredService.metricThresholdSpec.MetricThresholdActionType;
@@ -89,7 +90,7 @@ public class StackdriverMetricHealthSourceSpecTransformerTest extends CvNextGenT
     TimeSeriesMetricPackDTO timeSeriesMetricPackDTO = spec.getMetricPacks().iterator().next();
     assertThat(timeSeriesMetricPackDTO.getMetricThresholds()).hasSize(1);
     assertThat(timeSeriesMetricPackDTO.getIdentifier()).isEqualTo(customIdentifier);
-    TimeSeriesMetricPackDTO.MetricThreshold metricThreshold = timeSeriesMetricPackDTO.getMetricThresholds().get(0);
+    MetricThreshold metricThreshold = timeSeriesMetricPackDTO.getMetricThresholds().get(0);
     assertThat(metricThreshold.getMetricType()).isEqualTo(customIdentifier);
     assertThat(metricThreshold.getMetricName()).isEqualTo(metricName);
     assertThat(metricThreshold.getGroupName()).isEqualTo(metricGroupName);

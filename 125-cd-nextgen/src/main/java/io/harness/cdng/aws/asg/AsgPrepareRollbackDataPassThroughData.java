@@ -10,8 +10,11 @@ package io.harness.cdng.aws.asg;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 
+import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Value;
 import org.springframework.data.annotation.TypeAlias;
@@ -21,4 +24,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @TypeAlias("asgPrepareRollbackDataPassThroughData")
 @RecasterAlias("io.harness.cdng.aws.asg.AsgPrepareRollbackDataPassThroughData")
-public class AsgPrepareRollbackDataPassThroughData implements PassThroughData {}
+public class AsgPrepareRollbackDataPassThroughData implements PassThroughData {
+  Map<String, List<String>> asgStoreManifestsContent;
+  InfrastructureOutcome infrastructureOutcome;
+}

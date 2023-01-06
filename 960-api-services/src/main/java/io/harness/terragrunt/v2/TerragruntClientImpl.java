@@ -24,6 +24,9 @@ import io.harness.cli.CliHelper;
 import io.harness.cli.CliResponse;
 import io.harness.cli.LogCallbackOutputStream;
 import io.harness.cli.TerraformCliErrorLogOutputStream;
+import io.harness.exception.HintException;
+import io.harness.exception.InvalidRequestException;
+import io.harness.exception.NestedExceptionUtils;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.serializer.JsonUtils;
@@ -191,7 +194,14 @@ public class TerragruntClientImpl implements TerragruntClient {
   @NotNull
   @Override
   public String terragruntWorkingDirectory() {
-    return JsonUtils.jsonPath(terragruntInfoJson, "WorkingDir");
+    try {
+      return JsonUtils.jsonPath(terragruntInfoJson, "WorkingDir");
+    } catch (Exception e) {
+      throw new HintException("Please check your terragrunt configuration and path configuration",
+          NestedExceptionUtils.hintWithExplanationException("Or check if terragrunt/terraform is installed on delegate",
+              "Unable to detect terragrunt working directory in terragrunt info json:" + terragruntInfoJson,
+              new InvalidRequestException("Unable to detect terragrunt working directory: " + e.getMessage())));
+    }
   }
 
   private String getTargetArgs(List<String> targets) {

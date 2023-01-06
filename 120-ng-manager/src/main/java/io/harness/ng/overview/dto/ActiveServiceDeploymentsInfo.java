@@ -20,4 +20,6 @@ public class ActiveServiceDeploymentsInfo {
   private String infrastructureIdentifier;
   private String infrastructureName;
   private String artifactPath;
+  private String serviceId;
+  private String serviceName;
 }

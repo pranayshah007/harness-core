@@ -16,6 +16,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EmbeddedUser;
 import io.harness.data.validator.Trimmed;
+import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
@@ -32,6 +33,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
 import java.util.List;
 import javax.validation.Valid;
 import lombok.Data;
@@ -40,7 +42,6 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.UtilityClass;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
 
 @OwnedBy(CDP)
 @Data
@@ -79,7 +80,7 @@ public abstract class InfrastructureProvisioner
 
   @NotEmpty @Trimmed private String name;
   private String description;
-  @NotEmpty private String infrastructureProvisionerType;
+  @FdIndex @NotEmpty private String infrastructureProvisionerType;
   private List<NameValuePair> variables;
   @Valid List<InfrastructureMappingBlueprint> mappingBlueprints;
   private String accountId;

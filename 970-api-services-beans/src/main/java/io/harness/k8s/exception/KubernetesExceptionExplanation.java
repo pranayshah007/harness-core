@@ -84,4 +84,5 @@ public class KubernetesExceptionExplanation {
   public final String MISSING_REQUIRED_FIELD = "Some required field(s) is/are missing from the manifest.";
   public final String MISSING_OBJECT_ERROR = "The resource may be deleted from the server.";
   public final String INVALID_VALUES_YAML = "Values yaml file(s) are not valid.";
+  public final String EXPECTED_BLOCK_END = "Expected a 'block end' but found: scalar";
 }

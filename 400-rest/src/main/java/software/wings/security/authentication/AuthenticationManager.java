@@ -482,7 +482,7 @@ public class AuthenticationManager {
   }
 
   public Response samlLogin(String... credentials) throws URISyntaxException {
-    String accountId;
+    String accountId = null;
     User user = null;
     try {
       user = samlBasedAuthHandler.authenticate(credentials).getUser();
@@ -510,6 +510,11 @@ public class AuthenticationManager {
         }
         URI redirectUrl = new URI(baseUrl + LOGIN_ERROR_CODE_SAMLTESTSUCCESS);
         return Response.seeOther(redirectUrl).build();
+      } else if (e.getCode() == ErrorCode.DOMAIN_WHITELIST_FILTER_CHECK_FAILED) {
+        String userEmail = user != null ? user.getEmail() : null;
+        log.error("SAML: user with email {} does not match the domain whitelist filter for Account: {}", userEmail,
+            accountId, e);
+        throw new WingsException(DOMAIN_WHITELIST_FILTER_CHECK_FAILED, USER);
       } else {
         return generateInvalidSSOResponse(e);
       }

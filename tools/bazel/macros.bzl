@@ -17,6 +17,7 @@ def openapi_stub_generator(name):
         config_file = "jaxrs-spec-config.json",
         language = "jaxrs-spec",
         spec = "openapi.yaml",
+        logback_test = "logback-test.xml",
     )
 
 def resources(name = "resources", runtime_deps = [], testonly = 0, visibility = None):

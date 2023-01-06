@@ -31,14 +31,14 @@ import com.google.cloud.datastore.Blob;
 import com.google.cloud.datastore.Datastore;
 import com.google.cloud.datastore.Key;
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
 
 /**
  * @author Praveen
@@ -83,7 +83,7 @@ public final class AnomalousLogRecord implements GoogleDataStoreAware {
   @Override
   public com.google.cloud.datastore.Entity convertToCloudStorageEntity(Datastore datastore) {
     Key taskKey = datastore.newKeyFactory()
-                      .setKind(this.getClass().getAnnotation(org.mongodb.morphia.annotations.Entity.class).value())
+                      .setKind(this.getClass().getAnnotation(dev.morphia.annotations.Entity.class).value())
                       .newKey(generateUuid());
     com.google.cloud.datastore.Entity.Builder recordBuilder = com.google.cloud.datastore.Entity.newBuilder(taskKey);
     if (stateType != null) {

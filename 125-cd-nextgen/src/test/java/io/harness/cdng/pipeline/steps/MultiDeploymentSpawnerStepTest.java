@@ -15,6 +15,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.environment.helper.EnvironmentInfraFilterHelper;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.environment.yaml.EnvironmentsYaml;
 import io.harness.cdng.infra.yaml.InfraStructureDefinitionYaml;
@@ -22,6 +23,7 @@ import io.harness.cdng.pipeline.beans.MultiDeploymentStepParameters;
 import io.harness.cdng.service.beans.ServiceYamlV2;
 import io.harness.cdng.service.beans.ServicesYaml;
 import io.harness.exception.InvalidYamlException;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
 import io.harness.pms.contracts.execution.MatrixMetadata;
 import io.harness.pms.contracts.execution.Status;
@@ -29,27 +31,36 @@ import io.harness.pms.contracts.execution.StrategyMetadata;
 import io.harness.pms.sdk.core.steps.io.StepResponseNotifyData;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
+import io.harness.utils.NGFeatureFlagHelperService;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.assertj.core.util.Maps;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 public class MultiDeploymentSpawnerStepTest extends CategoryTest {
+  @Mock private NGFeatureFlagHelperService featureFlagHelperService;
+  @Mock private EnvironmentInfraFilterHelper environmentInfraFilterHelper;
   @InjectMocks private final MultiDeploymentSpawnerStep multiDeploymentSpawnerStep = new MultiDeploymentSpawnerStep();
+  @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
   @Test
   @Owner(developers = SAHIL)
   @Category(UnitTests.class)
   public void testHandleChildrenResponseInternal() {
     StepResponseNotifyData stepResponseNotifyData = StepResponseNotifyData.builder().status(Status.SUCCEEDED).build();
-    assertThat(multiDeploymentSpawnerStep
-                   .handleChildrenResponseInternal(null, null, Maps.newHashMap("a", stepResponseNotifyData))
-                   .getStatus())
+    assertThat(
+        multiDeploymentSpawnerStep
+            .handleChildrenResponseInternal(prepareAmbience(), null, Maps.newHashMap("a", stepResponseNotifyData))
+            .getStatus())
         .isEqualTo(Status.SUCCEEDED);
   }
 
@@ -73,7 +84,8 @@ public class MultiDeploymentSpawnerStepTest extends CategoryTest {
             .services(ServicesYaml.builder().values(ParameterField.createValueField(serviceYamlV2s)).build())
             .build();
 
-    assertThat(multiDeploymentSpawnerStep.obtainChildrenAfterRbac(null, multiDeploymentStepParameters, null))
+    assertThat(
+        multiDeploymentSpawnerStep.obtainChildrenAfterRbac(prepareAmbience(), multiDeploymentStepParameters, null))
         .isEqualTo(
             ChildrenExecutableResponse.newBuilder()
                 .addChildren(ChildrenExecutableResponse.Child.newBuilder().setChildNodeId("test").setStrategyMetadata(
@@ -110,7 +122,8 @@ public class MultiDeploymentSpawnerStepTest extends CategoryTest {
     Map<String, String> map = new HashMap<>();
     map.put("environmentRef", "env1");
     map.put("identifier", "identifier");
-    assertThat(multiDeploymentSpawnerStep.obtainChildrenAfterRbac(null, multiDeploymentStepParameters, null))
+    assertThat(
+        multiDeploymentSpawnerStep.obtainChildrenAfterRbac(prepareAmbience(), multiDeploymentStepParameters, null))
         .isEqualTo(ChildrenExecutableResponse.newBuilder()
                        .addChildren(ChildrenExecutableResponse.Child.newBuilder()
                                         .setChildNodeId("test")
@@ -147,9 +160,14 @@ public class MultiDeploymentSpawnerStepTest extends CategoryTest {
                 EnvironmentsYaml.builder().values(ParameterField.createValueField(environmentYamlV2s)).build())
             .build();
 
-    assertThatThrownBy(
-        () -> multiDeploymentSpawnerStep.obtainChildrenAfterRbac(null, multiDeploymentStepParameters, null))
+    assertThatThrownBy(()
+                           -> multiDeploymentSpawnerStep.obtainChildrenAfterRbac(
+                               prepareAmbience(), multiDeploymentStepParameters, null))
         .isInstanceOf(InvalidYamlException.class)
         .hasMessageContaining("No infrastructure definition provided. Please provide atleast one value");
+  }
+
+  private Ambiance prepareAmbience() {
+    return Ambiance.newBuilder().build();
   }
 }

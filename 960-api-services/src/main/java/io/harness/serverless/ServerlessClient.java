@@ -49,6 +49,10 @@ public class ServerlessClient {
     return new RemoveCommand(this);
   }
 
+  public PrintCommand print() {
+    return new PrintCommand(this);
+  }
+
   public String command() {
     StringBuilder command = new StringBuilder(256);
     if (StringUtils.isNotBlank(serverlessPath)) {

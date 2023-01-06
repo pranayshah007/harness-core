@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: permissionsConfiguration
-version: 41
+version: 42
 permissions:
   - identifier: core_project_delete
     name: Delete Project
@@ -1272,3 +1272,57 @@ permissions:
       - account
       - organization
       - project
+  - identifier: ccm_cloudAssetGovernanceRule_edit
+    name: Edit a CCM Governance Rule
+    status: EXPERIMENTAL
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: ccm_cloudAssetGovernanceRule_view
+    name: View a CCM Governance Rule
+    status: EXPERIMENTAL
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: ccm_cloudAssetGovernanceRule_delete
+    name: Delete a CCM Governance Rule
+    status: EXPERIMENTAL
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: ccm_cloudAssetGovernanceRuleSet_edit
+    name: Edit a CCM Governance  Rule Set
+    status: EXPERIMENTAL
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: ccm_cloudAssetGovernanceRuleSet_view
+    name: View a CCM Governance Rule Set
+    status: EXPERIMENTAL
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: ccm_cloudAssetGovernanceRuleSet_delete
+    name: Delete a CCM Governance Rule Set
+    status: EXPERIMENTAL
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: ccm_cloudAssetGovernanceEnforcement_edit
+    name: Edit a CCM Governance Enforcement
+    status: EXPERIMENTAL
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: ccm_cloudAssetGovernanceEnforcement_view
+    name: View a CCM Governance Enforcement
+    status: EXPERIMENTAL
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: ccm_cloudAssetGovernanceEnforcement_delete
+    name: Delete a CCM Governance Enforcement
+    status: EXPERIMENTAL
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account

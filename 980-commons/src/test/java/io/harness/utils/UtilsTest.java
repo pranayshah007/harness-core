@@ -7,6 +7,7 @@
 
 package io.harness.utils;
 
+import static io.harness.rule.OwnerRule.FERNANDOD;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -47,5 +48,22 @@ public class UtilsTest extends CategoryTest {
     list = Collections.singletonList(b1);
     outC = Utils.getFirstInstance(list, C.class);
     assertThat(outC).isEqualTo(null);
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void validateIsInstanceOf() {
+    assertThat(Utils.isInstanceOf(String.class, "valid")).isTrue();
+    assertThat(Utils.isInstanceOf(Number.class, Long.valueOf(1010L))).isTrue();
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void validateIsNotInstanceOf() {
+    assertThat(Utils.isNotInstanceOf(Number.class, "valid")).isTrue();
+    assertThat(Utils.isNotInstanceOf(String.class, Long.valueOf(1010L))).isTrue();
+    assertThat(Utils.isNotInstanceOf(String.class, "valid")).isFalse();
   }
 }

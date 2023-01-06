@@ -19,11 +19,11 @@ import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
+import dev.morphia.query.Sort;
 import java.time.Clock;
 import java.util.ConcurrentModificationException;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mongodb.morphia.query.Sort;
 
 public class SLIRecordTest extends CvNextGenTestBase {
   @Inject HPersistence hPersistence;

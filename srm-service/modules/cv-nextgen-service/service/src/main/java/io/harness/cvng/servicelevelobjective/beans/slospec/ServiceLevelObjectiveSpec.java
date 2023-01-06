@@ -27,7 +27,7 @@ import lombok.experimental.SuperBuilder;
   @JsonSubTypes.Type(value = SimpleServiceLevelObjectiveSpec.class, name = "Simple")
   , @JsonSubTypes.Type(value = CompositeServiceLevelObjectiveSpec.class, name = "Composite"),
 })
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = SLO_SPEC, include = JsonTypeInfo.As.EXTERNAL_PROPERTY)
+@JsonTypeInfo(use = JsonTypeInfo.Id.DEDUCTION, property = SLO_SPEC, include = JsonTypeInfo.As.EXTERNAL_PROPERTY)
 public abstract class ServiceLevelObjectiveSpec {
   @JsonIgnore public abstract ServiceLevelObjectiveType getType();
 }

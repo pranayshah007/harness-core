@@ -26,6 +26,7 @@ import software.wings.utils.EmailUtils;
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.annotations.Transient;
 import java.time.Duration;
 import java.util.List;
 import java.util.Properties;
@@ -34,7 +35,6 @@ import javax.mail.MessagingException;
 import javax.mail.Session;
 import javax.mail.Transport;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.annotations.Transient;
 
 @Singleton
 @Slf4j

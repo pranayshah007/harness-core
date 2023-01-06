@@ -12,9 +12,12 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.OrchestrationEngine;
 import io.harness.pms.contracts.execution.events.ResumeNodeExecutionRequest;
 import io.harness.pms.contracts.execution.events.SdkResponseEventProto;
+import io.harness.pms.contracts.resume.ResponseDataProto;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.HashMap;
+import java.util.Map;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @Singleton
@@ -24,6 +27,11 @@ public class ResumeNodeExecutionRequestProcessor implements SdkResponseProcessor
   @Override
   public void handleEvent(SdkResponseEventProto event) {
     ResumeNodeExecutionRequest request = event.getResumeNodeExecutionRequest();
-    engine.resumeNodeExecution(event.getAmbiance(), request.getResponseMap(), request.getAsyncError());
+    Map<String, ResponseDataProto> responseDataProtoMap = new HashMap<>();
+    request.getResponseMap().forEach(
+        (k, v)
+            -> responseDataProtoMap.put(
+                k, ResponseDataProto.newBuilder().setResponse(v).setUsingKryoWithoutReference(false).build()));
+    engine.resumeNodeExecution(event.getAmbiance(), responseDataProtoMap, request.getAsyncError());
   }
 }

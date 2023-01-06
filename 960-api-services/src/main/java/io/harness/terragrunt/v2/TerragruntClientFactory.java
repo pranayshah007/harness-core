@@ -17,9 +17,11 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.version.Version;
 import io.harness.cli.CliHelper;
 import io.harness.cli.CliResponse;
+import io.harness.exception.runtime.TerragruntCliRuntimeException;
 import io.harness.logging.NoopExecutionCallback;
 import io.harness.serializer.JsonUtils;
 import io.harness.terraform.beans.TerraformVersion;
+import io.harness.terragrunt.v2.request.TerragruntRunType;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -38,12 +40,24 @@ public class TerragruntClientFactory {
   public static final Pattern TG_VERSION_REGEX = Pattern.compile("v(\\d+).(\\d+).(\\d+)", CASE_INSENSITIVE);
   private static final String FALLBACK_TG_INFO_OUTPUT = "{}";
   private static final Version MIN_FALLBACK_VERSION = Version.parse("0.0.1");
+  public static final String TERRAFORM_BINARY_VALUE = "terraform";
 
   @Inject private CliHelper cliHelper;
 
-  public TerragruntClient getClient(String tgScriptDirectory, long timeoutInMillis) {
-    String terragruntInfoJson = getTerragruntInfoJson(tgScriptDirectory, timeoutInMillis);
-    String terraformPath = JsonUtils.jsonPath(terragruntInfoJson, TERRAGRUNT_INFO_TF_BINARY_JSON_PATH);
+  public TerragruntClient getClient(String tgScriptDirectory, long timeoutInMillis, String runType) {
+    String terragruntInfoJson = "{}";
+    String terraformPath = TERRAFORM_BINARY_VALUE;
+    if (TerragruntRunType.RUN_MODULE.name().equalsIgnoreCase(runType)) {
+      // When run-all from outside concrete module we don't need to run terragrunt terragrunt-info, because there might
+      // be no terragrunt.hcl
+      terragruntInfoJson = getTerragruntInfoJson(tgScriptDirectory, timeoutInMillis);
+      try {
+        terraformPath = JsonUtils.jsonPath(terragruntInfoJson, TERRAGRUNT_INFO_TF_BINARY_JSON_PATH);
+      } catch (Exception e) {
+        terraformPath = TERRAFORM_BINARY_VALUE;
+      }
+    }
+
     return TerragruntClientImpl.builder()
         .terragruntInfoJson(terragruntInfoJson)
         .terraformVersion(getTerraformVersion(tgScriptDirectory, terraformPath, timeoutInMillis))
@@ -78,8 +92,13 @@ public class TerragruntClientFactory {
       }
 
       return result.getOutput();
-    } catch (IOException | InterruptedException | TimeoutException e) {
+    }
+
+    catch (InterruptedException e) {
       Thread.currentThread().interrupt();
+      log.error(format("Exception while executing [%s]", command), e);
+      throw new TerragruntCliRuntimeException("Thread was interrupted:", e);
+    } catch (IOException | TimeoutException e) {
       log.error(format("Exception while executing [%s]", command), e);
       return defaultOutput;
     }

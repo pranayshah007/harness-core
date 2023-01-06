@@ -12,6 +12,8 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
+import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
 import io.harness.cdng.environment.filters.Entity;
 import io.harness.cdng.environment.filters.FilterType;
 import io.harness.cdng.environment.filters.FilterYaml;
@@ -19,6 +21,7 @@ import io.harness.cdng.environment.filters.TagsFilter;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.environment.yaml.EnvironmentsYaml;
 import io.harness.cdng.gitops.service.ClusterService;
+import io.harness.cdng.infra.yaml.InfraStructureDefinitionYaml;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitops.models.Cluster;
@@ -35,8 +38,10 @@ import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.mapper.TagMapper;
 import io.harness.pms.tags.TagUtils;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.RetryUtils;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -46,6 +51,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -53,6 +59,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -66,12 +73,14 @@ public class EnvironmentInfraFilterHelper {
   public static final int PAGE_SIZE = 1000;
   public static final String TAGFILTER_MATCHTYPE_ALL = "all";
   public static final String TAGFILTER_MATCHTYPE_ANY = "any";
+  public static final String SERVICE_TAGS = "<+service.tags>";
   @Inject private GitopsResourceClient gitopsResourceClient;
   @Inject private ClusterService clusterService;
   @Inject private EnvironmentService environmentService;
   @Inject private EnvironmentFilterHelper environmentFilterHelper;
 
   @Inject private InfrastructureEntityService infrastructureEntityService;
+  @Inject private NGFeatureFlagHelperService featureFlagHelperService;
 
   private static final RetryPolicy<Object> retryPolicyForGitopsClustersFetch = RetryUtils.getRetryPolicy(
       "Error getting clusters from Harness Gitops..retrying", "Failed to fetch clusters from Harness Gitops",
@@ -129,7 +138,7 @@ public class EnvironmentInfraFilterHelper {
         }
         if (isSupportedFilter(tagsFilter)) {
           throw new InvalidRequestException(
-              String.format("TagFilter of type [%s] is not supported", tagsFilter.getMatchType().getValue().name()));
+              String.format("TagFilter of type [%s] is not supported", tagsFilter.getMatchType().getValue()));
         }
       }
     }
@@ -138,7 +147,7 @@ public class EnvironmentInfraFilterHelper {
   }
 
   private boolean applyMatchAnyFilter(List<NGTag> entityTags, TagsFilter tagsFilter) {
-    return tagsFilter.getMatchType().getValue().name().equals(TAGFILTER_MATCHTYPE_ANY)
+    return tagsFilter.getMatchType().getValue().equals(TAGFILTER_MATCHTYPE_ANY)
         && areAnyTagFiltersMatching(entityTags, TagMapper.convertToList(tagsFilter.getTags().getValue()));
   }
 
@@ -146,7 +155,9 @@ public class EnvironmentInfraFilterHelper {
     Map<String, String> tagsMap = tagsFilter.getTags().getValue();
     // Remove UUID from tags
     TagUtils.removeUuidFromTags(tagsMap);
-    return tagsFilter.getMatchType().getValue().name().equals(TAGFILTER_MATCHTYPE_ALL)
+    String name = tagsFilter.getMatchType().getValue().toString();
+
+    return name.equals(TAGFILTER_MATCHTYPE_ALL)
         && areAllTagFiltersMatching(entityTags, TagMapper.convertToList(tagsMap));
   }
 
@@ -177,7 +188,7 @@ public class EnvironmentInfraFilterHelper {
         }
         if (isSupportedFilter(tagsFilter)) {
           throw new InvalidRequestException(
-              String.format("TagFilter of type [%s] is not supported", tagsFilter.getMatchType().getValue().name()));
+              String.format("TagFilter of type [%s] is not supported", tagsFilter.getMatchType().getValue()));
         }
       }
     }
@@ -185,8 +196,8 @@ public class EnvironmentInfraFilterHelper {
   }
 
   private static boolean isSupportedFilter(TagsFilter tagsFilter) {
-    return !tagsFilter.getMatchType().getValue().name().equals(TAGFILTER_MATCHTYPE_ALL)
-        && !tagsFilter.getMatchType().getValue().name().equals(TAGFILTER_MATCHTYPE_ANY);
+    return !tagsFilter.getMatchType().getValue().equals(TAGFILTER_MATCHTYPE_ALL)
+        && !tagsFilter.getMatchType().getValue().equals(TAGFILTER_MATCHTYPE_ANY);
   }
 
   /**
@@ -342,7 +353,7 @@ public class EnvironmentInfraFilterHelper {
         }
         if (isSupportedFilter(tagsFilter)) {
           throw new InvalidRequestException(
-              String.format("TagFilter of type [%s] is not supported", tagsFilter.getMatchType().getValue().name()));
+              String.format("TagFilter of type [%s] is not supported", tagsFilter.getMatchType().getValue()));
         }
       }
     }
@@ -373,24 +384,278 @@ public class EnvironmentInfraFilterHelper {
   }
 
   public boolean areFiltersPresent(EnvironmentsYaml environmentsYaml) {
-    return (ParameterField.isNotNull(environmentsYaml.getFilters())
-               && isNotEmpty(environmentsYaml.getFilters().getValue()))
-        || areFiltersSetOnIndividualEnvironments(environmentsYaml);
+    return environmentsYaml != null
+        && ((ParameterField.isNotNull(environmentsYaml.getFilters())
+                && isNotEmpty(environmentsYaml.getFilters().getValue()))
+            || areFiltersSetOnIndividualEnvironments(environmentsYaml));
   }
 
   public boolean areFiltersSetOnIndividualEnvironments(EnvironmentsYaml environmentsYaml) {
     if (ParameterField.isNull(environmentsYaml.getValues())) {
       return false;
     }
-    List<EnvironmentYamlV2> envV2YamlsWithFilters = getEnvV2YamlsWithFilters(environmentsYaml);
+    List<EnvironmentYamlV2> envV2YamlsWithFilters = getEnvYamlV2WithFilters(environmentsYaml.getValues());
     return isNotEmpty(envV2YamlsWithFilters);
   }
 
-  public List<EnvironmentYamlV2> getEnvV2YamlsWithFilters(EnvironmentsYaml environmentsYaml) {
-    return environmentsYaml.getValues()
-        .getValue()
+  public boolean areFiltersPresent(EnvironmentGroupYaml environmentGroupYaml) {
+    return environmentGroupYaml != null
+        && ((ParameterField.isNotNull(environmentGroupYaml.getFilters())
+                && isNotEmpty(environmentGroupYaml.getFilters().getValue()))
+            || areFiltersSetOnIndividualEnvironments(environmentGroupYaml.getEnvironments()));
+  }
+
+  public boolean areFiltersSetOnIndividualEnvironments(ParameterField<List<EnvironmentYamlV2>> environmentYamlV2s) {
+    if (ParameterField.isNull(environmentYamlV2s)) {
+      return false;
+    }
+    List<EnvironmentYamlV2> envV2YamlsWithFilters = getEnvYamlV2WithFilters(environmentYamlV2s);
+    return isNotEmpty(envV2YamlsWithFilters);
+  }
+
+  public List<EnvironmentYamlV2> getEnvYamlV2WithFilters(ParameterField<List<EnvironmentYamlV2>> environmentYamlV2s) {
+    return environmentYamlV2s.getValue()
         .stream()
-        .filter(e -> ParameterField.isNotNull(e.getFilters()))
+        .filter(eg -> ParameterField.isNotNull(eg.getFilters()))
         .collect(Collectors.toList());
+  }
+
+  public boolean isServiceTagsExpressionPresent(EnvironmentsYaml environments) {
+    if (environments == null) {
+      return false;
+    }
+    ParameterField<List<FilterYaml>> filters = environments.getFilters();
+    if (ParameterField.isNotNull(filters) && isServiceTagsExpressionPresent(filters)) {
+      return true;
+    }
+    ParameterField<List<EnvironmentYamlV2>> environmentsValues = environments.getValues();
+    return ParameterField.isNotNull(environmentsValues)
+        && isServiceTagsExpressionPresent(environmentsValues.getValue());
+  }
+
+  private boolean isServiceTagsExpressionPresent(List<EnvironmentYamlV2> environments) {
+    if (isEmpty(environments)) {
+      return false;
+    }
+    return environments.stream()
+        .map(EnvironmentYamlV2::getFilters)
+        .anyMatch(filters -> ParameterField.isNotNull(filters) && isServiceTagsExpressionPresent(filters));
+  }
+
+  private boolean isServiceTagsExpressionPresent(ParameterField<List<FilterYaml>> filters) {
+    if (ParameterField.isNull(filters) || isEmpty(filters.getValue())) {
+      return false;
+    }
+    for (FilterYaml filterYaml : filters.getValue()) {
+      if (FilterType.tags == filterYaml.getType()) {
+        ParameterField<Map<String, String>> tags = ((TagsFilter) filterYaml.getSpec()).getTags();
+        if (tags.isExpression() && tags.getExpressionValue().equals(SERVICE_TAGS)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  public boolean isServiceTagsExpressionPresent(EnvironmentGroupYaml environmentGroup) {
+    if (environmentGroup == null) {
+      return false;
+    }
+    ParameterField<List<FilterYaml>> filters = environmentGroup.getFilters();
+    if (isServiceTagsExpressionPresent(filters)) {
+      return true;
+    }
+    ParameterField<List<EnvironmentYamlV2>> environments = environmentGroup.getEnvironments();
+    return ParameterField.isNotNull(environments) && isServiceTagsExpressionPresent(environments.getValue());
+  }
+
+  public void processEnvInfraFiltering(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      EnvironmentsYaml environments, EnvironmentGroupYaml environmentGroup) {
+    if (featureFlagHelperService.isEnabled(accountIdentifier, FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS)) {
+      if (environments != null && areFiltersPresent(environments)) {
+        EnvironmentsYaml environmentsYaml = environments;
+        List<EnvironmentYamlV2> finalyamlV2List = new ArrayList<>();
+        if (areFiltersPresent(environmentsYaml)) {
+          finalyamlV2List = processFilteringForEnvironmentsLevelFilters(
+              accountIdentifier, orgIdentifier, projectIdentifier, environmentsYaml);
+        }
+        // Set the filtered envYamlV2 in the environments yaml so normal processing continues
+        environmentsYaml.setValues(ParameterField.createValueField(finalyamlV2List));
+      }
+
+      // If deploying to environment group with filters
+      if (environmentGroup != null
+          && (isNotEmpty(environmentGroup.getFilters().getValue())
+              || isNotEmpty(getEnvYamlV2WithFilters(environmentGroup.getEnvironments())))) {
+        EnvironmentGroupYaml environmentGroupYaml = environmentGroup;
+
+        List<EnvironmentYamlV2> finalyamlV2List = processFilteringForEnvironmentGroupLevelFilters(accountIdentifier,
+            orgIdentifier, projectIdentifier, environmentGroupYaml, environmentGroup.getFilters().getValue());
+
+        // Set the filtered envYamlV2 in the environmentGroup yaml so normal processing continues
+        environmentGroupYaml.setEnvironments(ParameterField.createValueField(finalyamlV2List));
+      }
+    }
+  }
+
+  @NotNull
+  private List<EnvironmentYamlV2> processFilteringForEnvironmentsLevelFilters(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, EnvironmentsYaml environmentsYaml) {
+    List<EnvironmentYamlV2> finalyamlV2List;
+    Set<EnvironmentYamlV2> envsLevelEnvironmentYamlV2 = new LinkedHashSet<>();
+    if (ParameterField.isNotNull(environmentsYaml.getFilters())
+        && isNotEmpty(environmentsYaml.getFilters().getValue())) {
+      List<EnvironmentYamlV2> filteredEnvList = processEnvironmentInfraFilters(
+          accountIdentifier, orgIdentifier, projectIdentifier, environmentsYaml.getFilters().getValue());
+      envsLevelEnvironmentYamlV2.addAll(filteredEnvList);
+      return new ArrayList<>(envsLevelEnvironmentYamlV2);
+    }
+
+    // Process filtering at individual Environment level
+    Set<EnvironmentYamlV2> individualEnvironmentYamlV2 = new LinkedHashSet<>();
+    if (areFiltersSetOnIndividualEnvironments(environmentsYaml)) {
+      processFiltersOnIndividualEnvironmentsLevel(accountIdentifier, orgIdentifier, projectIdentifier,
+          individualEnvironmentYamlV2, getEnvYamlV2WithFilters(environmentsYaml.getValues()));
+    }
+
+    // Merge the two lists
+    List<EnvironmentYamlV2> mergedFilteredEnvs =
+        getEnvOrEnvGrouplevelAndIndividualEnvFilteredEnvs(envsLevelEnvironmentYamlV2, individualEnvironmentYamlV2);
+
+    // If there are envs in the filtered list and there are
+    // specific infras specific, pick the specified infras
+    finalyamlV2List = getFinalEnvsList(environmentsYaml.getValues().getValue(), mergedFilteredEnvs);
+
+    return finalyamlV2List;
+  }
+
+  private List<EnvironmentYamlV2> processFilteringForEnvironmentGroupLevelFilters(String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, EnvironmentGroupYaml environmentGroupYaml,
+      List<FilterYaml> filterYamls) {
+    Set<EnvironmentYamlV2> envsLevelEnvironmentYamlV2 = new HashSet<>();
+    if (isNotEmpty(filterYamls)) {
+      List<EnvironmentYamlV2> filteredEnvList =
+          processEnvironmentInfraFilters(accountIdentifier, orgIdentifier, projectIdentifier, filterYamls);
+      envsLevelEnvironmentYamlV2.addAll(filteredEnvList);
+    }
+
+    Set<EnvironmentYamlV2> individualEnvironmentYamlV2 = new HashSet<>();
+    if (isNotEmpty(environmentGroupYaml.getEnvironments().getValue())) {
+      if (isNotEmpty(getEnvYamlV2WithFilters(environmentGroupYaml.getEnvironments()))) {
+        processFiltersOnIndividualEnvironmentsLevel(accountIdentifier, orgIdentifier, projectIdentifier,
+            individualEnvironmentYamlV2, getEnvYamlV2WithFilters(environmentGroupYaml.getEnvironments()));
+      }
+    }
+
+    // Merge the two lists
+    List<EnvironmentYamlV2> mergedFilteredEnvs =
+        getEnvOrEnvGrouplevelAndIndividualEnvFilteredEnvs(envsLevelEnvironmentYamlV2, individualEnvironmentYamlV2);
+
+    return getFinalEnvsList(environmentGroupYaml.getEnvironments().getValue(), mergedFilteredEnvs);
+  }
+
+  @NotNull
+  private static List<EnvironmentYamlV2> getFinalEnvsList(
+      List<EnvironmentYamlV2> envsFromYaml, List<EnvironmentYamlV2> mergedFilteredEnvs) {
+    List<EnvironmentYamlV2> finalyamlV2List = new ArrayList<>();
+    if (isNotEmpty(envsFromYaml)) {
+      for (EnvironmentYamlV2 e : envsFromYaml) {
+        List<EnvironmentYamlV2> list = mergedFilteredEnvs.stream()
+                                           .filter(in -> in.getEnvironmentRef().equals(e.getEnvironmentRef()))
+                                           .collect(Collectors.toList());
+        if (isNotEmpty(list) || ParameterField.isNull(e.getInfrastructureDefinitions())
+            || isEmpty(e.getInfrastructureDefinitions().getValue())) {
+          continue;
+        }
+        finalyamlV2List.add(e);
+      }
+    }
+    finalyamlV2List.addAll(mergedFilteredEnvs);
+    return finalyamlV2List;
+  }
+
+  @NotNull
+  private static List<EnvironmentYamlV2> getEnvOrEnvGrouplevelAndIndividualEnvFilteredEnvs(
+      Set<EnvironmentYamlV2> envsLevelEnvironmentYamlV2, Set<EnvironmentYamlV2> individualEnvironmentYamlV2) {
+    List<EnvironmentYamlV2> mergedFilteredEnvs = new ArrayList<>();
+    for (EnvironmentYamlV2 envYamlV2 : envsLevelEnvironmentYamlV2) {
+      List<EnvironmentYamlV2> eV2 = individualEnvironmentYamlV2.stream()
+                                        .filter(e -> e.getEnvironmentRef().equals(envYamlV2.getEnvironmentRef()))
+                                        .collect(Collectors.toList());
+      if (isNotEmpty(eV2)) {
+        continue;
+      }
+      mergedFilteredEnvs.add(envYamlV2);
+    }
+    mergedFilteredEnvs.addAll(individualEnvironmentYamlV2);
+    return mergedFilteredEnvs;
+  }
+
+  private List<EnvironmentYamlV2> processEnvironmentInfraFilters(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, List<FilterYaml> filterYamls) {
+    Set<Environment> allEnvsInProject =
+        getAllEnvironmentsInProject(accountIdentifier, orgIdentifier, projectIdentifier);
+
+    // Apply filters on environments
+    Set<Environment> filteredEnvs = applyFiltersOnEnvs(allEnvsInProject, filterYamls);
+
+    // Get All InfraDefinitions
+    List<EnvironmentYamlV2> environmentYamlV2List = new ArrayList<>();
+    for (Environment env : filteredEnvs) {
+      Set<InfrastructureEntity> infrastructureEntitySet =
+          getInfrastructureForEnvironmentList(accountIdentifier, orgIdentifier, projectIdentifier, env.getIdentifier());
+
+      if (isNotEmpty(infrastructureEntitySet)) {
+        List<EnvironmentYamlV2> temp = filterInfras(filterYamls, env.getIdentifier(), infrastructureEntitySet);
+        if (isNotEmpty(temp)) {
+          environmentYamlV2List.add(temp.get(0));
+        }
+      }
+    }
+    return environmentYamlV2List;
+  }
+
+  public List<EnvironmentYamlV2> filterInfras(
+      List<FilterYaml> filterYamls, String env, Set<InfrastructureEntity> infrastructureEntitySet) {
+    List<EnvironmentYamlV2> environmentYamlV2List = new ArrayList<>();
+    Set<InfrastructureEntity> filteredInfras = applyFilteringOnInfras(filterYamls, infrastructureEntitySet);
+
+    if (isNotEmpty(filteredInfras)) {
+      List<InfraStructureDefinitionYaml> infraDefYamlList = new ArrayList<>();
+
+      for (InfrastructureEntity in : filteredInfras) {
+        infraDefYamlList.add(createInfraDefinitionYaml(in));
+      }
+
+      EnvironmentYamlV2 environmentYamlV2 =
+          EnvironmentYamlV2.builder()
+              .environmentRef(ParameterField.createValueField(env))
+              .infrastructureDefinitions(ParameterField.createValueField(infraDefYamlList))
+              .build();
+
+      environmentYamlV2List.add(environmentYamlV2);
+    }
+    return environmentYamlV2List;
+  }
+  @VisibleForTesting
+  protected InfraStructureDefinitionYaml createInfraDefinitionYaml(InfrastructureEntity infrastructureEntity) {
+    return InfraStructureDefinitionYaml.builder()
+        .identifier(ParameterField.createValueField(infrastructureEntity.getIdentifier()))
+        .build();
+  }
+
+  private List<EnvironmentYamlV2> processFiltersOnIndividualEnvironmentsLevel(String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, Set<EnvironmentYamlV2> individualEnvironmentYamlV2,
+      List<EnvironmentYamlV2> envV2YamlsWithFilters) {
+    List<EnvironmentYamlV2> filteredInfraList = new ArrayList<>();
+    for (EnvironmentYamlV2 envYamlV2 : envV2YamlsWithFilters) {
+      Set<InfrastructureEntity> infrastructureEntitySet = getInfrastructureForEnvironmentList(
+          accountIdentifier, orgIdentifier, projectIdentifier, envYamlV2.getEnvironmentRef().getValue());
+
+      filteredInfraList = filterInfras(
+          envYamlV2.getFilters().getValue(), envYamlV2.getEnvironmentRef().getValue(), infrastructureEntitySet);
+      individualEnvironmentYamlV2.addAll(filteredInfraList);
+    }
+    return filteredInfraList;
   }
 }

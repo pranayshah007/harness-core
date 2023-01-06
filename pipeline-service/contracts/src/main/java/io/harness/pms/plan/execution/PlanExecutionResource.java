@@ -280,6 +280,105 @@ public interface PlanExecutionResource {
               "InputSet YAML if the pipeline contains runtime inputs. This will be empty by default if pipeline does not contains runtime inputs")
       String inputSetPipelineYaml);
 
+  @POST
+  @Path("/debug/{originalExecutionId}/{identifier}/stages")
+  @ApiOperation(value = "debug a pipeline with inputSet pipeline yaml", nickname = "debugStagesWithRuntimeInputYaml")
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)
+  @Operation(operationId = "postDebugStages", summary = "debug given Stages of a Pipeline",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Re-run a given Stages Execution of a Pipeline")
+      })
+  @Hidden
+  ResponseDTO<PlanExecutionResponseDto>
+  debugStagesWithRuntimeInputYaml(
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @Parameter(
+          description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE) String accountId,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) @OrgIdentifier @Parameter(
+          description = PipelineResourceConstants.ORG_PARAM_MESSAGE) String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier @Parameter(
+          description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.MODULE_TYPE) @Parameter(
+          description = PlanExecutionResourceConstants.MODULE_TYPE_PARAM_MESSAGE) String moduleType,
+      @PathParam(NGCommonEntityConstants.IDENTIFIER_KEY) @ResourceIdentifier @NotEmpty @Parameter(
+          description = PipelineResourceConstants.PIPELINE_ID_PARAM_MESSAGE) String pipelineIdentifier,
+      @NotNull @PathParam("originalExecutionId")
+      @Parameter(description = PlanExecutionResourceConstants.ORIGINAL_EXECUTION_IDENTIFIER_PARAM_MESSAGE)
+      String originalExecutionId, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
+      @QueryParam("useFQNIfError") @DefaultValue("false") boolean useFQNIfErrorResponse,
+      RunStageRequestDTO runStageRequestDTO);
+
+  @POST
+  @Path("/debug/{originalExecutionId}/{identifier}")
+  @ApiOperation(
+      value = "debug a pipeline with inputSet pipeline yaml", nickname = "debugPipelineExecuteWithInputSetYaml")
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)
+  @Operation(operationId = "debugPipelineExecuteWithInputSetYaml",
+      summary = "debug a pipeline with inputSet pipeline yaml",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns pipeline execution details")
+      })
+  @Hidden
+  ResponseDTO<PlanExecutionResponseDto>
+  debugPipelineWithInputSetPipelineYaml(
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @Parameter(
+          description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE) @AccountIdentifier String accountId,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) @Parameter(
+          description = PipelineResourceConstants.ORG_PARAM_MESSAGE) @OrgIdentifier String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @Parameter(
+          description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE) @ProjectIdentifier String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.MODULE_TYPE) @Parameter(
+          description = PlanExecutionResourceConstants.MODULE_TYPE_PARAM_MESSAGE) String moduleType,
+      @NotNull @PathParam("originalExecutionId") @Parameter(
+          description = PlanExecutionResourceConstants.ORIGINAL_EXECUTION_IDENTIFIER_PARAM_MESSAGE)
+      String originalExecutionId,
+      @PathParam(NGCommonEntityConstants.IDENTIFIER_KEY)
+      @Parameter(description = PlanExecutionResourceConstants.PIPELINE_IDENTIFIER_PARAM_MESSAGE) @ResourceIdentifier
+      @NotEmpty String pipelineIdentifier, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
+      @QueryParam("useFQNIfError") @DefaultValue("false") boolean useFQNIfErrorResponse,
+      @ApiParam(hidden = true) @Parameter(
+          description =
+              "InputSet YAML if the pipeline contains runtime inputs. This will be empty by default if pipeline does not contains runtime inputs")
+      String inputSetPipelineYaml);
+
+  @POST
+  @Path("/debug/v2/{originalExecutionId}/{identifier}")
+  @ApiOperation(value = "Re Execute a pipeline with inputSet pipeline yaml Version 2",
+      nickname = "debugPipelineExecuteWithInputSetYamlV2")
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)
+  @Operation(operationId = "debugPipelineExecuteWithInputSetYamlV2",
+      summary = "Re Execute a pipeline with InputSet Pipeline YAML Version 2",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns pipeline execution details")
+      })
+  @Hidden
+  ResponseDTO<PlanExecutionResponseDto>
+  debugPipelineWithInputSetPipelineYamlV2(
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @Parameter(
+          description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE) @AccountIdentifier String accountId,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) @Parameter(
+          description = PipelineResourceConstants.ORG_PARAM_MESSAGE) @OrgIdentifier String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @Parameter(
+          description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE) @ProjectIdentifier String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.MODULE_TYPE) @Parameter(
+          description = PlanExecutionResourceConstants.MODULE_TYPE_PARAM_MESSAGE) String moduleType,
+      @NotNull @PathParam("originalExecutionId") @Parameter(
+          description = PlanExecutionResourceConstants.ORIGINAL_EXECUTION_IDENTIFIER_PARAM_MESSAGE)
+      String originalExecutionId,
+      @PathParam(NGCommonEntityConstants.IDENTIFIER_KEY)
+      @Parameter(description = PlanExecutionResourceConstants.PIPELINE_IDENTIFIER_PARAM_MESSAGE) @ResourceIdentifier
+      @NotEmpty String pipelineIdentifier, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
+      @QueryParam("useFQNIfError") @DefaultValue("false") boolean useFQNIfErrorResponse,
+      @ApiParam(hidden = true) @Parameter(
+          description =
+              "InputSet YAML if the pipeline contains runtime inputs. This will be empty by default if pipeline does not contains runtime inputs")
+      String inputSetPipelineYaml);
+
   @GET
   @Path("/{planExecutionId}/retryStages")
   @ApiOperation(value = "Get retry stages for failed pipeline", nickname = "getRetryStages")

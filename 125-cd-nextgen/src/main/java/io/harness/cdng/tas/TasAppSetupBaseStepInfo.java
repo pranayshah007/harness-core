@@ -20,6 +20,7 @@ import io.harness.yaml.YamlSchemaTypes;
 
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
+import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -36,8 +37,11 @@ public class TasAppSetupBaseStepInfo {
   @NotNull
   @ApiModelProperty(dataType = INTEGER_CLASSPATH)
   @YamlSchemaTypes(value = {expression})
+  @Min(1)
   ParameterField<String> existingVersionToKeep;
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH) ParameterField<List<String>> additionalRoutes;
+  @YamlSchemaTypes({runtime})
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
+  ParameterField<List<String>> additionalRoutes;
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;

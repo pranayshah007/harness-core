@@ -36,6 +36,7 @@ import io.harness.ccm.commons.constants.CloudProvider;
 import io.harness.ccm.commons.dao.recommendation.K8sRecommendationDAO;
 import io.harness.ccm.commons.dao.recommendation.RecommendationCrudService;
 import io.harness.ccm.currency.Currency;
+import io.harness.ccm.graphql.core.recommendation.RecommendationsIgnoreListService;
 import io.harness.ccm.graphql.dto.common.CloudServiceProvider;
 import io.harness.pricing.dto.cloudinfo.ProductDetails;
 import io.harness.pricing.dto.cloudinfo.ZonePrice;
@@ -69,6 +70,7 @@ public class K8sNodeRecommendationTaskletTest extends BaseTaskletTest {
   @Mock private VMPricingService vmPricingService;
   @Mock private RecommendationCrudService recommendationCrudService;
   @Mock private ClusterHelper clusterHelper;
+  @Mock private RecommendationsIgnoreListService ignoreListService;
   @Mock(answer = Answers.RETURNS_DEEP_STUBS) private BanzaiRecommenderClient banzaiRecommenderClient;
   @Mock private CurrencyPreferenceHelper currencyPreferenceHelper;
   @InjectMocks private K8sNodeRecommendationTasklet tasklet;
@@ -139,6 +141,9 @@ public class K8sNodeRecommendationTaskletTest extends BaseTaskletTest {
     when(currencyPreferenceHelper.getDestinationCurrencyConversionFactor(
              anyString(), any(CloudServiceProvider.class), any(Currency.class)))
         .thenReturn(1.0);
+    doNothing()
+        .when(ignoreListService)
+        .updateNodeRecommendationState(eq(entityUuid), eq(ACCOUNT_ID), eq(CLUSTER_NAME), eq(NODE_POOL_NAME));
   }
 
   @Test

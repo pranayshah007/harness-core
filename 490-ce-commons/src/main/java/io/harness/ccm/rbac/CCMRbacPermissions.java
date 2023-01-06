@@ -28,4 +28,16 @@ public interface CCMRbacPermissions {
 
   String CURRENCY_PREFERENCE_SET_AND_EDIT = "ccm_currencyPreference_edit";
   String CURRENCY_PREFERENCE_VIEW = "ccm_currencyPreference_view";
+
+  String RULE_CREATE_AND_EDIT = "ccm_cloudAssetGovernanceRule_edit";
+  String RULE_VIEW = "ccm_cloudAssetGovernanceRule_view";
+  String RULE_DELETE = "ccm_cloudAssetGovernanceRule_delete";
+
+  String RULE_SET_CREATE_AND_EDIT = "ccm_cloudAssetGovernanceRuleSet_edit";
+  String RULE_SET_VIEW = "ccm_cloudAssetGovernanceRuleSet_view";
+  String RULE_SET_DELETE = "ccm_cloudAssetGovernanceRuleSet_delete";
+
+  String RULE_ENFORCEMENT_CREATE_AND_EDIT = "ccm_cloudAssetGovernanceEnforcement_edit";
+  String RULE_ENFORCEMENT_VIEW = "ccm_cloudAssetGovernanceEnforcement_view";
+  String RULE_ENFORCEMENT_DELETE = "ccm_cloudAssetGovernanceEnforcement_delete";
 }

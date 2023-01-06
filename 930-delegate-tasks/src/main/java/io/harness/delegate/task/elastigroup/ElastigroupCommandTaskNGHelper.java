@@ -39,6 +39,8 @@ import static software.wings.beans.LogWeight.Bold;
 import static com.google.common.collect.Lists.newArrayList;
 import static java.lang.String.format;
 import static java.time.Duration.ofSeconds;
+import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.beans.AwsInternalConfig;
@@ -632,5 +634,22 @@ public class ElastigroupCommandTaskNGHelper {
 
   public static String getElastigroupString(ElastiGroup elastiGroup) {
     return format("%s [%s]", elastiGroup.getId(), elastiGroup.getName());
+  }
+
+  public List<String> getAllEc2InstanceIdsOfElastigroup(
+      String spotInstToken, String spotInstAccountId, ElastiGroup elastigroup) throws Exception {
+    if (elastigroup == null || isEmpty(elastigroup.getId())) {
+      return emptyList();
+    }
+
+    final List<ElastiGroupInstanceHealth> elastigroupInstanceHealths =
+        spotInstHelperServiceDelegate.listElastiGroupInstancesHealth(
+            spotInstToken, spotInstAccountId, elastigroup.getId());
+
+    if (isEmpty(elastigroupInstanceHealths)) {
+      return emptyList();
+    }
+
+    return elastigroupInstanceHealths.stream().map(ElastiGroupInstanceHealth::getInstanceId).collect(toList());
   }
 }

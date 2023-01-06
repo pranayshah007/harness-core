@@ -20,8 +20,6 @@ import static io.harness.spotinst.model.SpotInstConstants.DELETE_NEW_ELASTI_GROU
 import static io.harness.spotinst.model.SpotInstConstants.SWAP_ROUTES_COMMAND_UNIT;
 
 import static java.lang.String.format;
-import static java.util.Collections.emptyList;
-import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -40,7 +38,6 @@ import io.harness.logging.LogLevel;
 import io.harness.spotinst.SpotInstHelperServiceDelegate;
 import io.harness.spotinst.model.ElastiGroup;
 import io.harness.spotinst.model.ElastiGroupCapacity;
-import io.harness.spotinst.model.ElastiGroupInstanceHealth;
 import io.harness.spotinst.model.ElastiGroupRenameRequest;
 
 import com.google.inject.Inject;
@@ -81,23 +78,6 @@ public class ElastigroupDeployTaskHelper {
     updateElastigroup(spotInstToken, spotInstAccountId, elastigroup, scaleLogCallback);
     elastigroupCommandTaskNGHelper.waitForSteadyState(
         elastigroup, spotInstAccountId, spotInstToken, steadyStateTimeOut, waitLogCallback);
-  }
-
-  public List<String> getAllEc2InstanceIdsOfElastigroup(
-      String spotInstToken, String spotInstAccountId, ElastiGroup elastigroup) throws Exception {
-    if (elastigroup == null || isEmpty(elastigroup.getId())) {
-      return emptyList();
-    }
-
-    final List<ElastiGroupInstanceHealth> elastigroupInstanceHealths =
-        spotInstHelperServiceDelegate.listElastiGroupInstancesHealth(
-            spotInstToken, spotInstAccountId, elastigroup.getId());
-
-    if (isEmpty(elastigroupInstanceHealths)) {
-      return emptyList();
-    }
-
-    return elastigroupInstanceHealths.stream().map(ElastiGroupInstanceHealth::getInstanceId).collect(toList());
   }
 
   private LogCallback getLogCallback(ILogStreamingTaskClient logStreamingTaskClient, String commandUnitName,

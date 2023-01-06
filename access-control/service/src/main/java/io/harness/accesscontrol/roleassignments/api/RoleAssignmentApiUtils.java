@@ -21,6 +21,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.beans.SortOrder.Builder.aSortOrder;
 import static io.harness.beans.SortOrder.OrderType.DESC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.accesscontrol.AccessControlPermissions;
 import io.harness.accesscontrol.AccessControlResourceTypes;
@@ -185,14 +186,22 @@ public class RoleAssignmentApiUtils {
 
   public io.harness.accesscontrol.roleassignments.RoleAssignment buildRoleAssignmentWithPrincipalScopeLevel(
       io.harness.accesscontrol.roleassignments.RoleAssignment roleAssignment, Scope scope) {
+    // For principalType USER, principalScopeLevel should be always null.
     String principalScopeLevel = null;
+
     if (USER_GROUP.equals(roleAssignment.getPrincipalType()) && !isEmpty(roleAssignment.getPrincipalScopeLevel())) {
       principalScopeLevel = roleAssignment.getPrincipalScopeLevel();
     }
     if (USER_GROUP.equals(roleAssignment.getPrincipalType()) && isEmpty(roleAssignment.getPrincipalScopeLevel())) {
       principalScopeLevel = roleAssignment.getScopeLevel();
     }
-    if (SERVICE_ACCOUNT.equals(roleAssignment.getPrincipalType()) && isEmpty(roleAssignment.getPrincipalScopeLevel())) {
+
+    if (SERVICE_ACCOUNT.equals(roleAssignment.getPrincipalType())) {
+      if (isNotEmpty(roleAssignment.getPrincipalScopeLevel())
+          && !roleAssignment.getPrincipalScopeLevel().equals(scope.getLevel().toString())) {
+        throw new InvalidRequestException(
+            "Cannot create role assignment for given Service Account. Principal should be of same scope as of role assignment.");
+      }
       principalScopeLevel = getServiceAccountScopeLevel(roleAssignment.getPrincipalIdentifier(), scope);
     }
     return io.harness.accesscontrol.roleassignments.RoleAssignment.builder()

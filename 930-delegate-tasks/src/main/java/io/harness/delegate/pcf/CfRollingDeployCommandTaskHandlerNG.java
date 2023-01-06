@@ -27,7 +27,6 @@ import io.harness.delegate.task.cf.TasArtifactDownloadContext;
 import io.harness.delegate.task.cf.TasArtifactDownloadResponse;
 import io.harness.delegate.task.cf.artifact.TasArtifactCreds;
 import io.harness.delegate.task.cf.artifact.TasRegistrySettingsAdapter;
-import io.harness.delegate.task.pcf.PcfManifestsPackage;
 import io.harness.delegate.task.pcf.TasTaskHelperBase;
 import io.harness.delegate.task.pcf.artifact.TasContainerArtifactConfig;
 import io.harness.delegate.task.pcf.artifact.TasPackageArtifactConfig;
@@ -35,6 +34,7 @@ import io.harness.delegate.task.pcf.request.CfBasicSetupRequestNG;
 import io.harness.delegate.task.pcf.request.CfCommandRequestNG;
 import io.harness.delegate.task.pcf.request.CfDeployCommandRequestNG;
 import io.harness.delegate.task.pcf.request.CfRollingDeployRequestNG;
+import io.harness.delegate.task.pcf.request.TasManifestsPackage;
 import io.harness.delegate.task.pcf.response.CfBasicSetupResponseNG;
 import io.harness.delegate.task.pcf.response.CfCommandResponseNG;
 import io.harness.delegate.task.pcf.response.CfDeployCommandResponseNG;
@@ -265,12 +265,12 @@ public class CfRollingDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler 
   private void configureAutoscalarIfNeeded(CfRollingDeployRequestNG cfCommandDeployRequest,
                                            ApplicationDetail applicationDetail, CfAppAutoscalarRequestData appAutoscalarRequestData,
                                            LogCallback executionLogCallback) throws PivotalClientApiException, IOException {
-    if (cfCommandDeployRequest.isUseAppAutoScalar() && cfCommandDeployRequest.getPcfManifestsPackage() != null
-            && isNotEmpty(cfCommandDeployRequest.getPcfManifestsPackage().getAutoscalarManifestYml())) {
+    if (cfCommandDeployRequest.isUseAppAutoScalar() && cfCommandDeployRequest.getTasManifestsPackage() != null
+            && isNotEmpty(cfCommandDeployRequest.getTasManifestsPackage().getAutoscalarManifestYml())) {
       // This is autoscalar file inside workingDirectory
       String filePath =
               appAutoscalarRequestData.getConfigPathVar() + "/autoscalar_" + System.currentTimeMillis() + ".yml";
-      cfCommandTaskHelperNG.createYamlFileLocally(filePath, cfCommandDeployRequest.getPcfManifestsPackage().getAutoscalarManifestYml());
+      cfCommandTaskHelperNG.createYamlFileLocally(filePath, cfCommandDeployRequest.getTasManifestsPackage().getAutoscalarManifestYml());
 
       // upload autoscalar config
       appAutoscalarRequestData.setApplicationName(applicationDetail.getName());
@@ -338,9 +338,9 @@ public class CfRollingDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler 
       return;
     }
 
-    PcfManifestsPackage pcfManifestsPackage = cfRollingDeployRequestNG.getPcfManifestsPackage();
+    TasManifestsPackage tasManifestsPackage = cfRollingDeployRequestNG.getTasManifestsPackage();
     AtomicInteger varFileIndex = new AtomicInteger(0);
-    pcfManifestsPackage.getVariableYmls().forEach(varFileYml -> {
+    tasManifestsPackage.getVariableYmls().forEach(varFileYml -> {
       File varsYamlFile =
               pcfCommandTaskBaseHelper.createManifestVarsYamlFileLocally(requestData, varFileYml, varFileIndex.get());
       if (varsYamlFile != null) {
@@ -353,7 +353,7 @@ public class CfRollingDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler 
   public String generateManifestYamlForPush(CfRollingDeployRequestNG cfRollingDeployRequestNG,
                                             CfCreateApplicationRequestData requestData) throws PivotalClientApiException {
     // Substitute name,
-    String manifestYaml = cfRollingDeployRequestNG.getPcfManifestsPackage().getManifestYml();
+    String manifestYaml = cfRollingDeployRequestNG.getTasManifestsPackage().getManifestYml();
 
     Map<String, Object> map;
     try {
@@ -379,20 +379,6 @@ public class CfRollingDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler 
 
     updateArtifactDetails(requestData, cfRollingDeployRequestNG, applicationToBeUpdated);
 
-//    applicationToBeUpdated.put(INSTANCE_MANIFEST_YML_ELEMENT, 0);
-//
-//    if (applicationToBeUpdated.containsKey(PROCESSES_MANIFEST_YML_ELEMENT)) {
-//      Object processes = applicationToBeUpdated.get(PROCESSES_MANIFEST_YML_ELEMENT);
-//      if (processes instanceof ArrayList<?>) {
-//        ArrayList<Map<String, Object>> allProcesses = (ArrayList<Map<String, Object>>) processes;
-//        for (Map<String, Object> process : allProcesses) {
-//          Object p = process.get(PROCESSES_TYPE_MANIFEST_YML_ELEMENT);
-//          if ((p instanceof String) && (p.toString().equals(WEB_PROCESS_TYPE_MANIFEST_YML_ELEMENT))) {
-//            process.put(INSTANCE_MANIFEST_YML_ELEMENT, 0);
-//          }
-//        }
-//      }
-//    }
     // Update routes.
     updateConfigWithRoutesIfRequired(requestData, applicationToBeUpdated, cfRollingDeployRequestNG);
     // We do not want to change order
@@ -472,11 +458,11 @@ public class CfRollingDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler 
   }
 
   boolean checkIfVarsFilePresent(CfRollingDeployRequestNG setupRequest) {
-    if (setupRequest.getPcfManifestsPackage() == null) {
+    if (setupRequest.getTasManifestsPackage() == null) {
       return false;
     }
 
-    List<String> varFiles = setupRequest.getPcfManifestsPackage().getVariableYmls();
+    List<String> varFiles = setupRequest.getTasManifestsPackage().getVariableYmls();
     if (isNotEmpty(varFiles)) {
       varFiles = varFiles.stream().filter(StringUtils::isNotBlank).collect(toList());
     }

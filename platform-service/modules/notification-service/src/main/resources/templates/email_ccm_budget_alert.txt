@@ -1,5 +1,5 @@
 subject: >-
-  ${SUBJECT_COST_TYPE} for the ${PERIOD} has exceeded ${THRESHOLD_PERCENTAGE}% of the budget ${BUDGET_NAME}.
+  ${SUBJECT_COST_TYPE} for the ${PERIOD} has exceeded ${THRESHOLD_PERCENTAGE}% of the ${BUDGET_OR_BUDGET_GROUP} ${BUDGET_NAME}.
 body: >-
   <html xmlns="http://www.w3.org/1999/xhtml">
 
@@ -49,14 +49,14 @@ body: >-
                               <h1 style="font-size: 18px; color: #77787b; line-height: 30px; font-weight: normal;">
                                   Hi ${(name!"there")?capitalize},<br></h1>
                               <h1 style="font-size: 18px; color: #77787b; line-height: 30px; font-weight: normal;">
-                                  You requested that we alert you when the ${COST_TYPE} associated with your <B>"${BUDGET_NAME}"</B> budget exceeds <B>${THRESHOLD_PERCENTAGE}%</B> for the current ${PERIOD}. As of now, the ${COST_TYPE} associated with this budget is <B>${CURRENT_COST}</B>.
+                                  You requested that we alert you when the ${COST_TYPE} associated with your <B>"${BUDGET_NAME}"</B> ${BUDGET_OR_BUDGET_GROUP} exceeds <B>${THRESHOLD_PERCENTAGE}%</B> for the current ${PERIOD}. As of now, the ${COST_TYPE} associated with this ${BUDGET_OR_BUDGET_GROUP} is <B>${CURRENT_COST}</B>.
                               </h1>
                           </td>
                       </tr>
                       <tr>
                           <td align="left" valign="top" style="-webkit-font-smoothing: antialiased; text-size-adjust: 100%; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; line-height: 100%; mso-table-lspace: 0pt; mso-table-rspace: 0pt; border-spacing: 0; margin: 0; padding: 0; padding-left: 6.25%; padding-right: 6.25%; width: 87.5%; padding-top: 0px; height: 110px; border-collapse: collapse;" height="70" class="button" width="87.5%">
                               <a href="${url!}" target="_blank" style="-webkit-font-smoothing: antialiased; text-size-adjust: 100%; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; padding: 8px 16px; text-decoration: none; background-color: #24a6f8; color: #FFFFFF; font-family: 'Source Sans Pro', Tahoma, Verdana, Segoe, sans-serif; font-size: 14px; line-height: 120%; border-radius: 4px; -webkit-border-radius: 4px; -moz-border-radius: 4px; -khtml-border-radius: 4px;">
-                                  Go to Budget Details
+                                  Go to ${BUDGET_OR_BUDGET_GROUP_CAMEL_CASE} Details
                               </a>
                           </td>
                       </tr>

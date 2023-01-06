@@ -57,4 +57,6 @@ public interface GitToHarnessProgressService {
   GitToHarnessProgressDTO getByYamlChangeSetId(String yamlChangeSetId);
 
   GitToHarnessProgressDTO updateProcessingCommitId(String uuid, String processingCommitId);
+
+  void deleteByAccount(String accountId);
 }

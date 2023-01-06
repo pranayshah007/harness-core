@@ -30,6 +30,7 @@ import io.harness.rule.Owner;
 
 import com.azure.core.credential.AccessToken;
 import com.azure.core.credential.TokenCredential;
+import com.azure.core.http.HttpPipeline;
 import com.azure.core.http.policy.HttpLogDetailLevel;
 import com.azure.core.http.rest.PagedFlux;
 import com.azure.core.http.rest.PagedIterable;
@@ -85,6 +86,9 @@ public class AzureMonitorClientImplTest extends CategoryTest {
     azureResourceManagerMockedStatic.when(() -> AzureResourceManager.configure()).thenReturn(configurable);
 
     Mockito.when(configurable.withLogLevel(any(HttpLogDetailLevel.class))).thenReturn(configurable);
+    azureResourceManagerMockedStatic
+        .when(() -> AzureResourceManager.authenticate(any(HttpPipeline.class), any(AzureProfile.class)))
+        .thenReturn(authenticated);
     Mockito.when(configurable.withHttpClient(any())).thenReturn(configurable);
     when(configurable.withRetryPolicy(any())).thenReturn(configurable);
     Mockito.when(configurable.authenticate(any(TokenCredential.class), any(AzureProfile.class)))

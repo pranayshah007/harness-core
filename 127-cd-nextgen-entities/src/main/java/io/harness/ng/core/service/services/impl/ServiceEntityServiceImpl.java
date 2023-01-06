@@ -110,6 +110,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
 import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
@@ -193,15 +194,14 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   public Optional<ServiceEntity> get(
       String accountId, String orgIdentifier, String projectIdentifier, String serviceRef, boolean deleted) {
     checkArgument(isNotEmpty(accountId), "accountId must be present");
-    checkArgument(isNotEmpty(serviceRef), "service ref must be present");
 
     return getServiceByRef(accountId, orgIdentifier, projectIdentifier, serviceRef, deleted);
   }
 
   private Optional<ServiceEntity> getServiceByRef(
       String accountId, String orgIdentifier, String projectIdentifier, String serviceRef, boolean deleted) {
-    String[] serviceRefSplit = serviceRef.split("\\.", MAX_RESULT_THRESHOLD_FOR_SPLIT);
-    if (serviceRefSplit.length == 1) {
+    String[] serviceRefSplit = StringUtils.split(serviceRef, ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
+    if (serviceRefSplit == null || serviceRefSplit.length == 1) {
       return serviceRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndDeletedNot(
           accountId, orgIdentifier, projectIdentifier, serviceRef, !deleted);
     } else {
@@ -228,6 +228,11 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       if (oldService != null && oldService.getType() != null && requestService.getType() != null
           && !oldService.getType().equals(requestService.getType())) {
         throw new InvalidRequestException(String.format("Service Deployment Type is not allowed to change."));
+      }
+
+      if (oldService != null && oldService.getGitOpsEnabled() != null && requestService.getGitOpsEnabled() != null
+          && !oldService.getGitOpsEnabled().equals(requestService.getGitOpsEnabled())) {
+        throw new InvalidRequestException(String.format("GitOps Enabled is not allowed to change."));
       }
 
       if (ServiceDefinitionType.TAS.equals(requestService.getType())) {
@@ -280,6 +285,11 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       if (oldService != null && oldService.getType() != null && requestService.getType() != null
           && !oldService.getType().equals(requestService.getType())) {
         throw new InvalidRequestException(String.format("Service Deployment Type is not allowed to change."));
+      }
+
+      if (oldService != null && oldService.getGitOpsEnabled() != null && requestService.getGitOpsEnabled() != null
+          && !oldService.getGitOpsEnabled().equals(requestService.getGitOpsEnabled())) {
+        throw new InvalidRequestException(String.format("GitOps Enabled is not allowed to change."));
       }
     }
     if (ServiceDefinitionType.TAS.equals(requestService.getType())) {
@@ -429,10 +439,9 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
 
   private Criteria getServiceEqualityCriteria(ServiceEntity requestService, boolean deleted) {
     checkArgument(isNotEmpty(requestService.getAccountId()), "accountId must be present");
-    checkArgument(isNotEmpty(requestService.getIdentifier()), "service ref must be present");
-    String[] serviceRefSplit = requestService.getIdentifier().split("\\.", MAX_RESULT_THRESHOLD_FOR_SPLIT);
+    String[] serviceRefSplit = StringUtils.split(requestService.getIdentifier(), ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
     Criteria criteria;
-    if (serviceRefSplit.length == 1) {
+    if (serviceRefSplit == null || serviceRefSplit.length == 1) {
       criteria = Criteria.where(ServiceEntityKeys.accountId)
                      .is(requestService.getAccountId())
                      .and(ServiceEntityKeys.orgIdentifier)
@@ -509,7 +518,6 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
     return getScopedServiceEntities(accountIdentifier, orgIdentifier, projectIdentifier, serviceRefs);
   }
 
-  @org.jetbrains.annotations.NotNull
   private List<ServiceEntity> getScopedServiceEntities(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> serviceRefs) {
     List<ServiceEntity> entities = new ArrayList<>();
@@ -775,9 +783,19 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   @Override
   public boolean forceDeleteAllInProject(String accountId, String orgIdentifier, String projectIdentifier) {
     Criteria criteria = CoreCriteriaUtils.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier);
+    List<String> services = getServiceIdentifiers(accountId, orgIdentifier, projectIdentifier);
     return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
       DeleteResult deleteResult = serviceRepository.deleteMany(criteria);
-      if (!deleteResult.wasAcknowledged()) {
+      if (deleteResult.wasAcknowledged()) {
+        if (isEmpty(services)) {
+          return true;
+        }
+        for (String serviceId : services) {
+          entitySetupUsageHelper.deleteSetupUsagesWithOnlyIdentifierInfo(
+              serviceId, accountId, orgIdentifier, projectIdentifier);
+        }
+
+      } else {
         throw new InvalidRequestException(String.format(
             "Services under Project[%s], Organization [%s] couldn't be deleted.", projectIdentifier, orgIdentifier));
       }
@@ -894,6 +912,10 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
     }
 
     return serviceEntityList;
+  }
+  @Override
+  public List<String> getServiceIdentifiers(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    return serviceRepository.getServiceIdentifiers(accountIdentifier, orgIdentifier, projectIdentifier);
   }
 
   private void validateTheServicesList(List<ServiceEntity> serviceEntities) {

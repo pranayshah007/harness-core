@@ -17,10 +17,10 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
 import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
 
 @Slf4j
 @Singleton

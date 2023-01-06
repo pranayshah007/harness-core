@@ -27,6 +27,7 @@ import io.harness.delegate.beans.connector.servicenow.ServiceNowConnectorDTO;
 import io.harness.delegate.task.servicenow.ServiceNowTaskNGParameters;
 import io.harness.delegate.task.servicenow.ServiceNowTaskNGParameters.ServiceNowTaskNGParametersBuilder;
 import io.harness.delegate.task.servicenow.ServiceNowTaskNGResponse;
+import io.harness.delegate.task.shell.ShellScriptTaskNG;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ServiceNowException;
@@ -115,7 +116,7 @@ public class ServiceNowStepHelperServiceImpl implements ServiceNowStepHelperServ
                             .parameters(new Object[] {params})
                             .build();
     return StepUtils.prepareTaskRequest(ambiance, taskData, kryoSerializer, TaskCategory.DELEGATE_TASK_V2,
-        Collections.emptyList(), false, taskName,
+        Collections.singletonList(ShellScriptTaskNG.COMMAND_UNIT), true, taskName,
         params.getDelegateSelectors()
             .stream()
             .map(s -> TaskSelector.newBuilder().setSelector(s).build())

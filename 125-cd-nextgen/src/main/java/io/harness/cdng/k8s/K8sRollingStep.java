@@ -7,9 +7,13 @@
 
 package io.harness.cdng.k8s;
 
+import static io.harness.delegate.task.k8s.K8sRollingDeployRequest.K8sRollingDeployRequestBuilder;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.k8s.K8sRollingBaseStepInfo.K8sRollingBaseStepInfoKeys;
@@ -55,6 +59,7 @@ import io.harness.tasks.ResponseData;
 import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
@@ -70,6 +75,7 @@ public class K8sRollingStep extends TaskChainExecutableWithRollbackAndRbac imple
   @Inject private CDStepHelper cdStepHelper;
   @Inject ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private InstanceInfoService instanceInfoService;
+  @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
@@ -112,8 +118,7 @@ public class K8sRollingStep extends TaskChainExecutableWithRollbackAndRbac imple
               canaryStepFqn + "." + OutcomeExpressionConstants.K8S_CANARY_OUTCOME));
       isCanaryWorkflow = optionalCanaryOutcome.isFound();
     }
-
-    K8sRollingDeployRequest k8sRollingDeployRequest =
+    K8sRollingDeployRequestBuilder rollingRequestBuilder =
         K8sRollingDeployRequest.builder()
             .skipDryRun(skipDryRun)
             .inCanaryWorkflow(isCanaryWorkflow)
@@ -137,9 +142,14 @@ public class K8sRollingStep extends TaskChainExecutableWithRollbackAndRbac imple
             .useNewKubectlVersion(cdStepHelper.isUseNewKubectlVersion(accountId))
             .useK8sApiForSteadyStateCheck(cdStepHelper.shouldUseK8sApiForSteadyStateCheck(accountId))
             .skipAddingTrackSelectorToDeployment(cdStepHelper.isSkipAddingTrackSelectorToDeployment(accountId))
-            .pruningEnabled(pruningEnabled)
-            .build();
+            .pruningEnabled(pruningEnabled);
 
+    if (cdFeatureFlagHelper.isEnabled(accountId, FeatureName.NG_K8_COMMAND_FLAGS)) {
+      Map<String, String> k8sCommandFlag =
+          k8sStepHelper.getDelegateK8sCommandFlag(k8sRollingStepParameters.getCommandFlags());
+      rollingRequestBuilder.k8sCommandFlags(k8sCommandFlag);
+    }
+    K8sRollingDeployRequest k8sRollingDeployRequest = rollingRequestBuilder.build();
     k8sStepHelper.publishReleaseNameStepDetails(ambiance, releaseName);
     TaskChainResponse response =
         k8sStepHelper.queueK8sTask(stepElementParameters, k8sRollingDeployRequest, ambiance, executionPassThroughData);

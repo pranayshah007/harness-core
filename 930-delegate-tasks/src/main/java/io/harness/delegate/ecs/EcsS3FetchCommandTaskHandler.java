@@ -89,6 +89,7 @@ public class EcsS3FetchCommandTaskHandler {
           : CommandUnitsProgress.builder().build();
       responseData = getRunTaskS3FetchResponse(ecsS3FetchRunTaskRequest, commandUnitsProgress, iLogStreamingTaskClient);
     }
+    log.info("Completed ECS S3 task execution");
     return responseData;
   }
 

@@ -13,6 +13,7 @@ import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.configfile.ConfigFileOutcome;
 import io.harness.cdng.execution.ExecutionDetails;
 import io.harness.delegate.task.pcf.PcfManifestsPackage;
+import io.harness.delegate.task.pcf.request.TasManifestsPackage;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
@@ -32,7 +33,7 @@ public class TasStageExecutionDetails implements ExecutionDetails {
   private Map<String, ConfigFileOutcome> configFilesOutcome;
   private Map<String, Object> envVariables;
   private Map<String, Object> outVariables;
-  private PcfManifestsPackage pcfManifestsPackage;
+  private TasManifestsPackage tasManifestsPackage;
   private String pipelineExecutionId;
   private Boolean isAutoscalarEnabled;
   private List<String> routeMaps;

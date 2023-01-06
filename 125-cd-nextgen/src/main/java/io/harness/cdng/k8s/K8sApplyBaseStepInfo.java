@@ -14,6 +14,7 @@ import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
+import io.harness.cdng.manifest.yaml.K8sStepCommandFlag;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
@@ -49,4 +50,5 @@ public class K8sApplyBaseStepInfo {
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
   @JsonProperty("overrides") List<ManifestConfigWrapper> overrides;
   @ApiModelProperty(dataType = BOOLEAN_CLASSPATH) @YamlSchemaTypes({string}) ParameterField<Boolean> skipRendering;
+  @YamlSchemaTypes({runtime}) List<K8sStepCommandFlag> commandFlags;
 }

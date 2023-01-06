@@ -12,7 +12,7 @@ import static io.harness.springdata.PersistenceStoreUtils.getMatchingEntities;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.MongoConfig;
-import io.harness.persistence.Store;
+import io.harness.persistence.store.Store;
 import io.harness.reflection.HarnessReflections;
 import io.harness.springdata.HMongoTemplate;
 

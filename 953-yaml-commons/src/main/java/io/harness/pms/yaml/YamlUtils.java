@@ -11,6 +11,8 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
+import static io.serializer.HObjectMapper.configureObjectMapperForNG;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
@@ -51,6 +53,8 @@ public class YamlUtils {
   private static final List<String> ignorableStringForQualifiedName = Arrays.asList("step", "parallel");
 
   private final ObjectMapper mapper;
+  public static final ObjectMapper NG_DEFAULT_OBJECT_MAPPER =
+      configureObjectMapperForNG(new ObjectMapper(new YAMLFactory()));
 
   static {
     mapper = new ObjectMapper(new YAMLFactory());
@@ -69,6 +73,11 @@ public class YamlUtils {
   public <T> T read(String yaml, Class<T> cls) throws IOException {
     return mapper.readValue(yaml, cls);
   }
+
+  public <T> T readWithDefaultObjectMapper(String yaml, Class<T> cls) throws IOException {
+    return NG_DEFAULT_OBJECT_MAPPER.readValue(yaml, cls);
+  }
+
   public <T> T read(String yaml, TypeReference<T> valueTypeRef) throws IOException {
     return mapper.readValue(yaml, valueTypeRef);
   }
@@ -82,7 +91,14 @@ public class YamlUtils {
   }
 
   public YamlField readTree(String content) throws IOException {
-    JsonNode rootJsonNode = mapper.readTree(content);
+    return readTreeInternal(content, mapper);
+  }
+  public YamlField readTreeWithDefaultObjectMapper(String content) throws IOException {
+    return readTreeInternal(content, NG_DEFAULT_OBJECT_MAPPER);
+  }
+
+  private YamlField readTreeInternal(String content, ObjectMapper objectMapper) throws IOException {
+    JsonNode rootJsonNode = objectMapper.readTree(content);
     YamlNode rootYamlNode = new YamlNode(rootJsonNode);
     return new YamlField(rootYamlNode);
   }

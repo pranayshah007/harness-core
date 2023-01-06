@@ -8,12 +8,14 @@
 package io.harness.cdng.tas;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.expression.Expression.ALLOW_SECRETS;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
-import io.harness.delegate.task.pcf.PcfManifestsPackage;
+import io.harness.delegate.task.pcf.request.TasManifestsPackage;
+import io.harness.expression.Expression;
 import io.harness.pcf.model.CfCliVersionNG;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 
@@ -33,7 +35,7 @@ public class TasExecutionPassThroughData implements PassThroughData {
   InfrastructureOutcome infrastructure;
   UnitProgressData lastActiveUnitProgressData;
   String zippedManifestId;
-  PcfManifestsPackage pcfManifestsPackage;
+  @Expression(ALLOW_SECRETS) TasManifestsPackage tasManifestsPackage;
   Map<String, String> allFilesFetched;
   String repoRoot;
   CfCliVersionNG cfCliVersion;

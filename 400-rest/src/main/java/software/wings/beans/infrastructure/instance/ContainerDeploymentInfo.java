@@ -21,10 +21,10 @@ import io.harness.ng.DbAliases;
 import software.wings.beans.Base;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import dev.morphia.annotations.Entity;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.mongodb.morphia.annotations.Entity;
 
 /**
  *

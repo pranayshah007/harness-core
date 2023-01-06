@@ -18,7 +18,10 @@ import io.harness.beans.IdentifierRef;
 import io.harness.delegate.task.servicenow.ServiceNowTaskNGParameters;
 import io.harness.delegate.task.servicenow.ServiceNowTaskNGParameters.ServiceNowTaskNGParametersBuilder;
 import io.harness.delegate.task.servicenow.ServiceNowTaskNGResponse;
+import io.harness.delegate.task.shell.ShellScriptTaskNG;
 import io.harness.exception.InvalidRequestException;
+import io.harness.logstreaming.ILogStreamingStepClient;
+import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.ng.core.EntityDetail;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollbackAndRbac;
@@ -48,6 +51,8 @@ public class ServiceNowImportSetStep extends TaskExecutableWithRollbackAndRbac<S
   @Inject private PipelineRbacHelper pipelineRbacHelper;
   @Inject private ServiceNowStepHelperService serviceNowStepHelperService;
 
+  @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
+
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
     String accountIdentifier = AmbianceUtils.getAccountId(ambiance);
@@ -69,17 +74,29 @@ public class ServiceNowImportSetStep extends TaskExecutableWithRollbackAndRbac<S
   @Override
   public TaskRequest obtainTaskAfterRbac(
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
+    // Creating the log stream once and will close at the end of the task.
+    ILogStreamingStepClient logStreamingStepClient = logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
+    logStreamingStepClient.openStream(ShellScriptTaskNG.COMMAND_UNIT);
     ServiceNowImportSetSpecParameters specParameters = (ServiceNowImportSetSpecParameters) stepParameters.getSpec();
-
-    return serviceNowStepHelperService.prepareTaskRequest(getServiceNowTaskNGFromSpecParameters(specParameters),
-        ambiance, specParameters.getConnectorRef().getValue(), stepParameters.getTimeout().getValue(),
-        String.format("ServiceNow Task: %s", ServiceNowActionNG.IMPORT_SET));
+    try {
+      return serviceNowStepHelperService.prepareTaskRequest(getServiceNowTaskNGFromSpecParameters(specParameters),
+          ambiance, specParameters.getConnectorRef().getValue(), stepParameters.getTimeout().getValue(),
+          String.format("ServiceNow Task: %s", ServiceNowActionNG.IMPORT_SET));
+    } catch (InvalidRequestException ex) {
+      closeLogStream(ambiance);
+      throw ex;
+    }
   }
 
   @Override
   public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
       ThrowingSupplier<ServiceNowTaskNGResponse> responseSupplier) throws Exception {
-    return serviceNowStepHelperService.prepareImportSetStepResponse(responseSupplier);
+    try {
+      return serviceNowStepHelperService.prepareImportSetStepResponse(responseSupplier);
+    } finally {
+      // Closing the log stream.
+      closeLogStream(ambiance);
+    }
   }
 
   @Override
@@ -109,5 +126,10 @@ public class ServiceNowImportSetStep extends TaskExecutableWithRollbackAndRbac<S
         .importData(importDataJson)
         .delegateSelectors(
             StepUtils.getDelegateSelectorListFromTaskSelectorYaml(specParameters.getDelegateSelectors()));
+  }
+
+  private void closeLogStream(Ambiance ambiance) {
+    ILogStreamingStepClient logStreamingStepClient = logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
+    logStreamingStepClient.closeStream(ShellScriptTaskNG.COMMAND_UNIT);
   }
 }

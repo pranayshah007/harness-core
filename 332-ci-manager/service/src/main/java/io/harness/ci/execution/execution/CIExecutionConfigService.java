@@ -577,7 +577,7 @@ public class CIExecutionConfigService {
           image = vmImageConfig.getGitClone();
         }
         break;
-      case IACM_TERRAFORM_PLAN:
+      case IACM:
         if (Strings.isNotBlank(vmImageConfig.getIacmTerraform())) {
           image = vmImageConfig.getIacmTerraform();
         }

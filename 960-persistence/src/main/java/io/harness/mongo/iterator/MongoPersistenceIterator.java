@@ -30,6 +30,8 @@ import io.harness.iterator.PersistenceIterator;
 import io.harness.iterator.PersistentIrregularIterable;
 import io.harness.iterator.PersistentIterable;
 import io.harness.iterator.PersistentRegularIterable;
+import io.harness.lock.AcquiredLock;
+import io.harness.lock.PersistentLocker;
 import io.harness.maintenance.MaintenanceController;
 import io.harness.metrics.impl.PersistenceMetricsServiceImpl;
 import io.harness.mongo.DelayLogContext;
@@ -42,10 +44,14 @@ import io.harness.queue.QueueController;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
+import com.mongodb.BulkWriteResult;
+import dev.morphia.query.MorphiaIterator;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.Semaphore;
 import lombok.Builder;
 import lombok.Getter;
@@ -57,13 +63,17 @@ import lombok.extern.slf4j.Slf4j;
 public class MongoPersistenceIterator<T extends PersistentIterable, F extends FilterExpander>
     implements PersistenceIterator<T> {
   private static final Duration QUERY_TIME = ofMillis(200);
+  private static final int SIMPLE_MOVING_AVG_MULTIPLIER = 15; // The multiplier to be used for SMA
+  private static final int SIMPLE_MOVING_AVG_DIVISOR = 16; // The divisor to be used for SMA
+  private static final String SEMAPHORE_ACQUIRE_ERROR = "Working on entity was interrupted";
+  private static final int LOCK_TIMEOUT_SECONDS = 5; // The lockTimeout is the duration a lock is held
+  private static final int LOCK_WAIT_TIMEOUT_SECONDS =
+      5; // The lockWaitTimeout is the duration to wait to acquire a lock
+  private static final int BATCH_SIZE_MULTIPLY_FACTOR = 2; // The factor by how much the batchSize should be increased
+  private static final int REDIS_BATCH_PAUSE_DURATION = 5; // The duration by which to pause if worker JobQ is full
 
   @Inject private final QueueController queueController;
   @Inject private PersistenceMetricsServiceImpl iteratorMetricsService;
-
-  public interface Handler<T> {
-    void handle(T entity);
-  }
 
   public enum SchedulingType { REGULAR, IRREGULAR, IRREGULAR_SKIP_MISSED }
 
@@ -79,19 +89,17 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
   private Duration throttleInterval;
   private Handler<T> handler;
   @Getter private ExecutorService executorService;
+  @Getter private ScheduledThreadPoolExecutor threadPoolExecutor;
   private Semaphore semaphore;
   private boolean redistribute;
   private EntityProcessController<T> entityProcessController;
   @Getter private SchedulingType schedulingType;
   private String iteratorName;
   private boolean unsorted;
+  private PersistentLocker persistentLocker;
 
-  private long movingAvg(long current, long sample) {
-    return (15 * current + sample) / 16;
-  }
-
-  private boolean shouldProcess() {
-    return !MaintenanceController.getMaintenanceFlag() && queueController.isPrimary();
+  public interface Handler<T> {
+    void handle(T entity);
   }
 
   @Override
@@ -173,7 +181,7 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
               // lets wait for awhile until for this to happen
               finalEntity.wait(10000);
             } catch (RejectedExecutionException e) {
-              log.info("The executor service has been shutdown for entity {}", finalEntity);
+              log.info("The executor service has been shutdown - received exception {} ", e);
             }
           }
           continue;
@@ -237,7 +245,7 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
       try {
         semaphore.acquire();
       } catch (InterruptedException e) {
-        log.error("Working on entity was interrupted", e);
+        log.error(SEMAPHORE_ACQUIRE_ERROR, e);
         iteratorMetricsService.recordIteratorMetrics(iteratorName, ITERATOR_ERROR);
         Thread.currentThread().interrupt();
         return;
@@ -248,22 +256,11 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
         synchronized (entity) {
           entity.notify();
         }
-        Long nextIteration = entity.obtainNextIteration(fieldName);
+
+        // Update the iterator metrics for ITERATOR_WORKING_ON_ENTITY and ITERATOR_DELAY
+        updateIteratorMetricsNosOfEntityAndDelay(entity);
         if (schedulingType == REGULAR) {
           ((PersistentRegularIterable) entity).updateNextIteration(fieldName, 0L);
-        }
-
-        long delay = nextIteration == null || nextIteration == 0 ? 0 : startTime - nextIteration;
-        try (DelayLogContext ignore2 = new DelayLogContext(delay, OVERRIDE_ERROR)) {
-          log.debug("Working on entity");
-          iteratorMetricsService.recordIteratorMetrics(iteratorName, ITERATOR_WORKING_ON_ENTITY);
-          iteratorMetricsService.recordIteratorMetricsWithDuration(
-              iteratorName, Duration.ofMillis(delay), ITERATOR_DELAY);
-
-          if (delay >= acceptableNoAlertDelay.toMillis()) {
-            log.debug(
-                "Working on entity but the delay is more than the acceptable {}", acceptableNoAlertDelay.toMillis());
-          }
         }
 
         try {
@@ -280,18 +277,274 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
 
         long processTime = currentTimeMillis() - startTime;
         log.debug("Done with entity");
-        iteratorMetricsService.recordIteratorMetricsWithDuration(
-            iteratorName, Duration.ofMillis(processTime), ITERATOR_PROCESSING_TIME);
 
-        try (ProcessTimeLogContext ignore2 = new ProcessTimeLogContext(processTime, OVERRIDE_ERROR)) {
-          if (acceptableExecutionTime != null && processTime > acceptableExecutionTime.toMillis()) {
-            log.debug("Done with entity but took too long acceptable {}", acceptableExecutionTime.toMillis());
-          }
-        } catch (Throwable exception) {
-          log.error("Exception while recording the processing of entity", exception);
-          iteratorMetricsService.recordIteratorMetrics(iteratorName, ITERATOR_ERROR);
+        // Update the iterator metric for ITERATOR_PROCESSING_TIME
+        updateIteratorMetricProcessingTime(processTime);
+      }
+    }
+  }
+
+  /**
+   * Process method for Redis Batch mode iterator.
+   *
+   *  1. Determine the batch-size by taking into account the number of worker
+   *     threads available and multiplying it by the BATCH_SIZE_MULTIPLY_FACTOR.
+   *  2. Update the batch-size by finding a limit which will take into account the number
+   *     of docs still not processed in the jobQ which ensures that the Q doesn't overflow.
+   *  3. If the batch-size limit is not positive then pause for a while. This allows the
+   *     workers to process the remaining docs in the jobQ and doesn't cause Q overflow.
+   *  4. Try to acquire a Redis distributed lock so that this process gets an exclusive
+   *     access to a batch of Mongo docs that it can update and work on.
+   *  5. Once the Redis lock is acquired fetch a batch of documents. The number of docs
+   *     to fetch will be the batch-size limit value that was computed earlier.
+   *  6. Iterator over the fetched docs and submit it to the workers jobQ without waiting
+   *     to ensure that the Redis lock is released at the earliest.
+   *  7. Collect the doc Ids of each doc that was submitted to the worker jobQ and update
+   *     the nextIteration fields of these docs in bulk using Mongo's bulkWrite operation.
+   *  8. Release the Redis distributed lock so that the other processes can work on another
+   *     batch of Mongo docs.
+   */
+  public void redisBatchProcess() {
+    boolean docsAvailable = true;
+    // Set the batchSize to fetch documents as 2x number of worker threads.
+    // The main thread is fetching documents so worker thread count is N-1.
+    int batchSize = Math.max(BATCH_SIZE_MULTIPLY_FACTOR * (threadPoolExecutor.getCorePoolSize() - 1), 1);
+
+    while (docsAvailable) {
+      // Check if iterators should run or not.
+      if (!shouldProcess()) {
+        return;
+      }
+
+      // Compute a limit value that takes into account the number of unprocessed
+      // docs in the jobQ to ensure that the Q doesn't overflow.
+      int limit = Math.min(batchSize, batchSize - threadPoolExecutor.getQueue().size());
+
+      if (limit <= 0) {
+        // The Queue is full, so try after sometime
+        log.warn("The worker Q for {} iterator is full, pausing for 5 seconds", iteratorName);
+        sleep(ofSeconds(REDIS_BATCH_PAUSE_DURATION));
+        continue;
+      }
+
+      // Acquiring Semaphore to reduce the number of worker
+      // threads that can run processShardEntity by 1.
+      try {
+        semaphore.acquire();
+      } catch (InterruptedException e) {
+        log.error(SEMAPHORE_ACQUIRE_ERROR, e);
+        iteratorMetricsService.recordIteratorMetrics(iteratorName, ITERATOR_ERROR);
+        Thread.currentThread().interrupt();
+        return;
+      }
+
+      long totalTimeStart = currentTimeMillis();
+      long startTime = currentTimeMillis();
+
+      AcquiredLock acquiredLock = null;
+      long processTime = 0;
+
+      try {
+        // Acquire the distributed lock
+        acquiredLock = acquireLock();
+
+        processTime = currentTimeMillis() - startTime;
+        log.info("Redis Batch Iterator Mode - time to acquire Redis lock {}", processTime);
+
+        startTime = currentTimeMillis();
+        MorphiaIterator<T, T> docItr = persistenceProvider.obtainNextInstances(clazz, fieldName, filterExpander, limit);
+        processTime = currentTimeMillis() - startTime;
+        log.info("Redis Batch Iterator Mode - time to acquire {} docs is {}", limit, processTime);
+
+        // Iterate over the fetched documents - submit it to workers and prepare bulkWrite operations
+        List<String> docIds = new ArrayList<>();
+        while (docItr.hasNext()) {
+          T entity = docItr.next();
+          submitEntityForProcessingWithoutWait(entity);
+          docIds.add(entity.getUuid());
+        }
+
+        // Update the documents next iteration field
+        updateDocumentNextIteration(docIds);
+
+        // If there were no documents available to process then break from loop
+        docsAvailable = !docIds.isEmpty();
+
+      } finally {
+        // Release the distributed lock - acquiredLock cannot be null
+        acquiredLock.release();
+
+        // Release the semaphore
+        semaphore.release();
+        processTime = currentTimeMillis() - totalTimeStart;
+        log.info("Redis Batch Iterator Mode - time to carryout the entire processing is {}", processTime);
+      }
+    }
+  }
+
+  /**
+   * Method to submit an entity to the Worker JobQ.
+   * @param entity - Mongo document that worker thread should process
+   */
+  public void submitEntityForProcessingWithoutWait(T entity) {
+    if (entity == null) {
+      return;
+    }
+
+    if (entityProcessController != null && !entityProcessController.shouldProcessEntity(entity)) {
+      return;
+    }
+
+    T finalEntity = entity;
+    synchronized (finalEntity) {
+      try {
+        // We won't wait for the threads to pick up the task.
+        // The caller should be mindful of the threadPoolExecutor jobQ overflow.
+        threadPoolExecutor.submit(() -> processEntityWithoutWaitNotify(finalEntity));
+      } catch (RejectedExecutionException e) {
+        log.info("The executor service has been shutdown - received exception {} ", e);
+      }
+    }
+  }
+
+  private long movingAvg(long current, long sample) {
+    return (SIMPLE_MOVING_AVG_MULTIPLIER * current + sample) / SIMPLE_MOVING_AVG_DIVISOR;
+  }
+
+  private boolean shouldProcess() {
+    return !MaintenanceController.getMaintenanceFlag() && queueController.isPrimary();
+  }
+
+  /**
+   * Method to process entity without synchronized wait notification.
+   * @param entity - Mongo document that worker thread should process
+   */
+  private void processEntityWithoutWaitNotify(T entity) {
+    try (EntityLogContext ignore = new EntityLogContext(entity, OVERRIDE_ERROR)) {
+      try {
+        semaphore.acquire();
+      } catch (InterruptedException e) {
+        log.error(SEMAPHORE_ACQUIRE_ERROR, e);
+        iteratorMetricsService.recordIteratorMetrics(iteratorName, ITERATOR_ERROR);
+        Thread.currentThread().interrupt();
+        return;
+      }
+
+      // Update the iterator metrics for ITERATOR_WORKING_ON_ENTITY and ITERATOR_DELAY
+      updateIteratorMetricsNosOfEntityAndDelay(entity);
+      long startTime = currentTimeMillis();
+
+      try {
+        // Work on this entity.
+        handler.handle(entity);
+      } catch (Exception exception) {
+        log.error("Catch and handle all exceptions in the entity handler", exception);
+        iteratorMetricsService.recordIteratorMetrics(iteratorName, ITERATOR_ERROR);
+      } finally {
+        semaphore.release();
+
+        long processTime = currentTimeMillis() - startTime;
+        log.debug("Done with entity");
+
+        // Update the iterator metric for ITERATOR_PROCESSING_TIME
+        updateIteratorMetricProcessingTime(processTime);
+      }
+    }
+  }
+
+  /**
+   * Method to acquire the lock and return it.
+   * @return AcquiredLock
+   */
+  private AcquiredLock acquireLock() {
+    while (true) {
+      // Hardcoding the lockTimeout and waitTimeout for the lock to 5 secs.
+      try (AcquiredLock acquiredLock = persistentLocker.waitToAcquireLock(MongoPersistenceIterator.class, iteratorName,
+               ofSeconds(LOCK_TIMEOUT_SECONDS), ofSeconds(LOCK_WAIT_TIMEOUT_SECONDS))) {
+        if (acquiredLock != null) {
+          // Got the lock, proceed further.
+          return acquiredLock;
+        } else {
+          log.warn("Failed to acquire distributed lock - attempting to reacquire");
         }
       }
+    }
+  }
+
+  /**
+   * Method to carryout bulk find and update operation.
+   * @param docIds List of document Ids
+   */
+  private void updateDocumentNextIteration(List<String> docIds) {
+    // If the docIds list is empty then return
+    if (docIds.isEmpty()) {
+      return;
+    }
+
+    long base = currentTimeMillis();
+    int size = docIds.size();
+    try {
+      long startTime = currentTimeMillis();
+      BulkWriteResult writeResults =
+          persistenceProvider.bulkWriteDocumentsMatchingIds(clazz, docIds, fieldName, base, targetInterval);
+      long processTime = currentTimeMillis() - startTime;
+      log.info("Redis Batch Iterator Mode - time to carryout bulk write for {} docs is {}", docIds.size(), processTime);
+
+      // Do not do any further time-consuming processing here because
+      // the distributed lock has to be released in the finally block for safety.
+
+      // Check if all documents were found
+      if (size != writeResults.getMatchedCount()) {
+        log.warn("All documents not found - exp {} found {} ", size, writeResults.getMatchedCount());
+      }
+      // Check if all the writes went through
+      if (size != writeResults.getModifiedCount()) {
+        log.warn("All updates for the field {} did not go through - exp {} modified {} ", fieldName, size,
+            writeResults.getModifiedCount());
+      }
+    } catch (RuntimeException ex) {
+      log.error("Failed to find and update documents due to exception {} ", ex);
+    }
+  }
+
+  /**
+   * Helper method to update the iterator metrics for -
+   * 1. ITERATOR_WORKING_ON_ENTITY
+   * 2. ITERATOR_DELAY
+   *
+   * @param entity the mongo doc or entity currently being procesed
+   */
+  private void updateIteratorMetricsNosOfEntityAndDelay(T entity) {
+    long startTime = currentTimeMillis();
+    Long nextIteration = entity.obtainNextIteration(fieldName);
+    long delay = (nextIteration == null || nextIteration == 0) ? 0 : (startTime - nextIteration);
+
+    try (DelayLogContext ignore2 = new DelayLogContext(delay, OVERRIDE_ERROR)) {
+      iteratorMetricsService.recordIteratorMetrics(iteratorName, ITERATOR_WORKING_ON_ENTITY);
+      iteratorMetricsService.recordIteratorMetricsWithDuration(iteratorName, ofMillis(delay), ITERATOR_DELAY);
+
+      if (delay >= acceptableNoAlertDelay.toMillis()) {
+        log.debug("Working on entity but the delay is more than the acceptable {}", acceptableNoAlertDelay.toMillis());
+      }
+    }
+  }
+
+  /**
+   * Helper method to update the iterator metric for ITERATOR_PROCESSING_TIME
+   *
+   * @param processTime the time it took to process the mongo doc or entity
+   */
+  private void updateIteratorMetricProcessingTime(long processTime) {
+    iteratorMetricsService.recordIteratorMetricsWithDuration(
+        iteratorName, ofMillis(processTime), ITERATOR_PROCESSING_TIME);
+
+    try (ProcessTimeLogContext ignore2 = new ProcessTimeLogContext(processTime, OVERRIDE_ERROR)) {
+      if (acceptableExecutionTime != null && processTime > acceptableExecutionTime.toMillis()) {
+        log.debug("Done with entity but took too long acceptable {}", acceptableExecutionTime.toMillis());
+      }
+    } catch (Exception exception) {
+      log.error("Exception while recording the processing of entity", exception);
+      iteratorMetricsService.recordIteratorMetrics(iteratorName, ITERATOR_ERROR);
     }
   }
 }

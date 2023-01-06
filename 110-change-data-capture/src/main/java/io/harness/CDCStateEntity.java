@@ -13,10 +13,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
 import lombok.Value;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
 
 @Value
 @StoreIn(DbAliases.CDC)

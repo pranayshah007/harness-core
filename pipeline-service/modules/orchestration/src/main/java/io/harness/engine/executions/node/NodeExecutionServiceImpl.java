@@ -62,6 +62,7 @@ import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -101,17 +102,11 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   @Inject private OrchestrationLogConfiguration orchestrationLogConfiguration;
   @Inject private NodeExecutionReadHelper nodeExecutionReadHelper;
 
-  @Getter private final Subject<NodeStatusUpdateObserver> stepStatusUpdateSubject = new Subject<>();
+  @Getter private final Subject<NodeStatusUpdateObserver> nodeStatusUpdateSubject = new Subject<>();
   @Getter private final Subject<NodeExecutionStartObserver> nodeExecutionStartSubject = new Subject<>();
   @Getter private final Subject<NodeUpdateObserver> nodeUpdateObserverSubject = new Subject<>();
 
-  /**
-   * This is deprecated, use function
-   * @param nodeExecutionId
-   * @return
-   */
   @Override
-  @Deprecated
   public NodeExecution get(String nodeExecutionId) {
     Query query = query(where(NodeExecutionKeys.uuid).is(nodeExecutionId));
     Optional<NodeExecution> nodeExecutionOptional = nodeExecutionReadHelper.getOneWithoutProjections(query);
@@ -252,6 +247,19 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
 
   @Override
   public CloseableIterator<NodeExecution> fetchChildrenNodeExecutionsIterator(
+      String planExecutionId, String parentId, Direction sortOrderOfCreatedAt, Set<String> fieldsToBeIncluded) {
+    // Uses planExecutionId_parentId_createdAt_idx
+    Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
+                      .addCriteria(where(NodeExecutionKeys.parentId).is(parentId))
+                      .with(Sort.by(sortOrderOfCreatedAt, NodeExecutionKeys.createdAt));
+    for (String field : fieldsToBeIncluded) {
+      query.fields().include(field);
+    }
+    return nodeExecutionReadHelper.fetchNodeExecutions(query);
+  }
+
+  @Override
+  public CloseableIterator<NodeExecution> fetchChildrenNodeExecutionsIterator(
       String parentId, Set<String> fieldsToBeIncluded) {
     // Uses planExecutionId_parentId_createdAt_idx
     Query query = query(where(NodeExecutionKeys.parentId).is(parentId));
@@ -345,84 +353,6 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     return extractChildExecutions(parentId, includeParent, finalList, allExecutions);
   }
 
-  /**
-   * This is deprecated, use below update to get only required fields
-   */
-  @Override
-  public NodeExecution update(@NonNull String nodeExecutionId, @NonNull Consumer<Update> ops) {
-    Query query = query(where(NodeExecutionKeys.uuid).is(nodeExecutionId));
-    Update updateOps = new Update().set(NodeExecutionKeys.lastUpdatedAt, System.currentTimeMillis());
-    ops.accept(updateOps);
-    boolean shouldLog = shouldLog(updateOps);
-    NodeExecution updatedNodeExecution = transactionHelper.performTransaction(() -> {
-      NodeExecution updated = mongoTemplate.findAndModify(query, updateOps, returnNewOptions, NodeExecution.class);
-      if (updated == null) {
-        throw new NodeExecutionUpdateFailedException(
-            "Node Execution Cannot be updated with provided operations" + nodeExecutionId);
-      }
-      if (shouldLog) {
-        orchestrationLogPublisher.onNodeUpdate(NodeUpdateInfo.builder().nodeExecution(updated).build());
-      }
-      return updated;
-    });
-    nodeUpdateObserverSubject.fireInform(
-        NodeUpdateObserver::onNodeUpdate, NodeUpdateInfo.builder().nodeExecution(updatedNodeExecution).build());
-    return updatedNodeExecution;
-  }
-
-  @Override
-  public NodeExecution update(
-      @NonNull String nodeExecutionId, @NonNull Consumer<Update> ops, Set<String> fieldsToBeIncluded) {
-    Query query = query(where(NodeExecutionKeys.uuid).is(nodeExecutionId));
-    fieldsToBeIncluded.addAll(NodeProjectionUtils.fieldsForNodeUpdateObserver);
-    for (String field : fieldsToBeIncluded) {
-      query.fields().include(field);
-    }
-    Update updateOps = new Update().set(NodeExecutionKeys.lastUpdatedAt, System.currentTimeMillis());
-    ops.accept(updateOps);
-    boolean shouldLog = shouldLog(updateOps);
-    NodeExecution updatedNodeExecution = transactionHelper.performTransaction(() -> {
-      NodeExecution updated = mongoTemplate.findAndModify(query, updateOps, returnNewOptions, NodeExecution.class);
-      if (updated == null) {
-        throw new NodeExecutionUpdateFailedException(
-            "Node Execution Cannot be updated with provided operations" + nodeExecutionId);
-      }
-      if (shouldLog) {
-        orchestrationLogPublisher.onNodeUpdate(NodeUpdateInfo.builder().nodeExecution(updated).build());
-      }
-      return updated;
-    });
-    nodeUpdateObserverSubject.fireInform(
-        NodeUpdateObserver::onNodeUpdate, NodeUpdateInfo.builder().nodeExecution(updatedNodeExecution).build());
-    return updatedNodeExecution;
-  }
-
-  @VisibleForTesting
-  @Override
-  public boolean shouldLog(Update updateOps) {
-    Set<String> fieldsUpdated = new HashSet<>();
-    if (updateOps.getUpdateObject().containsKey("$set")) {
-      fieldsUpdated.addAll(((Document) updateOps.getUpdateObject().get("$set")).keySet());
-    }
-    if (updateOps.getUpdateObject().containsKey("$addToSet")) {
-      fieldsUpdated.addAll(((Document) updateOps.getUpdateObject().get("$addToSet")).keySet());
-    }
-    return fieldsUpdated.stream().anyMatch(GRAPH_FIELDS::contains);
-  }
-
-  @Override
-  public void updateV2(@NonNull String nodeExecutionId, @NonNull Consumer<Update> ops) {
-    update(nodeExecutionId, ops, NodeProjectionUtils.fieldsForNodeUpdateObserver);
-  }
-
-  // Save a collection nodeExecutions.
-  // This does not send any orchestration event. So if you want to do graph update operations on NodeExecution save,
-  // then use the below save() method.
-  @Override
-  public List<NodeExecution> saveAll(Collection<NodeExecution> nodeExecutions) {
-    return new ArrayList<>(mongoTemplate.insertAll(nodeExecutions));
-  }
-
   @Override
   public NodeExecution save(NodeExecution nodeExecution) {
     if (nodeExecution.getVersion() == null) {
@@ -459,11 +389,76 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     }
   }
 
+  // Save a collection nodeExecutions.
+  // This does not send any orchestration event. So if you want to do graph update operations on NodeExecution save,
+  // then use the below save() method.
+  @Override
+  public List<NodeExecution> saveAll(Collection<NodeExecution> nodeExecutions) {
+    return new ArrayList<>(mongoTemplate.insertAll(nodeExecutions));
+  }
+
+  @Override
+  public NodeExecution update(@NonNull String nodeExecutionId, @NonNull Consumer<Update> ops) {
+    return updateNodeExecutionInternal(nodeExecutionId, ops, new HashSet<>(), false);
+  }
+
+  @Override
+  public NodeExecution update(
+      @NonNull String nodeExecutionId, @NonNull Consumer<Update> ops, @NonNull Set<String> fieldsToBeIncluded) {
+    return updateNodeExecutionInternal(nodeExecutionId, ops, fieldsToBeIncluded, true);
+  }
+
+  private NodeExecution updateNodeExecutionInternal(@NonNull String nodeExecutionId, @NonNull Consumer<Update> ops,
+      @NonNull Set<String> fieldsToBeIncluded, boolean validateProjection) {
+    Query query = query(where(NodeExecutionKeys.uuid).is(nodeExecutionId));
+    if (validateProjection) {
+      validateNodeExecutionProjection(fieldsToBeIncluded);
+      fieldsToBeIncluded.addAll(NodeProjectionUtils.fieldsForNodeUpdateObserver);
+      for (String field : fieldsToBeIncluded) {
+        query.fields().include(field);
+      }
+    }
+    Update updateOps = new Update().set(NodeExecutionKeys.lastUpdatedAt, System.currentTimeMillis());
+    ops.accept(updateOps);
+    boolean shouldLog = shouldLog(updateOps);
+    NodeExecution updatedNodeExecution = transactionHelper.performTransaction(() -> {
+      NodeExecution updated = mongoTemplate.findAndModify(query, updateOps, returnNewOptions, NodeExecution.class);
+      if (updated == null) {
+        throw new NodeExecutionUpdateFailedException(
+            "Node Execution Cannot be updated with provided operations" + nodeExecutionId);
+      }
+      if (shouldLog) {
+        orchestrationLogPublisher.onNodeUpdate(NodeUpdateInfo.builder().nodeExecution(updated).build());
+      }
+      return updated;
+    });
+    nodeUpdateObserverSubject.fireInform(
+        NodeUpdateObserver::onNodeUpdate, NodeUpdateInfo.builder().nodeExecution(updatedNodeExecution).build());
+    return updatedNodeExecution;
+  }
+
+  @VisibleForTesting
+  boolean shouldLog(Update updateOps) {
+    Set<String> fieldsUpdated = new HashSet<>();
+    if (updateOps.getUpdateObject().containsKey("$set")) {
+      fieldsUpdated.addAll(((Document) updateOps.getUpdateObject().get("$set")).keySet());
+    }
+    if (updateOps.getUpdateObject().containsKey("$addToSet")) {
+      fieldsUpdated.addAll(((Document) updateOps.getUpdateObject().get("$addToSet")).keySet());
+    }
+    return fieldsUpdated.stream().anyMatch(GRAPH_FIELDS::contains);
+  }
+
+  @Override
+  public void updateV2(@NonNull String nodeExecutionId, @NonNull Consumer<Update> ops) {
+    updateNodeExecutionInternal(nodeExecutionId, ops, Sets.newHashSet(NodeExecutionKeys.uuid), true);
+  }
+
   /**
-   * Always use this method while updating statuses. This guarantees we a hopping from correct statuses.
-   * As we don't have transactions it is possible that you node execution state is manipulated by some other thread and
+   * Always use this method while updating statuses. This guarantees we are hopping from correct statuses.
+   * As we don't have transactions it is possible that your node execution state is manipulated by some other thread and
    * your transition is no longer valid.
-   *
+   * <p>
    * Like your workflow is aborted but some other thread try to set it to running. Same logic applied to plan execution
    * status as well
    */
@@ -478,34 +473,12 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     return updateStatusWithUpdate(nodeExecutionId, status, updateOps, overrideStatusSet);
   }
 
-  @Override
-  public NodeExecution updateStatusWithOpsV2(@NonNull String nodeExecutionId, @NonNull Status status,
-      Consumer<Update> ops, EnumSet<Status> overrideStatusSet, Set<String> fieldsToBeIncluded) {
-    Update updateOps = new Update();
-    if (ops != null) {
-      ops.accept(updateOps);
-    }
-    return updateStatusWithUpdate(nodeExecutionId, status, updateOps, overrideStatusSet, fieldsToBeIncluded, true);
-  }
-
-  @Override
-  public NodeExecution updateStatusWithUpdate(
+  private NodeExecution updateStatusWithUpdate(
       @NotNull String nodeExecutionId, @NotNull Status status, Update ops, EnumSet<Status> overrideStatusSet) {
-    return updateStatusWithUpdate(nodeExecutionId, status, ops, overrideStatusSet, new HashSet<>(), false);
-  }
-
-  @Override
-  public NodeExecution updateStatusWithUpdate(@NotNull String nodeExecutionId, @NotNull Status status, Update ops,
-      EnumSet<Status> overrideStatusSet, Set<String> includedFields, boolean shouldUseProjections) {
     EnumSet<Status> allowedStartStatuses =
         isEmpty(overrideStatusSet) ? StatusUtils.nodeAllowedStartSet(status) : overrideStatusSet;
     Query query = query(where(NodeExecutionKeys.uuid).is(nodeExecutionId))
                       .addCriteria(where(NodeExecutionKeys.status).in(allowedStartStatuses));
-    if (shouldUseProjections) {
-      for (String field : includedFields) {
-        query.fields().include(field);
-      }
-    }
     Update updateOps =
         ops.set(NodeExecutionKeys.status, status).set(NodeExecutionKeys.lastUpdatedAt, System.currentTimeMillis());
     NodeExecution updatedNodeExecution = transactionHelper.performTransaction(() -> {
@@ -521,21 +494,21 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
       return updated;
     });
     if (updatedNodeExecution != null) {
-      stepStatusUpdateSubject.fireInform(NodeStatusUpdateObserver::onNodeStatusUpdate,
+      nodeStatusUpdateSubject.fireInform(NodeStatusUpdateObserver::onNodeStatusUpdate,
           NodeUpdateInfo.builder().nodeExecution(updatedNodeExecution).build());
     }
     return updatedNodeExecution;
   }
 
   @Override
-  public long markLeavesDiscontinuing(String planExecutionId, List<String> leafInstanceIds) {
+  public long markLeavesDiscontinuing(List<String> leafInstanceIds) {
     Update ops = new Update();
     ops.set(NodeExecutionKeys.status, DISCONTINUING);
-    Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
-                      .addCriteria(where(NodeExecutionKeys.uuid).in(leafInstanceIds));
+    // Use Id index
+    Query query = query(where(NodeExecutionKeys.uuid).in(leafInstanceIds));
     UpdateResult updateResult = mongoTemplate.updateMulti(query, ops, NodeExecution.class);
     if (!updateResult.wasAcknowledged()) {
-      log.warn("No NodeExecutions could be marked as DISCONTINUING -  planExecutionId: {}", planExecutionId);
+      log.warn("No NodeExecutions could be marked as DISCONTINUING for given nodeExecutionIds");
       return -1;
     }
     return updateResult.getModifiedCount();
@@ -552,6 +525,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
                                     .and(NodeExecutionKeys.oldRetry)
                                     .is(false);
     Criteria queuedNodeCriteria = where(NodeExecutionKeys.status).in(Status.QUEUED, Status.INPUT_WAITING);
+    // Uses - planExecutionId_status_idx
     Query query = query(
         where(NodeExecutionKeys.planExecutionId).is(planExecutionId).orOperator(leafNodeCriteria, queuedNodeCriteria));
     UpdateResult updateResult = mongoTemplate.updateMulti(query, ops, NodeExecution.class);
@@ -570,6 +544,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   @Override
   public boolean markRetried(String nodeExecutionId) {
     Update ops = new Update().set(NodeExecutionKeys.oldRetry, Boolean.TRUE);
+    // Uses - id index
     Query query = query(where(NodeExecutionKeys.uuid).is(nodeExecutionId));
     NodeExecution nodeExecution = mongoTemplate.findAndModify(query, ops, NodeExecution.class);
     if (nodeExecution == null) {
@@ -584,12 +559,13 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
    * Update Nodes for which the previousId was failed node execution and replace it with the
    * note execution which is being retried
    *
-   * @param nodeExecutionId Old nodeExecutionId
+   * @param nodeExecutionId    Old nodeExecutionId
    * @param newNodeExecutionId Id of new retry node execution
    */
   @Override
   public boolean updateRelationShipsForRetryNode(String nodeExecutionId, String newNodeExecutionId) {
     Update ops = new Update().set(NodeExecutionKeys.previousId, newNodeExecutionId);
+    // Uses - previous_id_idx
     Query query = query(where(NodeExecutionKeys.previousId).is(nodeExecutionId));
     UpdateResult updateResult = mongoTemplate.updateMulti(query, ops, NodeExecution.class);
     if (updateResult.wasAcknowledged()) {
@@ -600,38 +576,11 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   }
 
   @Override
-  public List<NodeExecution> fetchNodeExecutionsByParentIdWithAmbianceAndNode(
-      String nodeExecutionId, boolean oldRetry, boolean includeParent) {
-    Criteria criteria = new Criteria();
-    if (includeParent) {
-      criteria.orOperator(Criteria.where(NodeExecutionKeys.parentId).is(nodeExecutionId),
-          Criteria.where(NodeExecutionKeys.uuid).is(nodeExecutionId));
-    } else {
-      criteria = Criteria.where(NodeExecutionKeys.parentId).is(nodeExecutionId);
-    }
-    Query query = query(criteria).addCriteria(where(NodeExecutionKeys.oldRetry).is(false));
-    query.fields()
-        .include(NodeExecutionKeys.uuid)
-        .include(NodeExecutionKeys.nodeId)
-        .include(NodeExecutionKeys.identifier)
-        .include(NodeExecutionKeys.name)
-        .include(NodeExecutionKeys.status)
-        .include(NodeExecutionKeys.failureInfo)
-        .include(NodeExecutionKeys.parentId)
-        .include(NodeExecutionKeys.ambiance)
-        .include(NodeExecutionKeys.executableResponses)
-        .include(NodeExecutionKeys.planNode)
-        .include(NodeExecutionKeys.adviserResponse)
-        .include(NodeExecutionKeys.createdAt)
-        .include(NodeExecutionKeys.oldRetry);
-    return mongoTemplate.find(query, NodeExecution.class);
-  }
-
-  @Override
   public boolean errorOutActiveNodes(String planExecutionId) {
     Update ops = new Update();
     ops.set(NodeExecutionKeys.status, ERRORED);
     ops.set(NodeExecutionKeys.endTs, System.currentTimeMillis());
+    // Uses - planExecutionId_status_idx
     Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
                       .addCriteria(where(NodeExecutionKeys.status).in(StatusUtils.activeStatuses()));
     UpdateResult updateResult = mongoTemplate.updateMulti(query, ops, NodeExecution.class);
@@ -711,6 +660,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   public boolean removeTimeoutInstances(String nodeExecutionId) {
     Update ops = new Update();
     ops.set(NodeExecutionKeys.timeoutInstanceIds, new ArrayList<>());
+    // Uses - id index
     Query query = query(where(NodeExecutionKeys.uuid).is(nodeExecutionId));
     UpdateResult updateResult = mongoTemplate.updateMulti(query, ops, NodeExecution.class);
 
@@ -732,11 +682,6 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
                       .addCriteria(where(NodeExecutionKeys.stepCategory).in(StepCategory.STAGE, StepCategory.STRATEGY));
     query.with(by(NodeExecutionKeys.createdAt));
     return mongoTemplate.find(query, NodeExecution.class);
-  }
-
-  @Override
-  public NodeExecution update(@NonNull NodeExecution nodeExecution) {
-    return mongoTemplate.save(nodeExecution);
   }
 
   @Override
@@ -782,14 +727,17 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
 
           String nextId = nodeExecution.getNextId();
           String parentId = nodeExecution.getParentId();
-          RetryStageInfo stageDetail = RetryStageInfo.builder()
-                                           .name(nodeExecution.getName())
-                                           .identifier(nodeExecution.getIdentifier())
-                                           .parentId(parentId)
-                                           .createdAt(nodeExecution.getCreatedAt())
-                                           .status(ExecutionStatus.getExecutionStatus(nodeExecution.getStatus()))
-                                           .nextId(nextId != null ? nextId : get(parentId).getNextId())
-                                           .build();
+          RetryStageInfo stageDetail =
+              RetryStageInfo.builder()
+                  .name(nodeExecution.getName())
+                  .identifier(nodeExecution.getIdentifier())
+                  .parentId(parentId)
+                  .createdAt(nodeExecution.getCreatedAt())
+                  .status(ExecutionStatus.getExecutionStatus(nodeExecution.getStatus()))
+                  .nextId(nextId != null
+                          ? nextId
+                          : getWithFieldsIncluded(parentId, Sets.newHashSet(NodeExecutionKeys.nextId)).getNextId())
+                  .build();
           stageDetails.add(stageDetail);
         }
       } else {
@@ -803,14 +751,17 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
       if (strategyNodeExecutionIds.contains(parentId)) {
         continue;
       }
-      RetryStageInfo stageDetail = RetryStageInfo.builder()
-                                       .name(nodeExecution.getName())
-                                       .identifier(nodeExecution.getIdentifier())
-                                       .parentId(parentId)
-                                       .createdAt(nodeExecution.getCreatedAt())
-                                       .status(ExecutionStatus.getExecutionStatus(nodeExecution.getStatus()))
-                                       .nextId(nextId != null ? nextId : get(parentId).getNextId())
-                                       .build();
+      RetryStageInfo stageDetail =
+          RetryStageInfo.builder()
+              .name(nodeExecution.getName())
+              .identifier(nodeExecution.getIdentifier())
+              .parentId(parentId)
+              .createdAt(nodeExecution.getCreatedAt())
+              .status(ExecutionStatus.getExecutionStatus(nodeExecution.getStatus()))
+              .nextId(nextId != null
+                      ? nextId
+                      : getWithFieldsIncluded(parentId, Sets.newHashSet(NodeExecutionKeys.nextId)).getNextId())
+              .build();
       stageDetails.add(stageDetail);
     }
     return stageDetails;
@@ -876,5 +827,11 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
       }
     }
     return nodeExecutionMap;
+  }
+
+  private void validateNodeExecutionProjection(Set<String> fieldsToInclude) {
+    if (EmptyPredicate.isEmpty(fieldsToInclude)) {
+      throw new InvalidRequestException("Projection fields cannot be empty in NodeExecution query.");
+    }
   }
 }

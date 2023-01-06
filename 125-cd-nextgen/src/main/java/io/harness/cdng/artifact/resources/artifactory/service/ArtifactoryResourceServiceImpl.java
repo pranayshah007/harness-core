@@ -88,7 +88,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(HarnessTeam.CDC)
 public class ArtifactoryResourceServiceImpl implements ArtifactoryResourceService {
-  private final ConnectorService connectorService;
+  private static ConnectorService connectorService;
   private final DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   private final SecretManagerClientService secretManagerClientService;
   @Inject ExceptionManager exceptionManager;
@@ -317,7 +317,7 @@ public class ArtifactoryResourceServiceImpl implements ArtifactoryResourceServic
     return ArtifactoryImagePathsDTO.builder().imagePaths(imagePathResponse.getArtifactoryImagePathsFetchDTO()).build();
   }
 
-  private ArtifactoryConnectorDTO getConnector(IdentifierRef artifactoryConnectorRef) {
+  public static ArtifactoryConnectorDTO getConnector(IdentifierRef artifactoryConnectorRef) {
     Optional<ConnectorResponseDTO> connectorDTO =
         connectorService.get(artifactoryConnectorRef.getAccountIdentifier(), artifactoryConnectorRef.getOrgIdentifier(),
             artifactoryConnectorRef.getProjectIdentifier(), artifactoryConnectorRef.getIdentifier());
@@ -330,7 +330,7 @@ public class ArtifactoryResourceServiceImpl implements ArtifactoryResourceServic
     return (ArtifactoryConnectorDTO) connectors.getConnectorConfig();
   }
 
-  private boolean isAArtifactoryConnector(@NotNull ConnectorResponseDTO connectorResponseDTO) {
+  private static boolean isAArtifactoryConnector(@NotNull ConnectorResponseDTO connectorResponseDTO) {
     return ConnectorType.ARTIFACTORY == (connectorResponseDTO.getConnector().getConnectorType());
   }
 

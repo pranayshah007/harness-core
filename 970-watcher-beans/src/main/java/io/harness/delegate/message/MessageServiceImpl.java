@@ -94,9 +94,11 @@ public class MessageServiceImpl implements MessageService {
   public void writeMessageToChannel(
       MessengerType targetType, String targetProcessId, String message, String... params) {
     boolean isOutput = messengerType == targetType && processId.equals(targetProcessId);
-    String output = isOutput ? "Writing message" : "Sending message to " + targetType + " " + targetProcessId;
-    String paramStr = params != null ? join(", ", params) : "";
-    log.info("{}: {}({})", output, message, paramStr);
+    if (log.isDebugEnabled()) {
+      String output = isOutput ? "Writing message" : "Sending message to " + targetType + " " + targetProcessId;
+      String paramStr = params != null ? join(", ", params) : "";
+      log.info("{}: {}({})", output, message, paramStr);
+    }
     try {
       File channel = getMessageChannel(targetType, targetProcessId);
       List<String> messageContent = new ArrayList<>();

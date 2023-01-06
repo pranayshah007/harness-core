@@ -25,6 +25,7 @@ import io.harness.delegate.beans.VersionOverride.VersionOverrideKeys;
 import io.harness.delegate.service.intfc.DelegateRingService;
 import io.harness.ff.FeatureFlagService;
 import io.harness.persistence.HPersistence;
+import io.harness.persistence.PersistentEntity;
 
 import software.wings.app.MainConfiguration;
 import software.wings.service.impl.infra.InfraDownloadService;
@@ -307,27 +308,29 @@ public class DelegateVersionServiceTest {
 
   private void mockVersionOverride(final VersionOverride delegateImageOverride, final VersionOverride upgraderOverride,
       final VersionOverride delegateJarOverride, final VersionOverride watcherOverride) {
-    when(persistence.createQuery(VersionOverride.class)
-             .filter(VersionOverrideKeys.accountId, ACCOUNT_ID)
-             .filter(VersionOverrideKeys.overrideType, DELEGATE_IMAGE_TAG)
-             .get())
-        .thenReturn(delegateImageOverride);
+    PersistentEntity var1 = persistence.createQuery(VersionOverride.class)
+                                .filter(VersionOverrideKeys.accountId, ACCOUNT_ID)
+                                .filter(VersionOverrideKeys.overrideType, DELEGATE_IMAGE_TAG)
+                                .get();
+    when(var1).thenReturn(delegateImageOverride);
 
-    when(persistence.createQuery(VersionOverride.class)
-             .filter(VersionOverrideKeys.accountId, ACCOUNT_ID)
-             .filter(VersionOverrideKeys.overrideType, UPGRADER_IMAGE_TAG)
-             .get())
-        .thenReturn(upgraderOverride);
-    when(persistence.createQuery(VersionOverride.class)
-             .filter(VersionOverrideKeys.accountId, ACCOUNT_ID)
-             .filter(VersionOverrideKeys.overrideType, DELEGATE_JAR)
-             .get())
-        .thenReturn(delegateJarOverride);
-    when(persistence.createQuery(VersionOverride.class)
-             .filter(VersionOverrideKeys.accountId, ACCOUNT_ID)
-             .filter(VersionOverrideKeys.overrideType, WATCHER_JAR)
-             .get())
-        .thenReturn(watcherOverride);
+    PersistentEntity var2 = persistence.createQuery(VersionOverride.class)
+                                .filter(VersionOverrideKeys.accountId, ACCOUNT_ID)
+                                .filter(VersionOverrideKeys.overrideType, UPGRADER_IMAGE_TAG)
+                                .get();
+    when(var2).thenReturn(upgraderOverride);
+
+    PersistentEntity var3 = persistence.createQuery(VersionOverride.class)
+                                .filter(VersionOverrideKeys.accountId, ACCOUNT_ID)
+                                .filter(VersionOverrideKeys.overrideType, DELEGATE_JAR)
+                                .get();
+    when(var3).thenReturn(delegateJarOverride);
+
+    PersistentEntity var4 = persistence.createQuery(VersionOverride.class)
+                                .filter(VersionOverrideKeys.accountId, ACCOUNT_ID)
+                                .filter(VersionOverrideKeys.overrideType, WATCHER_JAR)
+                                .get();
+    when(var4).thenReturn(watcherOverride);
   }
 
   private void assertOverrides(final String expectedDelegateTag, final String expectedUpgraderTag,

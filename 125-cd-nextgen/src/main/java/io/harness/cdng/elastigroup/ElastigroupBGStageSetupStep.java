@@ -217,6 +217,9 @@ public class ElastigroupBGStageSetupStep
           .build();
     }
 
+    elastigroupStepCommonHelper.saveSpotServerInstanceInfosToSweepingOutput(
+        elastigroupSetupResult.getEc2InstanceIdsAdded(), elastigroupSetupResult.getEc2InstanceIdsExisting(), ambiance);
+
     return stepResponseBuilder.status(Status.SUCCEEDED)
         .stepOutcome(StepResponse.StepOutcome.builder()
                          .name(OutcomeExpressionConstants.OUTPUT)

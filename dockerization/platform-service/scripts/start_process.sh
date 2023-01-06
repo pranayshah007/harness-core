@@ -46,6 +46,9 @@ if [[ "${ENABLE_OPENTELEMETRY}" == "true" ]] ; then
 
     if [ -n "$OTEL_EXPORTER_OTLP_ENDPOINT" ]; then
         JAVA_OPTS=$JAVA_OPTS" -Dotel.exporter.otlp.endpoint=$OTEL_EXPORTER_OTLP_ENDPOINT "
+    else
+        echo "OpenTelemetry export is disabled"
+        JAVA_OPTS=$JAVA_OPTS" -Dotel.traces.exporter=none -Dotel.metrics.exporter=none "
     fi
     echo "Using OpenTelemetry Java Agent"
 fi

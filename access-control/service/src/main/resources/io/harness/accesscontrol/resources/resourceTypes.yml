@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: resourceTypeConfiguration
-version: 21
+version: 22
 resourceTypes:
   - identifier: ACCOUNT
     permissionKey: account
@@ -106,6 +106,12 @@ resourceTypes:
     permissionKey: loadBalancer
   - identifier: CCM_CURRENCYPREFERENCE
     permissionKey: currencyPreference
+  - identifier: CCM_CLOUD_ASSET_GOVERNANCE_RULE
+    permissionKey: cloudAssetGovernanceRule
+  - identifier: CCM_CLOUD_ASSET_GOVERNANCE_RULE_SET
+    permissionKey: cloudAssetGovernanceRuleSet
+  - identifier: CCM_CLOUD_ASSET_GOVERNANCE_RULE_ENFORCEMENT
+    permissionKey: cloudAssetGovernanceEnforcement
   - identifier: SMTP
     permissionKey: smtp
   - identifier: SETTING

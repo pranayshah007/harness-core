@@ -17,6 +17,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import io.harness.category.element.UnitTests;
+import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
@@ -27,6 +28,7 @@ import io.harness.pms.pipelinestage.helper.PipelineStageHelper;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
@@ -41,6 +43,7 @@ import io.harness.yaml.core.failurestrategy.NGFailureActionTypeConstants;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Optional;
+import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Rule;
 import org.junit.Test;
@@ -96,10 +99,10 @@ public class PipelineStagePlanCreatorTest {
                                      .project(PROJ)
                                      .inputSetReferences(Collections.singletonList("ref"))
                                      .build();
-    doReturn("inputYaml").when(pipelineStageHelper).getInputSetYaml(yamlField);
+    doReturn("inputYaml").when(pipelineStageHelper).getInputSetYaml(yamlField, PipelineVersion.V0);
 
     PipelineStageStepParameters stepParameters =
-        pipelineStagePlanCreator.getStepParameter(config, yamlField, "planNodeId");
+        pipelineStagePlanCreator.getStepParameter(config, yamlField, "planNodeId", PipelineVersion.V0);
     assertThat(stepParameters.getPipeline()).isEqualTo(PIPELINE);
     assertThat(stepParameters.getOrg()).isEqualTo(ORG);
     assertThat(stepParameters.getProject()).isEqualTo(PROJ);
@@ -148,6 +151,7 @@ public class PipelineStagePlanCreatorTest {
     assertThat(planNode.getGroup()).isEqualTo(StepCategory.STAGE.name());
     assertThat(planNode.getFacilitatorObtainments().get(0).getType().getType())
         .isEqualTo(OrchestrationFacilitatorType.ASYNC);
+    assertThat(planNode.getExpressionMode()).isEqualTo(ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
   }
 
   @Test
@@ -193,5 +197,12 @@ public class PipelineStagePlanCreatorTest {
         + "  org: \"org\"\n"
         + "  project: \"project\"\n";
     return yamlField;
+  }
+
+  @Test
+  @Owner(developers = PRASHANTSHARMA)
+  @Category(UnitTests.class)
+  public void testGetSupportedYamlVersions() {
+    assertThat(pipelineStagePlanCreator.getSupportedYamlVersions()).isEqualTo(Set.of(PipelineVersion.V0));
   }
 }

@@ -32,9 +32,9 @@ import org.springframework.data.annotation.TypeAlias;
 public class EcsRunTaskStepParameters extends EcsRunTaskBaseStepInfo implements EcsSpecParameters {
   @Builder(builderMethodName = "infoBuilder")
   public EcsRunTaskStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-      ParameterField<StoreConfigWrapper> taskDefinition, ParameterField<StoreConfigWrapper> runTaskRequestDefinition,
-      ParameterField<Boolean> skipSteadyStateCheck) {
-    super(delegateSelectors, taskDefinition, runTaskRequestDefinition, skipSteadyStateCheck);
+      ParameterField<StoreConfigWrapper> taskDefinition, ParameterField<String> taskDefinitionArn,
+      ParameterField<StoreConfigWrapper> runTaskRequestDefinition, ParameterField<Boolean> skipSteadyStateCheck) {
+    super(delegateSelectors, taskDefinition, taskDefinitionArn, runTaskRequestDefinition, skipSteadyStateCheck);
   }
 
   public List<String> getCommandUnits() {

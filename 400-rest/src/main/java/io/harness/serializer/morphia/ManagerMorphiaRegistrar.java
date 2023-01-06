@@ -261,6 +261,7 @@ import software.wings.beans.container.HelmChartSpecification;
 import software.wings.beans.container.KubernetesContainerTask;
 import software.wings.beans.container.PcfServiceSpecification;
 import software.wings.beans.container.UserDataSpecification;
+import software.wings.beans.datatretention.LongerDataRetentionState;
 import software.wings.beans.entityinterface.TagAware;
 import software.wings.beans.governance.GovernanceConfig;
 import software.wings.beans.infrastructure.CloudFormationRollbackConfig;
@@ -348,6 +349,7 @@ import software.wings.persistence.AppContainer;
 import software.wings.persistence.BaseFile;
 import software.wings.persistence.artifact.Artifact;
 import software.wings.persistence.artifact.ArtifactFile;
+import software.wings.persistence.mail.EmailData;
 import software.wings.prune.PruneEvent;
 import software.wings.resources.DelegateFileResource.FileIdempotentResult;
 import software.wings.scheduler.events.segment.SegmentGroupEventJobContext;
@@ -700,6 +702,7 @@ public class ManagerMorphiaRegistrar implements MorphiaRegistrar {
     set.add(EcsServiceSpecification.class);
     set.add(ElasticsearchBulkMigrationJob.class);
     set.add(ElkCVConfiguration.class);
+    set.add(EmailData.class);
     set.add(EmailVerificationToken.class);
     set.add(EntityVersion.class);
     set.add(EntityVersionCollection.class);
@@ -869,6 +872,7 @@ public class ManagerMorphiaRegistrar implements MorphiaRegistrar {
     set.add(Artifact.class);
     set.add(BaseFile.class);
     set.add(AppContainer.class);
+    set.add(LongerDataRetentionState.class);
   }
 
   @Override

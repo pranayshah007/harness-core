@@ -23,6 +23,8 @@ import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAware;
 
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
@@ -30,8 +32,6 @@ import lombok.Data;
 import lombok.Setter;
 import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
 
 @OwnedBy(PL)
 @Data

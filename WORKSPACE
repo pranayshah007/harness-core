@@ -389,9 +389,9 @@ grpc_java_repositories()
 
 http_archive(
     name = "com_github_query_builder_generator",
-    sha256 = "7f6a7b4dc2d038e5a3e205aa1ac24e30659c9506c48105040732f3ff189c437f",
-    strip_prefix = "query-builder-generator-0.1.22",
-    urls = ["https://github.com/wings-software/query-builder-generator/archive/refs/tags/v0.1.22.zip"],
+    sha256 = "d72449d0ed7848260c6421be3677633946de46dc69af6588dbb4bc938e9714db",
+    strip_prefix = "query-builder-generator-0.1.23",
+    urls = ["https://github.com/wings-software/query-builder-generator/archive/refs/tags/v0.1.23.zip"],
 )
 
 # Add a go repository
@@ -1322,8 +1322,8 @@ go_repository(
 go_repository(
     name = "com_github_drone_go_scm",
     importpath = "github.com/drone/go-scm",
-    sum = "h1:OYTRTah/I9YdJ2WidqpLu+N9KH8iyum/1yfueOePzIk=",
-    version = "v1.27.1-0.20221110140757-b29a0d2b0f30",
+    sum = "h1:HE9ukdqJZAtwBzA5fc66Fnc8XNOZmfPLxbucmf3/8SQ=",
+    version = "v1.27.1-0.20221116132008-1949a8eb7407",
 )
 
 go_repository(
@@ -4671,7 +4671,7 @@ plain_artifacts = [
     "com.esotericsoftware.yamlbeans:yamlbeans:1.13",
     "com.esotericsoftware:kryo:4.0.2",
     "com.esotericsoftware:minlog:1.3.0",
-    "com.esotericsoftware:reflectasm:1.11.3",
+    "com.esotericsoftware:reflectasm:1.11.6",
     "com.fasterxml.jackson.core:jackson-annotations:2.13.4",
     "com.fasterxml.jackson.core:jackson-core:2.13.4",
     "com.fasterxml.jackson.core:jackson-databind:2.13.4.2",
@@ -4955,7 +4955,7 @@ plain_artifacts = [
     "io.grpc:grpc-stub:1.50.1",
     "io.gsonfire:gson-fire:1.8.3",
     "io.harness.cv:data-collection-dsl:0.42-RELEASE",
-    "io.harness:ff-java-server-sdk:1.0.5.3",
+    "io.harness:ff-java-server-sdk:1.1.9",
     "io.jsonwebtoken:jjwt:0.9.1",
     "io.kubernetes:client-java-api:16.0.0",
     "io.kubernetes:client-java-extended:16.0.0",
@@ -4963,17 +4963,17 @@ plain_artifacts = [
     "io.kubernetes:client-java:16.0.0",
     "io.kubernetes:client-java-api-fluent:16.0.0",
     "io.leangen.graphql:spqr:0.11.2",
-    "io.netty:netty-all:4.1.77.Final",
-    "io.netty:netty-buffer:4.1.77.Final",
-    "io.netty:netty-handler-proxy:4.1.77.Final",
-    "io.netty:netty-common:4.1.77.Final",
-    "io.netty:netty-handler:4.1.77.Final",
-    "io.netty:netty-resolver-dns:4.1.77.Final",
-    "io.netty:netty-resolver:4.1.77.Final",
-    "io.netty:netty-transport-native-epoll:linux-x86_64:4.1.77.Final",
-    "io.netty:netty-transport-native-kqueue:4.1.77.Final",
-    "io.netty:netty-transport-native-unix-common:4.1.77.Final",
-    "io.netty:netty-transport:4.1.77.Final",
+    "io.netty:netty-all:4.1.86.Final",
+    "io.netty:netty-buffer:4.1.86.Final",
+    "io.netty:netty-handler-proxy:4.1.86.Final",
+    "io.netty:netty-common:4.1.86.Final",
+    "io.netty:netty-handler:4.1.86.Final",
+    "io.netty:netty-resolver-dns:4.1.86.Final",
+    "io.netty:netty-resolver:4.1.86.Final",
+    "io.netty:netty-transport-native-epoll:linux-x86_64:4.1.86.Final",
+    "io.netty:netty-transport-native-kqueue:4.1.86.Final",
+    "io.netty:netty-transport-native-unix-common:4.1.86.Final",
+    "io.netty:netty-transport:4.1.86.Final",
     "io.opencensus:opencensus-api:0.24.0",
     "io.opencensus:opencensus-contrib-http-util:0.24.0",
     "io.opencensus:opencensus-exporter-stats-stackdriver:0.28.0",
@@ -5211,10 +5211,10 @@ plain_artifacts = [
     "org.jboss.marshalling:jboss-marshalling-river:2.0.9.Final",
     "org.jboss.marshalling:jboss-marshalling:2.0.9.Final",
     "org.jboss.spec.javax.rmi:jboss-rmi-api_1.0_spec:1.0.6.Final",
-    "org.jetbrains.kotlin:kotlin-stdlib-common:1.4.10",
-    "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.4.10",
-    "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.4.10",
-    "org.jetbrains.kotlin:kotlin-stdlib:1.4.10",
+    "org.jetbrains.kotlin:kotlin-stdlib-common:1.7.20",
+    "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.7.20",
+    "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.7.20",
+    "org.jetbrains.kotlin:kotlin-stdlib:1.7.20",
     "org.jetbrains:annotations:13.0",
     "org.jfree:jfreechart:1.5.0",
     "org.jfrog.artifactory.client:artifactory-java-client-api:2.9.1",
@@ -5237,9 +5237,12 @@ plain_artifacts = [
     "org.lz4:lz4-java:1.6.0",
     "org.mindrot:jbcrypt:0.4",
     "org.modelmapper:modelmapper:0.7.5",
-    "org.mongodb.morphia:morphia-logging-slf4j:1.3.2",
-    "org.mongodb.morphia:morphia:1.3.2",
+    "dev.morphia.morphia:core:1.6.1",
+    "org.mongodb:mongodb-driver-legacy:3.12.2",
+    "org.mongodb:mongodb-driver-sync:3.12.2",
+    "org.mongodb:mongodb-driver-core:3.12.2",
     "org.mongodb:mongo-java-driver:3.12.2",
+    "org.mongodb:bson:3.12.2",
     "org.mortbay.jetty.alpn:alpn-boot:8.1.13.v20181017",
     "org.mozilla:rhino:1.7R4",
     "org.objenesis:objenesis:2.6",
@@ -5407,7 +5410,7 @@ maven_install(
             artifact = "netty-transport-native-kqueue",
             classifier = "osx-x86_64",
             group = "io.netty",
-            version = "4.1.77.Final",
+            version = "4.1.86.Final",
         ),
         maven.artifact(
             artifact = "jjschema",
@@ -5596,15 +5599,15 @@ maven_install(
     ],
 )
 
-# Adding maven rule for upgraded version of debezium (2.0.0.Final) and required version of mongodb java driver for debezium service
+# Adding maven rule for upgraded version of debezium (2.1.1.Final) and required version of mongodb java driver for debezium service
 maven_install(
     name = "maven_debezium",
     artifacts = [
         "org.mongodb:mongodb-driver-core:4.0.4",
         "org.mongodb:mongodb-driver-sync:4.0.4",
-        "io.debezium:debezium-api:2.0.0.Final",
-        "io.debezium:debezium-connector-mongodb:2.0.0.Final",
-        "io.debezium:debezium-core:2.0.0.Final",
+        "io.debezium:debezium-api:2.1.1.Final",
+        "io.debezium:debezium-connector-mongodb:2.1.1.Final",
+        "io.debezium:debezium-core:2.1.1.Final",
         maven.artifact(
             artifact = "debezium-embedded",
             exclusions = [
@@ -5612,7 +5615,7 @@ maven_install(
                 "org.slf4j:slf4j-log4j12",
             ],
             group = "io.debezium",
-            version = "2.0.0.Final",
+            version = "2.1.1.Final",
         ),
     ],
     repositories = [

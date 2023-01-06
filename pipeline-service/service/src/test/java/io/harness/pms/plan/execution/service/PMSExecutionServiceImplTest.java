@@ -35,6 +35,7 @@ import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.ngpipeline.inputset.helpers.ValidateAndMergeHelper;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
+import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
 import io.harness.pms.plan.execution.beans.dto.ExecutionDataResponseDTO;
 import io.harness.repositories.executions.PmsExecutionSummaryRepository;
 import io.harness.rule.Owner;
@@ -143,6 +144,23 @@ public class PMSExecutionServiceImplTest extends PipelineServiceTestBase {
     assertThat(form.getCriteriaObject().get("pipelineDeleted")).isNotEqualTo(true);
     assertThat(form.getCriteriaObject().containsKey("executionTriggerInfo")).isEqualTo(false);
     assertThat(form.getCriteriaObject().get("isLatestExecution")).isNotEqualTo(false);
+  }
+
+  @Test
+  @Owner(developers = PRASHANTSHARMA)
+  @Category(UnitTests.class)
+  public void testFormCriteriaForParentInfoCriteria() {
+    Criteria form = pmsExecutionService.formCriteria(
+        null, null, null, "", null, null, null, null, null, false, !PIPELINE_DELETED, true);
+    Criteria childCriteria = new Criteria();
+    childCriteria.orOperator(Criteria.where(PlanExecutionSummaryKeys.parentStageInfo).exists(false),
+        Criteria.where(PlanExecutionSummaryKeys.isChildPipeline).is(false));
+
+    List<Boolean> inChildList =
+        (List<Boolean>) ((Document) form.getCriteriaObject().get(PlanExecutionSummaryKeys.isChildPipeline)).get("$in");
+    assertThat(inChildList.size()).isEqualTo(2);
+    assertThat(inChildList.get(0)).isNull();
+    assertThat(inChildList.get(1)).isEqualTo(false);
   }
 
   @Test

@@ -125,7 +125,7 @@ public class PipelinesApiUtils {
     pipelineGetResponseBody.setDescription(pipelineEntity.getDescription());
     pipelineGetResponseBody.setTags(ApiUtils.getTags(pipelineEntity.getTags()));
     pipelineGetResponseBody.setGitDetails(getGitDetails(PMSPipelineDtoMapper.getEntityGitDetails(pipelineEntity)));
-    pipelineGetResponseBody.setModules(getModules(pipelineEntity.getFilters().keySet()));
+    pipelineGetResponseBody.setModules(getModules(pipelineEntity));
     pipelineGetResponseBody.setCreated(pipelineEntity.getCreatedAt());
     pipelineGetResponseBody.setUpdated(pipelineEntity.getLastUpdatedAt());
     pipelineGetResponseBody.setValid(true);
@@ -146,7 +146,9 @@ public class PipelinesApiUtils {
     return cacheResponseMetadataDTO;
   }
 
-  public static List<String> getModules(Set<String> modules) {
+  public static List<String> getModules(PipelineEntity pipelineEntity) {
+    Set<String> modules = pipelineEntity.getFilters().keySet();
+
     if (modules == null) {
       return null;
     }

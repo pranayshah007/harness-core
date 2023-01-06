@@ -12,9 +12,11 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
+        "//123-ng-core-user:module",
         "//947-scim-core:module",
         "//960-ng-core-beans/src/main/java/io/harness/ng/core/dto:module",
         "//970-ng-commons:module",
+        "//clients/access-control/admin-client:module",
         "@maven//:com_google_inject_guice",
         "@maven//:io_dropwizard_dropwizard_jersey",
         "@maven//:io_swagger_core_v3_swagger_annotations",

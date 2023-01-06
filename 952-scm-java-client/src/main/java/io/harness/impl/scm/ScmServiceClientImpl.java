@@ -1027,16 +1027,20 @@ public class ScmServiceClientImpl implements ScmServiceClient {
     }
 
     if (isEmpty(commitId)) {
-      GetLatestCommitOnFileResponse getLatestCommitOnFileResponse =
-          getLatestCommitOnFile(scmConnector, scmBlockingStub, branch, gitFileContentRequest.getFilepath());
-      if (isNotEmpty(getLatestCommitOnFileResponse.getError())) {
-        return GitFileResponse.builder()
-            .error(getLatestCommitOnFileResponse.getError())
-            .statusCode(Constants.SCM_BAD_RESPONSE_ERROR_CODE)
-            .branch(branch)
-            .build();
+      if (isNotEmpty(fileContent.getCommitId())) {
+        commitId = fileContent.getCommitId();
+      } else {
+        GetLatestCommitOnFileResponse getLatestCommitOnFileResponse =
+            getLatestCommitOnFile(scmConnector, scmBlockingStub, branch, gitFileContentRequest.getFilepath());
+        if (isNotEmpty(getLatestCommitOnFileResponse.getError())) {
+          return GitFileResponse.builder()
+              .error(getLatestCommitOnFileResponse.getError())
+              .statusCode(Constants.SCM_BAD_RESPONSE_ERROR_CODE)
+              .branch(branch)
+              .build();
+        }
+        commitId = getLatestCommitOnFileResponse.getCommitId();
       }
-      commitId = getLatestCommitOnFileResponse.getCommitId();
     }
 
     return GitFileResponse.builder()

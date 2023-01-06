@@ -19,14 +19,14 @@ import io.harness.cvng.analysis.beans.TimeSeriesAnomaliesDTO;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.ng.DbAliases;
-import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
-import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UuidAware;
 import io.harness.serializer.JsonUtils;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.core.type.TypeReference;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
 import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -40,8 +40,6 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
 
 @Data
 @Builder
@@ -53,10 +51,8 @@ import org.mongodb.morphia.annotations.Id;
 @StoreIn(DbAliases.CVNG)
 @Entity(value = "timeseriesAnomalousPatterns", noClassnameStored = true)
 @HarnessEntity(exportable = false)
-public final class TimeSeriesAnomalousPatterns implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware {
+public final class TimeSeriesAnomalousPatterns extends VerificationTaskBase implements PersistentEntity, UuidAware {
   @Id private String uuid;
-  @FdIndex private long createdAt;
-  @FdIndex private long lastUpdatedAt;
   @FdIndex private String verificationTaskId;
   private List<TimeSeriesAnomalies> anomalies;
   private byte[] compressedAnomalies;

@@ -20,7 +20,7 @@ import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.core.beans.RiskProfile;
 import io.harness.cvng.core.beans.healthsource.QueryDefinition;
-import io.harness.cvng.core.beans.healthsource.QueryParams;
+import io.harness.cvng.core.beans.healthsource.QueryParamsDTO;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.NextGenHealthSourceSpec;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.NextGenMetricCVConfig;
@@ -86,7 +86,7 @@ public class NextGenMetricSourceSpecTransformerTest extends CvNextGenTestBase {
   @Owner(developers = ANSUMAN)
   @Category(UnitTests.class)
   public void testTransformToHealthSourceConfig() {
-    queryDefinitions.get(0).setQueryParams(QueryParams.builder().serviceInstanceField("path").build());
+    queryDefinitions.get(0).setQueryParams(QueryParamsDTO.builder().serviceInstanceField("path").build());
     List<NextGenMetricCVConfig> cvConfigs = new ArrayList<>();
     NextGenMetricCVConfig cvConfig1 =
         (NextGenMetricCVConfig) createCVConfig(connectorIdentifier, DataSourceType.SUMOLOGIC_METRICS);

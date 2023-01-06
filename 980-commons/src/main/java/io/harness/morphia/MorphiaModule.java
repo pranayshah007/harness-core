@@ -29,6 +29,13 @@ import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
+import dev.morphia.Morphia;
+import dev.morphia.ObjectFactory;
+import dev.morphia.annotations.Entity;
+import dev.morphia.converters.TypeConverter;
+import dev.morphia.mapping.MappedClass;
+import dev.morphia.mapping.MappingException;
+import dev.morphia.utils.ReflectionUtils;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
@@ -46,13 +53,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.Morphia;
-import org.mongodb.morphia.ObjectFactory;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.converters.TypeConverter;
-import org.mongodb.morphia.mapping.MappedClass;
-import org.mongodb.morphia.mapping.MappingException;
-import org.mongodb.morphia.utils.ReflectionUtils;
 
 @Slf4j
 public class MorphiaModule extends AbstractModule {
@@ -200,9 +200,9 @@ public class MorphiaModule extends AbstractModule {
               jarPath = jarPath.substring(1);
             }
 
-            classes.addAll(ReflectionUtils.getFromJARFile(loader, jarPath, path, mapSubPackages));
+            classes.addAll(MorphiaUtils.getFromJARFile(loader, jarPath, path, mapSubPackages));
           } else {
-            classes.addAll(ReflectionUtils.getFromDirectory(loader, new File(filePath), packageName, mapSubPackages));
+            classes.addAll(MorphiaUtils.getFromDirectory(loader, new File(filePath), packageName, mapSubPackages));
           }
         }
       }

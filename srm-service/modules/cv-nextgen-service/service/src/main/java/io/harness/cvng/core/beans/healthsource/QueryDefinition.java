@@ -9,7 +9,7 @@ package io.harness.cvng.core.beans.healthsource;
 
 import io.harness.beans.WithIdentifier;
 import io.harness.cvng.core.beans.RiskProfile;
-import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
+import io.harness.cvng.core.beans.monitoredService.MetricThreshold;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,11 +22,11 @@ public class QueryDefinition implements WithIdentifier {
   String identifier;
   String name;
   String groupName;
-  QueryParams queryParams;
+  @Builder.Default QueryParamsDTO queryParams = QueryParamsDTO.builder().build();
   Boolean liveMonitoringEnabled;
   Boolean continuousVerificationEnabled;
   Boolean sliEnabled;
   String query;
-  @Builder.Default List<TimeSeriesMetricPackDTO.MetricThreshold> metricThresholds = new ArrayList<>();
+  @Builder.Default List<MetricThreshold> metricThresholds = new ArrayList<>();
   RiskProfile riskProfile;
 }

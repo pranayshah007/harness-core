@@ -21,6 +21,7 @@ import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.rule.OwnerRule.AADITI;
 import static io.harness.rule.OwnerRule.ANUBHAW;
 import static io.harness.rule.OwnerRule.HINGER;
+import static io.harness.rule.OwnerRule.IVAN;
 import static io.harness.rule.OwnerRule.YOGESH;
 import static io.harness.shell.SshSessionConfig.Builder.aSshSessionConfig;
 
@@ -174,10 +175,9 @@ public class SshPwdAuthExecutorTest extends WingsBaseTest {
    * Should throw exception for invalid credential.
    */
   @Test
-  @Owner(developers = ANUBHAW)
+  @Owner(developers = {ANUBHAW, IVAN})
   @Repeat(times = 3, successes = 1)
   @Category(UnitTests.class)
-  @Ignore(value = "TODO")
   public void shouldThrowExceptionForInvalidCredential() {
     executor = new ScriptSshExecutor(
         logCallback, true, configBuilder.but().withPassword("INVALID_PASSWORD".toCharArray()).build());
@@ -206,10 +206,8 @@ public class SshPwdAuthExecutorTest extends WingsBaseTest {
    * Should return failure for failed command execution.
    */
   @Test
-  @Owner(developers = ANUBHAW)
-  @Repeat(times = 3, successes = 1)
+  @Owner(developers = {ANUBHAW, IVAN})
   @Category(UnitTests.class)
-  @Ignore(value = "TODO")
   public void shouldReturnFailureForFailedCommandExecution() {
     executor = new ScriptSshExecutor(logCallback, true, configBuilder.but().build());
     CommandExecutionStatus execute = executor.executeCommandString(format("rm %s", "FILE_DOES_NOT_EXIST"));

@@ -10,9 +10,9 @@ package io.harness.queue;
 import io.harness.annotations.StoreIn;
 import io.harness.ng.DbAliases;
 
+import dev.morphia.annotations.Entity;
 import lombok.Getter;
 import lombok.Setter;
-import org.mongodb.morphia.annotations.Entity;
 
 @StoreIn(DbAliases.TEST)
 @Entity(value = "!!!testNoTopicQueue", noClassnameStored = true)

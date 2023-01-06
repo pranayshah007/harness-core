@@ -7,6 +7,7 @@
 
 package io.harness.cvng.migration.list;
 
+import io.harness.cvng.analysis.entities.VerificationTaskBase.VerificationTaskBaseKeys;
 import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.migration.CVNGMigration;
@@ -19,13 +20,13 @@ import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @Slf4j
 public class DeleteOldAnalysisOrchestratorMigration implements CVNGMigration {
@@ -38,7 +39,7 @@ public class DeleteOldAnalysisOrchestratorMigration implements CVNGMigration {
         hPersistence.createQuery(AnalysisOrchestrator.class)
             .field(AnalysisOrchestratorKeys.status)
             .in(Arrays.asList(AnalysisStatus.CREATED, AnalysisStatus.RUNNING))
-            .field(AnalysisOrchestratorKeys.createdAt)
+            .field(VerificationTaskBaseKeys.createdAt)
             .lessThan(Instant.now().minus(Duration.ofDays(2)).toEpochMilli());
     try (HIterator<AnalysisOrchestrator> iterator = new HIterator<>(orchestratorQuery.fetch())) {
       while (iterator.hasNext()) {

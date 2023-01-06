@@ -39,8 +39,6 @@ import org.springframework.data.util.CloseableIterator;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public abstract class MarkStatusInterruptHandler implements InterruptHandler {
-  private static int MAX_NODES_BATCH_SIZE = 1000;
-
   @Inject protected NodeExecutionService nodeExecutionService;
   @Inject protected InterruptService interruptService;
   @Inject private OrchestrationEngine orchestrationEngine;
@@ -89,7 +87,8 @@ public abstract class MarkStatusInterruptHandler implements InterruptHandler {
                   .tookEffectAt(System.currentTimeMillis())
                   .interruptId(interrupt.getUuid())
                   .interruptConfig(interrupt.getInterruptConfig())
-                  .build()));
+                  .build()),
+          NodeProjectionUtils.withAmbianceAndStatus);
 
       handlePlanStatus(interrupt.getPlanExecutionId(), nodeExecution.getUuid());
       orchestrationEngine.concludeNodeExecution(

@@ -18,7 +18,7 @@ spec:
           name: Merge PR
           identifier: mergePR
           spec:
-            deleteSourceBranch: false
+            deleteSourceBranch: true
           timeout: 10m
       - step:
           type: GitOpsFetchLinkedApps

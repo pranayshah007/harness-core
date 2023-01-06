@@ -53,7 +53,7 @@ public class IdentifierRefHelper {
    * Project Scope -> Identifer
    * Invalid Scope -> xyz.Identifer
    */
-  private void validateEntityScopes(
+  public void validateEntityScopes(
       String accountId, String orgIdentifier, String projectIdentifier, String entityIdentifierRef, String fieldName) {
     int parentEntityScope;
     int childEntityScope;
@@ -116,6 +116,14 @@ public class IdentifierRefHelper {
     }
   }
 
+  public IdentifierRef getConnectorIdentifierRef(
+      String scopedConnectorIdentifierRef, String accountId, String orgIdentifier, String projectIdentifier) {
+    if (isEmpty(scopedConnectorIdentifierRef)) {
+      throw new InvalidIdentifierRefException("Unable to resolve empty connector identifier reference");
+    }
+    return getIdentifierRef(scopedConnectorIdentifierRef, accountId, orgIdentifier, projectIdentifier);
+  }
+
   public IdentifierRef getIdentifierRef(
       String scopedIdentifierConfig, String accountId, String orgIdentifier, String projectIdentifier) {
     return getIdentifierRef(scopedIdentifierConfig, accountId, orgIdentifier, projectIdentifier, null);
@@ -132,7 +140,11 @@ public class IdentifierRefHelper {
     }
 
     if (isEmpty(scopedIdentifierConfig)) {
-      throw new InvalidIdentifierRefException("Empty identifier ref cannot be given");
+      throw new InvalidIdentifierRefException("Empty identifier values are not supported");
+    }
+    if (scopedIdentifierConfig.contains("<+input>")) {
+      throw new InvalidIdentifierRefException(
+          "Artifactory Connector is required to fetch repositories. You can make this field Runtime input otherwise.");
     }
     String[] identifierConfigStringSplit = scopedIdentifierConfig.split(IDENTIFIER_REF_DELIMITER);
 

@@ -78,12 +78,14 @@ public class ArtifactSourceController {
 
   public static QLArtifactSource populateArtifactSource(ArtifactStream artifactStream) {
     ArtifactStreamType artifactStreamType = ArtifactStreamType.valueOf(artifactStream.getArtifactStreamType());
+    Boolean collectionEnabled = isCollectionEnabled(artifactStream);
     switch (artifactStreamType) {
       case ACR:
         AcrArtifactStream acrArtifactStream = (AcrArtifactStream) artifactStream;
         return QLACRArtifactSource.builder()
             .id(artifactStream.getUuid())
             .name(artifactStream.getName())
+            .collectionEnabled(collectionEnabled)
             .createdAt(artifactStream.getCreatedAt())
             .azureCloudProviderId(acrArtifactStream.getSettingId())
             .registryName(acrArtifactStream.getRegistryName())
@@ -100,6 +102,7 @@ public class ArtifactSourceController {
             .id(artifactStream.getUuid())
             .name(artifactStream.getName())
             .createdAt(artifactStream.getCreatedAt())
+            .collectionEnabled(collectionEnabled)
             .awsCloudProviderId(amiArtifactStream.getSettingId())
             .region(amiArtifactStream.getRegion())
             .amiResourceFilters(
@@ -117,6 +120,7 @@ public class ArtifactSourceController {
             .id(artifactStream.getUuid())
             .name(artifactStream.getName())
             .createdAt(artifactStream.getCreatedAt())
+            .collectionEnabled(collectionEnabled)
             .awsCloudProviderId(ecrArtifactStream.getSettingId())
             .imageName(ecrArtifactStream.getImageName())
             .region(ecrArtifactStream.getRegion())
@@ -128,6 +132,7 @@ public class ArtifactSourceController {
             .id(artifactStream.getUuid())
             .name(artifactStream.getName())
             .createdAt(artifactStream.getCreatedAt())
+            .collectionEnabled(collectionEnabled)
             .gcpCloudProviderId(gcrArtifactStream.getSettingId())
             .dockerImageName(gcrArtifactStream.getDockerImageName())
             .registryHostName(gcrArtifactStream.getRegistryHostName())
@@ -139,6 +144,7 @@ public class ArtifactSourceController {
             .id(artifactStream.getUuid())
             .name(artifactStream.getName())
             .createdAt(artifactStream.getCreatedAt())
+            .collectionEnabled(collectionEnabled)
             .gcpCloudProviderId(gcsArtifactStream.getSettingId())
             .artifactPaths(gcsArtifactStream.getArtifactPaths())
             .bucket(gcsArtifactStream.getJobname())
@@ -151,6 +157,7 @@ public class ArtifactSourceController {
             .id(artifactStream.getUuid())
             .name(artifactStream.getName())
             .createdAt(artifactStream.getCreatedAt())
+            .collectionEnabled(collectionEnabled)
             .artifactPaths(smbArtifactStream.getArtifactPaths())
             .smbConnectorId(smbArtifactStream.getSettingId())
             .build();
@@ -161,6 +168,7 @@ public class ArtifactSourceController {
             .id(artifactStream.getUuid())
             .name(artifactStream.getName())
             .createdAt(artifactStream.getCreatedAt())
+            .collectionEnabled(collectionEnabled)
             .artifactPaths(sftpArtifactStream.getArtifactPaths())
             .sftpConnectorId(sftpArtifactStream.getSettingId())
             .build();
@@ -171,6 +179,7 @@ public class ArtifactSourceController {
             .id(artifactStream.getUuid())
             .name(artifactStream.getName())
             .createdAt(artifactStream.getCreatedAt())
+            .collectionEnabled(collectionEnabled)
             .properties(generateNexusProps(nexusArtifactStream))
             .parameters(Collections.emptyList())
             .build();
@@ -180,6 +189,7 @@ public class ArtifactSourceController {
         return QLBambooArtifactSource.builder()
             .id(artifactStream.getUuid())
             .name(artifactStream.getName())
+            .collectionEnabled(collectionEnabled)
             .bambooConnectorId(bambooArtifactStream.getSettingId())
             .artifactPaths(bambooArtifactStream.getArtifactPaths())
             .planKey(bambooArtifactStream.getJobname())
@@ -191,6 +201,7 @@ public class ArtifactSourceController {
             .id(artifactStream.getUuid())
             .name(artifactStream.getName())
             .createdAt(artifactStream.getCreatedAt())
+            .collectionEnabled(collectionEnabled)
             .build();
 
       case DOCKER:
@@ -199,6 +210,7 @@ public class ArtifactSourceController {
             .id(artifactStream.getUuid())
             .name(artifactStream.getName())
             .createdAt(artifactStream.getCreatedAt())
+            .collectionEnabled(collectionEnabled)
             .imageName(dockerArtifactStream.getImageName())
             .dockerConnectorId(dockerArtifactStream.getSettingId())
             .build();
@@ -209,6 +221,7 @@ public class ArtifactSourceController {
             .id(artifactStream.getUuid())
             .name(artifactStream.getName())
             .createdAt(artifactStream.getCreatedAt())
+            .collectionEnabled(collectionEnabled)
             .artifactPaths(jenkinsArtifactStream.getArtifactPaths())
             .jobName(jenkinsArtifactStream.getJobname())
             .jenkinsConnectorId(jenkinsArtifactStream.getSettingId())
@@ -220,6 +233,7 @@ public class ArtifactSourceController {
             .id(artifactStream.getUuid())
             .name(artifactStream.getName())
             .createdAt(artifactStream.getCreatedAt())
+            .collectionEnabled(collectionEnabled)
             .awsCloudProviderId(amazonS3ArtifactStream.getSettingId())
             .bucket(amazonS3ArtifactStream.getJobname())
             .artifactPaths(amazonS3ArtifactStream.getArtifactPaths())
@@ -231,6 +245,7 @@ public class ArtifactSourceController {
             .id(artifactStream.getUuid())
             .name(artifactStream.getName())
             .createdAt(artifactStream.getCreatedAt())
+            .collectionEnabled(collectionEnabled)
             .properties(generateArtifactoryProps(artifactoryArtifactStream))
             .build();
 
@@ -240,6 +255,7 @@ public class ArtifactSourceController {
             .id(artifactStream.getUuid())
             .name(artifactStream.getName())
             .createdAt(artifactStream.getCreatedAt())
+            .collectionEnabled(collectionEnabled)
             .azureConnectorId(azureArtifactsArtifactStream.getSettingId())
             .packageName(azureArtifactsArtifactStream.getPackageName())
             .packageType(azureArtifactsArtifactStream.getProtocolType())
@@ -255,6 +271,7 @@ public class ArtifactSourceController {
             .id(artifactStream.getUuid())
             .name(artifactStream.getName())
             .createdAt(artifactStream.getCreatedAt())
+            .collectionEnabled(collectionEnabled)
             .azureCloudProviderId(azureMachineImageArtifactStream.getSettingId())
             .imageType(azureMachineImageArtifactStream.getImageType().name())
             .subscriptionId(azureMachineImageArtifactStream.getSubscriptionId())
@@ -342,11 +359,16 @@ public class ArtifactSourceController {
             .id(artifactStream.getUuid())
             .name(artifactStream.getName())
             .createdAt(artifactStream.getCreatedAt())
+            .collectionEnabled(isCollectionEnabled(artifactStream))
             .parameters(parameters)
             .build();
       default:
         throw new InvalidRequestException(
             format("Artifact stream type [%s]does not support parameters: ", artifactStreamType));
     }
+  }
+
+  private static Boolean isCollectionEnabled(final ArtifactStream artifactStream) {
+    return Optional.ofNullable(artifactStream.getCollectionEnabled()).orElse(Boolean.TRUE);
   }
 }

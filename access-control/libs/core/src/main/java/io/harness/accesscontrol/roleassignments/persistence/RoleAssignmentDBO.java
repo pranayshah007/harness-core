@@ -21,6 +21,7 @@ import io.harness.mongo.index.MongoIndex;
 import io.harness.persistence.PersistentEntity;
 
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
@@ -33,7 +34,6 @@ import lombok.ToString;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
@@ -56,7 +56,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document("roleassignments")
 @TypeAlias("roleassignments")
 public class RoleAssignmentDBO implements PersistentEntity, AccessControlEntity {
-  @Setter @Id @org.mongodb.morphia.annotations.Id String id;
+  @Setter @Id @dev.morphia.annotations.Id String id;
   @EntityIdentifier final String identifier;
   @NotEmpty final String scopeIdentifier;
   final String scopeLevel;
@@ -140,6 +140,12 @@ public class RoleAssignmentDBO implements PersistentEntity, AccessControlEntity 
                  .field(RoleAssignmentDBOKeys.principalIdentifier)
                  .field(RoleAssignmentDBOKeys.principalScopeLevel)
                  .field(RoleAssignmentDBOKeys.principalType)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("userGroupPrincipalIndex")
+                 .field(RoleAssignmentDBOKeys.principalIdentifier)
+                 .field(RoleAssignmentDBOKeys.principalType)
+                 .field(RoleAssignmentDBOKeys.scopeIdentifier)
                  .build())
         .build();
   }

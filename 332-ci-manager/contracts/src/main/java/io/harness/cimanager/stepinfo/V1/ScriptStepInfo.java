@@ -64,7 +64,7 @@ public class ScriptStepInfo extends CIAbstractStepInfo implements WithConnectorR
   @VariableExpression(skipVariableExpression = true)
   ParameterField<List<String>> outputs;
   public ParameterField<List<String>> getOutputs() {
-    if (this.outputs.getValue() == null) {
+    if (ParameterField.isNull(this.outputs)) {
       this.outputs.setValue(Collections.emptyList());
     }
     return this.outputs;
@@ -73,7 +73,7 @@ public class ScriptStepInfo extends CIAbstractStepInfo implements WithConnectorR
   @ApiModelProperty(dataType = STRING_MAP_CLASSPATH)
   ParameterField<Map<String, String>> env;
   public ParameterField<Map<String, String>> getEnv() {
-    if (this.env.getValue() == null) {
+    if (ParameterField.isNull(this.env)) {
       this.env.setValue(Collections.emptyMap());
     }
     return this.env;
@@ -82,7 +82,7 @@ public class ScriptStepInfo extends CIAbstractStepInfo implements WithConnectorR
   @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.reports.V1.Report", hidden = true)
   ParameterField<List<Report>> reports;
   public ParameterField<List<Report>> getReports() {
-    if (this.reports.getValue() == null) {
+    if (ParameterField.isNull(this.reports)) {
       this.reports.setValue(Collections.emptyList());
     }
     return this.reports;
@@ -91,20 +91,18 @@ public class ScriptStepInfo extends CIAbstractStepInfo implements WithConnectorR
   @ApiModelProperty(dataType = STRING_CLASSPATH) ParameterField<String> image;
   @YamlSchemaTypes({runtime}) @ApiModelProperty(dataType = BOOLEAN_CLASSPATH) ParameterField<Boolean> privileged;
   @YamlSchemaTypes({string}) @ApiModelProperty(dataType = INTEGER_CLASSPATH) ParameterField<Integer> user;
-  @YamlSchemaTypes({runtime})
-  @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.beans.Shell")
-  ParameterField<Shell> shell;
+  @YamlSchemaTypes({runtime}) @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.beans.Shell") Shell shell;
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.beans.PullPolicy")
-  ParameterField<PullPolicy> pull;
+  PullPolicy pull;
 
   @Builder
   @ConstructorProperties({"uuid", "run", "outputs", "env", "reports", "image", "resources", "privileged", "user",
       "shell", "pull", "volumes"})
   public ScriptStepInfo(String uuid, ParameterField<String> run, ParameterField<List<String>> outputs,
       ParameterField<Map<String, String>> env, ParameterField<List<Report>> reports, ParameterField<String> image,
-      ContainerResource resources, ParameterField<Boolean> privileged, ParameterField<Integer> user,
-      ParameterField<Shell> shell, ParameterField<PullPolicy> pull, ParameterField<List<Volume>> volumes) {
+      ContainerResource resources, ParameterField<Boolean> privileged, ParameterField<Integer> user, Shell shell,
+      PullPolicy pull, ParameterField<List<Volume>> volumes) {
     this.uuid = uuid;
     this.run = run;
     this.env = env;

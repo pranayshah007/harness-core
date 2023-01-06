@@ -7,8 +7,13 @@
 
 package io.harness.freeze.service.impl;
 
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
+
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
+import io.harness.events.FreezeEntityCreateEvent;
+import io.harness.events.FreezeEntityDeleteEvent;
+import io.harness.events.FreezeEntityUpdateEvent;
 import io.harness.exception.DuplicateEntityException;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.ngexception.NGFreezeException;
@@ -20,29 +25,36 @@ import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
 import io.harness.freeze.beans.yaml.FreezeConfig;
 import io.harness.freeze.beans.yaml.FreezeInfoConfig;
 import io.harness.freeze.entity.FreezeConfigEntity;
+import io.harness.freeze.entity.FreezeConfigEntity.FreezeConfigEntityKeys;
 import io.harness.freeze.helpers.FreezeFilterHelper;
 import io.harness.freeze.mappers.NGFreezeDtoMapper;
 import io.harness.freeze.service.FreezeCRUDService;
 import io.harness.freeze.service.FreezeSchemaService;
+import io.harness.outbox.api.OutboxService;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.repositories.FreezeConfigRepository;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
+import net.jodah.failsafe.Failsafe;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @Singleton
 @Slf4j
 public class FreezeCRUDServiceImpl implements FreezeCRUDService {
   private final FreezeConfigRepository freezeConfigRepository;
   private final FreezeSchemaService freezeSchemaService;
+  private final TransactionTemplate transactionTemplate;
+  private final OutboxService outboxService;
 
   static final String FREEZE_CONFIG_DOES_NOT_EXIST_ERROR_TEMPLATE =
       "Freeze Config for freezeIdentifier: %s , ogrIdentifier: %s , projIdentifier: %s doesn't exist";
@@ -53,9 +65,12 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
       "Can't update global freeze with identifier: '%s'. Please use _GLOBAL_ as the id";
 
   @Inject
-  public FreezeCRUDServiceImpl(FreezeConfigRepository freezeConfigRepository, FreezeSchemaService freezeSchemaService) {
+  public FreezeCRUDServiceImpl(FreezeConfigRepository freezeConfigRepository, FreezeSchemaService freezeSchemaService,
+      TransactionTemplate transactionTemplate, OutboxService outboxService) {
     this.freezeConfigRepository = freezeConfigRepository;
     this.freezeSchemaService = freezeSchemaService;
+    this.transactionTemplate = transactionTemplate;
+    this.outboxService = outboxService;
   }
 
   @Override
@@ -92,7 +107,12 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
       throw new DuplicateEntityException(createFreezeConfigAlreadyExistsMessage(freezeConfigEntity.getOrgIdentifier(),
           freezeConfigEntity.getProjectIdentifier(), freezeConfigEntity.getIdentifier()));
     } else {
-      freezeConfigRepository.save(freezeConfigEntity);
+      updateNextIterations(freezeConfigEntity);
+      Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
+        FreezeConfigEntity freezeConfig = freezeConfigRepository.save(freezeConfigEntity);
+        outboxService.save(new FreezeEntityCreateEvent(freezeConfig.getAccountId(), freezeConfig));
+        return freezeConfig;
+      }));
     }
     return NGFreezeDtoMapper.prepareFreezeResponseDto(freezeConfigEntity);
   }
@@ -111,11 +131,43 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
       throw new NGFreezeException(
           String.format(GLOBAL_FREEZE_CONFIG_WITH_WRONG_IDENTIFIER, freezeConfigEntity.getIdentifier()));
     }
-    FreezeConfigEntity updatedFreezeConfigEntity =
-        updateFreezeConfig(freezeConfigEntity, accountId, orgId, projectId, freezeConfigEntity.getIdentifier());
+    FreezeConfigEntity oldFreezeConfigEntity = null;
+    Optional<FreezeConfigEntity> oldFreezeConfigEntityOptional =
+        getOldFreezeConfig(accountId, orgId, projectId, freezeConfigEntity.getIdentifier());
+    if (oldFreezeConfigEntityOptional.isPresent()) {
+      oldFreezeConfigEntity = oldFreezeConfigEntityOptional.get();
+    }
+    FreezeConfigEntity finalOldFreezeConfigEntity = FreezeConfigEntity.builder()
+                                                        .accountId(oldFreezeConfigEntity.getAccountId())
+                                                        .freezeScope(oldFreezeConfigEntity.getFreezeScope())
+                                                        .orgIdentifier(oldFreezeConfigEntity.getOrgIdentifier())
+                                                        .projectIdentifier(oldFreezeConfigEntity.getProjectIdentifier())
+                                                        .identifier(oldFreezeConfigEntity.getIdentifier())
+                                                        .uuid(oldFreezeConfigEntity.getUuid())
+                                                        .yaml(oldFreezeConfigEntity.getYaml())
+                                                        .type(oldFreezeConfigEntity.getType())
+                                                        .name(oldFreezeConfigEntity.getName())
+                                                        .status(oldFreezeConfigEntity.getStatus())
+                                                        .build();
+    FreezeConfigEntity updatedFreezeConfigEntity = updateFreezeConfig(
+        freezeConfigEntity, orgId, projectId, freezeConfigEntity.getIdentifier(), oldFreezeConfigEntityOptional);
     deleteFreezeWindowsIfDisabled(updatedFreezeConfigEntity);
-    updatedFreezeConfigEntity = freezeConfigRepository.save(updatedFreezeConfigEntity);
+    updateNextIterations(updatedFreezeConfigEntity);
+    FreezeConfigEntity finalUpdatedFreezeConfigEntity = updatedFreezeConfigEntity;
+    updatedFreezeConfigEntity = Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
+      FreezeConfigEntity newFreezeConfigEntity = freezeConfigRepository.save(finalUpdatedFreezeConfigEntity);
+      outboxService.save(new FreezeEntityUpdateEvent(accountId, newFreezeConfigEntity, finalOldFreezeConfigEntity));
+      return newFreezeConfigEntity;
+    }));
     return NGFreezeDtoMapper.prepareFreezeResponseDto(updatedFreezeConfigEntity);
+  }
+
+  private void updateNextIterations(FreezeConfigEntity freezeConfigEntity) {
+    freezeConfigEntity.setNextIterations(new ArrayList<>());
+    if (freezeConfigEntity.getStatus().equals(FreezeStatus.ENABLED)) {
+      freezeConfigEntity.setNextIterations(
+          freezeConfigEntity.recalculateNextIterations(FreezeConfigEntityKeys.nextIterations, true, 0));
+    }
   }
 
   @Override
@@ -128,9 +180,34 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
     }
     FreezeConfigEntity updatedFreezeConfigEntity =
         NGFreezeDtoMapper.toFreezeConfigEntityManual(accountId, orgId, projectId, deploymentFreezeYaml);
-    updatedFreezeConfigEntity = updateFreezeConfig(
-        updatedFreezeConfigEntity, accountId, orgId, projectId, updatedFreezeConfigEntity.getIdentifier());
-    updatedFreezeConfigEntity = freezeConfigRepository.save(updatedFreezeConfigEntity);
+    FreezeConfigEntity oldFreezeConfigEntity = null;
+    Optional<FreezeConfigEntity> oldFreezeConfigEntityOptional =
+        getOldFreezeConfig(accountId, orgId, projectId, updatedFreezeConfigEntity.getIdentifier());
+    if (oldFreezeConfigEntityOptional.isPresent()) {
+      oldFreezeConfigEntity = oldFreezeConfigEntityOptional.get();
+    }
+    FreezeConfigEntity finalOldFreezeConfigEntity = FreezeConfigEntity.builder()
+                                                        .accountId(oldFreezeConfigEntity.getAccountId())
+                                                        .freezeScope(oldFreezeConfigEntity.getFreezeScope())
+                                                        .orgIdentifier(oldFreezeConfigEntity.getOrgIdentifier())
+                                                        .projectIdentifier(oldFreezeConfigEntity.getProjectIdentifier())
+                                                        .identifier(oldFreezeConfigEntity.getIdentifier())
+                                                        .uuid(oldFreezeConfigEntity.getUuid())
+                                                        .yaml(oldFreezeConfigEntity.getYaml())
+                                                        .type(oldFreezeConfigEntity.getType())
+                                                        .name(oldFreezeConfigEntity.getName())
+                                                        .status(oldFreezeConfigEntity.getStatus())
+                                                        .build();
+    updatedFreezeConfigEntity = updateFreezeConfig(updatedFreezeConfigEntity, orgId, projectId,
+        updatedFreezeConfigEntity.getIdentifier(), oldFreezeConfigEntityOptional);
+    updateNextIterations(updatedFreezeConfigEntity);
+    FreezeConfigEntity finalUpdatedFreezeConfigEntity = updatedFreezeConfigEntity;
+    updatedFreezeConfigEntity = Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
+      FreezeConfigEntity newFreezeConfigEntity = freezeConfigRepository.save(finalUpdatedFreezeConfigEntity);
+      outboxService.save(new FreezeEntityUpdateEvent(accountId, newFreezeConfigEntity, finalOldFreezeConfigEntity));
+      return newFreezeConfigEntity;
+    }));
+
     return NGFreezeDtoMapper.prepareFreezeResponseDto(updatedFreezeConfigEntity);
   }
 
@@ -141,7 +218,17 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
             accountId, orgId, projectId, freezeIdentifier);
     if (freezeConfigEntityOptional.isPresent()) {
       FreezeConfigEntity freezeConfigEntityToDelete = freezeConfigEntityOptional.get();
-      freezeConfigRepository.delete(FreezeFilterHelper.getFreezeEqualityCriteria(freezeConfigEntityToDelete));
+      boolean success = Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
+        boolean deleted =
+            freezeConfigRepository.delete(FreezeFilterHelper.getFreezeEqualityCriteria(freezeConfigEntityToDelete));
+        outboxService.save(new FreezeEntityDeleteEvent(accountId, freezeConfigEntityToDelete));
+        return deleted;
+      }));
+      if (success) {
+        log.info("Freeze window successfully deleted");
+      } else {
+        log.info("Freeze window deletion was not successful");
+      }
       return;
     } else {
       throw new EntityNotFoundException(createFreezeConfigDoesntExistMessage(orgId, projectId, freezeIdentifier));
@@ -189,6 +276,21 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
         .noOfFailed(failed)
         .freezeErrorResponseDTOList(freezeErrorResponseDTOList)
         .build();
+  }
+
+  @Override
+  public void deleteByScope(io.harness.beans.Scope scope) {
+    Criteria criteria =
+        createScopeCriteria(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier());
+    freezeConfigRepository.delete(criteria);
+  }
+
+  private Criteria createScopeCriteria(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    Criteria criteria = new Criteria();
+    criteria.and(FreezeConfigEntityKeys.accountId).is(accountIdentifier);
+    criteria.and(FreezeConfigEntityKeys.orgIdentifier).is(orgIdentifier);
+    criteria.and(FreezeConfigEntityKeys.projectIdentifier).is(projectIdentifier);
+    return criteria;
   }
 
   @Override
@@ -284,12 +386,30 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
             accountId, orgId, projectId, freezeIdentifier);
     if (freezeConfigEntityOptional.isPresent()) {
       FreezeConfigEntity freezeConfigEntity = freezeConfigEntityOptional.get();
+      FreezeConfigEntity finalOldFreezeConfigEntity = FreezeConfigEntity.builder()
+                                                          .accountId(freezeConfigEntity.getAccountId())
+                                                          .freezeScope(freezeConfigEntity.getFreezeScope())
+                                                          .orgIdentifier(freezeConfigEntity.getOrgIdentifier())
+                                                          .projectIdentifier(freezeConfigEntity.getProjectIdentifier())
+                                                          .identifier(freezeConfigEntity.getIdentifier())
+                                                          .uuid(freezeConfigEntity.getUuid())
+                                                          .yaml(freezeConfigEntity.getYaml())
+                                                          .type(freezeConfigEntity.getType())
+                                                          .name(freezeConfigEntity.getName())
+                                                          .status(freezeConfigEntity.getStatus())
+                                                          .build();
       String deploymentFreezeYaml = freezeConfigEntity.getYaml();
       FreezeConfig freezeConfig = NGFreezeDtoMapper.toFreezeConfig(deploymentFreezeYaml);
       freezeConfig.getFreezeInfoConfig().setStatus(freezeStatus);
       freezeConfigEntity.setYaml(NGFreezeDtoMapper.toYaml(freezeConfig));
       freezeConfigEntity.setStatus(freezeStatus);
-      freezeConfigEntity = freezeConfigRepository.save(freezeConfigEntity);
+      updateNextIterations(freezeConfigEntity);
+      FreezeConfigEntity finalFreezeConfigEntity = freezeConfigEntity;
+      freezeConfigEntity = Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
+        FreezeConfigEntity newFreezeConfigEntity = freezeConfigRepository.save(finalFreezeConfigEntity);
+        outboxService.save(new FreezeEntityUpdateEvent(accountId, newFreezeConfigEntity, finalOldFreezeConfigEntity));
+        return newFreezeConfigEntity;
+      }));
       return NGFreezeDtoMapper.prepareFreezeResponseDto(freezeConfigEntity);
     } else {
       throw new EntityNotFoundException(createFreezeConfigDoesntExistMessage(orgId, projectId, freezeIdentifier));
@@ -309,11 +429,8 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
     return NGFreezeDtoMapper.toYaml(freezeConfig);
   }
 
-  private FreezeConfigEntity updateFreezeConfig(FreezeConfigEntity updatedFreezeConfigEntity, String accountId,
-      String orgId, String projectId, String freezeIdentifier) {
-    Optional<FreezeConfigEntity> oldFreezeConfigEntityOptional =
-        freezeConfigRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifier(
-            accountId, orgId, projectId, freezeIdentifier);
+  private FreezeConfigEntity updateFreezeConfig(FreezeConfigEntity updatedFreezeConfigEntity, String orgId,
+      String projectId, String freezeIdentifier, Optional<FreezeConfigEntity> oldFreezeConfigEntityOptional) {
     if (oldFreezeConfigEntityOptional.isPresent()) {
       updatedFreezeConfigEntity =
           NGFreezeDtoMapper.updateOldFreezeConfig(updatedFreezeConfigEntity, oldFreezeConfigEntityOptional.get());
@@ -321,6 +438,12 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
     } else {
       throw new EntityNotFoundException(createFreezeConfigDoesntExistMessage(orgId, projectId, freezeIdentifier));
     }
+  }
+
+  private Optional<FreezeConfigEntity> getOldFreezeConfig(
+      String accountId, String orgId, String projectId, String freezeIdentifier) {
+    return freezeConfigRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+        accountId, orgId, projectId, freezeIdentifier);
   }
 
   private void deleteFreezeWindowsIfDisabled(FreezeConfigEntity freezeConfigEntity) {

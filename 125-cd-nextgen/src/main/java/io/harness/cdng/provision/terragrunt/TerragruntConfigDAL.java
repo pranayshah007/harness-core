@@ -15,6 +15,7 @@ import io.harness.cdng.expressions.CDExpressionResolveFunctor;
 import io.harness.cdng.provision.terragrunt.TerragruntConfig.TerragruntConfigKeys;
 import io.harness.expression.EngineExpressionSecretUtils;
 import io.harness.expression.ExpressionEvaluatorUtils;
+import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -22,9 +23,10 @@ import io.harness.pms.expression.EngineExpressionService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
 import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
 
 @Slf4j
 @Singleton
@@ -58,5 +60,15 @@ public class TerragruntConfigDAL {
                            .filter(TerragruntConfigKeys.orgId, AmbianceUtils.getOrgIdentifier(ambiance))
                            .filter(TerragruntConfigKeys.projectId, AmbianceUtils.getProjectIdentifier(ambiance))
                            .filter(TerragruntConfigKeys.entityId, entityId));
+  }
+
+  public HIterator<TerragruntConfig> getIterator(Ambiance ambiance, String entityId) {
+    return new HIterator(persistence.createQuery(TerragruntConfig.class)
+                             .filter(TerragruntConfigKeys.accountId, AmbianceUtils.getAccountId(ambiance))
+                             .filter(TerragruntConfigKeys.orgId, AmbianceUtils.getOrgIdentifier(ambiance))
+                             .filter(TerragruntConfigKeys.projectId, AmbianceUtils.getProjectIdentifier(ambiance))
+                             .filter(TerragruntConfigKeys.entityId, entityId)
+                             .order(Sort.descending(TerragruntConfigKeys.createdAt))
+                             .fetch());
   }
 }

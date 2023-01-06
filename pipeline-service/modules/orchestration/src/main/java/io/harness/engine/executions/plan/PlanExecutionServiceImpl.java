@@ -94,6 +94,12 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
   public PlanExecution updateStatusForceful(
       @NonNull String planExecutionId, @NonNull Status status, Consumer<Update> ops, boolean forced) {
     EnumSet<Status> allowedStartStatuses = StatusUtils.planAllowedStartSet(status);
+    return updateStatusForceful(planExecutionId, status, ops, forced, allowedStartStatuses);
+  }
+
+  @Override
+  public PlanExecution updateStatusForceful(@NonNull String planExecutionId, @NonNull Status status,
+      Consumer<Update> ops, boolean forced, EnumSet<Status> allowedStartStatuses) {
     Query query = query(where(PlanExecutionKeys.uuid).is(planExecutionId));
     if (!forced) {
       query.addCriteria(where(PlanExecutionKeys.status).in(allowedStartStatuses));

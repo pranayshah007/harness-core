@@ -33,6 +33,7 @@ import io.harness.ccm.commons.constants.CloudProvider;
 import io.harness.ccm.commons.dao.recommendation.K8sRecommendationDAO;
 import io.harness.ccm.commons.dao.recommendation.RecommendationCrudService;
 import io.harness.ccm.currency.Currency;
+import io.harness.ccm.graphql.core.recommendation.RecommendationsIgnoreListService;
 import io.harness.ccm.graphql.dto.common.CloudServiceProvider;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pricing.dto.cloudinfo.ProductDetails;
@@ -63,6 +64,7 @@ public class K8sNodeRecommendationTasklet implements Tasklet {
   @Autowired private VMPricingService vmPricingService;
   @Autowired private ClusterHelper clusterHelper;
   @Autowired private CurrencyPreferenceHelper currencyPreferenceHelper;
+  @Autowired private RecommendationsIgnoreListService ignoreListService;
 
   @Override
   public RepeatStatus execute(StepContribution stepContribution, ChunkContext chunkContext) throws Exception {
@@ -144,6 +146,8 @@ public class K8sNodeRecommendationTasklet implements Tasklet {
 
     final String clusterName = clusterHelper.fetchClusterName(nodePoolId.getClusterid());
     recommendationCrudService.upsertNodeRecommendation(mongoEntityId, jobConstants, nodePoolId, clusterName, stats);
+    ignoreListService.updateNodeRecommendationState(
+        mongoEntityId, jobConstants.getAccountId(), clusterName, nodePoolId.getNodepoolname());
   }
 
   private void updateK8sServiceProvider(@NonNull K8sServiceProvider serviceProvider, @NonNull Double conversionFactor) {

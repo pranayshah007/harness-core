@@ -23,10 +23,10 @@ import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UuidAware;
 
+import dev.morphia.annotations.Entity;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -41,7 +41,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @OwnedBy(DX)
 public class GitFileActivity implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware, AccountAccess,
                                         OrganizationAccess, ProjectAccess {
-  @org.springframework.data.annotation.Id @org.mongodb.morphia.annotations.Id private String uuid;
+  @org.springframework.data.annotation.Id @dev.morphia.annotations.Id private String uuid;
   private String accountId;
   private String organizationId;
   private String projectId;

@@ -10,7 +10,7 @@ package io.harness.cdng.tas;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.pipeline.CDStepInfo;
+import io.harness.cdng.pipeline.CDAbstractStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.TasBasicAppSetupStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -43,7 +43,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName(StepSpecTypeConstants.TAS_BASIC_APP_SETUP)
 @TypeAlias("TasBasicAppSetupStepInfo")
 @RecasterAlias("io.harness.cdng.tas.TasBasicAppSetupStepInfo")
-public class TasBasicAppSetupStepInfo extends TasAppSetupBaseStepInfo implements CDStepInfo, Visitable {
+public class TasBasicAppSetupStepInfo extends TasAppSetupBaseStepInfo implements CDAbstractStepInfo, Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)

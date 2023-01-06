@@ -53,4 +53,10 @@ public class SettingRepositoryCustomImpl implements SettingRepositoryCustom {
     Query query = new Query(criteria);
     return mongoTemplate.remove(query, Setting.class);
   }
+
+  @Override
+  public List<Setting> deleteAll(Criteria criteria) {
+    Query query = new Query(criteria);
+    return mongoTemplate.findAllAndRemove(query, Setting.class);
+  }
 }

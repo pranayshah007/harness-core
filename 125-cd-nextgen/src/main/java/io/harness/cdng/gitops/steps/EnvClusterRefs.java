@@ -21,6 +21,7 @@ import org.springframework.data.annotation.TypeAlias;
 public class EnvClusterRefs {
   private String envRef;
   private String envName;
+  private String envType;
   private Set<String> clusterRefs;
   boolean deployToAll;
 }

@@ -20,10 +20,12 @@ import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 
 import com.azure.core.http.HttpClient;
+import com.azure.core.http.HttpPipeline;
 import com.azure.core.http.policy.HttpLogDetailLevel;
 import com.azure.core.http.rest.PagedIterable;
 import com.azure.core.http.rest.Response;
 import com.azure.core.http.rest.SimpleResponse;
+import com.azure.core.management.profile.AzureProfile;
 import com.azure.resourcemanager.AzureResourceManager;
 import com.azure.resourcemanager.monitor.fluent.AutoscaleSettingsClient;
 import com.azure.resourcemanager.monitor.fluent.MonitorClient;
@@ -69,6 +71,8 @@ public class AzureAutoScaleSettingsClientImplTest extends CategoryTest {
 
     MockedStatic<AzureResourceManager> azureMockStatic = mockStatic(AzureResourceManager.class);
     azureMockStatic.when(AzureResourceManager::configure).thenReturn(configurable);
+    azureMockStatic.when(() -> AzureResourceManager.authenticate(any(HttpPipeline.class), any(AzureProfile.class)))
+        .thenReturn(authenticated);
     when(configurable.withLogLevel(any(HttpLogDetailLevel.class))).thenReturn(configurable);
     when(configurable.withHttpClient(any(HttpClient.class))).thenReturn(configurable);
     when(configurable.withRetryPolicy(any())).thenReturn(configurable);

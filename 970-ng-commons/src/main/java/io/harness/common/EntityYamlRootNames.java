@@ -190,6 +190,8 @@ public class EntityYamlRootNames {
   public static final String TERRAGRUNT_DESTROY = "TerragruntDestroy";
   public static final String TERRAGRUNT_ROLLBACK = "TerragruntRollback";
   public static final String IACM_TERRAFORM_PLAN = "IACMTerraformPlan";
+  public static final String IACM_TEMPLATE = "IACMTemplate";
+
   public static final String ELASTIGROUP_BG_STAGE_SETUP = "ElastigroupBGStageSetup";
   public static final String ELASTIGROUP_SWAP_ROUTE = "ElastigroupSwapRoute";
   public static final String ASG_CANARY_DEPLOY = "AsgCanaryDeploy";
@@ -202,6 +204,8 @@ public class EntityYamlRootNames {
   public static final String TAS_BG_APP_SETUP_STEP = "BGAppSetup";
   public static final String TAS_BASIC_APP_SETUP_STEP = "BasicAppSetup";
   public static final String TANZU_COMMAND_STEP = "TanzuCommand";
+  public static final String ASG_ROLLING_DEPLOY = "AsgRollingDeploy";
+  public static final String ASG_ROLLING_ROLLBACK = "AsgRollingRollback";
   public static final String TAS_ROLLING_DEPLOY = "TasRollingDeploy";
   public static final String TAS_ROLLING_ROLLBACK = "TasRollingRollback";
   public static final String ROUTE_MAPPING = "RouteMapping";

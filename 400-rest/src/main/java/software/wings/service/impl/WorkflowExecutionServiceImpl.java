@@ -37,6 +37,7 @@ import static io.harness.beans.FeatureName.INFRA_MAPPING_BASED_ROLLBACK_ARTIFACT
 import static io.harness.beans.FeatureName.NEW_DEPLOYMENT_FREEZE;
 import static io.harness.beans.FeatureName.PIPELINE_PER_ENV_DEPLOYMENT_PERMISSION;
 import static io.harness.beans.FeatureName.RESOLVE_DEPLOYMENT_TAGS_BEFORE_EXECUTION;
+import static io.harness.beans.FeatureName.SPG_ALLOW_REFRESH_PIPELINE_EXECUTION_BEFORE_CONTINUE_PIPELINE;
 import static io.harness.beans.FeatureName.SPG_REDUCE_KEYWORDS_PERSISTENCE_ON_EXECUTIONS;
 import static io.harness.beans.FeatureName.SPG_SAVE_REJECTED_BY_FREEZE_WINDOWS;
 import static io.harness.beans.FeatureName.SPG_WFE_OPTIMIZE_UPDATE_PIPELINE_ESTIMATES;
@@ -96,6 +97,7 @@ import static software.wings.sm.StateType.PHASE;
 import static software.wings.sm.StateType.PHASE_STEP;
 import static software.wings.sm.states.ArtifactCollectLoopState.ArtifactCollectLoopStateKeys;
 
+import static dev.morphia.mapping.Mapper.ID_KEY;
 import static io.fabric8.utils.Lists.isNullOrEmpty;
 import static java.lang.String.format;
 import static java.lang.System.currentTimeMillis;
@@ -111,7 +113,6 @@ import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.collections4.ListUtils.emptyIfNull;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
-import static org.mongodb.morphia.mapping.Mapper.ID_KEY;
 
 import io.harness.alert.AlertData;
 import io.harness.annotations.dev.HarnessModule;
@@ -374,8 +375,15 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
 import com.mongodb.ReadPreference;
+import dev.morphia.query.CriteriaContainer;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
+import dev.morphia.query.UpdateOperations;
+import dev.morphia.query.UpdateResults;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.ConcurrentModificationException;
@@ -407,12 +415,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.mongodb.morphia.query.CriteriaContainerImpl;
-import org.mongodb.morphia.query.FindOptions;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
-import org.mongodb.morphia.query.UpdateOperations;
-import org.mongodb.morphia.query.UpdateResults;
 
 /**
  * The Class WorkflowExecutionServiceImpl.
@@ -1746,7 +1748,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     query.field(WorkflowExecutionKeys.startTs).greaterThanOrEq(sixtyDays);
     query.project("serviceIds", true);
     FindOptions findOptions = new FindOptions();
-    findOptions.modifier("$hint", "accountId_startTs_serviceIds");
+    findOptions.hint(WorkflowExecution.getHint("accountId_startTs_serviceIds"));
     findOptions.readPreference(ReadPreference.secondaryPreferred());
     List<WorkflowExecution> workflowExecutions = query.asList(findOptions);
     Set<String> flattenedSvcSet = new HashSet<>();
@@ -3274,7 +3276,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
   }
 
   private List<Artifact> validateAndGetPreviousArtifacts(WorkflowExecution workflowExecution, boolean fromPipe) {
-    final Query<WorkflowExecution> query =
+    Query<WorkflowExecution> query =
         wingsPersistence.createQuery(WorkflowExecution.class)
             .filter(WorkflowExecutionKeys.appId, workflowExecution.getAppId())
             .filter(WorkflowExecutionKeys.workflowType, ORCHESTRATION)
@@ -3289,10 +3291,22 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     List<WorkflowExecution> workflowExecutionList = new ArrayList<>();
     if (featureFlagService.isEnabled(
             FeatureName.ON_DEMAND_ROLLBACK_WITH_DIFFERENT_ARTIFACT, workflowExecution.getAccountId())) {
-      query.field(WorkflowExecutionKeys.serviceExecutionSummaries_instanceStatusSummaries_instanceElement_uuid)
-          .exists();
+      FindOptions findOptions = new FindOptions();
+      findOptions.hint(WorkflowExecution.getHint("lastInfraMappingSearch"));
+      Query<WorkflowExecution> deploymentQuery = query.cloneQuery();
+      deploymentQuery.filter(WorkflowExecutionKeys.deployment, true);
+      WorkflowExecution existingWorkflow = deploymentQuery.get(findOptions);
+      // this logic is used because deployment field is not populated on all executions
+      // maybe in the future we should remove this and use only deployment query
+      if (existingWorkflow != null) {
+        query = deploymentQuery;
+      } else {
+        query.field(WorkflowExecutionKeys.serviceExecutionSummaries_instanceStatusSummaries_instanceElement_uuid)
+            .exists();
+      }
+
       boolean firstEntry = true;
-      try (HIterator<WorkflowExecution> iterator = new HIterator<>(query.fetch())) {
+      try (HIterator<WorkflowExecution> iterator = new HIterator<>(query.fetch(findOptions))) {
         for (WorkflowExecution wfExecution : iterator) {
           if (firstEntry) {
             firstEntry = false;
@@ -4136,6 +4150,11 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
       String appId, WorkflowExecution pipelineExecution, String pipelineStageElementId, ExecutionArgs executionArgs) {
     validatePipelineExecution(pipelineExecution.getUuid(), pipelineExecution);
 
+    if (featureFlagService.isEnabled(
+            SPG_ALLOW_REFRESH_PIPELINE_EXECUTION_BEFORE_CONTINUE_PIPELINE, pipelineExecution.getAccountId())) {
+      refreshPipelineExecution(pipelineExecution);
+    }
+
     PipelineStageExecution pipelineStageExecution =
         pipelineExecution.getPipelineExecution()
             .getPipelineStageExecutions()
@@ -4653,8 +4672,8 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
 
     // SubGraphFilterId is the instance (host element) Id.
     // For older execution this will be null.
-    CriteriaContainerImpl nullCriteria = query.criteria(StateExecutionInstanceKeys.subGraphFilterId).doesNotExist();
-    CriteriaContainerImpl existsCriteria =
+    CriteriaContainer nullCriteria = query.criteria(StateExecutionInstanceKeys.subGraphFilterId).doesNotExist();
+    CriteriaContainer existsCriteria =
         query.criteria(StateExecutionInstanceKeys.subGraphFilterId).in(selectedInstances);
     query.or(nullCriteria, existsCriteria);
     return query;
@@ -4764,8 +4783,22 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
       Collections.sort(serviceExecutionSummaries, ElementExecutionSummary.startTsComparator);
       workflowExecution.setServiceExecutionSummaries(serviceExecutionSummaries);
       if (ExecutionStatus.isFinalStatus(workflowExecution.getStatus())) {
-        wingsPersistence.updateField(WorkflowExecution.class, workflowExecution.getUuid(), "serviceExecutionSummaries",
-            workflowExecution.getServiceExecutionSummaries());
+        Map<String, Object> fieldsToUpdate = new HashMap<>();
+        Optional<InstanceElement> optionalInstanceElement =
+            serviceExecutionSummaries.stream()
+                .map(ElementExecutionSummary::getInstanceStatusSummaries)
+                .filter(Objects::nonNull)
+                .flatMap(Collection::stream)
+                .map(InstanceStatusSummary::getInstanceElement)
+                .filter(Objects::nonNull)
+                .findAny();
+        fieldsToUpdate.put(
+            WorkflowExecutionKeys.serviceExecutionSummaries, workflowExecution.getServiceExecutionSummaries());
+        if (optionalInstanceElement.isPresent() && optionalInstanceElement.get().getUuid() != null) {
+          workflowExecution.setDeployment(true);
+          fieldsToUpdate.put(WorkflowExecutionKeys.deployment, workflowExecution.getDeployment());
+        }
+        wingsPersistence.updateFields(WorkflowExecution.class, workflowExecution.getUuid(), fieldsToUpdate);
       }
     }
   }
@@ -5711,9 +5744,9 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     addressInefficientQueries(workflowExecutionQuery);
 
     if (isNotEmpty(workflowExecution.getInfraMappingIds())) {
-      findOptions.modifier("$hint", "appid_status_workflowid_infraMappingIds_createdat");
+      findOptions.hint(WorkflowExecution.getHint("appid_status_workflowid_infraMappingIds_createdat"));
     } else {
-      findOptions.modifier("$hint", "appid_workflowid_status_createdat");
+      findOptions.hint(WorkflowExecution.getHint("appid_workflowid_status_createdat"));
     }
     return workflowExecutionQuery.order("-createdAt").get(findOptions);
   }
@@ -5742,14 +5775,28 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
 
     if (isNotEmpty(infraMappingList)) {
       if (isInfraBasedArtifact) {
-        findOptions.modifier("$hint", "lastInfraMappingSearch");
+        findOptions.hint(WorkflowExecution.getHint("lastInfraMappingSearch"));
+
+        Query<WorkflowExecution> deploymentQuery = workflowExecutionQuery.cloneQuery();
+        deploymentQuery.filter(WorkflowExecutionKeys.deployment, true);
+        WorkflowExecution existingWorkflow =
+            deploymentQuery.order(Sort.descending(WorkflowExecutionKeys.createdAt)).get(findOptions);
+        // this logic is used because deployment field is not populated on all executions
+        // maybe in the future we should remove this and use only deployment query
+        if (existingWorkflow != null) {
+          return existingWorkflow;
+        } else {
+          workflowExecutionQuery
+              .field(WorkflowExecutionKeys.serviceExecutionSummaries_instanceStatusSummaries_instanceElement_uuid)
+              .exists();
+        }
       } else {
-        findOptions.modifier("$hint", "appid_status_workflowid_infraMappingIds_createdat");
+        findOptions.hint(WorkflowExecution.getHint("appid_status_workflowid_infraMappingIds_createdat"));
       }
     } else {
-      findOptions.modifier("$hint", "appid_workflowid_status_createdat");
+      findOptions.hint(WorkflowExecution.getHint("appid_workflowid_status_deployedServices_createdat"));
     }
-    return workflowExecutionQuery.order("-createdAt").get(findOptions);
+    return workflowExecutionQuery.order(Sort.descending(WorkflowExecutionKeys.createdAt)).get(findOptions);
   }
 
   private Query<WorkflowExecution> getWorkflowExecutionQuery(
@@ -5765,9 +5812,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     return wingsPersistence.createQuery(WorkflowExecution.class)
         .filter(WorkflowExecutionKeys.appId, workflowExecution.getAppId())
         .filter(WorkflowExecutionKeys.workflowType, workflowExecution.getWorkflowType())
-        .filter(WorkflowExecutionKeys.status, status)
-        .field(WorkflowExecutionKeys.serviceExecutionSummaries_instanceStatusSummaries_instanceElement_uuid)
-        .exists();
+        .filter(WorkflowExecutionKeys.status, status);
   }
 
   private String getAccountId(WorkflowExecution workflowExecution) {

@@ -23,6 +23,7 @@ import com.google.inject.Inject;
 import java.util.Optional;
 import javax.validation.constraints.NotEmpty;
 import javax.ws.rs.NotFoundException;
+import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.CDC)
 public class EnvironmentValidationHelper {
@@ -31,12 +32,11 @@ public class EnvironmentValidationHelper {
   public boolean checkThatEnvExists(@NotEmpty String accountIdentifier, String orgIdentifier, String projectIdentifier,
       @NotEmpty String environmentRef) {
     checkArgument(isNotEmpty(accountIdentifier), "accountId must be present");
-    checkArgument(isNotEmpty(environmentRef), "environment ref must be present");
 
     Optional<Environment> environment;
-    String[] envRefSplit = environmentRef.split("\\.", MAX_RESULT_THRESHOLD_FOR_SPLIT);
+    String[] envRefSplit = StringUtils.split(environmentRef, ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
 
-    if (envRefSplit.length == 1) {
+    if (envRefSplit == null || envRefSplit.length == 1) {
       environment = environmentService.get(accountIdentifier, orgIdentifier, projectIdentifier, environmentRef, false);
     } else {
       // env ref for org/account level entity

@@ -676,7 +676,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
                                                       .build();
     Kubectl client = Kubectl.client("kubectl", "config-path");
 
-    spyK8sTaskHelperBase.applyManifests(client, emptyList(), k8sDelegateTaskParams, executionLogCallback, true);
+    spyK8sTaskHelperBase.applyManifests(client, emptyList(), k8sDelegateTaskParams, executionLogCallback, true, null);
 
     ArgumentCaptor<ApplyCommand> captor = ArgumentCaptor.forClass(ApplyCommand.class);
     verify(spyK8sTaskHelperBase, times(1)).runK8sExecutable(any(), any(), captor.capture());
@@ -692,7 +692,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
                    .spec("")
                    .resourceId(KubernetesResourceId.builder().kind("Route").build())
                    .build()),
-        k8sDelegateTaskParams, executionLogCallback, true);
+        k8sDelegateTaskParams, executionLogCallback, true, null);
     mock.close();
     verify(spyK8sTaskHelperBase, times(1)).runK8sExecutable(any(), any(), captor.capture());
     assertThat(captor.getValue().command())
@@ -724,7 +724,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
                                                  .spec("")
                                                  .resourceId(KubernetesResourceId.builder().kind("Deployment").build())
                                                  .build()),
-                               k8sDelegateTaskParams, executionLogCallback, true, true))
+                               k8sDelegateTaskParams, executionLogCallback, true, true, null))
         .matches(throwable -> {
           KubernetesCliTaskRuntimeException taskException = (KubernetesCliTaskRuntimeException) throwable;
           assertThat(taskException.getProcessResponse().getProcessResult().outputUTF8())
@@ -2593,7 +2593,8 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
                                                       .build();
     Kubectl client = Kubectl.client("kubectl", "config-path");
 
-    spyK8sTaskHelper.applyManifests(client, singletonList(resource), k8sDelegateTaskParams, executionLogCallback, true);
+    spyK8sTaskHelper.applyManifests(
+        client, singletonList(resource), k8sDelegateTaskParams, executionLogCallback, true, null);
     ArgumentCaptor<ApplyCommand> captor = ArgumentCaptor.forClass(ApplyCommand.class);
     verify(spyK8sTaskHelper, times(1)).runK8sExecutable(any(), any(), captor.capture());
 
@@ -2761,6 +2762,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
                                                      .branch("master")
                                                      .fetchType(FetchType.BRANCH)
                                                      .connectorName("conenctor")
+                                                     .connectorId("connectorId")
                                                      .gitConfigDTO(gitConfigDTO)
                                                      .path("manifest")
                                                      .encryptedDataDetails(encryptionDataDetails)
@@ -2805,6 +2807,27 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testFetchManifestFilesAndWriteToDirectoryLocalStoreWithEmptyManifestFiles() throws Exception {
+    K8sTaskHelperBase spyHelperBase = spy(k8sTaskHelperBase);
+    LocalFileStoreDelegateConfig localFileStoreDelegateConfig =
+        LocalFileStoreDelegateConfig.builder()
+            .filePaths(asList("path/to/k8s/template/deploy.yaml"))
+            .manifestIdentifier("identifier")
+            .manifestType("K8sManifest")
+            .manifestFiles(getEmptyManifestFiles())
+            .build();
+
+    K8sManifestDelegateConfig manifestDelegateConfig =
+        K8sManifestDelegateConfig.builder().storeDelegateConfig(localFileStoreDelegateConfig).build();
+
+    assertThat(spyHelperBase.fetchManifestFilesAndWriteToDirectory(
+                   manifestDelegateConfig, "manifest", executionLogCallback, 9000L, "accountId"))
+        .isEqualTo(true);
+  }
+
+  @Test
   @Owner(developers = TMACARI)
   @Category(UnitTests.class)
   public void testFetchManifestFilesAndWriteToDirectoryOptimizedFileFetch() throws Exception {
@@ -2831,6 +2854,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
                                                      .branch("master")
                                                      .fetchType(FetchType.BRANCH)
                                                      .connectorName("conenctor")
+                                                     .connectorId("connectorId")
                                                      .gitConfigDTO(githubConnectorDTO)
                                                      .path("manifest")
                                                      .encryptedDataDetails(encryptionDataDetails)
@@ -3568,6 +3592,14 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
                       .fileName("chart.yaml")
                       .filePath("path/to/helm/chart/chart.yaml")
                       .fileContent("Test content")
+                      .build());
+  }
+
+  private List<ManifestFiles> getEmptyManifestFiles() {
+    return asList(ManifestFiles.builder()
+                      .fileName("chart.yaml")
+                      .filePath("path/to/helm/chart/chart.yaml")
+                      .fileContent(null)
                       .build());
   }
 }

@@ -16,11 +16,13 @@ import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependency;
+import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.contracts.plan.GraphLayoutNode;
 import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.execution.utils.SkipInfoUtils;
+import io.harness.pms.merger.helpers.RuntimeInputFormHelper;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipelinestage.PipelineStageStepParameters;
@@ -35,6 +37,7 @@ import io.harness.pms.sdk.core.plan.creation.creators.PartialPlanCreator;
 import io.harness.pms.security.PmsSecurityContextGuardUtils;
 import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.security.SecurityContextBuilder;
@@ -72,8 +75,14 @@ public class PipelineStagePlanCreator implements PartialPlanCreator<PipelineStag
         YAMLFieldNameConstants.STAGE, Collections.singleton(StepSpecTypeConstants.PIPELINE_STAGE));
   }
 
+  @Override
+  public String getExecutionInputTemplateAndModifyYamlField(YamlField yamlField) {
+    return RuntimeInputFormHelper.createExecutionInputFormAndUpdateYamlFieldForStage(
+        yamlField.getNode().getParentNode().getCurrJsonNode());
+  }
+
   public PipelineStageStepParameters getStepParameter(
-      PipelineStageConfig config, YamlField pipelineInputs, String stageNodeId) {
+      PipelineStageConfig config, YamlField pipelineInputs, String stageNodeId, String childPipelineVersion) {
     return PipelineStageStepParameters.builder()
         .pipeline(config.getPipeline())
         .org(config.getOrg())
@@ -81,7 +90,7 @@ public class PipelineStagePlanCreator implements PartialPlanCreator<PipelineStag
         .stageNodeId(stageNodeId)
         .inputSetReferences(config.getInputSetReferences())
         .outputs(ParameterField.createValueField(PipelineStageOutputs.getMapOfString(config.getOutputs())))
-        .pipelineInputs(pipelineStageHelper.getInputSetYaml(pipelineInputs))
+        .pipelineInputs(pipelineStageHelper.getInputSetYaml(pipelineInputs, childPipelineVersion))
         .build();
   }
 
@@ -133,13 +142,16 @@ public class PipelineStagePlanCreator implements PartialPlanCreator<PipelineStag
             .identifier(stageNode.getIdentifier())
             .group(StepCategory.STAGE.name())
             .stepType(PipelineStageStep.STEP_TYPE)
+            .expressionMode(
+                ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED) // Do not want null if expression is
+                                                                         // unresolved. Used in envV2 implementation
             .stepParameters(getStepParameter(config,
                 ctx.getCurrentField()
                     .getNode()
                     .getField(YAMLFieldNameConstants.SPEC)
                     .getNode()
                     .getField(YAMLFieldNameConstants.INPUTS),
-                planNodeId))
+                planNodeId, childPipelineEntity.get().getHarnessVersion()))
             .skipCondition(SkipInfoUtils.getSkipCondition(stageNode.getSkipCondition()))
             .whenCondition(RunInfoUtils.getRunCondition(stageNode.getWhen()))
             .facilitatorObtainment(
@@ -179,5 +191,10 @@ public class PipelineStagePlanCreator implements PartialPlanCreator<PipelineStag
       stageYamlFieldMap = StrategyUtils.modifyStageLayoutNodeGraph(stageYamlField);
     }
     return GraphLayoutResponse.builder().layoutNodes(stageYamlFieldMap).build();
+  }
+
+  @Override
+  public Set<String> getSupportedYamlVersions() {
+    return Set.of(PipelineVersion.V0);
   }
 }

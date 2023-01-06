@@ -226,8 +226,8 @@ public class CfRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
       LogCallback executionLogCallback, CfRollbackCommandRequestNG commandRollbackRequest, Exception exception) {
     log.error(
         CLOUD_FOUNDRY_LOG_PREFIX + "Exception in processing CF Rollback task [{}]", commandRollbackRequest, exception);
-    executionLogCallback.saveExecutionLog("\n\n--------- CF Rollback failed to complete successfully", ERROR, FAILURE);
     Misc.logAllMessages(exception, executionLogCallback);
+    executionLogCallback.saveExecutionLog("\n\n--------- CF Rollback failed to complete successfully", ERROR, FAILURE);
   }
 
   private void deleteApp(CfRequestConfig cfRequestConfig, CfRollbackCommandRequestNG cfRollbackCommandRequestNG,

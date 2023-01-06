@@ -17,6 +17,7 @@ import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
 
@@ -30,6 +31,7 @@ import io.harness.filter.dto.FilterDTO;
 import io.harness.filter.service.FilterService;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitaware.helper.GitAwareEntityHelper;
+import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.ng.core.common.beans.NGTag;
@@ -397,5 +399,45 @@ public class PMSPipelineServiceHelperTest extends PipelineServiceTestBase {
         ()
             -> PMSPipelineServiceHelper.checkAndThrowMismatchInImportedPipelineMetadataInternal(
                 orgIdentifier, projectIdentifier, pipelineIdentifier, pipelineImportRequest, importedPipeline));
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testResolveTemplatesAndValidatePipeline() {
+    String yaml = "yaml";
+    PipelineEntity pipelineEntity = PipelineEntity.builder()
+                                        .accountId(accountIdentifier)
+                                        .orgIdentifier(orgIdentifier)
+                                        .projectIdentifier(projectIdentifier)
+                                        .yaml(yaml)
+                                        .build();
+    List<TemplateReferenceSummary> templateReferenceSummaryList = new ArrayList<>();
+    TemplateMergeResponseDTO templateMergeResponseDTO = TemplateMergeResponseDTO.builder()
+                                                            .mergedPipelineYaml(yaml)
+                                                            .templateReferenceSummaries(templateReferenceSummaryList)
+                                                            .build();
+    doReturn(templateMergeResponseDTO)
+        .when(pipelineTemplateHelper)
+        .resolveTemplateRefsInPipeline(pipelineEntity, false, false);
+
+    Mockito.when(pipelineValidationService.validateYamlAndGovernanceRules(any(), any(), any(), any(), any(), any()))
+        .thenReturn(PipelineValidationResponse.builder()
+                        .governanceMetadata(GovernanceMetadata.newBuilder().setDeny(false).build())
+                        .build());
+
+    GitEntityInfo gitEntityInfo = GitEntityInfo.builder()
+                                      .repoName("repoName")
+                                      .connectorRef("connectorRef")
+                                      .isNewBranch(true)
+                                      .branch("branch")
+                                      .build();
+    GitAwareContextHelper.updateGitEntityContext(gitEntityInfo);
+
+    GovernanceMetadata governanceMetadata =
+        pmsPipelineServiceHelper.resolveTemplatesAndValidatePipeline(pipelineEntity, true, false);
+    GitEntityInfo gitEntityInfo1 = GitContextHelper.getGitEntityInfo();
+
+    assertEquals(gitEntityInfo1.getBranch(), gitEntityInfo.getBranch());
   }
 }

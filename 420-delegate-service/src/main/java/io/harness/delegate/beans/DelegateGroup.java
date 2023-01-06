@@ -7,6 +7,8 @@
 
 package io.harness.delegate.beans;
 
+import static java.time.Duration.ofDays;
+
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
@@ -22,6 +24,9 @@ import io.harness.persistence.UuidAware;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
+import java.time.Duration;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -31,8 +36,6 @@ import lombok.Data;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.UtilityClass;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Data
@@ -43,6 +46,8 @@ import org.mongodb.morphia.annotations.Id;
 @HarnessEntity(exportable = true)
 @OwnedBy(HarnessTeam.DEL)
 public class DelegateGroup implements PersistentEntity, UuidAware {
+  public static final Duration TTL = ofDays(7);
+
   @Id @NotNull private String uuid;
 
   @NotEmpty private String name;

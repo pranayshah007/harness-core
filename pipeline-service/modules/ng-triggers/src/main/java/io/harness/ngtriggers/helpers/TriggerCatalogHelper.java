@@ -10,7 +10,7 @@ package io.harness.ngtriggers.helpers;
 import io.harness.beans.FeatureName;
 import io.harness.ngtriggers.beans.entity.metadata.catalog.TriggerCatalogItem;
 import io.harness.ngtriggers.beans.entity.metadata.catalog.TriggerCatalogType;
-import io.harness.ngtriggers.beans.entity.metadata.catalog.TriggerCategory;
+import io.harness.ngtriggers.beans.source.NGTriggerType;
 import io.harness.ngtriggers.featureflagfilter.TriggerCatalogFilter;
 
 import com.google.inject.Inject;
@@ -26,7 +26,7 @@ public class TriggerCatalogHelper {
   @Inject TriggerCatalogFilter enumFilter;
 
   public List<TriggerCatalogItem> getTriggerTypeToCategoryMapping(String accountIdentifier) {
-    final Map<TriggerCategory, List<TriggerCatalogType>> triggerCategoryListMap =
+    final Map<NGTriggerType, List<TriggerCatalogType>> triggerCategoryListMap =
         Arrays.stream(TriggerCatalogType.values())
             .filter(enumFilter.filter(accountIdentifier, FeatureName.CD_TRIGGER_CATALOG))
             .collect(Collectors.groupingBy(catalogType -> TriggerCatalogType.getTriggerCategory(catalogType)));

@@ -44,6 +44,7 @@ public class SmtpConfigResourceNG {
             .port(smtpConfig.getPort())
             .fromAddress(smtpConfig.getFromAddress())
             .useSSL(smtpConfig.isUseSSL())
+            .startTLS(smtpConfig.isStartTLS())
             .username(smtpConfig.getUsername())
             .password(smtpConfig.getPassword())
             .encryptedPassword(smtpConfig.getEncryptedPassword())

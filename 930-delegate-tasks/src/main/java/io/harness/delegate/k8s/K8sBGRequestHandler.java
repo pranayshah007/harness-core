@@ -51,6 +51,8 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.KubernetesTaskException;
 import io.harness.exception.KubernetesYamlException;
 import io.harness.exception.NestedExceptionUtils;
+import io.harness.k8s.K8sCliCommandType;
+import io.harness.k8s.K8sCommandFlagsUtils;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.exception.KubernetesExceptionExplanation;
 import io.harness.k8s.exception.KubernetesExceptionHints;
@@ -81,6 +83,7 @@ import io.kubernetes.client.openapi.models.V1Service;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -144,8 +147,13 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
     currentRelease.setManagedWorkload(managedWorkload.getResourceId().cloneInternal());
 
     shouldSaveReleaseHistory = true;
+    // Apply Command Flag
+    Map<String, String> k8sCommandFlag = k8sBGDeployRequest.getK8sCommandFlags();
+
+    String commandFlags = K8sCommandFlagsUtils.getK8sCommandFlags(K8sCliCommandType.Apply.name(), k8sCommandFlag);
     k8sTaskHelperBase.applyManifests(client, resources, k8sDelegateTaskParams,
-        k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Apply, true, commandUnitsProgress), true, true);
+        k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Apply, true, commandUnitsProgress), true, true,
+        commandFlags);
 
     k8sTaskHelperBase.saveReleaseHistoryInConfigMap(
         kubernetesConfig, k8sBGDeployRequest.getReleaseName(), releaseHistory.getAsYaml());

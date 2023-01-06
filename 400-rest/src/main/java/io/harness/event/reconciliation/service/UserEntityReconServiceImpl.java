@@ -21,10 +21,11 @@ import software.wings.search.framework.TimeScaleEntity;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.MorphiaKeyIterator;
 import java.util.HashSet;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.MorphiaKeyIterator;
 
 @Singleton
 @Slf4j
@@ -45,16 +46,17 @@ public class UserEntityReconServiceImpl implements LookerEntityReconService {
 
   public Set<String> getEntityIdsFromMongoDB(String accountId, long durationStartTs, long durationEndTs) {
     Set<String> userIds = new HashSet<>();
+    FindOptions options = persistence.analyticNodePreferenceOptions();
     MorphiaKeyIterator<User> users = persistence.createQuery(User.class)
                                          .field(UserKeys.accounts)
                                          .contains(accountId)
                                          .field(CREATED_AT)
-                                         .exists()
+                                         .notEqual(null)
                                          .field(CREATED_AT)
                                          .greaterThanOrEq(durationStartTs)
                                          .field(CREATED_AT)
                                          .lessThanOrEq(durationEndTs)
-                                         .fetchKeys();
+                                         .fetchKeys(options);
     users.forEachRemaining(userKey -> userIds.add((String) userKey.getId()));
 
     return userIds;

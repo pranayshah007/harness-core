@@ -124,7 +124,7 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
     doReturn(true)
         .when(k8sTaskHelperBase)
         .applyManifests(any(Kubectl.class), anyListOf(KubernetesResource.class), any(K8sDelegateTaskParams.class),
-            eq(logCallback), anyBoolean());
+            eq(logCallback), anyBoolean(), eq(null));
     k8sCanaryHandlerConfig = k8sCanaryRequestHandler.getK8sCanaryHandlerConfig();
     k8sCanaryHandlerConfig.setKubernetesConfig(kubernetesConfig);
     k8sCanaryHandlerConfig.setManifestFilesDirectory(manifestFileDirectory);
@@ -526,7 +526,7 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
       doThrow(applyThrowable)
           .when(k8sTaskHelperBase)
           .applyManifests(
-              any(Kubectl.class), eq(emptyList()), eq(delegateTaskParams), eq(logCallback), eq(true), eq(true));
+              any(Kubectl.class), eq(emptyList()), eq(delegateTaskParams), eq(logCallback), eq(true), eq(true), any());
     } else if (statusCheckThrowable != null) {
       doThrow(statusCheckThrowable).when(k8sClient).performSteadyStateCheck(any(K8sSteadyStateDTO.class));
     }

@@ -33,6 +33,7 @@ import com.google.inject.Singleton;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -47,9 +48,6 @@ public class SpotInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpetualT
   @Override
   public PerpetualTaskExecutionBundle getExecutionBundle(InfrastructureMappingDTO infrastructure,
       List<DeploymentInfoDTO> deploymentInfoDTOList, InfrastructureOutcome infrastructureOutcome) {
-    SpotDeploymentInfoDTO spotDeploymentInfoDTO =
-        (SpotDeploymentInfoDTO) deploymentInfoDTOList.get(deploymentInfoDTOList.size() - 1);
-
     BaseNGAccess access = BaseNGAccess.builder()
                               .accountIdentifier(infrastructure.getAccountIdentifier())
                               .orgIdentifier(infrastructure.getOrgIdentifier())
@@ -58,7 +56,11 @@ public class SpotInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpetualT
 
     ConnectorInfoDTO connectorInfoDTO = sshEntityHelper.getConnectorInfoDTO(infrastructureOutcome, access);
     SpotConnectorDTO spotConnectorDTO = (SpotConnectorDTO) connectorInfoDTO.getConnectorConfig();
-
+    List<String> elastigroupIds = deploymentInfoDTOList.stream()
+                                      .map(d -> (SpotDeploymentInfoDTO) d)
+                                      .map(SpotDeploymentInfoDTO::getElastigroupId)
+                                      .distinct()
+                                      .collect(Collectors.toList());
     List<EncryptedDataDetail> encryptionDetails = getEncryptedDataDetails(access, spotConnectorDTO);
 
     SpotinstAmiInstanceSyncPerpetualTaskParamsNg spotinstAmiInstanceSyncPerpetualTaskParamsNg =
@@ -67,7 +69,7 @@ public class SpotInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpetualT
             .setInfrastructureKey(infrastructure.getInfrastructureKey())
             .setSpotinstConfig(ByteString.copyFrom(kryoSerializer.asBytes(spotConnectorDTO)))
             .setSpotinstEncryptedData(ByteString.copyFrom(kryoSerializer.asBytes(encryptionDetails)))
-            .addAllElastigroupIds(spotDeploymentInfoDTO.getElastigroupEc2InstancesMap().keySet())
+            .addAllElastigroupIds(elastigroupIds)
             .build();
 
     Any perpetualTaskPack = Any.pack(spotinstAmiInstanceSyncPerpetualTaskParamsNg);

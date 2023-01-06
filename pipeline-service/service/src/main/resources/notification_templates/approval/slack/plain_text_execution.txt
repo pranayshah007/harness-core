@@ -7,8 +7,8 @@
         "text" : "*Approval Required for pipeline <${pipelineExecutionLink}|${pipelineName}> triggered by ${triggeredBy}*\n\n*Approval message:*\n${approvalMessage}"
       },
       "fields" : [
-        {"type" : "mrkdwn", "text" : "*Organization:*\n${orgIdentifier}"},
-        {"type" : "mrkdwn", "text" : "*Project:*\n${projectIdentifier}"},
+        {"type" : "mrkdwn", "text" : "*Organization:*\n${orgName}"},
+        {"type" : "mrkdwn", "text" : "*Project:*\n${projectName}"},
         {"type" : "mrkdwn", "text" : "*Triggered by:*\n${triggeredBy}"}
       ]
     },

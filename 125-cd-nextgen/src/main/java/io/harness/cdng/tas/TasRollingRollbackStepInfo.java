@@ -12,6 +12,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.pipeline.CDAbstractStepInfo;
 import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.TasRollingRollbackStepInfoVisitorHelper;
 import io.harness.cdng.visitor.helpers.cdstepinfo.TasSwapRollbackStepInfoVisitorHelper;
@@ -42,7 +43,7 @@ import java.util.List;
 @JsonTypeName(StepSpecTypeConstants.TAS_ROLLING_ROLLBACK)
 @TypeAlias("TasRollingRollbackStepInfo")
 @RecasterAlias("io.harness.cdng.tas.TasRollingRollbackStepInfo")
-public class TasRollingRollbackStepInfo extends TasRollingRollbackBaseStepInfo implements CDStepInfo, Visitable {
+public class TasRollingRollbackStepInfo extends TasRollingRollbackBaseStepInfo implements CDAbstractStepInfo, Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)

@@ -57,6 +57,7 @@ public class ElastigroupDeployStepTest extends CategoryTest {
           .build();
 
   @Mock ElastigroupDeployStepHelper stepHelper;
+  @Mock ElastigroupStepCommonHelper elastigroupStepCommonHelper;
 
   @InjectMocks ElastigroupDeployStep step;
 

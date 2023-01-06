@@ -175,15 +175,14 @@ public class EnvironmentServiceImpl implements EnvironmentService {
   public Optional<Environment> get(
       String accountId, String orgIdentifier, String projectIdentifier, String environmentRef, boolean deleted) {
     checkArgument(isNotEmpty(accountId), "accountId must be present");
-    checkArgument(isNotEmpty(environmentRef), "environment ref must be present");
 
     return getEnvironmentByRef(accountId, orgIdentifier, projectIdentifier, environmentRef, deleted);
   }
 
   private Optional<Environment> getEnvironmentByRef(
       String accountId, String orgIdentifier, String projectIdentifier, String environmentRef, boolean deleted) {
-    String[] envRefSplit = environmentRef.split("\\.", MAX_RESULT_THRESHOLD_FOR_SPLIT);
-    if (envRefSplit.length == 1) {
+    String[] envRefSplit = StringUtils.split(environmentRef, ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
+    if (envRefSplit == null || envRefSplit.length == 1) {
       return environmentRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndDeletedNot(
           accountId, orgIdentifier, projectIdentifier, environmentRef, !deleted);
     } else {
@@ -356,8 +355,8 @@ public class EnvironmentServiceImpl implements EnvironmentService {
     // assume same scope
     List<String> envIdentifierList = new ArrayList<>();
     for (String envRef : envRefsList) {
-      String[] envRefSplit = envRef.split("\\.", MAX_RESULT_THRESHOLD_FOR_SPLIT);
-      if (envRefSplit.length == 1) {
+      String[] envRefSplit = StringUtils.split(envRef, ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
+      if (envRefSplit == null || envRefSplit.length == 1) {
         envIdentifierList.add(envRef);
       } else if (envRefSplit.length == 2) {
         envIdentifierList.add(envRefSplit[1]);
@@ -382,8 +381,8 @@ public class EnvironmentServiceImpl implements EnvironmentService {
     // assume same scope
     List<String> envIdentifierList = new ArrayList<>();
     for (String envRef : envRefsList) {
-      String[] envRefSplit = envRef.split("\\.", MAX_RESULT_THRESHOLD_FOR_SPLIT);
-      if (envRefSplit.length == 1) {
+      String[] envRefSplit = StringUtils.split(envRef, ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
+      if (envRefSplit == null || envRefSplit.length == 1) {
         envIdentifierList.add(envRef);
       } else if (envRefSplit.length == 2) {
         envIdentifierList.add(envRefSplit[1]);
@@ -521,10 +520,9 @@ public class EnvironmentServiceImpl implements EnvironmentService {
 
   private Criteria getEnvironmentEqualityCriteria(Environment requestEnvironment, boolean deleted) {
     checkArgument(isNotEmpty(requestEnvironment.getAccountId()), "accountId must be present");
-    checkArgument(isNotEmpty(requestEnvironment.getIdentifier()), "environment ref must be present");
-    String[] envRefSplit = requestEnvironment.getIdentifier().split("\\.", MAX_RESULT_THRESHOLD_FOR_SPLIT);
+    String[] envRefSplit = StringUtils.split(requestEnvironment.getIdentifier(), ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
     Criteria criteria;
-    if (envRefSplit.length == 1) {
+    if (envRefSplit == null || envRefSplit.length == 1) {
       criteria = Criteria.where(EnvironmentKeys.accountId)
                      .is(requestEnvironment.getAccountId())
                      .and(EnvironmentKeys.orgIdentifier)

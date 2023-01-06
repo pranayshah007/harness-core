@@ -22,16 +22,20 @@ import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAware;
 
 import com.google.common.collect.ImmutableList;
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBObject;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
 import java.time.OffsetDateTime;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Builder.Default;
 import lombok.Data;
 import lombok.ToString;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
 
 @Data
 @Builder
@@ -74,4 +78,20 @@ public class DeploymentReconRecord implements PersistentEntity, UuidAware, Accou
   private long reconStartTs;
   private long reconEndTs;
   @Default @FdTtlIndex private Date ttl = Date.from(OffsetDateTime.now().plusMonths(1).toInstant());
+
+  public static DBObject getHint(String indexName) {
+    Map<String, Object> map = new LinkedHashMap<>();
+
+    switch (indexName) {
+      case "accountId_entityClass_durationEndTs_sorted":
+        map.put(DeploymentReconRecordKeys.accountId, 1);
+        map.put(DeploymentReconRecordKeys.entityClass, 1);
+        map.put(DeploymentReconRecordKeys.durationEndTs, -1);
+        break;
+      default:
+        break;
+    }
+
+    return new BasicDBObject(map);
+  }
 }

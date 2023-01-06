@@ -7,9 +7,13 @@
 
 package io.harness.cdng.k8s;
 
+import static io.harness.delegate.task.k8s.K8sBGDeployRequest.K8sBGDeployRequestBuilder;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.k8s.K8sBlueGreenBaseStepInfo.K8sBlueGreenBaseStepInfoKeys;
@@ -51,6 +55,7 @@ import io.harness.tasks.ResponseData;
 import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -66,6 +71,7 @@ public class K8sBlueGreenStep extends TaskChainExecutableWithRollbackAndRbac imp
   @Inject private CDStepHelper cdStepHelper;
   @Inject ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private InstanceInfoService instanceInfoService;
+  @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
@@ -109,7 +115,7 @@ public class K8sBlueGreenStep extends TaskChainExecutableWithRollbackAndRbac imp
 
     final String accountId = AmbianceUtils.getAccountId(ambiance);
 
-    K8sBGDeployRequest k8sBGDeployRequest =
+    K8sBGDeployRequestBuilder bgRequestBuilder =
         K8sBGDeployRequest.builder()
             .skipDryRun(skipDryRun)
             .releaseName(releaseName)
@@ -130,9 +136,14 @@ public class K8sBlueGreenStep extends TaskChainExecutableWithRollbackAndRbac imp
             .useLatestKustomizeVersion(cdStepHelper.isUseLatestKustomizeVersion(accountId))
             .useNewKubectlVersion(cdStepHelper.isUseNewKubectlVersion(accountId))
             .pruningEnabled(pruningEnabled)
-            .useK8sApiForSteadyStateCheck(cdStepHelper.shouldUseK8sApiForSteadyStateCheck(accountId))
-            .build();
+            .useK8sApiForSteadyStateCheck(cdStepHelper.shouldUseK8sApiForSteadyStateCheck(accountId));
 
+    if (cdFeatureFlagHelper.isEnabled(accountId, FeatureName.NG_K8_COMMAND_FLAGS)) {
+      Map<String, String> k8sCommandFlag =
+          k8sStepHelper.getDelegateK8sCommandFlag(k8sBlueGreenStepParameters.getCommandFlags());
+      bgRequestBuilder.k8sCommandFlags(k8sCommandFlag);
+    }
+    K8sBGDeployRequest k8sBGDeployRequest = bgRequestBuilder.build();
     k8sStepHelper.publishReleaseNameStepDetails(ambiance, releaseName);
 
     return k8sStepHelper.queueK8sTask(stepElementParameters, k8sBGDeployRequest, ambiance, executionPassThroughData);

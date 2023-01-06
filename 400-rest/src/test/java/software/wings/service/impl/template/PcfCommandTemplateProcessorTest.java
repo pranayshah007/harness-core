@@ -59,12 +59,12 @@ import software.wings.service.intfc.WorkflowService;
 
 import com.google.inject.Inject;
 import com.mongodb.DBCursor;
+import dev.morphia.query.FieldEnd;
+import dev.morphia.query.MorphiaIterator;
+import dev.morphia.query.Query;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.Mock;
-import org.mongodb.morphia.query.FieldEnd;
-import org.mongodb.morphia.query.MorphiaIterator;
-import org.mongodb.morphia.query.Query;
 
 @OwnedBy(CDP)
 public class PcfCommandTemplateProcessorTest extends TemplateBaseTestHelper {

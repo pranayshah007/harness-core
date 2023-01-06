@@ -44,6 +44,20 @@ public class SerializerUtils {
     return entrypoint;
   }
 
+  public static String getK8sDebugCommand(int timeoutSeconds) {
+    return String.format("remote_debug() %n  { %n  if [ "
+        + " \"$?\" -ne \"0\" ]; then %n"
+        + " timeout " + Integer.toString(timeoutSeconds) + "s /addon/bin/tmate -F;  "
+        + " %n fi %n } %n trap remote_debug EXIT");
+  }
+
+  public static String getVmDebugCommand(int timeoutSeconds) {
+    return String.format("remote_debug() %n  { %n  if [ "
+        + " \"$?\" -ne \"0\" ]; then %n"
+        + "timeout " + Integer.toString(timeoutSeconds) + "s  /addon/tmate -F; "
+        + " %n fi %n } %n trap remote_debug EXIT");
+  }
+
   public static String getEarlyExitCommand(ParameterField<CIShellType> parametrizedShellType) {
     String cmd;
     CIShellType shellType = RunTimeInputHandler.resolveShellType(parametrizedShellType);

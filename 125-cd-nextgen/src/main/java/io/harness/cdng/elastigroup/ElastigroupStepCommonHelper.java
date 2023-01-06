@@ -33,6 +33,7 @@ import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.elastigroup.beans.ElastigroupExecutionPassThroughData;
 import io.harness.cdng.elastigroup.beans.ElastigroupParametersFetchFailurePassThroughData;
 import io.harness.cdng.elastigroup.beans.ElastigroupPreFetchOutcome;
+import io.harness.cdng.elastigroup.beans.ElastigroupSetupDataOutcome;
 import io.harness.cdng.elastigroup.beans.ElastigroupStartupScriptFetchFailurePassThroughData;
 import io.harness.cdng.elastigroup.beans.ElastigroupStepExceptionPassThroughData;
 import io.harness.cdng.elastigroup.config.StartupScriptOutcome;
@@ -43,6 +44,7 @@ import io.harness.cdng.execution.spot.elastigroup.ElastigroupStageExecutionDetai
 import io.harness.cdng.expressions.CDExpressionResolveFunctor;
 import io.harness.cdng.infra.beans.ElastigroupInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
@@ -51,6 +53,8 @@ import io.harness.data.structure.HarnessStringUtils;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.elastigroup.ElastigroupPreFetchResult;
 import io.harness.delegate.beans.elastigroup.ElastigroupSetupResult;
+import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
+import io.harness.delegate.beans.instancesync.info.SpotServerInstanceInfo;
 import io.harness.delegate.beans.logstreaming.CommandUnitProgress;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
@@ -64,10 +68,10 @@ import io.harness.delegate.task.elastigroup.response.ElastigroupPreFetchResponse
 import io.harness.delegate.task.elastigroup.response.SpotInstConfig;
 import io.harness.elastigroup.ElastigroupCommandUnitConstants;
 import io.harness.exception.ExceptionUtils;
+import io.harness.exception.InvalidRequestException;
 import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
-import io.harness.logging.Misc;
 import io.harness.logging.UnitProgress;
 import io.harness.ng.core.NGAccess;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -108,11 +112,15 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
@@ -125,6 +133,8 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
   @Inject private StepHelper stepHelper;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private StageExecutionInfoService stageExecutionInfoService;
+  @Inject private InstanceInfoService instanceInfoService;
+  @Inject private CDStepHelper cdStepHelper;
 
   private static final String STARTUP_SCRIPT = "Startup Script";
   private static final String ELASTIGROUP_CONFIGURATION = "Elastigroup Configuration";
@@ -138,6 +148,79 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
     Map<String, Object> elastiGroupConfigMap = (Map<String, Object>) jsonConfigMap.get(GROUP_CONFIG_ELEMENT);
     String groupConfigJson = gson.toJson(elastiGroupConfigMap);
     return gson.fromJson(groupConfigJson, ElastiGroup.class);
+  }
+
+  public StepResponse.StepOutcome saveSpotServerInstanceInfosToSweepingOutput(
+      List<String> newEc2Instances, List<String> existingEc2Instances, Ambiance ambiance) {
+    List<ServerInstanceInfo> spotServerInstanceInfos =
+        createSpotServerInstanceInfos(newEc2Instances, new ArrayList<>(), ambiance);
+    if (isNotEmpty(spotServerInstanceInfos)) {
+      return instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, spotServerInstanceInfos);
+    }
+    return null;
+  }
+
+  private ElastigroupSetupDataOutcome getElastigroupSetupOutcome(Ambiance ambiance) {
+    OptionalSweepingOutput optionalSetupDataOutput = executionSweepingOutputService.resolveOptional(
+        ambiance, RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.ELASTIGROUP_SETUP_OUTCOME));
+    if (!optionalSetupDataOutput.isFound()) {
+      throw new InvalidRequestException("No elastigroup setup output found.");
+    }
+    return (ElastigroupSetupDataOutcome) optionalSetupDataOutput.getOutput();
+  }
+
+  private List<ServerInstanceInfo> createSpotServerInstanceInfos(
+      List<String> newEc2Instances, List<String> existingEc2Instances, Ambiance ambiance) {
+    if (isEmpty(newEc2Instances) && isEmpty(existingEc2Instances)) {
+      return new ArrayList<>();
+    }
+
+    InfrastructureOutcome infrastructure = cdStepHelper.getInfrastructureOutcome(ambiance);
+
+    ElastigroupSetupDataOutcome elastigroupSetupDataOutcome = getElastigroupSetupOutcome(ambiance);
+    ElastiGroup oldElastigroup = elastigroupSetupDataOutcome.getOldElastigroupOriginalConfig();
+    ElastiGroup newElastigroup = elastigroupSetupDataOutcome.getNewElastigroupOriginalConfig();
+
+    if (oldElastigroup == null && newElastigroup == null) {
+      return new ArrayList<>();
+    }
+
+    List<SpotServerInstanceInfo> oldSpotServerInstanceInfos =
+        getSpotServerInstanceInfos(oldElastigroup, existingEc2Instances, infrastructure);
+
+    List<SpotServerInstanceInfo> newSpotServerInstanceInfos =
+        getSpotServerInstanceInfos(newElastigroup, newEc2Instances, infrastructure);
+
+    return Stream.of(oldSpotServerInstanceInfos, newSpotServerInstanceInfos)
+        .flatMap(Collection::stream)
+        .collect(Collectors.toList());
+  }
+
+  @NotNull
+  private List<SpotServerInstanceInfo> getSpotServerInstanceInfos(
+      ElastiGroup elastigroup, List<String> ec2InstanceIds, InfrastructureOutcome infrastructure) {
+    List<SpotServerInstanceInfo> newSpotServerInstanceInfos;
+    if (elastigroup != null && isNotEmpty(elastigroup.getId())) {
+      String elastigroupId = elastigroup.getId();
+      newSpotServerInstanceInfos = ec2InstanceIds == null
+          ? Collections.emptyList()
+          : ec2InstanceIds.stream()
+                .map(id -> mapToSpotServerInstanceInfo(infrastructure.getInfrastructureKey(), elastigroupId, id))
+                .collect(Collectors.toList());
+
+    } else {
+      newSpotServerInstanceInfos = Collections.emptyList();
+    }
+    return newSpotServerInstanceInfos;
+  }
+
+  private SpotServerInstanceInfo mapToSpotServerInstanceInfo(
+      String infrastructureKey, String groupId, String instanceId) {
+    return SpotServerInstanceInfo.builder()
+        .infrastructureKey(infrastructureKey)
+        .ec2InstanceId(instanceId)
+        .elastigroupId(groupId)
+        .build();
   }
 
   public int renderCount(ParameterField<Integer> field, int defaultValue, Ambiance ambiance) {
@@ -383,7 +466,6 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
       return stepFailureTaskResponseWithMessage(
           unitProgressData, "Name not provided for new elastigroup to be created");
     }
-    elastigroupNamePrefix = Misc.normalizeExpression(elastigroupNamePrefix);
 
     executionPassThroughData.setElastigroupNamePrefix(elastigroupNamePrefix);
     executionPassThroughData.setSpotInstConfig(spotInstConfig);

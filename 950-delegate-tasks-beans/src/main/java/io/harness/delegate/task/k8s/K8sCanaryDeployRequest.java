@@ -17,6 +17,7 @@ import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.expression.Expression;
 
 import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Value;
 
@@ -45,4 +46,5 @@ public class K8sCanaryDeployRequest implements K8sDeployRequest {
   boolean useNewKubectlVersion;
   boolean cleanUpIncompleteCanaryDeployRelease;
   boolean useK8sApiForSteadyStateCheck;
+  @Expression(ALLOW_SECRETS) Map<String, String> k8sCommandFlags;
 }

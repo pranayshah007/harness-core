@@ -32,6 +32,8 @@ public class ActiveServiceMapper {
         .map(activeServiceInfo
             -> ActiveServiceDTO.builder()
                    .accountIdentifier(accountIdentifier)
+                   .orgIdentifier(activeServiceInfo.getOrgIdentifier())
+                   .projectIdentifier(activeServiceInfo.getProjectIdentifier())
                    .identifier(activeServiceInfo.getIdentifier())
                    .name(activeServiceInfo.getName())
                    .orgName(activeServiceInfo.getOrgName())

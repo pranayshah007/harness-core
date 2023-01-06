@@ -8,9 +8,9 @@
 package io.harness.cvng.core.services.impl;
 
 import io.harness.cvng.beans.SumologicMetricDataCollectionInfo;
-import io.harness.cvng.core.beans.healthsource.QueryParams;
 import io.harness.cvng.core.entities.NextGenMetricCVConfig;
 import io.harness.cvng.core.entities.NextGenMetricInfo;
+import io.harness.cvng.core.entities.QueryParams;
 import io.harness.cvng.core.services.api.MetricDataCollectionInfoMapper;
 
 import java.util.List;

@@ -48,7 +48,7 @@ import io.harness.rest.RestResponse;
 import io.harness.timescaledb.TimeScaleDBService;
 
 import software.wings.graphql.datafetcher.billing.BillingDataQueryMetadata;
-import software.wings.helpers.ext.mail.EmailData;
+import software.wings.persistence.mail.EmailData;
 import software.wings.service.impl.instance.CloudToHarnessMappingServiceImpl;
 
 import com.google.api.client.util.Charsets;

@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.manifest.yaml.K8sStepCommandFlag;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.k8s.K8sCommandUnitConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -34,8 +35,9 @@ import org.springframework.data.annotation.TypeAlias;
 public class K8sRollingStepParameters extends K8sRollingBaseStepInfo implements K8sSpecParameters {
   @Builder(builderMethodName = "infoBuilder")
   public K8sRollingStepParameters(ParameterField<Boolean> skipDryRun, ParameterField<Boolean> pruningEnabled,
-      ParameterField<List<TaskSelectorYaml>> delegateSelectors, String canaryStepFqn) {
-    super(skipDryRun, pruningEnabled, delegateSelectors, canaryStepFqn);
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors, String canaryStepFqn,
+      List<K8sStepCommandFlag> commandFlags) {
+    super(skipDryRun, pruningEnabled, delegateSelectors, canaryStepFqn, commandFlags);
   }
 
   @NotNull

@@ -400,9 +400,9 @@ public enum TaskType {
   ELASTIGROUP_SETUP_COMMAND_TASK_NG(TaskGroup.ELASTIGROUP, "Elastigroup Setup Command Task"),
   ELASTIGROUP_STARTUP_SCRIPT_FETCH_RUN_TASK_NG(TaskGroup.ELASTIGROUP, "Elastigroup Startup Script Fetch Run Task"),
   TERRAFORM_SECRET_CLEANUP_TASK_NG(TaskGroup.TERRAFORM_NG, "Terraform Secret Cleanup Task"),
-  TERRAGRUNT_PLAN_TASK_NG(TaskGroup.TERRAGRUNT, "Terragrunt Plan Task", true),
-  TERRAGRUNT_APPLY_TASK_NG(TaskGroup.TERRAGRUNT, "Terragrunt Apply Task", true),
-  TERRAGRUNT_DESTROY_TASK_NG(TaskGroup.TERRAGRUNT, "Terragrunt Destroy Task", true),
+  TERRAGRUNT_PLAN_TASK_NG(TaskGroup.TERRAGRUNT, "Terragrunt Plan Task", false),
+  TERRAGRUNT_APPLY_TASK_NG(TaskGroup.TERRAGRUNT, "Terragrunt Apply Task", false),
+  TERRAGRUNT_DESTROY_TASK_NG(TaskGroup.TERRAGRUNT, "Terragrunt Destroy Task", false),
   TERRAGRUNT_ROLLBACK_TASK_NG(TaskGroup.TERRAGRUNT, "Terragrunt Rollback Task", true),
   GITOPS_FETCH_APP_TASK(TaskGroup.GITOPS, "Gitops Fetch App Task"),
   VAULT_TOKEN_LOOKUP(TaskGroup.KMS, "Token lookup of token in Hashicorp Vault"),
@@ -432,6 +432,14 @@ public enum TaskType {
   TAS_BG_SETUP(TaskGroup.TAS, "Tas BG Setup task"),
   TAS_SWAP_ROLLBACK(TaskGroup.TAS, "Tas Swap Rollback task"),
   TAS_DATA_FETCH(TaskGroup.TAS, "Tas Data Fetch task"),
+
+  ECS_RUN_TASK_ARN(TaskGroup.ECS, "ECS Run Task Arn"),
+  AWS_ASG_ROLLING_DEPLOY_TASK_NG(TaskGroup.ASG, "AWS Asg Rolling Deploy"),
+  AWS_ASG_PREPARE_ROLLBACK_DATA_TASK_NG(TaskGroup.ASG, "AWS Asg Prepare Rollback Data"),
+  AWS_ASG_ROLLING_ROLLBACK_TASK_NG(TaskGroup.ASG, "AWS Asg Rolling Rollback"),
+  TERRAFORM_PROVISION_TASK_V2(TaskGroup.TERRAFORM, "Terraform Provision Task V2"),
+  TERRAFORM_INPUT_VARIABLES_OBTAIN_TASK_V2(TaskGroup.TERRAFORM, "Terraform Fetch Input variables Task V2"),
+  TERRAFORM_FETCH_TARGETS_TASK_V2(TaskGroup.TERRAFORM, "Terraform Fetch Targets Task V2"),
   TAS_ROLLING_DEPLOY(TaskGroup.TAS, "Tas Rolling Deploy task"),
   TAS_ROLLING_ROLLBACK(TaskGroup.TAS, "Tas Rolling Rollback task");
 

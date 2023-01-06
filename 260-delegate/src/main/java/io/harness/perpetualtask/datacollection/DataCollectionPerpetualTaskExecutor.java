@@ -108,10 +108,14 @@ public class DataCollectionPerpetualTaskExecutor implements PerpetualTaskExecuto
       }
 
       dataCollectionDSLService.registerDatacollectionExecutorService(dataCollectionService);
-      List<DataCollectionTaskDTO> dataCollectionTasks;
+      List<DataCollectionTaskDTO> dataCollectionTasks = new ArrayList<>();
       // TODO: What happens if this task takes more time then the schedule?
       while (true) {
-        dataCollectionTasks = getNextDataCollectionTasks(taskParams);
+        try {
+          dataCollectionTasks = getNextDataCollectionTasks(taskParams);
+        } catch (Exception e) {
+          log.error("Data collection task failed.", e);
+        }
         if (isEmpty(dataCollectionTasks)) {
           log.info("Nothing to process.");
           break;

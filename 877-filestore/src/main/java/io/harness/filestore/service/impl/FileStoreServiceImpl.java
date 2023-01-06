@@ -53,6 +53,7 @@ import io.harness.filestore.entities.NGFile;
 import io.harness.filestore.service.FileFailsafeService;
 import io.harness.filestore.service.FileStoreService;
 import io.harness.filestore.service.FileStructureService;
+import io.harness.filestore.service.FileValidationService;
 import io.harness.filter.dto.FilterDTO;
 import io.harness.filter.service.FilterService;
 import io.harness.ng.core.dto.EmbeddedUserDetailsDTO;
@@ -104,6 +105,7 @@ public class FileStoreServiceImpl implements FileStoreService {
   private final FilterService filterService;
   private final FileFailsafeService fileFailsafeService;
   private final FileStructureService fileStructureService;
+  private final FileValidationService fileValidationService;
 
   @Override
   public FileDTO create(@NotNull FileDTO fileDto, InputStream content) {
@@ -376,21 +378,6 @@ public class FileStoreServiceImpl implements FileStoreService {
     });
   }
 
-  private boolean isFileExistsByIdentifier(FileDTO fileDto) {
-    return fileStoreRepository
-        .findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(fileDto.getAccountIdentifier(),
-            fileDto.getOrgIdentifier(), fileDto.getProjectIdentifier(), fileDto.getIdentifier())
-        .isPresent();
-  }
-
-  private boolean isFileExistByName(FileDTO fileDto) {
-    return fileStoreRepository
-        .findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndParentIdentifierAndName(
-            fileDto.getAccountIdentifier(), fileDto.getOrgIdentifier(), fileDto.getProjectIdentifier(),
-            fileDto.getParentIdentifier(), fileDto.getName())
-        .isPresent();
-  }
-
   private String getDuplicateEntityIdentifierMessage(@NotNull FileDTO fileDto) {
     return format("Try another identifier, %s with identifier [%s] already exists.",
         fileDto.getType().name().toLowerCase(), fileDto.getIdentifier());
@@ -539,11 +526,12 @@ public class FileStoreServiceImpl implements FileStoreService {
   }
 
   private void validateCreationFileDto(FileDTO fileDto) {
-    if (isFileExistByName(fileDto)) {
+    if (fileValidationService.isFileExistByName(fileDto)) {
       throw new DuplicateFieldException(getDuplicateEntityNameMessage(fileDto));
     }
 
-    if (ROOT_FOLDER_IDENTIFIER.equals(fileDto.getIdentifier()) || isFileExistsByIdentifier(fileDto)) {
+    if (ROOT_FOLDER_IDENTIFIER.equals(fileDto.getIdentifier())
+        || fileValidationService.isFileExistsByIdentifier(fileDto)) {
       throw new DuplicateFieldException(getDuplicateEntityIdentifierMessage(fileDto));
     }
 
@@ -583,7 +571,7 @@ public class FileStoreServiceImpl implements FileStoreService {
   }
   // common validation rules for creation and update
   private void validateFileDto(FileDTO fileDto) {
-    if (!parentFolderExists(fileDto)) {
+    if (!fileValidationService.parentFolderExists(fileDto)) {
       throw new InvalidArgumentsException(
           format("Parent folder with identifier [%s] does not exist", fileDto.getParentIdentifier()));
     }
@@ -592,17 +580,6 @@ public class FileStoreServiceImpl implements FileStoreService {
       throw new InvalidArgumentsException(
           format("File usage cannot be set for folder, identifier [%s]", fileDto.getIdentifier()));
     }
-  }
-
-  private boolean parentFolderExists(FileDTO fileDto) {
-    if (ROOT_FOLDER_IDENTIFIER.equals(fileDto.getParentIdentifier())) {
-      return true;
-    }
-    return fileStoreRepository
-        .findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(fileDto.getAccountIdentifier(),
-            fileDto.getOrgIdentifier(), fileDto.getProjectIdentifier(), fileDto.getParentIdentifier())
-        .filter(NGFile::isFolder)
-        .isPresent();
   }
 
   private String createPath(FileDTO fileDto) {

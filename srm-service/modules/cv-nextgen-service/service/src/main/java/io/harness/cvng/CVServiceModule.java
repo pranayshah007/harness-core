@@ -62,6 +62,7 @@ import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.activity.ActivityType;
 import io.harness.cvng.beans.change.ChangeSourceType;
 import io.harness.cvng.cdng.beans.MonitoredServiceSpec.MonitoredServiceSpecType;
+import io.harness.cvng.cdng.resources.VerifyStepResourceImpl;
 import io.harness.cvng.cdng.services.api.CDStageMetaDataService;
 import io.harness.cvng.cdng.services.api.CVNGStepService;
 import io.harness.cvng.cdng.services.api.CVNGStepTaskService;
@@ -317,6 +318,7 @@ import io.harness.cvng.notification.transformer.SlackNotificationMethodTransform
 import io.harness.cvng.outbox.CVServiceOutboxEventHandler;
 import io.harness.cvng.outbox.MonitoredServiceOutboxEventHandler;
 import io.harness.cvng.outbox.ServiceLevelObjectiveOutboxEventHandler;
+import io.harness.cvng.resources.VerifyStepResource;
 import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
@@ -387,7 +389,7 @@ import io.harness.cvng.statemachine.services.impl.DeploymentStateMachineServiceI
 import io.harness.cvng.statemachine.services.impl.LiveMonitoringStateMachineServiceImpl;
 import io.harness.cvng.statemachine.services.impl.OrchestrationServiceImpl;
 import io.harness.cvng.statemachine.services.impl.SLIAnalysisStateMachineServiceImpl;
-import io.harness.cvng.usage.impl.CVLicenseUsageImpl;
+import io.harness.cvng.usage.impl.SRMLicenseUsageImpl;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
 import io.harness.cvng.verificationjob.services.impl.VerificationJobInstanceServiceImpl;
 import io.harness.enforcement.client.EnforcementClientModule;
@@ -410,6 +412,9 @@ import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.serializer.CvNextGenRegistrars;
 import io.harness.template.TemplateResourceClientModule;
 import io.harness.threading.ThreadPool;
+import io.harness.timescaledb.TimeScaleDBConfig;
+import io.harness.timescaledb.TimeScaleDBService;
+import io.harness.timescaledb.TimeScaleDBServiceImpl;
 import io.harness.waiter.AbstractWaiterModule;
 import io.harness.waiter.AsyncWaitEngineImpl;
 import io.harness.waiter.WaitNotifyEngine;
@@ -671,6 +676,7 @@ public class CVServiceModule extends AbstractModule {
         .to(TemplateVerifyStepMonitoredServiceResolutionServiceImpl.class)
         .in(Scopes.SINGLETON);
 
+    bind(VerifyStepResource.class).to(VerifyStepResourceImpl.class);
     bind(MetricPackService.class).to(MetricPackServiceImpl.class);
     bind(AppDynamicsService.class).to(AppDynamicsServiceImpl.class).in(Singleton.class);
     bind(LogRecordService.class).to(LogRecordServiceImpl.class);
@@ -680,7 +686,7 @@ public class CVServiceModule extends AbstractModule {
     bind(ActivityService.class).to(ActivityServiceImpl.class);
     bind(LogDashboardService.class).to(LogDashboardServiceImpl.class);
     bind(ErrorTrackingDashboardService.class).to(ErrorTrackingDashboardServiceImpl.class);
-    bind(LicenseUsageInterface.class).to(CVLicenseUsageImpl.class);
+    bind(LicenseUsageInterface.class).to(SRMLicenseUsageImpl.class);
     bind(DeploymentTimeSeriesAnalysisService.class).to(DeploymentTimeSeriesAnalysisServiceImpl.class);
     bind(NextGenService.class).to(NextGenServiceImpl.class);
     bind(HostRecordService.class).to(HostRecordServiceImpl.class);
@@ -723,6 +729,26 @@ public class CVServiceModule extends AbstractModule {
     bind(ExecutionLogService.class).to(ExecutionLogServiceImpl.class);
     bind(DeleteEntityByHandler.class).to(DefaultDeleteEntityByHandler.class);
     bind(TimeSeriesAnomalousPatternsService.class).to(TimeSeriesAnomalousPatternsServiceImpl.class);
+
+    try {
+      bind(TimeScaleDBService.class)
+          .toConstructor(TimeScaleDBServiceImpl.class.getConstructor(TimeScaleDBConfig.class));
+    } catch (NoSuchMethodException e) {
+      log.error("TimeScaleDbServiceImpl Initialization Failed in due to missing constructor", e);
+    }
+
+    if (verificationConfiguration.getEnableDashboardTimescale() != null
+        && verificationConfiguration.getEnableDashboardTimescale()) {
+      bind(TimeScaleDBConfig.class)
+          .annotatedWith(Names.named("TimeScaleDBConfig"))
+          .toInstance(verificationConfiguration.getTimeScaleDBConfig() != null
+                  ? verificationConfiguration.getTimeScaleDBConfig()
+                  : TimeScaleDBConfig.builder().build());
+    } else {
+      bind(TimeScaleDBConfig.class)
+          .annotatedWith(Names.named("TimeScaleDBConfig"))
+          .toInstance(TimeScaleDBConfig.builder().build());
+    }
 
     bind(MonitoringSourcePerpetualTaskService.class).to(MonitoringSourcePerpetualTaskServiceImpl.class);
     MapBinder<DataSourceType, DataSourceConnectivityChecker> dataSourceTypeToServiceMapBinder =

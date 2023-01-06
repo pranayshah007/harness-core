@@ -129,7 +129,7 @@ import software.wings.beans.VaultConfig;
 import software.wings.events.TestUtils;
 import software.wings.expression.ManagerPreviewExpressionEvaluator;
 import software.wings.features.api.UsageLimitedFeature;
-import software.wings.helpers.ext.mail.EmailData;
+import software.wings.persistence.mail.EmailData;
 import software.wings.service.impl.TemplateParameters.TemplateParametersBuilder;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.AssignDelegateService;
@@ -1407,7 +1407,9 @@ public class DelegateServiceImplTest extends WingsBaseTest {
     DelegateGroup delegateGroup2 =
         delegateService.upsertDelegateGroup(TEST_DELEGATE_GROUP_NAME, ACCOUNT_ID, delegateSetupDetails2);
 
-    assertThat(delegateGroup1).isEqualTo(delegateGroup2);
+    assertThat(delegateGroup1.getIdentifier()).isEqualTo(delegateGroup2.getIdentifier());
+    assertThat(delegateGroup1.getName()).isEqualTo(delegateGroup2.getName());
+    assertThat(delegateGroup1.getOwner()).isEqualTo(delegateGroup2.getOwner());
   }
 
   @Test

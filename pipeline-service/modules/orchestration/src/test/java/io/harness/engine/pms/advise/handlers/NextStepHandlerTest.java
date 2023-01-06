@@ -92,7 +92,7 @@ public class NextStepHandlerTest extends OrchestrationTestBase {
                                       .build();
 
     when(planService.fetchNode(planId, nextNodeId)).thenReturn(planNode);
-    when(nodeExecutionService.update(eq(nodeExecutionId), any())).thenReturn(nodeExecution);
+    doNothing().when(nodeExecutionService).updateV2(eq(nodeExecutionId), any());
 
     ArgumentCaptor<Ambiance> ambianceArgumentCaptor = ArgumentCaptor.forClass(Ambiance.class);
     nextStepHandler.handleAdvise(nodeExecution, adviserResponse);

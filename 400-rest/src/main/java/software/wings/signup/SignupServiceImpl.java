@@ -30,8 +30,8 @@ import software.wings.app.MainConfiguration;
 import software.wings.beans.UserInvite;
 import software.wings.beans.UserInvite.UserInviteKeys;
 import software.wings.dl.WingsPersistence;
-import software.wings.helpers.ext.mail.EmailData;
 import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
+import software.wings.persistence.mail.EmailData;
 import software.wings.service.intfc.EmailNotificationService;
 import software.wings.service.intfc.SignupService;
 

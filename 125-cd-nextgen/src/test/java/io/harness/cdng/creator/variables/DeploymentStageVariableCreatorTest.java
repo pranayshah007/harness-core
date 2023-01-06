@@ -413,8 +413,8 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
                 "artifacts.primary.repositoryFormat", "artifacts.primary.artifactDirectory",
                 "artifacts.primary.artifactPathFilter", "artifacts.primary.subscription", "artifacts.primary.registry",
                 "artifacts.primary.repository", "artifacts.primary.project", "artifacts.primary.package",
-                "artifacts.primary.version", "artifacts.primary.versionRegex", "serviceVariables.envVar1",
-                "serviceVariables.svar1"))
+                "artifacts.primary.version", "artifacts.primary.versionRegex", "artifacts.primary.repositoryType",
+                "serviceVariables.envVar1", "serviceVariables.svar1"))
             .expectedEnvFqn(
                 List.of("env.name", "env.identifier", "env.description", "env.type", "env.tags", "env.environmentRef",
                     "env.variables.envVar1", "env.variables.svar1", "env.envGroupRef", "env.envGroupName"))

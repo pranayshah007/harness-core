@@ -46,6 +46,8 @@ import io.harness.ccm.graphql.core.budget.BudgetService;
 import io.harness.ccm.graphql.core.budget.BudgetServiceImpl;
 import io.harness.ccm.graphql.core.currency.CurrencyPreferenceService;
 import io.harness.ccm.graphql.core.currency.CurrencyPreferenceServiceImpl;
+import io.harness.ccm.jira.CCMJiraHelper;
+import io.harness.ccm.jira.CCMJiraHelperImpl;
 import io.harness.ccm.service.impl.AWSOrganizationHelperServiceImpl;
 import io.harness.ccm.service.intf.AWSOrganizationHelperService;
 import io.harness.ccm.views.businessMapping.service.impl.BusinessMappingServiceImpl;
@@ -77,6 +79,7 @@ import io.harness.persistence.HPersistence;
 import io.harness.pricing.client.CloudInfoPricingClientModule;
 import io.harness.remote.client.ClientMode;
 import io.harness.remote.client.ServiceHttpClientConfig;
+import io.harness.secrets.SecretNGManagerClientModule;
 import io.harness.telemetry.AbstractTelemetryModule;
 import io.harness.telemetry.TelemetryConfiguration;
 import io.harness.telemetry.segment.SegmentConfiguration;
@@ -163,6 +166,8 @@ public class BatchProcessingModule extends AbstractModule {
         batchMainConfig.getNgManagerServiceSecret(), MANAGER.getServiceId()));
     install(new NotificationResourceClientModule(batchMainConfig.getCeNgServiceHttpClientConfig(),
         batchMainConfig.getCeNgServiceSecret(), BATCH_PROCESSING.getServiceId(), ClientMode.PRIVILEGED));
+    install(new SecretNGManagerClientModule(batchMainConfig.getNgManagerServiceHttpClientConfig(),
+        batchMainConfig.getNgManagerServiceSecret(), BATCH_PROCESSING.getServiceId()));
     install(new AbstractTelemetryModule() {
       @Override
       public TelemetryConfiguration telemetryConfiguration() {
@@ -184,6 +189,7 @@ public class BatchProcessingModule extends AbstractModule {
     bind(PerspectiveAnomalyService.class).to(PerspectiveAnomalyServiceImpl.class);
     bind(CurrencyPreferenceService.class).to(CurrencyPreferenceServiceImpl.class);
     bind(CurrencyPreferenceHelper.class).to(CurrencyPreferenceHelperImpl.class);
+    bind(CCMJiraHelper.class).to(CCMJiraHelperImpl.class);
 
     install(new MetricsModule());
     install(new CENGGraphQLModule(batchMainConfig.getCurrencyPreferencesConfig()));

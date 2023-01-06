@@ -13,8 +13,8 @@ import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
 import io.harness.iterator.PersistentRegularIterable;
-import io.harness.mongo.CollationLocale;
-import io.harness.mongo.CollationStrength;
+import io.harness.mongo.collation.CollationLocale;
+import io.harness.mongo.collation.CollationStrength;
 import io.harness.mongo.index.Collation;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
@@ -26,6 +26,7 @@ import io.harness.resourcegroup.model.ResourceSelector;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
 import java.util.List;
 import java.util.Set;
 import javax.validation.constraints.NotNull;
@@ -35,7 +36,6 @@ import lombok.Data;
 import lombok.Singular;
 import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
@@ -79,7 +79,7 @@ public class ResourceGroup implements PersistentRegularIterable, PersistentEntit
         .build();
   }
 
-  @Id @org.mongodb.morphia.annotations.Id String id;
+  @Id @dev.morphia.annotations.Id String id;
   String accountIdentifier;
   String orgIdentifier;
   String projectIdentifier;

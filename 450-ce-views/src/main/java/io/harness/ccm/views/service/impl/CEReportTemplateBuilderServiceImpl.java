@@ -10,6 +10,8 @@ package io.harness.ccm.views.service.impl;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.ccm.commons.dao.CEMetadataRecordDao;
+import io.harness.ccm.currency.Currency;
 import io.harness.ccm.views.entities.CEView;
 import io.harness.ccm.views.entities.ViewFieldIdentifier;
 import io.harness.ccm.views.entities.ViewTimeRangeType;
@@ -70,9 +72,10 @@ import org.jfree.data.category.DefaultCategoryDataset;
 
 @Slf4j
 public class CEReportTemplateBuilderServiceImpl implements CEReportTemplateBuilderService {
-  @Inject CEViewService ceViewService;
-  @Inject ViewsBillingServiceImpl viewsBillingService;
-  @Inject ViewsQueryHelper viewsQueryHelper;
+  @Inject private CEViewService ceViewService;
+  @Inject private ViewsBillingServiceImpl viewsBillingService;
+  @Inject private ViewsQueryHelper viewsQueryHelper;
+  @Inject private CEMetadataRecordDao ceMetadataRecordDao;
 
   // For table construction
   private static final String TABLE_START =
@@ -107,11 +110,9 @@ public class CEReportTemplateBuilderServiceImpl implements CEReportTemplateBuild
   private static final String TOTAL_COST_LAST_WEEK = "TOTAL_COST_LAST_WEEK";
   private static final String TABLE = "TABLE";
   private static final String CHART = "CHART";
-  private static final String UNSUBSCRIBE_URL = "UNSUBSCRIBE_URL";
   private static final String PERSPECTIVE_URL = "PERSPECTIVE_URL";
 
   // Constants
-  private static final String ZERO = "0";
   private static final String WEEK = "WEEK";
   private static final String DAY = "DAY";
   private static final String THIRTY_DAYS = "30 DAYS";
@@ -125,7 +126,6 @@ public class CEReportTemplateBuilderServiceImpl implements CEReportTemplateBuild
   private static final String UPWARD_ARROW = "&uarr;";
   private static final String DOWNWARD_ARROW = "&darr;";
   private static final String PERCENT = "%";
-  private static final String DOLLAR = "$";
   private static final Integer DEFAULT_LIMIT = Integer.MAX_VALUE - 1;
   private static final Integer DEFAULT_OFFSET = 0;
   private static final Color[] COLORS = {new Color(72, 165, 243), new Color(147, 133, 241), new Color(83, 205, 124),
@@ -207,6 +207,8 @@ public class CEReportTemplateBuilderServiceImpl implements CEReportTemplateBuild
       throw new InvalidRequestException("Exception while generating report. No data to for chart");
     }
 
+    Currency currency = getDestinationCurrency(accountId);
+
     // Filling template placeholders
     templatePlaceholders.put(VIEW_NAME, view.getName());
     templatePlaceholders.put(PERIOD, period);
@@ -216,24 +218,23 @@ public class CEReportTemplateBuilderServiceImpl implements CEReportTemplateBuild
     templatePlaceholders.put(CHART, getEncodedImage(createChart(chartData, entities, !period.equals(WEEK))));
 
     // Trend bar for report
-    templatePlaceholders.put(TOTAL_COST, trendData.getStatsValue());
+    templatePlaceholders.put(
+        TOTAL_COST, trendData.getStatsValue().replaceFirst(currency.getSymbol(), currency.getUtf8HexSymbol()));
     if (trendData.getStatsTrend().doubleValue() < 0) {
       templatePlaceholders.put(TOTAL_COST_TREND,
-          String.format(
-              COST_TREND, GREEN_COLOR, trendData.getStatsTrend().toString() + PERCENT, getTotalCostDiff(trendData)));
+          String.format(COST_TREND, GREEN_COLOR, trendData.getStatsTrend() + PERCENT, getTotalCostDiff(trendData)));
     } else if (trendData.getStatsTrend().doubleValue() > 0) {
       templatePlaceholders.put(TOTAL_COST_TREND,
-          String.format(
-              COST_TREND, RED_COLOR, trendData.getStatsTrend().toString() + PERCENT, getTotalCostDiff(trendData)));
+          String.format(COST_TREND, RED_COLOR, trendData.getStatsTrend() + PERCENT, getTotalCostDiff(trendData)));
     } else {
       templatePlaceholders.put(TOTAL_COST_TREND, String.format(COST_TREND, GREY_COLOR, "-", "-"));
     }
 
-    templatePlaceholders.put(
-        TOTAL_COST_LAST_WEEK, DOLLAR + viewsQueryHelper.formatNumber(getTotalCostLastWeek(trendData)));
+    templatePlaceholders.put(TOTAL_COST_LAST_WEEK,
+        currency.getUtf8HexSymbol() + viewsQueryHelper.formatNumber(getTotalCostLastWeek(trendData)));
 
     // Generating table for report
-    templatePlaceholders.put(TABLE, generateTable(tableData, entity));
+    templatePlaceholders.put(TABLE, generateTable(tableData, entity, currency));
     templatePlaceholders.put(PERSPECTIVE_URL, getPerspectiveUrl(view));
 
     return templatePlaceholders;
@@ -298,7 +299,7 @@ public class CEReportTemplateBuilderServiceImpl implements CEReportTemplateBuild
         / 100D;
   }
 
-  private String generateTable(List<QLCEViewEntityStatsDataPoint> tableData, String entity) {
+  private String generateTable(List<QLCEViewEntityStatsDataPoint> tableData, String entity, Currency currency) {
     String table = "";
     if (isNotEmpty(tableData)) {
       StringJoiner joiner = new StringJoiner(" ");
@@ -312,7 +313,8 @@ public class CEReportTemplateBuilderServiceImpl implements CEReportTemplateBuild
       tableData.forEach(data -> {
         joiner.add(ROW_START);
         joiner.add(String.format(LEFT_COLUMN, data.getName()));
-        joiner.add(String.format(MIDDLE_COLUMN, DOLLAR + viewsQueryHelper.formatNumber(data.getCost().doubleValue())));
+        joiner.add(String.format(
+            MIDDLE_COLUMN, currency.getUtf8HexSymbol() + viewsQueryHelper.formatNumber(data.getCost().doubleValue())));
         if (data.getCostTrend().doubleValue() < 0) {
           joiner.add(String.format(
               RIGHT_COLUMN, GREEN_COLOR, DOWNWARD_ARROW, Math.abs(data.getCostTrend().doubleValue()) + PERCENT));
@@ -477,5 +479,13 @@ public class CEReportTemplateBuilderServiceImpl implements CEReportTemplateBuild
       log.info("Can't create explorer Url for perspective : {}", view.getUuid());
     }
     return defaultUrl;
+  }
+
+  private Currency getDestinationCurrency(String accountId) {
+    Currency currency = ceMetadataRecordDao.getDestinationCurrency(accountId);
+    if (Currency.NONE == currency) {
+      currency = Currency.USD;
+    }
+    return currency;
   }
 }

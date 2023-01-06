@@ -148,8 +148,8 @@ public class PluginSettingUtils {
   public static final String ECR_REGISTRY_PATTERN = "%s.dkr.ecr.%s.amazonaws.com";
   @Inject private CodebaseUtils codebaseUtils;
 
-  public Map<String, String> getPluginCompatibleEnvVariables(
-      PluginCompatibleStep stepInfo, String identifier, long timeout, Ambiance ambiance, Type infraType) {
+  public Map<String, String> getPluginCompatibleEnvVariables(PluginCompatibleStep stepInfo, String identifier,
+      long timeout, Ambiance ambiance, Type infraType, boolean isMandatory) {
     switch (stepInfo.getNonYamlInfo().getStepInfoType()) {
       case ECR:
         return getECRStepInfoEnvVariables((ECRStepInfo) stepInfo, identifier, infraType);
@@ -164,7 +164,7 @@ public class PluginSettingUtils {
       case UPLOAD_GCS:
         return getUploadToGCSStepInfoEnvVariables((UploadToGCSStepInfo) stepInfo, identifier);
       case UPLOAD_S3:
-        return getUploadToS3StepInfoEnvVariables((UploadToS3StepInfo) stepInfo, identifier);
+        return getUploadToS3StepInfoEnvVariables((UploadToS3StepInfo) stepInfo, identifier, isMandatory);
       case SAVE_CACHE_GCS:
         return getSaveCacheGCSStepInfoEnvVariables((SaveCacheGCSStepInfo) stepInfo, identifier, timeout);
       case SECURITY:
@@ -696,13 +696,14 @@ public class PluginSettingUtils {
     return map;
   }
 
-  private static Map<String, String> getUploadToS3StepInfoEnvVariables(UploadToS3StepInfo stepInfo, String identifier) {
+  private static Map<String, String> getUploadToS3StepInfoEnvVariables(
+      UploadToS3StepInfo stepInfo, String identifier, boolean isMandatory) {
     Map<String, String> map = new HashMap<>();
 
-    setMandatoryEnvironmentVariable(
-        map, PLUGIN_BUCKET, resolveStringParameterV2("bucket", "S3Upload", identifier, stepInfo.getBucket(), true));
+    setMandatoryEnvironmentVariable(map, PLUGIN_BUCKET,
+        resolveStringParameterV2("bucket", "S3Upload", identifier, stepInfo.getBucket(), isMandatory));
     setMandatoryEnvironmentVariable(map, PLUGIN_SOURCE,
-        resolveStringParameterV2("sourcePath", "S3Upload", identifier, stepInfo.getSourcePath(), true));
+        resolveStringParameterV2("sourcePath", "S3Upload", identifier, stepInfo.getSourcePath(), isMandatory));
 
     String target = resolveStringParameter("target", "S3Upload", identifier, stepInfo.getTarget(), false);
     if (target != null && !target.equals(UNRESOLVED_PARAMETER)) {

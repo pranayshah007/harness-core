@@ -144,6 +144,9 @@ public class DeploymentEventListener implements OrchestrationEventHandler {
             .deployedAt(AmbianceUtils.getCurrentLevelStartTs(ambiance))
             .infrastructureIdentifier(infrastructureOutcome.getInfraIdentifier())
             .infrastructureName(infrastructureOutcome.getInfraName())
+            .envGroupRef(infrastructureOutcome.getEnvironment() != null
+                    ? infrastructureOutcome.getEnvironment().getEnvGroupRef()
+                    : null)
             .build();
     setArtifactDetails(ambiance, deploymentSummaryDTO, deploymentInfoDTO);
     deploymentSummaryDTO = deploymentSummaryService.save(deploymentSummaryDTO);

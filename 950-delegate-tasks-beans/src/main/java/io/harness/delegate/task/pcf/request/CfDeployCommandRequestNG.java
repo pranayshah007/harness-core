@@ -8,6 +8,7 @@
 package io.harness.delegate.task.pcf.request;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.expression.Expression.ALLOW_SECRETS;
 
 import static java.lang.String.format;
 
@@ -20,8 +21,8 @@ import io.harness.delegate.beans.pcf.CfServiceData;
 import io.harness.delegate.beans.pcf.TasApplicationInfo;
 import io.harness.delegate.beans.pcf.TasResizeStrategyType;
 import io.harness.delegate.task.pcf.CfCommandTypeNG;
-import io.harness.delegate.task.pcf.PcfManifestsPackage;
 import io.harness.delegate.task.pcf.response.TasInfraConfig;
+import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.pcf.model.CfCliVersion;
 
@@ -40,7 +41,7 @@ public class CfDeployCommandRequestNG extends AbstractTasTaskRequest {
   Integer downSizeCount;
   Integer totalPreviousInstanceCount;
   TasApplicationInfo downsizeAppDetail;
-  PcfManifestsPackage pcfManifestsPackage;
+  @Expression(ALLOW_SECRETS) TasManifestsPackage tasManifestsPackage;
   Integer maxCount;
   List<CfServiceData> instanceData;
   TasResizeStrategyType resizeStrategy;
@@ -53,7 +54,7 @@ public class CfDeployCommandRequestNG extends AbstractTasTaskRequest {
       CfCliVersion cfCliVersion, Integer timeoutIntervalInMin, String newReleaseName, List<String> routeMaps,
 
       Integer upsizeCount, Integer downSizeCount, Integer totalPreviousInstanceCount,
-      TasApplicationInfo downsizeAppDetail, PcfManifestsPackage pcfManifestsPackage, Integer maxCount,
+      TasApplicationInfo downsizeAppDetail, TasManifestsPackage tasManifestsPackage, Integer maxCount,
       List<CfServiceData> instanceData, TasResizeStrategyType resizeStrategy, boolean isStandardBlueGreen,
       boolean useAppAutoScalar) {
     super(timeoutIntervalInMin, accountId, commandName, cfCommandTypeNG, commandUnitsProgress, tasInfraConfig, useCfCLI,
@@ -64,7 +65,7 @@ public class CfDeployCommandRequestNG extends AbstractTasTaskRequest {
     this.downSizeCount = downSizeCount;
     this.totalPreviousInstanceCount = totalPreviousInstanceCount;
     this.downsizeAppDetail = downsizeAppDetail;
-    this.pcfManifestsPackage = pcfManifestsPackage;
+    this.tasManifestsPackage = tasManifestsPackage;
     this.maxCount = maxCount;
     this.instanceData = instanceData;
     this.resizeStrategy = resizeStrategy;

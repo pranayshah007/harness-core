@@ -187,7 +187,7 @@ public class EcsGitFetchTask extends AbstractDelegateRunnableTask {
         String filePath = ecsGitFetchFileConfig.getGitStoreDelegateConfig().getPaths().get(0);
 
         List<String> filePaths = Collections.singletonList(filePath);
-        gitFetchTaskHelper.printFileNames(executionLogCallback, filePaths);
+        gitFetchTaskHelper.printFileNames(executionLogCallback, filePaths, false);
         try {
           filesResult =
               gitFetchTaskHelper.fetchFileFromRepo(gitStoreDelegateConfig, filePaths, accountId, gitConfigDTO);

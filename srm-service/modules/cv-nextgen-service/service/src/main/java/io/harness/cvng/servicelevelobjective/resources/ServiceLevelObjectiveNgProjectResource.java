@@ -7,6 +7,8 @@
 
 package io.harness.cvng.servicelevelobjective.resources;
 
+import static io.harness.cvng.core.beans.params.ProjectParams.fromProjectPathParams;
+import static io.harness.cvng.core.beans.params.ProjectParams.fromResourcePathParams;
 import static io.harness.cvng.core.services.CVNextGenConstants.RESOURCE_IDENTIFIER_PATH;
 import static io.harness.cvng.core.services.CVNextGenConstants.SLO_NG_PROJECT_PATH;
 
@@ -128,7 +130,7 @@ public class ServiceLevelObjectiveNgProjectResource {
       @Body ServiceLevelObjectiveV2DTO serviceLevelObjectiveDTO) {
     validations(
         projectPathParams.getOrgIdentifier(), projectPathParams.getProjectIdentifier(), serviceLevelObjectiveDTO);
-    ProjectParams projectParams = buildProjectParamsFromPathParams(projectPathParams);
+    ProjectParams projectParams = fromProjectPathParams(projectPathParams);
     return new RestResponse<>(serviceLevelObjectiveService.create(projectParams, serviceLevelObjectiveDTO));
   }
 
@@ -142,7 +144,7 @@ public class ServiceLevelObjectiveNgProjectResource {
   @NGAccessControlCheck(resourceType = SLO, permission = VIEW_PERMISSION)
   public RestResponse<ServiceLevelObjectiveV2Response>
   getServiceLevelObjectiveNg(@Valid @BeanParam ResourcePathParams resourcePathParams) {
-    ProjectParams projectParams = buildProjectParamsFromPathParams(resourcePathParams);
+    ProjectParams projectParams = fromResourcePathParams(resourcePathParams);
     return new RestResponse<>(serviceLevelObjectiveService.get(projectParams, resourcePathParams.getIdentifier()));
   }
 
@@ -159,7 +161,7 @@ public class ServiceLevelObjectiveNgProjectResource {
           "offset") @NotNull Integer offset,
       @Parameter(description = NGCommonEntityConstants.SIZE_PARAM_MESSAGE) @QueryParam("pageSize")
       @NotNull Integer pageSize, @BeanParam ServiceLevelObjectiveFilter serviceLevelObjectiveFilter) {
-    ProjectParams projectParams = buildProjectParamsFromPathParams(projectPathParams);
+    ProjectParams projectParams = fromProjectPathParams(projectPathParams);
     return ResponseDTO.newResponse(
         serviceLevelObjectiveService.get(projectParams, offset, pageSize, serviceLevelObjectiveFilter));
   }
@@ -179,7 +181,7 @@ public class ServiceLevelObjectiveNgProjectResource {
       @Body ServiceLevelObjectiveV2DTO serviceLevelObjectiveDTO) {
     validations(
         resourcePathParams.getOrgIdentifier(), resourcePathParams.getProjectIdentifier(), serviceLevelObjectiveDTO);
-    ProjectParams projectParams = buildProjectParamsFromPathParams(resourcePathParams);
+    ProjectParams projectParams = fromResourcePathParams(resourcePathParams);
     return new RestResponse<>(serviceLevelObjectiveService.update(
         projectParams, resourcePathParams.getIdentifier(), serviceLevelObjectiveDTO));
   }
@@ -195,7 +197,7 @@ public class ServiceLevelObjectiveNgProjectResource {
   @NGAccessControlCheck(resourceType = SLO, permission = DELETE_PERMISSION)
   public RestResponse<Boolean>
   deleteSLODataNg(@Valid @BeanParam ResourcePathParams resourcePathParams) {
-    ProjectParams projectParams = buildProjectParamsFromPathParams(resourcePathParams);
+    ProjectParams projectParams = fromResourcePathParams(resourcePathParams);
     return new RestResponse<>(serviceLevelObjectiveService.delete(projectParams, resourcePathParams.getIdentifier()));
   }
 
@@ -210,7 +212,7 @@ public class ServiceLevelObjectiveNgProjectResource {
   public ResponseDTO<PageResponse<SLOHealthListView>>
   getSLOHealthListViewNg(@Valid @BeanParam ProjectPathParams projectPathParams, @BeanParam PageParams pageParams,
       @Valid @Body SLODashboardApiFilter filter) {
-    ProjectParams projectParams = buildProjectParamsFromPathParams(projectPathParams);
+    ProjectParams projectParams = fromProjectPathParams(projectPathParams);
     return ResponseDTO.newResponse(sloDashboardService.getSloHealthListView(projectParams, filter, pageParams));
   }
 
@@ -220,13 +222,5 @@ public class ServiceLevelObjectiveNgProjectResource {
         || !projectIdentifier.equals(serviceLevelObjectiveDTO.getProjectIdentifier())) {
       throw new IllegalArgumentException("Mismatch between path params and request dto for org / project identifier");
     }
-  }
-
-  private static ProjectParams buildProjectParamsFromPathParams(ProjectPathParams projectPathParams) {
-    return ProjectParams.builder()
-        .accountIdentifier(projectPathParams.getAccountIdentifier())
-        .orgIdentifier(projectPathParams.getOrgIdentifier())
-        .projectIdentifier(projectPathParams.getProjectIdentifier())
-        .build();
   }
 }

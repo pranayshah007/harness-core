@@ -34,6 +34,7 @@ public class DeploymentSummaryMapper {
         .deploymentInfoDTO(DeploymentInfoMapper.toDTO(deploymentSummary.getDeploymentInfo()))
         .infrastructureMappingId(deploymentSummary.getInfrastructureMappingId())
         .infrastructureIdentifier(deploymentSummary.getInfrastructureIdentifier())
+        .envGroupRef(deploymentSummary.getEnvGroupRef())
         .infrastructureName(deploymentSummary.getInfrastructureName())
         .lastModifiedAt(deploymentSummary.getLastModifiedAt())
         .id(deploymentSummary.getId())
@@ -60,6 +61,7 @@ public class DeploymentSummaryMapper {
         .artifactDetails(deploymentSummaryDTO.getArtifactDetails())
         .isRollbackDeployment(deploymentSummaryDTO.isRollbackDeployment())
         .instanceSyncKey(deploymentSummaryDTO.getInstanceSyncKey())
+        .envGroupRef(deploymentSummaryDTO.getEnvGroupRef())
         .build();
   }
 }

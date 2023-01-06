@@ -118,12 +118,10 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
 
     PerpetualTaskExecutionBundle.Builder builder =
         PerpetualTaskExecutionBundle.newBuilder()
-            .setTaskParams(
-                Any.pack(CgInstanceSyncTaskParams.newBuilder()
-                             .setAccountId(cloudProvider.getAccountId())
-                             .setCloudProviderType(cloudProvider.getValue().getType())
-                             .setCloudProviderDetails(ByteString.copyFrom(kryoSerializer.asBytes(cloudProvider)))
-                             .build()))
+            .setTaskParams(Any.pack(CgInstanceSyncTaskParams.newBuilder()
+                                        .setAccountId(cloudProvider.getAccountId())
+                                        .setCloudProviderType(cloudProvider.getValue().getType())
+                                        .build()))
             .putAllSetupAbstractions(Maps.of(NG, "false", OWNER, cloudProvider.getAccountId()));
     cloudProvider.getValue().fetchRequiredExecutionCapabilities(null).forEach(executionCapability
         -> builder

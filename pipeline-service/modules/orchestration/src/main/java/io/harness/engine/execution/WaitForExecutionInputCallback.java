@@ -65,16 +65,19 @@ public class WaitForExecutionInputCallback implements OldNotifyCallback {
   public void notifyTimeout(Map<String, ResponseData> responseMap) {
     NodeExecution nodeExecution = nodeExecutionService.get(nodeExecutionId);
     PlanNode node = nodeExecution.getNode();
-    FailureInfo failureInfo = FailureInfo.newBuilder()
-                                  .setErrorMessage("ExecutionInputExpired")
-                                  .addFailureTypes(FailureType.INPUT_TIMEOUT_FAILURE)
-                                  .addFailureData(FailureData.newBuilder()
-                                                      .addFailureTypes(FailureType.INPUT_TIMEOUT_FAILURE)
-                                                      .setLevel(Level.ERROR.name())
-                                                      .setCode(TIMEOUT_ENGINE_EXCEPTION.name())
-                                                      .setMessage("ExecutionInputExpired")
-                                                      .build())
-                                  .build();
+    FailureInfo failureInfo =
+        FailureInfo.newBuilder()
+            .setErrorMessage("ExecutionInputExpired")
+            .addFailureTypes(FailureType.INPUT_TIMEOUT_FAILURE)
+            .addFailureData(
+                FailureData.newBuilder()
+                    .addFailureTypes(FailureType.INPUT_TIMEOUT_FAILURE)
+                    .setLevel(Level.ERROR.name())
+                    .setCode(TIMEOUT_ENGINE_EXCEPTION.name())
+                    .setMessage(
+                        "Pipeline has passed the time limit to take the user input. Please check the timeout configuration")
+                    .build())
+            .build();
 
     // ProceedWithDefault FailureStrategy is not configured, then expire the nodeExecution.
     if (node.getAdviserObtainments().stream().noneMatch(

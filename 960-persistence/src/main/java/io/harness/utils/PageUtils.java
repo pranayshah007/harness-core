@@ -17,7 +17,6 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 
-import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -111,8 +110,10 @@ public class PageUtils {
   }
 
   public static <T> PageResponse<T> offsetAndLimit(List<T> input, int offset, int pageSize) {
-    Preconditions.checkState(input.size() >= offset * pageSize,
-        "for a list of size %s the offset %s and pagesize %s is invalid", input.size(), offset, pageSize);
+    if (input.size() < offset * pageSize) {
+      throw new InvalidRequestException(String.format(
+          "for a list of size %s the offset %s and pagesize %s is invalid", input.size(), offset, pageSize));
+    }
 
     int startIndex = offset * pageSize;
     int endIndex = startIndex + pageSize < input.size() ? startIndex + pageSize : input.size();

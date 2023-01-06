@@ -103,7 +103,7 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
           Optional<InstanceSyncPerpetualTaskInfoDTO> instanceSyncPerpetualTaskInfoDTOOptional =
               instanceSyncPerpetualTaskInfoService.findByInfrastructureMappingId(infrastructureMappingDTO.getId());
           InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO;
-          if (!instanceSyncPerpetualTaskInfoDTOOptional.isPresent()) {
+          if (instanceSyncPerpetualTaskInfoDTOOptional.isEmpty()) {
             // no existing perpetual task info record found for given infrastructure mapping id
             // so create a new perpetual task and instance sync perpetual task info record
             String perpetualTaskId = instanceSyncPerpetualTaskService.createPerpetualTask(infrastructureMappingDTO,
@@ -120,7 +120,7 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
               addNewDeploymentInfoToInstanceSyncPerpetualTaskInfoRecord(
                   instanceSyncPerpetualTaskInfoDTO, deploymentSummaryDTO);
               instanceSyncPerpetualTaskInfoService.updateDeploymentInfoDetailsList(instanceSyncPerpetualTaskInfoDTO);
-              // Reset perpetual task to update the execution bundle with latest information
+              // Reset perpetual task to update the execution bundle with the latest information
               instanceSyncPerpetualTaskService.resetPerpetualTask(infrastructureMappingDTO.getAccountIdentifier(),
                   instanceSyncPerpetualTaskInfoDTO.getPerpetualTaskId(), infrastructureMappingDTO,
                   abstractInstanceSyncHandler,
@@ -199,6 +199,8 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
         }
 
         if (!doSvcAndEnvExist(infrastructureMappingDTO.get())) {
+          // as either or both of svc and env don't exist, we delete the instances before deleting the perpetual task
+          deleteInstances(infrastructureMappingDTO.get());
           instanceSyncHelper.cleanUpInstanceSyncPerpetualTaskInfo(instanceSyncPerpetualTaskInfoDTO);
           return;
         }
@@ -463,6 +465,7 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
         .deployedAt(instanceDTO.getLastDeployedAt())
         .infrastructureIdentifier(instanceDTO.getInfraIdentifier())
         .infrastructureName(instanceDTO.getInfraName())
+        .envGroupRef(instanceDTO.getEnvGroupRef())
         .build();
   }
 
@@ -506,6 +509,7 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
             .envIdentifier(environment.getIdentifier())
             .envType(environment.getType())
             .envName(environment.getName())
+            .envGroupRef(deploymentSummaryDTO.getEnvGroupRef())
             .serviceName(serviceEntity.getName())
             .serviceIdentifier(serviceEntity.getIdentifier())
             .projectIdentifier(deploymentSummaryDTO.getProjectIdentifier())
@@ -626,5 +630,12 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
       return false;
     }
     return true;
+  }
+
+  private void deleteInstances(InfrastructureMappingDTO mappingDTO) {
+    List<InstanceDTO> instancesInDB =
+        instanceService.getActiveInstancesByInfrastructureMappingId(mappingDTO.getAccountIdentifier(),
+            mappingDTO.getOrgIdentifier(), mappingDTO.getProjectIdentifier(), mappingDTO.getId());
+    instanceService.deleteAll(instancesInDB);
   }
 }

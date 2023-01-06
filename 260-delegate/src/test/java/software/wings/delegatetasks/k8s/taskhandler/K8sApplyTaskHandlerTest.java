@@ -296,7 +296,7 @@ public class K8sApplyTaskHandlerTest extends WingsBaseTest {
         .init(any(K8sApplyTaskParameters.class), any(K8sDelegateTaskParams.class), any(ExecutionLogCallback.class));
     verify(k8sTaskHelper, times(1)).fetchManifestFilesAndWriteToDirectory(any(), any(), any(), anyLong());
     verify(mockedK8sApplyBaseHandler, times(0)).prepare(any(), anyBoolean(), any());
-    verify(k8sTaskHelperBase, times(0)).applyManifests(any(), any(), any(), any(), anyBoolean());
+    verify(k8sTaskHelperBase, times(0)).applyManifests(any(), any(), any(), any(), anyBoolean(), any());
     verify(mockedK8sApplyBaseHandler, times(0)).steadyStateCheck(anyBoolean(), any(), any(), anyLong(), any(), any());
     verify(mockedK8sApplyBaseHandler, times(0)).wrapUp(any(), any(), any());
 
@@ -318,7 +318,7 @@ public class K8sApplyTaskHandlerTest extends WingsBaseTest {
 
     doReturn(true).when(k8sTaskHelper).restore(any(), any(), any(), any(), any());
     doReturn(true).when(mockedK8sApplyBaseHandler).prepare(any(), anyBoolean(), any());
-    doReturn(true).when(k8sTaskHelperBase).applyManifests(any(), any(), any(), any(), anyBoolean());
+    doReturn(true).when(k8sTaskHelperBase).applyManifests(any(), any(), any(), any(), anyBoolean(), eq(null));
     doReturn(true)
         .when(mockedK8sApplyBaseHandler)
         .steadyStateCheck(anyBoolean(), any(), any(), anyLong(), any(), any());
@@ -337,7 +337,7 @@ public class K8sApplyTaskHandlerTest extends WingsBaseTest {
     verify(k8sTaskHelper, times(0)).fetchManifestFilesAndWriteToDirectory(any(), any(), any(), anyLong());
     verify(k8sTaskHelper, times(1)).restore(any(), any(), any(), any(), any());
     verify(mockedK8sApplyBaseHandler, times(1)).prepare(any(), anyBoolean(), any());
-    verify(k8sTaskHelperBase, times(1)).applyManifests(any(), any(), any(), any(), anyBoolean());
+    verify(k8sTaskHelperBase, times(1)).applyManifests(any(), any(), any(), any(), anyBoolean(), any());
     verify(mockedK8sApplyBaseHandler, times(1)).steadyStateCheck(anyBoolean(), any(), any(), anyLong(), any(), any());
     verify(mockedK8sApplyBaseHandler, times(1)).wrapUp(any(), any(), any());
 
@@ -454,8 +454,8 @@ public class K8sApplyTaskHandlerTest extends WingsBaseTest {
         .prepare(any(ExecutionLogCallback.class), anyBoolean(), any(K8sApplyHandlerConfig.class));
     doReturn(false)
         .when(k8sTaskHelperBase)
-        .applyManifests(
-            any(Kubectl.class), any(), any(K8sDelegateTaskParams.class), any(ExecutionLogCallback.class), anyBoolean());
+        .applyManifests(any(Kubectl.class), any(), any(K8sDelegateTaskParams.class), any(ExecutionLogCallback.class),
+            anyBoolean(), any());
 
     final K8sTaskExecutionResponse response =
         k8sApplyTaskHandler.executeTask(K8sApplyTaskParameters.builder().releaseName("release-name").build(),
@@ -615,7 +615,7 @@ public class K8sApplyTaskHandlerTest extends WingsBaseTest {
     doReturn(true)
         .when(k8sTaskHelperBase)
         .applyManifests(nullable(Kubectl.class), any(), nullable(K8sDelegateTaskParams.class),
-            nullable(ExecutionLogCallback.class), anyBoolean());
+            nullable(ExecutionLogCallback.class), anyBoolean(), any());
     doReturn(true)
         .when(mockedK8sApplyBaseHandler)
         .steadyStateCheck(anyBoolean(), any(), nullable(K8sDelegateTaskParams.class), anyLong(),

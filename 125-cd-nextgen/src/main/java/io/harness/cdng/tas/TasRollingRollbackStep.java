@@ -157,7 +157,7 @@ public class TasRollingRollbackStep extends TaskExecutableWithRollbackAndRbac<Cf
             .tasInfraConfig(tasInfraConfig)
             .tasArtifactConfig(tasArtifactConfig)
             .cfCommandTypeNG(CfCommandTypeNG.TAS_ROLLING_ROLLBACK)
-            .pcfManifestsPackage(tasStageExecutionDetails == null ?  null : tasStageExecutionDetails.getPcfManifestsPackage())
+            .tasManifestsPackage(tasStageExecutionDetails == null ?  null : tasStageExecutionDetails.getTasManifestsPackage())
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
             .isFirstDeployment(tasRollingDeployOutcome.isFirstDeployment())
             .useAppAutoScalar(tasStageExecutionDetails != null && tasStageExecutionDetails.getIsAutoscalarEnabled())

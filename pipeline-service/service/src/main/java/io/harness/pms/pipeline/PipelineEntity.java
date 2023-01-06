@@ -35,6 +35,7 @@ import io.harness.template.yaml.TemplateRefHelper;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,7 +54,6 @@ import lombok.experimental.NonFinal;
 import lombok.experimental.UtilityClass;
 import lombok.experimental.Wither;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -72,6 +72,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @TypeAlias("pipelinesPMS")
 @HarnessEntity(exportable = true)
 @ChangeDataCapture(table = "tags_info", dataStore = "pms-harness", fields = {}, handler = "TagsInfoCD")
+@ChangeDataCapture(table = "tags_info_ng", dataStore = "pms-harness", fields = {}, handler = "TagsInfoNGCD")
 @ChangeDataCapture(table = "pipelines", dataStore = "ng-harness", fields = {}, handler = "Pipelines")
 public class PipelineEntity
     implements GitAware, GitSyncableEntity, PersistentEntity, AccountAccess, UuidAware, CreatedAtAware, UpdatedAtAware {
@@ -137,7 +138,7 @@ public class PipelineEntity
                  .build())
         .build();
   }
-  @Setter @NonFinal @Id @org.mongodb.morphia.annotations.Id String uuid;
+  @Setter @NonFinal @Id @dev.morphia.annotations.Id String uuid;
 
   @Setter @NonFinal Set<String> templateModules;
 

@@ -157,9 +157,9 @@ aeriform("//425-verification-commons:module")
 
 aeriform("//425-verification-commons:tests")
 
-aeriform("//430-cv-nextgen-commons:module")
+aeriform("//srm-service/modules/cv-nextgen-service/contracts/commons:module")
 
-aeriform("//430-cv-nextgen-commons:tests")
+aeriform("//srm-service/modules/cv-nextgen-service/contracts/commons:tests")
 
 aeriform("//440-connector-nextgen:module")
 
@@ -301,7 +301,7 @@ aeriform("//clients/access-control/sdk:module")
 
 aeriform("//clients/access-control/sdk:tests")
 
-aeriform("//948-cv-nextgen-beans:module")
+aeriform("//srm-service/modules/cv-nextgen-service/contracts/delegate:module")
 
 aeriform("//950-command-library-common:module")
 

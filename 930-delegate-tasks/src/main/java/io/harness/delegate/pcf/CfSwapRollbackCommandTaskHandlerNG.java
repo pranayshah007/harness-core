@@ -148,6 +148,7 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
               .isMapRoutesOperation(false)
               .build();
 
+      List<CfInternalInstanceElement> cfInstanceElements = new ArrayList<>();
       if (cfRollbackCommandRequestNG.isSwapRouteOccurred()) {
         // If rollback and active & in-active app was downsized or renamed, then restore it
         updateValues = restoreAppsDuringRollback(executionLogCallback, cfRollbackCommandRequestNG, cfRequestConfig,
@@ -183,7 +184,6 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
               .filter(cfServiceData -> cfServiceData.getDesiredCount() < cfServiceData.getPreviousCount())
               .collect(toList());
 
-      List<CfInternalInstanceElement> cfInstanceElements = new ArrayList<>();
       // During rollback, always upsize old ones
       cfCommandTaskHelperNG.upsizeListOfInstances(executionLogCallback, cfDeploymentManager, cfServiceDataUpdated,
           cfRequestConfig, upsizeList, cfInstanceElements);
@@ -223,7 +223,9 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
       } else {
         cfRollbackCommandResult.setCfInstanceElements(cfInstanceElements);
       }
-
+      List<CfInternalInstanceElement> newAppInstances = getNewAppInstance(cfRequestConfig,
+          cfRollbackCommandRequestNG.getCfAppNamePrefix(), cfRollbackCommandRequestNG.isSwapRouteOccurred());
+      cfRollbackCommandResult.setNewAppInstances(newAppInstances);
     } catch (Exception e) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
       log.error("Exception in processing PCF Route Update task", sanitizedException);
@@ -250,6 +252,24 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
     }
     cfRollbackCommandResponseNG.setCfRollbackCommandResult(cfRollbackCommandResult);
     return cfRollbackCommandResponseNG;
+  }
+
+  private List<CfInternalInstanceElement> getNewAppInstance(CfRequestConfig cfRequestConfig, String cfAppNamePrefix,
+      boolean swapRouteOccurred) throws PivotalClientApiException {
+    if (!swapRouteOccurred) {
+      return Collections.emptyList();
+    }
+    cfRequestConfig.setApplicationName(cfAppNamePrefix);
+    ApplicationDetail applicationDetail = cfDeploymentManager.getApplicationByName(cfRequestConfig);
+    List<CfInternalInstanceElement> instances = new ArrayList<>();
+    applicationDetail.getInstanceDetails().forEach(instance
+        -> instances.add(CfInternalInstanceElement.builder()
+                             .applicationId(applicationDetail.getId())
+                             .displayName(applicationDetail.getName())
+                             .instanceIndex(instance.getIndex())
+                             .isUpsize(false)
+                             .build()));
+    return instances;
   }
 
   private List<String> getExistingApplicationNames(CfSwapRollbackCommandRequestNG cfRollbackCommandRequestNG) {

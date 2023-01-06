@@ -28,7 +28,7 @@ import io.harness.advisers.rollback.OnFailRollbackParameters.OnFailRollbackParam
 import io.harness.advisers.rollback.RollbackStrategy;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.pipeline.CDStepInfo;
+import io.harness.cdng.pipeline.CDAbstractStepInfo;
 import io.harness.cdng.pipeline.CdAbstractStepNode;
 import io.harness.exception.InvalidRequestException;
 import io.harness.govern.Switch;
@@ -222,7 +222,7 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
   protected StepParameters getStepParameters(PlanCreationContext ctx, T stepElement) {
     if (stepElement.getStepSpecType() instanceof WithStepElementParameters) {
       stepElement.setTimeout(TimeoutUtils.getTimeout(stepElement.getTimeout()));
-      return ((CDStepInfo) stepElement.getStepSpecType())
+      return ((CDAbstractStepInfo) stepElement.getStepSpecType())
           .getStepParameters(stepElement,
               getRollbackParameters(ctx.getCurrentField(), Collections.emptySet(), RollbackStrategy.UNKNOWN), ctx);
     }

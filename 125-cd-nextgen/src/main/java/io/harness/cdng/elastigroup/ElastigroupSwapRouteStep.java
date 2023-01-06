@@ -183,6 +183,10 @@ public class ElastigroupSwapRouteStep
     executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.ELASTIGROUP_SWAP_ROUTE_OUTCOME,
         elastigroupSwapRouteDataOutcome, StepOutcomeGroup.STAGE.name());
 
+    elastigroupStepCommonHelper.saveSpotServerInstanceInfosToSweepingOutput(
+        elastigroupSwapRouteResult.getEc2InstanceIdsAdded(), elastigroupSwapRouteResult.getEc2InstanceIdsExisting(),
+        ambiance);
+
     return stepResponseBuilder.status(Status.SUCCEEDED)
         .stepOutcome(StepResponse.StepOutcome.builder()
                          .name(OutcomeExpressionConstants.OUTPUT)

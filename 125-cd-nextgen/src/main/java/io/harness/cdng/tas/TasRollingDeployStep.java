@@ -175,8 +175,8 @@ public class TasRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
       List<ServerInstanceInfo> serverInstanceInfoList = getServerInstanceInfoList(response, ambiance);
       StepResponse.StepOutcome stepOutcome =
               instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfoList);
-      tasStepHelper.updateManifestFiles(ambiance, tasExecutionPassThroughData.getPcfManifestsPackage(), appName, tasInfraConfig);
-      tasStepHelper.updateAutoscalarEnabledField(ambiance, !isNull(tasExecutionPassThroughData.getPcfManifestsPackage().getAutoscalarManifestYml()), appName, tasInfraConfig);
+      tasStepHelper.updateManifestFiles(ambiance, tasExecutionPassThroughData.getTasManifestsPackage(), appName, tasInfraConfig);
+      tasStepHelper.updateAutoscalarEnabledField(ambiance, !isNull(tasExecutionPassThroughData.getTasManifestsPackage().getAutoscalarManifestYml()), appName, tasInfraConfig);
       tasStepHelper.updateRouteMapsField(ambiance, response.getNewApplicationInfo().getAttachedRoutes(), appName, tasInfraConfig);
       tasStepHelper.updateDesiredCountField(ambiance, tasExecutionPassThroughData.getDesiredCountInFinalYaml(), appName, tasInfraConfig);
       tasStepHelper.updateIsFirstDeploymentField(ambiance, response.getCurrentProdInfo() == null, appName, tasInfraConfig);
@@ -220,7 +220,7 @@ public class TasRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
             () -> new InvalidArgumentsException(Pair.of("artifacts", "Primary artifact is required for PCF")));
     InfrastructureOutcome infrastructureOutcome = cdStepHelper.getInfrastructureOutcome(ambiance);
     List<String> routeMaps =
-            tasStepHelper.getRouteMaps(executionPassThroughData.getPcfManifestsPackage().getManifestYml(),
+            tasStepHelper.getRouteMaps(executionPassThroughData.getTasManifestsPackage().getManifestYml(),
                     getParameterFieldValue(tasRollingDeployStepParameters.getAdditionalRoutes()));
     TaskParameters taskParameters =
             CfRollingDeployRequestNG.builder()
@@ -234,9 +234,9 @@ public class TasRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
                     .routeMaps(routeMaps)
                     .tasArtifactConfig(tasStepHelper.getPrimaryArtifactConfig(ambiance, artifactOutcome))
                     .cfCliVersion(tasStepHelper.cfCliVersionNGMapper(executionPassThroughData.getCfCliVersion()))
-                    .pcfManifestsPackage(executionPassThroughData.getPcfManifestsPackage())
+                    .tasManifestsPackage(executionPassThroughData.getTasManifestsPackage())
                     .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
-                    .useAppAutoScalar(!isNull(executionPassThroughData.getPcfManifestsPackage().getAutoscalarManifestYml()))
+                    .useAppAutoScalar(!isNull(executionPassThroughData.getTasManifestsPackage().getAutoscalarManifestYml()))
                     .desiredCount(executionPassThroughData.getDesiredCountInFinalYaml())
                     .build();
 

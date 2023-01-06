@@ -234,6 +234,7 @@ public class ArtifactResponseToOutcomeMapper {
         .identifier(githubPackagesArtifactConfig.getIdentifier())
         .primaryArtifact(githubPackagesArtifactConfig.isPrimaryArtifact())
         .versionRegex(githubPackagesArtifactConfig.getVersionRegex().getValue())
+        .packageType(githubPackagesArtifactConfig.getPackageType().getValue())
         .build();
   }
 
@@ -320,6 +321,7 @@ public class ArtifactResponseToOutcomeMapper {
         .primaryArtifact(googleArtifactRegistryConfig.isPrimaryArtifact())
         .image(getImageValue(garDelegateResponse))
         .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(googleArtifactRegistryConfig)))
+        .repositoryType(googleArtifactRegistryConfig.getGoogleArtifactRegistryType().getValue())
         .build();
   }
 

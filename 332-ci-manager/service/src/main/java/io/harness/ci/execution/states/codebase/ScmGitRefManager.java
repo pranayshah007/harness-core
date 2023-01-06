@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static java.lang.String.format;
 
 import io.harness.beans.DecryptableEntity;
+import io.harness.beans.PageRequestDTO;
 import io.harness.ci.buildstate.CodebaseUtils;
 import io.harness.ci.buildstate.SecretUtils;
 import io.harness.connector.helper.GitApiAccessDecryptionHelper;
@@ -24,6 +25,7 @@ import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.impl.ScmResponseStatusUtils;
 import io.harness.product.ci.scm.proto.FindPRResponse;
 import io.harness.product.ci.scm.proto.GetLatestCommitResponse;
+import io.harness.product.ci.scm.proto.ListBranchesWithDefaultResponse;
 import io.harness.product.ci.scm.proto.ListCommitsInPRResponse;
 import io.harness.product.ci.scm.proto.SCMGrpc;
 import io.harness.service.ScmServiceClient;
@@ -92,6 +94,19 @@ public class ScmGitRefManager {
       throw new CIStageExecutionException(
           "Manual codebase git task needs one of PR number, branch or tag. Please check if you are passing codebase inputs correctly.");
     }
+  }
+
+  public String getDefaultBranch(ScmConnector scmConnector, String connectorIdentifier) {
+    RetryPolicy<Object> retryPolicy = getRetryPolicy(
+        format("[Retrying failed call to get default branch for connector: [%s], attempt: {}", connectorIdentifier),
+        format("Failed call to get default branch for connector: [%s] after retrying {} times", connectorIdentifier));
+    PageRequestDTO pageRequestDTO = PageRequestDTO.builder().build();
+    final ListBranchesWithDefaultResponse listBranchesWithDefaultResponse =
+        Failsafe.with(retryPolicy)
+            .get(() -> scmServiceClient.listBranchesWithDefault(scmConnector, pageRequestDTO, scmBlockingStub));
+    ScmResponseStatusUtils.checkScmResponseStatusAndThrowException(
+        listBranchesWithDefaultResponse.getStatus(), listBranchesWithDefaultResponse.getError());
+    return listBranchesWithDefaultResponse.getDefaultBranch();
   }
 
   public ScmConnector getScmConnector(ConnectorDetails connectorDetails, String accountId, String repoName) {

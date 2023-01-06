@@ -27,7 +27,9 @@ import io.harness.security.annotations.NextGenManagerAuth;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
+import com.cronutils.utils.Preconditions;
 import com.google.inject.Inject;
+import io.fabric8.utils.Lists;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -87,12 +89,12 @@ public class ChangeEventNgResourceProjectImpl implements ChangeEventNgResource {
 
   @GET
   @Timed
-  @Path("/{activityId}")
   @NextGenManagerAuth
+  @Path("/{activityId}")
   @ExceptionMetered
   @ApiOperation(value = "get ChangeEvent detail", nickname = "getChangeEventDetail")
   public RestResponse<ChangeEventDTO> getChangeEventDetail(
-      @Valid ProjectPathParams projectPathParams, @PathParam("activityId") String activityId) {
+      @Valid @BeanParam ProjectPathParams projectPathParams, @PathParam("activityId") String activityId) {
     return new RestResponse<>(changeEventService.get(activityId));
   }
 
@@ -100,54 +102,66 @@ public class ChangeEventNgResourceProjectImpl implements ChangeEventNgResource {
   @Timed
   @NextGenManagerAuth
   @ExceptionMetered
-  public RestResponse<PageResponse<ChangeEventDTO>> get(@Valid ProjectPathParams projectPathParams,
+  @ApiOperation(value = "get ChangeEvent List For Project", nickname = "changeEventList")
+  public RestResponse<PageResponse<ChangeEventDTO>> get(@Valid @BeanParam ProjectPathParams projectPathParams,
       List<String> serviceIdentifiers, List<String> envIdentifiers, List<String> monitoredServiceIdentifiers,
-      boolean isMonitoredServiceIdentifierScoped, List<ChangeCategory> changeCategories,
+      List<String> scopedMonitoredServiceIdentifiers, List<ChangeCategory> changeCategories,
       List<ChangeSourceType> changeSourceTypes, String searchText, @NotNull long startTime, @NotNull long endTime,
       PageRequest pageRequest) {
+    Preconditions.checkArgument(Lists.isNullOrEmpty(scopedMonitoredServiceIdentifiers),
+        "Monitored Service or Service and Env Identifiers without any scope needs to be sent for project");
     ProjectParams projectParams = ProjectParams.builder()
                                       .accountIdentifier(projectPathParams.getAccountIdentifier())
                                       .orgIdentifier(projectPathParams.getOrgIdentifier())
                                       .projectIdentifier(projectPathParams.getProjectIdentifier())
                                       .build();
     return new RestResponse<>(changeEventService.getChangeEvents(projectParams, serviceIdentifiers, envIdentifiers,
-        monitoredServiceIdentifiers, isMonitoredServiceIdentifierScoped, searchText, changeCategories,
-        changeSourceTypes, Instant.ofEpochMilli(startTime), Instant.ofEpochMilli(endTime), pageRequest));
+        monitoredServiceIdentifiers, false, searchText, changeCategories, changeSourceTypes,
+        Instant.ofEpochMilli(startTime), Instant.ofEpochMilli(endTime), pageRequest));
   }
 
   @Override
   @Timed
   @NextGenManagerAuth
   @ExceptionMetered
-  public RestResponse<ChangeTimeline> get(@Valid ProjectPathParams projectPathParams, List<String> serviceIdentifiers,
-      List<String> envIdentifiers, List<String> monitoredServiceIdentifiers, boolean isMonitoredServiceIdentifierScoped,
-      List<ChangeCategory> changeCategories, List<ChangeSourceType> changeSourceTypes, String searchText,
-      @NotNull long startTime, @NotNull long endTime, Integer pointCount) {
+  @ApiOperation(value = "get ChangeEvent timeline For Project", nickname = "changeEventTimeline")
+  public RestResponse<ChangeTimeline> get(@Valid @BeanParam ProjectPathParams projectPathParams,
+      List<String> serviceIdentifiers, List<String> envIdentifiers, List<String> monitoredServiceIdentifiers,
+      List<String> scopedMonitoredServiceIdentifiers, List<ChangeCategory> changeCategories,
+      List<ChangeSourceType> changeSourceTypes, String searchText, @NotNull long startTime, @NotNull long endTime,
+      Integer pointCount) {
+    Preconditions.checkArgument(Lists.isNullOrEmpty(scopedMonitoredServiceIdentifiers),
+        "Monitored Service or Service and Env Identifiers without any scope needs to be sent for project");
     ProjectParams projectParams = ProjectParams.builder()
                                       .accountIdentifier(projectPathParams.getAccountIdentifier())
                                       .orgIdentifier(projectPathParams.getOrgIdentifier())
                                       .projectIdentifier(projectPathParams.getProjectIdentifier())
                                       .build();
     return new RestResponse<>(changeEventService.getTimeline(projectParams, serviceIdentifiers, envIdentifiers,
-        monitoredServiceIdentifiers, isMonitoredServiceIdentifierScoped, searchText, changeCategories,
-        changeSourceTypes, Instant.ofEpochMilli(startTime), Instant.ofEpochMilli(endTime), pointCount));
+        monitoredServiceIdentifiers, false, searchText, changeCategories, changeSourceTypes,
+        Instant.ofEpochMilli(startTime), Instant.ofEpochMilli(endTime), pointCount));
   }
 
   @Override
   @Timed
   @NextGenManagerAuth
   @ExceptionMetered
-  public RestResponse<ChangeSummaryDTO> getSummary(@Valid ProjectPathParams projectPathParams,
-      String monitoredServiceIdentifier, List<String> monitoredServiceIdentifiers,
-      boolean isMonitoredServiceIdentifierScoped, List<ChangeCategory> changeCategories,
-      List<ChangeSourceType> changeSourceTypes, @NotNull long startTime, @NotNull long endTime) {
+  @ApiOperation(value = "get ChangeEvent summary for monitored service For Project",
+      nickname = "getMonitoredServiceChangeEventSummary")
+  public RestResponse<ChangeSummaryDTO>
+  getSummary(@Valid @BeanParam ProjectPathParams projectPathParams, String monitoredServiceIdentifier,
+      List<String> monitoredServiceIdentifiers, List<String> scopedMonitoredServiceIdentifiers,
+      List<ChangeCategory> changeCategories, List<ChangeSourceType> changeSourceTypes, @NotNull long startTime,
+      @NotNull long endTime) {
+    Preconditions.checkArgument(Lists.isNullOrEmpty(scopedMonitoredServiceIdentifiers),
+        "Monitored Service or Service and Env Identifiers without any scope needs to be sent for project");
     ProjectParams projectParams = ProjectParams.builder()
                                       .accountIdentifier(projectPathParams.getAccountIdentifier())
                                       .orgIdentifier(projectPathParams.getOrgIdentifier())
                                       .projectIdentifier(projectPathParams.getProjectIdentifier())
                                       .build();
     return new RestResponse<>(changeEventService.getChangeSummary(projectParams, monitoredServiceIdentifier,
-        monitoredServiceIdentifiers, isMonitoredServiceIdentifierScoped, changeCategories, changeSourceTypes,
-        Instant.ofEpochMilli(startTime), Instant.ofEpochMilli(endTime)));
+        monitoredServiceIdentifiers, false, changeCategories, changeSourceTypes, Instant.ofEpochMilli(startTime),
+        Instant.ofEpochMilli(endTime)));
   }
 }

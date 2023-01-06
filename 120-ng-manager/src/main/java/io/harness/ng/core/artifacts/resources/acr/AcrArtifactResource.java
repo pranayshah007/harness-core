@@ -82,8 +82,8 @@ public class AcrArtifactResource {
         azureConnectorIdentifier = acrArtifactConfig.getConnectorRef().getValue();
       }
     }
-    IdentifierRef connectorRef =
-        IdentifierRefHelper.getIdentifierRef(azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+    IdentifierRef connectorRef = IdentifierRefHelper.getConnectorIdentifierRef(
+        azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(
         azureResourceService.getSubscriptions(connectorRef, orgIdentifier, projectIdentifier));
   }
@@ -111,8 +111,8 @@ public class AcrArtifactResource {
         azureConnectorIdentifier = acrArtifactConfig.getConnectorRef().getValue();
       }
     }
-    IdentifierRef connectorRef =
-        IdentifierRefHelper.getIdentifierRef(azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+    IdentifierRef connectorRef = IdentifierRefHelper.getConnectorIdentifierRef(
+        azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(
         azureResourceService.getSubscriptions(connectorRef, orgIdentifier, projectIdentifier));
   }
@@ -126,8 +126,8 @@ public class AcrArtifactResource {
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotNull @QueryParam("subscriptionId") String subscriptionId) {
-    IdentifierRef connectorRef =
-        IdentifierRefHelper.getIdentifierRef(azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+    IdentifierRef connectorRef = IdentifierRefHelper.getConnectorIdentifierRef(
+        azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(
         acrResourceService.getRegistries(connectorRef, orgIdentifier, projectIdentifier, subscriptionId));
   }
@@ -153,8 +153,8 @@ public class AcrArtifactResource {
         subscriptionId = acrArtifactConfig.getSubscriptionId().getValue();
       }
     }
-    IdentifierRef connectorRef =
-        IdentifierRefHelper.getIdentifierRef(azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+    IdentifierRef connectorRef = IdentifierRefHelper.getConnectorIdentifierRef(
+        azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(
         acrResourceService.getRegistries(connectorRef, orgIdentifier, projectIdentifier, subscriptionId));
   }
@@ -185,8 +185,8 @@ public class AcrArtifactResource {
         subscriptionId = acrArtifactConfig.getSubscriptionId().getValue();
       }
     }
-    IdentifierRef connectorRef =
-        IdentifierRefHelper.getIdentifierRef(azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+    IdentifierRef connectorRef = IdentifierRefHelper.getConnectorIdentifierRef(
+        azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(
         acrResourceService.getRegistries(connectorRef, orgIdentifier, projectIdentifier, subscriptionId));
   }
@@ -201,8 +201,8 @@ public class AcrArtifactResource {
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotNull @QueryParam("subscriptionId") String subscriptionId, @PathParam("registry") String registry) {
-    IdentifierRef connectorRef =
-        IdentifierRefHelper.getIdentifierRef(azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+    IdentifierRef connectorRef = IdentifierRefHelper.getConnectorIdentifierRef(
+        azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(
         acrResourceService.getRepositories(connectorRef, orgIdentifier, projectIdentifier, subscriptionId, registry));
   }
@@ -232,8 +232,8 @@ public class AcrArtifactResource {
         registry = acrArtifactConfig.getRegistry().getValue();
       }
     }
-    IdentifierRef connectorRef =
-        IdentifierRefHelper.getIdentifierRef(azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+    IdentifierRef connectorRef = IdentifierRefHelper.getConnectorIdentifierRef(
+        azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(
         acrResourceService.getRepositories(connectorRef, orgIdentifier, projectIdentifier, subscriptionId, registry));
   }
@@ -267,8 +267,8 @@ public class AcrArtifactResource {
         registry = acrArtifactConfig.getRegistry().getValue();
       }
     }
-    IdentifierRef connectorRef =
-        IdentifierRefHelper.getIdentifierRef(azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+    IdentifierRef connectorRef = IdentifierRefHelper.getConnectorIdentifierRef(
+        azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(
         acrResourceService.getRepositories(connectorRef, orgIdentifier, projectIdentifier, subscriptionId, registry));
   }
@@ -283,8 +283,8 @@ public class AcrArtifactResource {
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
-    IdentifierRef connectorRef =
-        IdentifierRefHelper.getIdentifierRef(azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+    IdentifierRef connectorRef = IdentifierRefHelper.getConnectorIdentifierRef(
+        azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     AcrResponseDTO buildDetails = acrResourceService.getBuildDetails(
         connectorRef, subscriptionId, registry, repository, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(buildDetails);
@@ -323,8 +323,8 @@ public class AcrArtifactResource {
       }
     }
 
-    IdentifierRef connectorRef =
-        IdentifierRefHelper.getIdentifierRef(azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+    IdentifierRef connectorRef = IdentifierRefHelper.getConnectorIdentifierRef(
+        azureConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
 
     AcrResponseDTO buildDetails = acrResourceService.getBuildDetails(
         connectorRef, subscriptionId, registry, repository, orgIdentifier, projectIdentifier);

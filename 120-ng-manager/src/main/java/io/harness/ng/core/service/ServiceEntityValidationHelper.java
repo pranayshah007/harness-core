@@ -23,6 +23,7 @@ import com.google.inject.Inject;
 import java.util.Optional;
 import javax.validation.constraints.NotEmpty;
 import javax.ws.rs.NotFoundException;
+import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.CDC)
 public class ServiceEntityValidationHelper {
@@ -31,12 +32,11 @@ public class ServiceEntityValidationHelper {
   public void checkThatServiceExists(
       @NotEmpty String accountIdentifier, String orgIdentifier, String projectIdentifier, @NotEmpty String serviceRef) {
     checkArgument(isNotEmpty(accountIdentifier), "accountId must be present");
-    checkArgument(isNotEmpty(serviceRef), "service ref must be present");
 
     Optional<ServiceEntity> service;
-    String[] serviceRefSplit = serviceRef.split("\\.", MAX_RESULT_THRESHOLD_FOR_SPLIT);
+    String[] serviceRefSplit = StringUtils.split(serviceRef, ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
     // project level entity or org/account level entity with identifier
-    if (serviceRefSplit.length == 1) {
+    if (serviceRefSplit == null || serviceRefSplit.length == 1) {
       service = serviceEntityService.get(accountIdentifier, orgIdentifier, projectIdentifier, serviceRef, false);
     } else {
       // org/account level

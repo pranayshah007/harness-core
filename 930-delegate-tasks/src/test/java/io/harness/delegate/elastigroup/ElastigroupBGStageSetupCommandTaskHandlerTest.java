@@ -103,7 +103,7 @@ public class ElastigroupBGStageSetupCommandTaskHandlerTest extends CategoryTest 
     CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
     doReturn(createServiceLogCallback)
         .when(elastigroupCommandTaskNGHelper)
-        .getLogCallback(iLogStreamingTaskClient, ElastigroupCommandUnitConstants.CREATE_ELASTIGROUP.toString(), true,
+        .getLogCallback(iLogStreamingTaskClient, ElastigroupCommandUnitConstants.CREATE_ELASTIGROUP.toString(), false,
             commandUnitsProgress);
 
     AwsCredentialDTO awsCredentialDTO = AwsCredentialDTO.builder().build();
@@ -203,6 +203,8 @@ public class ElastigroupBGStageSetupCommandTaskHandlerTest extends CategoryTest 
             .maxInstanceCount(elastigroupSetupCommandRequest.getMaxInstanceCount())
             .resizeStrategy(elastigroupSetupCommandRequest.getResizeStrategy())
             .loadBalancerDetailsForBGDeployments(lbDetailList)
+            .ec2InstanceIdsAdded(new ArrayList<>())
+            .ec2InstanceIdsExisting(new ArrayList<>())
             .build();
 
     ElastigroupSetupResponse elastigroupSetupResponse =

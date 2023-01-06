@@ -44,6 +44,8 @@ import io.harness.rule.Owner;
 import software.wings.app.MainConfiguration;
 import software.wings.beans.DelegateSequenceConfig;
 
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -58,8 +60,6 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @RunWith(MockitoJUnitRunner.class)
 @OwnedBy(HarnessTeam.DEL)

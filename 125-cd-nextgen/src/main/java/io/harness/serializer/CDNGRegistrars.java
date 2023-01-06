@@ -13,6 +13,8 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.aws.asg.AsgCanaryDeleteStepNode;
 import io.harness.cdng.aws.asg.AsgCanaryDeployStepNode;
+import io.harness.cdng.aws.asg.AsgRollingDeployStepNode;
+import io.harness.cdng.aws.asg.AsgRollingRollbackStepNode;
 import io.harness.cdng.azure.webapp.AzureWebAppRollbackStepNode;
 import io.harness.cdng.azure.webapp.AzureWebAppSlotDeploymentStepNode;
 import io.harness.cdng.azure.webapp.AzureWebAppSwapSlotStepNode;
@@ -50,7 +52,7 @@ import io.harness.cdng.k8s.K8sDeleteStepNode;
 import io.harness.cdng.k8s.K8sRollingRollbackStepNode;
 import io.harness.cdng.k8s.K8sRollingStepNode;
 import io.harness.cdng.k8s.K8sScaleStepNode;
-import io.harness.cdng.pipeline.CDStepInfo;
+import io.harness.cdng.pipeline.CDAbstractStepInfo;
 import io.harness.cdng.provision.azure.AzureARMRollbackStepNode;
 import io.harness.cdng.provision.azure.AzureCreateARMResourceStepNode;
 import io.harness.cdng.provision.azure.AzureCreateBPStepNode;
@@ -153,7 +155,7 @@ public class CDNGRegistrars {
                    .availableAtProjectLevel(true)
                    .availableAtOrgLevel(false)
                    .availableAtAccountLevel(false)
-                   .clazz(CDStepInfo.class)
+                   .clazz(CDAbstractStepInfo.class)
                    .build())
           .add(YamlSchemaRootClass.builder()
                    .entityType(EntityType.TEMPLATE_CUSTOM_DEPLOYMENT)
@@ -920,6 +922,30 @@ public class CDNGRegistrars {
                    .yamlSchemaMetadata(YamlSchemaMetadata.builder()
                                            .namespace(SchemaNamespaceConstants.CD)
                                            .modulesSupported(Collections.singletonList(ModuleType.CD))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.ASG_ROLLING_DEPLOY_STEP)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(AsgRollingDeployStepNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.CD)
+                                           .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.ASG_ROLLING_ROLLBACK_STEP)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(AsgRollingRollbackStepNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.CD)
+                                           .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))
                                            .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
                                            .build())
                    .build())

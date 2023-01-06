@@ -20,6 +20,7 @@ import static io.harness.delegate.task.mixin.HttpConnectionExecutionCapabilityGe
 import static io.harness.rule.OwnerRule.ANSHUL;
 import static io.harness.rule.OwnerRule.ARPIT;
 import static io.harness.rule.OwnerRule.ARVIND;
+import static io.harness.rule.OwnerRule.ASHISHSANODIA;
 import static io.harness.rule.OwnerRule.BRETT;
 import static io.harness.rule.OwnerRule.GEORGE;
 import static io.harness.rule.OwnerRule.JENNY;
@@ -77,6 +78,7 @@ import io.harness.delegate.beans.DelegateProfileScopingRule;
 import io.harness.delegate.beans.DelegateScope;
 import io.harness.delegate.beans.DelegateSelectionLogParams;
 import io.harness.delegate.beans.TaskData;
+import io.harness.delegate.beans.TaskDataV2;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.HttpConnectionExecutionCapability;
 import io.harness.delegate.beans.executioncapability.SelectorCapability;
@@ -170,6 +172,8 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
   private static final String VERSION = "1.0.0";
 
   private static final List<String> supportedTasks = Arrays.stream(TaskType.values()).map(Enum::name).collect(toList());
+  private static final String expectedErrorMessage =
+      "None of the active delegates were eligible to complete the task.\n\n ===> hostname: In scope and no tag mismatch\n";
 
   @Before
   public void setUp() throws IllegalAccessException, ExecutionException {
@@ -1499,6 +1503,122 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
   @Owner(developers = VUK)
   @Category(UnitTests.class)
   public void testGetActiveDelegateAssignmentErrorMessageSelectionLogsAvailable() {
+    String accountId = generateUuid();
+    String uuid = generateUuid();
+    String delegateId = generateUuid();
+
+    DelegateTask delegateTask = DelegateTask.builder().uuid(uuid).accountId(accountId).delegateId(delegateId).build();
+
+    DelegateSelectionLogParams delegateSelectionLog = DelegateSelectionLogParams.builder()
+                                                          .delegateId(delegateTask.getDelegateId())
+                                                          .delegateName("testDelegateName")
+                                                          .delegateHostName("testDelegateHostName")
+                                                          .delegateProfileName("testDelegateProfileName")
+                                                          .conclusion("Disconnected")
+                                                          .message("testMessage")
+                                                          .build();
+
+    List<DelegateSelectionLogParams> delegateSelectionLogs = asList(delegateSelectionLog);
+
+    when(delegateSelectionLogsService.fetchTaskSelectionLogs(accountId, uuid)).thenReturn(delegateSelectionLogs);
+
+    String errorMessage = assignDelegateService.getActiveDelegateAssignmentErrorMessage(null, delegateTask);
+
+    String expectedErrorMessage =
+        String.format(ERROR_MESSAGE, delegateSelectionLog.getDelegateId(), delegateSelectionLog.getDelegateName(),
+            delegateSelectionLog.getDelegateHostName(), delegateSelectionLog.getDelegateProfileName(),
+            delegateSelectionLog.getConclusion(), delegateSelectionLog.getMessage(),
+            LocalDateTime.ofInstant(
+                Instant.ofEpochMilli(delegateSelectionLog.getEventTimestamp()), ZoneId.systemDefault()));
+
+    assertThat(errorMessage).isNotNull();
+    assertThat(errorMessage).isEqualTo(expectedErrorMessage);
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testGetActiveDelegateAssignmentErrorMessageSelectionLogsAvailableForExpiredTask()
+      throws ExecutionException {
+    String accountId = generateUuid();
+    String uuid = generateUuid();
+    String delegateId = generateUuid();
+    Delegate activeDelegate1 =
+        createDelegateBuilder().accountId(accountId).uuid(delegateId).hostName("hostname").build();
+    when(accountDelegatesCache.get(accountId)).thenReturn(asList(activeDelegate1));
+    when(delegateCache.get(accountId, delegateId, false)).thenReturn(activeDelegate1);
+
+    DelegateTask delegateTask = DelegateTask.builder()
+                                    .uuid(uuid)
+                                    .accountId(accountId)
+                                    .delegateId(delegateId)
+                                    .eligibleToExecuteDelegateIds(new LinkedList<>())
+                                    .data(TaskData.builder().taskType(TaskType.NOTIFY_SLACK.name()).build())
+                                    .build();
+
+    DelegateSelectionLogParams delegateSelectionLog = DelegateSelectionLogParams.builder()
+                                                          .delegateId(delegateTask.getDelegateId())
+                                                          .delegateName("testDelegateName")
+                                                          .delegateHostName("testDelegateHostName")
+                                                          .delegateProfileName("testDelegateProfileName")
+                                                          .conclusion("Disconnected")
+                                                          .message("testMessage")
+                                                          .build();
+
+    List<DelegateSelectionLogParams> delegateSelectionLogs = asList(delegateSelectionLog);
+
+    when(delegateSelectionLogsService.fetchTaskSelectionLogs(accountId, uuid)).thenReturn(delegateSelectionLogs);
+
+    String errorMessage = assignDelegateService.getActiveDelegateAssignmentErrorMessage(EXPIRED, delegateTask);
+
+    assertThat(errorMessage).isNotNull();
+    assertThat(errorMessage).isEqualTo(expectedErrorMessage);
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testGetActiveDelegateAssignmentErrorMessageSelectionLogsAvailableForExpiredV2Task()
+      throws ExecutionException {
+    String accountId = generateUuid();
+    String uuid = generateUuid();
+    String delegateId = generateUuid();
+    Delegate activeDelegate1 =
+        createDelegateBuilder().accountId(accountId).uuid(delegateId).hostName("hostname").build();
+    when(accountDelegatesCache.get(accountId)).thenReturn(asList(activeDelegate1));
+    when(delegateCache.get(accountId, delegateId, false)).thenReturn(activeDelegate1);
+
+    DelegateTask delegateTask = DelegateTask.builder()
+                                    .uuid(uuid)
+                                    .accountId(accountId)
+                                    .delegateId(delegateId)
+                                    .eligibleToExecuteDelegateIds(new LinkedList<>())
+                                    .taskDataV2(TaskDataV2.builder().taskType(TaskType.NOTIFY_SLACK.name()).build())
+                                    .build();
+
+    DelegateSelectionLogParams delegateSelectionLog = DelegateSelectionLogParams.builder()
+                                                          .delegateId(delegateTask.getDelegateId())
+                                                          .delegateName("testDelegateName")
+                                                          .delegateHostName("testDelegateHostName")
+                                                          .delegateProfileName("testDelegateProfileName")
+                                                          .conclusion("Disconnected")
+                                                          .message("testMessage")
+                                                          .build();
+
+    List<DelegateSelectionLogParams> delegateSelectionLogs = asList(delegateSelectionLog);
+
+    when(delegateSelectionLogsService.fetchTaskSelectionLogs(accountId, uuid)).thenReturn(delegateSelectionLogs);
+
+    String errorMessage = assignDelegateService.getActiveDelegateAssignmentErrorMessage(EXPIRED, delegateTask);
+
+    assertThat(errorMessage).isNotNull();
+    assertThat(errorMessage).isEqualTo(expectedErrorMessage);
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testGetActiveDelegateAssignmentErrorMessageSelectionLogsAvailableForOtherThanExpiredV2Task() {
     String accountId = generateUuid();
     String uuid = generateUuid();
     String delegateId = generateUuid();

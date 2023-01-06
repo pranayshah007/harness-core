@@ -48,6 +48,7 @@ import static software.wings.beans.User.Builder.anUser;
 import static software.wings.utils.Utils.normalizeIdentifier;
 import static software.wings.utils.Utils.uuidToIdentifier;
 
+import static dev.morphia.mapping.Mapper.ID_KEY;
 import static freemarker.template.Configuration.VERSION_2_3_23;
 import static java.lang.String.format;
 import static java.lang.System.currentTimeMillis;
@@ -68,7 +69,6 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.substringAfter;
 import static org.apache.commons.lang3.StringUtils.substringBefore;
-import static org.mongodb.morphia.mapping.Mapper.ID_KEY;
 
 import io.harness.agent.beans.AgentMtlsEndpointDetails;
 import io.harness.annotations.dev.BreakDependencyOn;
@@ -204,9 +204,9 @@ import software.wings.core.managerConfiguration.ConfigurationController;
 import software.wings.expression.SecretFunctor;
 import software.wings.features.DelegatesFeature;
 import software.wings.features.api.UsageLimitedFeature;
-import software.wings.helpers.ext.mail.EmailData;
 import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
 import software.wings.licensing.LicenseService;
+import software.wings.persistence.mail.EmailData;
 import software.wings.service.impl.TemplateParameters.TemplateParametersBuilder;
 import software.wings.service.impl.infra.InfraDownloadService;
 import software.wings.service.intfc.AccountService;
@@ -236,6 +236,8 @@ import com.google.inject.name.Named;
 import com.google.protobuf.StringValue;
 import com.mongodb.DuplicateKeyException;
 import com.mongodb.MongoGridFSException;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import freemarker.cache.ClassTemplateLoader;
 import freemarker.template.Configuration;
 import freemarker.template.TemplateException;
@@ -295,8 +297,6 @@ import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.hibernate.validator.internal.engine.path.PathImpl;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @Singleton
 @ValidateOnExecution
@@ -2817,8 +2817,11 @@ public class DelegateServiceImpl implements DelegateService {
     delegate.setLastHeartBeat(now);
     delegate.setValidUntil(Date.from(OffsetDateTime.now().plusDays(Delegate.TTL.toDays()).toInstant()));
 
-    if (isGroupedCgDelegate(delegate)) {
-      updateDelegateWithConfigFromGroup(delegate);
+    if (delegate.getDelegateGroupId() != null) {
+      if (!delegate.isNg()) {
+        updateDelegateWithConfigFromGroup(delegate);
+      }
+      delegateSetupService.updateDelegateGroupValidity(delegate.getAccountId(), delegate.getDelegateGroupId());
     }
 
     Delegate registeredDelegate;
@@ -3239,7 +3242,9 @@ public class DelegateServiceImpl implements DelegateService {
             .set(DelegateGroupKeys.name, name)
             .set(DelegateGroupKeys.accountId, accountId)
             .set(DelegateGroupKeys.ng, isNg)
-            .set(DelegateGroupKeys.delegateType, delegateType);
+            .set(DelegateGroupKeys.delegateType, delegateType)
+            .set(DelegateGroupKeys.validUntil,
+                Date.from(OffsetDateTime.now().plusDays(DelegateGroup.TTL.toDays()).toInstant()));
 
     if (k8sConfigDetails != null) {
       setUnset(updateOperations, DelegateGroupKeys.k8sConfigDetails, k8sConfigDetails);

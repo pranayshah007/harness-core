@@ -8,6 +8,7 @@
 package io.harness.repositories.instancestats;
 
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
+import static io.harness.rule.OwnerRule.TARUN_UBA;
 import static io.harness.rule.OwnerRule.VIKYATH_HAREKAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -45,7 +46,7 @@ public class InstanceStatsRepositoryImplTest extends InstancesTestBase {
   @Test
   @Owner(developers = PIYUSH_BHUWALKA)
   @Category(UnitTests.class)
-  public void getLatestRecordTest() throws SQLException {
+  public void getLatestRecordTest() throws Exception {
     when(timeScaleDBService.getDBConnection()).thenReturn(dbConnection);
     when(dbConnection.prepareStatement(InstanceStatsQuery.FETCH_LATEST_RECORD.query())).thenReturn(statement);
     statement.setString(1, ACCOUNT_ID);
@@ -87,7 +88,12 @@ public class InstanceStatsRepositoryImplTest extends InstancesTestBase {
     when(resultSet.getString(io.harness.repositories.instancestats.InstanceStatsFields.SERVICEID.fieldName()))
         .thenReturn(SERVICE_ID);
     when(resultSet.getTimestamp(InstanceStatsFields.REPORTEDAT.fieldName())).thenReturn(timestamp);
-    InstanceStats instanceStats = instanceStatsRepository.getLatestRecord(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID);
+    InstanceStats instanceStats = null;
+    try {
+      instanceStats = instanceStatsRepository.getLatestRecord(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID);
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
     assertThat(instanceStats.getAccountId()).isEqualTo(ACCOUNT_ID);
     assertThat(instanceStats.getEnvId()).isEqualTo(ENVIRONMENT_ID);
     assertThat(instanceStats.getServiceId()).isEqualTo(SERVICE_ID);
@@ -105,7 +111,31 @@ public class InstanceStatsRepositoryImplTest extends InstancesTestBase {
     statement.setString(3, PROJECT_ID);
     statement.setString(4, SERVICE_ID);
     when(statement.executeQuery()).thenThrow(new SQLException());
-    InstanceStats instanceStats = instanceStatsRepository.getLatestRecord(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID);
+    InstanceStats instanceStats = null;
+    try {
+      instanceStats = instanceStatsRepository.getLatestRecord(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID);
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+    assertThat(instanceStats).isNull();
+  }
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void getLatestRecordTestShouldFailAfterThrowingException() throws SQLException {
+    when(timeScaleDBService.getDBConnection()).thenReturn(dbConnection);
+    when(dbConnection.prepareStatement(InstanceStatsQuery.FETCH_LATEST_RECORD.query())).thenReturn(statement);
+    statement.setString(1, ACCOUNT_ID);
+    statement.setString(2, ORG_ID);
+    statement.setString(3, PROJECT_ID);
+    statement.setString(4, SERVICE_ID);
+    when(statement.executeQuery()).thenThrow(new SQLException("Sample Exception"));
+    InstanceStats instanceStats = null;
+    try {
+      instanceStats = instanceStatsRepository.getLatestRecord(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID);
+    } catch (Exception e) {
+      assertThat(e.getMessage()).isEqualTo("Sample Exception");
+    }
     assertThat(instanceStats).isNull();
   }
 }

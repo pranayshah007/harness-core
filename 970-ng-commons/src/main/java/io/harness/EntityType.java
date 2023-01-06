@@ -453,6 +453,9 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.IACM)
   IACM_TERRAFORM_PLAN(ModuleType.IACM, EntityTypeConstants.IACM_TERRAFORM_PLAN, IdentifierRef.class,
       EntityYamlRootNames.IACM_TERRAFORM_PLAN),
+  @JsonProperty(EntityTypeConstants.IACM)
+  IACM_TEMPLATE(
+      ModuleType.IACM, EntityTypeConstants.IACM_TEMPLATE, IdentifierRef.class, EntityYamlRootNames.IACM_TEMPLATE),
   @JsonProperty(EntityTypeConstants.ELASTIGROUP_BG_STAGE_SETUP)
   ELASTIGROUP_BG_STAGE_SETUP_STEP(ModuleType.CD, EntityTypeConstants.ELASTIGROUP_BG_STAGE_SETUP, IdentifierRef.class,
       EntityYamlRootNames.ELASTIGROUP_BG_STAGE_SETUP),
@@ -489,6 +492,12 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.TANZU_COMMAND_STEP)
   TANZU_COMMAND_STEP(ModuleType.CD, EntityTypeConstants.TANZU_COMMAND_STEP, IdentifierRef.class,
       EntityYamlRootNames.TANZU_COMMAND_STEP),
+  @JsonProperty(EntityTypeConstants.ASG_ROLLING_DEPLOY)
+  ASG_ROLLING_DEPLOY_STEP(ModuleType.CD, EntityTypeConstants.ASG_ROLLING_DEPLOY, IdentifierRef.class,
+      EntityYamlRootNames.ASG_ROLLING_DEPLOY),
+  @JsonProperty(EntityTypeConstants.ASG_ROLLING_ROLLBACK)
+  ASG_ROLLING_ROLLBACK_STEP(ModuleType.CD, EntityTypeConstants.ASG_ROLLING_ROLLBACK, IdentifierRef.class,
+      EntityYamlRootNames.ASG_ROLLING_ROLLBACK),
   @JsonProperty(EntityTypeConstants.TAS_ROLLING_DEPLOY)
   TAS_ROLLING_DEPLOY(ModuleType.CD, EntityTypeConstants.TAS_ROLLING_DEPLOY, IdentifierRef.class,
           EntityYamlRootNames.TAS_ROLLING_DEPLOY),

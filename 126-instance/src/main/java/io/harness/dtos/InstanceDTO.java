@@ -33,6 +33,7 @@ public class InstanceDTO {
   InstanceType instanceType;
   String envIdentifier;
   String envName;
+  String envGroupRef;
   EnvironmentType envType;
   String serviceIdentifier;
   String serviceName;
@@ -53,4 +54,5 @@ public class InstanceDTO {
   long createdAt;
   long lastModifiedAt;
   Map<String, String> metadata;
+  Long podCreatedAt;
 }

@@ -18,6 +18,8 @@ import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.strategy.StrategyConfig;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
+import io.harness.template.yaml.TemplateLinkConfig;
+import io.harness.validation.OneOfSet;
 import io.harness.validator.NGRegexValidatorConstants;
 import io.harness.when.beans.StepWhenCondition;
 import io.harness.yaml.YamlSchemaTypes;
@@ -46,6 +48,7 @@ import org.springframework.data.annotation.TypeAlias;
 @AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@OneOfSet(fields = {"steps", "template"}, requiredFieldNames = {"template", "steps"})
 @TypeAlias("stepGroupElementConfig")
 @OwnedBy(PIPELINE)
 public class StepGroupElementConfig {
@@ -66,8 +69,10 @@ public class StepGroupElementConfig {
   ParameterField<String> skipCondition;
   @VariableExpression StepWhenCondition when;
 
+  @VariableExpression(skipVariableExpression = true) TemplateLinkConfig template;
+
   @VariableExpression(skipVariableExpression = true) List<FailureStrategyConfig> failureStrategies;
-  @NotNull @Size(min = 1) @VariableExpression(skipVariableExpression = true) List<ExecutionWrapperConfig> steps;
+  @Size(min = 1) @VariableExpression(skipVariableExpression = true) List<ExecutionWrapperConfig> steps;
 
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   @YamlSchemaTypes(value = {runtime})

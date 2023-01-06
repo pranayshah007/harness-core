@@ -28,6 +28,8 @@ java_library(
         "@maven//:com_fasterxml_jackson_core_jackson_annotations",
         #        "@maven//:javax_validation_validation_api",
         "@maven//:org_springframework_spring_tx",
+        "//clients/audit:module",
+        "//platform-service/modules/audit-service/contracts:module",
     ],
 )
 

@@ -60,9 +60,14 @@ import software.wings.service.intfc.ownership.OwnedByAccount;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.query.Criteria;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -77,11 +82,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
+import javax.validation.constraints.NotNull;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Criteria;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @Singleton
 @ValidateOnExecution
@@ -286,15 +289,19 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
     Query<DelegateProfile> query = persistence.createQuery(DelegateProfile.class)
                                        .filter(DelegateProfileKeys.accountId, accountId)
                                        .filter(DelegateProfileKeys.ng, true);
+    Query<DelegateProfile> filterIdentifiersQuery = persistence.createQuery(DelegateProfile.class)
+                                                        .filter(DelegateProfileKeys.accountId, accountId)
+                                                        .filter(DelegateProfileKeys.ng, true);
 
     DelegateEntityOwner owner = DelegateEntityOwnerHelper.buildOwner(orgId, projectId);
     if (owner != null) {
       query.field(DelegateProfileKeys.owner).equal(owner);
+      filterIdentifiersQuery.field(DelegateProfileKeys.owner).equal(owner);
     } else {
       // Account level delegate configurations
       query.field(DelegateProfileKeys.owner).doesNotExist();
+      filterIdentifiersQuery.field(DelegateProfileKeys.owner).doesNotExist();
     }
-    Query<DelegateProfile> filterIdentifiersQuery = query.cloneQuery();
     query.field(DelegateProfileKeys.uuid).in(identifiers);
     List<String> existingRecordsKeys = query.asKeyList().stream().map(key -> (String) key.getId()).collect(toList());
 
@@ -839,6 +846,22 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
       return AutoUpgrade.SYNCHRONIZING;
     }
     return AutoUpgrade.OFF;
+  }
+
+  @Override
+  public void updateDelegateGroupValidity(@NotNull String accountId, @NotNull String delegateGroupId) {
+    try {
+      Query<DelegateGroup> delegateGroupQuery = persistence.createQuery(DelegateGroup.class)
+                                                    .filter(DelegateGroupKeys.accountId, accountId)
+                                                    .filter(DelegateGroupKeys.uuid, delegateGroupId);
+      UpdateOperations<DelegateGroup> updateOperations =
+          persistence.createUpdateOperations(DelegateGroup.class)
+              .set(DelegateGroupKeys.validUntil,
+                  Date.from(OffsetDateTime.now().plusDays(DelegateGroup.TTL.toDays()).toInstant()));
+      persistence.update(delegateGroupQuery, updateOperations);
+    } catch (Exception e) {
+      log.info("Exception occurred while updating delegate group validity.", e);
+    }
   }
 
   private boolean checkForDelegateGroupsHavingAllTags(DelegateGroup delegateGroup, DelegateGroupTags tags) {

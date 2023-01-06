@@ -25,6 +25,7 @@ import io.harness.tasks.ProgressData;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import java.util.Map;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -35,6 +36,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ProgressEventHandler extends PmsBaseEventHandler<ProgressEvent> {
   @Inject private ExecutableProcessorFactory executableProcessorFactory;
   @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
   @Override
   protected String getMetricPrefix(ProgressEvent message) {
@@ -57,8 +59,13 @@ public class ProgressEventHandler extends PmsBaseEventHandler<ProgressEvent> {
     try {
       StepParameters stepParameters =
           RecastOrchestrationUtils.fromJson(event.getStepParameters().toStringUtf8(), StepParameters.class);
-      ProgressData progressData =
-          (ProgressData) kryoSerializer.asInflatedObject(event.getProgressBytes().toByteArray());
+      ProgressData progressData;
+      if (event.getUsingKryoWithoutReference()) {
+        progressData =
+            (ProgressData) referenceFalseKryoSerializer.asInflatedObject(event.getProgressBytes().toByteArray());
+      } else {
+        progressData = (ProgressData) kryoSerializer.asInflatedObject(event.getProgressBytes().toByteArray());
+      }
 
       ExecutableProcessor processor = executableProcessorFactory.obtainProcessor(event.getExecutionMode());
       ProgressPackage progressPackage = ProgressPackage.builder()

@@ -19,4 +19,5 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.ci.config.HostedVmConfig")
 public class HostedVmConfig {
   boolean splitLinuxAmd64Pool;
+  boolean splitLinuxArm64Pool;
 }

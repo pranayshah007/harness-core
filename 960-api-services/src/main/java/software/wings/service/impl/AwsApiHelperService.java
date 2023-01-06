@@ -341,7 +341,6 @@ public class AwsApiHelperService {
       return buildDetailsList;
 
     } catch (WingsException e) {
-      e.excludeReportTarget(AWS_ACCESS_DENIED, EVERYBODY);
       throw new InvalidArtifactServerException(ExceptionUtils.getMessage(e), USER);
     } catch (RuntimeException e) {
       throw new InvalidArtifactServerException(ExceptionUtils.getMessage(e), USER);
@@ -567,7 +566,7 @@ public class AwsApiHelperService {
   public AWSCredentialsProvider getAwsCredentialsProvider(AwsInternalConfig awsConfig) {
     AWSCredentialsProvider credentialsProvider;
     if (awsConfig.isUseEc2IamCredentials()) {
-      log.info("Instantiating EC2ContainerCredentialsProviderWrapper");
+      log.debug("Instantiating EC2ContainerCredentialsProviderWrapper");
       credentialsProvider = new EC2ContainerCredentialsProviderWrapper();
     } else if (awsConfig.isUseIRSA()) {
       WebIdentityTokenCredentialsProvider.Builder providerBuilder = WebIdentityTokenCredentialsProvider.builder();

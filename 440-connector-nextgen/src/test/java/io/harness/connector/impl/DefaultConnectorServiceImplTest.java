@@ -52,6 +52,7 @@ import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesUserNamePasswordDTO;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
+import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ReferencedEntityException;
 import io.harness.gitsync.clients.YamlGitConfigClient;
@@ -72,6 +73,7 @@ import io.harness.utils.FullyQualifiedIdentifierHelper;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -108,7 +110,6 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
 
   @Mock Call<RestResponse<Boolean>> featureFlagCall1;
   @Mock Call<RestResponse<Boolean>> featureFlagCall2;
-
   @Spy @Inject @InjectMocks private DefaultConnectorServiceImpl connectorService;
   @Inject MongoTemplate mongoTemplate;
 
@@ -127,6 +128,7 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
   String updatedUserName = "updatedUserName";
   String updatedMasterUrl = "updatedMasterUrl";
   String updatedPasswordIdentifier = "updatedPasswordIdentifier";
+  String dummyExceptionMessage = "DUMMY_MESSAGE";
 
   @Before
   public void setUp() {
@@ -137,7 +139,8 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
     doReturn(false).when(gitSyncSdkService).isGitSyncEnabled(anyString(), anyString(), anyString());
   }
 
-  private ConnectorDTO createKubernetesConnectorRequestDTO(String connectorIdentifier, String name) {
+  private ConnectorDTO createKubernetesConnectorRequestDTO(
+      String connectorIdentifier, String name, SecretRefData passwordSecretRef) {
     KubernetesAuthDTO kubernetesAuthDTO =
         KubernetesAuthDTO.builder()
             .authType(KubernetesAuthType.USER_PASSWORD)
@@ -161,7 +164,8 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
   }
 
   private ConnectorResponseDTO createConnector(String connectorIdentifier, String name) {
-    ConnectorDTO connectorRequestDTO = createKubernetesConnectorRequestDTO(connectorIdentifier, name);
+    ConnectorDTO connectorRequestDTO =
+        createKubernetesConnectorRequestDTO(connectorIdentifier, name, passwordSecretRef);
     return connectorService.create(connectorRequestDTO, accountIdentifier);
   }
 
@@ -186,6 +190,23 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
   }
 
   @Test
+  @Owner(developers = OwnerRule.NAMANG)
+  @Category(UnitTests.class)
+  public void testCreateConnectorsWithInvalidSecretRef() {
+    SecretRefData invalidRef = SecretRefData.builder().identifier("").scope(Scope.ACCOUNT).build();
+    ConnectorDTO connectorRequestDTO = createKubernetesConnectorRequestDTO("identifier", name, passwordSecretRef);
+    Map<String, SecretRefData> secretRefDataMap = new HashMap<>();
+    secretRefDataMap.put("fieldName", invalidRef);
+    when(secretRefInputValidationHelper.getDecryptableFieldsData(any())).thenReturn(secretRefDataMap);
+    InvalidRequestException invalidRequestException = new InvalidRequestException(dummyExceptionMessage);
+    doThrow(invalidRequestException).when(secretRefInputValidationHelper).validateTheSecretInput(any(), any());
+    assertThatThrownBy(() -> connectorService.create(connectorRequestDTO, accountIdentifier))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(String.format(
+            "Error while validating %s field : %s", "fieldName", ExceptionUtils.getMessage(invalidRequestException)));
+  }
+
+  @Test
   @Owner(developers = OwnerRule.DEV_MITTAL)
   @Category(UnitTests.class)
   public void testUpdateConnectorsWithSameName() {
@@ -196,6 +217,23 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
     assertThat(updated.getConnector().getIdentifier()).isEqualTo("identifier2");
     assertThat(connectorDTOOutput1.getConnector().getName()).isEqualTo(updatedName);
     assertThat(connectorDTOOutput1.getConnector().getIdentifier()).isEqualTo(identifier);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.NAMANG)
+  @Category(UnitTests.class)
+  public void testUpdateConnectorsWithInvalidSecretRef() {
+    SecretRefData invalidRef = SecretRefData.builder().identifier("").scope(Scope.ACCOUNT).build();
+    ConnectorDTO connectorRequestDTO = createKubernetesConnectorRequestDTO("identifier", name, passwordSecretRef);
+    Map<String, SecretRefData> secretRefDataMap = new HashMap<>();
+    secretRefDataMap.put("fieldName", invalidRef);
+    when(secretRefInputValidationHelper.getDecryptableFieldsData(any())).thenReturn(secretRefDataMap);
+    InvalidRequestException invalidRequestException = new InvalidRequestException(dummyExceptionMessage);
+    doThrow(invalidRequestException).when(secretRefInputValidationHelper).validateTheSecretInput(any(), any());
+    assertThatThrownBy(() -> connectorService.update(connectorRequestDTO, accountIdentifier))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(String.format(
+            "Error while validating %s field : %s", "fieldName", ExceptionUtils.getMessage(invalidRequestException)));
   }
 
   @Test

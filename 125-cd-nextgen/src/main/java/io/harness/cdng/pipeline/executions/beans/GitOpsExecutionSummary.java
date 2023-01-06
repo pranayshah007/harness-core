@@ -30,15 +30,16 @@ public class GitOpsExecutionSummary {
   Set<Environment> environments = new HashSet<>();
   List<Cluster> clusters = new ArrayList<>();
 
-  public void addSingleEnvironment(@NotEmpty String envId, @NotEmpty String envName) {
-    environments.add(Environment.builder().identifier(envId).name(envName).build());
+  public void addSingleEnvironment(@NotEmpty String envId, @NotEmpty String envName, @NotEmpty String envType) {
+    environments.add(Environment.builder().identifier(envId).name(envName).type(envType).build());
   }
 
-  public void addSingleEnvironmentWithinEnvGroup(
-      @NotEmpty String envGroupId, @NotEmpty String envGroupName, @NotEmpty String envId, @NotEmpty String envName) {
+  public void addSingleEnvironmentWithinEnvGroup(@NotEmpty String envGroupId, @NotEmpty String envGroupName,
+      @NotEmpty String envId, @NotEmpty String envName, @NotEmpty String envType) {
     environments.add(Environment.builder()
                          .identifier(envId)
                          .name(envName)
+                         .type(envType)
                          .envGroupName(envGroupName)
                          .envGroupIdentifier(envGroupId)
                          .build());
@@ -48,6 +49,7 @@ public class GitOpsExecutionSummary {
   @Builder
   public static class Environment {
     String name;
+    String type;
     String identifier;
     String envGroupIdentifier;
     String envGroupName;

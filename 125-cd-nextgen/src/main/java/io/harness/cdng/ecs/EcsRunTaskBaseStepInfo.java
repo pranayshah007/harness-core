@@ -46,6 +46,11 @@ public class EcsRunTaskBaseStepInfo {
   @SkipAutoEvaluation
   ParameterField<StoreConfigWrapper> taskDefinition;
 
+  @JsonProperty("taskDefinitionArn")
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
+  @SkipAutoEvaluation
+  ParameterField<String> taskDefinitionArn;
+
   @Wither
   @JsonProperty("runTaskRequestDefinition")
   @ApiModelProperty(dataType = "io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper")

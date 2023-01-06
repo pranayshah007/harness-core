@@ -16,10 +16,10 @@ import io.harness.data.validator.Trimmed;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import dev.morphia.annotations.Transient;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Transient;
 
 @Data
 @Builder

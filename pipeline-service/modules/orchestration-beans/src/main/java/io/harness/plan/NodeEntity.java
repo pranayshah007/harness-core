@@ -16,13 +16,13 @@ import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAccess;
 
+import dev.morphia.annotations.Entity;
 import java.time.OffsetDateTime;
 import java.util.Date;
 import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.Wither;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -36,7 +36,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class NodeEntity implements PersistentEntity, UuidAccess {
   private static final long TTL_MONTHS = 6;
 
-  @Wither @Id @org.mongodb.morphia.annotations.Id String uuid;
+  @Wither @Id @dev.morphia.annotations.Id String uuid;
   Node node;
   String planId;
   @Builder.Default @FdTtlIndex Date validUntil = Date.from(OffsetDateTime.now().plusMonths(TTL_MONTHS).toInstant());

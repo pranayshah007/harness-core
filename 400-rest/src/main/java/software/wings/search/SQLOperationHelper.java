@@ -165,7 +165,7 @@ public class SQLOperationHelper {
     }
 
     /* Making the DELETE Query */
-    deleteSQLBuilder.append(String.format("DELETE FROM %s WHERE ", tableName));
+    deleteSQLBuilder.append(String.format("UPDATE %s SET IS_DELETED = true WHERE ", tableName));
 
     if (!columnValueMappingForCondition.isEmpty()) {
       for (Map.Entry<String, Object> entry : columnValueMappingForCondition.entrySet()) {

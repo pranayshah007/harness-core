@@ -18,6 +18,7 @@ import software.wings.service.impl.yaml.handler.governance.GovernanceFreezeConfi
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import dev.morphia.annotations.Transient;
 import java.util.List;
 import java.util.Objects;
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -29,7 +30,6 @@ import lombok.Setter;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.codehaus.jackson.annotate.JsonCreator;
-import org.mongodb.morphia.annotations.Transient;
 
 @Getter
 @ToString

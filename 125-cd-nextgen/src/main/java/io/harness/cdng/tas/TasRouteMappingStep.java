@@ -163,8 +163,8 @@ public class TasRouteMappingStep extends TaskChainExecutableWithRollbackAndRbac 
       List<ServerInstanceInfo> serverInstanceInfoList = getServerInstanceInfoList(response, ambiance);
       StepResponse.StepOutcome stepOutcome =
               instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfoList);
-      tasStepHelper.updateManifestFiles(ambiance, tasExecutionPassThroughData.getPcfManifestsPackage(), appName, tasInfraConfig);
-      tasStepHelper.updateAutoscalarEnabledField(ambiance, !isNull(tasExecutionPassThroughData.getPcfManifestsPackage().getAutoscalarManifestYml()), appName, tasInfraConfig);
+      tasStepHelper.updateManifestFiles(ambiance, tasExecutionPassThroughData.getTasManifestsPackage(), appName, tasInfraConfig);
+      tasStepHelper.updateAutoscalarEnabledField(ambiance, !isNull(tasExecutionPassThroughData.getTasManifestsPackage().getAutoscalarManifestYml()), appName, tasInfraConfig);
       tasStepHelper.updateRouteMapsField(ambiance, response.getNewApplicationInfo().getAttachedRoutes(), appName, tasInfraConfig);
       tasStepHelper.updateDesiredCountField(ambiance, tasExecutionPassThroughData.getDesiredCountInFinalYaml(), appName, tasInfraConfig);
       tasStepHelper.updateIsFirstDeploymentField(ambiance, response.getCurrentProdInfo() == null, appName, tasInfraConfig);

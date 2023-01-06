@@ -45,6 +45,7 @@ import io.harness.steps.container.execution.ContainerStepCleanupHelper;
 import io.harness.steps.container.execution.ContainerStepExecutionResponseHelper;
 import io.harness.steps.container.execution.ContainerStepRbacHelper;
 import io.harness.steps.executable.TaskChainExecutableWithRbac;
+import io.harness.steps.plugin.ContainerCommandUnitConstants;
 import io.harness.steps.plugin.ContainerStepInfo;
 import io.harness.steps.plugin.ContainerStepPassThroughData;
 import io.harness.supplier.ThrowingSupplier;
@@ -124,9 +125,10 @@ public class ContainerStep implements TaskChainExecutableWithRbac<StepElementPar
     String stageId = ambiance.getStageExecutionId();
     List<TaskSelector> taskSelectors = new ArrayList<>();
 
-    TaskRequest taskRequest = StepUtils.prepareTaskRequest(ambiance, getTaskData(stepParameters, buildSetupTaskParams),
-        kryoSerializer, TaskCategory.DELEGATE_TASK_V2, Collections.emptyList(), true, null, taskSelectors,
-        Scope.PROJECT, EnvironmentType.ALL, false, new ArrayList<>(), false, stageId);
+    TaskRequest taskRequest =
+        StepUtils.prepareTaskRequest(ambiance, getTaskData(stepParameters, buildSetupTaskParams), kryoSerializer,
+            TaskCategory.DELEGATE_TASK_V2, Collections.singletonList(ContainerCommandUnitConstants.InitContainer), true,
+            null, taskSelectors, Scope.PROJECT, EnvironmentType.ALL, false, new ArrayList<>(), false, stageId);
     return TaskChainResponse.builder()
         .taskRequest(taskRequest)
         .passThroughData(ContainerStepPassThroughData.builder().build())
@@ -166,8 +168,8 @@ public class ContainerStep implements TaskChainExecutableWithRbac<StepElementPar
     String stageId = ambiance.getStageExecutionId();
 
     TaskRequest taskRequest = StepUtils.prepareTaskRequest(ambiance, runStepTaskData, kryoSerializer,
-        TaskCategory.DELEGATE_TASK_V2, Collections.emptyList(), true, null, new ArrayList<>(), Scope.PROJECT,
-        EnvironmentType.ALL, false, new ArrayList<>(), false, stageId);
+        TaskCategory.DELEGATE_TASK_V2, Collections.singletonList(ContainerCommandUnitConstants.ContainerStep), true,
+        null, new ArrayList<>(), Scope.PROJECT, EnvironmentType.ALL, false, new ArrayList<>(), false, stageId);
 
     return TaskChainResponse.builder()
         .chainEnd(true)

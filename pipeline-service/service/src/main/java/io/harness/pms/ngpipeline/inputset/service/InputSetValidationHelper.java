@@ -33,6 +33,7 @@ import io.harness.pms.ngpipeline.inputset.mappers.PMSInputSetElementMapper;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PipelineCRUDErrorResponse;
+import io.harness.pms.yaml.PipelineVersion;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -44,6 +45,14 @@ public class InputSetValidationHelper {
   // this method is not for old git sync
   public void validateInputSet(PMSInputSetService inputSetService, PMSPipelineService pipelineService,
       InputSetEntity inputSetEntity, boolean checkForStoreType, boolean hasNewYamlStructure) {
+    switch (inputSetEntity.getHarnessVersion()) {
+      case PipelineVersion.V1:
+        return;
+      case PipelineVersion.V0:
+        break;
+      default:
+        throw new IllegalStateException("version not supported");
+    }
     String accountId = inputSetEntity.getAccountId();
     String orgIdentifier = inputSetEntity.getOrgIdentifier();
     String projectIdentifier = inputSetEntity.getProjectIdentifier();

@@ -190,8 +190,6 @@ public class NGAggregateResource {
       @QueryParam(NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
       @QueryParam("filterType") @DefaultValue("EXCLUDE_INHERITED_GROUPS") UserGroupFilterType filterType,
       @QueryParam("userSize") @DefaultValue("6") @Max(20) int userSize) {
-    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
-        Resource.of(USERGROUP, null), VIEW_USERGROUP_PERMISSION);
     if (isEmpty(pageRequest.getSortOrders())) {
       SortOrder order =
           SortOrder.Builder.aSortOrder().withField(ProjectKeys.lastModifiedAt, SortOrder.OrderType.DESC).build();

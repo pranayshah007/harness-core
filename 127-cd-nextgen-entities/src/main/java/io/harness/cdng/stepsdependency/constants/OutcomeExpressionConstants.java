@@ -32,6 +32,7 @@ public class OutcomeExpressionConstants {
   public final String OUTPUT = "output";
   public final String INFRA_TASK_EXECUTABLE_STEP_OUTPUT = "InfrastructureStepOutput";
   public final String TERRAFORM_CONFIG = "terraformConfig";
+  public final String TERRAGRUNT_CONFIG = "terragruntConfig";
   public final String DEPLOYMENT_INFO_OUTCOME = "deploymentInfoOutcome";
   public final String HELM_DEPLOY_OUTCOME = "helmDeployOutcome";
   public final String HELM_ROLLBACK_OUTCOME = "helmRollbackOutcome";
@@ -62,9 +63,11 @@ public class OutcomeExpressionConstants {
   public final String ELASTIGROUP_SWAP_ROUTE_OUTCOME = "elastigroupSwapRouteOutcome";
   public final String ASG_CANARY_DELETE_OUTCOME = "asgCanaryDeleteOutcome";
   public final String ASG_CANARY_DEPLOY_OUTCOME = "asgCanaryDeployOutcome";
+  public final String ASG_ROLLING_PREPARE_ROLLBACK_DATA_OUTCOME = "asgRollingPrepareRollbackDataOutcome";
   public final String TAS_APP_SETUP_OUTCOME = "TasAppSetupOutcome";
   public final String TAS_APP_RESIZE_OUTCOME = "TasAppResizeOutcome";
   public final String TAS_SWAP_ROUTES_OUTCOME = "TasSwapRoutesOutcome";
   public final String TAS_INBUILT_VARIABLES_OUTCOME = "pcf";
+  public final String ASG_ROLLING_DEPLOY_OUTCOME = "asgRollingDeployOutcome";
   public final String TAS_ROLLING_DEPLOY_OUTCOME = "TasRollingDeployOutcome";
 }

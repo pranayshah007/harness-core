@@ -64,7 +64,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import org.hibernate.validator.constraints.NotBlank;
 import org.springframework.data.domain.Page;
 
 @Api("triggers")
@@ -188,7 +187,7 @@ public interface NGTriggerResource {
       })
   @Path("{triggerIdentifier}")
   @ApiOperation(value = "Delete a trigger by identifier", nickname = "deleteTrigger")
-  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_DELETE)
   ResponseDTO<Boolean>
   delete(@HeaderParam(IF_MATCH) String ifMatch,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
@@ -268,7 +267,7 @@ public interface NGTriggerResource {
         ApiResponse(responseCode = "default", description = "Returns the Trigger catalogue response")
       })
   ResponseDTO<NGTriggerCatalogDTO>
-  getTriggerCatalog(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotBlank @QueryParam(
+  getTriggerCatalog(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
       NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier);
 
   @GET

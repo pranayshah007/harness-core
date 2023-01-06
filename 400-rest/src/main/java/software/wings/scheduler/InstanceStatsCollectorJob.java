@@ -10,6 +10,7 @@ package software.wings.scheduler;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import io.harness.beans.FeatureName;
+import io.harness.dataretention.LongerDataRetentionService;
 import io.harness.event.timeseries.processor.instanceeventprocessor.instancereconservice.IInstanceReconService;
 import io.harness.ff.FeatureFlagService;
 import io.harness.lock.AcquiredLock;
@@ -21,6 +22,7 @@ import io.harness.scheduler.PersistentScheduler;
 import software.wings.beans.Account;
 import software.wings.beans.AccountStatus;
 import software.wings.beans.LicenseInfo;
+import software.wings.beans.datatretention.LongerDataRetentionState;
 import software.wings.beans.instance.dashboard.InstanceStatsUtils;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.instance.licensing.InstanceUsageLimitExcessHandler;
@@ -71,6 +73,7 @@ public class InstanceStatsCollectorJob implements Job {
   @Inject private AccountService accountService;
   @Inject private IInstanceReconService instanceReconService;
   @Inject private FeatureFlagService featureFlagService;
+  @Inject LongerDataRetentionService longerDataRetentionService;
 
   private static TriggerBuilder<SimpleTrigger> instanceStatsTriggerBuilder(String accountId) {
     return TriggerBuilder.newTrigger()
@@ -144,8 +147,9 @@ public class InstanceStatsCollectorJob implements Job {
         log.error("Unable to fetch lock for running instance data migration for account : {}", accountId);
         return;
       }
-      // Add flag for lock similar to deployments
-      if (featureFlagService.isEnabled(FeatureName.CUSTOM_DASHBOARD_ENABLE_CRON_INSTANCE_DATA_MIGRATION, accountId)) {
+      if (featureFlagService.isEnabled(FeatureName.CUSTOM_DASHBOARD_ENABLE_CRON_INSTANCE_DATA_MIGRATION, accountId)
+          && !longerDataRetentionService.isLongerDataRetentionCompleted(
+              LongerDataRetentionState.INSTANCE_LONGER_RETENTION, accountId)) {
         log.info("Triggering instance data migration cron for account : {}", accountId);
         try {
           instanceReconService.doDataMigration(accountId, DATA_MIGRATION_INTERVAL_IN_HOURS);

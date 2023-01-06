@@ -10,6 +10,7 @@ package io.harness.ng.core.dto;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
+import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 
@@ -19,4 +20,12 @@ import lombok.Value;
 public class CDStageMetaDataDTO {
   String environmentRef;
   String serviceRef;
+  List<ServiceEnvRef> serviceEnvRefList;
+
+  @Value
+  @Builder
+  public static class ServiceEnvRef {
+    String environmentRef;
+    String serviceRef;
+  }
 }

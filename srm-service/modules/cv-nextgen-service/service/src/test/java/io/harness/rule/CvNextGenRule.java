@@ -83,6 +83,7 @@ import com.google.inject.Module;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.util.Modules;
+import dev.morphia.converters.TypeConverter;
 import io.dropwizard.configuration.YamlConfigurationFactory;
 import io.dropwizard.jackson.Jackson;
 import io.dropwizard.jersey.validation.Validators;
@@ -104,7 +105,6 @@ import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
 import org.mockito.Mockito;
 import org.mockito.stubbing.Answer;
-import org.mongodb.morphia.converters.TypeConverter;
 import org.springframework.core.convert.converter.Converter;
 import org.yaml.snakeyaml.Yaml;
 import retrofit2.Call;
@@ -282,10 +282,11 @@ public class CvNextGenRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
   private TemplateResourceClient getMockedTemplateResourceClient() {
     TemplateResourceClient templateResourceClient = Mockito.mock(TemplateResourceClient.class);
     Mockito
-        .when(templateResourceClient.applyTemplatesOnGivenYaml(Mockito.any(), Mockito.any(), Mockito.any(),
-            Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
+        .when(templateResourceClient.applyTemplatesOnGivenYamlV2(Mockito.any(), Mockito.any(), Mockito.any(),
+            Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
+            Mockito.any(), Mockito.any(), Mockito.any()))
         .thenAnswer((Answer<Call<ResponseDTO<TemplateMergeResponseDTO>>>) invocation -> {
-          TemplateApplyRequestDTO templateApplyRequestDTO = (TemplateApplyRequestDTO) invocation.getArguments()[7];
+          TemplateApplyRequestDTO templateApplyRequestDTO = (TemplateApplyRequestDTO) invocation.getArguments()[12];
           String yaml = templateApplyRequestDTO.getOriginalEntityYaml();
           Yaml yamlObject = new Yaml();
           Map<String, Object> data = yamlObject.load(yaml);

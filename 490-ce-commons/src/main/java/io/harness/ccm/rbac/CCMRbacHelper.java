@@ -32,4 +32,16 @@ public interface CCMRbacHelper {
 
   void checkCurrencyPreferenceViewPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
   void checkCurrencyPreferenceEditPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
+
+  void checkRuleEditPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
+  void checkRuleViewPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
+  void checkRuleDeletePermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
+
+  void checkRuleSetViewPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
+  void checkRuleSetDeletePermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
+  void checkRuleSetEditPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
+
+  void checkRuleEnforcementViewPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
+  void checkRuleEnforcementDeletePermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
+  void checkRuleEnforcementEditPermission(String accountIdentifier, String orgIdentifier, String projectIdentifier);
 }

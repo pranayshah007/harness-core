@@ -15,6 +15,7 @@ import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.yaml.extended.reports.JUnitTestReport;
 import io.harness.beans.yaml.extended.reports.UnitTestReportType;
 import io.harness.ci.buildstate.ConnectorUtils;
+import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.serializer.SerializerUtils;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.vm.steps.VmJunitTestReport;
@@ -39,7 +40,7 @@ import org.apache.commons.lang3.StringUtils;
 @Singleton
 public class VmRunStepSerializer {
   @Inject ConnectorUtils connectorUtils;
-
+  @Inject CIExecutionServiceConfig ciExecutionServiceConfig;
   public VmRunStep serialize(RunStepInfo runStepInfo, Ambiance ambiance, String identifier,
       ParameterField<Timeout> parameterFieldTimeout, String stepName) {
     String command =
@@ -63,7 +64,14 @@ public class VmRunStepSerializer {
     }
 
     String earlyExitCommand = SerializerUtils.getEarlyExitCommand(runStepInfo.getShell());
-    command = earlyExitCommand + command;
+    if (ambiance.hasMetadata() && ambiance.getMetadata().getIsDebug()) {
+      command = earlyExitCommand + System.lineSeparator()
+          + SerializerUtils.getVmDebugCommand(ciExecutionServiceConfig.getRemoteDebugTimeout()) + System.lineSeparator()
+          + command;
+    } else {
+      command = earlyExitCommand + command;
+    }
+
     VmRunStepBuilder runStepBuilder = VmRunStep.builder()
                                           .image(image)
                                           .entrypoint(SerializerUtils.getEntrypoint(runStepInfo.getShell()))

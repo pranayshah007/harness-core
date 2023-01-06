@@ -25,8 +25,11 @@ import io.harness.validation.Update;
 
 import software.wings.beans.GitFileConfig;
 import software.wings.beans.NameValuePair;
+import software.wings.beans.S3FileConfig;
 
 import com.github.reinert.jjschema.SchemaIgnore;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -34,8 +37,6 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
 
 @Data
 @SuperBuilder(toBuilder = true)
@@ -70,6 +71,8 @@ public class TerraformConfig implements PersistentEntity, UuidAware, CreatedAtAw
   private final List<String> tfVarFiles;
   private final GitFileConfig tfVarGitFileConfig;
   private final GitFileConfig remoteBackendConfig;
+  private final S3FileConfig s3BackendFileConfig;
+  private final S3FileConfig tfVarS3FileConfig;
   private final String backendConfigStoreType;
   private final TerraformCommand command;
 

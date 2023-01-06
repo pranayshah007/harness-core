@@ -940,7 +940,7 @@ public class UserResource {
 
   @POST
   @Path("saml-login")
-  @Produces(MediaType.TEXT_HTML)
+  @Produces({MediaType.TEXT_HTML, MediaType.APPLICATION_JSON})
   @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
   @PublicApi
   @Timed
@@ -951,6 +951,8 @@ public class UserResource {
     try {
       return authenticationManager.samlLogin(
           request.getHeader(com.google.common.net.HttpHeaders.REFERER), samlResponse, accountId, relayState);
+    } catch (WingsException e) {
+      throw e;
     } catch (URISyntaxException e) {
       throw new WingsException(ErrorCode.UNKNOWN_ERROR, e);
     }

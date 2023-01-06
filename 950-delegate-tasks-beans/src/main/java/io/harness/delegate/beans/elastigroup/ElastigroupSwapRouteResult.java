@@ -25,4 +25,6 @@ public class ElastigroupSwapRouteResult {
   private String newElastiGroupName;
   private String oldElastiGroupId;
   private String oldElastiGroupName;
+  private List<String> ec2InstanceIdsAdded;
+  private List<String> ec2InstanceIdsExisting;
 }

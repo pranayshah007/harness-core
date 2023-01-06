@@ -13,16 +13,16 @@ import io.harness.licensing.interfaces.clients.local.CDLocalClient;
 import io.harness.licensing.interfaces.clients.local.CELocalClient;
 import io.harness.licensing.interfaces.clients.local.CFLocalClient;
 import io.harness.licensing.interfaces.clients.local.CILocalClient;
-import io.harness.licensing.interfaces.clients.local.CVLocalClient;
 import io.harness.licensing.interfaces.clients.local.ChaosLocalClient;
+import io.harness.licensing.interfaces.clients.local.SRMLocalClient;
 import io.harness.licensing.interfaces.clients.local.STOLocalClient;
 import io.harness.licensing.mappers.LicenseObjectMapper;
 import io.harness.licensing.mappers.modules.CDLicenseObjectMapper;
 import io.harness.licensing.mappers.modules.CELicenseObjectMapper;
 import io.harness.licensing.mappers.modules.CFLicenseObjectMapper;
 import io.harness.licensing.mappers.modules.CILicenseObjectMapper;
-import io.harness.licensing.mappers.modules.CVLicenseObjectMapper;
 import io.harness.licensing.mappers.modules.ChaosLicenseObjectMapper;
+import io.harness.licensing.mappers.modules.SRMLicenseObjectMapper;
 import io.harness.licensing.mappers.modules.STOLicenseObjectMapper;
 
 import java.util.HashMap;
@@ -42,7 +42,9 @@ public class ModuleLicenseRegistrarFactory {
     registrar.put(
         ModuleType.CE, new ModuleLicenseRegistrar(ModuleType.CE, CELicenseObjectMapper.class, CELocalClient.class));
     registrar.put(
-        ModuleType.CV, new ModuleLicenseRegistrar(ModuleType.CV, CVLicenseObjectMapper.class, CVLocalClient.class));
+        ModuleType.CV, new ModuleLicenseRegistrar(ModuleType.CV, SRMLicenseObjectMapper.class, SRMLocalClient.class));
+    registrar.put(
+        ModuleType.SRM, new ModuleLicenseRegistrar(ModuleType.SRM, SRMLicenseObjectMapper.class, SRMLocalClient.class));
     registrar.put(
         ModuleType.CF, new ModuleLicenseRegistrar(ModuleType.CF, CFLicenseObjectMapper.class, CFLocalClient.class));
     registrar.put(

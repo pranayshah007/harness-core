@@ -98,11 +98,13 @@ public class BuildTriggerHelper {
     return response != null ? Optional.of(response.getYamlPipeline()) : Optional.empty();
   }
 
-  public Optional<String> fetchResolvedTemplatesPipelineForTrigger(NGTriggerEntity ngTriggerEntity) {
+  public Optional<String> fetchResolvedTemplatesPipelineForTrigger(TriggerDetails triggerDetails) {
+    NGTriggerEntity ngTriggerEntity = triggerDetails.getNgTriggerEntity();
+    NGTriggerConfigV2 ngTriggerConfigV2 = triggerDetails.getNgTriggerConfigV2();
     TemplatesResolvedPipelineResponseDTO response =
         NGRestUtils.getResponse(pipelineServiceClient.getResolvedTemplatesPipelineByIdentifier(
             ngTriggerEntity.getTargetIdentifier(), ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(),
-            ngTriggerEntity.getProjectIdentifier(), null, null, false));
+            ngTriggerEntity.getProjectIdentifier(), ngTriggerConfigV2.getPipelineBranchName(), null, false));
 
     return response != null ? Optional.of(response.getResolvedTemplatesPipelineYaml()) : Optional.empty();
   }

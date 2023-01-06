@@ -19,6 +19,8 @@ import software.wings.dl.WingsPersistence;
 import software.wings.search.framework.SearchSourceEntitySyncState.SearchSourceEntitySyncStateKeys;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -32,8 +34,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @OwnedBy(PL)
 @Slf4j

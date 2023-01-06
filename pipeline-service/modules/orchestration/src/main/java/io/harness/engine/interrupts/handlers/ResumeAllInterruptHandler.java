@@ -28,6 +28,7 @@ import io.harness.interrupts.Interrupt;
 import io.harness.interrupts.InterruptEffect;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.interrupts.InterruptType;
+import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.sdk.core.steps.io.StatusNotifyResponseData;
 import io.harness.waiter.WaitNotifyEngine;
 
@@ -102,7 +103,8 @@ public class ResumeAllInterruptHandler implements InterruptHandler {
 
   @Override
   public Interrupt handleInterruptForNodeExecution(Interrupt interrupt, String nodeExecutionId) {
-    NodeExecution nodeExecution = nodeExecutionService.get(nodeExecutionId);
+    NodeExecution nodeExecution =
+        nodeExecutionService.getWithFieldsIncluded(nodeExecutionId, NodeProjectionUtils.withStatus);
     if (nodeExecution.getStatus() != Status.PAUSED) {
       return interrupt;
     }

@@ -83,6 +83,7 @@ public class CfDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler {
     List<CfServiceData> cfServiceDataUpdated = new ArrayList<>();
     CfDeployCommandResponseNG cfDeployCommandResponseNG = CfDeployCommandResponseNG.builder().build();
     CfDeployCommandResult cfDeployCommandResult = CfDeployCommandResult.builder().build();
+    cfDeployCommandResult.setStandardBG(cfDeployCommandRequestNG.isStandardBlueGreen());
 
     File workingDirectory = null;
     boolean noExceptionOccured = true;
@@ -190,7 +191,7 @@ public class CfDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler {
     log.error(
         CLOUD_FOUNDRY_LOG_PREFIX + "Exception in processing CF Deploy task [{}]", cfDeployCommandRequestNG, exception);
 
-    executionLogCallback.saveExecutionLog("\n\n--------- CF Resize failed to complete successfully", ERROR, FAILURE);
     Misc.logAllMessages(exception, executionLogCallback);
+    executionLogCallback.saveExecutionLog("\n\n--------- CF Resize failed to complete successfully", ERROR, FAILURE);
   }
 }

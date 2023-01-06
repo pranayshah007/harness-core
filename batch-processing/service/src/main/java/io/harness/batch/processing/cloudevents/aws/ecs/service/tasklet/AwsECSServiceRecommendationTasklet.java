@@ -30,6 +30,7 @@ import io.harness.ccm.commons.dao.recommendation.ECSRecommendationDAO;
 import io.harness.ccm.commons.entities.ecs.ECSService;
 import io.harness.ccm.commons.entities.ecs.recommendation.ECSPartialRecommendationHistogram;
 import io.harness.ccm.commons.entities.ecs.recommendation.ECSServiceRecommendation;
+import io.harness.ccm.graphql.core.recommendation.RecommendationsIgnoreListService;
 import io.harness.ccm.graphql.core.recommendation.fargate.CpuMillsAndMemoryBytes;
 import io.harness.ccm.graphql.core.recommendation.fargate.FargateResourceValues;
 import io.harness.ff.FeatureFlagService;
@@ -75,6 +76,7 @@ public class AwsECSServiceRecommendationTasklet implements Tasklet {
   @Autowired private BillingDataServiceImpl billingDataService;
   @Autowired private FeatureFlagService featureFlagService;
   @Autowired private FargateResourceValues fargateResourceValues;
+  @Autowired private RecommendationsIgnoreListService ignoreListService;
 
   private static final int BATCH_SIZE = 20;
   private static final int MAX_UTILIZATION_WEIGHT = 1;
@@ -180,6 +182,8 @@ public class AwsECSServiceRecommendationTasklet implements Tasklet {
         ecsRecommendationDAO.upsertCeRecommendation(ecsServiceRecommendation.getUuid(), accountId, clusterName,
             serviceName, monthlyCost, monthlySaving, recommendation.shouldShowRecommendation(),
             recommendation.getLastReceivedUtilDataAt());
+        ignoreListService.updateECSRecommendationState(
+            ecsServiceRecommendation.getUuid(), accountId, clusterName, serviceName);
       }
     }
 

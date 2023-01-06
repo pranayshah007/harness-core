@@ -20,7 +20,7 @@ import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.core.beans.RiskProfile;
 import io.harness.cvng.core.beans.healthsource.QueryDefinition;
-import io.harness.cvng.core.beans.healthsource.QueryParams;
+import io.harness.cvng.core.beans.healthsource.QueryParamsDTO;
 import io.harness.cvng.core.beans.monitoredService.HealthSource;
 import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.NextGenHealthSourceSpec;
@@ -261,7 +261,7 @@ public class NextGenHealthSourceSpecTest extends CvNextGenTestBase {
   public void testValidate_serviceJsonInstancePathIsEmpty() {
     QueryDefinition queryDefinition = nextGenHealthSourceSpec.getQueryDefinitions().get(0);
     queryDefinition.setContinuousVerificationEnabled(true);
-    queryDefinition.setQueryParams(QueryParams.builder().serviceInstanceField("").build());
+    queryDefinition.setQueryParams(QueryParamsDTO.builder().serviceInstanceField("").build());
     assertThatThrownBy(() -> nextGenHealthSourceSpec.validate())
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage(SERVICE_INSTANCE_LABEL_EMPTY_ERROR_MESSAGE);
@@ -273,23 +273,23 @@ public class NextGenHealthSourceSpecTest extends CvNextGenTestBase {
   public void testValidate_serviceJsonInstancePathIsNull() {
     QueryDefinition queryDefinition = nextGenHealthSourceSpec.getQueryDefinitions().get(0);
     queryDefinition.setContinuousVerificationEnabled(true);
-    queryDefinition.setQueryParams(QueryParams.builder().serviceInstanceField(null).build());
+    queryDefinition.setQueryParams(QueryParamsDTO.builder().serviceInstanceField(null).build());
     assertThatThrownBy(() -> nextGenHealthSourceSpec.validate())
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage(SERVICE_INSTANCE_LABEL_EMPTY_ERROR_MESSAGE);
   }
 
-  /*  @Test
-    @Owner(developers = ANSUMAN)
-    @Category(UnitTests.class)
-    public void testValidate_metricResponseMappingIsNull() {
-      QueryDefinition metricDefinition = nextGenHealthSourceSpec.getQueryDefinitions().get(0);
-      metricDefinition.setContinuousVerificationEnabled(true);
-      metricDefinition.setQueryParams(null);
-      assertThatThrownBy(() -> nextGenHealthSourceSpec.validate())
-          .isInstanceOf(IllegalArgumentException.class)
-          .hasMessage(SERVICE_INSTANCE_LABEL_EMPTY_ERROR_MESSAGE);
-    }*/
+  @Test
+  @Owner(developers = ANSUMAN)
+  @Category(UnitTests.class)
+  public void testValidate_metricResponseMappingIsNull() {
+    QueryDefinition metricDefinition = nextGenHealthSourceSpec.getQueryDefinitions().get(0);
+    metricDefinition.setContinuousVerificationEnabled(true);
+    metricDefinition.setQueryParams(null);
+    assertThatThrownBy(() -> nextGenHealthSourceSpec.validate())
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage(SERVICE_INSTANCE_LABEL_EMPTY_ERROR_MESSAGE);
+  }
 
   @Test
   @Owner(developers = ANSUMAN)
@@ -297,7 +297,7 @@ public class NextGenHealthSourceSpecTest extends CvNextGenTestBase {
   public void testValidate_serviceJsonInstancePathIsPresent() {
     QueryDefinition metricDefinition = nextGenHealthSourceSpec.getQueryDefinitions().get(0);
     metricDefinition.setContinuousVerificationEnabled(true);
-    metricDefinition.setQueryParams(QueryParams.builder().serviceInstanceField("path").build());
+    metricDefinition.setQueryParams(QueryParamsDTO.builder().serviceInstanceField("path").build());
     nextGenHealthSourceSpec.validate();
     assertThat(true).isTrue();
   }

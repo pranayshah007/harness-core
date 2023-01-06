@@ -24,7 +24,6 @@ import io.harness.security.annotations.NextGenManagerAuth;
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
 import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import java.util.List;
 import javax.validation.Valid;
@@ -46,12 +45,11 @@ public interface ChangeEventNgResource {
   @NextGenManagerAuth
   @ExceptionMetered
   @Path("")
-  @ApiOperation(value = "get ChangeEvent List", nickname = "changeEventList")
   RestResponse<PageResponse<ChangeEventDTO>> get(@Valid @BeanParam ProjectPathParams projectPathParams,
       @QueryParam("serviceIdentifiers") List<String> serviceIdentifiers,
       @QueryParam("envIdentifiers") List<String> envIdentifiers,
       @QueryParam("monitoredServiceIdentifiers") List<String> monitoredServiceIdentifiers,
-      @QueryParam("isMonitoredServiceIdentifierScoped") boolean isMonitoredServiceIdentifierScoped,
+      @QueryParam("scopedMonitoredServiceIdentifiers") List<String> scopedMonitoredServiceIdentifiers,
       @QueryParam("changeCategories") List<ChangeCategory> changeCategories,
       @QueryParam("changeSourceTypes") List<ChangeSourceType> changeSourceTypes,
       @QueryParam("searchText") String searchText,
@@ -64,12 +62,11 @@ public interface ChangeEventNgResource {
   @NextGenManagerAuth
   @Path("/timeline")
   @ExceptionMetered
-  @ApiOperation(value = "get ChangeEvent timeline", nickname = "changeEventTimeline")
   RestResponse<ChangeTimeline> get(@Valid @BeanParam ProjectPathParams projectPathParams,
       @QueryParam("serviceIdentifiers") List<String> serviceIdentifiers,
       @QueryParam("envIdentifiers") List<String> envIdentifiers,
       @QueryParam("monitoredServiceIdentifiers") List<String> monitoredServiceIdentifiers,
-      @QueryParam("isMonitoredServiceIdentifierScoped") boolean isMonitoredServiceIdentifierScoped,
+      @QueryParam("scopedMonitoredServiceIdentifiers") List<String> scopedMonitoredServiceIdentifiers,
       @QueryParam("changeCategories") List<ChangeCategory> changeCategories,
       @QueryParam("changeSourceTypes") List<ChangeSourceType> changeSourceTypes,
       @QueryParam("searchText") String searchText,
@@ -82,13 +79,10 @@ public interface ChangeEventNgResource {
   @NextGenManagerAuth
   @Path("/monitored-service-summary")
   @ExceptionMetered
-  @ApiOperation(
-      value = "get ChangeEvent summary for monitored service", nickname = "getMonitoredServiceChangeEventSummary")
-  RestResponse<ChangeSummaryDTO>
-  getSummary(@Valid @BeanParam ProjectPathParams projectPathParams,
+  RestResponse<ChangeSummaryDTO> getSummary(@Valid @BeanParam ProjectPathParams projectPathParams,
       @QueryParam("monitoredServiceIdentifier") String monitoredServiceIdentifier,
       @QueryParam("monitoredServiceIdentifiers") List<String> monitoredServiceIdentifiers,
-      @QueryParam("isMonitoredServiceIdentifierScoped") boolean isMonitoredServiceIdentifierScoped,
+      @QueryParam("scopedMonitoredServiceIdentifiers") List<String> scopedMonitoredServiceIdentifiers,
       @QueryParam("changeCategories") List<ChangeCategory> changeCategories,
       @QueryParam("changeSourceTypes") List<ChangeSourceType> changeSourceTypes,
       @ApiParam(required = true) @NotNull @QueryParam("startTime") long startTime,

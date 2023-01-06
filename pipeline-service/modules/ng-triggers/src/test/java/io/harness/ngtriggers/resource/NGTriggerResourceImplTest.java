@@ -47,7 +47,6 @@ import io.harness.ngtriggers.beans.entity.metadata.NGTriggerMetadata;
 import io.harness.ngtriggers.beans.entity.metadata.WebhookMetadata;
 import io.harness.ngtriggers.beans.entity.metadata.catalog.TriggerCatalogItem;
 import io.harness.ngtriggers.beans.entity.metadata.catalog.TriggerCatalogType;
-import io.harness.ngtriggers.beans.entity.metadata.catalog.TriggerCategory;
 import io.harness.ngtriggers.beans.response.TriggerEventResponse;
 import io.harness.ngtriggers.beans.source.NGTriggerType;
 import io.harness.ngtriggers.beans.source.scheduled.CronTriggerSpec;
@@ -836,7 +835,7 @@ public class NGTriggerResourceImplTest extends CategoryTest {
     catalogTypes.add(TriggerCatalogType.ECR);
     catalogTypes.add(TriggerCatalogType.ACR);
     List<TriggerCatalogItem> triggerCatalogItems = Arrays.asList(
-        TriggerCatalogItem.builder().category(TriggerCategory.ARTIFACT).triggerCatalogType(catalogTypes).build());
+        TriggerCatalogItem.builder().category(NGTriggerType.ARTIFACT).triggerCatalogType(catalogTypes).build());
     when(ngTriggerService.getTriggerCatalog(ACCOUNT_ID)).thenReturn(triggerCatalogItems);
     when(ngTriggerElementMapper.toCatalogDTO(triggerCatalogItems))
         .thenReturn(NGTriggerCatalogDTO.builder().catalog(triggerCatalogItems).build());
@@ -844,7 +843,7 @@ public class NGTriggerResourceImplTest extends CategoryTest {
     NGTriggerCatalogDTO responseDTO = ngTriggerResource.getTriggerCatalog(ACCOUNT_ID).getData();
 
     assertThat(responseDTO.getCatalog().size()).isEqualTo(1);
-    assertThat(responseDTO.getCatalog().get(0).getCategory()).isEqualTo(TriggerCategory.ARTIFACT);
+    assertThat(responseDTO.getCatalog().get(0).getCategory()).isEqualTo(NGTriggerType.ARTIFACT);
     assertThat(responseDTO.getCatalog().get(0).getTriggerCatalogType().size()).isEqualTo(2);
   }
 
@@ -855,7 +854,7 @@ public class NGTriggerResourceImplTest extends CategoryTest {
     List<TriggerCatalogType> catalogTypes = new ArrayList<>();
     catalogTypes.add(TriggerCatalogType.CRON);
     List<TriggerCatalogItem> triggerCatalogItems = Arrays.asList(
-        TriggerCatalogItem.builder().category(TriggerCategory.SCHEDULED).triggerCatalogType(catalogTypes).build());
+        TriggerCatalogItem.builder().category(NGTriggerType.SCHEDULED).triggerCatalogType(catalogTypes).build());
     when(ngTriggerService.getTriggerCatalog(ACCOUNT_ID)).thenReturn(triggerCatalogItems);
     when(ngTriggerElementMapper.toCatalogDTO(triggerCatalogItems))
         .thenReturn(NGTriggerCatalogDTO.builder().catalog(triggerCatalogItems).build());
@@ -863,7 +862,7 @@ public class NGTriggerResourceImplTest extends CategoryTest {
     NGTriggerCatalogDTO responseDTO = ngTriggerResource.getTriggerCatalog(ACCOUNT_ID).getData();
 
     assertThat(responseDTO.getCatalog().size()).isEqualTo(1);
-    assertThat(responseDTO.getCatalog().get(0).getCategory()).isEqualTo(TriggerCategory.SCHEDULED);
+    assertThat(responseDTO.getCatalog().get(0).getCategory()).isEqualTo(NGTriggerType.SCHEDULED);
     assertThat(responseDTO.getCatalog().get(0).getTriggerCatalogType().size()).isEqualTo(1);
   }
 
@@ -875,7 +874,7 @@ public class NGTriggerResourceImplTest extends CategoryTest {
     catalogTypes.add(TriggerCatalogType.GITHUB);
     catalogTypes.add(TriggerCatalogType.GITLAB);
     List<TriggerCatalogItem> triggerCatalogItems = Arrays.asList(
-        TriggerCatalogItem.builder().category(TriggerCategory.WEBHOOK).triggerCatalogType(catalogTypes).build());
+        TriggerCatalogItem.builder().category(NGTriggerType.WEBHOOK).triggerCatalogType(catalogTypes).build());
     when(ngTriggerService.getTriggerCatalog(ACCOUNT_ID)).thenReturn(triggerCatalogItems);
     when(ngTriggerElementMapper.toCatalogDTO(triggerCatalogItems))
         .thenReturn(NGTriggerCatalogDTO.builder().catalog(triggerCatalogItems).build());
@@ -883,7 +882,7 @@ public class NGTriggerResourceImplTest extends CategoryTest {
     NGTriggerCatalogDTO responseDTO = ngTriggerResource.getTriggerCatalog(ACCOUNT_ID).getData();
 
     assertThat(responseDTO.getCatalog().size()).isEqualTo(1);
-    assertThat(responseDTO.getCatalog().get(0).getCategory()).isEqualTo(TriggerCategory.WEBHOOK);
+    assertThat(responseDTO.getCatalog().get(0).getCategory()).isEqualTo(NGTriggerType.WEBHOOK);
     assertThat(responseDTO.getCatalog().get(0).getTriggerCatalogType().size()).isEqualTo(2);
   }
 

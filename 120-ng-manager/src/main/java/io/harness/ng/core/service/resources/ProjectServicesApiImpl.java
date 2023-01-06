@@ -33,9 +33,10 @@ public class ProjectServicesApiImpl extends AbstractServicesApiImpl implements P
   @Inject
   public ProjectServicesApiImpl(ServiceEntityService serviceEntityService, AccessControlClient accessControlClient,
       ServiceEntityManagementService serviceEntityManagementService,
-      OrgAndProjectValidationHelper orgAndProjectValidationHelper, ServiceResourceApiUtils serviceResourceApiUtils) {
+      OrgAndProjectValidationHelper orgAndProjectValidationHelper, ServiceResourceApiUtils serviceResourceApiUtils,
+      ServiceEntityYamlSchemaHelper serviceSchemaHelper) {
     super(serviceEntityService, accessControlClient, serviceEntityManagementService, orgAndProjectValidationHelper,
-        serviceResourceApiUtils);
+        serviceResourceApiUtils, serviceSchemaHelper);
   }
 
   @Override

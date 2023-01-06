@@ -14,7 +14,6 @@ import static io.harness.exception.WingsException.USER;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.remote.client.NGRestUtils.getResponse;
 import static io.harness.template.beans.NGTemplateConstants.STABLE_VERSION;
-import static io.harness.utils.RestCallToNGManagerClientUtils.execute;
 
 import static java.lang.String.format;
 
@@ -58,6 +57,7 @@ import io.harness.ng.core.template.exception.NGTemplateResolveExceptionV2;
 import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.organization.remote.OrganizationClient;
 import io.harness.project.remote.ProjectClient;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.NGTemplateRepository;
 import io.harness.springdata.TransactionHelper;
 import io.harness.template.TemplateFilterPropertiesDTO;
@@ -428,15 +428,14 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     try {
       return templateServiceHelper.getTemplate(accountId, orgIdentifier, projectIdentifier, templateIdentifier,
           versionLabel, deleted, false, loadFromCache, loadFromFallbackBranch);
+    } catch (ExplanationException | HintException | ScmException e) {
+      String errorMessage = getErrorMessage(templateIdentifier, versionLabel);
+      log.error(errorMessage, e);
+      throw e;
     } catch (Exception e) {
       String errorMessage = getErrorMessage(templateIdentifier, versionLabel);
       log.error(errorMessage, e);
-      ScmException exception = TemplateUtils.getScmException(e);
-      if (null != exception) {
-        throw new InvalidRequestException(errorMessage, e);
-      } else {
-        throw new InvalidRequestException(String.format("[%s]: %s", errorMessage, ExceptionUtils.getMessage(e)));
-      }
+      throw new InvalidRequestException(String.format("[%s]: %s", errorMessage, ExceptionUtils.getMessage(e)));
     }
   }
 
@@ -603,8 +602,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     String referredEntityFQN = identifierRef.getFullyQualifiedName() + "/" + versionLabel + "/";
     boolean isEntityReferenced;
     try {
-      isEntityReferenced =
-          execute(entitySetupUsageClient.isEntityReferenced(accountId, referredEntityFQN, EntityType.TEMPLATE));
+      isEntityReferenced = NGRestUtils.getResponse(
+          entitySetupUsageClient.isEntityReferenced(accountId, referredEntityFQN, EntityType.TEMPLATE));
     } catch (Exception ex) {
       log.info("Encountered exception while requesting the Entity Reference records of [{}], with exception.",
           templateId, ex);

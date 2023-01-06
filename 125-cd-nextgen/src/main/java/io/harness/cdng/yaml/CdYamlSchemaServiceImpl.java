@@ -19,7 +19,6 @@ import io.harness.beans.FeatureFlag;
 import io.harness.cdng.creator.plan.stage.DeploymentStageConfig;
 import io.harness.cdng.creator.plan.stage.DeploymentStageNode;
 import io.harness.encryption.Scope;
-import io.harness.jackson.JsonNodeUtils;
 import io.harness.plancreator.steps.ParallelStepElementConfig;
 import io.harness.plancreator.steps.StepElementConfig;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -119,13 +118,8 @@ public class CdYamlSchemaServiceImpl implements CdYamlSchemaService {
     JsonNode deploymentStageSchema =
         yamlSchemaProvider.getYamlSchema(EntityType.DEPLOYMENT_STAGE, orgIdentifier, projectIdentifier, scope);
 
-    JsonNode deploymentStepsSchema =
-        yamlSchemaProvider.getYamlSchema(EntityType.DEPLOYMENT_STEPS, orgIdentifier, projectIdentifier, scope);
-
     JsonNode definitions = deploymentStageSchema.get(DEFINITIONS_NODE);
-    JsonNode deploymentStepDefinitions = deploymentStepsSchema.get(DEFINITIONS_NODE);
 
-    JsonNodeUtils.merge(definitions, deploymentStepDefinitions);
     yamlSchemaProvider.mergeAllV2StepsDefinitions(projectIdentifier, orgIdentifier, scope, (ObjectNode) definitions,
         YamlSchemaUtils.getNodeEntityTypesByYamlGroup(yamlSchemaRootClasses, StepCategory.STEP.name()));
     JsonNode jsonNode = definitions.get(ParallelStepElementConfig.class.getSimpleName());

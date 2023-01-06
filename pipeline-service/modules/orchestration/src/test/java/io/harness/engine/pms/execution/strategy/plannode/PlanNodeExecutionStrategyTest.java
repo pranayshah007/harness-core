@@ -72,6 +72,7 @@ import io.harness.pms.contracts.facilitators.FacilitatorResponseProto;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.plan.TriggeredBy;
+import io.harness.pms.contracts.resume.ResponseDataProto;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.contracts.steps.io.StepResponseProto;
@@ -293,7 +294,8 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
                             .build();
     NodeExecution nodeExecution =
         NodeExecution.builder().uuid(nodeExecutionId).ambiance(ambiance).status(Status.RUNNING).build();
-    Map<String, ByteString> responseMap = ImmutableMap.of(generateUuid(), ByteString.copyFromUtf8(generateUuid()));
+    Map<String, ResponseDataProto> responseMap = ImmutableMap.of(
+        generateUuid(), ResponseDataProto.newBuilder().setResponse(ByteString.copyFromUtf8(generateUuid())).build());
     when(nodeExecutionService.getWithFieldsIncluded(eq(nodeExecutionId), eq(NodeProjectionUtils.fieldsForResume)))
         .thenReturn(nodeExecution);
     executionStrategy.resumeNodeExecution(ambiance, responseMap, false);
@@ -313,7 +315,8 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
                             .build();
     NodeExecution nodeExecution =
         NodeExecution.builder().uuid(nodeExecutionId).ambiance(ambiance).status(Status.ABORTED).build();
-    Map<String, ByteString> responseMap = ImmutableMap.of(generateUuid(), ByteString.copyFromUtf8(generateUuid()));
+    Map<String, ResponseDataProto> responseMap = ImmutableMap.of(
+        generateUuid(), ResponseDataProto.newBuilder().setResponse(ByteString.copyFromUtf8(generateUuid())).build());
     when(nodeExecutionService.get(eq(nodeExecutionId))).thenReturn(nodeExecution);
     executionStrategy.resumeNodeExecution(ambiance, responseMap, false);
     verify(resumeHelper, times(0)).resume(eq(nodeExecution), eq(responseMap), eq(false));
@@ -609,7 +612,7 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
     String uuid = generateUuid();
     Ambiance ambiance = Ambiance.newBuilder().addLevels(Level.newBuilder().setRuntimeId(uuid).build()).build();
     NodeExecution nodeExecution = NodeExecution.builder().build();
-    doReturn(nodeExecution).when(nodeExecutionService).update(any(), any());
+    doReturn(nodeExecution).when(nodeExecutionService).update(any(), any(), any());
     executionStrategy.endNodeExecution(ambiance);
     verify(orchestrationEngine, times(1)).endNodeExecution(any());
   }
@@ -622,7 +625,7 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
     Ambiance ambiance = Ambiance.newBuilder().addLevels(Level.newBuilder().setRuntimeId(uuid).build()).build();
     String notifyId = generateUuid();
     NodeExecution nodeExecution = NodeExecution.builder().notifyId(notifyId).build();
-    doReturn(nodeExecution).when(nodeExecutionService).update(any(), any());
+    doReturn(nodeExecution).when(nodeExecutionService).update(any(), any(), any());
     executionStrategy.endNodeExecution(ambiance);
     verify(waitNotifyEngine, times(1)).doneWith(any(), any(StepResponseNotifyData.class));
   }
@@ -731,6 +734,6 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
     executionStrategy.resolveParameters(ambiance, planNode);
     verify(pmsEngineExpressionService, times(1))
         .resolve(ambiance, planNode.getStepParameters(), planNode.getExpressionMode());
-    verify(nodeExecutionService, times(1)).update(any(), any());
+    verify(nodeExecutionService, times(1)).updateV2(any(), any());
   }
 }

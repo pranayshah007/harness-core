@@ -96,7 +96,8 @@ public class DelegateGrpcClientWrapper {
   }
 
   public String submitAsyncTask(DelegateTaskRequest delegateTaskRequest, Duration holdFor) {
-    return delegateServiceGrpcClient.submitAsyncTask(delegateTaskRequest, delegateCallbackTokenSupplier.get(), holdFor);
+    return delegateServiceGrpcClient.submitAsyncTask(
+        delegateTaskRequest, delegateCallbackTokenSupplier.get(), holdFor, false);
   }
 
   public String submitAsyncTaskV2(DelegateTaskRequest delegateTaskRequest, Duration holdFor) {
