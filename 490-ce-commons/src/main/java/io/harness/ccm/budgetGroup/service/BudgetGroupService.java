@@ -11,6 +11,7 @@ import io.harness.ccm.budget.BudgetBreakdown;
 import io.harness.ccm.budget.BudgetSummary;
 import io.harness.ccm.budget.ValueDataPoint;
 import io.harness.ccm.budgetGroup.BudgetGroup;
+import io.harness.ccm.budgetGroup.BudgetGroupChildEntityDTO;
 import io.harness.ccm.commons.entities.budget.BudgetData;
 
 import java.util.List;
@@ -21,13 +22,12 @@ public interface BudgetGroupService {
   BudgetGroup get(String uuid, String accountId);
   List<BudgetGroup> list(String accountId);
   boolean delete(String uuid, String accountId);
+  void updateProportionsOnDeletion(BudgetGroupChildEntityDTO deletedChildEntity, BudgetGroup parentBudgetGroup);
   List<ValueDataPoint> getAggregatedAmount(
       String accountId, boolean areChildEntitiesBudgets, List<String> childEntityIds);
   List<BudgetSummary> listAllEntities(String accountId);
   List<BudgetSummary> listBudgetsAndBudgetGroupsSummary(String accountId, String id);
   BudgetData getBudgetGroupTimeSeriesStats(BudgetGroup budgetGroup, BudgetBreakdown breakdown);
-  void updateParentIdForBudgets(String parentId, List<String> budgetIds);
-  void updateParentIdForBudgetGroups(String parentId, List<String> budgetGroupIds);
   void cascadeBudgetGroupAmount(BudgetGroup budgetGroup);
   void updateBudgetGroupCosts(BudgetGroup budgetGroup);
 }

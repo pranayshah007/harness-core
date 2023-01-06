@@ -8,8 +8,10 @@
 package io.harness.ccm.budgetGroup.dao;
 
 import io.harness.ccm.budget.BudgetMonthlyBreakdown.BudgetMonthlyBreakdownKeys;
+import io.harness.ccm.budget.ValueDataPoint;
 import io.harness.ccm.budgetGroup.BudgetGroup;
 import io.harness.ccm.budgetGroup.BudgetGroup.BudgetGroupKeys;
+import io.harness.ccm.budgetGroup.BudgetGroupChildEntityDTO;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
@@ -21,6 +23,8 @@ import java.util.List;
 public class BudgetGroupDao {
   @Inject private HPersistence hPersistence;
 
+  private static final String BUDGET_GROUP_MONTHLY_BREAKDOWN_MONTHLY_AMOUNTS =
+      BudgetGroupKeys.budgetGroupMonthlyBreakdown + "." + BudgetMonthlyBreakdownKeys.budgetMonthlyAmount;
   private static final String BUDGET_GROUP_MONTHLY_BREAKDOWN_ACTUAL_MONTHLY_COST =
       BudgetGroupKeys.budgetGroupMonthlyBreakdown + "." + BudgetMonthlyBreakdownKeys.actualMonthlyCost;
   private static final String BUDGET_GROUP_MONTHLY_BREAKDOWN_FORECAST_MONTHLY_COST =
@@ -79,6 +83,21 @@ public class BudgetGroupDao {
     hPersistence.update(query, updateOperations);
   }
 
+  public void updateChildEntities(String uuid, List<BudgetGroupChildEntityDTO> childEntities) {
+    Query<BudgetGroup> query = hPersistence.createQuery(BudgetGroup.class).field(BudgetGroupKeys.uuid).equal(uuid);
+    UpdateOperations<BudgetGroup> updateOperations =
+        hPersistence.createUpdateOperations(BudgetGroup.class).set(BudgetGroupKeys.childEntities, childEntities);
+    hPersistence.update(query, updateOperations);
+  }
+
+  public void unsetParent(List<String> budgetGroupIds) {
+    Query<BudgetGroup> query =
+        hPersistence.createQuery(BudgetGroup.class).field(BudgetGroupKeys.uuid).in(budgetGroupIds);
+    UpdateOperations<BudgetGroup> updateOperations =
+        hPersistence.createUpdateOperations(BudgetGroup.class).unset(BudgetGroupKeys.parentBudgetGroupId);
+    hPersistence.update(query, updateOperations);
+  }
+
   public void updateBreakdownCosts(
       String uuid, Double[] actualCosts, Double[] forecastCosts, Double[] lastPeriodCosts) {
     Query<BudgetGroup> query = hPersistence.createQuery(BudgetGroup.class).field(BudgetGroupKeys.uuid).equal(uuid);
@@ -87,6 +106,21 @@ public class BudgetGroupDao {
             .set(BUDGET_GROUP_MONTHLY_BREAKDOWN_ACTUAL_MONTHLY_COST, actualCosts)
             .set(BUDGET_GROUP_MONTHLY_BREAKDOWN_FORECAST_MONTHLY_COST, forecastCosts)
             .set(BUDGET_GROUP_MONTHLY_BREAKDOWN_YEARLY_LAST_PERIOD_COST, lastPeriodCosts);
+    hPersistence.update(query, updateOperations);
+  }
+
+  public void updateBudgetGroupAmount(String uuid, Double budgetGroupAmount) {
+    Query<BudgetGroup> query = hPersistence.createQuery(BudgetGroup.class).field(BudgetGroupKeys.uuid).equal(uuid);
+    UpdateOperations<BudgetGroup> updateOperations = hPersistence.createUpdateOperations(BudgetGroup.class)
+                                                         .set(BudgetGroupKeys.budgetGroupAmount, budgetGroupAmount);
+    hPersistence.update(query, updateOperations);
+  }
+
+  public void updateBudgetGroupAmountInBreakdown(String uuid, List<ValueDataPoint> monthlyBudgetGroupAmounts) {
+    Query<BudgetGroup> query = hPersistence.createQuery(BudgetGroup.class).field(BudgetGroupKeys.uuid).equal(uuid);
+    UpdateOperations<BudgetGroup> updateOperations =
+        hPersistence.createUpdateOperations(BudgetGroup.class)
+            .set(BUDGET_GROUP_MONTHLY_BREAKDOWN_MONTHLY_AMOUNTS, monthlyBudgetGroupAmounts);
     hPersistence.update(query, updateOperations);
   }
 

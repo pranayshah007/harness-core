@@ -14,6 +14,10 @@ import io.harness.ccm.budget.BudgetPeriod;
 import io.harness.ccm.budget.BudgetScope;
 import io.harness.ccm.budget.dao.BudgetDao;
 import io.harness.ccm.budget.utils.BudgetUtils;
+import io.harness.ccm.budgetGroup.BudgetGroup;
+import io.harness.ccm.budgetGroup.BudgetGroupChildEntityDTO;
+import io.harness.ccm.budgetGroup.dao.BudgetGroupDao;
+import io.harness.ccm.budgetGroup.service.BudgetGroupService;
 import io.harness.ccm.commons.entities.billing.Budget;
 import io.harness.ccm.commons.entities.budget.BudgetData;
 import io.harness.ccm.commons.utils.BigQueryHelper;
@@ -34,6 +38,8 @@ import org.apache.commons.lang3.ArrayUtils;
 @Slf4j
 public class BudgetServiceImpl implements BudgetService {
   @Inject private BudgetDao budgetDao;
+  @Inject private BudgetGroupDao budgetGroupDao;
+  @Inject private BudgetGroupService budgetGroupService;
   @Inject private CEViewService ceViewService;
   @Inject ViewsBillingService viewsBillingService;
   @Inject ViewsQueryHelper viewsQueryHelper;
@@ -125,6 +131,17 @@ public class BudgetServiceImpl implements BudgetService {
 
   @Override
   public boolean delete(String budgetId, String accountId) {
+    Budget budget = budgetDao.get(budgetId, accountId);
+    if (budget.getParentBudgetGroupId() != null) {
+      BudgetGroup parentBudgetGroup = budgetGroupDao.get(budget.getParentBudgetGroupId(), accountId);
+      BudgetGroupChildEntityDTO deletedChildEntity = parentBudgetGroup.getChildEntities()
+                                                         .stream()
+                                                         .filter(childEntity -> !childEntity.getId().equals(budgetId))
+                                                         .collect(Collectors.toList())
+                                                         .get(0);
+      budgetGroupService.updateProportionsOnDeletion(deletedChildEntity, parentBudgetGroup);
+      budgetGroupService.cascadeBudgetGroupAmount(parentBudgetGroup);
+    }
     return budgetDao.delete(budgetId, accountId);
   }
 

@@ -23,6 +23,7 @@ import io.harness.ccm.budget.ValueDataPoint;
 import io.harness.ccm.budget.utils.BudgetUtils;
 import io.harness.ccm.budgetGroup.BudgetGroup;
 import io.harness.ccm.budgetGroup.BudgetGroupChildEntityDTO;
+import io.harness.ccm.budgetGroup.CascadeType;
 import io.harness.ccm.commons.entities.billing.Budget;
 import io.harness.exception.InvalidRequestException;
 
@@ -67,9 +68,13 @@ public class BudgetGroupUtils {
       "Error in performing operation. Parent for child entities not found.";
   public static final String CHILD_ENTITY_PARENT_PRESENT_EXCEPTION =
       "Error in performing operation. Parent for child entities already configured.";
+  public static final String INVALID_CASCADE_TYPE_EXCEPTION =
+      "Error in performing operation. Cannot perform cascading.";
   public static final String COST_TYPE_ACTUAL = "Actual cost";
   public static final String COST_TYPE_FORECASTED = "Forecasted cost";
   public static final String COST_TYPE_LAST_PERIOD = "Last period cost";
+  public static final String NO_CHILD_ENTITY_PRESENT_EXCEPTION =
+      "Error in performing operation. Budget group must have atleast one child budget/budget group";
 
   public static void validateBudgetGroup(BudgetGroup budgetGroup, List<BudgetGroup> existingBudgetGroups) {
     populateDefaultBudgetGroupBreakdown(budgetGroup);
@@ -364,6 +369,31 @@ public class BudgetGroupUtils {
     BudgetPeriod period = getPeriodForChildBudgetGroups(childBudgetGroups);
     BudgetBreakdown budgetBreakdown = getBudgetBreakdownForChildBudgetGroups(childBudgetGroups);
     return period == YEARLY && budgetBreakdown == MONTHLY;
+  }
+
+  public static double getCascadedAmount(
+      CascadeType cascadeType, Double totalNumberOfChildEntities, Double proportion, Double amount) {
+    switch (cascadeType) {
+      case PROPORTIONAL:
+        return BudgetUtils.getRoundedValue(amount * (proportion / 100));
+      case EQUAL:
+        return BudgetUtils.getRoundedValue(amount * (1 / totalNumberOfChildEntities));
+      case NO_CASCADE:
+      default:
+        throw new InvalidRequestException(INVALID_CASCADE_TYPE_EXCEPTION);
+    }
+  }
+
+  public static List<ValueDataPoint> getCascadedMonthlyAmount(CascadeType cascadeType,
+      Double totalNumberOfChildEntities, Double proportion, List<ValueDataPoint> monthlyAmounts) {
+    List<ValueDataPoint> cascadedMonthlyAmounts = new ArrayList<>();
+    monthlyAmounts.forEach(dataPoint
+        -> cascadedMonthlyAmounts.add(
+            ValueDataPoint.builder()
+                .time(dataPoint.getTime())
+                .value(getCascadedAmount(cascadeType, totalNumberOfChildEntities, proportion, dataPoint.getValue()))
+                .build()));
+    return cascadedMonthlyAmounts;
   }
 
   public static BudgetSummary buildBudgetGroupSummary(BudgetGroup budgetGroup, List<BudgetSummary> childEntities) {
