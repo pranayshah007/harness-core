@@ -190,6 +190,7 @@ public class TasRouteMappingStep extends TaskChainExecutableWithRollbackAndRbac 
   @Override
   public TaskChainResponse startChainLinkAfterRbac(
           Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
+
     return tasStepHelper.startChainLink(this, ambiance, stepParameters);
   }
 
@@ -202,44 +203,8 @@ public class TasRouteMappingStep extends TaskChainExecutableWithRollbackAndRbac 
   public TaskChainResponse executeTasTask(ManifestOutcome tasManifestOutcome, Ambiance ambiance,
                                           StepElementParameters stepParameters, TasExecutionPassThroughData executionPassThroughData,
                                           boolean shouldOpenFetchFilesLogStream, UnitProgressData unitProgressData) {
-    TasRollingDeployStepParameters tasRollingDeployStepParameters =
-            (TasRollingDeployStepParameters) stepParameters.getSpec();
-    ArtifactOutcome artifactOutcome = cdStepHelper.resolveArtifactsOutcome(ambiance).orElseThrow(
-            () -> new InvalidArgumentsException(Pair.of("artifacts", "Primary artifact is required for PCF")));
-    InfrastructureOutcome infrastructureOutcome = cdStepHelper.getInfrastructureOutcome(ambiance);
-    List<String> routeMaps =
-            tasStepHelper.getRouteMaps(executionPassThroughData.getPcfManifestsPackage().getManifestYml(),
-                    getParameterFieldValue(tasRollingDeployStepParameters.getAdditionalRoutes()));
-    TaskParameters taskParameters =
-            CfRollingDeployRequestNG.builder()
-                    .applicationName(executionPassThroughData.getApplicationName())
-                    .accountId(AmbianceUtils.getAccountId(ambiance))
-                    .cfCommandTypeNG(CfCommandTypeNG.TAS_ROLLING_DEPLOY)
-                    .commandName(CfCommandUnitConstants.Deploy)
-                    .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
-                    .tasInfraConfig(cdStepHelper.getTasInfraConfig(infrastructureOutcome, ambiance))
-                    .useCfCLI(true)
-                    .routeMaps(routeMaps)
-                    .tasArtifactConfig(tasStepHelper.getPrimaryArtifactConfig(ambiance, artifactOutcome))
-                    .cfCliVersion(tasStepHelper.cfCliVersionNGMapper(executionPassThroughData.getCfCliVersion()))
-                    .pcfManifestsPackage(executionPassThroughData.getPcfManifestsPackage())
-                    .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
-                    .useAppAutoScalar(!isNull(executionPassThroughData.getPcfManifestsPackage().getAutoscalarManifestYml()))
-                    .desiredCount(executionPassThroughData.getDesiredCountInFinalYaml())
-                    .build();
-
-    TaskData taskData = TaskData.builder()
-            .parameters(new Object[] {taskParameters})
-            .taskType(TaskType.TAS_ROLLING_DEPLOY.name())
-            .timeout(CDStepHelper.getTimeoutInMillis(stepParameters))
-            .async(true)
-            .build();
-    final TaskRequest taskRequest =
-            prepareCDTaskRequest(ambiance, taskData, kryoSerializer, executionPassThroughData.getCommandUnits(), TaskType.TAS_ROLLING_DEPLOY.getDisplayName(),
-                    TaskSelectorYaml.toTaskSelector(tasRollingDeployStepParameters.getDelegateSelectors()),
-                    stepHelper.getEnvironmentType(ambiance));
     return TaskChainResponse.builder()
-            .taskRequest(taskRequest)
+            .taskRequest(TaskRequest.newBuilder().build())
             .chainEnd(true)
             .passThroughData(executionPassThroughData)
             .build();

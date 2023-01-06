@@ -59,7 +59,7 @@ public class TasRouteMappingStepInfo extends TasRouteMappingBaseStepInfo impleme
 
   @Override
   public StepType getStepType() {
-    return TasRollingDeployStep.STEP_TYPE;
+    return TasRouteMappingStep.STEP_TYPE;
   }
 
   @Override
