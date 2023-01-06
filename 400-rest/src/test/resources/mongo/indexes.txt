@@ -76,6 +76,7 @@ artifacts {"name": "artifactStream_artifactPath", "background": true} {"artifact
 artifacts {"name": "artifactStream_buildNo", "background": true} {"artifactStreamId": 1, "metadata.buildNo": 1}
 artifacts {"name": "artifactStream_createdAt_buildNo", "background": true} {"artifactStreamId": 1, "createdAt": -1, "metadata.buildNo": 1}
 artifacts {"name": "artifactStream_revision", "background": true} {"artifactStreamId": 1, "revision": 1}
+artifacts {"name": "artifactStream_status", "background": true} {"artifactStreamId": 1, "status": 1}
 artifacts {"name": "createdAt_1", "background": true} {"createdAt": 1}
 artifacts {"name": "owners", "background": true} {"artifactStreamId": 1, "appId": 1}
 audits {"name": "accountId_createdAt_earAffectedResourceOperation_earAffectedResourceType", "background": true} {"accountId": 1, "createdAt": -1, "entityAuditRecords.affectedResourceOperation": 1, "entityAuditRecords.affectedResourceType": 1}
