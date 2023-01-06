@@ -9,6 +9,8 @@ package software.wings.instancesyncv2;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import static software.wings.settings.SettingVariableTypes.KUBERNETES_CLUSTER;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -124,6 +126,7 @@ public class CgInstanceSyncServiceV2Test extends CategoryTest {
 
     InfrastructureMapping infraMapping = new DirectKubernetesInfrastructureMapping();
     infraMapping.setComputeProviderSettingId("varID");
+    infraMapping.setComputeProviderType(String.valueOf(KUBERNETES_CLUSTER));
     doReturn(infraMapping).when(infrastructureMappingService).get(anyString(), anyString());
     doReturn(SettingAttribute.Builder.aSettingAttribute()
                  .withAccountId("accountId")
@@ -180,6 +183,7 @@ public class CgInstanceSyncServiceV2Test extends CategoryTest {
 
     InfrastructureMapping infraMapping = new DirectKubernetesInfrastructureMapping();
     infraMapping.setComputeProviderSettingId("varID");
+    infraMapping.setComputeProviderType(String.valueOf(KUBERNETES_CLUSTER));
     doReturn(infraMapping).when(infrastructureMappingService).get(anyString(), anyString());
     doReturn(SettingAttribute.Builder.aSettingAttribute()
                  .withAccountId("accountId")
