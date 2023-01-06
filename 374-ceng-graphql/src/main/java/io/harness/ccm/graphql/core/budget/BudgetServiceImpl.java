@@ -139,7 +139,7 @@ public class BudgetServiceImpl implements BudgetService {
                                                          .filter(childEntity -> !childEntity.getId().equals(budgetId))
                                                          .collect(Collectors.toList())
                                                          .get(0);
-      budgetGroupService.updateProportionsOnDeletion(deletedChildEntity, parentBudgetGroup);
+      parentBudgetGroup = budgetGroupService.updateProportionsOnDeletion(deletedChildEntity, parentBudgetGroup);
       budgetGroupService.cascadeBudgetGroupAmount(parentBudgetGroup);
     }
     return budgetDao.delete(budgetId, accountId);
