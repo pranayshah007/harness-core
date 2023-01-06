@@ -53,7 +53,7 @@ public class RecommendationService {
                    .monthlySaving(ceRecommendations.getMonthlysaving())
                    .recommendationState(RecommendationState.valueOf(ceRecommendations.getRecommendationstate()))
                    .jiraConnectorRef(ceRecommendations.getJiraconnectorref())
-                   .jiraIssueKey(ceRecommendations.getJiraconnectorref())
+                   .jiraIssueKey(ceRecommendations.getJiraissuekey())
                    .jiraStatus(ceRecommendations.getJirastatus())
                    .build())
         .collect(Collectors.toList());
