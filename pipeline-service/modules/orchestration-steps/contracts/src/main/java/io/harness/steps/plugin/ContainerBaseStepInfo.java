@@ -19,7 +19,9 @@ import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.YamlSchemaTypes;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.annotations.ApiModelProperty;
+import java.util.Arrays;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -50,4 +52,9 @@ public class ContainerBaseStepInfo {
   @YamlSchemaTypes(value = {string})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   public ParameterField<List<String>> entrypoint;
+
+  @JsonIgnore
+  public List<String> getCommandUnits() {
+    return Arrays.asList(ContainerCommandUnitConstants.InitContainer, ContainerCommandUnitConstants.ContainerStep);
+  }
 }
