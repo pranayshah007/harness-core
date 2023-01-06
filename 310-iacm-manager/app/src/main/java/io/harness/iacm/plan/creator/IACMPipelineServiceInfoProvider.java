@@ -23,6 +23,7 @@ import io.harness.iacm.plan.creator.stage.IACMStagePMSPlanCreator;
 import io.harness.iacm.plan.creator.step.IACMPMSStepFilterJsonCreator;
 import io.harness.iacm.plan.creator.step.IACMStepFilterJsonCreatorV2;
 import io.harness.iacm.plan.creator.step.IACMStepPlanCreator;
+import io.harness.iacm.plan.creator.step.IACMTemplateStepVariableCreator;
 import io.harness.iacm.plan.creator.step.IACMTerraformPlanStepVariableCreator;
 import io.harness.plancreator.execution.ExecutionPmsPlanCreator;
 import io.harness.plancreator.steps.NGStageStepsPlanCreator;
@@ -86,6 +87,8 @@ public class IACMPipelineServiceInfoProvider implements PipelineServiceInfoProvi
     variableCreators.add(new ExecutionVariableCreator()); // variable creator for the execution
     variableCreators.add(new PluginStepVariableCreator()); // variable creator for the plugin step
     variableCreators.add(new IACMTerraformPlanStepVariableCreator());
+    variableCreators.add(new IACMTemplateStepVariableCreator());
+
     variableCreators.add(new EmptyAnyVariableCreator(Set.of(YAMLFieldNameConstants.PARALLEL, STEPS))); // ??
 
     return variableCreators;

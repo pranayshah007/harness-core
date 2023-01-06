@@ -5,10 +5,12 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.beans.steps;
+package io.harness.cvng.migration.timescale;
 
-public interface IACMStepSpecTypeConstants {
-  String IACM_STAGE = "IACM";
-  String IACM_TERRAFORM_PLAN = "IACMTerraformPlan";
-  String IACM_TEMPLATE = "IACMTemplate";
+import io.harness.migration.timescale.NGAbstractTimeScaleMigration;
+
+public class CreateSLOPeriodicSummary extends NGAbstractTimeScaleMigration {
+  public String getFileName() {
+    return "timescale/create_service_level_objective_table.sql";
+  }
 }

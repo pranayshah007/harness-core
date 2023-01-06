@@ -23,7 +23,7 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(HarnessTeam.IACM)
 public class IACMCreatorUtils {
   public Set<String> getSupportedSteps() {
-    return Sets.newHashSet("Plugin", "IACMTerraformPlan");
+    return Sets.newHashSet("Plugin", "IACMTerraformPlan", "IACMTemplate");
   }
 
   public Set<String> getSupportedStepsV2() {

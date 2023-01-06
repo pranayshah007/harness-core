@@ -308,3 +308,5 @@ io.harness.beans.steps.stepinfo.IACMStepInfo
 io.harness.beans.steps.stepinfo.IACMTerraformPlanInfo
 io.harness.ci.states.V1.InitStepV2DelegateTaskInfo
 io.harness.plancreator.policy.PolicyConfig
+io.harness.beans.steps.stepinfo.IACMTemplateInfo
+io.harness.beans.steps.nodes.iacm.IACMTemplateStepNode
