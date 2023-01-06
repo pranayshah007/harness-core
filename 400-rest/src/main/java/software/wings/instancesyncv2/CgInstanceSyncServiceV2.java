@@ -10,6 +10,7 @@ package software.wings.instancesyncv2;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static java.lang.String.format;
+import static java.util.Objects.isNull;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -45,6 +46,7 @@ import software.wings.service.impl.instance.InstanceHandlerFactoryService;
 import software.wings.service.impl.instance.InstanceSyncByPerpetualTaskHandler;
 import software.wings.service.intfc.InfrastructureMappingService;
 import software.wings.service.intfc.instance.DeploymentService;
+import software.wings.settings.SettingVariableTypes;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Sets;
@@ -63,6 +65,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import javax.ws.rs.NotSupportedException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -105,6 +108,7 @@ public class CgInstanceSyncServiceV2 {
     String infraMappingId = event.getDeploymentSummaries().iterator().next().getInfraMappingId();
     String appId = event.getDeploymentSummaries().iterator().next().getAppId();
     InfrastructureMapping infrastructureMapping = infrastructureMappingService.get(appId, infraMappingId);
+    isSupportedCloudProvider(infrastructureMapping.getComputeProviderType());
     try (AcquiredLock lock = persistentLocker.waitToAcquireLock(
              InfrastructureMapping.class, infraMappingId, Duration.ofSeconds(200), Duration.ofSeconds(220))) {
       List<DeploymentSummary> deploymentSummaries = event.getDeploymentSummaries();
@@ -134,6 +138,13 @@ public class CgInstanceSyncServiceV2 {
           format("Exception while handling deployment event for executionId [%s], infraMappingId [%s]",
               event.getDeploymentSummaries().iterator().next().getWorkflowExecutionId(), infraMappingId),
           ex);
+    }
+  }
+
+  private void isSupportedCloudProvider(String cloudProviderType) {
+    if (!Objects.equals(cloudProviderType, SettingVariableTypes.KUBERNETES_CLUSTER.name())) {
+      throw new NotSupportedException(
+          String.format("Cloud Provider Type [%s] is not supported for Instance sync V2", cloudProviderType));
     }
   }
 
