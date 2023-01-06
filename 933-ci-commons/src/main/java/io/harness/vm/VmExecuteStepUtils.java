@@ -220,6 +220,7 @@ public class VmExecuteStepUtils {
         .user(pluginStep.getRunAsUser())
         .envs(pluginStep.getEnvVariables())
         .privileged(pluginStep.isPrivileged())
+        .outputVars(pluginStep.getOutputVariables())
         .testReport(convertTestReport(pluginStep.getUnitTestReport()))
         .timeout(pluginStep.getTimeoutSecs());
     return secrets;
