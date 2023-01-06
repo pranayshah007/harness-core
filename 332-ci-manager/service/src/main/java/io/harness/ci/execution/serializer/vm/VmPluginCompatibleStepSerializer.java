@@ -29,6 +29,7 @@ import io.harness.yaml.core.timeout.Timeout;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.List;
 import java.util.Map;
 
 @Singleton
@@ -49,6 +50,8 @@ public class VmPluginCompatibleStepSerializer {
         pluginCompatibleStep, ciExecutionConfigService, Type.VM, AmbianceUtils.getAccountId(ambiance));
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
 
+    List<String> outputVarNames = CIStepInfoUtils.getOutputVariables(pluginCompatibleStep);
+
     ConnectorDetails harnessInternalImageConnector =
         harnessImageUtils.getHarnessImageConnectorDetailsForVM(ngAccess, stageInfraDetails);
 
@@ -56,6 +59,7 @@ public class VmPluginCompatibleStepSerializer {
         VmPluginStep.builder()
             .image(IntegrationStageUtils.getFullyQualifiedImageName(image, harnessInternalImageConnector))
             .envVariables(envVars)
+            .outputVariables(outputVarNames)
             .timeoutSecs(timeout)
             .imageConnector(harnessInternalImageConnector);
 
