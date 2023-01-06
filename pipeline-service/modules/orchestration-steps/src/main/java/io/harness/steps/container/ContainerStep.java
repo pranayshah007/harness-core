@@ -59,6 +59,7 @@ import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import lombok.AllArgsConstructor;
@@ -140,9 +141,9 @@ public class ContainerStep implements TaskChainExecutableWithRbac<StepElementPar
         kryoSerializer, TaskCategory.DELEGATE_TASK_V2,
         //             Collections.singletonList(LogStreamingHelper.generateLogKeyGivenCommandUnit(logPrefix,
         //             ContainerCommandUnitConstants.InitContainer)),
-        logKeys, containerStepInfo.getCommandUnits(), true, TaskType.CONTAINER_INITIALIZATION.getDisplayName(),
-        taskSelectors, Scope.PROJECT, EnvironmentType.ALL, false, new ArrayList<>(), false, stageId, null,
-        logAbstractionMap);
+        StepUtils.generateLogKeys(ambiance, Collections.singletonList(ContainerCommandUnitConstants.InitContainer)),
+        containerStepInfo.getCommandUnits(), true, TaskType.CONTAINER_INITIALIZATION.getDisplayName(), taskSelectors,
+        Scope.PROJECT, EnvironmentType.ALL, false, new ArrayList<>(), false, stageId, null, logAbstractionMap);
 
     //    TaskRequest taskRequest = StepUtils.prepareTaskRequest(ambiance, getTaskData(stepParameters,
     //    buildSetupTaskParams),
@@ -198,9 +199,10 @@ public class ContainerStep implements TaskChainExecutableWithRbac<StepElementPar
       }
     });
     TaskRequest taskRequest = StepUtils.prepareTaskRequest(ambiance, runStepTaskData, kryoSerializer,
-        TaskCategory.DELEGATE_TASK_V2, logKeys, containerStepInfo.getCommandUnits(), true,
-        TaskType.CONTAINER_EXECUTE_STEP.getDisplayName(), new ArrayList<>(), Scope.PROJECT, EnvironmentType.ALL, false,
-        new ArrayList<>(), false, stageId, null, logAbstractionMap);
+        TaskCategory.DELEGATE_TASK_V2,
+        StepUtils.generateLogKeys(ambiance, Collections.singletonList(ContainerCommandUnitConstants.ContainerStep)),
+        containerStepInfo.getCommandUnits(), true, TaskType.CONTAINER_EXECUTE_STEP.getDisplayName(), new ArrayList<>(),
+        Scope.PROJECT, EnvironmentType.ALL, false, new ArrayList<>(), false, stageId, null, logAbstractionMap);
 
     return TaskChainResponse.builder()
         .chainEnd(true)
