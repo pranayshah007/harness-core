@@ -184,10 +184,12 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
     if (gitEntityInfo != null) {
       Criteria repoAndBranchCriteria = new Criteria();
+      String branch = null;
       //      Adding the branch filter if the branch is not null or default
       if (EmptyPredicate.isNotEmpty(gitEntityInfo.getBranch())
           && !GitAwareEntityHelper.DEFAULT.equals(gitEntityInfo.getBranch())) {
         repoAndBranchCriteria.and(PlanExecutionSummaryKeys.entityGitDetailsBranch).is(gitEntityInfo.getBranch());
+        branch = gitEntityInfo.getBranch();
       }
       if (gitSyncSdkService.isGitSyncEnabled(accountId, orgId, projectId)) {
         //     Adding the repoIdentifier for the old git sync flow
@@ -204,9 +206,13 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
         }
       }
       if (!repoAndBranchCriteria.equals(new Criteria())) {
-        Criteria gitCriteriaForMovedInlineToRemotePipeline = new Criteria();
-        gitCriteriaForMovedInlineToRemotePipeline.and(PlanExecutionSummaryKeys.storeType).is(StoreType.INLINE.name());
-        gitCriteria.orOperator(gitCriteriaForMovedInlineToRemotePipeline, repoAndBranchCriteria);
+        if (EmptyPredicate.isNotEmpty(pipelineIdentifier) && EmptyPredicate.isEmpty(branch)) {
+          Criteria gitCriteriaForMovedInlineToRemotePipeline = new Criteria();
+          gitCriteriaForMovedInlineToRemotePipeline.and(PlanExecutionSummaryKeys.storeType).is(StoreType.INLINE.name());
+          gitCriteria.orOperator(gitCriteriaForMovedInlineToRemotePipeline, repoAndBranchCriteria);
+        } else {
+          gitCriteria.andOperator(repoAndBranchCriteria);
+        }
       }
     }
 
