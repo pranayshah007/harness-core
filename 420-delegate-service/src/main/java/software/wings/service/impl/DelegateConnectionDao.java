@@ -46,8 +46,8 @@ public class DelegateConnectionDao {
   public void delegateDisconnected(String accountId, String delegateConnectionId) {
     log.info("Mark as disconnected delegateConnectionId: {}", delegateConnectionId);
     Query<DelegateConnection> query = persistence.createQuery(DelegateConnection.class)
-                                          .filter(DelegateConnectionKeys.accountId, accountId)
-                                          .filter(DelegateConnectionKeys.uuid, delegateConnectionId);
+                                          .filter(DelegateConnectionKeys.uuid, delegateConnectionId)
+                                          .filter(DelegateConnectionKeys.accountId, accountId);
     UpdateOperations<DelegateConnection> updateOperations = persistence.createUpdateOperations(DelegateConnection.class)
                                                                 .set(DelegateConnectionKeys.disconnected, Boolean.TRUE);
     persistence.update(query, updateOperations);
@@ -158,8 +158,8 @@ public class DelegateConnectionDao {
   public DelegateConnection upsertCurrentConnection(
       String accountId, String delegateId, String delegateConnectionId, String version, String location) {
     Query<DelegateConnection> query = persistence.createQuery(DelegateConnection.class)
-                                          .filter(DelegateConnectionKeys.accountId, accountId)
-                                          .filter(DelegateConnectionKeys.uuid, delegateConnectionId);
+                                          .filter(DelegateConnectionKeys.uuid, delegateConnectionId)
+                                          .filter(DelegateConnectionKeys.accountId, accountId);
 
     UpdateOperations<DelegateConnection> updateOperations =
         persistence.createUpdateOperations(DelegateConnection.class)
