@@ -25,8 +25,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.google.inject.Singleton;
-import java.io.BufferedWriter;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
@@ -82,17 +80,7 @@ public class AbstractSchemaChecker {
       final String previousVersionSchema =
           IOUtils.resourceToString(schemaPathForEntityType, StandardCharsets.UTF_8, this.getClass().getClassLoader());
       if (!previousVersionSchema.replaceAll("\\s+", "").equals(currentVersionSchema.replaceAll("\\s+", ""))) {
-        String filePath =
-            "/private/var/tmp/_bazel_sergey/d63952f6b42ec203d70ac9b4930e8472/execroot/harness_monorepo/bazel-out/darwin_arm64-fastbuild/testlogs/332-ci-manager/service/io.harness.CiBeansComponentTest";
-        String fileName = String.format("%s/%sCurrentSchema.json", filePath, schemaRoot.getEntityType());
-        log.info("Updated schema written to a file:\n" + fileName);
-        BufferedWriter writer = new BufferedWriter(new FileWriter(fileName));
-        writer.write(currentVersionSchema);
-
-        writer.close();
-
         log.info("Difference in schema :\n" + StringUtils.difference(currentVersionSchema, previousVersionSchema));
-
         throw new YamlSchemaException(String.format("Yaml schema not updated for %s", schemaRoot.getEntityType()));
       }
       log.info("schema check success for {}", schemaRoot.getEntityType());

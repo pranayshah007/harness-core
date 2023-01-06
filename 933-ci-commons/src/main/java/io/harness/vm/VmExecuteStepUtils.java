@@ -216,7 +216,7 @@ public class VmExecuteStepUtils {
     List<String> emptyCommand = new ArrayList<>();
     emptyCommand.add("echo");
     configBuilder.kind(RUN_STEP_KIND)
-        .runConfig(ExecuteStepRequest.RunConfig.builder().command(emptyCommand).entrypoint(emptyCommand).build())
+        .runConfig(ExecuteStepRequest.RunConfig.builder().command(emptyCommand).build())
         .image(pluginStep.getImage())
         .pull(pluginStep.getPullPolicy())
         .user(pluginStep.getRunAsUser())
