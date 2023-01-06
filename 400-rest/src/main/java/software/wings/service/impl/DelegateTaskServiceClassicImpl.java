@@ -1535,8 +1535,8 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     // QUESTION? Do we need a metric for this
     log.debug("Assigning {} task to delegate", delegateTask.getData().isAsync() ? ASYNC : SYNC);
     Query<DelegateTask> query = persistence.createQuery(DelegateTask.class)
-                                    .filter(DelegateTaskKeys.accountId, delegateTask.getAccountId())
                                     .filter(DelegateTaskKeys.uuid, taskId)
+                                    .filter(DelegateTaskKeys.accountId, delegateTask.getAccountId())
                                     .filter(DelegateTaskKeys.status, QUEUED)
                                     .field(DelegateTaskKeys.delegateId)
                                     .doesNotExist()
