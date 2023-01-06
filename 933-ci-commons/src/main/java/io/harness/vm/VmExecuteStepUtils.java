@@ -213,8 +213,10 @@ public class VmExecuteStepUtils {
       configBuilder.imageAuth(imageAuth);
       secrets.add(imageAuth.getPassword());
     }
+    List<String> emptyCommand = new ArrayList<>();
+    ;
     configBuilder.kind(RUN_STEP_KIND)
-        .runConfig(ExecuteStepRequest.RunConfig.builder().build())
+        .runConfig(ExecuteStepRequest.RunConfig.builder().command(emptyCommand).entrypoint(emptyCommand).build())
         .image(pluginStep.getImage())
         .pull(pluginStep.getPullPolicy())
         .user(pluginStep.getRunAsUser())
