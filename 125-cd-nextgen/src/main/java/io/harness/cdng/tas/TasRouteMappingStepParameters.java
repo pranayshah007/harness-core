@@ -27,7 +27,7 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@JsonTypeName(StepSpecTypeConstants.TAS_ROLLING_DEPLOY)
+@JsonTypeName(StepSpecTypeConstants.ROUTE_MAPPING)
 @TypeAlias("tasRouteMappingStepParameters")
 @RecasterAlias("io.harness.cdng.tas.TasRouteMappingStepParameters")
 public class TasRouteMappingStepParameters extends TasRouteMappingBaseStepInfo implements SpecParameters {

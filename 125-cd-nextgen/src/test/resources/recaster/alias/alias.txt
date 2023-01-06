@@ -678,6 +678,6 @@ io.harness.cdng.tas.TasBGAppSetupStepParameters
 io.harness.cdng.tas.TasCanaryAppSetupStepInfo
 io.harness.cdng.tas.TasManifestFileContents
 io.harness.cdng.tas.TasStepPassThroughData
-io.harness.cdng.tas.TasRouteMappingType
+io.harness.cdng.tas.TasRouteType
 io.harness.cdng.tas.TasRouteMappingStepInfo
 io.harness.cdng.tas.TasRouteMappingStepParameters
