@@ -305,7 +305,7 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
                            -> validateAndMergeHelper.getMergeInputSetFromPipelineTemplate(accountId, orgId, projectId,
                                pipelineId, List.of("forS1"), null, null, Collections.singletonList("s2")))
         .isInstanceOf(WingsException.class)
-        .hasMessage("Please move either the input-set inline to remote or pipeline remote to inline.");
+        .hasMessage("Please move the inline input-set to remote input-set.");
   }
 
   private String getPipelineYamlWithNoRuntime() {

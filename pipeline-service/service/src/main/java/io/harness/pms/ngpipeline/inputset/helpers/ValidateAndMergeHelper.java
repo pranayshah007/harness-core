@@ -227,11 +227,10 @@ public class ValidateAndMergeHelper {
         return;
       }
       if (!pipelineEntity.getStoreType().equals(inputSet.getStoreType())) {
-        throw NestedExceptionUtils.hintWithExplanationException(
-            "Please move either the input-set inline to remote or pipeline remote to inline.",
+        throw NestedExceptionUtils.hintWithExplanationException("Please move the inline input-set to remote input-set.",
             "The StoreType of pipeline and input-set are different.",
             new InvalidRequestException(String.format(
-                "Pipeline %s of storeType [%s] cannot be used with input-set %s of storeType [%s], please migrate to same storeType to use them",
+                "Remote Pipeline %s cannot be used with inline input-set %s, please migrate to same storeType to use them",
                 pipelineIdentifier, pipelineEntity.getStoreType().name(), inputSet.getIdentifier(),
                 inputSet.getStoreType().name())));
       }

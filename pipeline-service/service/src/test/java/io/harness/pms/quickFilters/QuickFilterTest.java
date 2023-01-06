@@ -336,6 +336,26 @@ public class QuickFilterTest extends CategoryTest {
     assertFalse((form.getCriteriaObject().get("$and").toString()).contains("Document{{entityGitDetails.branch=}}"));
   }
 
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testFormCriteriaWithRepoNameAndNoBranchForMovedInlineToRemotePipeline() {
+    when(gitSyncSdkService.isGitSyncEnabled(any(), any(), any())).thenReturn(false);
+    setupGitContext(GitEntityInfo.builder().repoName("testRepo").build());
+    // Testing the execution list by tags
+    Criteria form = pmsExecutionServiceImpl.formCriteria(accountId, orgId, projId, pipelineId, null,
+        PipelineExecutionFilterPropertiesDTO.builder()
+            .pipelineTags(Collections.singletonList(NGTag.builder().key("key1").value("val1").build()))
+            .build(),
+        null, null, null, false, false, true);
+
+    // Verify that tags are present in criteria.
+    assertTrue(
+        (form.getCriteriaObject().get("$and").toString()).contains("Document{{entityGitDetails.repoName=testRepo}}"));
+    assertTrue(
+        (form.getCriteriaObject().get("$and").toString()).contains("Document{{$or=[Document{{storeType=INLINE}}"));
+  }
+
   private void setupGitContext(GitEntityInfo branchInfo) {
     if (!GlobalContextManager.isAvailable()) {
       GlobalContextManager.set(new GlobalContext());

@@ -30,6 +30,7 @@ import io.harness.filter.dto.FilterDTO;
 import io.harness.filter.service.FilterService;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitaware.helper.GitAwareEntityHelper;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.gitsync.persistance.GitSyncSdkService;
@@ -182,24 +183,30 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     Criteria gitCriteria = new Criteria();
     GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
     if (gitEntityInfo != null) {
+      Criteria repoAndBranchCriteria = new Criteria();
       //      Adding the branch filter if the branch is not null or default
       if (EmptyPredicate.isNotEmpty(gitEntityInfo.getBranch())
           && !GitAwareEntityHelper.DEFAULT.equals(gitEntityInfo.getBranch())) {
-        gitCriteria.and(PlanExecutionSummaryKeys.entityGitDetailsBranch).is(gitEntityInfo.getBranch());
+        repoAndBranchCriteria.and(PlanExecutionSummaryKeys.entityGitDetailsBranch).is(gitEntityInfo.getBranch());
       }
       if (gitSyncSdkService.isGitSyncEnabled(accountId, orgId, projectId)) {
         //     Adding the repoIdentifier for the old git sync flow
         if (EmptyPredicate.isNotEmpty(gitEntityInfo.getYamlGitConfigId())
             && !GitAwareEntityHelper.DEFAULT.equals(gitEntityInfo.getYamlGitConfigId())) {
-          gitCriteria.and(PlanExecutionSummaryKeys.entityGitDetailsRepoIdentifier)
+          repoAndBranchCriteria.and(PlanExecutionSummaryKeys.entityGitDetailsRepoIdentifier)
               .is(gitEntityInfo.getYamlGitConfigId());
         }
       } else {
         //     Adding the repoName for the new git experience flow
         if (EmptyPredicate.isNotEmpty(gitEntityInfo.getRepoName())
             && !GitAwareEntityHelper.DEFAULT.equals(gitEntityInfo.getRepoName())) {
-          gitCriteria.and(PlanExecutionSummaryKeys.entityGitDetailsRepoName).is(gitEntityInfo.getRepoName());
+          repoAndBranchCriteria.and(PlanExecutionSummaryKeys.entityGitDetailsRepoName).is(gitEntityInfo.getRepoName());
         }
+      }
+      if (!repoAndBranchCriteria.equals(new Criteria())) {
+        Criteria gitCriteriaForMovedInlineToRemotePipeline = new Criteria();
+        gitCriteriaForMovedInlineToRemotePipeline.and(PlanExecutionSummaryKeys.storeType).is(StoreType.INLINE.name());
+        gitCriteria.orOperator(gitCriteriaForMovedInlineToRemotePipeline, repoAndBranchCriteria);
       }
     }
 
