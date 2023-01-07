@@ -9,11 +9,18 @@ package io.harness.cvng.cdng.beans.v2;
 
 import io.harness.cvng.beans.DataSourceType;
 
-import lombok.Value;
+import io.swagger.annotations.ApiModel;
+import lombok.AccessLevel;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import lombok.experimental.SuperBuilder;
 
-@Value
+@Data
 @SuperBuilder
+@NoArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
+@ApiModel(value = "HealthSourceV2")
 public class HealthSource {
   String healthSourceIdentifier;
   String healthSourceName;

@@ -42,6 +42,7 @@ public class IteratorExecutionHandlerImplTest extends CategoryTest {
                                         .threadPoolIntervalInSeconds(10)
                                         .nextIterationMode("TARGET")
                                         .targetIntervalInSeconds(10)
+                                        .iteratorMode("PUMP")
                                         .build(),
           IteratorExecutionHandler.DynamicIteratorConfig.builder()
               .name("ArtifactCollection")
@@ -50,6 +51,7 @@ public class IteratorExecutionHandlerImplTest extends CategoryTest {
               .threadPoolIntervalInSeconds(60)
               .nextIterationMode("THROTTLE")
               .throttleIntervalInSeconds(10)
+              .iteratorMode("LOOP")
               .build()));
   private IteratorExecutionHandlerImpl iteratorExecutionHandler;
 

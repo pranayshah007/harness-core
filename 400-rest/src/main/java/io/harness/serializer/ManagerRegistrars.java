@@ -39,9 +39,9 @@ import io.harness.serializer.morphia.TaskDataV2Convertor;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import dev.morphia.converters.TypeConverter;
 import io.serializer.registrars.NGCommonsRegistrars;
 import lombok.experimental.UtilityClass;
-import org.mongodb.morphia.converters.TypeConverter;
 import org.springframework.core.convert.converter.Converter;
 
 @UtilityClass

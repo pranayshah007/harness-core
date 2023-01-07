@@ -27,8 +27,8 @@ import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipelinestage.PipelineStageStepParameters;
+import io.harness.pms.pipelinestage.helper.PipelineStageHelper;
 import io.harness.pms.pipelinestage.step.PipelineStageStep;
-import io.harness.pms.pipelinestage.v1.helper.PipelineStageHelperV1;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.PlanNode.PlanNodeBuilder;
 import io.harness.pms.sdk.core.plan.creation.beans.GraphLayoutResponse;
@@ -68,7 +68,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.PIPELINE)
 @Slf4j
 public class PipelineStagePlanCreatorV1 implements PartialPlanCreator<YamlField> {
-  @Inject private PipelineStageHelperV1 pipelineStageHelper;
+  @Inject private PipelineStageHelper pipelineStageHelper;
   @Inject private PMSPipelineService pmsPipelineService;
   @Inject KryoSerializer kryoSerializer;
   @Override
@@ -83,7 +83,7 @@ public class PipelineStagePlanCreatorV1 implements PartialPlanCreator<YamlField>
   }
 
   public PipelineStageStepParameters getStepParameter(
-      PipelineStageConfig config, YamlField pipelineInputs, String stageNodeId) {
+      PipelineStageConfig config, YamlField pipelineInputs, String stageNodeId, String childPipelineVersion) {
     return PipelineStageStepParameters.builder()
         .pipeline(config.getPipeline())
         .org(config.getOrg())
@@ -91,7 +91,7 @@ public class PipelineStagePlanCreatorV1 implements PartialPlanCreator<YamlField>
         .stageNodeId(stageNodeId)
         .inputSetReferences(config.getInputSetReferences())
         .outputs(ParameterField.createValueField(PipelineStageOutputs.getMapOfString(config.getOutputs())))
-        .pipelineInputs(pipelineStageHelper.getInputSet(pipelineInputs))
+        .pipelineInputs(pipelineStageHelper.getInputSetYaml(pipelineInputs, childPipelineVersion))
         .build();
   }
 
@@ -157,7 +157,7 @@ public class PipelineStagePlanCreatorV1 implements PartialPlanCreator<YamlField>
                     .getField(YAMLFieldNameConstants.SPEC)
                     .getNode()
                     .getField(YAMLFieldNameConstants.INPUTS),
-                planNodeId))
+                planNodeId, childPipelineEntity.get().getHarnessVersion()))
             .whenCondition(RunInfoUtils.getStageWhenCondition(stageNode))
             .facilitatorObtainment(
                 FacilitatorObtainment.newBuilder()

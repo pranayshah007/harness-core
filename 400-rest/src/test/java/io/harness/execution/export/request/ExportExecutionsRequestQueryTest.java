@@ -21,9 +21,9 @@ import software.wings.beans.WorkflowExecution;
 
 import com.google.inject.Inject;
 import com.mongodb.DBObject;
+import dev.morphia.query.Query;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mongodb.morphia.query.Query;
 
 public class ExportExecutionsRequestQueryTest extends WingsBaseTest {
   @Inject private HPersistence persistence;

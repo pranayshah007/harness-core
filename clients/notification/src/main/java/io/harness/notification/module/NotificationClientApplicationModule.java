@@ -24,10 +24,10 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import dev.morphia.converters.TypeConverter;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
-import org.mongodb.morphia.converters.TypeConverter;
 
 public class NotificationClientApplicationModule extends AbstractModule {
   private final NotificationClientApplicationConfiguration appConfig;

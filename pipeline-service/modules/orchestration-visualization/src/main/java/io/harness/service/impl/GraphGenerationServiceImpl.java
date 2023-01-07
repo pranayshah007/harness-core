@@ -37,6 +37,7 @@ import io.harness.generator.OrchestrationAdjacencyListGenerator;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
 import io.harness.plan.NodeType;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.events.OrchestrationEventType;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.plan.execution.ExecutionSummaryUpdateUtils;
@@ -270,16 +271,18 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
 
   @Override
   public void sendUpdateEventIfAny(PipelineExecutionSummaryEntity executionSummaryEntity) {
-    if (!StatusUtils.isFinalStatus(executionSummaryEntity.getStatus().getEngineStatus())) {
-      orchestrationLogPublisher.sendLogEvent(executionSummaryEntity.getPlanExecutionId());
-    }
+    sendUpdateEventIfAny(executionSummaryEntity.getStatus().getEngineStatus(),
+        executionSummaryEntity.getPlanExecutionId(), executionSummaryEntity.getLastUpdatedAt());
   }
 
   private void sendUpdateEventIfAny(OrchestrationGraph orchestrationGraph) {
-    String planExecutionId = orchestrationGraph.getPlanExecutionId();
-    if (!StatusUtils.isFinalStatus(orchestrationGraph.getStatus())
-        || orchestrationEventLogRepository.checkIfAnyUnprocessedEvents(
-            orchestrationGraph.getPlanExecutionId(), orchestrationGraph.getLastUpdatedAt())) {
+    sendUpdateEventIfAny(
+        orchestrationGraph.getStatus(), orchestrationGraph.getPlanExecutionId(), orchestrationGraph.getLastUpdatedAt());
+  }
+
+  private void sendUpdateEventIfAny(Status planExecutionStatus, String planExecutionId, long lastUpdatedAt) {
+    if (!StatusUtils.isFinalStatus(planExecutionStatus)
+        || orchestrationEventLogRepository.checkIfAnyUnprocessedEvents(planExecutionId, lastUpdatedAt)) {
       orchestrationLogPublisher.sendLogEvent(planExecutionId);
     }
   }

@@ -13,6 +13,7 @@ import io.harness.ChangeHandler;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.changehandlers.ServicesChangeDataHandler;
 import io.harness.changehandlers.TagsInfoCDChangeDataHandler;
+import io.harness.changehandlers.TagsInfoNGCDChangeDataHandler;
 import io.harness.ng.core.service.entity.ServiceEntity;
 
 import com.google.inject.Inject;
@@ -21,11 +22,14 @@ import com.google.inject.Inject;
 public class ServiceCDCEntity implements CDCEntity<ServiceEntity> {
   @Inject private ServicesChangeDataHandler servicesChangeDataHandler;
   @Inject private TagsInfoCDChangeDataHandler tagsInfoCDChangeDataHandler;
+  @Inject private TagsInfoNGCDChangeDataHandler tagsInfoNGCDChangeDataHandler;
 
   @Override
   public ChangeHandler getChangeHandler(String handlerClass) {
     if (handlerClass.contentEquals("TagsInfoCD")) {
       return tagsInfoCDChangeDataHandler;
+    } else if (handlerClass.contentEquals("TagsInfoNGCD")) {
+      return tagsInfoNGCDChangeDataHandler;
     }
     return servicesChangeDataHandler;
   }

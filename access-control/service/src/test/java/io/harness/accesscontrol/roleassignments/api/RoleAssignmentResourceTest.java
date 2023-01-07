@@ -340,7 +340,7 @@ public class RoleAssignmentResourceTest extends AccessControlTestBase {
                                 .managedFilter(NO_FILTER)
                                 .build();
     RoleFilter roleFilterClone = (RoleFilter) HObjectMapper.clone(roleFilter);
-    when(roleService.list(maxPageRequest, roleFilter)).thenReturn(getEmptyPageResponse(maxPageRequest));
+    when(roleService.list(maxPageRequest, roleFilter, true)).thenReturn(getEmptyPageResponse(maxPageRequest));
     when(resourceGroupService.list(new ArrayList<>(), scope.toString(), NO_FILTER)).thenReturn(new ArrayList<>());
 
     ResponseDTO<RoleAssignmentAggregateResponseDTO> responseDTO =
@@ -352,7 +352,7 @@ public class RoleAssignmentResourceTest extends AccessControlTestBase {
 
     verify(accessControlClient, times(3)).hasAccess(any(ResourceScope.class), any(), any());
     verify(roleAssignmentService, times(1)).list(eq(maxPageRequest), roleAssignmentFilterArgumentCaptor.capture());
-    verify(roleService, times(1)).list(maxPageRequest, roleFilterClone);
+    verify(roleService, times(1)).list(maxPageRequest, roleFilterClone, true);
     verify(resourceGroupService, times(1)).list(new ArrayList<>(), scopeClone.toString(), NO_FILTER);
     RoleAssignmentFilter roleAssignmentFilter = roleAssignmentFilterArgumentCaptor.getValue();
     assertFilter(roleAssignmentFilterDTOClone, roleAssignmentFilterDTOClone.getPrincipalTypeFilter(),
@@ -377,7 +377,7 @@ public class RoleAssignmentResourceTest extends AccessControlTestBase {
                                 .scopeIdentifier(scope.toString())
                                 .managedFilter(NO_FILTER)
                                 .build();
-    when(roleService.list(maxPageRequest, roleFilter)).thenReturn(getEmptyPageResponse(maxPageRequest));
+    when(roleService.list(maxPageRequest, roleFilter, true)).thenReturn(getEmptyPageResponse(maxPageRequest));
     when(resourceGroupService.list(new ArrayList<>(), scope.toString(), NO_FILTER)).thenReturn(new ArrayList<>());
 
     ResponseDTO<PageResponse<RoleAssignmentAggregate>> responseDTO =
@@ -392,7 +392,7 @@ public class RoleAssignmentResourceTest extends AccessControlTestBase {
   private void testGetAggregatedMissingViewPrincipalPermissionsInternal(
       RoleAssignmentFilterDTO roleAssignmentFilterDTO) {
     testGetFilterMissingViewPrincipalPermissionsInternal(roleAssignmentFilterDTO);
-    verify(roleService, times(0)).list(any(), any());
+    verify(roleService, times(0)).list(any(), any(), eq(true));
     verify(resourceGroupService, times(0)).list(any(List.class), any(), any());
   }
 

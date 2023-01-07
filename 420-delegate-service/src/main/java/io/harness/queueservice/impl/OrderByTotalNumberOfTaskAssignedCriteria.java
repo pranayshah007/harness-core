@@ -7,12 +7,14 @@
 package io.harness.queueservice.impl;
 
 import static io.harness.beans.DelegateTask.Status.STARTED;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTask;
 import io.harness.beans.DelegateTask.DelegateTaskKeys;
 import io.harness.delegate.beans.Delegate;
+import io.harness.delegate.beans.TaskGroup;
 import io.harness.persistence.HPersistence;
 import io.harness.queueservice.infc.DelegateResourceCriteria;
 import io.harness.service.intfc.DelegateCache;
@@ -21,9 +23,13 @@ import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
@@ -43,12 +49,12 @@ public class OrderByTotalNumberOfTaskAssignedCriteria implements DelegateResourc
   @Override
   public List<Delegate> getFilteredEligibleDelegateList(
       List<Delegate> delegateList, TaskType taskType, String accountId) {
-    return listOfDelegatesSortedByNumberOfTaskAssigned(accountId);
+    return listOfDelegatesSortedByNumberOfTaskAssigned(accountId, taskType);
   }
 
-  private List<Delegate> listOfDelegatesSortedByNumberOfTaskAssigned(String accountId) {
+  private List<Delegate> listOfDelegatesSortedByNumberOfTaskAssigned(String accountId, TaskType taskType) {
     TreeMap<String, Integer> numberOfTaskAssigned = new TreeMap<>();
-    getTotalNumberOfTaskAssignedInDelegate(accountId).forEach(delegateTask -> {
+    getTotalNumberOfTaskAssignedInDelegate(accountId, taskType).forEach(delegateTask -> {
       if (delegateTask.getDelegateId() != null) {
         numberOfTaskAssigned.put(
             delegateTask.getDelegateId(), numberOfTaskAssigned.getOrDefault(delegateTask.getDelegateId(), 0) + 1);
@@ -74,16 +80,29 @@ public class OrderByTotalNumberOfTaskAssignedCriteria implements DelegateResourc
     return delegateCache.get(accountId, delegateId, false);
   }
 
-  public List<DelegateTask> getTotalNumberOfTaskAssignedInDelegate(String accountId) {
-    return persistence.createQuery(DelegateTask.class)
-        .filter(DelegateTaskKeys.accountId, accountId)
-        .filter(DelegateTaskKeys.status, STARTED)
-        .project(DelegateTaskKeys.delegateId, true)
-        .asList();
+  public List<DelegateTask> getTotalNumberOfTaskAssignedInDelegate(String accountId, TaskType taskType) {
+    List<DelegateTask> delegateTaskList = persistence.createQuery(DelegateTask.class)
+                                              .filter(DelegateTaskKeys.accountId, accountId)
+                                              .filter(DelegateTaskKeys.status, STARTED)
+                                              .project(DelegateTaskKeys.delegateId, true)
+                                              .project(DelegateTaskKeys.stageId, true)
+                                              .asList();
+    if (taskType.getTaskGroup().equals(TaskGroup.CI)) {
+      return delegateTaskList.stream()
+          .filter(delegateTask -> !isEmpty(delegateTask.getStageId()))
+          .filter(distinctByKey(DelegateTask::getStageId))
+          .collect(Collectors.toList());
+    }
+    return delegateTaskList;
   }
 
   private Map<String, Integer> listOfDelegatesSortedByNumberOfTaskAssignedFromRedisCache(String accountId) {
     // TBD
     return null;
+  }
+
+  public static <T> Predicate<T> distinctByKey(Function<T, Object> function) {
+    Set<Object> seen = new HashSet<>();
+    return t -> seen.add(function.apply(t));
   }
 }

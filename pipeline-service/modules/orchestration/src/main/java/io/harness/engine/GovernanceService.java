@@ -14,5 +14,5 @@ import io.harness.governance.GovernanceMetadata;
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface GovernanceService {
   GovernanceMetadata evaluateGovernancePolicies(String expandedJson, String accountId, String orgIdentifier,
-      String projectIdentifier, String action, String planExecutionId);
+      String projectIdentifier, String action, String planExecutionId, String pipelineVersion);
 }

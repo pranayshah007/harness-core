@@ -19,8 +19,8 @@ import software.wings.beans.TerraformSourceType;
 import software.wings.dl.WingsPersistence;
 
 import com.google.inject.Inject;
+import dev.morphia.query.UpdateResults;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.UpdateResults;
 
 @OwnedBy(CDP)
 @Slf4j
@@ -31,7 +31,8 @@ public class InitTerraformProvisionersSourceType implements Migration {
   public void migrate() {
     log.info("InitTerraformProvisionersSourceType migration started");
     UpdateResults updateResults = persistence.update(persistence.createQuery(TerraformInfrastructureProvisioner.class)
-                                                         .filter(INFRASTRUCTURE_PROVISIONER_TYPE_KEY, "TERRAFORM"),
+                                                         .filter(INFRASTRUCTURE_PROVISIONER_TYPE_KEY, "TERRAFORM")
+                                                         .filter("sourceType", null),
         persistence.createUpdateOperations(TerraformInfrastructureProvisioner.class)
             .set("sourceType", TerraformSourceType.GIT));
     log.info("InitTerraformProvisionersSourceType migration finishes");

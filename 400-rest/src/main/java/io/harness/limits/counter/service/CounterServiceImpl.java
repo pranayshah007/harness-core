@@ -17,8 +17,8 @@ import io.harness.limits.Counter.CounterKeys;
 import software.wings.dl.WingsPersistence;
 
 import com.google.inject.Inject;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 
 @OwnedBy(PL)
 public class CounterServiceImpl implements CounterService {

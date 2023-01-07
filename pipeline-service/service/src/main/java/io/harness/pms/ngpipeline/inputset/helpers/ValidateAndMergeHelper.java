@@ -18,6 +18,7 @@ import static io.harness.pms.merger.helpers.InputSetTemplateHelper.createTemplat
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.NestedExceptionUtils;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.helpers.GitContextHelper;
@@ -60,38 +61,36 @@ public class ValidateAndMergeHelper {
   private final PMSPipelineTemplateHelper pipelineTemplateHelper;
   private final GitSyncSdkService gitSyncSdkService;
 
-  public String getPipelineYaml(String accountId, String orgIdentifier, String projectIdentifier,
+  public PipelineEntity getPipelineEntity(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String pipelineBranch, String pipelineRepoID, boolean checkForStoreType) {
     if (gitSyncSdkService.isGitSyncEnabled(accountId, orgIdentifier, projectIdentifier)) {
-      return getPipelineYamlForOldGitSyncFlow(
+      return getPipelineEntityForOldGitSyncFlow(
           accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, pipelineBranch, pipelineRepoID);
     } else {
-      return getPipelineYaml(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, checkForStoreType);
+      return getPipelineEntity(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, checkForStoreType);
     }
   }
 
-  private String getPipelineYamlForOldGitSyncFlow(String accountId, String orgIdentifier, String projectIdentifier,
-      String pipelineIdentifier, String pipelineBranch, String pipelineRepoID) {
+  private PipelineEntity getPipelineEntityForOldGitSyncFlow(String accountId, String orgIdentifier,
+      String projectIdentifier, String pipelineIdentifier, String pipelineBranch, String pipelineRepoID) {
     GitSyncBranchContext gitSyncBranchContext =
         GitSyncBranchContext.builder()
             .gitBranchInfo(GitEntityInfo.builder().branch(pipelineBranch).yamlGitConfigId(pipelineRepoID).build())
             .build();
 
-    String pipelineYaml;
     try (PmsGitSyncBranchContextGuard ignored = new PmsGitSyncBranchContextGuard(gitSyncBranchContext, true)) {
       Optional<PipelineEntity> pipelineEntity = pmsPipelineService.getAndValidatePipeline(
           accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
       if (pipelineEntity.isPresent()) {
-        pipelineYaml = pipelineEntity.get().getYaml();
+        return pipelineEntity.get();
       } else {
         throw new InvalidRequestException(PipelineCRUDErrorResponse.errorMessageForPipelineNotFound(
             orgIdentifier, projectIdentifier, pipelineIdentifier));
       }
     }
-    return pipelineYaml;
   }
 
-  private String getPipelineYaml(String accountId, String orgIdentifier, String projectIdentifier,
+  private PipelineEntity getPipelineEntity(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, boolean checkForStoreType) {
     Optional<PipelineEntity> optionalPipelineEntity;
     if (GitContextHelper.isUpdateToNewBranch()) {
@@ -116,7 +115,7 @@ public class ValidateAndMergeHelper {
       if (checkForStoreType && storeTypeInContext != null && pipelineEntity.getStoreType() != storeTypeInContext) {
         throw new InvalidRequestException("Input Set should have the same Store Type as the Pipeline it is for");
       }
-      return pipelineEntity.getYaml();
+      return pipelineEntity;
     } else {
       throw new InvalidRequestException(PipelineCRUDErrorResponse.errorMessageForPipelineNotFound(
           orgIdentifier, projectIdentifier, pipelineIdentifier));
@@ -188,8 +187,9 @@ public class ValidateAndMergeHelper {
 
   public String getPipelineTemplate(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String pipelineBranch, String pipelineRepoID, List<String> stageIdentifiers) {
-    String pipelineYaml = getPipelineYaml(
-        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, pipelineBranch, pipelineRepoID, false);
+    String pipelineYaml = getPipelineEntity(
+        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, pipelineBranch, pipelineRepoID, false)
+                              .getYaml();
     if (EmptyPredicate.isEmpty(stageIdentifiers)) {
       return createTemplateFromPipeline(pipelineYaml);
     }
@@ -199,8 +199,9 @@ public class ValidateAndMergeHelper {
   public String getMergeInputSetFromPipelineTemplate(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, List<String> inputSetReferences, String pipelineBranch, String pipelineRepoID,
       List<String> stageIdentifiers) {
-    String pipelineYaml = getPipelineYaml(
+    PipelineEntity pipelineEntity = getPipelineEntity(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, pipelineBranch, pipelineRepoID, false);
+    String pipelineYaml = pipelineEntity.getYaml();
     String pipelineTemplateForValidations = createTemplateFromPipeline(pipelineYaml);
     String pipelineTemplate = EmptyPredicate.isEmpty(stageIdentifiers)
         ? pipelineTemplateForValidations
@@ -224,6 +225,15 @@ public class ValidateAndMergeHelper {
       if (inputSet.getIsInvalid()) {
         invalidReferences.add(identifier);
         return;
+      }
+      if (!pipelineEntity.getStoreType().equals(inputSet.getStoreType())) {
+        throw NestedExceptionUtils.hintWithExplanationException(
+            "Please move either the input-set inline to remote or pipeline remote to inline.",
+            "The StoreType of pipeline and input-set are different.",
+            new InvalidRequestException(String.format(
+                "Pipeline %s of storeType [%s] cannot be used with input-set %s of storeType [%s], please migrate to same storeType to use them",
+                pipelineIdentifier, pipelineEntity.getStoreType().name(), inputSet.getIdentifier(),
+                inputSet.getStoreType().name())));
       }
       if (inputSet.getInputSetEntityType() == InputSetEntityType.INPUT_SET) {
         inputSetYamlList.add(inputSet.getYaml());
@@ -265,8 +275,9 @@ public class ValidateAndMergeHelper {
   public String mergeInputSetIntoPipeline(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String mergedRuntimeInputYaml, String pipelineBranch, String pipelineRepoID,
       List<String> stageIdentifiers) {
-    String pipelineYaml = getPipelineYaml(
-        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, pipelineBranch, pipelineRepoID, false);
+    String pipelineYaml = getPipelineEntity(
+        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, pipelineBranch, pipelineRepoID, false)
+                              .getYaml();
     if (EmptyPredicate.isEmpty(stageIdentifiers)) {
       return InputSetMergeHelper.mergeInputSetIntoPipeline(pipelineYaml, mergedRuntimeInputYaml, false);
     }

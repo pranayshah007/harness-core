@@ -10,7 +10,7 @@ package io.harness.cdng.gitops;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.pipeline.CDStepInfo;
+import io.harness.cdng.pipeline.CDAbstractStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.CreatePRStepVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -40,7 +40,7 @@ import org.springframework.data.annotation.TypeAlias;
 @SimpleVisitorHelper(helperClass = CreatePRStepVisitorHelper.class)
 @TypeAlias("CreatePRStepInfo")
 @RecasterAlias("io.harness.cdng.gitops.CreatePRStepInfo")
-public class CreatePRStepInfo extends CreatePRBaseStepInfo implements CDStepInfo, Visitable {
+public class CreatePRStepInfo extends CreatePRBaseStepInfo implements CDAbstractStepInfo, Visitable {
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 

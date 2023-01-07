@@ -135,6 +135,8 @@ import software.wings.utils.WingsReflectionUtils;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.annotations.Transient;
+import dev.morphia.mapping.Mapper;
 import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.HashSet;
@@ -144,8 +146,6 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.annotations.Transient;
-import org.mongodb.morphia.mapping.Mapper;
 
 /**
  * Created by anubhaw on 5/1/17.

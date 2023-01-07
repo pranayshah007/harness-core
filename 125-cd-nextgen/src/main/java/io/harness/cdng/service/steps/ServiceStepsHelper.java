@@ -79,10 +79,13 @@ public class ServiceStepsHelper {
     List<NGVariable> serviceVariables =
         serviceConfig.getNgServiceV2InfoConfig().getServiceDefinition().getServiceSpec().getVariables();
 
+    checkForAccessOrThrow(ambiance, serviceVariables);
+  }
+
+  void checkForAccessOrThrow(Ambiance ambiance, List<NGVariable> serviceVariables) {
     if (EmptyPredicate.isEmpty(serviceVariables)) {
       return;
     }
-
     List<EntityDetail> entityDetails = new ArrayList<>();
 
     for (NGVariable ngVariable : serviceVariables) {

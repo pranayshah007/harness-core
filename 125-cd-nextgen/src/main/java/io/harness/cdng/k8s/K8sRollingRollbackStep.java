@@ -141,6 +141,7 @@ public class K8sRollingRollbackStep extends TaskExecutableWithRollbackAndRbac<K8
         .k8sInfraDelegateConfig(cdStepHelper.getK8sInfraDelegateConfig(infrastructure, ambiance))
         .useNewKubectlVersion(cdStepHelper.isUseNewKubectlVersion(accountId))
         .pruningEnabled(pruningEnabled)
+        .useDeclarativeRollback(cdStepHelper.useDeclarativeRollback(accountId))
         .build();
 
     return k8sStepHelper

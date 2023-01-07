@@ -12,7 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
-import io.harness.cdng.pipeline.CDStepInfo;
+import io.harness.cdng.pipeline.CDAbstractStepInfo;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
@@ -39,7 +39,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("chaosStepInfo")
 @OwnedBy(PIPELINE)
 @RecasterAlias("io.harness.cdng.chaos.ChaosStepInfo")
-public class ChaosStepInfo implements CDStepInfo {
+public class ChaosStepInfo implements CDAbstractStepInfo {
   @JsonProperty("experimentRef") @NotNull String experimentRef;
   @JsonProperty("expectedResilienceScore") @NotNull Double expectedResilienceScore;
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> assertion;

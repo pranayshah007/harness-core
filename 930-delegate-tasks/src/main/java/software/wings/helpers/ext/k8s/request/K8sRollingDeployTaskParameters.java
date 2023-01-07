@@ -45,6 +45,7 @@ public class K8sRollingDeployTaskParameters extends K8sTaskParameters implements
   private boolean inheritManifests;
   private boolean skipAddingTrackSelectorToDeployment;
   private List<KubernetesResource> kubernetesResources;
+  private boolean useDeclarativeRollback;
 
   @Builder
   public K8sRollingDeployTaskParameters(String accountId, String appId, String commandName, String activityId,
@@ -54,7 +55,7 @@ public class K8sRollingDeployTaskParameters extends K8sTaskParameters implements
       Boolean skipVersioningForAllK8sObjects, Set<String> delegateSelectors, boolean isPruningEnabled,
       boolean exportManifests, boolean inheritManifests, List<KubernetesResource> kubernetesResources,
       boolean useLatestChartMuseumVersion, boolean useLatestKustomizeVersion, boolean useNewKubectlVersion,
-      boolean skipAddingSelectorToDeployment) {
+      boolean skipAddingSelectorToDeployment, boolean useDeclarativeRollback) {
     super(accountId, appId, commandName, activityId, k8sClusterConfig, workflowExecutionId, releaseName,
         timeoutIntervalInMin, k8sTaskType, helmVersion, delegateSelectors, useLatestChartMuseumVersion,
         useLatestKustomizeVersion, useNewKubectlVersion);
@@ -69,6 +70,7 @@ public class K8sRollingDeployTaskParameters extends K8sTaskParameters implements
     this.inheritManifests = inheritManifests;
     this.kubernetesResources = kubernetesResources;
     this.skipAddingTrackSelectorToDeployment = skipAddingSelectorToDeployment;
+    this.useDeclarativeRollback = useDeclarativeRollback;
   }
 
   @Override

@@ -21,10 +21,10 @@ import io.harness.steps.jira.update.JiraUpdateStepInfo;
 import io.harness.steps.jira.update.JiraUpdateStepNode;
 import io.harness.steps.jira.update.beans.TransitionTo;
 
+import software.wings.beans.GraphNode;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.sm.State;
 import software.wings.sm.states.collaboration.JiraCreateUpdate;
-import software.wings.yaml.workflow.StepYaml;
 
 import java.util.Collections;
 import java.util.List;
@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 
 public class JiraCreateUpdateStepMapperImpl implements StepMapper {
   @Override
-  public String getStepType(StepYaml stepYaml) {
+  public String getStepType(GraphNode stepYaml) {
     JiraCreateUpdate state = (JiraCreateUpdate) getState(stepYaml);
     switch (state.getJiraAction()) {
       case UPDATE_TICKET:
@@ -46,7 +46,7 @@ public class JiraCreateUpdateStepMapperImpl implements StepMapper {
   }
 
   @Override
-  public State getState(StepYaml stepYaml) {
+  public State getState(GraphNode stepYaml) {
     Map<String, Object> properties = StepMapper.super.getProperties(stepYaml);
     JiraCreateUpdate state = new JiraCreateUpdate(stepYaml.getName());
     state.parseProperties(properties);
@@ -54,8 +54,8 @@ public class JiraCreateUpdateStepMapperImpl implements StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(Map<CgEntityId, NGYamlFile> migratedEntities, StepYaml stepYaml) {
-    JiraCreateUpdate state = (JiraCreateUpdate) getState(stepYaml);
+  public AbstractStepNode getSpec(Map<CgEntityId, NGYamlFile> migratedEntities, GraphNode graphNode) {
+    JiraCreateUpdate state = (JiraCreateUpdate) getState(graphNode);
     switch (state.getJiraAction()) {
       case UPDATE_TICKET:
         return buildUpdate(state);
@@ -67,7 +67,7 @@ public class JiraCreateUpdateStepMapperImpl implements StepMapper {
   }
 
   @Override
-  public boolean areSimilar(StepYaml stepYaml1, StepYaml stepYaml2) {
+  public boolean areSimilar(GraphNode stepYaml1, GraphNode stepYaml2) {
     JiraCreateUpdate state1 = (JiraCreateUpdate) getState(stepYaml1);
     JiraCreateUpdate state2 = (JiraCreateUpdate) getState(stepYaml2);
     if (!state2.getJiraAction().equals(state1.getJiraAction())) {

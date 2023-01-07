@@ -15,7 +15,7 @@ import io.harness.accesscontrol.acl.persistence.repositories.ACLRepository;
 import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBO;
 import io.harness.accesscontrol.roleassignments.persistence.repositories.RoleAssignmentRepository;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.mongo.DelayLogContext;
+import io.harness.logging.DelayLogContext;
 
 import com.google.inject.Singleton;
 import java.util.HashSet;

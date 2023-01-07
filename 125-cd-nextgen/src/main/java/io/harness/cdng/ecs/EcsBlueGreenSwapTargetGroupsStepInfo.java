@@ -10,7 +10,7 @@ package io.harness.cdng.ecs;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.pipeline.CDStepInfo;
+import io.harness.cdng.pipeline.CDAbstractStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.EcsBlueGreenSwapTargetGroupsStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -42,7 +42,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("ecsBlueGreenSwapTargetGroupsStepInfo")
 @RecasterAlias("io.harness.cdng.ecs.EcsBlueGreenSwapTargetGroupsStepInfo")
 public class EcsBlueGreenSwapTargetGroupsStepInfo
-    extends EcsBlueGreenSwapTargetGroupsBaseStepInfo implements CDStepInfo, Visitable {
+    extends EcsBlueGreenSwapTargetGroupsBaseStepInfo implements CDAbstractStepInfo, Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)

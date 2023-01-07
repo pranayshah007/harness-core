@@ -13,7 +13,6 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.STRATEGY;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.beans.steps.StepSpecTypeConstants;
 import io.harness.ci.creator.variables.ActionStepVariableCreator;
 import io.harness.ci.creator.variables.ArtifactoryUploadStepVariableCreator;
@@ -244,7 +243,6 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
     StepInfo securityStepInfo = StepInfo.newBuilder()
                                     .setName("Security")
                                     .setType(StepSpecTypeConstants.SECURITY)
-                                    .setFeatureFlag(FeatureName.SECURITY.name())
                                     .setFeatureRestrictionName(FeatureRestrictionName.SECURITY.name())
                                     .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Security").build())
                                     .build();
@@ -254,6 +252,12 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
                                   .setType(StepSpecTypeConstants.ACTION)
                                   .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Build").build())
                                   .build();
+
+    StepInfo bitriseStepInfo = StepInfo.newBuilder()
+                                   .setName("Bitrise")
+                                   .setType(StepSpecTypeConstants.BITRISE)
+                                   .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Build").build())
+                                   .build();
 
     StepInfo ecrPushBuilds =
         StepInfo.newBuilder()
@@ -321,7 +325,8 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
     stepInfos.add(saveCacheToGCS);
     stepInfos.add(gitCloneStepInfo);
     stepInfos.add(saveCacheToS3);
-    //    stepInfos.add(actionStepInfo);
+    stepInfos.add(actionStepInfo);
+    stepInfos.add(bitriseStepInfo);
 
     return stepInfos;
   }

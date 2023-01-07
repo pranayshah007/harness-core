@@ -43,6 +43,7 @@ import software.wings.verification.VerificationStateAnalysisExecutionData;
 import com.github.reinert.jjschema.Attributes;
 import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.inject.Inject;
+import dev.morphia.annotations.Transient;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -51,7 +52,6 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import lombok.experimental.FieldNameConstants;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.annotations.Transient;
 import org.slf4j.Logger;
 
 @Slf4j

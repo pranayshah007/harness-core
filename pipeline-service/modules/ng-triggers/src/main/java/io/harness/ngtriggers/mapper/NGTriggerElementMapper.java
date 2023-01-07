@@ -96,10 +96,10 @@ import io.harness.ngtriggers.utils.WebhookEventPayloadParser;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.spring.TriggerEventHistoryRepository;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.PmsFeatureFlagService;
-import io.harness.utils.RestCallToNGManagerClientUtils;
 import io.harness.utils.YamlPipelineUtils;
 import io.harness.webhook.WebhookConfigProvider;
 import io.harness.webhook.WebhookHelper;
@@ -625,7 +625,7 @@ public class NGTriggerElementMapper {
   }
 
   public ArtifactoryConnectorDTO getConnector(IdentifierRef artifactoryConnectorRef) {
-    Optional<ConnectorDTO> connectorDTO = RestCallToNGManagerClientUtils.execute(connectorResourceClient.get(
+    Optional<ConnectorDTO> connectorDTO = NGRestUtils.getResponse(connectorResourceClient.get(
         artifactoryConnectorRef.getIdentifier(), artifactoryConnectorRef.getAccountIdentifier(),
         artifactoryConnectorRef.getOrgIdentifier(), artifactoryConnectorRef.getProjectIdentifier()));
 

@@ -408,7 +408,7 @@
             "connectorRef": {
               "type": "string"
             },
-            "delegateSelectors": {
+            "entrypoint": {
               "oneOf": [
                 {
                   "type": "array",
@@ -417,17 +417,15 @@
                   }
                 },
                 {
-                  "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-                  "minLength": 1
+                  "type": "string"
                 }
               ]
             },
-            "entrypoint": {
+            "envVariables": {
               "oneOf": [
                 {
-                  "type": "array",
-                  "items": {
+                  "type": "object",
+                  "additionalProperties": {
                     "type": "string"
                   }
                 },

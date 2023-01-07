@@ -85,6 +85,7 @@ public class GitopsRequestDTOMapperTest extends InstancesTestBase {
         .envIdentifier(envId)
         .buildId(buildId)
         .lastDeployedAt(millis)
+        .lastExecutedAt(millis)
         .pipelineName(pipelineId)
         .pipelineExecutionId(pipelineId + commonId)
         .instanceInfo(getInstanceInfo())

@@ -56,6 +56,7 @@ import software.wings.service.intfc.ServiceResourceService;
 import software.wings.service.intfc.ServiceTemplateService;
 
 import com.google.inject.Inject;
+import dev.morphia.Key;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -64,7 +65,6 @@ import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mongodb.morphia.Key;
 
 /**
  * Created by anubhaw on 1/16/17.

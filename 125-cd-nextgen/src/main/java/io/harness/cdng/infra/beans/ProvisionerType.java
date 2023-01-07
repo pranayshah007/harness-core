@@ -33,9 +33,11 @@ public enum ProvisionerType {
   TERRAFORM("Terraform"),
   CLOUD_FORMATION("CloudFormation"),
   AZURE_ARM("ARM"),
+  AZURE_BLUEPRINT("Blueprint"),
   SHELL_SCRIPT_PROVISIONER("Script");
 
-  private static final Set<ProvisionerType> supportedTypes = ImmutableSet.of(TERRAFORM, CLOUD_FORMATION, AZURE_ARM);
+  private static final Set<ProvisionerType> supportedTypes =
+      ImmutableSet.of(TERRAFORM, CLOUD_FORMATION, AZURE_ARM, AZURE_BLUEPRINT, SHELL_SCRIPT_PROVISIONER);
   private static final List<NGStepType> supportedSteps = Arrays.asList(TERRAFORM_APPLY, TERRAFORM_PLAN,
       TERRAFORM_DESTROY, TERRAFORM_ROLLBACK, CF_CREATE_STACK, CF_DELETE_STACK, CF_ROLLBACK_STACK,
       AZURE_CREATE_ARM_RESOURCE, AZURE_CREATE_BP_RESOURCE, AZURE_ROLLBACK_ARM_RESOURCE);

@@ -186,6 +186,7 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testProcessVerificationJobInstance_getEmbaddedCVConfig() {
     VerificationJobInstance verificationJobInstance = newVerificationJobInstance();
+    verificationJobInstance.getResolvedJob().setCvConfigs(null);
     cvConfigService.save(cvConfig);
     verificationJobInstanceService.create(Arrays.asList(verificationJobInstance));
 
@@ -869,6 +870,7 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testCreateDemoInstances() {
     VerificationJobInstance verificationJobInstance = newVerificationJobInstance();
+    verificationJobInstance.getResolvedJob().setCvConfigs(null);
     verificationJobInstance.setVerificationStatus(ActivityVerificationStatus.VERIFICATION_FAILED);
     cvConfigService.save(cvConfig);
     List<String> verificationJobInstanceIds =

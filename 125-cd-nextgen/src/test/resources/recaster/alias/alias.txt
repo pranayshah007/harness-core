@@ -688,3 +688,5 @@ io.harness.cdng.aws.asg.AsgStepExceptionPassThroughData
 io.harness.cdng.aws.asg.AsgRollingRollbackStepNode
 io.harness.cdng.aws.asg.AsgRollingRollbackStepParameters
 io.harness.cdng.aws.asg.AsgRollingRollbackStepInfo
+io.harness.plancreator.policy.PolicyConfig
+io.harness.cdng.aws.asg.AsgRollingDeployOutcome

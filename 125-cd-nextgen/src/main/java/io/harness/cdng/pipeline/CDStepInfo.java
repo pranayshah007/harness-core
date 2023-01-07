@@ -109,6 +109,7 @@ import io.swagger.annotations.ApiModel;
         AsgRollingRollbackStepInfo.class})
 
 @OwnedBy(HarnessTeam.CDC)
+// keeping this class because of the swagger annotation and UI dependency on it
 public interface CDStepInfo extends StepSpecType, WithStepElementParameters, WithDelegateSelector {
   default StepParameters getStepParameters(
       CdAbstractStepNode stepElementConfig, OnFailRollbackParameters failRollbackParameters, PlanCreationContext ctx) {

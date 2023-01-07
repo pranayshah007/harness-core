@@ -482,9 +482,13 @@ public class NativeHelmStepHelper extends K8sHelmCommonStepHelper {
       }
     }
     if (shouldExecuteGitFetchTask(aggregatedValuesManifest)) {
+      LinkedList<ValuesManifestOutcome> orderedValuesManifests = new LinkedList<>(aggregatedValuesManifest);
+      if (ManifestStoreType.HARNESS.equals(k8sManifest.getStore().getKind())) {
+        orderedValuesManifests.addFirst(valuesManifestOutcome);
+      }
       updatedK8sStepPassThroughData.setShouldCloseFetchFilesStream(true);
       return executeValuesFetchTask(
-          ambiance, stepElementParameters, aggregatedValuesManifest, emptyMap(), updatedK8sStepPassThroughData);
+          ambiance, stepElementParameters, orderedValuesManifests, emptyMap(), updatedK8sStepPassThroughData);
     }
 
     LinkedList<ValuesManifestOutcome> orderedValuesManifests = new LinkedList<>(aggregatedValuesManifest);

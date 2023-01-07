@@ -95,9 +95,8 @@ public class GcpClusterResource {
                       "connectorRef") String gcpConnectorIdentifier,
       @Parameter(description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @Parameter(description = ORG_PARAM_MESSAGE) @NotNull @QueryParam(
-          NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @Parameter(description = PROJECT_PARAM_MESSAGE) @NotNull @QueryParam(
+      @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(gcpConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);

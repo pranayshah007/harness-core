@@ -10,7 +10,7 @@ package io.harness.cdng.provision.terraform;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.pipeline.CDStepInfo;
+import io.harness.cdng.pipeline.CDAbstractStepInfo;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.filters.WithConnectorRef;
@@ -49,7 +49,7 @@ import org.springframework.data.annotation.TypeAlias;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @RecasterAlias("io.harness.cdng.provision.terraform.TerraformDestroyStepInfo")
 public class TerraformDestroyStepInfo
-    extends TerraformDestroyBaseStepInfo implements CDStepInfo, Visitable, WithConnectorRef {
+    extends TerraformDestroyBaseStepInfo implements CDAbstractStepInfo, Visitable, WithConnectorRef {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)

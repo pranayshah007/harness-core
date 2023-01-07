@@ -99,6 +99,7 @@ import software.wings.sm.states.customdeploymentng.InstanceMapperUtils;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
+import dev.morphia.Key;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -115,7 +116,6 @@ import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mongodb.morphia.Key;
 
 public class InstanceFetchStateTest extends WingsBaseTest {
   @Mock private ExecutionContext context;

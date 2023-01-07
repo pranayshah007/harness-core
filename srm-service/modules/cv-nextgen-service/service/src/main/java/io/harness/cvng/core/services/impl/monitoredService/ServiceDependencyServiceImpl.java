@@ -21,6 +21,7 @@ import io.harness.persistence.HPersistence;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -30,7 +31,6 @@ import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
 
 @Slf4j
 @OwnedBy(CV)

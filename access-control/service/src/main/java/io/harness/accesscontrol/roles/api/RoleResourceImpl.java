@@ -90,7 +90,7 @@ public class RoleResourceImpl implements RoleResource {
     String scopeIdentifier = ScopeMapper.fromParams(harnessScopeParams).toString();
     RoleFilter roleFilter =
         RoleFilter.builder().searchTerm(searchTerm).scopeIdentifier(scopeIdentifier).managedFilter(NO_FILTER).build();
-    PageResponse<Role> pageResponse = roleService.list(pageRequest, roleFilter);
+    PageResponse<Role> pageResponse = roleService.list(pageRequest, roleFilter, true);
     return ResponseDTO.newResponse(pageResponse.map(roleDTOMapper::toResponseDTO));
   }
 

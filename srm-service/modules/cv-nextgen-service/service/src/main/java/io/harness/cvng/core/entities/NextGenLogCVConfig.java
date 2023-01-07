@@ -17,13 +17,13 @@ import io.harness.cvng.core.services.impl.DataCollectionDSLFactory;
 import io.harness.cvng.exception.NotImplementedForHealthSourceException;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import dev.morphia.query.UpdateOperations;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @JsonTypeName("NEXTGEN_LOG")
 @Data
@@ -35,6 +35,8 @@ public class NextGenLogCVConfig extends LogCVConfig {
   @NotNull String queryIdentifier;
   QueryParams queryParams;
   @NotNull DataSourceType dataSourceType;
+
+  @NotNull String groupName;
 
   @Override
   protected void validateParams() {

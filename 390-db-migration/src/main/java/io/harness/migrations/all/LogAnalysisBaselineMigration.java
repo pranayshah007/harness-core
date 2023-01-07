@@ -23,8 +23,8 @@ import software.wings.service.impl.analysis.LogMLAnalysisRecord;
 import software.wings.service.impl.analysis.LogMLAnalysisRecord.LogMLAnalysisRecordKeys;
 
 import com.google.inject.Inject;
+import dev.morphia.query.UpdateResults;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.UpdateResults;
 
 @Slf4j
 public class LogAnalysisBaselineMigration implements Migration {

@@ -125,7 +125,8 @@ public class ProjectServicesApiImplTest extends CategoryTest {
   @Owner(developers = UTKARSH_CHOUBEY)
   @Category(UnitTests.class)
   public void testCreateServiceWithSchemaValidationFlagOn() throws IOException {
-    when(featureFlagHelperService.isEnabled(account, FeatureName.CDS_SERVICE_ENV_SCHEMA_VALIDATION)).thenReturn(true);
+    when(featureFlagHelperService.isEnabled(account, FeatureName.DISABLE_CDS_SERVICE_ENV_SCHEMA_VALIDATION))
+        .thenReturn(false);
     when(featureFlagHelperService.isEnabled(account, FeatureName.NG_SVC_ENV_REDESIGN)).thenReturn(true);
 
     when(orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(org, project, account))
@@ -186,7 +187,8 @@ public class ProjectServicesApiImplTest extends CategoryTest {
   @Owner(developers = TARUN_UBA)
   @Category(UnitTests.class)
   public void testUpdateService() throws IOException {
-    when(featureFlagHelperService.isEnabled(account, FeatureName.CDS_SERVICE_ENV_SCHEMA_VALIDATION)).thenReturn(true);
+    when(featureFlagHelperService.isEnabled(account, FeatureName.DISABLE_CDS_SERVICE_ENV_SCHEMA_VALIDATION))
+        .thenReturn(false);
     when(featureFlagHelperService.isEnabled(account, FeatureName.NG_SVC_ENV_REDESIGN)).thenReturn(true);
     when(orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(org, project, account))
         .thenReturn(true);

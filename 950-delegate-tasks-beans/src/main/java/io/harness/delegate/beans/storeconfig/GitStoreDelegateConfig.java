@@ -26,6 +26,7 @@ public class GitStoreDelegateConfig implements StoreDelegateConfig {
   String branch;
   String commitId;
   String connectorName;
+  String connectorId;
   @Singular List<String> paths;
   FetchType fetchType;
 

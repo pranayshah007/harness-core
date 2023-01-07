@@ -17,7 +17,7 @@ import static io.harness.signup.services.SignupType.COMMUNITY_PROVISION;
 import static io.harness.utils.CryptoUtils.secureRandAlphaNumString;
 
 import static java.lang.Boolean.FALSE;
-import static org.mindrot.jbcrypt.BCrypt.hashpw;
+import static org.springframework.security.crypto.bcrypt.BCrypt.hashpw;
 
 import io.harness.ModuleType;
 import io.harness.TelemetryConstants;
@@ -93,7 +93,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.client.utils.URIBuilder;
-import org.mindrot.jbcrypt.BCrypt;
+import org.springframework.security.crypto.bcrypt.BCrypt;
 
 @Slf4j
 @Singleton

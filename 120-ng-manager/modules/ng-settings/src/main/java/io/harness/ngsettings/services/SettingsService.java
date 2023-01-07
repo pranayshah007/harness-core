@@ -7,6 +7,7 @@
 
 package io.harness.ngsettings.services;
 
+import io.harness.beans.Scope;
 import io.harness.beans.ScopeLevel;
 import io.harness.ngsettings.SettingCategory;
 import io.harness.ngsettings.dto.SettingRequestDTO;
@@ -29,4 +30,5 @@ public interface SettingsService {
   SettingConfiguration upsertSettingConfiguration(SettingConfiguration settingConfiguration);
 
   void deleteByScopeLevel(ScopeLevel scopeLevel, String identifier);
+  void deleteAtAllScopes(Scope scope);
 }

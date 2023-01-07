@@ -12252,8 +12252,7 @@
       "type": "object",
       "required": [
         "identifier",
-        "name",
-        "steps"
+        "name"
       ],
       "properties": {
         "delegateSelectors": {
@@ -12296,11 +12295,30 @@
         "strategy": {
           "$ref": "#/definitions/StrategyConfig"
         },
+        "template": {
+          "$ref": "#/definitions/TemplateLinkConfig"
+        },
         "when": {
           "$ref": "#/definitions/StepWhenCondition"
         }
       },
-      "$schema": "http://json-schema.org/draft-07/schema#"
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "oneOf": [
+            {
+              "required": [
+                "template"
+              ]
+            },
+            {
+              "required": [
+                "steps"
+              ]
+            }
+          ]
+        }
+      ]
     },
     "StepGroupFailureActionConfig": {
       "allOf": [

@@ -39,6 +39,7 @@ import io.harness.persistence.UuidAware;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.github.reinert.jjschema.SchemaIgnore;
+import dev.morphia.annotations.Entity;
 import java.util.ArrayList;
 import java.util.List;
 import javax.validation.constraints.NotEmpty;
@@ -50,7 +51,6 @@ import lombok.Setter;
 import lombok.Singular;
 import lombok.With;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
@@ -73,7 +73,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Persistent
 public class FreezeConfigEntity implements PersistentEntity, AccountAccess, UuidAware, CreatedAtAware, UpdatedAtAware,
                                            CreatedByAware, UpdatedByAware, PersistentIrregularIterable {
-  @Id @org.mongodb.morphia.annotations.Id String uuid;
+  @Id @dev.morphia.annotations.Id String uuid;
 
   @NotEmpty String accountId;
 

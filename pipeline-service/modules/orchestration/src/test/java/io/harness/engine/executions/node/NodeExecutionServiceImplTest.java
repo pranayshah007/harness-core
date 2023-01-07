@@ -277,7 +277,7 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
     nodeExecutionService.save(nodeExecution1);
 
     long updatedNumber = nodeExecutionService.markLeavesDiscontinuing(
-        planExecutionUuid, ImmutableList.of(nodeExecution.getUuid(), nodeExecution1.getUuid()));
+        ImmutableList.of(nodeExecution.getUuid(), nodeExecution1.getUuid()));
     assertThat(updatedNumber).isEqualTo(2);
   }
 

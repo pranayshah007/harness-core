@@ -28,6 +28,7 @@ public class CiStepParametersUtils {
     stepBuilder.when(stepNode.getWhen());
     stepBuilder.type(stepNode.getType());
     stepBuilder.uuid(stepNode.getUuid());
+    stepBuilder.enforce(stepNode.getEnforce());
 
     return stepBuilder;
   }

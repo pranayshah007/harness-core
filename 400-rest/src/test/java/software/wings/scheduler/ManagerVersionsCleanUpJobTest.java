@@ -28,6 +28,7 @@ import software.wings.core.managerConfiguration.ConfigurationController;
 import software.wings.service.intfc.AccountService;
 
 import com.google.inject.Inject;
+import dev.morphia.query.UpdateOperations;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -37,7 +38,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @Slf4j
 public class ManagerVersionsCleanUpJobTest extends WingsBaseTest {

@@ -17,6 +17,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
@@ -74,10 +75,14 @@ public class K8sLegacyReleaseHandlerImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testSaveRelease() throws Exception {
     doNothing().when(taskHelperBase).saveReleaseHistory(any(), anyString(), anyString(), anyBoolean());
+    K8SLegacyReleaseHistory legacyReleaseHistory = mock(K8SLegacyReleaseHistory.class);
+    ReleaseHistory releaseHistory = mock(ReleaseHistory.class);
+    doReturn(releaseHistory).when(legacyReleaseHistory).getReleaseHistory();
+    doReturn(SOME_RELEASE_HISTORY_YAML).when(releaseHistory).getAsYaml();
 
     releaseHandler.saveRelease(K8sReleasePersistDTO.builder()
                                    .releaseName(SOME_RELEASE)
-                                   .releaseHistoryYaml(SOME_RELEASE_HISTORY_YAML)
+                                   .releaseHistory(legacyReleaseHistory)
                                    .storeInSecrets(false)
                                    .build());
     verify(taskHelperBase).saveReleaseHistory(any(), eq(SOME_RELEASE), eq(SOME_RELEASE_HISTORY_YAML), eq(false));

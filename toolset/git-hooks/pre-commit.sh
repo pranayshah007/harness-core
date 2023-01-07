@@ -19,6 +19,16 @@ else
     against=4b825dc642cb6eb9a060e54bf8d69288fbee4904
 fi
 
+GIT_LEAKS=hook.pre-commit.gitleaks
+if [ "`git config $GIT_LEAKS`" == "false" ]
+then
+    echo -e '\033[0;31m' checking git leaks is disabled - to enable: '\033[0;37m'git config --unset $GIT_LEAKS '\033[0m'
+else
+    echo -e '\033[0;34m' checking git leaks  ... to disable: '\033[0;37m'git config --add $GIT_LEAKS false '\033[0m'
+
+    . $BASEDIR/toolset/git-hooks/gitleaks.sh
+fi
+
 CHECK_CONFLICTS=hook.pre-commit.check-conflicts
 if [ "`git config $CHECK_CONFLICTS`" == "false" ]
 then

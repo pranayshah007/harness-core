@@ -21,6 +21,7 @@ import software.wings.yaml.gitSync.GitFileProcessingSummary;
 import software.wings.yaml.gitSync.YamlChangeSet;
 
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -29,7 +30,6 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.UtilityClass;
-import org.mongodb.morphia.annotations.Entity;
 
 /**
  * Created by bsollish 10/13/17

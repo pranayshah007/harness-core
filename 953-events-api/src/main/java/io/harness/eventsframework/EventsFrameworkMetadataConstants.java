@@ -49,11 +49,17 @@ public final class EventsFrameworkMetadataConstants {
   public static final String ENVIRONMENT_GROUP_ENTITY = "environmentGroup";
 
   public static final String RESOURCE_GROUP = "resourcegroup";
+
   public static final String USER_GROUP = "usergroup";
   public static final String FILTER = "filter";
   public static final String FREEZE_CONFIG = "freezeConfig";
 
   public static final String GIT_COMMIT = "gitCommit";
+  public static final String POLLING_DOCUMENT = "pollingDocument";
+  public static final String GIT_TO_HARNESS_PROGRESS = "gitToHarnessProgress";
+  public static final String INVITE = "invite";
+
+  public static final String SETTINGS = "settings";
 
   public static final String GIT_PROCESS_REQUEST = "gitProcessReq";
   // deprecated, use setupusage and entityActivity channel.

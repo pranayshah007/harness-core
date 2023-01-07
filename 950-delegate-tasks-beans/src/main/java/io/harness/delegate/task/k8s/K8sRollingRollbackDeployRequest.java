@@ -37,6 +37,7 @@ public class K8sRollingRollbackDeployRequest implements K8sDeployRequest {
   boolean useNewKubectlVersion;
   boolean pruningEnabled;
   List<KubernetesResourceId> prunedResourceIds;
+  boolean useDeclarativeRollback;
   @Expression(ALLOW_SECRETS) Map<String, String> k8sCommandFlags;
 
   @Override

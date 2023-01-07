@@ -9,6 +9,7 @@ package io.harness.pms.ngpipeline.inputset.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.NAMAN;
+import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.VED;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -37,6 +38,7 @@ import io.harness.pms.ngpipeline.inputset.helpers.ValidateAndMergeHelper;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PipelineCRUDErrorResponse;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.rule.Owner;
 
 import com.google.common.io.Resources;
@@ -475,5 +477,25 @@ public class InputSetValidationHelperTest extends CategoryTest {
       GlobalContextManager.set(new GlobalContext());
     }
     GlobalContextManager.upsertGlobalContextRecord(GitSyncBranchContext.builder().gitBranchInfo(branchInfo).build());
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testValidateInputSetV1() {
+    String inputSetFile = "inputSetV1.yaml";
+    String inputSetYaml = readFile(inputSetFile);
+    InputSetEntity inputSetEntity = InputSetEntity.builder()
+                                        .accountId(accountId)
+                                        .orgIdentifier(orgId)
+                                        .projectIdentifier(projectId)
+                                        .pipelineIdentifier(pipelineId)
+                                        .yaml(inputSetYaml)
+                                        .inputSetEntityType(InputSetEntityType.INPUT_SET)
+                                        .storeType(StoreType.INLINE)
+                                        .harnessVersion(PipelineVersion.V1)
+                                        .build();
+    // no exception should be thrown
+    InputSetValidationHelper.validateInputSet(inputSetService, pipelineService, inputSetEntity, true, false);
   }
 }

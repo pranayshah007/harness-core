@@ -20,6 +20,10 @@ type Config struct {
 		GlobalToken string `envconfig:"LOG_SERVICE_GLOBAL_TOKEN" default:"token" secret:"true"`
 	}
 
+	Platform struct {
+		BaseURL string `envconfig:"LOG_SERVICE_PLATFORM_BASE_URL"`
+	}
+
 	Server struct {
 		Bind  string `envconfig:"LOG_SERVICE_HTTP_BIND" default:":8079"`
 		Proto string `envconfig:"LOG_SERVICE_HTTP_PROTO"`
@@ -44,10 +48,11 @@ type Config struct {
 	}
 
 	Redis struct {
-		Endpoint   string `envconfig:"LOG_SERVICE_REDIS_ENDPOINT"`
-		Password   string `envconfig:"LOG_SERVICE_REDIS_PASSWORD" secret:"true"`
-		SSLEnabled bool   `envconfig:"LOG_SERVICE_REDIS_SSL_ENABLED"`
-		CertPath   string `envconfig:"LOG_SERVICE_REDIS_SSL_CA_CERT_PATH"`
+		Endpoint             string `envconfig:"LOG_SERVICE_REDIS_ENDPOINT"`
+		Password             string `envconfig:"LOG_SERVICE_REDIS_PASSWORD" secret:"true"`
+		SSLEnabled           bool   `envconfig:"LOG_SERVICE_REDIS_SSL_ENABLED"`
+		CertPath             string `envconfig:"LOG_SERVICE_REDIS_SSL_CA_CERT_PATH"`
+		DisableExpiryWatcher bool   `envconfig:"LOG_SERVICE_REDIS_DISABLE_EXPIRY_WATCHER"`
 	}
 
 	// Whether to use secret env variables as they are, or talk to GCP secret
