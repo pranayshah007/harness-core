@@ -23,5 +23,6 @@ import lombok.experimental.FieldDefaults;
 @RecasterAlias("io.harness.steps.plugin.ContainerStepPassThroughData")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ContainerStepPassThroughData implements PassThroughData {
-  long firstStepStartTime;
+  long initStepStartTime;
+  long runStepStartTime;
 }

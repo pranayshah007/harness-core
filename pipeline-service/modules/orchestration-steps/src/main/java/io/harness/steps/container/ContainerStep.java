@@ -22,6 +22,8 @@ import io.harness.delegate.beans.ci.k8s.K8sTaskExecutionResponse;
 import io.harness.delegate.beans.ci.k8s.PodStatus;
 import io.harness.encryption.Scope;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.logging.UnitProgress;
+import io.harness.logging.UnitStatus;
 import io.harness.logstreaming.LogStreamingHelper;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -59,7 +61,7 @@ import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import lombok.AllArgsConstructor;
@@ -141,9 +143,9 @@ public class ContainerStep implements TaskChainExecutableWithRbac<StepElementPar
         kryoSerializer, TaskCategory.DELEGATE_TASK_V2,
         //             Collections.singletonList(LogStreamingHelper.generateLogKeyGivenCommandUnit(logPrefix,
         //             ContainerCommandUnitConstants.InitContainer)),
-        StepUtils.generateLogKeys(ambiance, Collections.singletonList(ContainerCommandUnitConstants.InitContainer)),
-        containerStepInfo.getCommandUnits(), true, TaskType.CONTAINER_INITIALIZATION.getDisplayName(), taskSelectors,
-        Scope.PROJECT, EnvironmentType.ALL, false, new ArrayList<>(), false, stageId, null, logAbstractionMap);
+        StepUtils.generateLogKeys(ambiance, containerStepInfo.getCommandUnits()), containerStepInfo.getCommandUnits(),
+        true, TaskType.CONTAINER_INITIALIZATION.getDisplayName(), taskSelectors, Scope.PROJECT, EnvironmentType.ALL,
+        false, new ArrayList<>(), false, stageId, null, logAbstractionMap);
 
     //    TaskRequest taskRequest = StepUtils.prepareTaskRequest(ambiance, getTaskData(stepParameters,
     //    buildSetupTaskParams),
@@ -152,7 +154,7 @@ public class ContainerStep implements TaskChainExecutableWithRbac<StepElementPar
     //        false, new ArrayList<>(), false, stageId);
     return TaskChainResponse.builder()
         .taskRequest(taskRequest)
-        .passThroughData(ContainerStepPassThroughData.builder().firstStepStartTime(System.currentTimeMillis()).build())
+        .passThroughData(ContainerStepPassThroughData.builder().initStepStartTime(System.currentTimeMillis()).build())
         .logKeys(StepUtils.generateLogKeys(ambiance, containerStepInfo.getCommandUnits()))
         .chainEnd(false)
         .units(containerStepInfo.getCommandUnits())
@@ -165,7 +167,22 @@ public class ContainerStep implements TaskChainExecutableWithRbac<StepElementPar
     containerStepCleanupHelper.sendCleanupRequest(ambiance);
     ResponseData responseData = responseDataSupplier.get();
     executionResponseHelper.finalizeStepResponse(ambiance, stepParameters, responseData);
-    return StepResponse.builder().status(Status.SUCCEEDED).build();
+    List<UnitProgress> unitProgresses =
+        Arrays.asList(UnitProgress.newBuilder()
+                          .setEndTime(System.currentTimeMillis())
+                          .setStartTime(((ContainerStepPassThroughData) passThroughData).getRunStepStartTime())
+                          .setStatus(UnitStatus.SUCCESS)
+                          .setEndTime(System.currentTimeMillis())
+                          .setUnitName(ContainerCommandUnitConstants.ContainerStep)
+                          .build(),
+            UnitProgress.newBuilder()
+                .setEndTime(System.currentTimeMillis())
+                .setStartTime(((ContainerStepPassThroughData) passThroughData).getInitStepStartTime())
+                .setStatus(UnitStatus.SUCCESS)
+                .setEndTime(((ContainerStepPassThroughData) passThroughData).getRunStepStartTime())
+                .setUnitName(ContainerCommandUnitConstants.InitContainer)
+                .build());
+    return StepResponse.builder().status(Status.SUCCEEDED).unitProgressList(unitProgresses).build();
   }
 
   @Override
@@ -199,8 +216,7 @@ public class ContainerStep implements TaskChainExecutableWithRbac<StepElementPar
       }
     });
     TaskRequest taskRequest = StepUtils.prepareTaskRequest(ambiance, runStepTaskData, kryoSerializer,
-        TaskCategory.DELEGATE_TASK_V2,
-        StepUtils.generateLogKeys(ambiance, Collections.singletonList(ContainerCommandUnitConstants.ContainerStep)),
+        TaskCategory.DELEGATE_TASK_V2, StepUtils.generateLogKeys(ambiance, containerStepInfo.getCommandUnits()),
         containerStepInfo.getCommandUnits(), true, TaskType.CONTAINER_EXECUTE_STEP.getDisplayName(), new ArrayList<>(),
         Scope.PROJECT, EnvironmentType.ALL, false, new ArrayList<>(), false, stageId, null, logAbstractionMap);
 
@@ -208,14 +224,17 @@ public class ContainerStep implements TaskChainExecutableWithRbac<StepElementPar
         .chainEnd(true)
         .taskRequest(taskRequest)
         .logKeys(StepUtils.generateLogKeys(ambiance, containerStepInfo.getCommandUnits()))
-        .passThroughData(ContainerStepPassThroughData.builder().build())
+        .passThroughData(ContainerStepPassThroughData.builder()
+                             .initStepStartTime(((ContainerStepPassThroughData) passThroughData).getInitStepStartTime())
+                             .runStepStartTime(System.currentTimeMillis())
+                             .build())
         .units(containerStepInfo.getCommandUnits())
         .build();
   }
 
   private long getTimeoutForDelegateTask(
       StepElementParameters stepParameters, ContainerStepPassThroughData passThroughData) {
-    long lastStepStartTime = passThroughData.getFirstStepStartTime();
+    long lastStepStartTime = passThroughData.getInitStepStartTime();
     long currentTime = System.currentTimeMillis();
     long timeoutInConfig =
         Timeout.fromString((String) stepParameters.getTimeout().fetchFinalValue()).getTimeoutInMillis();
