@@ -19,8 +19,8 @@ function getProperty () {
 
 buildNo=$1
 buildPropertiesFile=${2:-build.properties}
-buildMajorVersion=$(date +%y)
-buildMinorVersion=$(date +%m)
+buildMajorVersion=22
+buildMinorVersion=12
 patch=$(getProperty "${buildPropertiesFile}" "build.patch")
 timestamp=$( date +'%y%m%d-%H%M')
 
