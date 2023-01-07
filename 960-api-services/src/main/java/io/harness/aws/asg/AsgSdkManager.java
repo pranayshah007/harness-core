@@ -107,6 +107,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import lombok.Builder;
+import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -116,14 +117,13 @@ public class AsgSdkManager {
   public static final int STEADY_STATE_INTERVAL_IN_SECONDS = 20;
   private static final String INSTANCE_REFRESH_STATUS_SUCCESSFUL = "Successful";
   private static final String INSTANCE_STATUS_IN_SERVICE = "InService";
-
   private enum AwsClientType { EC2, ASG }
 
-  private final Supplier<AmazonEC2Client> ec2ClientSupplier;
-  private final Supplier<AmazonAutoScalingClient> asgClientSupplier;
-  private final Integer steadyStateTimeOutInMinutes;
+  @Getter private final Supplier<AmazonEC2Client> ec2ClientSupplier;
+  @Getter private final Supplier<AmazonAutoScalingClient> asgClientSupplier;
+  @Getter private final Integer steadyStateTimeOutInMinutes;
   private final TimeLimiter timeLimiter;
-  @Setter private LogCallback logCallback;
+  @Setter @Getter private LogCallback logCallback;
 
   @Builder
   public AsgSdkManager(Supplier<AmazonEC2Client> ec2ClientSupplier, Supplier<AmazonAutoScalingClient> asgClientSupplier,
