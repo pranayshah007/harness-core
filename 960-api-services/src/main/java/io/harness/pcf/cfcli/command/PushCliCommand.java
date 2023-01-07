@@ -28,7 +28,7 @@ import lombok.experimental.SuperBuilder;
 public class PushCliCommand extends CfCliCommand {
   @Builder
   PushCliCommand(CfCliVersion cliVersion, String cliPath, GlobalOptions globalOptions, List<String> arguments,
-      PushOptions options) {
+      Options options) {
     super(cliVersion, cliPath, globalOptions, CfCliCommandType.PUSH, arguments, options);
   }
 
@@ -65,10 +65,27 @@ public class PushCliCommand extends CfCliCommand {
     @Option(value = "--route-path") String routePath;
   }
 
-  @Value
   @SuperBuilder
-  @EqualsAndHashCode(callSuper = true)
-  public static class PushOptionsV7 extends PushOptions {
+  public static class PushOptionsV7 implements Options {
+    @Option(value = "-b") String buildPack;
+    @Option(value = "-c") String startupCmd;
+    @Option(value = "--docker-image") String dockerImage;
+    @Option(value = "--docker-username") String dockerUsername;
+    @Option(value = "--droplet") String droplet;
+    @Option(value = "-f") String pathToManifest;
+    @Option(value = "--health-check-type") String healthCheckType;
+    @Option(value = "-i") String numberOfInstances;
+    @Option(value = "-k") String diskLimit;
+    @Option(value = "-m") String memoryLimit;
+    @Flag(value = "--no-manifest") boolean noManifest;
+    @Flag(value = "--no-route") boolean noRoute;
+    @Flag(value = "--no-start") boolean noStart;
+    @Option(value = "-p") String pathToApp;
+    @Flag(value = "--random-route") boolean randomRoute;
+    @Option(value = "-s") String stackToUse;
+    @Option(value = "--vars-file") List<String> variableFilePaths;
+    @Option(value = "--var") List<String> variableKeyValuePairs;
+    @Option(value = "-t") String appStartTimeout;
     @Option(value = "--endpoint") String healthCheckEndpoint;
     @Flag(value = "--no-wait") boolean noWait;
     @Option(value = "--strategy") String strategy;

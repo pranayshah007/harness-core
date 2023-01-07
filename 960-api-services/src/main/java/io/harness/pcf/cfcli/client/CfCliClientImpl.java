@@ -225,7 +225,7 @@ public class CfCliClientImpl implements CfCliClient {
       });
     }
 
-    if(isNotEmpty(requestData.getStrategy())) {
+    if(isEmpty(requestData.getStrategy())) {
       return CfCliCommandResolver.getPushCliCommand(
               pcfRequestConfig.getCfCliPath(), pcfRequestConfig.getCfCliVersion(), finalFilePath, varFiles);
     } else {
