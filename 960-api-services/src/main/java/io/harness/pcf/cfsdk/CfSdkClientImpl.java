@@ -56,7 +56,6 @@ import org.cloudfoundry.client.v3.deployments.GetDeploymentRequest;
 import org.cloudfoundry.client.v3.deployments.GetDeploymentResponse;
 import org.cloudfoundry.client.v3.deployments.ListDeploymentsRequest;
 import org.cloudfoundry.client.v3.deployments.ListDeploymentsResponse;
-import org.cloudfoundry.client.v3.deployments.Status;
 import org.cloudfoundry.doppler.LogMessage;
 import org.cloudfoundry.operations.applications.ApplicationDetail;
 import org.cloudfoundry.operations.applications.ApplicationEnvironments;
@@ -132,7 +131,7 @@ public class CfSdkClientImpl implements CfSdkClient {
 
   @Override
   public List<DeploymentResource> listDeployments(CfRequestConfig pcfRequestConfig)
-          throws PivotalClientApiException, InterruptedException {
+      throws PivotalClientApiException, InterruptedException {
     log.info(format("%s Fetching Organizations", PIVOTAL_CLOUD_FOUNDRY_LOG_PREFIX));
 
     List<DeploymentResource> deployments = new ArrayList<>();
@@ -142,31 +141,35 @@ public class CfSdkClientImpl implements CfSdkClient {
     CountDownLatch latch = new CountDownLatch(1);
 
     ListDeploymentsRequest listDeploymentsRequest = ListDeploymentsRequest.builder().build();
-    CloudFoundryClient cloudFoundryClient = cloudFoundryClientProvider.getCloudFoundryClient(pcfRequestConfig, connectionContextProvider.getConnectionContext(pcfRequestConfig));
+    CloudFoundryClient cloudFoundryClient = cloudFoundryClientProvider.getCloudFoundryClient(
+        pcfRequestConfig, connectionContextProvider.getConnectionContext(pcfRequestConfig));
     Instant start = Instant.now();
-    cloudFoundryClient.deploymentsV3().list(listDeploymentsRequest).flatMapIterable(ListDeploymentsResponse::getResources).subscribe(deployments::add, throwable -> {
-      exceptionOccurred.set(true);
-      handleException(throwable, "listDeployments", errorBuilder);
-      latch.countDown();
-    }, latch::countDown);
+    cloudFoundryClient.deploymentsV3()
+        .list(listDeploymentsRequest)
+        .flatMapIterable(ListDeploymentsResponse::getResources)
+        .subscribe(deployments::add, throwable -> {
+          exceptionOccurred.set(true);
+          handleException(throwable, "listDeployments", errorBuilder);
+          latch.countDown();
+        }, latch::countDown);
 
     waitTillCompletion(latch, pcfRequestConfig.getTimeOutIntervalInMins());
     Instant end = Instant.now();
     if (exceptionOccurred.get()) {
       logSdkCommandFailure("getCloudFoundryOperations().organizations().list()", null,
-              Duration.between(start, end).toMillis(), errorBuilder.toString());
+          Duration.between(start, end).toMillis(), errorBuilder.toString());
       throw new PivotalClientApiException(
-              format("Exception occurred while fetching Deployments, Error: %s", errorBuilder.toString()));
+          format("Exception occurred while fetching Deployments, Error: %s", errorBuilder.toString()));
     } else {
-      logSdkCommand(
-              "deploymentsV3().list().flatMapIterable(ListDeploymentsResponse::getResources)", null, Duration.between(start, end).toMillis());
+      logSdkCommand("deploymentsV3().list().flatMapIterable(ListDeploymentsResponse::getResources)", null,
+          Duration.between(start, end).toMillis());
     }
     return deployments;
   }
 
   @Override
   public GetDeploymentResponse getDeployment(CfRequestConfig pcfRequestConfig, String deploymentId)
-          throws PivotalClientApiException, InterruptedException {
+      throws PivotalClientApiException, InterruptedException {
     log.info(format("%s Fetching Organizations", PIVOTAL_CLOUD_FOUNDRY_LOG_PREFIX));
 
     List<GetDeploymentResponse> getDeploymentResponseList = new ArrayList<>();
@@ -176,26 +179,29 @@ public class CfSdkClientImpl implements CfSdkClient {
     CountDownLatch latch = new CountDownLatch(1);
 
     GetDeploymentRequest getDeploymentRequest = GetDeploymentRequest.builder().deploymentId(deploymentId).build();
-    CloudFoundryClient cloudFoundryClient = cloudFoundryClientProvider.getCloudFoundryClient(pcfRequestConfig, connectionContextProvider.getConnectionContext(pcfRequestConfig));
+    CloudFoundryClient cloudFoundryClient = cloudFoundryClientProvider.getCloudFoundryClient(
+        pcfRequestConfig, connectionContextProvider.getConnectionContext(pcfRequestConfig));
     Instant start = Instant.now();
-    cloudFoundryClient.deploymentsV3().get(getDeploymentRequest).subscribe(getDeploymentResponse -> getDeploymentResponseList.add(getDeploymentResponse), throwable -> {
-      exceptionOccurred.set(true);
-      handleException(throwable, "listDeployments", errorBuilder);
-      latch.countDown();
-    }, latch::countDown);
+    cloudFoundryClient.deploymentsV3()
+        .get(getDeploymentRequest)
+        .subscribe(getDeploymentResponse -> getDeploymentResponseList.add(getDeploymentResponse), throwable -> {
+          exceptionOccurred.set(true);
+          handleException(throwable, "listDeployments", errorBuilder);
+          latch.countDown();
+        }, latch::countDown);
 
     waitTillCompletion(latch, pcfRequestConfig.getTimeOutIntervalInMins());
     Instant end = Instant.now();
     if (exceptionOccurred.get()) {
       logSdkCommandFailure("getCloudFoundryOperations().organizations().list()", null,
-              Duration.between(start, end).toMillis(), errorBuilder.toString());
+          Duration.between(start, end).toMillis(), errorBuilder.toString());
       throw new PivotalClientApiException(
-              format("Exception occurred while fetching Deployments, Error: %s", errorBuilder.toString()));
+          format("Exception occurred while fetching Deployments, Error: %s", errorBuilder.toString()));
     } else {
-      logSdkCommand(
-              "deploymentsV3().list().flatMapIterable(ListDeploymentsResponse::getResources)", null, Duration.between(start, end).toMillis());
+      logSdkCommand("deploymentsV3().list().flatMapIterable(ListDeploymentsResponse::getResources)", null,
+          Duration.between(start, end).toMillis());
     }
-    return isNotEmpty(getDeploymentResponseList) ? getDeploymentResponseList.get(0): null;
+    return isNotEmpty(getDeploymentResponseList) ? getDeploymentResponseList.get(0) : null;
   }
 
   private void handleExceptionForGetOrganizationsAPI(Throwable t, String apiName, StringBuilder errorBuilder) {

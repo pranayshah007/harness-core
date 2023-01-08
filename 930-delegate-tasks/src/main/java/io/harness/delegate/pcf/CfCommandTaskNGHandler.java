@@ -7,6 +7,12 @@
 
 package io.harness.delegate.pcf;
 
+import static io.harness.pcf.PcfUtils.encodeColor;
+
+import static software.wings.beans.LogColor.White;
+import static software.wings.beans.LogHelper.color;
+import static software.wings.beans.LogWeight.Bold;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
@@ -17,19 +23,14 @@ import io.harness.delegate.task.pcf.artifact.TasArtifactType;
 import io.harness.delegate.task.pcf.request.CfCommandRequestNG;
 import io.harness.delegate.task.pcf.response.CfCommandResponseNG;
 import io.harness.logging.LogCallback;
+
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.operations.applications.ApplicationSummary;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 import org.yaml.snakeyaml.representer.Representer;
-
-import java.util.List;
-
-import static io.harness.pcf.PcfUtils.encodeColor;
-import static software.wings.beans.LogColor.White;
-import static software.wings.beans.LogHelper.color;
-import static software.wings.beans.LogWeight.Bold;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)

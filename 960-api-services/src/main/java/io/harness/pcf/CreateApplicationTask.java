@@ -7,31 +7,20 @@
 
 package io.harness.pcf;
 
-import static io.harness.logging.CommandExecutionStatus.FAILURE;
-import static io.harness.logging.LogLevel.ERROR;
-import static io.harness.logging.LogLevel.INFO;
-import static io.harness.pcf.model.PcfConstants.PIVOTAL_CLOUD_FOUNDRY_CLIENT_EXCEPTION;
-
-import static java.lang.String.format;
-
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.azure.client.AzureWebClient;
-import io.harness.azure.context.AzureWebClientContext;
 import io.harness.exception.ExceptionUtils;
 import io.harness.logging.LogCallback;
 import io.harness.pcf.model.CfCreateApplicationRequestData;
 import io.harness.pcf.model.CfRequestConfig;
+import org.cloudfoundry.operations.applications.ApplicationDetail;
 
-import com.azure.core.http.rest.Response;
-import com.google.inject.Inject;
-import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.Callable;
-import org.cloudfoundry.operations.applications.ApplicationDetail;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
+
+import static io.harness.logging.LogLevel.INFO;
+import static io.harness.pcf.model.PcfConstants.PIVOTAL_CLOUD_FOUNDRY_CLIENT_EXCEPTION;
 
 @OwnedBy(HarnessTeam.CDP)
 public class CreateApplicationTask implements Callable<ApplicationDetail> {
