@@ -25,7 +25,7 @@ import io.harness.accesscontrol.roles.persistence.RoleDBO;
 import io.harness.accesscontrol.roles.persistence.repositories.RoleRepository;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.GeneralException;
-import io.harness.mongo.DelayLogContext;
+import io.harness.logging.DelayLogContext;
 
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;

@@ -23,15 +23,11 @@ import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAccess;
 
 import com.google.common.collect.ImmutableList;
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBObject;
 import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Id;
 import java.time.OffsetDateTime;
 import java.util.Date;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Getter;
@@ -134,20 +130,4 @@ public final class SweepingOutputInstance implements PersistentEntity, UuidAcces
   public enum Scope { PIPELINE, WORKFLOW, PHASE, STATE }
 
   @FdTtlIndex Date validUntil = Date.from(OffsetDateTime.now().plusMonths(6).toInstant());
-
-  public static DBObject getHint(String indexName) {
-    Map<String, Object> map = new LinkedHashMap<>();
-
-    switch (indexName) {
-      case "pipelineStateExecution":
-        map.put(SweepingOutputInstanceKeys.appId, 1);
-        map.put(SweepingOutputInstanceKeys.pipelineExecutionId, 1);
-        map.put(SweepingOutputInstanceKeys.stateExecutionId, 1);
-        break;
-      default:
-        break;
-    }
-
-    return new BasicDBObject(map);
-  }
 }

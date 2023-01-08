@@ -5,14 +5,12 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.mongo;
+package io.harness.persistence;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.tracing.TraceMode;
-import io.harness.mongo.tracing.Tracer;
 import io.harness.observer.Subject;
-import io.harness.persistence.HQuery;
 
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
@@ -28,9 +26,9 @@ public class QueryFactory extends DefaultQueryFactory {
   @Getter private final int maxOperationTimeInMillis;
   @Getter private final Subject<Tracer> tracerSubject = new Subject<>();
 
-  public QueryFactory(MongoConfig mongoConfig) {
-    this.traceMode = mongoConfig.getTraceMode();
-    this.maxOperationTimeInMillis = mongoConfig.getMaxOperationTimeInMillis();
+  public QueryFactory(TraceMode traceMode, int maxOperationTimeInMillis) {
+    this.traceMode = traceMode;
+    this.maxOperationTimeInMillis = maxOperationTimeInMillis;
   }
 
   @Override

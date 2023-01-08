@@ -19,10 +19,9 @@ import static java.time.Duration.ofSeconds;
 
 import io.harness.exception.ExceptionLogger;
 import io.harness.exception.WingsException;
+import io.harness.logging.DelayLogContext;
+import io.harness.logging.ProcessTimeLogContext;
 import io.harness.manage.GlobalContextManager.GlobalContextGuard;
-import io.harness.mongo.DelayLogContext;
-import io.harness.mongo.MessageLogContext;
-import io.harness.mongo.ProcessTimeLogContext;
 import io.harness.queue.QueueConsumer.Filter;
 
 import com.google.inject.Inject;
