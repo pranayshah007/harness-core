@@ -30,7 +30,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.data.structure.UUIDGenerator;
-import io.harness.encryptors.clients.HashicorpVaultEncryptor;
 import io.harness.exception.SecretManagementDelegateException;
 import io.harness.exception.runtime.hashicorp.HashiCorpVaultRuntimeException;
 import io.harness.helpers.ext.vault.VaultAppRoleLoginResult;

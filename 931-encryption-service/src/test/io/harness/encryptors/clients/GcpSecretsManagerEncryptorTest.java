@@ -25,7 +25,6 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.beans.SecretText;
 import io.harness.category.element.UnitTests;
-import io.harness.encryptors.clients.GcpSecretsManagerEncryptor;
 import io.harness.exception.SecretManagementException;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.AdditionalMetadata;

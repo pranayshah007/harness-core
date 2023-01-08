@@ -27,7 +27,6 @@ import io.harness.category.element.UnitTests;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.delegate.exception.DelegateRetryableException;
-import io.harness.encryptors.clients.GcpKmsEncryptor;
 import io.harness.exception.HintException;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedRecord;

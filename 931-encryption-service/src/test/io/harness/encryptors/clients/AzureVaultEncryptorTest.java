@@ -29,7 +29,6 @@ import io.harness.azure.AzureEnvironmentType;
 import io.harness.category.element.UnitTests;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.data.structure.UUIDGenerator;
-import io.harness.encryptors.clients.AzureVaultEncryptor;
 import io.harness.exception.SecretManagementDelegateException;
 import io.harness.helpers.ext.azure.KeyVaultAuthenticator;
 import io.harness.rule.Owner;

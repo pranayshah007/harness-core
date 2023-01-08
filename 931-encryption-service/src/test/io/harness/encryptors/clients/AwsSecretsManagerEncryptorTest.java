@@ -22,7 +22,6 @@ import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.data.structure.UUIDGenerator;
-import io.harness.encryptors.clients.AwsSecretsManagerEncryptor;
 import io.harness.exception.SecretManagementDelegateException;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedRecord;

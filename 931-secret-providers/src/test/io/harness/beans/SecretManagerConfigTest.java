@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package software.wings.beans;
+package io.harness.beans;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.UTKARSH;
@@ -23,6 +23,7 @@ import java.security.SecureRandom;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import software.wings.beans.VaultConfig;
 
 public class SecretManagerConfigTest extends CategoryTest {
   private static final SecureRandom random = new SecureRandom();

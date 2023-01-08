@@ -11,16 +11,15 @@ import static io.harness.rule.OwnerRule.ANSHUL;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.harness.CategoryTest;
 import io.harness.azure.AzureEnvironmentType;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 
-import software.wings.WingsBaseTest;
-
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-public class AzureVaultConfigTest extends WingsBaseTest {
+public class AzureVaultConfigTest extends CategoryTest {
   @Test
   @Owner(developers = ANSHUL)
   @Category(UnitTests.class)

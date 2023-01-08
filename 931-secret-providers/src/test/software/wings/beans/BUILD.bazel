@@ -13,21 +13,10 @@ java_library(
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     deps = [
-        "//930-delegate-tasks:module",
-        "//931-encryption-service/src/java/io/harness/secrets:module",
-        "//931-encryption-service/src/java/software/wings/service/impl/security:module",
-        "//931-secret-providers/src/java/software/wings/beans:module",
         "//970-api-services-beans:module",
-        "//970-api-services-beans/src/main/java/io/harness/security/encryption:module",
-        "//970-api-services-beans/src/main/java/io/harness/security/encryption/setting:module",
-        "//980-commons/src/main/java/io/harness/data/encoding:module",
-        "//980-commons/src/main/java/io/harness/data/structure:module",
-        "//980-commons/src/main/java/io/harness/security:module",
         "//990-commons-test:module",
-        "@maven//:com_google_guava_guava",
         "@maven//:junit_junit",
         "@maven//:org_assertj_assertj_core",
-        "@maven//:org_mockito_mockito_core",
     ],
 )
 

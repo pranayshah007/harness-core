@@ -38,7 +38,6 @@ import io.harness.security.encryption.setting.EncryptableSettingWithEncryptionDe
 
 import software.wings.beans.KmsConfig;
 import software.wings.beans.LocalEncryptionConfig;
-import software.wings.service.intfc.security.SecretManagementDelegateService;
 
 import com.google.common.collect.Lists;
 import java.nio.ByteBuffer;
@@ -53,7 +52,6 @@ import org.mockito.Mock;
  * @author marklu on 10/14/19
  */
 public class EncryptionServiceTest extends CategoryTest {
-  @Mock private SecretManagementDelegateService secretManagementDelegateService;
   @Mock private SecretsDelegateCacheService secretsDelegateCacheService;
   @Mock private EncryptedDataDetail encryptedDataDetail1;
   @Mock private EncryptedDataDetail encryptedDataDetail2;
@@ -91,7 +89,7 @@ public class EncryptionServiceTest extends CategoryTest {
     String accountId = UUIDGenerator.generateUuid();
     when(kmsEncryptor.fetchSecretValue(any(), any(), any())).thenReturn("YWRzYXNk".toCharArray());
     List<EncryptableSettingWithEncryptionDetails> encryptableSettingWithEncryptionDetails =
-        SecurityTestUtils.getEncryptableSettingWithEncryptionDetailsList(
+        EncryptionUtils.getEncryptableSettingWithEncryptionDetailsList(
             accountId, Lists.newArrayList(encryptedDataDetail1, encryptedDataDetail2));
 
     List<EncryptableSettingWithEncryptionDetails> resultDetailsList =

@@ -9,7 +9,7 @@ load("//:tools/bazel/GenTestRules.bzl", "run_tests")
 java_library(
     name = "tests",
     testonly = True,
-    srcs = glob(["*Test.java"]),
+    srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
