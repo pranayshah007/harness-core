@@ -96,7 +96,7 @@ public class ApprovalNotificationHandlerImpl implements ApprovalNotificationHand
   public ApprovalNotificationHandlerImpl(@Named("PRIVILEGED") UserGroupClient userGroupClient,
       NotificationClient notificationClient, NotificationHelper notificationHelper,
       PMSExecutionService pmsExecutionService, LogStreamingStepClientFactory logStreamingStepClientFactory,
-      OrganizationClient organizationClient, ProjectClient projectClient) {
+      @Named("PRIVILEGED") OrganizationClient organizationClient, @Named("PRIVILEGED") ProjectClient projectClient) {
     this.userGroupClient = userGroupClient;
     this.notificationClient = notificationClient;
     this.notificationHelper = notificationHelper;
