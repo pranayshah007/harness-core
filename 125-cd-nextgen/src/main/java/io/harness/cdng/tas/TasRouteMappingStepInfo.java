@@ -13,8 +13,6 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.pipeline.CDAbstractStepInfo;
-import io.harness.cdng.pipeline.CDStepInfo;
-import io.harness.cdng.visitor.helpers.cdstepinfo.TasRollingDeployStepInfoVisitorHelper;
 import io.harness.cdng.visitor.helpers.cdstepinfo.TasRouteMappingStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -54,7 +52,8 @@ public class TasRouteMappingStepInfo extends TasRouteMappingBaseStepInfo impleme
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
   @Builder(builderMethodName = "infoBuilder")
-  public TasRouteMappingStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors, ParameterField<String> appName, TasRouteType routeType, ParameterField<List<String>> routes) {
+  public TasRouteMappingStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
+      ParameterField<String> appName, TasRouteType routeType, ParameterField<List<String>> routes) {
     super(delegateSelectors, appName, routeType, routes);
   }
 

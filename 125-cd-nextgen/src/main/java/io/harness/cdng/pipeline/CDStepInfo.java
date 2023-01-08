@@ -72,7 +72,6 @@ import io.harness.cdng.tas.TasBasicAppSetupStepInfo;
 import io.harness.cdng.tas.TasCanaryAppSetupStepInfo;
 import io.harness.cdng.tas.TasCommandStepInfo;
 import io.harness.cdng.tas.TasRollbackStepInfo;
-import io.harness.cdng.tas.TasRollingDeployStep;
 import io.harness.cdng.tas.TasRollingDeployStepInfo;
 import io.harness.cdng.tas.TasRollingRollbackStepInfo;
 import io.harness.cdng.tas.TasRouteMappingStepInfo;
@@ -85,7 +84,6 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.steps.StepUtils;
 import io.harness.yaml.core.StepSpecType;
-
 import io.swagger.annotations.ApiModel;
 
 @ApiModel(
@@ -110,7 +108,8 @@ import io.swagger.annotations.ApiModel;
         TasCanaryAppSetupStepInfo.class, TasBGAppSetupStepInfo.class, TasBasicAppSetupStepInfo.class,
         TasCommandStepInfo.class, ElastigroupBGStageSetupStepInfo.class, ElastigroupSwapRouteStepInfo.class,
         TasAppResizeStepInfo.class, TasRollbackStepInfo.class, AsgRollingDeployStepInfo.class,
-        AsgRollingRollbackStepInfo.class, TasRollingDeployStepInfo.class, TasRollingRollbackStepInfo.class, TasRouteMappingStepInfo.class})
+        AsgRollingRollbackStepInfo.class, TasRollingDeployStepInfo.class, TasRollingRollbackStepInfo.class,
+        TasRouteMappingStepInfo.class})
 
 @OwnedBy(HarnessTeam.CDC)
 // keeping this class because of the swagger annotation and UI dependency on it

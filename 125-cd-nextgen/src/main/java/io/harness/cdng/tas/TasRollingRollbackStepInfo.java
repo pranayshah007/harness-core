@@ -7,8 +7,6 @@
 
 package io.harness.cdng.tas;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -25,15 +23,17 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.TypeAlias;
-
-import java.util.List;
 
 @OwnedBy(HarnessTeam.CDP)
 @Data
@@ -43,7 +43,8 @@ import java.util.List;
 @JsonTypeName(StepSpecTypeConstants.TAS_ROLLING_ROLLBACK)
 @TypeAlias("TasRollingRollbackStepInfo")
 @RecasterAlias("io.harness.cdng.tas.TasRollingRollbackStepInfo")
-public class TasRollingRollbackStepInfo extends TasRollingRollbackBaseStepInfo implements CDAbstractStepInfo, Visitable {
+public class TasRollingRollbackStepInfo
+    extends TasRollingRollbackBaseStepInfo implements CDAbstractStepInfo, Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -52,7 +53,8 @@ public class TasRollingRollbackStepInfo extends TasRollingRollbackBaseStepInfo i
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
   @Builder(builderMethodName = "infoBuilder")
-  public TasRollingRollbackStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors, String tasRollingDeployFqn) {
+  public TasRollingRollbackStepInfo(
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors, String tasRollingDeployFqn) {
     super(delegateSelectors, tasRollingDeployFqn);
   }
 

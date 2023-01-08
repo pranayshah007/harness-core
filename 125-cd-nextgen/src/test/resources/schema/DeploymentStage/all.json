@@ -1016,7 +1016,7 @@
         },
         {
           "type": "object",
-          "properties": {}
+          "properties": { }
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -4129,7 +4129,7 @@
         },
         {
           "type": "object",
-          "properties": {}
+          "properties": { }
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -7323,7 +7323,7 @@
         },
         {
           "type": "object",
-          "properties": {}
+          "properties": { }
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -8078,7 +8078,7 @@
         },
         {
           "type": "object",
-          "properties": {}
+          "properties": { }
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -9087,7 +9087,7 @@
         {
           "$ref": "#/definitions/Infrastructure"
         },
-        {}
+        { }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#",
       "oneOf": [
@@ -10071,7 +10071,7 @@
         },
         {
           "type": "object",
-          "properties": {}
+          "properties": { }
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -10949,7 +10949,7 @@
         },
         {
           "type": "object",
-          "properties": {}
+          "properties": { }
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -12026,6 +12026,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "RouteMapping"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/TasRouteMappingStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "ServerlessAwsLambdaDeploy"
               }
             }
@@ -12114,6 +12130,38 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/TasCommandStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "TasRollingDeploy"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/TasRollingDeployStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "TasRollingRollback"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/TasRollingRollbackStepInfo"
               }
             }
           }
@@ -12883,7 +12931,7 @@
         },
         {
           "type": "object",
-          "properties": {}
+          "properties": { }
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -13398,6 +13446,116 @@
                   "minLength": 1
                 }
               ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TasRollingDeployStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "additionalRoutes": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TasRollingRollbackStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TasRouteMappingStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "appName",
+            "routeType"
+          ],
+          "properties": {
+            "appName": {
+              "type": "string"
+            },
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "routeType": {
+              "type": "string",
+              "enum": [
+                "Map",
+                "UnMap"
+              ]
+            },
+            "routes": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
             }
           }
         }

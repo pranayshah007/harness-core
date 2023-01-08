@@ -27,8 +27,8 @@ import lombok.experimental.SuperBuilder;
 @Alias("P")
 public class PushCliCommand extends CfCliCommand {
   @Builder
-  PushCliCommand(CfCliVersion cliVersion, String cliPath, GlobalOptions globalOptions, List<String> arguments,
-      Options options) {
+  PushCliCommand(
+      CfCliVersion cliVersion, String cliPath, GlobalOptions globalOptions, List<String> arguments, Options options) {
     super(cliVersion, cliPath, globalOptions, CfCliCommandType.PUSH, arguments, options);
   }
 

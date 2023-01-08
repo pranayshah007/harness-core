@@ -12,7 +12,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.configfile.ConfigFileOutcome;
 import io.harness.cdng.execution.ExecutionDetails;
-import io.harness.delegate.task.pcf.PcfManifestsPackage;
 import io.harness.delegate.task.pcf.request.TasManifestsPackage;
 import lombok.Builder;
 import lombok.Data;

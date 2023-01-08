@@ -7,28 +7,20 @@
 
 package io.harness.cdng.creator.plan.steps;
 
-import com.google.common.collect.Sets;
+import static io.harness.executions.steps.StepSpecTypeConstants.TAS_ROLLING_DEPLOY;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.tas.TasRollingRollbackStepNode;
 import io.harness.cdng.tas.TasRollingRollbackStepParameters;
-import io.harness.cdng.tas.TasSwapRollbackStepNode;
-import io.harness.cdng.tas.TasSwapRollbackStepParameters;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 
+import com.google.common.collect.Sets;
 import java.util.Set;
-
-import static io.harness.executions.steps.StepSpecTypeConstants.TAS_APP_RESIZE;
-import static io.harness.executions.steps.StepSpecTypeConstants.TAS_BASIC_APP_SETUP;
-import static io.harness.executions.steps.StepSpecTypeConstants.TAS_BG_APP_SETUP;
-import static io.harness.executions.steps.StepSpecTypeConstants.TAS_CANARY_APP_SETUP;
-import static io.harness.executions.steps.StepSpecTypeConstants.TAS_ROLLING_DEPLOY;
-import static io.harness.executions.steps.StepSpecTypeConstants.TAS_ROLLING_ROLLBACK;
-import static io.harness.executions.steps.StepSpecTypeConstants.TAS_SWAP_ROUTES;
 
 @OwnedBy(HarnessTeam.CDP)
 public class TasRollingRollbackStepPlanCreator extends CDPMSStepPlanCreatorV2<TasRollingRollbackStepNode> {

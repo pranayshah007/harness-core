@@ -8,7 +8,6 @@ package io.harness.cdng.visitor.helpers.cdstepinfo;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.tas.TasRollingRollbackStepInfo;
-import io.harness.cdng.tas.TasSwapRollbackStepInfo;
 import io.harness.walktree.visitor.validation.ConfigValidator;
 import io.harness.walktree.visitor.validation.ValidationVisitor;
 

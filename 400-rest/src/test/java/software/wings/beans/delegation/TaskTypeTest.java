@@ -436,6 +436,8 @@ public class TaskTypeTest extends CategoryTest {
     taskTypeOrdinalMapping.put(396, "TERRAFORM_PROVISION_TASK_V2");
     taskTypeOrdinalMapping.put(397, "TERRAFORM_INPUT_VARIABLES_OBTAIN_TASK_V2");
     taskTypeOrdinalMapping.put(398, "TERRAFORM_FETCH_TARGETS_TASK_V2");
+    taskTypeOrdinalMapping.put(399, "TAS_ROLLING_DEPLOY");
+    taskTypeOrdinalMapping.put(400, "TAS_ROLLING_ROLLBACK");
 
     taskTypeConstantMapping =
         taskTypeOrdinalMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));

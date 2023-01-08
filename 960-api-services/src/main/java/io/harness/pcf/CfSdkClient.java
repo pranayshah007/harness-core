@@ -16,7 +16,6 @@ import io.harness.pcf.model.CfRequestConfig;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
-
 import org.cloudfoundry.client.v3.deployments.DeploymentResource;
 import org.cloudfoundry.client.v3.deployments.GetDeploymentResponse;
 import org.cloudfoundry.doppler.LogMessage;
@@ -49,7 +48,7 @@ public interface CfSdkClient {
    * @throws InterruptedException
    */
   List<DeploymentResource> listDeployments(CfRequestConfig pcfRequestConfig)
-          throws PivotalClientApiException, InterruptedException;
+      throws PivotalClientApiException, InterruptedException;
 
   /**
    * Get Deployments for Guid
@@ -60,7 +59,7 @@ public interface CfSdkClient {
    * @throws InterruptedException
    */
   GetDeploymentResponse getDeployment(CfRequestConfig pcfRequestConfig, String deploymentId)
-          throws PivotalClientApiException, InterruptedException;
+      throws PivotalClientApiException, InterruptedException;
 
   /**
    * Get space for organization.

@@ -7,10 +7,42 @@
 
 package io.harness.delegate.pcf;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
+import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.logging.CommandExecutionStatus.FAILURE;
+import static io.harness.logging.CommandExecutionStatus.SUCCESS;
+import static io.harness.logging.LogLevel.ERROR;
+import static io.harness.logging.LogLevel.INFO;
+import static io.harness.pcf.CfCommandUnitConstants.Deploy;
+import static io.harness.pcf.CfCommandUnitConstants.Downsize;
+import static io.harness.pcf.CfCommandUnitConstants.Upsize;
+import static io.harness.pcf.CfCommandUnitConstants.Wrapup;
+import static io.harness.pcf.PcfUtils.encodeColor;
+import static io.harness.pcf.model.PcfConstants.APPLICATION_YML_ELEMENT;
+import static io.harness.pcf.model.PcfConstants.CREATE_SERVICE_MANIFEST_ELEMENT;
+import static io.harness.pcf.model.PcfConstants.DOCKER_MANIFEST_YML_ELEMENT;
+import static io.harness.pcf.model.PcfConstants.IMAGE_MANIFEST_YML_ELEMENT;
+import static io.harness.pcf.model.PcfConstants.INSTANCE_MANIFEST_YML_ELEMENT;
+import static io.harness.pcf.model.PcfConstants.NAME_MANIFEST_YML_ELEMENT;
+import static io.harness.pcf.model.PcfConstants.NO_ROUTE_MANIFEST_YML_ELEMENT;
+import static io.harness.pcf.model.PcfConstants.PATH_MANIFEST_YML_ELEMENT;
+import static io.harness.pcf.model.PcfConstants.PIVOTAL_CLOUD_FOUNDRY_LOG_PREFIX;
+import static io.harness.pcf.model.PcfConstants.PROCESSES_MANIFEST_YML_ELEMENT;
+import static io.harness.pcf.model.PcfConstants.PROCESSES_TYPE_MANIFEST_YML_ELEMENT;
+import static io.harness.pcf.model.PcfConstants.RANDOM_ROUTE_MANIFEST_YML_ELEMENT;
+import static io.harness.pcf.model.PcfConstants.ROUTES_MANIFEST_YML_ELEMENT;
+import static io.harness.pcf.model.PcfConstants.ROUTE_MANIFEST_YML_ELEMENT;
+import static io.harness.pcf.model.PcfConstants.USERNAME_MANIFEST_YML_ELEMENT;
+import static io.harness.pcf.model.PcfConstants.WEB_PROCESS_TYPE_MANIFEST_YML_ELEMENT;
+
+import static software.wings.beans.LogColor.White;
+import static software.wings.beans.LogHelper.color;
+import static software.wings.beans.LogWeight.Bold;
+
+import static java.util.Objects.isNull;
+import static java.util.stream.Collectors.toList;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.task.tas.TasNgConfigMapper;
 import io.harness.data.structure.EmptyPredicate;
@@ -56,14 +88,11 @@ import io.harness.pcf.model.CfCreateApplicationRequestData;
 import io.harness.pcf.model.CfManifestFileData;
 import io.harness.pcf.model.CfRequestConfig;
 import io.harness.pcf.model.CloudFoundryConfig;
-import lombok.NoArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
-import org.cloudfoundry.operations.applications.ApplicationDetail;
-import org.cloudfoundry.operations.applications.ApplicationSummary;
-import org.cloudfoundry.operations.applications.InstanceDetail;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -74,40 +103,13 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
-
-import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.logging.CommandExecutionStatus.FAILURE;
-import static io.harness.logging.CommandExecutionStatus.SUCCESS;
-import static io.harness.logging.LogLevel.ERROR;
-import static io.harness.logging.LogLevel.INFO;
-import static io.harness.pcf.CfCommandUnitConstants.Deploy;
-import static io.harness.pcf.CfCommandUnitConstants.Downsize;
-import static io.harness.pcf.CfCommandUnitConstants.Upsize;
-import static io.harness.pcf.CfCommandUnitConstants.Wrapup;
-import static io.harness.pcf.PcfUtils.encodeColor;
-import static io.harness.pcf.model.PcfConstants.APPLICATION_YML_ELEMENT;
-import static io.harness.pcf.model.PcfConstants.CREATE_SERVICE_MANIFEST_ELEMENT;
-import static io.harness.pcf.model.PcfConstants.DOCKER_MANIFEST_YML_ELEMENT;
-import static io.harness.pcf.model.PcfConstants.IMAGE_MANIFEST_YML_ELEMENT;
-import static io.harness.pcf.model.PcfConstants.INSTANCE_MANIFEST_YML_ELEMENT;
-import static io.harness.pcf.model.PcfConstants.NAME_MANIFEST_YML_ELEMENT;
-import static io.harness.pcf.model.PcfConstants.NO_ROUTE_MANIFEST_YML_ELEMENT;
-import static io.harness.pcf.model.PcfConstants.PATH_MANIFEST_YML_ELEMENT;
-import static io.harness.pcf.model.PcfConstants.PIVOTAL_CLOUD_FOUNDRY_LOG_PREFIX;
-import static io.harness.pcf.model.PcfConstants.PROCESSES_MANIFEST_YML_ELEMENT;
-import static io.harness.pcf.model.PcfConstants.PROCESSES_TYPE_MANIFEST_YML_ELEMENT;
-import static io.harness.pcf.model.PcfConstants.RANDOM_ROUTE_MANIFEST_YML_ELEMENT;
-import static io.harness.pcf.model.PcfConstants.ROUTES_MANIFEST_YML_ELEMENT;
-import static io.harness.pcf.model.PcfConstants.ROUTE_MANIFEST_YML_ELEMENT;
-import static io.harness.pcf.model.PcfConstants.USERNAME_MANIFEST_YML_ELEMENT;
-import static io.harness.pcf.model.PcfConstants.WEB_PROCESS_TYPE_MANIFEST_YML_ELEMENT;
-import static java.util.Objects.isNull;
-import static java.util.stream.Collectors.toList;
-import static software.wings.beans.LogColor.White;
-import static software.wings.beans.LogHelper.color;
-import static software.wings.beans.LogWeight.Bold;
+import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
+import org.cloudfoundry.operations.applications.ApplicationDetail;
+import org.cloudfoundry.operations.applications.ApplicationSummary;
+import org.cloudfoundry.operations.applications.InstanceDetail;
 
 @NoArgsConstructor
 @Singleton
@@ -129,54 +131,56 @@ public class CfRollingDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler 
           Pair.of("cfCommandRequestNG", "Must be instance of CfRollingDeployRequestNG"));
     }
 
-    LogCallback logCallback = tasTaskHelperBase.getLogCallback(
-            iLogStreamingTaskClient, Deploy, true, commandUnitsProgress);
+    LogCallback logCallback =
+        tasTaskHelperBase.getLogCallback(iLogStreamingTaskClient, Deploy, true, commandUnitsProgress);
     CfManifestFileData pcfManifestFileData = CfManifestFileData.builder().varFiles(new ArrayList<>()).build();
 
     CfRollingDeployRequestNG cfRollingDeployRequestNG = (CfRollingDeployRequestNG) cfCommandRequestNG;
     TasInfraConfig tasInfraConfig = cfRollingDeployRequestNG.getTasInfraConfig();
     CloudFoundryConfig cfConfig = tasNgConfigMapper.mapTasConfigWithDecryption(
-            tasInfraConfig.getTasConnectorDTO(), tasInfraConfig.getEncryptionDataDetails());
+        tasInfraConfig.getTasConnectorDTO(), tasInfraConfig.getEncryptionDataDetails());
     CfRequestConfig cfRequestConfig = getCfRequestConfig(cfRollingDeployRequestNG, cfConfig);
 
     File artifactFile = null;
     File workingDirectory = null;
     TasApplicationInfo currentProdInfo = null;
-    CfRollingDeployResponseNG.CfRollingDeployResponseNGBuilder cfRollingDeployResponseNGBuilder = CfRollingDeployResponseNG.builder();
+    CfRollingDeployResponseNG.CfRollingDeployResponseNGBuilder cfRollingDeployResponseNGBuilder =
+        CfRollingDeployResponseNG.builder();
     try {
-      List<ApplicationSummary> previousReleases =
-              cfDeploymentManager.getPreviousReleasesForRolling(cfRequestConfig, ((CfRollingDeployRequestNG) cfCommandRequestNG).getApplicationName());
+      List<ApplicationSummary> previousReleases = cfDeploymentManager.getPreviousReleasesForRolling(
+          cfRequestConfig, ((CfRollingDeployRequestNG) cfCommandRequestNG).getApplicationName());
       workingDirectory = generateWorkingDirectoryOnDelegate(cfRollingDeployRequestNG);
-      ApplicationDetail detailsBeforeDeployment = isEmpty(previousReleases) ? null : cfCommandTaskHelperNG.getApplicationDetails(
-              cfRequestConfig, cfDeploymentManager);
+      ApplicationDetail detailsBeforeDeployment = isEmpty(previousReleases)
+          ? null
+          : cfCommandTaskHelperNG.getApplicationDetails(cfRequestConfig, cfDeploymentManager);
       currentProdInfo = getCurrentProdInfo(previousReleases, clonePcfRequestConfig(cfRequestConfig).build(),
-              workingDirectory, ((CfRollingDeployRequestNG) cfCommandRequestNG).getTimeoutIntervalInMin(), logCallback);
+          workingDirectory, ((CfRollingDeployRequestNG) cfCommandRequestNG).getTimeoutIntervalInMin(), logCallback);
       cfRollingDeployResponseNGBuilder.currentProdInfo(currentProdInfo);
 
       CfAppAutoscalarRequestData cfAppAutoscalarRequestData =
-              CfAppAutoscalarRequestData.builder()
-                      .cfRequestConfig(cfRequestConfig)
-                      .configPathVar(workingDirectory.getAbsolutePath())
-                      .timeoutInMins(cfRollingDeployRequestNG.getTimeoutIntervalInMin())
-                      .build();
+          CfAppAutoscalarRequestData.builder()
+              .cfRequestConfig(cfRequestConfig)
+              .configPathVar(workingDirectory.getAbsolutePath())
+              .timeoutInMins(cfRollingDeployRequestNG.getTimeoutIntervalInMin())
+              .build();
 
       artifactFile = downloadArtifactFile(cfRollingDeployRequestNG, workingDirectory, logCallback);
 
       boolean varsYmlPresent = checkIfVarsFilePresent(cfRollingDeployRequestNG);
       CfCreateApplicationRequestData requestData =
-              CfCreateApplicationRequestData.builder()
-                      .cfRequestConfig(clonePcfRequestConfig(cfRequestConfig)
-                              .applicationName(cfRollingDeployRequestNG.getApplicationName())
-                              .routeMaps(cfRollingDeployRequestNG.getRouteMaps())
-                              .build())
-                      .artifactPath(artifactFile == null ? null : artifactFile.getAbsolutePath())
-                      .configPathVar(workingDirectory.getAbsolutePath())
-                      .newReleaseName(cfRollingDeployRequestNG.getApplicationName())
-                      .pcfManifestFileData(pcfManifestFileData)
-                      .varsYmlFilePresent(varsYmlPresent)
-                      .dockerBasedDeployment(isDockerArtifact(cfRollingDeployRequestNG.getTasArtifactConfig()))
-                      .strategy("rolling")
-                      .build();
+          CfCreateApplicationRequestData.builder()
+              .cfRequestConfig(clonePcfRequestConfig(cfRequestConfig)
+                                   .applicationName(cfRollingDeployRequestNG.getApplicationName())
+                                   .routeMaps(cfRollingDeployRequestNG.getRouteMaps())
+                                   .build())
+              .artifactPath(artifactFile == null ? null : artifactFile.getAbsolutePath())
+              .configPathVar(workingDirectory.getAbsolutePath())
+              .newReleaseName(cfRollingDeployRequestNG.getApplicationName())
+              .pcfManifestFileData(pcfManifestFileData)
+              .varsYmlFilePresent(varsYmlPresent)
+              .dockerBasedDeployment(isDockerArtifact(cfRollingDeployRequestNG.getTasArtifactConfig()))
+              .strategy("rolling")
+              .build();
 
       requestData.setFinalManifestYaml(generateManifestYamlForPush(cfRollingDeployRequestNG, requestData));
       // Create manifest.yaml file
@@ -198,79 +202,80 @@ public class CfRollingDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler 
       cfRollingDeployResponseNGBuilder.deploymentStarted(true);
       ApplicationDetail applicationDetail = createAppAndPrintDetails(logCallback, requestData);
       List<CfInternalInstanceElement> cfInternalInstanceElements = new ArrayList<>();
-      List<InstanceDetail> newUpsizedInstances = filterNewUpsizedAppInstances(detailsBeforeDeployment, applicationDetail);
+      List<InstanceDetail> newUpsizedInstances =
+          filterNewUpsizedAppInstances(detailsBeforeDeployment, applicationDetail);
       newUpsizedInstances.forEach(instance
-              -> cfInternalInstanceElements.add(CfInternalInstanceElement.builder()
-              .uuid(applicationDetail.getId() + instance.getIndex())
-              .applicationId(applicationDetail.getId())
-              .displayName(applicationDetail.getName())
-              .instanceIndex(instance.getIndex())
-              .isUpsize(true)
-              .build()));
-      configureAutoscalarIfNeeded(cfRollingDeployRequestNG,
-              applicationDetail, cfAppAutoscalarRequestData, logCallback);
-      if(cfRollingDeployRequestNG.isUseAppAutoScalar()) {
+          -> cfInternalInstanceElements.add(CfInternalInstanceElement.builder()
+                                                .uuid(applicationDetail.getId() + instance.getIndex())
+                                                .applicationId(applicationDetail.getId())
+                                                .displayName(applicationDetail.getName())
+                                                .instanceIndex(instance.getIndex())
+                                                .isUpsize(true)
+                                                .build()));
+      configureAutoscalarIfNeeded(cfRollingDeployRequestNG, applicationDetail, cfAppAutoscalarRequestData, logCallback);
+      if (cfRollingDeployRequestNG.isUseAppAutoScalar()) {
         cfCommandTaskHelperNG.enableAutoscalerIfNeeded(applicationDetail, cfAppAutoscalarRequestData, logCallback);
       }
 
       CfRollingDeployResponseNG cfRollingDeployResponseNG =
-              cfRollingDeployResponseNGBuilder
-                      .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
-                      .newApplicationInfo(TasApplicationInfo.builder()
-                              .applicationGuid(applicationDetail.getId())
-                              .applicationName(applicationDetail.getName())
-                              .attachedRoutes(new ArrayList<>(applicationDetail.getUrls()))
-                              .runningCount(applicationDetail.getRunningInstances())
-                              .build())
-                      .newAppInstances(cfInternalInstanceElements)
-                      .build();
+          cfRollingDeployResponseNGBuilder.commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+              .newApplicationInfo(TasApplicationInfo.builder()
+                                      .applicationGuid(applicationDetail.getId())
+                                      .applicationName(applicationDetail.getName())
+                                      .attachedRoutes(new ArrayList<>(applicationDetail.getUrls()))
+                                      .runningCount(applicationDetail.getRunningInstances())
+                                      .build())
+              .newAppInstances(cfInternalInstanceElements)
+              .build();
 
       logCallback.saveExecutionLog("\n ----------  PCF Rolling Deployment completed successfully", INFO, SUCCESS);
       return cfRollingDeployResponseNG;
 
     } catch (RuntimeException | PivotalClientApiException | IOException e) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
-      log.error(PIVOTAL_CLOUD_FOUNDRY_LOG_PREFIX + "Exception in processing PCF Rolling Deployment task [{}]", cfRollingDeployRequestNG,
-              sanitizedException);
-      logCallback.saveExecutionLog(
-              "\n\n ----------  PCF Rolling Deployment failed to complete successfully", ERROR, CommandExecutionStatus.FAILURE);
+      log.error(PIVOTAL_CLOUD_FOUNDRY_LOG_PREFIX + "Exception in processing PCF Rolling Deployment task [{}]",
+          cfRollingDeployRequestNG, sanitizedException);
+      logCallback.saveExecutionLog("\n\n ----------  PCF Rolling Deployment failed to complete successfully", ERROR,
+          CommandExecutionStatus.FAILURE);
 
       Misc.logAllMessages(sanitizedException, logCallback);
-      return cfRollingDeployResponseNGBuilder
-              .commandExecutionStatus(CommandExecutionStatus.FAILURE)
-              .errorMessage(ExceptionUtils.getMessage(sanitizedException))
-              .build();
+      return cfRollingDeployResponseNGBuilder.commandExecutionStatus(CommandExecutionStatus.FAILURE)
+          .errorMessage(ExceptionUtils.getMessage(sanitizedException))
+          .build();
     } finally {
       logCallback = tasTaskHelperBase.getLogCallback(iLogStreamingTaskClient, Wrapup, true, commandUnitsProgress);
-      removeTempFilesCreated(cfRollingDeployRequestNG, logCallback, artifactFile, workingDirectory, pcfManifestFileData);
+      removeTempFilesCreated(
+          cfRollingDeployRequestNG, logCallback, artifactFile, workingDirectory, pcfManifestFileData);
       logCallback.saveExecutionLog("#----------  Cleaning up temporary files completed", INFO, SUCCESS);
     }
   }
 
   private List<InstanceDetail> filterNewUpsizedAppInstances(
-          ApplicationDetail appDetailsBeforeUpsize, ApplicationDetail appDetailsAfterUpsize) {
-    if (appDetailsBeforeUpsize == null || isEmpty(appDetailsBeforeUpsize.getInstanceDetails()) || isEmpty(appDetailsAfterUpsize.getInstanceDetails())) {
+      ApplicationDetail appDetailsBeforeUpsize, ApplicationDetail appDetailsAfterUpsize) {
+    if (appDetailsBeforeUpsize == null || isEmpty(appDetailsBeforeUpsize.getInstanceDetails())
+        || isEmpty(appDetailsAfterUpsize.getInstanceDetails())) {
       return appDetailsAfterUpsize.getInstanceDetails();
     }
 
     List<String> alreadyUpsizedInstances =
-            appDetailsBeforeUpsize.getInstanceDetails().stream().map(InstanceDetail::getIndex).collect(toList());
+        appDetailsBeforeUpsize.getInstanceDetails().stream().map(InstanceDetail::getIndex).collect(toList());
 
     return appDetailsAfterUpsize.getInstanceDetails()
-            .stream()
-            .filter(instanceDetail -> !alreadyUpsizedInstances.contains(instanceDetail.getIndex()))
-            .collect(Collectors.toList());
+        .stream()
+        .filter(instanceDetail -> !alreadyUpsizedInstances.contains(instanceDetail.getIndex()))
+        .collect(Collectors.toList());
   }
 
   private void configureAutoscalarIfNeeded(CfRollingDeployRequestNG cfCommandDeployRequest,
-                                           ApplicationDetail applicationDetail, CfAppAutoscalarRequestData appAutoscalarRequestData,
-                                           LogCallback executionLogCallback) throws PivotalClientApiException, IOException {
+      ApplicationDetail applicationDetail, CfAppAutoscalarRequestData appAutoscalarRequestData,
+      LogCallback executionLogCallback) throws PivotalClientApiException, IOException {
     if (cfCommandDeployRequest.isUseAppAutoScalar() && cfCommandDeployRequest.getTasManifestsPackage() != null
-            && isNotEmpty(cfCommandDeployRequest.getTasManifestsPackage().getAutoscalarManifestYml())) {
+        && isNotEmpty(cfCommandDeployRequest.getTasManifestsPackage().getAutoscalarManifestYml())) {
       // This is autoscalar file inside workingDirectory
       String filePath =
-              appAutoscalarRequestData.getConfigPathVar() + "/autoscalar_" + System.currentTimeMillis() + ".yml";
-      cfCommandTaskHelperNG.createYamlFileLocally(filePath, cfCommandDeployRequest.getTasManifestsPackage().getAutoscalarManifestYml());
+          appAutoscalarRequestData.getConfigPathVar() + "/autoscalar_" + System.currentTimeMillis() + ".yml";
+      cfCommandTaskHelperNG.createYamlFileLocally(
+          filePath, cfCommandDeployRequest.getTasManifestsPackage().getAutoscalarManifestYml());
 
       // upload autoscalar config
       appAutoscalarRequestData.setApplicationName(applicationDetail.getName());
@@ -281,10 +286,10 @@ public class CfRollingDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler 
     }
   }
 
-
   // Remove downloaded artifact and generated yaml files
-  private void removeTempFilesCreated(CfRollingDeployRequestNG cfRollingDeployRequestNG, LogCallback executionLogCallback,
-                                      File artifactFile, File workingDirectory, CfManifestFileData pcfManifestFileData) {
+  private void removeTempFilesCreated(CfRollingDeployRequestNG cfRollingDeployRequestNG,
+      LogCallback executionLogCallback, File artifactFile, File workingDirectory,
+      CfManifestFileData pcfManifestFileData) {
     try {
       executionLogCallback.saveExecutionLog("# Deleting any temporary files created");
       List<File> filesToBeRemoved = new ArrayList<>();
@@ -302,7 +307,7 @@ public class CfRollingDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler 
 
       if (cfRollingDeployRequestNG.isUseCfCLI() && manifestYamlFile != null) {
         filesToBeRemoved.add(
-                new File(pcfCommandTaskBaseHelper.generateFinalManifestFilePath(manifestYamlFile.getAbsolutePath())));
+            new File(pcfCommandTaskBaseHelper.generateFinalManifestFilePath(manifestYamlFile.getAbsolutePath())));
       }
 
       pcfCommandTaskBaseHelper.deleteCreatedFile(filesToBeRemoved);
@@ -316,10 +321,11 @@ public class CfRollingDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler 
     }
   }
 
-  ApplicationDetail createAppAndPrintDetails(
-          LogCallback executionLogCallback, CfCreateApplicationRequestData requestData) throws PivotalClientApiException, InterruptedException {
+  ApplicationDetail createAppAndPrintDetails(LogCallback executionLogCallback,
+      CfCreateApplicationRequestData requestData) throws PivotalClientApiException, InterruptedException {
     requestData.getCfRequestConfig().setLoggedin(false);
-      ApplicationDetail newApplication = cfDeploymentManager.createRollingApplicationWithSteadyStateCheck(requestData, executionLogCallback);
+    ApplicationDetail newApplication =
+        cfDeploymentManager.createRollingApplicationWithSteadyStateCheck(requestData, executionLogCallback);
     executionLogCallback.saveExecutionLog(color("# Application created successfully", White, Bold));
     executionLogCallback.saveExecutionLog("# App Details: ");
     pcfCommandTaskBaseHelper.printApplicationDetail(newApplication, executionLogCallback);
@@ -332,8 +338,8 @@ public class CfRollingDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler 
     requestData.getPcfManifestFileData().setManifestFile(manifestYamlFile);
   }
 
-  void prepareVarsYamlFile(CfCreateApplicationRequestData requestData, CfRollingDeployRequestNG cfRollingDeployRequestNG)
-          throws IOException {
+  void prepareVarsYamlFile(CfCreateApplicationRequestData requestData,
+      CfRollingDeployRequestNG cfRollingDeployRequestNG) throws IOException {
     if (!requestData.isVarsYmlFilePresent()) {
       return;
     }
@@ -342,7 +348,7 @@ public class CfRollingDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler 
     AtomicInteger varFileIndex = new AtomicInteger(0);
     tasManifestsPackage.getVariableYmls().forEach(varFileYml -> {
       File varsYamlFile =
-              pcfCommandTaskBaseHelper.createManifestVarsYamlFileLocally(requestData, varFileYml, varFileIndex.get());
+          pcfCommandTaskBaseHelper.createManifestVarsYamlFileLocally(requestData, varFileYml, varFileIndex.get());
       if (varsYamlFile != null) {
         varFileIndex.incrementAndGet();
         requestData.getPcfManifestFileData().getVarFiles().add(varsYamlFile);
@@ -351,7 +357,7 @@ public class CfRollingDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler 
   }
 
   public String generateManifestYamlForPush(CfRollingDeployRequestNG cfRollingDeployRequestNG,
-                                            CfCreateApplicationRequestData requestData) throws PivotalClientApiException {
+      CfCreateApplicationRequestData requestData) throws PivotalClientApiException {
     // Substitute name,
     String manifestYaml = cfRollingDeployRequestNG.getTasManifestsPackage().getManifestYml();
 
@@ -368,7 +374,7 @@ public class CfRollingDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler 
 
     if (isEmpty(applicationMaps)) {
       throw new InvalidArgumentsException(
-              Pair.of("Manifest.yml does not have any elements under \'applications\'", manifestYaml));
+          Pair.of("Manifest.yml does not have any elements under \'applications\'", manifestYaml));
     }
 
     Map mapForUpdate = applicationMaps.get(0);
@@ -387,7 +393,7 @@ public class CfRollingDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler 
     // This elements is not needed for cf push
     map.remove(CREATE_SERVICE_MANIFEST_ELEMENT);
     Map<String, Object> applicationMapForYamlDump =
-            pcfCommandTaskBaseHelper.generateFinalMapForYamlDump(applicationToBeUpdated);
+        pcfCommandTaskBaseHelper.generateFinalMapForYamlDump(applicationToBeUpdated);
 
     // replace map for first application that we are deploying
     applicationMaps.set(0, applicationMapForYamlDump);
@@ -396,20 +402,20 @@ public class CfRollingDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler 
     } catch (Exception e) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
       throw new PivotalClientApiException(new StringBuilder()
-              .append("Failed to generate final version of  Manifest.yml file. ")
-              .append(manifestYaml)
-              .toString(),
-              sanitizedException);
+                                              .append("Failed to generate final version of  Manifest.yml file. ")
+                                              .append(manifestYaml)
+                                              .toString(),
+          sanitizedException);
     }
   }
 
-  private void updateConfigWithRoutesIfRequired(
-          CfCreateApplicationRequestData requestData, TreeMap applicationToBeUpdated, CfRollingDeployRequestNG cfRollingDeployRequestNG) {
+  private void updateConfigWithRoutesIfRequired(CfCreateApplicationRequestData requestData,
+      TreeMap applicationToBeUpdated, CfRollingDeployRequestNG cfRollingDeployRequestNG) {
     applicationToBeUpdated.remove(ROUTES_MANIFEST_YML_ELEMENT);
 
     // 1. Check and handle no-route scenario
     boolean isNoRoute = applicationToBeUpdated.containsKey(NO_ROUTE_MANIFEST_YML_ELEMENT)
-            && (boolean) applicationToBeUpdated.get(NO_ROUTE_MANIFEST_YML_ELEMENT);
+        && (boolean) applicationToBeUpdated.get(NO_ROUTE_MANIFEST_YML_ELEMENT);
     if (isNoRoute) {
       applicationToBeUpdated.remove(ROUTES_MANIFEST_YML_ELEMENT);
       return;
@@ -417,7 +423,8 @@ public class CfRollingDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler 
 
     // 2. Check if random-route config is needed. This happens if random-route=true in manifest or
     // user has not provided any route value.
-    if (pcfCommandTaskBaseHelper.shouldUseRandomRoute(applicationToBeUpdated, cfRollingDeployRequestNG.getRouteMaps())) {
+    if (pcfCommandTaskBaseHelper.shouldUseRandomRoute(
+            applicationToBeUpdated, cfRollingDeployRequestNG.getRouteMaps())) {
       applicationToBeUpdated.put(RANDOM_ROUTE_MANIFEST_YML_ELEMENT, true);
       return;
     }
@@ -434,15 +441,15 @@ public class CfRollingDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler 
     applicationToBeUpdated.put(ROUTES_MANIFEST_YML_ELEMENT, routeMapList);
   }
 
-  void updateArtifactDetails(CfCreateApplicationRequestData requestData, CfRollingDeployRequestNG cfRollingDeployRequestNG,
-                             TreeMap<String, Object> applicationToBeUpdated) {
+  void updateArtifactDetails(CfCreateApplicationRequestData requestData,
+      CfRollingDeployRequestNG cfRollingDeployRequestNG, TreeMap<String, Object> applicationToBeUpdated) {
     if (isPackageArtifact(cfRollingDeployRequestNG.getTasArtifactConfig())) {
       if (!isNull(requestData.getArtifactPath())) {
         applicationToBeUpdated.put(PATH_MANIFEST_YML_ELEMENT, requestData.getArtifactPath());
       }
     } else {
       TasContainerArtifactConfig tasContainerArtifactConfig =
-              (TasContainerArtifactConfig) cfRollingDeployRequestNG.getTasArtifactConfig();
+          (TasContainerArtifactConfig) cfRollingDeployRequestNG.getTasArtifactConfig();
       TasArtifactCreds tasArtifactCreds = tasRegistrySettingsAdapter.getContainerSettings(tasContainerArtifactConfig);
       Map<String, Object> dockerDetails = new HashMap<>();
       String dockerImagePath = tasContainerArtifactConfig.getImage();
@@ -471,15 +478,15 @@ public class CfRollingDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler 
   }
 
   private File downloadArtifactFile(
-          CfRollingDeployRequestNG cfRollingDeployRequestNG, File workingDirectory, LogCallback logCallback) {
+      CfRollingDeployRequestNG cfRollingDeployRequestNG, File workingDirectory, LogCallback logCallback) {
     File artifactFile = null;
     if (isPackageArtifact(cfRollingDeployRequestNG.getTasArtifactConfig())) {
       TasArtifactDownloadResponse tasArtifactDownloadResponse = cfCommandTaskHelperNG.downloadPackageArtifact(
-              TasArtifactDownloadContext.builder()
-                      .artifactConfig((TasPackageArtifactConfig) cfRollingDeployRequestNG.getTasArtifactConfig())
-                      .workingDirectory(workingDirectory)
-                      .build(),
-              logCallback);
+          TasArtifactDownloadContext.builder()
+              .artifactConfig((TasPackageArtifactConfig) cfRollingDeployRequestNG.getTasArtifactConfig())
+              .workingDirectory(workingDirectory)
+              .build(),
+          logCallback);
       artifactFile = tasArtifactDownloadResponse.getArtifactFile();
     }
     return artifactFile;
@@ -487,59 +494,62 @@ public class CfRollingDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler 
 
   private CfRequestConfig.CfRequestConfigBuilder clonePcfRequestConfig(CfRequestConfig cfRequestConfig) {
     return CfRequestConfig.builder()
-            .orgName(cfRequestConfig.getOrgName())
-            .spaceName(cfRequestConfig.getSpaceName())
-            .userName(cfRequestConfig.getUserName())
-            .password(cfRequestConfig.getPassword())
-            .endpointUrl(cfRequestConfig.getEndpointUrl())
-            .manifestYaml(cfRequestConfig.getManifestYaml())
-            .desiredCount(cfRequestConfig.getDesiredCount())
-            .timeOutIntervalInMins(cfRequestConfig.getTimeOutIntervalInMins())
-            .useCFCLI(cfRequestConfig.isUseCFCLI())
-            .cfCliPath(cfRequestConfig.getCfCliPath())
-            .cfCliVersion(cfRequestConfig.getCfCliVersion())
-            .cfHomeDirPath(cfRequestConfig.getCfHomeDirPath())
-            .loggedin(cfRequestConfig.isLoggedin())
-            .limitPcfThreads(cfRequestConfig.isLimitPcfThreads())
-            .useNumbering(cfRequestConfig.isUseNumbering())
-            .applicationName(cfRequestConfig.getApplicationName())
-            .routeMaps(cfRequestConfig.getRouteMaps());
+        .orgName(cfRequestConfig.getOrgName())
+        .spaceName(cfRequestConfig.getSpaceName())
+        .userName(cfRequestConfig.getUserName())
+        .password(cfRequestConfig.getPassword())
+        .endpointUrl(cfRequestConfig.getEndpointUrl())
+        .manifestYaml(cfRequestConfig.getManifestYaml())
+        .desiredCount(cfRequestConfig.getDesiredCount())
+        .timeOutIntervalInMins(cfRequestConfig.getTimeOutIntervalInMins())
+        .useCFCLI(cfRequestConfig.isUseCFCLI())
+        .cfCliPath(cfRequestConfig.getCfCliPath())
+        .cfCliVersion(cfRequestConfig.getCfCliVersion())
+        .cfHomeDirPath(cfRequestConfig.getCfHomeDirPath())
+        .loggedin(cfRequestConfig.isLoggedin())
+        .limitPcfThreads(cfRequestConfig.isLimitPcfThreads())
+        .useNumbering(cfRequestConfig.isUseNumbering())
+        .applicationName(cfRequestConfig.getApplicationName())
+        .routeMaps(cfRequestConfig.getRouteMaps());
   }
 
-  private TasApplicationInfo getCurrentProdInfo(List<ApplicationSummary> previousReleases, CfRequestConfig cfRequestConfig, File workingDirectory, int timeoutInMins, LogCallback logCallback) throws PivotalClientApiException {
+  private TasApplicationInfo getCurrentProdInfo(List<ApplicationSummary> previousReleases,
+      CfRequestConfig cfRequestConfig, File workingDirectory, int timeoutInMins, LogCallback logCallback)
+      throws PivotalClientApiException {
     if (isEmpty(previousReleases)) {
       return null;
     }
-    ApplicationDetail currentActiveApplication = cfCommandTaskHelperNG.getApplicationDetails(cfRequestConfig, cfDeploymentManager);
+    ApplicationDetail currentActiveApplication =
+        cfCommandTaskHelperNG.getApplicationDetails(cfRequestConfig, cfDeploymentManager);
     if (currentActiveApplication == null) {
       return null;
     }
     CfAppAutoscalarRequestData cfAppAutoscalarRequestData = CfAppAutoscalarRequestData.builder()
-            .cfRequestConfig(cfRequestConfig)
-            .configPathVar(workingDirectory.getAbsolutePath())
-            .timeoutInMins(timeoutInMins)
-            .applicationName(currentActiveApplication.getName())
-            .applicationGuid(currentActiveApplication.getId())
-            .build();
+                                                                .cfRequestConfig(cfRequestConfig)
+                                                                .configPathVar(workingDirectory.getAbsolutePath())
+                                                                .timeoutInMins(timeoutInMins)
+                                                                .applicationName(currentActiveApplication.getName())
+                                                                .applicationGuid(currentActiveApplication.getId())
+                                                                .build();
     boolean isAutoScalarEnabled = false;
     try {
       isAutoScalarEnabled = cfDeploymentManager.checkIfAppHasAutoscalarEnabled(cfAppAutoscalarRequestData, logCallback);
     } catch (PivotalClientApiException e) {
       logCallback.saveExecutionLog(
-              "Failed while fetching autoscalar state: " + encodeColor(currentActiveApplication.getName()), LogLevel.ERROR);
+          "Failed while fetching autoscalar state: " + encodeColor(currentActiveApplication.getName()), LogLevel.ERROR);
     }
     return TasApplicationInfo.builder()
-            .applicationName(currentActiveApplication.getName())
-            .oldName(currentActiveApplication.getName())
-            .applicationGuid(currentActiveApplication.getId())
-            .attachedRoutes(currentActiveApplication.getUrls())
-            .runningCount(currentActiveApplication.getRunningInstances())
-            .isAutoScalarEnabled(isAutoScalarEnabled)
-            .build();
+        .applicationName(currentActiveApplication.getName())
+        .oldName(currentActiveApplication.getName())
+        .applicationGuid(currentActiveApplication.getId())
+        .attachedRoutes(currentActiveApplication.getUrls())
+        .runningCount(currentActiveApplication.getRunningInstances())
+        .isAutoScalarEnabled(isAutoScalarEnabled)
+        .build();
   }
 
   private File generateWorkingDirectoryOnDelegate(CfRollingDeployRequestNG cfCommandSetupRequest)
-          throws PivotalClientApiException, IOException {
+      throws PivotalClientApiException, IOException {
     File workingDirectory = pcfCommandTaskBaseHelper.generateWorkingDirectoryForDeployment();
     if (cfCommandSetupRequest.isUseCfCLI() || cfCommandSetupRequest.isUseAppAutoScalar()) {
       if (workingDirectory == null) {
@@ -549,20 +559,21 @@ public class CfRollingDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler 
     return workingDirectory;
   }
 
-  private CfRequestConfig getCfRequestConfig(CfRollingDeployRequestNG cfRollingDeployRequestNG, CloudFoundryConfig cfConfig) {
+  private CfRequestConfig getCfRequestConfig(
+      CfRollingDeployRequestNG cfRollingDeployRequestNG, CloudFoundryConfig cfConfig) {
     return CfRequestConfig.builder()
-            .userName(String.valueOf(cfConfig.getUserName()))
-            .password(String.valueOf(cfConfig.getPassword()))
-            .endpointUrl(cfConfig.getEndpointUrl())
-            .orgName(cfRollingDeployRequestNG.getTasInfraConfig().getOrganization())
-            .spaceName(cfRollingDeployRequestNG.getTasInfraConfig().getSpace())
-            .timeOutIntervalInMins(cfRollingDeployRequestNG.getTimeoutIntervalInMin())
-            .useCFCLI(cfRollingDeployRequestNG.isUseCfCLI())
-            .cfCliPath(cfCommandTaskHelperNG.getCfCliPathOnDelegate(
-                    cfRollingDeployRequestNG.isUseCfCLI(), cfRollingDeployRequestNG.getCfCliVersion()))
-            .cfCliVersion(cfRollingDeployRequestNG.getCfCliVersion())
-            .applicationName(cfRollingDeployRequestNG.getApplicationName())
-            .desiredCount(cfRollingDeployRequestNG.getDesiredCount())
-            .build();
+        .userName(String.valueOf(cfConfig.getUserName()))
+        .password(String.valueOf(cfConfig.getPassword()))
+        .endpointUrl(cfConfig.getEndpointUrl())
+        .orgName(cfRollingDeployRequestNG.getTasInfraConfig().getOrganization())
+        .spaceName(cfRollingDeployRequestNG.getTasInfraConfig().getSpace())
+        .timeOutIntervalInMins(cfRollingDeployRequestNG.getTimeoutIntervalInMin())
+        .useCFCLI(cfRollingDeployRequestNG.isUseCfCLI())
+        .cfCliPath(cfCommandTaskHelperNG.getCfCliPathOnDelegate(
+            cfRollingDeployRequestNG.isUseCfCLI(), cfRollingDeployRequestNG.getCfCliVersion()))
+        .cfCliVersion(cfRollingDeployRequestNG.getCfCliVersion())
+        .applicationName(cfRollingDeployRequestNG.getApplicationName())
+        .desiredCount(cfRollingDeployRequestNG.getDesiredCount())
+        .build();
   }
 }

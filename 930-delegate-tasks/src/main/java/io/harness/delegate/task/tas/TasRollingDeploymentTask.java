@@ -1,3 +1,4 @@
+
 /*
  * Copyright 2022 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
@@ -14,7 +15,6 @@ import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.pcf.CfRollingDeployCommandTaskHandlerNG;
-import io.harness.delegate.pcf.TasBlueGreenSetupTaskHandler;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.pcf.CfDelegateTaskHelper;
@@ -31,8 +31,9 @@ public class TasRollingDeploymentTask extends AbstractDelegateRunnableTask {
   @Inject private CfDelegateTaskHelper cfDelegateTaskHelper;
   @Inject CfRollingDeployCommandTaskHandlerNG cfRollingDeployCommandTaskHandlerNG;
 
-  public TasRollingDeploymentTask(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
-                                  Consumer<DelegateTaskResponse> consumer, BooleanSupplier preExecute) {
+  public TasRollingDeploymentTask(DelegateTaskPackage delegateTaskPackage,
+      ILogStreamingTaskClient logStreamingTaskClient, Consumer<DelegateTaskResponse> consumer,
+      BooleanSupplier preExecute) {
     super(delegateTaskPackage, logStreamingTaskClient, consumer, preExecute);
 
     SecretSanitizerThreadLocal.addAll(delegateTaskPackage.getSecrets());
@@ -47,7 +48,7 @@ public class TasRollingDeploymentTask extends AbstractDelegateRunnableTask {
   public CfCommandResponseNG run(TaskParameters parameters) {
     CfCommandRequestNG cfCommandRequestNG = (CfCommandRequestNG) parameters;
     return cfDelegateTaskHelper.getCfCommandResponse(
-            cfRollingDeployCommandTaskHandlerNG, cfCommandRequestNG, getLogStreamingTaskClient());
+        cfRollingDeployCommandTaskHandlerNG, cfCommandRequestNG, getLogStreamingTaskClient());
   }
 
   @Override

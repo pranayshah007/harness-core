@@ -184,14 +184,14 @@ public class CfDeploymentManagerUnsupported implements CfDeploymentManager {
   }
 
   @Override
-  public ApplicationDetail createRollingApplicationWithSteadyStateCheck(
-          CfCreateApplicationRequestData requestData, LogCallback executionLogCallback) throws PivotalClientApiException, InterruptedException {
+  public ApplicationDetail createRollingApplicationWithSteadyStateCheck(CfCreateApplicationRequestData requestData,
+      LogCallback executionLogCallback) throws PivotalClientApiException, InterruptedException {
     throw new PivotalClientApiException("PCF operations not supported by this API.");
   }
 
   @Override
   public List<ApplicationSummary> getPreviousReleasesForRolling(CfRequestConfig cfRequestConfig, String prefix)
-          throws PivotalClientApiException {
+      throws PivotalClientApiException {
     throw new PivotalClientApiException("PCF operations not supported by this API.");
   }
 }

@@ -312,11 +312,13 @@ public class StageExecutionHelper {
     } else if (InfrastructureKind.ELASTIGROUP.equals(infrastructureKind)) {
       return Optional.of(
           ElastigroupStageExecutionDetails.builder().pipelineExecutionId(ambiance.getPlanExecutionId()).build());
-    } else if(InfrastructureKind.TAS.equals(infrastructureKind)) {
+    } else if (InfrastructureKind.TAS.equals(infrastructureKind)) {
       Optional<ArtifactOutcome> artifactOutcome = cdStepHelper.resolveArtifactsOutcome(ambiance);
       List<ArtifactOutcome> artifactsOutcome = artifactOutcome.map(Lists::newArrayList).orElse(new ArrayList<>());
-      return Optional.of(
-              TasStageExecutionDetails.builder().artifactsOutcome(artifactsOutcome).pipelineExecutionId(ambiance.getPlanExecutionId()).build());
+      return Optional.of(TasStageExecutionDetails.builder()
+                             .artifactsOutcome(artifactsOutcome)
+                             .pipelineExecutionId(ambiance.getPlanExecutionId())
+                             .build());
     }
     Optional<ArtifactOutcome> artifactOutcome = cdStepHelper.resolveArtifactsOutcome(ambiance);
     List<ArtifactOutcome> artifactsOutcome = artifactOutcome.map(Lists::newArrayList).orElse(new ArrayList<>());

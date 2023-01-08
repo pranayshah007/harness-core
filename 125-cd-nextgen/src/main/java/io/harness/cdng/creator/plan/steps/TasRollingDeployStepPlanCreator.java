@@ -7,19 +7,17 @@
 
 package io.harness.cdng.creator.plan.steps;
 
-import com.google.common.collect.Sets;
+import static io.harness.executions.steps.StepSpecTypeConstants.TAS_ROLLING_DEPLOY;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.tas.TasCommandStepNode;
 import io.harness.cdng.tas.TasRollingDeployStepNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 
+import com.google.common.collect.Sets;
 import java.util.Set;
-
-import static io.harness.executions.steps.StepSpecTypeConstants.TANZU_COMMAND;
-import static io.harness.executions.steps.StepSpecTypeConstants.TAS_ROLLING_DEPLOY;
 
 @OwnedBy(HarnessTeam.CDP)
 public class TasRollingDeployStepPlanCreator extends CDPMSStepPlanCreatorV2<TasRollingDeployStepNode> {

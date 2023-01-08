@@ -13,12 +13,12 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.yaml.ParameterField;
+
+import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-
-import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -27,8 +27,8 @@ import java.util.List;
 @RecasterAlias("io.harness.cdng.tas.TasRollingRollbackStepParameters")
 public class TasRollingRollbackStepParameters extends TasRollingRollbackBaseStepInfo implements SpecParameters {
   @Builder(builderMethodName = "infoBuilder")
-  public TasRollingRollbackStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-                                          String tasRollingDeployFqn) {
+  public TasRollingRollbackStepParameters(
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors, String tasRollingDeployFqn) {
     super(delegateSelectors, tasRollingDeployFqn);
   }
 }

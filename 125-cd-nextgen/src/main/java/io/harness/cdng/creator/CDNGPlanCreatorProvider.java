@@ -1104,14 +1104,16 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setFeatureFlag(FeatureName.ASG_NG.name())
             .build();
 
-    StepInfo tasRollingDeploy = StepInfo.newBuilder()
+    StepInfo tasRollingDeploy =
+        StepInfo.newBuilder()
             .setName("Tas Rolling Deploy")
             .setType(StepSpecTypeConstants.TAS_ROLLING_DEPLOY)
             .setStepMetaData(StepMetaData.newBuilder().addCategory(TAS).setFolderPath(TAS).build())
             .setFeatureFlag(FeatureName.CDS_TAS_NG.name())
             .build();
 
-    StepInfo tasRollingRollback = StepInfo.newBuilder()
+    StepInfo tasRollingRollback =
+        StepInfo.newBuilder()
             .setName("Tas Rolling Rollback")
             .setType(StepSpecTypeConstants.TAS_ROLLING_ROLLBACK)
             .setStepMetaData(StepMetaData.newBuilder().addCategory(TAS).setFolderPath(TAS).build())
@@ -1119,11 +1121,11 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .build();
 
     StepInfo routeMapping = StepInfo.newBuilder()
-            .setName("Route Mapping")
-            .setType(StepSpecTypeConstants.ROUTE_MAPPING)
-            .setStepMetaData(StepMetaData.newBuilder().addCategory(TAS).setFolderPath(TAS).build())
-            .setFeatureFlag(FeatureName.CDS_TAS_NG.name())
-            .build();
+                                .setName("Route Mapping")
+                                .setType(StepSpecTypeConstants.ROUTE_MAPPING)
+                                .setStepMetaData(StepMetaData.newBuilder().addCategory(TAS).setFolderPath(TAS).build())
+                                .setFeatureFlag(FeatureName.CDS_TAS_NG.name())
+                                .build();
 
     List<StepInfo> stepInfos = new ArrayList<>();
 

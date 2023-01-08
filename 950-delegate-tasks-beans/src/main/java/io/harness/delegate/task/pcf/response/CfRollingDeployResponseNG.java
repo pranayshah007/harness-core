@@ -7,6 +7,8 @@
 
 package io.harness.delegate.task.pcf.response;
 
+import static io.harness.expression.Expression.ALLOW_SECRETS;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateMetaInfo;
@@ -17,21 +19,18 @@ import io.harness.delegate.task.pcf.PcfManifestsPackage;
 import io.harness.delegate.task.pcf.artifact.TasArtifactConfig;
 import io.harness.expression.Expression;
 import io.harness.logging.CommandExecutionStatus;
+
+import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.NonFinal;
-
-import java.util.List;
-
-import static io.harness.expression.Expression.ALLOW_SECRETS;
 
 @Data
 @Builder
 @OwnedBy(HarnessTeam.CDP)
 public class CfRollingDeployResponseNG implements CfCommandResponseNG {
   TasArtifactConfig tasArtifactConfig;
-  @Expression(ALLOW_SECRETS)
-  List<String> routeMaps;
+  @Expression(ALLOW_SECRETS) List<String> routeMaps;
   @NonFinal DelegateMetaInfo delegateMetaInfo;
   @NonFinal UnitProgressData unitProgressData;
   CommandExecutionStatus commandExecutionStatus;

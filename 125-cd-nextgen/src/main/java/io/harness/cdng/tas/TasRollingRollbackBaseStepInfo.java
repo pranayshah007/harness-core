@@ -19,12 +19,10 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.TypeAlias;
 
-import javax.validation.constraints.NotEmpty;
 import java.util.List;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
 @OwnedBy(CDP)
 @Data

@@ -7,7 +7,6 @@
 
 package io.harness.cdng.visitor.helpers.cdstepinfo;
 
-import io.harness.cdng.tas.TasRollingDeployStepInfo;
 import io.harness.cdng.tas.TasRouteMappingStepInfo;
 import io.harness.walktree.visitor.validation.ConfigValidator;
 import io.harness.walktree.visitor.validation.ValidationVisitor;

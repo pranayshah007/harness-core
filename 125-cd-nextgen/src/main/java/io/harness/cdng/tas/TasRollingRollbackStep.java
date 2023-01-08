@@ -18,10 +18,7 @@ import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.TanzuApplicationServiceInfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
-import io.harness.cdng.tas.outcome.TasAppResizeDataOutcome;
 import io.harness.cdng.tas.outcome.TasRollingDeployOutcome;
-import io.harness.cdng.tas.outcome.TasSetupDataOutcome;
-import io.harness.cdng.tas.outcome.TasSwapRouteDataOutcome;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.connector.tasconnector.TasConnectorDTO;
@@ -29,15 +26,10 @@ import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.TasServerInstanceInfo;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.pcf.CfInternalInstanceElement;
-import io.harness.delegate.beans.pcf.CfRollbackCommandResult;
-import io.harness.delegate.beans.pcf.CfServiceData;
 import io.harness.delegate.task.pcf.CfCommandTypeNG;
 import io.harness.delegate.task.pcf.artifact.TasArtifactConfig;
 import io.harness.delegate.task.pcf.request.CfRollingRollbackRequestNG;
-import io.harness.delegate.task.pcf.request.CfSwapRollbackCommandRequestNG;
 import io.harness.delegate.task.pcf.response.CfCommandResponseNG;
-import io.harness.delegate.task.pcf.response.CfRollbackCommandResponseNG;
-import io.harness.delegate.task.pcf.response.CfRollingDeployResponseNG;
 import io.harness.delegate.task.pcf.response.CfRollingRollbackResponseNG;
 import io.harness.delegate.task.pcf.response.TasInfraConfig;
 import io.harness.eraro.ErrorCode;
@@ -116,40 +108,44 @@ public class TasRollingRollbackStep extends TaskExecutableWithRollbackAndRbac<Cf
     TasInfraConfig tasInfraConfig = getTasInfraConfig(ambiance);
 
     OptionalSweepingOutput tasRollingDeployOutcomeOptional = executionSweepingOutputService.resolveOptional(ambiance,
-            RefObjectUtils.getSweepingOutputRefObject(
-                    tasRollingRollbackStepParameters.getTasRollingDeployFqn() + "." + OutcomeExpressionConstants.TAS_ROLLING_DEPLOY_OUTCOME));
+        RefObjectUtils.getSweepingOutputRefObject(tasRollingRollbackStepParameters.getTasRollingDeployFqn() + "."
+            + OutcomeExpressionConstants.TAS_ROLLING_DEPLOY_OUTCOME));
 
     if (tasRollingDeployOutcomeOptional.isFound() == false) {
       return TaskRequest.newBuilder()
-              .setSkipTaskRequest(
-                      SkipTaskRequest.newBuilder().setMessage(" Outcome Not Found For Deploy Step, so skipping it ").build())
-              .build();
+          .setSkipTaskRequest(
+              SkipTaskRequest.newBuilder().setMessage(" Outcome Not Found For Deploy Step, so skipping it ").build())
+          .build();
     }
 
-    TasRollingDeployOutcome tasRollingDeployOutcome = (TasRollingDeployOutcome) tasRollingDeployOutcomeOptional.getOutput();
+    TasRollingDeployOutcome tasRollingDeployOutcome =
+        (TasRollingDeployOutcome) tasRollingDeployOutcomeOptional.getOutput();
 
     if (tasRollingDeployOutcome.isDeploymentStarted() == false) {
       return TaskRequest.newBuilder()
-              .setSkipTaskRequest(
-                      SkipTaskRequest.newBuilder().setMessage(" Deployment did not start , so skipping Rollback ").build())
-              .build();
+          .setSkipTaskRequest(
+              SkipTaskRequest.newBuilder().setMessage(" Deployment did not start , so skipping Rollback ").build())
+          .build();
     }
 
-    TasStageExecutionDetails tasStageExecutionDetails = tasStepHelper.findLastSuccessfulStageExecutionDetails(ambiance, tasInfraConfig, tasRollingDeployOutcome.getAppName());
+    TasStageExecutionDetails tasStageExecutionDetails = tasStepHelper.findLastSuccessfulStageExecutionDetails(
+        ambiance, tasInfraConfig, tasRollingDeployOutcome.getAppName());
 
-    if (tasRollingDeployOutcome.isFirstDeployment() == false && tasStageExecutionDetails ==  null) {
+    if (tasRollingDeployOutcome.isFirstDeployment() == false && tasStageExecutionDetails == null) {
       return TaskRequest.newBuilder()
-              .setSkipTaskRequest(
-                      SkipTaskRequest.newBuilder().setMessage("No successful deployment found for the particular app").build())
-              .build();
+          .setSkipTaskRequest(
+              SkipTaskRequest.newBuilder().setMessage("No successful deployment found for the particular app").build())
+          .build();
     }
 
-    List<ArtifactOutcome> artifactOutcomes = tasStageExecutionDetails == null ? Collections.emptyList() : tasStageExecutionDetails.getArtifactsOutcome();
-    TasArtifactConfig tasArtifactConfig = artifactOutcomes.isEmpty() ? null : tasStepHelper.getPrimaryArtifactConfig(ambiance, artifactOutcomes.get(0));
+    List<ArtifactOutcome> artifactOutcomes =
+        tasStageExecutionDetails == null ? Collections.emptyList() : tasStageExecutionDetails.getArtifactsOutcome();
+    TasArtifactConfig tasArtifactConfig =
+        artifactOutcomes.isEmpty() ? null : tasStepHelper.getPrimaryArtifactConfig(ambiance, artifactOutcomes.get(0));
 
     CfRollingRollbackRequestNG cfRollingRollbackRequestNG =
-            CfRollingRollbackRequestNG.builder()
-                    .applicationName(tasRollingDeployOutcome.getAppName())
+        CfRollingRollbackRequestNG.builder()
+            .applicationName(tasRollingDeployOutcome.getAppName())
             .accountId(accountId)
             .useCfCLI(true)
             .commandName(CfCommandTypeNG.TAS_ROLLING_ROLLBACK.name())
@@ -157,12 +153,13 @@ public class TasRollingRollbackStep extends TaskExecutableWithRollbackAndRbac<Cf
             .tasInfraConfig(tasInfraConfig)
             .tasArtifactConfig(tasArtifactConfig)
             .cfCommandTypeNG(CfCommandTypeNG.TAS_ROLLING_ROLLBACK)
-            .tasManifestsPackage(tasStageExecutionDetails == null ?  null : tasStageExecutionDetails.getTasManifestsPackage())
+            .tasManifestsPackage(
+                tasStageExecutionDetails == null ? null : tasStageExecutionDetails.getTasManifestsPackage())
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
             .isFirstDeployment(tasRollingDeployOutcome.isFirstDeployment())
             .useAppAutoScalar(tasStageExecutionDetails != null && tasStageExecutionDetails.getIsAutoscalarEnabled())
-            .desiredCount(tasStageExecutionDetails == null ?  0 : tasStageExecutionDetails.getDesiredCount())
-            .routeMaps(tasStageExecutionDetails == null ?  null : tasStageExecutionDetails.getRouteMaps())
+            .desiredCount(tasStageExecutionDetails == null ? 0 : tasStageExecutionDetails.getDesiredCount())
+            .routeMaps(tasStageExecutionDetails == null ? null : tasStageExecutionDetails.getRouteMaps())
             .cfCliVersion(tasStepHelper.cfCliVersionNGMapper(tasRollingDeployOutcome.getCfCliVersion()))
             .failedDeploymentRouteMaps(tasRollingDeployOutcome.getRouteMaps())
             .build();
@@ -223,7 +220,7 @@ public class TasRollingRollbackStep extends TaskExecutableWithRollbackAndRbac<Cf
     }
     List<ServerInstanceInfo> serverInstanceInfoList = getServerInstanceInfoList(response, ambiance);
     StepResponse.StepOutcome stepOutcome =
-            instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfoList);
+        instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfoList);
     builder.stepOutcome(stepOutcome);
     builder.unitProgressList(response.getUnitProgressData().getUnitProgresses());
     builder.status(Status.SUCCEEDED);
@@ -237,8 +234,8 @@ public class TasRollingRollbackStep extends TaskExecutableWithRollbackAndRbac<Cf
 
   private List<ServerInstanceInfo> getServerInstanceInfoList(CfRollingRollbackResponseNG response, Ambiance ambiance) {
     TanzuApplicationServiceInfrastructureOutcome infrastructureOutcome =
-            (TanzuApplicationServiceInfrastructureOutcome) outcomeService.resolve(
-                    ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
+        (TanzuApplicationServiceInfrastructureOutcome) outcomeService.resolve(
+            ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
     if (response == null) {
       log.error("Could not generate server instance info for rolling deploy step");
       return Collections.emptyList();
@@ -246,21 +243,21 @@ public class TasRollingRollbackStep extends TaskExecutableWithRollbackAndRbac<Cf
     List<CfInternalInstanceElement> instances = response.getNewAppInstances();
     if (!isNull(instances)) {
       return instances.stream()
-              .map(instance -> getServerInstance(instance, infrastructureOutcome))
-              .collect(Collectors.toList());
+          .map(instance -> getServerInstance(instance, infrastructureOutcome))
+          .collect(Collectors.toList());
     }
     return new ArrayList<>();
   }
 
   private ServerInstanceInfo getServerInstance(
-          CfInternalInstanceElement instance, TanzuApplicationServiceInfrastructureOutcome infrastructureOutcome) {
+      CfInternalInstanceElement instance, TanzuApplicationServiceInfrastructureOutcome infrastructureOutcome) {
     return TasServerInstanceInfo.builder()
-            .id(instance.getApplicationId() + ":" + instance.getInstanceIndex())
-            .instanceIndex(instance.getInstanceIndex())
-            .tasApplicationName(instance.getDisplayName())
-            .tasApplicationGuid(instance.getApplicationId())
-            .organization(infrastructureOutcome.getOrganization())
-            .space(infrastructureOutcome.getSpace())
-            .build();
+        .id(instance.getApplicationId() + ":" + instance.getInstanceIndex())
+        .instanceIndex(instance.getInstanceIndex())
+        .tasApplicationName(instance.getDisplayName())
+        .tasApplicationGuid(instance.getApplicationId())
+        .organization(infrastructureOutcome.getOrganization())
+        .space(infrastructureOutcome.getSpace())
+        .build();
   }
 }

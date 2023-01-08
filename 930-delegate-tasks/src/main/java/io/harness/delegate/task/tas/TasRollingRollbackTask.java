@@ -7,25 +7,23 @@
 
 package io.harness.delegate.task.tas;
 
-import com.google.inject.Inject;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
-import io.harness.delegate.pcf.CfRollingDeployCommandTaskHandlerNG;
 import io.harness.delegate.pcf.CfRollingRollbackCommandTaskHandlerNG;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.pcf.CfDelegateTaskHelper;
 import io.harness.delegate.task.pcf.request.CfCommandRequestNG;
 import io.harness.delegate.task.pcf.response.CfCommandResponseNG;
-import io.harness.delegate.task.pcf.response.CfRollingRollbackResponseNG;
 import io.harness.secret.SecretSanitizerThreadLocal;
-import org.apache.commons.lang3.NotImplementedException;
 
+import com.google.inject.Inject;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+import org.apache.commons.lang3.NotImplementedException;
 
 @OwnedBy(HarnessTeam.CDP)
 public class TasRollingRollbackTask extends AbstractDelegateRunnableTask {
@@ -33,7 +31,7 @@ public class TasRollingRollbackTask extends AbstractDelegateRunnableTask {
   @Inject CfRollingRollbackCommandTaskHandlerNG cfRollingRollbackCommandTaskHandlerNG;
 
   public TasRollingRollbackTask(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
-                                Consumer<DelegateTaskResponse> consumer, BooleanSupplier preExecute) {
+      Consumer<DelegateTaskResponse> consumer, BooleanSupplier preExecute) {
     super(delegateTaskPackage, logStreamingTaskClient, consumer, preExecute);
 
     SecretSanitizerThreadLocal.addAll(delegateTaskPackage.getSecrets());
@@ -48,7 +46,7 @@ public class TasRollingRollbackTask extends AbstractDelegateRunnableTask {
   public CfCommandResponseNG run(TaskParameters parameters) {
     CfCommandRequestNG cfCommandRequestNG = (CfCommandRequestNG) parameters;
     return cfDelegateTaskHelper.getCfCommandResponse(
-            cfRollingRollbackCommandTaskHandlerNG, cfCommandRequestNG, getLogStreamingTaskClient());
+        cfRollingRollbackCommandTaskHandlerNG, cfCommandRequestNG, getLogStreamingTaskClient());
   }
 
   @Override

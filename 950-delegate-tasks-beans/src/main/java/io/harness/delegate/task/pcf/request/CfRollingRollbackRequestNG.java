@@ -21,7 +21,6 @@ import io.harness.delegate.beans.executioncapability.PcfAutoScalarCapability;
 import io.harness.delegate.beans.executioncapability.PcfInstallationCapability;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.task.pcf.CfCommandTypeNG;
-import io.harness.delegate.task.pcf.PcfManifestsPackage;
 import io.harness.delegate.task.pcf.artifact.TasArtifactConfig;
 import io.harness.delegate.task.pcf.artifact.TasArtifactType;
 import io.harness.delegate.task.pcf.artifact.TasContainerArtifactConfig;
@@ -55,12 +54,12 @@ public class CfRollingRollbackRequestNG extends AbstractTasTaskRequest {
 
   @Builder
   public CfRollingRollbackRequestNG(String accountId, CfCommandTypeNG cfCommandTypeNG, String commandName,
-                                  CommandUnitsProgress commandUnitsProgress, TasInfraConfig tasInfraConfig, boolean useCfCLI,
-                                  CfCliVersion cfCliVersion, Integer timeoutIntervalInMin,
-                                  TasArtifactConfig tasArtifactConfig, List<String> routeMaps, boolean useAppAutoScalar,
-                                  TasManifestsPackage tasManifestsPackage, String applicationName, int desiredCount, boolean isFirstDeployment, List<String> failedDeploymentRouteMaps) {
+      CommandUnitsProgress commandUnitsProgress, TasInfraConfig tasInfraConfig, boolean useCfCLI,
+      CfCliVersion cfCliVersion, Integer timeoutIntervalInMin, TasArtifactConfig tasArtifactConfig,
+      List<String> routeMaps, boolean useAppAutoScalar, TasManifestsPackage tasManifestsPackage, String applicationName,
+      int desiredCount, boolean isFirstDeployment, List<String> failedDeploymentRouteMaps) {
     super(timeoutIntervalInMin, accountId, commandName, cfCommandTypeNG, commandUnitsProgress, tasInfraConfig, useCfCLI,
-            cfCliVersion);
+        cfCliVersion);
     this.applicationName = applicationName;
     this.tasArtifactConfig = tasArtifactConfig;
     this.routeMaps = routeMaps;
@@ -73,18 +72,18 @@ public class CfRollingRollbackRequestNG extends AbstractTasTaskRequest {
 
   @Override
   public void populateRequestCapabilities(
-          List<ExecutionCapability> capabilities, ExpressionEvaluator maskingEvaluator) {
+      List<ExecutionCapability> capabilities, ExpressionEvaluator maskingEvaluator) {
     if (useCfCLI || useAppAutoScalar) {
       capabilities.add(PcfInstallationCapability.builder()
-              .criteria(format("Checking that CF CLI version: %s is installed", cfCliVersion))
-              .version(cfCliVersion)
-              .build());
+                           .criteria(format("Checking that CF CLI version: %s is installed", cfCliVersion))
+                           .version(cfCliVersion)
+                           .build());
     }
     if (useAppAutoScalar) {
       capabilities.add(PcfAutoScalarCapability.builder()
-              .version(cfCliVersion)
-              .criteria("Checking that App Autoscaler plugin is installed")
-              .build());
+                           .version(cfCliVersion)
+                           .criteria("Checking that App Autoscaler plugin is installed")
+                           .build());
     }
     if (tasArtifactConfig != null) {
       if (tasArtifactConfig.getArtifactType() == TasArtifactType.CONTAINER) {
@@ -93,15 +92,15 @@ public class CfRollingRollbackRequestNG extends AbstractTasTaskRequest {
           case DOCKER_HUB_PUBLIC:
           case DOCKER_HUB_PRIVATE:
             capabilities.addAll(DockerCapabilityHelper.fetchRequiredExecutionCapabilities(
-                    azureContainerArtifactConfig.getConnectorConfig(), maskingEvaluator));
+                azureContainerArtifactConfig.getConnectorConfig(), maskingEvaluator));
             break;
           case ARTIFACTORY_PRIVATE_REGISTRY:
             capabilities.addAll(ArtifactoryCapabilityHelper.fetchRequiredExecutionCapabilities(
-                    azureContainerArtifactConfig.getConnectorConfig(), maskingEvaluator));
+                azureContainerArtifactConfig.getConnectorConfig(), maskingEvaluator));
             break;
           case ACR:
             capabilities.addAll(AzureCapabilityHelper.fetchRequiredExecutionCapabilities(
-                    azureContainerArtifactConfig.getConnectorConfig(), maskingEvaluator));
+                azureContainerArtifactConfig.getConnectorConfig(), maskingEvaluator));
             break;
           default:
             // no capabilities to add
@@ -111,23 +110,23 @@ public class CfRollingRollbackRequestNG extends AbstractTasTaskRequest {
         switch (azurePackageArtifactConfig.getSourceType()) {
           case ARTIFACTORY_REGISTRY:
             capabilities.addAll(ArtifactoryCapabilityHelper.fetchRequiredExecutionCapabilities(
-                    azurePackageArtifactConfig.getConnectorConfig(), maskingEvaluator));
+                azurePackageArtifactConfig.getConnectorConfig(), maskingEvaluator));
             break;
           case AMAZONS3:
             capabilities.addAll(AwsCapabilityHelper.fetchRequiredExecutionCapabilities(
-                    azurePackageArtifactConfig.getConnectorConfig(), maskingEvaluator));
+                azurePackageArtifactConfig.getConnectorConfig(), maskingEvaluator));
             break;
           case NEXUS3_REGISTRY:
             capabilities.addAll(NexusCapabilityHelper.fetchRequiredExecutionCapabilities(
-                    maskingEvaluator, (NexusConnectorDTO) azurePackageArtifactConfig.getConnectorConfig()));
+                maskingEvaluator, (NexusConnectorDTO) azurePackageArtifactConfig.getConnectorConfig()));
             break;
           case JENKINS:
             capabilities.addAll(JenkinsCapabilityHelper.fetchRequiredExecutionCapabilities(
-                    azurePackageArtifactConfig.getConnectorConfig(), maskingEvaluator));
+                azurePackageArtifactConfig.getConnectorConfig(), maskingEvaluator));
             break;
           case AZURE_ARTIFACTS:
             capabilities.addAll(AzureArtifactsCapabilityHelper.fetchRequiredExecutionCapabilities(
-                    azurePackageArtifactConfig.getConnectorConfig(), maskingEvaluator));
+                azurePackageArtifactConfig.getConnectorConfig(), maskingEvaluator));
             break;
           default:
             // no capabilities to add

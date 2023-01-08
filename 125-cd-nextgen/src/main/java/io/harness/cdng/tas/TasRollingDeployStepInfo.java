@@ -13,8 +13,6 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.pipeline.CDAbstractStepInfo;
-import io.harness.cdng.pipeline.CDStepInfo;
-import io.harness.cdng.visitor.helpers.cdstepinfo.TasCommandStepInfoVisitorHelper;
 import io.harness.cdng.visitor.helpers.cdstepinfo.TasRollingDeployStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -54,7 +52,8 @@ public class TasRollingDeployStepInfo extends TasRollingDeployBaseStepInfo imple
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
   @Builder(builderMethodName = "infoBuilder")
-  public TasRollingDeployStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors, ParameterField<List<String>> additionalRoutes) {
+  public TasRollingDeployStepInfo(
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors, ParameterField<List<String>> additionalRoutes) {
     super(delegateSelectors, additionalRoutes);
   }
 
@@ -72,7 +71,7 @@ public class TasRollingDeployStepInfo extends TasRollingDeployBaseStepInfo imple
   public SpecParameters getSpecParameters() {
     return TasRollingDeployStepParameters.infoBuilder()
         .delegateSelectors(this.getDelegateSelectors())
-            .additionalRoutes(this.getAdditionalRoutes())
+        .additionalRoutes(this.getAdditionalRoutes())
         .build();
   }
 

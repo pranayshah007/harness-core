@@ -2031,7 +2031,6 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.TAS_DATA_FETCH).toInstance(TasDataFetchTask.class);
     mapBinder.addBinding(TaskType.TAS_ROLLING_DEPLOY).toInstance(TasRollingDeploymentTask.class);
     mapBinder.addBinding(TaskType.TAS_ROLLING_ROLLBACK).toInstance(TasRollingRollbackTask.class);
-
   }
 
   private void registerSecretManagementBindings() {
