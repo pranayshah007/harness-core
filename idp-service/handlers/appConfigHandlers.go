@@ -89,9 +89,9 @@ func UpdateAppConfigYaml(c echo.Context) error {
 
 	// currentTime := time.Now()
 
-	// sha := GetSHAOfFile("wings-software", "harness-idp-test", "app-config.yaml", accountId, "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")
+	// sha := GetSHAOfFile("wings-software", "harness-idp-test", "app-config.yaml", accountId, "github-token-XXXXXX")
 	// log.Print("Sha of file to be updated : ",sha,"\n")
-	// UpdateFileInGithubRepo("wings-software", "harness-idp-test", "app-config.yaml", accountId, "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","test-commit-"+currentTime.String(), sha, "Devesh Mishra", "devesh.mishra@harness.io", appConfig.Content)
+	// UpdateFileInGithubRepo("wings-software", "harness-idp-test", "app-config.yaml", accountId, "github-token-XXXXXX","test-commit-"+currentTime.String(), sha, "name", "email-id", appConfig.Content)
 
     update := bson.M{"accountid": accountId, "content": appConfig.Content}
 
