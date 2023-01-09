@@ -1,11 +1,14 @@
 package vo
 
 //Response
-type HealthCheckResponse struct {
-	Message string `json:"message"`
-}
 
-type Cat struct {
-	Name string `json:"name"`
-	Type string `json:"type"`
+import (
+    "github.com/labstack/echo/v4"
+) 
+
+
+type AppConfigResponse struct {
+    Status  int       `json:"status"`
+    Message string    `json:"message"`
+    Data    *echo.Map `json:"data"`
 }

@@ -3,18 +3,14 @@ package api
 import (
 	"idp-service/handlers"
 
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 )
 
-func MainGroup(e *echo.Echo) {
-	// Route / to handler function
-	e.GET("/health-check", handlers.HealthCheck)
+func AppConfigYaml(e *echo.Echo){
 
-	e.GET("/cats/:data", handlers.GetCats)
-	e.POST("/cats", handlers.AddCat)
-
-}
-
-func AdminGroup(g *echo.Group) {
-	g.GET("/main", handlers.MainAdmin)
+	e.POST("/add-appconfig", handlers.AddAppConfigs)
+	e.GET("/appconfig/:accountId", handlers.GetAppConfigFromAccountID)
+	e.POST("/update-appconfig/:accountId", handlers.UpdateAppConfigYaml)
+	e.DELETE("/delete-appconfig/:accountId", handlers.DeleteAUser)
+	
 }
