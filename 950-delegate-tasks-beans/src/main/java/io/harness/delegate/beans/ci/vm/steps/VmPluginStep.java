@@ -29,6 +29,8 @@ public class VmPluginStep implements VmStepInfo {
   private boolean privileged;
   private String runAsUser;
   private List<String> outputVariables;
+  private List<String> entrypoint;
+  private List<String> command;
   @Expression(ALLOW_SECRETS) private Map<String, String> envVariables;
   private VmUnitTestReport unitTestReport;
   private long timeoutSecs;

@@ -213,16 +213,25 @@ public class VmExecuteStepUtils {
       configBuilder.imageAuth(imageAuth);
       secrets.add(imageAuth.getPassword());
     }
-    List<String> emptyCommand = new ArrayList<>();
-    emptyCommand.add("echo");
+
+    ExecuteStepRequest.RunConfig.RunConfigBuilder runConfigBuilder = ExecuteStepRequest.RunConfig.builder();
+    Boolean hasOutputVariables = pluginStep.getOutputVariables() != null && pluginStep.getOutputVariables().size() > 0;
+    Boolean hasEntrypoint = pluginStep.getEntrypoint() != null && pluginStep.getEntrypoint().size() > 0;
+    Boolean hasCommand = pluginStep.getCommand() != null && pluginStep.getCommand().size() > 0;
+
+    if (hasOutputVariables && hasEntrypoint && hasCommand) {
+      runConfigBuilder.entrypoint(pluginStep.getEntrypoint());
+      runConfigBuilder.command(pluginStep.getCommand());
+      configBuilder.outputVars(pluginStep.getOutputVariables());
+    }
+
     configBuilder.kind(RUN_STEP_KIND)
-        .runConfig(ExecuteStepRequest.RunConfig.builder().command(emptyCommand).entrypoint(emptyCommand).build())
+        .runConfig(runConfigBuilder.build())
         .image(pluginStep.getImage())
         .pull(pluginStep.getPullPolicy())
         .user(pluginStep.getRunAsUser())
         .envs(pluginStep.getEnvVariables())
         .privileged(pluginStep.isPrivileged())
-        .outputVars(pluginStep.getOutputVariables())
         .testReport(convertTestReport(pluginStep.getUnitTestReport()))
         .timeout(pluginStep.getTimeoutSecs());
     return secrets;

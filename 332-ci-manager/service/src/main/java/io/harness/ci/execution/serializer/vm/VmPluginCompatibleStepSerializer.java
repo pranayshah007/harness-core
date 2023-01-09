@@ -63,6 +63,15 @@ public class VmPluginCompatibleStepSerializer {
             .timeoutSecs(timeout)
             .imageConnector(harnessInternalImageConnector);
 
+    if (type == Type.DLITE_VM) {
+      List<String> pluginEntrypoint = CIStepInfoUtils.getPluginEntrypoint(
+          pluginCompatibleStep, ciExecutionConfigService, AmbianceUtils.getAccountId(ambiance));
+      if (pluginEntrypoint != null && pluginEntrypoint.size() > 1) {
+        vmPluginStepBuilder.entrypoint(pluginEntrypoint.subList(0, 1));
+        vmPluginStepBuilder.command(pluginEntrypoint.subList(1, pluginEntrypoint.size()));
+      }
+    }
+
     String connectorRef = PluginSettingUtils.getConnectorRef(pluginCompatibleStep);
     if (connectorRef != null) {
       Map<EnvVariableEnum, String> connectorSecretEnvMap =

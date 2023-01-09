@@ -121,6 +121,17 @@ public class CIStepInfoUtils {
     return defaultImageConfig;
   }
 
+  public static List<String> getPluginEntrypoint(
+      PluginCompatibleStep step, CIExecutionConfigService ciExecutionConfigService, String accountId) {
+    CIStepInfoType stepInfoType = step.getNonYamlInfo().getStepInfoType();
+    if (stepInfoType == CIStepInfoType.SECURITY) {
+      StepImageConfig stepImageConfig = getK8PluginCustomStepImageConfig(step, ciExecutionConfigService, accountId);
+      return stepImageConfig.getEntrypoint();
+    }
+
+    return null;
+  }
+
   private static String getVmPluginCustomStepImageConfig(
       PluginCompatibleStep step, CIExecutionConfigService ciExecutionConfigService, String accountId) {
     CIStepInfoType stepInfoType = step.getNonYamlInfo().getStepInfoType();
