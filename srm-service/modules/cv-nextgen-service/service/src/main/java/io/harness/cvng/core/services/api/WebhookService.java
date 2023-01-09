@@ -7,6 +7,7 @@
 
 package io.harness.cvng.core.services.api;
 
+import io.harness.cvng.core.beans.CustomChangeWebhookEvent;
 import io.harness.cvng.core.beans.PagerDutyWebhookEvent;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
@@ -22,4 +23,7 @@ public interface WebhookService {
   void deleteWebhook(Webhook webhook);
 
   void handlePagerDutyWebhook(String token, PagerDutyWebhookEvent payload);
+
+  void handleCustomChangeWebhook(ProjectParams projectParams, String monitoredServiceIdentifier,
+      String changeSourceIdentifier, CustomChangeWebhookEvent customChangeWebhookEvent);
 }

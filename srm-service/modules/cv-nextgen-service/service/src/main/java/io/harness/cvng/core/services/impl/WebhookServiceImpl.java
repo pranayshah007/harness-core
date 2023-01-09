@@ -7,11 +7,17 @@
 
 package io.harness.cvng.core.services.impl;
 
+import static io.harness.NGConstants.X_API_KEY;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.accesscontrol.acl.api.Resource;
+import io.harness.accesscontrol.acl.api.ResourceScope;
+import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.beans.HeaderConfig;
 import io.harness.cvng.beans.change.ChangeEventDTO;
 import io.harness.cvng.beans.change.ChangeSourceType;
 import io.harness.cvng.beans.change.PagerDutyEventMetaData;
+import io.harness.cvng.core.beans.CustomChangeWebhookEvent;
 import io.harness.cvng.core.beans.PagerDutyWebhookEvent;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
@@ -19,17 +25,26 @@ import io.harness.cvng.core.entities.PagerDutyWebhook;
 import io.harness.cvng.core.entities.PagerDutyWebhook.PagerDutyWebhookKeys;
 import io.harness.cvng.core.entities.Webhook;
 import io.harness.cvng.core.entities.Webhook.WebhookKeys;
+import io.harness.cvng.core.jobs.CustomChangeEventPublisherService;
 import io.harness.cvng.core.services.api.ChangeEventService;
 import io.harness.cvng.core.services.api.WebhookService;
 import io.harness.persistence.HPersistence;
+import io.harness.pms.rbac.PipelineRbacPermissions;
 
 import com.google.inject.Inject;
 import groovy.util.logging.Slf4j;
+import java.util.List;
 
 @Slf4j
 public class WebhookServiceImpl implements WebhookService {
   @Inject private HPersistence hPersistence;
   @Inject private ChangeEventService changeEventService;
+
+  @Inject private CustomChangeEventPublisherService customChangeEventPublisherService;
+
+  // private final AccessControlClient accessControlClient;
+
+  @Inject
 
   @Override
   public void createPagerdutyWebhook(
@@ -97,5 +112,27 @@ public class WebhookServiceImpl implements WebhookService {
                                         .metadata(eventMetaData)
                                         .build();
     changeEventService.register(changeEventDTO);
+  }
+
+  @Override
+  public void handleCustomChangeWebhook(ProjectParams projectParams, String monitoredServiceIdentifier,
+      String changeSourceIdentifier, CustomChangeWebhookEvent customChangeWebhookEvent) {
+    customChangeEventPublisherService.registerCustomChangeEvent(
+        projectParams, monitoredServiceIdentifier, changeSourceIdentifier, customChangeWebhookEvent);
+  }
+
+  private void checkAuthorization(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String monitoredServiceIdentifier, String changeSourceIdentifier, List<HeaderConfig> headerConfigs) {
+    boolean hasApiKey = false;
+    for (HeaderConfig headerConfig : headerConfigs) {
+      if (headerConfig.getKey().equalsIgnoreCase(X_API_KEY)) {
+        hasApiKey = true;
+        break;
+      }
+    }
+    if (hasApiKey) {
+      accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+          Resource.of("PIPELINE", pipelineIdentifier), PipelineRbacPermissions.PIPELINE_EXECUTE);
+    }
   }
 }

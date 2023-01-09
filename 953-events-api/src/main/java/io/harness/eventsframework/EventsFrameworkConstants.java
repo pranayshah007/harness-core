@@ -125,6 +125,8 @@ public final class EventsFrameworkConstants {
   public static final int SRM_STATEMACHINE_LOCK_TIMEOUT = 10;
   public static final int SRM_STATEMACHINE_LOCK_WAIT_TIMEOUT = 5;
 
+  public static final String CUSTOM_CHANGE_EVENT = "srm_custom_change";
+
   public static final int DEFAULT_TOPIC_SIZE = 10000;
   public static final int USER_MEMBERSHIP_TOPIC_SIZE = 100000;
   public static final int ENTITY_CRUD_MAX_TOPIC_SIZE = 100000;

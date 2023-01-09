@@ -113,6 +113,8 @@ import io.harness.cvng.core.handler.monitoredService.MonitoredServiceSLIMetricUp
 import io.harness.cvng.core.jobs.AccountChangeEventMessageProcessor;
 import io.harness.cvng.core.jobs.ConnectorChangeEventMessageProcessor;
 import io.harness.cvng.core.jobs.ConsumerMessageProcessor;
+import io.harness.cvng.core.jobs.CustomChangeEventPublisherService;
+import io.harness.cvng.core.jobs.CustomChangeEventPublisherServiceImpl;
 import io.harness.cvng.core.jobs.OrganizationChangeEventMessageProcessor;
 import io.harness.cvng.core.jobs.ProjectChangeEventMessageProcessor;
 import io.harness.cvng.core.jobs.StateMachineEventPublisherService;
@@ -720,6 +722,7 @@ public class CVServiceModule extends AbstractModule {
     bind(ParseSampleDataService.class).to(ParseSampleDataServiceImpl.class);
     bind(VerifyStepDemoService.class).to(VerifyStepDemoServiceImpl.class);
     bind(StateMachineEventPublisherService.class).to(StateMachineEventPublisherServiceImpl.class);
+    bind(CustomChangeEventPublisherService.class).to(CustomChangeEventPublisherServiceImpl.class);
     bind(String.class)
         .annotatedWith(Names.named("portalUrl"))
         .toInstance(verificationConfiguration.getPortalUrl().endsWith("/")
