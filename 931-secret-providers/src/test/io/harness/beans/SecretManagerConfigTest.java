@@ -19,11 +19,12 @@ import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptionType;
 
+import software.wings.beans.VaultConfig;
+
 import java.security.SecureRandom;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import software.wings.beans.VaultConfig;
 
 public class SecretManagerConfigTest extends CategoryTest {
   private static final SecureRandom random = new SecureRandom();

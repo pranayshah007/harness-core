@@ -10,6 +10,7 @@ java_library(
     name = "tests",
     testonly = True,
     srcs = glob(["*.java"]),
+    resources = ["//931-encryption-service/src/test/resources:resource"],
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
@@ -53,7 +54,7 @@ java_library(
         "@maven//:org_powermock_powermock_api_mockito2",
         "@maven//:org_powermock_powermock_core",
         "@maven//:org_powermock_powermock_module_junit4",
-    ],
+    ] + ["@maven//:org_mockito_mockito_inline"],
 )
 
 run_tests("*Test.java")
