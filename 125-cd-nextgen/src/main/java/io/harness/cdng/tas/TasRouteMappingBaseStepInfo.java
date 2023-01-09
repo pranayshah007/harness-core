@@ -35,5 +35,7 @@ public class TasRouteMappingBaseStepInfo {
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> appName;
   @NotNull TasRouteType routeType;
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH) ParameterField<List<String>> routes;
+  @YamlSchemaTypes({runtime})
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
+  ParameterField<List<String>> routes;
 }
