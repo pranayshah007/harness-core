@@ -87,11 +87,11 @@ func UpdateAppConfigYaml(c echo.Context) error {
         return c.JSON(http.StatusBadRequest, vo.AppConfigResponse{Status: http.StatusBadRequest, Message: "error", Data: &echo.Map{"data": validationErr.Error()}})
     }
 
-	currentTime := time.Now()
+	// currentTime := time.Now()
 
-	sha := GetSHAOfFile("wings-software", "harness-idp-test", "app-config.yaml", accountId, "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")
-	log.Print("Sha of file to be updated : ",sha,"\n")
-	UpdateFileInGithubRepo("wings-software", "harness-idp-test", "app-config.yaml", accountId, "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","test-commit-"+currentTime.String(), sha, "Devesh Mishra", "devesh.mishra@harness.io", appConfig.Content)
+	// sha := GetSHAOfFile("wings-software", "harness-idp-test", "app-config.yaml", accountId, "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")
+	// log.Print("Sha of file to be updated : ",sha,"\n")
+	// UpdateFileInGithubRepo("wings-software", "harness-idp-test", "app-config.yaml", accountId, "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","test-commit-"+currentTime.String(), sha, "Devesh Mishra", "devesh.mishra@harness.io", appConfig.Content)
 
     update := bson.M{"accountid": accountId, "content": appConfig.Content}
 
@@ -128,10 +128,10 @@ func DeleteAUser(c echo.Context) error {
     }
 
     if result.DeletedCount < 1 {
-        return c.JSON(http.StatusNotFound, vo.AppConfigResponse{Status: http.StatusNotFound, Message: "error", Data: &echo.Map{"data": "User with specified ID not found!"}})
+        return c.JSON(http.StatusNotFound, vo.AppConfigResponse{Status: http.StatusNotFound, Message: "error", Data: &echo.Map{"data": "App Config with specified Account ID not found!"}})
     }
 
-    return c.JSON(http.StatusOK, vo.AppConfigResponse{Status: http.StatusOK, Message: "success", Data: &echo.Map{"data": "User successfully deleted!"}})
+    return c.JSON(http.StatusOK, vo.AppConfigResponse{Status: http.StatusOK, Message: "success", Data: &echo.Map{"data": "App Config successfully deleted!"}})
 }
 
 

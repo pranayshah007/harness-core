@@ -10,7 +10,7 @@ func AppConfigYaml(e *echo.Echo){
 
 	e.POST("/add-appconfig", handlers.AddAppConfigs)
 	e.GET("/appconfig/:accountId", handlers.GetAppConfigFromAccountID)
-	e.POST("/update-appconfig/:accountId", handlers.UpdateAppConfigYaml)
+	e.PUT("/update-appconfig/:accountId", handlers.UpdateAppConfigYaml)
 	e.DELETE("/delete-appconfig/:accountId", handlers.DeleteAUser)
 	
 }
