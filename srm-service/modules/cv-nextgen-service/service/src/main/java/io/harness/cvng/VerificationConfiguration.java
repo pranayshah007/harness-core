@@ -32,6 +32,7 @@ import io.harness.reflection.HarnessReflections;
 import io.harness.remote.ManagerAuthConfig;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.secret.ConfigSecret;
+import io.harness.timescaledb.TimeScaleDBConfig;
 
 import software.wings.app.PortalConfig;
 
@@ -106,6 +107,8 @@ public class VerificationConfiguration extends Configuration {
   @JsonProperty("basePathPrefix") String basePathPrefix = "";
   @JsonProperty(value = "enableOpentelemetry") private Boolean enableOpentelemetry;
   public static final String RESOURCE_PACKAGE = "io.harness.cvng";
+  @JsonProperty("enableDashboardTimescale") private Boolean enableDashboardTimescale;
+  @JsonProperty("timescaledb") private TimeScaleDBConfig timeScaleDBConfig;
 
   private String portalUrl;
   /**

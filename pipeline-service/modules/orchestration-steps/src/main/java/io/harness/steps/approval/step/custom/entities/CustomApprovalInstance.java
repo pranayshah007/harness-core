@@ -29,6 +29,7 @@ import io.harness.steps.shellscript.ShellScriptStepParameters;
 import io.harness.steps.shellscript.ShellType;
 import io.harness.yaml.core.timeout.Timeout;
 
+import dev.morphia.annotations.Entity;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -41,7 +42,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.Persistent;
 import org.springframework.data.annotation.TypeAlias;
 

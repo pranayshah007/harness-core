@@ -25,6 +25,8 @@ import com.google.api.client.util.Charsets;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.mongodb.MongoCommandException;
+import dev.morphia.annotations.Entity;
+import dev.morphia.query.UpdateResults;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
@@ -34,8 +36,6 @@ import java.util.Map;
 import java.util.StringJoiner;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.query.UpdateResults;
 
 @Slf4j
 public class AddDeploymentMonitoringSourcePerpetualTask implements CVNGMigration {

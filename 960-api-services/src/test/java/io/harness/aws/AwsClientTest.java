@@ -26,6 +26,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 
 import software.wings.service.impl.AwsApiHelperService;
+import software.wings.service.impl.aws.client.CloseableAmazonWebServiceClient;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;

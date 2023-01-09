@@ -52,6 +52,7 @@ import io.harness.plancreator.steps.http.HTTPStepVariableCreator;
 import io.harness.plancreator.steps.http.HttpStepPlanCreator;
 import io.harness.plancreator.steps.http.v1.HttpStepPlanCreatorV1;
 import io.harness.plancreator.steps.internal.FlagConfigurationStepPlanCreator;
+import io.harness.plancreator.steps.internal.HarnessApprovalStepFilterJsonCreatorV2;
 import io.harness.plancreator.steps.internal.PMSStepPlanCreator;
 import io.harness.plancreator.steps.internal.PmsStepFilterJsonCreator;
 import io.harness.plancreator.steps.internal.PmsStepFilterJsonCreatorV2;
@@ -190,6 +191,7 @@ public class PipelineServiceInternalInfoProvider implements PipelineServiceInfoP
     filterJsonCreators.add(new GroupFilterJsonCreator());
     filterJsonCreators.add(new EmptyAnyFilterJsonCreator(ImmutableSet.of(STAGES, STRATEGY, STEPS, SPEC)));
     filterJsonCreators.add(new EmptyFilterJsonCreator(STEP, ImmutableSet.of(FLAG_CONFIGURATION)));
+    filterJsonCreators.add(new HarnessApprovalStepFilterJsonCreatorV2());
     injectorUtils.injectMembers(filterJsonCreators);
     return filterJsonCreators;
   }

@@ -31,6 +31,7 @@ public class AuditEventJobScheduler {
   @Scheduled(cron = "* */1 * * * *") // run every 1 min
   public void runEventCollectionBatchJob() {
     try {
+      log.info("Starting Event collection batch job");
       jobLauncher.run(auditEventPublisherJob, new JobParameters(new HashMap<>()));
     } catch (JobExecutionAlreadyRunningException e) {
       throw new RuntimeException(e);

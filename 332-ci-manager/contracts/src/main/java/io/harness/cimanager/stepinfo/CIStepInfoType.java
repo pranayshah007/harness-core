@@ -74,6 +74,7 @@ public enum CIStepInfoType {
   BITRISE(CI_LITE_ENGINE, "Bitrise"),
   SCRIPT(CI_LITE_ENGINE, "script"),
   PLUGIN_V1(CI_LITE_ENGINE, "plugin"),
+  IACM(CI_LITE_ENGINE, "IACM"),
   IACM_TERRAFORM_PLAN(CI_LITE_ENGINE, "IACMTerraformPlan");
 
   @Getter private final CIStepExecEnvironment ciStepExecEnvironment;

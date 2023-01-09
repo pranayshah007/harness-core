@@ -34,6 +34,9 @@ import io.harness.utils.PageUtils;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
+import dev.morphia.query.UpdateOperations;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -42,9 +45,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
-import org.mongodb.morphia.query.UpdateOperations;
 
 public class NotificationRuleServiceImpl implements NotificationRuleService {
   @Inject private HPersistence hPersistence;

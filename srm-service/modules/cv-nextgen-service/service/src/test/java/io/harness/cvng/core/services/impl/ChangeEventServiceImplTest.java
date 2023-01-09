@@ -41,6 +41,7 @@ import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -53,7 +54,6 @@ import org.assertj.core.api.Assertions;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mongodb.morphia.query.Query;
 
 public class ChangeEventServiceImplTest extends CvNextGenTestBase {
   @Inject MonitoredServiceService monitoredServiceService;
@@ -311,13 +311,13 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
 
     assertThat(activityQuery.toString())
         .isEqualTo(
-            "{ query: {\"$and\": [{\"$text\": {\"$search\": \"searchText\"}}, {\"eventTime\": {\"$lt\": {\"$date\": 400000}}}, {\"eventTime\": {\"$gte\": {\"$date\": 100000}}}, {\"type\": {\"$in\": [\"DEPLOYMENT\"]}}]}  }");
+            "{ {\"$and\": [{\"$text\": {\"$search\": \"searchText\"}}, {\"eventTime\": {\"$lt\": {\"$date\": 400000}}}, {\"eventTime\": {\"$gte\": {\"$date\": 100000}}}, {\"type\": {\"$in\": [\"DEPLOYMENT\"]}}]}  }");
 
     activityQuery = changeEventService.createTextSearchQuery(
         Instant.ofEpochSecond(100), Instant.ofEpochSecond(400), "searchText", null, null);
     assertThat(activityQuery.toString())
         .isEqualTo(
-            "{ query: {\"$and\": [{\"$text\": {\"$search\": \"searchText\"}}, {\"eventTime\": {\"$lt\": {\"$date\": 400000}}}, {\"eventTime\": {\"$gte\": {\"$date\": 100000}}}, {\"type\": {\"$in\": [\"DEPLOYMENT\", \"PAGER_DUTY\", \"KUBERNETES\", \"HARNESS_CD_CURRENT_GEN\", \"FEATURE_FLAG\"]}}]}  }");
+            "{ {\"$and\": [{\"$text\": {\"$search\": \"searchText\"}}, {\"eventTime\": {\"$lt\": {\"$date\": 400000}}}, {\"eventTime\": {\"$gte\": {\"$date\": 100000}}}, {\"type\": {\"$in\": [\"DEPLOYMENT\", \"PAGER_DUTY\", \"KUBERNETES\", \"HARNESS_CD_CURRENT_GEN\", \"FEATURE_FLAG\"]}}]}  }");
   }
 
   @Test

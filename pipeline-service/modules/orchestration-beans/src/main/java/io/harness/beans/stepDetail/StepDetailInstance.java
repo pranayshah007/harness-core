@@ -20,13 +20,13 @@ import io.harness.pms.data.stepdetails.PmsStepDetails;
 import io.harness.pms.data.stepparameters.PmsStepParameters;
 
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
 import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -44,7 +44,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class StepDetailInstance {
   public static final long TTL_MONTHS = 6;
 
-  @Id @org.mongodb.morphia.annotations.Id String uuid;
+  @Id @dev.morphia.annotations.Id String uuid;
   String name;
   String planExecutionId;
   String nodeExecutionId;

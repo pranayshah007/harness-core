@@ -17,6 +17,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.ng.DbAliases;
 import io.harness.queue.Queuable;
 
+import dev.morphia.annotations.Entity;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.AllArgsConstructor;
@@ -24,7 +25,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import org.mongodb.morphia.annotations.Entity;
 
 @Data
 @Builder

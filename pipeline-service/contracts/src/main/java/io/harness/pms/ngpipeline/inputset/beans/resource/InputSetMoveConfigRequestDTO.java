@@ -7,7 +7,7 @@
 
 package io.harness.pms.ngpipeline.inputset.beans.resource;
 
-import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
@@ -30,7 +30,7 @@ import lombok.experimental.FieldNameConstants;
 @FieldNameConstants(innerTypeName = "InputSetMoveConfigRequestKeys")
 @Schema(name = "InputSetMoveConfigRequestDTO",
     description = "Details to move input set from inline to remote or remote to inline")
-@OwnedBy(PL)
+@OwnedBy(PIPELINE)
 @NoArgsConstructor
 @AllArgsConstructor
 public class InputSetMoveConfigRequestDTO {

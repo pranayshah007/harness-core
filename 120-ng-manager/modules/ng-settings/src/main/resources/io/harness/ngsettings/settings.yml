@@ -1,10 +1,10 @@
 #Any edit in this file should accompany an increment in version.
 name : settingsConfiguration
-version : 9
+version : 10
 settings :
   - identifier: mandate_webhook_secrets_for_github_triggers
     name: Mandate Webhook Secrets for Github Triggers
-    category: CORE
+    category: PMS
     defaultValue: false
     valueType: BOOLEAN
     allowOverrides: true
@@ -21,7 +21,7 @@ settings :
       - ACCOUNT
   - identifier: mandate_custom_webhook_authorization
     name: Mandate Authorization for Custom Webhook Triggers
-    category: CORE
+    category: PMS
     defaultValue: false
     valueType: BOOLEAN
     allowOverrides: true

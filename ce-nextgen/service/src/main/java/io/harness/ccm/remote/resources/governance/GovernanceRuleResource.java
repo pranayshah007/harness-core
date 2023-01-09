@@ -19,7 +19,6 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 import static io.harness.telemetry.Destination.AMPLITUDE;
-import static io.harness.utils.RestCallToNGManagerClientUtils.execute;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
@@ -64,6 +63,7 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.outbox.api.OutboxService;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.PublicApi;
 import io.harness.telemetry.Category;
@@ -461,7 +461,7 @@ public class GovernanceRuleResource {
       int page = 0;
       int size = 100;
       do {
-        response = execute(connectorResourceClient.listConnectors(
+        response = NGRestUtils.getResponse(connectorResourceClient.listConnectors(
             accountId, null, null, page, size, connectorFilterPropertiesDTO, false));
         if (response != null && isNotEmpty(response.getContent())) {
           nextGenConnectorResponses.addAll(response.getContent());

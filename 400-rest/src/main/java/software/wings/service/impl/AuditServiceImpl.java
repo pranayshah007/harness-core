@@ -11,16 +11,17 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.globalcontex.AuditGlobalContextData.AUDIT_ID;
+import static io.harness.persistence.HPersistence.ANALYTIC_STORE;
 import static io.harness.persistence.HPersistence.DEFAULT_STORE;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
 import static com.google.common.collect.Sets.newHashSet;
+import static dev.morphia.mapping.Mapper.ID_KEY;
+import static dev.morphia.query.Sort.descending;
 import static java.lang.String.format;
 import static java.lang.System.currentTimeMillis;
 import static org.apache.commons.codec.digest.DigestUtils.sha1Hex;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
-import static org.mongodb.morphia.mapping.Mapper.ID_KEY;
-import static org.mongodb.morphia.query.Sort.descending;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
@@ -95,6 +96,9 @@ import com.mongodb.BulkWriteResult;
 import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
+import dev.morphia.query.UpdateOperations;
 import io.fabric8.utils.Lists;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -113,9 +117,6 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.jetbrains.annotations.NotNull;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
-import org.mongodb.morphia.query.UpdateOperations;
 import org.omg.CORBA.INVALID_ACTIVITY;
 
 /**
@@ -425,10 +426,13 @@ public class AuditServiceImpl implements AuditService {
     //  Audit Files and Chunks clean up
     DBCollection auditFilesCollection = wingsPersistence.getCollection(DEFAULT_STORE, "audits.files");
     DBCollection auditChunksCollection = wingsPersistence.getCollection(DEFAULT_STORE, "audits.chunks");
+
+    DBCollection analyticAuditFilesCollection = wingsPersistence.getCollection(ANALYTIC_STORE, "audits.files");
+
     final BasicDBObject filter =
         new BasicDBObject().append("uploadDate", new BasicDBObject("$lt", Instant.ofEpochMilli(retentionMillis)));
     BasicDBObject projection = new BasicDBObject("_id", Boolean.TRUE);
-    try (DBCursor fileIdsToBeDeleted = auditFilesCollection.find(filter, projection).batchSize(batchSize)) {
+    try (DBCursor fileIdsToBeDeleted = analyticAuditFilesCollection.find(filter, projection).batchSize(batchSize)) {
       while (true) {
         List<ObjectId> fileIdsTobeDeletedList = new ArrayList<>();
         while (fileIdsToBeDeleted.hasNext()) {

@@ -25,7 +25,6 @@ import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
-import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollback;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.TaskExecutableResponse;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
@@ -40,6 +39,7 @@ import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.StepUtils;
+import io.harness.steps.executables.PipelineTaskExecutable;
 import io.harness.supplier.ThrowingSupplier;
 
 import software.wings.beans.TaskType;
@@ -52,7 +52,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(CDC)
 @Slf4j
-public class ShellScriptStep extends TaskExecutableWithRollback<ShellScriptTaskResponseNG> {
+public class ShellScriptStep extends PipelineTaskExecutable<ShellScriptTaskResponseNG> {
   public static final StepType STEP_TYPE = StepSpecTypeConstants.SHELL_SCRIPT_STEP_TYPE;
 
   @Inject private KryoSerializer kryoSerializer;
@@ -66,7 +66,7 @@ public class ShellScriptStep extends TaskExecutableWithRollback<ShellScriptTaskR
   }
 
   @Override
-  public TaskRequest obtainTask(
+  public TaskRequest obtainTaskAfterRbac(
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
     ShellScriptStepParameters shellScriptStepParameters = (ShellScriptStepParameters) stepParameters.getSpec();
     TaskParameters taskParameters =
@@ -123,7 +123,7 @@ public class ShellScriptStep extends TaskExecutableWithRollback<ShellScriptTaskR
   }
 
   @Override
-  public StepResponse handleTaskResult(Ambiance ambiance, StepElementParameters stepParameters,
+  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
       ThrowingSupplier<ShellScriptTaskResponseNG> responseSupplier) throws Exception {
     try {
       StepResponseBuilder stepResponseBuilder = StepResponse.builder();
@@ -178,4 +178,7 @@ public class ShellScriptStep extends TaskExecutableWithRollback<ShellScriptTaskR
       logStreamingStepClient.closeAllOpenStreamsWithPrefix(StepUtils.generateLogKeys(ambiance, emptyList()).get(0));
     }
   }
+
+  @Override
+  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {}
 }

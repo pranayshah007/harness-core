@@ -106,6 +106,8 @@ import io.harness.datahandler.services.AdminUserService;
 import io.harness.datahandler.services.AdminUserServiceImpl;
 import io.harness.datahandler.utils.AccountSummaryHelper;
 import io.harness.datahandler.utils.AccountSummaryHelperImpl;
+import io.harness.dataretention.LongerDataRetentionService;
+import io.harness.dataretention.LongerDataRetentionServiceImpl;
 import io.harness.delegate.DelegateConfigurationServiceProvider;
 import io.harness.delegate.DelegatePropertiesServiceProvider;
 import io.harness.delegate.beans.StartupMode;
@@ -117,9 +119,11 @@ import io.harness.delegate.outbox.DelegateOutboxEventHandler;
 import io.harness.delegate.queueservice.DelegateTaskQueueService;
 import io.harness.delegate.queueservice.HQueueServiceClientFactory;
 import io.harness.delegate.service.impl.DelegateDownloadServiceImpl;
+import io.harness.delegate.service.impl.DelegateInstallationCommandServiceImpl;
 import io.harness.delegate.service.impl.DelegateRingServiceImpl;
 import io.harness.delegate.service.impl.DelegateUpgraderServiceImpl;
 import io.harness.delegate.service.intfc.DelegateDownloadService;
+import io.harness.delegate.service.intfc.DelegateInstallationCommandService;
 import io.harness.delegate.service.intfc.DelegateNgTokenService;
 import io.harness.delegate.service.intfc.DelegateRingService;
 import io.harness.delegate.service.intfc.DelegateUpgraderService;
@@ -1045,6 +1049,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(DelegateUpgraderService.class).to(DelegateUpgraderServiceImpl.class);
     bind(DelegateService.class).to(DelegateServiceImpl.class);
     bind(DelegateScopeService.class).to(DelegateScopeServiceImpl.class);
+    bind(DelegateInstallationCommandService.class).to(DelegateInstallationCommandServiceImpl.class);
     bind(DelegateSelectionLogsService.class).to(DelegateSelectionLogsServiceImpl.class);
     bind(BarrierService.class).to(BarrierServiceImpl.class);
     bind(DownloadTokenService.class).to(DownloadTokenServiceImpl.class);
@@ -1686,6 +1691,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(SecretsRBACService.class).to(SecretsRBACServiceImpl.class);
     bind(SecretsManagerRBACService.class).to(SecretsManagerRBACServiceImpl.class);
     bind(SecretManagementDelegateService.class).to(SecretManagementDelegateServiceImpl.class);
+    bind(LongerDataRetentionService.class).to(LongerDataRetentionServiceImpl.class);
 
     binder()
         .bind(VaultEncryptor.class)

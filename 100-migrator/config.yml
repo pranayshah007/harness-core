@@ -692,6 +692,13 @@ cg:
 
   enableOpentelemetry: false
 
+  delegateQueueServiceConfig:
+    queueServiceConfig:
+      baseUrl: http://localhost:9091/
+      connectTimeOutSeconds: 15
+      readTimeOutSeconds: 15
+    topic: "delegate-service"
+
 ngClientConfig:
   baseUrl: https://127.0.0.1:7090
 

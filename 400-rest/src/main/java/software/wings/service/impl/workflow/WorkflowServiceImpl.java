@@ -10,7 +10,6 @@ package software.wings.service.impl.workflow;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
 import static io.harness.beans.FeatureName.HELM_CHART_AS_ARTIFACT;
-import static io.harness.beans.FeatureName.SPG_WFE_OPTIMIZE_WORKFLOW_LISTING;
 import static io.harness.beans.FeatureName.TIMEOUT_FAILURE_SUPPORT;
 import static io.harness.beans.OrchestrationWorkflowType.BASIC;
 import static io.harness.beans.OrchestrationWorkflowType.BLUE_GREEN;
@@ -105,6 +104,7 @@ import static software.wings.sm.StepType.SPOTINST_LISTENER_ALB_SHIFT;
 import static software.wings.sm.StepType.SPOTINST_LISTENER_ALB_SHIFT_ROLLBACK;
 import static software.wings.stencils.WorkflowStepType.SERVICE_COMMAND;
 
+import static dev.morphia.mapping.Mapper.ID_KEY;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
@@ -116,7 +116,6 @@ import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.atteo.evo.inflector.English.plural;
-import static org.mongodb.morphia.mapping.Mapper.ID_KEY;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
@@ -127,7 +126,6 @@ import io.harness.beans.OrchestrationWorkflowType;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.beans.RepairActionCode;
-import io.harness.beans.SearchFilter;
 import io.harness.beans.SearchFilter.Operator;
 import io.harness.beans.SortOrder.OrderType;
 import io.harness.beans.WorkflowType;
@@ -300,6 +298,10 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
+import dev.morphia.query.UpdateOperations;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -328,10 +330,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.query.FindOptions;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
-import org.mongodb.morphia.query.UpdateOperations;
 import ru.vyarus.guice.validator.group.annotation.ValidationGroups;
 
 /**
@@ -689,40 +687,17 @@ public class WorkflowServiceImpl implements WorkflowService {
         try {
           List<WorkflowExecution> workflowExecutions;
 
-          Optional<String> accountId =
-              pageRequest.getFilters()
-                  .stream()
-                  .filter(searchFilter -> WorkflowExecutionKeys.accountId.equals(searchFilter.getFieldName()))
-                  .map(SearchFilter::getFieldValues)
-                  .map(object -> object[0].toString())
-                  .findFirst();
-          if (accountId.isPresent()
-              && featureFlagService.isEnabled(SPG_WFE_OPTIMIZE_WORKFLOW_LISTING, accountId.get())) {
-            FindOptions findOptions = new FindOptions();
-            findOptions.limit(previousExecutionsCount);
-            workflowExecutions = wingsPersistence.createAnalyticsQuery(WorkflowExecution.class)
-                                     .filter(WorkflowExecutionKeys.workflowId, workflow.getUuid())
-                                     .filter(WorkflowExecutionKeys.appId, workflow.getAppId())
-                                     .order(Sort.descending(WorkflowExecutionKeys.createdAt))
-                                     .project(WorkflowExecutionKeys.stateMachine, false)
-                                     .project(WorkflowExecutionKeys.serviceExecutionSummaries, false)
-                                     .project(WorkflowExecutionKeys.rollbackArtifacts, false)
-                                     .project(WorkflowExecutionKeys.artifacts, false)
-                                     .asList(findOptions);
-          } else {
-            PageRequest<WorkflowExecution> workflowExecutionPageRequest =
-                aPageRequest()
-                    .withLimit(previousExecutionsCount.toString())
-                    .addFilter("workflowId", EQ, workflow.getUuid())
-                    .addFilter("appId", EQ, workflow.getAppId())
-                    .build();
-
-            workflowExecutions =
-                workflowExecutionService
-                    .listExecutions(workflowExecutionPageRequest, false, false, false, false, false, true)
-                    .getResponse();
-            workflowExecutions.forEach(we -> we.setStateMachine(null));
-          }
+          FindOptions findOptions = new FindOptions();
+          findOptions.limit(previousExecutionsCount);
+          workflowExecutions = wingsPersistence.createAnalyticsQuery(WorkflowExecution.class)
+                                   .filter(WorkflowExecutionKeys.workflowId, workflow.getUuid())
+                                   .filter(WorkflowExecutionKeys.appId, workflow.getAppId())
+                                   .order(Sort.descending(WorkflowExecutionKeys.createdAt))
+                                   .project(WorkflowExecutionKeys.stateMachine, false)
+                                   .project(WorkflowExecutionKeys.serviceExecutionSummaries, false)
+                                   .project(WorkflowExecutionKeys.rollbackArtifacts, false)
+                                   .project(WorkflowExecutionKeys.artifacts, false)
+                                   .asList(findOptions);
 
           workflow.setWorkflowExecutions(workflowExecutions);
         } catch (Exception e) {

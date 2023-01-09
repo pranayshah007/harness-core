@@ -30,17 +30,20 @@ public class K8sRollingDeployRollbackTaskParameters extends K8sTaskParameters {
   Integer releaseNumber;
   List<KubernetesResourceId> prunedResourcesIds;
   boolean isPruningEnabled;
+  private boolean useDeclarativeRollback;
+
   @Builder
   public K8sRollingDeployRollbackTaskParameters(String accountId, String appId, String commandName, String activityId,
       K8sTaskType k8sTaskType, K8sClusterConfig k8sClusterConfig, String workflowExecutionId, String releaseName,
       Integer timeoutIntervalInMin, Integer releaseNumber, HelmVersion helmVersion, Set<String> delegateSelectors,
       List<KubernetesResourceId> prunedResourcesIds, boolean isPruningEnabled, boolean useLatestChartMuseumVersion,
-      boolean useLatestKustomizeVersion, boolean useNewKubectlVersion) {
+      boolean useLatestKustomizeVersion, boolean useNewKubectlVersion, boolean useDeclarativeRollback) {
     super(accountId, appId, commandName, activityId, k8sClusterConfig, workflowExecutionId, releaseName,
         timeoutIntervalInMin, k8sTaskType, helmVersion, delegateSelectors, useLatestChartMuseumVersion,
         useLatestKustomizeVersion, useNewKubectlVersion);
     this.releaseNumber = releaseNumber;
     this.prunedResourcesIds = prunedResourcesIds;
     this.isPruningEnabled = isPruningEnabled;
+    this.useDeclarativeRollback = useDeclarativeRollback;
   }
 }

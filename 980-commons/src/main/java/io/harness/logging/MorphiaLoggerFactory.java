@@ -7,9 +7,9 @@
 
 package io.harness.logging;
 
-public class MorphiaLoggerFactory implements org.mongodb.morphia.logging.LoggerFactory {
+public class MorphiaLoggerFactory implements dev.morphia.logging.LoggerFactory {
   @Override
-  public org.mongodb.morphia.logging.Logger get(Class<?> c) {
+  public dev.morphia.logging.Logger get(Class<?> c) {
     return new MorphiaLogger(c);
   }
 }

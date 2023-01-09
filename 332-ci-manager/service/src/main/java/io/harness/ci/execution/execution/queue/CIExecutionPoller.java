@@ -26,11 +26,15 @@ import io.harness.hsqs.client.model.UnAckResponse;
 import io.harness.pms.sdk.core.waiter.AsyncWaitEngine;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
 import io.dropwizard.lifecycle.Managed;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.extern.slf4j.Slf4j;
@@ -45,7 +49,7 @@ public class CIExecutionPoller implements Managed {
   @Inject InitializeTaskStepV2 initializeTaskStepV2;
   @Inject AsyncWaitEngine asyncWaitEngine;
   private AtomicBoolean shouldStop = new AtomicBoolean(false);
-  private static final int WAIT_TIME_IN_SECONDS = 5;
+  private static final int WAIT_TIME_IN_SECONDS = 10;
   private final String moduleName = "ci";
   private final int batchSize = 1;
   private final Duration RETRY_SLEEP_DURATION = Duration.ofSeconds(2);
@@ -53,8 +57,12 @@ public class CIExecutionPoller implements Managed {
 
   @Override
   public void start() {
+    ExecutorService executorService =
+        Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("ci-queue-poller").build());
+    executorService.execute(this::run);
+  }
+  public void run() {
     log.info("Started the Consumer {}", this.getClass().getSimpleName());
-    Thread.currentThread().setName("ci-init-task");
 
     try {
       do {
@@ -85,7 +93,7 @@ public class CIExecutionPoller implements Managed {
   }
 
   @VisibleForTesting
-  void pollAndProcessMessages() {
+  void pollAndProcessMessages() throws InterruptedException {
     try {
       Response<List<DequeueResponse>> messages =
           hsqsServiceClient
@@ -97,6 +105,10 @@ public class CIExecutionPoller implements Managed {
                            .build(),
                   ciExecutionServiceConfig.getQueueServiceClient().getAuthToken())
               .execute();
+      if (messages.body() == null) {
+        TimeUnit.SECONDS.sleep(WAIT_TIME_IN_SECONDS);
+        return;
+      }
       for (DequeueResponse message : messages.body()) {
         processMessage(message);
       }

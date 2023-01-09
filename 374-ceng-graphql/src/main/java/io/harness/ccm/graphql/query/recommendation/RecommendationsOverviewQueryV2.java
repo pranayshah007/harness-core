@@ -148,6 +148,10 @@ public class RecommendationsOverviewQueryV2 {
                               .recommendationDetails(getRecommendationDetails(item, env))
                               .monthlyCost(item.getMonthlyCost())
                               .monthlySaving(item.getMonthlySaving())
+                              .recommendationState(item.getRecommendationState())
+                              .jiraConnectorRef(item.getJiraConnectorRef())
+                              .jiraIssueKey(item.getJiraIssueKey())
+                              .jiraStatus(item.getJiraStatus())
                               .build())
                 .collect(Collectors.toList());
     return RecommendationsDTO.builder().items(items).offset(filter.getOffset()).limit(filter.getLimit()).build();

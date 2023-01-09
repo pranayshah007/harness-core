@@ -20,6 +20,8 @@ import software.wings.service.intfc.marketplace.gcp.GCPUsageReportService;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.Sort;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,8 +29,6 @@ import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-import org.mongodb.morphia.query.FindOptions;
-import org.mongodb.morphia.query.Sort;
 
 /**
  * Mongo backed implementation for gcpUsage service.

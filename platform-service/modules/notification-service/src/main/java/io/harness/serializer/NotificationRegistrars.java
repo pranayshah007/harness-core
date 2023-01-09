@@ -23,7 +23,7 @@ import io.harness.serializer.morphia.NotificationBeansMorphiaRegistrar;
 import io.harness.serializer.morphia.NotificationRegistrar;
 
 import com.google.common.collect.ImmutableSet;
-import org.mongodb.morphia.converters.TypeConverter;
+import dev.morphia.converters.TypeConverter;
 
 @OwnedBy(PL)
 public class NotificationRegistrars {

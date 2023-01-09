@@ -11,20 +11,26 @@ import static io.harness.ng.core.Status.SUCCESS;
 import static io.harness.rule.OwnerRule.SRIDHAR;
 import static io.harness.rule.OwnerRule.VINICIUS;
 import static io.harness.rule.OwnerRule.VITALIE;
+import static io.harness.rule.OwnerRule.VLAD;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.azure.resources.dtos.AzureTagDTO;
 import io.harness.cdng.azure.resources.dtos.AzureTagsDTO;
+import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
+import io.harness.cdng.infra.yaml.InfrastructureConfig;
+import io.harness.cdng.infra.yaml.InfrastructureDefinitionConfig;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureClusterDTO;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureClustersDTO;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureDeploymentSlotDTO;
@@ -39,12 +45,19 @@ import io.harness.cdng.k8s.resources.azure.dtos.AzureWebAppNamesDTO;
 import io.harness.cdng.k8s.resources.azure.service.AzureResourceService;
 import io.harness.delegate.beans.azure.ManagementGroupData;
 import io.harness.exception.InvalidIdentifierRefException;
+import io.harness.ng.core.EnvironmentValidationHelper;
+import io.harness.ng.core.OrgAndProjectValidationHelper;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.infrastructure.InfrastructureType;
+import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.utils.IdentifierRefHelper;
+import io.harness.utils.YamlPipelineUtils;
 
 import java.util.Arrays;
+import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -56,6 +69,9 @@ import org.mockito.MockitoAnnotations;
 public class AzureResourceTest extends CategoryTest {
   @Mock AzureResourceService azureResourceService;
   @Mock InfrastructureEntityService infrastructureEntityService;
+  @Mock AccessControlClient accessControlClient;
+  @Mock EnvironmentValidationHelper environmentValidationHelper;
+  @Mock OrgAndProjectValidationHelper orgAndProjectValidationHelper;
   @InjectMocks AzureResource azureResource;
 
   private static final String CONNECTOR_REF = "connectorRef";
@@ -68,6 +84,7 @@ public class AzureResourceTest extends CategoryTest {
 
   private static final String SUBSCRIPTION_ID = "subscriptionId";
   private static final String RESOURCE_GROUP = "resourceGroup";
+  private static final String WEB_APP_NAME = "AzureWebAppName";
 
   private final IdentifierRef identifierRef = IdentifierRefHelper.getConnectorIdentifierRef(
       CONNECTOR_REF, ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
@@ -273,5 +290,79 @@ public class AzureResourceTest extends CategoryTest {
         CONNECTOR_REF, SUBSCRIPTION_ID, ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
     assertThat(result.getStatus()).isEqualTo(SUCCESS);
     assertThat(result.getData().getLocations().get(0)).isEqualTo("location");
+  }
+
+  @Test
+  @Owner(developers = VLAD)
+  @Category(UnitTests.class)
+  public void getAppServiceNamesForInfraTest() {
+    InfrastructureConfig azureInfra =
+        InfrastructureConfig.builder()
+            .infrastructureDefinitionConfig(
+                InfrastructureDefinitionConfig.builder()
+                    .type(InfrastructureType.AZURE_WEB_APP)
+                    .spec(AzureWebAppInfrastructure.builder()
+                              .connectorRef(ParameterField.createValueField(identifierRef.getIdentifier()))
+                              .build())
+                    .build())
+            .build();
+    InfrastructureEntity infrastructureEntity = InfrastructureEntity.builder()
+                                                    .accountId(ACCOUNT_IDENTIFIER)
+                                                    .orgIdentifier(ORG_IDENTIFIER)
+                                                    .projectIdentifier(PROJECT_IDENTIFIER)
+                                                    .identifier(INFRA_DEFINITION_ID)
+                                                    .envIdentifier(ENV_ID)
+                                                    .type(azureInfra.getInfrastructureDefinitionConfig().getType())
+                                                    .yaml(YamlPipelineUtils.writeYamlString(azureInfra))
+                                                    .build();
+    when(infrastructureEntityService.get(
+             ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, ENV_ID, INFRA_DEFINITION_ID))
+        .thenReturn(Optional.of(infrastructureEntity));
+    when(azureResourceService.getWebAppNames(
+             eq(identifierRef), eq(ORG_IDENTIFIER), eq(PROJECT_IDENTIFIER), any(), any()))
+        .thenReturn(AzureWebAppNamesDTO.builder().webAppNames(Arrays.asList(WEB_APP_NAME)).build());
+
+    ResponseDTO<AzureWebAppNamesDTO> result = azureResource.getAppServiceNamesV2(
+        null, ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, null, null, ENV_ID, INFRA_DEFINITION_ID);
+    assertThat(result.getStatus()).isEqualTo(SUCCESS);
+    assertThat(result.getData().getWebAppNames().get(0)).isEqualTo(WEB_APP_NAME);
+  }
+
+  @Test
+  @Owner(developers = VLAD)
+  @Category(UnitTests.class)
+  public void getAppServiceDeploymenSlotsForInfraTest() {
+    String slotName = "slotName";
+    InfrastructureConfig azureInfra =
+        InfrastructureConfig.builder()
+            .infrastructureDefinitionConfig(
+                InfrastructureDefinitionConfig.builder()
+                    .type(InfrastructureType.AZURE_WEB_APP)
+                    .spec(AzureWebAppInfrastructure.builder()
+                              .connectorRef(ParameterField.createValueField(identifierRef.getIdentifier()))
+                              .build())
+                    .build())
+            .build();
+    InfrastructureEntity infrastructureEntity = InfrastructureEntity.builder()
+                                                    .accountId(ACCOUNT_IDENTIFIER)
+                                                    .orgIdentifier(ORG_IDENTIFIER)
+                                                    .projectIdentifier(PROJECT_IDENTIFIER)
+                                                    .identifier(INFRA_DEFINITION_ID)
+                                                    .envIdentifier(ENV_ID)
+                                                    .type(azureInfra.getInfrastructureDefinitionConfig().getType())
+                                                    .yaml(YamlPipelineUtils.writeYamlString(azureInfra))
+                                                    .build();
+    when(infrastructureEntityService.get(
+             ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, ENV_ID, INFRA_DEFINITION_ID))
+        .thenReturn(Optional.of(infrastructureEntity));
+    when(azureResourceService.getAppServiceDeploymentSlots(
+             eq(identifierRef), eq(ORG_IDENTIFIER), eq(PROJECT_IDENTIFIER), any(), any(), eq(WEB_APP_NAME)))
+        .thenReturn(AzureDeploymentSlotsDTO.builder()
+                        .deploymentSlots(Arrays.asList(AzureDeploymentSlotDTO.builder().name(slotName).build()))
+                        .build());
+    ResponseDTO<AzureDeploymentSlotsDTO> result = azureResource.getAppServiceDeploymentSlotNamesV2(null,
+        ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, null, null, ENV_ID, INFRA_DEFINITION_ID, WEB_APP_NAME);
+    assertThat(result.getStatus()).isEqualTo(SUCCESS);
+    assertThat(result.getData().getDeploymentSlots().get(0).getName()).isEqualTo(slotName);
   }
 }

@@ -111,10 +111,10 @@ import io.harness.ff.FeatureFlagService;
 import io.harness.lock.PersistentLocker;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
+import io.harness.logging.DelayLogContext;
 import io.harness.logging.DelegateDriverLogContext;
 import io.harness.logstreaming.LogStreamingServiceRestClient;
 import io.harness.metrics.intfc.DelegateMetricsService;
-import io.harness.mongo.DelayLogContext;
 import io.harness.network.SafeHttpCall;
 import io.harness.observer.RemoteObserverInformer;
 import io.harness.observer.Subject;
@@ -184,6 +184,8 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.io.IOException;
 import java.security.SecureRandom;
 import java.time.Clock;
@@ -210,8 +212,6 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.atmosphere.cpr.BroadcasterFactory;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @Singleton
 @ValidateOnExecution

@@ -53,6 +53,13 @@ public class AuditYamlServiceImpl implements AuditYamlService {
   }
 
   @Override
+  public void deleteByAccount(String accountId) {
+    Criteria criteria = new Criteria();
+    criteria.and(YamlDiffRecordKeys.accountIdentifier).is(accountId);
+    auditYamlRepository.deleteAll(auditYamlRepository.findAllByAccountIdentifier(accountId));
+  }
+
+  @Override
   public void purgeYamlDiffOlderThanTimestamp(String accountIdentifier, Instant timestamp) {
     auditYamlRepository.delete(Criteria.where(YamlDiffRecordKeys.timestamp)
                                    .lte(timestamp)

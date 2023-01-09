@@ -253,6 +253,12 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
                                   .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Build").build())
                                   .build();
 
+    StepInfo bitriseStepInfo = StepInfo.newBuilder()
+                                   .setName("Bitrise")
+                                   .setType(StepSpecTypeConstants.BITRISE)
+                                   .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Build").build())
+                                   .build();
+
     StepInfo ecrPushBuilds =
         StepInfo.newBuilder()
             .setName("Build and Push to ECR")
@@ -319,7 +325,8 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
     stepInfos.add(saveCacheToGCS);
     stepInfos.add(gitCloneStepInfo);
     stepInfos.add(saveCacheToS3);
-    //    stepInfos.add(actionStepInfo);
+    stepInfos.add(actionStepInfo);
+    stepInfos.add(bitriseStepInfo);
 
     return stepInfos;
   }

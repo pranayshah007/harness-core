@@ -389,9 +389,9 @@ grpc_java_repositories()
 
 http_archive(
     name = "com_github_query_builder_generator",
-    sha256 = "7f6a7b4dc2d038e5a3e205aa1ac24e30659c9506c48105040732f3ff189c437f",
-    strip_prefix = "query-builder-generator-0.1.22",
-    urls = ["https://github.com/wings-software/query-builder-generator/archive/refs/tags/v0.1.22.zip"],
+    sha256 = "d72449d0ed7848260c6421be3677633946de46dc69af6588dbb4bc938e9714db",
+    strip_prefix = "query-builder-generator-0.1.23",
+    urls = ["https://github.com/wings-software/query-builder-generator/archive/refs/tags/v0.1.23.zip"],
 )
 
 # Add a go repository
@@ -5237,9 +5237,12 @@ plain_artifacts = [
     "org.lz4:lz4-java:1.6.0",
     "org.mindrot:jbcrypt:0.4",
     "org.modelmapper:modelmapper:0.7.5",
-    "org.mongodb.morphia:morphia-logging-slf4j:1.3.2",
-    "org.mongodb.morphia:morphia:1.3.2",
+    "dev.morphia.morphia:core:1.6.1",
+    "org.mongodb:mongodb-driver-legacy:3.12.2",
+    "org.mongodb:mongodb-driver-sync:3.12.2",
+    "org.mongodb:mongodb-driver-core:3.12.2",
     "org.mongodb:mongo-java-driver:3.12.2",
+    "org.mongodb:bson:3.12.2",
     "org.mortbay.jetty.alpn:alpn-boot:8.1.13.v20181017",
     "org.mozilla:rhino:1.7R4",
     "org.objenesis:objenesis:2.6",

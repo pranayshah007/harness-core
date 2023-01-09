@@ -174,19 +174,15 @@ public class TasBGAppSetupStep extends TaskChainExecutableWithRollbackAndRbac im
 
       TasSetupVariablesOutcomeBuilder tasSetupVariablesOutcome =
           TasSetupVariablesOutcome.builder()
-              .newAppName(response.getNewApplicationInfo().getApplicationName())
+              .inActiveAppName(response.getNewApplicationInfo().getApplicationName())
               .newAppGuid(response.getNewApplicationInfo().getApplicationGuid())
-              .newAppRoutes(response.getNewApplicationInfo().getAttachedRoutes())
               .finalRoutes(routeMaps)
               .tempRoutes(getParameterFieldValue(tasBGAppSetupStepParameters.getTempRoutes()));
       if (!isNull(response.getActiveApplicationInfo())) {
-        tasSetupVariablesOutcome.activeAppName(response.getActiveApplicationInfo().getApplicationName());
-      }
-      if (!isNull(response.getInActiveApplicationInfo())) {
-        tasSetupVariablesOutcome.oldAppName(response.getInActiveApplicationInfo().getApplicationName())
-            .oldAppGuid(response.getInActiveApplicationInfo().getApplicationGuid())
-            .oldAppRoutes(response.getInActiveApplicationInfo().getAttachedRoutes())
-            .inActiveAppName(response.getInActiveApplicationInfo().getApplicationName());
+        tasSetupVariablesOutcome.activeAppName(response.getActiveApplicationInfo().getApplicationName())
+            .activeAppName(response.getActiveApplicationInfo().getApplicationName())
+            .oldAppGuid(response.getActiveApplicationInfo().getApplicationGuid())
+            .oldAppRoutes(response.getActiveApplicationInfo().getAttachedRoutes());
       }
       return StepResponse.builder()
           .status(Status.SUCCEEDED)
@@ -219,7 +215,7 @@ public class TasBGAppSetupStep extends TaskChainExecutableWithRollbackAndRbac im
       boolean shouldOpenFetchFilesLogStream, UnitProgressData unitProgressData) {
     TasBGAppSetupStepParameters tasBGAppSetupStepParameters = (TasBGAppSetupStepParameters) stepParameters.getSpec();
     ArtifactOutcome artifactOutcome = cdStepHelper.resolveArtifactsOutcome(ambiance).orElseThrow(
-        () -> new InvalidArgumentsException(Pair.of("artifacts", "Primary artifact is required for PCF")));
+        () -> new InvalidArgumentsException(Pair.of("artifacts", "Primary artifact is required for TAS")));
     InfrastructureOutcome infrastructureOutcome = cdStepHelper.getInfrastructureOutcome(ambiance);
     Integer maxCount = null;
     if (tasBGAppSetupStepParameters.getTasInstanceCountType().equals(TasInstanceCountType.FROM_MANIFEST)) {

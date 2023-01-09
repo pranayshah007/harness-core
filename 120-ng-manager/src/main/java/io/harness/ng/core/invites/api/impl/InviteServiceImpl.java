@@ -26,7 +26,6 @@ import static io.harness.springdata.PersistenceUtils.getRetryPolicy;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static java.lang.String.format;
-import static java.util.regex.Pattern.quote;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
@@ -362,6 +361,21 @@ public class InviteServiceImpl implements InviteService {
       log.error("URL format incorrect. Cannot create invite link. InviteId: " + invite.getId(), e);
       throw new UnexpectedException("Could not create invite link. Unexpectedly failed due to malformed URL.");
     }
+  }
+
+  @Override
+  public void deleteAtAllScopes(Scope scope) {
+    Criteria criteria =
+        createScopeCriteria(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier());
+    inviteRepository.deleteAll(criteria);
+  }
+
+  private Criteria createScopeCriteria(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    Criteria criteria = new Criteria();
+    criteria.and(InviteKeys.accountIdentifier).is(accountIdentifier);
+    criteria.and(InviteKeys.orgIdentifier).is(orgIdentifier);
+    criteria.and(InviteKeys.projectIdentifier).is(projectIdentifier);
+    return criteria;
   }
 
   private void checkUserLimit(String accountId, String emailId) {
@@ -912,7 +926,7 @@ public class InviteServiceImpl implements InviteService {
       List<String> emailIds = userInfos.stream().map(UserInfo::getEmail).collect(toList());
       Criteria searchTermCriteria = new Criteria();
       searchTermCriteria.orOperator(
-          Criteria.where(InviteKeys.email).regex(quote(searchTerm)), Criteria.where(InviteKeys.email).in(emailIds));
+          Criteria.where(InviteKeys.email).regex(searchTerm), Criteria.where(InviteKeys.email).in(emailIds));
       criteria = new Criteria().andOperator(criteria, searchTermCriteria);
     }
     return getInvites(criteria, pageRequest);

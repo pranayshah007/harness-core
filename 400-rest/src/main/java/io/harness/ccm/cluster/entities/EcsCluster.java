@@ -16,12 +16,12 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.ccm.cluster.entities.ClusterRecord.ClusterRecordKeys;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import dev.morphia.query.Query;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.query.Query;
 
 @Data
 @JsonTypeName("AWS_ECS")

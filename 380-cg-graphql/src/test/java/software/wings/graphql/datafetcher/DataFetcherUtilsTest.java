@@ -34,6 +34,8 @@ import software.wings.app.MainConfiguration;
 import software.wings.graphql.schema.type.aggregation.QLIdFilter;
 import software.wings.graphql.schema.type.aggregation.QLIdOperator;
 
+import dev.morphia.query.FieldEnd;
+import dev.morphia.query.Query;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -45,8 +47,6 @@ import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.mongodb.morphia.query.FieldEnd;
-import org.mongodb.morphia.query.Query;
 
 public class DataFetcherUtilsTest extends CategoryTest {
   private static final String ACCOUNT_ID = "account_id";

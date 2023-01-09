@@ -17,12 +17,12 @@ import software.wings.beans.Base;
 import software.wings.service.impl.analysis.MLAnalysisType;
 
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
 
 @Data
 @FieldNameConstants(innerTypeName = "MLExperimentsKeys")

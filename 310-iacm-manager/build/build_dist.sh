@@ -23,13 +23,13 @@ then
     echo ${PURPOSE} > purpose.txt
 fi
 
-cp ${HOME}/.bazel-dirs/bin/310-iacm-manager/module_deploy.jar iacm-manager-capsule.jar
-cp ../../310-iacm-manager/iacm-manager-config.yml .
+cp ${HOME}/.bazel-dirs/bin/310-iacm-manager/app/module_deploy.jar iacm-manager-capsule.jar
+cp ../../310-iacm-manager/config/iacm-manager-config.yml .
 cp ../../keystore.jks .
-  cp ../../310-iacm-manager/key.pem .
-cp ../../310-iacm-manager/cert.pem .
-cp ../../310-iacm-manager/src/main/resources/redisson-jcache.yaml .
-cp ../../310-iacm-manager/src/main/resources/enterprise-redisson-jcache.yaml .
+  cp ../../310-iacm-manager/config/key.pem .
+cp ../../310-iacm-manager/config/cert.pem .
+cp ../../310-iacm-manager/app/src/main/resources/redisson-jcache.yaml .
+cp ../../310-iacm-manager/app/src/main/resources/enterprise-redisson-jcache.yaml .
 
 cp ../../310-iacm-manager/build/container/Dockerfile-iacmmanager-service-jenkins-k8-openjdk ./Dockerfile
 cp ../../310-iacm-manager/build/container/Dockerfile-iacmmanager-service-jenkins-k8-gcr-openjdk ./Dockerfile-gcr

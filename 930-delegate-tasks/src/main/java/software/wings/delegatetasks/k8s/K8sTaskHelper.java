@@ -16,7 +16,6 @@ import static io.harness.filesystem.FileIo.deleteDirectoryAndItsContentIfExists;
 import static io.harness.filesystem.FileIo.waitForDirectoryToBeAccessibleOutOfProcess;
 import static io.harness.govern.Switch.unhandled;
 import static io.harness.k8s.manifest.ManifestHelper.values_filename;
-import static io.harness.k8s.model.Kind.Namespace;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.ERROR;
@@ -29,7 +28,6 @@ import static software.wings.delegatetasks.helm.HelmTaskHelper.copyManifestFiles
 import static software.wings.delegatetasks.helm.HelmTaskHelper.handleIncorrectConfiguration;
 
 import static java.lang.String.format;
-import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.annotations.dev.HarnessModule;
@@ -52,7 +50,6 @@ import io.harness.filesystem.FileIo;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.K8sDelegateTaskParams;
-import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
 import io.harness.logging.CommandExecutionStatus;
@@ -73,7 +70,6 @@ import software.wings.helpers.ext.helm.HelmHelper;
 import software.wings.helpers.ext.helm.request.HelmChartConfigParams;
 import software.wings.helpers.ext.k8s.request.K8sClusterConfig;
 import software.wings.helpers.ext.k8s.request.K8sDelegateManifestConfig;
-import software.wings.helpers.ext.k8s.request.K8sDeleteTaskParameters;
 import software.wings.helpers.ext.k8s.request.K8sTaskParameters;
 import software.wings.helpers.ext.k8s.response.K8sTaskExecutionResponse;
 import software.wings.helpers.ext.k8s.response.K8sTaskResponse;
@@ -527,22 +523,6 @@ public class K8sTaskHelper {
           ERROR, CommandExecutionStatus.FAILURE);
       return false;
     }
-  }
-
-  public List<KubernetesResourceId> getResourceIdsForDeletion(K8sDeleteTaskParameters k8sDeleteTaskParameters,
-      KubernetesConfig kubernetesConfig, ExecutionLogCallback executionLogCallback) throws IOException {
-    List<KubernetesResourceId> kubernetesResourceIds = k8sTaskHelperBase.fetchAllResourcesForRelease(
-        k8sDeleteTaskParameters.getReleaseName(), kubernetesConfig, executionLogCallback);
-
-    // If namespace deletion is NOT selected,remove all Namespace resources from deletion list
-    if (!k8sDeleteTaskParameters.isDeleteNamespacesForRelease()) {
-      kubernetesResourceIds =
-          kubernetesResourceIds.stream()
-              .filter(kubernetesResourceId -> !Namespace.name().equals(kubernetesResourceId.getKind()))
-              .collect(toList());
-    }
-
-    return k8sTaskHelperBase.arrangeResourceIdsInDeletionOrder(kubernetesResourceIds);
   }
 
   public boolean restore(List<KubernetesResource> kubernetesResources, K8sClusterConfig clusterConfig,

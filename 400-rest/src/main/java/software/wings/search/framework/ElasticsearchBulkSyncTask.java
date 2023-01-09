@@ -23,6 +23,8 @@ import software.wings.search.framework.SearchEntityIndexState.SearchEntityIndexS
 import software.wings.timescale.framework.TimeScaleEntityIndexState;
 
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.HashMap;
@@ -35,8 +37,6 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 /**
  * The task responsible for carrying out the bulk sync

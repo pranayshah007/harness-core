@@ -45,7 +45,7 @@ import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.MapBinder;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Names;
-import org.mongodb.morphia.converters.TypeConverter;
+import dev.morphia.converters.TypeConverter;
 import org.springframework.data.mongodb.MongoTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 

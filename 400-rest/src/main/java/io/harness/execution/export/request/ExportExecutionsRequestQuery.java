@@ -14,10 +14,10 @@ import io.harness.annotations.dev.OwnedBy;
 import software.wings.beans.WorkflowExecution;
 
 import com.mongodb.BasicDBObject;
+import dev.morphia.query.Query;
+import dev.morphia.query.QueryImpl;
 import lombok.Builder;
 import lombok.Value;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.QueryImpl;
 
 @OwnedBy(CDC)
 @Value

@@ -115,6 +115,7 @@ public class PlanCreatorMergeServiceTest extends CategoryTest {
     assertThat(planCreationContextValue.getProjectIdentifier()).isEqualTo(projId);
     assertThat(planCreationContextValue.getMetadata()).isEqualTo(executionMetadata);
     assertThat(planCreationContextValue.getTriggerPayload()).isEqualTo(triggerPayload);
+    assertThat(planCreationContextValue.getIsExecutionInputEnabled()).isTrue();
   }
 
   @Test
@@ -132,6 +133,7 @@ public class PlanCreatorMergeServiceTest extends CategoryTest {
     assertThat(initialPlanCreationContext).containsKey("metadata");
     PlanCreationContextValue planCreationContextValue = initialPlanCreationContext.get("metadata");
     assertThat(planCreationContextValue.getGlobalDependency()).isNotNull();
+    assertThat(planCreationContextValue.getIsExecutionInputEnabled()).isFalse();
     Dependency globalDependency = planCreationContextValue.getGlobalDependency();
     assertThat(globalDependency.getMetadataMap()).containsKey(YAMLFieldNameConstants.REPOSITORY);
     byte[] bytes = globalDependency.getMetadataMap().get(YAMLFieldNameConstants.REPOSITORY).toByteArray();
@@ -140,6 +142,36 @@ public class PlanCreatorMergeServiceTest extends CategoryTest {
     assertThat(repository.getConnector().fetchFinalValue()).isEqualTo("connector");
     assertThat(repository.getName().fetchFinalValue()).isEqualTo("harness-core");
     assertThat(repository.getReference().fetchFinalValue()).isNull();
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testCreateInitialPlanCreationContextForV1YamlWithStaticReference() {
+    ExecutionMetadata executionMetadataLocal =
+        executionMetadata.toBuilder().setHarnessVersion(PipelineVersion.V1).build();
+    String pipelineYaml = readFile("pipeline-v1-with-static-reference.yaml");
+    PlanExecutionMetadata planExecutionMetadata = PlanExecutionMetadata.builder().processedYaml(pipelineYaml).build();
+    PlanCreatorMergeService planCreatorMergeService = new PlanCreatorMergeService(
+        null, null, null, null, Executors.newSingleThreadExecutor(), 20, pmsFeatureFlagService, kryoSerializer);
+    Map<String, PlanCreationContextValue> initialPlanCreationContext =
+        planCreatorMergeService.createInitialPlanCreationContext(
+            accountId, orgId, projId, executionMetadataLocal, planExecutionMetadata);
+    assertThat(initialPlanCreationContext).containsKey("metadata");
+    PlanCreationContextValue planCreationContextValue = initialPlanCreationContext.get("metadata");
+    assertThat(planCreationContextValue.getGlobalDependency()).isNotNull();
+    assertThat(planCreationContextValue.getIsExecutionInputEnabled()).isFalse();
+    Dependency globalDependency = planCreationContextValue.getGlobalDependency();
+    assertThat(globalDependency.getMetadataMap()).containsKey(YAMLFieldNameConstants.REPOSITORY);
+    byte[] bytes = globalDependency.getMetadataMap().get(YAMLFieldNameConstants.REPOSITORY).toByteArray();
+    Repository repository = (Repository) kryoSerializer.asObject(bytes);
+    assertThat(repository).isNotNull();
+    assertThat(repository.getConnector().fetchFinalValue()).isEqualTo("connector");
+    assertThat(repository.getName().fetchFinalValue()).isEqualTo("harness-core");
+    assertThat(repository.getReference().fetchFinalValue()).isNotNull();
+    Reference reference = repository.getReference().getValue();
+    assertThat(reference.getValue()).isEqualTo("v1");
+    assertThat(reference.getType()).isEqualTo(ReferenceType.TAG);
   }
 
   @Test
@@ -159,6 +191,7 @@ public class PlanCreatorMergeServiceTest extends CategoryTest {
     assertThat(initialPlanCreationContext).containsKey("metadata");
     PlanCreationContextValue planCreationContextValue = initialPlanCreationContext.get("metadata");
     assertThat(planCreationContextValue.getGlobalDependency()).isNotNull();
+    assertThat(planCreationContextValue.getIsExecutionInputEnabled()).isFalse();
     Dependency globalDependency = planCreationContextValue.getGlobalDependency();
     assertThat(globalDependency.getMetadataMap()).containsKey(YAMLFieldNameConstants.REPOSITORY);
     byte[] bytes = globalDependency.getMetadataMap().get(YAMLFieldNameConstants.REPOSITORY).toByteArray();

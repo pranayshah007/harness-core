@@ -19,6 +19,7 @@ import io.harness.persistence.PersistentEntity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
@@ -27,7 +28,6 @@ import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
 import lombok.experimental.UtilityClass;
 import org.hibernate.validator.constraints.NotBlank;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -44,7 +44,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Entity(value = "entityActivity", noClassnameStored = true)
 @Persistent
 public class NGActivity implements PersistentEntity, NGAccountAccess {
-  @Id @org.mongodb.morphia.annotations.Id String id;
+  @Id @dev.morphia.annotations.Id String id;
   @FdIndex @NotBlank String accountIdentifier;
   @NotNull EntityDetail referredEntity;
   String referredEntityFQN;

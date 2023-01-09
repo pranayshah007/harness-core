@@ -27,6 +27,8 @@ import io.harness.validation.Update;
 import software.wings.beans.entityinterface.ApplicationAccess;
 
 import com.github.reinert.jjschema.SchemaIgnore;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -34,8 +36,6 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
 
 @OwnedBy(CDC)
 @Data

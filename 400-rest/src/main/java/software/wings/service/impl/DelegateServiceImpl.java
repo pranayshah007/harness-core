@@ -48,6 +48,7 @@ import static software.wings.beans.User.Builder.anUser;
 import static software.wings.utils.Utils.normalizeIdentifier;
 import static software.wings.utils.Utils.uuidToIdentifier;
 
+import static dev.morphia.mapping.Mapper.ID_KEY;
 import static freemarker.template.Configuration.VERSION_2_3_23;
 import static java.lang.String.format;
 import static java.lang.System.currentTimeMillis;
@@ -68,7 +69,6 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.substringAfter;
 import static org.apache.commons.lang3.StringUtils.substringBefore;
-import static org.mongodb.morphia.mapping.Mapper.ID_KEY;
 
 import io.harness.agent.beans.AgentMtlsEndpointDetails;
 import io.harness.annotations.dev.BreakDependencyOn;
@@ -236,6 +236,8 @@ import com.google.inject.name.Named;
 import com.google.protobuf.StringValue;
 import com.mongodb.DuplicateKeyException;
 import com.mongodb.MongoGridFSException;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import freemarker.cache.ClassTemplateLoader;
 import freemarker.template.Configuration;
 import freemarker.template.TemplateException;
@@ -295,8 +297,6 @@ import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.hibernate.validator.internal.engine.path.PathImpl;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @Singleton
 @ValidateOnExecution

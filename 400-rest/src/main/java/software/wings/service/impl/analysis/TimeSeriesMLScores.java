@@ -18,6 +18,7 @@ import io.harness.persistence.AccountAccess;
 import software.wings.beans.Base;
 import software.wings.sm.StateType;
 
+import dev.morphia.annotations.Entity;
 import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.Map;
@@ -27,7 +28,6 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
 
 /**
  * Created by sriram_parthasarathy on 10/17/17.

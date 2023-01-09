@@ -82,6 +82,8 @@ import software.wings.utils.GitUtilsManager;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -100,8 +102,6 @@ import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.stubbing.Answer;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
 
 @OwnedBy(CDP)
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)

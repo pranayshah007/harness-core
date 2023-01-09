@@ -34,6 +34,8 @@ import software.wings.graphql.schema.type.aggregation.deployment.QLDeploymentTag
 import software.wings.graphql.schema.type.aggregation.tag.QLTagInput;
 
 import com.google.inject.Inject;
+import dev.morphia.query.FieldEnd;
+import dev.morphia.query.Query;
 import java.util.Collections;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -41,8 +43,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mongodb.morphia.query.FieldEnd;
-import org.mongodb.morphia.query.Query;
 
 public class ExecutionQueryHelperTest extends WingsBaseTest {
   @Mock private DataFetcherUtils utils;

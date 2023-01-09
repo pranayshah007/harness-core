@@ -24,7 +24,8 @@ import org.hibernate.validator.constraints.NotEmpty;
 public interface RoleDao {
   Role create(@NotNull @Valid Role role);
 
-  PageResponse<Role> list(@NotNull PageRequest pageRequest, @Valid @NotNull RoleFilter roleFilter);
+  PageResponse<Role> list(
+      @NotNull PageRequest pageRequest, @Valid @NotNull RoleFilter roleFilter, boolean hideInternal);
 
   Optional<Role> get(@NotEmpty String identifier, String scopeIdentifier, @NotNull ManagedFilter managedFilter);
 

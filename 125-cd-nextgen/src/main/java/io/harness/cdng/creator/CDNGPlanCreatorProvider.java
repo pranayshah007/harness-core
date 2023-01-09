@@ -264,6 +264,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
   private static final String COMMANDS = "Commands";
   private static final String ELASTIGROUP = "Elastigroup";
   private static final String TAS = "TAS";
+  private static final String ASG = "AutoScalingGroup";
 
   private static final List<String> CUSTOM_DEPLOYMENT_CATEGORY = Arrays.asList(COMMANDS, CUSTOM_DEPLOYMENT);
   private static final List<String> CLOUDFORMATION_CATEGORY =
@@ -280,6 +281,8 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
   private static final List<String> SHELL_SCRIPT_PROVISIONER_CATEGORY =
       Arrays.asList(KUBERNETES, PROVISIONER, HELM, AZURE_WEBAPP, ECS, COMMANDS);
+
+  private static final List<String> ASG_CATEGORY = Arrays.asList(ASG);
 
   private static final Set<String> EMPTY_FILTER_IDENTIFIERS = Sets.newHashSet(SIDECARS, SPEC, SERVICE_CONFIG,
       CONFIG_FILE, STARTUP_COMMAND, APPLICATION_SETTINGS, ARTIFACTS, ROLLBACK_STEPS, CONNECTION_STRINGS, STEPS,
@@ -1009,7 +1012,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
         StepInfo.newBuilder()
             .setName("Asg Canary Deploy")
             .setType(StepSpecTypeConstants.ASG_CANARY_DEPLOY)
-            .setStepMetaData(StepMetaData.newBuilder().addCategory("Asg").setFolderPath("Asg").build())
+            .setStepMetaData(StepMetaData.newBuilder().addAllCategory(ASG_CATEGORY).setFolderPath(ASG).build())
             .setFeatureFlag(FeatureName.ASG_NG.name())
             .build();
 
@@ -1017,7 +1020,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
         StepInfo.newBuilder()
             .setName("Asg Canary Delete")
             .setType(StepSpecTypeConstants.ASG_CANARY_DELETE)
-            .setStepMetaData(StepMetaData.newBuilder().addCategory("Asg").setFolderPath("Asg").build())
+            .setStepMetaData(StepMetaData.newBuilder().addAllCategory(ASG_CATEGORY).setFolderPath(ASG).build())
             .setFeatureFlag(FeatureName.ASG_NG.name())
             .build();
 
@@ -1080,7 +1083,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
         StepInfo.newBuilder()
             .setName("Asg Rolling Deploy")
             .setType(StepSpecTypeConstants.ASG_ROLLING_DEPLOY)
-            .setStepMetaData(StepMetaData.newBuilder().addCategory("Asg").setFolderPath("Asg").build())
+            .setStepMetaData(StepMetaData.newBuilder().addAllCategory(ASG_CATEGORY).setFolderPath(ASG).build())
             .setFeatureFlag(FeatureName.ASG_NG.name())
             .build();
 
@@ -1088,7 +1091,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
         StepInfo.newBuilder()
             .setName("Asg Rolling Rollback")
             .setType(StepSpecTypeConstants.ASG_ROLLING_ROLLBACK)
-            .setStepMetaData(StepMetaData.newBuilder().addCategory("Asg").setFolderPath("Asg").build())
+            .setStepMetaData(StepMetaData.newBuilder().addAllCategory(ASG_CATEGORY).setFolderPath(ASG).build())
             .setFeatureFlag(FeatureName.ASG_NG.name())
             .build();
 

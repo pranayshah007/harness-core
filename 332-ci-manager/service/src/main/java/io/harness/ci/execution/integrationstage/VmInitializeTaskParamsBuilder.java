@@ -132,7 +132,6 @@ public class VmInitializeTaskParamsBuilder {
     HostedVmInfraYaml hostedVmInfraYaml = (HostedVmInfraYaml) initializeStepInfo.getInfrastructure();
     String accountId = AmbianceUtils.getAccountId(ambiance);
     String poolId = getHostedPoolId(hostedVmInfraYaml.getSpec().getPlatform(), accountId);
-
     CIVmInitializeTaskParams params = getVmInitializeParams(initializeStepInfo, ambiance, poolId);
     SetupVmRequest setupVmRequest = convertHostedSetupParams(params);
     List<ExecuteStepRequest> services = new ArrayList<>();

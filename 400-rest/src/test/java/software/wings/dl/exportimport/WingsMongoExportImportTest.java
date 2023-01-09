@@ -28,6 +28,8 @@ import software.wings.dl.WingsPersistence;
 
 import com.google.inject.Inject;
 import com.mongodb.BasicDBObject;
+import dev.morphia.Morphia;
+import dev.morphia.annotations.Entity;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -36,8 +38,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mongodb.morphia.Morphia;
-import org.mongodb.morphia.annotations.Entity;
 
 /**
  * @author marklu on 10/24/18
