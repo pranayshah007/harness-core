@@ -27,6 +27,7 @@ import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -52,6 +53,7 @@ public class BuildCleaner {
   private MavenManifest mavenManifest;
   private MavenManifest mavenManifestOverride;
   private PackageParser packageParser;
+  private HashMap<String, TreeSet<String>> allModuleDependencies;
 
   BuildCleaner(String[] args) {
     this.options = getCommandLineOptions(args);
@@ -67,6 +69,7 @@ public class BuildCleaner {
     }
 
     this.packageParser = new PackageParser(workspace());
+    this.allModuleDependencies = new HashMap<>();
   }
 
   public static void main(String[] args) throws IOException, ClassNotFoundException {
@@ -109,10 +112,14 @@ public class BuildCleaner {
             // - The BUILD file has at most one java_binary rule.
             // - Empty dependencies are explicitly mentioned in the rules: Eg: deps = [] and runtime_deps = []
             buildFile.get().updateDependencies(buildFilePath);
+
           } catch (IOException e) {
             throw new RuntimeException(e);
           }
         });
+
+    // if listAllDependencies is set then dump the dependencies
+    dumpAllDependencies();
   }
 
   /**
@@ -224,6 +231,7 @@ public class BuildCleaner {
 
     JavaLibrary javaLibrary = new JavaLibrary(DEFAULT_JAVA_LIBRARY_NAME, DEFAULT_VISIBILITY, srcsGlob(), dependencies);
     buildFile.addJavaLibrary(javaLibrary);
+    buildAllDependencyMap(dependencies);
 
     // Find main files in the folder and create java binary targets.
     for (String className : classpathParser.getMainClasses()) {
@@ -305,6 +313,53 @@ public class BuildCleaner {
     return packageNames.stream().findFirst().get();
   }
 
+  /**
+   * Helper method that builds a map of modules
+   * to all dependencies from those modules.
+   *
+   * @param dependencies The dependency set for a java library rule
+   */
+  private void buildAllDependencyMap(Set<String> dependencies) {
+    if (!options.hasOption("listAllDependencies")) {
+      return;
+    }
+
+    for (String dependency : dependencies) {
+      int slashIndex = dependency.substring(2).indexOf("/");
+      if (slashIndex == -1) {
+        continue;
+      }
+      String parsedDep = dependency.substring(0, slashIndex + 2);
+
+      if (allModuleDependencies.containsKey(parsedDep)) {
+        allModuleDependencies.get(parsedDep).add(dependency);
+      } else {
+        TreeSet<String> set = new TreeSet<>();
+        set.add(dependency);
+        allModuleDependencies.put(parsedDep, set);
+      }
+    }
+  }
+
+  /**
+   * Helper method to dump all the dependencies
+   * captured in allModuleDependencies.
+   */
+  private void dumpAllDependencies() {
+    if (!options.hasOption("listAllDependencies")) {
+      return;
+    }
+
+    for (String key : allModuleDependencies.keySet()) {
+      logger.info("The dependencies from module { " + key + " } are - ");
+      String val = "";
+      for (String value : allModuleDependencies.get(key)) {
+        val += value + System.lineSeparator();
+      }
+      logger.info("\n" + val);
+    }
+  }
+
   private boolean indexFileExists() {
     File f = new File(indexFilePath().toString());
     return f.exists();
@@ -371,6 +426,8 @@ public class BuildCleaner {
     options.addOption(new Option(null, "assumedPackagePrefixesWithBuildFile", true,
         "Comma separate list of module prefixes for which we can assume BUILD file to be present. "
             + "Set to 'all' if need same behavior for all folders"));
+    options.addOption(
+        new Option(null, "listAllDependencies", false, "Lists all the dependencies from the generated Build files"));
 
     CommandLine commandLineOptions = null;
     try {
