@@ -3112,8 +3112,12 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
 
   private Boolean isGitopsEnabled(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId) {
-    return serviceEntityServiceImpl.getService(accountIdentifier, orgIdentifier, projectIdentifier, serviceId)
-        .get()
-        .getGitOpsEnabled();
+    Optional<ServiceEntity> serviceEntity =
+        serviceEntityServiceImpl.getService(accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
+    if (serviceEntity.isPresent()) {
+      ServiceEntity service = serviceEntity.get();
+      return service.getGitOpsEnabled() != null ? service.getGitOpsEnabled() : Boolean.FALSE;
+    }
+    return Boolean.FALSE;
   }
 }
