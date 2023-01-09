@@ -55,6 +55,7 @@ import io.harness.delegate.task.ssh.PdcSshInfraDelegateConfig;
 import io.harness.delegate.task.ssh.PdcWinRmInfraDelegateConfig;
 import io.harness.delegate.task.ssh.SshInfraDelegateConfig;
 import io.harness.delegate.task.ssh.WinRmInfraDelegateConfig;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -930,5 +931,18 @@ public class SshEntityHelperTest extends CategoryTest {
     Set<String> hosts = helper.extractDynamicallyProvisionedHostNames(pdcInfrastructure);
 
     assertThat(hosts).isEmpty();
+  }
+
+  private void mockSecretKey() throws IOException {
+    Call<ResponseDTO<SecretResponseWrapper>> getSecretCall = mock(Call.class);
+    ResponseDTO<SecretResponseWrapper> responseDTO =
+        ResponseDTO.newResponse(SecretResponseWrapper.builder()
+                                    .secret(SecretDTOV2.builder().type(SecretType.SSHKey).spec(sshKeySpecDTO).build())
+                                    .build());
+    doReturn(Response.success(responseDTO)).when(getSecretCall).execute();
+    doReturn(getSecretCall).when(secretManagerClient).getSecret(anyString(), anyString(), anyString(), anyString());
+    doReturn(Arrays.asList(EncryptedDataDetail.builder().build()))
+        .when(sshKeySpecDTOHelper)
+        .getSSHKeyEncryptionDetails(eq(sshKeySpecDTO), any());
   }
 }
