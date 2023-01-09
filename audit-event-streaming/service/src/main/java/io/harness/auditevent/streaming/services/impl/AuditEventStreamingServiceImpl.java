@@ -27,6 +27,7 @@ import io.harness.auditevent.streaming.publishers.StreamingPublisherUtils;
 import io.harness.auditevent.streaming.services.AuditEventStreamingService;
 import io.harness.auditevent.streaming.services.BatchProcessorService;
 import io.harness.auditevent.streaming.services.StreamingBatchService;
+import io.harness.auditevent.streaming.services.StreamingDestinationsService;
 
 import java.util.List;
 import java.util.Map;
@@ -42,16 +43,19 @@ import org.springframework.stereotype.Service;
 public class AuditEventStreamingServiceImpl implements AuditEventStreamingService {
   private final BatchProcessorService batchProcessorService;
   private final StreamingBatchService streamingBatchService;
+  private final StreamingDestinationsService streamingDestinationsService;
   private final AuditEventRepository auditEventRepository;
   private final Map<String, StreamingPublisher> streamingPublisherMap;
   private final BatchConfig batchConfig;
 
   @Autowired
   public AuditEventStreamingServiceImpl(BatchProcessorService batchProcessorService,
-      StreamingBatchService streamingBatchService, AuditEventRepository auditEventRepository,
-      Map<String, StreamingPublisher> streamingPublisherMap, BatchConfig batchConfig) {
+      StreamingBatchService streamingBatchService, StreamingDestinationsService streamingDestinationsService,
+      AuditEventRepository auditEventRepository, Map<String, StreamingPublisher> streamingPublisherMap,
+      BatchConfig batchConfig) {
     this.batchProcessorService = batchProcessorService;
     this.streamingBatchService = streamingBatchService;
+    this.streamingDestinationsService = streamingDestinationsService;
     this.auditEventRepository = auditEventRepository;
     this.streamingPublisherMap = streamingPublisherMap;
     this.batchConfig = batchConfig;
@@ -69,7 +73,7 @@ public class AuditEventStreamingServiceImpl implements AuditEventStreamingServic
       log.warn(getFullLogMessage(
           String.format("Retry [%s]. Exhausted all retries. Not publishing.", streamingBatch.getRetryCount()),
           streamingBatch));
-      // disable streaming destination
+      streamingDestinationsService.disableStreamingDestination(streamingDestination);
       return streamingBatch;
     }
     while (true) {
