@@ -148,7 +148,7 @@ public class ServiceStepV2 implements ChildrenExecutable<ServiceStepV2Parameters
   }
 
   public ChildrenExecutableResponse obtainChildren(
-          Ambiance ambiance, ServiceStepV2Parameters stepParameters, StepInputPackage inputPackage) {
+      Ambiance ambiance, ServiceStepV2Parameters stepParameters, StepInputPackage inputPackage) {
     validate(stepParameters);
     try {
       final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance, true);
@@ -458,7 +458,7 @@ public class ServiceStepV2 implements ChildrenExecutable<ServiceStepV2Parameters
 
   @Override
   public StepResponse handleChildrenResponse(
-          Ambiance ambiance, ServiceStepV2Parameters stepParameters, Map<String, ResponseData> responseDataMap) {
+      Ambiance ambiance, ServiceStepV2Parameters stepParameters, Map<String, ResponseData> responseDataMap) {
     final List<StepResponse.StepOutcome> stepOutcomes = new ArrayList<>();
 
     final ServiceSweepingOutput serviceSweepingOutput = (ServiceSweepingOutput) sweepingOutputService.resolve(
@@ -538,7 +538,7 @@ public class ServiceStepV2 implements ChildrenExecutable<ServiceStepV2Parameters
   }
 
   private ServicePartResponse executeServicePart(
-          Ambiance ambiance, ServiceStepV2Parameters stepParameters, Map<FreezeEntityType, List<String>> entityMap) {
+      Ambiance ambiance, ServiceStepV2Parameters stepParameters, Map<FreezeEntityType, List<String>> entityMap) {
     final Optional<ServiceEntity> serviceOpt =
         serviceEntityService.get(AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
             AmbianceUtils.getProjectIdentifier(ambiance), stepParameters.getServiceRef().getValue(), false);
