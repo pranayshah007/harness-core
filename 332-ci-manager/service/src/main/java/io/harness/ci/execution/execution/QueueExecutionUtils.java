@@ -9,6 +9,7 @@ package io.harness.ci.execution;
 
 import static io.harness.pms.contracts.execution.Status.RUNNING;
 
+import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.stages.IntegrationStageStepParametersPMS;
 import io.harness.beans.yaml.extended.infrastrucutre.DockerInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml;
@@ -18,6 +19,7 @@ import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.beans.yaml.extended.infrastrucutre.VmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml;
 import io.harness.ci.config.CIExecutionServiceConfig;
+import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.plancreator.steps.common.StageElementParameters;
 import io.harness.pms.sdk.core.events.OrchestrationEvent;
 import io.harness.repositories.CIExecutionRepository;
@@ -52,23 +54,22 @@ public class QueueExecutionUtils {
     String os = "Linux";
     if (specConfig.getInfrastructure() instanceof VmInfraYaml) {
       VmInfraYaml infrastructure = (VmInfraYaml) specConfig.getInfrastructure();
-      os = ((VmPoolYaml) infrastructure.getSpec()).getSpec().getOs().fetchFinalValue().toString();
+      return RunTimeInputHandler.resolveOSType(((VmPoolYaml) infrastructure.getSpec()).getSpec().getOs());
     } else if (specConfig.getInfrastructure() instanceof DockerInfraYaml) {
       DockerInfraYaml infrastructure = (DockerInfraYaml) specConfig.getInfrastructure();
-      os = ((DockerInfraYaml.DockerInfraSpec) infrastructure.getSpec())
-               .getPlatform()
-               .getValue()
-               .getOs()
-               .fetchFinalValue()
-               .toString();
+      return RunTimeInputHandler.resolveOSType(infrastructure.getSpec()
+              .getPlatform()
+              .getValue()
+              .getOs());
     } else if (specConfig.getInfrastructure() instanceof K8sDirectInfraYaml) {
       K8sDirectInfraYaml infrastructure = (K8sDirectInfraYaml) specConfig.getInfrastructure();
-      os = (infrastructure.getSpec()).getOs().fetchFinalValue().toString();
+      return RunTimeInputHandler.resolveOSType(infrastructure.getSpec().getOs());
     } else if (specConfig.getInfrastructure() instanceof HostedVmInfraYaml) {
       HostedVmInfraYaml infrastructure = (HostedVmInfraYaml) specConfig.getInfrastructure();
-      os = (infrastructure.getSpec()).getPlatform().getValue().getOs().fetchFinalValue().toString();
+      return RunTimeInputHandler.resolveOSType(infrastructure.getSpec().getPlatform().getValue().getOs());
+    } else {
+      throw new CIStageExecutionException("unexpected type of infra received");
     }
-    return OSType.fromString(os);
   }
 
   public long getActiveExecutionsCount(String accountID) {

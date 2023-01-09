@@ -7,6 +7,7 @@
 
 package io.harness.ci;
 
+import com.google.inject.Provides;
 import io.harness.CIBeansModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -35,6 +36,7 @@ import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
 import io.harness.ci.config.CIExecutionServiceConfig;
+import io.harness.ci.config.ExecutionLimits;
 import io.harness.ci.serializer.PluginCompatibleStepSerializer;
 import io.harness.ci.serializer.PluginStepProtobufSerializer;
 import io.harness.ci.serializer.ProtobufStepSerializer;
@@ -52,7 +54,10 @@ import com.google.inject.Inject;
 import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Names;
+
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -90,6 +95,19 @@ public class CIExecutionServiceModule extends AbstractModule {
   public CIExecutionServiceModule(CIExecutionServiceConfig ciExecutionServiceConfig, Boolean withPMS) {
     this.ciExecutionServiceConfig = ciExecutionServiceConfig;
     this.withPMS = withPMS;
+  }
+
+  @Provides
+  public ExecutionLimits ExecutionLimits(CIExecutionServiceConfig ciExecutionServiceConfig) {
+    ExecutionLimits executionLimits = ciExecutionServiceConfig.getExecutionLimits();
+    List<String> overrideConfig = executionLimits.getOverrideConfig();
+    HashMap<String, ExecutionLimits.ExecutionLimitSpec> mp = new HashMap<>();
+    overrideConfig.stream().forEach(key -> {
+      String[] split = key.split(":");
+      mp.put(split[0], ExecutionLimits.ExecutionLimitSpec.builder().defaultTotalExecutionCount(Integer.parseInt(split[1])).defaultMacExecutionCount(Integer.parseInt(split[2])).build());
+    });
+    executionLimits.setOverrideConfigMap(mp);
+    return executionLimits;
   }
 
   @Override
