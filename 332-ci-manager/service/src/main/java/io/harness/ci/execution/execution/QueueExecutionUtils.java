@@ -57,10 +57,7 @@ public class QueueExecutionUtils {
       return RunTimeInputHandler.resolveOSType(((VmPoolYaml) infrastructure.getSpec()).getSpec().getOs());
     } else if (specConfig.getInfrastructure() instanceof DockerInfraYaml) {
       DockerInfraYaml infrastructure = (DockerInfraYaml) specConfig.getInfrastructure();
-      return RunTimeInputHandler.resolveOSType(infrastructure.getSpec()
-              .getPlatform()
-              .getValue()
-              .getOs());
+      return RunTimeInputHandler.resolveOSType(infrastructure.getSpec().getPlatform().getValue().getOs());
     } else if (specConfig.getInfrastructure() instanceof K8sDirectInfraYaml) {
       K8sDirectInfraYaml infrastructure = (K8sDirectInfraYaml) specConfig.getInfrastructure();
       return RunTimeInputHandler.resolveOSType(infrastructure.getSpec().getOs());

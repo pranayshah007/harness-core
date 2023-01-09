@@ -7,7 +7,6 @@
 
 package io.harness.ci.enforcement;
 
-import com.google.inject.Inject;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ci.config.ExecutionLimits;
@@ -15,6 +14,8 @@ import io.harness.ci.config.ExecutionLimits.ExecutionLimitSpec;
 import io.harness.ci.execution.QueueExecutionUtils;
 import io.harness.ci.license.CILicenseService;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
+
+import com.google.inject.Inject;
 
 @OwnedBy(HarnessTeam.CI)
 public class CIBuildEnforcerImpl implements CIBuildEnforcer {
@@ -28,9 +29,9 @@ public class CIBuildEnforcerImpl implements CIBuildEnforcer {
     long macExecutionsCount = queueExecutionUtils.getActiveExecutionsCount(accountId);
 
     // if the limits are override for a specific account, give priority to those
-    if(executionLimits.getOverrideConfigMap().containsKey(accountId)) {
+    if (executionLimits.getOverrideConfigMap().containsKey(accountId)) {
       return currExecutionCount <= executionLimits.getOverrideConfigMap().get(accountId).getDefaultTotalExecutionCount()
-              && macExecutionsCount <= executionLimits.getOverrideConfigMap().get(accountId).getDefaultMacExecutionCount();
+          && macExecutionsCount <= executionLimits.getOverrideConfigMap().get(accountId).getDefaultMacExecutionCount();
     }
 
     LicensesWithSummaryDTO licensesWithSummaryDTO = ciLicenseService.getLicenseSummary(accountId);

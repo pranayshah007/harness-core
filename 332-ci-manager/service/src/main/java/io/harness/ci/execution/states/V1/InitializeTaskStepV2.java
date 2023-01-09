@@ -219,7 +219,7 @@ public class InitializeTaskStepV2 implements AsyncExecutableWithRbac<StepElement
   }
 
   public String executeBuild(Ambiance ambiance, StepElementParameters stepParameters) {
-      log.info("start executeAsyncAfterRbac for initialize step async");
+    log.info("start executeAsyncAfterRbac for initialize step async");
     InitializeStepInfo initializeStepInfo = (InitializeStepInfo) stepParameters.getSpec();
 
     String logPrefix = getLogPrefix(ambiance);

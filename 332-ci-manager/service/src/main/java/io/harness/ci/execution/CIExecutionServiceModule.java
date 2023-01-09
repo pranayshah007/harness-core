@@ -7,7 +7,6 @@
 
 package io.harness.ci;
 
-import com.google.inject.Provides;
 import io.harness.CIBeansModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -51,10 +50,10 @@ import io.harness.waiter.WaiterConfiguration;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
+import com.google.inject.Provides;
 import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Names;
-
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -104,7 +103,11 @@ public class CIExecutionServiceModule extends AbstractModule {
     HashMap<String, ExecutionLimits.ExecutionLimitSpec> mp = new HashMap<>();
     overrideConfig.stream().forEach(key -> {
       String[] split = key.split(":");
-      mp.put(split[0], ExecutionLimits.ExecutionLimitSpec.builder().defaultTotalExecutionCount(Integer.parseInt(split[1])).defaultMacExecutionCount(Integer.parseInt(split[2])).build());
+      mp.put(split[0],
+          ExecutionLimits.ExecutionLimitSpec.builder()
+              .defaultTotalExecutionCount(Integer.parseInt(split[1]))
+              .defaultMacExecutionCount(Integer.parseInt(split[2]))
+              .build());
     });
     executionLimits.setOverrideConfigMap(mp);
     return executionLimits;
