@@ -19,7 +19,9 @@ import io.harness.serializer.JsonUtils;
 
 import com.google.common.base.Preconditions;
 import com.mongodb.BasicDBObject;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import lombok.Builder;
 import lombok.Singular;
@@ -86,6 +88,21 @@ public class SortCompoundMongoIndex implements MongoIndex {
       }
     }
     return IndexCreator.builder().keys(keys).options(options);
+  }
+
+  @Override
+  public BasicDBObject getHint() {
+    Map<String, Object> options = new LinkedHashMap<>();
+    for (String field : getFields()) {
+      options.put(field.replace("-", ""), field.charAt(0) == '-' ? -1 : 1);
+    }
+    for (String field : getSortFields()) {
+      options.put(field.replace("-", ""), field.charAt(0) == '-' ? -1 : 1);
+    }
+    for (String field : getRangeFields()) {
+      options.put(field.replace("-", ""), field.charAt(0) == '-' ? -1 : 1);
+    }
+    return new BasicDBObject(options);
   }
 
   @Override

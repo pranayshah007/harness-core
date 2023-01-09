@@ -166,7 +166,18 @@ public class CfDeploymentManagerUnsupported implements CfDeploymentManager {
   }
 
   @Override
+  public boolean isInActiveApplicationNG(CfRequestConfig cfRequestConfig) throws PivotalClientApiException {
+    throw new PivotalClientApiException("PCF operations not supported by this API.");
+  }
+
+  @Override
   public void setEnvironmentVariableForAppStatus(CfRequestConfig cfRequestConfig, boolean activeStatus,
+      LogCallback executionLogCallback) throws PivotalClientApiException {
+    throw new PivotalClientApiException("PCF operations not supported by this API.");
+  }
+
+  @Override
+  public void setEnvironmentVariableForAppStatusNG(CfRequestConfig cfRequestConfig, boolean activeStatus,
       LogCallback executionLogCallback) throws PivotalClientApiException {
     throw new PivotalClientApiException("PCF operations not supported by this API.");
   }

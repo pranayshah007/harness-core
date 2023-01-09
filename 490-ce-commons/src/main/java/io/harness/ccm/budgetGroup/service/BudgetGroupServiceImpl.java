@@ -143,10 +143,10 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
       BudgetGroup parentBudgetGroup = budgetGroupDao.get(budgetGroup.getParentBudgetGroupId(), accountId);
       BudgetGroupChildEntityDTO deletedChildEntity = parentBudgetGroup.getChildEntities()
                                                          .stream()
-                                                         .filter(childEntity -> !childEntity.getId().equals(uuid))
+                                                         .filter(childEntity -> childEntity.getId().equals(uuid))
                                                          .collect(Collectors.toList())
                                                          .get(0);
-      updateProportionsOnDeletion(deletedChildEntity, parentBudgetGroup);
+      parentBudgetGroup = updateProportionsOnDeletion(deletedChildEntity, parentBudgetGroup);
       cascadeBudgetGroupAmount(parentBudgetGroup);
     }
 
@@ -154,7 +154,8 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
   }
 
   @Override
-  public void updateProportionsOnDeletion(BudgetGroupChildEntityDTO deletedChildEntity, BudgetGroup parentBudgetGroup) {
+  public BudgetGroup updateProportionsOnDeletion(
+      BudgetGroupChildEntityDTO deletedChildEntity, BudgetGroup parentBudgetGroup) {
     List<BudgetGroupChildEntityDTO> updatedChildEntities =
         parentBudgetGroup.getChildEntities()
             .stream()
@@ -166,8 +167,9 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
     }
     switch (parentBudgetGroup.getCascadeType()) {
       case EQUAL:
+        parentBudgetGroup.setChildEntities(updatedChildEntities);
         budgetGroupDao.updateChildEntities(parentBudgetGroup.getUuid(), updatedChildEntities);
-        return;
+        return parentBudgetGroup;
       case PROPORTIONAL:
         List<BudgetGroupChildEntityDTO> updatedChildEntitiesWithProportionsAdjusted = new ArrayList<>();
         double proportionToBeAdded =
@@ -179,10 +181,12 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
                     .isBudgetGroup(childEntity.isBudgetGroup())
                     .proportion(BudgetUtils.getRoundedValue(childEntity.getProportion() + proportionToBeAdded))
                     .build()));
+        parentBudgetGroup.setChildEntities(updatedChildEntitiesWithProportionsAdjusted);
         budgetGroupDao.updateChildEntities(parentBudgetGroup.getUuid(), updatedChildEntitiesWithProportionsAdjusted);
-        return;
+        return parentBudgetGroup;
       case NO_CASCADE:
       default:
+        return null;
     }
   }
 
@@ -296,26 +300,22 @@ public class BudgetGroupServiceImpl implements BudgetGroupService {
     if (areChildEntitiesBudgetGroups) {
       List<String> childEntityIds =
           budgetGroup.getChildEntities().stream().map(BudgetGroupChildEntityDTO::getId).collect(Collectors.toList());
-      List<BudgetGroup> childBudgetGroups = budgetGroupDao.list(budgetGroup.getAccountId(), childEntityIds);
-      Map<String, BudgetGroup> budgetGroupIdMapping = childBudgetGroups.stream().collect(
-          Collectors.toMap(BudgetGroup::getUuid, childBudgetGroup -> childBudgetGroup));
 
       if (isMonthlyBreakdownPresent) {
         childEntities.forEach(childEntity -> {
           budgetGroupDao.updateBudgetGroupAmountInBreakdown(childEntity.getId(),
               BudgetGroupUtils.getCascadedMonthlyAmount(budgetGroup.getCascadeType(), totalNumberOfChildEntities,
                   childEntity.getProportion(), budgetGroup.getBudgetGroupMonthlyBreakdown().getBudgetMonthlyAmount()));
-          cascadeBudgetGroupAmount(budgetGroupIdMapping.get(childEntity.getId()));
         });
-
       } else {
         childEntities.forEach(childEntity -> {
           budgetGroupDao.updateBudgetGroupAmount(childEntity.getId(),
               BudgetGroupUtils.getCascadedAmount(budgetGroup.getCascadeType(), totalNumberOfChildEntities,
                   childEntity.getProportion(), budgetGroup.getBudgetGroupAmount()));
-          cascadeBudgetGroupAmount(budgetGroupIdMapping.get(childEntity.getId()));
         });
       }
+      List<BudgetGroup> childBudgetGroups = budgetGroupDao.list(budgetGroup.getAccountId(), childEntityIds);
+      childBudgetGroups.forEach(this::cascadeBudgetGroupAmount);
     } else {
       if (isMonthlyBreakdownPresent) {
         childEntities.forEach(childEntity

@@ -679,6 +679,24 @@ public class CfDeploymentManagerImpl implements CfDeploymentManager {
   }
 
   @Override
+  public boolean isInActiveApplicationNG(CfRequestConfig cfRequestConfig) throws PivotalClientApiException {
+    if (PcfConstants.isInterimApp(cfRequestConfig.getApplicationName())) {
+      return false;
+    }
+    ApplicationEnvironments applicationEnvironments = cfSdkClient.getApplicationEnvironmentsByName(cfRequestConfig);
+    if (applicationEnvironments != null && EmptyPredicate.isNotEmpty(applicationEnvironments.getUserProvided())) {
+      for (String statusKey : STATUS_ENV_VARIABLES) {
+        if (applicationEnvironments.getUserProvided().containsKey(statusKey)
+            && (HARNESS__INACTIVE__IDENTIFIER.equals(applicationEnvironments.getUserProvided().get(statusKey))
+                || HARNESS__STAGE__IDENTIFIER.equals(applicationEnvironments.getUserProvided().get(statusKey)))) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  @Override
   public void setEnvironmentVariableForAppStatus(CfRequestConfig cfRequestConfig, boolean activeStatus,
       LogCallback executionLogCallback) throws PivotalClientApiException {
     // If we want to enable it, its expected to be disabled and vice versa
@@ -686,6 +704,17 @@ public class CfDeploymentManagerImpl implements CfDeploymentManager {
     cfCliClient.setEnvVariablesForApplication(
         Collections.singletonMap(
             HARNESS__STATUS__IDENTIFIER, activeStatus ? HARNESS__ACTIVE__IDENTIFIER : HARNESS__STAGE__IDENTIFIER),
+        cfRequestConfig, executionLogCallback);
+  }
+
+  @Override
+  public void setEnvironmentVariableForAppStatusNG(CfRequestConfig cfRequestConfig, boolean activeStatus,
+      LogCallback executionLogCallback) throws PivotalClientApiException {
+    // If we want to enable it, its expected to be disabled and vice versa
+    removeOldStatusVariableIfExist(cfRequestConfig, executionLogCallback);
+    cfCliClient.setEnvVariablesForApplication(
+        Collections.singletonMap(
+            HARNESS__STATUS__IDENTIFIER, activeStatus ? HARNESS__ACTIVE__IDENTIFIER : HARNESS__INACTIVE__IDENTIFIER),
         cfRequestConfig, executionLogCallback);
   }
 

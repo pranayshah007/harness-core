@@ -5,20 +5,8 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.steps.policy.step;
+package io.harness.delegate.service.intfc;
 
-import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-
-import io.harness.annotations.dev.OwnedBy;
-
-import lombok.Builder;
-import lombok.Value;
-
-@Value
-@Builder
-@OwnedBy(PIPELINE)
-public class PolicyEvaluationErrorResponse {
-  String identifier;
-  String name;
-  String message;
+public interface DelegateInstallationCommandService {
+  String getCommand(String commandType, String managerUrl, String accountId);
 }

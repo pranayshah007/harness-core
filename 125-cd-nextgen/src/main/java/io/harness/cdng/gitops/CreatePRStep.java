@@ -17,6 +17,7 @@ import static org.apache.commons.lang3.StringUtils.trim;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.expressions.CDExpressionResolveFunctor;
 import io.harness.cdng.gitops.steps.GitOpsStepHelper;
 import io.harness.cdng.gitops.steps.GitopsClustersOutcome;
@@ -39,7 +40,6 @@ import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
-import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
@@ -73,7 +73,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(GITOPS)
 @Slf4j
-public class CreatePRStep extends TaskExecutableWithRollbackAndRbac<NGGitOpsResponse> {
+public class CreatePRStep extends CdTaskExecutable<NGGitOpsResponse> {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.GITOPS_CREATE_PR.getYamlType())
                                                .setStepCategory(StepCategory.STEP)

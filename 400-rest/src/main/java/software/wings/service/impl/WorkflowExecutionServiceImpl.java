@@ -165,6 +165,7 @@ import io.harness.limits.checker.LimitApproachingException;
 import io.harness.limits.checker.UsageLimitExceededException;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
+import io.harness.mongo.index.BasicDBUtils;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 import io.harness.queue.QueuePublisher;
@@ -1748,7 +1749,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     query.field(WorkflowExecutionKeys.startTs).greaterThanOrEq(sixtyDays);
     query.project("serviceIds", true);
     FindOptions findOptions = new FindOptions();
-    findOptions.hint(WorkflowExecution.getHint("accountId_startTs_serviceIds"));
+    findOptions.hint(BasicDBUtils.getIndexObject(WorkflowExecution.mongoIndexes(), "accountId_startTs_serviceIds"));
     findOptions.readPreference(ReadPreference.secondaryPreferred());
     List<WorkflowExecution> workflowExecutions = query.asList(findOptions);
     Set<String> flattenedSvcSet = new HashSet<>();
@@ -3292,7 +3293,8 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     if (featureFlagService.isEnabled(
             FeatureName.ON_DEMAND_ROLLBACK_WITH_DIFFERENT_ARTIFACT, workflowExecution.getAccountId())) {
       FindOptions findOptions = new FindOptions();
-      findOptions.hint(WorkflowExecution.getHint("lastInfraMappingSearch"));
+
+      findOptions.hint(BasicDBUtils.getIndexObject(WorkflowExecution.mongoIndexes(), "lastInfraMappingSearch"));
       Query<WorkflowExecution> deploymentQuery = query.cloneQuery();
       deploymentQuery.filter(WorkflowExecutionKeys.deployment, true);
       WorkflowExecution existingWorkflow = deploymentQuery.get(findOptions);
@@ -5744,9 +5746,11 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     addressInefficientQueries(workflowExecutionQuery);
 
     if (isNotEmpty(workflowExecution.getInfraMappingIds())) {
-      findOptions.hint(WorkflowExecution.getHint("appid_status_workflowid_infraMappingIds_createdat"));
+      findOptions.hint(BasicDBUtils.getIndexObject(
+          WorkflowExecution.mongoIndexes(), "appid_status_workflowid_infraMappingIds_createdat"));
     } else {
-      findOptions.hint(WorkflowExecution.getHint("appid_workflowid_status_createdat"));
+      findOptions.hint(
+          BasicDBUtils.getIndexObject(WorkflowExecution.mongoIndexes(), "appid_workflowid_status_createdat"));
     }
     return workflowExecutionQuery.order("-createdAt").get(findOptions);
   }
@@ -5775,7 +5779,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
 
     if (isNotEmpty(infraMappingList)) {
       if (isInfraBasedArtifact) {
-        findOptions.hint(WorkflowExecution.getHint("lastInfraMappingSearch"));
+        findOptions.hint(BasicDBUtils.getIndexObject(WorkflowExecution.mongoIndexes(), "lastInfraMappingSearch"));
 
         Query<WorkflowExecution> deploymentQuery = workflowExecutionQuery.cloneQuery();
         deploymentQuery.filter(WorkflowExecutionKeys.deployment, true);
@@ -5791,10 +5795,12 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
               .exists();
         }
       } else {
-        findOptions.hint(WorkflowExecution.getHint("appid_status_workflowid_infraMappingIds_createdat"));
+        findOptions.hint(BasicDBUtils.getIndexObject(
+            WorkflowExecution.mongoIndexes(), "appid_status_workflowid_infraMappingIds_createdat"));
       }
     } else {
-      findOptions.hint(WorkflowExecution.getHint("appid_workflowid_status_deployedServices_createdat"));
+      findOptions.hint(BasicDBUtils.getIndexObject(
+          WorkflowExecution.mongoIndexes(), "appid_workflowid_status_deployedServices_createdat"));
     }
     return workflowExecutionQuery.order(Sort.descending(WorkflowExecutionKeys.createdAt)).get(findOptions);
   }

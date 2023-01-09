@@ -856,8 +856,10 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     ViewCostData currentCostData = getCostData(bigQuery, viewsQueryHelper.getFiltersForForecastCost(filters), groupBy,
         aggregateFunction, cloudProviderTableName, queryParams);
     Double forecastCost = viewBillingServiceHelper.getForecastCost(currentCostData, endInstantForForecastCost);
+    Currency currency = getDestinationCurrency(queryParams.getAccountId());
     return viewBillingServiceHelper.getForecastCostBillingStats(forecastCost, currentCostData.getCost(),
-        viewParametersHelper.getStartInstantForForecastCost(), endInstantForForecastCost.plus(1, ChronoUnit.SECONDS));
+        viewParametersHelper.getStartInstantForForecastCost(), endInstantForForecastCost.plus(1, ChronoUnit.SECONDS),
+        currency);
   }
 
   // ----------------------------------------------------------------------------------------------------------------

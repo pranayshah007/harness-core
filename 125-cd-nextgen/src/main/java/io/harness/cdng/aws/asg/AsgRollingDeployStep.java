@@ -15,11 +15,13 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.task.aws.asg.AsgPrepareRollbackDataRequest;
 import io.harness.delegate.task.aws.asg.AsgRollingDeployRequest;
 import io.harness.delegate.task.aws.asg.AsgRollingDeployResponse;
+import io.harness.delegate.task.git.GitFetchResponse;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -40,6 +42,9 @@ import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 
 import com.google.inject.Inject;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
@@ -73,8 +78,29 @@ public class AsgRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
       StepInputPackage inputPackage, PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseSupplier)
       throws Exception {
     log.info("Calling executeNextLink");
+    DelegateResponseData delegateResponseData = (DelegateResponseData) responseSupplier.get();
+    if (delegateResponseData instanceof GitFetchResponse) {
+      AsgExecutionPassThroughData executionPassThroughData = (AsgExecutionPassThroughData) passThroughData;
+
+      Supplier<TaskChainResponse> executeAsgPrepareRollbackDataTaskSupplier = () -> {
+        Map<String, List<String>> asgStoreManifestsContent =
+            asgStepCommonHelper.buildManifestContentMap(executionPassThroughData.getAsgManifestFetchData(), ambiance);
+        AsgPrepareRollbackDataPassThroughData asgPrepareRollbackDataPassThroughData =
+            AsgPrepareRollbackDataPassThroughData.builder()
+                .infrastructureOutcome(executionPassThroughData.getInfrastructure())
+                .asgStoreManifestsContent(asgStoreManifestsContent)
+                .build();
+
+        return executeAsgPrepareRollbackDataTask(ambiance, stepParameters, asgPrepareRollbackDataPassThroughData,
+            executionPassThroughData.getLastActiveUnitProgressData());
+      };
+
+      return asgStepCommonHelper.chainFetchGitTaskUntilAllGitManifestsFetched(executionPassThroughData,
+          delegateResponseData, ambiance, stepParameters, executeAsgPrepareRollbackDataTaskSupplier);
+    }
+
     return asgStepCommonHelper.executeNextLinkRolling(
-        this, ambiance, stepParameters, passThroughData, responseSupplier);
+        this, ambiance, stepParameters, passThroughData, delegateResponseData);
   }
 
   @Override

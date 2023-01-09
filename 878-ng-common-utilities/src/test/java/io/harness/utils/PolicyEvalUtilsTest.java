@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.steps.policy.step;
+package io.harness.utils;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.NAMAN;
@@ -32,19 +32,19 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 @OwnedBy(PIPELINE)
-public class PolicyStepHelperTest extends CategoryTest {
+public class PolicyEvalUtilsTest extends CategoryTest {
   @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testGetPolicySetsStringForQueryParam() {
     List<String> l1 = Collections.singletonList("ps1");
-    String l1S = PolicyStepHelper.getPolicySetsStringForQueryParam(l1);
+    String l1S = PolicyEvalUtils.getPolicySetsStringForQueryParam(l1);
     assertThat(l1S).isEqualTo("ps1");
     List<String> l2 = Arrays.asList("ps1", "ps2");
-    String l2S = PolicyStepHelper.getPolicySetsStringForQueryParam(l2);
+    String l2S = PolicyEvalUtils.getPolicySetsStringForQueryParam(l2);
     assertThat(l2S).isEqualTo("ps1,ps2");
     List<String> l3 = Arrays.asList("acc.ps1", "ps1", "org.ps1");
-    String l3S = PolicyStepHelper.getPolicySetsStringForQueryParam(l3);
+    String l3S = PolicyEvalUtils.getPolicySetsStringForQueryParam(l3);
     assertThat(l3S).isEqualTo("acc.ps1,ps1,org.ps1");
   }
 
@@ -53,22 +53,22 @@ public class PolicyStepHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testIsInvalidPayload() {
     String valid = "{\"this\" : \"that\"}";
-    assertThat(PolicyStepHelper.isInvalidPayload(valid)).isFalse();
+    assertThat(PolicyEvalUtils.isInvalidPayload(valid)).isFalse();
     String invalid = "{\"this\" : \"that";
-    assertThat(PolicyStepHelper.isInvalidPayload(invalid)).isTrue();
+    assertThat(PolicyEvalUtils.isInvalidPayload(invalid)).isTrue();
     String number = "12";
-    assertThat(PolicyStepHelper.isInvalidPayload(number)).isTrue();
+    assertThat(PolicyEvalUtils.isInvalidPayload(number)).isTrue();
     String string = "string";
-    assertThat(PolicyStepHelper.isInvalidPayload(string)).isTrue();
+    assertThat(PolicyEvalUtils.isInvalidPayload(string)).isTrue();
     String arrayOfObjects = "[{\"s\": \"d\"},{\"s\": \"d\"}]";
-    assertThat(PolicyStepHelper.isInvalidPayload(arrayOfObjects)).isTrue();
+    assertThat(PolicyEvalUtils.isInvalidPayload(arrayOfObjects)).isTrue();
   }
 
   @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testBuildFailureStepResponse() {
-    StepResponse stepResponse = PolicyStepHelper.buildFailureStepResponse(
+    StepResponse stepResponse = PolicyEvalUtils.buildFailureStepResponse(
         ErrorCode.INVALID_JSON_PAYLOAD, "Custom payload is not a valid JSON.", FailureType.UNKNOWN_FAILURE);
     assertThat(stepResponse.getStatus()).isEqualTo(Status.FAILED);
     FailureInfo failureInfo = stepResponse.getFailureInfo();
@@ -85,11 +85,11 @@ public class PolicyStepHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetEntityMetadataString() {
     String stepName = "noSpaces";
-    String entityMetadataString = PolicyStepHelper.getEntityMetadataString(stepName);
+    String entityMetadataString = PolicyEvalUtils.getEntityMetadataString(stepName);
     assertThat(entityMetadataString).isEqualTo("%7B%22entityName%22%3A%22noSpaces%22%7D");
 
     stepName = "has Spaces";
-    entityMetadataString = PolicyStepHelper.getEntityMetadataString(stepName);
+    entityMetadataString = PolicyEvalUtils.getEntityMetadataString(stepName);
     assertThat(entityMetadataString).isEqualTo("%7B%22entityName%22%3A%22has+Spaces%22%7D");
   }
 
@@ -103,7 +103,7 @@ public class PolicyStepHelperTest extends CategoryTest {
             .details(Collections.singletonList(
                 OpaPolicySetEvaluationResponse.builder().status("error").name("myName").build()))
             .build();
-    String singleErrorSingleResponse = PolicyStepHelper.buildPolicyEvaluationFailureMessage(evaluationResponse0);
+    String singleErrorSingleResponse = PolicyEvalUtils.buildPolicyEvaluationFailureMessage(evaluationResponse0);
     assertThat(singleErrorSingleResponse).isEqualTo("The following Policy Set was not adhered to: myName");
 
     OpaEvaluationResponseHolder evaluationResponse1 =
@@ -112,7 +112,7 @@ public class PolicyStepHelperTest extends CategoryTest {
             .details(Arrays.asList(OpaPolicySetEvaluationResponse.builder().status("error").name("myName").build(),
                 OpaPolicySetEvaluationResponse.builder().status("pass").name("my name").build()))
             .build();
-    String singleErrorMultipleResponse = PolicyStepHelper.buildPolicyEvaluationFailureMessage(evaluationResponse1);
+    String singleErrorMultipleResponse = PolicyEvalUtils.buildPolicyEvaluationFailureMessage(evaluationResponse1);
     assertThat(singleErrorMultipleResponse).isEqualTo("The following Policy Set was not adhered to: myName");
 
     OpaEvaluationResponseHolder evaluationResponse2 =
@@ -122,7 +122,7 @@ public class PolicyStepHelperTest extends CategoryTest {
                 OpaPolicySetEvaluationResponse.builder().status("pass").name("my Name").build(),
                 OpaPolicySetEvaluationResponse.builder().status("error").name("my name").build()))
             .build();
-    String multipleErrors = PolicyStepHelper.buildPolicyEvaluationFailureMessage(evaluationResponse2);
+    String multipleErrors = PolicyEvalUtils.buildPolicyEvaluationFailureMessage(evaluationResponse2);
     assertThat(multipleErrors).isEqualTo("The following Policy Sets were not adhered to: myName, my name");
   }
 }

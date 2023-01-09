@@ -5,11 +5,10 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.mongo.tracing;
+package io.harness.persistence;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.persistence.HQuery;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface Tracer {

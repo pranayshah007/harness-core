@@ -5,11 +5,10 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.mongo;
+package io.harness.queue;
 
 import io.harness.data.structure.NullSafeImmutableMap;
 import io.harness.logging.AutoLogContext;
-import io.harness.queue.Queuable;
 
 import lombok.extern.slf4j.Slf4j;
 

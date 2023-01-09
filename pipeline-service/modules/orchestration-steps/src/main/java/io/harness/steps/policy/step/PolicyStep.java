@@ -9,6 +9,7 @@ package io.harness.steps.policy.step;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.PolicyConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.eraro.ErrorCode;
@@ -37,6 +38,7 @@ import io.harness.steps.policy.PolicyStepSpecParameters;
 import io.harness.steps.policy.custom.CustomPolicyStepSpec;
 import io.harness.steps.policy.step.outcome.PolicyStepOutcome;
 import io.harness.steps.policy.step.outcome.PolicyStepOutcomeMapper;
+import io.harness.utils.PolicyEvalUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
@@ -58,7 +60,7 @@ public class PolicyStep implements SyncExecutable<StepElementParameters> {
     // todo(@NamanVerma): Check for unresolved expressions
     List<String> policySets = policyStepSpecParameters.getPolicySets().getValue();
     if (EmptyPredicate.isEmpty(policySets)) {
-      return PolicyStepHelper.buildFailureStepResponse(ErrorCode.UNSUPPORTED_OPERATION_EXCEPTION,
+      return PolicyEvalUtils.buildFailureStepResponse(ErrorCode.UNSUPPORTED_OPERATION_EXCEPTION,
           "List of Policy Sets cannot by empty", FailureType.UNKNOWN_FAILURE);
     }
 
@@ -69,14 +71,14 @@ public class PolicyStep implements SyncExecutable<StepElementParameters> {
         CustomPolicyStepSpec customPolicySpec = (CustomPolicyStepSpec) policyStepSpecParameters.getPolicySpec();
         // todo(@NamanVerma): Check for unresolved expressions
         payload = customPolicySpec.getPayload().getValue();
-        if (PolicyStepHelper.isInvalidPayload(payload)) {
+        if (PolicyEvalUtils.isInvalidPayload(payload)) {
           log.error("Custom payload is not a valid JSON:\n" + payload);
-          return PolicyStepHelper.buildFailureStepResponse(
+          return PolicyEvalUtils.buildFailureStepResponse(
               ErrorCode.INVALID_JSON_PAYLOAD, "Custom payload is not a valid JSON.", FailureType.UNKNOWN_FAILURE);
         }
         break;
       default:
-        return PolicyStepHelper.buildFailureStepResponse(ErrorCode.UNSUPPORTED_OPERATION_EXCEPTION,
+        return PolicyEvalUtils.buildFailureStepResponse(ErrorCode.UNSUPPORTED_OPERATION_EXCEPTION,
             "Policy Step type " + policyStepType + " is not supported.", FailureType.UNKNOWN_FAILURE);
     }
 
@@ -85,17 +87,17 @@ public class PolicyStep implements SyncExecutable<StepElementParameters> {
     String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
     OpaEvaluationResponseHolder opaEvaluationResponseHolder;
     try {
-      String policySetsQueryParam = PolicyStepHelper.getPolicySetsStringForQueryParam(policySets);
+      String policySetsQueryParam = PolicyEvalUtils.getPolicySetsStringForQueryParam(policySets);
       JsonNode payloadObject = YamlUtils.readTree(payload).getNode().getCurrJsonNode();
       opaEvaluationResponseHolder = SafeHttpCall.executeWithErrorMessage(
           opaServiceClient.evaluateWithCredentialsByID(accountId, orgIdentifier, projectIdentifier,
-              policySetsQueryParam, PolicyStepHelper.getEntityMetadataString(stepParameters.getName()), payloadObject));
+              policySetsQueryParam, PolicyEvalUtils.getEntityMetadataString(stepParameters.getName()), payloadObject));
     } catch (InvalidRequestException ex) {
-      return PolicyStepHelper.buildPolicyEvaluationErrorStepResponse(ex.getMessage());
+      return PolicyEvalUtils.buildPolicyEvaluationErrorStepResponse(ex.getMessage(), null);
     } catch (Exception ex) {
-      log.error("Exception while evaluating OPA rules", ex);
-      return PolicyStepHelper.buildFailureStepResponse(ErrorCode.HTTP_RESPONSE_EXCEPTION,
-          "Unexpected error occurred while evaluating Policies.", FailureType.APPLICATION_FAILURE);
+      log.error(PolicyConstants.OPA_EVALUATION_ERROR_MSG, ex);
+      return PolicyEvalUtils.buildFailureStepResponse(ErrorCode.HTTP_RESPONSE_EXCEPTION,
+          PolicyConstants.POLICY_EVALUATION_UNEXPECTED_ERROR_MSG, FailureType.APPLICATION_FAILURE);
     }
     PolicyStepOutcome outcome = PolicyStepOutcomeMapper.toOutcome(opaEvaluationResponseHolder);
     StepOutcome stepOutcome = StepOutcome.builder()
@@ -105,8 +107,8 @@ public class PolicyStep implements SyncExecutable<StepElementParameters> {
                                   .build();
 
     if (opaEvaluationResponseHolder.getStatus().equals(OpaConstants.OPA_STATUS_ERROR)) {
-      String errorMessage = PolicyStepHelper.buildPolicyEvaluationFailureMessage(opaEvaluationResponseHolder);
-      return PolicyStepHelper.buildFailureStepResponse(
+      String errorMessage = PolicyEvalUtils.buildPolicyEvaluationFailureMessage(opaEvaluationResponseHolder);
+      return PolicyEvalUtils.buildFailureStepResponse(
           ErrorCode.POLICY_EVALUATION_FAILURE, errorMessage, FailureType.POLICY_EVALUATION_FAILURE, stepOutcome);
     }
     return StepResponse.builder().status(Status.SUCCEEDED).stepOutcome(stepOutcome).build();

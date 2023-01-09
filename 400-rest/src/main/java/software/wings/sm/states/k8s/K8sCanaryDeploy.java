@@ -9,6 +9,7 @@ package software.wings.sm.states.k8s;
 
 import static io.harness.annotations.dev.HarnessModule._870_CG_ORCHESTRATION;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.beans.FeatureName.CDP_USE_K8S_DECLARATIVE_ROLLBACK;
 import static io.harness.beans.FeatureName.INSTANCE_SYNC_V2_CG;
 import static io.harness.beans.FeatureName.NEW_KUBECTL_VERSION;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -195,6 +196,8 @@ public class K8sCanaryDeploy extends AbstractK8sState {
             .useLatestKustomizeVersion(isUseLatestKustomizeVersion(context.getAccountId()))
             .useNewKubectlVersion(featureFlagService.isEnabled(NEW_KUBECTL_VERSION, infraMapping.getAccountId()))
             .cleanUpIncompleteCanaryDeployRelease(true)
+            .useDeclarativeRollback(
+                featureFlagService.isEnabled(CDP_USE_K8S_DECLARATIVE_ROLLBACK, infraMapping.getAccountId()))
             .build();
     ExecutionResponse response = queueK8sDelegateTask(context, k8sTaskParameters, appManifestMap);
     saveK8sCanaryDeployRun(context);

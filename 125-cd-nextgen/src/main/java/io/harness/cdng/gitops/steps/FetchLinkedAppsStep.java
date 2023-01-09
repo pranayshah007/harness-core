@@ -16,6 +16,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.gitops.beans.FetchLinkedAppsStepParams;
 import io.harness.cdng.gitops.beans.GitOpsLinkedAppsOutcome;
 import io.harness.cdng.manifest.yaml.DeploymentRepoManifestOutcome;
@@ -46,7 +47,6 @@ import io.harness.ng.BaseUrls;
 import io.harness.ng.beans.PageResponse;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
-import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureData;
@@ -84,7 +84,7 @@ import retrofit2.Response;
 
 @OwnedBy(HarnessTeam.GITOPS)
 @Slf4j
-public class FetchLinkedAppsStep extends TaskExecutableWithRollbackAndRbac<GitOpsFetchAppTaskResponse> {
+public class FetchLinkedAppsStep extends CdTaskExecutable<GitOpsFetchAppTaskResponse> {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.GITOPS_FETCH_LINKED_APPS.getYamlType())
                                                .setStepCategory(StepCategory.STEP)

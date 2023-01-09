@@ -70,6 +70,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.AdditionalAnswers.returnsFirstArg;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
@@ -147,6 +149,8 @@ import io.harness.exception.KubernetesYamlException;
 import io.harness.exception.UrlNotProvidedException;
 import io.harness.exception.UrlNotReachableException;
 import io.harness.filesystem.FileIo;
+import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
+import io.harness.helpers.k8s.releasehistory.K8sReleaseHandlerFactory;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.KubernetesHelperService;
 import io.harness.k8s.ProcessResponse;
@@ -311,6 +315,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
   @Mock private NGErrorHelper ngErrorHelper;
   @Mock private K8sApiClient k8sApiClient;
   @Mock private K8sCliClient k8sCliClient;
+  @Mock private K8sReleaseHandlerFactory releaseHandlerFactory;
 
   @Inject @InjectMocks private K8sTaskHelperBase k8sTaskHelperBase;
   @Spy @InjectMocks private K8sTaskHelperBase spyK8sTaskHelperBase;
@@ -3545,6 +3550,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     resources.add(KubernetesResourceId.builder().name("d2").kind("Deployment").namespace("ns-diff").build());
     resources.add(KubernetesResourceId.builder().name("d3").kind("Service").namespace("ns3").build());
     resources.add(KubernetesResourceId.builder().name("d4").kind("Deployment").namespace("ns4").build());
+    resources.add(KubernetesResourceId.builder().name("d5").kind("Namespace").namespace("ns4").build());
     return resources;
   }
 
@@ -3601,5 +3607,33 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
                       .filePath("path/to/helm/chart/chart.yaml")
                       .fileContent(null)
                       .build());
+  }
+
+  @Test
+  @Owner(developers = ABHINAV2)
+  @Category(UnitTests.class)
+  public void testGetResourceIdsToDelete() throws IOException {
+    List<KubernetesResourceId> resourceIds = generateServerWorkloadTestResource();
+    K8sReleaseHandler releaseHandler = mock(K8sReleaseHandler.class);
+    doReturn(releaseHandler).when(releaseHandlerFactory).getK8sReleaseHandler(anyBoolean());
+    doReturn(resourceIds).when(releaseHandler).getResourceIdsToDelete(any(), any(), any());
+    doAnswer(returnsFirstArg()).when(spyK8sTaskHelperBase).arrangeResourceIdsInDeletionOrder(anyList());
+
+    List<KubernetesResourceId> resourcesToDeleteIncludingNamespace = spyK8sTaskHelperBase.getResourceIdsForDeletion(
+        false, "somerelease", KubernetesConfig.builder().build(), executionLogCallback, true);
+    List<KubernetesResourceId> resourcesToDeleteExcludingNamespace = spyK8sTaskHelperBase.getResourceIdsForDeletion(
+        false, "somerelease", KubernetesConfig.builder().build(), executionLogCallback, false);
+
+    assertThat(resourcesToDeleteIncludingNamespace.size()).isEqualTo(5);
+    assertThat(resourcesToDeleteIncludingNamespace.containsAll(resourceIds)).isTrue();
+
+    assertThat(resourcesToDeleteExcludingNamespace.size()).isEqualTo(4);
+    assertThat(resourceIds.containsAll(resourcesToDeleteExcludingNamespace)).isTrue();
+
+    List<KubernetesResourceId> diff = resourceIds.stream()
+                                          .filter(resource -> !resourcesToDeleteExcludingNamespace.contains(resource))
+                                          .collect(Collectors.toList());
+    assertThat(diff.size()).isEqualTo(1);
+    assertThat(diff.get(0).getKind()).isEqualTo(Namespace.name());
   }
 }

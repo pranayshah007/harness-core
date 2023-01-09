@@ -34,6 +34,7 @@ import static io.harness.k8s.manifest.ManifestHelper.yaml_file_extension;
 import static io.harness.k8s.manifest.ManifestHelper.yml_file_extension;
 import static io.harness.k8s.model.K8sExpressions.canaryDestinationExpression;
 import static io.harness.k8s.model.K8sExpressions.stableDestinationExpression;
+import static io.harness.k8s.model.Kind.Namespace;
 import static io.harness.k8s.releasehistory.IK8sRelease.Status.Failed;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
@@ -127,6 +128,8 @@ import io.harness.helm.HelmCliCommandType;
 import io.harness.helm.HelmCommandFlagsUtils;
 import io.harness.helm.HelmCommandTemplateFactory;
 import io.harness.helm.HelmSubCommandType;
+import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
+import io.harness.helpers.k8s.releasehistory.K8sReleaseHandlerFactory;
 import io.harness.k8s.K8sConstants;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.KubernetesHelperService;
@@ -156,13 +159,18 @@ import io.harness.k8s.model.IstioDestinationWeight;
 import io.harness.k8s.model.K8sContainer;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.K8sPod;
+import io.harness.k8s.model.K8sSteadyStateDTO;
 import io.harness.k8s.model.Kind;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceComparer;
 import io.harness.k8s.model.KubernetesResourceId;
 import io.harness.k8s.model.response.CEK8sDelegatePrerequisite;
+import io.harness.k8s.releasehistory.IK8sRelease;
+import io.harness.k8s.releasehistory.IK8sReleaseHistory;
 import io.harness.k8s.releasehistory.K8sLegacyRelease;
+import io.harness.k8s.releasehistory.K8sReleaseHistoryCleanupDTO;
+import io.harness.k8s.releasehistory.K8sReleasePersistDTO;
 import io.harness.k8s.releasehistory.ReleaseHistory;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
@@ -293,6 +301,7 @@ public class K8sTaskHelperBase {
   @Inject private K8sApiClient kubernetesApiClient;
   @Inject private CustomManifestService customManifestService;
   @Inject private CustomManifestFetchTaskHelper customManifestFetchTaskHelper;
+  @Inject private K8sReleaseHandlerFactory releaseHandlerFactory;
 
   private DelegateExpressionEvaluator delegateExpressionEvaluator = new DelegateExpressionEvaluator();
 
@@ -507,6 +516,9 @@ public class K8sTaskHelperBase {
       });
     } catch (UncheckedTimeoutException e) {
       log.error("Timed out waiting for LoadBalancer service. Moving on.", e);
+    } catch (InterruptedException e) {
+      log.error("Exception while trying to get LoadBalancer service", e);
+      Thread.currentThread().interrupt();
     } catch (Exception e) {
       log.error("Exception while trying to get LoadBalancer service", e);
     }
@@ -3135,6 +3147,76 @@ public class K8sTaskHelperBase {
     }
   }
 
+  public K8sReleaseHandler getReleaseHandler(boolean useDeclarativeRollback) {
+    return releaseHandlerFactory.getK8sReleaseHandler(useDeclarativeRollback);
+  }
+
+  public List<KubernetesResourceId> getResourceIdsForDeletion(boolean useDeclarativeRollback, String releaseName,
+      KubernetesConfig kubernetesConfig, LogCallback logCallback, boolean deleteNamespaceForRelease)
+      throws IOException {
+    K8sReleaseHandler releaseHandler = getReleaseHandler(useDeclarativeRollback);
+    List<KubernetesResourceId> kubernetesResourceIds =
+        releaseHandler.getResourceIdsToDelete(releaseName, kubernetesConfig, logCallback);
+
+    // If namespace deletion is NOT selected,remove all Namespace resources from deletion list
+    if (!deleteNamespaceForRelease) {
+      kubernetesResourceIds =
+          kubernetesResourceIds.stream()
+              .filter(kubernetesResourceId -> !Namespace.name().equals(kubernetesResourceId.getKind()))
+              .collect(toList());
+    }
+
+    return arrangeResourceIdsInDeletionOrder(kubernetesResourceIds);
+  }
+
+  public K8sReleaseHistoryCleanupDTO createReleaseHistoryCleanupRequest(String releaseName,
+      IK8sReleaseHistory releaseHistory, Kubectl client, KubernetesConfig kubernetesConfig,
+      LogCallback executionLogCallback, int currentReleaseNumber, K8sDelegateTaskParams k8sDelegateTaskParams) {
+    return K8sReleaseHistoryCleanupDTO.builder()
+        .releaseName(releaseName)
+        .releaseHistory(releaseHistory)
+        .client(client)
+        .kubernetesConfig(kubernetesConfig)
+        .logCallback(executionLogCallback)
+        .currentReleaseNumber(currentReleaseNumber)
+        .delegateTaskParams(k8sDelegateTaskParams)
+        .build();
+  }
+
+  public K8sSteadyStateDTO createSteadyStateCheckRequest(K8sDeployRequest k8sDeployRequest,
+      List<KubernetesResourceId> managedWorkloadKubernetesResourceIds, LogCallback waitForeSteadyStateLogCallback,
+      K8sDelegateTaskParams k8sDelegateTaskParams, String namespace, boolean denoteOverallSuccess,
+      boolean isErrorFrameworkEnabled) {
+    return K8sSteadyStateDTO.builder()
+        .request(k8sDeployRequest)
+        .resourceIds(managedWorkloadKubernetesResourceIds)
+        .executionLogCallback(waitForeSteadyStateLogCallback)
+        .k8sDelegateTaskParams(k8sDelegateTaskParams)
+        .namespace(namespace)
+        .denoteOverallSuccess(denoteOverallSuccess)
+        .isErrorFrameworkEnabled(isErrorFrameworkEnabled)
+        .build();
+  }
+
+  public K8sReleasePersistDTO createSaveReleaseRequest(KubernetesConfig kubernetesConfig, IK8sRelease release,
+      String releaseName, IK8sReleaseHistory releaseHistory, boolean storeInSecrets) {
+    return K8sReleasePersistDTO.builder()
+        .kubernetesConfig(kubernetesConfig)
+        .release(release)
+        .releaseName(releaseName)
+        .releaseHistory(releaseHistory)
+        .storeInSecrets(storeInSecrets)
+        .build();
+  }
+
+  public void saveRelease(boolean useDeclarativeRollback, boolean storeInSecrets, KubernetesConfig kubernetesConfig,
+      IK8sRelease release, IK8sReleaseHistory releaseHistory, String releaseName) throws Exception {
+    K8sReleaseHandler releaseHandler = getReleaseHandler(useDeclarativeRollback);
+    K8sReleasePersistDTO persistDTO =
+        createSaveReleaseRequest(kubernetesConfig, release, releaseName, releaseHistory, storeInSecrets);
+    releaseHandler.saveRelease(persistDTO);
+  }
+
   private static String getLatestVersionOcPath() {
     String ocPath = "oc";
     try {
@@ -3143,5 +3225,13 @@ public class K8sTaskHelperBase {
       log.warn("Unable to fetch OC binary path from delegate. Kindly ensure it is configured as env variable." + ex);
     }
     return ocPath;
+  }
+
+  public int getNextReleaseNumberFromOldReleaseHistory(KubernetesConfig kubernetesConfig, String releaseName)
+      throws Exception {
+    K8sReleaseHandler legacyReleaseHistoryHandler = getReleaseHandler(false);
+    IK8sReleaseHistory legacyReleaseHistory =
+        legacyReleaseHistoryHandler.getReleaseHistory(kubernetesConfig, releaseName);
+    return legacyReleaseHistory.getAndIncrementLastReleaseNumber();
   }
 }

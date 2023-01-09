@@ -20,26 +20,35 @@ import io.harness.ccm.budget.BudgetMonthlyBreakdown;
 import io.harness.ccm.budget.BudgetPeriod;
 import io.harness.ccm.budget.BudgetSummary;
 import io.harness.ccm.budget.ValueDataPoint;
+import io.harness.ccm.budget.dao.BudgetDao;
 import io.harness.ccm.budget.utils.BudgetUtils;
 import io.harness.ccm.budgetGroup.BudgetGroup;
 import io.harness.ccm.budgetGroup.BudgetGroupChildEntityDTO;
 import io.harness.ccm.budgetGroup.CascadeType;
+import io.harness.ccm.budgetGroup.dao.BudgetGroupDao;
 import io.harness.ccm.commons.entities.billing.Budget;
+import io.harness.ccm.commons.entities.budget.BudgetCostData;
 import io.harness.exception.InvalidRequestException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.Stack;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @Slf4j
 public class BudgetGroupUtils {
+  @Autowired private static BudgetDao budgetDao;
+  @Autowired private static BudgetGroupDao budgetGroupDao;
+
   public static final String BUDGET_GROUP_NAME_EXISTS_EXCEPTION =
       "Error in creating budget group. Budget group with given name already exists";
   public static final String INVALID_CHILD_ENTITY_ID_EXCEPTION =
@@ -60,6 +69,7 @@ public class BudgetGroupUtils {
       "Error in performing operation. Parent of child entities don't match.";
   public static final String CHILD_ENTITY_BUDGET_BREAKDOWN_NOT_PRESENT_EXCEPTION =
       "Error in performing operation. Budget breakdown not found.";
+  public static final int MONTHS = 12;
   public static final String CHILD_ENTITY_TYPE_NOT_PRESENT_EXCEPTION =
       "Error in performing operation. Child entity type not found.";
   public static final String CHILD_ENTITY_NOT_PRESENT_EXCEPTION =
@@ -515,5 +525,181 @@ public class BudgetGroupUtils {
     if (!existingBudgetGroups.isEmpty() && (!existingBudgetGroups.get(0).getUuid().equals(budgetGroup.getUuid()))) {
       throw new InvalidRequestException(BUDGET_GROUP_NAME_EXISTS_EXCEPTION);
     }
+  }
+
+  public static void updateBudgetGroupAmount(BudgetGroup budgetGroup, String accountId) {
+    try {
+      Double[] budgetGroupAmountMonthly = new Double[12];
+
+      double budgetGroupAmount = 0.0;
+
+      Arrays.fill(budgetGroupAmountMonthly, 0.0);
+
+      // budgetGroupStack is used to traverse through all the children of budgetGroup
+      Stack<BudgetGroup> budgetGroupStack = new Stack<>();
+
+      // budgetGroupUuid & budgetUuid is used to avoid any circular link that might exist
+      Set<String> budgetGroupUuid = new HashSet<>();
+      Set<String> budgetUuid = new HashSet<>();
+
+      budgetGroupStack.add(budgetGroup);
+      budgetGroupUuid.add(budgetGroup.getUuid());
+
+      while (!budgetGroupStack.isEmpty()) {
+        BudgetGroup budgetGroupTemp = budgetGroupStack.peek();
+        budgetGroupStack.pop();
+
+        // Here we explore all children of the given budgetGroup
+        for (BudgetGroupChildEntityDTO childEntityDTO : budgetGroupTemp.getChildEntities()) {
+          // If child entity is a budgetGroup & not yet explored we add it to stack and mark it as visited
+          if (childEntityDTO.isBudgetGroup() && !budgetGroupUuid.contains(childEntityDTO.getId())) {
+            budgetGroupStack.add(budgetGroupDao.get(childEntityDTO.getId(), accountId));
+            budgetGroupUuid.add(childEntityDTO.getId());
+          }
+
+          // If child entity id a budget & not yet explored then we add the amount to budgetGroup Amount
+          // And also mark it as visited
+          if (!childEntityDTO.isBudgetGroup() && !budgetUuid.contains(childEntityDTO.getId())) {
+            budgetUuid.add(childEntityDTO.getId());
+            Budget childBudget = budgetDao.get(childEntityDTO.getId(), accountId);
+            budgetGroupAmount += childBudget.getBudgetAmount();
+            if (childBudget.getPeriod() == BudgetPeriod.YEARLY && childBudget.getBudgetMonthlyBreakdown() != null
+                && childBudget.getBudgetMonthlyBreakdown().getBudgetBreakdown() == BudgetBreakdown.MONTHLY) {
+              Double[] budgetAmountMonthly = BudgetUtils.getYearlyMonthWiseValues(
+                  childBudget.getBudgetMonthlyBreakdown().getBudgetMonthlyAmount());
+              for (int month = 0; month < MONTHS; month++) {
+                budgetGroupAmountMonthly[month] += budgetAmountMonthly[month];
+              }
+            }
+          }
+        }
+      }
+
+      budgetGroup.setBudgetGroupAmount(budgetGroupAmount);
+      if (budgetGroup.getPeriod() == BudgetPeriod.YEARLY && budgetGroup.getBudgetGroupMonthlyBreakdown() != null
+          && budgetGroup.getBudgetGroupMonthlyBreakdown().getBudgetBreakdown() == BudgetBreakdown.MONTHLY) {
+        budgetGroup.getBudgetGroupMonthlyBreakdown().setBudgetMonthlyAmount(
+            BudgetUtils.getYearlyMonthWiseKeyValuePairs(budgetGroup.getStartTime(), budgetGroupAmountMonthly));
+      }
+    } catch (Exception e) {
+      log.error("Exception while calculating updated budget group amount for budget group : {}. Exception: {}",
+          budgetGroup.getUuid(), e);
+    }
+  }
+
+  public static void updateBudgetGroupCosts(BudgetGroup budgetGroup, String accountId) {
+    try {
+      Double[] budgetGroupActualCostMonthly = new Double[12];
+      Double[] budgetGroupForecastCostMonthly = new Double[12];
+      Double[] budgetGroupLastPeriodCostMonthly = new Double[12];
+
+      double budgetGroupActualCost = 0.0;
+      double budgetGroupForecastCost = 0.0;
+      double budgetGroupLastPeriodCost = 0.0;
+
+      Arrays.fill(budgetGroupActualCostMonthly, 0.0);
+      Arrays.fill(budgetGroupForecastCostMonthly, 0.0);
+      Arrays.fill(budgetGroupLastPeriodCostMonthly, 0.0);
+
+      // budgetGroupStack is used to traverse through all the children of budgetGroup
+      Stack<BudgetGroup> budgetGroupStack = new Stack<>();
+
+      // budgetGroupUuid & budgetUuid is used to avoid any circular link that might exist
+      Set<String> budgetGroupUuid = new HashSet<>();
+      Set<String> budgetUuid = new HashSet<>();
+
+      budgetGroupStack.add(budgetGroup);
+      budgetGroupUuid.add(budgetGroup.getUuid());
+
+      while (!budgetGroupStack.isEmpty()) {
+        BudgetGroup budgetGroupTemp = budgetGroupStack.peek();
+        budgetGroupStack.pop();
+
+        // Here we explore all children of the given budgetGroup
+        for (BudgetGroupChildEntityDTO childEntityDTO : budgetGroupTemp.getChildEntities()) {
+          // If child entity is a budgetGroup & not yet explored we add it to stack and mark it as visited
+          if (childEntityDTO.isBudgetGroup() && !budgetGroupUuid.contains(childEntityDTO.getId())) {
+            budgetGroupStack.add(budgetGroupDao.get(childEntityDTO.getId(), accountId));
+            budgetGroupUuid.add(childEntityDTO.getId());
+          }
+
+          // If child entity id a budget & not yet explored then we add the amount to budgetGroup Amount
+          // And also mark it as visited
+          if (!childEntityDTO.isBudgetGroup() && !budgetUuid.contains(childEntityDTO.getId())) {
+            budgetUuid.add(childEntityDTO.getId());
+            Budget childBudget = budgetDao.get(childEntityDTO.getId(), accountId);
+            budgetGroupActualCost += childBudget.getActualCost();
+            budgetGroupForecastCost += childBudget.getForecastCost();
+            budgetGroupLastPeriodCost += childBudget.getLastMonthCost();
+            if (childBudget.getPeriod() == BudgetPeriod.YEARLY && childBudget.getBudgetMonthlyBreakdown() != null
+                && childBudget.getBudgetMonthlyBreakdown().getBudgetBreakdown() == BudgetBreakdown.MONTHLY) {
+              Double[] budgetActualCostMonthly = childBudget.getBudgetMonthlyBreakdown().getActualMonthlyCost();
+              Double[] budgetForecastCostMonthly = childBudget.getBudgetMonthlyBreakdown().getForecastMonthlyCost();
+              Double[] budgetLastPeriodCostMonthly = childBudget.getBudgetMonthlyBreakdown().getYearlyLastPeriodCost();
+              for (int month = 0; month < MONTHS; month++) {
+                budgetGroupActualCostMonthly[month] += budgetActualCostMonthly[month];
+                budgetGroupForecastCostMonthly[month] += budgetForecastCostMonthly[month];
+                budgetGroupLastPeriodCostMonthly[month] += budgetLastPeriodCostMonthly[month];
+              }
+            }
+          }
+        }
+      }
+
+      budgetGroup.setActualCost(budgetGroupActualCost);
+      budgetGroup.setForecastCost(budgetGroupForecastCost);
+      budgetGroup.setLastMonthCost(budgetGroupLastPeriodCost);
+      if (budgetGroup.getPeriod() == BudgetPeriod.YEARLY && budgetGroup.getBudgetGroupMonthlyBreakdown() != null
+          && budgetGroup.getBudgetGroupMonthlyBreakdown().getBudgetBreakdown() == BudgetBreakdown.MONTHLY) {
+        budgetGroup.getBudgetGroupMonthlyBreakdown().setActualMonthlyCost(budgetGroupActualCostMonthly);
+        budgetGroup.getBudgetGroupMonthlyBreakdown().setForecastMonthlyCost(budgetGroupForecastCostMonthly);
+        budgetGroup.getBudgetGroupMonthlyBreakdown().setYearlyLastPeriodCost(budgetGroupLastPeriodCostMonthly);
+      }
+    } catch (Exception e) {
+      log.error("Exception while calculating updated budget group costs for budget group : {}. Exception: {}",
+          budgetGroup.getUuid(), e);
+    }
+  }
+
+  public static HashMap<Long, BudgetCostData> adjustBudgetGroupHistory(BudgetGroup budgetGroup) {
+    HashMap<Long, BudgetCostData> budgetGroupHistory = budgetGroup.getBudgetGroupHistory();
+    int maxAllowedSize;
+
+    switch (budgetGroup.getPeriod()) {
+      case DAILY:
+      case WEEKLY:
+      case MONTHLY:
+        maxAllowedSize = 12;
+        break;
+      case QUARTERLY:
+        maxAllowedSize = 4;
+        break;
+      case YEARLY:
+        maxAllowedSize = 1;
+        break;
+      default:
+        maxAllowedSize = 0;
+    }
+
+    while (budgetGroupHistory.size() >= maxAllowedSize) {
+      Long minStartTime = Collections.min(budgetGroupHistory.keySet());
+      budgetGroupHistory.remove(minStartTime);
+    }
+
+    double budgetVariance =
+        BudgetUtils.getBudgetVariance(budgetGroup.getBudgetGroupAmount(), budgetGroup.getActualCost());
+    double budgetVariancePercentage =
+        BudgetUtils.getBudgetVariancePercentage(budgetVariance, budgetGroup.getBudgetGroupAmount());
+    BudgetCostData currentBudgetCostData = BudgetCostData.builder()
+                                               .time(budgetGroup.getStartTime())
+                                               .endTime(budgetGroup.getEndTime())
+                                               .budgeted(budgetGroup.getBudgetGroupAmount())
+                                               .actualCost(budgetGroup.getActualCost())
+                                               .forecastCost(budgetGroup.getForecastCost())
+                                               .budgetVariance(budgetVariance)
+                                               .budgetVariancePercentage(budgetVariancePercentage)
+                                               .build();
+    budgetGroupHistory.put(budgetGroup.getStartTime(), currentBudgetCostData);
+    return budgetGroupHistory;
   }
 }

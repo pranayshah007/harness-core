@@ -101,6 +101,7 @@ shared_dependencies = [
     "@maven//:io_swagger_core_v3_swagger_annotations",
     "@maven//:io_swagger_core_v3_swagger_models",
     "@maven//:io_swagger_core_v3_swagger_integration",
+    "@maven//:org_postgresql_postgresql",
 ]
 
 java_binary(
