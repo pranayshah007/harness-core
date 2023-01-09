@@ -40,6 +40,7 @@ import io.harness.auditevent.streaming.publishers.StreamingPublisher;
 import io.harness.auditevent.streaming.publishers.impl.AwsS3StreamingPublisher;
 import io.harness.auditevent.streaming.services.BatchProcessorService;
 import io.harness.auditevent.streaming.services.StreamingBatchService;
+import io.harness.auditevent.streaming.services.StreamingDestinationsService;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 
@@ -62,6 +63,7 @@ public class AuditEventStreamingServiceImplTest extends CategoryTest {
   public static final int MINUTES_30_IN_MILLS = 30 * 60 * 1000;
   @Mock private BatchProcessorService batchProcessorService;
   @Mock private StreamingBatchService streamingBatchService;
+  @Mock private StreamingDestinationsService streamingDestinationsService;
   @Mock private AuditEventRepository auditEventRepository;
   @Mock private AwsS3StreamingPublisher awsS3StreamingPublisher;
   @Mock private BatchConfig batchConfig;
@@ -70,6 +72,8 @@ public class AuditEventStreamingServiceImplTest extends CategoryTest {
 
   ArgumentCaptor<Criteria> criteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
   ArgumentCaptor<StreamingBatch> streamingBatchArgumentCaptor = ArgumentCaptor.forClass(StreamingBatch.class);
+  ArgumentCaptor<StreamingDestination> streamingDestinationArgumentCaptor =
+      ArgumentCaptor.forClass(StreamingDestination.class);
 
   private static final String ACCOUNT_IDENTIFIER = randomAlphabetic(10);
 
@@ -77,8 +81,8 @@ public class AuditEventStreamingServiceImplTest extends CategoryTest {
   public void setup() {
     MockitoAnnotations.openMocks(this);
     streamingPublisherMap = Map.of(AWS_S3_STREAMING_PUBLISHER, awsS3StreamingPublisher);
-    this.auditEventStreamingService = new AuditEventStreamingServiceImpl(
-        batchProcessorService, streamingBatchService, auditEventRepository, streamingPublisherMap, batchConfig);
+    this.auditEventStreamingService = new AuditEventStreamingServiceImpl(batchProcessorService, streamingBatchService,
+        streamingDestinationsService, auditEventRepository, streamingPublisherMap, batchConfig);
   }
 
   @Test
@@ -122,6 +126,9 @@ public class AuditEventStreamingServiceImplTest extends CategoryTest {
 
     verify(streamingBatchService, times(1))
         .getLastStreamingBatch(streamingDestination, jobParameters.getLong(JOB_START_TIME_PARAMETER_KEY));
+    verify(streamingDestinationsService, times(1))
+        .disableStreamingDestination(streamingDestinationArgumentCaptor.capture());
+    assertThat(streamingDestinationArgumentCaptor.getValue()).isEqualTo(streamingDestination);
     verify(auditEventRepository, times(0)).loadAuditEvents(any(), any());
     verify(streamingBatchService, times(0)).update(ACCOUNT_IDENTIFIER, streamingBatch);
     verify(batchProcessorService, times(0)).processAuditEvent(any());
