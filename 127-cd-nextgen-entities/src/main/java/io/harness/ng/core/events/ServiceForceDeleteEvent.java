@@ -2,9 +2,12 @@ package io.harness.ng.core.events;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.audit.ResourceTypeConstants.SERVICE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.event.Event;
+import io.harness.ng.core.AccountScope;
+import io.harness.ng.core.OrgScope;
 import io.harness.ng.core.ProjectScope;
 import io.harness.ng.core.Resource;
 import io.harness.ng.core.ResourceScope;
@@ -13,17 +16,28 @@ import io.harness.ng.core.service.entity.ServiceEntity;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+
 @OwnedBy(CDC)
 @Getter
 @Builder
 @AllArgsConstructor
+
 public class ServiceForceDeleteEvent implements Event {
   private String accountIdentifier;
+
   private String orgIdentifier;
+
   private String projectIdentifier;
+
   private ServiceEntity service;
+
   @Override
   public ResourceScope getResourceScope() {
+    if (isEmpty(service.getOrgIdentifier())) {
+      return new AccountScope(accountIdentifier);
+    } else if (isEmpty(service.getProjectIdentifier())) {
+      return new OrgScope(accountIdentifier, service.getOrgIdentifier());
+    }
     return new ProjectScope(accountIdentifier, service.getOrgIdentifier(), service.getProjectIdentifier());
   }
 

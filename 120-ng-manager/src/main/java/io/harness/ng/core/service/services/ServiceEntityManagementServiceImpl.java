@@ -34,15 +34,18 @@ import java.util.List;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
-@OwnedBy(HarnessTeam.PIPELINE)
+@OwnedBy(HarnessTeam.CDC)
 public class ServiceEntityManagementServiceImpl implements ServiceEntityManagementService {
   private final InstanceService instanceService;
   private final ServiceEntityService serviceEntityService;
+
   private final AccountClient accountClient;
+
   NGSettingsClient settingsClient;
+
   @Override
   public boolean deleteService(String accountId, String orgIdentifier, String projectIdentifier,
-      String serviceIdentifier, String ifMatch, Boolean forceDelete) {
+      String serviceIdentifier, String ifMatch, boolean forceDelete) {
     if (forceDelete && !isForceDeleteEnabled(accountId)) {
       throw new InvalidRequestException(
           format("Parameter forcedDelete cannot be true. Force Delete is not enabled for account [%s]", accountId),
