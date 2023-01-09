@@ -50,12 +50,6 @@ import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.cloudfoundry.client.CloudFoundryClient;
-import org.cloudfoundry.client.v3.deployments.DeploymentResource;
-import org.cloudfoundry.client.v3.deployments.GetDeploymentRequest;
-import org.cloudfoundry.client.v3.deployments.GetDeploymentResponse;
-import org.cloudfoundry.client.v3.deployments.ListDeploymentsRequest;
-import org.cloudfoundry.client.v3.deployments.ListDeploymentsResponse;
 import org.cloudfoundry.doppler.LogMessage;
 import org.cloudfoundry.operations.applications.ApplicationDetail;
 import org.cloudfoundry.operations.applications.ApplicationEnvironments;
@@ -92,8 +86,6 @@ public class CfSdkClientImpl implements CfSdkClient {
   public static final String PCF_PROXY_PROPERTY = "https_proxy";
 
   @Inject private CloudFoundryOperationsProvider cloudFoundryOperationsProvider;
-  @Inject private CloudFoundryClientProvider cloudFoundryClientProvider;
-  @Inject private ConnectionContextProvider connectionContextProvider;
 
   @Override
   public List<OrganizationSummary> getOrganizations(CfRequestConfig pcfRequestConfig)
@@ -128,82 +120,6 @@ public class CfSdkClientImpl implements CfSdkClient {
     }
     return organizations;
   }
-
-  @Override
-  public List<DeploymentResource> listDeployments(CfRequestConfig pcfRequestConfig)
-      throws PivotalClientApiException, InterruptedException {
-    log.info(format("%s Fetching Organizations", PIVOTAL_CLOUD_FOUNDRY_LOG_PREFIX));
-
-    List<DeploymentResource> deployments = new ArrayList<>();
-
-    AtomicBoolean exceptionOccurred = new AtomicBoolean(false);
-    StringBuilder errorBuilder = new StringBuilder();
-    CountDownLatch latch = new CountDownLatch(1);
-
-    ListDeploymentsRequest listDeploymentsRequest = ListDeploymentsRequest.builder().build();
-    CloudFoundryClient cloudFoundryClient = cloudFoundryClientProvider.getCloudFoundryClient(
-        pcfRequestConfig, connectionContextProvider.getConnectionContext(pcfRequestConfig));
-    Instant start = Instant.now();
-    cloudFoundryClient.deploymentsV3()
-        .list(listDeploymentsRequest)
-        .flatMapIterable(ListDeploymentsResponse::getResources)
-        .subscribe(deployments::add, throwable -> {
-          exceptionOccurred.set(true);
-          handleException(throwable, "listDeployments", errorBuilder);
-          latch.countDown();
-        }, latch::countDown);
-
-    waitTillCompletion(latch, pcfRequestConfig.getTimeOutIntervalInMins());
-    Instant end = Instant.now();
-    if (exceptionOccurred.get()) {
-      logSdkCommandFailure("getCloudFoundryOperations().organizations().list()", null,
-          Duration.between(start, end).toMillis(), errorBuilder.toString());
-      throw new PivotalClientApiException(
-          format("Exception occurred while fetching Deployments, Error: %s", errorBuilder.toString()));
-    } else {
-      logSdkCommand("deploymentsV3().list().flatMapIterable(ListDeploymentsResponse::getResources)", null,
-          Duration.between(start, end).toMillis());
-    }
-    return deployments;
-  }
-
-  @Override
-  public GetDeploymentResponse getDeployment(CfRequestConfig pcfRequestConfig, String deploymentId)
-      throws PivotalClientApiException, InterruptedException {
-    log.info(format("%s Fetching Organizations", PIVOTAL_CLOUD_FOUNDRY_LOG_PREFIX));
-
-    List<GetDeploymentResponse> getDeploymentResponseList = new ArrayList<>();
-
-    AtomicBoolean exceptionOccurred = new AtomicBoolean(false);
-    StringBuilder errorBuilder = new StringBuilder();
-    CountDownLatch latch = new CountDownLatch(1);
-
-    GetDeploymentRequest getDeploymentRequest = GetDeploymentRequest.builder().deploymentId(deploymentId).build();
-    CloudFoundryClient cloudFoundryClient = cloudFoundryClientProvider.getCloudFoundryClient(
-        pcfRequestConfig, connectionContextProvider.getConnectionContext(pcfRequestConfig));
-    Instant start = Instant.now();
-    cloudFoundryClient.deploymentsV3()
-        .get(getDeploymentRequest)
-        .subscribe(getDeploymentResponse -> getDeploymentResponseList.add(getDeploymentResponse), throwable -> {
-          exceptionOccurred.set(true);
-          handleException(throwable, "listDeployments", errorBuilder);
-          latch.countDown();
-        }, latch::countDown);
-
-    waitTillCompletion(latch, pcfRequestConfig.getTimeOutIntervalInMins());
-    Instant end = Instant.now();
-    if (exceptionOccurred.get()) {
-      logSdkCommandFailure("getCloudFoundryOperations().organizations().list()", null,
-          Duration.between(start, end).toMillis(), errorBuilder.toString());
-      throw new PivotalClientApiException(
-          format("Exception occurred while fetching Deployments, Error: %s", errorBuilder.toString()));
-    } else {
-      logSdkCommand("deploymentsV3().list().flatMapIterable(ListDeploymentsResponse::getResources)", null,
-          Duration.between(start, end).toMillis());
-    }
-    return isNotEmpty(getDeploymentResponseList) ? getDeploymentResponseList.get(0) : null;
-  }
-
   private void handleExceptionForGetOrganizationsAPI(Throwable t, String apiName, StringBuilder errorBuilder) {
     log.error(PIVOTAL_CLOUD_FOUNDRY_LOG_PREFIX + "Exception Occurred while executing PCF api: " + apiName
         + " EXCEPTION: " + t.toString());
