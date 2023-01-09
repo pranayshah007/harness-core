@@ -7,12 +7,15 @@
 
 package io.harness.cvng.core.services.api;
 
+import io.harness.beans.HeaderConfig;
 import io.harness.cvng.core.beans.CustomChangeWebhookEvent;
 import io.harness.cvng.core.beans.PagerDutyWebhookEvent;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.entities.PagerDutyWebhook;
 import io.harness.cvng.core.entities.Webhook;
+
+import java.util.List;
 
 public interface WebhookService {
   void createPagerdutyWebhook(
@@ -26,4 +29,7 @@ public interface WebhookService {
 
   void handleCustomChangeWebhook(ProjectParams projectParams, String monitoredServiceIdentifier,
       String changeSourceIdentifier, CustomChangeWebhookEvent customChangeWebhookEvent);
+
+  void checkAuthorization(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, List<HeaderConfig> headerConfigs);
 }

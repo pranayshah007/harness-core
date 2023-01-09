@@ -28,6 +28,7 @@ import io.harness.cvng.core.entities.Webhook.WebhookKeys;
 import io.harness.cvng.core.jobs.CustomChangeEventPublisherService;
 import io.harness.cvng.core.services.api.ChangeEventService;
 import io.harness.cvng.core.services.api.WebhookService;
+import io.harness.exception.InvalidRequestException;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 
@@ -42,9 +43,7 @@ public class WebhookServiceImpl implements WebhookService {
 
   @Inject private CustomChangeEventPublisherService customChangeEventPublisherService;
 
-  // private final AccessControlClient accessControlClient;
-
-  @Inject
+  @Inject AccessControlClient accessControlClient;
 
   @Override
   public void createPagerdutyWebhook(
@@ -121,8 +120,9 @@ public class WebhookServiceImpl implements WebhookService {
         projectParams, monitoredServiceIdentifier, changeSourceIdentifier, customChangeWebhookEvent);
   }
 
-  private void checkAuthorization(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      String monitoredServiceIdentifier, String changeSourceIdentifier, List<HeaderConfig> headerConfigs) {
+  @Override
+  public void checkAuthorization(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, List<HeaderConfig> headerConfigs) {
     boolean hasApiKey = false;
     for (HeaderConfig headerConfig : headerConfigs) {
       if (headerConfig.getKey().equalsIgnoreCase(X_API_KEY)) {
@@ -131,8 +131,11 @@ public class WebhookServiceImpl implements WebhookService {
       }
     }
     if (hasApiKey) {
-      accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
-          Resource.of("PIPELINE", pipelineIdentifier), PipelineRbacPermissions.PIPELINE_EXECUTE);
+      accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier), )
     }
+
+    throw new InvalidRequestException(
+        String.format("Authorization is mandatory for custom change in %s:%s:%s. Please add %s header in the request",
+            accountIdentifier, orgIdentifier, projectIdentifier, X_API_KEY));
   }
 }
