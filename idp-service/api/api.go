@@ -8,9 +8,9 @@ import (
 
 func AppConfigYaml(e *echo.Echo){
 
-	e.POST("/add-appconfig", handlers.AddAppConfigs)
-	e.GET("/appconfig/:accountId", handlers.GetAppConfigFromAccountID)
-	e.PUT("/update-appconfig/:accountId", handlers.UpdateAppConfigYaml)
-	e.DELETE("/delete-appconfig/:accountId", handlers.DeleteAUser)
+	e.POST("/idp/appconfig/add", handlers.AddAppConfigs)
+	e.GET("/idp/appconfig/:accountId", handlers.GetAppConfigFromAccountID)
+	e.PUT("/idp/appconfig/update/:accountId", handlers.UpdateAppConfigYaml)
+	e.DELETE("/idp/appconfig/delete/:accountId", handlers.DeleteAUser)
 	
 }
