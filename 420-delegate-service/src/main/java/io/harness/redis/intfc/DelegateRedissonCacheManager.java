@@ -13,12 +13,14 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.redis.impl.DelegateRedissonCacheManagerImpl;
 
 import com.google.inject.ImplementedBy;
+import org.redisson.api.LocalCachedMapOptions;
 import org.redisson.api.RLocalCachedMap;
 
 @OwnedBy(DEL)
 @ImplementedBy(DelegateRedissonCacheManagerImpl.class)
 public interface DelegateRedissonCacheManager {
-  <K, V> RLocalCachedMap<K, V> getCache(String cacheName, Class<K> keyType, Class<V> valueType);
+  <K, V> RLocalCachedMap<K, V> getCache(
+      String cacheName, Class<K> keyType, Class<V> valueType, LocalCachedMapOptions<K, V> localCachedMapOptions);
 
   <K, V> RLocalCachedMap<K, V> getCache(String cacheName, Class<K> keyType, Class<V> valueType, String keyPrefix);
 }

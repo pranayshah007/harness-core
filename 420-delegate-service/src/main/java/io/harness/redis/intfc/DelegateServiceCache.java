@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.DEL;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.Delegate;
+import io.harness.delegate.beans.DelegateGroup;
 import io.harness.redis.impl.DelegateServiceCacheImpl;
 import io.harness.redis.impl.DelegateServiceCacheImpl.UpdateOperation;
 
@@ -22,7 +23,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 @ImplementedBy(DelegateServiceCacheImpl.class)
 public interface DelegateServiceCache {
   AtomicInteger getDelegateTaskCache(String delegateId);
+
   void updateDelegateTaskCache(String delegateId, UpdateOperation updateOperation);
+
   Delegate getDelegateCache(String delegateId);
+
+  DelegateGroup getDelegateGroupCache(String accountId, String delegateGroupId);
+
   List<Delegate> getDelegatesForGroup(String accountId, String delegateGroupId);
+
+  Integer getNumberOfPerpetualTaskAssignedCount(String accountId, String delegateId);
 }
