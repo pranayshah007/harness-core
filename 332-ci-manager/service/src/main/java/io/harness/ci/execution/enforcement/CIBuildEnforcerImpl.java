@@ -9,44 +9,52 @@ package io.harness.ci.enforcement;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.ci.config.CIExecutionServiceConfig;
+import io.harness.ci.config.ExecutionLimits;
 import io.harness.ci.config.ExecutionLimits.ExecutionLimitSpec;
 import io.harness.ci.execution.QueueExecutionUtils;
 import io.harness.ci.license.CILicenseService;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
 
 import com.google.inject.Inject;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CI)
+@Slf4j
 public class CIBuildEnforcerImpl implements CIBuildEnforcer {
-  @Inject private CILicenseService ciLicenseService;
-  @Inject private CIExecutionServiceConfig ciExecutionServiceConfig;
-
+  @Inject CILicenseService ciLicenseService;
   @Inject private QueueExecutionUtils queueExecutionUtils;
+  @Inject private ExecutionLimits executionLimits;
 
   @Override
   public boolean checkBuildEnforcement(String accountId) {
+    long currExecutionCount = queueExecutionUtils.getActiveExecutionsCount(accountId);
+    long macExecutionsCount = queueExecutionUtils.getActiveMacExecutionsCount(accountId);
+
+    // if the limits are override for a specific account, give priority to those
+    if (executionLimits.getOverrideConfigMap().containsKey(accountId)) {
+      log.info("overridden limits for the account: {}, total: {}, mac: {}", accountId,
+          executionLimits.getOverrideConfigMap().get(accountId).getDefaultTotalExecutionCount(),
+          executionLimits.getOverrideConfigMap().get(accountId).getDefaultMacExecutionCount());
+      return currExecutionCount <= executionLimits.getOverrideConfigMap().get(accountId).getDefaultTotalExecutionCount()
+          && macExecutionsCount <= executionLimits.getOverrideConfigMap().get(accountId).getDefaultMacExecutionCount();
+    }
+
     LicensesWithSummaryDTO licensesWithSummaryDTO = ciLicenseService.getLicenseSummary(accountId);
     if (licensesWithSummaryDTO != null) {
       ExecutionLimitSpec executionLimitSpec = null;
       switch (licensesWithSummaryDTO.getEdition()) {
-        case FREE:
-          executionLimitSpec = ciExecutionServiceConfig.getExecutionLimits().getFree();
-          break;
         case TEAM:
-          executionLimitSpec = ciExecutionServiceConfig.getExecutionLimits().getTeam();
+          executionLimitSpec = executionLimits.getTeam();
           break;
         case ENTERPRISE:
-          executionLimitSpec = ciExecutionServiceConfig.getExecutionLimits().getEnterprise();
+          executionLimitSpec = executionLimits.getEnterprise();
           break;
         default:
-          executionLimitSpec = ciExecutionServiceConfig.getExecutionLimits().getFree();
+          executionLimitSpec = executionLimits.getFree();
       }
-      long currExecutionCount = queueExecutionUtils.getActiveExecutionsCount(accountId);
-      long macExecutionsCount = queueExecutionUtils.getActiveExecutionsCount(accountId);
 
-      return currExecutionCount < executionLimitSpec.getDefaultTotalExecutionCount()
-          && macExecutionsCount < executionLimitSpec.getDefaultMacExecutionCount();
+      return currExecutionCount <= executionLimitSpec.getDefaultTotalExecutionCount()
+          && macExecutionsCount <= executionLimitSpec.getDefaultMacExecutionCount();
     }
     // in case of any failures in fetching the license, keeping the default behaviour as allowed
     return true;
