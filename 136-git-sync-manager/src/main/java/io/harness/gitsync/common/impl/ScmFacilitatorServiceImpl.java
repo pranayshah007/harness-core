@@ -667,6 +667,33 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
     }
   }
 
+  @Override
+  public String getFileUrl(Scope scope, String connectorRef, String repoName, String fileName, String branch) {
+    final ScmConnector scmConnector = gitSyncConnectorHelper.getScmConnectorForGivenRepo(
+        scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), connectorRef, repoName);
+    String gitConnectionUrl = scmConnector.getGitConnectionUrl(GitRepositoryDTO.builder().name(repoName).build());
+
+    switch (scmConnector.getConnectorType()) {
+      case GITHUB:
+        return GitClientHelper.getCompleteHTTPUrlForGithub(gitConnectionUrl);
+      case BITBUCKET:
+        if (GitClientHelper.isBitBucketSAAS(gitConnectionUrl)) {
+          return GitClientHelper.getCompleteHTTPUrlForBitbucketSaas(gitConnectionUrl);
+        }
+        BitbucketConnectorDTO bitbucketConnectorDTO = (BitbucketConnectorDTO) scmConnector;
+        if (GitAuthType.SSH.equals(bitbucketConnectorDTO.getAuthentication().getAuthType())) {
+          return GitClientHelper.getCompleteHTTPUrlFromSSHUrlForBitbucketServer(gitConnectionUrl);
+        } else {
+          return gitConnectionUrl;
+        }
+      case AZURE_REPO:
+        return GitClientHelper.getCompleteHTTPRepoUrlForAzureRepoSaas(gitConnectionUrl);
+      default:
+        throw new InvalidRequestException(
+            format("Connector of given type : %s isn't supported", scmConnector.getConnectorType()));
+    }
+  }
+
   private List<GitRepositoryResponseDTO> prepareListRepoResponse(
       ScmConnector scmConnector, GetUserReposResponse response) {
     GitRepositoryDTO gitRepository = scmConnector.getGitRepositoryDetails();

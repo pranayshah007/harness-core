@@ -49,6 +49,7 @@ public class GitSyncApiConstants {
   public static final String REPOID_PARAM_MESSAGE = "Git Sync Config Id.";
   public static final String REPO_URL_PARAM_MESSAGE = "URL of the repository.";
   public static final String REPO_NAME_PARAM_MESSAGE = "Name of the repository.";
+  public static final String FILE_NAME_PARAM_MESSAGE = "Name of the file.";
   public static final String FOLDER_PATH_PARAM_MESSAGE = "Path to the root folder of the Entity.";
   public static final String COMMIT_MESSAGE_PARAM_MESSAGE = "Commit Message to use for the merge commit.";
   public static final String DEFAULT_BRANCH_PARAM_MESSAGE = "Name of the default branch.";

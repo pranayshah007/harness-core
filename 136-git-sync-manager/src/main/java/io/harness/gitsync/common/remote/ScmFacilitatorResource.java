@@ -452,4 +452,30 @@ public class ScmFacilitatorResource {
                                                                        .connectorRef(connectorRef)
                                                                        .build()));
   }
+
+  @GET
+  @Path("file-url")
+  @ApiOperation(value = "Get file url", nickname = "getFileURL")
+  @Hidden
+  public ResponseDTO<String> getFileURL(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @NotBlank @QueryParam(
+                                            NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+      @Parameter(description = GitSyncApiConstants.REPO_NAME_PARAM_MESSAGE) @NotBlank @QueryParam(
+          NGCommonEntityConstants.REPO_NAME) String repoName,
+      @Parameter(description = GitSyncApiConstants.FILE_NAME_PARAM_MESSAGE) @NotBlank @QueryParam(
+          NGCommonEntityConstants.FILE_NAME) String fileName,
+      @Parameter(description = GitSyncApiConstants.BRANCH_PARAM_MESSAGE) @QueryParam(
+          GitSyncApiConstants.BRANCH_KEY) @NotBlank String branch,
+      @Parameter(description = GitSyncApiConstants.GIT_CONNECTOR_REF_PARAM_MESSAGE) @NotBlank @QueryParam(
+          GitSyncApiConstants.CONNECTOR_REF) String connectorRef) {
+    Scope scope = Scope.builder()
+                      .accountIdentifier(accountIdentifier)
+                      .orgIdentifier(orgIdentifier)
+                      .projectIdentifier(projectIdentifier)
+                      .build();
+    return ResponseDTO.newResponse(scmFacilitatorService.getFileUrl(scope, connectorRef, repoName, fileName, branch));
+  }
 }

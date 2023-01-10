@@ -64,4 +64,6 @@ public interface ScmFacilitatorService {
       ScmGetBranchHeadCommitRequestDTO scmGetBranchHeadCommitRequestDTO);
 
   ScmListFilesResponseDTO listFiles(ScmListFilesRequestDTO scmListFilesRequestDTO);
+
+  String getFileUrl(Scope scope, String connectorRef, String repoName, String fileName, String branch);
 }
