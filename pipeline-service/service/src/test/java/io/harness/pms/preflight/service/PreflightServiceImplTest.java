@@ -17,6 +17,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.EntityType;
@@ -220,6 +221,27 @@ public class PreflightServiceImplTest extends CategoryTest {
     Update update =
         new Update().set(PreFlightEntityKeys.connectorCheckResponse, Collections.singletonList(connResponse));
     verify(preFlightRepository, times(1)).update(criteria, update);
+
+    String exceptionMessage = "Runtime Exception";
+    List<ConnectorCheckResponse> connectorCheckResponsesForFailure = Collections.singletonList(
+        ConnectorCheckResponse.builder()
+            .status(PreFlightStatus.FAILURE)
+            .errorInfo(PreFlightEntityErrorInfo.builder()
+                           .causes(Collections.singletonList(PreFlightCause.builder().cause(exceptionMessage).build()))
+                           .summary(String.format(
+                               "Exception encountered while checking connector responses. %s", exceptionMessage))
+                           .build())
+            .build());
+    when(connectorPreflightHandler.getConnectorCheckResponsesForReferredConnectors(
+             accountId, orgId, projectId, Collections.emptyMap(), connUsages))
+        .thenThrow(new RuntimeException(exceptionMessage));
+
+    List<ConnectorCheckResponse> responses = preflightService.updateConnectorCheckResponses(
+        accountId, orgId, projectId, preflightEntityId, Collections.emptyMap(), connUsages);
+
+    update = new Update().set(PreFlightEntityKeys.connectorCheckResponse, connectorCheckResponsesForFailure);
+    verify(preFlightRepository, times(1)).update(criteria, update);
+    assertThat(responses).isEqualTo(connectorCheckResponsesForFailure);
   }
 
   @Test

@@ -7,8 +7,8 @@
 
 package io.harness.gitsync.common.helper;
 
-import static io.harness.AuthorizationServiceHeader.GIT_SYNC_SERVICE;
 import static io.harness.annotations.dev.HarnessTeam.DX;
+import static io.harness.authorization.AuthorizationServiceHeader.GIT_SYNC_SERVICE;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;

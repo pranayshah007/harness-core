@@ -78,8 +78,8 @@ public class ArtifactoryArtifactResource {
       @QueryParam("repositoryUrl") String artifactRepositoryUrl,
       @QueryParam("connectorRef") String artifactoryConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
     IdentifierRef connectorRef = IdentifierRefHelper.getIdentifierRef(
         artifactoryConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
@@ -181,8 +181,8 @@ public class ArtifactoryArtifactResource {
   @ApiOperation(value = "Validate artifactory artifact server", nickname = "validateArtifactServerForArtifactory")
   public ResponseDTO<Boolean> validateArtifactServer(@QueryParam("connectorRef") String artifactoryConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
     IdentifierRef connectorRef = IdentifierRefHelper.getIdentifierRef(
         artifactoryConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     boolean isValidArtifactServer =
@@ -209,6 +209,10 @@ public class ArtifactoryArtifactResource {
       if (isEmpty(artifactoryConnectorIdentifier)) {
         artifactoryConnectorIdentifier =
             artifactoryRegistryArtifactConfig.getConnectorRef().fetchFinalValue().toString();
+      }
+
+      if (isEmpty(repositoryType)) {
+        repositoryType = artifactoryRegistryArtifactConfig.getRepositoryFormat().fetchFinalValue().toString();
       }
     }
     IdentifierRef connectorRef = IdentifierRefHelper.getIdentifierRef(
@@ -255,7 +259,7 @@ public class ArtifactoryArtifactResource {
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
+      @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
       @QueryParam("repository") String repository, @QueryParam("fqnPath") String fqnPath,
       @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef, @NotNull String runtimeInputYaml,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
@@ -275,8 +279,8 @@ public class ArtifactoryArtifactResource {
       @NotNull @QueryParam("repositoryName") String repositoryName, @QueryParam("filePath") String filePath,
       @NotNull @QueryParam("maxVersions") int maxVersions,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
     IdentifierRef connectorRef = IdentifierRefHelper.getIdentifierRef(
         artifactoryConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
     List<ArtifactoryArtifactBuildDetailsDTO> buildDetails = artifactoryResourceService.getBuildDetails(

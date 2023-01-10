@@ -16,6 +16,8 @@ import static io.harness.mongo.MongoUtils.setUnset;
 import static io.harness.persistence.HQuery.excludeAuthority;
 import static io.harness.validation.Validator.nullCheck;
 
+import static software.wings.beans.Base.ACCOUNT_ID_KEY2;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.PageRequest;
@@ -52,6 +54,10 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.Key;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -65,10 +71,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.Key;
-import org.mongodb.morphia.query.FindOptions;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 /**
  * @author rktummala on 8/13/17
@@ -225,6 +227,11 @@ public class InstanceServiceImpl implements InstanceService {
   @Override
   public void deleteByAccountId(String accountId) {
     pruneByEntity("accountId", accountId);
+    deleteManualSyncJobsByAccountId(accountId);
+  }
+
+  private void deleteManualSyncJobsByAccountId(String accountId) {
+    wingsPersistence.delete(wingsPersistence.createQuery(ManualSyncJob.class).filter(ACCOUNT_ID_KEY2, accountId));
   }
 
   @Override
@@ -459,7 +466,7 @@ public class InstanceServiceImpl implements InstanceService {
   @Override
   public List<Boolean> getManualSyncJobsStatus(String accountId, Set<String> manualJobIdSet) {
     List<Key<ManualSyncJob>> keyList = wingsPersistence.createQuery(ManualSyncJob.class)
-                                           .filter(ManualSyncJob.ACCOUNT_ID_KEY2, accountId)
+                                           .filter(ACCOUNT_ID_KEY2, accountId)
                                            .field("_id")
                                            .in(manualJobIdSet)
                                            .asKeyList();

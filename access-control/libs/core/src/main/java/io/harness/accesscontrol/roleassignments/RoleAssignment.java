@@ -40,6 +40,7 @@ public class RoleAssignment {
   @NotEmpty final String principalIdentifier;
   @NotNull final PrincipalType principalType;
   @Setter boolean managed;
+  @Setter boolean internal;
   final boolean disabled;
   final Long createdAt;
   final Long lastModifiedAt;

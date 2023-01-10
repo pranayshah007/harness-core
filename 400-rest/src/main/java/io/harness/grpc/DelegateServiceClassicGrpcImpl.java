@@ -135,7 +135,7 @@ public class DelegateServiceClassicGrpcImpl extends DelegateTaskGrpc.DelegateTas
       String accountId = request.getAccountId();
       String delegateTaskId = request.getDelegateTaskId();
 
-      DelegateTask delegateTask = delegateTaskServiceClassic.abortTask(accountId, delegateTaskId);
+      DelegateTask delegateTask = delegateTaskServiceClassic.abortTaskV2(accountId, delegateTaskId);
       responseObserver.onNext(
           AbortTaskResponse.newBuilder()
               .setDelegateTaskKryo(ByteString.copyFrom(referenceFalseKryoSerializer.asDeflatedBytes(delegateTask)))
@@ -170,7 +170,7 @@ public class DelegateServiceClassicGrpcImpl extends DelegateTaskGrpc.DelegateTas
       String accountId = request.getAccountId();
       String delegateTaskId = request.getDelegateTaskId();
 
-      String message = delegateTaskServiceClassic.expireTask(accountId, delegateTaskId);
+      String message = delegateTaskServiceClassic.expireTaskV2(accountId, delegateTaskId);
       responseObserver.onNext(ExpireTaskResponse.newBuilder().setMessage(message).build());
       responseObserver.onCompleted();
 

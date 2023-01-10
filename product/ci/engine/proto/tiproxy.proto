@@ -21,7 +21,9 @@ message UploadCgRequest {
   int64 time_ms = 7;  // time taken for the test step to complete
 }
 
-message UploadCgResponse {}
+message UploadCgResponse {
+  string cg_msg = 1;
+}
 
 // Definitions to interact with TI service
 message WriteTestsRequest {

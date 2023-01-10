@@ -16,6 +16,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.annotations.ApiModel;
 import io.swagger.v3.oas.annotations.media.Schema;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Value;
 
@@ -28,7 +29,7 @@ import lombok.Value;
     description = "This tells the state of the cache from which the template was fetched.")
 @OwnedBy(CDC)
 public class CacheResponseMetadataDTO {
-  CacheState cacheState;
-  long ttlLeft;
-  long lastUpdatedAt;
+  @NotNull CacheState cacheState;
+  @NotNull long ttlLeft;
+  @NotNull long lastUpdatedAt;
 }

@@ -32,9 +32,6 @@ func BenchmarkEndToEndSimpleEnqueueWithGroupRegistration(b *testing.B) {
 	defer parentCancel()
 	//enqueue and register streams with consumer groups
 	for k := 0; k < queueCount; k++ {
-		if err := redisStore.Register(parent, store.RegisterTopicMetadata{Topic: topic}); err != nil {
-			b.Errorf("could not register consumer group to queue %v", err.Error())
-		}
 		for j := 0; j < count; j++ {
 			ctx, _ := context.WithTimeout(parent, 100*time.Millisecond)
 			if _, err := redisStore.Enqueue(ctx, store.EnqueueRequest{
@@ -81,7 +78,7 @@ func BenchmarkDequeueAllTheMessages(b *testing.B) {
 				}
 				dequeResponse, err := redisStore.Dequeue(ctx, deqRequest)
 				if err != nil {
-					b.Fatalf("could not dequeue tasks inside: %v", err.Error())
+					b.Errorf("could not dequeue tasks inside: %v", err.Error())
 				}
 				fmt.Printf("length is %d", len(processed))
 				if len(processed) == 10000 {

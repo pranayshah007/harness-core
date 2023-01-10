@@ -18,6 +18,7 @@ import io.harness.utils.StageStatus;
 import com.mongodb.client.result.UpdateResult;
 import java.util.List;
 import java.util.Map;
+import org.springframework.data.mongodb.core.query.Criteria;
 
 @OwnedBy(CDP)
 public interface StageExecutionInfoRepositoryCustom {
@@ -27,4 +28,6 @@ public interface StageExecutionInfoRepositoryCustom {
 
   List<StageExecutionInfo> listSucceededStageExecutionNotIncludeCurrent(
       ExecutionInfoKey executionInfoKey, String executionId, int limit);
+
+  List<StageExecutionInfo> deleteAll(Criteria criteria);
 }

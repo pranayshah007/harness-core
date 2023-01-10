@@ -7,8 +7,8 @@
 
 package io.harness.resourcegroup;
 
-import static io.harness.AuthorizationServiceHeader.RESOUCE_GROUP_SERVICE;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.authorization.AuthorizationServiceHeader.RESOUCE_GROUP_SERVICE;
 import static io.harness.lock.DistributedLockImplementation.NOOP;
 import static io.harness.outbox.OutboxSDKConstants.DEFAULT_OUTBOX_POLL_CONFIGURATION;
 
@@ -59,6 +59,7 @@ import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
+import dev.morphia.converters.TypeConverter;
 import java.io.Closeable;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
@@ -69,7 +70,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.rules.MethodRule;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
-import org.mongodb.morphia.converters.TypeConverter;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.mongodb.MongoTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;

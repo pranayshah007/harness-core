@@ -11,9 +11,9 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static software.wings.beans.ApprovalNotification.Builder.anApprovalNotification;
-import static software.wings.beans.artifact.Artifact.ContentStatus.DOWNLOADED;
-import static software.wings.beans.artifact.Artifact.ContentStatus.FAILED;
-import static software.wings.beans.artifact.Artifact.Status.APPROVED;
+import static software.wings.persistence.artifact.Artifact.ContentStatus.DOWNLOADED;
+import static software.wings.persistence.artifact.Artifact.ContentStatus.FAILED;
+import static software.wings.persistence.artifact.Artifact.Status.APPROVED;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.ListNotifyResponseData;
@@ -22,8 +22,9 @@ import io.harness.waiter.OldNotifyCallback;
 
 import software.wings.beans.EntityType;
 import software.wings.beans.SettingAttribute;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactStream;
+import software.wings.persistence.artifact.Artifact;
+import software.wings.persistence.artifact.ArtifactFile;
 import software.wings.service.intfc.ArtifactService;
 import software.wings.service.intfc.ArtifactStreamService;
 import software.wings.service.intfc.NotificationService;
@@ -31,6 +32,7 @@ import software.wings.service.intfc.SettingsService;
 
 import com.google.inject.Inject;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -73,7 +75,8 @@ public class ArtifactCollectionCallback implements OldNotifyCallback {
         log.info("Artifact Id {} was deleted - nothing to do", artifactId);
         return;
       }
-      artifactService.addArtifactFile(artifact.getUuid(), artifact.getAccountId(), responseData.getData());
+      artifactService.addArtifactFile(artifact.getUuid(), artifact.getAccountId(),
+          responseData.getData().stream().map(ArtifactFile::fromDTO).collect(Collectors.toList()));
       artifactService.updateStatus(artifactId, artifact.getAccountId(), APPROVED, DOWNLOADED, "");
       String accountId = null;
       ArtifactStream artifactStream = artifactStreamService.get(artifact.getArtifactStreamId());

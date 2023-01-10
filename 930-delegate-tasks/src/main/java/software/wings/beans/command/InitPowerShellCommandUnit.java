@@ -21,9 +21,9 @@ import software.wings.beans.dto.Command;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.inject.Inject;
+import dev.morphia.annotations.Transient;
 import java.util.HashMap;
 import java.util.Map;
-import org.mongodb.morphia.annotations.Transient;
 
 @OwnedBy(CDP)
 @TargetModule(_930_DELEGATE_TASKS)
@@ -74,7 +74,7 @@ public class InitPowerShellCommandUnit extends AbstractCommandUnit {
       throw new WingsException("Unexpected context type");
     }
     return ((ShellCommandExecutionContext) context)
-        .executeCommandString(getInitCommand(context.getWindowsRuntimePath()));
+        .executeCommandString(getInitCommand(context.getWindowsRuntimePath()), false);
   }
 
   private void createPreparedCommands(Command command) {

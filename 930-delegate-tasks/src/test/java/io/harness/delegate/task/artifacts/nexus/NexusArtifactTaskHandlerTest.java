@@ -8,6 +8,7 @@
 package io.harness.delegate.task.artifacts.nexus;
 
 import static io.harness.rule.OwnerRule.MLUKIC;
+import static io.harness.rule.OwnerRule.SHIVAM;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.doReturn;
@@ -21,6 +22,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.connector.nexusconnector.NexusAuthenticationDTO;
 import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
 import io.harness.delegate.beans.connector.nexusconnector.NexusUsernamePasswordAuthDTO;
+import io.harness.delegate.task.artifacts.mappers.NexusRequestResponseMapper;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
 import io.harness.encryption.SecretRefData;
 import io.harness.nexus.NexusRequest;
@@ -30,6 +32,7 @@ import io.harness.rule.Owner;
 import software.wings.utils.RepositoryFormat;
 
 import io.fabric8.utils.Lists;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.Rule;
@@ -260,5 +263,26 @@ public class NexusArtifactTaskHandlerTest extends CategoryTest {
         .hasCredentials(true)
         .artifactRepositoryUrl(DOCKER_REPO_URL)
         .build();
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testGetRepositories() {
+    NexusUsernamePasswordAuthDTO nexusUsernamePasswordAuthDTO = createNexusCredentials();
+    NexusConnectorDTO nexusConnectorDTO = createNexusConnector(nexusUsernamePasswordAuthDTO);
+    BuildDetailsInternal buildDetailsInternal =
+        BuildDetailsInternal.builder().number(IMAGE_TAG).metadata(createBuildMetadataWithUrl()).build();
+    NexusRequest nexusInternalConfig = createNexusConfigWithUrl(nexusUsernamePasswordAuthDTO, nexusConnectorDTO);
+    NexusArtifactDelegateRequest sourceAttributes = createNexusDelegateRequestWithTagAndUrl(nexusConnectorDTO);
+
+    doReturn(Collections.singletonMap("test", "test"))
+        .when(nexusRegistryService)
+        .getRepository(
+            NexusRequestResponseMapper.toNexusInternalConfig(sourceAttributes), sourceAttributes.getRepositoryFormat());
+
+    ArtifactTaskExecutionResponse repositories = nexusArtifactService.getRepositories(sourceAttributes);
+    assertThat(repositories).isNotNull();
+    assertThat(repositories.getRepositories().size()).isEqualTo(1);
   }
 }

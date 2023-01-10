@@ -1,0 +1,17 @@
+pipeline:
+  identifier: "Test_Pipline11"
+  variables:
+    - name: "port2"
+      value: 8080
+      type: Number
+  stages:
+  - stage:
+      identifier: "qaStage"
+      absolutelyWrongKey: absolutelyWrongValue
+      spec:
+        execution:
+          steps:
+          - step:
+              identifier: "httpStep1"
+              spec:
+                url: www.google.com

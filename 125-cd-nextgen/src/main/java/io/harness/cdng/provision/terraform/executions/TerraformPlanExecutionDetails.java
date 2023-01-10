@@ -20,6 +20,8 @@ import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.EncryptionConfig;
 
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
@@ -28,8 +30,6 @@ import lombok.Data;
 import lombok.ToString;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.TypeAlias;

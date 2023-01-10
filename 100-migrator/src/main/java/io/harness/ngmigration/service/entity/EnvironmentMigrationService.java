@@ -57,7 +57,6 @@ import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.DiscoveryNode;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.ngmigration.NGMigrationEntityType;
-import software.wings.ngmigration.NGMigrationStatus;
 import software.wings.service.intfc.ApplicationManifestService;
 import software.wings.service.intfc.ConfigService;
 import software.wings.service.intfc.EnvironmentService;
@@ -170,17 +169,6 @@ public class EnvironmentMigrationService extends NgMigrationService {
   }
 
   @Override
-  public NGMigrationStatus canMigrate(NGMigrationEntity entity) {
-    return NGMigrationStatus.builder().status(true).build();
-  }
-
-  @Override
-  public NGMigrationStatus canMigrate(
-      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId) {
-    return NGMigrationStatus.builder().status(true).build();
-  }
-
-  @Override
   public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,
       TemplateClient templateClient, MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
     if (yamlFile.isExists()) {
@@ -236,7 +224,7 @@ public class EnvironmentMigrationService extends NgMigrationService {
             .map(entry -> (ConfigFile) entry.getEntity())
             .filter(configFile -> configFile.getEntityType() == EntityType.ENVIRONMENT)
             .filter(configFile -> StringUtils.equals(configFile.getEntityId(), environment.getUuid()))
-            .map(configFile -> CgEntityId.builder().type(CONFIG_FILE).id(configFile.getEntityId()).build())
+            .map(configFile -> CgEntityId.builder().type(CONFIG_FILE).id(configFile.getUuid()).build())
             .collect(Collectors.toSet());
 
     List<ManifestConfigWrapper> manifests =

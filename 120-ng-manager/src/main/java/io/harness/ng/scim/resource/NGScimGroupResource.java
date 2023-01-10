@@ -7,6 +7,13 @@
 
 package io.harness.ng.scim.resource;
 
+import static io.harness.ng.accesscontrol.PlatformPermissions.MANAGE_USERGROUP_PERMISSION;
+import static io.harness.ng.accesscontrol.PlatformPermissions.VIEW_USERGROUP_PERMISSION;
+import static io.harness.ng.accesscontrol.PlatformResourceTypes.USERGROUP;
+
+import io.harness.accesscontrol.acl.api.Resource;
+import io.harness.accesscontrol.acl.api.ResourceScope;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.scim.PatchRequest;
 import io.harness.scim.ScimGroup;
 import io.harness.scim.ScimListResponse;
@@ -38,11 +45,16 @@ import lombok.extern.slf4j.Slf4j;
 @ScimAPI
 public class NGScimGroupResource extends ScimResource {
   @Inject private ScimGroupService scimGroupService;
+  @Inject private AccessControlClient accessControlClient;
 
   @POST
   @Path("Groups")
   @ApiOperation(value = "Create a new group and return uuid in response", nickname = "createScimGroup")
   public Response createGroup(ScimGroup groupQuery, @PathParam("accountIdentifier") String accountIdentifier) {
+    if (!accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, null, null), Resource.of(USERGROUP, null),
+            MANAGE_USERGROUP_PERMISSION)) {
+      log.warn("NGSCIM: Missing permission to create group for accountId {}", accountIdentifier);
+    }
     try {
       return Response.status(Response.Status.CREATED)
           .entity(scimGroupService.createGroup(groupQuery, accountIdentifier))
@@ -58,6 +70,10 @@ public class NGScimGroupResource extends ScimResource {
   @ApiOperation(value = "Fetch an existing user by uuid", nickname = "getScimGroup")
   public Response getGroup(
       @PathParam("accountIdentifier") String accountIdentifier, @PathParam("groupIdentifier") String groupIdentifier) {
+    if (!accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, null, null),
+            Resource.of(USERGROUP, groupIdentifier), VIEW_USERGROUP_PERMISSION)) {
+      log.warn("NGSCIM: Missing permission to fetch group for accountId {}", accountIdentifier);
+    }
     try {
       return Response.status(Response.Status.OK)
           .entity(scimGroupService.getGroup(groupIdentifier, accountIdentifier))
@@ -74,6 +90,10 @@ public class NGScimGroupResource extends ScimResource {
   @ApiOperation(value = "Delete an existing user by uuid", nickname = "deleteScimGroup")
   public Response deleteGroup(
       @PathParam("accountIdentifier") String accountIdentifier, @PathParam("groupIdentifier") String groupIdentifier) {
+    if (!accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, null, null),
+            Resource.of(USERGROUP, groupIdentifier), MANAGE_USERGROUP_PERMISSION)) {
+      log.warn("NGSCIM: Missing permission to delete group for accountId {}", accountIdentifier);
+    }
     scimGroupService.deleteGroup(groupIdentifier, accountIdentifier);
     return Response.status(Response.Status.NO_CONTENT).build();
   }
@@ -87,6 +107,10 @@ public class NGScimGroupResource extends ScimResource {
   public Response
   searchGroup(@PathParam("accountIdentifier") String accountIdentifier, @QueryParam("filter") String filter,
       @QueryParam("count") Integer count, @QueryParam("startIndex") Integer startIndex) {
+    if (!accessControlClient.hasAccess(
+            ResourceScope.of(accountIdentifier, null, null), Resource.of(USERGROUP, null), VIEW_USERGROUP_PERMISSION)) {
+      log.warn("NGSCIM: Missing permission to search group for accountId {}", accountIdentifier);
+    }
     try {
       ScimListResponse<ScimGroup> groupResources =
           scimGroupService.searchGroup(filter, accountIdentifier, count, startIndex);
@@ -103,6 +127,10 @@ public class NGScimGroupResource extends ScimResource {
   @ApiOperation(value = "Update some fields of a groups by uuid. Can update members/name", nickname = "patchScimGroup")
   public Response updateGroup(@PathParam("accountIdentifier") String accountIdentifier,
       @PathParam("groupIdentifier") String groupIdentifier, PatchRequest patchRequest) {
+    if (!accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, null, null),
+            Resource.of(USERGROUP, groupIdentifier), MANAGE_USERGROUP_PERMISSION)) {
+      log.warn("NGSCIM: Missing permission to patch update group for accountId {}", accountIdentifier);
+    }
     return scimGroupService.updateGroup(groupIdentifier, accountIdentifier, patchRequest);
   }
 
@@ -111,6 +139,10 @@ public class NGScimGroupResource extends ScimResource {
   @ApiOperation(value = "Update a group", nickname = "updateScimGroup")
   public Response updateGroup(@PathParam("accountIdentifier") String accountIdentifier,
       @PathParam("groupIdentifier") String groupIdentifier, ScimGroup groupQuery) {
+    if (!accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, null, null),
+            Resource.of(USERGROUP, groupIdentifier), MANAGE_USERGROUP_PERMISSION)) {
+      log.warn("NGSCIM: Missing permission to update group for accountId {}", accountIdentifier);
+    }
     try {
       return scimGroupService.updateGroup(groupIdentifier, accountIdentifier, groupQuery);
     } catch (Exception ex) {

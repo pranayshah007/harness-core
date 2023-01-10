@@ -7,6 +7,8 @@
 
 package io.harness.ng.core.events;
 
+import static io.harness.delegate.utils.DelegateOutboxEventConstants.DELEGATE_CONFIGURATION_DELETE_EVENT;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.ResourceTypeConstants;
@@ -37,6 +39,6 @@ public class DelegateConfigurationDeleteEvent extends AbstractDelegateConfigurat
 
   @Override
   public String getEventType() {
-    return "DelegateProfileDeleted";
+    return DELEGATE_CONFIGURATION_DELETE_EVENT;
   }
 }

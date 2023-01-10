@@ -36,7 +36,7 @@ public class VersionUtils {
   private static Set<String> workloadKinds = ImmutableSet.of(Deployment.name(), DaemonSet.name(), StatefulSet.name(),
       Pod.name(), Job.name(), DeploymentConfig.name(), CronJob.name());
 
-  private static boolean shouldVersion(KubernetesResource resource) {
+  public static boolean shouldVersion(KubernetesResource resource) {
     if (versionedKinds.contains(resource.getResourceId().getKind())) {
       String skipVersioning = resource.getMetadataAnnotationValue(HarnessAnnotations.skipVersioning);
       if (StringUtils.equalsIgnoreCase(skipVersioning, "true")) {

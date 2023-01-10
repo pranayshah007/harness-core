@@ -33,6 +33,9 @@ import io.harness.persistence.UuidAware;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
+import dev.morphia.query.UpdateOperations;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
@@ -45,9 +48,6 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @Data
 @SuperBuilder
@@ -124,8 +124,7 @@ public abstract class ServiceLevelIndicator
       implements UpdatableEntity<T, D> {
     protected void setCommonOperations(UpdateOperations<T> updateOperations, D serviceLevelIndicator) {
       updateOperations.set(ServiceLevelIndicatorKeys.type, serviceLevelIndicator.getType())
-          .set(ServiceLevelIndicatorKeys.sliMissingDataType, serviceLevelIndicator.getSliMissingDataType())
-          .set(ServiceLevelIndicatorKeys.type, serviceLevelIndicator.getType());
+          .set(ServiceLevelIndicatorKeys.sliMissingDataType, serviceLevelIndicator.getSliMissingDataType());
     }
   }
   @FdIndex Long createNextTaskIteration;

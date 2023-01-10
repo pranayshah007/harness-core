@@ -33,6 +33,7 @@ import static software.wings.security.PermissionAttribute.PermissionType.DEPLOYM
 import static software.wings.security.PermissionAttribute.PermissionType.USER_PERMISSION_MANAGEMENT;
 import static software.wings.security.PermissionAttribute.PermissionType.USER_PERMISSION_READ;
 
+import static dev.morphia.mapping.Mapper.ID_KEY;
 import static java.lang.Boolean.TRUE;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -44,7 +45,6 @@ import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.elasticsearch.common.util.set.Sets.newHashSet;
-import static org.mongodb.morphia.mapping.Mapper.ID_KEY;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
@@ -117,6 +117,10 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.mongodb.ReadPreference;
+import dev.morphia.query.CountOptions;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -139,10 +143,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.validator.constraints.NotBlank;
-import org.mongodb.morphia.query.CountOptions;
-import org.mongodb.morphia.query.FindOptions;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @OwnedBy(PL)
 @ValidateOnExecution
@@ -267,6 +267,9 @@ public class UserGroupServiceImpl implements UserGroupService {
       populateAppIdFilter(req, applicationIdsMatchingSearchTerm);
     }
     PageResponse<UserGroup> res = wingsPersistence.query(UserGroup.class, req);
+
+    log.info("[SAML_SYNC]: Page response for user groups list: {}", res);
+
     // Using a custom comparator since our mongo apis don't support alphabetical sorting with case insensitivity.
     // Currently, it only supports ASC and DSC.
     res.getResponse().sort((ug1, ug2) -> StringUtils.compareIgnoreCase(ug1.getName(), ug2.getName()));
@@ -335,8 +338,10 @@ public class UserGroupServiceImpl implements UserGroupService {
     Map<String, User> userMap = allUsersList.stream().collect(Collectors.toMap(User::getUuid, identity()));
     userGroups.forEach(userGroup -> {
       List<String> memberIds = userGroup.getMemberIds();
+      log.info("[SAML_SYNC]: Member IDs in user group: {}", memberIds);
       if (isEmpty(memberIds)) {
         userGroup.setMembers(new ArrayList<>());
+        log.info("[SAML_SYNC]: User group has empty memberIDs: {}", userGroup);
         return;
       }
       List<User> members = new ArrayList<>();
@@ -346,6 +351,7 @@ public class UserGroupServiceImpl implements UserGroupService {
           members.add(user);
         }
       });
+      log.info("[SAML_SYNC]: Members added- size: {}, members: {}", members.size(), members);
       userGroup.setMembers(members);
     });
   }
@@ -549,7 +555,11 @@ public class UserGroupServiceImpl implements UserGroupService {
         : Sets.newHashSet(userGroupToUpdate.getMemberIds());
     newMemberIds.removeIf(EmptyPredicate::isEmpty);
 
+    log.info("[SAML_SYNC]: New member IDs: {}", newMemberIds);
+
     UserGroup existingUserGroup = get(userGroupToUpdate.getAccountId(), userGroupToUpdate.getUuid());
+    log.info("[SAML_SYNC]: Existing user group: {}", existingUserGroup);
+
     if (UserGroupUtils.isAdminUserGroup(existingUserGroup) && newMemberIds.isEmpty()) {
       throw new WingsException(
           ErrorCode.UPDATE_NOT_ALLOWED, "Account Administrator user group must have at least one user");
@@ -562,6 +572,8 @@ public class UserGroupServiceImpl implements UserGroupService {
     UpdateOperations<UserGroup> operations = wingsPersistence.createUpdateOperations(UserGroup.class);
     setUnset(operations, UserGroupKeys.memberIds, newMemberIds);
     UserGroup updatedUserGroup = update(userGroupToUpdate, operations);
+
+    log.info("[SAML_SYNC]: Updated user group: {}", updatedUserGroup);
 
     // auditing addition/removal of users in/from user group
     if (toBeAudited) {
@@ -610,9 +622,7 @@ public class UserGroupServiceImpl implements UserGroupService {
       return userGroup;
     }
     List<User> groupMembers = userGroup.getMembers();
-    if (isEmpty(groupMembers)) {
-      return userGroup;
-    }
+    log.info("[SAML_SYNC]: Group members in the user group- {} are: {}", userGroup.getName(), groupMembers);
 
     userGroup.getMemberIds().removeAll(members.stream().map(User::getUuid).collect(toList()));
     return updateMembers(userGroup, sendNotification, toBeAudited);

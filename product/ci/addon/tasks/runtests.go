@@ -148,57 +148,37 @@ func NewRunTestsTask(step *pb.UnitStep, tmpFilePath string, log *zap.SugaredLogg
 	}
 }
 
-// Execute commands with timeout and retry handling
+// Run executes commands with timeout
 func (r *runTestsTask) Run(ctx context.Context) (map[string]string, int32, error) {
-	var err, errCg error
-	var o map[string]string
-	cgDir := filepath.Join(r.tmpFilePath, cgDir)
+	cgDirPath := filepath.Join(r.tmpFilePath, cgDir)
 	testSt := time.Now()
-	for i := int32(1); i <= r.numRetries; i++ {
-		if o, err = r.execute(ctx, i); err == nil {
-			cgSt := time.Now()
-			// even if the collectCg fails, try to collect reports. Both are parallel features and one should
-			// work even if the other one fails
-			errCg = collectCgFn(ctx, r.id, cgDir, time.Since(testSt).Milliseconds(), r.log, cgSt)
-			cgTime := time.Since(cgSt)
-			repoSt := time.Now()
-			err = collectTestReportsFn(ctx, r.reports, r.id, r.log)
-			repoTime := time.Since(repoSt)
-			if errCg != nil {
-				// If there's an error in collecting callgraph, we won't retry but
-				// the step will be marked as an error
-				r.log.Errorw(fmt.Sprintf("unable to collect callgraph. Time taken: %s", cgTime), zap.Error(errCg))
-				if err != nil {
-					r.log.Errorw(fmt.Sprintf("unable to collect tests reports. Time taken: %s", repoTime), zap.Error(err))
-				}
-				return nil, r.numRetries, errCg
-			}
-			if err != nil {
-				// If there's an error in collecting reports, we won't retry but
-				// the step will be marked as an error
-				r.log.Errorw(fmt.Sprintf("unable to collect test reports. Time taken: %s", repoTime), zap.Error(err))
-				return nil, r.numRetries, err
-			}
-			if len(r.reports) > 0 {
-				r.log.Infow(fmt.Sprintf("successfully collected test reports in %s time", repoTime))
-			}
-			return o, i, nil
-		}
+
+	stepOutput, err := r.execute(ctx)
+	collectionErr := r.collectRunTestData(ctx, cgDirPath, testSt)
+	if err == nil {
+		// Fail the step if run was successful but error during collection
+		err = collectionErr
 	}
-	if err != nil {
-		// Run step did not execute successfully
-		// Try and collect callgraph and reports, ignore any errors during collection steps itself
-		errCg = collectCgFn(ctx, r.id, cgDir, time.Since(testSt).Milliseconds(), r.log, time.Now())
-		errc := collectTestReportsFn(ctx, r.reports, r.id, r.log)
-		if errc != nil {
-			r.log.Errorw("error while collecting test reports", zap.Error(errc))
-		}
-		if errCg != nil {
-			r.log.Errorw("error while collecting callgraph", zap.Error(errCg))
-		}
-		return nil, r.numRetries, err
+	return stepOutput, r.numRetries, err
+}
+
+func (r *runTestsTask) collectRunTestData(ctx context.Context, cgDirPath string, testSt time.Time) error {
+	cgStart := time.Now()
+	errCg := collectCgFn(ctx, r.id, cgDirPath, time.Since(testSt).Milliseconds(), r.log, cgStart)
+	if errCg != nil {
+		r.log.Errorw(fmt.Sprintf("Unable to collect callgraph. Time taken: %s", time.Since(cgStart)), zap.Error(errCg))
 	}
-	return nil, r.numRetries, err
+
+	crStart := time.Now()
+	errCr := collectTestReportsFn(ctx, r.reports, r.id, r.log, crStart)
+	if errCr != nil {
+		r.log.Errorw(fmt.Sprintf("Unable to collect tests reports. Time taken: %s", time.Since(crStart)), zap.Error(errCr))
+	}
+
+	if errCg != nil {
+		return errCg
+	}
+	return errCr
 }
 
 // createJavaAgentArg creates the ini file which is required as input to the java agent
@@ -594,8 +574,9 @@ func (r *runTestsTask) getCmd(ctx context.Context, agentPath, outputVarFile stri
 	return resolvedCmd, nil
 }
 
-func (r *runTestsTask) execute(ctx context.Context, retryCount int32) (map[string]string, error) {
+func (r *runTestsTask) execute(ctx context.Context) (map[string]string, error) {
 	start := time.Now()
+	retryCount := int32(1)
 	ctx, cancel := context.WithTimeout(ctx, time.Second*time.Duration(r.timeoutSecs))
 	defer cancel()
 

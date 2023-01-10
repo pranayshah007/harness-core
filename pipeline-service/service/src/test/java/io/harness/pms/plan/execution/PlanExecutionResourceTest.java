@@ -8,6 +8,7 @@
 package io.harness.pms.plan.execution;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
@@ -120,7 +121,7 @@ public class PlanExecutionResourceTest extends CategoryTest {
         TemplateMergeResponseDTO.builder().mergedPipelineYaml(yaml).build();
     doReturn(templateMergeResponseDTO)
         .when(pipelineTemplateHelper)
-        .resolveTemplateRefsInPipeline(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, yaml);
+        .resolveTemplateRefsInPipeline(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, yaml, BOOLEAN_FALSE_VALUE);
     ResponseDTO<List<StageExecutionResponse>> stagesExecutionList = planExecutionResource.getStagesExecutionList(
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null);
     assertThat(stagesExecutionList.getData()).hasSize(2);

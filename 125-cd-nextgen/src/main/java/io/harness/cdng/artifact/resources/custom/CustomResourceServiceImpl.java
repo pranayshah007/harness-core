@@ -35,14 +35,17 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.exception.exceptionmanager.exceptionhandler.DocumentLinksConstants;
+import io.harness.expression.common.ExpressionMode;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.plancreator.steps.TaskSelectorYaml;
+import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.service.DelegateGrpcClientWrapper;
 
 import software.wings.helpers.ext.jenkins.BuildDetails;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -52,6 +55,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class CustomResourceServiceImpl implements CustomResourceService {
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
+
+  @Inject @Named("PRIVILEGED") private SecretManagerClientService ngSecretService;
   @Inject ExceptionManager exceptionManager;
   @VisibleForTesting static final int timeoutInSecs = 30;
 
@@ -62,10 +67,11 @@ public class CustomResourceServiceImpl implements CustomResourceService {
     BaseNGAccess baseNGAccess = getBaseNGAccess(accountIdentifier, orgIdentifier, projectIdentifier);
     CustomScriptSecretExpressionEvaluator customScriptSecretExpressionEvaluator =
         new CustomScriptSecretExpressionEvaluator(script, secretFunctor);
-    script = customScriptSecretExpressionEvaluator.renderExpression(script);
+    script = customScriptSecretExpressionEvaluator.renderExpression(
+        script, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
     CustomArtifactDelegateRequest customArtifactDelegateRequest = ArtifactDelegateRequestUtils.getCustomDelegateRequest(
         arrayPath, null, "Inline", ArtifactSourceType.CUSTOM_ARTIFACT, versionPath, script, Collections.emptyMap(),
-        inputs, null, null, 10, accountIdentifier);
+        inputs, null, null, timeoutInSecs, accountIdentifier);
     try {
       ArtifactTaskExecutionResponse artifactTaskExecutionResponse =
           executeSyncTask(customArtifactDelegateRequest, ArtifactTaskType.GET_BUILDS, baseNGAccess,
@@ -103,9 +109,9 @@ public class CustomResourceServiceImpl implements CustomResourceService {
         DelegateTaskRequest.builder()
             .accountId(ngAccess.getAccountIdentifier())
             .taskType(NGTaskType.CUSTOM_ARTIFACT_NG.name())
-            .expressionFunctorToken(secretFunctor)
             .taskParameters(artifactTaskParameters)
             .executionTimeout(java.time.Duration.ofSeconds(timeoutInSecs))
+            .expressionFunctorToken(secretFunctor)
             .taskSetupAbstraction("ng", "true")
             .taskSelectors(EmptyPredicate.isNotEmpty(delegateSelector)
                     ? delegateSelectors.stream().map(TaskSelector::getSelector).collect(Collectors.toList())

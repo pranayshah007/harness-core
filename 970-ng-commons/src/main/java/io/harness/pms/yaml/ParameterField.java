@@ -49,6 +49,10 @@ public class ParameterField<T> {
     return value != null ? value : defaultValue;
   }
 
+  public T obtainValue() {
+    return value;
+  }
+
   public static <T> ParameterField<T> createExpressionField(
       boolean isExpression, String expressionValue, InputSetValidator inputSetValidator, boolean isTypeString) {
     return new ParameterField<>(null, null, isExpression, expressionValue, inputSetValidator, isTypeString);

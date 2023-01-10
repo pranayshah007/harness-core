@@ -8,6 +8,7 @@
 package io.harness.batch.processing.config;
 
 import io.harness.ccm.commons.beans.config.GcpConfig;
+import io.harness.ccm.config.CurrencyPreferencesConfig;
 import io.harness.cf.CfClientConfig;
 import io.harness.event.handler.segment.SegmentConfig;
 import io.harness.ff.FeatureFlagConfig;
@@ -59,6 +60,7 @@ public class BatchMainConfig {
   private AwsAccountTagsCollectionJobConfig awsAccountTagsCollectionJobConfig;
   @JsonProperty("gcpConfig") private GcpConfig gcpConfig;
   @JsonProperty("notificationClient") private NotificationClientConfiguration notificationClientConfiguration;
+  @JsonProperty("currencyPreferences") private CurrencyPreferencesConfig currencyPreferencesConfig;
 
   public List<String> getDbAliases() {
     List<String> dbAliases = new ArrayList<>();

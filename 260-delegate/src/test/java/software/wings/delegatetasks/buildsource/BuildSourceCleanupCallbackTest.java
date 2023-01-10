@@ -10,9 +10,9 @@ package software.wings.delegatetasks.buildsource;
 import static io.harness.rule.OwnerRule.ANSHUL;
 import static io.harness.rule.OwnerRule.HARSH;
 
-import static software.wings.beans.artifact.Artifact.Builder.anArtifact;
 import static software.wings.beans.artifact.ArtifactStreamCollectionStatus.UNSTABLE;
 import static software.wings.helpers.ext.jenkins.BuildDetails.Builder.aBuildDetails;
+import static software.wings.persistence.artifact.Artifact.Builder.anArtifact;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.APP_ID;
 import static software.wings.utils.WingsTestConstants.ARTIFACTORY_URL;
@@ -47,7 +47,6 @@ import io.harness.rule.Owner;
 import software.wings.WingsBaseTest;
 import software.wings.beans.artifact.AcrArtifactStream;
 import software.wings.beans.artifact.AmiArtifactStream;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
@@ -61,11 +60,14 @@ import software.wings.beans.artifact.NexusArtifactStream;
 import software.wings.beans.config.ArtifactoryConfig;
 import software.wings.beans.dto.SettingAttribute;
 import software.wings.helpers.ext.jenkins.BuildDetails;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.impl.artifact.ArtifactCollectionUtils;
 import software.wings.service.intfc.ArtifactService;
 import software.wings.service.intfc.ArtifactStreamService;
 
 import com.google.inject.Inject;
+import dev.morphia.query.MorphiaIterator;
+import dev.morphia.query.Query;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -78,8 +80,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mongodb.morphia.query.MorphiaIterator;
-import org.mongodb.morphia.query.Query;
 
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 public class BuildSourceCleanupCallbackTest extends WingsBaseTest {

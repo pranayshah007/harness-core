@@ -8,6 +8,7 @@
 package io.harness.ngmigration.template;
 
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.serializer.JsonUtils;
 import io.harness.steps.StepSpecTypeConstants;
 
@@ -17,15 +18,27 @@ import software.wings.beans.template.command.ShellScriptTemplate;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 
 public class ShellScriptTemplateService implements NgTemplateService {
   @Override
+  public Set<String> getExpressions(Template template) {
+    ShellScriptTemplate shellScriptTemplate = (ShellScriptTemplate) template.getTemplateObject();
+    if (StringUtils.isBlank(shellScriptTemplate.getScriptString())) {
+      return Collections.emptySet();
+    }
+    return MigratorExpressionUtils.extractAll(shellScriptTemplate.getScriptString());
+  }
+
+  @Override
   public boolean isMigrationSupported() {
     return true;
   }
+
   @Override
   public JsonNode getNgTemplateConfigSpec(Template template, String orgIdentifier, String projectIdentifier) {
     ShellScriptTemplate shellScriptTemplate = (ShellScriptTemplate) template.getTemplateObject();

@@ -16,7 +16,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
@@ -30,9 +29,9 @@ public class BuildFile {
   private static final Pattern JAVA_BINARY_RUNTIME_DEPS_PATTERN =
       Pattern.compile("java_binary\\([\\s\\S]*?(runtime_deps = \\[[\\s\\S]*?\\]),?", Pattern.MULTILINE);
   private static final Pattern JAVA_LIBRARY_DEPS_PATTERN =
-      Pattern.compile("java_library\\([\\s\\S]*?(deps = \\[[\\s\\S]*?\\]),?", Pattern.MULTILINE);
-  private static final Pattern JAVA_LIBRARY_RUNTIME_DEPS_PATTERN =
-      Pattern.compile("java_library\\([\\s\\S]*?(runtime_deps = \\[[\\s\\S]*?\\]),?", Pattern.MULTILINE);
+      Pattern.compile("java_library\\([\\s\\S]*?module[\\s\\S]*?(deps = \\[[\\s\\S]*?\\]),?", Pattern.MULTILINE);
+  private static final Pattern JAVA_LIBRARY_RUNTIME_DEPS_PATTERN = Pattern.compile(
+      "java_library\\([\\s\\S]*?module[\\s\\S]*?(runtime_deps = \\[[\\s\\S]*?\\]),?", Pattern.MULTILINE);
 
   private static final Logger logger = LoggerFactory.getLogger(BuildFile.class);
 

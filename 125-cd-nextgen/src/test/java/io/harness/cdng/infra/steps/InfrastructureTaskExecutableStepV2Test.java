@@ -87,6 +87,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.UnitStatus;
 import io.harness.logstreaming.NGLogCallback;
+import io.harness.ng.core.entitydetail.EntityDetailProtoToRestMapper;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.ng.core.infrastructure.InfrastructureType;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
@@ -165,6 +166,7 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
   @Mock private NGLogCallback logCallback;
   @Mock private CDExpressionResolver resolver;
   @Spy InstanceOutcomeHelper instanceOutcomeHelper;
+  @Mock EntityDetailProtoToRestMapper entityDetailProtoToRestMapper;
 
   @Mock private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   @InjectMocks private InfrastructureTaskExecutableStepV2 step = new InfrastructureTaskExecutableStepV2();
@@ -331,7 +333,7 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
 
     doThrow(AccessDeniedException.class)
         .when(pipelineRbacHelper)
-        .checkRuntimePermissions(any(Ambiance.class), any(Set.class));
+        .checkRuntimePermissions(any(Ambiance.class), any(List.class), anyBoolean());
     assertThatExceptionOfType(AccessDeniedException.class)
         .isThrownBy(()
                         -> step.executeAsyncAfterRbac(ambiance,

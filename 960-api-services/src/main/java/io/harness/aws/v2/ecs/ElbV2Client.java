@@ -15,6 +15,8 @@ import software.amazon.awssdk.services.elasticloadbalancingv2.model.DescribeLoad
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.DescribeLoadBalancersResponse;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.DescribeRulesRequest;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.DescribeRulesResponse;
+import software.amazon.awssdk.services.elasticloadbalancingv2.model.DescribeTargetGroupsRequest;
+import software.amazon.awssdk.services.elasticloadbalancingv2.model.DescribeTargetGroupsResponse;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.ModifyListenerRequest;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.ModifyListenerResponse;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.ModifyRuleRequest;
@@ -34,4 +36,7 @@ public interface ElbV2Client {
 
   DescribeLoadBalancersResponse describeLoadBalancer(
       AwsInternalConfig awsConfig, DescribeLoadBalancersRequest describeLoadBalancersRequest, String region);
+
+  DescribeTargetGroupsResponse describeTargetGroups(
+      AwsInternalConfig awsConfig, DescribeTargetGroupsRequest describeTargetGroupsRequest, String region);
 }

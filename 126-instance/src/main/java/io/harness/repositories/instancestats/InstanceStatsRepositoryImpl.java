@@ -28,7 +28,8 @@ public class InstanceStatsRepositoryImpl implements InstanceStatsRepository {
   private TimeScaleDBService timeScaleDBService;
   private static final int MAX_RETRY_COUNT = 3;
 
-  public InstanceStats getLatestRecord(String accountId, String orgId, String projectId, String serviceId) {
+  public InstanceStats getLatestRecord(String accountId, String orgId, String projectId, String serviceId)
+      throws Exception {
     int totalTries = 0;
     while (totalTries <= MAX_RETRY_COUNT) {
       ResultSet resultSet = null;
@@ -43,12 +44,14 @@ public class InstanceStatsRepositoryImpl implements InstanceStatsRepository {
         return parseInstanceStatsRecord(resultSet);
       } catch (SQLException ex) {
         if (totalTries == MAX_RETRY_COUNT) {
-          log.error("Error while fetching latest instance stats record", ex);
+          log.error("Error while fetching latest instance stats record after all retries");
+          throw ex;
         }
         log.warn("Could not fetch latest instance stats record. Retrying again. Retry number: {}", totalTries, ex);
         totalTries++;
       } catch (Exception ex) {
-        log.error("Error while fetching latest instance stats record", ex);
+        log.error("Error while fetching latest instance stats record");
+        throw ex;
       } finally {
         DBUtils.close(resultSet);
       }

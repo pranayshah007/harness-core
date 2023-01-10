@@ -75,6 +75,7 @@ public class EcsBlueGreenPrepareRollbackCommandTaskHandler extends EcsCommandTas
         iLogStreamingTaskClient, EcsCommandUnitConstants.prepareRollbackData.toString(), true, commandUnitsProgress);
 
     try {
+      prepareRollbackDataLogCallback.saveExecutionLog(format("Preparing Rollback Data..%n%n"), LogLevel.INFO);
       AwsInternalConfig awsInternalConfig =
           awsNgConfigMapper.createAwsInternalConfig(ecsInfraConfig.getAwsConnectorDTO());
 
@@ -85,6 +86,11 @@ public class EcsBlueGreenPrepareRollbackCommandTaskHandler extends EcsCommandTas
           ecsCommandTaskHelper
               .parseYamlAsObject(ecsServiceDefinitionManifestContent, CreateServiceRequest.serializableBuilderClass())
               .build();
+
+      // update EcsLoadBalancerConfig with default listener rules if listener rules provided are empty
+      ecsCommandTaskHelper.updateECSLoadbalancerConfigWithDefaultListenerRulesIfEmpty(
+          ecsBlueGreenPrepareRollbackRequest.getEcsLoadBalancerConfig(), awsInternalConfig, ecsInfraConfig,
+          prepareRollbackDataLogCallback);
 
       prepareRollbackDataLogCallback.saveExecutionLog(
           format("Fetching Target group for ELB Prod Listener: %s ",
@@ -158,7 +164,8 @@ public class EcsBlueGreenPrepareRollbackCommandTaskHandler extends EcsCommandTas
         Service updatedService = service.toBuilder().desiredCount(maxDesiredCount).build();
 
         // Get createServiceRequestBuilderString from service
-        String createServiceRequestBuilderString = EcsMapper.createCreateServiceRequestFromService(updatedService);
+        String createServiceRequestBuilderString =
+            ecsCommandTaskHelper.toYaml(EcsMapper.createCreateServiceRequestBuilderFromService(updatedService));
         prepareRollbackDataLogCallback.saveExecutionLog(
             format("Fetched Service Definition Details for Service %s", serviceName), LogLevel.INFO);
 
@@ -186,6 +193,7 @@ public class EcsBlueGreenPrepareRollbackCommandTaskHandler extends EcsCommandTas
                 .build();
         prepareRollbackDataLogCallback.saveExecutionLog(
             "Preparing Rollback Data complete", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+        log.info("Completed task execution for command: {}", ecsCommandRequest.getEcsCommandType().name());
         return ecsBlueGreenPrepareRollbackDataResponse;
       } else { // If service doesn't exist
         return getFirstTimeDeploymentResponse(prepareRollbackDataLogCallback, prodTargetGroupArn,

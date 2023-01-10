@@ -11,8 +11,8 @@ import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.eventsframework.EventsFrameworkConstants.GIT_CONFIG_STREAM;
 import static io.harness.gitsync.AbstractGitSyncSdkModule.GIT_SYNC_SDK;
 
-import io.harness.AuthorizationServiceHeader;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.eventsframework.api.Consumer;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.consumer.Message;

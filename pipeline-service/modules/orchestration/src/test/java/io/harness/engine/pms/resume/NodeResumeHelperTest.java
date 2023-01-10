@@ -16,6 +16,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.OrchestrationTestBase;
 import io.harness.category.element.UnitTests;
+import io.harness.engine.OrchestrationTestHelper;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.pms.data.PmsOutcomeService;
 import io.harness.engine.pms.resume.publisher.ResumeMetadata;
@@ -27,12 +28,13 @@ import io.harness.pms.contracts.execution.ChildChainExecutableResponse;
 import io.harness.pms.contracts.execution.ChildExecutableResponse;
 import io.harness.pms.contracts.execution.ExecutableResponse;
 import io.harness.pms.contracts.execution.ExecutionMode;
+import io.harness.pms.contracts.resume.ResponseDataProto;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
-import com.google.protobuf.ByteString;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -40,6 +42,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.springframework.data.util.CloseableIterator;
 
 public class NodeResumeHelperTest extends OrchestrationTestBase {
   @Mock NodeExecutionService nodeExecutionService;
@@ -91,10 +94,14 @@ public class NodeResumeHelperTest extends OrchestrationTestBase {
                           .build())
             .nodeId(childSetupId)
             .build();
-    when(nodeExecutionService.fetchNodeExecutionsByParentId(eq(nodeExecutionId), eq(false)))
-        .thenReturn(Collections.singletonList(child));
+
+    CloseableIterator<NodeExecution> iterator =
+        OrchestrationTestHelper.createCloseableIterator(Collections.singletonList(child).listIterator());
+    when(nodeExecutionService.fetchChildrenNodeExecutionsIterator(
+             nodeExecutionId, NodeProjectionUtils.fieldsForResponseNotifyData))
+        .thenReturn(iterator);
     when(pmsOutcomeService.fetchOutcomeRefs(eq(nodeExecutionId))).thenReturn(Collections.emptyList());
-    Map<String, ByteString> responseMap = resumeHelper.buildResponseMap(metadata, new HashMap<>());
+    Map<String, ResponseDataProto> responseMap = resumeHelper.buildResponseMap(metadata, new HashMap<>());
     assertThat(responseMap).containsKey(childId);
   }
 

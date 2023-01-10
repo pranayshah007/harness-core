@@ -25,9 +25,9 @@ import static software.wings.beans.AwsInfrastructureMapping.Builder.anAwsInfrast
 import static software.wings.beans.CloudFormationSourceType.TEMPLATE_BODY;
 import static software.wings.beans.Environment.Builder.anEnvironment;
 import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
-import static software.wings.beans.artifact.Artifact.Builder.anArtifact;
 import static software.wings.beans.command.Command.Builder.aCommand;
 import static software.wings.beans.command.ServiceCommand.Builder.aServiceCommand;
+import static software.wings.persistence.artifact.Artifact.Builder.anArtifact;
 import static software.wings.sm.StateExecutionInstance.Builder.aStateExecutionInstance;
 import static software.wings.sm.WorkflowStandardParams.Builder.aWorkflowStandardParams;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
@@ -102,7 +102,6 @@ import software.wings.beans.ServiceVariableType;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.TemplateExpression;
 import software.wings.beans.WorkflowExecution;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.JenkinsArtifactStream;
@@ -118,6 +117,7 @@ import software.wings.helpers.ext.cloudformation.request.CloudFormationDeleteSta
 import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
 import software.wings.infra.AwsAmiInfrastructure;
 import software.wings.infra.InfrastructureDefinition;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.ServiceHelper;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.ActivityService;

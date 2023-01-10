@@ -30,6 +30,7 @@ import com.google.common.collect.Sets;
 import java.io.IOException;
 import java.text.ParseException;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Set;
 import lombok.experimental.UtilityClass;
@@ -69,7 +70,7 @@ public class NGFreezeDtoMapper {
     oldFreezeConfigEntity.setProjectIdentifier(newFreezeConfigEntity.getProjectIdentifier());
     oldFreezeConfigEntity.setIdentifier(newFreezeConfigEntity.getIdentifier());
     oldFreezeConfigEntity.setFreezeScope(newFreezeConfigEntity.getFreezeScope());
-    oldFreezeConfigEntity.setDescription(newFreezeConfigEntity.getDescription());
+    oldFreezeConfigEntity.setDescription(getDescription(newFreezeConfigEntity.getDescription()));
     oldFreezeConfigEntity.setName(newFreezeConfigEntity.getName());
     oldFreezeConfigEntity.setStatus(newFreezeConfigEntity.getStatus());
     oldFreezeConfigEntity.setTags(newFreezeConfigEntity.getTags());
@@ -84,7 +85,7 @@ public class NGFreezeDtoMapper {
         .projectIdentifier(freezeConfigEntity.getProjectIdentifier())
         .yaml(freezeConfigEntity.getYaml())
         .identifier(freezeConfigEntity.getIdentifier())
-        .description(freezeConfigEntity.getDescription())
+        .description(getDescription(freezeConfigEntity.getDescription()))
         .name(freezeConfigEntity.getName())
         .status(freezeConfigEntity.getStatus())
         .freezeScope(freezeConfigEntity.getFreezeScope())
@@ -105,7 +106,7 @@ public class NGFreezeDtoMapper {
         .windows(freezeConfig.getFreezeInfoConfig().getWindows())
         .rules(freezeConfig.getFreezeInfoConfig().getRules())
         .identifier(freezeConfigEntity.getIdentifier())
-        .description(freezeConfigEntity.getDescription())
+        .description(getDescription(freezeConfigEntity.getDescription()))
         .name(freezeConfigEntity.getName())
         .status(freezeConfigEntity.getStatus())
         .freezeScope(freezeConfigEntity.getFreezeScope())
@@ -129,7 +130,7 @@ public class NGFreezeDtoMapper {
         .windows(freezeConfig.getFreezeInfoConfig().getWindows())
         .rules(freezeConfig.getFreezeInfoConfig().getRules())
         .identifier(freezeResponseDTO.getIdentifier())
-        .description(freezeResponseDTO.getDescription())
+        .description(getDescription(freezeResponseDTO.getDescription()))
         .name(freezeResponseDTO.getName())
         .status(freezeResponseDTO.getStatus())
         .freezeScope(freezeResponseDTO.getFreezeScope())
@@ -167,7 +168,7 @@ public class NGFreezeDtoMapper {
         .windows(freezeConfig.getFreezeInfoConfig().getWindows())
         .rules(freezeConfig.getFreezeInfoConfig().getRules())
         .identifier(freezeResponseDTO.getIdentifier())
-        .description(freezeResponseDTO.getDescription())
+        .description(getDescription(freezeResponseDTO.getDescription()))
         .name(freezeResponseDTO.getName())
         .status(freezeResponseDTO.getStatus())
         .freezeScope(freezeResponseDTO.getFreezeScope())
@@ -192,7 +193,7 @@ public class NGFreezeDtoMapper {
     String description = null;
     if (freezeConfig.getFreezeInfoConfig().getDescription() != null) {
       description = (String) freezeConfig.getFreezeInfoConfig().getDescription().fetchFinalValue();
-      description = description == null ? "" : description;
+      description = getDescription(description);
     }
     return FreezeConfigEntity.builder()
         .yaml(freezeConfigYaml)
@@ -239,8 +240,12 @@ public class NGFreezeDtoMapper {
 
     List<FreezeEntityRule> rules = freezeInfoConfig.getRules();
     List<FreezeWindow> windows = freezeInfoConfig.getWindows();
-    if (FreezeType.MANUAL.equals(type) && (EmptyPredicate.isEmpty(rules) || EmptyPredicate.isEmpty(windows))) {
-      throw new InvalidRequestException("Freeze Windows and Rules are required.");
+    if (FreezeType.MANUAL.equals(type)) {
+      if (EmptyPredicate.isEmpty(rules)) {
+        throw new InvalidRequestException("Rules are required.");
+      } else if (EmptyPredicate.isEmpty(windows)) {
+        throw new InvalidRequestException("Freeze Windows are required.");
+      }
     }
 
     // Currently we support only 1 window, Remove this validation after multiple windows are supported.
@@ -273,8 +278,15 @@ public class NGFreezeDtoMapper {
           FreezeTimeUtils.validateTimeRange(freezeWindow);
         } catch (ParseException e) {
           throw new InvalidRequestException("Invalid time format provided.", e);
+        } catch (DateTimeParseException e) {
+          throw new InvalidRequestException(
+              "Invalid time format provided. Provide the time in the following format YYYY-MM-DD hh:mm AM/PM", e);
         }
       });
     }
+  }
+
+  private String getDescription(String descriptionValue) {
+    return descriptionValue == null ? "" : descriptionValue;
   }
 }

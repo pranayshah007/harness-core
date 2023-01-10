@@ -25,9 +25,9 @@ import static software.wings.beans.InstanceUnitType.COUNT;
 import static software.wings.beans.InstanceUnitType.PERCENTAGE;
 import static software.wings.beans.ServiceTemplate.Builder.aServiceTemplate;
 import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
-import static software.wings.beans.artifact.Artifact.Builder.anArtifact;
 import static software.wings.beans.command.Command.Builder.aCommand;
 import static software.wings.beans.command.ServiceCommand.Builder.aServiceCommand;
+import static software.wings.persistence.artifact.Artifact.Builder.anArtifact;
 import static software.wings.service.intfc.ServiceTemplateService.EncryptedFieldComputeMode.OBTAIN_VALUE;
 import static software.wings.sm.states.pcf.PcfStateTestHelper.PHASE_NAME;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
@@ -133,6 +133,7 @@ import software.wings.sm.StateExecutionInstance;
 import software.wings.sm.WorkflowStandardParams;
 import software.wings.sm.WorkflowStandardParamsExtensionService;
 
+import dev.morphia.Key;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -146,7 +147,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
-import org.mongodb.morphia.Key;
 
 @OwnedBy(CDP)
 public class PcfDeployStateTest extends WingsBaseTest {

@@ -9,15 +9,24 @@ package io.harness.gitsync.caching.helper;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.gitsync.caching.GitFileCacheTTL;
-import io.harness.gitsync.caching.entity.CacheDetails;
-import io.harness.gitsync.caching.entity.CacheDetails.CacheDetailsBuilder;
+import io.harness.gitsync.GitServiceConfiguration;
+import io.harness.gitsync.caching.beans.CacheDetails;
+import io.harness.gitsync.caching.beans.CacheDetails.CacheDetailsBuilder;
 
-import lombok.experimental.UtilityClass;
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
+import java.time.Instant;
+import java.util.Date;
 
-@UtilityClass
 @OwnedBy(HarnessTeam.PIPELINE)
 public class GitFileCacheTTLHelper {
+  private GitServiceConfiguration gitServiceConfiguration;
+
+  @Inject
+  public GitFileCacheTTLHelper(@Named("gitServiceConfiguration") GitServiceConfiguration gitServiceConfiguration) {
+    this.gitServiceConfiguration = gitServiceConfiguration;
+  }
+
   public CacheDetails getCacheDetails(long cacheUpdatedAt, long cacheExpiryAt) {
     long currentTime = System.currentTimeMillis();
     if (isExpiredCache(cacheExpiryAt, currentTime)) {
@@ -28,7 +37,7 @@ public class GitFileCacheTTLHelper {
         CacheDetails.builder().lastUpdatedAt(cacheUpdatedAt).cacheExpiryTTL(cacheExpiryAt - currentTime);
 
     long timeElapsedSinceUpdate = currentTime - cacheUpdatedAt;
-    long validUntilTTL = GitFileCacheTTL.VALID_CACHE_DURATION.getDurationInMs() - timeElapsedSinceUpdate;
+    long validUntilTTL = getValidCacheDuration() - timeElapsedSinceUpdate;
     if (validUntilTTL < 0) {
       cacheDetailsBuilder.isStale(true);
     }
@@ -36,11 +45,23 @@ public class GitFileCacheTTLHelper {
     return cacheDetailsBuilder.build();
   }
 
-  public long getValidUntilTime(long currentTime) {
-    return currentTime + GitFileCacheTTL.VALID_CACHE_DURATION.getDurationInMs();
+  public Date getValidUntilTime(long currentTime) {
+    return Date.from(Instant.ofEpochMilli(currentTime + getMaxCacheDuration()));
+  }
+
+  public Date getFormattedValidUntilTime(long validUntilTime) {
+    return Date.from(Instant.ofEpochMilli(validUntilTime));
   }
 
   private boolean isExpiredCache(long validUntil, long currentTime) {
     return validUntil - currentTime < 0;
+  }
+
+  private long getValidCacheDuration() {
+    return gitServiceConfiguration.getGitServiceCacheConfiguration().getValidCacheDurationInMillis();
+  }
+
+  private long getMaxCacheDuration() {
+    return gitServiceConfiguration.getGitServiceCacheConfiguration().getMaxCacheDurationInMillis();
   }
 }

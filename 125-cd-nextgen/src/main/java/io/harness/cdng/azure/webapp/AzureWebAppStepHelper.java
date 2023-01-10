@@ -55,6 +55,8 @@ import io.harness.cdng.azure.config.ApplicationSettingsOutcome;
 import io.harness.cdng.azure.config.ConnectionStringsOutcome;
 import io.harness.cdng.azure.config.StartupCommandOutcome;
 import io.harness.cdng.azure.webapp.beans.AzureWebAppPreDeploymentDataOutput;
+import io.harness.cdng.azure.webapp.steps.NgAppSettingsSweepingOutput;
+import io.harness.cdng.azure.webapp.steps.NgConnectionStringsSweepingOutput;
 import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.execution.StageExecutionInfo;
 import io.harness.cdng.execution.azure.webapps.AzureWebAppsStageExecutionDetails;
@@ -67,6 +69,7 @@ import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
+import io.harness.cdng.service.steps.ServiceStepV3;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.TaskData;
@@ -105,6 +108,7 @@ import io.harness.filestore.service.FileStoreService;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.api.NGEncryptedDataService;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
+import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -154,6 +158,8 @@ public class AzureWebAppStepHelper {
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
   @Named("PRIVILEGED") @Inject private SecretManagerClientService secretManagerClientService;
   @Inject private StageExecutionInfoService stageExecutionInfoService;
+  @Inject private ServiceOverrideService serviceOverrideService;
+  @Inject private ExecutionSweepingOutputService sweepingOutputService;
 
   public ExecutionInfoKey getExecutionInfoKey(Ambiance ambiance, AzureWebAppInfraDelegateConfig infraDelegateConfig) {
     ServiceStepOutcome serviceOutcome = (ServiceStepOutcome) outcomeService.resolve(
@@ -205,18 +211,47 @@ public class AzureWebAppStepHelper {
       settingsConfig.put(STARTUP_COMMAND, startupCommand.getStore());
     }
 
-    if (applicationSettingsOutcome.isFound()) {
+    NgAppSettingsSweepingOutput appSettingsOutput = fetchNgAppSettingsMetadataFromSweepingOutput(ambiance);
+
+    if (appSettingsOutput != null && appSettingsOutput.getStore() != null
+        && appSettingsOutput.getStore().getSpec() != null) {
+      StoreConfig storeConfig = appSettingsOutput.getStore().getSpec();
+      cdExpressionResolver.updateExpressions(ambiance, storeConfig);
+      settingsConfig.put(APPLICATION_SETTINGS, storeConfig);
+    } else if (applicationSettingsOutcome.isFound()) {
       ApplicationSettingsOutcome applicationSettings =
           (ApplicationSettingsOutcome) applicationSettingsOutcome.getOutcome();
       settingsConfig.put(APPLICATION_SETTINGS, applicationSettings.getStore());
     }
 
-    if (connectionStringsOutcome.isFound()) {
+    NgConnectionStringsSweepingOutput connectionStringsOutput =
+        fetchNgConnectionStringsMetadataFromSweepingOutput(ambiance);
+
+    if (connectionStringsOutput != null && connectionStringsOutput.getStore() != null
+        && connectionStringsOutput.getStore().getSpec() != null) {
+      StoreConfig storeConfig = connectionStringsOutput.getStore().getSpec();
+      cdExpressionResolver.updateExpressions(ambiance, storeConfig);
+      settingsConfig.put(CONNECTION_STRINGS, storeConfig);
+    } else if (connectionStringsOutcome.isFound()) {
       ConnectionStringsOutcome connectionStrings = (ConnectionStringsOutcome) connectionStringsOutcome.getOutcome();
       settingsConfig.put(CONNECTION_STRINGS, connectionStrings.getStore());
     }
 
     return settingsConfig;
+  }
+
+  private NgConnectionStringsSweepingOutput fetchNgConnectionStringsMetadataFromSweepingOutput(Ambiance ambiance) {
+    final OptionalSweepingOutput resolveOptional = sweepingOutputService.resolveOptional(
+        ambiance, RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_CONNECTION_STRINGS_SWEEPING_OUTPUT));
+    return resolveOptional.isFound() ? (NgConnectionStringsSweepingOutput) resolveOptional.getOutput()
+                                     : NgConnectionStringsSweepingOutput.builder().build();
+  }
+
+  private NgAppSettingsSweepingOutput fetchNgAppSettingsMetadataFromSweepingOutput(Ambiance ambiance) {
+    final OptionalSweepingOutput resolveOptional = sweepingOutputService.resolveOptional(
+        ambiance, RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_APP_SETTINGS_SWEEPING_OUTPUT));
+    return resolveOptional.isFound() ? (NgAppSettingsSweepingOutput) resolveOptional.getOutput()
+                                     : NgAppSettingsSweepingOutput.builder().build();
   }
 
   public TaskRequest prepareGitFetchTaskRequest(StepElementParameters stepElementParameters, Ambiance ambiance,

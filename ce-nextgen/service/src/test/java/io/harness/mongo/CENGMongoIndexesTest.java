@@ -16,11 +16,14 @@ import io.harness.category.element.UnitTests;
 import io.harness.ccm.CENGTestBase;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.HPersistence;
-import io.harness.persistence.Store;
+import io.harness.persistence.store.Store;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import dev.morphia.AdvancedDatastore;
+import dev.morphia.Morphia;
+import dev.morphia.ObjectFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
@@ -30,9 +33,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mongodb.morphia.AdvancedDatastore;
-import org.mongodb.morphia.Morphia;
-import org.mongodb.morphia.ObjectFactory;
 
 @Slf4j
 public class CENGMongoIndexesTest extends CENGTestBase {

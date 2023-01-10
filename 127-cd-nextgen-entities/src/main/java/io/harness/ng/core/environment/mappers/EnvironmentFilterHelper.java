@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.filter.FilterType.ENVIRONMENT;
 import static io.harness.springdata.SpringDataMongoUtils.populateInFilter;
+import static io.harness.utils.IdentifierRefHelper.MAX_RESULT_THRESHOLD_FOR_SPLIT;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -19,6 +20,7 @@ import static org.springframework.data.mongodb.core.query.Criteria.where;
 
 import io.harness.NGResourceFilterConstants;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.IdentifierRef;
 import io.harness.encryption.ScopeHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.filter.dto.FilterDTO;
@@ -31,6 +33,7 @@ import io.harness.ng.core.mapper.TagMapper;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity.NGServiceOverridesEntityKeys;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
+import io.harness.utils.IdentifierRefHelper;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -66,26 +69,56 @@ public class EnvironmentFilterHelper {
   }
 
   public Criteria createCriteriaForGetList(String accountId, String orgIdentifier, String projectIdentifier,
-      boolean deleted, String searchTerm, String filterIdentifier, EnvironmentFilterPropertiesDTO filterProperties) {
+      boolean deleted, String searchTerm, String filterIdentifier, EnvironmentFilterPropertiesDTO filterProperties,
+      boolean includeAllAccessibleAtScope) {
     if (isNotBlank(filterIdentifier) && filterProperties != null) {
       throw new InvalidRequestException("Can not apply both filter properties and saved filter together");
     }
-
-    Criteria criteria =
-        CoreCriteriaUtils.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier, deleted);
-
+    Criteria criteria = Criteria.where(EnvironmentKeys.accountId).is(accountId);
+    List<Criteria> andCriteriaList = new ArrayList<>();
+    if (includeAllAccessibleAtScope) {
+      getCriteriaToReturnAllAccessibleEnvironmentsAtScope(orgIdentifier, projectIdentifier, andCriteriaList);
+    } else {
+      criteria.and(EnvironmentKeys.orgIdentifier).is(orgIdentifier);
+      criteria.and(EnvironmentKeys.projectIdentifier).is(projectIdentifier);
+    }
+    criteria.and(EnvironmentKeys.deleted).is(deleted);
     if (isNotBlank(filterIdentifier)) {
       populateSavedEnvironmentFilter(
-          criteria, filterIdentifier, accountId, orgIdentifier, projectIdentifier, searchTerm);
+          criteria, filterIdentifier, accountId, orgIdentifier, projectIdentifier, searchTerm, andCriteriaList);
     } else {
-      populateEnvironmentFiltersInTheCriteria(criteria, filterProperties, searchTerm);
+      populateEnvironmentFiltersInTheCriteria(criteria, filterProperties, searchTerm, andCriteriaList);
     }
-
+    if (andCriteriaList.size() != 0) {
+      criteria.andOperator(andCriteriaList.toArray(new Criteria[0]));
+    }
     return criteria;
   }
 
+  private void getCriteriaToReturnAllAccessibleEnvironmentsAtScope(
+      String orgIdentifier, String projectIdentifier, List<Criteria> andCriteriaList) {
+    Criteria criteria = new Criteria();
+    Criteria accountCriteria =
+        Criteria.where(EnvironmentKeys.orgIdentifier).is(null).and(EnvironmentKeys.projectIdentifier).is(null);
+    Criteria orgCriteria =
+        Criteria.where(EnvironmentKeys.orgIdentifier).is(orgIdentifier).and(EnvironmentKeys.projectIdentifier).is(null);
+    Criteria projectCriteria = Criteria.where(EnvironmentKeys.orgIdentifier)
+                                   .is(orgIdentifier)
+                                   .and(EnvironmentKeys.projectIdentifier)
+                                   .is(projectIdentifier);
+
+    if (isNotBlank(projectIdentifier)) {
+      criteria.orOperator(projectCriteria, orgCriteria, accountCriteria);
+    } else if (isNotBlank(orgIdentifier)) {
+      criteria.orOperator(orgCriteria, accountCriteria);
+    } else {
+      criteria.orOperator(accountCriteria);
+    }
+    andCriteriaList.add(criteria);
+  }
+
   private void populateSavedEnvironmentFilter(Criteria criteria, String filterIdentifier, String accountIdentifier,
-      String orgIdentifier, String projectIdentifier, String searchTerm) {
+      String orgIdentifier, String projectIdentifier, String searchTerm, List<Criteria> andCriteriaList) {
     FilterDTO envFilterDTO =
         filterService.get(accountIdentifier, orgIdentifier, projectIdentifier, filterIdentifier, ENVIRONMENT);
     if (envFilterDTO == null) {
@@ -94,18 +127,19 @@ public class EnvironmentFilterHelper {
               ScopeHelper.getScopeMessageForLogs(accountIdentifier, orgIdentifier, projectIdentifier)));
     }
     populateEnvironmentFiltersInTheCriteria(
-        criteria, (EnvironmentFilterPropertiesDTO) envFilterDTO.getFilterProperties(), searchTerm);
+        criteria, (EnvironmentFilterPropertiesDTO) envFilterDTO.getFilterProperties(), searchTerm, andCriteriaList);
   }
 
-  private void populateEnvironmentFiltersInTheCriteria(
-      Criteria criteria, EnvironmentFilterPropertiesDTO environmentFilterPropertiesDTO, String searchTerm) {
+  private void populateEnvironmentFiltersInTheCriteria(Criteria criteria,
+      EnvironmentFilterPropertiesDTO environmentFilterPropertiesDTO, String searchTerm,
+      List<Criteria> andCriteriaList) {
     if (environmentFilterPropertiesDTO == null) {
       return;
     }
 
     populateInFilter(criteria, EnvironmentKeys.type, environmentFilterPropertiesDTO.getEnvironmentTypes());
-    populateNameDesciptionAndSearchTermFilter(criteria, environmentFilterPropertiesDTO.getEnvironmentNames(),
-        environmentFilterPropertiesDTO.getDescription(), searchTerm);
+    populateNameDescriptionAndSearchTermFilter(criteria, environmentFilterPropertiesDTO.getEnvironmentNames(),
+        environmentFilterPropertiesDTO.getDescription(), searchTerm, andCriteriaList);
     populateInFilter(criteria, EnvironmentKeys.identifier, environmentFilterPropertiesDTO.getEnvironmentIdentifiers());
     populateTagsFilter(criteria, environmentFilterPropertiesDTO.getTags());
   }
@@ -117,24 +151,20 @@ public class EnvironmentFilterHelper {
     criteria.and(EnvironmentKeys.tags).in(TagMapper.convertToList(tags));
   }
 
-  private void populateNameDesciptionAndSearchTermFilter(
-      Criteria criteria, List<String> environmentNames, String description, String searchTerm) {
-    List<Criteria> criteriaList = new ArrayList<>();
+  private void populateNameDescriptionAndSearchTermFilter(Criteria criteria, List<String> environmentNames,
+      String description, String searchTerm, List<Criteria> andCriteriaList) {
     Criteria nameCriteria = getNameFilter(criteria, environmentNames);
     if (nameCriteria != null) {
-      criteriaList.add(nameCriteria);
+      andCriteriaList.add(nameCriteria);
     }
     Criteria descriptionCriteria = getDescriptionFilter(description);
     if (descriptionCriteria != null) {
-      criteriaList.add(descriptionCriteria);
+      andCriteriaList.add(descriptionCriteria);
     }
 
     Criteria searchCriteria = getSearchTermFilter(searchTerm);
     if (searchCriteria != null) {
-      criteriaList.add(searchCriteria);
-    }
-    if (criteriaList.size() != 0) {
-      criteria.andOperator(criteriaList.toArray(new Criteria[0]));
+      andCriteriaList.add(searchCriteria);
     }
   }
 
@@ -189,8 +219,19 @@ public class EnvironmentFilterHelper {
 
   public Criteria createCriteriaForGetServiceOverrides(
       String accountId, String orgIdentifier, String projectIdentifier, String environmentRef, String serviceRef) {
-    Criteria criteria = CoreCriteriaUtils.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier);
-    criteria.and(NGServiceOverridesEntityKeys.environmentRef).is(environmentRef);
+    Criteria criteria;
+    String[] envRefSplit =
+        org.apache.commons.lang3.StringUtils.split(environmentRef, ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
+    if (envRefSplit == null || envRefSplit.length == 1) {
+      criteria = CoreCriteriaUtils.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier);
+      criteria.and(NGServiceOverridesEntityKeys.environmentRef).is(environmentRef);
+    } else {
+      IdentifierRef envIdentifierRef =
+          IdentifierRefHelper.getIdentifierRef(environmentRef, accountId, orgIdentifier, projectIdentifier);
+      criteria = CoreCriteriaUtils.createCriteriaForGetList(envIdentifierRef.getAccountIdentifier(),
+          envIdentifierRef.getOrgIdentifier(), envIdentifierRef.getProjectIdentifier());
+      criteria.and(NGServiceOverridesEntityKeys.environmentRef).is(envIdentifierRef.getIdentifier());
+    }
 
     if (isNotBlank(serviceRef)) {
       criteria.and(NGServiceOverridesEntityKeys.serviceRef).is(serviceRef);

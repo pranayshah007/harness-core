@@ -24,8 +24,8 @@ import static io.harness.ngtriggers.beans.source.WebhookTriggerType.GITHUB;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.GITLAB;
 import static io.harness.pms.contracts.triggers.Type.WEBHOOK;
 
-import io.harness.AuthorizationServiceHeader;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.FeatureName;
 import io.harness.beans.HeaderConfig;
@@ -85,6 +85,7 @@ import software.wings.beans.TaskType;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -97,6 +98,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 @OwnedBy(PIPELINE)
 public class TriggerEventExecutionHelper {
   private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   private SecretManagerClientService ngSecretService;
   private TaskExecutionUtils taskExecutionUtils;
   private final NGSettingsClient settingsClient;
@@ -113,10 +115,7 @@ public class TriggerEventExecutionHelper {
     WebhookEventProcessingResultBuilder resultBuilder = WebhookEventProcessingResult.builder();
     List<TriggerEventResponse> eventResponses = new ArrayList<>();
     if (!webhookEventMappingResponse.isFailedToFindTrigger()) {
-      if (pmsFeatureFlagService.isEnabled(
-              triggerWebhookEvent.getAccountId(), FeatureName.SPG_NG_GITHUB_WEBHOOK_AUTHENTICATION)) {
-        authenticateTriggers(triggerWebhookEvent, webhookEventMappingResponse);
-      }
+      authenticateTriggers(triggerWebhookEvent, webhookEventMappingResponse);
       log.info("Preparing for pipeline execution request");
       resultBuilder.mappedToTriggers(true);
       if (isNotEmpty(webhookEventMappingResponse.getTriggers())) {
@@ -363,7 +362,9 @@ public class TriggerEventExecutionHelper {
 
     if (BinaryResponseData.class.isAssignableFrom(responseData.getClass())) {
       BinaryResponseData binaryResponseData = (BinaryResponseData) responseData;
-      Object object = kryoSerializer.asInflatedObject(binaryResponseData.getData());
+      Object object = binaryResponseData.isUsingKryoWithoutReference()
+          ? referenceFalseKryoSerializer.asInflatedObject(binaryResponseData.getData())
+          : kryoSerializer.asInflatedObject(binaryResponseData.getData());
       if (object instanceof TriggerAuthenticationTaskResponse) {
         int index = 0;
         for (Boolean isWebhookAuthenticated :

@@ -43,8 +43,8 @@ import software.wings.beans.Service;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.TemplateExpression;
 import software.wings.beans.WorkflowExecution;
-import software.wings.beans.artifact.Artifact;
 import software.wings.infra.InfrastructureDefinition;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.PhaseSubWorkflowHelperService;
 import software.wings.service.intfc.ArtifactService;
 import software.wings.service.intfc.ArtifactStreamServiceBindingService;
@@ -70,11 +70,11 @@ import software.wings.sm.WorkflowStandardParamsExtensionService;
 import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
+import dev.morphia.annotations.Transient;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.annotations.Transient;
 
 /**
  * Created by rishi on 1/12/17.

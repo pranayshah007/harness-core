@@ -11,7 +11,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.execution.ExecutionSource;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
-import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.integrationstage.V1.CIPlanCreatorUtils;
 import io.harness.ci.plancreator.V1.GitClonePlanCreator;
 import io.harness.ci.plancreator.V1.InitializeStepPlanCreatorV1;
@@ -55,9 +54,9 @@ import org.apache.commons.lang3.tuple.Pair;
 @OwnedBy(HarnessTeam.CI)
 public class CIStepsPlanCreator extends ChildrenPlanCreator<YamlField> {
   @Inject private KryoSerializer kryoSerializer;
-  @Inject private ConnectorUtils connectorUtils;
   @Inject private GitClonePlanCreator gitClonePlanCreator;
   @Inject private InitializeStepPlanCreatorV1 initializeStepPlanCreatorV1;
+  @Inject private CIPlanCreatorUtils ciPlanCreatorUtils;
 
   @Override
   public PlanNode createPlanForParentNode(PlanCreationContext ctx, YamlField config, List<String> childrenNodeIds) {
@@ -117,7 +116,7 @@ public class CIStepsPlanCreator extends ChildrenPlanCreator<YamlField> {
       List<ExecutionWrapperConfig> executionWrapperConfigs, String childNodeID) {
     LinkedHashMap<String, PlanCreationResponse> responseMap = new LinkedHashMap<>();
     Optional<Object> optionalInfrastructure =
-        CIPlanCreatorUtils.getDeserializedObjectFromDependency(ctx.getDependency(), kryoSerializer, "infrastructure");
+        ciPlanCreatorUtils.getDeserializedObjectFromDependency(ctx.getDependency(), "infrastructure");
     if (optionalInfrastructure.isEmpty()) {
       throw new InvalidRequestException("Infrastructure cannot be empty");
     }
@@ -125,20 +124,20 @@ public class CIStepsPlanCreator extends ChildrenPlanCreator<YamlField> {
     // do in reverse order
     // inject codebase plugin plan creator
     Optional<Object> optionalCodebase =
-        CIPlanCreatorUtils.getDeserializedObjectFromDependency(ctx.getDependency(), kryoSerializer, "codebase");
+        ciPlanCreatorUtils.getDeserializedObjectFromDependency(ctx.getDependency(), "codebase");
     CodeBase codeBase = null;
     if (optionalCodebase.isPresent()) {
       codeBase = (CodeBase) optionalCodebase.get();
     }
     ExecutionSource executionSource =
-        CIPlanCreatorUtils.buildExecutionSource(ctx, codeBase, connectorUtils, ctx.getCurrentField().getId());
+        ciPlanCreatorUtils.buildExecutionSource(ctx, codeBase, ctx.getCurrentField().getId());
     String gitCloneChildNodeID =
         createGitClonePlanCreator(ctx, responseMap, executionWrapperConfigs, codeBase, childNodeID);
     childNodeID = gitCloneChildNodeID != null ? gitCloneChildNodeID : childNodeID;
 
     // inject initialise plan creator
     Optional<Object> optionalStageNode =
-        CIPlanCreatorUtils.getDeserializedObjectFromDependency(ctx.getDependency(), kryoSerializer, "stageNode");
+        ciPlanCreatorUtils.getDeserializedObjectFromDependency(ctx.getDependency(), "stageNode");
     if (optionalStageNode.isEmpty()) {
       throw new InvalidRequestException("IntegrationStageNode cannot be empty");
     }

@@ -8,6 +8,7 @@
 package software.wings.resources.dashboard;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.event.reconciliation.service.LookerEntityReconServiceHelper.performReconciliationViaAPI;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
@@ -30,7 +31,6 @@ import io.harness.event.reconciliation.ReconciliationStatus;
 import io.harness.event.reconciliation.service.DeploymentReconService;
 import io.harness.event.reconciliation.service.DeploymentStepReconServiceImpl;
 import io.harness.event.reconciliation.service.ExecutionInterruptReconServiceImpl;
-import io.harness.event.reconciliation.service.LookerEntityReconService;
 import io.harness.event.timeseries.processor.DeploymentEventProcessor;
 import io.harness.event.timeseries.processor.StepEventProcessor;
 import io.harness.event.timeseries.processor.instanceeventprocessor.InstanceEventProcessor;
@@ -40,8 +40,10 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
+import io.harness.persistence.HPersistence;
 import io.harness.rest.RestResponse;
 import io.harness.rest.RestResponse.Builder;
+import io.harness.timescaledb.TimeScaleDBService;
 
 import software.wings.beans.Account;
 import software.wings.beans.Application;
@@ -98,7 +100,6 @@ public class CustomDashboardResource {
   private DashboardAuthHandler dashboardAuthHandler;
   private HarnessUserGroupService harnessUserGroupService;
   private DeploymentReconService deploymentReconService;
-  private LookerEntityReconService lookerEntityReconService;
   private AccountService accountService;
   private InstanceEventProcessor instanceEventProcessor;
   private IInstanceReconService instanceReconService;
@@ -109,6 +110,8 @@ public class CustomDashboardResource {
   @Inject private Set<TimeScaleEntity<?>> timeScaleEntities;
   @Inject private DeploymentExecutionEntity deploymentExecutionEntity;
   @Inject @Named("CustomDashboardAPIExecutor") ExecutorService executorService;
+  @Inject TimeScaleDBService timeScaleDBService;
+  @Inject HPersistence persistence;
 
   @Inject
   public CustomDashboardResource(DashboardSettingsService dashboardSettingsService,
@@ -688,9 +691,8 @@ public class CustomDashboardResource {
   @ExceptionMetered
   @AuthRule(permissionType = LOGGED_IN)
   public RestResponse performLookerEntityReconciliationSingleAccountSingleEntity(
-      @QueryParam("targetAccountId") @NotEmpty String targetAccountId,
-      @QueryParam("durationStartTs") Long durationStartTs, @QueryParam("durationEndTs") Long durationEndTs,
-      @QueryParam("entity") String lookerEntity) {
+      @QueryParam("accountId") @NotEmpty String accountId, @QueryParam("durationStartTs") Long durationStartTs,
+      @QueryParam("durationEndTs") Long durationEndTs, @QueryParam("entity") String lookerEntity) {
     User authUser = UserThreadLocal.get();
 
     String deployMode = System.getenv(DeployMode.DEPLOY_MODE);
@@ -702,18 +704,17 @@ public class CustomDashboardResource {
             .build();
       }
 
-      Account account = accountService.get(targetAccountId);
+      Account account = accountService.get(accountId);
       if (account == null) {
         return Builder.aRestResponse()
-            .withResponseMessages(Lists.newArrayList(ResponseMessage.builder()
-                                                         .message(targetAccountId + " not found")
-                                                         .code(ErrorCode.INVALID_ARGUMENT)
-                                                         .build()))
+            .withResponseMessages(Lists.newArrayList(
+                ResponseMessage.builder().message(accountId + " not found").code(ErrorCode.INVALID_ARGUMENT).build()))
             .build();
       }
+
       TimeScaleEntity entity = null;
       for (TimeScaleEntity timeScaleEntity : timeScaleEntities) {
-        if (timeScaleEntity.getSourceEntityClass().equals(lookerEntity)) {
+        if (timeScaleEntity.getSourceEntityClass().getSimpleName().equals(lookerEntity)) {
           entity = timeScaleEntity;
           break;
         }
@@ -726,131 +727,140 @@ public class CustomDashboardResource {
             .build();
       }
 
-      ReconciliationStatus status =
-          lookerEntityReconService.performReconciliation(targetAccountId, durationStartTs, durationEndTs, entity);
+      ReconciliationStatus status = performReconciliationViaAPI(
+          accountId, durationStartTs, durationEndTs, entity, timeScaleDBService, persistence);
+
       return Builder.aRestResponse()
-          .withResponseMessages(Lists.newArrayList(ResponseMessage.builder()
-                                                       .message(targetAccountId + ":" + status.name())
-                                                       .code(null)
-                                                       .level(Level.INFO)
-                                                       .build()))
+          .withResponseMessages(Lists.newArrayList(
+              ResponseMessage.builder()
+                  .message(String.format("looker-entity-recon-per-account for account: %s, entity: %s, status: %s",
+                      accountId, entity.getSourceEntityClass().getSimpleName(), status.name()))
+                  .code(null)
+                  .level(Level.INFO)
+                  .build()))
           .build();
     } else {
       return Builder.aRestResponse()
-          .withResponseMessages(
-              Lists.newArrayList(ResponseMessage.builder()
-                                     .message("User not allowed to perform the deployment-recon-per-account operation")
-                                     .build()))
+          .withResponseMessages(Lists.newArrayList(
+              ResponseMessage.builder()
+                  .message("User not allowed to perform the looker-entity-recon-per-account operation")
+                  .build()))
           .build();
     }
   }
 
-  //  /**
-  //   * Perform reconciliation
-  //   *
-  //   * @return the rest response
-  //   */
-  //  @PUT
-  //  @Path("looker-entity-recon-per-account-per-entity")
-  //  @Scope(value = ResourceType.USER, scope = LOGGED_IN)
-  //  @Timed
-  //  @ExceptionMetered
-  //  @AuthRule(permissionType = LOGGED_IN)
-  //  public RestResponse performLookerEntityReconciliationSingleAccount(
-  //          @QueryParam("targetAccountId") @NotEmpty String targetAccountId,
-  //          @QueryParam("durationStartTs") Long durationStartTs, @QueryParam("durationEndTs") Long durationEndTs) {
-  //    User authUser = UserThreadLocal.get();
+  /**
+   * Perform reconciliation
+   *
+   * @return the rest response
+   */
+  @PUT
+  @Path("looker-entity-recon-per-account-per-entity")
+  @Scope(value = ResourceType.USER, scope = LOGGED_IN)
+  @Timed
+  @ExceptionMetered
+  @AuthRule(permissionType = LOGGED_IN)
+  public RestResponse performLookerEntityReconciliationSingleAccount(
+      @QueryParam("accountId") @NotEmpty String accountId, @QueryParam("durationStartTs") Long durationStartTs,
+      @QueryParam("durationEndTs") Long durationEndTs) {
+    User authUser = UserThreadLocal.get();
+
+    String deployMode = System.getenv(DeployMode.DEPLOY_MODE);
+    if (DeployMode.isOnPrem(deployMode) || harnessUserGroupService.isHarnessSupportUser(authUser.getUuid())) {
+      if (durationEndTs == null || durationStartTs == null || durationStartTs <= 0 || durationEndTs <= 0) {
+        return Builder.aRestResponse()
+            .withResponseMessages(Lists.newArrayList(ResponseMessage.builder()
+                                                         .message("durationStartTs or endTs is null or invalid")
+
+                                                         .build()))
+            .build();
+      }
+
+      Account account = accountService.get(accountId);
+      if (account == null) {
+        return Builder.aRestResponse()
+            .withResponseMessages(Lists.newArrayList(
+                ResponseMessage.builder().message(accountId + " not found").code(ErrorCode.INVALID_ARGUMENT).build()))
+            .build();
+      }
+
+      for (TimeScaleEntity timeScaleEntity : timeScaleEntities) {
+        ReconciliationStatus status = performReconciliationViaAPI(
+            accountId, durationStartTs, durationEndTs, timeScaleEntity, timeScaleDBService, persistence);
+        log.info(String.format("looker-entity-recon-per-account-per-entity account: %s, entity: %s, status: %s",
+            accountId, timeScaleEntity.getSourceEntityClass().getSimpleName(), status.name()));
+      }
+
+      return Builder.aRestResponse()
+          .withResponseMessages(Lists.newArrayList(
+              ResponseMessage.builder()
+                  .message(
+                      String.format("performed looker-entity-recon-per-account-per-entity for account: %s", accountId))
+                  .code(null)
+                  .level(Level.INFO)
+                  .build()))
+          .build();
+    } else {
+      return Builder.aRestResponse()
+          .withResponseMessages(Lists.newArrayList(
+              ResponseMessage.builder()
+                  .message("User not allowed to perform the looker-entity-recon-per-account-per-entity operation")
+                  .build()))
+          .build();
+    }
+  }
+
+  //    /**
+  //     * Perform reconciliation
+  //     *
+  //     * @return the rest response
+  //     */
+  //    @PUT
+  //    @Path("looker-entity-recon-all-accounts")
+  //    @Scope(value = ResourceType.USER, scope = LOGGED_IN)
+  //    @Timed
+  //    @ExceptionMetered
+  //    @AuthRule(permissionType = LOGGED_IN)
+  //    public RestResponse performLookerEntityReconciliationAllAccounts(
+  //            @QueryParam("durationStartTs") Long durationStartTs, @QueryParam("durationEndTs") Long durationEndTs) {
+  //      User authUser = UserThreadLocal.get();
+  //      if (harnessUserGroupService.isHarnessSupportUser(authUser.getUuid())) {
+  //        if (durationEndTs == null || durationStartTs == null || durationStartTs <= 0 || durationEndTs <= 0) {
+  //          return Builder.aRestResponse()
+  //                  .withResponseMessages(Lists.newArrayList(ResponseMessage.builder()
+  //                          .message("durationStartTs or endTs is null or invalid")
+  //                          .code(ErrorCode.INVALID_ARGUMENT)
+  //                          .build()))
+  //                  .build();
+  //        }
   //
-  //    String deployMode = System.getenv(DeployMode.DEPLOY_MODE);
-  //    if (DeployMode.isOnPrem(deployMode) || harnessUserGroupService.isHarnessSupportUser(authUser.getUuid())) {
-  //      if (durationEndTs == null || durationStartTs == null || durationStartTs <= 0 || durationEndTs <= 0) {
+  //        List<Account> accountList = accountService.listAllAccountWithDefaultsWithoutLicenseInfo();
+  //        Map<String, String> accountReconStatusMap = new HashMap<>();
+  //        for (Account account : accountList) {
+  //          ReconciliationStatus status =
+  //                  lookerEntityReconService.performReconciliation(account.getUuid(), durationStartTs, durationEndTs);
+  //          accountReconStatusMap.put(account.getAccountName(), status.name());
+  //          log.info("Reconcilation completed for accountID:[{}],accountName:[{}],status:[{}]", account.getUuid(),
+  //                  account.getAccountName(), status);
+  //        }
   //        return Builder.aRestResponse()
-  //                .withResponseMessages(Lists.newArrayList(ResponseMessage.builder()
-  //                        .message("durationStartTs or endTs is null or invalid")
-  //
-  //                        .build()))
+  //                .withResponseMessages(accountReconStatusMap.entrySet()
+  //                        .stream()
+  //                        .map(stringStringEntry
+  //                                -> ResponseMessage.builder()
+  //                                .message(stringStringEntry.getKey() + ":" + stringStringEntry.getValue())
+  //                                .code(null)
+  //                                .level(Level.INFO)
+  //                                .build())
+  //                        .collect(Collectors.toList()))
+  //                .build();
+  //      } else {
+  //        return Builder.aRestResponse()
+  //                .withResponseMessages(
+  //                        Lists.newArrayList(ResponseMessage.builder()
+  //                                .message("User not allowed to perform the deployment-recon-all-account operation")
+  //                                .build()))
   //                .build();
   //      }
-  //
-  //      Account account = accountService.get(targetAccountId);
-  //      if (account == null) {
-  //        return Builder.aRestResponse()
-  //                .withResponseMessages(Lists.newArrayList(ResponseMessage.builder()
-  //                        .message(targetAccountId + " not found")
-  //                        .code(ErrorCode.INVALID_ARGUMENT)
-  //                        .build()))
-  //                .build();
-  //      }
-  //      ReconciliationStatus status =
-  //              lookerEntityReconService.performReconciliation(targetAccountId, durationStartTs, durationEndTs);
-  //      return Builder.aRestResponse()
-  //              .withResponseMessages(Lists.newArrayList(ResponseMessage.builder()
-  //                      .message(targetAccountId + ":" + status.name())
-  //                      .code(null)
-  //                      .level(Level.INFO)
-  //                      .build()))
-  //              .build();
-  //    } else {
-  //      return Builder.aRestResponse()
-  //              .withResponseMessages(
-  //                      Lists.newArrayList(ResponseMessage.builder()
-  //                              .message("User not allowed to perform the deployment-recon-per-account operation")
-  //                              .build()))
-  //              .build();
   //    }
-  //  }
-  //
-  //  /**
-  //   * Perform reconciliation
-  //   *
-  //   * @return the rest response
-  //   */
-  //  @PUT
-  //  @Path("looker-entity-recon-all-accounts")
-  //  @Scope(value = ResourceType.USER, scope = LOGGED_IN)
-  //  @Timed
-  //  @ExceptionMetered
-  //  @AuthRule(permissionType = LOGGED_IN)
-  //  public RestResponse performLookerEntityReconciliationAllAccounts(
-  //          @QueryParam("durationStartTs") Long durationStartTs, @QueryParam("durationEndTs") Long durationEndTs) {
-  //    User authUser = UserThreadLocal.get();
-  //    if (harnessUserGroupService.isHarnessSupportUser(authUser.getUuid())) {
-  //      if (durationEndTs == null || durationStartTs == null || durationStartTs <= 0 || durationEndTs <= 0) {
-  //        return Builder.aRestResponse()
-  //                .withResponseMessages(Lists.newArrayList(ResponseMessage.builder()
-  //                        .message("durationStartTs or endTs is null or invalid")
-  //                        .code(ErrorCode.INVALID_ARGUMENT)
-  //                        .build()))
-  //                .build();
-  //      }
-  //
-  //      List<Account> accountList = accountService.listAllAccountWithDefaultsWithoutLicenseInfo();
-  //      Map<String, String> accountReconStatusMap = new HashMap<>();
-  //      for (Account account : accountList) {
-  //        ReconciliationStatus status =
-  //                lookerEntityReconService.performReconciliation(account.getUuid(), durationStartTs, durationEndTs);
-  //        accountReconStatusMap.put(account.getAccountName(), status.name());
-  //        log.info("Reconcilation completed for accountID:[{}],accountName:[{}],status:[{}]", account.getUuid(),
-  //                account.getAccountName(), status);
-  //      }
-  //      return Builder.aRestResponse()
-  //              .withResponseMessages(accountReconStatusMap.entrySet()
-  //                      .stream()
-  //                      .map(stringStringEntry
-  //                              -> ResponseMessage.builder()
-  //                              .message(stringStringEntry.getKey() + ":" + stringStringEntry.getValue())
-  //                              .code(null)
-  //                              .level(Level.INFO)
-  //                              .build())
-  //                      .collect(Collectors.toList()))
-  //              .build();
-  //    } else {
-  //      return Builder.aRestResponse()
-  //              .withResponseMessages(
-  //                      Lists.newArrayList(ResponseMessage.builder()
-  //                              .message("User not allowed to perform the deployment-recon-all-account operation")
-  //                              .build()))
-  //              .build();
-  //    }
-  //  }
 }

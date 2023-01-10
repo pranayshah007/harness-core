@@ -7,8 +7,6 @@
 
 package io.harness.ccm;
 
-import static io.harness.AuthorizationServiceHeader.CE_NEXT_GEN;
-import static io.harness.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.annotations.dev.HarnessTeam.CE;
 import static io.harness.audit.ResourceTypeConstants.CLOUD_ASSET_GOVERNANCE_RULE;
 import static io.harness.audit.ResourceTypeConstants.CLOUD_ASSET_GOVERNANCE_RULE_ENFORCEMENT;
@@ -18,6 +16,8 @@ import static io.harness.audit.ResourceTypeConstants.PERSPECTIVE;
 import static io.harness.audit.ResourceTypeConstants.PERSPECTIVE_BUDGET;
 import static io.harness.audit.ResourceTypeConstants.PERSPECTIVE_FOLDER;
 import static io.harness.audit.ResourceTypeConstants.PERSPECTIVE_REPORT;
+import static io.harness.authorization.AuthorizationServiceHeader.CE_NEXT_GEN;
+import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CONNECTOR_ENTITY;
 import static io.harness.lock.DistributedLockImplementation.MONGO;
@@ -46,6 +46,8 @@ import io.harness.ccm.audittrails.eventhandler.RuleEventHandler;
 import io.harness.ccm.audittrails.eventhandler.RuleSetEventHandler;
 import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.bigQuery.BigQueryServiceImpl;
+import io.harness.ccm.budgetGroup.service.BudgetGroupService;
+import io.harness.ccm.budgetGroup.service.BudgetGroupServiceImpl;
 import io.harness.ccm.commons.beans.config.GcpConfig;
 import io.harness.ccm.commons.service.impl.ClusterRecordServiceImpl;
 import io.harness.ccm.commons.service.impl.EntityMetadataServiceImpl;
@@ -58,6 +60,10 @@ import io.harness.ccm.graphql.core.budget.BudgetCostService;
 import io.harness.ccm.graphql.core.budget.BudgetCostServiceImpl;
 import io.harness.ccm.graphql.core.budget.BudgetService;
 import io.harness.ccm.graphql.core.budget.BudgetServiceImpl;
+import io.harness.ccm.graphql.core.currency.CurrencyPreferenceService;
+import io.harness.ccm.graphql.core.currency.CurrencyPreferenceServiceImpl;
+import io.harness.ccm.jira.CCMJiraHelper;
+import io.harness.ccm.jira.CCMJiraHelperImpl;
 import io.harness.ccm.perpetualtask.K8sWatchTaskResourceClientModule;
 import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.rbac.CCMRbacHelperImpl;
@@ -158,13 +164,18 @@ import io.harness.threading.ExecutorModule;
 import io.harness.time.TimeModule;
 import io.harness.timescaledb.JooqModule;
 import io.harness.timescaledb.TimeScaleDBConfig;
+import io.harness.timescaledb.TimeScaleDBService;
+import io.harness.timescaledb.TimeScaleDBServiceImpl;
 import io.harness.timescaledb.metrics.HExecuteListener;
 import io.harness.timescaledb.metrics.QueryStatsPrinter;
 import io.harness.token.TokenClientModule;
 import io.harness.version.VersionModule;
 import io.harness.waiter.AbstractWaiterModule;
 import io.harness.waiter.WaiterConfiguration;
+import io.harness.yaml.YamlSdkModule;
+import io.harness.yaml.schema.beans.YamlSchemaRootClass;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -176,6 +187,8 @@ import com.google.inject.matcher.Matchers;
 import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
+import dev.morphia.converters.TypeConverter;
+import io.dropwizard.jackson.Jackson;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -185,7 +198,6 @@ import javax.validation.ValidatorFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.parameternameprovider.ReflectionParameterNameProvider;
 import org.jooq.ExecuteListener;
-import org.mongodb.morphia.converters.TypeConverter;
 import org.springframework.core.convert.converter.Converter;
 import ru.vyarus.guice.validator.ValidationModule;
 
@@ -320,6 +332,8 @@ public class CENextGenModule extends AbstractModule {
         configuration.getOutboxPollConfig(), NG_MANAGER.getServiceId(), configuration.isExportMetricsToStackDriver()));
     install(NgLicenseHttpClientModule.getInstance(configuration.getNgManagerClientConfig(),
         configuration.getNgManagerServiceSecret(), CE_NEXT_GEN.getServiceId()));
+    install(new CENGGraphQLModule(configuration.getCurrencyPreferencesConfig()));
+    install(YamlSdkModule.getInstance());
     bind(HPersistence.class).to(MongoPersistence.class);
     bind(CENextGenConfiguration.class).toInstance(configuration);
     bind(SQLConverter.class).to(SQLConverterImpl.class);
@@ -352,6 +366,15 @@ public class CENextGenModule extends AbstractModule {
     bind(RuleEnforcementService.class).to(RuleEnforcementServiceImpl.class);
     bind(RuleExecutionService.class).to(RuleExecutionServiceImpl.class);
     bind(CCMActiveSpendService.class).to(CCMActiveSpendServiceImpl.class);
+    bind(CCMJiraHelper.class).to(CCMJiraHelperImpl.class);
+    bind(CurrencyPreferenceService.class).to(CurrencyPreferenceServiceImpl.class);
+    bind(BudgetGroupService.class).to(BudgetGroupServiceImpl.class);
+    try {
+      bind(TimeScaleDBService.class)
+          .toConstructor(TimeScaleDBServiceImpl.class.getConstructor(TimeScaleDBConfig.class));
+    } catch (NoSuchMethodException e) {
+      log.error("TimeScaleDbServiceImpl Initialization Failed in due to missing constructor", e);
+    }
 
     registerEventsFrameworkMessageListeners();
 
@@ -366,7 +389,7 @@ public class CENextGenModule extends AbstractModule {
     filterPropertiesMapper.addBinding(FilterType.CCMRECOMMENDATION.toString())
         .to(CCMRecommendationFilterPropertiesMapper.class);
     filterPropertiesMapper.addBinding(FilterType.ANOMALY.toString()).to(AnomalyFilterPropertiesMapper.class);
-    filterPropertiesMapper.addBinding(FilterType.POLICYEXECUTION.toString()).to(ExecutionFilterPropertyMapper.class);
+    filterPropertiesMapper.addBinding(FilterType.RULEEXECUTION.toString()).to(ExecutionFilterPropertyMapper.class);
   }
 
   private void bindAccountLogContextInterceptor() {
@@ -469,5 +492,26 @@ public class CENextGenModule extends AbstractModule {
     bind(MessageListener.class)
         .annotatedWith(Names.named(CONNECTOR_ENTITY + ENTITY_CRUD))
         .to(ConnectorEntityCRUDStreamListener.class);
+  }
+
+  @Provides
+  @Singleton
+  List<YamlSchemaRootClass> yamlSchemaRootClasses() {
+    return ImmutableList.<YamlSchemaRootClass>builder().addAll(CENextGenModuleRegistrars.yamlSchemaRegistrars).build();
+  }
+
+  @Provides
+  @Named("yaml-schema-mapper")
+  @Singleton
+  public ObjectMapper getYamlSchemaObjectMapper() {
+    ObjectMapper objectMapper = Jackson.newObjectMapper();
+    CENextGenApplication.configureObjectMapper(objectMapper);
+    return objectMapper;
+  }
+
+  @Provides
+  @Singleton
+  public ObjectMapper getYamlSchemaObjectMapperWithoutNamed() {
+    return Jackson.newObjectMapper();
   }
 }

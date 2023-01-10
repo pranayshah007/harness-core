@@ -53,8 +53,12 @@ public class LogAnalysisResource {
   public RestResponse<List<LogClusterDTO>> getTestData(@QueryParam("verificationTaskId") String verificationTaskId,
       @NotNull @QueryParam("analysisStartTime") Long analysisStartTime,
       @NotNull @QueryParam("analysisEndTime") Long analysisEndTime, @QueryParam("hosts") String commaSeparatedHosts) {
-    return new RestResponse<>(logAnalysisService.getTestData(
-        verificationTaskId, Instant.ofEpochMilli(analysisStartTime), Instant.ofEpochMilli(analysisEndTime)));
+    if (commaSeparatedHosts == null) {
+      return new RestResponse<>(logAnalysisService.getTestData(
+          verificationTaskId, Instant.ofEpochMilli(analysisStartTime), Instant.ofEpochMilli(analysisEndTime)));
+    }
+    return new RestResponse<>(logAnalysisService.getTestDataForDeploymentLog(verificationTaskId,
+        Instant.ofEpochMilli(analysisStartTime), Instant.ofEpochMilli(analysisEndTime), commaSeparatedHosts));
   }
 
   @GET

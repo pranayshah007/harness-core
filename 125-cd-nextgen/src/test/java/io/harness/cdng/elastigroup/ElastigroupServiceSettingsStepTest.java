@@ -7,11 +7,14 @@
 
 package io.harness.cdng.elastigroup;
 
+import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
@@ -26,21 +29,28 @@ import io.harness.cdng.service.beans.ServiceDefinition;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.steps.ServiceStepsHelper;
 import io.harness.cdng.steps.EmptyStepParameters;
+import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
+import io.harness.ng.core.EntityDetail;
+import io.harness.ng.core.entitydetail.EntityDetailProtoToRestMapper;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.data.Outcome;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
+import io.harness.steps.EntityReferenceExtractorUtils;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.junit.After;
@@ -57,7 +67,9 @@ public class ElastigroupServiceSettingsStepTest {
   @Mock private ElastigroupHelperService elastigroupHelperService;
   @Mock private CDStepHelper cdStepHelper;
   @Mock private CDExpressionResolver expressionResolver;
-
+  @Mock EntityDetailProtoToRestMapper entityDetailProtoToRestMapper;
+  @Mock private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
+  @Mock private PipelineRbacHelper pipelineRbacHelper;
   private final StartupScriptConfiguration startupScriptConfig =
       StartupScriptConfiguration.builder()
           .store(StoreConfigWrapper.builder()
@@ -89,7 +101,18 @@ public class ElastigroupServiceSettingsStepTest {
     doReturn(getServiceConfig(startupScriptConfig))
         .when(cdStepHelper)
         .fetchServiceConfigFromSweepingOutput(any(Ambiance.class));
+    List<EntityDetail> listEntityDetail = new ArrayList<>();
 
+    listEntityDetail.add(EntityDetail.builder().name("StartupScript1").build());
+    listEntityDetail.add(EntityDetail.builder().name("StartupScript2").build());
+
+    Set<EntityDetailProtoDTO> setEntityDetail = new HashSet<>();
+
+    doReturn(setEntityDetail).when(entityReferenceExtractorUtils).extractReferredEntities(any(), any());
+
+    doReturn(listEntityDetail)
+        .when(entityDetailProtoToRestMapper)
+        .createEntityDetailsDTO(new ArrayList<>(emptyIfNull(setEntityDetail)));
     StepResponse response = step.executeSync(buildAmbiance(), stepParameters, null, null);
 
     assertThat(response.getStatus()).isEqualTo(Status.SUCCEEDED);
@@ -101,6 +124,7 @@ public class ElastigroupServiceSettingsStepTest {
 
     StartupScriptOutcome startupScriptOutcome = (StartupScriptOutcome) outcomes.get(StartupScriptOutcome.class);
 
+    verify(pipelineRbacHelper, times(1)).checkRuntimePermissions(any(), any(List.class), any(Boolean.class));
     assertThat(startupScriptOutcome.getStore()).isEqualTo(startupScriptConfig.getStore().getSpec());
   }
 

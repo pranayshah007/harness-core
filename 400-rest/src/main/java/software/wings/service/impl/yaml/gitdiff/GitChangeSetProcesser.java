@@ -20,8 +20,8 @@ import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.collections4.ListUtils.emptyIfNull;
 
 import io.harness.logging.AccountLogContext;
+import io.harness.logging.ProcessTimeLogContext;
 import io.harness.manage.GlobalContextManager.GlobalContextGuard;
-import io.harness.mongo.ProcessTimeLogContext;
 
 import software.wings.beans.Application;
 import software.wings.beans.Application.ApplicationKeys;

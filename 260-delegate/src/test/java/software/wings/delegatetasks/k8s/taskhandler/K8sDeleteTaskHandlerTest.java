@@ -35,6 +35,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.KubernetesConfig;
@@ -85,9 +86,9 @@ public class K8sDeleteTaskHandlerTest extends WingsBaseTest {
         .getExecutionLogCallback(any(K8sDeleteTaskParameters.class), eq(FetchFiles));
     doReturn(asList(deployment().getResourceId(), service().getResourceId(), deploymentConfig().getResourceId(),
                  namespace().getResourceId()))
-        .when(k8sTaskHelper)
+        .when(k8sTaskHelperBase)
         .getResourceIdsForDeletion(
-            any(K8sDeleteTaskParameters.class), eq(kubernetesConfig), any(ExecutionLogCallback.class));
+            anyBoolean(), any(), eq(kubernetesConfig), any(ExecutionLogCallback.class), anyBoolean());
   }
 
   @Test
@@ -222,6 +223,8 @@ public class K8sDeleteTaskHandlerTest extends WingsBaseTest {
   @Owner(developers = OwnerRule.TARUN_UBA)
   @Category(UnitTests.class)
   public void deleteCanaryWorkloadResources() throws Exception {
+    K8sReleaseHandler releaseHandler = mock(K8sReleaseHandler.class);
+    doReturn(releaseHandler).when(k8sTaskHelperBase).getReleaseHandler(anyBoolean());
     doReturn(KubernetesConfig.builder().build())
         .when(deploymentDelegateHelper)
         .getKubernetesConfig(any(K8sClusterConfig.class), eq(false));
@@ -229,8 +232,8 @@ public class K8sDeleteTaskHandlerTest extends WingsBaseTest {
 
     K8sDeleteTaskParameters deleteAllResources =
         K8sDeleteTaskParameters.builder().k8sCanaryDelete(true).resources("${k8s.canaryWorkload}").build();
-    final K8sTaskExecutionResponse taskResponse = handler.executeTaskInternal(deleteAllResources, taskParams);
+    handler.executeTaskInternal(deleteAllResources, taskParams);
 
-    verify(k8sTaskHelperBase, times(1)).getReleaseHistoryData(any(), any());
+    verify(releaseHandler).getReleaseHistory(any(), any());
   }
 }

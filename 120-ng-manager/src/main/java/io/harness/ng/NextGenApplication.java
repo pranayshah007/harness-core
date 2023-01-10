@@ -7,15 +7,15 @@
 
 package io.harness.ng;
 
-import static io.harness.AuthorizationServiceHeader.BEARER;
-import static io.harness.AuthorizationServiceHeader.DEFAULT;
-import static io.harness.AuthorizationServiceHeader.IDENTITY_SERVICE;
-import static io.harness.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.accesscontrol.filter.NGScopeAccessCheckFilter.bypassInterMsvcRequests;
 import static io.harness.accesscontrol.filter.NGScopeAccessCheckFilter.bypassInternalApi;
 import static io.harness.accesscontrol.filter.NGScopeAccessCheckFilter.bypassPaths;
 import static io.harness.accesscontrol.filter.NGScopeAccessCheckFilter.bypassPublicApi;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.authorization.AuthorizationServiceHeader.BEARER;
+import static io.harness.authorization.AuthorizationServiceHeader.DEFAULT;
+import static io.harness.authorization.AuthorizationServiceHeader.IDENTITY_SERVICE;
+import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 import static io.harness.ng.NextGenConfiguration.HARNESS_RESOURCE_CLASSES;
@@ -103,6 +103,7 @@ import io.harness.migration.NGMigrationSdkModule;
 import io.harness.migration.beans.NGMigrationConfiguration;
 import io.harness.migrations.InstanceMigrationProvider;
 import io.harness.ng.core.CorrelationFilter;
+import io.harness.ng.core.DefaultUserGroupsCreationJob;
 import io.harness.ng.core.EtagFilter;
 import io.harness.ng.core.TraceFilter;
 import io.harness.ng.core.event.NGEventConsumerService;
@@ -114,6 +115,7 @@ import io.harness.ng.core.exceptionmappers.OptimisticLockingFailureExceptionMapp
 import io.harness.ng.core.exceptionmappers.WingsExceptionMapperV2;
 import io.harness.ng.core.filter.ApiResponseFilter;
 import io.harness.ng.core.handler.NGVaultSecretManagerRenewalHandler;
+import io.harness.ng.core.handler.freezeHandlers.NgDeploymentFreezeActivationHandler;
 import io.harness.ng.core.migration.NGBeanMigrationProvider;
 import io.harness.ng.core.migration.ProjectMigrationProvider;
 import io.harness.ng.core.migration.UserGroupMigrationProvider;
@@ -604,6 +606,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     injector.getInstance(InstanceStatsIteratorHandler.class).registerIterators();
     injector.getInstance(GitFullSyncEntityIterator.class)
         .registerIterators(ngIteratorsConfig.getGitFullSyncEntityIteratorConfig().getThreadPoolSize());
+    injector.getInstance(NgDeploymentFreezeActivationHandler.class).registerIterators();
     injector.getInstance(OAuthTokenRefresher.class)
         .registerIterators(ngIteratorsConfig.getOauthTokenRefreshIteratorConfig().getThreadPoolSize());
   }
@@ -784,6 +787,9 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     environment.lifecycle().manage(injector.getInstance(QueueListenerController.class));
     environment.lifecycle().manage(injector.getInstance(NotifierScheduledExecutorService.class));
     environment.lifecycle().manage(injector.getInstance(OutboxEventPollService.class));
+    environment.lifecycle().manage(injector.getInstance(DefaultUserGroupsCreationJob.class));
+    // Do not remove as it's used for MaintenanceController for shutdown mode
+    environment.lifecycle().manage(injector.getInstance(MaintenanceController.class));
     createConsumerThreadsToListenToEvents(environment, injector);
   }
 

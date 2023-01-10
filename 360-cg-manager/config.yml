@@ -335,7 +335,7 @@ deployMode: KUBERNETES
 deployVariant: SAAS
 envPath: ""
 
-scmVersion: 3920e509
+scmVersion: 1658d03e
 
 ngAuthUIEnabled: false
 
@@ -359,8 +359,8 @@ portal:
   delegateDockerImage: harness/delegate:latest
   externalGraphQLRateLimitPerMinute: 500
   customDashGraphQLRateLimitPerMinute: 1000
-  optionalDelegateTaskRejectAtLimit: 10000
-  importantDelegateTaskRejectAtLimit: 50000
+  optionalDelegateTaskRejectAtLimit: 5000
+  importantDelegateTaskRejectAtLimit: 5000
   criticalDelegateTaskRejectAtLimit: 100000
 
 totp:
@@ -667,6 +667,14 @@ eventListenersCountConfig:
   orchestrationNotifyEventListenerCount: ${ORCHESTRATION_NOTIFY_EVENT_LISTENER_COUNT:-5}
   notifyConsumerCount: ${NOTIFY_CONSUMER_COUNT:-2}
   generalConsumerCount: ${GENERAL_CONSUMER_COUNT:-2}
+
+delegateQueueServiceConfig:
+    queueServiceConfig:
+      baseUrl: http://localhost:9091/
+      connectTimeOutSeconds: 15
+      readTimeOutSeconds: 15
+    topic: "delegate-service"
+    enableQueueAndDequeue: false
 
 iteratorsConfig:
   resourceConstraintBackupIteratorConfig:

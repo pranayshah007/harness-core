@@ -14,6 +14,8 @@ import lombok.Value;
 @Builder
 public class ChaosK8sRequest {
   String accountId;
+  String orgId;
+  String projectId;
   String delegateId;
   String k8sConnectorId;
   String k8sManifest;

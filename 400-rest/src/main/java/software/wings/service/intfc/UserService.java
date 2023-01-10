@@ -48,6 +48,7 @@ import software.wings.security.authentication.TwoFactorAuthenticationSettings;
 import software.wings.security.authentication.oauth.OauthUserInfo;
 import software.wings.service.intfc.ownership.OwnedByAccount;
 
+import dev.morphia.query.UpdateOperations;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
@@ -60,7 +61,6 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import org.hibernate.validator.constraints.NotBlank;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.query.UpdateOperations;
 import ru.vyarus.guice.validator.group.annotation.ValidationGroups;
 
 /**
@@ -226,6 +226,8 @@ public interface UserService extends OwnedByAccount {
   User get(@NotEmpty String accountId, @NotEmpty String userId);
 
   void loadSupportAccounts(User user);
+
+  void loadSupportAccounts(User user, Set<String> fieldsToBeIncluded);
 
   /**
    * Gets user from cache or db.
@@ -648,6 +650,8 @@ public interface UserService extends OwnedByAccount {
 
   void setUserEmailVerified(String userId);
 
+  List<Account> getUserAccounts(String userId, int pageIndex, int pageSize, String searchTerm);
+
   boolean isUserPasswordPresent(String accountId, String emailId);
 
   URI getInviteAcceptRedirectURL(InviteOperationResponse inviteResponse, UserInvite userInvite, String jwtToken)
@@ -657,4 +661,8 @@ public interface UserService extends OwnedByAccount {
 
   io.harness.ng.beans.PageResponse<Account> getUserAccountsAndSupportAccounts(
       String userId, int pageIndex, int pageSize, String searchTerm);
+
+  boolean ifUserHasAccessToSupportAccount(String userId, String accountId);
+
+  boolean isFFToAvoidLoadingSupportAccountsUnncessarilyDisabled();
 }

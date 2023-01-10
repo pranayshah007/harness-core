@@ -36,6 +36,7 @@ import software.wings.beans.User;
 import software.wings.security.authentication.AccountSettingsResponse;
 import software.wings.service.impl.analysis.CVEnabledService;
 
+import dev.morphia.query.Query;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -44,7 +45,6 @@ import java.util.Set;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import org.hibernate.validator.constraints.NotBlank;
-import org.mongodb.morphia.query.Query;
 import ru.vyarus.guice.validator.group.annotation.ValidationGroups;
 
 /**
@@ -110,7 +110,7 @@ public interface AccountService {
    */
   List<Account> list(@NotNull PageRequest<Account> request);
 
-  List<Account> listHarnessSupportAccounts(Set<String> excludedAccountIds);
+  List<Account> listHarnessSupportAccounts(Set<String> excludedAccountIds, Set<String> fieldsToBeIncluded);
 
   DelegateConfiguration getDelegateConfiguration(String accountId);
 
@@ -243,7 +243,7 @@ public interface AccountService {
 
   boolean disableHarnessUserGroupAccess(String accountId);
 
-  boolean isRestrictedAccessEnabled(String accountId);
+  boolean isHarnessSupportAccessDisabled(String accountId);
 
   boolean isAutoInviteAcceptanceEnabled(String accountId);
 

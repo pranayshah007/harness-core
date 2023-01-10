@@ -9,6 +9,8 @@ package io.harness.engine.executions.plan;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.execution.PlanExecution.PlanExecutionKeys;
+import static io.harness.pms.contracts.execution.Status.PAUSED;
+import static io.harness.pms.contracts.execution.Status.SUCCEEDED;
 import static io.harness.rule.OwnerRule.ALEXEI;
 import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.PRASHANT;
@@ -27,6 +29,7 @@ import io.harness.OrchestrationTestBase;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.engine.OrchestrationTestHelper;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.interrupts.statusupdate.NodeStatusUpdateHandlerFactory;
 import io.harness.engine.interrupts.statusupdate.PausedStepStatusUpdate;
@@ -46,7 +49,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import java.util.Arrays;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -56,11 +58,8 @@ import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.data.util.CloseableIterator;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PlanExecutionServiceImplTest extends OrchestrationTestBase {
@@ -110,12 +109,12 @@ public class PlanExecutionServiceImplTest extends OrchestrationTestBase {
     List<NodeExecution> nodeExecutionList =
         Arrays.asList(NodeExecution.builder().uuid(excludedNodeExecutionId).status(Status.QUEUED).build(),
             NodeExecution.builder().uuid(generateUuid()).status(Status.RUNNING).build());
-    Pageable pageable = PageRequest.of(0, 1000);
-    Page<NodeExecution> nodeExecutions = new PageImpl<>(nodeExecutionList, pageable, 1);
 
-    when(nodeExecutionService.fetchWithoutRetriesAndStatusIn(
-             eq(planExecutionId), eq(EnumSet.noneOf(Status.class)), eq(NodeProjectionUtils.withStatus), eq(pageable)))
-        .thenReturn(nodeExecutions);
+    CloseableIterator<NodeExecution> iterator =
+        OrchestrationTestHelper.createCloseableIterator(nodeExecutionList.iterator());
+    when(nodeExecutionService.fetchNodeExecutionsWithoutOldRetriesIterator(
+             eq(planExecutionId), eq(NodeProjectionUtils.withStatus)))
+        .thenReturn(iterator);
 
     Status status = planExecutionService.calculateStatusExcluding(planExecutionId, excludedNodeExecutionId);
     assertThat(status).isEqualTo(Status.RUNNING);
@@ -189,6 +188,9 @@ public class PlanExecutionServiceImplTest extends OrchestrationTestBase {
     Consumer<Update> op = ops -> ops.set(PlanExecutionKeys.endTs, System.currentTimeMillis());
     PlanExecution planExecution = planExecutionService.updateStatusForceful(planExecutionId, Status.ABORTED, op, true);
     assertNull(planExecution);
+    planExecutionService.save(PlanExecution.builder().uuid(planExecutionId).status(SUCCEEDED).build());
+    planExecution = planExecutionService.updateStatusForceful(planExecutionId, Status.ABORTED, op, false);
+    assertNull(planExecution);
   }
 
   @Test
@@ -199,8 +201,8 @@ public class PlanExecutionServiceImplTest extends OrchestrationTestBase {
     String planExecutionId = generateUuid();
     long endTs = System.currentTimeMillis();
     Consumer<Update> op = ops -> ops.set(PlanExecutionKeys.endTs, endTs);
-    planExecutionService.save(PlanExecution.builder().uuid(planExecutionId).build());
-    PlanExecution planExecution = planExecutionService.updateStatusForceful(planExecutionId, Status.ABORTED, op, true);
+    planExecutionService.save(PlanExecution.builder().uuid(planExecutionId).status(PAUSED).build());
+    PlanExecution planExecution = planExecutionService.updateStatusForceful(planExecutionId, Status.ABORTED, op, false);
     assertEquals(planExecution.getUuid(), planExecutionId);
     assertEquals(planExecution.getStatus(), Status.ABORTED);
     assertEquals(planExecution.getEndTs().longValue(), endTs);
@@ -272,7 +274,7 @@ public class PlanExecutionServiceImplTest extends OrchestrationTestBase {
     String planExecutionId = generateUuid();
     doReturn(ImmutableList.of(Status.RUNNING, Status.FAILED, Status.ABORTED))
         .when(nodeExecutionService)
-        .fetchNodeExecutionsWithoutOldRetriesOnlyStatus(planExecutionId);
+        .fetchNodeExecutionsStatusesWithoutOldRetries(planExecutionId);
     Status status = planExecutionService.calculateStatus(planExecutionId);
     assertEquals(Status.ABORTED, status);
   }
@@ -285,7 +287,7 @@ public class PlanExecutionServiceImplTest extends OrchestrationTestBase {
     String planExecutionId = generateUuid();
     doReturn(ImmutableList.of(Status.RUNNING, Status.PAUSED))
         .when(nodeExecutionService)
-        .fetchNodeExecutionsWithoutOldRetriesOnlyStatus(planExecutionId);
+        .fetchNodeExecutionsStatusesWithoutOldRetries(planExecutionId);
     Status status = planExecutionService.calculateStatus(planExecutionId);
     planExecutionService.save(PlanExecution.builder().status(Status.QUEUED).uuid(planExecutionId).build());
     PlanExecution planExecution = planExecutionService.updateCalculatedStatus(planExecutionId);

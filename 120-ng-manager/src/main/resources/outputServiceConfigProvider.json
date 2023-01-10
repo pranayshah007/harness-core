@@ -1,0 +1,33 @@
+{
+  "documentationUri": "https://docs.harness.io/category/fe0577j8ie-access-management",
+  "patch": {
+    "supported": true
+  },
+  "bulk": {
+    "supported": false,
+    "maxOperations": 1,
+    "maxPayloadSize": 0
+  },
+  "filter": {
+    "supported": true,
+    "maxResults": 1000
+  },
+  "changePassword": {
+    "supported": false
+  },
+  "sort": {
+    "supported": false
+  },
+  "etag": {
+    "supported": false
+  },
+  "scimAuthenticationSchemes": [
+    {
+      "name": "OAuth Bearer Token",
+      "description": "Authentication scheme using the OAuth Bearer Token Standard",
+      "specUri": "http://www.rfc-editor.org/info/rfc6750",
+      "type": "oauthbearertoken",
+      "primary": true
+    }
+  ]
+}

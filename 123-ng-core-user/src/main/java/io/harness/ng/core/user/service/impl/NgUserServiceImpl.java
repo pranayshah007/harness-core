@@ -202,7 +202,6 @@ public class NgUserServiceImpl implements NgUserService {
   @Override
   public PageResponse<UserMetadataDTO> listUsers(Scope scope, PageRequest pageRequest, UserFilter userFilter) {
     Criteria userMembershipCriteria;
-    List<String> userIds = new ArrayList<>();
     if (userFilter == null || UserFilter.ParentFilter.NO_PARENT_SCOPES.equals(userFilter.getParentFilter())) {
       userMembershipCriteria = getUserMembershipCriteria(scope, false);
     } else if (UserFilter.ParentFilter.INCLUDE_PARENT_SCOPES.equals(userFilter.getParentFilter())) {
@@ -218,14 +217,17 @@ public class NgUserServiceImpl implements NgUserService {
         userMetadataCriteria.orOperator(Criteria.where(UserMetadataKeys.name).regex(userFilter.getSearchTerm(), "i"),
             Criteria.where(UserMetadataKeys.email).regex(userFilter.getSearchTerm(), "i"));
       }
-      if (userFilter.getIdentifiers() != null) {
-        userIds.addAll(userFilter.getIdentifiers());
-      }
-      if (userFilter.getEmails() != null) {
-        getUserMetadataByEmails(new ArrayList<>(userFilter.getEmails()))
-            .forEach(userMetadataDTO -> userIds.add(userMetadataDTO.getUuid()));
-      }
-      if (isNotEmpty(userIds)) {
+      if (userFilter.getIdentifiers() != null || userFilter.getEmails() != null) {
+        List<String> userIds = new ArrayList<>();
+        if (userFilter.getIdentifiers() != null) {
+          userIds.addAll(userFilter.getIdentifiers());
+        }
+        if (userFilter.getEmails() != null) {
+          userIds.addAll(getUserMetadataByEmails(new ArrayList<>(userFilter.getEmails()))
+                             .stream()
+                             .map(UserMetadataDTO::getUuid)
+                             .collect(toList()));
+        }
         userMembershipCriteria.and(UserMembershipKeys.userId).in(userIds);
       }
     }

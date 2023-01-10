@@ -14,6 +14,7 @@ import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.CONN
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.ENVIRONMENT;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.ENVIRONMENT_GROUP;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.FILES;
+import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.PIPELINES;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.SECRETS;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.SERVICE;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.TEMPLATE;
@@ -58,7 +59,7 @@ public class SetupUsageChangeEventMessageListener implements MessageListener {
   EntitySetupUsageService entitySetupUsageService;
   EntitySetupUsageEventDTOMapper entitySetupUsageEventDTOToRestDTOMapper;
   final Set<EntityTypeProtoEnum> entityTypesSupportedByNGCore =
-      Sets.newHashSet(SECRETS, CONNECTORS, SERVICE, ENVIRONMENT, ENVIRONMENT_GROUP, TEMPLATE, FILES);
+      Sets.newHashSet(SECRETS, CONNECTORS, SERVICE, ENVIRONMENT, ENVIRONMENT_GROUP, TEMPLATE, FILES, PIPELINES);
 
   @Inject
   public SetupUsageChangeEventMessageListener(EntitySetupUsageService entitySetupUsageService,

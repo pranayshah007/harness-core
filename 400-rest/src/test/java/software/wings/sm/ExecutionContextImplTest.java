@@ -100,11 +100,11 @@ import software.wings.beans.ServiceVariableType;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.Variable;
 import software.wings.beans.appmanifest.HelmChart;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.customdeployment.CustomDeploymentTypeDTO;
 import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
 import software.wings.infra.GoogleKubernetesEngine;
 import software.wings.infra.InfrastructureDefinition;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.scheduler.BackgroundJobScheduler;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.AppService;
@@ -132,6 +132,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+import dev.morphia.Key;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -146,7 +147,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mongodb.morphia.Key;
 
 /**
  * The Class ExecutionContextImplTest.

@@ -54,7 +54,6 @@ import io.harness.pms.yaml.YamlUtils;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -206,7 +205,7 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
                                             .getValue()
                                             .stream()
                                             .map(FilterYaml::getEntities)
-                                            .flatMap(EnumSet::stream)
+                                            .flatMap(Set::stream)
                                             .filter(e -> Entity.gitOpsClusters != e && Entity.infrastructures != e)
                                             .collect(Collectors.toSet());
       if (!unsupportedEntities.isEmpty()) {

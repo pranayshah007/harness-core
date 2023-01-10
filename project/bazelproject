@@ -9,6 +9,7 @@ test_sources:
 import_run_configurations:
   project/run-configurations/AccessControlMicroservice.xml
   project/run-configurations/Analyser_Service.xml
+  project/run-configurations/AuditEventStreamingApp.xml
   project/run-configurations/BatchProcessinngApp.xml
   project/run-configurations/CEEventService.xml
   project/run-configurations/CENextGenApp.xml

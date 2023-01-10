@@ -20,7 +20,6 @@ import static java.lang.String.format;
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.azure.model.AzureConstants;
-import io.harness.beans.FeatureName;
 import io.harness.beans.FileReference;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.CDStepHelper;
@@ -44,11 +43,8 @@ import io.harness.delegate.task.azure.arm.AzureBlueprintTaskNGResponse;
 import io.harness.delegate.task.azure.arm.AzureResourceCreationTaskNGParameters;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.git.GitFetchResponse;
-import io.harness.eraro.ErrorCode;
-import io.harness.exception.AccessDeniedException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
-import io.harness.exception.WingsException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.filestore.dto.node.FileNodeDTO;
 import io.harness.filestore.dto.node.FileStoreNodeDTO;
@@ -119,12 +115,6 @@ public class AzureCreateBPStep extends TaskChainExecutableWithRollbackAndRbac {
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
-    if (!cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.AZURE_ARM_BP_NG)) {
-      throw new AccessDeniedException(
-          "The creation of resources using Azure Blueprint in NG is not enabled for this account."
-              + " Please contact harness customer care.",
-          ErrorCode.NG_ACCESS_DENIED, WingsException.USER);
-    }
     List<EntityDetail> entityDetailList = new ArrayList<>();
     String accountId = AmbianceUtils.getAccountId(ambiance);
     String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);

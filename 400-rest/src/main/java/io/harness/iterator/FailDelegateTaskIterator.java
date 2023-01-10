@@ -54,6 +54,7 @@ import software.wings.service.intfc.DelegateSelectionLogsService;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.query.Query;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -63,7 +64,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
 
 @Singleton
 @Slf4j
@@ -242,8 +242,10 @@ public class FailDelegateTaskIterator
       if (delegateTask.getValidationCompleteDelegateIds().containsAll(delegateTask.getEligibleToExecuteDelegateIds())) {
         log.info("Found delegate task {} with validation completed by all delegates but not assigned",
             delegateTask.getUuid());
-        try (AutoLogContext ignore = new TaskLogContext(delegateTask.getUuid(), delegateTask.getData().getTaskType(),
-                 TaskType.valueOf(delegateTask.getData().getTaskType()).getTaskGroup().name(), OVERRIDE_ERROR)) {
+        String taskType = delegateTask.getTaskDataV2() != null ? delegateTask.getTaskDataV2().getTaskType()
+                                                               : delegateTask.getData().getTaskType();
+        try (AutoLogContext ignore = new TaskLogContext(
+                 delegateTask.getUuid(), taskType, TaskType.valueOf(taskType).getTaskGroup().name(), OVERRIDE_ERROR)) {
           // Check whether a whitelisted delegate is connected
           List<String> whitelistedDelegates = assignDelegateService.connectedWhitelistedDelegates(delegateTask);
           if (isNotEmpty(whitelistedDelegates)) {
@@ -257,7 +259,9 @@ public class FailDelegateTaskIterator
           delegateSelectionLogsService.logTaskValidationFailed(delegateTask, errorMessage);
 
           DelegateResponseData response;
-          if (delegateTask.getData().isAsync()) {
+          boolean async = delegateTask.getTaskDataV2() != null ? delegateTask.getTaskDataV2().isAsync()
+                                                               : delegateTask.getData().isAsync();
+          if (async) {
             response = ErrorNotifyResponseData.builder()
                            .failureTypes(EnumSet.of(FailureType.DELEGATE_PROVISIONING))
                            .errorMessage(errorMessage)

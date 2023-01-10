@@ -82,6 +82,9 @@ import com.google.common.cache.LoadingCache;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
+import dev.morphia.FindAndModifyOptions;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -101,9 +104,6 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.mongodb.morphia.FindAndModifyOptions;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @Singleton
 @Slf4j
@@ -306,8 +306,16 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
   }
 
   private boolean canAssignDelegateScopes(Delegate delegate, DelegateTask task) {
-    TaskGroup taskGroup =
-        isNotBlank(task.getData().getTaskType()) ? TaskType.valueOf(task.getData().getTaskType()).getTaskGroup() : null;
+    TaskGroup taskGroup;
+    if (task.getTaskDataV2() != null) {
+      taskGroup = isNotBlank(task.getTaskDataV2().getTaskType())
+          ? TaskType.valueOf(task.getTaskDataV2().getTaskType()).getTaskGroup()
+          : null;
+    } else {
+      taskGroup = isNotBlank(task.getData().getTaskType())
+          ? TaskType.valueOf(task.getData().getTaskType()).getTaskGroup()
+          : null;
+    }
 
     String appId =
         task.getSetupAbstractions() == null ? null : task.getSetupAbstractions().get(Cd1SetupFields.APP_ID_FIELD);

@@ -67,6 +67,7 @@ import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV
 import io.harness.cvng.servicelevelobjective.transformer.ServiceLevelObjectiveDetailsTransformer;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.SLOTargetTransformer;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelobjectivev2.SLOV2Transformer;
+import io.harness.cvng.utils.ScopedInformation;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageResponse;
@@ -76,6 +77,9 @@ import io.harness.utils.PageUtils;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
+import dev.morphia.query.UpdateOperations;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -90,6 +94,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
@@ -99,9 +104,6 @@ import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @Slf4j
 public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjectiveV2Service {
@@ -234,10 +236,10 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
       if (isNotEmpty(referencedCompositeSLOIdentifiers)
           && !sloTarget.equals(simpleServiceLevelObjective.getSloTarget())) {
         throw new InvalidRequestException(String.format(
-            "Can't update the compliance time period for SLO with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s as it is associated with Composite SLO with identifier%s %s.",
+            "Can't update the compliance time period for SLO with identifier %s, accountId %s, orgIdentifier %s, and projectIdentifier %s as it is associated with Composite SLO with identifier%s %s.",
             identifier, projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
             projectParams.getProjectIdentifier(), referencedCompositeSLOIdentifiers.size() > 1 ? "s" : "",
-            String.join(",", referencedCompositeSLOIdentifiers)));
+            String.join(", ", referencedCompositeSLOIdentifiers)));
       }
 
       serviceLevelIndicators = serviceLevelIndicatorService.update(projectParams,
@@ -352,10 +354,10 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
               .collect(Collectors.toList());
       if (isNotEmpty(referencedCompositeSLOIdentifiers)) {
         throw new InvalidRequestException(String.format(
-            "Can't delete SLO with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s. This is associated with Composite SLO with identifier%s %s.",
+            "Can't delete the SLO with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s. This is associated with Composite SLO with identifier%s %s.",
             identifier, projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
             projectParams.getProjectIdentifier(), referencedCompositeSLOIdentifiers.size() > 1 ? "s" : "",
-            String.join(",", referencedCompositeSLOIdentifiers)));
+            String.join(", ", referencedCompositeSLOIdentifiers)));
       }
       serviceLevelIndicatorService.deleteByIdentifier(
           projectParams, ((SimpleServiceLevelObjective) serviceLevelObjectiveV2).getServiceLevelIndicators());
@@ -547,6 +549,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
                     ? sloTargetTypeSLOTargetTransformerMap.get(filter.getSloTargetFilterDTO().getType())
                           .getSLOTarget(filter.getSloTargetFilterDTO().getSpec())
                     : null)
+            .childResource(filter.isChildResource())
             .build());
   }
 
@@ -570,7 +573,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
     AbstractServiceLevelObjective serviceLevelObjectiveV2 = getEntity(projectParams, sloIdentifier);
     if (serviceLevelObjectiveV2 == null) {
       throw new InvalidRequestException(String.format(
-          "SLO  with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s  is not present",
+          "SLO with identifier %s, accountId %s, orgIdentifier %s, and projectIdentifier %s  is not present.",
           sloIdentifier, projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
           projectParams.getProjectIdentifier()));
     }
@@ -705,8 +708,22 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
 
     if (sum != 100) {
       throw new InvalidRequestException(String.format(
-          "The weightage percentage of all the SLOs constituting the Composite SLO with identifier %s should sum upto 100.",
-          serviceLevelObjectiveDTO.getIdentifier()));
+          "The weightage percentage of all the SLOs constituting the Composite SLO with identifier %s is %s. It should sum up to 100.",
+          serviceLevelObjectiveDTO.getIdentifier(), sum));
+    }
+
+    Set<String> scopedReferencedSimpleSLOs =
+        compositeServiceLevelObjectiveSpec.getServiceLevelObjectivesDetails()
+            .stream()
+            .map(serviceLevelObjectiveDetailsDTO
+                -> ScopedInformation.getScopedInformation(serviceLevelObjectiveDetailsDTO.getAccountId(),
+                    serviceLevelObjectiveDetailsDTO.getOrgIdentifier(),
+                    serviceLevelObjectiveDetailsDTO.getProjectIdentifier(),
+                    serviceLevelObjectiveDetailsDTO.getServiceLevelObjectiveRef()))
+            .collect(Collectors.toSet());
+    if (scopedReferencedSimpleSLOs.size()
+        != compositeServiceLevelObjectiveSpec.getServiceLevelObjectivesDetails().size()) {
+      throw new InvalidRequestException(String.format("An SLO can't be referenced more than once"));
     }
   }
 
@@ -723,7 +740,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
              .getSLOTarget(serviceLevelObjectiveDTO.getSloTarget().getSpec())
              .equals(serviceLevelObjective.getSloTarget())) {
       throw new InvalidRequestException(String.format(
-          "Composite SLO with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s can not be created/updated as the compliance time period of the SLO and the associated SLOs is different.",
+          "Composite SLO with identifier %s, accountId %s, orgIdentifier %s, and projectIdentifier %s can not be created/updated as the compliance time period of the SLO and the associated SLOs is different.",
           serviceLevelObjectiveDTO.getIdentifier(), serviceLevelObjectiveDetailsDTO.getAccountId(),
           serviceLevelObjectiveDTO.getOrgIdentifier(), serviceLevelObjectiveDTO.getProjectIdentifier()));
     }
@@ -733,8 +750,8 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
     AbstractServiceLevelObjective serviceLevelObjective = getEntity(projectParams, identifier);
     if (serviceLevelObjective == null) {
       throw new InvalidRequestException(String.format(
-          "SLO with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s is not present", identifier,
-          projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
+          "SLO with identifier %s, accountId %s, orgIdentifier %s, and projectIdentifier %s is not present.",
+          identifier, projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
           projectParams.getProjectIdentifier()));
     }
     return serviceLevelObjective;
@@ -745,7 +762,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
     AbstractServiceLevelObjective serviceLevelObjective = checkIfSLOPresent(projectParams, identifier);
     if (serviceLevelObjective.getType() != type) {
       throw new InvalidRequestException(String.format(
-          "SLO with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s is not a %s SLO.",
+          "SLO with identifier %s, accountId %s, orgIdentifier %s, and projectIdentifier %s is not a %s SLO.",
           identifier, projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
           projectParams.getProjectIdentifier(), type));
     }
@@ -795,11 +812,14 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
             .disableValidation()
             .filter(AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys.accountId,
                 projectParams.getAccountIdentifier())
-            .filter(AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys.orgIdentifier,
-                projectParams.getOrgIdentifier())
-            .filter(AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys.projectIdentifier,
-                projectParams.getProjectIdentifier())
             .order(Sort.descending(AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys.lastUpdatedAt));
+    if (!filter.isChildResource()) {
+      sloQuery = sloQuery
+                     .filter(AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys.orgIdentifier,
+                         projectParams.getOrgIdentifier())
+                     .filter(AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys.projectIdentifier,
+                         projectParams.getProjectIdentifier());
+    }
     if (isNotEmpty(filter.getUserJourneys())) {
       sloQuery.field(ServiceLevelObjectiveV2Keys.userJourneyIdentifiers).hasAnyOf(filter.getUserJourneys());
     }
@@ -919,5 +939,6 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
     String searchFilter;
     ServiceLevelObjective.SLOTarget sloTarget;
     ServiceLevelObjectiveType sloType;
+    boolean childResource;
   }
 }

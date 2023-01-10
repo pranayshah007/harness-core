@@ -36,6 +36,7 @@ public class PipelineCoreMigrationProvider implements MigrationProvider {
     return new ArrayList<Class<? extends MigrationDetails>>() {
       { add(PipelineCoreMigrationDetails.class); }
       { add(PipelineCoreTimeScaleMigrationDetails.class); }
+      { add(PipelineCoreTimeScaleBgMigrationDetails.class); }
     };
   }
 }

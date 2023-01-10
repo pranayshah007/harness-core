@@ -7,7 +7,10 @@ load("//:tools/bazel/GenTestRules.bzl", "run_tests")
 load("//:tools/bazel/macros.bzl", "run_analysis")
 
 shared_dependencies = [
+    "//315-sto-manager/contracts:module",
+    "//310-iacm-manager/contracts:module",
     "//323-sto-utilities:module",
+    "//332-iacm-common:module",
     "//332-ci-manager/contracts:module",
     "//440-connector-nextgen:module",
     "//878-ng-common-utilities:module",
@@ -24,6 +27,7 @@ shared_dependencies = [
     "//960-persistence:module",
     "//999-annotations:module",
     "//clients/pipeline-service/pms-sdk:module",
+    "//clients/queue-service/java-client:module",
     "//product/ci/engine/proto:ciengine_java_proto",
     "//930-ng-license-manager:module",
     "//940-primary-version-manager:module",
@@ -397,7 +401,7 @@ java_library(
     ],
     visibility = [
         "//310-iacm-manager:__subpackages__",
-        "//315-sto-manager:__subpackages__",
+        "//315-sto-manager/app:__subpackages__",
         "//332-ci-manager/app:__subpackages__",
     ],
     deps = shared_dependencies + [

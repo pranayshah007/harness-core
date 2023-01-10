@@ -13,7 +13,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.IdentifierRef;
-import io.harness.cdng.artifact.utils.ArtifactStepHelper;
+import io.harness.cdng.artifact.utils.ArtifactUtils;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
@@ -100,7 +100,7 @@ public class AwsResourceServiceHelper {
   }
 
   public DelegateResponseData getResponseData(BaseNGAccess ngAccess, TaskParameters taskParameters, String taskType) {
-    Map<String, String> taskSetupAbstractions = ArtifactStepHelper.getTaskSetupAbstractions(ngAccess);
+    Map<String, String> taskSetupAbstractions = ArtifactUtils.getTaskSetupAbstractions(ngAccess);
 
     final DelegateTaskRequest delegateTaskRequest =
         DelegateTaskRequest.builder()
@@ -120,7 +120,7 @@ public class AwsResourceServiceHelper {
 
   public DelegateResponseData getResponseData(
       BaseNGAccess ngAccess, EcrArtifactDelegateRequest ecrRequest, TaskParameters taskParameters, String taskType) {
-    Map<String, String> taskSetupAbstractions = ArtifactStepHelper.getTaskSetupAbstractions(ngAccess);
+    Map<String, String> taskSetupAbstractions = ArtifactUtils.getTaskSetupAbstractions(ngAccess);
     final DelegateTaskRequest delegateTaskRequest =
         DelegateTaskRequest.builder()
             .accountId(ngAccess.getAccountIdentifier())

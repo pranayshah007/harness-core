@@ -31,9 +31,12 @@ public class BitbucketUpdateFileScmApiErrorHandler implements ScmApiErrorHandler
   public static final String UPDATE_FILE_REQUEST_FAILURE =
       "The requested file<FILEPATH> couldn't be updated in Bitbucket. ";
   public static final String UPDATE_FILE_CONFLICT_ERROR_HINT =
-      "Please check the input commit id of the requested file<FILEPATH>. It should match with current commit id of the file at head of the branch<BRANCH> in the given Bitbucket repository<REPO>";
+      "1. Please check the input commit id of the requested file<FILEPATH>. It should match with current commit id of the file at head of the branch<BRANCH> in the given Bitbucket repository<REPO>\n"
+      + "2. Please check if there any changes in the file content. There has to be change in the file content";
   public static final String UPDATE_FILE_CONFLICT_ERROR_EXPLANATION =
-      "The input commit id of the requested file<FILEPATH> doesn't match with current commit id of the file at head of the branch<BRANCH> in Bitbucket repository<REPO>, which results in update operation failure.";
+      "The file update has failed. Possible reasons could be:\n"
+      + "1. Input commit id of the requested file<FILEPATH> doesn't match with current commit id of the file at head of the branch<BRANCH> in Bitbucket repository<REPO>.\n"
+      + "2. There are no changes in the file content.";
   public static final String UPDATE_FILE_BAD_REQUEST_EXPLANATION =
       "The requested branch<BRANCH> does not have push permission.";
   public static final String UPDATE_FILE_BAD_REQUEST_HINT =

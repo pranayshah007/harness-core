@@ -17,20 +17,17 @@ import software.wings.security.PermissionAttribute;
 import software.wings.security.annotations.Scope;
 
 import java.util.List;
-import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.FieldNameConstants;
+import lombok.experimental.SuperBuilder;
 
 @OwnedBy(CDC)
 @Value
-@Builder
+@SuperBuilder
 @FieldNameConstants(innerTypeName = "QLGCSArtifactSourceKeys")
 @Scope(PermissionAttribute.ResourceType.SERVICE)
 @TargetModule(HarnessModule._380_CG_GRAPHQL)
-public class QLGCSArtifactSource implements QLArtifactSource {
-  String name;
-  String id;
-  Long createdAt;
+public class QLGCSArtifactSource extends QLArtifactSourceBase {
   String gcpCloudProviderId;
   String bucket;
   List<String> artifactPaths;

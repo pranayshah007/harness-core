@@ -14,6 +14,7 @@ import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
+import io.harness.cdng.manifest.yaml.K8sStepCommandFlag;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.YamlSchemaTypes;
@@ -34,10 +35,10 @@ import org.springframework.data.annotation.TypeAlias;
 @FieldNameConstants(innerTypeName = "K8sRollingRollbackBaseStepInfoKeys")
 @TypeAlias("K8sRollingRollbackBaseStepInfo")
 public class K8sRollingRollbackBaseStepInfo {
-  @ApiModelProperty(dataType = BOOLEAN_CLASSPATH) @YamlSchemaTypes({string}) ParameterField<Boolean> skipDryRun;
   @ApiModelProperty(dataType = BOOLEAN_CLASSPATH) @YamlSchemaTypes({string}) ParameterField<Boolean> pruningEnabled;
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
   @JsonIgnore String rollingStepFqn;
+  @YamlSchemaTypes({runtime}) List<K8sStepCommandFlag> commandFlags;
 }

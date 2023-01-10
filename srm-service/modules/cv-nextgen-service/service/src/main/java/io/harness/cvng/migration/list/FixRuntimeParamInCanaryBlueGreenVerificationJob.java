@@ -19,9 +19,9 @@ import io.harness.persistence.HPersistence;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
+import dev.morphia.query.UpdateOperations;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CV)

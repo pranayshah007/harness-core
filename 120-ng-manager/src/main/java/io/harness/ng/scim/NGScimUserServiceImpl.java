@@ -8,6 +8,7 @@
 package io.harness.ng.scim;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.util.Collections.emptyList;
 
@@ -193,7 +194,12 @@ public class NGScimUserServiceImpl implements ScimUserService {
 
   @Override
   public ScimUser updateUser(String accountId, String userId, PatchRequest patchRequest) {
-    log.info("NGSCIM: Updating user : Patch - userId: {}, accountId: {}", userId, accountId);
+    String operation = isNotEmpty(patchRequest.getOperations()) ? patchRequest.getOperations().toString() : null;
+    String schemas = isNotEmpty(patchRequest.getSchemas()) ? patchRequest.getSchemas().toString() : null;
+    log.info(
+        "NGSCIM: Updating user: Patch Request Logging\nOperations {}\n, Schemas {}\n,External Id {}\n, Meta {}, for userId: {}, accountId {}",
+        operation, schemas, patchRequest.getExternalId(), patchRequest.getMeta(), userId, accountId);
+
     // Call CG to update the user as it is
     ngUserService.updateScimUser(accountId, userId, patchRequest);
     Optional<UserMetadataDTO> userMetadataDTOOptional = ngUserService.getUserMetadata(userId);

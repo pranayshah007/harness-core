@@ -16,14 +16,14 @@ import io.harness.persistence.HIterator;
 import software.wings.beans.Account;
 import software.wings.beans.Application;
 import software.wings.beans.Application.ApplicationKeys;
-import software.wings.beans.artifact.Artifact;
-import software.wings.beans.artifact.Artifact.ArtifactKeys;
 import software.wings.beans.infrastructure.instance.Instance;
 import software.wings.beans.infrastructure.instance.Instance.InstanceKeys;
 import software.wings.beans.infrastructure.instance.info.InstanceInfo;
 import software.wings.beans.infrastructure.instance.info.K8sContainerInfo;
 import software.wings.beans.infrastructure.instance.info.K8sPodInfo;
 import software.wings.dl.WingsPersistence;
+import software.wings.persistence.artifact.Artifact;
+import software.wings.persistence.artifact.Artifact.ArtifactKeys;
 
 import com.google.inject.Inject;
 import java.util.List;

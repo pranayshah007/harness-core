@@ -7,10 +7,10 @@
 
 package io.harness.cvng;
 
-import static io.harness.AuthorizationServiceHeader.BEARER;
-import static io.harness.AuthorizationServiceHeader.CV_NEXT_GEN;
-import static io.harness.AuthorizationServiceHeader.DEFAULT;
-import static io.harness.AuthorizationServiceHeader.IDENTITY_SERVICE;
+import static io.harness.authorization.AuthorizationServiceHeader.BEARER;
+import static io.harness.authorization.AuthorizationServiceHeader.CV_NEXT_GEN;
+import static io.harness.authorization.AuthorizationServiceHeader.DEFAULT;
+import static io.harness.authorization.AuthorizationServiceHeader.IDENTITY_SERVICE;
 import static io.harness.cvng.CVConstants.ENVIRONMENT;
 import static io.harness.cvng.cdng.services.impl.CVNGNotifyEventListener.CVNG_ORCHESTRATION;
 import static io.harness.cvng.migration.beans.CVNGSchema.CVNGMigrationStatus.RUNNING;
@@ -23,6 +23,7 @@ import static java.time.Duration.ofMinutes;
 import static java.time.Duration.ofSeconds;
 
 import io.harness.AccessControlClientModule;
+import io.harness.Microservice;
 import io.harness.ModuleType;
 import io.harness.PipelineServiceUtilityModule;
 import io.harness.annotations.dev.HarnessTeam;
@@ -36,6 +37,7 @@ import io.harness.cvng.activity.entities.Activity;
 import io.harness.cvng.activity.entities.Activity.ActivityKeys;
 import io.harness.cvng.activity.jobs.ActivityStatusJob;
 import io.harness.cvng.activity.jobs.HarnessCDCurrentGenEventsHandler;
+import io.harness.cvng.analysis.entities.VerificationTaskBase.VerificationTaskBaseKeys;
 import io.harness.cvng.beans.DataCollectionExecutionStatus;
 import io.harness.cvng.beans.activity.ActivityVerificationStatus;
 import io.harness.cvng.beans.change.ChangeSourceType;
@@ -44,6 +46,7 @@ import io.harness.cvng.cdng.services.impl.CVNGFilterCreationResponseMerger;
 import io.harness.cvng.cdng.services.impl.CVNGModuleInfoProvider;
 import io.harness.cvng.cdng.services.impl.CVNGNotifyEventListener;
 import io.harness.cvng.cdng.services.impl.CVNGPipelineServiceInfoProvider;
+import io.harness.cvng.client.ErrorTrackingClientModule;
 import io.harness.cvng.client.NextGenClientModule;
 import io.harness.cvng.client.VerificationManagerClientModule;
 import io.harness.cvng.core.entities.CVConfig;
@@ -65,6 +68,7 @@ import io.harness.cvng.core.jobs.CompositeSLODataExecutorTaskHandler;
 import io.harness.cvng.core.jobs.DataCollectionTasksPerpetualTaskStatusUpdateHandler;
 import io.harness.cvng.core.jobs.DeploymentChangeEventConsumer;
 import io.harness.cvng.core.jobs.EntityCRUDStreamConsumer;
+import io.harness.cvng.core.jobs.InternalChangeEventFFConsumer;
 import io.harness.cvng.core.jobs.MonitoringSourcePerpetualTaskHandler;
 import io.harness.cvng.core.jobs.PersistentLockCleanup;
 import io.harness.cvng.core.jobs.SLIDataCollectionTaskCreateNextTaskHandler;
@@ -83,6 +87,7 @@ import io.harness.cvng.governance.services.SLOPolicyExpansionHandler;
 import io.harness.cvng.licenserestriction.MaxServiceRestrictionUsageImpl;
 import io.harness.cvng.metrics.services.impl.CVNGMetricsPublisher;
 import io.harness.cvng.migration.CVNGSchemaHandler;
+import io.harness.cvng.migration.SRMCoreMigrationProvider;
 import io.harness.cvng.migration.beans.CVNGSchema;
 import io.harness.cvng.migration.beans.CVNGSchema.CVNGSchemaKeys;
 import io.harness.cvng.migration.service.CVNGMigrationService;
@@ -130,6 +135,9 @@ import io.harness.metrics.HarnessMetricRegistry;
 import io.harness.metrics.MetricRegistryModule;
 import io.harness.metrics.jobs.RecordMetricsJob;
 import io.harness.metrics.service.api.MetricService;
+import io.harness.migration.NGMigrationSdkInitHelper;
+import io.harness.migration.NGMigrationSdkModule;
+import io.harness.migration.beans.NGMigrationConfiguration;
 import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.MongoConfig;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
@@ -210,6 +218,7 @@ import com.google.inject.matcher.AbstractMatcher;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import com.palominolabs.metrics.guice.MetricsInstrumentationModule;
+import dev.morphia.converters.TypeConverter;
 import io.dropwizard.Application;
 import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
 import io.dropwizard.configuration.SubstitutingSourceProvider;
@@ -245,7 +254,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.glassfish.jersey.server.model.Resource;
 import org.hibernate.validator.parameternameprovider.ReflectionParameterNameProvider;
-import org.mongodb.morphia.converters.TypeConverter;
 import org.springframework.core.convert.converter.Converter;
 import ru.vyarus.guice.validator.ValidationModule;
 
@@ -302,6 +310,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
   private void createConsumerThreadsToListenToEvents(Injector injector) {
     new Thread(injector.getInstance(EntityCRUDStreamConsumer.class)).start();
     new Thread(injector.getInstance(DeploymentChangeEventConsumer.class)).start();
+    new Thread(injector.getInstance(InternalChangeEventFFConsumer.class)).start();
     new Thread(injector.getInstance(StatemachineEventConsumer.class)).start();
   }
 
@@ -426,6 +435,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
     modules.add(new MetricRegistryModule(metricRegistry));
     modules.add(new VerificationManagerClientModule(configuration.getManagerClientConfig().getBaseUrl()));
     modules.add(new NextGenClientModule(configuration.getNgManagerServiceConfig()));
+    modules.add(new ErrorTrackingClientModule(configuration.getErrorTrackingClientConfig()));
     modules.add(new SecretNGManagerClientModule(
         ServiceHttpClientConfig.builder().baseUrl(configuration.getNgManagerServiceConfig().getNgManagerUrl()).build(),
         configuration.getNgManagerServiceConfig().getManagerServiceSecret(), "NextGenManager"));
@@ -446,7 +456,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
     PmsSdkConfiguration pmsSdkConfiguration = getPmsSdkConfiguration(configuration);
     modules.add(PmsSdkModule.getInstance(pmsSdkConfiguration));
     modules.add(PipelineServiceUtilityModule.getInstance());
-
+    modules.add(NGMigrationSdkModule.getInstance());
     Injector injector = Guice.createInjector(modules);
     YamlSdkInitHelper.initialize(injector, yamlSdkConfiguration);
     initializeServiceSecretKeys();
@@ -487,6 +497,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
     initializeEnforcementSdk(injector);
     initAutoscalingMetrics();
     registerOasResource(configuration, environment, injector);
+    registerMigrations(injector);
 
     if (BooleanUtils.isTrue(configuration.getEnableOpentelemetry())) {
       registerTraceFilter(environment, injector);
@@ -501,7 +512,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
 
   private void scheduleSidekickProcessing(Injector injector) {
     ScheduledThreadPoolExecutor workflowVerificationExecutor =
-        new ScheduledThreadPoolExecutor(1, new ThreadFactoryBuilder().setNameFormat("side-kick").build());
+        new ScheduledThreadPoolExecutor(3, new ThreadFactoryBuilder().setNameFormat("side-kick").build());
     workflowVerificationExecutor.scheduleWithFixedDelay(
         () -> injector.getInstance(SideKickService.class).processNext(), 5, 5, TimeUnit.SECONDS);
   }
@@ -527,6 +538,20 @@ public class VerificationApplication extends Application<VerificationConfigurati
         injector.getInstance(NotifyQueuePublisherRegister.class);
     notifyQueuePublisherRegister.register(
         CVNG_ORCHESTRATION, payload -> publisher.send(Arrays.asList(CVNG_ORCHESTRATION), payload));
+  }
+
+  private void registerMigrations(Injector injector) {
+    NGMigrationConfiguration config = getMigrationSdkConfiguration();
+    NGMigrationSdkInitHelper.initialize(injector, config);
+  }
+
+  private NGMigrationConfiguration getMigrationSdkConfiguration() {
+    return NGMigrationConfiguration.builder()
+        .microservice(Microservice.CV)
+        .migrationProviderList(new ArrayList<>() {
+          { add(SRMCoreMigrationProvider.class); }
+        })
+        .build();
   }
 
   public void registerPipelineSDK(VerificationConfiguration configuration, Injector injector) {
@@ -894,7 +919,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
                     query.or(query.criteria(DataCollectionTaskKeys.status).equal(DataCollectionExecutionStatus.QUEUED),
                         query.and(
                             query.criteria(DataCollectionTaskKeys.status).equal(DataCollectionExecutionStatus.RUNNING),
-                            query.criteria(DataCollectionTaskKeys.lastUpdatedAt)
+                            query.criteria(VerificationTaskBaseKeys.lastUpdatedAt)
                                 .lessThan(injector.getInstance(Clock.class)
                                               .instant()
                                               .minus(5, ChronoUnit.MINUTES)

@@ -14,22 +14,22 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanService;
 import io.harness.execution.NodeExecution;
-import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.plan.Node;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.execution.utils.StatusUtils;
 
-import com.google.common.collect.Sets;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.Value;
+import org.springframework.data.util.CloseableIterator;
 
 @OwnedBy(CDC)
 @Value
@@ -88,8 +88,13 @@ public class NodeExecutionsCache {
       return ids.stream().map(map::get).filter(Objects::nonNull).collect(Collectors.toList());
     }
 
-    List<NodeExecution> childExecutions = nodeExecutionService.fetchChildrenNodeExecutions(
-        ambiance.getPlanExecutionId(), parentId, NodeProjectionUtils.fieldsForExpressionEngine);
+    List<NodeExecution> childExecutions = new LinkedList<>();
+    try (CloseableIterator<NodeExecution> iterator = nodeExecutionService.fetchChildrenNodeExecutionsIterator(
+             ambiance.getPlanExecutionId(), parentId, NodeProjectionUtils.fieldsForExpressionEngine)) {
+      while (iterator.hasNext()) {
+        childExecutions.add(iterator.next());
+      }
+    }
     if (EmptyPredicate.isEmpty(childExecutions)) {
       childrenMap.put(parentId, Collections.emptyList());
       return Collections.emptyList();
@@ -103,10 +108,8 @@ public class NodeExecutionsCache {
   // Should not change the fields to be included as its only used by NodeExecutionMap, if you change it may not use
   // index of NodeExecution collection
   public List<Status> findAllTerminalChildrenStatusOnly(String parentId) {
-    List<NodeExecution> nodeExecutions =
-        nodeExecutionService.findAllChildrenWithStatusIn(ambiance.getPlanExecutionId(), parentId, null, false, true,
-            Sets.newHashSet(NodeExecutionKeys.parentId, NodeExecutionKeys.status, NodeExecutionKeys.stepType),
-            Sets.newHashSet());
+    List<NodeExecution> nodeExecutions = nodeExecutionService.findAllChildrenWithStatusInAndWithoutOldRetries(
+        ambiance.getPlanExecutionId(), parentId, null, false, Collections.emptySet());
     return nodeExecutions.stream()
         .map(NodeExecution::getStatus)
         .filter(status -> StatusUtils.finalStatuses().contains(status))

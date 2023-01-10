@@ -14,7 +14,7 @@ import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import org.mongodb.morphia.query.UpdateOperations;
+import dev.morphia.query.UpdateOperations;
 @Singleton
 public class CVNGDemoDataIndexServiceImpl implements CVNGDemoDataIndexService {
   @Inject HPersistence hPersistence;

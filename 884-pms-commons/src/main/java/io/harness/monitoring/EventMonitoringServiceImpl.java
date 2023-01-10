@@ -7,10 +7,10 @@
 
 package io.harness.monitoring;
 
-import io.harness.SystemWrapper;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.metrics.service.api.MetricService;
+import io.harness.utils.system.SystemWrapper;
 
 import com.google.inject.Inject;
 import com.google.protobuf.Message;

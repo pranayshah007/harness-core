@@ -54,6 +54,7 @@ import static software.wings.utils.WingsTestConstants.TARGET_APP_ID;
 import static software.wings.utils.WingsTestConstants.TEMPLATE_DESCRIPTION;
 import static software.wings.utils.WingsTestConstants.TEMPLATE_ID;
 
+import static dev.morphia.mapping.Mapper.ID_KEY;
 import static java.time.Duration.ofSeconds;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -70,7 +71,6 @@ import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mongodb.morphia.mapping.Mapper.ID_KEY;
 
 import io.harness.beans.EnvironmentType;
 import io.harness.beans.FeatureName;
@@ -131,6 +131,10 @@ import software.wings.service.intfc.yaml.YamlPushService;
 import software.wings.utils.ArtifactType;
 
 import com.google.inject.Inject;
+import dev.morphia.Key;
+import dev.morphia.query.FieldEnd;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -146,10 +150,6 @@ import org.mockito.Captor;
 import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mongodb.morphia.Key;
-import org.mongodb.morphia.query.FieldEnd;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 /**
  * Created by anubhaw on 6/28/16.

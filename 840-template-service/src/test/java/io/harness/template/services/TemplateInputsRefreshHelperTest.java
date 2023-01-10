@@ -111,7 +111,7 @@ public class TemplateInputsRefreshHelperTest extends TemplateServiceTestBase {
                                         .versionLabel("v1")
                                         .build();
 
-    when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(accountId, orgId, projId, "t4", "v1", false))
+    when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(accountId, orgId, projId, "t4", "v1", false, false))
         .thenReturn(Optional.of(templateEntity));
 
     String pipelineYamlFile = "pipeline-with-one-runtime-input.yaml";
@@ -152,7 +152,7 @@ public class TemplateInputsRefreshHelperTest extends TemplateServiceTestBase {
                                         .versionLabel("v1")
                                         .build();
 
-    when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(accountId, orgId, projId, "t4", "v1", false))
+    when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(accountId, orgId, projId, "t4", "v1", false, false))
         .thenReturn(Optional.of(templateEntity));
 
     String pipelineYamlFile = "pipeline-with-two-runtime-inputs.yaml";
@@ -193,7 +193,7 @@ public class TemplateInputsRefreshHelperTest extends TemplateServiceTestBase {
                                         .versionLabel("v1")
                                         .build();
 
-    when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(accountId, orgId, projId, "t4", "v1", false))
+    when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(accountId, orgId, projId, "t4", "v1", false, false))
         .thenReturn(Optional.of(templateEntity));
 
     String pipelineYamlFile = "pipeline-with-two-runtime-inputs.yaml";
@@ -234,7 +234,7 @@ public class TemplateInputsRefreshHelperTest extends TemplateServiceTestBase {
                                         .versionLabel("v1")
                                         .build();
 
-    when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(accountId, orgId, projId, "t4", "v1", false))
+    when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(accountId, orgId, projId, "t4", "v1", false, false))
         .thenReturn(Optional.of(templateEntity));
 
     String pipelineYamlFile = "pipeline-with-zero-runtime-inputs.yaml";
@@ -275,7 +275,7 @@ public class TemplateInputsRefreshHelperTest extends TemplateServiceTestBase {
                                         .versionLabel("v1")
                                         .build();
 
-    when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(accountId, orgId, projId, "t4", "v1", false))
+    when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(accountId, orgId, projId, "t4", "v1", false, false))
         .thenReturn(Optional.of(templateEntity));
 
     String pipelineYamlFile = "pipeline-with-zero-runtime-inputs.yaml";
@@ -316,7 +316,7 @@ public class TemplateInputsRefreshHelperTest extends TemplateServiceTestBase {
                                         .versionLabel("v1")
                                         .build();
 
-    when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(accountId, orgId, projId, "t4", "v1", false))
+    when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(accountId, orgId, projId, "t4", "v1", false, false))
         .thenReturn(Optional.of(templateEntity));
 
     String pipelineYamlFile = "pipeline-with-zero-runtime-inputs.yaml";

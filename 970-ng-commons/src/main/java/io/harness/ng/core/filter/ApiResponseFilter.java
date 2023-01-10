@@ -14,8 +14,8 @@ import io.harness.eraro.ErrorCode;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.ErrorDTOBase;
 import io.harness.ng.core.dto.FailureDTO;
-import io.harness.spec.server.commons.model.ErrorResponse;
-import io.harness.spec.server.commons.model.FieldError;
+import io.harness.spec.server.commons.v1.model.ErrorResponse;
+import io.harness.spec.server.commons.v1.model.FieldError;
 
 import com.google.inject.Singleton;
 import java.util.List;

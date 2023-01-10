@@ -9,10 +9,12 @@ package io.harness.beans.serializer;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
 import static io.harness.rule.OwnerRule.HARSH;
+import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.when;
 
 import io.harness.CiBeansTestBase;
 import io.harness.annotations.dev.OwnedBy;
@@ -49,5 +51,52 @@ public class RunTimeInputHandlerTest extends CiBeansTestBase {
 
     assertThatExceptionOfType(CIStageExecutionUserException.class)
         .isThrownBy(() -> RunTimeInputHandler.resolveIntegerParameter(parameterField, 1));
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testStringRunTimeMandatoryInput() {
+    assertThatExceptionOfType(CIStageExecutionUserException.class)
+        .isThrownBy(() -> RunTimeInputHandler.resolveStringParameterV2("name", "type", "identifier", null, true));
+    doReturn("null").when(parameterField).fetchFinalValue();
+    assertThatExceptionOfType(CIStageExecutionUserException.class)
+        .isThrownBy(() -> RunTimeInputHandler.resolveStringParameterV2("name", "type", "identifier", null, true));
+
+    doReturn(null).when(parameterField).fetchFinalValue();
+
+    when(parameterField.isExpression()).thenReturn(false);
+    assertThatExceptionOfType(CIStageExecutionUserException.class)
+        .isThrownBy(
+            () -> RunTimeInputHandler.resolveStringParameterV2("name", "type", "identifier", parameterField, true));
+
+    when(parameterField.isExpression()).thenReturn(true);
+    when(parameterField.getExpressionValue()).thenReturn("<+input>");
+    assertThatExceptionOfType(CIStageExecutionUserException.class)
+        .isThrownBy(
+            () -> RunTimeInputHandler.resolveStringParameterV2("name", "type", "identifier", parameterField, true));
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testStringRunTimeNonMandatoryInput() {
+    doReturn(null).when(parameterField).fetchFinalValue();
+    when(parameterField.isExpression()).thenReturn(false);
+    assertThat(RunTimeInputHandler.resolveStringParameterV2("name", "type", "identifier", parameterField, false))
+        .isNull();
+
+    doReturn("abc").when(parameterField).fetchFinalValue();
+    assertThat(RunTimeInputHandler.resolveStringParameterV2("name", "type", "identifier", parameterField, false))
+        .isEqualTo("abc");
+
+    when(parameterField.isExpression()).thenReturn(true);
+    when(parameterField.getExpressionValue()).thenReturn("abc");
+    assertThat(RunTimeInputHandler.resolveStringParameterV2("name", "type", "identifier", parameterField, false))
+        .isEqualTo("abc");
+
+    when(parameterField.getExpressionValue()).thenReturn("<+input>");
+    assertThat(RunTimeInputHandler.resolveStringParameterV2("name", "type", "identifier", parameterField, false))
+        .isNull();
   }
 }

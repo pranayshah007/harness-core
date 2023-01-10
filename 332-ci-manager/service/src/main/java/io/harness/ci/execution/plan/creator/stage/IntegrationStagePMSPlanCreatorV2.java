@@ -106,8 +106,6 @@ public class IntegrationStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<I
   @Override
   public LinkedHashMap<String, PlanCreationResponse> createPlanForChildrenNodes(
       PlanCreationContext ctx, IntegrationStageNode stageNode) {
-    CIStagePlanCreationUtils.validateFreeAccountStageExecutionLimit(
-        accountExecutionMetadataRepository, ciLicenseService, ctx.getAccountIdentifier());
     log.info("Received plan creation request for integration stageV2 {}", stageNode.getIdentifier());
     LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
     Map<String, ByteString> metadataMap = new HashMap<>();
@@ -133,6 +131,10 @@ public class IntegrationStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<I
     }
 
     Infrastructure infrastructure = IntegrationStageStepParametersPMS.getInfrastructure(stageNode, ctx);
+
+    CIStagePlanCreationUtils.validateFreeAccountStageExecutionLimit(
+        accountExecutionMetadataRepository, ciLicenseService, ctx.getAccountIdentifier(), infrastructure);
+
     ExecutionElementConfig modifiedExecutionPlan =
         modifyYAMLWithImplicitSteps(ctx, executionSource, executionField, stageNode, infrastructure);
 

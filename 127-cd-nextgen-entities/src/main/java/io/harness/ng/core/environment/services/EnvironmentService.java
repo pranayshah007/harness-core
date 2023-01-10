@@ -53,8 +53,7 @@ public interface EnvironmentService {
       String accountId, String orgIdentifier, String projectIdentifier, List<String> envIdentifiers);
 
   EnvironmentInputSetYamlAndServiceOverridesMetadataDTO getEnvironmentsInputYamlAndServiceOverridesMetadata(
-      String accountId, String orgIdentifier, String projectIdentifier, List<String> envIdentifiers,
-      List<String> serviceIdentifiers);
+      String accountId, String orgIdentifier, String projectIdentifier, List<String> envRefs, List<String> serviceRefs);
 
   EnvironmentInputsMergedResponseDto mergeEnvironmentInputs(
       String accountId, String orgId, String projectId, String serviceId, String oldEnvironmentInputsYaml);

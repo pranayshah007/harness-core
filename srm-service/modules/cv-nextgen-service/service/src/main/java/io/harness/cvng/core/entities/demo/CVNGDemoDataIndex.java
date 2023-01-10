@@ -12,6 +12,7 @@ import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.CVConstants;
+import io.harness.cvng.analysis.entities.VerificationTaskBase;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
@@ -23,6 +24,8 @@ import io.harness.persistence.UuidAware;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
 import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.List;
@@ -32,8 +35,6 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
 
 @Data
 @Builder
@@ -44,7 +45,7 @@ import org.mongodb.morphia.annotations.Id;
 @Entity(value = "cvngDemoDataIndices")
 @HarnessEntity(exportable = true)
 @OwnedBy(HarnessTeam.CV)
-public class CVNGDemoDataIndex implements AccountAccess, PersistentEntity, UuidAware {
+public class CVNGDemoDataIndex extends VerificationTaskBase implements AccountAccess, PersistentEntity, UuidAware {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()

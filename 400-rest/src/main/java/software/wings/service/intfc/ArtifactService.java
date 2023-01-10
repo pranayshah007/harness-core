@@ -9,7 +9,7 @@ package software.wings.service.intfc;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
-import static software.wings.beans.artifact.Artifact.Status;
+import static software.wings.persistence.artifact.Artifact.Status;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
@@ -17,14 +17,15 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 
-import software.wings.beans.artifact.Artifact;
-import software.wings.beans.artifact.Artifact.ContentStatus;
-import software.wings.beans.artifact.ArtifactFile;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.beans.artifact.ArtifactView;
+import software.wings.persistence.artifact.Artifact;
+import software.wings.persistence.artifact.Artifact.ContentStatus;
+import software.wings.persistence.artifact.ArtifactFile;
 import software.wings.service.intfc.ownership.OwnedByArtifactStream;
 
+import dev.morphia.query.Query;
 import java.io.File;
 import java.util.Collection;
 import java.util.List;
@@ -32,7 +33,6 @@ import java.util.Map;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.query.Query;
 
 /**
  * The Interface ArtifactService.

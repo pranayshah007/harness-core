@@ -1,0 +1,46 @@
+failureStrategies:
+  - onFailure:
+      errors:
+        - AllErrors
+      action:
+        type: StageRollback
+spec:
+  execution:
+    steps:
+      - step:
+          name: Elastigroup Setup
+          identifier: Elastigroup_Setup
+          type: ElastigroupSetup
+          timeout: 10m
+          spec:
+            name: <+project.identifier>_<+service.identifier>_<+env.identifier>
+            instances:
+              type: Fixed
+              spec:
+                min: 1
+                max: 1
+                desired: 1
+          failureStrategies: []
+      - step:
+          type: ElastigroupDeploy
+          name: Elastigroup Deploy
+          identifier: Elastigroup_Deploy
+          spec:
+            newService:
+              type: Percentage
+              spec:
+                percentage: 100
+          timeout: 15m
+      - step:
+          type: Verify
+          name: Verify
+          identifier: Verify
+          timeout: 2h
+          spec: {}
+    rollbackSteps:
+      - step:
+          name: Elastigroup Rollback
+          identifier: Elastigroup_Rollback
+          type: ElastigroupRollback
+          timeout: 10m
+          spec: {}

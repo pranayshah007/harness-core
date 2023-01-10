@@ -43,7 +43,6 @@ import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.appmanifest.HelmChart;
 import software.wings.beans.approval.PreviousApprovalDetails;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.baseline.WorkflowExecutionBaseline;
 import software.wings.beans.concurrency.ConcurrentExecutionResponse;
 import software.wings.beans.deployment.DeploymentMetadata;
@@ -51,7 +50,9 @@ import software.wings.beans.deployment.WorkflowVariablesMetadata;
 import software.wings.beans.execution.WorkflowExecutionInfo;
 import software.wings.beans.trigger.Trigger;
 import software.wings.infra.InfrastructureDefinition;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.impl.WorkflowExecutionUpdate;
+import software.wings.service.intfc.deployment.PreDeploymentChecker;
 import software.wings.sm.ExecutionContext;
 import software.wings.sm.ExecutionInterrupt;
 import software.wings.sm.PhaseExecutionSummary;
@@ -63,6 +64,8 @@ import software.wings.sm.StateMachine;
 import software.wings.sm.StateStatusUpdate;
 import software.wings.sm.StateType;
 
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.Query;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -70,8 +73,6 @@ import java.util.Set;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.query.FindOptions;
-import org.mongodb.morphia.query.Query;
 
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)
@@ -365,4 +366,7 @@ public interface WorkflowExecutionService extends StateStatusUpdate {
 
   List<WorkflowExecution> getWorkflowExecutionsWithFailureDetails(
       String appId, List<WorkflowExecution> workflowExecutions);
+
+  void checkDeploymentFreezeRejectedExecution(
+      String accountId, PreDeploymentChecker deploymentFreezeChecker, WorkflowExecution workflowExecution);
 }

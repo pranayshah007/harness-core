@@ -45,10 +45,10 @@ public class TemplateInputsValidator {
     return toValidateTemplateInputsResponseDTO(validateInputsResponseDTO);
   }
 
-  public ValidateTemplateInputsResponseDTO validateNestedTemplateInputsForGivenYaml(
-      String accountId, String orgId, String projectId, String yaml, Map<String, TemplateEntity> templateCacheMap) {
+  public ValidateTemplateInputsResponseDTO validateNestedTemplateInputsForGivenYaml(String accountId, String orgId,
+      String projectId, String yaml, Map<String, TemplateEntity> templateCacheMap, boolean loadFromCache) {
     ValidateInputsResponseDTO validateInputsResponseDTO =
-        inputsValidator.validateInputsForYaml(accountId, orgId, projectId, yaml, templateCacheMap);
+        inputsValidator.validateInputsForYaml(accountId, orgId, projectId, yaml, templateCacheMap, loadFromCache);
     return toValidateTemplateInputsResponseDTO(validateInputsResponseDTO);
   }
 

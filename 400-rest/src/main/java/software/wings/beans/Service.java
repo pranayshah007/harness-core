@@ -39,6 +39,7 @@ import software.wings.beans.entityinterface.KeywordsAware;
 import software.wings.beans.entityinterface.TagAware;
 import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.NGMigrationEntity;
+import software.wings.persistence.AppContainer;
 import software.wings.service.intfc.customdeployment.CustomDeploymentTypeAware;
 import software.wings.utils.ArtifactType;
 import software.wings.yaml.BaseEntityYaml;
@@ -47,6 +48,10 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Reference;
+import dev.morphia.annotations.Transient;
+import dev.morphia.annotations.Version;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -57,10 +62,6 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.UtilityClass;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Reference;
-import org.mongodb.morphia.annotations.Transient;
-import org.mongodb.morphia.annotations.Version;
 
 /**
  * Component bean class.

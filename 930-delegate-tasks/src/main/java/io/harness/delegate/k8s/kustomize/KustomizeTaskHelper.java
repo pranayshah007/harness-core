@@ -10,11 +10,17 @@ package io.harness.delegate.k8s.kustomize;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.delegate.task.k8s.K8sExceptionConstants.ACCUMULATING_RESOURCES;
-import static io.harness.delegate.task.k8s.K8sExceptionConstants.EVALSYMLINK_ERROR_EXPLAINATION;
-import static io.harness.delegate.task.k8s.K8sExceptionConstants.EVALSYMLINK_ERROR_HINT;
-import static io.harness.delegate.task.k8s.K8sExceptionConstants.EVALSYMLINK_FAILURE;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.kustomize.KustomizeExceptionConstants.ACCUMULATING_RESOURCES;
+import static io.harness.kustomize.KustomizeExceptionConstants.EVALSYMLINK_ERROR_EXPLANATION;
+import static io.harness.kustomize.KustomizeExceptionConstants.EVALSYMLINK_ERROR_HINT;
+import static io.harness.kustomize.KustomizeExceptionConstants.EVALSYMLINK_FAILURE;
+import static io.harness.kustomize.KustomizeExceptionConstants.KUSTOMIZE_BUILD_FAILED_EXPLANATION;
+import static io.harness.kustomize.KustomizeExceptionConstants.KUSTOMIZE_BUILD_FAILED_HINT;
+import static io.harness.kustomize.KustomizeExceptionConstants.KUSTOMIZE_IO_EXCEPTION_HINT;
+import static io.harness.kustomize.KustomizeExceptionConstants.KUSTOMIZE_IO_EXPLANATION;
+import static io.harness.kustomize.KustomizeExceptionConstants.KUSTOMIZE_TIMEOUT_EXCEPTION_HINT;
+import static io.harness.kustomize.KustomizeExceptionConstants.KUSTOMIZE_TIMEOUT_EXPLANATION;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -64,9 +70,12 @@ public class KustomizeTaskHelper {
       Thread.currentThread().interrupt();
       throw new InvalidRequestException("Kustomize build interrupted", e, WingsException.USER);
     } catch (TimeoutException e) {
-      throw new InvalidRequestException("Kustomize build timed out", e, WingsException.USER);
+      throw NestedExceptionUtils.hintWithExplanationException(KUSTOMIZE_TIMEOUT_EXCEPTION_HINT,
+          KUSTOMIZE_TIMEOUT_EXPLANATION,
+          new InvalidRequestException("Kustomize build timed out", e, WingsException.USER));
     } catch (IOException e) {
-      throw new InvalidRequestException("IO Failure occurred while running kustomize build", e, WingsException.USER);
+      throw NestedExceptionUtils.hintWithExplanationException(KUSTOMIZE_IO_EXCEPTION_HINT, KUSTOMIZE_IO_EXPLANATION,
+          new InvalidRequestException("IO Failure occurred while running kustomize build", e, WingsException.USER));
     }
 
     if (cliResponse.getCommandExecutionStatus() == CommandExecutionStatus.SUCCESS) {
@@ -81,11 +90,14 @@ public class KustomizeTaskHelper {
 
       if (isNotEmpty(cliErrorMessage) && cliErrorMessage.contains(EVALSYMLINK_FAILURE)
           && cliErrorMessage.contains(ACCUMULATING_RESOURCES)) {
-        throw NestedExceptionUtils.hintWithExplanationException(EVALSYMLINK_ERROR_HINT, EVALSYMLINK_ERROR_EXPLAINATION,
+        throw NestedExceptionUtils.hintWithExplanationException(EVALSYMLINK_ERROR_HINT, EVALSYMLINK_ERROR_EXPLANATION,
             new InvalidRequestException(cliErrorMessage, WingsException.USER));
       }
 
-      throw new InvalidRequestException(stringBuilder.toString(), WingsException.USER);
+      throw NestedExceptionUtils.hintWithExplanationException(KUSTOMIZE_BUILD_FAILED_HINT,
+          KUSTOMIZE_BUILD_FAILED_EXPLANATION,
+          new InvalidRequestException(
+              isEmpty(cliResponse.getOutput()) ? cliErrorMessage : stringBuilder.toString(), WingsException.USER));
     }
   }
 

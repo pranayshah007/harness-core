@@ -32,9 +32,9 @@ import static software.wings.beans.ServiceVariable.ServiceVariableKeys;
 import static software.wings.service.impl.security.AbstractSecretServiceImpl.checkState;
 import static software.wings.service.impl.security.AbstractSecretServiceImpl.encryptLocal;
 
+import static dev.morphia.aggregation.Group.grouping;
+import static dev.morphia.aggregation.Projection.projection;
 import static org.apache.commons.lang3.StringUtils.trim;
-import static org.mongodb.morphia.aggregation.Group.grouping;
-import static org.mongodb.morphia.aggregation.Projection.projection;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
@@ -103,6 +103,9 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.mongodb.AggregationOptions;
+import dev.morphia.aggregation.Accumulator;
+import dev.morphia.aggregation.AggregationPipeline;
+import dev.morphia.query.Query;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -131,9 +134,6 @@ import javax.cache.Cache;
 import lombok.Builder;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.aggregation.Accumulator;
-import org.mongodb.morphia.aggregation.AggregationPipeline;
-import org.mongodb.morphia.query.Query;
 
 @OwnedBy(PL)
 @Slf4j
@@ -344,7 +344,7 @@ public class SecretManagerImpl implements SecretManager, EncryptedSettingAttribu
 
   private SecretManagerConfig updateRuntimeParametersAndGetConfig(
       String workflowExecutionId, SecretManagerConfig encryptionConfig) {
-    Optional<SecretManagerRuntimeParameters> secretManagerRuntimeParametersOptional =
+    Optional<software.wings.beans.dto.SecretManagerRuntimeParameters> secretManagerRuntimeParametersOptional =
         getSecretManagerRuntimeCredentialsForExecution(workflowExecutionId, encryptionConfig.getUuid());
     if (!secretManagerRuntimeParametersOptional.isPresent()) {
       String errorMessage = String.format(
@@ -743,8 +743,8 @@ public class SecretManagerImpl implements SecretManager, EncryptedSettingAttribu
   }
 
   @Override
-  public Optional<SecretManagerRuntimeParameters> getSecretManagerRuntimeCredentialsForExecution(
-      String executionId, String secretManagerId) {
+  public Optional<software.wings.beans.dto.SecretManagerRuntimeParameters>
+  getSecretManagerRuntimeCredentialsForExecution(String executionId, String secretManagerId) {
     SecretManagerRuntimeParameters secretManagerRuntimeParameters =
         wingsPersistence.createQuery(SecretManagerRuntimeParameters.class)
             .field(SecretManagerRuntimeParametersKeys.executionId)
@@ -757,7 +757,7 @@ public class SecretManagerImpl implements SecretManager, EncryptedSettingAttribu
           wingsPersistence.get(EncryptedData.class, secretManagerRuntimeParameters.getRuntimeParameters());
       secretManagerRuntimeParameters.setRuntimeParameters(
           String.valueOf(secretService.fetchSecretValue(encryptedData)));
-      return Optional.of(secretManagerRuntimeParameters);
+      return Optional.of(secretManagerRuntimeParameters.toDto());
     }
     return Optional.empty();
   }
@@ -768,7 +768,7 @@ public class SecretManagerImpl implements SecretManager, EncryptedSettingAttribu
   }
 
   @Override
-  public SecretManagerRuntimeParameters configureSecretManagerRuntimeCredentialsForExecution(
+  public software.wings.beans.dto.SecretManagerRuntimeParameters configureSecretManagerRuntimeCredentialsForExecution(
       String accountId, String kmsId, String executionId, Map<String, String> runtimeParameters) {
     String runtimeParametersString = JsonUtils.asJson(runtimeParameters);
     EncryptedData encryptedData = encryptLocal(runtimeParametersString.toCharArray());
@@ -783,7 +783,7 @@ public class SecretManagerImpl implements SecretManager, EncryptedSettingAttribu
                                                                         .runtimeParameters(encryptedDataId)
                                                                         .build();
     wingsPersistence.save(secretManagerRuntimeParameters);
-    return secretManagerRuntimeParameters;
+    return secretManagerRuntimeParameters.toDto();
   }
 
   @Override
@@ -892,13 +892,13 @@ public class SecretManagerImpl implements SecretManager, EncryptedSettingAttribu
 
   @Override
   public PageResponse<EncryptedData> listSecrets(String accountId, PageRequest<EncryptedData> pageRequest,
-      String appIdFromRequest, String envIdFromRequest, boolean details, boolean listHidden)
+      String appIdFromRequest, String envIdFromRequest, boolean details, boolean listHidden, boolean ignoreRunTimeUsage)
       throws IllegalAccessException {
     if (!listHidden) {
       addFilterHideFromListing(pageRequest);
     }
 
-    return listSecrets(accountId, pageRequest, appIdFromRequest, envIdFromRequest, details);
+    return listSecrets(accountId, pageRequest, appIdFromRequest, envIdFromRequest, details, ignoreRunTimeUsage);
   }
 
   private void addFilterHideFromListing(PageRequest<EncryptedData> pageRequest) {
@@ -916,22 +916,24 @@ public class SecretManagerImpl implements SecretManager, EncryptedSettingAttribu
 
   @Override
   public PageResponse<EncryptedData> listSecrets(String accountId, PageRequest<EncryptedData> pageRequest,
-      String appIdFromRequest, String envIdFromRequest, boolean details) throws IllegalAccessException {
+      String appIdFromRequest, String envIdFromRequest, boolean details, boolean ignoreRunTimeUsage)
+      throws IllegalAccessException {
     PageResponse<EncryptedData> pageResponse =
         secretService.listSecrets(accountId, pageRequest, appIdFromRequest, envIdFromRequest);
     if (details) {
-      fillInDetails(accountId, pageResponse.getResponse());
+      fillInDetails(accountId, pageResponse.getResponse(), ignoreRunTimeUsage);
     }
     return pageResponse;
   }
 
-  private void fillInDetails(String accountId, List<EncryptedData> encryptedDataList) throws IllegalAccessException {
+  private void fillInDetails(String accountId, List<EncryptedData> encryptedDataList, boolean ignoreRunTimeUsage)
+      throws IllegalAccessException {
     if (isEmpty(encryptedDataList)) {
       return;
     }
 
     Set<String> encryptedDataIds = encryptedDataList.stream().map(EncryptedData::getUuid).collect(Collectors.toSet());
-    Map<String, Long> usageLogSizes = getUsageLogSizes(accountId, encryptedDataIds, SettingVariableTypes.SECRET_TEXT);
+
     Map<String, Long> changeLogSizes = getChangeLogSizes(accountId, encryptedDataIds, SettingVariableTypes.SECRET_TEXT);
 
     for (EncryptedData encryptedData : encryptedDataList) {
@@ -942,9 +944,16 @@ public class SecretManagerImpl implements SecretManager, EncryptedSettingAttribu
       int secretUsageSize = encryptedData.getParents().size();
       encryptedData.setSetupUsage(secretUsageSize);
 
-      if (usageLogSizes.containsKey(entityId)) {
-        encryptedData.setRunTimeUsage(usageLogSizes.get(entityId).intValue());
+      if (ignoreRunTimeUsage) {
+        encryptedData.setRunTimeUsage(null);
+      } else {
+        Map<String, Long> usageLogSizes =
+            getUsageLogSizes(accountId, encryptedDataIds, SettingVariableTypes.SECRET_TEXT);
+        if (usageLogSizes.containsKey(entityId)) {
+          encryptedData.setRunTimeUsage((long) usageLogSizes.get(entityId).intValue());
+        }
       }
+
       if (changeLogSizes.containsKey(entityId)) {
         encryptedData.setChangeLog(changeLogSizes.get(entityId).intValue());
       }
@@ -953,10 +962,11 @@ public class SecretManagerImpl implements SecretManager, EncryptedSettingAttribu
 
   @Override
   public PageResponse<EncryptedData> listSecretsMappedToAccount(
-      String accountId, PageRequest<EncryptedData> pageRequest, boolean details) throws IllegalAccessException {
+      String accountId, PageRequest<EncryptedData> pageRequest, boolean details, boolean ignoreRunTimeUsage)
+      throws IllegalAccessException {
     PageResponse<EncryptedData> pageResponse = secretService.listSecretsScopedToAccount(accountId, pageRequest);
     if (details) {
-      fillInDetails(accountId, pageResponse.getResponse());
+      fillInDetails(accountId, pageResponse.getResponse(), ignoreRunTimeUsage);
     }
     return pageResponse;
   }

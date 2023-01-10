@@ -7,9 +7,11 @@
 
 package io.harness.ngtriggers.utils;
 
+import static io.harness.rule.OwnerRule.ASHISHSANODIA;
 import static io.harness.rule.OwnerRule.DEV_MITTAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.joor.Reflect.on;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.when;
@@ -55,11 +57,14 @@ public class SCMDataObtainerTest extends CategoryTest {
   @Mock ScmServiceClient scmServiceClient;
   @Mock TaskExecutionUtils taskExecutionUtils;
   @Mock KryoSerializer kryoSerializer;
+  @Mock KryoSerializer referenceFalseKryoSerializer;
   @InjectMocks SCMDataObtainer scmDataObtainer;
 
   @Before
   public void setUp() throws IOException {
     initMocks(this);
+    on(scmDataObtainer).set("kryoSerializer", kryoSerializer);
+    on(scmDataObtainer).set("referenceFalseKryoSerializer", referenceFalseKryoSerializer);
   }
 
   @Test
@@ -96,6 +101,47 @@ public class SCMDataObtainerTest extends CategoryTest {
                       .build()
                       .toByteArray();
     when(kryoSerializer.asInflatedObject(any()))
+        .thenReturn(ScmGitRefTaskResponseData.builder().listCommitsInPRResponse(list).build());
+
+    List<Commit> commits = scmDataObtainer.getCommitsInPr(connectorDetails, triggerDetails, 3);
+    assertThat(commits.size()).isEqualTo(1);
+    assertThat(commits.get(0).getSha()).isEqualTo("commitId");
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testGetCommitsInPrViaDelegateUsingKryoWithoutReference() {
+    TriggerDetails triggerDetails =
+        TriggerDetails.builder()
+            .ngTriggerConfigV2(
+                NGTriggerConfigV2.builder()
+                    .source(NGTriggerSourceV2.builder()
+                                .spec(WebhookTriggerConfigV2.builder().type(WebhookTriggerType.GITHUB).build())
+                                .build())
+                    .build())
+            .ngTriggerEntity(NGTriggerEntity.builder().accountId("account").build())
+            .build();
+
+    ConnectorDetails connectorDetails =
+        ConnectorDetails.builder()
+            .connectorType(ConnectorType.GITHUB)
+            .connectorConfig(GithubConnectorDTO.builder().connectionType(GitConnectionType.REPO).url("url").build())
+            .executeOnDelegate(true)
+            .build();
+
+    when(taskExecutionUtils.executeSyncTask(any(DelegateTaskRequest.class)))
+        .thenReturn(BinaryResponseData.builder().usingKryoWithoutReference(true).build());
+
+    byte[] list = ListCommitsInPRResponse.newBuilder()
+                      .addCommits(Commit.newBuilder()
+                                      .setSha("commitId")
+                                      .setMessage("message")
+                                      .setLink("http://github.com/octocat/hello-world/pull/1/commits/commitId")
+                                      .build())
+                      .build()
+                      .toByteArray();
+    when(referenceFalseKryoSerializer.asInflatedObject(any()))
         .thenReturn(ScmGitRefTaskResponseData.builder().listCommitsInPRResponse(list).build());
 
     List<Commit> commits = scmDataObtainer.getCommitsInPr(connectorDetails, triggerDetails, 3);

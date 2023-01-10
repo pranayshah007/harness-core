@@ -7,7 +7,6 @@
 
 package software.wings.rules;
 
-import static java.lang.String.format;
 import static java.util.Arrays.asList;
 
 import java.io.File;
@@ -23,10 +22,12 @@ import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.sshd.common.channel.PtyMode;
 import org.apache.sshd.common.util.GenericUtils;
+import org.apache.sshd.common.util.MapEntryUtils;
 import org.apache.sshd.common.util.ValidateUtils;
 import org.apache.sshd.common.util.io.IoUtils;
 import org.apache.sshd.common.util.logging.AbstractLoggingBean;
 import org.apache.sshd.server.Environment;
+import org.apache.sshd.server.channel.ChannelSession;
 import org.apache.sshd.server.channel.PuttyRequestHandler;
 import org.apache.sshd.server.session.ServerSession;
 import org.apache.sshd.server.session.ServerSessionHolder;
@@ -42,6 +43,7 @@ public class FileSystemAwareProcessShell extends AbstractLoggingBean implements 
   private final List<String> command;
   private String cmdValue;
   private ServerSession session;
+  private ChannelSession channelSession;
   private Process process;
   private TtyFilterOutputStream in;
   private TtyFilterInputStream out;
@@ -87,51 +89,6 @@ public class FileSystemAwareProcessShell extends AbstractLoggingBean implements 
     ValidateUtils.checkTrue(process == null, "Session set after process started");
   }
 
-  @Override
-  public void start(Environment env) throws IOException {
-    Map<String, String> varsMap = resolveShellEnvironment(env.getEnv());
-    for (int i = 0; i < command.size(); i++) {
-      String cmd = command.get(i);
-      if ("$USER".equals(cmd)) {
-        cmd = varsMap.get("USER");
-        command.set(i, cmd);
-        cmdValue = GenericUtils.join(command, ' ');
-      }
-    }
-
-    ProcessBuilder builder = new ProcessBuilder(command);
-    if (GenericUtils.size(varsMap) > 0) {
-      try {
-        Map<String, String> procEnv = builder.environment();
-        procEnv.putAll(varsMap);
-      } catch (Exception e) {
-        log.warn(
-            format("start() - Failed (%s) to set environment for command=%s", e.getClass().getSimpleName(), cmdValue),
-            e);
-        if (log.isDebugEnabled()) {
-          log.debug("start(" + cmdValue + ") failure details: " + e.getMessage(), e);
-          for (StackTraceElement elem : e.getStackTrace()) {
-            log.debug("Trace: {}", elem);
-          }
-        }
-      }
-    }
-
-    if (log.isDebugEnabled()) {
-      log.debug("Starting shell with command: '{}' and env: {}", builder.command(), builder.environment());
-    }
-
-    if (root != null) {
-      builder.directory(new File(root.toString()));
-    }
-    process = builder.start();
-
-    Map<PtyMode, ?> modes = resolveShellTtyOptions(env.getPtyModes());
-    out = new TtyFilterInputStream(process.getInputStream(), modes);
-    err = new TtyFilterInputStream(process.getErrorStream(), modes);
-    in = new TtyFilterOutputStream(process.getOutputStream(), err, modes);
-  }
-
   /**
    * Resolve shell environment map.
    *
@@ -174,35 +131,86 @@ public class FileSystemAwareProcessShell extends AbstractLoggingBean implements 
 
   @Override
   public boolean isAlive() {
-    // TODO in JDK-8 call process.isAlive()
-    try {
-      process.exitValue();
-      return false;
-    } catch (IllegalThreadStateException e) {
-      return true;
-    }
+    return this.process.isAlive();
   }
 
   @Override
   public int exitValue() {
-    // TODO in JDK-8 call process.isAlive()
-    if (isAlive()) {
+    if (this.isAlive()) {
       try {
-        return process.waitFor();
-      } catch (InterruptedException e) {
-        throw new RuntimeException(e);
+        return this.process.waitFor();
+      } catch (InterruptedException ex) {
+        throw new RuntimeException(ex);
       }
     } else {
-      return process.exitValue();
+      return this.process.exitValue();
     }
   }
 
   @Override
-  public void destroy() {
+  public String toString() {
+    return GenericUtils.isEmpty(cmdValue) ? super.toString() : cmdValue;
+  }
+
+  @Override
+  public ChannelSession getServerChannelSession() {
+    return this.channelSession;
+  }
+
+  @Override
+  public void start(ChannelSession channelSession, Environment env) throws IOException {
+    this.channelSession = channelSession;
+    Map<String, String> varsMap = this.resolveShellEnvironment(env.getEnv());
+
+    for (int i = 0; i < this.command.size(); ++i) {
+      String cmd = this.command.get(i);
+      if ("$USER".equals(cmd)) {
+        cmd = varsMap.get("USER");
+        this.command.set(i, cmd);
+        this.cmdValue = GenericUtils.join(this.command, ' ');
+      }
+    }
+
+    ProcessBuilder builder = new ProcessBuilder(this.command);
+    Map<String, String> modes;
+    if (MapEntryUtils.size(varsMap) > 0) {
+      try {
+        modes = builder.environment();
+        modes.putAll(varsMap);
+      } catch (Exception ex) {
+        this.warn("start({}) - Failed ({}) to set environment for command={}: {}", channelSession,
+            ex.getClass().getSimpleName(), this.cmdValue, ex.getMessage(), ex);
+
+        if (log.isDebugEnabled()) {
+          log.debug("start(" + cmdValue + ") failure details: " + ex.getMessage(), ex);
+          for (StackTraceElement elem : ex.getStackTrace()) {
+            log.debug("Trace: {}", elem);
+          }
+        }
+      }
+    }
+
+    if (log.isDebugEnabled()) {
+      log.debug("Starting shell with command: '{}' and env: {}", builder.command(), builder.environment());
+    }
+
+    if (root != null) {
+      builder.directory(new File(root.toString()));
+    }
+    process = builder.start();
+
+    Map<PtyMode, ?> ptyModels = resolveShellTtyOptions(env.getPtyModes());
+    out = new TtyFilterInputStream(process.getInputStream(), ptyModels);
+    err = new TtyFilterInputStream(process.getErrorStream(), ptyModels);
+    in = new TtyFilterOutputStream(process.getOutputStream(), err, ptyModels);
+  }
+
+  @Override
+  public void destroy(ChannelSession channelSession) throws Exception {
     // NOTE !!! DO NOT NULL-IFY THE PROCESS SINCE "exitValue" is called subsequently
     if (process != null) {
       if (log.isDebugEnabled()) {
-        log.debug("Destroy process for " + cmdValue);
+        log.debug("destroy({}) Destroy process for '{}'", channelSession, this.cmdValue);
       }
       process.destroy();
     }
@@ -210,7 +218,8 @@ public class FileSystemAwareProcessShell extends AbstractLoggingBean implements 
     IOException e = IoUtils.closeQuietly(getInputStream(), getOutputStream(), getErrorStream());
     if (e != null) {
       if (log.isDebugEnabled()) {
-        log.debug(e.getClass().getSimpleName() + " while destroy streams of '" + this + "': " + e.getMessage());
+        log.debug("destroy({}) {} while destroy streams of '{}': {}", channelSession, e.getClass().getSimpleName(),
+            this, e.getMessage(), e);
       }
 
       if (log.isTraceEnabled()) {
@@ -223,10 +232,5 @@ public class FileSystemAwareProcessShell extends AbstractLoggingBean implements 
         }
       }
     }
-  }
-
-  @Override
-  public String toString() {
-    return GenericUtils.isEmpty(cmdValue) ? super.toString() : cmdValue;
   }
 }

@@ -1,0 +1,54 @@
+template:
+  projectIdentifier: projId
+  orgIdentifier: orgId
+  identifier: stageTemplate
+  versionLabel: 1
+  name: template1
+  type: Stage
+  spec:
+    type: Approval
+    spec:
+      execution:
+        steps:
+          - step:
+              name: Approval
+              identifier: approval
+              template:
+                templateRef: approvalTemplate
+                versionLabel: 1
+                templateInputs:
+                  type: HarnessApproval
+                  spec:
+                    approvers:
+                      userGroups: <+input>
+          - step:
+              name: jiraApproval
+              identifier: jiraApproval
+              type: JiraApproval
+              spec:
+                connectorRef: jiraConnector
+                issueKey: <+input>
+                approvalCriteria:
+                  type: KeyValues
+                  spec:
+                    matchAnyCondition: true
+                    conditions:
+                      - key: Status
+                        operator: equals
+                        value: Done
+                rejectionCriteria:
+                  type: KeyValues
+                  spec:
+                    matchAnyCondition: true
+                    conditions: []
+                timeout: 1d
+          - step:
+              name: jiraApprovalTemplate
+              identifier: jiraApprovalTemplate
+              template:
+                templateRef: jiraApprovalTemplate
+                versionLabel: 1
+                templateInputs:
+                  spec:
+                    connectorRef: <+input>.allowedValues("c1", "c2")
+                    issueKey: <+input>

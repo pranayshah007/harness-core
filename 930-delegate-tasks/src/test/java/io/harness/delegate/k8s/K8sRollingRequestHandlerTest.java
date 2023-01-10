@@ -12,12 +12,14 @@ import static io.harness.delegate.k8s.K8sTestHelper.deployment;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.rule.OwnerRule.ABHINAV2;
 import static io.harness.rule.OwnerRule.ABOSII;
+import static io.harness.rule.OwnerRule.VIKYATH_HAREKAL;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyList;
@@ -25,6 +27,7 @@ import static org.mockito.Matchers.anyListOf;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -47,6 +50,7 @@ import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.delegate.task.k8s.KustomizeManifestDelegateConfig;
 import io.harness.delegate.task.k8s.client.K8sClient;
 import io.harness.exception.InvalidRequestException;
+import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.model.K8sDelegateTaskParams;
@@ -54,10 +58,15 @@ import io.harness.k8s.model.K8sSteadyStateDTO;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
+import io.harness.k8s.releasehistory.IK8sRelease;
+import io.harness.k8s.releasehistory.IK8sReleaseHistory;
+import io.harness.k8s.releasehistory.K8SLegacyReleaseHistory;
 import io.harness.k8s.releasehistory.K8sLegacyRelease;
+import io.harness.k8s.releasehistory.ReleaseHistory;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 
+import java.util.Collections;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
@@ -68,8 +77,10 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
+
 @OwnedBy(CDP)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class K8sRollingRequestHandlerTest extends CategoryTest {
@@ -81,10 +92,13 @@ public class K8sRollingRequestHandlerTest extends CategoryTest {
   @InjectMocks @Spy K8sRollingRequestHandler rollingRequestHandler;
 
   @Mock ILogStreamingTaskClient logStreamingTaskClient;
+  @Mock K8sReleaseHandler releaseHandler;
   @Mock LogCallback logCallback;
 
   @Captor ArgumentCaptor<List<KubernetesResourceId>> captor;
   final CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
+  @Mock private IK8sReleaseHistory releaseHistory;
+  @Mock private IK8sRelease release;
 
   @Before
   public void setup() throws Exception {
@@ -97,6 +111,11 @@ public class K8sRollingRequestHandlerTest extends CategoryTest {
     doReturn(KubernetesConfig.builder().namespace("default").build())
         .when(containerDeploymentDelegateBaseHelper)
         .createKubernetesConfig(any(K8sInfraDelegateConfig.class));
+
+    doReturn(releaseHandler).when(taskHelperBase).getReleaseHandler(anyBoolean());
+    doReturn(releaseHistory).when(releaseHandler).getReleaseHistory(any(), any());
+    doReturn(release).when(releaseHandler).createRelease(anyString(), anyInt());
+    doReturn(release).when(release).setReleaseData(anyList(), anyBoolean());
   }
 
   @Test
@@ -108,6 +127,7 @@ public class K8sRollingRequestHandlerTest extends CategoryTest {
             .releaseName("releaseName")
             .k8sInfraDelegateConfig(mock(K8sInfraDelegateConfig.class))
             .manifestDelegateConfig(KustomizeManifestDelegateConfig.builder().kustomizeDirPath("dir").build())
+            .useDeclarativeRollback(true)
             .build();
     K8sDelegateTaskParams delegateTaskParams = K8sDelegateTaskParams.builder().build();
 
@@ -126,6 +146,47 @@ public class K8sRollingRequestHandlerTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = VIKYATH_HAREKAL)
+  @Category(UnitTests.class)
+  public void testExecuteTaskApplyFailureShouldSaveWorkloads() throws Exception {
+    on(rollingRequestHandler).set("release", null);
+    K8sRollingDeployRequest rollingDeployRequest =
+        K8sRollingDeployRequest.builder()
+            .releaseName("releaseName")
+            .k8sInfraDelegateConfig(mock(K8sInfraDelegateConfig.class))
+            .manifestDelegateConfig(KustomizeManifestDelegateConfig.builder().kustomizeDirPath("dir").build())
+            .useDeclarativeRollback(false)
+            .build();
+    K8sDelegateTaskParams delegateTaskParams = K8sDelegateTaskParams.builder().build();
+
+    K8SLegacyReleaseHistory releaseHistory = mock(K8SLegacyReleaseHistory.class);
+    ReleaseHistory releaseHistoryContent = mock(ReleaseHistory.class);
+    K8sLegacyRelease currentRelease = mock(K8sLegacyRelease.class);
+    doReturn(currentRelease).when(releaseHandler).createRelease(anyString(), anyInt());
+    doReturn(currentRelease).when(currentRelease).setReleaseData(anyList(), anyBoolean());
+    doReturn(releaseHistoryContent).when(releaseHistory).getReleaseHistory();
+    doReturn(null).when(releaseHistoryContent).addReleaseToReleaseHistory(any());
+    doReturn(releaseHistory).when(releaseHandler).getReleaseHistory(any(), any());
+
+    RuntimeException thrownException = new RuntimeException("Failed to apply");
+    doThrow(thrownException)
+        .when(taskHelperBase)
+        .applyManifests(any(Kubectl.class), anyList(), any(K8sDelegateTaskParams.class), any(LogCallback.class),
+            eq(true), eq(true), anyString());
+    doReturn(Collections.singletonList(deployment()))
+        .when(taskHelperBase)
+        .readManifestAndOverrideLocalSecrets(anyListOf(FileData.class), eq(logCallback), anyBoolean(), anyBoolean());
+
+    assertThatThrownBy(()
+                           -> rollingRequestHandler.executeTask(
+                               rollingDeployRequest, delegateTaskParams, logStreamingTaskClient, commandUnitsProgress))
+        .isSameAs(thrownException);
+
+    Mockito.verify(taskHelperBase, times(1))
+        .getLatestRevision(any(Kubectl.class), any(KubernetesResourceId.class), any(K8sDelegateTaskParams.class));
+  }
+
+  @Test
   @Owner(developers = ABOSII)
   @Category(UnitTests.class)
   public void testExecuteTaskInternalGetPodsFailed() throws Exception {
@@ -134,6 +195,7 @@ public class K8sRollingRequestHandlerTest extends CategoryTest {
             .manifestDelegateConfig(KustomizeManifestDelegateConfig.builder().kustomizeDirPath("dir").build())
             .k8sInfraDelegateConfig(mock(K8sInfraDelegateConfig.class))
             .releaseName("releaseName")
+            .useDeclarativeRollback(true)
             .build();
     K8sDelegateTaskParams delegateTaskParams = K8sDelegateTaskParams.builder().build();
     InvalidRequestException thrownException = new InvalidRequestException("Failed to get pods");
@@ -161,9 +223,9 @@ public class K8sRollingRequestHandlerTest extends CategoryTest {
                            -> rollingRequestHandler.executeTaskInternal(
                                rollingDeployRequest, delegateTaskParams, logStreamingTaskClient, commandUnitsProgress))
         .isEqualTo(thrownException);
-
-    verify(kubernetesContainerService, times(1))
-        .saveReleaseHistory(any(KubernetesConfig.class), anyString(), anyString(), anyBoolean());
+    verify(taskHelperBase)
+        .saveRelease(anyBoolean(), anyBoolean(), any(KubernetesConfig.class), any(IK8sRelease.class),
+            any(IK8sReleaseHistory.class), anyString());
     verify(baseHandler, times(1))
         .addLabelsInDeploymentSelectorForCanary(anyBoolean(), anyBoolean(), anyList(), anyList());
   }
@@ -179,7 +241,9 @@ public class K8sRollingRequestHandlerTest extends CategoryTest {
             .pruningEnabled(true)
             .manifestDelegateConfig(K8sManifestDelegateConfig.builder().build())
             .k8sInfraDelegateConfig(mock(K8sInfraDelegateConfig.class))
+            .useDeclarativeRollback(true)
             .build();
+    doReturn(null).when(baseHandler).getLastSuccessfulRelease(anyBoolean(), any(), anyInt(), any(), any());
     List<KubernetesResourceId> prunedResourceIds = singletonList(KubernetesResourceId.builder().build());
     doReturn(prunedResourceIds).when(rollingRequestHandler).prune(any(), any(), any());
 
@@ -194,6 +258,8 @@ public class K8sRollingRequestHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testPruningWithNoResourceToPrune() throws Exception {
     on(rollingRequestHandler).set("release", K8sLegacyRelease.builder().resourcesWithSpec(emptyList()).build());
+    on(rollingRequestHandler).set("kubernetesConfig", KubernetesConfig.builder().namespace("ns").build());
+    doNothing().when(taskHelperBase).setNamespaceToKubernetesResourcesIfRequired(anyList(), any());
     assertThat(rollingRequestHandler.prune(null, null, logCallback)).isEmpty();
 
     K8sLegacyRelease releaseWithEmptySpecs = K8sLegacyRelease.builder().resourcesWithSpec(emptyList()).build();
@@ -210,6 +276,7 @@ public class K8sRollingRequestHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testPruning() throws Exception {
     on(rollingRequestHandler).set("release", K8sLegacyRelease.builder().resourcesWithSpec(emptyList()).build());
+    on(rollingRequestHandler).set("kubernetesConfig", KubernetesConfig.builder().namespace("ns").build());
     K8sLegacyRelease releaseWithDummySpec =
         K8sLegacyRelease.builder().resourcesWithSpec(singletonList(KubernetesResource.builder().build())).build();
     List<KubernetesResourceId> toBePruned = singletonList(
@@ -218,6 +285,7 @@ public class K8sRollingRequestHandlerTest extends CategoryTest {
         .when(taskHelperBase)
         .executeDeleteHandlingPartialExecution(any(Kubectl.class), any(K8sDelegateTaskParams.class),
             anyListOf(KubernetesResourceId.class), any(LogCallback.class), anyBoolean());
+    doNothing().when(taskHelperBase).setNamespaceToKubernetesResourcesIfRequired(anyList(), any());
     doReturn(toBePruned)
         .when(taskHelperBase)
         .getResourcesToBePrunedInOrder(anyListOf(KubernetesResource.class), anyListOf(KubernetesResource.class));

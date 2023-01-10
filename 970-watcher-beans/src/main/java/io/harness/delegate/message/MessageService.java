@@ -33,11 +33,12 @@ public interface MessageService {
 
   void shutdown();
 
-  Message waitForMessage(String messageName, long timeout);
+  Message waitForMessage(String messageName, long timeout, boolean printIntermediateMessages);
 
   List<Message> waitForMessages(String messageName, long timeout, long minWaitTime);
 
-  Message waitForMessageOnChannel(MessengerType sourceType, String sourceProcessId, String messageName, long timeout);
+  Message waitForMessageOnChannel(MessengerType sourceType, String sourceProcessId, String messageName, long timeout,
+      boolean printIntermediateMessages);
 
   List<Message> waitForMessagesOnChannel(
       MessengerType sourceType, String sourceProcessId, String messageName, long timeout, long minWaitTime);

@@ -155,7 +155,7 @@ public class EnvironmentGroupResource {
           NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
-      @Parameter(description = "Specify whether Environment is deleted or not") @QueryParam(
+      @Parameter(description = "Specify whether environment group is deleted or not") @QueryParam(
           NGCommonEntityConstants.DELETED_KEY) @DefaultValue("false") boolean deleted,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
     checkFForThrow(accountId);
@@ -211,11 +211,11 @@ public class EnvironmentGroupResource {
   @POST
   @Path("/list")
   @ApiOperation(value = "Gets Environment Group list", nickname = "getEnvironmentGroupList")
-  @Operation(operationId = "getEnvironmentGroupList", summary = "Gets Environment Group list for a Project",
+  @Operation(operationId = "getEnvironmentGroupList", summary = "Gets Environment Group list",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "Returns the list of Environment Group for a Project")
+        ApiResponse(responseCode = "default", description = "Returns the list of Environment Groups")
       })
   public ResponseDTO<PageResponse<EnvironmentGroupResponse>>
   listEnvironmentGroup(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
@@ -223,7 +223,7 @@ public class EnvironmentGroupResource {
       @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
-          NGCommonEntityConstants.PROJECT_KEY) @ResourceIdentifier String projectIdentifier,
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
       @QueryParam("envGroupIdentifiers") List<String> envGroupIds,
       @Parameter(description = "The word to be searched and included in the list response") @QueryParam(
           NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
@@ -235,13 +235,17 @@ public class EnvironmentGroupResource {
       @Parameter(description = "Filter identifier") @QueryParam(
           NGResourceFilterConstants.FILTER_KEY) String filterIdentifier,
       @RequestBody(description = "This is the body for the filter properties for listing Environment Groups")
-      FilterPropertiesDTO filterProperties, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
+      FilterPropertiesDTO filterProperties, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
+      @Parameter(description = "Specify true if all accessible environment groups are to be included") @QueryParam(
+          NGResourceFilterConstants.INCLUDE_ALL_ENV_GROUPS_ACCESSIBLE_AT_SCOPE) @DefaultValue("false")
+      boolean includeAllEnvGroupsAccessibleAtScope) {
     checkFForThrow(accountId);
 
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
         Resource.of(NGResourceType.ENVIRONMENT_GROUP, null), CDNGRbacPermissions.ENVIRONMENT_GROUP_VIEW_PERMISSION);
     Criteria criteria = environmentGroupService.formCriteria(accountId, orgIdentifier, projectIdentifier, false,
-        searchTerm, filterIdentifier, (EnvironmentGroupFilterPropertiesDTO) filterProperties);
+        searchTerm, filterIdentifier, (EnvironmentGroupFilterPropertiesDTO) filterProperties,
+        includeAllEnvGroupsAccessibleAtScope);
 
     if (EmptyPredicate.isNotEmpty(envGroupIds)) {
       criteria.and(EnvironmentGroupKeys.identifier).in(envGroupIds);

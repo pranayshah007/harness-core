@@ -52,7 +52,7 @@ import software.wings.beans.InstanceUnitType;
 import software.wings.beans.Service;
 import software.wings.beans.VMSSAuthType;
 import software.wings.beans.VMSSDeploymentType;
-import software.wings.beans.artifact.Artifact;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.impl.azure.manager.AzureVMSSAllPhaseRollbackData;
 import software.wings.service.intfc.DelegateService;
 import software.wings.service.intfc.InfrastructureMappingService;

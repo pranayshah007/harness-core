@@ -13,6 +13,7 @@ import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expressio
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.InvalidRequestException;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.yaml.YamlSchemaTypes;
@@ -20,6 +21,7 @@ import io.harness.yaml.YamlSchemaTypes;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
+import java.math.BigDecimal;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import lombok.Builder;
@@ -47,5 +49,18 @@ public class PercentageCapacitySpec implements CapacitySpec {
   @Override
   public String getType() {
     return CapacitySpecType.PERCENTAGE;
+  }
+
+  @Override
+  public Integer getInstances() {
+    if (ParameterField.isNull(percentage)) {
+      return null;
+    }
+    try {
+      return new BigDecimal(percentage.getValue()).intValueExact();
+    } catch (Exception exception) {
+      throw new InvalidRequestException(
+          String.format("Percentage value: [%s] is not an integer", percentage.getValue()), exception);
+    }
   }
 }

@@ -14,6 +14,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.annotations.ApiModel;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
+import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -30,5 +31,5 @@ import lombok.experimental.FieldDefaults;
 @ApiModel("TriggerCatalogResponse")
 @Schema(name = "TriggerCatalogResponse", description = "This has details of the retrieved Trigger Catalog.")
 public class NGTriggerCatalogDTO {
-  @Schema(description = Constants.TRIGGER_CATALOGUE_LIST) List<TriggerCatalogItem> catalog;
+  @NotNull @Schema(description = Constants.TRIGGER_CATALOGUE_LIST) List<TriggerCatalogItem> catalog;
 }

@@ -18,6 +18,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
 import io.harness.execution.NodeExecution;
 import io.harness.expression.EngineExpressionEvaluator;
+import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
@@ -43,7 +44,8 @@ public class YamlExpressionResolveHelper {
   @Inject private NodeExecutionService nodeExecutionService;
 
   public String resolveExpressionsInYaml(String yamlString, String planExecutionId) {
-    Optional<NodeExecution> nodeExecution = nodeExecutionService.getByNodeIdentifier("pipeline", planExecutionId);
+    Optional<NodeExecution> nodeExecution = nodeExecutionService.getPipelineNodeExecutionWithProjections(
+        planExecutionId, NodeProjectionUtils.withAmbianceAndStatus);
 
     if (nodeExecution.isPresent()) {
       EngineExpressionEvaluator engineExpressionEvaluator =

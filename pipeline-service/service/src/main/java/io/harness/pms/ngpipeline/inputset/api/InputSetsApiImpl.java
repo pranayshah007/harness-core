@@ -7,8 +7,6 @@
 
 package io.harness.pms.ngpipeline.inputset.api;
 
-import static io.harness.pms.merger.helpers.InputSetTemplateHelper.removeRuntimeInputFromYaml;
-
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.accesscontrol.OrgIdentifier;
@@ -20,7 +18,6 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
-import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.pms.inputset.InputSetErrorWrapperDTOPMS;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
@@ -31,12 +28,12 @@ import io.harness.pms.ngpipeline.inputset.mappers.PMSInputSetElementMapper;
 import io.harness.pms.ngpipeline.inputset.mappers.PMSInputSetFilterHelper;
 import io.harness.pms.ngpipeline.inputset.service.PMSInputSetService;
 import io.harness.pms.pipeline.api.PipelinesApiUtils;
-import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.spec.server.pipeline.v1.InputSetsApi;
 import io.harness.spec.server.pipeline.v1.model.InputSetCreateRequestBody;
 import io.harness.spec.server.pipeline.v1.model.InputSetResponseBody;
 import io.harness.spec.server.pipeline.v1.model.InputSetUpdateRequestBody;
+import io.harness.utils.ApiUtils;
 import io.harness.utils.PageUtils;
 
 import com.google.inject.Inject;
@@ -60,27 +57,22 @@ import org.springframework.data.mongodb.core.query.Criteria;
 public class InputSetsApiImpl implements InputSetsApi {
   private final PMSInputSetService pmsInputSetService;
   private final InputSetsApiUtils inputSetsApiUtils;
-  private final PMSPipelineService pipelineService;
-  private final GitSyncSdkService gitSyncSdkService;
 
   @Override
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
   public Response createInputSet(InputSetCreateRequestBody requestBody, @ResourceIdentifier String pipeline,
-      @OrgIdentifier String org, @ProjectIdentifier String project, @AccountIdentifier String account,
-      String pipelineBranch, String pipelineRepo) {
+      @OrgIdentifier String org, @ProjectIdentifier String project, @AccountIdentifier String account) {
     if (requestBody == null) {
       throw new InvalidRequestException("Input Set create request body must not be null.");
     }
     GitAwareContextHelper.populateGitDetails(InputSetsApiUtils.populateGitCreateDetails(requestBody.getGitDetails()));
-    final String pipelineYaml = inputSetsApiUtils.getPipelineYaml(
-        account, org, project, pipeline, pipelineBranch, pipelineRepo, pipelineService, gitSyncSdkService);
-    String yaml = removeRuntimeInputFromYaml(pipelineYaml, requestBody.getInputSetYaml());
-    InputSetEntity entity = PMSInputSetElementMapper.toInputSetEntity(
-        InputSetsApiUtils.mapCreateToRequestInfoDTO(requestBody), account, org, project, pipeline, yaml);
+    String inputSetVersion = inputSetsApiUtils.inputSetVersion(account, requestBody.getInputSetYaml());
+    InputSetEntity entity = PMSInputSetElementMapper.toInputSetEntityFromVersion(
+        InputSetsApiUtils.mapCreateToRequestInfoDTO(requestBody), account, org, project, pipeline, inputSetVersion);
     log.info(String.format("Create input set with identifier %s for pipeline %s in project %s, org %s, account %s",
         entity.getIdentifier(), pipeline, project, org, account));
     InputSetResponseBody inputSetResponse =
-        inputSetsApiUtils.getInputSetResponse(pmsInputSetService.create(entity, pipelineBranch, pipelineRepo));
+        inputSetsApiUtils.getInputSetResponse(pmsInputSetService.create(entity, true));
     return Response.status(201).entity(inputSetResponse).build();
   }
 
@@ -97,15 +89,19 @@ public class InputSetsApiImpl implements InputSetsApi {
   @Override
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
   public Response getInputSet(@OrgIdentifier String org, @ProjectIdentifier String project, String inputSet,
-      @ResourceIdentifier String pipeline, @AccountIdentifier String account, String pipelineBranch,
-      String pipelineRepo, String branchGitX) {
-    GitAwareContextHelper.populateGitDetails(GitEntityInfo.builder().branch(branchGitX).build());
+      @ResourceIdentifier String pipeline, @AccountIdentifier String account, String branchGitX,
+      String parentEntityConnectorRef, String parentEntityRepoName) {
+    GitAwareContextHelper.populateGitDetails(GitEntityInfo.builder()
+                                                 .branch(branchGitX)
+                                                 .parentEntityConnectorRef(parentEntityConnectorRef)
+                                                 .parentEntityRepoName(parentEntityRepoName)
+                                                 .build());
     log.info(String.format("Retrieving input set with identifier %s for pipeline %s in project %s, org %s, account %s",
         inputSet, pipeline, project, org, account));
     Optional<InputSetEntity> optionalInputSetEntity = Optional.empty();
     try {
       optionalInputSetEntity =
-          pmsInputSetService.get(account, org, project, pipeline, inputSet, false, pipelineBranch, pipelineRepo);
+          pmsInputSetService.get(account, org, project, pipeline, inputSet, false, null, null, true);
     } catch (InvalidInputSetException e) {
       return Response.ok()
           .entity(inputSetsApiUtils.getInputSetResponseWithError(
@@ -136,7 +132,7 @@ public class InputSetsApiImpl implements InputSetsApi {
     Page<InputSetResponseBody> inputSetList = inputSetEntities.map(inputSetsApiUtils::getInputSetResponse);
 
     ResponseBuilder responseBuilder = Response.ok();
-    ResponseBuilder responseBuilderWithLinks = PipelinesApiUtils.addLinksHeader(responseBuilder,
+    ResponseBuilder responseBuilderWithLinks = ApiUtils.addLinksHeader(responseBuilder,
         String.format("/v1/orgs/%s/projects/%s/pipelines/%s/input-sets", org, project, pipeline),
         inputSetList.getContent().size(), page, limit);
     return responseBuilderWithLinks.entity(inputSetList.getContent()).build();
@@ -145,8 +141,8 @@ public class InputSetsApiImpl implements InputSetsApi {
   @Override
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
   public Response updateInputSet(InputSetUpdateRequestBody requestBody, @ResourceIdentifier String pipeline,
-      @OrgIdentifier String org, @ProjectIdentifier String project, String inputSet, @AccountIdentifier String account,
-      String pipelineBranch, String pipelineRepo) {
+      @OrgIdentifier String org, @ProjectIdentifier String project, String inputSet,
+      @AccountIdentifier String account) {
     if (requestBody == null) {
       throw new InvalidRequestException("Input Set update request body must not be null.");
     }
@@ -157,12 +153,10 @@ public class InputSetsApiImpl implements InputSetsApi {
     GitAwareContextHelper.populateGitDetails(InputSetsApiUtils.populateGitUpdateDetails(requestBody.getGitDetails()));
     log.info(String.format("Updating input set with identifier %s for pipeline %s in project %s, org %s, account %s",
         inputSet, pipeline, project, org, account));
-    final String pipelineYaml = inputSetsApiUtils.getPipelineYaml(
-        account, org, project, pipeline, pipelineBranch, pipelineRepo, pipelineService, gitSyncSdkService);
-    String yaml = removeRuntimeInputFromYaml(pipelineYaml, requestBody.getInputSetYaml());
-    InputSetEntity entity = PMSInputSetElementMapper.toInputSetEntity(
-        InputSetsApiUtils.mapUpdateToRequestInfoDTO(requestBody), account, org, project, pipeline, yaml);
-    InputSetEntity updatedEntity = pmsInputSetService.update(entity, ChangeType.MODIFY, pipelineBranch, pipelineRepo);
+    String inputSetVersion = inputSetsApiUtils.inputSetVersion(account, requestBody.getInputSetYaml());
+    InputSetEntity entity = PMSInputSetElementMapper.toInputSetEntityFromVersion(
+        InputSetsApiUtils.mapUpdateToRequestInfoDTO(requestBody), account, org, project, pipeline, inputSetVersion);
+    InputSetEntity updatedEntity = pmsInputSetService.update(ChangeType.MODIFY, entity, true);
     InputSetResponseBody inputSetResponse = inputSetsApiUtils.getInputSetResponse(updatedEntity);
     return Response.ok().entity(inputSetResponse).build();
   }

@@ -13,14 +13,17 @@ import static io.harness.beans.ExecutionStatus.REJECTED;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
 import static io.harness.rule.OwnerRule.GARVIT;
 import static io.harness.rule.OwnerRule.HINGER;
+import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.rule.OwnerRule.PRABU;
+import static io.harness.rule.OwnerRule.RAFAEL;
 import static io.harness.rule.OwnerRule.SRINIVAS;
 import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static software.wings.api.EnvStateExecutionData.Builder.anEnvStateExecutionData;
 import static software.wings.beans.Application.Builder.anApplication;
+import static software.wings.beans.Workflow.WorkflowBuilder.aWorkflow;
 import static software.wings.beans.alert.AlertType.DEPLOYMENT_FREEZE_EVENT;
-import static software.wings.beans.artifact.Artifact.Builder.anArtifact;
+import static software.wings.persistence.artifact.Artifact.Builder.anArtifact;
 import static software.wings.sm.WorkflowStandardParams.Builder.aWorkflowStandardParams;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.APP_ID;
@@ -79,8 +82,8 @@ import software.wings.beans.ExecutionArgs;
 import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
-import software.wings.beans.artifact.Artifact;
 import software.wings.common.NotificationMessageResolver;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.impl.WorkflowExecutionUpdate;
 import software.wings.service.impl.deployment.checks.DeploymentFreezeUtils;
 import software.wings.service.intfc.ArtifactService;
@@ -90,6 +93,7 @@ import software.wings.service.intfc.WorkflowService;
 import software.wings.service.intfc.sweepingoutput.SweepingOutputService;
 import software.wings.sm.ExecutionContextImpl;
 import software.wings.sm.ExecutionResponse;
+import software.wings.sm.StateExecutionContext;
 import software.wings.sm.StateExecutionInstance;
 import software.wings.sm.WorkflowStandardParams;
 
@@ -98,6 +102,7 @@ import com.google.inject.Injector;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -106,6 +111,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.slf4j.Logger;
 
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)
@@ -123,6 +129,7 @@ public class EnvStateTest extends WingsBaseTest {
   @Mock private DeploymentFreezeUtils deploymentFreezeUtils;
   @Mock private WorkflowExecutionUpdate workflowExecutionUpdate;
   @Mock private Injector injector;
+  @Mock private Logger logger;
 
   private static final WorkflowElement workflowElement =
       WorkflowElement.builder()
@@ -366,7 +373,7 @@ public class EnvStateTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldGetTimeout() {
     Integer timeoutMillis = envState.getTimeoutMillis();
-    assertThat(timeoutMillis).isEqualTo(EnvState.ENV_STATE_TIMEOUT_MILLIS);
+    assertThat(timeoutMillis).isEqualTo(EnvState.INFINITE_TIMEOUT);
   }
 
   @Test
@@ -399,7 +406,7 @@ public class EnvStateTest extends WingsBaseTest {
     when(workflowExecutionService.triggerOrchestrationExecution(
              eq(APP_ID), eq(null), eq(WORKFLOW_ID), eq(PIPELINE_WORKFLOW_EXECUTION_ID), any(), any()))
         .thenThrow(new DeploymentFreezeException(ErrorCode.DEPLOYMENT_GOVERNANCE_ERROR, Level.INFO, WingsException.USER,
-            ACCOUNT_ID, deploymentFreezeIds, "", false, false));
+            ACCOUNT_ID, deploymentFreezeIds, Collections.singletonList(""), "", false, false));
     when(workflowExecutionService.fetchWorkflowExecution(APP_ID, PIPELINE_WORKFLOW_EXECUTION_ID,
              WorkflowExecutionKeys.createdAt, WorkflowExecutionKeys.triggeredBy, WorkflowExecutionKeys.status))
         .thenReturn(WorkflowExecution.builder().build());
@@ -429,7 +436,7 @@ public class EnvStateTest extends WingsBaseTest {
     when(workflowExecutionService.triggerOrchestrationExecution(
              eq(APP_ID), eq(null), eq(WORKFLOW_ID), eq(PIPELINE_WORKFLOW_EXECUTION_ID), any(), any()))
         .thenThrow(new DeploymentFreezeException(ErrorCode.DEPLOYMENT_GOVERNANCE_ERROR, Level.INFO, WingsException.USER,
-            ACCOUNT_ID, Collections.emptyList(), "", true, false));
+            ACCOUNT_ID, Collections.emptyList(), Collections.emptyList(), "", true, false));
     when(workflowExecutionService.fetchWorkflowExecution(APP_ID, PIPELINE_WORKFLOW_EXECUTION_ID,
              WorkflowExecutionKeys.createdAt, WorkflowExecutionKeys.triggeredBy, WorkflowExecutionKeys.status))
         .thenReturn(WorkflowExecution.builder().build());
@@ -458,7 +465,7 @@ public class EnvStateTest extends WingsBaseTest {
     variableMap.put("var1", "${secrets.getValue('value')}");
     ExecutionArgs executionArgs = ExecutionArgs.builder().workflowVariables(variableMap).build();
     envState.renderWorkflowExpression(context, executionArgs, workflowVariableWithExpressionValue);
-    verify(context, times(0)).renderExpression(any());
+    verify(context, times(0)).renderExpression(any(String.class), any(StateExecutionContext.class));
   }
 
   @Test
@@ -471,6 +478,160 @@ public class EnvStateTest extends WingsBaseTest {
     variableMap.put("var1", "${workflow.variable.var1}");
     ExecutionArgs executionArgs = ExecutionArgs.builder().workflowVariables(variableMap).build();
     envState.renderWorkflowExpression(context, executionArgs, workflowVariableWithExpressionValue);
-    verify(context, times(1)).renderExpression(any());
+    verify(context, times(1)).renderExpression(any(String.class), any(StateExecutionContext.class));
+    assertThat(executionArgs.getWorkflowVariables()).isNotEmpty().hasSize(1);
+    assertThat(executionArgs.getWorkflowVariables().get("var1")).isEqualTo("${workflow.variable.var1}");
+  }
+
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void testRenderWorkflowExpression3() {
+    List<String> workflowVariableWithExpressionValue = new ArrayList<>();
+    workflowVariableWithExpressionValue.add("var1");
+    Map<String, String> variableMap = new HashMap<>();
+    variableMap.put("var1", "${workflow.variable.var1}");
+    when(context.renderExpression(any(String.class), any(StateExecutionContext.class)))
+        .thenReturn("${secretManager.obtain(\"test\", 1234)}");
+    ExecutionArgs executionArgs = ExecutionArgs.builder().workflowVariables(variableMap).build();
+    envState.renderWorkflowExpression(context, executionArgs, workflowVariableWithExpressionValue);
+    verify(context, times(1)).renderExpression(any(String.class), any(StateExecutionContext.class));
+    assertThat(executionArgs.getWorkflowVariables()).isNotEmpty().hasSize(1);
+    assertThat(executionArgs.getWorkflowVariables().get("var1")).isEqualTo("${workflow.variable.var1}");
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void checkDisableAssertionShouldReturnNullWhenVariableIsNotEmpty() {
+    String disableAssertion = "${empty(${workflow.variables.data})}";
+    Workflow workflow1 = aWorkflow().build();
+    WorkflowElement workflowElem = WorkflowElement.builder().name("wfElem").description("test wfElem").build();
+
+    WorkflowStandardParams stdParams =
+        WorkflowStandardParams.Builder.aWorkflowStandardParams().withWorkflowElement(workflowElem).build();
+    StateExecutionInstance stateEI = StateExecutionInstance.Builder.aStateExecutionInstance()
+                                         .stateName("STAGE 1")
+                                         .stateType("ENV_STATE")
+                                         .contextElement(stdParams)
+                                         .contextElements(new LinkedList<>(List.of(stdParams)))
+                                         .build();
+    envState.setDisableAssertion(disableAssertion);
+    envState.setWorkflowVariables(Map.of("data", "value", "data2", "value2"));
+    workflow1.setOrchestrationWorkflow(canaryOrchestrationWorkflow);
+    when(context.renderExpression(any(String.class), any(StateExecutionContext.class))).thenReturn("false");
+    when(context.evaluateExpression(eq(disableAssertion), any(StateExecutionContext.class))).thenReturn(false);
+    when(context.getStateExecutionInstance()).thenReturn(stateEI);
+    when(workflowService.readWorkflowWithoutServices(any(), any())).thenReturn(workflow1);
+    when(featureFlagService.isEnabled(
+             eq(FeatureName.SPG_ALLOW_USE_WORKFLOW_VARIABLES_TO_CONDITION_OF_SKIP_PIPELINE_STAGE), any()))
+        .thenReturn(true);
+    ExecutionResponse response = envState.checkDisableAssertion(context, workflowService, logger);
+    assertThat(response).isNull();
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void checkDisableAssertionShouldReturnSkippedWhenVariableIsEmpty() {
+    String disableAssertion = "${empty(${workflow.variables.data})}";
+    Workflow workflow1 = aWorkflow().build();
+    WorkflowElement workflowElem = WorkflowElement.builder().name("wfElem").description("test wfElem").build();
+
+    WorkflowStandardParams stdParams =
+        WorkflowStandardParams.Builder.aWorkflowStandardParams().withWorkflowElement(workflowElem).build();
+    StateExecutionInstance stateEI = StateExecutionInstance.Builder.aStateExecutionInstance()
+                                         .stateName("STAGE 1")
+                                         .stateType("ENV_STATE")
+                                         .contextElement(stdParams)
+                                         .contextElements(new LinkedList<>(List.of(stdParams)))
+                                         .build();
+    envState.setDisableAssertion(disableAssertion);
+    envState.setWorkflowVariables(Map.of("data2", "value2"));
+    workflow1.setOrchestrationWorkflow(canaryOrchestrationWorkflow);
+    when(context.renderExpression(any(String.class), any(StateExecutionContext.class))).thenReturn("true");
+    when(context.evaluateExpression(eq(disableAssertion), any(StateExecutionContext.class))).thenReturn(true);
+    when(context.getStateExecutionInstance()).thenReturn(stateEI);
+    when(workflowService.readWorkflowWithoutServices(any(), any())).thenReturn(workflow1);
+    when(featureFlagService.isEnabled(
+             eq(FeatureName.SPG_ALLOW_USE_WORKFLOW_VARIABLES_TO_CONDITION_OF_SKIP_PIPELINE_STAGE), any()))
+        .thenReturn(true);
+    ExecutionResponse response = envState.checkDisableAssertion(context, workflowService, logger);
+    assertThat(response.getErrorMessage())
+        .isEqualTo(
+            "ENV_STATE step in null has been skipped based on assertion expression [${empty(${workflow.variables.data})}]");
+    assertThat(response.getExecutionStatus().name()).isEqualTo(ExecutionStatus.SKIPPED.name());
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void checkDisableAssertionShouldReturnFailedWhenAssertionResultIsNotBoolean() {
+    String disableAssertion = "${empty(${workflow.variables.dat})}";
+    Workflow workflow1 = aWorkflow().build();
+    WorkflowElement workflowElem = WorkflowElement.builder().name("wfElem").description("test wfElem").build();
+
+    WorkflowStandardParams stdParams =
+        WorkflowStandardParams.Builder.aWorkflowStandardParams().withWorkflowElement(workflowElem).build();
+    StateExecutionInstance stateEI = StateExecutionInstance.Builder.aStateExecutionInstance()
+                                         .stateName("STAGE 1")
+                                         .stateType("ENV_STATE")
+                                         .contextElement(stdParams)
+                                         .contextElements(new LinkedList<>(List.of(stdParams)))
+                                         .build();
+    envState.setDisableAssertion(disableAssertion);
+    envState.setWorkflowVariables(Map.of("data2", "value2"));
+    workflow1.setOrchestrationWorkflow(canaryOrchestrationWorkflow);
+    when(context.renderExpression(any(String.class), any(StateExecutionContext.class))).thenReturn("true");
+    when(context.evaluateExpression(eq(disableAssertion), any(StateExecutionContext.class))).thenReturn("some");
+    when(context.getStateExecutionInstance()).thenReturn(stateEI);
+    when(workflowService.readWorkflowWithoutServices(any(), any())).thenReturn(workflow1);
+    when(featureFlagService.isEnabled(
+             eq(FeatureName.SPG_ALLOW_USE_WORKFLOW_VARIABLES_TO_CONDITION_OF_SKIP_PIPELINE_STAGE), any()))
+        .thenReturn(true);
+    ExecutionResponse response = envState.checkDisableAssertion(context, workflowService, logger);
+    assertThat(response.getErrorMessage())
+        .isEqualTo(
+            "Skip Assertion Evaluation Failed : Expression '${empty(${workflow.variables.dat})}' did not return a boolean value");
+    assertThat(response.getExecutionStatus().name()).isEqualTo(ExecutionStatus.FAILED.name());
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void checkDisableAssertionShouldReturnFailedWhenWorkflowIsNull() {
+    ExecutionResponse response = envState.checkDisableAssertion(context, workflowService, logger);
+    assertThat(response.getErrorMessage()).isEqualTo("Workflow does not exist");
+    assertThat(response.getExecutionStatus().name()).isEqualTo(ExecutionStatus.FAILED.name());
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void checkDisableAssertionShouldReturnFailedWhenDisableAssertionIsTrue() {
+    String disableAssertion = "true";
+    Workflow workflow1 = aWorkflow().build();
+    workflow1.setOrchestrationWorkflow(canaryOrchestrationWorkflow);
+    envState.setDisableAssertion(disableAssertion);
+    when(workflowService.readWorkflowWithoutServices(any(), any())).thenReturn(workflow1);
+    ExecutionResponse response = envState.checkDisableAssertion(context, workflowService, logger);
+    assertThat(response.getErrorMessage()).isEqualTo("ENV_STATE step in null has been skipped");
+    assertThat(response.getExecutionStatus().name()).isEqualTo(ExecutionStatus.SKIPPED.name());
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void checkDisableAssertionShouldReturnFailedWhenDisableAssertionIsEmpty() {
+    Workflow workflow1 = aWorkflow().build();
+    workflow1.setOrchestrationWorkflow(canaryOrchestrationWorkflow);
+    envState.setDisableAssertion("");
+    when(workflowService.readWorkflowWithoutServices(any(), any())).thenReturn(workflow1);
+    ExecutionResponse response = envState.checkDisableAssertion(context, workflowService, logger);
+    assertThat(response).isNull();
+
+    envState.setDisableAssertion(null);
+    response = envState.checkDisableAssertion(context, workflowService, logger);
+    assertThat(response).isNull();
   }
 }

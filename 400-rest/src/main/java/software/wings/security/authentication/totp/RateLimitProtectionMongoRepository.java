@@ -17,10 +17,10 @@ import io.harness.persistence.HPersistence;
 import software.wings.beans.User;
 
 import com.mongodb.BasicDBObject;
+import dev.morphia.AdvancedDatastore;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.util.ArrayList;
-import org.mongodb.morphia.AdvancedDatastore;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @OwnedBy(HarnessTeam.PL)
 public class RateLimitProtectionMongoRepository implements RateLimitProtectionRepository {

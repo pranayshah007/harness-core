@@ -34,6 +34,7 @@ import io.harness.spec.server.ng.v1.OrgProjectApi;
 import io.harness.spec.server.ng.v1.model.CreateProjectRequest;
 import io.harness.spec.server.ng.v1.model.ProjectResponse;
 import io.harness.spec.server.ng.v1.model.UpdateProjectRequest;
+import io.harness.utils.ApiUtils;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -85,7 +86,7 @@ public class OrgProjectApiImpl implements OrgProjectApi {
 
     ResponseBuilder responseBuilder = Response.ok();
 
-    ResponseBuilder responseBuilderWithLinks = projectApiUtils.addLinksHeader(
+    ResponseBuilder responseBuilderWithLinks = ApiUtils.addLinksHeader(
         responseBuilder, format("/v1/orgs/%s/projects", org), projectResponses.size(), page, limit);
 
     return responseBuilderWithLinks.entity(projectResponses).build();

@@ -14,14 +14,14 @@ import io.harness.ng.core.template.TemplateRetainVariablesResponse;
 
 @OwnedBy(HarnessTeam.CDC)
 public interface TemplateMergeService {
-  String getTemplateInputs(
-      String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, String versionLabel);
+  String getTemplateInputs(String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier,
+      String versionLabel, boolean loadFromCache);
 
-  TemplateMergeResponseDTO applyTemplatesToYaml(
-      String accountId, String orgId, String projectId, String yaml, boolean getMergedYamlWithTemplateField);
+  TemplateMergeResponseDTO applyTemplatesToYaml(String accountId, String orgId, String projectId, String yaml,
+      boolean getMergedYamlWithTemplateField, boolean loadFromCache);
 
-  TemplateMergeResponseDTO applyTemplatesToYamlV2(
-      String accountId, String orgId, String projectId, String yaml, boolean getMergedYamlWithTemplateField);
+  TemplateMergeResponseDTO applyTemplatesToYamlV2(String accountId, String orgId, String projectId, String yaml,
+      boolean getMergedYamlWithTemplateField, boolean loadFromCache);
 
   TemplateRetainVariablesResponse mergeTemplateInputs(String newTemplateInputs, String originalTemplateInputs);
 }

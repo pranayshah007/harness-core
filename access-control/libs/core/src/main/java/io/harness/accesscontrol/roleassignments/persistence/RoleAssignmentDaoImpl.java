@@ -66,7 +66,7 @@ public class RoleAssignmentDaoImpl implements RoleAssignmentDao {
   @Override
   public PageResponse<RoleAssignment> list(PageRequest pageRequest, RoleAssignmentFilter roleAssignmentFilter) {
     Pageable pageable = PageUtils.getPageRequest(pageRequest);
-    Criteria criteria = createCriteriaFromFilter(roleAssignmentFilter);
+    Criteria criteria = createCriteriaFromFilter(roleAssignmentFilter, true);
     Page<RoleAssignmentDBO> assignmentPage = roleAssignmentRepository.findAll(criteria, pageable);
     return PageUtils.getNGPageResponse(assignmentPage.map(RoleAssignmentDBOMapper::fromDBO));
   }
@@ -106,10 +106,10 @@ public class RoleAssignmentDaoImpl implements RoleAssignmentDao {
 
   @Override
   public long deleteMulti(RoleAssignmentFilter roleAssignmentFilter) {
-    return roleAssignmentRepository.deleteMulti(createCriteriaFromFilter(roleAssignmentFilter));
+    return roleAssignmentRepository.deleteMulti(createCriteriaFromFilter(roleAssignmentFilter, false));
   }
 
-  private Criteria createCriteriaFromFilter(RoleAssignmentFilter roleAssignmentFilter) {
+  private Criteria createCriteriaFromFilter(RoleAssignmentFilter roleAssignmentFilter, boolean hideInternal) {
     Criteria criteria = new Criteria();
 
     List<Criteria> scopeCriteria =
@@ -166,6 +166,11 @@ public class RoleAssignmentDaoImpl implements RoleAssignmentDao {
         criteria.and(RoleAssignmentDBOKeys.principalScopeLevel).in(roleAssignmentFilter.getPrincipalScopeLevelFilter());
       }
     }
+
+    if (hideInternal) {
+      criteria.and(RoleAssignmentDBOKeys.internal).ne(true);
+    }
+
     Criteria[] principalCriteria = roleAssignmentFilter.getPrincipalFilter()
                                        .stream()
                                        .map(principal

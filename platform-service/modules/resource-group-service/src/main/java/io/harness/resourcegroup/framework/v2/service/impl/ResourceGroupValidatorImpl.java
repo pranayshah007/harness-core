@@ -179,14 +179,14 @@ public class ResourceGroupValidatorImpl implements ResourceGroupValidator {
     ResourceFilter resourceFilter = resourceGroupDTO.getResourceFilter();
 
     if (ScopeUtils.isAccountScope(scopeOfResourceGroup)) {
-      resourceGroupDTO.getIncludedScopes().forEach(scope -> {
+      CollectionUtils.emptyIfNull(resourceGroupDTO.getIncludedScopes()).forEach(scope -> {
         includeStaticResources.set(isCurrentOnlyScopeSelector(scopeOfResourceGroup, scope));
         if (!scope.getAccountIdentifier().equals(scopeOfResourceGroup.getAccountIdentifier())) {
           throw new InvalidRequestException("Scope of included scopes does not match with the scope of resource group");
         }
       });
     } else if (ScopeUtils.isOrganizationScope(scopeOfResourceGroup)) {
-      resourceGroupDTO.getIncludedScopes().forEach(scope -> {
+      CollectionUtils.emptyIfNull(resourceGroupDTO.getIncludedScopes()).forEach(scope -> {
         includeStaticResources.set(isCurrentOnlyScopeSelector(scopeOfResourceGroup, scope));
         if (!(scopeOfResourceGroup.getAccountIdentifier().equals(scope.getAccountIdentifier())
                 && scopeOfResourceGroup.getOrgIdentifier().equals(scope.getOrgIdentifier()))) {
@@ -195,7 +195,7 @@ public class ResourceGroupValidatorImpl implements ResourceGroupValidator {
       });
     } else if (ScopeUtils.isProjectScope(scopeOfResourceGroup)) {
       includeStaticResources.set(true);
-      resourceGroupDTO.getIncludedScopes().forEach(scope -> {
+      CollectionUtils.emptyIfNull(resourceGroupDTO.getIncludedScopes()).forEach(scope -> {
         if (!scopeOfResourceGroup.equals(
                 Scope.of(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier()))) {
           throw new InvalidRequestException("Scope of included scopes does not match with the scope of resource group");

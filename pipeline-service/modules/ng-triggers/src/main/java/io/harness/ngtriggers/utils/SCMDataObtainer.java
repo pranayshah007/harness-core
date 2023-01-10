@@ -65,6 +65,7 @@ import io.harness.utils.ConnectorUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -81,6 +82,7 @@ public class SCMDataObtainer implements GitProviderBaseDataObtainer {
   private final TaskExecutionUtils taskExecutionUtils;
   private final ConnectorUtils connectorUtils;
   private final KryoSerializer kryoSerializer;
+  private final KryoSerializer referenceFalseKryoSerializer;
   public static final String GIT_URL_SUFFIX = ".git";
   public static final String PATH_SEPARATOR = "/";
   public static final String AZURE_REPO_BASE_URL = "azure.com";
@@ -91,11 +93,13 @@ public class SCMDataObtainer implements GitProviderBaseDataObtainer {
   @Inject ScmServiceClient scmServiceClient;
 
   @Inject
-  public SCMDataObtainer(
-      TaskExecutionUtils taskExecutionUtils, ConnectorUtils connectorUtils, KryoSerializer kryoSerializer) {
+  public SCMDataObtainer(TaskExecutionUtils taskExecutionUtils, ConnectorUtils connectorUtils,
+      KryoSerializer kryoSerializer,
+      @Named("referenceFalseKryoSerializer") KryoSerializer referenceFalseKryoSerializer) {
     this.taskExecutionUtils = taskExecutionUtils;
     this.connectorUtils = connectorUtils;
     this.kryoSerializer = kryoSerializer;
+    this.referenceFalseKryoSerializer = referenceFalseKryoSerializer;
   }
 
   @Override
@@ -275,7 +279,9 @@ public class SCMDataObtainer implements GitProviderBaseDataObtainer {
 
       if (BinaryResponseData.class.isAssignableFrom(responseData.getClass())) {
         BinaryResponseData binaryResponseData = (BinaryResponseData) responseData;
-        Object object = kryoSerializer.asInflatedObject(binaryResponseData.getData());
+        Object object = binaryResponseData.isUsingKryoWithoutReference()
+            ? referenceFalseKryoSerializer.asInflatedObject(binaryResponseData.getData())
+            : kryoSerializer.asInflatedObject(binaryResponseData.getData());
         if (ScmGitRefTaskResponseData.class.isAssignableFrom(object.getClass())) {
           ScmGitRefTaskResponseData scmGitRefTaskResponseData = (ScmGitRefTaskResponseData) object;
           try {

@@ -28,7 +28,8 @@ public class TriggerCatalogFilter {
   private final EnumMap<FeatureName, Set<Enum<?>>> enumTypeFeatureFlagMap = new EnumMap<>(FeatureName.class);
 
   public TriggerCatalogFilter() {
-    enumTypeFeatureFlagMap.put(CD_TRIGGER_CATALOG, Sets.newHashSet(TriggerCatalogType.NEXUS));
+    enumTypeFeatureFlagMap.put(
+        CD_TRIGGER_CATALOG, Sets.newHashSet(TriggerCatalogType.NEXUS2, TriggerCatalogType.NEXUS3));
   }
 
   public Predicate<TriggerCatalogType> filter(String accountId, FeatureName featureName) {

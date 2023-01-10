@@ -34,6 +34,7 @@ import io.kubernetes.client.openapi.models.CoreV1EventList;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
 import io.kubernetes.client.util.Watch;
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -80,7 +81,7 @@ public class K8sApiEventWatcher {
 
     try {
       String resourceVersion = null;
-      while (true) {
+      while (!Thread.currentThread().isInterrupted()) {
         if (resourceVersion == null) {
           CoreV1EventList coreV1EventList =
               coreV1Api.listNamespacedEvent(namespace, null, null, null, null, null, null, null, null, null, false);
@@ -115,11 +116,17 @@ public class K8sApiEventWatcher {
         }
       }
     } catch (ApiException e) {
+      if (e.getCause() instanceof InterruptedIOException) {
+        Thread.currentThread().interrupt();
+        return;
+      }
       ApiException ex = ExceptionMessageSanitizer.sanitizeException(e);
       String errorMessage =
           String.format("Failed to watch events in namespace %s. ", namespace) + ExceptionUtils.getMessage(ex);
       log.error(errorMessage, ex);
-      executionLogCallback.saveExecutionLog(errorMessage, LogLevel.ERROR);
+      if (!(ex.getCause() instanceof InterruptedIOException)) {
+        executionLogCallback.saveExecutionLog(errorMessage, LogLevel.ERROR);
+      }
     }
   }
 

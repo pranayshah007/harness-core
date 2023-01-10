@@ -28,7 +28,7 @@ import lombok.Data;
 public abstract class CdAbstractStepNode extends AbstractStepNode {
   List<FailureStrategyConfig> failureStrategies;
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
-  @Pattern(regexp = NGRegexValidatorConstants.TIMEOUT_PATTERN)
+  @Pattern(regexp = NGRegexValidatorConstants.TIMEOUT_PATTERN_WITHOUT_EXECUTION_INPUT)
   @VariableExpression(skipInnerObjectTraversal = true)
   ParameterField<Timeout> timeout;
 }

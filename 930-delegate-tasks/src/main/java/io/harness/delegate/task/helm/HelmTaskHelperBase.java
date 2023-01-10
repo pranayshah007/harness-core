@@ -630,7 +630,8 @@ public class HelmTaskHelperBase {
     if (isEmpty(chartVersion)) {
       return true;
     }
-    if (chartVersion.charAt(0) == '^') {
+    if (chartVersion.indexOf('+') == -1) {
+      // this means the version doesn't contain any metadata
       return true;
     }
     String chart = "";

@@ -10,8 +10,10 @@ package software.wings.sm.states;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.ExecutionStatus.FAILED;
 import static io.harness.beans.ExecutionStatus.REJECTED;
+import static io.harness.beans.ExecutionStatus.SKIPPED;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
 import static io.harness.beans.FeatureName.RESOLVE_DEPLOYMENT_TAGS_BEFORE_EXECUTION;
+import static io.harness.beans.FeatureName.SPG_ALLOW_USE_WORKFLOW_VARIABLES_TO_CONDITION_OF_SKIP_PIPELINE_STAGE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.ExecutionContext.MANAGER;
@@ -38,6 +40,7 @@ import io.harness.beans.RepairActionCode;
 import io.harness.beans.SweepingOutputInstance.Scope;
 import io.harness.beans.WorkflowType;
 import io.harness.context.ContextElementType;
+import io.harness.data.algorithm.HashGenerator;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.exception.DeploymentFreezeException;
 import io.harness.exception.ExceptionLogger;
@@ -49,6 +52,7 @@ import io.harness.logging.Misc;
 import io.harness.tasks.ResponseData;
 
 import software.wings.api.EnvStateExecutionData;
+import software.wings.api.SkipStateExecutionData;
 import software.wings.api.artifact.ServiceArtifactElement;
 import software.wings.api.artifact.ServiceArtifactElements;
 import software.wings.api.artifact.ServiceArtifactVariableElement;
@@ -68,8 +72,8 @@ import software.wings.beans.WorkflowExecution;
 import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
 import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.beans.appmanifest.HelmChart;
-import software.wings.beans.artifact.Artifact;
 import software.wings.common.NotificationMessageResolver;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.impl.WorkflowExecutionUpdate;
 import software.wings.service.impl.deployment.checks.DeploymentFreezeUtils;
 import software.wings.service.impl.workflow.WorkflowServiceHelper;
@@ -81,10 +85,12 @@ import software.wings.service.intfc.WorkflowExecutionService;
 import software.wings.service.intfc.WorkflowService;
 import software.wings.service.intfc.sweepingoutput.SweepingOutputService;
 import software.wings.sm.ExecutionContext;
+import software.wings.sm.ExecutionContextImpl;
 import software.wings.sm.ExecutionInterrupt;
 import software.wings.sm.ExecutionResponse;
 import software.wings.sm.ExecutionResponse.ExecutionResponseBuilder;
 import software.wings.sm.State;
+import software.wings.sm.StateExecutionContext;
 import software.wings.sm.StateType;
 import software.wings.sm.WorkflowStandardParams;
 
@@ -94,6 +100,7 @@ import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+import dev.morphia.annotations.Transient;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -108,8 +115,9 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.FieldNameConstants;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.jexl3.JexlException;
 import org.apache.commons.lang3.StringUtils;
-import org.mongodb.morphia.annotations.Transient;
+import org.slf4j.Logger;
 
 /**
  * A Env state to pause state machine execution.
@@ -122,9 +130,8 @@ import org.mongodb.morphia.annotations.Transient;
 @FieldNameConstants(innerTypeName = "EnvStateKeys")
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)
 public class EnvState extends State implements WorkflowState {
-  public static final Integer ENV_STATE_TIMEOUT_MILLIS = 7 * 24 * 60 * 60 * 1000;
-
   private static final Pattern secretNamePattern = Pattern.compile("\\$\\{secrets.getValue\\([^{}]+\\)}");
+  private static final Pattern secretManagerObtainPattern = Pattern.compile("\\$\\{secretManager.obtain\\([^{}]+\\)}");
 
   // NOTE: This field should no longer be used. It contains incorrect/stale values.
   @Attributes(required = true, title = "Environment") @Setter @Deprecated private String envId;
@@ -266,12 +273,23 @@ public class EnvState extends State implements WorkflowState {
       ExecutionContext context, ExecutionArgs executionArgs, List<String> workflowVariablesWithExpressionValue) {
     if (isNotEmpty(workflowVariablesWithExpressionValue)) {
       workflowVariablesWithExpressionValue.forEach(variable -> {
-        String secretVariable = executionArgs.getWorkflowVariables().get(variable);
-        Matcher matcher = secretNamePattern.matcher(secretVariable);
+        String variableValue = executionArgs.getWorkflowVariables().get(variable);
+        Matcher matcher = secretNamePattern.matcher(variableValue);
         if (!matcher.matches()) {
-          String value = context.renderExpression(executionArgs.getWorkflowVariables().get(variable));
-          executionArgs.getWorkflowVariables().put(variable,
-              value == null || "null".equals(value) ? executionArgs.getWorkflowVariables().get(variable) : value);
+          String renderedValue = context.renderExpression(variableValue,
+              StateExecutionContext.builder()
+                  .adoptDelegateDecryption(true)
+                  .expressionFunctorToken(HashGenerator.generateIntegerHash())
+                  .build());
+          // In case we are not able to resolve expression, keep the original expression in the value.
+          if (renderedValue == null || "null".equals(renderedValue)) {
+            renderedValue = variableValue;
+          }
+          // If rendered expression turns out to be a secret manager expression, keep the original expression
+          if (secretManagerObtainPattern.matcher(renderedValue).matches()) {
+            renderedValue = variableValue;
+          }
+          executionArgs.getWorkflowVariables().put(variable, renderedValue);
         }
       });
     }
@@ -599,7 +617,7 @@ public class EnvState extends State implements WorkflowState {
   @Override
   public Integer getTimeoutMillis() {
     if (super.getTimeoutMillis() == null) {
-      return ENV_STATE_TIMEOUT_MILLIS;
+      return INFINITE_TIMEOUT;
     }
     return super.getTimeoutMillis();
   }
@@ -661,5 +679,100 @@ public class EnvState extends State implements WorkflowState {
     public void setStatus(ExecutionStatus status) {
       this.status = status;
     }
+  }
+
+  @Override
+  public ExecutionResponse checkDisableAssertion(
+      ExecutionContextImpl context, WorkflowService workflowService, Logger log) {
+    String disableAssertion = getDisableAssertion();
+    String workflowId = getWorkflowId();
+    SkipStateExecutionData skipStateExecutionData = SkipStateExecutionData.builder().workflowId(workflowId).build();
+    Workflow workflow = workflowService.readWorkflowWithoutServices(context.getAppId(), workflowId);
+
+    if (workflow == null || workflow.getOrchestrationWorkflow() == null) {
+      return ExecutionResponse.builder()
+          .executionStatus(FAILED)
+          .errorMessage("Workflow does not exist")
+          .stateExecutionData(skipStateExecutionData)
+          .build();
+    }
+    if (disableAssertion != null && disableAssertion.equals("true")) {
+      return ExecutionResponse.builder()
+          .executionStatus(SKIPPED)
+          .errorMessage(getName() + " step in " + context.getPipelineStageName() + " has been skipped")
+          .stateExecutionData(skipStateExecutionData)
+          .build();
+    }
+
+    if (isNotEmpty(disableAssertion)) {
+      try {
+        if (context.getStateExecutionInstance() != null
+            && isNotEmpty(context.getStateExecutionInstance().getContextElements())) {
+          WorkflowStandardParams stdParams =
+              (WorkflowStandardParams) context.getStateExecutionInstance().getContextElements().get(0);
+
+          if (stdParams.getWorkflowElement() != null) {
+            stdParams.getWorkflowElement().setName(workflow.getName());
+            stdParams.getWorkflowElement().setDescription(workflow.getDescription());
+
+            if (featureFlagService.isEnabled(
+                    SPG_ALLOW_USE_WORKFLOW_VARIABLES_TO_CONDITION_OF_SKIP_PIPELINE_STAGE, context.getAccountId())) {
+              stdParams.getWorkflowElement().setVariables(new HashMap<>(this.getWorkflowVariables()));
+              stdParams.setWorkflowVariables(this.getWorkflowVariables());
+            }
+          }
+        }
+
+        Object resultObj = context.evaluateExpression(disableAssertion,
+            StateExecutionContext.builder()
+                .contextElements(context.getStateExecutionInstance().getContextElements())
+                .stateExecutionData(skipStateExecutionData)
+                .build());
+        //  rendering expression in order to have it tracked
+        context.renderExpression(disableAssertion);
+        if (!(resultObj instanceof Boolean)) {
+          return ExecutionResponse.builder()
+              .executionStatus(FAILED)
+              .errorMessage("Skip Assertion Evaluation Failed : Expression '" + disableAssertion
+                  + "' did not return a boolean value")
+              .stateExecutionData(skipStateExecutionData)
+              .build();
+        }
+
+        boolean assertionResult = (boolean) resultObj;
+        if (assertionResult) {
+          return ExecutionResponse.builder()
+              .executionStatus(SKIPPED)
+              .errorMessage(getName() + " step in " + context.getPipelineStageName()
+                  + " has been skipped based on assertion expression [" + disableAssertion + "]")
+              .stateExecutionData(skipStateExecutionData)
+              .build();
+        }
+      } catch (JexlException je) {
+        log.error("Skip Assertion Evaluation Failed", je);
+        String jexlError = Optional.ofNullable(je.getMessage()).orElse("");
+        if (jexlError.contains(":")) {
+          jexlError = jexlError.split(":")[1];
+        }
+        if (je instanceof JexlException.Variable
+            && ((JexlException.Variable) je).getVariable().equals("sweepingOutputSecrets")) {
+          jexlError = "Secret Variables defined in Script output of shell scripts cannot be used in assertions";
+        }
+        return ExecutionResponse.builder()
+            .executionStatus(FAILED)
+            .errorMessage("Skip Assertion Evaluation Failed : " + jexlError)
+            .stateExecutionData(skipStateExecutionData)
+            .build();
+      } catch (Exception e) {
+        log.error("Skip Assertion Evaluation Failed", e);
+        return ExecutionResponse.builder()
+            .executionStatus(FAILED)
+            .errorMessage("Skip Assertion Evaluation Failed : " + (e.getMessage() != null ? e.getMessage() : ""))
+            .stateExecutionData(skipStateExecutionData)
+            .build();
+      }
+    }
+
+    return null;
   }
 }

@@ -150,6 +150,15 @@ public class SecretManagementModuleTest extends CategoryTest {
     modules.add(new ProviderModule() {
       @Provides
       @Singleton
+      @Named("PRIVILEGED")
+      AccountClient getAccountClient() {
+        return mock(AccountClient.class);
+      }
+    });
+
+    modules.add(new ProviderModule() {
+      @Provides
+      @Singleton
       AccessControlClient getAccessControlClient() {
         return mock(AccessControlClient.class);
       }

@@ -31,6 +31,7 @@ import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.spec.server.resourcegroup.v1.AccountResourceGroupsApi;
 import io.harness.spec.server.resourcegroup.v1.model.CreateResourceGroupRequest;
 import io.harness.spec.server.resourcegroup.v1.model.ResourceGroupsResponse;
+import io.harness.utils.ApiUtils;
 
 import com.google.inject.Inject;
 import java.util.stream.Collectors;
@@ -84,12 +85,12 @@ public class AccountResourceGroupApiImpl implements AccountResourceGroupsApi {
   @NGAccessControlCheck(resourceType = RESOURCE_GROUP, permission = VIEW_RESOURCEGROUP_PERMISSION)
   public Response listResourceGroupsAcc(
       Integer page, Integer limit, String searchTerm, @AccountIdentifier String account, String sort, String order) {
-    PageRequest pageRequest = ResourceGroupApiUtils.getPageRequest(page, limit, sort, order);
+    PageRequest pageRequest = ApiUtils.getPageRequest(page, limit, sort, order);
     Page<ResourceGroupResponse> pageResponse =
         resourceGroupService.list(Scope.of(account, null, null), pageRequest, searchTerm);
     ResponseBuilder responseBuilder = Response.ok();
-    ResponseBuilder responseBuilderWithLinks = ResourceGroupApiUtils.addLinksHeader(
-        responseBuilder, "/v1/resource-groups", pageResponse.getContent().size(), page, limit);
+    ResponseBuilder responseBuilderWithLinks =
+        ApiUtils.addLinksHeader(responseBuilder, "/v1/resource-groups", pageResponse.getContent().size(), page, limit);
     return responseBuilderWithLinks
         .entity(pageResponse.getContent()
                     .stream()

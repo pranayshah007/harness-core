@@ -168,8 +168,12 @@ public class WatcherApplication {
     Runtime.getRuntime().addShutdownHook(new Thread(() -> {
       MessageService messageService = injector.getInstance(MessageService.class);
       messageService.closeChannel(WATCHER, processId);
-      log.info("My watch has ended");
+      log.info("Message service has been closed.");
+      injector.getInstance(ExecutorService.class).shutdown();
+      log.info("Executor services have been shut down.");
+      log.info("flushing logs");
       LogManager.shutdown();
+      log.info("My watch has ended");
     }));
 
     if (upgrade) {
@@ -181,11 +185,6 @@ public class WatcherApplication {
     WatcherService watcherService = injector.getInstance(WatcherService.class);
     watcherService.run(upgrade);
 
-    // This should run in case of upgrade flow otherwise never called
-    injector.getInstance(ExecutorService.class).shutdown();
-    injector.getInstance(ExecutorService.class).awaitTermination(5, TimeUnit.MINUTES);
-    log.info("Flushing logs");
-    LogManager.shutdown();
     System.exit(0);
   }
 }

@@ -49,12 +49,12 @@ public class ChronicleQueueMonitor extends AbstractScheduledService {
                            .map(File::listFiles)
                            .map(fileList -> stream(fileList).filter(file -> file.getName().endsWith(SUFFIX)).count())
                            .orElse(0L);
-      log.info("eventQueue fileCount: {}", fileCount);
-      if (fileCount >= THRESHOLD) {
-        log.warn("EventQueue file count on delegate is too high. Marking unhealthy");
+      log.debug("eventQueue fileCount: {}", fileCount);
+      if (fileCount > THRESHOLD) {
+        log.warn("EventQueue file count on delegate is too high. Marking unhealthy. Current count {}", fileCount);
         healthy = false;
       } else if (!healthy) {
-        log.info("Event queue recovered. Marking healthy.");
+        log.info("Event queue recovered. Marking healthy. Current count {}", fileCount);
         healthy = true;
       }
     } catch (Exception e) {

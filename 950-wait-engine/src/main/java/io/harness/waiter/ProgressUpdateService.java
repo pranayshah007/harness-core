@@ -22,6 +22,7 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
@@ -61,7 +62,9 @@ public class ProgressUpdateService implements Runnable {
           busyCorrelationIds.put(progressUpdate.getCorrelationId(), progressUpdate.getCorrelationId());
           continue;
         }
-        log.info("Starting to process progress response");
+        if (log.isDebugEnabled()) {
+          log.debug("Starting to process progress response");
+        }
 
         ProgressData progressData = progressUpdate.isUsingKryoWithoutReference()
             ? (ProgressData) referenceFalseKryoSerializer.asInflatedObject(progressUpdate.getProgressData())
@@ -73,7 +76,11 @@ public class ProgressUpdateService implements Runnable {
           injector.injectMembers(progressCallback);
           progressCallback.notify(progressUpdate.getCorrelationId(), progressData);
         }
-        log.info("Processed progress response");
+        if (log.isDebugEnabled()) {
+          log.debug("Processed progress response for correlationId - " + progressUpdate.getCorrelationId()
+              + " and waitInstanceIds - "
+              + waitInstances.stream().map(WaitInstance::getUuid).collect(Collectors.toList()));
+        }
         persistenceWrapper.delete(progressUpdate);
       } catch (Exception e) {
         log.error("Exception occurred while running progress service", e);

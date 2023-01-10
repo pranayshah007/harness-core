@@ -10,7 +10,7 @@ package io.harness.cvng.client;
 import static io.harness.ng.core.CorrelationContext.getCorrelationIdInterceptor;
 import static io.harness.request.RequestContextFilter.getRequestContextInterceptor;
 
-import io.harness.AuthorizationServiceHeader;
+import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.cvng.core.NGManagerServiceConfig;
 import io.harness.exception.GeneralException;
 import io.harness.network.Http;

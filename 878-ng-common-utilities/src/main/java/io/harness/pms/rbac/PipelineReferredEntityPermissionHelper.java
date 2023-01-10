@@ -21,26 +21,39 @@ public class PipelineReferredEntityPermissionHelper {
   private final String PERMISSION_PLACE_HOLDER = "core_%s_%s";
 
   // Have created two set deliberately since environment group permission name does not contains underscore [_]
-  public final Map<EntityType, String> coreEntityTypeToPermissionEntityName = Maps.of(EntityType.CONNECTORS,
-      NGResourceType.CONNECTOR, EntityType.SECRETS, NGResourceType.SECRETS, EntityType.SERVICE, NGResourceType.SERVICE,
-      EntityType.ENVIRONMENT, NGResourceType.ENVIRONMENT, EntityType.FILES, NGResourceType.FILE,
-      EntityType.ENVIRONMENT_GROUP, "environmentgroup", EntityType.TEMPLATE, "template");
+  public final Map<EntityType, String> coreEntityTypeToPermissionEntityName =
+      Maps.of(EntityType.CONNECTORS, NGResourceType.CONNECTOR, EntityType.SECRETS, NGResourceType.SECRETS,
+          EntityType.SERVICE, NGResourceType.SERVICE, EntityType.ENVIRONMENT, NGResourceType.ENVIRONMENT,
+          EntityType.FILES, NGResourceType.FILE, EntityType.ENVIRONMENT_GROUP, "environmentgroup", EntityType.TEMPLATE,
+          "template", EntityType.PIPELINES, NGResourceType.PIPELINE);
 
-  public final Map<EntityType, String> coreEntityTypeToResourceTypeName = Maps.of(EntityType.CONNECTORS,
-      NGResourceType.CONNECTOR, EntityType.SECRETS, NGResourceType.SECRETS, EntityType.SERVICE, NGResourceType.SERVICE,
-      EntityType.ENVIRONMENT, NGResourceType.ENVIRONMENT, EntityType.FILES, NGResourceType.FILE,
-      EntityType.ENVIRONMENT_GROUP, NGResourceType.ENVIRONMENT_GROUP, EntityType.TEMPLATE, "TEMPLATE");
+  public final Map<EntityType, String> coreEntityTypeToResourceTypeName =
+      Maps.of(EntityType.CONNECTORS, NGResourceType.CONNECTOR, EntityType.SECRETS, NGResourceType.SECRETS,
+          EntityType.SERVICE, NGResourceType.SERVICE, EntityType.ENVIRONMENT, NGResourceType.ENVIRONMENT,
+          EntityType.FILES, NGResourceType.FILE, EntityType.ENVIRONMENT_GROUP, NGResourceType.ENVIRONMENT_GROUP,
+          EntityType.TEMPLATE, "TEMPLATE", EntityType.PIPELINES, NGResourceType.PIPELINE);
 
-  public String getPermissionForGivenType(EntityType entityType, boolean isNew) {
-    String permission = "access";
-    if (isNew) {
-      permission = "edit";
-    }
+  public String getPermissionForGivenType(EntityType entityType, boolean isNewEntity) {
+    String permission = calculatePermission(entityType, isNewEntity);
     if (coreEntityTypeToPermissionEntityName.containsKey(entityType)) {
       return String.format(
           PERMISSION_PLACE_HOLDER, coreEntityTypeToPermissionEntityName.get(entityType).toLowerCase(), permission);
     }
     throw new UnsupportedOperationException();
+  }
+
+  /*
+    Order of if else condition is important here. Do not change the order
+     */
+  private String calculatePermission(EntityType entityType, boolean isNewEntity) {
+    // This change is for Pipeline Stage to check execute permission of child pipeline
+    if (entityType.equals(EntityType.PIPELINES)) {
+      return "execute";
+    } else if (isNewEntity) { // permission for new Entity is edit
+      return "edit";
+    }
+
+    return "access";
   }
 
   public String getEntityName(EntityType entityType) {

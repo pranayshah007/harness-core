@@ -13,6 +13,7 @@ import static io.harness.rule.OwnerRule.ABHINAV;
 import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.ALEXEI;
 import static io.harness.rule.OwnerRule.DEEPAK;
+import static io.harness.rule.OwnerRule.MEET;
 import static io.harness.rule.OwnerRule.ROHIT_KUMAR;
 import static io.harness.rule.OwnerRule.RUSHABH;
 import static io.harness.rule.OwnerRule.VARDAN_BANSAL;
@@ -42,6 +43,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.YamlException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.git.model.ChangeType;
 import io.harness.rule.Owner;
@@ -49,6 +51,7 @@ import io.harness.rule.Owner;
 import software.wings.WingsBaseTest;
 import software.wings.audit.AuditHeader;
 import software.wings.beans.Application;
+import software.wings.beans.Service;
 import software.wings.beans.yaml.Change;
 import software.wings.beans.yaml.ChangeContext;
 import software.wings.beans.yaml.GitFileChange;
@@ -60,6 +63,7 @@ import software.wings.service.impl.yaml.handler.BaseYamlHandler;
 import software.wings.service.impl.yaml.handler.YamlHandlerFactory;
 import software.wings.service.impl.yaml.handler.app.ApplicationYamlHandler;
 import software.wings.service.impl.yaml.handler.tag.HarnessTagYamlHelper;
+import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.AuditService;
 import software.wings.service.intfc.yaml.YamlGitService;
 import software.wings.yaml.YamlOperationResponse;
@@ -100,6 +104,7 @@ public class YamlServiceImplTest extends WingsBaseTest {
   @Mock ApplicationYamlHandler applicationYamlHandler;
   @Mock BaseYamlHandler baseYamlHandler;
   @Mock HarnessTagYamlHelper harnessTagYamlHelper;
+  @Mock AppService appService;
 
   @Before
   public void setUp() {
@@ -436,5 +441,73 @@ public class YamlServiceImplTest extends WingsBaseTest {
             ChangeContext.Builder.aChangeContext().withChange(change1).build());
 
     assertThat(changeContextErrorMap.changeContextList).isEqualTo(expected);
+  }
+
+  @Test
+  @Owner(developers = MEET)
+  @Category(UnitTests.class)
+  public void testValidateServiceInPath() {
+    Change change = Change.Builder.aFileChange().withAccountId("accountId1").build();
+    String yamlFilePath1 = "Setup/Applications/app1/Environments/env1/Values/Services/service1/Index.yaml";
+    Application app1 = Application.Builder.anApplication().appId("appId1").build();
+    Service service1 = Service.builder().appId("appId1").build();
+    String yamlFilePath2 = "Setup/Applications/app2/Environments/env2/Values/Services/service2/abc.yaml";
+    Application app2 = Application.Builder.anApplication().appId("appId2").build();
+    Service service2 = Service.builder().appId("appId2").build();
+    String yamlFilePath3 = "Setup/Applications/app3/Environments/env3/Values/Services/service3/values.yaml";
+    Application app3 = Application.Builder.anApplication().appId("appId3").build();
+    Service service3 = Service.builder().appId("appId3").build();
+    String yamlFilePath4 = "Setup/Applications/app4/Services/service4/Index.yaml";
+    Application app4 = Application.Builder.anApplication().appId("appId4").build();
+    Service service4 = Service.builder().appId("appId4").build();
+    String yamlFilePath5 = "Setup/Applications/app5/Environments/env3/Values/Services/service5/values.yaml";
+    Application app5 = Application.Builder.anApplication().appId("appId5").build();
+    Service service5 = Service.builder().appId("appId5").build();
+
+    when(featureFlagService.isEnabled(any(), any())).thenReturn(true);
+    when(appService.getAppByName(any(), any())).thenReturn(app1);
+    when(yamlHelper.getServiceNameForFileOverride(yamlFilePath1)).thenReturn("service1");
+    when(yamlHelper.getServiceByName("appId1", "service1")).thenReturn(service1);
+    when(yamlHelper.getAppName(yamlFilePath1)).thenReturn("app1");
+
+    yamlService.validateServiceInPath(yamlFilePath1, change);
+    verify(yamlHelper, times(1)).getAppName(yamlFilePath1);
+    verify(yamlHelper, times(1)).getServiceNameForFileOverride(yamlFilePath1);
+    verify(yamlHelper, times(1)).getServiceByName("appId1", "service1");
+    verify(appService, times(1)).getAppByName("accountId1", "app1");
+
+    yamlService.validateServiceInPath(yamlFilePath2, change);
+    verify(yamlHelper, times(0)).getAppName(yamlFilePath2);
+    verify(yamlHelper, times(0)).getServiceNameForFileOverride(yamlFilePath2);
+    verify(yamlHelper, times(0)).getServiceByName("appId2", "service2");
+    verify(appService, times(0)).getAppByName("accountId1", "app2");
+
+    when(appService.getAppByName(any(), any())).thenReturn(app3);
+    when(yamlHelper.getServiceNameForFileOverride(yamlFilePath3)).thenReturn("service3");
+    when(yamlHelper.getServiceByName("appId3", "service3")).thenReturn(service3);
+    when(yamlHelper.getAppName(yamlFilePath3)).thenReturn("app3");
+
+    yamlService.validateServiceInPath(yamlFilePath3, change);
+    verify(yamlHelper, times(1)).getAppName(yamlFilePath3);
+    verify(yamlHelper, times(1)).getServiceNameForFileOverride(yamlFilePath3);
+    verify(yamlHelper, times(1)).getServiceByName("appId3", "service3");
+    verify(appService, times(1)).getAppByName("accountId1", "app3");
+
+    when(appService.getAppByName(any(), any())).thenReturn(app4);
+    when(yamlHelper.getServiceNameForFileOverride(yamlFilePath4)).thenReturn("service4");
+    when(yamlHelper.getServiceByName("appId4", "service4")).thenReturn(service4);
+    when(yamlHelper.getAppName(yamlFilePath4)).thenReturn("app4");
+
+    yamlService.validateServiceInPath(yamlFilePath4, change);
+    verify(yamlHelper, times(0)).getServiceByName("appId4", "service4");
+
+    when(appService.getAppByName(any(), any())).thenReturn(app5);
+    when(yamlHelper.getServiceNameForFileOverride(yamlFilePath5)).thenReturn("service5");
+    when(yamlHelper.getAppName(yamlFilePath5)).thenReturn("app5");
+    when(yamlHelper.getServiceByName("appId5", "service5")).thenReturn(null);
+
+    assertThatThrownBy(() -> yamlService.validateServiceInPath(yamlFilePath5, change))
+        .hasMessage("Service with name service5 not found in app app5.")
+        .isInstanceOf(YamlException.class);
   }
 }

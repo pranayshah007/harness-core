@@ -19,12 +19,10 @@ import io.harness.category.element.UnitTests;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanService;
 import io.harness.execution.NodeExecution;
-import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.rule.Owner;
 
-import com.google.common.collect.Sets;
 import java.util.Collections;
 import java.util.List;
 import org.junit.Before;
@@ -54,9 +52,8 @@ public class NodeExecutionsCacheTest extends CategoryTest {
   public void testFindAllChildrenUsingRequiredProjection() {
     doReturn(Collections.singletonList(NodeExecution.builder().identifier("test").status(Status.ABORTED).build()))
         .when(nodeExecutionService)
-        .findAllChildrenWithStatusIn("PLAN_EXECUTION_ID", "PARENT_ID", null, false, true,
-            Sets.newHashSet(NodeExecutionKeys.parentId, NodeExecutionKeys.status, NodeExecutionKeys.stepType),
-            Collections.emptySet());
+        .findAllChildrenWithStatusInAndWithoutOldRetries(
+            "PLAN_EXECUTION_ID", "PARENT_ID", null, false, Collections.emptySet());
     List<Status> allChildren = nodeExecutionsCache.findAllTerminalChildrenStatusOnly("PARENT_ID");
     assertThat(allChildren.size()).isEqualTo(1);
   }

@@ -24,7 +24,8 @@ import lombok.experimental.SuperBuilder;
       @JsonSubTypes.Type(value = ErrorBudgetBurnRateConditionSpec.class, name = "ErrorBudgetBurnRate"),
       @JsonSubTypes.Type(value = ChangeImpactConditionSpec.class, name = "ChangeImpact"),
       @JsonSubTypes.Type(value = HealthScoreConditionSpec.class, name = "HealthScore"),
-      @JsonSubTypes.Type(value = ChangeObservedConditionSpec.class, name = "ChangeObserved")
+      @JsonSubTypes.Type(value = ChangeObservedConditionSpec.class, name = "ChangeObserved"),
+      @JsonSubTypes.Type(value = ErrorTrackingConditionSpec.class, name = "CodeErrors")
 })
 public abstract class NotificationRuleConditionSpec {
   @JsonIgnore public abstract NotificationRuleConditionType getType();

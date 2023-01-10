@@ -1,0 +1,97 @@
+{
+  "data": {
+    "pairs": [
+      {
+        "request": {
+          "path": [
+            {
+              "matcher": "exact",
+              "value": "/api/v1/metrics/results"
+            }
+          ],
+          "method": [
+            {
+              "matcher": "exact",
+              "value": "POST"
+            }
+          ],
+          "destination": [
+            {
+              "matcher": "exact",
+              "value": "api.in.sumologic.com"
+            }
+          ],
+          "scheme": [
+            {
+              "matcher": "exact",
+              "value": "https"
+            }
+          ],
+          "body": [
+            {
+              "matcher": "json",
+              "value": "{\n    \"query\": [{\"query\":\"metric=Mem_UsedPercent | quantize to 1m using avg\"}],\n    \"startTime\":1668431100000,\n    \"endTime\":1668431400000\n}"
+            }
+          ]
+        },
+        "response": {
+          "status": 200,
+          "body": "{\"error\":false,\"errorMessage\":null,\"errorInstanceId\":null,\"errorKey\":null,\"keyedErrors\":[],\"response\":[{\"rowId\":\"\",\"results\":[{\"metric\":{\"dimensions\":[{\"key\":\"_source\",\"value\":\"d89f9c9b3f9c-7ea9ab09-04f1-46e1-9aa6-8441e8a5be83\"},{\"key\":\"_sourceName\",\"value\":\"OTC Metric Input\"},{\"key\":\"host\",\"value\":\"d89f9c9b3f9c\"},{\"key\":\"_sourceCategory\",\"value\":\"OTC Metric Input\"},{\"key\":\"_collectorId\",\"value\":\"0000000006082739\"},{\"key\":\"_sourceId\",\"value\":\"0000000000000000\"},{\"key\":\"_sourceHost\",\"value\":\"d89f9c9b3f9c\"},{\"key\":\"_collector\",\"value\":\"d89f9c9b3f9c-7ea9ab09-04f1-46e1-9aa6-8441e8a5be83\"},{\"key\":\"metric\",\"value\":\"Mem_UsedPercent\"}],\"algoId\":1},\"horAggs\":{\"min\":13.271006880347823,\"max\":13.290952290081464,\"avg\":13.280716920563615,\"sum\":66.40358460281807,\"count\":5,\"latest\":13.288262115376487},\"datapoints\":{\"timestamp\":[1668431100000,1668431160000,1668431220000,1668431280000,1668431340000],\"value\":[13.271550535090656,13.290952290081464,13.271006880347823,13.281812781921635,13.288262115376487],\"outlierParams\":[{\"anomalyScore\":0.0,\"baseline\":0.0,\"unit\":0.0,\"lowerBound\":0.0,\"upperBound\":0.0,\"isOutlier\":false,\"outlier\":false},{\"anomalyScore\":0.0,\"baseline\":0.0,\"unit\":0.0,\"lowerBound\":0.0,\"upperBound\":0.0,\"isOutlier\":false,\"outlier\":false},{\"anomalyScore\":0.0,\"baseline\":0.0,\"unit\":0.0,\"lowerBound\":0.0,\"upperBound\":0.0,\"isOutlier\":false,\"outlier\":false},{\"anomalyScore\":0.0,\"baseline\":0.0,\"unit\":0.0,\"lowerBound\":0.0,\"upperBound\":0.0,\"isOutlier\":false,\"outlier\":false},{\"anomalyScore\":0.0,\"baseline\":0.0,\"unit\":0.0,\"lowerBound\":0.0,\"upperBound\":0.0,\"isOutlier\":false,\"outlier\":false}],\"max\":[13.271550535090656,13.290952290081464,13.271006880347823,13.281812781921635,13.288262115376487],\"min\":[13.271550535090656,13.290952290081464,13.271006880347823,13.281812781921635,13.288262115376487],\"avg\":[13.271550535090656,13.290952290081464,13.271006880347823,13.281812781921635,13.288262115376487],\"count\":[1,1,1,1,1],\"isFilled\":[false,false,false,false,false]}},{\"metric\":{\"dimensions\":[{\"key\":\"_source\",\"value\":\"f3c9b643c7a0-a21e8df9-cbb8-4e37-b7a9-11b06b170cd4\"},{\"key\":\"_sourceName\",\"value\":\"OTC Metric Input\"},{\"key\":\"host\",\"value\":\"f3c9b643c7a0\"},{\"key\":\"_sourceCategory\",\"value\":\"OTC Metric Input\"},{\"key\":\"_collectorId\",\"value\":\"000000000608273B\"},{\"key\":\"_sourceId\",\"value\":\"0000000000000000\"},{\"key\":\"_sourceHost\",\"value\":\"f3c9b643c7a0\"},{\"key\":\"_collector\",\"value\":\"f3c9b643c7a0-a21e8df9-cbb8-4e37-b7a9-11b06b170cd4\"},{\"key\":\"metric\",\"value\":\"Mem_UsedPercent\"}],\"algoId\":1},\"horAggs\":{\"min\":13.271064300062234,\"max\":13.290952290081464,\"avg\":13.280728404506496,\"sum\":66.40364202253248,\"count\":5,\"latest\":13.288262115376487},\"datapoints\":{\"timestamp\":[1668431100000,1668431160000,1668431220000,1668431280000,1668431340000],\"value\":[13.271550535090656,13.290952290081464,13.271064300062234,13.281812781921635,13.288262115376487],\"outlierParams\":[{\"anomalyScore\":0.0,\"baseline\":0.0,\"unit\":0.0,\"lowerBound\":0.0,\"upperBound\":0.0,\"isOutlier\":false,\"outlier\":false},{\"anomalyScore\":0.0,\"baseline\":0.0,\"unit\":0.0,\"lowerBound\":0.0,\"upperBound\":0.0,\"isOutlier\":false,\"outlier\":false},{\"anomalyScore\":0.0,\"baseline\":0.0,\"unit\":0.0,\"lowerBound\":0.0,\"upperBound\":0.0,\"isOutlier\":false,\"outlier\":false},{\"anomalyScore\":0.0,\"baseline\":0.0,\"unit\":0.0,\"lowerBound\":0.0,\"upperBound\":0.0,\"isOutlier\":false,\"outlier\":false},{\"anomalyScore\":0.0,\"baseline\":0.0,\"unit\":0.0,\"lowerBound\":0.0,\"upperBound\":0.0,\"isOutlier\":false,\"outlier\":false}],\"max\":[13.271550535090656,13.290952290081464,13.271064300062234,13.281812781921635,13.288262115376487],\"min\":[13.271550535090656,13.290952290081464,13.271064300062234,13.281812781921635,13.288262115376487],\"avg\":[13.271550535090656,13.290952290081464,13.271064300062234,13.281812781921635,13.288262115376487],\"count\":[1,1,1,1,1],\"isFilled\":[false,false,false,false,false]}}]}],\"queryInfo\":{\"startTime\":1668431100000,\"endTime\":1668431400000,\"desiredQuantizationInSecs\":{\"empty\":false,\"defined\":true},\"actualQuantizationInSecs\":60,\"sessionIdStr\":\"\"}}",
+          "encodedBody": false,
+          "headers": {
+            "Cache-Control": [
+              "no-cache, no-store, max-age=0, must-revalidate"
+            ],
+            "Connection": [
+              "keep-alive"
+            ],
+            "Content-Type": [
+              "application/json;charset=utf-8"
+            ],
+            "Date": [
+              "Mon, 28 Nov 2022 18:16:08 GMT"
+            ],
+            "Expires": [
+              "0"
+            ],
+            "Hoverfly": [
+              "Was-Here"
+            ],
+            "Pragma": [
+              "no-cache"
+            ],
+            "Set-Cookie": [
+              "AWSALB=1IxvyGcl5YH3N+LurT4cwCEQxhna6qdt1QkGx2ai64LX60MxfBol8LCu8zooHcHza2Mah7PirBNQ9jQDY2eIC1gbfmMjAvEe8OMa18HOxL0zrhrRQ+DMY/pQxaVc; Expires=Mon, 05 Dec 2022 18:16:08 GMT; Path=/",
+              "AWSALBCORS=1IxvyGcl5YH3N+LurT4cwCEQxhna6qdt1QkGx2ai64LX60MxfBol8LCu8zooHcHza2Mah7PirBNQ9jQDY2eIC1gbfmMjAvEe8OMa18HOxL0zrhrRQ+DMY/pQxaVc; Expires=Mon, 05 Dec 2022 18:16:08 GMT; Path=/; SameSite=None; Secure"
+            ],
+            "Strict-Transport-Security": [
+              "max-age=15552000"
+            ],
+            "Vary": [
+              "Accept-Encoding, User-Agent"
+            ],
+            "X-Content-Type-Options": [
+              "nosniff"
+            ],
+            "X-Frame-Options": [
+              "DENY"
+            ],
+            "X-Xss-Protection": [
+              "1; mode=block"
+            ]
+          },
+          "templated": false
+        }
+      }
+    ],
+    "globalActions": {
+      "delays": [],
+      "delaysLogNormal": []
+    }
+  },
+  "meta": {
+    "schemaVersion": "v5",
+    "hoverflyVersion": "v1.4.0",
+    "timeExported": "2022-11-28T23:46:25+05:30"
+  }
+}

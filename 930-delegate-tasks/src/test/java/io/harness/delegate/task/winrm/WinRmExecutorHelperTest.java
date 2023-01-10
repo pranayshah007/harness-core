@@ -71,19 +71,14 @@ public class WinRmExecutorHelperTest extends CategoryTest {
     String result = WinRmExecutorHelper.prepareCommandForCopyingToRemoteFile(
         "encodedScriptFilePath", "psScriptFile", "powershell", Collections.emptyList(), "executableFile");
     assertThat(result).isNotEmpty();
-    assertThat(result).isEqualTo(
-        "powershell Invoke-Command  -command {[IO.File]::AppendAllText(\\\"psScriptFile\\\", \\\""
-        + "try{`n"
-        + "`t`$encoded = get-content encodedScriptFilePath`n"
-        + "`t`$decoded = [System.Text.Encoding]::Unicode.GetString([System.Convert]::FromBase64String(`$encoded));`n"
-        + "`tSet-Content -Path executableFile -Value `$decoded -Encoding Unicode`n"
-        + "`tInvoke-Expression -Command executableFile`n}`n"
-        + "catch`n{`n"
-        + "`tWrite-Error `$_;`n"
-        + "`texit 1`n}`n"
-        + "finally`n{`n"
-        + "`tif (Test-Path executableFile) {Remove-Item -Force -Path executableFile}"
-        + "`tif (Test-Path encodedScriptFilePath) {Remove-Item -Force -Path encodedScriptFilePath}`n}\\\" ) }");
+    assertThat(result).isEqualTo("powershell Invoke-Command  -command {[IO.File]::AppendAllText(\\\"psScriptFile\\\","
+        + " \\\"`$encodedScriptFile = [Environment]::ExpandEnvironmentVariables(`\\\"encodedScriptFilePath`\\\");`n"
+        + "`$scriptExecutionFile = [Environment]::ExpandEnvironmentVariables(`\\\"executableFile`\\\");`n"
+        + "`$encoded = get-content `$encodedScriptFile`n"
+        + "`$decoded = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String(`$encoded));`n"
+        + "`$expanded = [Environment]::ExpandEnvironmentVariables(`$decoded);`n"
+        + "Set-Content -Path `$scriptExecutionFile` -Value `$expanded -Encoding Unicode`n"
+        + "if (Test-Path `$encodedScriptFile) {Remove-Item -Force -Path `$encodedScriptFile}\\\" ) }");
   }
 
   @Test

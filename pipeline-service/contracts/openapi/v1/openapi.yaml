@@ -1,20 +1,20 @@
 openapi: 3.0.0
 x-stoplight:
-  id: dlx56eyqljwug
+  id: uo2r4f4vt18on
 info:
   title: Harness NextGen Software Delivery Platform API Reference
-  version: '1.0'
+  version: '1'
   description: This is the Open Api Spec 3 for the Pipeline Service. This is under active development. Beware of the breaking change with respect to the generated code stub.
   contact:
     email: contact@harness.io
 servers:
-  - url: 'http://api.harness.io'
-    description: Harness host url
+  - url: 'https://api.harness.io'
+    description: Harness host URL.
 tags:
   - name: Pipelines
     description: This contains APIs for performing CRUD operations on Pipelines.
   - name: Input Sets
-    description: This contains APIs for performing CRUD operations on Input Sets.
+    description: This contains APIs for Input Sets.
 paths:
   '/v1/orgs/{org}/projects/{project}/pipelines':
     parameters:
@@ -162,15 +162,23 @@ paths:
           name: repo_name
           description: Name of the repository (for Git Experience).
         - schema:
-            type: boolean
+            type: string
+            default: 'false'
           in: header
           name: Load-From-Cache
           description: Flag to enable loading the remote pipeline from git or git cache
         - schema:
             type: boolean
+            default: false
           in: query
           name: load_from_fallback_branch
           description: Flag to load the pipeline from the created non default branch
+        - schema:
+            type: boolean
+            default: 'false'
+          in: query
+          name: validate_async
+          description: Flag to tell whether to start an asynchronous validation process or not
       tags:
         - Pipelines
       responses:
@@ -314,16 +322,6 @@ paths:
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
         - $ref: '#/components/parameters/PipelineInputSetParam'
-        - schema:
-            type: string
-          in: query
-          name: pipeline_branch
-          description: Git branch of the Pipeline for which the Input Set is to be created.
-        - schema:
-            type: string
-          in: query
-          name: pipeline_repo
-          description: Git repository identifier of the Pipeline for which the Input Set is to be created.
       requestBody:
         $ref: '#/components/requestBodies/InputSetCreateRequestBody'
     get:
@@ -364,17 +362,17 @@ paths:
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
         - $ref: '#/components/parameters/PipelineInputSetParam'
-        - schema:
-            type: string
-          in: query
-          name: pipeline_branch
-          description: Git branch of the Pipeline for which the Input Set is to be created.
-        - schema:
-            type: string
-          in: query
-          name: pipeline_repo
-          description: Git repository identifier of the Pipeline for which the Input Set is to be created.
         - $ref: '#/components/parameters/Branch'
+        - schema:
+            type: string
+          in: query
+          name: parent_entity_connector_ref
+          description: Connector reference for Parent Entity (Pipeline).
+        - schema:
+            type: string
+          in: query
+          name: parent_entity_repo_name
+          description: Repository name for Parent Entity (Pipeline).
     put:
       summary: Update an Input Set
       operationId: update-input-set
@@ -387,16 +385,6 @@ paths:
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
         - $ref: '#/components/parameters/PipelineInputSetParam'
-        - schema:
-            type: string
-          in: query
-          name: pipeline_branch
-          description: Git branch of the Pipeline for which the Input Set is to be created.
-        - schema:
-            type: string
-          in: query
-          name: pipeline_repo
-          description: Git repository identifier of the Pipeline for which the Input Set is to be created.
       tags:
         - Input Sets
       requestBody:
@@ -433,6 +421,40 @@ paths:
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
         - $ref: '#/components/parameters/PipelineInputSetParam'
+  '/v1/orgs/{org}/projects/{project}/pipelines/{pipeline}/inputs':
+    parameters:
+      - $ref: '#/components/parameters/OrgParam'
+      - $ref: '#/components/parameters/ProjectParam'
+      - $ref: '#/components/parameters/PipelineParam'
+    get:
+      summary: Get Pipeline Inputs
+      operationId: get-pipeline-inputs
+      responses:
+        '200':
+          $ref: '#/components/responses/InputsResponseBody'
+      description: Return Inputs for a Pipeline.
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - schema:
+            type: string
+          in: query
+          name: branch_name
+          description: Name of the branch (for Git Experience).
+        - schema:
+            type: string
+          in: query
+          name: repo_name
+          description: Name of the repository (for Git Experience).
+        - schema:
+            type: string
+          in: query
+          name: connector_ref
+          description: Identifier of the Harness Connector used for CRUD operations on the Entity (for Git Experience).
+      tags:
+        - Inputs
+      x-internal: false
 components:
   schemas:
     GitDetails:
@@ -535,9 +557,9 @@ components:
         slug:
           type: string
           description: Pipeline identifier
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
         name:
           type: string
           description: Pipeline name
@@ -592,6 +614,9 @@ components:
           type: integer
           description: Last modification timestamp for Pipeline.
           format: int64
+        validation_uuid:
+          type: string
+          description: 'UUID of the asynchronous validation event started, if any'
     PipelineValidationResponseBody:
       title: Pipeline Validation Response Body
       description: Pipeline Validation Response Body
@@ -662,9 +687,9 @@ components:
         slug:
           type: string
           description: Pipeline identifier
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
         name:
           type: string
           description: Pipeline name
@@ -829,9 +854,9 @@ components:
           description: Pipeline YAML (to be passed as a String).
         slug:
           type: string
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
           description: Pipeline identifier
         name:
           type: string
@@ -868,9 +893,9 @@ components:
         slug:
           type: string
           description: Pipeline identifier
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
     YAMLSchemaErrorWrapper:
       title: YAML Schema Error Wrapper
       x-stoplight:
@@ -1240,9 +1265,9 @@ components:
           description: Pipeline YAML (to be passed as a String).
         slug:
           type: string
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$'
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           minLength: 1
-          maxLength: 64
+          maxLength: 128
           description: Pipeline identifier
         name:
           type: string
@@ -1617,6 +1642,8 @@ components:
             last_object_id: abcdXYZ
             base_branch: old_branch
             last_commit_id: abcdXYZ
+            parent_entity_connector_ref: git_connector
+            parent_entity_repo_name: example_repository
       properties:
         input_set_yaml:
           type: string
@@ -1662,6 +1689,8 @@ components:
           last_object_id: abcdXYZ
           base_branch: old_branch
           last_commit_id: abcdXYZ
+          parent_entity_connector_ref: git_connector
+          parent_entity_repo_name: example_repository
       properties:
         branch_name:
           type: string
@@ -1678,6 +1707,71 @@ components:
         last_commit_id:
           type: string
           description: Last commit identifier.
+        parent_entity_connector_ref:
+          type: string
+          description: Connector reference for Parent Entity (Pipeline).
+        parent_entity_repo_name:
+          type: string
+          description: Repository name for Parent Entity (Pipeline).
+    InputsResponseBody:
+      title: Inputs Response Body
+      x-stoplight:
+        id: opv8b35dycaey
+      type: object
+      properties:
+        inputs:
+          type: object
+        repository:
+          type: object
+          properties:
+            reference:
+              type: object
+              properties:
+                type:
+                  type: object
+                value:
+                  type: object
+      x-examples:
+        example-inputs-response:
+          inputs:
+            key1:
+              prompt: false
+              required: false
+              default: golang
+              type: string
+              desc: sample desc
+            key2:
+              prompt: true
+              required: true
+              type: string
+              desc: sample desc
+            key3:
+              prompt: false
+              required: false
+              type: number
+            key4:
+              prompt: false
+              required: true
+              type: secret
+              desc: sample desc
+              enums:
+                - enum1
+                - enum2
+          repository:
+            reference:
+              type:
+                prompt: false
+                required: true
+                type: string
+                enums:
+                  - enum1
+                  - enum2
+                  - enum3
+              value:
+                prompt: false
+                required: true
+                type: string
+      description: Response Body for Pipeline Inputs
   securitySchemes:
     x-api-key:
       name: x-api-key
@@ -2185,6 +2279,53 @@ components:
           examples:
             sample:
               value: '</v1/orgs/{org}/projects/{project}/pipelines/{pipeline}/input-sets?page=2&limit=1>; rel="next", </v1/orgs/{org}/projects/{project}/pipelines/{pipeline}/input-sets?page=1&limit=1>; rel="self", </v1/orgs/{org}/projects/{project}/pipelines/{pipeline}/input-sets?page=0&limit=1>; rel="previous", '
+    InputsResponseBody:
+      description: Inputs Response Body
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/InputsResponseBody'
+          examples:
+            inputs-response-body:
+              value:
+                inputs:
+                  key1:
+                    prompt: false
+                    required: false
+                    default: golang
+                    type: string
+                    desc: sample desc
+                  key2:
+                    prompt: true
+                    required: true
+                    type: string
+                    desc: sample desc
+                  key3:
+                    prompt: false
+                    required: false
+                    type: number
+                  key4:
+                    prompt: false
+                    required: true
+                    type: secret
+                    desc: sample desc
+                    enums:
+                      - enum1
+                      - enum2
+                repository:
+                  reference:
+                    type:
+                      prompt: false
+                      required: true
+                      type: string
+                      enums:
+                        - enum1
+                        - enum2
+                        - enum3
+                    value:
+                      prompt: false
+                      required: true
+                      type: string
   requestBodies:
     PipelineCreateRequestBody:
       content:
@@ -2624,6 +2765,8 @@ components:
                   last_object_id: abcdXYZ
                   base_branch: old_branch
                   last_commit_id: abcdXYZ
+                  parent_entity_connector_ref: git_connector
+                  parent_entity_repo_name: example_repository
         application/yaml:
           schema:
             $ref: '#/components/schemas/InputSetUpdateRequestBody'
@@ -2679,5 +2822,7 @@ components:
                   last_object_id: abcdXYZ
                   base_branch: old_branch
                   last_commit_id: abcdXYZ
+                  parent_entity_connector_ref: git_connector
+                  parent_entity_repo_name: example_repository
       description: Input Set update request body
       required: true

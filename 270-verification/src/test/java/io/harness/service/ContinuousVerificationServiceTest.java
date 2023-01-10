@@ -35,6 +35,7 @@ import static software.wings.service.intfc.analysis.LogAnalysisResource.ANALYSIS
 import static software.wings.service.intfc.analysis.LogAnalysisResource.ANALYSIS_STATE_SAVE_24X7_CLUSTERED_LOG_URL;
 import static software.wings.service.intfc.analysis.LogAnalysisResource.LOG_ANALYSIS;
 
+import static dev.morphia.mapping.Mapper.ID_KEY;
 import static java.time.Duration.ofMillis;
 import static org.apache.commons.lang3.reflect.FieldUtils.writeField;
 import static org.apache.cxf.ws.addressing.ContextUtils.generateUUID;
@@ -51,7 +52,6 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mongodb.morphia.mapping.Mapper.ID_KEY;
 
 import io.harness.VerificationBase;
 import io.harness.alert.AlertData;
@@ -63,6 +63,7 @@ import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.task.common.DataCollectionExecutorService;
 import io.harness.entities.CVTask;
+import io.harness.ff.FeatureFlagService;
 import io.harness.managerclient.VerificationManagerClient;
 import io.harness.metrics.HarnessMetricRegistry;
 import io.harness.rest.RestResponse;
@@ -151,6 +152,8 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -182,8 +185,6 @@ import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
 import retrofit2.Call;
 import retrofit2.Response;
 
@@ -209,6 +210,7 @@ public class ContinuousVerificationServiceTest extends VerificationBase {
   @Inject private DataCollectionExecutorService dataCollectionService;
   @Inject private DataStoreService dataStoreService;
   @Inject Map<AlertType, Class<? extends AlertData>> alertTypeClassMap;
+  @Mock private FeatureFlagService featureFlagService;
 
   @Mock private CVConfigurationService cvConfigurationService;
   @Mock private CVTaskService cvTaskService;
@@ -332,9 +334,11 @@ public class ContinuousVerificationServiceTest extends VerificationBase {
     writeField(alertService, "executorService", Executors.newSingleThreadScheduledExecutor(), true);
     writeField(alertService, "injector", injector, true);
     writeField(alertService, "alertTypeClassMap", alertTypeClassMap, true);
+    writeField(alertService, "featureFlagService", featureFlagService, true);
     writeField(managerVerificationService, "alertService", alertService, true);
     when(cvActivityLogService.getLoggerByStateExecutionId(anyString(), anyString()))
         .thenReturn(mock(CVActivityLogger.class));
+    when(featureFlagService.isEnabled(FeatureName.INSTANT_DELEGATE_DOWN_ALERT, accountId)).thenReturn(false);
     when(cvActivityLogService.getLoggerByCVConfigId(anyString(), anyString(), anyLong())).thenReturn(activityLogger);
     when(verificationManagerClient.triggerCVDataCollection(anyString(), anyObject(), anyLong(), anyLong()))
         .then(invocation -> {

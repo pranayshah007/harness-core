@@ -7,8 +7,8 @@
 
 package io.harness.ldap.scheduler;
 
-import static io.harness.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.eventsframework.EventsFrameworkConstants.LDAP_GROUP_SYNC;
 
 import io.harness.annotations.dev.OwnedBy;

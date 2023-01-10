@@ -32,9 +32,11 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptedRecordData;
 
 import software.wings.api.terraform.TfVarGitSource;
+import software.wings.api.terraform.TfVarS3Source;
 import software.wings.beans.AwsConfig;
 import software.wings.beans.GitConfig;
 import software.wings.beans.NameValuePair;
+import software.wings.beans.TerraformSourceType;
 import software.wings.delegatetasks.delegatecapability.CapabilityHelper;
 import software.wings.delegatetasks.validation.capabilities.GitConnectionCapability;
 
@@ -52,7 +54,6 @@ import lombok.Value;
 public class TerraformProvisionParameters implements TaskParameters, ActivityAccess, ExecutionCapabilityDemander {
   public static final long TIMEOUT_IN_MINUTES = 100;
   public static final String TERRAFORM = "terraform";
-
   private String accountId;
   private final String activityId;
   private final String appId;
@@ -97,7 +98,6 @@ public class TerraformProvisionParameters implements TaskParameters, ActivityAcc
   private final String planName;
 
   private final TfVarSource tfVarSource;
-
   private final boolean useTfClient; // FF: USE_TF_CLIENT
   private final boolean useActivityIdBasedTfBaseDir;
   private final boolean syncGitCloneAndCopyToDestDir;
@@ -109,12 +109,19 @@ public class TerraformProvisionParameters implements TaskParameters, ActivityAcc
   private boolean isGitHostConnectivityCheck;
   private final boolean useTfConfigInspectLatestVersion;
   private final AwsConfig awsConfig;
+
   private final String awsConfigId;
   private final String awsRoleArn;
   private final String awsRegion;
   private List<EncryptedDataDetail> awsConfigEncryptionDetails;
 
   private final boolean analyseTfPlanSummary; // FF: ANALYSE_TF_PLAN_SUMMARY
+
+  private TerraformSourceType sourceType;
+  private final String configFilesS3URI;
+  private final AwsConfig configFilesAwsSourceConfig;
+  private List<EncryptedDataDetail> configFileAWSEncryptionDetails;
+  private final TfVarS3Source remoteS3BackendConfig;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
@@ -152,6 +159,26 @@ public class TerraformProvisionParameters implements TaskParameters, ActivityAcc
       capabilities.addAll(
           CapabilityHelper.generateDelegateCapabilities(awsConfig, awsConfigEncryptionDetails, maskingEvaluator));
     }
+
+    if (tfVarSource != null && tfVarSource.getTfVarSourceType() != null
+        && tfVarSource.getTfVarSourceType().equals(TfVarSourceType.S3)) {
+      TfVarS3Source tfVarS3Source = (TfVarS3Source) tfVarSource;
+      if (tfVarS3Source.getAwsConfig() != null) {
+        capabilities.addAll(CapabilityHelper.generateDelegateCapabilities(
+            tfVarS3Source.getAwsConfig(), tfVarS3Source.getEncryptedDataDetails(), maskingEvaluator));
+      }
+    }
+
+    if (sourceType != null && sourceType.equals(TerraformSourceType.S3) && configFilesAwsSourceConfig != null) {
+      capabilities.addAll(CapabilityHelper.generateDelegateCapabilities(
+          configFilesAwsSourceConfig, configFileAWSEncryptionDetails, maskingEvaluator));
+    }
+
+    if (remoteS3BackendConfig != null) {
+      capabilities.addAll(CapabilityHelper.generateDelegateCapabilities(
+          remoteS3BackendConfig.getAwsConfig(), remoteS3BackendConfig.getEncryptedDataDetails(), maskingEvaluator));
+    }
+
     return capabilities;
   }
 }

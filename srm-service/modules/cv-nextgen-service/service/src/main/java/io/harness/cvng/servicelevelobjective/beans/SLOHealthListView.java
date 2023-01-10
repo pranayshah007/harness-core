@@ -7,6 +7,7 @@
 
 package io.harness.cvng.servicelevelobjective.beans;
 
+import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.ng.core.mapper.TagMapper;
@@ -23,8 +24,8 @@ import lombok.Value;
 public class SLOHealthListView {
   @NotNull String sloIdentifier;
   @NotNull String name;
-  @JsonIgnore String orgIdentifier;
-  @JsonIgnore String projectIdentifier;
+  String orgName;
+  String projectName;
   String monitoredServiceIdentifier;
   String monitoredServiceName;
   String healthSourceIdentifier;
@@ -47,6 +48,7 @@ public class SLOHealthListView {
   @NotNull ServiceLevelObjectiveType sloType;
   @NotNull double sloTargetPercentage;
   @NotNull int noOfActiveAlerts;
+  @NotNull ProjectParams projectParams;
   @NotNull
   public ErrorBudgetRisk getErrorBudgetRisk() {
     return ErrorBudgetRisk.getFromPercentage(errorBudgetRemainingPercentage);
@@ -58,8 +60,6 @@ public class SLOHealthListView {
     return SLOHealthListView.builder()
         .sloIdentifier(serviceLevelObjective.getIdentifier())
         .name(serviceLevelObjective.getName())
-        .orgIdentifier(serviceLevelObjective.getOrgIdentifier())
-        .projectIdentifier(serviceLevelObjective.getProjectIdentifier())
         .sloTargetType(serviceLevelObjective.getSloTarget().getType())
         .sloTargetPercentage(serviceLevelObjective.getSloTargetPercentage())
         .userJourneys(userJourneys)
@@ -71,6 +71,11 @@ public class SLOHealthListView {
         .errorBudgetRemainingPercentage(sloHealthIndicator.getErrorBudgetRemainingPercentage())
         .burnRate(sloHealthIndicator.getErrorBudgetBurnRate())
         .noOfActiveAlerts(serviceLevelObjective.getNotificationRuleRefs().size())
-        .sloType(serviceLevelObjective.getType());
+        .sloType(serviceLevelObjective.getType())
+        .projectParams(ProjectParams.builder()
+                           .accountIdentifier(serviceLevelObjective.getAccountId())
+                           .orgIdentifier(serviceLevelObjective.getOrgIdentifier())
+                           .projectIdentifier(serviceLevelObjective.getProjectIdentifier())
+                           .build());
   }
 }

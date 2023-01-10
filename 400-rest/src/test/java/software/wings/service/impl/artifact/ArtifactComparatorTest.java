@@ -10,7 +10,7 @@ package software.wings.service.impl.artifact;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.rule.OwnerRule.GEORGE;
 
-import static software.wings.beans.artifact.Artifact.Builder.anArtifact;
+import static software.wings.persistence.artifact.Artifact.Builder.anArtifact;
 import static software.wings.utils.WingsTestConstants.APP_ID;
 import static software.wings.utils.WingsTestConstants.ARTIFACT_STREAM_ID;
 
@@ -25,8 +25,8 @@ import io.harness.beans.EmbeddedUser;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactMetadataKeys;
+import software.wings.persistence.artifact.Artifact;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.List;

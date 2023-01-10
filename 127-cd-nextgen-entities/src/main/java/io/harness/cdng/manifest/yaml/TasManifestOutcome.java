@@ -37,4 +37,5 @@ public class TasManifestOutcome implements ManifestOutcome {
   CfCliVersionNG cfCliVersion;
   ParameterField<List<String>> varsPaths;
   ParameterField<List<String>> autoScalerPath;
+  int order;
 }

@@ -10,6 +10,7 @@ package io.harness.engine.pms.execution.strategy.identity;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.ModuleType;
+import io.harness.OrchestrationStepTypes;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.OrchestrationEngine;
@@ -36,6 +37,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.start.NodeStartEvent;
+import io.harness.pms.contracts.resume.ResponseDataProto;
 import io.harness.pms.contracts.steps.io.StepResponseProto;
 import io.harness.pms.events.base.PmsEventCategory;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -46,7 +48,6 @@ import io.harness.waiter.WaitNotifyEngine;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
-import com.google.protobuf.ByteString;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Objects;
@@ -72,8 +73,7 @@ public class IdentityNodeExecutionStrategy
   @Override
   public NodeExecution createNodeExecution(@NotNull Ambiance ambiance, @NotNull IdentityPlanNode node,
       IdentityNodeExecutionMetadata metadata, String notifyId, String parentId, String previousId) {
-    return identityNodeExecutionStrategyHelper.createNodeExecution(
-        ambiance, node, metadata, notifyId, parentId, previousId);
+    return identityNodeExecutionStrategyHelper.createNodeExecution(ambiance, node, notifyId, parentId, previousId);
   }
 
   @Override
@@ -131,6 +131,15 @@ public class IdentityNodeExecutionStrategy
       identityNodeExecutionStrategyHelper.copyNodeExecutionsForRetriedNodes(
           nodeExecution, originalNodeExecution.getRetryIds());
 
+      // Pipeline Stage is a stage-leaf node. Need to set executable response which contains Child ExecutionId. This
+      // will be required to show child graph in retried stage.
+      if (originalNodeExecution.getNode().getStepType().getType().equals(OrchestrationStepTypes.PIPELINE_STAGE)) {
+        return nodeExecutionService.updateStatusWithOps(nodeExecution.getUuid(), originalNodeExecution.getStatus(),
+            update
+            -> update.set(NodeExecutionKeys.executableResponses, originalNodeExecution.getExecutableResponses()),
+            EnumSet.noneOf(Status.class));
+      }
+
       return nodeExecutionService.updateStatusWithOps(
           nodeExecution.getUuid(), originalNodeExecution.getStatus(), null, EnumSet.noneOf(Status.class));
     });
@@ -166,8 +175,10 @@ public class IdentityNodeExecutionStrategy
   @Override
   public void endNodeExecution(Ambiance ambiance) {
     String nodeExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
-    NodeExecution nodeExecution = nodeExecutionService.update(
-        nodeExecutionId, ops -> ops.set(NodeExecutionKeys.endTs, System.currentTimeMillis()));
+    NodeExecution nodeExecution = nodeExecutionService.update(nodeExecutionId,
+        ops
+        -> ops.set(NodeExecutionKeys.endTs, System.currentTimeMillis()),
+        NodeProjectionUtils.fieldsForExecutionStrategy);
     if (isNotEmpty(nodeExecution.getNotifyId())) {
       Level level = AmbianceUtils.obtainCurrentLevel(nodeExecution.getAmbiance());
       StepResponseNotifyData responseData = StepResponseNotifyData.builder()
@@ -189,7 +200,7 @@ public class IdentityNodeExecutionStrategy
   public void handleError(Ambiance ambiance, Exception exception) {}
 
   @Override
-  public void resumeNodeExecution(Ambiance ambiance, Map<String, ByteString> response, boolean asyncError) {
+  public void resumeNodeExecution(Ambiance ambiance, Map<String, ResponseDataProto> response, boolean asyncError) {
     String nodeExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
     NodeExecution nodeExecution =
         nodeExecutionService.getWithFieldsIncluded(nodeExecutionId, NodeProjectionUtils.fieldsForResume);

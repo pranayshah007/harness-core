@@ -16,9 +16,7 @@ import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
-import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
-import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UuidAware;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -26,6 +24,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -37,8 +37,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
 
 @Data
 @Builder
@@ -49,7 +47,7 @@ import org.mongodb.morphia.annotations.Id;
 @StoreIn(DbAliases.CVNG)
 @Entity(value = "logAnalysisResults", noClassnameStored = true)
 @HarnessEntity(exportable = false)
-public final class LogAnalysisResult implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware {
+public final class LogAnalysisResult extends VerificationTaskBase implements PersistentEntity, UuidAware {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
@@ -62,8 +60,7 @@ public final class LogAnalysisResult implements PersistentEntity, UuidAware, Cre
   }
 
   @Id private String uuid;
-  @FdIndex private long createdAt;
-  @FdIndex private long lastUpdatedAt;
+
   private String verificationTaskId;
   private Instant analysisStartTime;
   private Instant analysisEndTime;

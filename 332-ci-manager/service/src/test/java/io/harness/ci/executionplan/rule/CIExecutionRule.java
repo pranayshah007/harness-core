@@ -22,6 +22,8 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.AwsClient;
 import io.harness.aws.AwsClientImpl;
+import io.harness.beans.entities.IACMServiceConfig;
+import io.harness.beans.execution.QueueServiceClient;
 import io.harness.cache.CacheConfig;
 import io.harness.cache.CacheConfig.CacheConfigBuilder;
 import io.harness.cache.CacheModule;
@@ -56,6 +58,8 @@ import io.harness.factory.ClosingFactory;
 import io.harness.factory.ClosingFactoryModule;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
+import io.harness.iacmserviceclient.IACMServiceClient;
+import io.harness.iacmserviceclient.IACMServiceClientFactory;
 import io.harness.impl.scm.ScmServiceClientImpl;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
@@ -84,6 +88,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.Provides;
+import com.google.inject.Scopes;
 import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.MapBinder;
@@ -147,6 +152,7 @@ public class CIExecutionRule implements MethodRule, InjectorRuleMixin, MongoRule
       @Override
       protected void configure() {
         bind(AccountClient.class).toInstance(mock(AccountClient.class));
+        bind(AccountClient.class).annotatedWith(Names.named("PRIVILEGED")).toInstance(mock(AccountClient.class));
       }
     });
 
@@ -160,6 +166,10 @@ public class CIExecutionRule implements MethodRule, InjectorRuleMixin, MongoRule
         bind(AzureRepoService.class).to(AzureRepoServiceImpl.class);
         bind(SecretDecryptor.class).to(SecretDecryptorViaNg.class);
         bind(AwsClient.class).to(AwsClientImpl.class);
+        bind(IACMServiceConfig.class)
+            .toInstance(
+                IACMServiceConfig.builder().baseUrl("http://localhost:4000").globalToken("api/v1/token").build());
+        bind(IACMServiceClient.class).toProvider(IACMServiceClientFactory.class).in(Scopes.SINGLETON);
       }
     });
 
@@ -233,6 +243,7 @@ public class CIExecutionRule implements MethodRule, InjectorRuleMixin, MongoRule
                                                  .liteEngineImage("harness/ci-lite-engine:1.4.0")
                                                  .pvcDefaultStorageSize(25600)
                                                  .stepConfig(ciStepConfig)
+                                                 .queueServiceClient(QueueServiceClient.builder().build())
                                                  .build(),
         false));
 

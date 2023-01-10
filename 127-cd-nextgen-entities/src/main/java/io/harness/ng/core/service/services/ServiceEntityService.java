@@ -80,10 +80,14 @@ public interface ServiceEntityService {
   YamlNode getYamlNodeForFqn(@NotEmpty String accountId, @NotEmpty String orgIdentifier,
       @NotEmpty String projectIdentifier, @NotEmpty String serviceIdentifier, @NotEmpty String fqn);
 
+  // Avoid using this method,as it  allows clients to access unbounded amount of data
+  @Deprecated
   List<ServiceEntity> getServices(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> serviceIdentifiers);
 
   boolean isServiceField(String fieldName, JsonNode value);
+
+  List<String> getServiceIdentifiers(String accountIdentifier, String orgIdentifier, String projectIdentifier);
 
   Optional<ServiceEntity> getService(
       String accountId, String orgIdentifier, String projectIdentifier, String serviceIdentifier);

@@ -19,11 +19,12 @@ import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
+import javax.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
 public abstract class DeploymentAbstractStageNode extends AbstractStageNode {
-  @VariableExpression(skipVariableExpression = true) List<FailureStrategyConfig> failureStrategies;
+  @NotNull @VariableExpression(skipVariableExpression = true) List<FailureStrategyConfig> failureStrategies;
 
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
   @YamlSchemaTypes({string})

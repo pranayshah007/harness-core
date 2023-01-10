@@ -18,6 +18,7 @@ import io.harness.cdng.artifact.resources.gcr.dtos.GcrBuildDetailsDTO;
 import io.harness.cdng.artifact.resources.gcr.dtos.GcrRequestDTO;
 import io.harness.cdng.artifact.resources.gcr.dtos.GcrResponseDTO;
 import io.harness.cdng.artifact.resources.gcr.mappers.GcrResourceMapper;
+import io.harness.cdng.artifact.utils.ArtifactUtils;
 import io.harness.common.NGTaskType;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
@@ -55,6 +56,7 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
@@ -199,16 +201,14 @@ public class GcrResourceServiceImpl implements GcrResourceService {
                                                         .artifactTaskType(artifactTaskType)
                                                         .attributes(gcrRequest)
                                                         .build();
+    Map<String, String> abstractions = ArtifactUtils.getTaskSetupAbstractions(ngAccess);
     final DelegateTaskRequest delegateTaskRequest =
         DelegateTaskRequest.builder()
             .accountId(ngAccess.getAccountIdentifier())
             .taskType(NGTaskType.GCR_ARTIFACT_TASK_NG.name())
             .taskParameters(artifactTaskParameters)
             .executionTimeout(java.time.Duration.ofSeconds(timeoutInSecs))
-            .taskSetupAbstraction("ng", "true")
-            .taskSetupAbstraction("owner", ngAccess.getOrgIdentifier() + "/" + ngAccess.getProjectIdentifier())
-            .taskSetupAbstraction("orgIdentifier", ngAccess.getOrgIdentifier())
-            .taskSetupAbstraction("projectIdentifier", ngAccess.getProjectIdentifier())
+            .taskSetupAbstractions(abstractions)
             .taskSelectors(gcrRequest.getGcpConnectorDTO().getDelegateSelectors())
             .build();
     try {

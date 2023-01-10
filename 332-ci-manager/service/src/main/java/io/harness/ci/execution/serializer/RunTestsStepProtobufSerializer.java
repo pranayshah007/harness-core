@@ -149,8 +149,11 @@ public class RunTestsStepProtobufSerializer implements ProtobufStepSerializer<Ru
     if (StringUtils.isNotEmpty(testSplitStrategy)) {
       runTestsStepBuilder.setTestSplitStrategy(SerializerUtils.getTestSplitStrategy(testSplitStrategy));
     }
-    runTestsStepBuilder.setTestGlobs(RunTimeInputHandler.resolveStringParameter(
-        "testGlobs", stepName, identifier, runTestsStepInfo.getTestGlobs(), false));
+    String testGlobs = RunTimeInputHandler.resolveStringParameter(
+        "testGlobs", stepName, identifier, runTestsStepInfo.getTestGlobs(), false);
+    if (StringUtils.isNotEmpty(testGlobs)) {
+      runTestsStepBuilder.setTestGlobs(testGlobs);
+    }
 
     runTestsStepBuilder.setContext(StepContext.newBuilder().setExecutionTimeoutSecs(timeout).build());
 

@@ -29,6 +29,10 @@ import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
+import dev.morphia.query.UpdateOperations;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Collections;
@@ -37,10 +41,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.FindOptions;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
-import org.mongodb.morphia.query.UpdateOperations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
@@ -72,11 +72,13 @@ public class InstanceDataDaoImpl implements InstanceDataDao {
   }
 
   @Override
-  public List<InstanceData> fetchInstanceData(Set<String> instanceIds) {
+  public List<InstanceData> fetchInstanceData(String accountId, Set<String> instanceIds) {
     if (instanceIds.isEmpty()) {
       return Collections.emptyList();
     } else {
       return hPersistence.createQuery(InstanceData.class, excludeAuthorityCount)
+          .field(InstanceDataKeys.accountId)
+          .equal(accountId)
           .field(InstanceDataKeys.instanceId)
           .in(instanceIds)
           .asList();
@@ -204,7 +206,10 @@ public class InstanceDataDaoImpl implements InstanceDataDao {
                                     .field(InstanceDataKeys.instanceState)
                                     .in(instanceState)
                                     .field(InstanceDataKeys.usageStartTime)
-                                    .lessThanOrEq(startTime);
+                                    .lessThanOrEq(startTime)
+                                    .project(InstanceDataKeys.instanceId, true)
+                                    .project(InstanceDataKeys.usageStopTime, true)
+                                    .project(InstanceDataKeys.uuid, false);
     try (HIterator<InstanceData> instanceItr = new HIterator<>(query.fetch())) {
       for (InstanceData instanceData : instanceItr) {
         if (null == instanceData.getUsageStopTime()) {
@@ -270,5 +275,21 @@ public class InstanceDataDaoImpl implements InstanceDataDao {
         .field(InstanceDataKeys.instanceType)
         .in(instanceTypes)
         .order(InstanceDataKeys.accountId + "," + InstanceDataKeys.activeInstanceIterator);
+  }
+
+  public List<InstanceData> getInstanceDataListsOfTypesAndClusterId(String accountId, int batchSize, Instant startTime,
+      Instant endTime, List<InstanceType> instanceTypes, String clusterId) {
+    Query<InstanceData> query = hPersistence.createQuery(InstanceData.class, excludeCount)
+                                    .filter(InstanceDataKeys.accountId, accountId)
+                                    .filter(InstanceDataKeys.clusterId, clusterId)
+                                    .field(InstanceDataKeys.activeInstanceIterator)
+                                    .greaterThanOrEq(startTime)
+                                    .field(InstanceDataKeys.usageStartTime)
+                                    .lessThanOrEq(endTime)
+                                    .field(InstanceDataKeys.instanceType)
+                                    .in(instanceTypes)
+                                    .order(InstanceDataKeys.accountId + "," + InstanceDataKeys.clusterId + ","
+                                        + InstanceDataKeys.activeInstanceIterator);
+    return query.asList(new FindOptions().limit(batchSize));
   }
 }

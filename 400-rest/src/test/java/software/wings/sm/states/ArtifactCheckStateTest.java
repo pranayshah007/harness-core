@@ -10,7 +10,7 @@ package software.wings.sm.states;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.rule.OwnerRule.RAGHU;
 
-import static software.wings.beans.artifact.Artifact.Builder.anArtifact;
+import static software.wings.persistence.artifact.Artifact.Builder.anArtifact;
 import static software.wings.sm.WorkflowStandardParams.Builder.aWorkflowStandardParams;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -29,10 +29,10 @@ import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
-import software.wings.beans.artifact.Artifact.ContentStatus;
-import software.wings.beans.artifact.Artifact.Status;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.JenkinsArtifactStream;
+import software.wings.persistence.artifact.Artifact.ContentStatus;
+import software.wings.persistence.artifact.Artifact.Status;
 import software.wings.service.intfc.ArtifactService;
 import software.wings.sm.ExecutionContext;
 import software.wings.sm.ExecutionResponse;

@@ -7,8 +7,8 @@
 
 package io.harness.ng.eventsframework;
 
-import static io.harness.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.eventsframework.EventsFrameworkConstants.GIT_BRANCH_HOOK_EVENT_STREAM;
 import static io.harness.eventsframework.EventsFrameworkConstants.GIT_BRANCH_HOOK_EVENT_STREAM_MAX_TOPIC_SIZE;
 import static io.harness.eventsframework.EventsFrameworkConstants.GIT_CONFIG_STREAM;

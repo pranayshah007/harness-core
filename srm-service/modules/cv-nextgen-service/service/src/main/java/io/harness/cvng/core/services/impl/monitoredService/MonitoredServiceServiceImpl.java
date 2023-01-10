@@ -9,12 +9,14 @@ package io.harness.cvng.core.services.impl.monitoredService;
 
 import static io.harness.cvng.core.beans.params.ServiceEnvironmentParams.builderWithProjectParams;
 import static io.harness.cvng.core.constant.MonitoredServiceConstants.REGULAR_EXPRESSION;
+import static io.harness.cvng.core.utils.FeatureFlagNames.SRM_CODE_ERROR_NOTIFICATIONS;
 import static io.harness.cvng.notification.beans.MonitoredServiceChangeEventType.getMonitoredServiceChangeEventTypeFromActivityType;
 import static io.harness.cvng.notification.utils.NotificationRuleCommonUtils.getDurationInSeconds;
 import static io.harness.cvng.notification.utils.NotificationRuleCommonUtils.getNotificationTemplateId;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.CHANGE_EVENT_TYPE;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.COOL_OFF_DURATION;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.CURRENT_HEALTH_SCORE;
+import static io.harness.cvng.notification.utils.NotificationRuleConstants.ERROR_TRACKING_TYPE;
 import static io.harness.data.structure.CollectionUtils.distinctByKey;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -27,6 +29,8 @@ import io.harness.cvng.beans.MonitoredServiceType;
 import io.harness.cvng.beans.activity.ActivityType;
 import io.harness.cvng.beans.change.ChangeSourceType;
 import io.harness.cvng.beans.cvnglog.CVNGLogDTO;
+import io.harness.cvng.beans.errortracking.ErrorTrackingNotificationData;
+import io.harness.cvng.client.ErrorTrackingService;
 import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.core.beans.HealthMonitoringFlagResponse;
 import io.harness.cvng.core.beans.change.ChangeSummaryDTO;
@@ -95,6 +99,7 @@ import io.harness.cvng.notification.beans.NotificationRuleType;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceChangeImpactCondition;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceChangeObservedCondition;
+import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceCodeErrorCondition;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceHealthScoreCondition;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceNotificationRuleCondition;
 import io.harness.cvng.notification.entities.NotificationRule;
@@ -130,6 +135,9 @@ import com.google.common.base.Preconditions;
 import com.google.common.io.Resources;
 import com.google.inject.Inject;
 import com.mongodb.DuplicateKeyException;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
+import dev.morphia.query.UpdateOperations;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
@@ -165,9 +173,6 @@ import lombok.experimental.SuperBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @Slf4j
 public class MonitoredServiceServiceImpl implements MonitoredServiceService {
@@ -192,6 +197,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
   @Inject private ServiceDependencyService serviceDependencyService;
   @Inject private SetupUsageEventService setupUsageEventService;
   @Inject private ChangeSourceService changeSourceService;
+  @Inject private ErrorTrackingService errorTrackingService;
   @Inject private Clock clock;
   @Inject private TimeSeriesDashboardService timeSeriesDashboardService;
   @Inject private LogDashboardService logDashboardService;
@@ -540,6 +546,28 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
     return monitoredServiceResponseList;
   }
 
+  @Override
+  public List<MonitoredServiceResponse> get(String accountId, Set<String> identifierSet) {
+    List<MonitoredService> monitoredServices = hPersistence.createQuery(MonitoredService.class)
+                                                   .filter(MonitoredServiceKeys.accountId, accountId)
+                                                   .field(MonitoredServiceKeys.identifier)
+                                                   .in(identifierSet)
+                                                   .asList();
+    List<MonitoredServiceResponse> monitoredServiceResponseList = new ArrayList<>();
+    monitoredServices.forEach(monitoredService -> {
+      ServiceEnvironmentParams environmentParams =
+          builderWithProjectParams(ProjectParams.builder()
+                                       .accountIdentifier(monitoredService.getAccountId())
+                                       .orgIdentifier(monitoredService.getOrgIdentifier())
+                                       .projectIdentifier(monitoredService.getProjectIdentifier())
+                                       .build())
+              .serviceIdentifier(monitoredService.getServiceIdentifier())
+              .environmentIdentifier(monitoredService.getEnvironmentIdentifier())
+              .build();
+      monitoredServiceResponseList.add(createMonitoredServiceDTOFromEntity(monitoredService, environmentParams));
+    });
+    return monitoredServiceResponseList;
+  }
   @Override
   public MonitoredServiceResponse get(ProjectParams projectParams, String identifier) {
     MonitoredService monitoredServiceEntity = getMonitoredService(projectParams, identifier);
@@ -1264,7 +1292,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
         projectParams, monitoredService.getIdentifier(), enable);
     if (enable
         && featureFlagService.isFeatureFlagEnabled(
-            projectParams.getAccountIdentifier(), FeatureFlagNames.CVNG_SLO_DISABLE_ENABLE)) {
+            projectParams.getAccountIdentifier(), FeatureFlagNames.SRM_SLO_TOGGLE)) {
       entityDisabledTimeService.save(EntityDisableTime.builder()
                                          .entityUUID(monitoredService.getUuid())
                                          .accountId(monitoredService.getAccountId())
@@ -1893,6 +1921,26 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
         } else {
           return NotificationData.builder().shouldSendNotification(false).build();
         }
+      case CODE_ERRORS:
+        if (featureFlagService.isFeatureFlagEnabled(SRM_CODE_ERROR_NOTIFICATIONS, monitoredService.getAccountId())) {
+          log.info("SRM_CODE_ERROR_NOTIFICATIONS feature flag enabled");
+          MonitoredServiceCodeErrorCondition codeErrorCondition = (MonitoredServiceCodeErrorCondition) condition;
+          try {
+            final ErrorTrackingNotificationData notificationData =
+                errorTrackingService.getNotificationData(monitoredService.getOrgIdentifier(),
+                    monitoredService.getAccountId(), monitoredService.getProjectIdentifier(),
+                    monitoredService.getServiceIdentifier(), monitoredService.getEnvironmentIdentifierList().get(0),
+                    codeErrorCondition.getErrorTrackingEventTypes());
+            templateDataMap.put(ERROR_TRACKING_TYPE, notificationData.toString());
+          } catch (Exception e) {
+            log.error("Error connecting to the ErrorTracking Event Summary API.", e);
+            templateDataMap.put(ERROR_TRACKING_TYPE, "<INSERT CODE ERROR DATA>");
+          }
+          // Always send a notification for this current iteration as the event summary api isn't expected to work
+          // initially
+          return NotificationData.builder().shouldSendNotification(true).templateDataMap(templateDataMap).build();
+        }
+        return NotificationData.builder().shouldSendNotification(false).build();
       default:
         return NotificationData.builder().shouldSendNotification(false).build();
     }

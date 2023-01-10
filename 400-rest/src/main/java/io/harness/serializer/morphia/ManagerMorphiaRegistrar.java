@@ -196,7 +196,6 @@ import software.wings.beans.Schema;
 import software.wings.beans.Service;
 import software.wings.beans.ServiceInstance;
 import software.wings.beans.ServiceTemplate;
-import software.wings.beans.ServiceVariable;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.SystemCatalog;
 import software.wings.beans.TerraformInfrastructureProvisioner;
@@ -262,6 +261,7 @@ import software.wings.beans.container.HelmChartSpecification;
 import software.wings.beans.container.KubernetesContainerTask;
 import software.wings.beans.container.PcfServiceSpecification;
 import software.wings.beans.container.UserDataSpecification;
+import software.wings.beans.datatretention.LongerDataRetentionState;
 import software.wings.beans.entityinterface.TagAware;
 import software.wings.beans.governance.GovernanceConfig;
 import software.wings.beans.infrastructure.CloudFormationRollbackConfig;
@@ -345,6 +345,11 @@ import software.wings.infra.PhysicalInfra;
 import software.wings.infra.PhysicalInfraWinrm;
 import software.wings.instancesyncv2.model.InstanceSyncTaskDetails;
 import software.wings.metrics.TimeSeriesDataRecord;
+import software.wings.persistence.AppContainer;
+import software.wings.persistence.BaseFile;
+import software.wings.persistence.artifact.Artifact;
+import software.wings.persistence.artifact.ArtifactFile;
+import software.wings.persistence.mail.EmailData;
 import software.wings.prune.PruneEvent;
 import software.wings.resources.DelegateFileResource.FileIdempotentResult;
 import software.wings.scheduler.events.segment.SegmentGroupEventJobContext;
@@ -697,6 +702,7 @@ public class ManagerMorphiaRegistrar implements MorphiaRegistrar {
     set.add(EcsServiceSpecification.class);
     set.add(ElasticsearchBulkMigrationJob.class);
     set.add(ElkCVConfiguration.class);
+    set.add(EmailData.class);
     set.add(EmailVerificationToken.class);
     set.add(EntityVersion.class);
     set.add(EntityVersionCollection.class);
@@ -863,7 +869,10 @@ public class ManagerMorphiaRegistrar implements MorphiaRegistrar {
     set.add(MigratedAccountTracker.class);
     set.add(YamlGitConfig.class);
     set.add(SettingAttribute.class);
-    set.add(ServiceVariable.class);
+    set.add(Artifact.class);
+    set.add(BaseFile.class);
+    set.add(AppContainer.class);
+    set.add(LongerDataRetentionState.class);
   }
 
   @Override
@@ -963,6 +972,7 @@ public class ManagerMorphiaRegistrar implements MorphiaRegistrar {
     w.put("beans.alert.SettingAttributeValidationFailedAlert", SettingAttributeValidationFailedAlert.class);
     w.put("beans.alert.SSOSyncFailedAlert", SSOSyncFailedAlert.class);
     w.put("beans.alert.UsageLimitExceededAlert", UsageLimitExceededAlert.class);
+    w.put("persistence.artifact.ArtifactFile", ArtifactFile.class);
     w.put("beans.BasicOrchestrationWorkflow", BasicOrchestrationWorkflow.class);
     w.put("beans.BlueGreenOrchestrationWorkflow", BlueGreenOrchestrationWorkflow.class);
     w.put("beans.BuildWorkflow", BuildWorkflow.class);

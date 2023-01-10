@@ -42,9 +42,9 @@ import software.wings.beans.Service;
 import software.wings.beans.TemplateExpression;
 import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowExecution;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.infra.InfrastructureDefinition;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.intfc.ArtifactStreamService;
 import software.wings.service.intfc.WorkflowExecutionService;
 

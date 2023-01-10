@@ -7,6 +7,8 @@
 
 package io.harness.cdng.creator.plan.service;
 
+import static io.harness.cdng.pipeline.steps.MultiDeploymentSpawnerUtils.SERVICE_OVERRIDE_INPUTS_EXPRESSION;
+import static io.harness.cdng.pipeline.steps.MultiDeploymentSpawnerUtils.SERVICE_REF_EXPRESSION;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.cdng.artifact.steps.ArtifactsStepV2;
@@ -56,6 +58,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
+import lombok.NonNull;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -70,7 +73,7 @@ public class ServiceAllInOnePlanCreatorUtils {
    */
   public LinkedHashMap<String, PlanCreationResponse> addServiceNode(YamlField specField, KryoSerializer kryoSerializer,
       ServiceYamlV2 serviceYamlV2, EnvironmentYamlV2 environmentYamlV2, String serviceNodeId, String nextNodeId,
-      ServiceDefinitionType serviceType) {
+      ServiceDefinitionType serviceType, ParameterField<String> envGroupRef) {
     final ServiceYamlV2 finalServiceYaml = useFromStage(serviceYamlV2)
         ? useServiceYamlFromStage(serviceYamlV2.getUseFromStage(), specField)
         : serviceYamlV2;
@@ -79,16 +82,22 @@ public class ServiceAllInOnePlanCreatorUtils {
 
     // add nodes for artifacts/manifests/files
     final List<String> childrenNodeIds = addChildrenNodes(planCreationResponseMap, serviceType);
-    final ServiceStepV3Parameters stepParameters =
-        ServiceStepV3Parameters.builder()
-            .serviceRef(finalServiceYaml.getServiceRef())
-            .inputs(finalServiceYaml.getServiceInputs())
-            .envRef(environmentYamlV2.getEnvironmentRef())
-            .envInputs(environmentYamlV2.getEnvironmentInputs())
-            .childrenNodeIds(childrenNodeIds)
-            .serviceOverrideInputs(environmentYamlV2.getServiceOverrideInputs())
-            .deploymentType(serviceType)
-            .build();
+    ParameterField<Map<String, Object>> serviceOverrideInputs = environmentYamlV2.getServiceOverrideInputs();
+    if (finalServiceYaml.getServiceRef().isExpression()
+        && finalServiceYaml.getServiceRef().getExpressionValue().equals(SERVICE_REF_EXPRESSION)) {
+      serviceOverrideInputs =
+          ParameterField.createExpressionField(true, SERVICE_OVERRIDE_INPUTS_EXPRESSION, null, false);
+    }
+    final ServiceStepV3Parameters stepParameters = ServiceStepV3Parameters.builder()
+                                                       .serviceRef(finalServiceYaml.getServiceRef())
+                                                       .inputs(finalServiceYaml.getServiceInputs())
+                                                       .envRef(environmentYamlV2.getEnvironmentRef())
+                                                       .envInputs(environmentYamlV2.getEnvironmentInputs())
+                                                       .childrenNodeIds(childrenNodeIds)
+                                                       .serviceOverrideInputs(serviceOverrideInputs)
+                                                       .deploymentType(serviceType)
+                                                       .envGroupRef(envGroupRef)
+                                                       .build();
 
     return createPlanNode(kryoSerializer, serviceNodeId, nextNodeId, planCreationResponseMap, stepParameters);
   }
@@ -313,6 +322,7 @@ public class ServiceAllInOnePlanCreatorUtils {
     return mergedServiceOverrideInputs;
   }
 
+  @NonNull
   private ServiceYamlV2 useServiceYamlFromStage(@NotNull ServiceUseFromStageV2 useFromStage, YamlField specField) {
     final YamlField serviceField = specField.getNode().getField(YamlTypes.SERVICE_ENTITY);
     String stage = useFromStage.getStage();
@@ -321,11 +331,23 @@ public class ServiceAllInOnePlanCreatorUtils {
     }
 
     try {
-      //  Add validation for not chaining of stages
       DeploymentStageNode stageElementConfig = YamlUtils.read(
           PlanCreatorUtils.getStageConfig(serviceField, stage).getNode().toString(), DeploymentStageNode.class);
       DeploymentStageConfig deploymentStage = stageElementConfig.getDeploymentStageConfig();
       if (deploymentStage != null) {
+        if (deploymentStage.getService() != null && useFromStage(deploymentStage.getService())) {
+          throw new InvalidArgumentsException("Invalid identifier [" + stage
+              + "] given in useFromStage. Cannot reference a stage which also has useFromStage parameter");
+        }
+
+        if (deploymentStage.getService() == null) {
+          if (deploymentStage.getServices() != null) {
+            throw new InvalidRequestException(
+                "Propagate from stage is not supported with multi service deployments, hence not possible to propagate service from that stage");
+          }
+          throw new InvalidRequestException(String.format(
+              "Could not find service in stage [%s], hence not possible to propagate service from that stage", stage));
+        }
         return deploymentStage.getService();
       } else {
         throw new InvalidArgumentsException("Stage identifier given in useFromStage doesn't exist");

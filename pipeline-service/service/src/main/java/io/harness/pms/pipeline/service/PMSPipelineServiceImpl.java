@@ -8,15 +8,21 @@
 package io.harness.pms.pipeline.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER_SRE;
+import static io.harness.pms.pipeline.MoveConfigOperationType.INLINE_TO_REMOTE;
+import static io.harness.pms.pipeline.MoveConfigOperationType.REMOTE_TO_INLINE;
 import static io.harness.pms.pipeline.service.PMSPipelineServiceStepHelper.LIBRARY;
 
 import static java.lang.String.format;
 
+import io.harness.EntityType;
 import io.harness.PipelineSettingsService;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
+import io.harness.beans.IdentifierRef;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.entitysetupusageclient.remote.EntitySetupUsageClient;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
@@ -27,7 +33,9 @@ import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
+import io.harness.exception.ReferencedEntityException;
 import io.harness.exception.ScmException;
+import io.harness.exception.UnexpectedException;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorDTO;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperDTO;
 import io.harness.git.model.ChangeType;
@@ -36,6 +44,7 @@ import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.common.utils.GitEntityFilePath;
 import io.harness.gitsync.common.utils.GitSyncFilePathUtils;
 import io.harness.gitsync.helpers.GitContextHelper;
+import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.scm.EntityObjectIdUtils;
 import io.harness.governance.GovernanceMetadata;
@@ -47,10 +56,12 @@ import io.harness.pms.helpers.PipelineCloneHelper;
 import io.harness.pms.pipeline.ClonePipelineDTO;
 import io.harness.pms.pipeline.CommonStepInfo;
 import io.harness.pms.pipeline.ExecutionSummaryInfo;
+import io.harness.pms.pipeline.MoveConfigOperationDTO;
 import io.harness.pms.pipeline.PMSPipelineListRepoResponse;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
 import io.harness.pms.pipeline.PipelineImportRequestDTO;
+import io.harness.pms.pipeline.PipelineMetadataV2;
 import io.harness.pms.pipeline.StepCategory;
 import io.harness.pms.pipeline.StepPalleteFilterWrapper;
 import io.harness.pms.pipeline.StepPalleteInfo;
@@ -59,12 +70,13 @@ import io.harness.pms.pipeline.filters.PMSPipelineFilterHelper;
 import io.harness.pms.pipeline.governance.service.PipelineGovernanceService;
 import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
 import io.harness.pms.sdk.PmsSdkInstanceService;
-import io.harness.pms.yaml.PipelineVersion;
-import io.harness.pms.yaml.YamlField;
+import io.harness.pms.utils.PipelineYamlHelper;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.pipeline.PMSPipelineRepository;
 import io.harness.utils.PmsFeatureFlagHelper;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
@@ -109,21 +121,22 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Inject private final PipelineCloneHelper pipelineCloneHelper;
   @Inject private final PmsFeatureFlagHelper pmsFeatureFlagHelper;
   @Inject private final PipelineSettingsService pipelineSettingsService;
+  @Inject private final EntitySetupUsageClient entitySetupUsageClient;
 
   public static final String CREATING_PIPELINE = "creating new pipeline";
   public static final String UPDATING_PIPELINE = "updating existing pipeline";
 
   private static final String DUP_KEY_EXP_FORMAT_STRING =
       "Pipeline [%s] under Project[%s], Organization [%s] already exists or has been deleted.";
-  private static final String VERSION_FIELD_NAME = "version";
 
   private static final int MAX_LIST_SIZE = 1000;
   private static final String REPO_LIST_SIZE_EXCEPTION = "The size of unique repository list is greater than [%d]";
 
+  public static final String DEFAULT = "__default__";
+
   @Override
   public PipelineCRUDResult validateAndCreatePipeline(
       PipelineEntity pipelineEntity, boolean throwExceptionIfGovernanceFails) {
-    checkAndThrowIfLimitReached(pipelineEntity.getAccountIdentifier());
     if (pipelineEntity.getIsDraft() != null && pipelineEntity.getIsDraft()) {
       log.info("Creating Draft Pipeline with identifier: {}", pipelineEntity.getIdentifier());
       return createPipeline(pipelineEntity);
@@ -131,8 +144,8 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     PMSPipelineServiceHelper.validatePresenceOfRequiredFields(pipelineEntity.getAccountId(),
         pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineEntity.getIdentifier(),
         pipelineEntity.getIdentifier());
-    GovernanceMetadata governanceMetadata =
-        pmsPipelineServiceHelper.resolveTemplatesAndValidatePipeline(pipelineEntity, throwExceptionIfGovernanceFails);
+    GovernanceMetadata governanceMetadata = pmsPipelineServiceHelper.resolveTemplatesAndValidatePipeline(
+        pipelineEntity, throwExceptionIfGovernanceFails, false);
     try {
       if (governanceMetadata.getDeny()) {
         return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).build();
@@ -150,7 +163,6 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   }
 
   private PipelineCRUDResult createPipeline(PipelineEntity pipelineEntity) {
-    checkAndThrowIfLimitReached(pipelineEntity.getAccountIdentifier());
     PipelineEntity createdEntity;
     try {
       if (gitSyncSdkService.isGitSyncEnabled(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
@@ -181,7 +193,6 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   }
   @Override
   public PipelineSaveResponse validateAndClonePipeline(ClonePipelineDTO clonePipelineDTO, String accountId) {
-    checkAndThrowIfLimitReached(accountId);
     PipelineEntity sourcePipelineEntity = getSourcePipelineEntity(clonePipelineDTO, accountId);
 
     String sourcePipelineEntityYaml = sourcePipelineEntity.getYaml();
@@ -254,9 +265,9 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
               .schemaErrors(Collections.singletonList(
                   YamlSchemaErrorDTO.builder().message(errorMessage).fqn("$.pipeline").build()))
               .build();
-      throw new io.harness.yaml.validator.InvalidYamlException(errorMessage, errorWrapperDTO);
+      throw new io.harness.yaml.validator.InvalidYamlException(errorMessage, errorWrapperDTO, pipelineEntity.getData());
     }
-    pmsPipelineServiceHelper.resolveTemplatesAndValidatePipelineEntity(pipelineEntity);
+    pmsPipelineServiceHelper.resolveTemplatesAndValidatePipelineEntity(pipelineEntity, loadFromCache);
     return optionalPipelineEntity;
   }
 
@@ -310,8 +321,8 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     }
     PMSPipelineServiceHelper.validatePresenceOfRequiredFields(pipelineEntity.getAccountId(),
         pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineEntity.getIdentifier());
-    GovernanceMetadata governanceMetadata =
-        pmsPipelineServiceHelper.resolveTemplatesAndValidatePipeline(pipelineEntity, throwExceptionIfGovernanceFails);
+    GovernanceMetadata governanceMetadata = pmsPipelineServiceHelper.resolveTemplatesAndValidatePipeline(
+        pipelineEntity, throwExceptionIfGovernanceFails, false);
     if (governanceMetadata.getDeny()) {
       return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).build();
     }
@@ -458,6 +469,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Override
   public boolean delete(
       String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier, Long version) {
+    validateSetupUsage(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
     if (gitSyncSdkService.isGitSyncEnabled(accountId, orgIdentifier, projectIdentifier)) {
       return deleteForOldGitSync(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
     }
@@ -471,6 +483,29 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       throw new InvalidRequestException(
           format("Pipeline [%s] under Project[%s], Organization [%s] could not be deleted.", pipelineIdentifier,
               projectIdentifier, orgIdentifier));
+    }
+  }
+
+  public void validateSetupUsage(
+      String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier) {
+    IdentifierRef identifierRef = IdentifierRef.builder()
+                                      .accountIdentifier(accountId)
+                                      .orgIdentifier(orgIdentifier)
+                                      .projectIdentifier(projectIdentifier)
+                                      .identifier(pipelineIdentifier)
+                                      .build();
+    Boolean isEntityReferenced;
+    try {
+      isEntityReferenced = NGRestUtils.getResponse(entitySetupUsageClient.isEntityReferenced(
+          accountId, identifierRef.getFullyQualifiedName(), EntityType.PIPELINES));
+    } catch (Exception ex) {
+      log.info("Encountered exception while requesting the Entity Reference records of [{}], with exception",
+          pipelineIdentifier, ex);
+      throw new UnexpectedException("Error while deleting the Pipeline");
+    }
+    if (isEntityReferenced) {
+      throw new ReferencedEntityException(
+          String.format("Could not delete the pipeline %s as it is referenced by other entities", pipelineIdentifier));
     }
   }
 
@@ -510,7 +545,6 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Override
   public PipelineEntity importPipelineFromRemote(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, PipelineImportRequestDTO pipelineImportRequest, Boolean isForceImport) {
-    checkAndThrowIfLimitReached(accountId);
     String repoUrl = pmsPipelineServiceHelper.getRepoUrlAndCheckForFileUniqueness(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, isForceImport);
     String importedPipelineYAML =
@@ -653,20 +687,8 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
 
   @Override
   public String pipelineVersion(String accountId, String yaml) {
-    String version;
-    try {
-      YamlField yamlField = YamlUtils.readTree(yaml);
-      version = yamlField.getNode().getProperty(VERSION_FIELD_NAME);
-    } catch (IOException ioException) {
-      throw new InvalidRequestException("Invalid yaml passed.");
-    }
     boolean isYamlSimplificationEnabled = pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.CI_YAML_VERSIONING);
-
-    if (isYamlSimplificationEnabled && version != null) {
-      return version;
-    } else {
-      return PipelineVersion.V0;
-    }
+    return PipelineYamlHelper.getVersion(yaml, isYamlSimplificationEnabled);
   }
 
   @Override
@@ -683,14 +705,60 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     return PMSPipelineListRepoResponse.builder().repositories(uniqueRepos).build();
   }
 
-  private void checkAndThrowIfLimitReached(String accountId) {
-    long maxLimit = pipelineSettingsService.getMaxPipelineCreationCount(accountId);
-    if (maxLimit == Long.MAX_VALUE) {
-      return;
+  @Override
+  public PipelineCRUDResult moveConfig(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, MoveConfigOperationDTO moveConfigDTO) {
+    PipelineEntity pipeline =
+        getPipeline(accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, false, false).get();
+
+    PipelineEntity movedPipelineEntity = movePipelineEntity(
+        accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, moveConfigDTO, pipeline);
+
+    return PipelineCRUDResult.builder().pipelineEntity(movedPipelineEntity).build();
+  }
+
+  @VisibleForTesting
+  protected PipelineEntity movePipelineEntity(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, MoveConfigOperationDTO moveConfigDTO, PipelineEntity pipeline) {
+    Criteria pipelineCriteria = PMSPipelineServiceHelper.getPipelineEqualityCriteria(
+        accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, false, null);
+
+    Criteria metadataCriteria = pmsPipelineServiceHelper.getPipelineMetadataV2Criteria(
+        accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier);
+
+    Update pipelineUpdate;
+    Update metadataUpdate = new Update();
+
+    if (INLINE_TO_REMOTE.equals(moveConfigDTO.getMoveConfigOperationType())) {
+      setupGitContext(moveConfigDTO);
+
+      pipelineUpdate = pmsPipelineServiceHelper.getPipelineUpdateForInlineToRemote(
+          accountIdentifier, orgIdentifier, projectIdentifier, moveConfigDTO);
+      metadataUpdate = metadataUpdate.set(PipelineMetadataV2.PipelineMetadataV2Keys.branch, moveConfigDTO.getBranch());
+
+    } else if (REMOTE_TO_INLINE.equals(moveConfigDTO.getMoveConfigOperationType())) {
+      pipelineUpdate = pmsPipelineServiceHelper.getPipelineUpdateForRemoteToInline();
+      metadataUpdate = metadataUpdate.unset(PipelineMetadataV2.PipelineMetadataV2Keys.entityGitDetails);
+    } else {
+      log.error("Invalid move config operation provided: {}", moveConfigDTO.getMoveConfigOperationType().name());
+      throw new InvalidRequestException(String.format(
+          "Invalid move config operation specified [%s].", moveConfigDTO.getMoveConfigOperationType().name()));
     }
-    if (pmsPipelineRepository.countAllPipelinesInAccount(accountId) >= maxLimit) {
-      throw new InvalidRequestException(
-          "You have created maximum number of pipelines, please upgrade your plan if you want to create more pipelines");
-    }
+    return pmsPipelineRepository.updatePipelineEntity(pipeline, pipelineUpdate, pipelineCriteria, metadataUpdate,
+        metadataCriteria, moveConfigDTO.getMoveConfigOperationType());
+  }
+
+  private void setupGitContext(MoveConfigOperationDTO moveConfigDTO) {
+    GitAwareContextHelper.populateGitDetails(
+        GitEntityInfo.builder()
+            .branch(moveConfigDTO.getBranch())
+            .filePath(moveConfigDTO.getFilePath())
+            .commitMsg(moveConfigDTO.getCommitMessage())
+            .isNewBranch(isNotEmpty(moveConfigDTO.getBranch()) && isNotEmpty(moveConfigDTO.getBaseBranch()))
+            .baseBranch(moveConfigDTO.getBaseBranch())
+            .connectorRef(moveConfigDTO.getConnectorRef())
+            .storeType(StoreType.REMOTE)
+            .repoName(moveConfigDTO.getRepoName())
+            .build());
   }
 }

@@ -29,6 +29,9 @@ import io.harness.validation.Update;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
+import dev.morphia.annotations.Transient;
 import java.time.Duration;
 import java.util.Date;
 import java.util.List;
@@ -39,9 +42,6 @@ import lombok.Data;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.UtilityClass;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
-import org.mongodb.morphia.annotations.Transient;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Data
@@ -96,6 +96,7 @@ public class Delegate implements PersistentEntity, UuidAware, CreatedAtAware, Ac
   private boolean polllingModeEnabled;
   private boolean proxy;
   private boolean ceEnabled;
+  private DelegateCapacity delegateCapacity;
 
   private List<String> supportedTaskTypes;
 
@@ -137,6 +138,8 @@ public class Delegate implements PersistentEntity, UuidAware, CreatedAtAware, Ac
   private boolean immutable;
 
   private boolean mtls;
+
+  @Transient private Integer numberOfTaskAssigned;
 
   @Override
   public void updateNextIteration(String fieldName, long nextIteration) {
@@ -191,5 +194,9 @@ public class Delegate implements PersistentEntity, UuidAware, CreatedAtAware, Ac
         .immutable(delegateParams.isImmutable())
         .tags(delegateParams.getTags())
         .build();
+  }
+
+  public boolean hasCapacityRegistered() {
+    return this.getDelegateCapacity() != null;
   }
 }

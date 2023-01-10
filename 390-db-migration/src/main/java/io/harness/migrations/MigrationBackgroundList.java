@@ -59,11 +59,13 @@ import io.harness.migrations.all.AddOrchestrationToWorkflows;
 import io.harness.migrations.all.AddPipelinesReferenceToUserGroups;
 import io.harness.migrations.all.AddRingsToAccountMigration;
 import io.harness.migrations.all.AddStateMachineToWorkflowExecutions;
+import io.harness.migrations.all.AddValidUntilToDelegateGroupMigration;
 import io.harness.migrations.all.AddValidUntilToSecretUsageLogs;
 import io.harness.migrations.all.AddValidUntilToWorkflowExecution;
 import io.harness.migrations.all.AlertCheckJobPollIntervalMigration;
 import io.harness.migrations.all.AmendCorruptedEncryptedServiceVariable;
 import io.harness.migrations.all.ApiKeysSetNameMigration;
+import io.harness.migrations.all.ArtifactSourceCollectionEnabledMigration;
 import io.harness.migrations.all.CDPaidLicenseToNGMigration;
 import io.harness.migrations.all.CEViewsMigration;
 import io.harness.migrations.all.CleanUpDirectK8sInfraMappingEncryptedFieldsMigration;
@@ -407,6 +409,8 @@ public class MigrationBackgroundList {
         .add(Pair.of(236, CorrectingQuartzTriggerFrequency.class))
         .add(Pair.of(237, DisableArtifactCollectionForInactiveAccount.class))
         .add(Pair.of(238, AddMisfireInstructionToQuartz.class))
+        .add(Pair.of(239, AddValidUntilToDelegateGroupMigration.class))
+        .add(Pair.of(240, ArtifactSourceCollectionEnabledMigration.class))
         .build();
   }
 }

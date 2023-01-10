@@ -21,8 +21,11 @@ import static io.harness.delegate.task.serverless.exception.ServerlessExceptionC
 import static io.harness.delegate.task.serverless.exception.ServerlessExceptionConstants.SERVERLESS_GIT_FILES_DOWNLOAD_EXPLANATION;
 import static io.harness.delegate.task.serverless.exception.ServerlessExceptionConstants.SERVERLESS_GIT_FILES_DOWNLOAD_FAILED;
 import static io.harness.delegate.task.serverless.exception.ServerlessExceptionConstants.SERVERLESS_GIT_FILES_DOWNLOAD_HINT;
+import static io.harness.delegate.task.serverless.exception.ServerlessExceptionConstants.SERVERLESS_S3_FILES_DOWNLOAD_FAILED;
+import static io.harness.delegate.task.serverless.exception.ServerlessExceptionConstants.SERVERLESS_S3_FILES_DOWNLOAD_HINT;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.filesystem.FileIo.createDirectoryIfDoesNotExist;
+import static io.harness.filesystem.FileIo.deleteDirectoryAndItsContentIfExists;
 import static io.harness.filesystem.FileIo.waitForDirectoryToBeAccessibleOutOfProcess;
 import static io.harness.logging.LogLevel.ERROR;
 
@@ -78,7 +81,6 @@ import software.wings.service.impl.AwsApiHelperService;
 import software.wings.service.intfc.aws.delegate.AwsLambdaHelperServiceDelegateNG;
 
 import com.amazonaws.services.s3.model.S3Object;
-import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.File;
@@ -187,24 +189,24 @@ public class ServerlessTaskHelperBase {
     decrypt(s3StoreDelegateConfig);
     AwsInternalConfig awsInternalConfig =
         awsNgConfigMapper.createAwsInternalConfig(s3StoreDelegateConfig.getAwsConnector());
+    String filePath = s3StoreDelegateConfig.getPaths().get(0);
+    String bucketName = s3StoreDelegateConfig.getBucketName();
+    String region = s3StoreDelegateConfig.getRegion();
+    S3Object s3Object = null;
     try {
-      String filePath = s3StoreDelegateConfig.getPaths().get(0);
-      String bucketName = s3StoreDelegateConfig.getBucketName();
-      String region = s3StoreDelegateConfig.getRegion();
-      S3Object s3Object = awsApiHelperService.getObjectFromS3(awsInternalConfig, region, bucketName, filePath);
-      S3ObjectInputStream stream = s3Object.getObjectContent();
-      ZipInputStream zipInputStream = new ZipInputStream(stream);
-      unzipManifestFiles(workingDirectory, zipInputStream);
+      s3Object = awsApiHelperService.getObjectFromS3(awsInternalConfig, region, bucketName, filePath);
     } catch (Exception e) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
-      log.error("Failure in fetching files from s3", sanitizedException);
+      log.error("Failure in fetching files from S3", sanitizedException);
       executionLogCallback.saveExecutionLog(
-          "Failed to download manifest files from git. " + ExceptionUtils.getMessage(sanitizedException), ERROR);
-      throw NestedExceptionUtils.hintWithExplanationException(format("Please check manifest S3 Manifest Aws connector"),
-          format("Failed while trying to download files from S3 manifest"),
+          "Failed to download manifest files from S3. " + ExceptionUtils.getMessage(sanitizedException), ERROR);
+      throw NestedExceptionUtils.hintWithExplanationException(format(SERVERLESS_S3_FILES_DOWNLOAD_HINT),
+          format(SERVERLESS_S3_FILES_DOWNLOAD_FAILED, filePath, bucketName, region),
           new ServerlessCommandExecutionException(
               "Failed while trying to download files from zip file", sanitizedException));
     }
+    ZipInputStream zipInputStream = new ZipInputStream(s3Object.getObjectContent());
+    unzipManifestFiles(workingDirectory, zipInputStream);
   }
 
   private File getNewFileForZipEntry(File destinationDir, ZipEntry zipEntry) throws IOException {
@@ -544,5 +546,14 @@ public class ServerlessTaskHelperBase {
       }
     }
     return serverInstanceInfoList;
+  }
+
+  public void cleanup(String workingDirectory) {
+    try {
+      log.warn("Cleaning up directory " + workingDirectory);
+      deleteDirectoryAndItsContentIfExists(workingDirectory);
+    } catch (Exception ex) {
+      log.warn("Exception in directory cleanup.", ExceptionMessageSanitizer.sanitizeException(ex));
+    }
   }
 }

@@ -7,9 +7,9 @@
 
 package software.wings.security;
 
-import static io.harness.AuthorizationServiceHeader.DEFAULT;
 import static io.harness.agent.AgentGatewayConstants.HEADER_AGENT_MTLS_AUTHORITY;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.authorization.AuthorizationServiceHeader.DEFAULT;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.INVALID_CREDENTIAL;
@@ -375,7 +375,10 @@ public class AuthenticationFilter implements ContainerRequestFilter {
   }
 
   private void updateUserInAuditRecord(User user) {
-    auditService.updateUser(auditHelper.get(), user.getPublicUser());
+    if (userService.isFFToAvoidLoadingSupportAccountsUnncessarilyDisabled()) {
+      auditService.updateUser(auditHelper.get(), user.getPublicUser(true));
+    }
+    auditService.updateUser(auditHelper.get(), user.getPublicUser(false));
   }
 
   protected void validateLearningEngineRequest(ContainerRequestContext containerRequestContext) {

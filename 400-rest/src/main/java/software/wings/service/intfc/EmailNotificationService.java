@@ -13,7 +13,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 
-import software.wings.helpers.ext.mail.EmailData;
+import software.wings.persistence.mail.EmailData;
 
 /**
  * Created by peeyushaggarwal on 5/23/16.

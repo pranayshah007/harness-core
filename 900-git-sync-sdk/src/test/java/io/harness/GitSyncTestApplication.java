@@ -12,6 +12,7 @@ import static io.harness.logging.LoggingInitializer.initializeLogging;
 import static io.harness.packages.HarnessPackages.IO_HARNESS;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.beans.SampleBean;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.gitsync.AbstractGitSyncSdkModule;

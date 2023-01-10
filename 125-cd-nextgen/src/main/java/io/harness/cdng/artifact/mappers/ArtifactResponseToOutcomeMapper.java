@@ -181,7 +181,7 @@ public class ArtifactResponseToOutcomeMapper {
         AMIArtifactConfig amiArtifactConfig = (AMIArtifactConfig) artifactConfig;
         AMIArtifactDelegateResponse amiArtifactDelegateResponse =
             (AMIArtifactDelegateResponse) artifactDelegateResponse;
-        return getAMIArtifactOutcome(amiArtifactConfig, amiArtifactDelegateResponse);
+        return getAMIArtifactOutcome(amiArtifactConfig, amiArtifactDelegateResponse, useDelegateResponse);
       default:
         throw new UnsupportedOperationException(
             String.format("Unknown Artifact Config type: [%s]", artifactConfig.getSourceType()));
@@ -207,16 +207,12 @@ public class ArtifactResponseToOutcomeMapper {
         .build();
   }
 
-  private static AMIArtifactOutcome getAMIArtifactOutcome(
-      AMIArtifactConfig amiArtifactConfig, AMIArtifactDelegateResponse amiArtifactDelegateResponse) {
-    if (amiArtifactDelegateResponse == null) {
-      return null;
-    }
-
+  private static AMIArtifactOutcome getAMIArtifactOutcome(AMIArtifactConfig amiArtifactConfig,
+      AMIArtifactDelegateResponse amiArtifactDelegateResponse, boolean useDelegateResponse) {
     return AMIArtifactOutcome.builder()
-        .amiId(amiArtifactDelegateResponse.getAmiId())
-        .metadata(amiArtifactDelegateResponse.getMetadata())
-        .version(amiArtifactDelegateResponse.getVersion())
+        .amiId(useDelegateResponse ? amiArtifactDelegateResponse.getAmiId() : "")
+        .metadata(useDelegateResponse ? amiArtifactDelegateResponse.getMetadata() : null)
+        .version(useDelegateResponse ? amiArtifactDelegateResponse.getVersion() : "")
         .connectorRef(amiArtifactConfig.getConnectorRef().getValue())
         .type(ArtifactSourceType.AMI.getDisplayName())
         .identifier(amiArtifactConfig.getIdentifier())
@@ -238,6 +234,7 @@ public class ArtifactResponseToOutcomeMapper {
         .identifier(githubPackagesArtifactConfig.getIdentifier())
         .primaryArtifact(githubPackagesArtifactConfig.isPrimaryArtifact())
         .versionRegex(githubPackagesArtifactConfig.getVersionRegex().getValue())
+        .packageType(githubPackagesArtifactConfig.getPackageType().getValue())
         .build();
   }
 
@@ -258,6 +255,16 @@ public class ArtifactResponseToOutcomeMapper {
 
   private DockerArtifactOutcome getDockerArtifactOutcome(DockerHubArtifactConfig dockerConfig,
       DockerArtifactDelegateResponse dockerDelegateResponse, boolean useDelegateResponse) {
+    Map<String, String> metadata = null;
+    String displayName = null;
+    if (useDelegateResponse && dockerDelegateResponse != null && dockerDelegateResponse.getBuildDetails() != null
+        && dockerDelegateResponse.getBuildDetails().getMetadata() != null) {
+      metadata = dockerDelegateResponse.getBuildDetails().getMetadata();
+    }
+    if (useDelegateResponse && dockerDelegateResponse != null && dockerDelegateResponse.getBuildDetails() != null
+        && dockerDelegateResponse.getBuildDetails().getUiDisplayName() != null) {
+      displayName = dockerDelegateResponse.getBuildDetails().getUiDisplayName();
+    }
     return DockerArtifactOutcome.builder()
         .image(getImageValue(dockerDelegateResponse))
         .connectorRef(dockerConfig.getConnectorRef().getValue())
@@ -270,8 +277,10 @@ public class ArtifactResponseToOutcomeMapper {
         .identifier(dockerConfig.getIdentifier())
         .type(ArtifactSourceType.DOCKER_REGISTRY.getDisplayName())
         .primaryArtifact(dockerConfig.isPrimaryArtifact())
+        .displayName(displayName)
         .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(dockerConfig)))
         .label(getLabels(dockerDelegateResponse))
+        .metadata(metadata)
         .build();
   }
 
@@ -312,6 +321,7 @@ public class ArtifactResponseToOutcomeMapper {
         .primaryArtifact(googleArtifactRegistryConfig.isPrimaryArtifact())
         .image(getImageValue(garDelegateResponse))
         .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(googleArtifactRegistryConfig)))
+        .repositoryType(googleArtifactRegistryConfig.getGoogleArtifactRegistryType().getValue())
         .build();
   }
 
@@ -343,6 +353,9 @@ public class ArtifactResponseToOutcomeMapper {
   private NexusArtifactOutcome getNexusArtifactOutcome(NexusRegistryArtifactConfig artifactConfig,
       NexusArtifactDelegateResponse artifactDelegateResponse, boolean useDelegateResponse) {
     String artifactPath = null;
+    String displayName = null;
+    String tag = null;
+
     if (artifactConfig.getRepositoryFormat().getValue().equalsIgnoreCase("docker")) {
       NexusRegistryDockerConfig nexusRegistryDockerConfig =
           (NexusRegistryDockerConfig) artifactConfig.getNexusRegistryConfigSpec();
@@ -361,26 +374,42 @@ public class ArtifactResponseToOutcomeMapper {
       }
     }
 
+    if (useDelegateResponse && artifactDelegateResponse != null && artifactDelegateResponse.getBuildDetails() != null
+        && isNotEmpty(artifactDelegateResponse.getBuildDetails().getUiDisplayName())) {
+      displayName = artifactDelegateResponse.getBuildDetails().getUiDisplayName();
+    }
+
+    if (useDelegateResponse && artifactDelegateResponse != null && isNotEmpty(artifactDelegateResponse.getTag())) {
+      tag = artifactDelegateResponse.getTag();
+    } else {
+      tag = artifactConfig.getTag() != null ? artifactConfig.getTag().fetchFinalValue().toString() : null;
+    }
+
     return NexusArtifactOutcome.builder()
         .repositoryName(artifactConfig.getRepository().getValue())
         .image(getImageValue(artifactDelegateResponse))
         .connectorRef(artifactConfig.getConnectorRef().getValue())
         .artifactPath(artifactPath)
         .repositoryFormat(artifactConfig.getRepositoryFormat().getValue())
-        .tag(useDelegateResponse ? artifactDelegateResponse.getTag()
-                                 : (artifactConfig.getTag() != null ? artifactConfig.getTag().getValue() : null))
+        .tag(tag)
         .tagRegex(artifactConfig.getTagRegex() != null ? artifactConfig.getTagRegex().getValue() : null)
         .identifier(artifactConfig.getIdentifier())
         .type(ArtifactSourceType.NEXUS3_REGISTRY.getDisplayName())
         .primaryArtifact(artifactConfig.isPrimaryArtifact())
         .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(artifactConfig)))
         .registryHostname(getRegistryHostnameValue(artifactDelegateResponse))
+        .displayName(displayName)
         .metadata(useDelegateResponse ? getMetadata(artifactDelegateResponse) : null)
         .build();
   }
 
   private NexusArtifactOutcome getNexus2ArtifactOutcome(Nexus2RegistryArtifactConfig artifactConfig,
       NexusArtifactDelegateResponse artifactDelegateResponse, boolean useDelegateResponse) {
+    String displayName = null;
+    if (artifactDelegateResponse.getBuildDetails() != null
+        && isNotEmpty(artifactDelegateResponse.getBuildDetails().getUiDisplayName())) {
+      displayName = artifactDelegateResponse.getBuildDetails().getUiDisplayName();
+    }
     return NexusArtifactOutcome.builder()
         .repositoryName(artifactConfig.getRepository().getValue())
         .image(getImageValue(artifactDelegateResponse))
@@ -394,6 +423,7 @@ public class ArtifactResponseToOutcomeMapper {
         .primaryArtifact(artifactConfig.isPrimaryArtifact())
         .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(artifactConfig)))
         .registryHostname(getRegistryHostnameValue(artifactDelegateResponse))
+        .displayName(displayName)
         .metadata(useDelegateResponse ? getMetadata(artifactDelegateResponse) : null)
         .build();
   }

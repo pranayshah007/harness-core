@@ -42,9 +42,12 @@ import io.harness.cdng.manifest.yaml.HelmChartManifestOutcome;
 import io.harness.cdng.manifest.yaml.HelmChartManifestOutcome.HelmChartManifestOutcomeKeys;
 import io.harness.cdng.manifest.yaml.K8sManifestOutcome;
 import io.harness.cdng.manifest.yaml.K8sManifestOutcome.K8sManifestOutcomeKeys;
+import io.harness.cdng.manifest.yaml.K8sStepCommandFlag;
 import io.harness.cdng.manifest.yaml.KustomizeManifestOutcome;
 import io.harness.cdng.manifest.yaml.KustomizeManifestOutcome.KustomizeManifestOutcomeKeys;
 import io.harness.cdng.manifest.yaml.KustomizePatchesManifestOutcome;
+import io.harness.cdng.manifest.yaml.ManifestConfig;
+import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.OpenshiftManifestOutcome;
 import io.harness.cdng.manifest.yaml.OpenshiftManifestOutcome.OpenshiftManifestOutcomeKeys;
@@ -399,6 +402,13 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
     String validationMessage = format("Values YAML with Id [%s]", valuesManifestOutcome.getIdentifier());
     return getValuesGitFetchFilesConfig(ambiance, valuesManifestOutcome.getIdentifier(),
         valuesManifestOutcome.getStore(), validationMessage, k8sManifestOutcome);
+  }
+
+  public void resolveManifestsConfigExpressions(Ambiance ambiance, List<ManifestConfigWrapper> manifestConfigWrappers) {
+    List<ManifestConfig> configs =
+        manifestConfigWrappers.stream().map(ManifestConfigWrapper::getManifest).collect(Collectors.toList());
+    ExpressionEvaluatorUtils.updateExpressions(
+        configs, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
   }
 
   public TaskChainResponse startChainLink(
@@ -760,10 +770,13 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
       }
     }
     if (shouldExecuteGitFetchTask(aggregatedValuesManifest)) {
+      LinkedList<ValuesManifestOutcome> orderedValuesManifests = new LinkedList<>(aggregatedValuesManifest);
+      if (ManifestStoreType.HARNESS.equals(k8sManifest.getStore().getKind())) {
+        orderedValuesManifests.addFirst(valuesManifestOutcome);
+      }
       return executeValuesFetchTask(
-          ambiance, stepElementParameters, aggregatedValuesManifest, emptyMap(), updatedK8sStepPassThroughData);
+          ambiance, stepElementParameters, orderedValuesManifests, emptyMap(), updatedK8sStepPassThroughData);
     }
-
     LinkedList<ValuesManifestOutcome> orderedValuesManifests = new LinkedList<>(aggregatedValuesManifest);
     orderedValuesManifests.addFirst(valuesManifestOutcome);
     return executeK8sTask(ambiance, stepElementParameters, k8sStepExecutor, updatedK8sStepPassThroughData,
@@ -942,5 +955,18 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
       return prunedResourceIds == null ? Collections.emptyList() : prunedResourceIds;
     }
     return Collections.emptyList();
+  }
+
+  public Map<String, String> getDelegateK8sCommandFlag(List<K8sStepCommandFlag> commandFlags) {
+    if (commandFlags == null) {
+      return new HashMap<>();
+    }
+
+    Map<String, String> commandsValueMap = new HashMap<>();
+    for (K8sStepCommandFlag commandFlag : commandFlags) {
+      commandsValueMap.put(commandFlag.getCommandType().getSubCommandType(), commandFlag.getFlag().getValue());
+    }
+
+    return commandsValueMap;
   }
 }

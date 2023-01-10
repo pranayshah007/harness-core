@@ -7,8 +7,8 @@
 
 package io.harness.gitsync.core.webhook.createbranchevent;
 
-import static io.harness.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.annotations.dev.HarnessTeam.DX;
+import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.eventsframework.EventsFrameworkConstants.GIT_BRANCH_HOOK_EVENT_STREAM;
 import static io.harness.gitsync.common.WebhookEventConstants.GIT_BRANCH_HOOK_EVENT_CONSUMER;
 

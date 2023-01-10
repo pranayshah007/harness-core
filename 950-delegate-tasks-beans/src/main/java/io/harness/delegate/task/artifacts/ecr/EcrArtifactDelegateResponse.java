@@ -7,6 +7,8 @@
 
 package io.harness.delegate.task.artifacts.ecr;
 
+import io.harness.artifact.ArtifactMetadataKeys;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.response.ArtifactBuildDetailsNG;
 import io.harness.delegate.task.artifacts.response.ArtifactDelegateResponse;
@@ -38,5 +40,20 @@ public class EcrArtifactDelegateResponse extends ArtifactDelegateResponse {
     this.imageUrl = imageUrl;
     this.authToken = authToken;
     this.label = label;
+  }
+
+  @Override
+  public String describe() {
+    String dockerPullCommand = (getBuildDetails() != null && getBuildDetails().getMetadata() != null)
+        ? "\nImage pull command: docker pull " + getBuildDetails().getMetadata().get(ArtifactMetadataKeys.IMAGE)
+        : null;
+
+    String metadataKeys = (getBuildDetails() != null && getBuildDetails().getMetadata() != null)
+        ? String.valueOf(getBuildDetails().getMetadata().keySet())
+        : null;
+
+    return "type: " + (getSourceType() != null ? getSourceType().getDisplayName() : null) + "\nimagePath: " + imagePath
+        + "\ntag: " + getTag() + "\nMetadata keys: " + (EmptyPredicate.isNotEmpty(metadataKeys) ? metadataKeys : "")
+        + (EmptyPredicate.isNotEmpty(dockerPullCommand) ? dockerPullCommand : "");
   }
 }

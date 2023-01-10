@@ -189,6 +189,9 @@ public class IntegrationStageUtils {
         return WebhookTriggerProcessorUtils.convertWebhookResponse(parsedPayload);
       } else if (executionTriggerInfo.getTriggerType() == TriggerType.WEBHOOK_CUSTOM) {
         return buildCustomExecutionSource(identifier, parameterFieldBuild);
+      } else {
+        throw new InvalidRequestException(
+            "CI stage cannot be triggered by trigger of type: " + executionTriggerInfo.getTriggerType());
       }
     } else {
       if (executionTriggerInfo.getRerunInfo().getRootTriggerType() == TriggerType.MANUAL
@@ -203,10 +206,11 @@ public class IntegrationStageUtils {
         return WebhookTriggerProcessorUtils.convertWebhookResponse(parsedPayload);
       } else if (executionTriggerInfo.getRerunInfo().getRootTriggerType() == TriggerType.WEBHOOK_CUSTOM) {
         return buildCustomExecutionSource(identifier, parameterFieldBuild);
+      } else {
+        throw new InvalidRequestException("CI stage cannot be triggered by trigger of type: "
+            + executionTriggerInfo.getRerunInfo().getRootTriggerType());
       }
     }
-
-    return null;
   }
 
   /* In case codebase and trigger connectors are different then treat it as manual execution

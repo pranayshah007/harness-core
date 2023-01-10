@@ -10,24 +10,26 @@ package io.harness.ngmigration.service.step;
 import io.harness.cdng.k8s.K8sBlueGreenStepInfo;
 import io.harness.cdng.k8s.K8sBlueGreenStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 
+import software.wings.beans.GraphNode;
+import software.wings.ngmigration.CgEntityId;
 import software.wings.sm.State;
 import software.wings.sm.states.k8s.K8sBlueGreenDeploy;
-import software.wings.yaml.workflow.StepYaml;
 
 import java.util.Map;
 
 public class K8sBlueGreenDeployStepMapperImpl implements StepMapper {
   @Override
-  public String getStepType(StepYaml stepYaml) {
+  public String getStepType(GraphNode stepYaml) {
     return StepSpecTypeConstants.K8S_BLUE_GREEN_DEPLOY;
   }
 
   @Override
-  public State getState(StepYaml stepYaml) {
+  public State getState(GraphNode stepYaml) {
     Map<String, Object> properties = StepMapper.super.getProperties(stepYaml);
     K8sBlueGreenDeploy state = new K8sBlueGreenDeploy(stepYaml.getName());
     state.parseProperties(properties);
@@ -35,10 +37,10 @@ public class K8sBlueGreenDeployStepMapperImpl implements StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(StepYaml stepYaml) {
-    K8sBlueGreenDeploy state = (K8sBlueGreenDeploy) getState(stepYaml);
+  public AbstractStepNode getSpec(Map<CgEntityId, NGYamlFile> migratedEntities, GraphNode graphNode) {
+    K8sBlueGreenDeploy state = (K8sBlueGreenDeploy) getState(graphNode);
     K8sBlueGreenStepNode stepNode = new K8sBlueGreenStepNode();
-    baseSetup(stepYaml, stepNode);
+    baseSetup(graphNode, stepNode);
     K8sBlueGreenStepInfo stepInfo =
         K8sBlueGreenStepInfo.infoBuilder()
             .pruningEnabled(ParameterField.createValueField(false))
@@ -50,7 +52,7 @@ public class K8sBlueGreenDeployStepMapperImpl implements StepMapper {
   }
 
   @Override
-  public boolean areSimilar(StepYaml stepYaml1, StepYaml stepYaml2) {
+  public boolean areSimilar(GraphNode stepYaml1, GraphNode stepYaml2) {
     return true;
   }
 }

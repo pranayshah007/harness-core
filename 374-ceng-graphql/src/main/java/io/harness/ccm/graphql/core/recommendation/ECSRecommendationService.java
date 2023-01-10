@@ -117,6 +117,7 @@ public class ECSRecommendationService {
                           .precomputed(getPrecomputedPercentiles(cpuHistogram))
                           .totalWeight(cpuHistogramCp.getTotalWeight())
                           .build())
+        .jiraDetails(recommendation.getJiraDetails())
         .build();
   }
 

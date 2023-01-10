@@ -30,11 +30,11 @@ import io.harness.testframework.restutils.ArtifactRestUtils;
 import software.wings.beans.Application;
 import software.wings.beans.Service;
 import software.wings.beans.SettingAttribute;
-import software.wings.beans.artifact.Artifact;
-import software.wings.beans.artifact.Artifact.Status;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.ArtifactStreamType;
 import software.wings.beans.artifact.GcsArtifactStream;
+import software.wings.persistence.artifact.Artifact;
+import software.wings.persistence.artifact.Artifact.Status;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;

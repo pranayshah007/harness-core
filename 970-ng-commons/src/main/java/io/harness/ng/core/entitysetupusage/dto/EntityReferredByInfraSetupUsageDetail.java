@@ -21,4 +21,5 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("EntityReferredByInfraSetupUsageDetail")
 public class EntityReferredByInfraSetupUsageDetail implements SetupUsageDetail {
   String environmentIdentifier;
+  String environmentName;
 }

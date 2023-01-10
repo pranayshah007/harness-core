@@ -17,6 +17,8 @@ import io.harness.data.validator.EntityIdentifier;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.ArrayList;
 import java.util.List;
 import javax.validation.Valid;
@@ -32,6 +34,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
+@Schema
 public class HealthSource {
   @NotEmpty String name;
   @NotEmpty @EntityIdentifier String identifier;
@@ -41,6 +44,8 @@ public class HealthSource {
       visible = true)
   @Valid
   @NotNull
+  @ApiModelProperty(
+      dataType = "io.harness.cvng.core.beans.monitoredService.healthSouceSpec.NextGenHealthSourceSpec", name = "spec")
   HealthSourceSpec spec;
 
   @Value

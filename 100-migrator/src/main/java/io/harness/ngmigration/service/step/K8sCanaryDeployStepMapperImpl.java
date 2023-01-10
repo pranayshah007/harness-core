@@ -15,25 +15,27 @@ import io.harness.cdng.k8s.K8sCanaryStepNode;
 import io.harness.cdng.k8s.K8sInstanceUnitType;
 import io.harness.cdng.k8s.PercentageInstanceSelection;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 
+import software.wings.beans.GraphNode;
 import software.wings.beans.InstanceUnitType;
+import software.wings.ngmigration.CgEntityId;
 import software.wings.sm.State;
 import software.wings.sm.states.k8s.K8sCanaryDeploy;
-import software.wings.yaml.workflow.StepYaml;
 
 import java.util.Map;
 
 public class K8sCanaryDeployStepMapperImpl implements StepMapper {
   @Override
-  public String getStepType(StepYaml stepYaml) {
+  public String getStepType(GraphNode stepYaml) {
     return StepSpecTypeConstants.K8S_CANARY_DEPLOY;
   }
 
   @Override
-  public State getState(StepYaml stepYaml) {
+  public State getState(GraphNode stepYaml) {
     Map<String, Object> properties = StepMapper.super.getProperties(stepYaml);
     K8sCanaryDeploy state = new K8sCanaryDeploy(stepYaml.getName());
     state.parseProperties(properties);
@@ -41,10 +43,10 @@ public class K8sCanaryDeployStepMapperImpl implements StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(StepYaml stepYaml) {
-    K8sCanaryDeploy state = (K8sCanaryDeploy) getState(stepYaml);
-    K8sCanaryStepNode k8sRollingStepNode = new K8sCanaryStepNode();
-    baseSetup(stepYaml, k8sRollingStepNode);
+  public AbstractStepNode getSpec(Map<CgEntityId, NGYamlFile> migratedEntities, GraphNode graphNode) {
+    K8sCanaryDeploy state = (K8sCanaryDeploy) getState(graphNode);
+    K8sCanaryStepNode k8sCanaryStepNode = new K8sCanaryStepNode();
+    baseSetup(state, k8sCanaryStepNode);
     InstanceSelectionBase spec;
     if (state.getInstanceUnitType().equals(InstanceUnitType.COUNT)) {
       spec = new CountInstanceSelection();
@@ -54,7 +56,7 @@ public class K8sCanaryDeployStepMapperImpl implements StepMapper {
       ((PercentageInstanceSelection) spec).setPercentage(ParameterField.createValueField(state.getInstances()));
     }
 
-    k8sRollingStepNode.setK8sCanaryStepInfo(
+    k8sCanaryStepNode.setK8sCanaryStepInfo(
         K8sCanaryStepInfo.infoBuilder()
             .skipDryRun(ParameterField.createValueField(state.isSkipDryRun()))
             .instanceSelection(
@@ -65,11 +67,11 @@ public class K8sCanaryDeployStepMapperImpl implements StepMapper {
                     .build())
             .delegateSelectors(MigratorUtility.getDelegateSelectors(state.getDelegateSelectors()))
             .build());
-    return k8sRollingStepNode;
+    return k8sCanaryStepNode;
   }
 
   @Override
-  public boolean areSimilar(StepYaml stepYaml1, StepYaml stepYaml2) {
+  public boolean areSimilar(GraphNode stepYaml1, GraphNode stepYaml2) {
     K8sCanaryDeploy state1 = (K8sCanaryDeploy) getState(stepYaml1);
     K8sCanaryDeploy state2 = (K8sCanaryDeploy) getState(stepYaml2);
     if (!state2.getInstanceUnitType().equals(state1.getInstanceUnitType())) {

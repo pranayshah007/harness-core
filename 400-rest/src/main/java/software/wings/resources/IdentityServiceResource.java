@@ -146,7 +146,10 @@ public class IdentityServiceResource {
     if (user == null) {
       throw new WingsException(USER_DOES_NOT_EXIST, USER);
     } else {
-      return new RestResponse<>(user.getPublicUser());
+      if (userService.isFFToAvoidLoadingSupportAccountsUnncessarilyDisabled()) {
+        return new RestResponse<>(user.getPublicUser(true));
+      }
+      return new RestResponse<>(user.getPublicUser(false));
     }
   }
 
@@ -157,7 +160,10 @@ public class IdentityServiceResource {
   public RestResponse<User> signupOAuthUser(
       @NotNull OauthUserInfo oauthUserInfo, @QueryParam("provider") String oauthProviderName) {
     User user = userService.signUpUserUsingOauth(oauthUserInfo, oauthProviderName);
-    return new RestResponse<>(user.getPublicUser());
+    if (userService.isFFToAvoidLoadingSupportAccountsUnncessarilyDisabled()) {
+      return new RestResponse<>(user.getPublicUser(true));
+    }
+    return new RestResponse<>(user.getPublicUser(false));
   }
 
   @GET

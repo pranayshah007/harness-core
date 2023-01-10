@@ -7,7 +7,7 @@
 
 package io.harness.template.event;
 
-import static io.harness.AuthorizationServiceHeader.TEMPLATE_SERVICE;
+import static io.harness.authorization.AuthorizationServiceHeader.TEMPLATE_SERVICE;
 
 import io.harness.eventsframework.api.Consumer;
 import io.harness.eventsframework.api.EventsFrameworkDownException;

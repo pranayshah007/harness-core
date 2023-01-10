@@ -43,6 +43,7 @@ import io.harness.observer.NoOpRemoteObserverInformerImpl;
 import io.harness.observer.RemoteObserver;
 import io.harness.observer.RemoteObserverInformer;
 import io.harness.observer.consumer.AbstractRemoteObserverModule;
+import io.harness.queueservice.config.DelegateQueueServiceConfig;
 import io.harness.redis.RedisConfig;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.security.DelegateTokenAuthenticator;
@@ -88,6 +89,7 @@ import com.google.inject.Module;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
+import dev.morphia.converters.TypeConverter;
 import graphql.GraphQL;
 import java.io.Closeable;
 import java.lang.annotation.Annotation;
@@ -105,7 +107,6 @@ import org.hibernate.validator.parameternameprovider.ReflectionParameterNameProv
 import org.junit.rules.MethodRule;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
-import org.mongodb.morphia.converters.TypeConverter;
 import org.springframework.core.convert.converter.Converter;
 import ru.vyarus.guice.validator.ValidationModule;
 
@@ -205,6 +206,15 @@ public class GraphQLRule implements MethodRule, InjectorRuleMixin, MongoRuleMixi
                                                     .certValidationRequired(false)
                                                     .build();
     configuration.setSegmentConfiguration(segmentConfiguration);
+
+    configuration.setQueueServiceConfig(DelegateQueueServiceConfig.builder()
+                                            .queueServiceConfig(ServiceHttpClientConfig.builder()
+                                                                    .baseUrl("http://localhost:9091/")
+                                                                    .readTimeOutSeconds(15)
+                                                                    .connectTimeOutSeconds(15)
+                                                                    .build())
+                                            .topic("delegate-service")
+                                            .build());
     return configuration;
   }
 

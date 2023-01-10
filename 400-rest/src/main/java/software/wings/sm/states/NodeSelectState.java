@@ -54,10 +54,10 @@ import software.wings.beans.InstanceUnitType;
 import software.wings.beans.ServiceInstance;
 import software.wings.beans.ServiceInstanceSelectionParams;
 import software.wings.beans.ServiceInstanceSelectionParams.Builder;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.infrastructure.Host;
 import software.wings.beans.infrastructure.instance.Instance;
 import software.wings.common.InstanceExpressionProcessor;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.impl.workflow.WorkflowServiceHelper;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.AppService;
@@ -79,6 +79,7 @@ import software.wings.sm.WorkflowStandardParams;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
+import dev.morphia.annotations.Transient;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -88,7 +89,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.annotations.Transient;
 
 /**
  * Created by brett on 10/10/17

@@ -8,6 +8,7 @@
 package io.harness.pms.merger.helpers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.pms.yaml.YamlNode.UUID_FIELD_NAME;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
@@ -124,6 +125,10 @@ public class YamlMapGenerator {
       return;
     }
     int noOfKeys = firstNode.size();
+    // UUID_FIELD_NAME is a generated Key. it should not be included in counting the number of keys in original field.
+    if (noOfKeys > 1 && firstNode.get(UUID_FIELD_NAME) != null) {
+      noOfKeys -= 1;
+    }
     if (noOfKeys == 1 && EmptyPredicate.isEmpty(FQNHelper.getUuidKey(list))) {
       generateYamlMapFromListOfSingleKeyMaps(list, baseFQN, fqnMap, res, topKey, isSanitiseFlow);
     } else {

@@ -10,10 +10,9 @@ package io.harness.pms.pipeline.api;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
-import static javax.ws.rs.core.UriBuilder.fromPath;
-
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.beans.yamlschema.NodeErrorInfo;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorDTO;
@@ -22,6 +21,8 @@ import io.harness.filter.FilterType;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.sdk.EntityGitDetails;
+import io.harness.governance.PolicyMetadata;
+import io.harness.governance.PolicySetMetadata;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.pms.contracts.plan.TriggerType;
 import io.harness.pms.execution.ExecutionStatus;
@@ -32,6 +33,10 @@ import io.harness.pms.pipeline.PipelineFilterPropertiesDto;
 import io.harness.pms.pipeline.mappers.CacheStateMapper;
 import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
 import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
+import io.harness.spec.server.commons.v1.model.GovernanceMetadata;
+import io.harness.spec.server.commons.v1.model.GovernanceStatus;
+import io.harness.spec.server.commons.v1.model.Policy;
+import io.harness.spec.server.commons.v1.model.PolicySet;
 import io.harness.spec.server.pipeline.v1.model.CacheResponseMetadataDTO;
 import io.harness.spec.server.pipeline.v1.model.ExecutorInfo;
 import io.harness.spec.server.pipeline.v1.model.ExecutorInfo.TriggerTypeEnum;
@@ -49,6 +54,7 @@ import io.harness.spec.server.pipeline.v1.model.PipelineValidationUUIDResponseBo
 import io.harness.spec.server.pipeline.v1.model.RecentExecutionInfo;
 import io.harness.spec.server.pipeline.v1.model.RecentExecutionInfo.ExecutionStatusEnum;
 import io.harness.spec.server.pipeline.v1.model.YAMLSchemaErrorWrapper;
+import io.harness.utils.ApiUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -57,8 +63,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.ws.rs.core.Link;
-import javax.ws.rs.core.Response.ResponseBuilder;
 import org.bson.Document;
 
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -119,9 +123,9 @@ public class PipelinesApiUtils {
     pipelineGetResponseBody.setOrg(pipelineEntity.getOrgIdentifier());
     pipelineGetResponseBody.setProject(pipelineEntity.getProjectIdentifier());
     pipelineGetResponseBody.setDescription(pipelineEntity.getDescription());
-    pipelineGetResponseBody.setTags(getTagsFromNGTag(pipelineEntity.getTags()));
+    pipelineGetResponseBody.setTags(ApiUtils.getTags(pipelineEntity.getTags()));
     pipelineGetResponseBody.setGitDetails(getGitDetails(PMSPipelineDtoMapper.getEntityGitDetails(pipelineEntity)));
-    pipelineGetResponseBody.setModules(getModules(pipelineEntity.getFilters().keySet()));
+    pipelineGetResponseBody.setModules(getModules(pipelineEntity));
     pipelineGetResponseBody.setCreated(pipelineEntity.getCreatedAt());
     pipelineGetResponseBody.setUpdated(pipelineEntity.getLastUpdatedAt());
     pipelineGetResponseBody.setValid(true);
@@ -142,18 +146,9 @@ public class PipelinesApiUtils {
     return cacheResponseMetadataDTO;
   }
 
-  public static Map<String, String> getTagsFromNGTag(List<NGTag> ngTags) {
-    if (isEmpty(ngTags)) {
-      return null;
-    }
-    Map<String, String> tags = new HashMap<>();
-    for (NGTag ngTag : ngTags) {
-      tags.put(ngTag.getKey(), ngTag.getValue());
-    }
-    return tags;
-  }
+  public static List<String> getModules(PipelineEntity pipelineEntity) {
+    Set<String> modules = pipelineEntity.getFilters().keySet();
 
-  public static List<String> getModules(Set<String> modules) {
     if (modules == null) {
       return null;
     }
@@ -231,36 +226,6 @@ public class PipelinesApiUtils {
       map.put("cd", cd);
     }
     return (map.isEmpty()) ? null : new Document(map);
-  }
-
-  public static ResponseBuilder addLinksHeader(
-      ResponseBuilder responseBuilder, String path, int currentResultCount, int page, int limit) {
-    ArrayList<Link> links = new ArrayList();
-    links.add(Link.fromUri(fromPath(path)
-                               .queryParam("page", new Object[] {page})
-                               .queryParam("page_size", new Object[] {limit})
-                               .build(new Object[0]))
-                  .rel("self")
-                  .build(new Object[0]));
-    if (page >= 1) {
-      links.add(Link.fromUri(fromPath(path)
-                                 .queryParam("page", new Object[] {page - 1})
-                                 .queryParam("page_size", new Object[] {limit})
-                                 .build(new Object[0]))
-                    .rel("previous")
-                    .build(new Object[0]));
-    }
-
-    if (limit == currentResultCount) {
-      links.add(Link.fromUri(fromPath(path)
-                                 .queryParam("page", new Object[] {page + 1})
-                                 .queryParam("page_size", new Object[] {limit})
-                                 .build(new Object[0]))
-                    .rel("next")
-                    .build(new Object[0]));
-    }
-
-    return responseBuilder.links((Link[]) links.toArray(new Link[links.size()]));
   }
 
   public static PipelineListResponseBody getPipelines(PMSPipelineSummaryResponseDTO pipelineDTO) {
@@ -442,5 +407,47 @@ public class PipelinesApiUtils {
 
   public static PipelineValidationResponseBody buildPipelineValidationResponseBody(PipelineValidationEvent event) {
     return new PipelineValidationResponseBody().status(event.getStatus().name());
+  }
+
+  public static GovernanceMetadata buildGovernanceMetadataFromProto(
+      io.harness.governance.GovernanceMetadata protoMetadata) {
+    return new GovernanceMetadata()
+        .deny(protoMetadata.getDeny())
+        .message(protoMetadata.getMessage())
+        .status(GovernanceStatus.fromValue(protoMetadata.getStatus().toUpperCase()))
+        .policySets(buildPolicySetMetadata(protoMetadata.getDetailsList()));
+  }
+
+  private static List<PolicySet> buildPolicySetMetadata(List<PolicySetMetadata> detailsList) {
+    if (EmptyPredicate.isEmpty(detailsList)) {
+      return null;
+    }
+    return detailsList.stream()
+        .map(policySet
+            -> new PolicySet()
+                   .identifier(policySet.getIdentifier())
+                   .name(policySet.getPolicySetName())
+                   .org(policySet.getOrgId())
+                   .project(policySet.getProjectId())
+                   .status(GovernanceStatus.fromValue(policySet.getStatus().toUpperCase()))
+                   .policies(buildPoliciesMetadata(policySet.getPolicyMetadataList())))
+        .collect(Collectors.toList());
+  }
+
+  private static List<Policy> buildPoliciesMetadata(List<PolicyMetadata> policyMetadataList) {
+    if (EmptyPredicate.isEmpty(policyMetadataList)) {
+      return null;
+    }
+    return policyMetadataList.stream()
+        .map(policy
+            -> new Policy()
+                   .identifier(policy.getIdentifier())
+                   .name(policy.getPolicyName())
+                   .org(policy.getOrgId())
+                   .project(policy.getProjectId())
+                   .evaluationError(policy.getError())
+                   .denyMessages(policy.getDenyMessagesList())
+                   .status(GovernanceStatus.fromValue(policy.getStatus().toUpperCase())))
+        .collect(Collectors.toList());
   }
 }

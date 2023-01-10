@@ -153,7 +153,7 @@ public class ServerlessAwsCommandTaskHelperTest extends CategoryTest {
   @Test
   @Owner(developers = PIYUSH_BHUWALKA)
   @Category(UnitTests.class)
-  public void testGetPreviousVersionTimeStamp() throws IOException {
+  public void testGetPreviousVersionTimeStamp() throws IOException, InterruptedException, TimeoutException {
     String output = "Warning: Invalid configuration encountered\n"
         + "  at 'provider.tracing': must be object\n"
         + "\n"
@@ -221,8 +221,8 @@ public class ServerlessAwsCommandTaskHelperTest extends CategoryTest {
     doReturn(listObjectsV2Result).when(awsApiHelperService).listObjectsInS3(any(), any(), any());
     doReturn(AwsInternalConfig.builder().build()).when(awsNgConfigMapper).createAwsInternalConfig(any());
 
-    assertThat(
-        serverlessAwsCommandTaskHelper.getLastDeployedTimestamp(null, timeStamps, serverlessPrepareRollbackDataRequest))
+    assertThat(serverlessAwsCommandTaskHelper.getLastDeployedTimestamp(
+                   timeStamps, serverlessPrepareRollbackDataRequest, "abc"))
         .isEqualTo(Optional.of("1646988531400"));
   }
 
@@ -352,8 +352,8 @@ public class ServerlessAwsCommandTaskHelperTest extends CategoryTest {
         .when(awsCFHelperServiceDelegate)
         .getPhysicalIdBasedOnLogicalId(any(), any(), any(), any());
     doReturn(AwsInternalConfig.builder().build()).when(awsNgConfigMapper).createAwsInternalConfig(any());
-    assertThat(serverlessAwsCommandTaskHelper.getServerlessDeploymentBucketName(logCallback,
-                   serverlessPrepareRollbackDataRequest, serverlessPrepareRollbackDataRequest.getManifestContent()))
+    assertThat(
+        serverlessAwsCommandTaskHelper.getServerlessDeploymentBucketName(serverlessPrepareRollbackDataRequest, "abc"))
         .isEqualTo(Optional.of("abc1646988531400xyz"));
   }
 
@@ -462,7 +462,6 @@ public class ServerlessAwsCommandTaskHelperTest extends CategoryTest {
   @Owner(developers = PIYUSH_BHUWALKA)
   @Category(UnitTests.class)
   public void cloudFormationStackExistsTest() throws Exception {
-    String serverlessManifest = "service: ABC";
     ServerlessAwsLambdaInfraConfig serverlessAwsLambdaInfraConfig = ServerlessAwsLambdaInfraConfig.builder()
                                                                         .region("us-east-2")
                                                                         .stage("dev")
@@ -473,7 +472,7 @@ public class ServerlessAwsCommandTaskHelperTest extends CategoryTest {
         + "-"
         + "dev";
     when(awsNgConfigMapper.createAwsInternalConfig(awsConnectorDTO)).thenReturn(awsInternalConfig);
-    serverlessAwsCommandTaskHelper.cloudFormationStackExists(logCallback, serverlessCommandRequest, serverlessManifest);
+    serverlessAwsCommandTaskHelper.cloudFormationStackExists(cloudFormationStackName, serverlessAwsLambdaInfraConfig);
     verify(awsNgConfigMapper, times(1)).createAwsInternalConfig(awsConnectorDTO);
     verify(awsCFHelperServiceDelegate, times(1))
         .stackExists(awsInternalConfig, serverlessAwsLambdaInfraConfig.getRegion(), cloudFormationStackName);
@@ -558,5 +557,51 @@ public class ServerlessAwsCommandTaskHelperTest extends CategoryTest {
     verify(awsCliClient)
         .setConfigure(eq("aws_session_token"), eq("IQoJb3JpZ2luX2VjEGMaC"), eq(new HashMap<>()),
             eq(serverlessDelegateTaskParams.getWorkingDirectory()), eq(logCallback), eq(600l), eq(""));
+  }
+
+  @Test
+  @Owner(developers = PRAGYESH)
+  @Category(UnitTests.class)
+  public void testGetCustomCloudFormationStackName() throws Exception {
+    ServerlessCliResponse printResponse = ServerlessCliResponse.builder()
+                                              .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                                              .output("service: my-service\n"
+                                                  + "provider:\n"
+                                                  + "  name: aws\n"
+                                                  + "  runtime: nodejs14.x\n"
+                                                  + "  stackName: testStack")
+                                              .build();
+    Mockito.mockStatic(ServerlessCommandTaskHelper.class);
+    PowerMockito.when(ServerlessCommandTaskHelper.executeCommand(any(), any(), any(), anyBoolean(), anyLong(), any()))
+        .thenReturn(printResponse);
+    Optional<String> stack = serverlessAwsCommandTaskHelper.getCustomCloudFormationStackName(
+        ServerlessClient.client("abc"), serverlessDelegateTaskParams, logCallback, 500L,
+        ServerlessAwsLambdaManifestConfig.builder().build(), new HashMap<>());
+    PowerMockito.verifyStatic(ServerlessCommandTaskHelper.class, times(1));
+    ServerlessCommandTaskHelper.executeCommand(any(), any(), any(), anyBoolean(), anyLong(), any());
+    assertThat(stack.isPresent()).isEqualTo(true);
+    assertThat(stack.get()).isEqualTo("testStack");
+  }
+
+  @Test
+  @Owner(developers = PRAGYESH)
+  @Category(UnitTests.class)
+  public void testGetCustomCloudFormationStackNameWithDefaultStack() throws Exception {
+    ServerlessCliResponse printResponse = ServerlessCliResponse.builder()
+                                              .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                                              .output("service: my-service\n"
+                                                  + "provider:\n"
+                                                  + "  name: aws\n"
+                                                  + "  runtime: nodejs14.x")
+                                              .build();
+    Mockito.mockStatic(ServerlessCommandTaskHelper.class);
+    PowerMockito.when(ServerlessCommandTaskHelper.executeCommand(any(), any(), any(), anyBoolean(), anyLong(), any()))
+        .thenReturn(printResponse);
+    Optional<String> stack = serverlessAwsCommandTaskHelper.getCustomCloudFormationStackName(
+        ServerlessClient.client("abc"), serverlessDelegateTaskParams, logCallback, 500L,
+        ServerlessAwsLambdaManifestConfig.builder().build(), new HashMap<>());
+    PowerMockito.verifyStatic(ServerlessCommandTaskHelper.class, times(1));
+    ServerlessCommandTaskHelper.executeCommand(any(), any(), any(), anyBoolean(), anyLong(), any());
+    assertThat(stack.isPresent()).isEqualTo(false);
   }
 }

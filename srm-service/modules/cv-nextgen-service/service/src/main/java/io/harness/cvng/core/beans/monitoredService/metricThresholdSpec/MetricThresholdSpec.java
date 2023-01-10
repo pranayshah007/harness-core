@@ -7,8 +7,11 @@
 
 package io.harness.cvng.core.beans.monitoredService.metricThresholdSpec;
 
+import static io.harness.cvng.CVConstants.METRIC_THRESHOLD_METRIC_TYPE;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Data;
@@ -24,6 +27,8 @@ import lombok.experimental.SuperBuilder;
   @JsonSubTypes.Type(value = IgnoreMetricThresholdSpec.class, name = "IgnoreThreshold")
   , @JsonSubTypes.Type(value = FailMetricThresholdSpec.class, name = "FailImmediately")
 })
+@JsonTypeInfo(
+    use = JsonTypeInfo.Id.NAME, property = METRIC_THRESHOLD_METRIC_TYPE, include = JsonTypeInfo.As.EXTERNAL_PROPERTY)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public abstract class MetricThresholdSpec {
   @NotNull MetricCustomThresholdActions action;

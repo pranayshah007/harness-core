@@ -17,6 +17,8 @@ import io.harness.cvng.activity.entities.DeploymentActivity;
 import io.harness.cvng.activity.entities.DeploymentActivity.DeploymentActivityBuilder;
 import io.harness.cvng.activity.entities.HarnessCDCurrentGenActivity;
 import io.harness.cvng.activity.entities.HarnessCDCurrentGenActivity.HarnessCDCurrentGenActivityBuilder;
+import io.harness.cvng.activity.entities.InternalChangeActivity;
+import io.harness.cvng.activity.entities.InternalChangeActivity.InternalChangeActivityBuilder;
 import io.harness.cvng.activity.entities.KubernetesClusterActivity;
 import io.harness.cvng.activity.entities.KubernetesClusterActivity.KubernetesClusterActivityBuilder;
 import io.harness.cvng.activity.entities.KubernetesClusterActivity.RelatedAppMonitoredService;
@@ -26,6 +28,7 @@ import io.harness.cvng.analysis.entities.CanaryLogAnalysisLearningEngineTask;
 import io.harness.cvng.analysis.entities.CanaryLogAnalysisLearningEngineTask.CanaryLogAnalysisLearningEngineTaskBuilder;
 import io.harness.cvng.analysis.entities.LearningEngineTask.LearningEngineTaskType;
 import io.harness.cvng.beans.CVMonitoringCategory;
+import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.MonitoredServiceDataSourceType;
 import io.harness.cvng.beans.MonitoredServiceType;
 import io.harness.cvng.beans.ThresholdConfigType;
@@ -34,11 +37,15 @@ import io.harness.cvng.beans.TimeSeriesMetricType;
 import io.harness.cvng.beans.TimeSeriesThresholdComparisonType;
 import io.harness.cvng.beans.TimeSeriesThresholdCriteria;
 import io.harness.cvng.beans.TimeSeriesThresholdType;
+import io.harness.cvng.beans.activity.ActivityType;
 import io.harness.cvng.beans.change.ChangeEventDTO;
 import io.harness.cvng.beans.change.ChangeEventDTO.ChangeEventDTOBuilder;
 import io.harness.cvng.beans.change.ChangeSourceType;
+import io.harness.cvng.beans.change.DeepLink;
 import io.harness.cvng.beans.change.HarnessCDCurrentGenEventMetadata;
 import io.harness.cvng.beans.change.HarnessCDEventMetadata;
+import io.harness.cvng.beans.change.InternalChangeEvent;
+import io.harness.cvng.beans.change.InternalChangeEventMetaData;
 import io.harness.cvng.beans.change.KubernetesChangeEventMetadata;
 import io.harness.cvng.beans.change.KubernetesChangeEventMetadata.Action;
 import io.harness.cvng.beans.change.KubernetesChangeEventMetadata.KubernetesResourceType;
@@ -58,6 +65,15 @@ import io.harness.cvng.cdng.beans.DefaultMonitoredServiceSpec.DefaultMonitoredSe
 import io.harness.cvng.cdng.beans.TemplateMonitoredServiceSpec;
 import io.harness.cvng.cdng.beans.TemplateMonitoredServiceSpec.TemplateMonitoredServiceSpecBuilder;
 import io.harness.cvng.cdng.beans.TestVerificationJobSpec;
+import io.harness.cvng.cdng.beans.v2.AnalysedDeploymentTestDataNode;
+import io.harness.cvng.cdng.beans.v2.AnalysisReason;
+import io.harness.cvng.cdng.beans.v2.AnalysisResult;
+import io.harness.cvng.cdng.beans.v2.ControlDataType;
+import io.harness.cvng.cdng.beans.v2.MetricThreshold;
+import io.harness.cvng.cdng.beans.v2.MetricThresholdCriteria;
+import io.harness.cvng.cdng.beans.v2.MetricType;
+import io.harness.cvng.cdng.beans.v2.MetricValue;
+import io.harness.cvng.cdng.beans.v2.MetricsAnalysis;
 import io.harness.cvng.cdng.entities.CVNGStepTask;
 import io.harness.cvng.cdng.entities.CVNGStepTask.CVNGStepTaskBuilder;
 import io.harness.cvng.cdng.entities.CVNGStepTask.Status;
@@ -84,6 +100,8 @@ import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.CustomHealthS
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.CustomHealthSourceMetricSpec;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.HealthSourceSpec;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.MetricResponseMapping;
+import io.harness.cvng.core.beans.monitoredService.metricThresholdSpec.MetricCustomThresholdActions;
+import io.harness.cvng.core.beans.monitoredService.metricThresholdSpec.MetricThresholdActionType;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
@@ -114,8 +132,13 @@ import io.harness.cvng.core.entities.ErrorTrackingCVConfig.ErrorTrackingCVConfig
 import io.harness.cvng.core.entities.MetricPack;
 import io.harness.cvng.core.entities.NewRelicCVConfig;
 import io.harness.cvng.core.entities.NewRelicCVConfig.NewRelicCVConfigBuilder;
+import io.harness.cvng.core.entities.NextGenLogCVConfig;
+import io.harness.cvng.core.entities.NextGenLogCVConfig.NextGenLogCVConfigBuilder;
+import io.harness.cvng.core.entities.NextGenMetricCVConfig;
+import io.harness.cvng.core.entities.NextGenMetricCVConfig.NextGenMetricCVConfigBuilder;
 import io.harness.cvng.core.entities.PrometheusCVConfig;
 import io.harness.cvng.core.entities.PrometheusCVConfig.PrometheusCVConfigBuilder;
+import io.harness.cvng.core.entities.QueryParams;
 import io.harness.cvng.core.entities.SplunkCVConfig;
 import io.harness.cvng.core.entities.SplunkCVConfig.SplunkCVConfigBuilder;
 import io.harness.cvng.core.entities.SplunkMetricCVConfig;
@@ -199,6 +222,8 @@ import io.harness.cvng.verificationjob.entities.VerificationJob.RuntimeParameter
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance.VerificationJobInstanceBuilder;
 import io.harness.delegate.beans.connector.customhealthconnector.CustomHealthMethod;
+import io.harness.eventsframework.schemas.cv.EventDetails;
+import io.harness.eventsframework.schemas.cv.InternalChangeEventDTO;
 import io.harness.eventsframework.schemas.deployment.ArtifactDetails;
 import io.harness.eventsframework.schemas.deployment.DeploymentEventDTO;
 import io.harness.eventsframework.schemas.deployment.ExecutionDetails;
@@ -294,13 +319,16 @@ public class BuilderFactory {
     Map<String, CVConfig> cvConfigMap = new HashMap<>();
     cvConfigMap.put(cvConfig.getUuid(), cvConfig);
     cvConfigMap.put(cvConfig2.getUuid(), cvConfig2);
+    List<CVConfig> cvConfigs = new ArrayList<>();
+    cvConfigs.add(cvConfig);
+    cvConfigs.add(cvConfig2);
     return VerificationJobInstance.builder()
         .accountId(context.getAccountId())
         .deploymentStartTime(clock.instant().minus(Duration.ofMinutes(2)))
         .startTime(clock.instant())
         .cvConfigMap(cvConfigMap)
         .dataCollectionDelay(Duration.ofMinutes(2))
-        .resolvedJob(getVerificationJob());
+        .resolvedJob(getVerificationJob(cvConfigs));
   }
 
   public SLOHealthIndicatorBuilder sLOHealthIndicatorBuilder() {
@@ -406,8 +434,15 @@ public class BuilderFactory {
         .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
         .identifier(context.getMonitoredServiceIdentifier() + "/" + generateUuid())
         .monitoringSourceName(generateUuid())
-        .metricPack(
-            MetricPack.builder().identifier(CVNextGenConstants.CUSTOM_PACK_IDENTIFIER).dataCollectionDsl("dsl").build())
+        .metricPack(MetricPack.builder()
+                        .identifier(CVNextGenConstants.CUSTOM_PACK_IDENTIFIER)
+                        .metrics(Collections.singleton(MetricPack.MetricDefinition.builder()
+                                                           .identifier("identifier")
+                                                           .type(TimeSeriesMetricType.OTHER)
+                                                           .name("name")
+                                                           .build()))
+                        .dataCollectionDsl("dsl")
+                        .build())
         .metricInfos(
             Arrays.asList(AppDynamicsCVConfig.MetricInfo.builder().identifier("identifier").metricName("name").build()))
         .applicationName(generateUuid())
@@ -506,6 +541,35 @@ public class BuilderFactory {
         .connectorIdentifier("connectorRef")
         .identifier(context.getMonitoredServiceIdentifier() + "/" + generateUuid())
         .category(CVMonitoringCategory.PERFORMANCE);
+  }
+
+  public NextGenMetricCVConfigBuilder nextGenMetricCVConfigBuilder(DataSourceType dataSourceType) {
+    return NextGenMetricCVConfig.builder()
+        .accountId(context.getAccountId())
+        .dataSourceType(dataSourceType)
+        .orgIdentifier(context.getOrgIdentifier())
+        .projectIdentifier(context.getProjectIdentifier())
+        .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
+        .connectorIdentifier("connectorRef")
+        .identifier(context.getMonitoredServiceIdentifier() + "/" + generateUuid());
+  }
+
+  public NextGenLogCVConfigBuilder nextGenLogCVConfigBuilder(
+      DataSourceType dataSourceType, String groupName, String queryIdentifier) {
+    return NextGenLogCVConfig.builder()
+        .accountId(context.getAccountId())
+        .dataSourceType(dataSourceType)
+        .groupName(groupName)
+        .queryIdentifier(queryIdentifier)
+        .orgIdentifier(context.getOrgIdentifier())
+        .projectIdentifier(context.getProjectIdentifier())
+        .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
+        .queryParams(QueryParams.builder().serviceInstanceField("hostname").build())
+        .enabled(true)
+        .category(CVMonitoringCategory.ERRORS)
+        .connectorIdentifier("connectorRef")
+        .productName(generateUuid())
+        .createdAt(clock.millis());
   }
 
   public ErrorTrackingCVConfigBuilder errorTrackingCVConfigBuilder() {
@@ -862,6 +926,29 @@ public class BuilderFactory {
         .activityStartTime(clock.instant());
   }
 
+  public InternalChangeActivityBuilder<?, ?> getInternalChangeActivity_FFBuilder() {
+    return InternalChangeActivity.builder()
+        .accountId(context.getAccountId())
+        .orgIdentifier(context.getOrgIdentifier())
+        .projectIdentifier(context.getProjectIdentifier())
+        .monitoredServiceIdentifier(context.getMonitoredServiceParams().getMonitoredServiceIdentifier())
+        .eventTime(clock.instant())
+        .changeSourceIdentifier("changeSourceID")
+        .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
+        .type(ActivityType.FEATURE_FLAG)
+        .activityType(ActivityType.FEATURE_FLAG)
+        .updatedBy("user")
+        .internalChangeEvent(
+            InternalChangeEvent.builder()
+                .changeEventDetailsLink(
+                    DeepLink.builder().action(DeepLink.Action.FETCH_DIFF_DATA).url("changeEventDetails").build())
+                .internalLinkToEntity(
+                    DeepLink.builder().action(DeepLink.Action.REDIRECT_URL).url("internalUrl").build())
+                .eventDescriptions(Arrays.asList("eventDesc1", "eventDesc2"))
+                .build())
+        .eventEndTime(clock.instant().toEpochMilli());
+  }
+
   public HarnessCDCurrentGenActivityBuilder getHarnessCDCurrentGenActivityBuilder() {
     return HarnessCDCurrentGenActivity.builder()
         .accountId(context.getAccountId())
@@ -988,6 +1075,26 @@ public class BuilderFactory {
                       .build());
   }
 
+  public ChangeEventDTOBuilder getInternalChangeEventDTO_FFBuilder() {
+    return getChangeEventDTOBuilder()
+        .type(ChangeSourceType.HARNESS_FF)
+        .metadata(InternalChangeEventMetaData.builder()
+                      .activityType(ActivityType.FEATURE_FLAG)
+                      .updatedBy("user")
+                      .eventStartTime(1000l)
+                      .internalChangeEvent(
+                          InternalChangeEvent.builder()
+                              .changeEventDetailsLink(DeepLink.builder()
+                                                          .action(DeepLink.Action.FETCH_DIFF_DATA)
+                                                          .url("changeEventDetails")
+                                                          .build())
+                              .internalLinkToEntity(
+                                  DeepLink.builder().action(DeepLink.Action.REDIRECT_URL).url("internalUrl").build())
+                              .eventDescriptions(Arrays.asList("eventDesc1", "eventDesc2"))
+                              .build())
+                      .build());
+  }
+
   public ChangeEventDTOBuilder getChangeEventDTOBuilder() {
     return ChangeEventDTO.builder()
         .accountId(context.getAccountId())
@@ -1018,6 +1125,27 @@ public class BuilderFactory {
                                  .build())
         .setArtifactDetails(
             ArtifactDetails.newBuilder().setArtifactTag("artifactTag").setArtifactType("artifactType").build());
+  }
+
+  public InternalChangeEventDTO.Builder getInternalChangeEventWithMultipleServiceEnvBuilder() {
+    return getInternalChangeEventBuilder().addServiceIdentifier("Service2").addEnvironmentIdentifier("Env2");
+  }
+
+  public InternalChangeEventDTO.Builder getInternalChangeEventBuilder() {
+    return InternalChangeEventDTO.newBuilder()
+        .setAccountId(context.getAccountId())
+        .setOrgIdentifier(context.getOrgIdentifier())
+        .setProjectIdentifier(context.getProjectIdentifier())
+        .addServiceIdentifier("Service1")
+        .addEnvironmentIdentifier("Env1")
+        .setEventDetails(EventDetails.newBuilder()
+                             .setUser("user")
+                             .addEventDetails("test event detail")
+                             .setInternalLinkToEntity("testInternalUrl")
+                             .setChangeEventDetailsLink("testChangeEventDetailsLink")
+                             .build())
+        .setType("FEATURE_FLAG")
+        .setExecutionTime(1000l);
   }
 
   private ChangeSourceDTOBuilder getChangeSourceDTOBuilder(ChangeSourceType changeSourceType) {
@@ -1248,7 +1376,7 @@ public class BuilderFactory {
         .metric2("metric2");
   }
 
-  private VerificationJob getVerificationJob() {
+  private VerificationJob getVerificationJob(List<CVConfig> cvConfigs) {
     TestVerificationJob testVerificationJob = new TestVerificationJob();
     testVerificationJob.setAccountId(context.getAccountId());
     testVerificationJob.setIdentifier("identifier");
@@ -1261,6 +1389,7 @@ public class BuilderFactory {
     testVerificationJob.setMonitoredServiceIdentifier(context.getMonitoredServiceIdentifier());
     testVerificationJob.setProjectIdentifier(context.getProjectIdentifier());
     testVerificationJob.setOrgIdentifier(context.getOrgIdentifier());
+    testVerificationJob.setCvConfigs(cvConfigs);
     return testVerificationJob;
   }
 
@@ -1513,5 +1642,39 @@ public class BuilderFactory {
                                                      .timeSeriesMetricType(TimeSeriesMetricType.INFRA)
                                                      .build();
     return Arrays.asList(performanceThroughputRiskCategory, infrastructureRiskCategory);
+  }
+
+  public MetricThreshold getMetricThreshold() {
+    return MetricThreshold.builder()
+        .thresholdType(MetricThresholdActionType.IGNORE)
+        .isUserDefined(true)
+        .action(MetricCustomThresholdActions.IGNORE)
+        .criteria(MetricThresholdCriteria.builder().lessThanThreshold(1.0).build())
+        .build();
+  }
+
+  public AnalysedDeploymentTestDataNode getAnalysedDeploymentTestDataNode() {
+    return AnalysedDeploymentTestDataNode.builder()
+        .nodeIdentifier("nodeIdentifier")
+        .analysisResult(AnalysisResult.NO_ANALYSIS)
+        .analysisReason(AnalysisReason.NO_CONTROL_DATA)
+        .controlDataType(ControlDataType.MINIMUM_DEVIATION)
+        .controlNodeIdentifier("controlNodeIdentifier")
+        .controlData(Collections.singletonList(MetricValue.builder().value(1.0).timestamp(1L).build()))
+        .testData(Collections.singletonList(MetricValue.builder().value(1.0).timestamp(1L).build()))
+        .build();
+  }
+
+  public MetricsAnalysis getMetricsAnalysis() {
+    return MetricsAnalysis.builder()
+        .metricName("metricName")
+        .metricType(MetricType.ERROR)
+        .metricIdentifier("metricIdentifier")
+        .healthSourceIdentifier("healthSourceIdentifier")
+        .transactionGroup("transactionGroup")
+        .thresholds(Collections.singletonList(getMetricThreshold()))
+        .analysisResult(AnalysisResult.NO_ANALYSIS)
+        .testDataNodes(Collections.singletonList(getAnalysedDeploymentTestDataNode()))
+        .build();
   }
 }

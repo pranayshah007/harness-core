@@ -24,6 +24,7 @@ import io.harness.execution.NodeExecution;
 import io.harness.interrupts.Interrupt;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.interrupts.InterruptType;
+import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.execution.utils.StatusUtils;
 
 import com.google.inject.Inject;
@@ -71,8 +72,8 @@ public class ExpireAllInterruptHandler extends InterruptPropagatorHandler implem
 
     // Check if plan is running
     Status planExecutionStatus = planExecutionService.getStatus(interrupt.getPlanExecutionId());
-    Optional<NodeExecution> pipelineNodeExecution =
-        nodeExecutionService.getPipelineNodeExecution(interrupt.getPlanExecutionId());
+    Optional<NodeExecution> pipelineNodeExecution = nodeExecutionService.getPipelineNodeExecutionWithProjections(
+        interrupt.getPlanExecutionId(), NodeProjectionUtils.withStatus);
     if (pipelineNodeExecution.isEmpty()) {
       throw new InvalidRequestException(
           String.format("NodeExecution not found for pipeline node for planExecutionId %s and interruptId %s",

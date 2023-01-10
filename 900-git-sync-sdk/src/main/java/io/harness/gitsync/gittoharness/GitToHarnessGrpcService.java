@@ -9,8 +9,8 @@ package io.harness.gitsync.gittoharness;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
-import io.harness.AuthorizationServiceHeader;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.gitsync.ChangeSet;
 import io.harness.gitsync.GitToHarnessProcessRequest;
 import io.harness.gitsync.GitToHarnessServiceGrpc.GitToHarnessServiceImplBase;

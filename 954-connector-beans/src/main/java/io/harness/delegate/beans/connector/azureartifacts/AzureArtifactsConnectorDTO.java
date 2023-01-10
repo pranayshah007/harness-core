@@ -31,6 +31,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.hibernate.validator.constraints.NotBlank;
+import org.hibernate.validator.constraints.URL;
 
 @Data
 @NoArgsConstructor
@@ -44,7 +45,7 @@ public class AzureArtifactsConnectorDTO extends ConnectorConfigDTO implements De
   /**
    * Azure Artifacts Url
    */
-  @NotBlank @NotNull @Schema(description = "HTTP URL for Azure Artifacts Registry") String azureArtifactsUrl;
+  @URL @NotBlank @NotNull @Schema(description = "HTTP URL for Azure Artifacts Registry") String azureArtifactsUrl;
 
   /**
    * Authentication Details

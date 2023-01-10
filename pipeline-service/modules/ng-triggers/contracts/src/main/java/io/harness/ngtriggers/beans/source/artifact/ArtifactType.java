@@ -10,25 +10,26 @@ package io.harness.ngtriggers.beans.source.artifact;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ngtriggers.Constants;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @OwnedBy(PIPELINE)
 public enum ArtifactType {
-  @JsonProperty("Gcr") GCR("Gcr"),
-  @JsonProperty("Ecr") ECR("Ecr"),
-  @JsonProperty("DockerRegistry") DOCKER_REGISTRY("DockerRegistry"),
-  @JsonProperty("Nexus3Registry") NEXUS3_REGISTRY("Nexus3Registry"),
-  @JsonProperty("Nexus2Registry") NEXUS2_REGISTRY("Nexus2Registry"),
-  @JsonProperty("ArtifactoryRegistry") ARTIFACTORY_REGISTRY("ArtifactoryRegistry"),
-  @JsonProperty("Acr") ACR("Acr"),
-  @JsonProperty("AmazonS3") AMAZON_S3("AmazonS3"),
-  @JsonProperty("Jenkins") JENKINS("Jenkins"),
-  @JsonProperty("CustomArtifact") CUSTOM_ARTIFACT("CustomArtifact"),
-  @JsonProperty("GoogleArtifactRegistry") GoogleArtifactRegistry("GoogleArtifactRegistry"),
-  @JsonProperty("GithubPackageRegistry") GITHUB_PACKAGES("GithubPackageRegistry"),
-  @JsonProperty("AzureArtifacts") AZURE_ARTIFACTS("AzureArtifacts"),
-  @JsonProperty("AmazonMachineImage") AMI("AmazonMachineImage");
+  @JsonProperty(Constants.GCR) GCR(Constants.GCR),
+  @JsonProperty(Constants.ECR) ECR(Constants.ECR),
+  @JsonProperty(Constants.DOCKER_REGISTRY) DOCKER_REGISTRY(Constants.DOCKER_REGISTRY),
+  @JsonProperty(Constants.NEXUS3_REGISTRY) NEXUS3_REGISTRY(Constants.NEXUS3_REGISTRY),
+  @JsonProperty(Constants.NEXUS2_REGISTRY) NEXUS2_REGISTRY(Constants.NEXUS2_REGISTRY),
+  @JsonProperty(Constants.ARTIFACTORY_REGISTRY) ARTIFACTORY_REGISTRY(Constants.ARTIFACTORY_REGISTRY),
+  @JsonProperty(Constants.ACR) ACR(Constants.ACR),
+  @JsonProperty(Constants.AMAZON_S3) AMAZON_S3(Constants.AMAZON_S3),
+  @JsonProperty(Constants.JENKINS) JENKINS(Constants.JENKINS),
+  @JsonProperty(Constants.CUSTOM_ARTIFACT) CUSTOM_ARTIFACT(Constants.CUSTOM_ARTIFACT),
+  @JsonProperty(Constants.GOOGLE_ARTIFACT_REGISTRY) GoogleArtifactRegistry(Constants.GOOGLE_ARTIFACT_REGISTRY),
+  @JsonProperty(Constants.GITHUB_PACKAGES) GITHUB_PACKAGES(Constants.GITHUB_PACKAGES),
+  @JsonProperty(Constants.AZURE_ARTIFACTS) AZURE_ARTIFACTS(Constants.AZURE_ARTIFACTS),
+  @JsonProperty(Constants.AMI) AMI(Constants.AMI);
 
   private String value;
 

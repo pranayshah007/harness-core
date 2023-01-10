@@ -9,7 +9,7 @@ package io.harness.ci.execution;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.pms.PmsCommonConstants.AUTO_ABORT_PIPELINE_THROUGH_TRIGGER;
-import static io.harness.pms.contracts.execution.Status.QUEUED;
+import static io.harness.pms.contracts.execution.Status.RUNNING;
 import static io.harness.pms.execution.utils.StatusUtils.isFinalStatus;
 import static io.harness.steps.StepUtils.buildAbstractions;
 
@@ -181,6 +181,7 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
     String taskType = "CI_CLEANUP";
     SerializationFormat serializationFormat = SerializationFormat.KRYO;
     boolean executeOnHarnessHostedDelegates = false;
+    String stageId = ambiance.getStageExecutionId();
     List<String> eligibleToExecuteDelegateIds = new ArrayList<>();
 
     CICleanupTaskParams.Type type = ciCleanupTaskParams.getType();
@@ -188,7 +189,6 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
       taskType = TaskType.DLITE_CI_VM_CLEANUP_TASK.getDisplayName();
       executeOnHarnessHostedDelegates = true;
       serializationFormat = SerializationFormat.JSON;
-      String stageId = ambiance.getStageExecutionId();
       String delegateId = fetchDelegateId(ambiance);
       if (Strings.isNotBlank(delegateId)) {
         eligibleToExecuteDelegateIds.add(delegateId);
@@ -216,6 +216,7 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
     return DelegateTaskRequest.builder()
         .accountId(accountId)
         .executeOnHarnessHostedDelegates(executeOnHarnessHostedDelegates)
+        .stageId(stageId)
         .eligibleToExecuteDelegateIds(eligibleToExecuteDelegateIds)
         .taskSelectors(taskSelectors.stream().map(TaskSelector::getSelector).collect(Collectors.toList()))
         .taskSetupAbstractions(abstractions)
@@ -280,7 +281,7 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
     LicensesWithSummaryDTO licensesWithSummaryDTO = ciLicenseService.getLicenseSummary(accountId);
     if (licensesWithSummaryDTO != null && licensesWithSummaryDTO.getEdition() == Edition.FREE) {
       if (level != null && serviceName.equalsIgnoreCase(SERVICE_NAME_CI)
-          && level.getStepType().getStepCategory() == StepCategory.STAGE && (status == QUEUED)) {
+          && level.getStepType().getStepCategory() == StepCategory.STAGE && (status == RUNNING)) {
         ciAccountExecutionMetadataRepository.updateCIDailyBuilds(accountId, level.getStartTs());
       }
     }

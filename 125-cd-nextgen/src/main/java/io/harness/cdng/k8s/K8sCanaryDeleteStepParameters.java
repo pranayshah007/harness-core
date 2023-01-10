@@ -32,9 +32,8 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.k8s.K8sCanaryDeleteStepParameters")
 public class K8sCanaryDeleteStepParameters extends K8sCanaryDeleteStepInfo implements K8sSpecParameters {
   @Builder(builderMethodName = "infoBuilder")
-  public K8sCanaryDeleteStepParameters(ParameterField<Boolean> skipDryRun,
+  public K8sCanaryDeleteStepParameters(
       ParameterField<List<TaskSelectorYaml>> delegateSelectors, String canaryStepFqn, String canaryDeleteStepFqn) {
-    this.skipDryRun = skipDryRun;
     this.delegateSelectors = delegateSelectors;
     this.canaryStepFqn = canaryStepFqn;
     this.canaryDeleteStepFqn = canaryDeleteStepFqn;

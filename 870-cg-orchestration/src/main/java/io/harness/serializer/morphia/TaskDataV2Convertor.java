@@ -12,10 +12,10 @@ import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import dev.morphia.converters.SimpleValueConverter;
+import dev.morphia.converters.TypeConverter;
+import dev.morphia.mapping.MappedField;
 import java.util.HashMap;
-import org.mongodb.morphia.converters.SimpleValueConverter;
-import org.mongodb.morphia.converters.TypeConverter;
-import org.mongodb.morphia.mapping.MappedField;
 
 public class TaskDataV2Convertor extends TypeConverter implements SimpleValueConverter {
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
@@ -30,7 +30,8 @@ public class TaskDataV2Convertor extends TypeConverter implements SimpleValueCon
       return null;
     }
     TaskDataV2 taskDataV2 = (TaskDataV2) value;
-    taskDataV2.setExpressions(new HashMap<>(taskDataV2.getExpressions()));
+    taskDataV2.setExpressions(
+        taskDataV2.getExpressions() != null ? new HashMap<>(taskDataV2.getExpressions()) : new HashMap<>());
     return referenceFalseKryoSerializer.asBytes(value);
   }
 

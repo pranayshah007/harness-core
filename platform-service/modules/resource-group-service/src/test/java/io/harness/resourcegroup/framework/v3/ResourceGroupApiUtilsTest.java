@@ -39,6 +39,7 @@ import io.harness.spec.server.resourcegroup.v1.model.ResourceGroupScope.FilterEn
 import io.harness.spec.server.resourcegroup.v1.model.ResourceGroupsResponse;
 import io.harness.spec.server.resourcegroup.v1.model.ResourceGroupsResponse.AllowedScopeLevelsEnum;
 import io.harness.spec.server.resourcegroup.v1.model.ResourceSelectorFilter;
+import io.harness.utils.ApiUtils;
 
 import java.util.Collections;
 import java.util.List;
@@ -254,7 +255,7 @@ public class ResourceGroupApiUtilsTest extends CategoryTest {
     String sort = "name";
     String order = "desc";
 
-    PageRequest pageRequest = ResourceGroupApiUtils.getPageRequest(page, limit, sort, order);
+    PageRequest pageRequest = ApiUtils.getPageRequest(page, limit, sort, order);
     assertEquals(pageRequest.getPageIndex(), page);
     assertEquals(pageRequest.getPageSize(), limit);
     assertEquals(pageRequest.getSortOrders().get(0).getFieldName(), sort);

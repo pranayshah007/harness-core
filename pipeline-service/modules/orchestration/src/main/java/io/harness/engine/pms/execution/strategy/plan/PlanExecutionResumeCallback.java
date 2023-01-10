@@ -50,8 +50,7 @@ public class PlanExecutionResumeCallback implements OldNotifyCallback {
         projectIdentifier, pipelineIdentifier);
     try (AcquiredLock<?> lock =
              persistentLocker.waitToAcquireLock(lockName, Duration.ofSeconds(10), Duration.ofSeconds(30))) {
-      PlanExecution planExecution = planExecutionService.findNextExecutionToRun(
-          accountIdIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier);
+      PlanExecution planExecution = planExecutionService.findNextExecutionToRunInAccount(accountIdIdentifier);
       if (planExecution != null) {
         planExecutionService.updateStatus(planExecution.getUuid(), Status.RUNNING);
         planExecutionStrategy.startPlanExecution(

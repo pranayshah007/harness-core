@@ -27,6 +27,7 @@ public class K8sCCMConstants {
   public static final String EKSCTL_NODE_POOL_KEY = "alpha.eksctl.io/nodegroup-name";
   public static final String EKS_NODE_POOL_KEY = "eks.amazonaws.com/nodegroup";
   public static final String KOPS_NODE_POOL_KEY = "kops.k8s.io/instancegroup";
+  public static final String GENERAL_NODE_POOL_KEY = "node-pool-name";
   public static final String COMPUTE_TYPE = "eks.amazonaws.com/compute-type";
   public static final String UNALLOCATED = "Unallocated";
   public static final String DEFAULT_DEPLOYMENT_TYPE = "Pod";

@@ -74,8 +74,8 @@ public class DeploymentFreezeChecker implements PreDeploymentChecker {
     }
 
     if (governanceConfig.isDeploymentFreeze()) {
-      throw new DeploymentFreezeException(
-          DEPLOYMENT_GOVERNANCE_ERROR, Level.INFO, USER, accountId, Collections.emptyList(), "", true, false);
+      throw new DeploymentFreezeException(DEPLOYMENT_GOVERNANCE_ERROR, Level.INFO, USER, accountId,
+          Collections.emptyList(), Collections.emptyList(), "", true, false);
     }
 
     if (featureFlagService.isEnabled(FeatureName.NEW_DEPLOYMENT_FREEZE, accountId)) {
@@ -120,6 +120,7 @@ public class DeploymentFreezeChecker implements PreDeploymentChecker {
     if (isNotEmpty(blockingWindows)) {
       throw new DeploymentFreezeException(DEPLOYMENT_GOVERNANCE_ERROR, Level.INFO, USER, accountId,
           blockingWindows.stream().map(GovernanceFreezeConfig::getUuid).collect(Collectors.toList()),
+          blockingWindows.stream().map(GovernanceFreezeConfig::getName).collect(Collectors.toList()),
           blockingWindows.stream().map(GovernanceFreezeConfig::getName).collect(Collectors.joining(", ", "[", "]")),
           false, true);
     }
@@ -197,6 +198,7 @@ public class DeploymentFreezeChecker implements PreDeploymentChecker {
     if (isNotEmpty(blockingWindows)) {
       throw new DeploymentFreezeException(DEPLOYMENT_GOVERNANCE_ERROR, Level.INFO, USER, accountId,
           blockingWindows.stream().map(GovernanceFreezeConfig::getUuid).collect(Collectors.toList()),
+          blockingWindows.stream().map(GovernanceFreezeConfig::getName).collect(Collectors.toList()),
           blockingWindows.stream().map(GovernanceFreezeConfig::getName).collect(Collectors.joining(", ", "[", "]")),
           false, false);
     }
@@ -250,6 +252,7 @@ public class DeploymentFreezeChecker implements PreDeploymentChecker {
       if (isNotEmpty(blockingWindows)) {
         throw new DeploymentFreezeException(DEPLOYMENT_GOVERNANCE_ERROR, Level.INFO, USER, accountId,
             blockingWindows.stream().map(GovernanceFreezeConfig::getUuid).collect(Collectors.toList()),
+            blockingWindows.stream().map(GovernanceFreezeConfig::getName).collect(Collectors.toList()),
             blockingWindows.stream().map(GovernanceFreezeConfig::getName).collect(Collectors.joining(", ", "[", "]")),
             false, false);
       }

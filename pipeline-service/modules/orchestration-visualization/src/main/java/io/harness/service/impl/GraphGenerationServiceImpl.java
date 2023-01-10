@@ -37,6 +37,7 @@ import io.harness.generator.OrchestrationAdjacencyListGenerator;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
 import io.harness.plan.NodeType;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.events.OrchestrationEventType;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.plan.execution.ExecutionSummaryUpdateUtils;
@@ -55,12 +56,14 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.data.util.CloseableIterator;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @Singleton
@@ -268,16 +271,18 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
 
   @Override
   public void sendUpdateEventIfAny(PipelineExecutionSummaryEntity executionSummaryEntity) {
-    if (!StatusUtils.isFinalStatus(executionSummaryEntity.getStatus().getEngineStatus())) {
-      orchestrationLogPublisher.sendLogEvent(executionSummaryEntity.getPlanExecutionId());
-    }
+    sendUpdateEventIfAny(executionSummaryEntity.getStatus().getEngineStatus(),
+        executionSummaryEntity.getPlanExecutionId(), executionSummaryEntity.getLastUpdatedAt());
   }
 
   private void sendUpdateEventIfAny(OrchestrationGraph orchestrationGraph) {
-    String planExecutionId = orchestrationGraph.getPlanExecutionId();
-    if (!StatusUtils.isFinalStatus(orchestrationGraph.getStatus())
-        || orchestrationEventLogRepository.checkIfAnyUnprocessedEvents(
-            orchestrationGraph.getPlanExecutionId(), orchestrationGraph.getLastUpdatedAt())) {
+    sendUpdateEventIfAny(
+        orchestrationGraph.getStatus(), orchestrationGraph.getPlanExecutionId(), orchestrationGraph.getLastUpdatedAt());
+  }
+
+  private void sendUpdateEventIfAny(Status planExecutionStatus, String planExecutionId, long lastUpdatedAt) {
+    if (!StatusUtils.isFinalStatus(planExecutionStatus)
+        || orchestrationEventLogRepository.checkIfAnyUnprocessedEvents(planExecutionId, lastUpdatedAt)) {
       orchestrationLogPublisher.sendLogEvent(planExecutionId);
     }
   }
@@ -292,7 +297,13 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
           "Try to open an execution which is not 6 months old. If issue persists, please contact harness support",
           new InvalidRequestException("Graph could not be generated for planExecutionId [" + planExecutionId + "]."));
     }
-    List<NodeExecution> nodeExecutions = nodeExecutionService.fetchNodeExecutionsWithoutOldRetries(planExecutionId);
+    List<NodeExecution> nodeExecutions = new LinkedList<>();
+    try (CloseableIterator<NodeExecution> iterator =
+             nodeExecutionService.fetchNodeExecutionsWithoutOldRetriesIterator(planExecutionId)) {
+      while (iterator.hasNext()) {
+        nodeExecutions.add(iterator.next());
+      }
+    }
     log.warn(String.format(
         "[GRAPH_ERROR]: Trying to build orchestration graph from scratch for planExecutionId [%s] with nodeExecutionsCount [%d]",
         planExecutionId, nodeExecutions.size()));

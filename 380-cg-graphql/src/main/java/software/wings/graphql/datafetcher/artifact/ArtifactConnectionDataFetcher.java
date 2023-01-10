@@ -13,7 +13,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
 import io.harness.persistence.CreatedAtAware;
 
-import software.wings.beans.artifact.Artifact;
 import software.wings.graphql.datafetcher.AbstractConnectionV2DataFetcher;
 import software.wings.graphql.schema.query.QLPageQueryParameters;
 import software.wings.graphql.schema.type.QLArtifactConnection;
@@ -25,14 +24,15 @@ import software.wings.graphql.schema.type.aggregation.artifact.QLArtifactFilter;
 import software.wings.graphql.schema.type.artifact.QLArtifact;
 import software.wings.graphql.schema.type.artifact.QLArtifact.QLArtifactBuilder;
 import software.wings.graphql.utils.nameservice.NameService;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.security.PermissionAttribute;
 import software.wings.security.annotations.AuthRule;
 
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
 import graphql.schema.DataFetchingEnvironment;
 import java.util.List;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
 
 @OwnedBy(CDC)
 public class ArtifactConnectionDataFetcher

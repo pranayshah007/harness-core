@@ -19,6 +19,7 @@ import static org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder.B
 
 import io.harness.account.services.AccountService;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
@@ -27,6 +28,7 @@ import io.harness.ng.core.AccountOrgProjectValidator;
 import io.harness.ng.core.account.ServiceAccountConfig;
 import io.harness.ng.core.api.ApiKeyService;
 import io.harness.ng.core.api.TokenService;
+import io.harness.ng.core.api.utils.JWTTokenFlowAuthFilterUtils;
 import io.harness.ng.core.common.beans.ApiKeyType;
 import io.harness.ng.core.dto.TokenAggregateDTO;
 import io.harness.ng.core.dto.TokenDTO;
@@ -46,6 +48,7 @@ import io.harness.outbox.api.OutboxService;
 import io.harness.repositories.ng.core.spring.TokenRepository;
 import io.harness.serviceaccount.ServiceAccountDTO;
 import io.harness.token.TokenValidationHelper;
+import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.PageUtils;
 
 import com.google.common.base.Preconditions;
@@ -81,6 +84,8 @@ public class TokenServiceImpl implements TokenService {
   @Inject private NgUserService ngUserService;
   @Inject private AccountService accountService;
   @Inject private TokenValidationHelper tokenValidationHelper;
+  @Inject private JWTTokenFlowAuthFilterUtils jwtTokenAuthFilterHelper;
+  @Inject private NGFeatureFlagHelperService ngFeatureFlagHelperService;
   private static final String deliminator = ".";
 
   @Override
@@ -127,13 +132,13 @@ public class TokenServiceImpl implements TokenService {
   private void validateTokenExpiryTime(TokenDTO tokenDTO) {
     if (tokenDTO.getValidTo() != null && (tokenDTO.getValidTo() < Instant.now().toEpochMilli())) {
       throw new InvalidRequestException(
-          String.format("Token's validTo cannot be set before current time TokenDTO: [%s]", tokenDTO, USER_SRE));
+          String.format("Token's validTo cannot be set before current time TokenDTO: [%s]", tokenDTO), USER_SRE);
     }
 
     if (tokenDTO.getValidTo() != null && tokenDTO.getValidFrom() != null
         && tokenDTO.getValidFrom() > tokenDTO.getValidTo()) {
       throw new InvalidRequestException(
-          String.format("Token's validFrom time cannot be after validTo time TokenDTO: [%s]", tokenDTO, USER_SRE));
+          String.format("Token's validFrom time cannot be after validTo time TokenDTO: [%s]", tokenDTO), USER_SRE);
     }
   }
 
@@ -146,7 +151,7 @@ public class TokenServiceImpl implements TokenService {
             .countByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndApiKeyTypeAndParentIdentifierAndApiKeyIdentifier(
                 accountIdentifier, orgIdentifier, projectIdentifier, apiKeyType, parentIdentifier, apiKeyIdentifier);
     if (existingTokenCount >= tokenLimit) {
-      throw new InvalidRequestException(String.format("Maximum limit has reached"));
+      throw new InvalidRequestException("Maximum limit has reached");
     }
   }
 
@@ -330,10 +335,15 @@ public class TokenServiceImpl implements TokenService {
 
   @Override
   public TokenDTO validateToken(String accountIdentifier, String apiKey) {
-    String tokenId = tokenValidationHelper.parseApiKeyToken(apiKey);
-    TokenDTO tokenDTO = getToken(tokenId, true);
-    tokenValidationHelper.validateToken(tokenDTO, accountIdentifier, tokenId, apiKey);
-    tokenDTO.setEncodedPassword(null);
-    return tokenDTO;
+    if (ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.PL_SUPPORT_JWT_TOKEN_SCIM_API)
+        && jwtTokenAuthFilterHelper.isJWTTokenType(apiKey, accountIdentifier)) {
+      return jwtTokenAuthFilterHelper.handleSCIMJwtTokenFlow(accountIdentifier, apiKey);
+    } else {
+      String tokenId = tokenValidationHelper.parseApiKeyToken(apiKey);
+      TokenDTO tokenDTO = getToken(tokenId, true);
+      tokenValidationHelper.validateToken(tokenDTO, accountIdentifier, tokenId, apiKey);
+      tokenDTO.setEncodedPassword(null);
+      return tokenDTO;
+    }
   }
 }

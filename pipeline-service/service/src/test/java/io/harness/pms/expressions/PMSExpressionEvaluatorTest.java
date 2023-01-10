@@ -24,6 +24,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.PipelineServiceApplication;
 import io.harness.PipelineServiceTestBase;
+import io.harness.PipelineServiceTestHelper;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -34,7 +35,6 @@ import io.harness.engine.expressions.OrchestrationConstants;
 import io.harness.engine.pms.data.PmsOutcomeService;
 import io.harness.engine.utils.PmsLevelUtils;
 import io.harness.execution.NodeExecution;
-import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.execution.PlanExecution;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.EngineJexlContext;
@@ -55,9 +55,9 @@ import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.rule.Owner;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Sets;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
@@ -67,6 +67,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
+import org.springframework.data.util.CloseableIterator;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PMSExpressionEvaluatorTest extends PipelineServiceTestBase {
@@ -182,19 +183,42 @@ public class PMSExpressionEvaluatorTest extends PipelineServiceTestBase {
              nodeExecution5.getUuid(), NodeProjectionUtils.fieldsForExpressionEngine))
         .thenReturn(nodeExecution5);
 
-    when(nodeExecutionService.fetchChildrenNodeExecutions(
+    List<NodeExecution> nodeExecutionsList1 = Collections.singletonList(nodeExecution1);
+    CloseableIterator<NodeExecution> iterator1 =
+        PipelineServiceTestHelper.createCloseableIterator(nodeExecutionsList1.iterator());
+    when(nodeExecutionService.fetchChildrenNodeExecutionsIterator(
              planExecutionId, null, NodeProjectionUtils.fieldsForExpressionEngine))
-        .thenReturn(Collections.singletonList(nodeExecution1));
-    when(nodeExecutionService.fetchChildrenNodeExecutions(
-             planExecutionId, nodeExecution1.getUuid(), NodeProjectionUtils.fieldsForExpressionEngine))
-        .thenReturn(Collections.singletonList(nodeExecution2));
-    when(nodeExecutionService.fetchChildrenNodeExecutions(
-             planExecutionId, nodeExecution2.getUuid(), NodeProjectionUtils.fieldsForExpressionEngine))
-        .thenReturn(Collections.singletonList(nodeExecution3));
-    when(nodeExecutionService.fetchChildrenNodeExecutions(
-             planExecutionId, nodeExecution3.getUuid(), NodeProjectionUtils.fieldsForExpressionEngine))
-        .thenReturn(asList(nodeExecution4, nodeExecution5));
+        .thenReturn(iterator1);
 
+    List<NodeExecution> nodeExecutionsList2 = Collections.singletonList(nodeExecution2);
+    CloseableIterator<NodeExecution> iterator2 =
+        PipelineServiceTestHelper.createCloseableIterator(nodeExecutionsList2.iterator());
+    when(nodeExecutionService.fetchChildrenNodeExecutionsIterator(
+             planExecutionId, nodeExecution1.getUuid(), NodeProjectionUtils.fieldsForExpressionEngine))
+        .thenReturn(iterator2);
+
+    List<NodeExecution> nodeExecutionList3 = Collections.singletonList(nodeExecution3);
+    CloseableIterator<NodeExecution> iterator3 =
+        PipelineServiceTestHelper.createCloseableIterator(nodeExecutionList3.iterator());
+    when(nodeExecutionService.fetchChildrenNodeExecutionsIterator(
+             planExecutionId, nodeExecution2.getUuid(), NodeProjectionUtils.fieldsForExpressionEngine))
+        .thenReturn(iterator3);
+
+    List<NodeExecution> nodeExecutionList4 = asList(nodeExecution4, nodeExecution5);
+    CloseableIterator<NodeExecution> iterator4 =
+        PipelineServiceTestHelper.createCloseableIterator(nodeExecutionList4.iterator());
+    when(nodeExecutionService.fetchChildrenNodeExecutionsIterator(
+             planExecutionId, nodeExecution3.getUuid(), NodeProjectionUtils.fieldsForExpressionEngine))
+        .thenReturn(iterator4);
+
+    CloseableIterator<NodeExecution> emptyIterator =
+        PipelineServiceTestHelper.createCloseableIterator(Collections.emptyListIterator());
+    when(nodeExecutionService.fetchChildrenNodeExecutionsIterator(
+             planExecutionId, nodeExecution4.getUuid(), NodeProjectionUtils.fieldsForExpressionEngine))
+        .thenReturn(emptyIterator);
+    when(nodeExecutionService.fetchChildrenNodeExecutionsIterator(
+             planExecutionId, nodeExecution5.getUuid(), NodeProjectionUtils.fieldsForExpressionEngine))
+        .thenReturn(emptyIterator);
     when(planExecutionService.getPlanExecutionMetadata(planExecutionId)).thenReturn(PlanExecution.builder().build());
   }
 
@@ -214,9 +238,8 @@ public class PMSExpressionEvaluatorTest extends PipelineServiceTestBase {
     Reflect.on(nodeExecution4).set("status", Status.SUCCEEDED);
 
     // pipeline children
-    when(nodeExecutionService.findAllChildrenWithStatusIn(planExecutionId, nodeExecution1.getUuid(), null, false, true,
-             Sets.newHashSet(NodeExecutionKeys.parentId, NodeExecutionKeys.status, NodeExecutionKeys.stepType),
-             Collections.emptySet()))
+    when(nodeExecutionService.findAllChildrenWithStatusInAndWithoutOldRetries(
+             planExecutionId, nodeExecution1.getUuid(), null, false, Collections.emptySet()))
         .thenReturn(Arrays.asList(nodeExecution4, nodeExecution5));
 
     EngineExpressionEvaluator engineExpressionEvaluator = prepareEngineExpressionEvaluator(newAmbiance);

@@ -16,6 +16,7 @@ import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.envgroup.helper.EnvironmentGroupYamlVisitorHelper;
 import io.harness.cdng.environment.filters.FilterYaml;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.beans.VisitableChildren;
@@ -25,11 +26,12 @@ import io.harness.yaml.YamlSchemaTypes;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
-import lombok.Getter;
 import org.springframework.data.annotation.TypeAlias;
 
 @Data
@@ -47,8 +49,7 @@ public class EnvironmentGroupYaml implements Visitable {
   @YamlSchemaTypes(runtime)
   ParameterField<List<EnvironmentYamlV2>> environments;
 
-  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
-  @ApiModelProperty(dataType = SwaggerConstants.FILTER_YAML_LIST_CLASSPATH, hidden = true)
+  @ApiModelProperty(dataType = SwaggerConstants.FILTER_YAML_LIST_CLASSPATH)
   @YamlSchemaTypes(runtime)
   ParameterField<List<FilterYaml>> filters;
 
@@ -73,5 +74,27 @@ public class EnvironmentGroupYaml implements Visitable {
     }
     return !deployToAll.isExpression() && deployToAll.getValue() == null ? ParameterField.createValueField(false)
                                                                          : deployToAll;
+  }
+
+  public EnvironmentGroupYaml clone() {
+    ParameterField<List<EnvironmentYamlV2>> environmentsCloned =
+        ParameterField.createValueField(Collections.emptyList());
+    if (ParameterField.isNotNull(this.environments) && EmptyPredicate.isNotEmpty(this.environments.getValue())) {
+      environmentsCloned = ParameterField.createValueField(
+          this.environments.getValue().stream().map(EnvironmentYamlV2::clone).collect(Collectors.toList()));
+    }
+    ParameterField<List<FilterYaml>> filtersCloned = ParameterField.createValueField(Collections.emptyList());
+    if (ParameterField.isNotNull(this.filters) && EmptyPredicate.isNotEmpty(this.filters.getValue())) {
+      filtersCloned = ParameterField.createValueField(
+          this.filters.getValue().stream().map(FilterYaml::clone).collect(Collectors.toList()));
+    }
+    return EnvironmentGroupYaml.builder()
+        .environments(environmentsCloned)
+        .environmentGroupMetadata(this.environmentGroupMetadata)
+        .deployToAll(this.deployToAll)
+        .envGroupRef(this.envGroupRef)
+        .filters(filtersCloned)
+        .uuid(this.uuid)
+        .build();
   }
 }

@@ -13,6 +13,10 @@ import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.GCS_
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.HTTP_HELM;
 import static io.harness.delegate.task.helm.HelmTaskHelperBase.RESOURCE_DIR_BASE;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.filesystem.FileIo.createDirectoryIfDoesNotExist;
+import static io.harness.filesystem.FileIo.deleteDirectoryAndItsContentIfExists;
+import static io.harness.filesystem.FileIo.waitForDirectoryToBeAccessibleOutOfProcess;
+import static io.harness.filesystem.FileIo.writeFile;
 import static io.harness.helm.HelmConstants.HELM_HOME_PATH_FLAG;
 import static io.harness.k8s.model.HelmVersion.V2;
 import static io.harness.k8s.model.HelmVersion.V3;
@@ -78,7 +82,9 @@ import io.harness.rule.Owner;
 import software.wings.helpers.ext.helm.response.ReleaseInfo;
 
 import com.google.common.collect.ImmutableMap;
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
@@ -1125,8 +1131,40 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
   @Owner(developers = ACHYUTH)
   @Category(UnitTests.class)
   public void testChartVersionRange() {
-    String chartVer = "^2.0.1";
-    assertThat(helmTaskHelperBase.checkChartVersion(chartVer, "chart/", "nginx")).isTrue();
+    String chartVer1 = "^2.0.1";
+    String chartVer2 = "~2.0.0";
+    String chartDir = "charts/";
+    String chartName = "nginx";
+    assertThat(helmTaskHelperBase.checkChartVersion(chartVer1, chartDir, chartName)).isTrue();
+    assertThat(helmTaskHelperBase.checkChartVersion(chartVer2, chartDir, chartName)).isTrue();
+  }
+
+  @Test
+  @Owner(developers = ACHYUTH)
+  @Category(UnitTests.class)
+  public void testChartVersionMetadata() throws IOException {
+    String chartVer3 = "1.0.0+metadata";
+    String chartDir = "charts/testMetaData/";
+    String chartName = "nginx";
+    String chartYaml = "apiVersion: v2\n"
+        + "appVersion: 1.16.0\n"
+        + "description: A Helm chart for Kubernetes\n"
+        + "name: nginx\n"
+        + "type: application\n"
+        + "version: 1.0.0+metadata";
+
+    assertThatThrownBy(() -> helmTaskHelperBase.checkChartVersion(chartVer3, chartDir, chartName))
+        .hasMessageContaining("Failed to fetch");
+
+    String directory = Paths.get(chartDir + "/" + chartName).toAbsolutePath().toString();
+    final String fileName = "/Chart.yaml";
+    createDirectoryIfDoesNotExist(directory);
+    File testFile = new File(directory, fileName);
+    writeFile(testFile.getAbsolutePath(), chartYaml.getBytes());
+    assertThat(
+        helmTaskHelperBase.checkChartVersion(chartVer3, Paths.get(chartDir).toAbsolutePath().toString(), chartName))
+        .isTrue();
+    deleteDirectoryAndItsContentIfExists(directory);
   }
 
   private String getHelmCollectionResult() {
@@ -1181,5 +1219,10 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
                                 .build())
                       .build())
         .build();
+  }
+
+  public void createAndWaitForDir(String dir) throws IOException {
+    createDirectoryIfDoesNotExist(dir);
+    waitForDirectoryToBeAccessibleOutOfProcess(dir, 10);
   }
 }

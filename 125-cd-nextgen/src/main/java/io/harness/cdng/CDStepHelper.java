@@ -12,6 +12,7 @@ import static io.harness.common.ParameterFieldHelper.getBooleanParameterFieldVal
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
 import static io.harness.data.structure.ListUtils.trimStrings;
 import static io.harness.delegate.beans.connector.scm.bitbucket.BitbucketApiAccessType.USERNAME_AND_TOKEN;
@@ -24,13 +25,17 @@ import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_DI
 import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_GCP;
 import static io.harness.validation.Validator.notEmptyCheck;
 
+import static software.wings.beans.LogHelper.color;
+
 import static java.lang.String.format;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.trim;
 import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 
 import io.harness.beans.DecryptableEntity;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.FeatureName;
+import io.harness.beans.FileReference;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
@@ -46,13 +51,16 @@ import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.mappers.ManifestOutcomeValidator;
 import io.harness.cdng.manifest.steps.ManifestsOutcome;
+import io.harness.cdng.manifest.yaml.AzureRepoStore;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.S3StoreConfig;
+import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.service.steps.ServiceStepV3;
 import io.harness.cdng.service.steps.ServiceSweepingOutput;
 import io.harness.cdng.ssh.SshEntityHelper;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.cdng.tas.TasEntityHelper;
 import io.harness.common.NGTimeConversionHelper;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.connector.ConnectorInfoDTO;
@@ -99,13 +107,18 @@ import io.harness.delegate.beans.connector.scm.gitlab.GitlabHttpAuthenticationTy
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabHttpCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabTokenSpecDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabUsernameTokenDTO;
+import io.harness.delegate.beans.logstreaming.CommandUnitProgress;
+import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
+import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.S3StoreDelegateConfig;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
+import io.harness.delegate.task.localstore.LocalStoreFetchFilesResult;
+import io.harness.delegate.task.pcf.response.TasInfraConfig;
 import io.harness.delegate.task.ssh.SshInfraDelegateConfig;
 import io.harness.delegate.task.ssh.WinRmInfraDelegateConfig;
 import io.harness.encryption.SecretRefData;
@@ -115,7 +128,10 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.StepConstants;
 import io.harness.expression.EngineExpressionEvaluator;
+import io.harness.filestore.dto.node.FileNodeDTO;
+import io.harness.filestore.dto.node.FileStoreNodeDTO;
 import io.harness.filestore.service.FileStoreService;
+import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
 import io.harness.logging.UnitProgress;
@@ -124,6 +140,7 @@ import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
+import io.harness.ng.core.filestore.NGFileType;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -153,14 +170,19 @@ import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
 import io.harness.validation.Validator;
 
+import software.wings.beans.LogColor;
+import software.wings.beans.LogWeight;
+
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -178,6 +200,7 @@ public class CDStepHelper {
   @Inject private EngineExpressionService engineExpressionService;
   @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
   @Inject private K8sEntityHelper k8sEntityHelper;
+  @Inject private TasEntityHelper tasEntityHelper;
   @Inject private SshEntityHelper sshEntityHelper;
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
@@ -192,6 +215,7 @@ public class CDStepHelper {
       "[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*";
 
   public static final Pattern releaseNamePattern = Pattern.compile(RELEASE_NAME_VALIDATION_REGEX);
+  public static final String GIT = "/_git/";
 
   // Optimised (SCM based) file fetch methods:
   public boolean isGitlabTokenAuth(ScmConnector scmConnector) {
@@ -335,12 +359,32 @@ public class CDStepHelper {
     return purgedRepoUrl + "/" + purgedRepoName;
   }
 
+  public String getGitRepoUrlForAzureProject(ScmConnector scmConnector, String repoName) {
+    repoName = trimToEmpty(repoName);
+    notEmptyCheck("Repo name cannot be empty for Account level git connector", repoName);
+    String purgedRepoUrl = scmConnector.getUrl().replaceAll("/*$", "");
+    String purgedRepoName = repoName.replaceAll("^/*", "");
+    return purgedRepoUrl + GIT + purgedRepoName;
+  }
+
+  public String convertGitAccountProjectUrlToRepoUrl(
+      GitConfigDTO gitConfigDTO, GitStoreConfig gitStoreConfig, String repoName) {
+    if (gitConfigDTO.getGitConnectionType() == GitConnectionType.ACCOUNT) {
+      return getGitRepoUrl(gitConfigDTO, repoName);
+    } else if (gitStoreConfig instanceof AzureRepoStore
+        && gitConfigDTO.getGitConnectionType() == GitConnectionType.PROJECT) {
+      return getGitRepoUrlForAzureProject(gitConfigDTO, repoName);
+    } else {
+      return "";
+    }
+  }
+
   public void convertToRepoGitConfig(GitStoreConfig gitstoreConfig, ScmConnector scmConnector) {
     String repoName = gitstoreConfig.getRepoName() != null ? gitstoreConfig.getRepoName().getValue() : null;
     if (scmConnector instanceof GitConfigDTO) {
       GitConfigDTO gitConfigDTO = (GitConfigDTO) scmConnector;
-      if (gitConfigDTO.getGitConnectionType() == GitConnectionType.ACCOUNT) {
-        String repoUrl = getGitRepoUrl(gitConfigDTO, repoName);
+      String repoUrl = convertGitAccountProjectUrlToRepoUrl(gitConfigDTO, gitstoreConfig, repoName);
+      if (isNotEmpty(repoUrl)) {
         gitConfigDTO.setUrl(repoUrl);
         gitConfigDTO.setGitConnectionType(GitConnectionType.REPO);
       }
@@ -368,7 +412,7 @@ public class CDStepHelper {
     } else if (scmConnector instanceof AzureRepoConnectorDTO) {
       AzureRepoConnectorDTO azureRepoConnectorDTO = (AzureRepoConnectorDTO) scmConnector;
       if (azureRepoConnectorDTO.getConnectionType() == AzureRepoConnectionTypeDTO.PROJECT) {
-        String repoUrl = getGitRepoUrl(azureRepoConnectorDTO, repoName);
+        String repoUrl = getGitRepoUrlForAzureProject(azureRepoConnectorDTO, repoName);
         azureRepoConnectorDTO.setUrl(repoUrl);
         azureRepoConnectorDTO.setConnectionType(AzureRepoConnectionTypeDTO.REPO);
       }
@@ -415,6 +459,7 @@ public class CDStepHelper {
         .branch(trim(getParameterFieldValue(gitstoreConfig.getBranch())))
         .commitId(trim(getParameterFieldValue(gitstoreConfig.getCommitId())))
         .paths(trimStrings(paths))
+        .connectorId(connectorDTO.getIdentifier())
         .connectorName(connectorDTO.getName())
         .manifestType(manifestType)
         .manifestId(manifestIdentifier)
@@ -626,6 +671,11 @@ public class CDStepHelper {
     return k8sEntityHelper.getK8sInfraDelegateConfig(infrastructure, ngAccess);
   }
 
+  public TasInfraConfig getTasInfraConfig(InfrastructureOutcome infrastructure, Ambiance ambiance) {
+    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+    return tasEntityHelper.getTasInfraConfig(infrastructure, ngAccess);
+  }
+
   public SshInfraDelegateConfig getSshInfraDelegateConfig(InfrastructureOutcome infrastructure, Ambiance ambiance) {
     return sshEntityHelper.getSshInfraDelegateConfig(infrastructure, ambiance);
   }
@@ -648,6 +698,10 @@ public class CDStepHelper {
 
   public boolean isSkipAddingTrackSelectorToDeployment(String accountId) {
     return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.SKIP_ADDING_TRACK_LABEL_SELECTOR_IN_ROLLING);
+  }
+
+  public boolean useDeclarativeRollback(String accountId) {
+    return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDP_USE_K8S_DECLARATIVE_ROLLBACK_NG);
   }
 
   public LogCallback getLogCallback(String commandUnitName, Ambiance ambiance, boolean shouldOpenStream) {
@@ -804,6 +858,96 @@ public class CDStepHelper {
           "Cannot find service. Make sure this is running in a CD stage with service configured");
     }
     return ((ServiceSweepingOutput) resolveOptional.getOutput()).getFinalServiceYaml();
+  }
+
+  public List<String> fetchFilesContentFromLocalStore(
+      Ambiance ambiance, ManifestOutcome manifestOutcome, LogCallback logCallback) {
+    Map<String, LocalStoreFetchFilesResult> localStoreFileMapContents = new HashMap<>();
+    LocalStoreFetchFilesResult localStoreFetchFilesResult = null;
+    logCallback.saveExecutionLog(color(
+        format("%nFetching %s from Harness File Store", manifestOutcome.getType()), LogColor.White, LogWeight.Bold));
+    if (ManifestStoreType.HARNESS.equals(manifestOutcome.getStore().getKind())) {
+      NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+      localStoreFetchFilesResult = getFileContentsFromManifestOutcome(manifestOutcome, ngAccess, logCallback);
+      localStoreFileMapContents.put(manifestOutcome.getType(), localStoreFetchFilesResult);
+    }
+    return localStoreFileMapContents.get(manifestOutcome.getType()).getLocalStoreFileContents();
+  }
+
+  private LocalStoreFetchFilesResult getFileContentsFromManifestOutcome(
+      ManifestOutcome manifestOutcome, NGAccess ngAccess, LogCallback logCallback) {
+    HarnessStore localStoreConfig = (HarnessStore) manifestOutcome.getStore();
+    List<String> scopedFilePathList = localStoreConfig.getFiles().getValue();
+    return getFileContentsFromManifest(
+        ngAccess, scopedFilePathList, manifestOutcome.getType(), manifestOutcome.getIdentifier(), logCallback);
+  }
+
+  private LocalStoreFetchFilesResult getFileContentsFromManifest(NGAccess ngAccess, List<String> scopedFilePathList,
+      String manifestType, String manifestIdentifier, LogCallback logCallback) {
+    List<String> fileContents = new ArrayList<>();
+    if (isNotEmpty(scopedFilePathList)) {
+      logCallback.saveExecutionLog(
+          color(format("%nFetching %s files with identifier: %s", manifestType, manifestIdentifier), LogColor.White,
+              LogWeight.Bold));
+      logCallback.saveExecutionLog(color(format("Fetching following Files :"), LogColor.White));
+      printFilesFetchedFromHarnessStore(scopedFilePathList, logCallback);
+      logCallback.saveExecutionLog(
+          color(format("Successfully fetched following files: "), LogColor.White, LogWeight.Bold));
+      for (String scopedFilePath : scopedFilePathList) {
+        Optional<FileStoreNodeDTO> valuesFile =
+            validateAndFetchFileFromHarnessStore(scopedFilePath, ngAccess, manifestIdentifier);
+        FileStoreNodeDTO fileStoreNodeDTO = valuesFile.get();
+        if (NGFileType.FILE.equals(fileStoreNodeDTO.getType())) {
+          FileNodeDTO file = (FileNodeDTO) fileStoreNodeDTO;
+          if (isNotEmpty(file.getContent())) {
+            fileContents.add(file.getContent());
+          } else {
+            throw new InvalidRequestException(
+                format("The following file %s in Harness File Store has empty content", scopedFilePath));
+          }
+          logCallback.saveExecutionLog(color(format("- %s", scopedFilePath), LogColor.White));
+        } else {
+          throw new UnsupportedOperationException("Only File type is supported. Please enter the correct file path");
+        }
+      }
+    }
+    return LocalStoreFetchFilesResult.builder().LocalStoreFileContents(fileContents).build();
+  }
+
+  private Optional<FileStoreNodeDTO> validateAndFetchFileFromHarnessStore(
+      String scopedFilePath, NGAccess ngAccess, String manifestIdentifier) {
+    if (isBlank(scopedFilePath)) {
+      throw new InvalidRequestException(
+          format("File reference cannot be null or empty, manifest identifier: %s", manifestIdentifier));
+    }
+    FileReference fileReference = FileReference.of(
+        scopedFilePath, ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
+
+    Optional<FileStoreNodeDTO> manifestFile =
+        fileStoreService.getWithChildrenByPath(fileReference.getAccountIdentifier(), fileReference.getOrgIdentifier(),
+            fileReference.getProjectIdentifier(), fileReference.getPath(), true);
+    if (!manifestFile.isPresent()) {
+      throw new InvalidRequestException(
+          format("File/Folder not found in File Store with path: [%s], scope: [%s], manifest identifier: [%s]",
+              fileReference.getPath(), fileReference.getScope(), manifestIdentifier));
+    }
+    return manifestFile;
+  }
+
+  private void printFilesFetchedFromHarnessStore(List<String> scopedFilePathList, LogCallback logCallback) {
+    for (String scopedFilePath : scopedFilePathList) {
+      logCallback.saveExecutionLog(color(format("- %s", scopedFilePath), LogColor.White));
+    }
+  }
+
+  public UnitProgressData getCommandUnitProgressData(
+      String commandName, CommandExecutionStatus commandExecutionStatus) {
+    LinkedHashMap<String, CommandUnitProgress> commandUnitProgressMap = new LinkedHashMap<>();
+    CommandUnitProgress commandUnitProgress = CommandUnitProgress.builder().status(commandExecutionStatus).build();
+    commandUnitProgressMap.put(commandName, commandUnitProgress);
+    CommandUnitsProgress commandUnitsProgress =
+        CommandUnitsProgress.builder().commandUnitProgressMap(commandUnitProgressMap).build();
+    return UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress);
   }
 
   @Nonnull

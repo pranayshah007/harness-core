@@ -94,6 +94,18 @@ public abstract class AbstractScriptExecutor implements BaseScriptExecutor {
     return executeCommandString(command, output, false);
   }
 
+  @Override
+  public CommandExecutionStatus executeCommandString(
+      String command, boolean displayCommand, boolean winrmScriptCommandSplit) {
+    return executeCommandString(command, null, displayCommand);
+  }
+
+  @Override
+  public CommandExecutionStatus executeCommandString(
+      String command, boolean winrmScriptCommandSplit, StringBuffer output, boolean displayComman) {
+    return executeCommandString(command, output, displayComman);
+  }
+
   protected String addEnvVariablesCollector(
       String command, List<String> envVariablesToCollect, String envVariablesOutputFilePath, ScriptType scriptType) {
     StringBuilder wrapperCommand = new StringBuilder(command);

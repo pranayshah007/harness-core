@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.steps.plugin;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
@@ -16,6 +23,7 @@ import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
 import org.springframework.data.annotation.TypeAlias;
@@ -36,6 +44,7 @@ public class ContainerBaseStepInfo {
 
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   public ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
   @YamlSchemaTypes(value = {string})

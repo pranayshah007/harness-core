@@ -7,7 +7,10 @@
 
 package io.harness.event.reconciliation.service;
 
+import static io.harness.maintenance.MaintenanceController.getMaintenanceFlag;
+
 import io.harness.beans.FeatureName;
+import io.harness.dataretention.LongerDataRetentionService;
 import io.harness.event.reconciliation.ReconciliationStatus;
 import io.harness.event.timeseries.processor.DeploymentEventProcessor;
 import io.harness.ff.FeatureFlagService;
@@ -17,6 +20,8 @@ import io.harness.lock.PersistentLocker;
 import software.wings.beans.Account;
 import software.wings.beans.AccountStatus;
 import software.wings.beans.WorkflowExecution;
+import software.wings.beans.datatretention.LongerDataRetentionState;
+import software.wings.core.managerConfiguration.ConfigurationController;
 import software.wings.search.entities.deployment.DeploymentExecutionEntity;
 import software.wings.search.framework.ExecutionEntity;
 import software.wings.service.intfc.AccountService;
@@ -37,6 +42,8 @@ public class DeploymentReconTask implements Runnable {
   @Inject private FeatureFlagService featureFlagService;
   @Inject private PersistentLocker persistentLocker;
   @Inject private Set<ExecutionEntity<?>> executionEntities;
+  @Inject private ConfigurationController configurationController;
+  @Inject private LongerDataRetentionService longerDataRetentionService;
 
   private static final Integer DATA_MIGRATION_INTERVAL_IN_HOURS = 24;
   // On safe side, cron cycle is around 15 minutes, so lock expiry set to 16 min
@@ -50,6 +57,10 @@ public class DeploymentReconTask implements Runnable {
   @Inject @Named("DeploymentReconTaskExecutor") ExecutorService executorService;
   @Override
   public void run() {
+    if (!shouldRun()) {
+      return;
+    }
+
     try {
       long startTime = System.currentTimeMillis();
       List<Account> accountList = accountService.getAccountsWithBasicInfo(true);
@@ -93,7 +104,9 @@ public class DeploymentReconTask implements Runnable {
                 }
 
                 if (featureFlagService.isEnabled(
-                        FeatureName.CUSTOM_DASHBOARD_ENABLE_CRON_DEPLOYMENT_DATA_MIGRATION, account.getUuid())) {
+                        FeatureName.CUSTOM_DASHBOARD_ENABLE_CRON_DEPLOYMENT_DATA_MIGRATION, account.getUuid())
+                    && !longerDataRetentionService.isLongerDataRetentionCompleted(
+                        LongerDataRetentionState.DEPLOYMENT_LONGER_RETENTION, account.getUuid())) {
                   log.info("Triggering deployment data migration cron for account : {}", account.getUuid());
                   try {
                     deploymentEventProcessor.doDataMigration(account.getUuid(), DATA_MIGRATION_INTERVAL_IN_HOURS);
@@ -109,5 +122,9 @@ public class DeploymentReconTask implements Runnable {
     } catch (Exception e) {
       log.error("Failed to run reconciliation", e);
     }
+  }
+
+  private boolean shouldRun() {
+    return !getMaintenanceFlag() && configurationController.isPrimary();
   }
 }

@@ -15,6 +15,7 @@ import static io.harness.beans.DelegateTask.Status.STARTED;
 import static io.harness.beans.DelegateTask.Status.runningStatuses;
 import static io.harness.beans.FeatureName.DEL_SECRET_EVALUATION_VERBOSE_LOGGING;
 import static io.harness.beans.FeatureName.GIT_HOST_CONNECTIVITY;
+import static io.harness.beans.FeatureName.QUEUE_CI_EXECUTIONS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.SizeFunction.size;
@@ -34,7 +35,6 @@ import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_TASK_E
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_TASK_NO_ELIGIBLE_DELEGATES;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_TASK_NO_FIRST_WHITELISTED;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_TASK_VALIDATION;
-import static io.harness.persistence.HQuery.excludeAuthority;
 
 import static software.wings.app.ManagerCacheRegistrar.SECRET_CACHE;
 import static software.wings.expression.SecretManagerModule.EXPRESSION_EVALUATOR_EXECUTOR;
@@ -44,6 +44,7 @@ import static software.wings.service.impl.AssignDelegateServiceImpl.STEP;
 import static software.wings.service.impl.AssignDelegateServiceImpl.STEP_GROUP;
 import static software.wings.service.impl.DelegateSelectionLogsServiceImpl.NO_ELIGIBLE_DELEGATES;
 
+import static java.lang.String.format;
 import static java.lang.System.currentTimeMillis;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
@@ -88,6 +89,7 @@ import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.delegate.beans.executioncapability.SelectorCapability;
 import io.harness.delegate.capability.EncryptedDataDetailsCapabilityHelper;
+import io.harness.delegate.queueservice.DelegateTaskQueueService;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.pcf.CfCommandRequest;
 import io.harness.delegate.task.pcf.request.CfCommandTaskParameters;
@@ -109,10 +111,10 @@ import io.harness.ff.FeatureFlagService;
 import io.harness.lock.PersistentLocker;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
+import io.harness.logging.DelayLogContext;
 import io.harness.logging.DelegateDriverLogContext;
 import io.harness.logstreaming.LogStreamingServiceRestClient;
 import io.harness.metrics.intfc.DelegateMetricsService;
-import io.harness.mongo.DelayLogContext;
 import io.harness.network.SafeHttpCall;
 import io.harness.observer.RemoteObserverInformer;
 import io.harness.observer.Subject;
@@ -136,6 +138,7 @@ import io.harness.version.VersionInfoManager;
 import io.harness.waiter.WaitNotifyEngine;
 
 import software.wings.app.MainConfiguration;
+import software.wings.beans.Account;
 import software.wings.beans.ExecutionCredential;
 import software.wings.beans.GitConfig;
 import software.wings.beans.GitValidationParameters;
@@ -158,6 +161,7 @@ import software.wings.expression.SweepingOutputSecretFunctor;
 import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
 import software.wings.service.impl.artifact.ArtifactCollectionUtils;
 import software.wings.service.impl.infra.InfraDownloadService;
+import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.AlertService;
 import software.wings.service.intfc.AssignDelegateService;
 import software.wings.service.intfc.ConfigService;
@@ -171,7 +175,6 @@ import software.wings.service.intfc.security.SecretManager;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Suppliers;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -181,6 +184,8 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.io.IOException;
 import java.security.SecureRandom;
 import java.time.Clock;
@@ -200,7 +205,6 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.cache.Cache;
 import javax.validation.executable.ValidateOnExecution;
@@ -208,8 +212,6 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.atmosphere.cpr.BroadcasterFactory;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @Singleton
 @ValidateOnExecution
@@ -233,6 +235,8 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   @Inject private WaitNotifyEngine waitNotifyEngine;
   @Inject private MainConfiguration mainConfiguration;
   @Inject private EventEmitter eventEmitter;
+
+  @Inject private AccountService accountService;
   @Inject private BroadcasterFactory broadcasterFactory;
   @Inject private AssignDelegateService assignDelegateService;
   @Inject private AlertService alertService;
@@ -274,10 +278,11 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   @Inject @Named(SECRET_CACHE) Cache<String, EncryptedDataDetails> secretsCache;
   @Inject @Named(EXPRESSION_EVALUATOR_EXECUTOR) ExecutorService expressionEvaluatorExecutor;
   @Inject @Getter private Subject<DelegateObserver> subject = new Subject<>();
+  @Inject private DelegateTaskQueueService delegateTaskQueueService;
 
   private static final SecureRandom random = new SecureRandom();
   private HarnessCacheManager harnessCacheManager;
-  private Supplier<Long> taskCountCache = Suppliers.memoizeWithExpiration(this::fetchTaskCount, 1, TimeUnit.MINUTES);
+
   @Inject private RemoteObserverInformer remoteObserverInformer;
   @Inject private ManagerObserverEventProducer managerObserverEventProducer;
 
@@ -334,33 +339,49 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     }
   }
 
-  @VisibleForTesting
-  protected void checkTaskRankRateLimit(DelegateTaskRank rank) {
-    if (rank == null) {
-      rank = DelegateTaskRank.CRITICAL;
+  private void checkTaskRankRateLimit(DelegateTask task) {
+    if (task.getRank() == null) {
+      task.setRank(DelegateTaskRank.IMPORTANT);
     }
+    String accountId = task.isExecuteOnHarnessHostedDelegates() ? task.getSecondaryAccountId() : task.getAccountId();
 
-    if (rankLimitReached(rank)) {
-      throw new RateLimitExceededException("Rate limit reached for tasks with rank " + rank.name());
-    }
-  }
-
-  private boolean rankLimitReached(DelegateTaskRank rank) {
-    Long totalTaskCount = taskCountCache.get();
-    return totalTaskCount >= obtainRankLimit(rank);
-  }
-
-  private long obtainRankLimit(DelegateTaskRank rank) {
-    switch (rank) {
+    long currentTaskCount;
+    long maxTaskCount;
+    switch (task.getRank()) {
       case OPTIONAL:
-        return mainConfiguration.getPortal().getOptionalDelegateTaskRejectAtLimit();
+        currentTaskCount = delegateCache.getTasksCount(accountId, DelegateTaskRank.OPTIONAL);
+        maxTaskCount = getTaskLimit(accountId, DelegateTaskRank.OPTIONAL);
+
+        if (currentTaskCount >= maxTaskCount) {
+          throw new RateLimitExceededException(
+              format("Rate limit reached for tasks with rank OPTIONAL. Current task count %s and max limit %s ",
+                  currentTaskCount, maxTaskCount));
+        }
+        break;
       case IMPORTANT:
-        return mainConfiguration.getPortal().getImportantDelegateTaskRejectAtLimit();
-      case CRITICAL:
-        return mainConfiguration.getPortal().getCriticalDelegateTaskRejectAtLimit();
+        currentTaskCount = delegateCache.getTasksCount(accountId, DelegateTaskRank.IMPORTANT);
+        maxTaskCount = getTaskLimit(accountId, DelegateTaskRank.IMPORTANT);
+        if (currentTaskCount >= maxTaskCount) {
+          throw new RateLimitExceededException(
+              format("Rate limit reached for tasks with rank IMPORTANT. Current task count %s and max limit %s ",
+                  currentTaskCount, maxTaskCount));
+        }
+        break;
       default:
-        throw new InvalidArgumentsException("Unsupported delegate task rank level " + rank);
+        throw new InvalidArgumentsException("Unsupported delegate task rank " + task.getRank());
     }
+  }
+
+  private long getTaskLimit(String accountId, DelegateTaskRank rank) {
+    Account account = accountService.getFromCacheWithFallback(accountId);
+    if (rank == DelegateTaskRank.OPTIONAL) {
+      return account.getOptionalDelegateTaskLimit() != null
+          ? account.getOptionalDelegateTaskLimit()
+          : mainConfiguration.getPortal().getOptionalDelegateTaskRejectAtLimit();
+    }
+    return account.getImportantDelegateTaskLimit() != null
+        ? account.getImportantDelegateTaskLimit()
+        : mainConfiguration.getPortal().getImportantDelegateTaskRejectAtLimit();
   }
 
   @VisibleForTesting
@@ -467,7 +488,6 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
         AutoLogContext ignore1 = new TaskLogContext(task.getUuid(), task.getTaskDataV2().getTaskType(),
             TaskType.valueOf(task.getTaskDataV2().getTaskType()).getTaskGroup().name(), task.getRank(), OVERRIDE_NESTS);
         AutoLogContext ignore2 = new AccountLogContext(task.getAccountId(), OVERRIDE_ERROR)) {
-      log.info("Queueing async task {} of type {} ", task.getUuid(), task.getTaskDataV2().getTaskType());
       processDelegateTaskV2(task, QUEUED);
       broadcastHelper.broadcastNewDelegateTaskAsyncV2(task);
     }
@@ -484,7 +504,6 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     try (AutoLogContext ignore1 = new TaskLogContext(task.getUuid(), task.getData().getTaskType(),
              TaskType.valueOf(task.getData().getTaskType()).getTaskGroup().name(), task.getRank(), OVERRIDE_NESTS);
          AutoLogContext ignore2 = new AccountLogContext(task.getAccountId(), OVERRIDE_ERROR)) {
-      log.info("Processing sync task {} of type {}", task.getUuid(), task.getData().getTaskType());
       processDelegateTask(task, QUEUED);
       broadcastHelper.rebroadcastDelegateTask(task);
     }
@@ -501,7 +520,6 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
         AutoLogContext ignore1 = new TaskLogContext(task.getUuid(), task.getTaskDataV2().getTaskType(),
             TaskType.valueOf(task.getTaskDataV2().getTaskType()).getTaskGroup().name(), task.getRank(), OVERRIDE_NESTS);
         AutoLogContext ignore2 = new AccountLogContext(task.getAccountId(), OVERRIDE_ERROR)) {
-      log.info("Processing sync task {} of type {}", task.getUuid(), task.getTaskDataV2().getTaskType());
       processDelegateTaskV2(task, QUEUED);
       broadcastHelper.rebroadcastDelegateTaskV2(task);
     }
@@ -517,15 +535,14 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   @Override
   public <T extends DelegateResponseData> T executeTaskV2(DelegateTask task) {
     scheduleSyncTaskV2(task);
-    return delegateSyncService.waitForTask(task.getUuid(), task.calcDescription(),
+    return delegateSyncService.waitForTask(task.getUuid(), task.calcDescriptionV2(),
         Duration.ofMillis(task.getTaskDataV2().getTimeout()), task.getExecutionCapabilities());
   }
 
   @VisibleForTesting
   @Override
   public void processDelegateTask(DelegateTask task, DelegateTask.Status taskStatus) {
-    String taskInfo =
-        String.format("Processing task id: %s of task type %s", task.getUuid(), task.getData().getTaskType());
+    String taskInfo = format("Processing task id: %s of task type %s", task.getUuid(), task.getData().getTaskType());
     addToTaskActivityLog(task, taskInfo);
     task.setStatus(taskStatus);
     task.setVersion(getVersion());
@@ -604,7 +621,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
             throw new NoAvailableDelegatesException();
           }
         }
-        checkTaskRankRateLimit(task.getRank());
+        checkTaskRankRateLimit(task);
 
         // Added temporarily to help to identifying tasks whose task setup abstractions need to be fixed
         verifyTaskSetupAbstractions(task);
@@ -615,12 +632,8 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
                                .setupAbstractions(task.getSetupAbstractions())
                                .build());
         }
-
-        // Ensure that broadcast happens at least 5 seconds from current time for async tasks
-        if (task.getData().isAsync()) {
-          task.setNextBroadcast(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(5));
-        }
-        persistence.save(task);
+        task.setNextBroadcast(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(5));
+        saveDelegateTask(task, task.getAccountId());
         delegateSelectionLogsService.logBroadcastToDelegate(Sets.newHashSet(task.getBroadcastToDelegateIds()), task);
         delegateMetricsService.recordDelegateTaskMetrics(task, DELEGATE_TASK_CREATION);
         log.info("Task {} marked as {} with first attempt broadcast to {}", task.getUuid(), taskStatus,
@@ -641,7 +654,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   @Override
   public void processDelegateTaskV2(DelegateTask task, DelegateTask.Status taskStatus) {
     String taskInfo =
-        String.format("Processing task id: %s of task type %s", task.getUuid(), task.getTaskDataV2().getTaskType());
+        format("Processing task id: %s of task type %s", task.getUuid(), task.getTaskDataV2().getTaskType());
     addToTaskActivityLog(task, taskInfo);
     task.setStatus(taskStatus);
     task.setVersion(getVersion());
@@ -703,7 +716,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
         }
         // save eligible delegate ids as part of task (will be used for rebroadcasting)
         task.setEligibleToExecuteDelegateIds(new LinkedList<>(eligibleListOfDelegates));
-        log.info("Assignable/eligible delegates to execute task {} are {}.", task.getUuid(),
+        log.debug("Assignable/eligible delegates to execute task {} are {}.", task.getUuid(),
             task.getEligibleToExecuteDelegateIds() + "\n\n"
                 + CapabilityHelper.generateLogStringWithSelectionCapabilitiesGenerated(
                     task.getTaskDataV2().getTaskType(), task.getExecutionCapabilities()));
@@ -720,7 +733,8 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
             throw new NoAvailableDelegatesException();
           }
         }
-        checkTaskRankRateLimit(task.getRank());
+
+        checkTaskRankRateLimit(task);
 
         // Added temporarily to help to identifying tasks whose task setup abstractions need to be fixed
         verifyTaskSetupAbstractions(task);
@@ -732,11 +746,8 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
                                .build());
         }
 
-        // Ensure that broadcast happens at least 5 seconds from current time for async tasks
-        if (task.getTaskDataV2().isAsync()) {
-          task.setNextBroadcast(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(5));
-        }
-        persistence.save(task);
+        task.setNextBroadcast(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(5));
+        saveDelegateTask(task, task.getAccountId());
         delegateSelectionLogsService.logBroadcastToDelegate(Sets.newHashSet(task.getBroadcastToDelegateIds()), task);
         delegateMetricsService.recordDelegateTaskMetrics(task, DELEGATE_TASK_CREATION);
         log.info("Task {} marked as {} with first attempt broadcast to {}", task.getUuid(), taskStatus,
@@ -849,10 +860,6 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     }
   }
 
-  private Long fetchTaskCount() {
-    return persistence.createQuery(DelegateTask.class, excludeAuthority).count();
-  }
-
   @Override
   public String queueParkedTask(String accountId, String taskId) {
     DelegateTask task = persistence.createQuery(DelegateTask.class)
@@ -885,7 +892,6 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
              TaskType.valueOf(task.getTaskDataV2().getTaskType()).getTaskGroup().name(), OVERRIDE_NESTS);
          AutoLogContext ignore2 = new AccountLogContext(task.getAccountId(), OVERRIDE_ERROR)) {
       processDelegateTaskV2(task, QUEUED);
-      log.debug("Queueing parked task");
       broadcastHelper.broadcastNewDelegateTaskAsyncV2(task);
     }
     return task.getUuid();
@@ -1115,9 +1121,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
         return DelegateTaskPackage.builder().build();
       }
     } finally {
-      if (log.isDebugEnabled()) {
-        log.debug("Done with acquire delegate task{} ", taskId);
-      }
+      log.debug("Done with acquire delegate task{} ", taskId);
     }
   }
 
@@ -1188,12 +1192,12 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
             delegateTask.getDelegateId(), delegateTask.getDelegateInstanceId(), delegateTask.getStatus());
       }
     } else {
-      log.info("Task with id: {} no longer exists", taskId);
+      log.info("Task no longer exists");
     }
     return null;
   }
 
-  private void copyTaskDataV2ToTaskData(DelegateTask delegateTask) {
+  private DelegateTask copyTaskDataV2ToTaskData(DelegateTask delegateTask) {
     if (delegateTask != null && delegateTask.getTaskDataV2() != null) {
       TaskDataV2 taskDataV2 = delegateTask.getTaskDataV2();
       if (taskDataV2 != null) {
@@ -1212,6 +1216,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
         delegateTask.setData(taskData);
       }
     }
+    return delegateTask;
   }
 
   private DelegateTaskPackage resolvePreAssignmentExpressions(DelegateTask delegateTask, SecretManagerMode mode) {
@@ -1254,8 +1259,8 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
         } catch (ExecutionException e) {
           delegateMetricsService.recordDelegateTaskMetrics(delegateTask, DELEGATE_TASK_ACQUIRE_FAILED);
           log.error(
-              "Unable to retrieve the log streaming service account token, while preparing delegate task package");
-          throw new InvalidRequestException(e.getMessage() + "\nPlease ensure log service is running.", e);
+              "Unable to retrieve the log streaming service account token, while preparing delegate task package", e);
+          throw new InvalidRequestException("Please ensure log service is running.");
         }
 
         delegateTaskPackageBuilder.logStreamingAbstractions(delegateTask.getLogStreamingAbstractions());
@@ -1362,8 +1367,9 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
           }
         } catch (ExecutionException e) {
           delegateMetricsService.recordDelegateTaskMetrics(delegateTask, DELEGATE_TASK_ACQUIRE_FAILED);
-          log.warn("Unable to retrieve the log streaming service account token, while preparing delegate task package");
-          throw new InvalidRequestException(e.getMessage() + "\nPlease ensure log service is running.", e);
+          log.warn(
+              "Unable to retrieve the log streaming service account token, while preparing delegate task package", e);
+          throw new InvalidRequestException("Please ensure log service is running.");
         }
 
         delegateTaskPackageBuilder.logStreamingAbstractions(delegateTask.getLogStreamingAbstractions());
@@ -1550,7 +1556,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     if (task != null) {
       try (
           DelayLogContext ignore = new DelayLogContext(task.getLastUpdatedAt() - task.getCreatedAt(), OVERRIDE_ERROR)) {
-        log.info("Task with id {} assigned to delegate", delegateTask.getUuid());
+        log.info("Task assigned to delegate");
       }
       task.getData().setParameters(delegateTask.getData().getParameters());
       delegateSelectionLogsService.logTaskAssigned(delegateId, task);
@@ -1636,6 +1642,44 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   }
 
   @Override
+  public String expireTaskV2(String accountId, String delegateTaskId) {
+    String errorMessage = null;
+    try (AutoLogContext ignore1 = new TaskLogContext(delegateTaskId, OVERRIDE_ERROR);
+         AutoLogContext ignore2 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
+      if (delegateTaskId == null) {
+        log.warn("Delegate task id was null", new IllegalArgumentException());
+        return errorMessage;
+      }
+      log.info("Expiring delegate task");
+      Query<DelegateTask> delegateTaskQuery = getRunningTaskQueryV2(accountId, delegateTaskId);
+
+      DelegateTask delegateTask =
+          delegateTaskQuery.asList().stream().filter(task -> task.getTaskDataV2().isAsync()).findFirst().orElse(null);
+      if (delegateTask != null) {
+        try (AutoLogContext ignore3 = new TaskLogContext(delegateTaskId, delegateTask.getData().getTaskType(),
+                 TaskType.valueOf(delegateTask.getData().getTaskType()).getTaskGroup().name(), OVERRIDE_ERROR)) {
+          errorMessage =
+              "Task expired. " + assignDelegateService.getActiveDelegateAssignmentErrorMessage(EXPIRED, delegateTask);
+          delegateMetricsService.recordDelegateTaskMetrics(delegateTask, DELEGATE_TASK_EXPIRED);
+          log.info("Marking task as expired: {}", errorMessage);
+
+          if (isNotBlank(delegateTask.getWaitId())) {
+            waitNotifyEngine.doneWith(delegateTask.getWaitId(),
+                ErrorNotifyResponseData.builder()
+                    .errorMessage(errorMessage)
+                    .expired(true)
+                    .exception(new DelegateTaskExpiredException(delegateTaskId))
+                    .build());
+          }
+        }
+      }
+
+      endTaskV2(accountId, delegateTaskId, delegateTaskQuery, ERROR);
+    }
+    return errorMessage;
+  }
+
+  @Override
   public DelegateTask abortTask(String accountId, String delegateTaskId) {
     try (AutoLogContext ignore1 = new TaskLogContext(delegateTaskId, OVERRIDE_ERROR);
          AutoLogContext ignore2 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
@@ -1655,6 +1699,26 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     }
   }
 
+  @Override
+  public DelegateTask abortTaskV2(String accountId, String delegateTaskId) {
+    try (AutoLogContext ignore1 = new TaskLogContext(delegateTaskId, OVERRIDE_ERROR);
+         AutoLogContext ignore2 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
+      if (delegateTaskId == null) {
+        log.warn("Delegate task id was null", new IllegalArgumentException());
+        return null;
+      }
+      log.info("Aborting delegate task");
+
+      persistence.save(DelegateSyncTaskResponse.builder()
+                           .uuid(delegateTaskId)
+                           .responseData(kryoSerializer.asDeflatedBytes(
+                               ErrorNotifyResponseData.builder().errorMessage("Delegate task was aborted").build()))
+                           .build());
+
+      return endTaskV2(accountId, delegateTaskId, getRunningTaskQueryV2(accountId, delegateTaskId), ABORTED);
+    }
+  }
+
   private DelegateTask endTask(
       String accountId, String delegateTaskId, Query<DelegateTask> delegateTaskQuery, DelegateTask.Status status) {
     UpdateOperations updateOperations =
@@ -1669,11 +1733,37 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     return oldTask;
   }
 
+  private DelegateTask endTaskV2(
+      String accountId, String delegateTaskId, Query<DelegateTask> delegateTaskQuery, DelegateTask.Status status) {
+    UpdateOperations updateOperations =
+        persistence.createUpdateOperations(DelegateTask.class).set(DelegateTaskKeys.status, status);
+
+    DelegateTask oldTask =
+        delegateTaskQuery.asList().stream().filter(task -> task.getTaskDataV2().isAsync()).findFirst().orElse(null);
+    if (oldTask != null) {
+      persistence.update(oldTask, updateOperations);
+    }
+    broadcasterFactory.lookup(STREAM_DELEGATE + accountId, true)
+        .broadcast(aDelegateTaskAbortEvent().withAccountId(accountId).withDelegateTaskId(delegateTaskId).build());
+
+    return oldTask;
+  }
+
   private Query<DelegateTask> getRunningTaskQuery(String accountId, String delegateTaskId) {
     return persistence.createQuery(DelegateTask.class)
         .filter(DelegateTaskKeys.uuid, delegateTaskId)
         .filter(DelegateTaskKeys.accountId, accountId)
         .filter(DelegateTaskKeys.data_async, Boolean.TRUE)
+        .field(DelegateTaskKeys.status)
+        .in(runningStatuses());
+  }
+
+  private Query<DelegateTask> getRunningTaskQueryV2(String accountId, String delegateTaskId) {
+    return persistence.createQuery(DelegateTask.class)
+        .filter(DelegateTaskKeys.uuid, delegateTaskId)
+        .filter(DelegateTaskKeys.accountId, accountId)
+        .field(DelegateTaskKeys.taskDataV2)
+        .exists()
         .field(DelegateTaskKeys.status)
         .in(runningStatuses());
   }
@@ -1698,7 +1788,6 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     Query<DelegateTask> delegateTaskQuery = persistence.createQuery(DelegateTask.class)
                                                 .filter(DelegateTaskKeys.accountId, accountId)
                                                 .filter(DelegateTaskKeys.status, QUEUED)
-                                                .filter(DelegateTaskKeys.data_async, !sync)
                                                 .field(DelegateTaskKeys.delegateId)
                                                 .doesNotExist()
                                                 .field(DelegateTaskKeys.expiry)
@@ -1706,6 +1795,8 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     List<DelegateTask> delegateTasks =
         delegateTaskQuery.asList()
             .stream()
+            .map(this::copyTaskDataV2ToTaskData)
+            .filter(delegateTask -> !sync == delegateTask.getData().isAsync())
             .filter(delegateTask -> delegateTask.getEligibleToExecuteDelegateIds().contains(delegateId))
             .collect(toList());
     return delegateTasks.stream()
@@ -1723,16 +1814,21 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     Query<DelegateTask> abortedQuery = persistence.createQuery(DelegateTask.class)
                                            .filter(DelegateTaskKeys.accountId, accountId)
                                            .filter(DelegateTaskKeys.status, ABORTED)
-                                           .filter(DelegateTaskKeys.data_async, Boolean.TRUE)
                                            .filter(DelegateTaskKeys.delegateId, delegateId);
 
-    // Send abort event only once by clearing delegateId
-    persistence.update(
-        abortedQuery, persistence.createUpdateOperations(DelegateTask.class).unset(DelegateTaskKeys.delegateId));
+    UpdateOperations<DelegateTask> updateOperations =
+        persistence.createUpdateOperations(DelegateTask.class).unset(DelegateTaskKeys.delegateId);
 
-    return abortedQuery.project(DelegateTaskKeys.accountId, true)
-        .asList()
-        .stream()
+    List<DelegateTask> delegateTasks = abortedQuery.asList()
+                                           .stream()
+                                           .map(this::copyTaskDataV2ToTaskData)
+                                           .filter(delegateTask -> delegateTask.getData().isAsync())
+                                           .collect(Collectors.toList());
+
+    // Send abort event only once by clearing delegateId
+    delegateTasks.stream().forEach(delegateTask -> persistence.update(delegateTask, updateOperations));
+
+    return delegateTasks.stream()
         .map(delegateTask
             -> aDelegateTaskAbortEvent()
                    .withAccountId(delegateTask.getAccountId())
@@ -1857,6 +1953,32 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     return selectorCapabilities;
   }
 
+  @Override
+  public String saveAndBroadcastDelegateTaskV2(DelegateTask delegateTask) {
+    delegateTask.setBroadcastToDelegateIds(Lists.newArrayList(delegateTask.getEligibleToExecuteDelegateIds().get(0)));
+    delegateTask.setNextBroadcast(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(5));
+    String key = persistence.save(delegateTask);
+    if (delegateTask.getTaskDataV2().isAsync()) {
+      broadcastHelper.broadcastNewDelegateTaskAsyncV2(delegateTask);
+    } else {
+      broadcastHelper.rebroadcastDelegateTaskV2(delegateTask);
+    }
+    return key;
+  }
+
+  @Override
+  public String saveAndBroadcastDelegateTask(DelegateTask delegateTask) {
+    delegateTask.setBroadcastToDelegateIds(Lists.newArrayList(delegateTask.getEligibleToExecuteDelegateIds().get(0)));
+    delegateTask.setNextBroadcast(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(5));
+    String taskId = persistence.save(delegateTask);
+    if (delegateTask.getData().isAsync()) {
+      broadcastHelper.broadcastNewDelegateTaskAsync(delegateTask);
+    } else {
+      broadcastHelper.rebroadcastDelegateTask(delegateTask);
+    }
+    return taskId;
+  }
+
   private void printErrorMessageOnTaskFailure(DelegateTask task) {
     log.info("Task Activity Log {}", task.getTaskActivityLogs().stream().collect(Collectors.joining("\n")));
   }
@@ -1866,6 +1988,20 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
             .stream()
             .filter(message -> message.startsWith("No matching criteria"))
             .collect(Collectors.joining("\n")));
+  }
+  private void saveDelegateTask(DelegateTask delegateTask, String accountId) {
+    if (mainConfiguration.getQueueServiceConfig() != null
+        && !mainConfiguration.getQueueServiceConfig().isEnableQueueAndDequeue()) {
+      persistence.save(delegateTask);
+      return;
+    }
+
+    if (featureFlagService.isEnabled(QUEUE_CI_EXECUTIONS, accountId)
+        && !delegateTaskQueueService.isResourceAvailableToAssignTask(delegateTask)) {
+      delegateTaskQueueService.enqueue(delegateTask);
+    } else {
+      persistence.save(delegateTask);
+    }
   }
 
   @Override

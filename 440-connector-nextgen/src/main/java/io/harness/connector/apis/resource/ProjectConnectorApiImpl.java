@@ -41,6 +41,7 @@ import io.harness.spec.server.connector.v1.ProjectConnectorApi;
 import io.harness.spec.server.connector.v1.model.ConnectorRequest;
 import io.harness.spec.server.connector.v1.model.ConnectorResponse;
 import io.harness.spec.server.connector.v1.model.ConnectorTestConnectionResponse;
+import io.harness.utils.ApiUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -125,7 +126,7 @@ public class ProjectConnectorApiImpl implements ProjectConnectorApi {
     List<ConnectorResponse> connectorResponses = connectorApiUtils.toConnectorResponses(connectorResponseDTOS);
 
     ResponseBuilder responseBuilder = Response.ok();
-    ResponseBuilder responseBuilderWithLinks = connectorApiUtils.addLinksHeader(responseBuilder,
+    ResponseBuilder responseBuilderWithLinks = ApiUtils.addLinksHeader(responseBuilder,
         String.format("/v1/orgs/%s/projects/%s/connectors", org, project), connectorResponses.size(), page, limit);
 
     return responseBuilderWithLinks.entity(connectorResponses).build();

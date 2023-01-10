@@ -27,6 +27,7 @@ message ExecutionMetadata {
   string pipelineConnectorRef = 15;
   PipelineStageInfo pipelineStageInfo = 16;
   string harnessVersion = 17;
+  bool isDebug = 18;
 }
 
 message RetryExecutionInfo {
@@ -37,11 +38,12 @@ message RetryExecutionInfo {
 
 message PipelineStageInfo {
   bool hasParentPipeline = 1;
-  string stageNodeExecutionId = 2;
+  string stageNodeId = 2;
   string executionId = 3;
   string identifier = 4;
   string projectId = 5;
   string orgId = 6;
+  int32 runSequence = 7;
 }
 
 enum PipelineStoreType {

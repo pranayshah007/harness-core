@@ -26,6 +26,7 @@ import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.sdk.core.steps.executables.ChildExecutable;
 import io.harness.pms.sdk.core.steps.executables.ChildrenExecutable;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
@@ -35,11 +36,22 @@ import io.harness.tasks.ResponseData;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import org.springframework.data.domain.Sort.Direction;
+import org.springframework.data.util.CloseableIterator;
 
+/**
+ * This step is used during retry-failed-pipeline for running any step/stage that is inside the strategy.
+ * In retry-failed-pipeline, we normally convert the PlanNode into IdentityNode.
+ * But in case of strategy, we have multiple executions for the same node. So some combinations might have failed in
+ * previous execution and some might have passed. But we can not convert the planNode into IdentityNode during plan
+ * creation because we might need the original planNode during the execution,(To run the failed combination) But we also
+ * want that successful matrix combinations should not run. And the above step comes into picture at this moment. This
+ * step will check the status from previous execution, if its positive status then it will create an IdentityNode for
+ * the provided planNode. And return the identityNode ids as child/children. And if status was negative, then simply
+ * return the planNode id as child/children ids.
+ */
 @OwnedBy(HarnessTeam.PIPELINE)
 public class IdentityStrategyInternalStep
     implements ChildExecutable<IdentityStepParameters>, ChildrenExecutable<IdentityStepParameters> {
@@ -53,17 +65,22 @@ public class IdentityStrategyInternalStep
   @Override
   public ChildExecutableResponse obtainChild(
       Ambiance ambiance, IdentityStepParameters identityParams, StepInputPackage inputPackage) {
-    NodeExecution originalNodeExecution = null;
+    NodeExecution originalNodeExecution = nodeExecutionService.getWithFieldsIncluded(
+        identityParams.getOriginalNodeExecutionId(), NodeProjectionUtils.fieldsForIdentityStrategyStep);
     NodeExecution childNodeExecution = null;
-    List<NodeExecution> nodeExecutions = nodeExecutionService.fetchNodeExecutionsByParentIdWithAmbianceAndNode(
-        identityParams.getOriginalNodeExecutionId(), true, true);
-    nodeExecutions =
-        nodeExecutions.stream().sorted(Comparator.comparing(NodeExecution::getCreatedAt)).collect(Collectors.toList());
-    for (NodeExecution nodeExecution : nodeExecutions) {
-      if (nodeExecution.getUuid().equals(identityParams.getOriginalNodeExecutionId())) {
-        originalNodeExecution = nodeExecution;
-      } else if (childNodeExecution == null) {
-        childNodeExecution = nodeExecution;
+    try (CloseableIterator<NodeExecution> iterator =
+             // Use original planExecutionId that belongs to the originalNodeExecutionId and not current
+             // planExecutionId(ambiance.getPlanExecutionId)
+        nodeExecutionService.fetchChildrenNodeExecutionsIterator(
+            originalNodeExecution.getAmbiance().getPlanExecutionId(), identityParams.getOriginalNodeExecutionId(),
+            Direction.ASC, NodeProjectionUtils.fieldsForIdentityStrategyStep)) {
+      while (iterator.hasNext()) {
+        NodeExecution next = iterator.next();
+        if (Boolean.FALSE.equals(next.getOldRetry())) {
+          // Getting first child with oldRetry false
+          childNodeExecution = next;
+          break;
+        }
       }
     }
 
@@ -79,23 +96,29 @@ public class IdentityStrategyInternalStep
   @Override
   public ChildrenExecutableResponse obtainChildren(
       Ambiance ambiance, IdentityStepParameters identityParams, StepInputPackage inputPackage) {
-    List<NodeExecution> nodeExecutions = nodeExecutionService.fetchNodeExecutionsByParentIdWithAmbianceAndNode(
-        identityParams.getOriginalNodeExecutionId(), true, true);
-    NodeExecution strategyNodeExecution = null;
+    NodeExecution originalStrategyNodeExecution = nodeExecutionService.getWithFieldsIncluded(
+        identityParams.getOriginalNodeExecutionId(), NodeProjectionUtils.fieldsForIdentityStrategyStep);
     List<NodeExecution> childrenNodeExecutions = new ArrayList<>();
 
-    for (NodeExecution nodeExecution : nodeExecutions) {
-      if (nodeExecution.getUuid().equals(identityParams.getOriginalNodeExecutionId())) {
-        strategyNodeExecution = nodeExecution;
-      } else {
-        childrenNodeExecutions.add(nodeExecution);
+    try (CloseableIterator<NodeExecution> iterator =
+             // Use original planExecutionId that belongs to the originalNodeExecutionId and not current
+             // planExecutionId(ambiance.getPlanExecutionId)
+        nodeExecutionService.fetchChildrenNodeExecutionsIterator(
+            originalStrategyNodeExecution.getAmbiance().getPlanExecutionId(),
+            identityParams.getOriginalNodeExecutionId(), NodeProjectionUtils.fieldsForIdentityStrategyStep)) {
+      while (iterator.hasNext()) {
+        NodeExecution next = iterator.next();
+        // Don't want to include retried nodeIds
+        if (Boolean.FALSE.equals(next.getOldRetry())) {
+          childrenNodeExecutions.add(next);
+        }
       }
     }
 
     List<ChildrenExecutableResponse.Child> children =
         getChildrenFromNodeExecutions(childrenNodeExecutions, ambiance.getPlanId());
-
-    long maxConcurrency = strategyNodeExecution.getExecutableResponses().get(0).getChildren().getMaxConcurrency();
+    long maxConcurrency =
+        originalStrategyNodeExecution.getExecutableResponses().get(0).getChildren().getMaxConcurrency();
 
     return ChildrenExecutableResponse.newBuilder().addAllChildren(children).setMaxConcurrency(maxConcurrency).build();
   }

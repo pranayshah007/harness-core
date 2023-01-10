@@ -9,7 +9,7 @@ package io.harness.delegate.task.citasks.cik8handler.helper;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
-import io.harness.SystemWrapper;
+import io.harness.utils.system.SystemWrapper;
 
 import com.google.inject.Singleton;
 import java.io.File;

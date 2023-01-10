@@ -6,12 +6,12 @@
                     debug_port="6016"
                     blaze-command="run"
                     keep-in-sync="true">
-        <blaze-target>//315-sto-manager:module</blaze-target>
+        <blaze-target>//315-sto-manager/app:module</blaze-target>
         <blaze-user-flag>
             --jvmopt=""
         </blaze-user-flag>
         <blaze-user-exe-flag>server</blaze-user-exe-flag>
-        <blaze-user-exe-flag>$PROJECT_DIR$/../315-sto-manager/sto-manager-config.yml</blaze-user-exe-flag>
+        <blaze-user-exe-flag>$PROJECT_DIR$/../315-sto-manager/config/sto-manager-config.yml</blaze-user-exe-flag>
     </blaze-settings>
     <method v="2">
         <option name="Blaze.BeforeRunTask" enabled="true"/>

@@ -70,6 +70,7 @@ public class EcsBlueGreenSwapTargetGroupsCommandTaskHandler extends EcsCommandTa
         iLogStreamingTaskClient, EcsCommandUnitConstants.swapTargetGroup.toString(), true, commandUnitsProgress);
 
     try {
+      swapTargetGroupLogCallback.saveExecutionLog(format("Swapping Target Groups..%n%n"), LogLevel.INFO);
       AwsInternalConfig awsInternalConfig =
           awsNgConfigMapper.createAwsInternalConfig(ecsInfraConfig.getAwsConnectorDTO());
 
@@ -158,6 +159,7 @@ public class EcsBlueGreenSwapTargetGroupsCommandTaskHandler extends EcsCommandTa
       swapTargetGroupLogCallback.saveExecutionLog(
           color(format("Swapping Successful. %n"), LogColor.Green, LogWeight.Bold), LogLevel.INFO,
           CommandExecutionStatus.SUCCESS);
+      log.info("Completed task execution for command: {}", ecsCommandRequest.getEcsCommandType().name());
       return ecsBlueGreenSwapTargetGroupsResponse;
     } catch (Exception e) {
       swapTargetGroupLogCallback.saveExecutionLog(color(format("Swapping Failed. %n"), LogColor.Red, LogWeight.Bold),

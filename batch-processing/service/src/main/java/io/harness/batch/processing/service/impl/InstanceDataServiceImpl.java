@@ -100,8 +100,8 @@ public class InstanceDataServiceImpl extends CacheUtils implements InstanceDataS
   }
 
   @Override
-  public List<InstanceLifecycleInfo> fetchInstanceDataForGivenInstances(Set<String> instanceIds) {
-    List<InstanceData> instanceDataList = instanceDataDao.fetchInstanceData(instanceIds);
+  public List<InstanceLifecycleInfo> fetchInstanceDataForGivenInstances(String accountId, Set<String> instanceIds) {
+    List<InstanceData> instanceDataList = instanceDataDao.fetchInstanceData(accountId, instanceIds);
     return instanceDataList.stream()
         .map(instanceData
             -> InstanceLifecycleInfo.builder()

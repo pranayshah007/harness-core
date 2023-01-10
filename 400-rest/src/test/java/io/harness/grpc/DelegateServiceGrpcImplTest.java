@@ -183,8 +183,7 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
                                       .setType(TaskType.newBuilder().setType("TYPE").build())
                                       .setKryoParameters(kryoParams)
                                       .setExecutionTimeout(Duration.newBuilder().setSeconds(3).setNanos(100).build())
-                                      .setExpressionFunctorToken(200)
-                                      .putAllExpressions(expressions);
+                                      .setExpressionFunctorToken(200);
 
     List<String> taskSelectors = Arrays.asList("testSelector");
 
@@ -195,7 +194,7 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
                              TaskLogAbstractions.newBuilder().putAllValues(logAbstractions).build(),
                              builder.setMode(TaskMode.SYNC).setParked(false).build(),
                              asList(SystemEnvCheckerCapability.builder().build()), taskSelectors,
-                             java.time.Duration.ZERO, false, false, Collections.emptyList(), false, null)
+                             java.time.Duration.ZERO, false, false, Collections.emptyList(), false, null, false)
                          .getTaskId();
     assertThat(taskId1).isNotNull();
     assertThat(taskId1.getId()).isNotBlank();
@@ -209,7 +208,7 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
                                TaskLogAbstractions.newBuilder().putAllValues(logAbstractions).build(),
                                builder.setMode(TaskMode.SYNC).setParked(false).build(),
                                asList(SystemEnvCheckerCapability.builder().build()), taskSelectors,
-                               java.time.Duration.ZERO, false, false, Collections.emptyList(), false, null)
+                               java.time.Duration.ZERO, false, false, Collections.emptyList(), false, null, false)
                            .getTaskId();
     assertThat(taskId1Ng).isNotNull();
     assertThat(taskId1Ng.getId()).isNotBlank();
@@ -222,7 +221,7 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
                              TaskLogAbstractions.newBuilder().putAllValues(new LinkedHashMap<>()).build(),
                              builder.setMode(TaskMode.ASYNC).setParked(false).build(),
                              asList(SystemEnvCheckerCapability.builder().build()), taskSelectors,
-                             java.time.Duration.ZERO, false, false, Collections.emptyList(), false, null)
+                             java.time.Duration.ZERO, false, false, Collections.emptyList(), false, null, false)
                          .getTaskId();
     assertThat(taskId2).isNotNull();
     assertThat(taskId2.getId()).isNotBlank();
@@ -235,7 +234,7 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
                 TaskLogAbstractions.newBuilder().putAllValues(new LinkedHashMap<>()).build(),
                 builder.setMode(TaskMode.ASYNC).setParked(true).build(),
                 asList(SystemEnvCheckerCapability.builder().build()), taskSelectors, java.time.Duration.ZERO, false,
-                false, Collections.emptyList(), false, null)
+                false, Collections.emptyList(), false, null, false)
             .getTaskId();
     assertThat(taskId3).isNotNull();
     assertThat(taskId3.getId()).isNotBlank();
@@ -250,7 +249,7 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
                 TaskLogAbstractions.newBuilder().putAllValues(new LinkedHashMap<>()).build(),
                 builder.setMode(TaskMode.SYNC).setParked(false).build(),
                 asList(SystemEnvCheckerCapability.builder().build()), taskSelectors, java.time.Duration.ZERO, false,
-                false, Collections.emptyList(), false, null))
+                false, Collections.emptyList(), false, null, false))
         .isInstanceOf(DelegateServiceDriverException.class)
         .hasMessage("Unexpected error occurred while submitting task.");
   }
@@ -278,6 +277,34 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
     doThrow(InvalidRequestException.class).when(delegateTaskServiceClassic).abortTask(accountId, taskId);
     assertThatThrownBy(()
                            -> delegateServiceGrpcClient.cancelTask(AccountId.newBuilder().setId(accountId).build(),
+                               TaskId.newBuilder().setId(taskId).build()))
+        .isInstanceOf(DelegateServiceDriverException.class)
+        .hasMessage("Unexpected error occurred while cancelling task.");
+  }
+
+  @Test
+  @Owner(developers = MARKO)
+  @Category(UnitTests.class)
+  public void testCancelTaskV2() {
+    String accountId = generateUuid();
+    String taskId = generateUuid();
+    when(delegateTaskServiceClassic.abortTaskV2(accountId, taskId))
+        .thenReturn(null)
+        .thenReturn(DelegateTask.builder().status(Status.STARTED).build());
+
+    TaskExecutionStage taskExecutionStage = delegateServiceGrpcClient.cancelTaskV2(
+        AccountId.newBuilder().setId(accountId).build(), TaskId.newBuilder().setId(taskId).build());
+    assertThat(taskExecutionStage).isNotNull();
+    assertThat(taskExecutionStage).isEqualTo(TaskExecutionStage.TYPE_UNSPECIFIED);
+
+    taskExecutionStage = delegateServiceGrpcClient.cancelTaskV2(
+        AccountId.newBuilder().setId(accountId).build(), TaskId.newBuilder().setId(taskId).build());
+    assertThat(taskExecutionStage).isNotNull();
+    assertThat(taskExecutionStage).isEqualTo(TaskExecutionStage.EXECUTING);
+
+    doThrow(InvalidRequestException.class).when(delegateTaskServiceClassic).abortTaskV2(accountId, taskId);
+    assertThatThrownBy(()
+                           -> delegateServiceGrpcClient.cancelTaskV2(AccountId.newBuilder().setId(accountId).build(),
                                TaskId.newBuilder().setId(taskId).build()))
         .isInstanceOf(DelegateServiceDriverException.class)
         .hasMessage("Unexpected error occurred while cancelling task.");

@@ -45,6 +45,7 @@ import io.harness.utils.ConnectorUtils;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import java.time.Duration;
 import java.util.List;
 import lombok.AllArgsConstructor;
@@ -58,6 +59,7 @@ public class AwsCodeCommitDataObtainer implements GitProviderBaseDataObtainer {
   private final TaskExecutionUtils taskExecutionUtils;
   private final ConnectorUtils connectorUtils;
   private final KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   private final WebhookEventPayloadParser webhookEventPayloadParser;
 
   @Override
@@ -131,7 +133,9 @@ public class AwsCodeCommitDataObtainer implements GitProviderBaseDataObtainer {
 
     if (BinaryResponseData.class.isAssignableFrom(responseData.getClass())) {
       BinaryResponseData binaryResponseData = (BinaryResponseData) responseData;
-      Object object = kryoSerializer.asInflatedObject(binaryResponseData.getData());
+      Object object = binaryResponseData.isUsingKryoWithoutReference()
+          ? referenceFalseKryoSerializer.asInflatedObject(binaryResponseData.getData())
+          : kryoSerializer.asInflatedObject(binaryResponseData.getData());
       if (object instanceof AwsCodeCommitApiTaskResponse) {
         return (AwsCodeCommitApiTaskResponse) object;
       } else if (object instanceof ErrorResponseData) {

@@ -10,20 +10,26 @@ package io.harness.freeze.helpers;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.rule.OwnerRule.ABHISHEK;
+import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.accesscontrol.NGAccessDeniedException;
 import io.harness.accesscontrol.acl.api.PermissionCheckDTO;
+import io.harness.accesscontrol.acl.api.Principal;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.accesscontrol.principals.PrincipalType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.freeze.beans.FreezeEntityType;
 import io.harness.rule.Owner;
+import io.harness.utils.NGFeatureFlagHelperService;
 
 import java.util.Collections;
 import java.util.Map;
@@ -38,6 +44,7 @@ import org.mockito.Mockito;
 @OwnedBy(CDC)
 public class FreezeRBACHelperTest extends CategoryTest {
   AccessControlClient accessControlClient = mock(AccessControlClient.class);
+  NGFeatureFlagHelperService ngFeatureFlagHelperService = mock(NGFeatureFlagHelperService.class);
 
   private String yaml1 =
       "freeze:\n  identifier: \"idx\"\n  name: \"name\"\n  description: \"desc\"\n  orgIdentifier: \"default\"\n  projectIdentifier: \"Sample\"\n  status: \"Enabled\"\n  entityConfigs:\n    - name: \"rule1\"\n      entities:\n      - filterType: \"Equals\"\n        type: \"Service\"\n        entityRefs:\n          - \"s1\"";
@@ -91,5 +98,21 @@ public class FreezeRBACHelperTest extends CategoryTest {
 
     result = FreezeRBACHelper.getResourceTypeAndPermission(FreezeEntityType.ENV_TYPE);
     assertThat(result.isPresent()).isEqualTo(false);
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void test_checkIfUserHasFreezeOverrideAccess() {
+    when(ngFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(true);
+    Principal principal =
+        Principal.builder().principalIdentifier("principalId").principalType(PrincipalType.USER).build();
+    when(accessControlClient.hasAccess(any(), any(), any(), any())).thenReturn(true);
+    assertThat(FreezeRBACHelper.checkIfUserHasFreezeOverrideAccess(
+                   ngFeatureFlagHelperService, "accountId", "projectId", "orgId", accessControlClient, null))
+        .isEqualTo(false);
+    assertThat(FreezeRBACHelper.checkIfUserHasFreezeOverrideAccess(
+                   ngFeatureFlagHelperService, "accountId", "projectId", "orgId", accessControlClient, principal))
+        .isEqualTo(true);
   }
 }

@@ -170,21 +170,4 @@ public class NexusRegistryServiceImpl implements NexusRegistryService {
             tag, repository, repositoryFormat, artifactName, nexusConfig.getNexusUrl()),
         new NexusRegistryException(String.format("Found multiple artifact tags ('%s'), but expected only one.", tag)));
   }
-
-  public BuildDetailsInternal getPackageNames(
-      NexusRequest nexusConfig, String repository, String packageName, String tag) {
-    List<BuildDetailsInternal> builds = nexusClient.getPackageNames(nexusConfig, repository, packageName);
-    builds = builds.stream().filter(build -> build.getNumber().equals(tag)).collect(Collectors.toList());
-
-    if (builds.size() == 1) {
-      return builds.get(0);
-    }
-
-    throw NestedExceptionUtils.hintWithExplanationException(
-        "Please check your Nexus repository for artifacts with same tag.",
-        String.format(
-            "Found multiple artifacts for tag [%s] in Nexus repository [%s] for %s packageName [%s] in registry [%s].",
-            tag, repository, packageName, nexusConfig.getNexusUrl()),
-        new NexusRegistryException(String.format("Found multiple artifact tags ('%s'), but expected only one.", tag)));
-  }
 }

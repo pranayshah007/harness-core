@@ -53,14 +53,12 @@ import software.wings.beans.Service;
 import software.wings.beans.appmanifest.AppManifestKind;
 import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.beans.appmanifest.ManifestFile;
-import software.wings.beans.appmanifest.StoreType;
 import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.DiscoveryNode;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.ngmigration.NGMigrationEntityType;
-import software.wings.ngmigration.NGMigrationStatus;
 import software.wings.service.intfc.ApplicationManifestService;
 
 import com.google.common.collect.Lists;
@@ -81,6 +79,8 @@ import org.apache.commons.lang3.StringUtils;
 public class ManifestMigrationService extends NgMigrationService {
   @Inject private ApplicationManifestService applicationManifestService;
   @Inject private NgManifestFactory manifestFactory;
+
+  @Inject private ServiceVariableMigrationService serviceVariableMigrationService;
   private static final List<AppManifestKind> SUPPORTED_MANIFEST_KIND =
       Lists.newArrayList(AppManifestKind.VALUES, AppManifestKind.K8S_MANIFEST);
 
@@ -148,26 +148,6 @@ public class ManifestMigrationService extends NgMigrationService {
   }
 
   @Override
-  public NGMigrationStatus canMigrate(NGMigrationEntity entity) {
-    ApplicationManifest applicationManifest = (ApplicationManifest) entity;
-    if (StoreType.Remote.equals(applicationManifest.getStoreType())) {
-      return NGMigrationStatus.builder()
-          .status(false)
-          .reasons(Collections.singletonList("Only remote manifests are supported currently for migration"))
-          .build();
-    }
-    if (!SUPPORTED_MANIFEST_KIND.contains(applicationManifest.getKind())) {
-      return NGMigrationStatus.builder()
-          .status(false)
-          .reasons(Collections.singletonList(
-              String.format("Only %s type of manifests are currently supported with migration",
-                  SUPPORTED_MANIFEST_KIND.stream().map(AppManifestKind::name).collect(Collectors.joining(", ")))))
-          .build();
-    }
-    return NGMigrationStatus.builder().status(true).build();
-  }
-
-  @Override
   public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,
       TemplateClient templateClient, MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
     return migrateFile(auth, ngClient, inputDTO, yamlFile);
@@ -180,7 +160,8 @@ public class ManifestMigrationService extends NgMigrationService {
     List<NGYamlFile> yamlFiles = getYamlFilesForManifest(applicationManifest, inputDTO, entities);
     String serviceId = applicationManifest.getServiceId();
     String envId = applicationManifest.getEnvId();
-    if (StringUtils.isNoneBlank(serviceId, envId)) {
+    if (StringUtils.isNoneBlank(serviceId, envId)
+        && serviceVariableMigrationService.doReferenceExists(migratedEntities, envId, serviceId)) {
       // We need to generate the overrides
       NGYamlFile override =
           ServiceVariableMigrationService.getBlankServiceOverride(inputDTO, migratedEntities, envId, serviceId, null);

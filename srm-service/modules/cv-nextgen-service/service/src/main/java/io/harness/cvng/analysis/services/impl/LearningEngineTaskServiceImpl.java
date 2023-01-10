@@ -19,6 +19,7 @@ import io.harness.cvng.analysis.entities.LearningEngineTask;
 import io.harness.cvng.analysis.entities.LearningEngineTask.ExecutionStatus;
 import io.harness.cvng.analysis.entities.LearningEngineTask.LearningEngineTaskKeys;
 import io.harness.cvng.analysis.entities.LearningEngineTask.LearningEngineTaskType;
+import io.harness.cvng.analysis.entities.VerificationTaskBase.VerificationTaskBaseKeys;
 import io.harness.cvng.analysis.services.api.LearningEngineTaskService;
 import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.core.entities.VerificationTask.TaskType;
@@ -34,6 +35,10 @@ import io.harness.persistence.HPersistence;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
+import dev.morphia.FindAndModifyOptions;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
+import dev.morphia.query.UpdateOperations;
 import java.net.URISyntaxException;
 import java.time.Clock;
 import java.time.Instant;
@@ -46,10 +51,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.client.utils.URIBuilder;
-import org.mongodb.morphia.FindAndModifyOptions;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @Slf4j
 public class LearningEngineTaskServiceImpl implements LearningEngineTaskService {
@@ -71,8 +72,8 @@ public class LearningEngineTaskServiceImpl implements LearningEngineTaskService 
     Query<LearningEngineTask> learningEngineTaskQuery =
         hPersistence.createQuery(LearningEngineTask.class)
             .filter(LearningEngineTaskKeys.taskStatus, ExecutionStatus.QUEUED)
-            .order(
-                Sort.ascending(LearningEngineTaskKeys.taskPriority), Sort.ascending(LearningEngineTaskKeys.createdAt));
+            .order(Sort.ascending(LearningEngineTaskKeys.taskPriority),
+                Sort.ascending(VerificationTaskBaseKeys.createdAt));
     if (isNotEmpty(taskType)) {
       learningEngineTaskQuery.field(LearningEngineTaskKeys.analysisType).in(taskType);
     }

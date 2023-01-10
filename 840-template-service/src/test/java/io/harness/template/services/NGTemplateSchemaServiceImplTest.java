@@ -217,7 +217,7 @@ public class NGTemplateSchemaServiceImplTest extends TemplateServiceTestBase {
   @Category(UnitTests.class)
   public void testInvalidValidatePipelineSchema() throws IOException {
     when(yamlSchemaValidator.validate(anyString(), anyString(), anyBoolean(), anyInt(), anyString()))
-        .thenThrow(new InvalidYamlException("msg", null));
+        .thenThrow(new InvalidYamlException("msg", null, null));
     Call<ResponseDTO<YamlSchemaResponse>> requestCall = mock(Call.class);
     doReturn(requestCall).when(pipelineYamlSchemaServiceClient).getYamlSchema(any(), any(), any(), any(), any(), any());
     try (MockedStatic<NGRestUtils> mockStatic = Mockito.mockStatic(NGRestUtils.class)) {

@@ -33,18 +33,21 @@ import org.redisson.codec.KryoCodec;
 
 @OwnedBy(PL)
 public class RedissonKryoCodec extends KryoCodec {
+  private final Set<Class<? extends KryoRegistrar>> kryoRegistrars;
+  public RedissonKryoCodec() {
+    kryoRegistrars = HarnessReflections.get().getSubTypesOf(KryoRegistrar.class);
+  }
   @Override
   protected Kryo createInstance(List<Class<?>> classes, ClassLoader classLoader) {
     return kryo();
   }
 
-  private synchronized Kryo kryo() {
+  private Kryo kryo() {
     final ClassResolver classResolver = new ClassResolver();
     HKryo kryo = new HKryo(classResolver);
     kryo.setDefaultSerializer(getDefaultSerializer());
 
     try {
-      Set<Class<? extends KryoRegistrar>> kryoRegistrars = HarnessReflections.get().getSubTypesOf(KryoRegistrar.class);
       for (Class<? extends KryoRegistrar> clazz : kryoRegistrars) {
         Constructor<?> constructor = clazz.getConstructor();
         final KryoRegistrar kryoRegistrar = (KryoRegistrar) constructor.newInstance();

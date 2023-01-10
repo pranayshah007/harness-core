@@ -10,7 +10,7 @@ package software.wings.sm.states;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.rule.OwnerRule.PRABU;
 
-import static software.wings.beans.artifact.Artifact.Builder.anArtifact;
+import static software.wings.persistence.artifact.Artifact.Builder.anArtifact;
 import static software.wings.utils.WingsTestConstants.ARTIFACT_ID;
 import static software.wings.utils.WingsTestConstants.ARTIFACT_STREAM_ID;
 import static software.wings.utils.WingsTestConstants.PHASE_STEP;
@@ -29,7 +29,7 @@ import software.wings.WingsBaseTest;
 import software.wings.beans.ExecutionArgs;
 import software.wings.beans.Service;
 import software.wings.beans.WorkflowExecution;
-import software.wings.beans.artifact.Artifact;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.intfc.ArtifactStreamServiceBindingService;
 import software.wings.utils.WingsTestConstants;
 

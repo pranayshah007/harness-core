@@ -19,9 +19,9 @@ import io.harness.mongo.iterator.filter.MorphiaFilterExpander;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mongodb.morphia.query.Query;
 
 public class MorphiaPersistenceProviderTest extends PersistenceTestBase {
   @Inject private MorphiaPersistenceProvider<TestIterableEntity> persistenceProvider;
@@ -34,13 +34,13 @@ public class MorphiaPersistenceProviderTest extends PersistenceTestBase {
     final Query<TestIterableEntity> query =
         persistenceProvider.createQuery(TestIterableEntity.class, TestIterableEntityKeys.nextIterations, null, false);
 
-    assertThat(query.toString().replace(" ", "")).isEqualTo("{query:{}}");
+    assertThat(query.toString().replace(" ", "")).isEqualTo("{{}}");
     assertThat(
         persistenceProvider.createQuery(5, TestIterableEntity.class, TestIterableEntityKeys.nextIterations, null, false)
             .toString()
             .replace(" ", ""))
         .isEqualTo(
-            "{query:{\"$or\":[{\"nextIterations\":{\"$lt\":{\"$numberLong\":\"5\"}}},{\"nextIterations\":{\"$exists\":false}}]}}");
+            "{{\"$or\":[{\"nextIterations\":{\"$lt\":{\"$numberLong\":\"5\"}}},{\"nextIterations\":{\"$exists\":false}}]}}");
   }
 
   @Test
@@ -53,14 +53,14 @@ public class MorphiaPersistenceProviderTest extends PersistenceTestBase {
     final Query<TestIterableEntity> query = persistenceProvider.createQuery(
         TestIterableEntity.class, TestIterableEntityKeys.nextIterations, filterExpander, false);
 
-    assertThat(query.toString().replace(" ", "")).isEqualTo("{query:{\"name\":\"foo\"}}");
+    assertThat(query.toString().replace(" ", "")).isEqualTo("{{\"name\":\"foo\"}}");
     assertThat(
         persistenceProvider
             .createQuery(5, TestIterableEntity.class, TestIterableEntityKeys.nextIterations, filterExpander, false)
             .toString()
             .replace(" ", ""))
         .isEqualTo(
-            "{query:{\"name\":\"foo\",\"$or\":[{\"nextIterations\":{\"$lt\":{\"$numberLong\":\"5\"}}},{\"nextIterations\":{\"$exists\":false}}]}}");
+            "{{\"name\":\"foo\",\"$or\":[{\"nextIterations\":{\"$lt\":{\"$numberLong\":\"5\"}}},{\"nextIterations\":{\"$exists\":false}}]}}");
   }
 
   @Test
@@ -75,13 +75,13 @@ public class MorphiaPersistenceProviderTest extends PersistenceTestBase {
         TestIterableEntity.class, TestIterableEntityKeys.nextIterations, filterExpander, false);
 
     assertThat(query.toString().replace(" ", ""))
-        .isEqualTo("{query:{\"$and\":[{\"name\":{\"$exists\":true}},{\"name\":\"foo\"}]}}");
+        .isEqualTo("{{\"$and\":[{\"name\":{\"$exists\":true}},{\"name\":\"foo\"}]}}");
     assertThat(
         persistenceProvider
             .createQuery(5, TestIterableEntity.class, TestIterableEntityKeys.nextIterations, filterExpander, false)
             .toString()
             .replace(" ", ""))
         .isEqualTo(
-            "{query:{\"$and\":[{\"$and\":[{\"name\":{\"$exists\":true}},{\"name\":\"foo\"}]},{\"$or\":[{\"nextIterations\":{\"$lt\":{\"$numberLong\":\"5\"}}},{\"nextIterations\":{\"$exists\":false}}]}]}}");
+            "{{\"$and\":[{\"name\":{\"$exists\":true}},{\"name\":\"foo\"}],\"$or\":[{\"nextIterations\":{\"$lt\":{\"$numberLong\":\"5\"}}},{\"nextIterations\":{\"$exists\":false}}]}}");
   }
 }

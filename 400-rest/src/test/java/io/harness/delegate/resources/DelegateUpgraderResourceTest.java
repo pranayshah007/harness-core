@@ -19,6 +19,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.UpgradeCheckResult;
 import io.harness.delegate.service.intfc.DelegateUpgraderService;
+import io.harness.metrics.intfc.DelegateMetricsService;
 import io.harness.rule.Owner;
 
 import javax.ws.rs.core.Application;
@@ -31,12 +32,9 @@ import org.glassfish.jersey.test.spi.TestContainerException;
 import org.glassfish.jersey.test.spi.TestContainerFactory;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
 
 @OwnedBy(DEL)
-@RunWith(MockitoJUnitRunner.class)
 @Slf4j
 public class DelegateUpgraderResourceTest extends JerseyTest {
   private static final String ACCOUNT_ID = "account_id";
@@ -46,13 +44,14 @@ public class DelegateUpgraderResourceTest extends JerseyTest {
   private static final String UPGRADER_IMAGE_TAG = "harness/upgrader:1";
 
   @Mock private DelegateUpgraderService upgraderService;
+  @Mock private DelegateMetricsService metricsService;
 
   @Override
   protected Application configure() {
-    // needs to initialize mocks here, even though we are using MockitoJUnitRunner class
+    // need to initialize mocks here, MockitoJUnitRunner won't help since this is not @Before, but happens only once.
     initMocks(this);
     final ResourceConfig resourceConfig = new ResourceConfig();
-    resourceConfig.register(new DelegateUpgraderResource(upgraderService));
+    resourceConfig.register(new DelegateUpgraderResource(upgraderService, metricsService));
     return resourceConfig;
   }
 

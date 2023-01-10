@@ -74,7 +74,9 @@ public class ServiceNowValidationHandlerTest extends CategoryTest {
   @Owner(developers = PRABU)
   @Category(UnitTests.class)
   public void testValidateFailure() {
-    doThrow(new RuntimeException("Invalid Credentials")).when(serviceNowTaskNgHelper).getServiceNowResponse(any());
+    doThrow(new RuntimeException("Invalid Credentials"))
+        .when(serviceNowTaskNgHelper)
+        .getServiceNowResponse(any(), any());
     doAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class))
         .when(ngErrorHelper)
         .getErrorSummary(any());

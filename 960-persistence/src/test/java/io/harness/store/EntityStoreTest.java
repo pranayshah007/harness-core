@@ -16,13 +16,13 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.persistence.HPersistence;
-import io.harness.persistence.Store;
+import io.harness.persistence.store.Store;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
+import dev.morphia.AdvancedDatastore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mongodb.morphia.AdvancedDatastore;
 
 @OwnedBy(HarnessTeam.PL)
 public class EntityStoreTest extends PersistenceTestBase {

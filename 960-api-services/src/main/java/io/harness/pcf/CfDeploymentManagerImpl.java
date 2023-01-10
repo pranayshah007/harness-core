@@ -346,6 +346,47 @@ public class CfDeploymentManagerImpl implements CfDeploymentManager {
     }
   }
 
+  @Override
+  public List<ApplicationSummary> getPreviousReleasesBasicAndCanaryNG(CfRequestConfig cfRequestConfig, String prefix)
+      throws PivotalClientApiException {
+    try {
+      List<ApplicationSummary> applicationSummaries = cfSdkClient.getApplications(cfRequestConfig);
+      if (CollectionUtils.isEmpty(applicationSummaries)) {
+        return Collections.emptyList();
+      }
+
+      return applicationSummaries.stream()
+          .filter(applicationSummary -> matchesPrefixBasicAndCanaryNG(prefix, applicationSummary.getName()))
+          .sorted(Comparator.comparing(ApplicationSummary::getName,
+              (name1, name2) -> {
+                String suffix1 = getLowerCaseSuffix(name1, prefix);
+                String suffix2 = getLowerCaseSuffix(name2, prefix);
+                return getIntegerSafe(suffix1).compareTo(getIntegerSafe(suffix2));
+              }))
+          .collect(toList());
+
+    } catch (Exception e) {
+      throw new PivotalClientApiException(PIVOTAL_CLOUD_FOUNDRY_CLIENT_EXCEPTION + ExceptionUtils.getMessage(e), e);
+    }
+  }
+  private boolean matchesPrefixBasicAndCanaryNG(String prefix, String name) {
+    boolean prefixMatches = name.toLowerCase().startsWith(prefix.toLowerCase());
+    if (prefixMatches) {
+      String suffix = name.substring(prefix.length());
+      prefixMatches = isValidRevisionSuffixBasicAndCanaryNG(suffix);
+    }
+    return prefixMatches;
+  }
+  boolean isValidRevisionSuffixBasicAndCanaryNG(String suffix) {
+    boolean result = suffix.length() == 0;
+
+    if (!result && suffix.startsWith(DELIMITER)) {
+      suffix = suffix.substring(DELIMITER.length());
+      result = getIntegerSafe(suffix) != -1;
+    }
+    return result;
+  }
+
   /**
    * Use this with #matchesPrefix2
    * @param input name of application
@@ -477,6 +518,13 @@ public class CfDeploymentManagerImpl implements CfDeploymentManager {
   }
 
   @Override
+  public boolean checkIfAppHasAutoscalarEnabled(CfAppAutoscalarRequestData appAutoscalarRequestData,
+      LogCallback executionLogCallback) throws PivotalClientApiException {
+    appAutoscalarRequestData.setExpectedEnabled(true);
+    return cfCliClient.checkIfAppHasAutoscalerWithExpectedState(appAutoscalarRequestData, executionLogCallback);
+  }
+
+  @Override
   public void performConfigureAutoscalar(CfAppAutoscalarRequestData appAutoscalarRequestData,
       LogCallback executionLogCallback) throws PivotalClientApiException {
     boolean autoscalarAttached =
@@ -557,6 +605,24 @@ public class CfDeploymentManagerImpl implements CfDeploymentManager {
   }
 
   @Override
+  public boolean isInActiveApplicationNG(CfRequestConfig cfRequestConfig) throws PivotalClientApiException {
+    if (PcfConstants.isInterimApp(cfRequestConfig.getApplicationName())) {
+      return false;
+    }
+    ApplicationEnvironments applicationEnvironments = cfSdkClient.getApplicationEnvironmentsByName(cfRequestConfig);
+    if (applicationEnvironments != null && EmptyPredicate.isNotEmpty(applicationEnvironments.getUserProvided())) {
+      for (String statusKey : STATUS_ENV_VARIABLES) {
+        if (applicationEnvironments.getUserProvided().containsKey(statusKey)
+            && (HARNESS__INACTIVE__IDENTIFIER.equals(applicationEnvironments.getUserProvided().get(statusKey))
+                || HARNESS__STAGE__IDENTIFIER.equals(applicationEnvironments.getUserProvided().get(statusKey)))) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  @Override
   public void setEnvironmentVariableForAppStatus(CfRequestConfig cfRequestConfig, boolean activeStatus,
       LogCallback executionLogCallback) throws PivotalClientApiException {
     // If we want to enable it, its expected to be disabled and vice versa
@@ -564,6 +630,17 @@ public class CfDeploymentManagerImpl implements CfDeploymentManager {
     cfCliClient.setEnvVariablesForApplication(
         Collections.singletonMap(
             HARNESS__STATUS__IDENTIFIER, activeStatus ? HARNESS__ACTIVE__IDENTIFIER : HARNESS__STAGE__IDENTIFIER),
+        cfRequestConfig, executionLogCallback);
+  }
+
+  @Override
+  public void setEnvironmentVariableForAppStatusNG(CfRequestConfig cfRequestConfig, boolean activeStatus,
+      LogCallback executionLogCallback) throws PivotalClientApiException {
+    // If we want to enable it, its expected to be disabled and vice versa
+    removeOldStatusVariableIfExist(cfRequestConfig, executionLogCallback);
+    cfCliClient.setEnvVariablesForApplication(
+        Collections.singletonMap(
+            HARNESS__STATUS__IDENTIFIER, activeStatus ? HARNESS__ACTIVE__IDENTIFIER : HARNESS__INACTIVE__IDENTIFIER),
         cfRequestConfig, executionLogCallback);
   }
 

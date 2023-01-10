@@ -20,6 +20,7 @@ import io.harness.beans.SearchFilter;
 import io.harness.dataretention.AccountDataRetentionEntity;
 import io.harness.exception.WingsException;
 import io.harness.persistence.GoogleDataStoreAware;
+import io.harness.reflection.HarnessReflections;
 
 import software.wings.beans.Log;
 import software.wings.dl.WingsPersistence;
@@ -47,7 +48,6 @@ import java.util.Map;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.Nullable;
-import org.reflections.Reflections;
 
 @Singleton
 @Slf4j
@@ -111,9 +111,8 @@ public class GoogleDataStoreServiceImpl implements DataStoreService {
 
   @Override
   public <T extends GoogleDataStoreAware> T getEntity(Class<T> clazz, String id) {
-    Key keyToFetch = datastore.newKeyFactory()
-                         .setKind(clazz.getAnnotation(org.mongodb.morphia.annotations.Entity.class).value())
-                         .newKey(id);
+    Key keyToFetch =
+        datastore.newKeyFactory().setKind(clazz.getAnnotation(dev.morphia.annotations.Entity.class).value()).newKey(id);
     try {
       return (T) clazz.newInstance().readFromCloudStorageEntity(datastore.get(keyToFetch));
     } catch (Exception ex) {
@@ -125,9 +124,8 @@ public class GoogleDataStoreServiceImpl implements DataStoreService {
   public <T extends GoogleDataStoreAware> void incrementField(
       Class<T> clazz, String id, String fieldName, int incrementCount) {
     Transaction txn = datastore.newTransaction();
-    Key keyToFetch = datastore.newKeyFactory()
-                         .setKind(clazz.getAnnotation(org.mongodb.morphia.annotations.Entity.class).value())
-                         .newKey(id);
+    Key keyToFetch =
+        datastore.newKeyFactory().setKind(clazz.getAnnotation(dev.morphia.annotations.Entity.class).value()).newKey(id);
     Entity entity = txn.get(keyToFetch);
     Entity updatedEntity = Entity.newBuilder(entity).set(fieldName, entity.getLong(fieldName) + incrementCount).build();
     txn.put(updatedEntity);
@@ -137,20 +135,19 @@ public class GoogleDataStoreServiceImpl implements DataStoreService {
   @Override
   public void delete(Class<? extends GoogleDataStoreAware> clazz, String id) {
     log.info("Deleting from GoogleDatastore table {}, id: {}",
-        clazz.getAnnotation(org.mongodb.morphia.annotations.Entity.class).value(), id);
-    Key keyToDelete = datastore.newKeyFactory()
-                          .setKind(clazz.getAnnotation(org.mongodb.morphia.annotations.Entity.class).value())
-                          .newKey(id);
+        clazz.getAnnotation(dev.morphia.annotations.Entity.class).value(), id);
+    Key keyToDelete =
+        datastore.newKeyFactory().setKind(clazz.getAnnotation(dev.morphia.annotations.Entity.class).value()).newKey(id);
     datastore.delete(keyToDelete);
     log.info("Deleted from GoogleDatastore table {}, id: {}",
-        clazz.getAnnotation(org.mongodb.morphia.annotations.Entity.class).value(), id);
+        clazz.getAnnotation(dev.morphia.annotations.Entity.class).value(), id);
   }
 
   @Override
   public void purgeByActivity(String appId, String activityId) {
     mongoDataStoreService.purgeByActivity(appId, activityId);
     Query<Key> query = Query.newKeyQueryBuilder()
-                           .setKind(Log.class.getAnnotation(org.mongodb.morphia.annotations.Entity.class).value())
+                           .setKind(Log.class.getAnnotation(dev.morphia.annotations.Entity.class).value())
                            .setFilter(CompositeFilter.and(
                                PropertyFilter.eq("appId", appId), PropertyFilter.eq("activityId", activityId)))
                            .build();
@@ -162,10 +159,8 @@ public class GoogleDataStoreServiceImpl implements DataStoreService {
 
   @Override
   public void purgeOlderRecords() {
-    Reflections reflections = new Reflections("software.wings");
-    Set<Class<? extends GoogleDataStoreAware>> dataStoreClasses = reflections.getSubTypesOf(GoogleDataStoreAware.class);
-    reflections = new Reflections("io.harness");
-    dataStoreClasses.addAll(reflections.getSubTypesOf(GoogleDataStoreAware.class));
+    Set<Class<? extends GoogleDataStoreAware>> dataStoreClasses =
+        HarnessReflections.get().getSubTypesOf(GoogleDataStoreAware.class);
 
     dataStoreClasses.forEach(dataStoreClass -> {
       if (AccountDataRetentionEntity.class.isAssignableFrom(dataStoreClass)) {
@@ -173,7 +168,7 @@ public class GoogleDataStoreServiceImpl implements DataStoreService {
       }
 
       long now = currentTimeMillis();
-      String collectionName = dataStoreClass.getAnnotation(org.mongodb.morphia.annotations.Entity.class).value();
+      String collectionName = dataStoreClass.getAnnotation(dev.morphia.annotations.Entity.class).value();
       log.info("cleaning up {}", collectionName);
       List<Key> keysToDelete = new ArrayList<>();
 
@@ -192,14 +187,12 @@ public class GoogleDataStoreServiceImpl implements DataStoreService {
 
   @Override
   public void purgeDataRetentionOlderRecords(Map<String, Long> accounts) {
-    Reflections reflections = new Reflections("software.wings");
-    Set<Class<? extends GoogleDataStoreAware>> dataStoreClasses = reflections.getSubTypesOf(GoogleDataStoreAware.class);
-    reflections = new Reflections("io.harness");
-    dataStoreClasses.addAll(reflections.getSubTypesOf(GoogleDataStoreAware.class));
+    Set<Class<? extends GoogleDataStoreAware>> dataStoreClasses =
+        HarnessReflections.get().getSubTypesOf(GoogleDataStoreAware.class);
 
     dataStoreClasses.forEach(dataStoreClass -> {
       long now = currentTimeMillis();
-      String collectionName = dataStoreClass.getAnnotation(org.mongodb.morphia.annotations.Entity.class).value();
+      String collectionName = dataStoreClass.getAnnotation(dev.morphia.annotations.Entity.class).value();
       log.info("cleaning up {}", collectionName);
       List<Key> keysToDelete = new ArrayList<>();
 
@@ -248,7 +241,7 @@ public class GoogleDataStoreServiceImpl implements DataStoreService {
 
   @Override
   public void delete(Class<? extends GoogleDataStoreAware> clazz, String fieldName, String fieldValue) {
-    String collectionName = clazz.getAnnotation(org.mongodb.morphia.annotations.Entity.class).value();
+    String collectionName = clazz.getAnnotation(dev.morphia.annotations.Entity.class).value();
     log.info("deleting records from {} for {} = {}", collectionName, fieldName, fieldValue);
     Query<Key> query =
         Query.newKeyQueryBuilder().setKind(collectionName).setFilter(PropertyFilter.eq(fieldName, fieldValue)).build();
@@ -266,7 +259,7 @@ public class GoogleDataStoreServiceImpl implements DataStoreService {
   private <T extends GoogleDataStoreAware> QueryResults<Entity> readResults(
       Class<T> clazz, PageRequest<T> pageRequest) {
     final Builder queryBuilder = Query.newEntityQueryBuilder()
-                                     .setKind(clazz.getAnnotation(org.mongodb.morphia.annotations.Entity.class).value())
+                                     .setKind(clazz.getAnnotation(dev.morphia.annotations.Entity.class).value())
                                      .setFilter(createCompositeFilter(pageRequest));
     if (isNotEmpty(pageRequest.getOrders())) {
       pageRequest.getOrders().forEach(sortOrder -> {
@@ -301,7 +294,7 @@ public class GoogleDataStoreServiceImpl implements DataStoreService {
     }
 
     Query<Key> query = Query.newKeyQueryBuilder()
-                           .setKind(clazz.getAnnotation(org.mongodb.morphia.annotations.Entity.class).value())
+                           .setKind(clazz.getAnnotation(dev.morphia.annotations.Entity.class).value())
                            .setFilter(createCompositeFilter(pageRequest))
                            .setLimit(10000)
                            .build();

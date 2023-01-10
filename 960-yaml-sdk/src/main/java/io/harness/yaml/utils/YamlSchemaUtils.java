@@ -407,6 +407,8 @@ public class YamlSchemaUtils {
       return "cd/";
     } else if (moduleType == ModuleType.CV) {
       return "cvng/";
+    } else if (moduleType == ModuleType.SRM) {
+      return "cvng/";
     } else if (moduleType == ModuleType.CI) {
       return "ci/";
     } else if (moduleType == ModuleType.CE) {

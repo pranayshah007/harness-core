@@ -531,7 +531,7 @@ public class UserResource {
   @ExceptionMetered
   @AuthRule(permissionType = LOGGED_IN)
   public RestResponse<User> get() {
-    User user = UserThreadLocal.get().getPublicUser();
+    User user = UserThreadLocal.get().getPublicUser(false);
     if (isEmpty(user.getSupportAccounts())) {
       userService.loadSupportAccounts(user);
     }
@@ -544,7 +544,7 @@ public class UserResource {
    * @return the rest response
    */
   @GET
-  @Path("userAccounts")
+  @Path("user-accounts")
   @Scope(value = ResourceType.USER, scope = LOGGED_IN)
   @Timed
   @ExceptionMetered
@@ -553,9 +553,16 @@ public class UserResource {
       @QueryParam(NGResourceFilterConstants.PAGE_KEY) @DefaultValue("0") int pageIndex,
       @QueryParam(NGResourceFilterConstants.SIZE_KEY) @DefaultValue("20") int pageSize,
       @Optional @QueryParam(NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm) {
-    return new RestResponse<>(userService.getUserAccountsAndSupportAccounts(
-        UserThreadLocal.get().getUuid(), pageIndex, pageSize, searchTerm));
+    List<Account> accounts =
+        userService.getUserAccounts(UserThreadLocal.get().getUuid(), pageIndex, pageSize, searchTerm);
+    return new RestResponse<>(io.harness.ng.beans.PageResponse.<Account>builder()
+                                  .content(accounts)
+                                  .pageItemCount(accounts.size())
+                                  .pageSize(pageSize)
+                                  .pageIndex(pageIndex)
+                                  .build());
   }
+
   /**
    * Look up the user object using email and login the user. Intended for internal use only.
    * E.g. The Identity Service authenticated the user through OAuth provider and get the user email, then
@@ -584,8 +591,12 @@ public class UserResource {
   @Timed
   @ExceptionMetered
   public RestResponse<AccountRole> getAccountRole(@PathParam("accountId") String accountId) {
+    if (userService.isFFToAvoidLoadingSupportAccountsUnncessarilyDisabled()) {
+      return new RestResponse<>(
+          userService.getUserAccountRole(UserThreadLocal.get().getPublicUser(true).getUuid(), accountId));
+    }
     return new RestResponse<>(
-        userService.getUserAccountRole(UserThreadLocal.get().getPublicUser().getUuid(), accountId));
+        userService.getUserAccountRole(UserThreadLocal.get().getPublicUser(false).getUuid(), accountId));
   }
 
   @GET
@@ -594,8 +605,12 @@ public class UserResource {
   @Timed
   @ExceptionMetered
   public RestResponse<UserPermissionInfo> getUserPermissionInfo(@PathParam("accountId") String accountId) {
+    if (userService.isFFToAvoidLoadingSupportAccountsUnncessarilyDisabled()) {
+      return new RestResponse<>(
+          authService.getUserPermissionInfo(accountId, UserThreadLocal.get().getPublicUser(true), false));
+    }
     return new RestResponse<>(
-        authService.getUserPermissionInfo(accountId, UserThreadLocal.get().getPublicUser(), false));
+        authService.getUserPermissionInfo(accountId, UserThreadLocal.get().getPublicUser(false), false));
   }
 
   /**
@@ -626,8 +641,12 @@ public class UserResource {
   @Timed
   @ExceptionMetered
   public RestResponse<ApplicationRole> getApplicationRole(@PathParam("appId") String appId) {
+    if (userService.isFFToAvoidLoadingSupportAccountsUnncessarilyDisabled()) {
+      return new RestResponse<>(
+          userService.getUserApplicationRole(UserThreadLocal.get().getPublicUser(true).getUuid(), appId));
+    }
     return new RestResponse<>(
-        userService.getUserApplicationRole(UserThreadLocal.get().getPublicUser().getUuid(), appId));
+        userService.getUserApplicationRole(UserThreadLocal.get().getPublicUser(false).getUuid(), appId));
   }
 
   /**
@@ -921,7 +940,7 @@ public class UserResource {
 
   @POST
   @Path("saml-login")
-  @Produces(MediaType.TEXT_HTML)
+  @Produces({MediaType.TEXT_HTML, MediaType.APPLICATION_JSON})
   @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
   @PublicApi
   @Timed
@@ -932,6 +951,8 @@ public class UserResource {
     try {
       return authenticationManager.samlLogin(
           request.getHeader(com.google.common.net.HttpHeaders.REFERER), samlResponse, accountId, relayState);
+    } catch (WingsException e) {
+      throw e;
     } catch (URISyntaxException e) {
       throw new WingsException(ErrorCode.UNKNOWN_ERROR, e);
     }

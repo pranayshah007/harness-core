@@ -28,5 +28,5 @@ public class ActiveServiceInstanceInfoV2 {
   private Long lastDeployedAt;
   private String tag;
   private String displayName;
-  private int count;
+  private Integer count;
 }

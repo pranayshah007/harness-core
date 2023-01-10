@@ -7,8 +7,8 @@
 
 package io.harness.gitsync.core.fullsync;
 
-import static io.harness.AuthorizationServiceHeader.GIT_SYNC_SERVICE;
 import static io.harness.annotations.dev.HarnessTeam.DX;
+import static io.harness.authorization.AuthorizationServiceHeader.GIT_SYNC_SERVICE;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;

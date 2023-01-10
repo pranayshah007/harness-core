@@ -25,6 +25,7 @@ public class InstanceGroupedByServiceList {
   public static class InstanceGroupedByService {
     String serviceId;
     String serviceName;
+    Long lastDeployedAt;
     List<InstanceGroupedByArtifactV2> instanceGroupedByArtifactList;
   }
 
@@ -34,6 +35,7 @@ public class InstanceGroupedByServiceList {
     String artifactVersion;
     String artifactPath;
     boolean latest;
+    Long lastDeployedAt;
     List<InstanceGroupedByEnvironmentV2> instanceGroupedByEnvironmentList;
   }
 
@@ -42,6 +44,7 @@ public class InstanceGroupedByServiceList {
   public static class InstanceGroupedByEnvironmentV2 {
     String envId;
     String envName;
+    Long lastDeployedAt;
     List<InstanceGroupedByInfrastructureV2> instanceGroupedByInfraList;
     List<InstanceGroupedByInfrastructureV2> instanceGroupedByClusterList;
   }
@@ -53,6 +56,7 @@ public class InstanceGroupedByServiceList {
     String infraName;
     String clusterIdentifier;
     String agentIdentifier;
+    Long lastDeployedAt;
     List<InstanceGroupedByPipelineExecution> instanceGroupedByPipelineExecutionList;
   }
 

@@ -13,11 +13,11 @@ import static software.wings.beans.command.CommandUnitType.COPY_CONFIGS;
 import static software.wings.beans.command.CommandUnitType.SCP;
 import static software.wings.beans.command.CommandUnitType.SETUP_ENV;
 
-import software.wings.beans.AppContainer;
 import software.wings.beans.GraphNode;
 import software.wings.beans.command.Command;
 import software.wings.beans.command.ScpCommandUnit;
 import software.wings.beans.command.SetupEnvCommandUnit;
+import software.wings.persistence.AppContainer;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;

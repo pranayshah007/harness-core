@@ -9,11 +9,11 @@ package io.harness.gitsync;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
-import io.harness.AuthorizationServiceHeader;
 import io.harness.EntityType;
 import io.harness.Microservice;
 import io.harness.ScmConnectionConfig;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.gitsync.common.GitSyncEntityOrderComparatorInMsvc;
 import io.harness.grpc.client.GrpcClientConfig;

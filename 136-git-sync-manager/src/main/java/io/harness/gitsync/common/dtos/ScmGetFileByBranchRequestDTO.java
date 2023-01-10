@@ -26,4 +26,5 @@ public class ScmGetFileByBranchRequestDTO {
   String branchName;
   String filePath;
   String connectorRef;
+  boolean useCache;
 }

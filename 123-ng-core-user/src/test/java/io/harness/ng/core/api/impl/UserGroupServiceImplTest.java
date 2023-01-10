@@ -7,13 +7,17 @@
 
 package io.harness.ng.core.api.impl;
 
+import static io.harness.accesscontrol.acl.api.AccessControlDTO.AccessControlDTOBuilder;
+import static io.harness.accesscontrol.principals.PrincipalType.USER;
 import static io.harness.accesscontrol.principals.PrincipalType.USER_GROUP;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.ng.accesscontrol.PlatformPermissions.VIEW_USERGROUP_PERMISSION;
 import static io.harness.ng.accesscontrol.PlatformResourceTypes.USERGROUP;
+import static io.harness.ng.core.user.entities.UserGroup.UserGroupBuilder;
 import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.DEEPAK;
 import static io.harness.rule.OwnerRule.KARAN;
+import static io.harness.rule.OwnerRule.MEENAKSHI;
 import static io.harness.rule.OwnerRule.NAMANG;
 import static io.harness.rule.OwnerRule.REETIKA;
 import static io.harness.utils.PageTestUtils.getPage;
@@ -24,6 +28,7 @@ import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -35,6 +40,9 @@ import static org.mockito.MockitoAnnotations.initMocks;
 
 import io.harness.CategoryTest;
 import io.harness.accesscontrol.AccessControlAdminClient;
+import io.harness.accesscontrol.acl.api.AccessCheckResponseDTO;
+import io.harness.accesscontrol.acl.api.AccessControlDTO;
+import io.harness.accesscontrol.acl.api.Principal;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
@@ -66,6 +74,7 @@ import io.harness.ng.core.usergroups.filter.UserGroupFilterType;
 import io.harness.outbox.api.OutboxService;
 import io.harness.repositories.ng.core.spring.UserGroupRepository;
 import io.harness.rule.Owner;
+import io.harness.utils.PageUtils;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -77,6 +86,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -84,6 +94,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.transaction.support.TransactionTemplate;
 import retrofit2.Call;
@@ -105,10 +117,36 @@ public class UserGroupServiceImplTest extends CategoryTest {
   private static final String ORG_IDENTIFIER = "O1";
   private static final String ORG2_IDENTIFIER = "O2";
   private static final String PROJECT_IDENTIFIER = "P1";
-
+  List<UserGroup> userGroupList = new ArrayList<>();
+  List<UserGroup> permittedUserGroups = new ArrayList<>();
+  List<AccessControlDTO> accessControlDTOS = new ArrayList<>();
   @Before
   public void setup() {
     initMocks(this);
+    UserGroupBuilder userGroupBuilder = UserGroup.builder()
+                                            .accountIdentifier(ACCOUNT_IDENTIFIER)
+                                            .orgIdentifier(ORG_IDENTIFIER)
+                                            .projectIdentifier(PROJECT_IDENTIFIER);
+
+    userGroupList.add(userGroupBuilder.identifier("UG1").build());
+    userGroupList.add(userGroupBuilder.identifier("UG2").build());
+    userGroupList.add(userGroupBuilder.identifier("UG3").build());
+
+    permittedUserGroups.add(userGroupBuilder.identifier("UG1").build());
+    permittedUserGroups.add(userGroupBuilder.identifier("UG2").build());
+
+    AccessControlDTOBuilder accessControlDTOBuilder = AccessControlDTO.builder()
+                                                          .resourceType(USERGROUP)
+                                                          .permission("core_usergroup_view")
+                                                          .resourceScope(ResourceScope.builder()
+                                                                             .accountIdentifier(ACCOUNT_IDENTIFIER)
+                                                                             .orgIdentifier(ORG_IDENTIFIER)
+                                                                             .projectIdentifier(PROJECT_IDENTIFIER)
+                                                                             .build());
+
+    accessControlDTOS.add(accessControlDTOBuilder.permitted(true).resourceIdentifier("UG1").build());
+    accessControlDTOS.add(accessControlDTOBuilder.permitted(true).resourceIdentifier("UG2").build());
+    accessControlDTOS.add(accessControlDTOBuilder.permitted(false).resourceIdentifier("UG3").build());
   }
 
   @Test
@@ -379,6 +417,133 @@ public class UserGroupServiceImplTest extends CategoryTest {
         .get(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), userGroupIdentifier);
     verify(ngUserService, times(1)).listUserIds(scope);
     verify(userGroupRepository, times(1)).save(updatedUserGroup);
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testListUserGroups_withViewPermissionOnAllUserGroups() {
+    when(accessControlClient.hasAccess(ResourceScope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER),
+             Resource.of(USERGROUP, null), VIEW_USERGROUP_PERMISSION))
+        .thenReturn(true);
+    PageRequest pageRequest = PageRequest.builder().pageIndex(0).pageSize(10).build();
+    final Pageable page = getPageRequest(pageRequest);
+    String searchTerm = randomAlphabetic(5);
+    final ArgumentCaptor<Criteria> userGroupCriteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
+
+    userGroupService.list(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, searchTerm,
+        UserGroupFilterType.INCLUDE_INHERITED_GROUPS, page);
+    verify(userGroupRepository, times(0)).findAll(userGroupCriteriaArgumentCaptor.capture(), eq(Pageable.unpaged()));
+    verify(userGroupRepository, times(1)).findAll(userGroupCriteriaArgumentCaptor.capture(), eq(page));
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testListUserGroups_withViewPermissionOnSelectedUserGroups() {
+    Criteria criteria = new Criteria();
+    String searchTerm = randomAlphabetic(5);
+    PageRequest pageRequest = PageRequest.builder().pageIndex(0).pageSize(10).build();
+    final Pageable page = getPageRequest(pageRequest);
+
+    AccessCheckResponseDTO accessCheckResponseDTO =
+        AccessCheckResponseDTO.builder()
+            .principal(Principal.builder().principalIdentifier("id").principalType(USER).build())
+            .accessControlList(accessControlDTOS)
+            .build();
+
+    doReturn(criteria)
+        .when(userGroupService)
+        .createUserGroupFilterCriteria(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, searchTerm,
+            UserGroupFilterType.INCLUDE_INHERITED_GROUPS);
+    when(accessControlClient.hasAccess(ResourceScope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER),
+             Resource.of(USERGROUP, null), VIEW_USERGROUP_PERMISSION))
+        .thenReturn(false);
+    final Page<UserGroup> allPages = PageUtils.getPage(userGroupList, 0, 10);
+    when(userGroupRepository.findAll(criteria, Pageable.unpaged())).thenReturn(allPages);
+    when(accessControlClient.checkForAccessOrThrow(any())).thenReturn(accessCheckResponseDTO);
+
+    userGroupService.list(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, searchTerm,
+        UserGroupFilterType.INCLUDE_INHERITED_GROUPS, page);
+
+    verify(userGroupRepository, times(1)).findAll(criteria, Pageable.unpaged());
+    criteria.and(UserGroupKeys.identifier)
+        .in(permittedUserGroups.stream().map(UserGroup::getIdentifier).collect(Collectors.toList()));
+    verify(userGroupRepository, times(1)).findAll(criteria, page);
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testListUserGroupsBatch_withViewPermissionOnAll() {
+    final ArgumentCaptor<Criteria> userGroupCriteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
+    String searchTerm = randomAlphabetic(5);
+
+    AccessCheckResponseDTO accessCheckResponseDTO =
+        AccessCheckResponseDTO.builder()
+            .principal(Principal.builder().principalIdentifier("id").principalType(USER).build())
+            .accessControlList(accessControlDTOS)
+            .build();
+
+    when(accessControlClient.hasAccess(ResourceScope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER),
+             Resource.of(USERGROUP, null), VIEW_USERGROUP_PERMISSION))
+        .thenReturn(true);
+    final Page<UserGroup> allPages = PageUtils.getPage(userGroupList, 0, 100);
+    when(userGroupRepository.findAll(userGroupCriteriaArgumentCaptor.capture(), eq(Pageable.unpaged())))
+        .thenReturn(allPages);
+    when(accessControlClient.checkForAccessOrThrow(any())).thenReturn(accessCheckResponseDTO);
+
+    List<UserGroup> resultUserGroups = userGroupService.list(UserGroupFilterDTO.builder()
+                                                                 .accountIdentifier(ACCOUNT_IDENTIFIER)
+                                                                 .orgIdentifier(ORG_IDENTIFIER)
+                                                                 .projectIdentifier(PROJECT_IDENTIFIER)
+                                                                 .searchTerm(searchTerm)
+                                                                 .build());
+
+    verify(userGroupRepository, times(1)).findAll(userGroupCriteriaArgumentCaptor.capture(), eq(Pageable.unpaged()));
+    assertThat(resultUserGroups.stream().map(UserGroup::getIdentifier).collect(Collectors.toList()))
+        .isEqualTo(userGroupList.stream().map(UserGroup::getIdentifier).collect(Collectors.toList()));
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testListUserGroupsBatch_withViewPermissionOnSelectedUserGroups() {
+    final ArgumentCaptor<Criteria> userGroupCriteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
+    String searchTerm = randomAlphabetic(5);
+
+    AccessControlDTOBuilder accessControlDTOBuilder = AccessControlDTO.builder()
+                                                          .resourceType(USERGROUP)
+                                                          .permission("core_usergroup_view")
+                                                          .resourceScope(ResourceScope.builder()
+                                                                             .accountIdentifier(ACCOUNT_IDENTIFIER)
+                                                                             .orgIdentifier(ORG_IDENTIFIER)
+                                                                             .projectIdentifier(PROJECT_IDENTIFIER)
+                                                                             .build());
+
+    AccessCheckResponseDTO accessCheckResponseDTO =
+        AccessCheckResponseDTO.builder()
+            .principal(Principal.builder().principalIdentifier("id").principalType(USER).build())
+            .accessControlList(accessControlDTOS)
+            .build();
+
+    when(accessControlClient.hasAccess(ResourceScope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER),
+             Resource.of(USERGROUP, null), VIEW_USERGROUP_PERMISSION))
+        .thenReturn(false);
+    final Page<UserGroup> allPages = PageUtils.getPage(userGroupList, 0, 100);
+    when(userGroupRepository.findAll(userGroupCriteriaArgumentCaptor.capture(), eq(Pageable.unpaged())))
+        .thenReturn(allPages);
+    when(accessControlClient.checkForAccessOrThrow(any())).thenReturn(accessCheckResponseDTO);
+
+    List<UserGroup> resultUserGroups = userGroupService.list(UserGroupFilterDTO.builder()
+                                                                 .accountIdentifier(ACCOUNT_IDENTIFIER)
+                                                                 .orgIdentifier(ORG_IDENTIFIER)
+                                                                 .projectIdentifier(PROJECT_IDENTIFIER)
+                                                                 .searchTerm(searchTerm)
+                                                                 .build());
+
+    verify(userGroupRepository, times(1)).findAll(userGroupCriteriaArgumentCaptor.capture(), eq(Pageable.unpaged()));
+    assertThat(resultUserGroups).isEqualTo(permittedUserGroups);
   }
 
   @Test

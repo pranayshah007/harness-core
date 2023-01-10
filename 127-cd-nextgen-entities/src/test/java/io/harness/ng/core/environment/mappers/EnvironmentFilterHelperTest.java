@@ -129,7 +129,7 @@ public class EnvironmentFilterHelperTest extends CategoryTest {
     EnvironmentFilterPropertiesDTO environmentFilterPropertiesDTO =
         EnvironmentFilterPropertiesDTO.builder().environmentNames(Arrays.asList("qa", "dev")).build();
     Criteria criteria = environmentFilterHelper.createCriteriaForGetList(
-        accountIdentifier, orgIdentifier, projectIdentifier, false, null, null, environmentFilterPropertiesDTO);
+        accountIdentifier, orgIdentifier, projectIdentifier, false, null, null, environmentFilterPropertiesDTO, false);
     Document criteriaObj = criteria.getCriteriaObject();
     assertThat(criteriaObj.get(EnvironmentKeys.accountId)).isEqualTo(accountIdentifier);
     assertThat(criteriaObj.get(EnvironmentKeys.projectIdentifier)).isEqualTo(projectIdentifier);
@@ -146,7 +146,7 @@ public class EnvironmentFilterHelperTest extends CategoryTest {
     EnvironmentFilterPropertiesDTO environmentFilterPropertiesDTO =
         EnvironmentFilterPropertiesDTO.builder().environmentTypes(Collections.singletonList(environmentType)).build();
     Criteria criteria = environmentFilterHelper.createCriteriaForGetList(
-        accountIdentifier, orgIdentifier, projectIdentifier, false, null, null, environmentFilterPropertiesDTO);
+        accountIdentifier, orgIdentifier, projectIdentifier, false, null, null, environmentFilterPropertiesDTO, false);
     Document criteriaObj = criteria.getCriteriaObject();
     assertThat(criteriaObj.get(EnvironmentKeys.accountId)).isEqualTo(accountIdentifier);
     assertThat(criteriaObj.get(EnvironmentKeys.projectIdentifier)).isEqualTo(projectIdentifier);
@@ -162,7 +162,7 @@ public class EnvironmentFilterHelperTest extends CategoryTest {
     EnvironmentFilterPropertiesDTO environmentFilterPropertiesDTO =
         EnvironmentFilterPropertiesDTO.builder().description("deploying to production").build();
     Criteria criteria = environmentFilterHelper.createCriteriaForGetList(
-        accountIdentifier, orgIdentifier, projectIdentifier, false, null, null, environmentFilterPropertiesDTO);
+        accountIdentifier, orgIdentifier, projectIdentifier, false, null, null, environmentFilterPropertiesDTO, false);
     Document criteriaObj = criteria.getCriteriaObject();
     assertThat(criteriaObj.get(EnvironmentKeys.accountId)).isEqualTo(accountIdentifier);
     assertThat(criteriaObj.get(EnvironmentKeys.projectIdentifier)).isEqualTo(projectIdentifier);
@@ -178,7 +178,7 @@ public class EnvironmentFilterHelperTest extends CategoryTest {
   public void testListWithSearchTermFilter() {
     EnvironmentFilterPropertiesDTO environmentFilterPropertiesDTO = EnvironmentFilterPropertiesDTO.builder().build();
     Criteria criteria = environmentFilterHelper.createCriteriaForGetList(
-        accountIdentifier, orgIdentifier, projectIdentifier, false, "gcp", null, environmentFilterPropertiesDTO);
+        accountIdentifier, orgIdentifier, projectIdentifier, false, "gcp", null, environmentFilterPropertiesDTO, false);
     Document criteriaObj = criteria.getCriteriaObject();
     assertThat(criteriaObj.get(EnvironmentKeys.accountId)).isEqualTo(accountIdentifier);
     assertThat(criteriaObj.get(EnvironmentKeys.projectIdentifier)).isEqualTo(projectIdentifier);
@@ -219,7 +219,7 @@ public class EnvironmentFilterHelperTest extends CategoryTest {
         .get(accountIdentifier, orgIdentifier, projectIdentifier, "filterIdentifier", FilterType.ENVIRONMENT);
 
     Criteria criteria = environmentFilterHelper.createCriteriaForGetList(
-        accountIdentifier, orgIdentifier, projectIdentifier, false, null, "filterIdentifier", null);
+        accountIdentifier, orgIdentifier, projectIdentifier, false, null, "filterIdentifier", null, false);
 
     Document criteriaObj = criteria.getCriteriaObject();
     assertThat(criteriaObj.get(EnvironmentKeys.accountId)).isEqualTo(accountIdentifier);
@@ -228,5 +228,62 @@ public class EnvironmentFilterHelperTest extends CategoryTest {
     Object p = ((Document) ((List<?>) criteriaObj.get("$and")).get(0)).get("description");
     // pattern
     assertThat(((Pattern) p).pattern()).isEqualTo("deploying|to|production");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.HINGER)
+  @Category(UnitTests.class)
+  public void testListIncludeAllScopesEnvAtProjectLevel() {
+    Criteria criteria = environmentFilterHelper.createCriteriaForGetList(
+        accountIdentifier, orgIdentifier, projectIdentifier, false, null, null, null, true);
+    Document criteriaObj = criteria.getCriteriaObject();
+    // 3 criteria for org/project
+    assertThat(criteriaObj.toJson())
+        .isEqualTo(
+            "{\"accountId\": \"accountIdentifier\", \"deleted\": false, \"$and\": [{\"$or\": [{\"orgIdentifier\": \"orgIdentifier\", \"projectIdentifier\": \"projectIdentifier\"}, {\"orgIdentifier\": \"orgIdentifier\", \"projectIdentifier\": null}, {\"orgIdentifier\": null, \"projectIdentifier\": null}]}]}");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.HINGER)
+  @Category(UnitTests.class)
+  public void testListIncludeAllScopesEnvAtOrgLevel() {
+    Criteria criteria = environmentFilterHelper.createCriteriaForGetList(
+        accountIdentifier, orgIdentifier, null, false, null, null, null, true);
+    Document criteriaObj = criteria.getCriteriaObject();
+
+    // 2 criteria for org/project
+    assertThat(criteriaObj.toJson())
+        .isEqualTo(
+            "{\"accountId\": \"accountIdentifier\", \"deleted\": false, \"$and\": [{\"$or\": [{\"orgIdentifier\": \"orgIdentifier\", \"projectIdentifier\": null}, {\"orgIdentifier\": null, \"projectIdentifier\": null}]}]}");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.HINGER)
+  @Category(UnitTests.class)
+  public void testListIncludeAllScopesEnvAtAccountLevel() {
+    Criteria criteria =
+        environmentFilterHelper.createCriteriaForGetList(accountIdentifier, null, null, false, null, null, null, true);
+    Document criteriaObj = criteria.getCriteriaObject();
+    assertThat(criteriaObj.get(EnvironmentKeys.accountId)).isEqualTo(accountIdentifier);
+    // 1 criteria for org/project
+    assertThat(criteriaObj.toJson())
+        .isEqualTo(
+            "{\"accountId\": \"accountIdentifier\", \"deleted\": false, \"$and\": [{\"$or\": [{\"orgIdentifier\": null, \"projectIdentifier\": null}]}]}");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.HINGER)
+  @Category(UnitTests.class)
+  public void testListIncludeAllScopesEnvAtAccountLevelWithEnvNames() {
+    EnvironmentFilterPropertiesDTO environmentFilterPropertiesDTO =
+        EnvironmentFilterPropertiesDTO.builder().environmentNames(List.of("qa")).build();
+    Criteria criteria = environmentFilterHelper.createCriteriaForGetList(
+        accountIdentifier, null, null, false, null, null, environmentFilterPropertiesDTO, true);
+    Document criteriaObj = criteria.getCriteriaObject();
+    assertThat(criteriaObj.get(EnvironmentKeys.accountId)).isEqualTo(accountIdentifier);
+    // 1 criteria for org/project
+    assertThat(criteriaObj.toJson())
+        .isEqualTo(
+            "{\"accountId\": \"accountIdentifier\", \"deleted\": false, \"$and\": [{\"$or\": [{\"orgIdentifier\": null, \"projectIdentifier\": null}]}, {\"$or\": [{\"name\": {\"$regex\": \"qa\", \"$options\": \"i\"}}]}]}");
   }
 }

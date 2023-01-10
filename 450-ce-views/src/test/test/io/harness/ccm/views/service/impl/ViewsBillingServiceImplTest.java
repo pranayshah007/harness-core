@@ -25,6 +25,8 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
+import io.harness.ccm.commons.dao.CEMetadataRecordDao;
+import io.harness.ccm.currency.Currency;
 import io.harness.ccm.views.entities.CEView;
 import io.harness.ccm.views.entities.ViewChartType;
 import io.harness.ccm.views.entities.ViewCondition;
@@ -62,6 +64,9 @@ import io.harness.ccm.views.graphql.ViewsQueryBuilder;
 import io.harness.ccm.views.graphql.ViewsQueryHelper;
 import io.harness.ccm.views.helper.AwsAccountFieldHelper;
 import io.harness.ccm.views.helper.BusinessMappingDataSourceHelper;
+import io.harness.ccm.views.helper.ViewBillingServiceHelper;
+import io.harness.ccm.views.helper.ViewBusinessMappingResponseHelper;
+import io.harness.ccm.views.helper.ViewParametersHelper;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
@@ -109,6 +114,9 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
   private static final String SYSTEM_COST = "50";
   private static final String TOTAL_COUNT = "324";
   @InjectMocks @Spy private ViewsBillingServiceImpl viewsBillingService;
+  @InjectMocks @Spy private ViewBillingServiceHelper viewBillingServiceHelper;
+  @InjectMocks @Spy private ViewParametersHelper viewParametersHelper;
+  @InjectMocks @Spy private ViewBusinessMappingResponseHelper viewBusinessMappingResponseHelper;
   @Mock private ViewsQueryBuilder viewsQueryBuilder;
   @Mock private ViewsQueryHelper viewsQueryHelper;
   @Mock private FeatureFlagService featureFlagService;
@@ -118,6 +126,7 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
   @Mock private BigQuery bigQuery;
   @Mock private TableResult resultSet;
   @Mock private FieldValueList row;
+  @Mock private CEMetadataRecordDao ceMetadataRecordDao;
 
   private Schema schema;
   private List<Field> fields;
@@ -252,6 +261,7 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
         .thenReturn(Collections.emptySet());
     when(businessMappingDataSourceHelper.getBusinessMappingViewFieldIdentifiersFromViewRules(anyList()))
         .thenReturn(Collections.emptySet());
+    when(ceMetadataRecordDao.getDestinationCurrency(anyString())).thenReturn(Currency.USD);
   }
 
   @Test
@@ -266,7 +276,7 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
                     .idFilter(QLCEViewFilter.builder().field(clusterId).values(new String[] {""}).build())
                     .build());
     when(awsAccountFieldHelper.addAccountIdsByAwsAccountNameFilter(anyList(), isNull()))
-        .thenReturn(ViewsBillingServiceImpl.getIdFilters(filters));
+        .thenReturn(Collections.singletonList(filters.get(0).getIdFilter()));
     List<String> filterValueStats =
         viewsBillingService.getFilterValueStats(bigQuery, filters, CLOUD_PROVIDER_TABLE, 10, 0);
     assertThat(filterValueStats.get(0)).isEqualTo(CLUSTER);
@@ -281,7 +291,7 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
                     .idFilter(QLCEViewFilter.builder().field(clusterId).values(new String[] {CLUSTER}).build())
                     .build());
     when(awsAccountFieldHelper.addAccountIdsByAwsAccountNameFilter(anyList(), isNull()))
-        .thenReturn(ViewsBillingServiceImpl.getIdFilters(filters));
+        .thenReturn(Collections.singletonList(filters.get(0).getIdFilter()));
     List<String> filterValueStats =
         viewsBillingService.getFilterValueStats(bigQuery, filters, CLOUD_PROVIDER_TABLE, 10, 0);
     assertThat(filterValueStats.get(0)).isEqualTo(CLUSTER);
@@ -296,7 +306,7 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
                     .idFilter(QLCEViewFilter.builder().field(labelKey).values(new String[] {""}).build())
                     .build());
     when(awsAccountFieldHelper.addAccountIdsByAwsAccountNameFilter(anyList(), isNull()))
-        .thenReturn(ViewsBillingServiceImpl.getIdFilters(filters));
+        .thenReturn(Collections.singletonList(filters.get(0).getIdFilter()));
     List<String> filterValueStats =
         viewsBillingService.getFilterValueStats(bigQuery, filters, CLOUD_PROVIDER_TABLE, 10, 0);
     assertThat(filterValueStats.get(0)).isEqualTo(LABEL_KEY);
@@ -311,7 +321,7 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
                     .idFilter(QLCEViewFilter.builder().field(labelValue).values(new String[] {""}).build())
                     .build());
     when(awsAccountFieldHelper.addAccountIdsByAwsAccountNameFilter(anyList(), isNull()))
-        .thenReturn(ViewsBillingServiceImpl.getIdFilters(filters));
+        .thenReturn(Collections.singletonList(filters.get(0).getIdFilter()));
     List<String> filterValueStats =
         viewsBillingService.getFilterValueStats(bigQuery, filters, CLOUD_PROVIDER_TABLE, 10, 0);
     assertThat(filterValueStats.get(0)).isEqualTo(LABEL_VALUE);
@@ -321,14 +331,14 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
   @Owner(developers = SAHILDEEP)
   @Category(UnitTests.class)
   public void clusterDatSourcesTrue() {
-    assertThat(viewsBillingService.isClusterDataSources(ImmutableSet.of(ViewFieldIdentifier.CLUSTER))).isTrue();
-    assertThat(viewsBillingService.isClusterDataSources(
+    assertThat(viewParametersHelper.isClusterDataSources(ImmutableSet.of(ViewFieldIdentifier.CLUSTER))).isTrue();
+    assertThat(viewParametersHelper.isClusterDataSources(
                    ImmutableSet.of(ViewFieldIdentifier.CLUSTER, ViewFieldIdentifier.COMMON)))
         .isTrue();
-    assertThat(viewsBillingService.isClusterDataSources(
+    assertThat(viewParametersHelper.isClusterDataSources(
                    ImmutableSet.of(ViewFieldIdentifier.CLUSTER, ViewFieldIdentifier.LABEL)))
         .isTrue();
-    assertThat(viewsBillingService.isClusterDataSources(
+    assertThat(viewParametersHelper.isClusterDataSources(
                    ImmutableSet.of(ViewFieldIdentifier.CLUSTER, ViewFieldIdentifier.COMMON, ViewFieldIdentifier.LABEL)))
         .isTrue();
   }
@@ -337,16 +347,16 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
   @Owner(developers = SAHILDEEP)
   @Category(UnitTests.class)
   public void clusterDatSourcesFalse() {
-    assertThat(viewsBillingService.isClusterDataSources(ImmutableSet.of(ViewFieldIdentifier.AWS))).isFalse();
-    assertThat(viewsBillingService.isClusterDataSources(ImmutableSet.of(ViewFieldIdentifier.COMMON))).isFalse();
-    assertThat(viewsBillingService.isClusterDataSources(ImmutableSet.of(ViewFieldIdentifier.LABEL))).isFalse();
-    assertThat(viewsBillingService.isClusterDataSources(
+    assertThat(viewParametersHelper.isClusterDataSources(ImmutableSet.of(ViewFieldIdentifier.AWS))).isFalse();
+    assertThat(viewParametersHelper.isClusterDataSources(ImmutableSet.of(ViewFieldIdentifier.COMMON))).isFalse();
+    assertThat(viewParametersHelper.isClusterDataSources(ImmutableSet.of(ViewFieldIdentifier.LABEL))).isFalse();
+    assertThat(viewParametersHelper.isClusterDataSources(
                    ImmutableSet.of(ViewFieldIdentifier.COMMON, ViewFieldIdentifier.LABEL)))
         .isFalse();
     assertThat(
-        viewsBillingService.isClusterDataSources(ImmutableSet.of(ViewFieldIdentifier.AZURE, ViewFieldIdentifier.GCP)))
+        viewParametersHelper.isClusterDataSources(ImmutableSet.of(ViewFieldIdentifier.AZURE, ViewFieldIdentifier.GCP)))
         .isFalse();
-    assertThat(viewsBillingService.isClusterDataSources(
+    assertThat(viewParametersHelper.isClusterDataSources(
                    ImmutableSet.of(ViewFieldIdentifier.AZURE, ViewFieldIdentifier.COMMON, ViewFieldIdentifier.LABEL)))
         .isFalse();
   }
@@ -360,7 +370,7 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
                     .idFilter(QLCEViewFilter.builder().field(clusterId).values(new String[] {CLUSTER}).build())
                     .build());
     when(awsAccountFieldHelper.addAccountIdsByAwsAccountNameFilter(anyList(), anyString()))
-        .thenReturn(ViewsBillingServiceImpl.getIdFilters(filters));
+        .thenReturn(Collections.singletonList(filters.get(0).getIdFilter()));
     List<String> filterValueStats = viewsBillingService.getFilterValueStatsNg(
         bigQuery, filters, CLOUD_PROVIDER_TABLE, 10, 0, getMockViewQueryParams(false));
     assertThat(filterValueStats.get(0)).isEqualTo(CLUSTER);
@@ -644,6 +654,7 @@ public class ViewsBillingServiceImplTest extends CategoryTest {
     fields.add(Field.newBuilder(StART_TIME_MAX, LegacySQLTypeName.NUMERIC).build());
     schema = Schema.of(fields);
     when(resultSet.getSchema()).thenReturn(schema);
+    when(ceMetadataRecordDao.getDestinationCurrency(null)).thenReturn(Currency.USD);
 
     // Build query parameters
     List<QLCEViewFilterWrapper> filters = new ArrayList<>();

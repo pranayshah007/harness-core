@@ -16,6 +16,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.inject.Provider;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import java.util.Set;
 
 public class DelegatePlatformKryoModule extends ProviderModule {
@@ -27,6 +28,7 @@ public class DelegatePlatformKryoModule extends ProviderModule {
 
   @Provides
   @Singleton
+  @Named("referenceFalseKryoSerializer")
   public KryoSerializer getKryoSerializer(final Provider<Set<Class<? extends KryoRegistrar>>> provider) {
     return new KryoSerializer(provider.get(), true, false);
   }

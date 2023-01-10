@@ -348,7 +348,7 @@ cg:
   envPath: ""
 
   kubectlVersion: v1.13.2
-  scmVersion: 3920e509
+  scmVersion: 1658d03e
 
   ngAuthUIEnabled: false
 
@@ -691,6 +691,14 @@ cg:
     defaultCronExpression: "0 0/15 * 1/1 * ? *"
 
   enableOpentelemetry: false
+
+  delegateQueueServiceConfig:
+    queueServiceConfig:
+      baseUrl: http://localhost:9091/
+      connectTimeOutSeconds: 15
+      readTimeOutSeconds: 15
+    topic: "delegate-service"
+    enableQueueAndDequeue: false
 
 ngClientConfig:
   baseUrl: https://127.0.0.1:7090

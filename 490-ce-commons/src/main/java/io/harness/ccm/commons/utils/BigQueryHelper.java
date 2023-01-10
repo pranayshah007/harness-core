@@ -21,12 +21,13 @@ import javax.annotation.Nullable;
 public class BigQueryHelper {
   @Inject @Nullable @Named("gcpConfig") GcpConfig config;
 
-  public static final String DATA_SET_NAME_TEMPLATE = "BillingReport_%s";
   public static final String UNIFIED_TABLE = "unifiedTable";
-  public static final String INFORMATION_SCHEMA = "INFORMATION_SCHEMA";
+  private static final String DATA_SET_NAME_TEMPLATE = "BillingReport_%s";
+  private static final String INFORMATION_SCHEMA = "INFORMATION_SCHEMA";
   private static final String AWS_RAW_TABLE = "awscur*";
   private static final String GCP_RAW_TABLE = "gcp_billing_export*";
   private static final String AZURE_RAW_TABLE = "azureBilling_%s_%s";
+  private static final String CE_INTERNAL_DATASET = "CE_INTERNAL";
 
   public String getCloudProviderTableName(String accountId, String tableName) {
     String projectId = config.getGcpProjectId();
@@ -38,6 +39,11 @@ public class BigQueryHelper {
     String projectId = config.getGcpProjectId();
     String dataSetId = getDataSetId(accountId);
     return format("%s.%s.%s.%s", projectId, dataSetId, INFORMATION_SCHEMA, view);
+  }
+
+  public String getCEInternalDatasetTable(String view) {
+    String projectId = config.getGcpProjectId();
+    return format("%s.%s.%s", projectId, CE_INTERNAL_DATASET, view);
   }
 
   public static String getTableName(String cloudProvider) {

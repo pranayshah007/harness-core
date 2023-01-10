@@ -9,6 +9,7 @@ package software.wings.sm.states.k8s;
 
 import static io.harness.annotations.dev.HarnessModule._870_CG_ORCHESTRATION;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.beans.FeatureName.CDP_USE_K8S_DECLARATIVE_ROLLBACK;
 import static io.harness.beans.FeatureName.NEW_KUBECTL_VERSION;
 import static io.harness.exception.ExceptionUtils.getMessage;
 
@@ -105,6 +106,8 @@ public class K8sTrafficSplitState extends AbstractK8sState {
               .istioDestinationWeights(istioDestinationWeights)
               .useLatestKustomizeVersion(isUseLatestKustomizeVersion(context.getAccountId()))
               .useNewKubectlVersion(featureFlagService.isEnabled(NEW_KUBECTL_VERSION, infraMapping.getAccountId()))
+              .useDeclarativeRollback(
+                  featureFlagService.isEnabled(CDP_USE_K8S_DECLARATIVE_ROLLBACK, infraMapping.getAccountId()))
               .build();
       return queueK8sDelegateTask(context, k8sTaskParameters, null);
     } catch (WingsException e) {

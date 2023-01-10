@@ -15,7 +15,7 @@ import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
-import io.harness.exception.ConstraintViolationExceptionMapper;
+import io.harness.exception.violation.ConstraintViolationExceptionMapper;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 

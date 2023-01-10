@@ -12,10 +12,12 @@ import static io.harness.accesscontrol.AccessControlPermissions.MANAGE_USERGROUP
 import static io.harness.accesscontrol.AccessControlPermissions.MANAGE_USER_PERMISSION;
 import static io.harness.accesscontrol.common.filter.ManagedFilter.NO_FILTER;
 import static io.harness.accesscontrol.common.filter.ManagedFilter.buildFromSet;
+import static io.harness.accesscontrol.principals.PrincipalType.USER;
 import static io.harness.accesscontrol.roleassignments.api.RoleAssignmentDTOMapper.fromDTO;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.ng.beans.PageResponse.getEmptyPageResponse;
 import static io.harness.rule.OwnerRule.KARAN;
+import static io.harness.rule.OwnerRule.REETIKA;
 
 import static javax.validation.Validation.buildDefaultValidatorFactory;
 import static junit.framework.TestCase.assertEquals;
@@ -338,7 +340,7 @@ public class RoleAssignmentResourceTest extends AccessControlTestBase {
                                 .managedFilter(NO_FILTER)
                                 .build();
     RoleFilter roleFilterClone = (RoleFilter) HObjectMapper.clone(roleFilter);
-    when(roleService.list(maxPageRequest, roleFilter)).thenReturn(getEmptyPageResponse(maxPageRequest));
+    when(roleService.list(maxPageRequest, roleFilter, true)).thenReturn(getEmptyPageResponse(maxPageRequest));
     when(resourceGroupService.list(new ArrayList<>(), scope.toString(), NO_FILTER)).thenReturn(new ArrayList<>());
 
     ResponseDTO<RoleAssignmentAggregateResponseDTO> responseDTO =
@@ -350,18 +352,74 @@ public class RoleAssignmentResourceTest extends AccessControlTestBase {
 
     verify(accessControlClient, times(3)).hasAccess(any(ResourceScope.class), any(), any());
     verify(roleAssignmentService, times(1)).list(eq(maxPageRequest), roleAssignmentFilterArgumentCaptor.capture());
-    verify(roleService, times(1)).list(maxPageRequest, roleFilterClone);
+    verify(roleService, times(1)).list(maxPageRequest, roleFilterClone, true);
     verify(resourceGroupService, times(1)).list(new ArrayList<>(), scopeClone.toString(), NO_FILTER);
     RoleAssignmentFilter roleAssignmentFilter = roleAssignmentFilterArgumentCaptor.getValue();
     assertFilter(roleAssignmentFilterDTOClone, roleAssignmentFilterDTOClone.getPrincipalTypeFilter(),
         roleAssignmentFilterDTOClone.getPrincipalFilter(), roleAssignmentFilter);
   }
 
+  private void testGetAggregatedV2Internal(RoleAssignmentFilterV2 roleAssignmentFilterV2DTO) {
+    Scope scope = ScopeMapper.fromParams(harnessScopeParams);
+    preViewPrincipalPermissions(true, false, false);
+    boolean isUserPrincipal = roleAssignmentFilterV2DTO.getPrincipalFilter() != null
+        && USER.equals(roleAssignmentFilterV2DTO.getPrincipalFilter().getType());
+    if (isUserPrincipal) {
+      when(userGroupService.list(roleAssignmentFilterV2DTO.getPrincipalFilter().getIdentifier()))
+          .thenReturn(Lists.newArrayList(UserGroup.builder().build()));
+    }
+    ArgumentCaptor<RoleAssignmentFilter> roleAssignmentFilterArgumentCaptor =
+        ArgumentCaptor.forClass(RoleAssignmentFilter.class);
+    PageRequest maxPageRequest = PageRequest.builder().pageSize(1000).build();
+    when(roleAssignmentService.list(eq(maxPageRequest), any())).thenReturn(getEmptyPageResponse(maxPageRequest));
+    RoleFilter roleFilter = RoleFilter.builder()
+                                .identifierFilter(new HashSet<>())
+                                .scopeIdentifier(scope.toString())
+                                .managedFilter(NO_FILTER)
+                                .build();
+    when(roleService.list(maxPageRequest, roleFilter, true)).thenReturn(getEmptyPageResponse(maxPageRequest));
+    when(resourceGroupService.list(new ArrayList<>(), scope.toString(), NO_FILTER)).thenReturn(new ArrayList<>());
+
+    ResponseDTO<PageResponse<RoleAssignmentAggregate>> responseDTO =
+        roleAssignmentResource.getList(maxPageRequest, harnessScopeParams, roleAssignmentFilterV2DTO);
+    if (isUserPrincipal) {
+      verify(userGroupService, times(1)).list(roleAssignmentFilterV2DTO.getPrincipalFilter().getIdentifier());
+    }
+    verify(accessControlClient, times(1)).hasAccess(any(ResourceScope.class), any(), any());
+    verify(roleAssignmentService, times(1)).list(eq(maxPageRequest), roleAssignmentFilterArgumentCaptor.capture());
+  }
+
   private void testGetAggregatedMissingViewPrincipalPermissionsInternal(
       RoleAssignmentFilterDTO roleAssignmentFilterDTO) {
     testGetFilterMissingViewPrincipalPermissionsInternal(roleAssignmentFilterDTO);
-    verify(roleService, times(0)).list(any(), any());
+    verify(roleService, times(0)).list(any(), any(), eq(true));
     verify(resourceGroupService, times(0)).list(any(List.class), any(), any());
+  }
+
+  @Test
+  @Owner(developers = REETIKA)
+  @Category(UnitTests.class)
+  public void testGetAggregatedV2WithNoPrincipalFilter() {
+    Set<String> resourceGroupFilter = Sets.newHashSet(randomAlphabetic(10), randomAlphabetic(10));
+    Set<String> roleFilter = Sets.newHashSet(randomAlphabetic(10), randomAlphabetic(10));
+    RoleAssignmentFilterV2 roleAssignmentFilterV2 =
+        RoleAssignmentFilterV2.builder().resourceGroupFilter(resourceGroupFilter).roleFilter(roleFilter).build();
+    testGetAggregatedV2Internal(roleAssignmentFilterV2);
+  }
+
+  @Test
+  @Owner(developers = REETIKA)
+  @Category(UnitTests.class)
+  public void testGetAggregatedV2WithUserFilter() {
+    Set<String> resourceGroupFilter = Sets.newHashSet(randomAlphabetic(10), randomAlphabetic(10));
+    Set<String> roleFilter = Sets.newHashSet(randomAlphabetic(10), randomAlphabetic(10));
+    RoleAssignmentFilterV2 roleAssignmentFilterV2 =
+        RoleAssignmentFilterV2.builder()
+            .resourceGroupFilter(resourceGroupFilter)
+            .roleFilter(roleFilter)
+            .principalFilter(PrincipalDTO.builder().identifier("user1").type(PrincipalType.USER).build())
+            .build();
+    testGetAggregatedV2Internal(roleAssignmentFilterV2);
   }
 
   @Test

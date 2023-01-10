@@ -7,7 +7,7 @@
 
 package io.harness.ng.core.migration;
 
-import static io.harness.AuthorizationServiceHeader.NG_MANAGER;
+import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.remote.client.NGRestUtils.getResponse;

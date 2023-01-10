@@ -22,12 +22,60 @@ import lombok.experimental.UtilityClass;
 public class ArtifactBuildDetailsMapper {
   public ArtifactBuildDetailsNG toBuildDetailsNG(BuildDetailsInternal buildDetailsInternal) {
     Map<String, String> metadata = new HashMap<>();
+    if (buildDetailsInternal != null && EmptyPredicate.isNotEmpty(buildDetailsInternal.getMetadata())) {
+      metadata = buildDetailsInternal.getMetadata();
+    }
+    metadata.put(ArtifactMetadataKeys.url, buildDetailsInternal.getBuildUrl());
+    metadata.put(ArtifactMetadataKeys.artifactName, buildDetailsInternal.getBuildFullDisplayName());
+    metadata.put(ArtifactMetadataKeys.artifactPath, buildDetailsInternal.getArtifactPath());
+    if (buildDetailsInternal.getArtifactFileMetadataList() != null
+        && EmptyPredicate.isNotEmpty(buildDetailsInternal.getArtifactFileMetadataList())
+        && buildDetailsInternal.getArtifactFileMetadataList().get(0) != null) {
+      if (EmptyPredicate.isNotEmpty(buildDetailsInternal.getArtifactFileMetadataList().get(0).getFileName())) {
+        metadata.put(
+            ArtifactMetadataKeys.FILE_NAME, buildDetailsInternal.getArtifactFileMetadataList().get(0).getFileName());
+      }
+      if (EmptyPredicate.isNotEmpty(buildDetailsInternal.getArtifactFileMetadataList().get(0).getImagePath())) {
+        metadata.put(
+            ArtifactMetadataKeys.IMAGE_PATH, buildDetailsInternal.getArtifactFileMetadataList().get(0).getImagePath());
+      }
+      if (EmptyPredicate.isNotEmpty(buildDetailsInternal.getArtifactFileMetadataList().get(0).getUrl())) {
+        metadata.put(ArtifactMetadataKeys.url, buildDetailsInternal.getArtifactFileMetadataList().get(0).getUrl());
+      }
+    }
+
+    return ArtifactBuildDetailsNG.builder()
+        .buildUrl(buildDetailsInternal.getBuildUrl())
+        .metadata(metadata)
+        .number(buildDetailsInternal.getNumber())
+        .uiDisplayName(buildDetailsInternal.getUiDisplayName())
+        .build();
+  }
+
+  public ArtifactBuildDetailsNG toBuildDetailsNG(BuildDetailsInternal buildDetailsInternal, String sha) {
+    Map<String, String> metadata = new HashMap<>();
     if (EmptyPredicate.isNotEmpty(buildDetailsInternal.getMetadata())) {
       metadata = buildDetailsInternal.getMetadata();
     }
     metadata.put(ArtifactMetadataKeys.url, buildDetailsInternal.getBuildUrl());
     metadata.put(ArtifactMetadataKeys.artifactName, buildDetailsInternal.getBuildFullDisplayName());
     metadata.put(ArtifactMetadataKeys.artifactPath, buildDetailsInternal.getArtifactPath());
+    metadata.put(ArtifactMetadataKeys.SHA, sha);
+    if (buildDetailsInternal.getArtifactFileMetadataList() != null
+        && EmptyPredicate.isNotEmpty(buildDetailsInternal.getArtifactFileMetadataList())
+        && buildDetailsInternal.getArtifactFileMetadataList().get(0) != null) {
+      if (EmptyPredicate.isNotEmpty(buildDetailsInternal.getArtifactFileMetadataList().get(0).getFileName())) {
+        metadata.put(
+            ArtifactMetadataKeys.FILE_NAME, buildDetailsInternal.getArtifactFileMetadataList().get(0).getFileName());
+      }
+      if (EmptyPredicate.isNotEmpty(buildDetailsInternal.getArtifactFileMetadataList().get(0).getImagePath())) {
+        metadata.put(
+            ArtifactMetadataKeys.IMAGE_PATH, buildDetailsInternal.getArtifactFileMetadataList().get(0).getImagePath());
+      }
+      if (EmptyPredicate.isNotEmpty(buildDetailsInternal.getArtifactFileMetadataList().get(0).getUrl())) {
+        metadata.put(ArtifactMetadataKeys.url, buildDetailsInternal.getArtifactFileMetadataList().get(0).getUrl());
+      }
+    }
 
     return ArtifactBuildDetailsNG.builder()
         .buildUrl(buildDetailsInternal.getBuildUrl())

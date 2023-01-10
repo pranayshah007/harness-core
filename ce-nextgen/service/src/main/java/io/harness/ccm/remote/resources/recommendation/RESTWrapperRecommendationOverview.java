@@ -196,4 +196,27 @@ public class RESTWrapperRecommendationOverview {
 
     return ResponseDTO.newResponse(overviewQueryV2.recommendationFilterStats(filterValues.getColumns(), filter, env));
   }
+
+  @POST
+  @Path("mark-applied")
+  @Timed
+  @LogAccountIdentifier
+  @ExceptionMetered
+  @Consumes(MediaType.APPLICATION_JSON)
+  @ApiOperation(value = "Mark recommendation as applied", nickname = "markApplied")
+  @Operation(operationId = "markRecommendationApplied", description = "Mark recommendation as applied",
+      summary = "Return void",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default", description = "Returns void.",
+            content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+      })
+  public ResponseDTO<Void>
+  markApplied(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+                  NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
+      @QueryParam("recommendationId") @NotNull @Valid String recommendationId) {
+    rbacHelper.checkRecommendationsViewPermission(accountId, null, null);
+    overviewQueryV2.markRecommendationAsApplied(recommendationId);
+    return ResponseDTO.newResponse();
+  }
 }

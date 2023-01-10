@@ -31,4 +31,7 @@ public class ServiceV2YamlMetadata {
   @NotNull String serviceIdentifier;
   String serviceYaml;
   String inputSetTemplateYaml;
+  // scope identifiers
+  String orgIdentifier;
+  String projectIdentifier;
 }

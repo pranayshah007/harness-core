@@ -34,6 +34,7 @@ public class PipelineStageStepParameters implements StepParameters {
   @NotNull String org;
 
   private String pipelineInputs;
+  String stageNodeId;
 
   @SkipAutoEvaluation private ParameterField<Map<String, ParameterField<String>>> outputs;
   private List<String> inputSetReferences;

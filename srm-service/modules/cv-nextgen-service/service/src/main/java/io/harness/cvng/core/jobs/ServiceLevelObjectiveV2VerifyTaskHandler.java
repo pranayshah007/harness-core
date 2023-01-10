@@ -48,26 +48,24 @@ public class ServiceLevelObjectiveV2VerifyTaskHandler
   private boolean isServiceLevelObjectiveV2EqualsServiceLevelObjective(
       AbstractServiceLevelObjective serviceLevelObjectiveV2, ServiceLevelObjective serviceLevelObjective) {
     SimpleServiceLevelObjective simpleServiceLevelObjective = (SimpleServiceLevelObjective) serviceLevelObjectiveV2;
-    if (simpleServiceLevelObjective.isEnabled() != serviceLevelObjective.isEnabled()
-        || simpleServiceLevelObjective.getTags()
-            != (serviceLevelObjective.getTags() == null ? Collections.emptyList() : serviceLevelObjective.getTags())
-        || simpleServiceLevelObjective.getNotificationRuleRefs() != serviceLevelObjective.getNotificationRuleRefs()
-        || simpleServiceLevelObjective.getServiceLevelIndicatorType() != serviceLevelObjective.getType()
-        || !simpleServiceLevelObjective.getSloTarget().equals(serviceLevelObjective.getSloTarget())
-        || !simpleServiceLevelObjective.getUserJourneyIdentifiers().stream().findFirst().get().equals(
+    return simpleServiceLevelObjective.isEnabled() == serviceLevelObjective.isEnabled()
+        && (simpleServiceLevelObjective.getTags() == null ? Collections.emptyList()
+                                                          : simpleServiceLevelObjective.getTags())
+        == (serviceLevelObjective.getTags() == null ? Collections.emptyList() : serviceLevelObjective.getTags())
+        && simpleServiceLevelObjective.getNotificationRuleRefs() == serviceLevelObjective.getNotificationRuleRefs()
+        && simpleServiceLevelObjective.getServiceLevelIndicatorType() == serviceLevelObjective.getType()
+        && simpleServiceLevelObjective.getSloTarget().equals(serviceLevelObjective.getSloTarget())
+        && simpleServiceLevelObjective.getUserJourneyIdentifiers().stream().findFirst().get().equals(
             serviceLevelObjective.getUserJourneyIdentifier())
-        || !Objects.equals(simpleServiceLevelObjective.getName(), serviceLevelObjective.getName())
-        || !Objects.equals(simpleServiceLevelObjective.getDesc(), serviceLevelObjective.getDesc())
-        || !Objects.equals(
+        && Objects.equals(simpleServiceLevelObjective.getName(), serviceLevelObjective.getName())
+        && Objects.equals(simpleServiceLevelObjective.getDesc(), serviceLevelObjective.getDesc())
+        && Objects.equals(
             simpleServiceLevelObjective.getSloTargetPercentage(), serviceLevelObjective.getSloTargetPercentage())
-        || !Objects.equals(
+        && Objects.equals(
             simpleServiceLevelObjective.getHealthSourceIdentifier(), serviceLevelObjective.getHealthSourceIdentifier())
-        || !Objects.equals(
+        && Objects.equals(
             simpleServiceLevelObjective.getServiceLevelIndicators(), serviceLevelObjective.getServiceLevelIndicators())
-        || !Objects.equals(simpleServiceLevelObjective.getMonitoredServiceIdentifier(),
-            serviceLevelObjective.getMonitoredServiceIdentifier())) {
-      return false;
-    }
-    return true;
+        && Objects.equals(simpleServiceLevelObjective.getMonitoredServiceIdentifier(),
+            serviceLevelObjective.getMonitoredServiceIdentifier());
   }
 }

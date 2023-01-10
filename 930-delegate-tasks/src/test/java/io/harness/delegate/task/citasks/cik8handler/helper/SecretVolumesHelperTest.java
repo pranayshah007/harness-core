@@ -15,9 +15,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 
 import io.harness.CategoryTest;
-import io.harness.SystemWrapper;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
+import io.harness.utils.system.SystemWrapper;
 
 import java.io.File;
 import java.io.IOException;

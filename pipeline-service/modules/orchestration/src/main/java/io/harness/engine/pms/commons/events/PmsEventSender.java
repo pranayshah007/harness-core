@@ -7,7 +7,7 @@
 
 package io.harness.engine.pms.commons.events;
 
-import static io.harness.AuthorizationServiceHeader.PIPELINE_SERVICE;
+import static io.harness.authorization.AuthorizationServiceHeader.PIPELINE_SERVICE;
 import static io.harness.eventsframework.EventsFrameworkConstants.DUMMY_REDIS_URL;
 import static io.harness.pms.events.PmsEventFrameworkConstants.PIPELINE_MONITORING_ENABLED;
 import static io.harness.pms.events.PmsEventFrameworkConstants.SERVICE_NAME;

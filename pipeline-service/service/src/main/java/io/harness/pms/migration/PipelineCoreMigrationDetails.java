@@ -35,6 +35,7 @@ public class PipelineCoreMigrationDetails implements MigrationDetails {
         .add(Pair.of(1, NoopPipelineCoreMigration.class))
         .add(Pair.of(2, PmsInternalRemoverCoreMigration.class))
         .add(Pair.of(3, PMSTriggerMigration.class))
+        .add(Pair.of(4, PmsExecutionSweepingOutputMigration.class))
         .build();
   }
 }

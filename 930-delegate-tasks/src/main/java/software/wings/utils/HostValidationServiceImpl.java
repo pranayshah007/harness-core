@@ -8,6 +8,7 @@
 package software.wings.utils;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.delegate.task.utils.PhysicalDataCenterUtils.extractHostnameFromHost;
 import static io.harness.govern.Switch.noop;
 import static io.harness.shell.SshHelperUtils.normalizeError;
 import static io.harness.winrm.WinRmHelperUtils.buildErrorDetailsFromWinRmClientException;
@@ -54,6 +55,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -136,11 +138,14 @@ public class HostValidationServiceImpl implements HostValidationService {
       return Collections.emptyList();
     } else {
       return hostNames.stream()
-          .map(host
-              -> HostReachabilityInfo.builder()
-                     .hostName(host)
-                     .reachable(SocketConnectivityCapabilityCheck.connectableHost(host, port))
-                     .build())
+          .map(host -> {
+            Optional<String> optionalHostname = extractHostnameFromHost(host);
+            boolean reachable = false;
+            if (optionalHostname.isPresent()) {
+              reachable = SocketConnectivityCapabilityCheck.connectableHost(optionalHostname.get(), port);
+            }
+            return HostReachabilityInfo.builder().hostName(host).reachable(reachable).build();
+          })
           .collect(Collectors.toList());
     }
   }

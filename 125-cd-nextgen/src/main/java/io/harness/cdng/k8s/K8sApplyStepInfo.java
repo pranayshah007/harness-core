@@ -11,8 +11,9 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.manifest.yaml.K8sStepCommandFlag;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
-import io.harness.cdng.pipeline.CDStepInfo;
+import io.harness.cdng.pipeline.CDAbstractStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.K8sApplyStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -43,7 +44,7 @@ import org.springframework.data.annotation.TypeAlias;
 @SimpleVisitorHelper(helperClass = K8sApplyStepInfoVisitorHelper.class)
 @TypeAlias("k8sApplyStepInfo")
 @RecasterAlias("io.harness.cdng.k8s.K8sApplyStepInfo")
-public class K8sApplyStepInfo extends K8sApplyBaseStepInfo implements CDStepInfo, Visitable {
+public class K8sApplyStepInfo extends K8sApplyBaseStepInfo implements CDAbstractStepInfo, Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -55,8 +56,9 @@ public class K8sApplyStepInfo extends K8sApplyBaseStepInfo implements CDStepInfo
   @Builder(builderMethodName = "infoBuilder")
   public K8sApplyStepInfo(ParameterField<Boolean> skipDryRun, ParameterField<Boolean> skipSteadyStateCheck,
       ParameterField<List<String>> filePaths, ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-      List<ManifestConfigWrapper> overrides, ParameterField<Boolean> skipRendering) {
-    super(skipDryRun, skipSteadyStateCheck, filePaths, delegateSelectors, overrides, skipRendering);
+      List<ManifestConfigWrapper> overrides, ParameterField<Boolean> skipRendering,
+      List<K8sStepCommandFlag> commandFlags) {
+    super(skipDryRun, skipSteadyStateCheck, filePaths, delegateSelectors, overrides, skipRendering, commandFlags);
   }
 
   @Override
@@ -78,6 +80,7 @@ public class K8sApplyStepInfo extends K8sApplyBaseStepInfo implements CDStepInfo
         .delegateSelectors(delegateSelectors)
         .overrides(overrides)
         .skipRendering(skipRendering)
+        .commandFlags(commandFlags)
         .build();
   }
 

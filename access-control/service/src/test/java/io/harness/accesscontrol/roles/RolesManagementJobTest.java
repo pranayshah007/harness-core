@@ -318,6 +318,17 @@ public class RolesManagementJobTest extends AccessControlTestBase {
                                      .scopeLevel(projectScope.getLevel().toString())
                                      .resourceGroupIdentifier(RANDOM_IDENTIFIER)
                                      .build());
+    roleAssignmentService.create(RoleAssignment.builder()
+                                     .identifier("roleAssigmentIdentifierAtProjectScopeForInternalRole")
+                                     .principalIdentifier(RANDOM_IDENTIFIER)
+                                     .principalType(PrincipalType.USER)
+                                     .roleIdentifier("someOtherRole")
+                                     .scopeIdentifier(projectScope.toString())
+                                     .scopeLevel(projectScope.getLevel().toString())
+                                     .resourceGroupIdentifier(RANDOM_IDENTIFIER)
+                                     .internal(true)
+                                     .build());
+
     PageRequest pageRequest = PageRequest.builder().pageSize(100).pageIndex(0).build();
     assertEquals(3,
         roleAssignmentService
@@ -407,7 +418,7 @@ public class RolesManagementJobTest extends AccessControlTestBase {
     PageRequest pageRequest = PageRequest.builder().pageIndex(0).pageSize(100).build();
     RoleFilter roleFilter = RoleFilter.builder().managedFilter(ManagedFilter.ONLY_MANAGED).build();
 
-    Set<Role> currentRoles = new HashSet<>(roleService.list(pageRequest, roleFilter).getContent());
+    Set<Role> currentRoles = new HashSet<>(roleService.list(pageRequest, roleFilter, false).getContent());
     assertEquals(rolesConfig.getRoles().size(), currentRoles.size());
     Map<String, Role> currentRolesMap = new HashMap<>();
     currentRoles.forEach(role -> currentRolesMap.put(role.getIdentifier() + "#" + role.getScopeIdentifier(), role));

@@ -152,7 +152,7 @@ public class EnvironmentMapperTest extends CDNGTestBase {
                     .build())
             .build();
 
-    EnvironmentOutcome outcome = EnvironmentMapper.toEnvironmentOutcome(envEntity, env, svcOverride);
+    EnvironmentOutcome outcome = EnvironmentMapper.toEnvironmentOutcome(envEntity, env, svcOverride, null);
 
     assertThat(((ParameterField) outcome.getVariables().get("var1")).getValue()).isEqualTo("svcoverrideval1");
     assertThat(((ParameterField) outcome.getVariables().get("var2")).getValue()).isEqualTo(16.0);
@@ -178,7 +178,7 @@ public class EnvironmentMapperTest extends CDNGTestBase {
                     .build())
             .build();
 
-    EnvironmentOutcome outcome = EnvironmentMapper.toEnvironmentOutcome(envEntity, env, svcOverride);
+    EnvironmentOutcome outcome = EnvironmentMapper.toEnvironmentOutcome(envEntity, env, svcOverride, null);
 
     assertThat(((ParameterField) outcome.getVariables().get("var1")).getValue()).isEqualTo("svcoverrideval1");
     assertThat(((ParameterField) outcome.getVariables().get("var2")).getValue()).isEqualTo(16.0);
@@ -203,7 +203,7 @@ public class EnvironmentMapperTest extends CDNGTestBase {
                                               .serviceOverrideInfoConfig(NGServiceOverrideInfoConfig.builder().build())
                                               .build();
 
-    EnvironmentOutcome outcome = EnvironmentMapper.toEnvironmentOutcome(envEntity, env, svcOverride);
+    EnvironmentOutcome outcome = EnvironmentMapper.toEnvironmentOutcome(envEntity, env, svcOverride, null);
 
     assertThat(((ParameterField) outcome.getVariables().get("var1")).getValue()).isEqualTo("val1");
     assertThat(((ParameterField) outcome.getVariables().get("var2")).getValue()).isEqualTo(4.0);
@@ -221,7 +221,7 @@ public class EnvironmentMapperTest extends CDNGTestBase {
                                               .serviceOverrideInfoConfig(NGServiceOverrideInfoConfig.builder().build())
                                               .build();
 
-    EnvironmentOutcome outcome = EnvironmentMapper.toEnvironmentOutcome(envEntity, env, svcOverride);
+    EnvironmentOutcome outcome = EnvironmentMapper.toEnvironmentOutcome(envEntity, env, svcOverride, null);
 
     assertThat(outcome.getVariables()).isEmpty();
   }

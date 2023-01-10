@@ -44,9 +44,11 @@ import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.CDC)
+@Slf4j
 public class K8sManifestHelmChartRepoStoreService implements NgManifestService {
   @Inject ManifestMigrationService manifestMigrationService;
 
@@ -55,11 +57,15 @@ public class K8sManifestHelmChartRepoStoreService implements NgManifestService {
       Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities,
       ManifestProvidedEntitySpec entitySpec, List<NGYamlFile> yamlFileList) {
     HelmChartConfig helmChartConfig = applicationManifest.getHelmChartConfig();
-    SettingAttribute settingAttribute =
-        (SettingAttribute) entities
-            .get(
-                CgEntityId.builder().type(NGMigrationEntityType.CONNECTOR).id(helmChartConfig.getConnectorId()).build())
-            .getEntity();
+    CgEntityId connectorId =
+        CgEntityId.builder().type(NGMigrationEntityType.CONNECTOR).id(helmChartConfig.getConnectorId()).build();
+    if (!migratedEntities.containsKey(connectorId)) {
+      log.error(
+          String.format("We could not migrate the following manifest %s as we could not find the helm connector %s",
+              applicationManifest.getUuid(), helmChartConfig.getConnectorId()));
+      return Collections.emptyList();
+    }
+    SettingAttribute settingAttribute = (SettingAttribute) entities.get(connectorId).getEntity();
     String name = StringUtils.isBlank(applicationManifest.getName()) ? applicationManifest.getUuid()
                                                                      : applicationManifest.getName();
 

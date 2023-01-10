@@ -10,7 +10,7 @@ package io.harness.beans;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
-import lombok.extern.log4j.Log4j;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.EnumUtils;
 
 /**
@@ -18,7 +18,7 @@ import org.apache.commons.lang3.EnumUtils;
  *
  * @author Rishi
  */
-@Log4j
+@Slf4j
 public class SortOrder {
   public static final String FIELD_NAME_ORDER_TYPE_SEPARATOR = ",";
 

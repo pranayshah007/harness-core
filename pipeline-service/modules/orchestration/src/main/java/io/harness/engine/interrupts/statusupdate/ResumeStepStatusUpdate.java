@@ -8,8 +8,11 @@
 package io.harness.engine.interrupts.statusupdate;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.pms.contracts.execution.Status.DISCONTINUING;
 import static io.harness.pms.contracts.execution.Status.INPUT_WAITING;
 import static io.harness.pms.contracts.execution.Status.PAUSED;
+import static io.harness.pms.contracts.execution.Status.PAUSING;
+import static io.harness.pms.contracts.execution.Status.QUEUED;
 import static io.harness.pms.contracts.execution.Status.RUNNING;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -21,6 +24,7 @@ import io.harness.execution.NodeExecution;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.execution.utils.StatusUtils;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import java.util.EnumSet;
 
@@ -36,12 +40,15 @@ public class ResumeStepStatusUpdate implements NodeStatusUpdateHandler {
       Status planStatus = planExecutionService.calculateStatusExcluding(
           nodeStatusUpdateInfo.getPlanExecutionId(), nodeStatusUpdateInfo.getNodeExecutionId());
       if (!StatusUtils.isFinalStatus(planStatus)) {
-        planExecutionService.updateStatus(nodeStatusUpdateInfo.getPlanExecutionId(), planStatus);
+        EnumSet<Status> allowedStartStatuses = EnumSet.of(RUNNING, DISCONTINUING, PAUSING, QUEUED, PAUSED);
+        planExecutionService.updateStatusForceful(
+            nodeStatusUpdateInfo.getPlanExecutionId(), planStatus, null, false, allowedStartStatuses);
       }
     }
   }
 
-  private boolean resumeParents(NodeExecution nodeExecution) {
+  @VisibleForTesting
+  boolean resumeParents(NodeExecution nodeExecution) {
     if (nodeExecution.getParentId() == null) {
       return true;
     }

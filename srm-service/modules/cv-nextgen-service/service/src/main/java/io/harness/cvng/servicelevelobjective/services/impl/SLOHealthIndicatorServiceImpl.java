@@ -27,12 +27,12 @@ import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
+import dev.morphia.query.UpdateOperations;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
-import org.mongodb.morphia.query.UpdateOperations;
 
 public class SLOHealthIndicatorServiceImpl implements SLOHealthIndicatorService {
   @Inject private HPersistence hPersistence;
@@ -85,6 +85,14 @@ public class SLOHealthIndicatorServiceImpl implements SLOHealthIndicatorService 
         .asList();
   }
 
+  @Override
+  public List<SLOHealthIndicator> getBySLOIdentifiers(String accountId, List<String> serviceLevelObjectiveIdentifiers) {
+    return hPersistence.createQuery(SLOHealthIndicator.class)
+        .filter(SLOHealthIndicatorKeys.accountId, accountId)
+        .field(SLOHealthIndicatorKeys.serviceLevelObjectiveIdentifier)
+        .in(serviceLevelObjectiveIdentifiers)
+        .asList();
+  }
   @Override
   public void upsert(ServiceLevelIndicator serviceLevelIndicator) {
     ProjectParams projectParams = ProjectParams.builder()

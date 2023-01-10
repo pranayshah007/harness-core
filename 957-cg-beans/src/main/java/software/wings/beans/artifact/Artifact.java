@@ -9,7 +9,6 @@ package software.wings.beans.artifact;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
-import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
@@ -19,25 +18,12 @@ import io.harness.beans.EmbeddedUser;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.artifact.ArtifactFileMetadata;
 import io.harness.expression.LateBindingMap;
-import io.harness.mongo.index.CompoundMongoIndex;
-import io.harness.mongo.index.FdIndex;
-import io.harness.mongo.index.MongoIndex;
-import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
-import io.harness.persistence.CreatedAtAware;
-import io.harness.persistence.CreatedByAware;
-import io.harness.persistence.PersistentEntity;
-import io.harness.persistence.UpdatedAtAware;
-import io.harness.persistence.UpdatedByAware;
-import io.harness.persistence.UuidAware;
 import io.harness.validation.Update;
-
-import software.wings.beans.entityinterface.ApplicationAccess;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.github.reinert.jjschema.SchemaIgnore;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -50,76 +36,14 @@ import lombok.Setter;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.UtilityClass;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
-import org.mongodb.morphia.annotations.Transient;
 
 @OwnedBy(CDC)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Data
 @FieldNameConstants(innerTypeName = "ArtifactKeys")
 @StoreIn(DbAliases.HARNESS)
-@Entity(value = "artifacts", noClassnameStored = true)
-@HarnessEntity(exportable = true)
 @TargetModule(HarnessModule._957_CG_BEANS)
-public class Artifact implements PersistentEntity, UuidAware, CreatedAtAware, CreatedByAware, UpdatedAtAware,
-                                 UpdatedByAware, ApplicationAccess {
-  public static List<MongoIndex> mongoIndexes() {
-    return ImmutableList.<MongoIndex>builder()
-        .add(CompoundMongoIndex.builder()
-                 .name("owners")
-                 .field(ArtifactKeys.artifactStreamId)
-                 .field(ArtifactKeys.appId)
-                 .build())
-        .add(CompoundMongoIndex.builder()
-                 .name("artifactStream_buildNo")
-                 .field(ArtifactKeys.artifactStreamId)
-                 .field(ArtifactKeys.metadata_buildNo)
-                 .build())
-        .add(SortCompoundMongoIndex.builder()
-                 .name("artifactStream_createdAt_buildNo")
-                 .field(ArtifactKeys.artifactStreamId)
-                 .descSortField(ArtifactKeys.createdAt)
-                 .rangeField(ArtifactKeys.metadata_buildNo)
-                 .build())
-        .add(CompoundMongoIndex.builder()
-                 .name("artifactStream_artifactPath")
-                 .field(ArtifactKeys.artifactStreamId)
-                 .field(ArtifactKeys.metadata_artifactPath)
-                 .build())
-        .add(CompoundMongoIndex.builder()
-                 .name("artifactStream_revision")
-                 .field(ArtifactKeys.artifactStreamId)
-                 .field(ArtifactKeys.revision)
-                 .build())
-        .add(SortCompoundMongoIndex.builder()
-                 .name("appId_artifactStreamId_status_createdAt")
-                 .field(ArtifactKeys.appId)
-                 .field(ArtifactKeys.artifactStreamId)
-                 .field(ArtifactKeys.status)
-                 .descSortField(ArtifactKeys.createdAt)
-                 .build())
-        .add(SortCompoundMongoIndex.builder()
-                 .name("accountId_artifactStreamId_createdAt")
-                 .field(ArtifactKeys.accountId)
-                 .field(ArtifactKeys.artifactStreamId)
-                 .descSortField(ArtifactKeys.createdAt)
-                 .build())
-        .add(CompoundMongoIndex.builder()
-                 .name("appId_artifactStreamId_metadata_image")
-                 .field(ArtifactKeys.appId)
-                 .field(ArtifactKeys.artifactStreamId)
-                 .field(ArtifactKeys.metadata_image)
-                 .build())
-        .add(SortCompoundMongoIndex.builder()
-                 .name("accountId_createdAt_artifactStreamIds")
-                 .field(ArtifactKeys.accountId)
-                 .descSortField(ArtifactKeys.createdAt)
-                 .rangeField(ArtifactKeys.artifactStreamId)
-                 .build())
-        .build();
-  }
-
+public class Artifact {
   @UtilityClass
   public static final class ArtifactKeys {
     public static final String uuid = "uuid";
@@ -136,10 +60,10 @@ public class Artifact implements PersistentEntity, UuidAware, CreatedAtAware, Cr
   @EqualsAndHashCode.Exclude @Deprecated public static final String ACCOUNT_ID_KEY2 = "accountId";
   @EqualsAndHashCode.Exclude @Deprecated public static final String LAST_UPDATED_AT_KEY2 = "lastUpdatedAt";
 
-  @Id @NotNull(groups = {Update.class}) @SchemaIgnore private String uuid;
+  @NotNull(groups = {Update.class}) @SchemaIgnore private String uuid;
   @NotNull @SchemaIgnore protected String appId;
   @EqualsAndHashCode.Exclude @SchemaIgnore private EmbeddedUser createdBy;
-  @EqualsAndHashCode.Exclude @SchemaIgnore @FdIndex private long createdAt;
+  @EqualsAndHashCode.Exclude @SchemaIgnore private long createdAt;
 
   @EqualsAndHashCode.Exclude @SchemaIgnore private EmbeddedUser lastUpdatedBy;
   @EqualsAndHashCode.Exclude @SchemaIgnore @NotNull private long lastUpdatedAt;
@@ -148,10 +72,7 @@ public class Artifact implements PersistentEntity, UuidAware, CreatedAtAware, Cr
    * TODO: Add isDeleted boolean field to enable soft delete. @swagat
    */
 
-  @JsonIgnore
-  @SchemaIgnore
-  @Transient
-  private transient String entityYamlPath; // TODO:: remove it with changeSet batching
+  @JsonIgnore @SchemaIgnore private transient String entityYamlPath; // TODO:: remove it with changeSet batching
 
   @JsonIgnore
   @SchemaIgnore
@@ -168,9 +89,9 @@ public class Artifact implements PersistentEntity, UuidAware, CreatedAtAware, Cr
   }
   private String artifactStreamId;
   private String artifactSourceName;
-  @Transient private String artifactStreamName;
+  private String artifactStreamName;
   private ArtifactMetadata metadata = new ArtifactMetadata(new HashMap<>());
-  @Transient @JsonIgnore public LateBindingMap label;
+  @JsonIgnore public LateBindingMap label;
   @NotEmpty private String displayName;
   private String revision;
   private List<String> serviceIds = new ArrayList<>();
@@ -186,7 +107,7 @@ public class Artifact implements PersistentEntity, UuidAware, CreatedAtAware, Cr
   private String artifactStreamType;
   private String uiDisplayName;
   private String buildIdentity;
-  @Transient @JsonIgnore private boolean isDuplicate;
+  @JsonIgnore private boolean isDuplicate;
 
   /**
    * Gets buildNo.

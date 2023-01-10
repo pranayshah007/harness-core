@@ -46,12 +46,11 @@ public class PollingSubscriptionHelper {
     }
 
     try {
-      Optional<String> pipelineYml = buildTriggerHelper.fetchResolvedTemplatesPipelineForTrigger(ngTriggerEntity);
+      TriggerDetails triggerDetails = ngTriggerElementMapper.toTriggerDetails(ngTriggerEntity);
+      Optional<String> pipelineYml = buildTriggerHelper.fetchResolvedTemplatesPipelineForTrigger(triggerDetails);
       if (!pipelineYml.isPresent()) {
         throw new InvalidRequestException("Failed to retrieve pipeline");
       }
-
-      TriggerDetails triggerDetails = ngTriggerElementMapper.toTriggerDetails(ngTriggerEntity);
 
       BuildTriggerOpsData buildTriggerOpsData = null;
       PollingItemGenerator pollingItemGenerator = null;

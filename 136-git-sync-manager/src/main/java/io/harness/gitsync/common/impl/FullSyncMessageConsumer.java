@@ -7,7 +7,7 @@
 
 package io.harness.gitsync.common.impl;
 
-import static io.harness.AuthorizationServiceHeader.NG_MANAGER;
+import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.eventsframework.EventsFrameworkConstants.GIT_FULL_SYNC_STREAM;
 
 import io.harness.eventsframework.consumer.Message;

@@ -10,6 +10,10 @@ package io.harness.cdng.pipeline;
 import io.harness.advisers.rollback.OnFailRollbackParameters;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.aws.asg.AsgCanaryDeleteStepInfo;
+import io.harness.cdng.aws.asg.AsgCanaryDeployStepInfo;
+import io.harness.cdng.aws.asg.AsgRollingDeployStepInfo;
+import io.harness.cdng.aws.asg.AsgRollingRollbackStepInfo;
 import io.harness.cdng.azure.webapp.AzureWebAppRollbackStepInfo;
 import io.harness.cdng.azure.webapp.AzureWebAppSlotDeploymentStepInfo;
 import io.harness.cdng.azure.webapp.AzureWebAppSwapSlotStepInfo;
@@ -23,7 +27,11 @@ import io.harness.cdng.ecs.EcsCanaryDeployStepInfo;
 import io.harness.cdng.ecs.EcsRollingDeployStepInfo;
 import io.harness.cdng.ecs.EcsRollingRollbackStepInfo;
 import io.harness.cdng.ecs.EcsRunTaskStepInfo;
+import io.harness.cdng.elastigroup.ElastigroupBGStageSetupStepInfo;
 import io.harness.cdng.elastigroup.ElastigroupSetupStepInfo;
+import io.harness.cdng.elastigroup.ElastigroupSwapRouteStepInfo;
+import io.harness.cdng.elastigroup.deploy.ElastigroupDeployStepInfo;
+import io.harness.cdng.elastigroup.rollback.ElastigroupRollbackStepInfo;
 import io.harness.cdng.gitops.CreatePRStepInfo;
 import io.harness.cdng.gitops.MergePRStepInfo;
 import io.harness.cdng.gitops.UpdateReleaseRepoStepInfo;
@@ -57,9 +65,15 @@ import io.harness.cdng.provision.terragrunt.TerragruntPlanStepInfo;
 import io.harness.cdng.provision.terragrunt.TerragruntRollbackStepInfo;
 import io.harness.cdng.serverless.ServerlessAwsLambdaDeployStepInfo;
 import io.harness.cdng.serverless.ServerlessAwsLambdaRollbackStepInfo;
-import io.harness.cdng.spot.elastigroup.deploy.ElastigroupDeployStepInfo;
-import io.harness.cdng.spot.elastigroup.rollback.ElastigroupRollbackStepInfo;
 import io.harness.cdng.ssh.CommandStepInfo;
+import io.harness.cdng.tas.TasAppResizeStepInfo;
+import io.harness.cdng.tas.TasBGAppSetupStepInfo;
+import io.harness.cdng.tas.TasBasicAppSetupStepInfo;
+import io.harness.cdng.tas.TasCanaryAppSetupStepInfo;
+import io.harness.cdng.tas.TasCommandStepInfo;
+import io.harness.cdng.tas.TasRollbackStepInfo;
+import io.harness.cdng.tas.TasSwapRollbackStepInfo;
+import io.harness.cdng.tas.TasSwapRoutesStepInfo;
 import io.harness.plancreator.steps.common.StepElementParameters.StepElementParametersBuilder;
 import io.harness.plancreator.steps.common.WithDelegateSelector;
 import io.harness.plancreator.steps.common.WithStepElementParameters;
@@ -87,9 +101,15 @@ import io.swagger.annotations.ApiModel;
         FetchInstanceScriptStepInfo.class, ShellScriptProvisionStepInfo.class, UpdateReleaseRepoStepInfo.class,
         EcsRunTaskStepInfo.class, ElastigroupDeployStepInfo.class, ElastigroupRollbackStepInfo.class,
         ElastigroupSetupStepInfo.class, TerragruntPlanStepInfo.class, TerragruntApplyStepInfo.class,
-        TerragruntDestroyStepInfo.class, TerragruntRollbackStepInfo.class})
+        TerragruntDestroyStepInfo.class, TerragruntRollbackStepInfo.class, AsgCanaryDeployStepInfo.class,
+        AsgCanaryDeleteStepInfo.class, TasSwapRoutesStepInfo.class, TasSwapRollbackStepInfo.class,
+        TasCanaryAppSetupStepInfo.class, TasBGAppSetupStepInfo.class, TasBasicAppSetupStepInfo.class,
+        TasCommandStepInfo.class, ElastigroupBGStageSetupStepInfo.class, ElastigroupSwapRouteStepInfo.class,
+        TasAppResizeStepInfo.class, TasRollbackStepInfo.class, AsgRollingDeployStepInfo.class,
+        AsgRollingRollbackStepInfo.class})
 
 @OwnedBy(HarnessTeam.CDC)
+// keeping this class because of the swagger annotation and UI dependency on it
 public interface CDStepInfo extends StepSpecType, WithStepElementParameters, WithDelegateSelector {
   default StepParameters getStepParameters(
       CdAbstractStepNode stepElementConfig, OnFailRollbackParameters failRollbackParameters, PlanCreationContext ctx) {

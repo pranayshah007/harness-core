@@ -29,6 +29,7 @@ import io.harness.ngtriggers.beans.dto.NGTriggerCatalogDTO;
 import io.harness.ngtriggers.beans.dto.NGTriggerDetailsResponseDTO;
 import io.harness.ngtriggers.beans.dto.NGTriggerEventHistoryDTO;
 import io.harness.ngtriggers.beans.dto.NGTriggerResponseDTO;
+import io.harness.ngtriggers.beans.dto.TriggerYamlDiffDTO;
 import io.harness.ngtriggers.beans.dto.ValidatePipelineInputsResponseDTO;
 import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.pms.pipeline.PipelineResourceConstants;
@@ -63,7 +64,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import org.hibernate.validator.constraints.NotBlank;
 import org.springframework.data.domain.Page;
 
 @Api("triggers")
@@ -187,7 +187,7 @@ public interface NGTriggerResource {
       })
   @Path("{triggerIdentifier}")
   @ApiOperation(value = "Delete a trigger by identifier", nickname = "deleteTrigger")
-  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_DELETE)
   ResponseDTO<Boolean>
   delete(@HeaderParam(IF_MATCH) String ifMatch,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
@@ -267,7 +267,7 @@ public interface NGTriggerResource {
         ApiResponse(responseCode = "default", description = "Returns the Trigger catalogue response")
       })
   ResponseDTO<NGTriggerCatalogDTO>
-  getTriggerCatalog(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotBlank @QueryParam(
+  getTriggerCatalog(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
       NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier);
 
   @GET
@@ -309,4 +309,18 @@ public interface NGTriggerResource {
       @Parameter(description = NGCommonEntityConstants.SIZE_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.SIZE) @DefaultValue("10") int size,
       @Parameter(description = NGCommonEntityConstants.SORT_PARAM_MESSAGE) @QueryParam("sort") List<String> sort);
+
+  @GET
+  @Path("{triggerIdentifier}/triggerReconciliationYamlDiff")
+  @ApiOperation(hidden = true, value = "This contains data for trigger YAML reconciliation",
+      nickname = "triggerReconciliationYamlDiff")
+  @Hidden
+  ResponseDTO<TriggerYamlDiffDTO>
+  getTriggerReconciliationYamlDiff(
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+      @Parameter(description = "Identifier of the target pipeline under which trigger resides") @NotNull @QueryParam(
+          "targetIdentifier") @ResourceIdentifier String targetIdentifier,
+      @PathParam("triggerIdentifier") String triggerIdentifier);
 }

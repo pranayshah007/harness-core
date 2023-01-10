@@ -132,6 +132,27 @@ public class FreezeEvaluateServiceImpl implements FreezeEvaluateService {
     return activeFreezeList;
   }
 
+  @Override
+  public List<FreezeSummaryResponseDTO> getActiveManualFreezeEntities(
+      String accountId, String orgIdentifier, String projectIdentifier, Map<FreezeEntityType, List<String>> entityMap) {
+    List<FreezeSummaryResponseDTO> activeFreezeList = new LinkedList<>();
+    Scope scope = NGFreezeDtoMapper.getScopeFromFreezeDto(orgIdentifier, projectIdentifier);
+    switch (scope) {
+      case PROJECT:
+        activeFreezeList.addAll(getActiveFreezeEntities(accountId, orgIdentifier, projectIdentifier, entityMap));
+        // fallthrough to ignore
+      case ORG:
+        activeFreezeList.addAll(getActiveFreezeEntities(accountId, orgIdentifier, null, entityMap));
+        // fallthrough to ignore
+      case ACCOUNT:
+        activeFreezeList.addAll(getActiveFreezeEntities(accountId, null, null, entityMap));
+        break;
+      default:
+        break;
+    }
+    return activeFreezeList;
+  }
+
   private boolean matchesEntities(Map<FreezeEntityType, List<String>> entityMap, List<FreezeEntityRule> rules) {
     for (FreezeEntityRule rule : rules) {
       if (matchesEntities(entityMap, rule)) {

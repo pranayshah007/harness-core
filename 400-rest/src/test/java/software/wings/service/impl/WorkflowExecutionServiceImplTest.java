@@ -36,6 +36,7 @@ import static io.harness.rule.OwnerRule.SRINIVAS;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 import static io.harness.rule.OwnerRule.VIKAS_S;
+import static io.harness.rule.OwnerRule.VINICIUS;
 import static io.harness.threading.Poller.pollFor;
 
 import static software.wings.api.DeploymentType.SSH;
@@ -53,9 +54,9 @@ import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
 import static software.wings.beans.User.Builder.anUser;
 import static software.wings.beans.Workflow.WorkflowBuilder.aWorkflow;
 import static software.wings.beans.WorkflowPhase.WorkflowPhaseBuilder.aWorkflowPhase;
-import static software.wings.beans.artifact.Artifact.Builder.anArtifact;
 import static software.wings.beans.infrastructure.Host.Builder.aHost;
 import static software.wings.infra.InfraDefinitionTestConstants.RESOURCE_CONSTRAINT_NAME;
+import static software.wings.persistence.artifact.Artifact.Builder.anArtifact;
 import static software.wings.settings.SettingVariableTypes.KUBERNETES;
 import static software.wings.settings.SettingVariableTypes.PHYSICAL_DATA_CENTER;
 import static software.wings.sm.ExecutionInterrupt.ExecutionInterruptBuilder.anExecutionInterrupt;
@@ -192,7 +193,6 @@ import software.wings.beans.WorkflowExecution;
 import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
 import software.wings.beans.WorkflowPhase;
 import software.wings.beans.appmanifest.HelmChart;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactInput;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.CustomArtifactStream;
@@ -211,6 +211,7 @@ import software.wings.helpers.ext.jenkins.BuildDetails;
 import software.wings.infra.InfrastructureDefinition;
 import software.wings.infra.PhysicalInfra;
 import software.wings.licensing.LicenseService;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.resources.stats.model.TimeRange;
 import software.wings.rules.Listeners;
 import software.wings.scheduler.BackgroundJobScheduler;
@@ -250,6 +251,8 @@ import software.wings.utils.ArtifactType;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -271,8 +274,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 /**
  * The type Workflow service impl test.
@@ -2011,6 +2012,7 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
     UpdateOperations<WorkflowExecution> updateOps1 =
         wingsPersistence.createUpdateOperations(WorkflowExecution.class)
             .set(WorkflowExecutionKeys.serviceExecutionSummaries, executionSummaries1)
+            .set(WorkflowExecutionKeys.deployment, true)
             .set(WorkflowExecutionKeys.artifacts, workflowExecution1.getArtifacts());
 
     UpdateOperations<WorkflowExecution> updateOps2 =
@@ -3450,5 +3452,47 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
     assertThat(workflowStandardParams.getArtifactInputs()).isNotNull().isNotEmpty();
     assertThat(workflowStandardParams.getArtifactInputs().get(0)).isEqualTo(artifactVariable1.getArtifactInput());
     verify(artifactStreamServiceBindingService).listArtifactStreamIds(service.getUuid());
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void shouldSaveRejectedByFreezeWindowsFFOn() {
+    User user = anUser().uuid(generateUuid()).name("user-name").build();
+    UserThreadLocal.set(user);
+    doThrow(new InvalidRequestException("User is not authorized", WingsException.USER))
+        .when(deploymentAuthHandler)
+        .authorizeDeploymentDuringFreeze();
+    String appId = app.getUuid();
+    Workflow workflow = createExecutableWorkflow(appId, env, "workflow1");
+    ExecutionArgs executionArgs = new ExecutionArgs();
+    executionArgs.setArtifacts(singletonList(
+        Artifact.Builder.anArtifact().withAccountId(ACCOUNT_ID).withAppId(APP_ID).withUuid(ARTIFACT_ID).build()));
+
+    WorkflowExecutionUpdateFake callback = new WorkflowExecutionUpdateFake();
+    when(featureFlagService.isEnabled(FeatureName.NEW_DEPLOYMENT_FREEZE, account.getUuid())).thenReturn(true);
+    when(featureFlagService.isEnabled(FeatureName.SPG_SAVE_REJECTED_BY_FREEZE_WINDOWS, account.getUuid()))
+        .thenReturn(true);
+
+    GovernanceConfig governanceConfig = GovernanceConfig.builder()
+                                            .accountId(account.getUuid())
+                                            .timeRangeBasedFreezeConfigs(Collections.singletonList(
+                                                TimeRangeBasedFreezeConfig.builder()
+                                                    .name("freeze1")
+                                                    .uuid(FREEZE_WINDOW_ID)
+                                                    .timeRange(new TimeRange(0, 1, "", false, null, null, null, false))
+                                                    .build()))
+                                            .build();
+    when(governanceConfigService.get(account.getUuid())).thenReturn(governanceConfig);
+    when(governanceConfigService.getFrozenEnvIdsForApp(account.getUuid(), appId, governanceConfig))
+        .thenReturn(Collections.singletonMap(FREEZE_WINDOW_ID, Collections.singleton(env.getUuid())));
+    assertThatThrownBy(()
+                           -> workflowExecutionService.triggerOrchestrationWorkflowExecution(
+                               appId, env.getUuid(), workflow.getUuid(), null, executionArgs, callback, null))
+        .isInstanceOf(DeploymentFreezeException.class)
+        .hasMessage(
+            "Deployment Freeze Window [freeze1] is active for the environment. No deployments are allowed to proceed.")
+        .hasFieldOrPropertyWithValue("deploymentFreezeIds", Collections.singletonList(FREEZE_WINDOW_ID))
+        .hasFieldOrPropertyWithValue("deploymentFreezeNamesList", Collections.singletonList("freeze1"));
   }
 }

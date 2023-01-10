@@ -17,12 +17,16 @@ import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.contracts.plan.PipelineStageInfo;
 import io.harness.pms.pipelinestage.PipelineStageStepParameters;
 import io.harness.pms.plan.execution.PlanExecutionInterruptType;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.rule.Owner;
 import io.harness.security.SecurityContextBuilder;
 
+import java.util.HashMap;
+import java.util.Map;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -49,5 +53,32 @@ public class PipelineStageStepTest extends CategoryTest {
         AsyncExecutableResponse.newBuilder().addCallbackIds(firstCallBackId).addCallbackIds(secondCallBackId).build());
     verify(pmsExecutionService, times(1)).registerInterrupt(PlanExecutionInterruptType.ABORTALL, firstCallBackId, null);
     assertThat(SecurityContextBuilder.getPrincipal()).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = PRASHANTSHARMA)
+  @Category(UnitTests.class)
+  public void testPipelineStageInfo() {
+    String planExecutionId = "planExecutionId";
+    String projectId = "projectId";
+    String ordId = "orgId";
+    Map<String, String> setup = new HashMap<>();
+    setup.put("projectIdentifier", projectId);
+    setup.put("orgIdentifier", ordId);
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .setPlanExecutionId(planExecutionId)
+                            .putAllSetupAbstractions(setup)
+                            .setMetadata(ExecutionMetadata.newBuilder().setRunSequence(40).build())
+                            .build();
+
+    PipelineStageStepParameters stepParameters =
+        PipelineStageStepParameters.builder().stageNodeId("stageNodeId").build();
+    PipelineStageInfo info = pipelineStageStep.prepareParentStageInfo(ambiance, stepParameters);
+    assertThat(info.getHasParentPipeline()).isEqualTo(true);
+    assertThat(info.getStageNodeId()).isEqualTo("stageNodeId");
+    assertThat(info.getExecutionId()).isEqualTo(planExecutionId);
+    assertThat(info.getProjectId()).isEqualTo(projectId);
+    assertThat(info.getOrgId()).isEqualTo(ordId);
+    assertThat(info.getRunSequence()).isEqualTo(40);
   }
 }

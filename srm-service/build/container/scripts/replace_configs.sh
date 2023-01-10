@@ -24,6 +24,15 @@ if [[ "" != "$LOGGING_LEVEL" ]]; then
   export LOGGING_LEVEL; yq -i '.logging.level=env(LOGGING_LEVEL)' $CONFIG_FILE
 fi
 
+if [[ "" != "$LOGGERS" ]]; then
+  IFS=',' read -ra LOGGER_ITEMS <<< "$LOGGERS"
+  for ITEM in "${LOGGER_ITEMS[@]}"; do
+    LOGGER=`echo $ITEM | awk -F= '{print $1}'`
+    LOGGER_LEVEL=`echo $ITEM | awk -F= '{print $2}'`
+    export LOGGER_LEVEL; export LOGGER; yq -i '.logging.loggers.[env(LOGGER)]=env(LOGGER_LEVEL)' $CONFIG_FILE
+  done
+fi
+
 if [[ "" != "$VERIFICATION_PORT" ]]; then
   export VERIFICATION_PORT; yq -i '.server.applicationConnectors[0].port=env(VERIFICATION_PORT)' $CONFIG_FILE
 else
@@ -238,6 +247,23 @@ if [[ "$EVENTS_FRAMEWORK_USE_SENTINEL" == "true" ]]; then
   fi
 fi
 
+if [[ "" != "$TIMESCALE_PASSWORD" ]]; then
+  yq write -i $CONFIG_FILE timescaledb.timescaledbPassword "$TIMESCALE_PASSWORD"
+fi
+
+if [[ "" != "$TIMESCALE_URI" ]]; then
+  yq write -i $CONFIG_FILE timescaledb.timescaledbUrl "$TIMESCALE_URI"
+fi
+
+if [[ "" != "$TIMESCALEDB_USERNAME" ]]; then
+  yq write -i $CONFIG_FILE timescaledb.timescaledbUsername "$TIMESCALEDB_USERNAME"
+fi
+
+if [[ "" != "$ENABLE_DASHBOARD_TIMESCALE" ]]; then
+  yq write -i $CONFIG_FILE enableDashboardTimescale $ENABLE_DASHBOARD_TIMESCALE
+fi
+
+
 replace_key_value cacheConfig.cacheNamespace $CACHE_NAMESPACE
 replace_key_value cacheConfig.cacheBackend $CACHE_BACKEND
 replace_key_value cacheConfig.enterpriseCacheEnabled $ENTERPRISE_CACHE_ENABLED
@@ -260,9 +286,13 @@ replace_key_value accessControlClientConfig.enableAccessControl "$ACCESS_CONTROL
 replace_key_value accessControlClientConfig.accessControlServiceConfig.baseUrl "$ACCESS_CONTROL_BASE_URL"
 replace_key_value accessControlClientConfig.accessControlServiceSecret "$ACCESS_CONTROL_SECRET"
 
+replace_key_value errorTrackingClientConfig.errorTrackingServiceConfig.baseUrl "$ET_SERVICE_BASE_URL"
+replace_key_value errorTrackingClientConfig.errorTrackingServiceSecret "$ET_SERVICE_SECRET"
+
 replace_key_value templateServiceClientConfig.baseUrl "$TEMPLATE_SERVICE_ENDPOINT"
 replace_key_value templateServiceSecret "$TEMPLATE_SERVICE_SECRET"
 
 replace_key_value enforcementClientConfiguration.enforcementCheckEnabled "$ENFORCEMENT_CHECK_ENABLED"
 
 replace_key_value enableOpentelemetry "$ENABLE_OPENTELEMETRY"
+

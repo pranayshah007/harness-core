@@ -76,7 +76,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-import java.util.function.Consumer;
 import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
@@ -246,30 +245,12 @@ public class NGHostValidationServiceImpl implements NGHostValidationService {
     }
   }
 
-  private String populateSecretPort(String host, Consumer<Integer> populate) {
-    Optional<Integer> portFromHost = extractPortFromHost(host);
-
-    if (!portFromHost.isPresent()) {
-      return host;
-    }
-
-    Integer portFromHostValue = portFromHost.get();
-    // if port from host exists it takes precedence over the port from SSH key
-    // host is host name and port number
-    populate.accept(portFromHostValue);
-
-    return extractHostnameFromHost(host).orElseThrow(
-        ()
-            -> new InvalidArgumentsException(
-                format("Not found hostName, host: %s, extracted port: %s", host, portFromHostValue), USER_SRE));
-  }
-
   private DelegateTaskRequest generateSshDelegateTaskRequest(Secret secret, String host, String accountIdentifier,
       String orgIdentifier, String projectIdentifier, Set<String> delegateSelectors) {
     SSHKeySpecDTO secretSpecDTO = (SSHKeySpecDTO) secret.getSecretSpec().toDTO();
     List<EncryptedDataDetail> encryptionDetails = sshKeySpecDTOHelper.getSSHKeyEncryptionDetails(
         secretSpecDTO, getBaseNGAccess(accountIdentifier, orgIdentifier, projectIdentifier));
-    String hostName = populateSecretPort(host, secretSpecDTO::setPort);
+    String hostName = getHostnameWithoutPort(host);
 
     return DelegateTaskRequest.builder()
         .accountId(accountIdentifier)
@@ -290,7 +271,7 @@ public class NGHostValidationServiceImpl implements NGHostValidationService {
     WinRmCredentialsSpecDTO secretSpecDTO = (WinRmCredentialsSpecDTO) secret.getSecretSpec().toDTO();
     List<EncryptedDataDetail> encryptionDetails = winRmCredentialsSpecDTOHelper.getWinRmEncryptionDetails(
         secretSpecDTO, getBaseNGAccess(accountIdentifier, orgIdentifier, projectIdentifier));
-    String hostName = populateSecretPort(host, secretSpecDTO::setPort);
+    String hostName = getHostnameWithoutPort(host);
 
     return DelegateTaskRequest.builder()
         .accountId(accountIdentifier)
@@ -304,6 +285,19 @@ public class NGHostValidationServiceImpl implements NGHostValidationService {
         .taskSetupAbstractions(setupTaskAbstractions(accountIdentifier, orgIdentifier, projectIdentifier))
         .executionTimeout(Duration.ofSeconds(PhysicalDataCenterConstants.EXECUTION_TIMEOUT_IN_SECONDS))
         .build();
+  }
+
+  private String getHostnameWithoutPort(String host) {
+    Optional<Integer> portFromHost = extractPortFromHost(host);
+
+    if (portFromHost.isEmpty()) {
+      return host;
+    }
+
+    return extractHostnameFromHost(host).orElseThrow(
+        ()
+            -> new InvalidArgumentsException(
+                format("Not found hostName, host: %s, extracted port: %s", host, portFromHost.get()), USER_SRE));
   }
 
   @NotNull

@@ -13,7 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.ff.FeatureFlagService;
 
-import software.wings.beans.artifact.Artifact;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.intfc.ArtifactService;
 import software.wings.sm.ContextElement;
 import software.wings.sm.ExecutionContext;

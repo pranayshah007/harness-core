@@ -3,7 +3,7 @@ resource "google_logging_metric" "ce_publish_requests" {
   description = "Number of publish requests received. Owner: CE"
   filter = join("\n", [
     local.filter_prefix,
-    "jsonPayload.logger=\"io.harness.event.grpc.EventPublisherServerImpl\"",
+    "jsonPayload.logger=(\"io.harness.event.grpc.EventPublisherServerImpl\" OR \"io.harness.event.resources.K8sEventResource\")",
     "jsonPayload.message:\"Received publish request\""
   ])
   metric_descriptor {

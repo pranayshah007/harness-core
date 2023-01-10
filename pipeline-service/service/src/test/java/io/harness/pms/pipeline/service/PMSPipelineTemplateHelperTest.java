@@ -8,6 +8,7 @@
 package io.harness.pms.pipeline.service;
 
 import static io.harness.exception.WingsException.USER;
+import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.INDER;
 
@@ -99,7 +100,8 @@ public class PMSPipelineTemplateHelperTest extends CategoryTest {
         .thenReturn(Response.success(
             ResponseDTO.newResponse(TemplateMergeResponseDTO.builder().mergedPipelineYaml(givenYaml).build())));
     String resolveTemplateRefsInPipeline =
-        pipelineTemplateHelper.resolveTemplateRefsInPipeline(ACCOUNT_ID, ORG_ID, PROJECT_ID, givenYaml)
+        pipelineTemplateHelper
+            .resolveTemplateRefsInPipeline(ACCOUNT_ID, ORG_ID, PROJECT_ID, givenYaml, BOOLEAN_FALSE_VALUE)
             .getMergedPipelineYaml();
     assertThat(resolveTemplateRefsInPipeline).isEqualTo(givenYaml);
   }
@@ -121,8 +123,9 @@ public class PMSPipelineTemplateHelperTest extends CategoryTest {
     when(callRequest.execute())
         .thenThrow(new NGTemplateResolveExceptionV2(
             "Exception in resolving template refs in given yaml.", USER, validateTemplateInputsResponseDTO, null));
-    assertThatThrownBy(
-        () -> pipelineTemplateHelper.resolveTemplateRefsInPipeline(ACCOUNT_ID, ORG_ID, PROJECT_ID, givenYaml))
+    assertThatThrownBy(()
+                           -> pipelineTemplateHelper.resolveTemplateRefsInPipeline(
+                               ACCOUNT_ID, ORG_ID, PROJECT_ID, givenYaml, BOOLEAN_FALSE_VALUE))
         .isInstanceOf(NGTemplateResolveExceptionV2.class)
         .hasMessage("Exception in resolving template refs in given yaml.");
   }

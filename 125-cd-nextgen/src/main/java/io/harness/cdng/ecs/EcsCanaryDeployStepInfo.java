@@ -10,7 +10,7 @@ package io.harness.cdng.ecs;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.pipeline.CDStepInfo;
+import io.harness.cdng.pipeline.CDAbstractStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.EcsCanaryDeployStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -41,7 +41,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName(StepSpecTypeConstants.ECS_CANARY_DEPLOY)
 @TypeAlias("ecsCanaryDeployStepInfo")
 @RecasterAlias("io.harness.cdng.ecs.EcsCanaryDeployStepInfo")
-public class EcsCanaryDeployStepInfo extends EcsCanaryDeployBaseStepInfo implements CDStepInfo, Visitable {
+public class EcsCanaryDeployStepInfo extends EcsCanaryDeployBaseStepInfo implements CDAbstractStepInfo, Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)

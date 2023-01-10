@@ -105,7 +105,7 @@ fi
 if [ $STO_MANAGER_T -eq 0 ]
 then
     echo "====Generating STO-MANAGER Target-Branch Api Spec===="
-    java -jar bazel-bin/315-sto-manager/module_deploy.jar generate-openapi-spec target/315_target.json 315-sto-manager/sto-manager-config.yml || STO_MANAGER_T=$?
+    java -jar bazel-bin/315-sto-manager/app/module_deploy.jar generate-openapi-spec target/315_target.json 315-sto-manager/config/sto-manager-config.yml || STO_MANAGER_T=$?
 fi
 
 
@@ -264,7 +264,7 @@ fi
 if [ $STO_MANAGER_S -eq 0 ]
 then
     echo "====Generating STO-Manager Source-Branch Api Spec===="
-    java -jar bazel-bin/315-sto-manager/module_deploy.jar generate-openapi-spec target/315_source.json 315-sto-manager/sto-manager-config.yml || STO_MANAGER_S=$?
+    java -jar bazel-bin/315-sto-manager/app/module_deploy.jar generate-openapi-spec target/315_source.json 315-sto-manager/config/sto-manager-config.yml || STO_MANAGER_S=$?
 fi
 
 exit_code=0

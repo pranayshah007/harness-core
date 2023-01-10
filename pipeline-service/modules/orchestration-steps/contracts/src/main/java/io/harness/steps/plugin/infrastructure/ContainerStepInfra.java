@@ -14,9 +14,9 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import io.swagger.annotations.ApiModelProperty;
 import org.springframework.data.annotation.TypeAlias;
 
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", visible = true, defaultImpl = ContainerK8sInfra.class)
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", visible = true,
+    include = JsonTypeInfo.As.EXISTING_PROPERTY, defaultImpl = ContainerK8sInfra.class)
 @JsonSubTypes({ @JsonSubTypes.Type(value = ContainerK8sInfra.class, name = "KubernetesDirect") })
-
 public interface ContainerStepInfra {
   @TypeAlias("infrastructure_type")
   enum Type {

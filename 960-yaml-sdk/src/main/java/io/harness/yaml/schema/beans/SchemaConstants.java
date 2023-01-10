@@ -68,7 +68,7 @@ public class SchemaConstants {
       + "^[+-]?[0-9]+\\.?[0-9]*$"
       + "|" + EXPRESSION_PATTERN + "|^$"
       + ")";
-
+  public static final String STRING_BUT_NOT_EXECUTION_INPUT_PATTERN = "^(?!<\\+input>.*\\.executionInput\\(\\)(.*)$)";
   public static final String SPEC_NODE = "spec";
   public static final String STAGE_ELEMENT_WRAPPER_CONFIG = "StageElementWrapperConfig";
   public static final String STAGE_ELEMENT_CONFIG_REF_VALUE = "#/definitions/StageElementConfig";

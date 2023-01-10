@@ -7,7 +7,6 @@
 
 package io.harness.cdng.provision.shellscript;
 
-import static io.harness.beans.FeatureName.SHELL_SCRIPT_PROVISION_NG;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 
@@ -16,6 +15,7 @@ import static software.wings.beans.TaskType.SHELL_SCRIPT_PROVISION;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.ssh.SshCommandStepHelper;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
@@ -25,14 +25,10 @@ import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.task.shell.provisioner.ShellScriptProvisionTaskNG;
 import io.harness.delegate.task.shell.provisioner.ShellScriptProvisionTaskNGRequest;
 import io.harness.delegate.task.shell.provisioner.ShellScriptProvisionTaskNGResponse;
-import io.harness.eraro.ErrorCode;
-import io.harness.exception.AccessDeniedException;
 import io.harness.exception.InvalidRequestException;
-import io.harness.exception.WingsException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
-import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
@@ -60,7 +56,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
-public class ShellScriptProvisionStep extends TaskExecutableWithRollbackAndRbac<ShellScriptProvisionTaskNGResponse> {
+public class ShellScriptProvisionStep extends CdTaskExecutable<ShellScriptProvisionTaskNGResponse> {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.SHELL_SCRIPT_PROVISION.getYamlType())
                                                .setStepCategory(StepCategory.STEP)
@@ -77,13 +73,7 @@ public class ShellScriptProvisionStep extends TaskExecutableWithRollbackAndRbac<
   }
 
   @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
-    if (!cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), SHELL_SCRIPT_PROVISION_NG)) {
-      throw new AccessDeniedException("Shell Script Provisioner is not enabled for this account."
-              + " Please contact harness customer care.",
-          ErrorCode.NG_ACCESS_DENIED, WingsException.USER);
-    }
-  }
+  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {}
 
   @Override
   public TaskRequest obtainTaskAfterRbac(

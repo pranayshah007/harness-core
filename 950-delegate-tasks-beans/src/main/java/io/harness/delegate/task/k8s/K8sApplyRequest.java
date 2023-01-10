@@ -17,6 +17,7 @@ import io.harness.expression.Expression;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Value;
 
@@ -43,7 +44,7 @@ public class K8sApplyRequest implements K8sDeployRequest {
   boolean useLatestKustomizeVersion;
   boolean useNewKubectlVersion;
   boolean useK8sApiForSteadyStateCheck;
-
+  @Expression(ALLOW_SECRETS) Map<String, String> k8sCommandFlags;
   @Override
   public List<String> getOpenshiftParamList() {
     return Collections.emptyList();

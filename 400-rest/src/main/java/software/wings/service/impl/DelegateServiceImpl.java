@@ -48,6 +48,7 @@ import static software.wings.beans.User.Builder.anUser;
 import static software.wings.utils.Utils.normalizeIdentifier;
 import static software.wings.utils.Utils.uuidToIdentifier;
 
+import static dev.morphia.mapping.Mapper.ID_KEY;
 import static freemarker.template.Configuration.VERSION_2_3_23;
 import static java.lang.String.format;
 import static java.lang.System.currentTimeMillis;
@@ -68,7 +69,6 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.substringAfter;
 import static org.apache.commons.lang3.StringUtils.substringBefore;
-import static org.mongodb.morphia.mapping.Mapper.ID_KEY;
 
 import io.harness.agent.beans.AgentMtlsEndpointDetails;
 import io.harness.annotations.dev.BreakDependencyOn;
@@ -124,10 +124,10 @@ import io.harness.delegate.beans.FileMetadata;
 import io.harness.delegate.beans.K8sConfigDetails;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.TaskDataV2;
-import io.harness.delegate.events.DelegateGroupDeleteEvent;
-import io.harness.delegate.events.DelegateGroupUpsertEvent;
+import io.harness.delegate.events.DelegateDeleteEvent;
 import io.harness.delegate.events.DelegateRegisterEvent;
 import io.harness.delegate.events.DelegateUnregisterEvent;
+import io.harness.delegate.events.DelegateUpsertEvent;
 import io.harness.delegate.service.DelegateVersionService;
 import io.harness.delegate.service.intfc.DelegateNgTokenService;
 import io.harness.delegate.task.DelegateLogContext;
@@ -204,9 +204,9 @@ import software.wings.core.managerConfiguration.ConfigurationController;
 import software.wings.expression.SecretFunctor;
 import software.wings.features.DelegatesFeature;
 import software.wings.features.api.UsageLimitedFeature;
-import software.wings.helpers.ext.mail.EmailData;
 import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
 import software.wings.licensing.LicenseService;
+import software.wings.persistence.mail.EmailData;
 import software.wings.service.impl.TemplateParameters.TemplateParametersBuilder;
 import software.wings.service.impl.infra.InfraDownloadService;
 import software.wings.service.intfc.AccountService;
@@ -236,6 +236,8 @@ import com.google.inject.name.Named;
 import com.google.protobuf.StringValue;
 import com.mongodb.DuplicateKeyException;
 import com.mongodb.MongoGridFSException;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import freemarker.cache.ClassTemplateLoader;
 import freemarker.template.Configuration;
 import freemarker.template.TemplateException;
@@ -295,8 +297,6 @@ import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.hibernate.validator.internal.engine.path.PathImpl;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @Singleton
 @ValidateOnExecution
@@ -1020,6 +1020,9 @@ public class DelegateServiceImpl implements DelegateService {
     if (delegate.getDelegateType() != null) {
       setUnset(updateOperations, DelegateKeys.delegateType, delegate.getDelegateType());
     }
+    if (delegate.getDelegateName() != null) {
+      setUnset(updateOperations, DelegateKeys.delegateName, delegate.getDelegateName());
+    }
     setUnset(updateOperations, DelegateKeys.delegateProfileId, delegate.getDelegateProfileId());
     setUnset(updateOperations, DelegateKeys.polllingModeEnabled, delegate.isPolllingModeEnabled());
     setUnset(updateOperations, DelegateKeys.proxy, delegate.isProxy());
@@ -1348,7 +1351,9 @@ public class DelegateServiceImpl implements DelegateService {
       if (mainConfiguration.getDeployMode() == DeployMode.KUBERNETES) {
         doUpgrade = true;
       } else {
-        doUpgrade = !(Version.valueOf(version).equals(Version.valueOf(upgradeToVersion)));
+        final String delegateVersion = substringBefore(version, "-").trim();
+        final String expectedVersion = substringBefore(upgradeToVersion, "-").trim();
+        doUpgrade = !(Version.valueOf(delegateVersion).equals(Version.valueOf(expectedVersion)));
       }
       delegateScripts.setDoUpgrade(doUpgrade);
       delegateScripts.setVersion(upgradeToVersion);
@@ -2397,11 +2402,11 @@ public class DelegateServiceImpl implements DelegateService {
         : null;
 
     outboxService.save(
-        DelegateGroupDeleteEvent.builder()
+        DelegateDeleteEvent.builder()
             .accountIdentifier(accountId)
             .orgIdentifier(orgIdentifier)
             .projectIdentifier(projectIdentifier)
-            .delegateGroupId(delegateGroupId)
+            .delegateGroupIdentifier(delegateGroup.getIdentifier())
             .delegateSetupDetails(DelegateSetupDetails.builder()
                                       .delegateConfigurationId(delegateGroup.getDelegateConfigurationId())
                                       .description(delegateGroup.getDescription())
@@ -2464,11 +2469,11 @@ public class DelegateServiceImpl implements DelegateService {
     log.info("Delegate group: {} and all belonging delegates have been deleted.", delegateGroupUuid);
 
     outboxService.save(
-        DelegateGroupDeleteEvent.builder()
+        DelegateDeleteEvent.builder()
             .accountIdentifier(accountId)
             .orgIdentifier(orgId)
             .projectIdentifier(projectId)
-            .delegateGroupId(delegateGroupUuid)
+            .delegateGroupIdentifier(delegateGroup.getIdentifier())
             .delegateSetupDetails(
                 DelegateSetupDetails.builder()
                     .delegateConfigurationId(delegateGroup.getDelegateConfigurationId())
@@ -2812,8 +2817,11 @@ public class DelegateServiceImpl implements DelegateService {
     delegate.setLastHeartBeat(now);
     delegate.setValidUntil(Date.from(OffsetDateTime.now().plusDays(Delegate.TTL.toDays()).toInstant()));
 
-    if (isGroupedCgDelegate(delegate)) {
-      updateDelegateWithConfigFromGroup(delegate);
+    if (delegate.getDelegateGroupId() != null) {
+      if (!delegate.isNg()) {
+        updateDelegateWithConfigFromGroup(delegate);
+      }
+      delegateSetupService.updateDelegateGroupValidity(delegate.getAccountId(), delegate.getDelegateGroupId());
     }
 
     Delegate registeredDelegate;
@@ -3234,7 +3242,9 @@ public class DelegateServiceImpl implements DelegateService {
             .set(DelegateGroupKeys.name, name)
             .set(DelegateGroupKeys.accountId, accountId)
             .set(DelegateGroupKeys.ng, isNg)
-            .set(DelegateGroupKeys.delegateType, delegateType);
+            .set(DelegateGroupKeys.delegateType, delegateType)
+            .set(DelegateGroupKeys.validUntil,
+                Date.from(OffsetDateTime.now().plusDays(DelegateGroup.TTL.toDays()).toInstant()));
 
     if (k8sConfigDetails != null) {
       setUnset(updateOperations, DelegateGroupKeys.k8sConfigDetails, k8sConfigDetails);
@@ -4122,8 +4132,18 @@ public class DelegateServiceImpl implements DelegateService {
   }
 
   @Override
+  public DelegateTask abortTaskV2(String accountId, String delegateTaskId) {
+    return delegateTaskServiceClassic.abortTaskV2(accountId, delegateTaskId);
+  }
+
+  @Override
   public String expireTask(String accountId, String delegateTaskId) {
     return delegateTaskServiceClassic.expireTask(accountId, delegateTaskId);
+  }
+
+  @Override
+  public String expireTaskV2(String accountId, String delegateTaskId) {
+    return delegateTaskServiceClassic.expireTaskV2(accountId, delegateTaskId);
   }
 
   public DelegateSizeDetails fetchDefaultDockerDelegateSize() {
@@ -4222,11 +4242,6 @@ public class DelegateServiceImpl implements DelegateService {
                                             .findFirst()
                                             .orElse(null);
 
-      // TODO: ARPIT remove creating delegate group here after UI starts using the createDelegteGroup method
-      DelegateGroup delegateGroup =
-          upsertDelegateGroup(delegateSetupDetails.getName(), accountId, delegateSetupDetails);
-      sendNewDelegateGroupAuditEvent(delegateSetupDetails, delegateGroup, accountId);
-
       ImmutableMap<String, String> scriptParams = getJarAndScriptRunTimeParamMap(
           this.finalizeTemplateParametersWithMtlsIfRequired(
               TemplateParameters.builder()
@@ -4304,10 +4319,6 @@ public class DelegateServiceImpl implements DelegateService {
                                           .filter(size -> size.getSize() == delegateSetupDetails.getSize())
                                           .findFirst()
                                           .orElse(null);
-
-    // TODO: ARPIT remove creating delegate group here after UI starts using the createDelegteGroup method
-    DelegateGroup delegateGroup = upsertDelegateGroup(delegateSetupDetails.getName(), accountId, delegateSetupDetails);
-    sendNewDelegateGroupAuditEvent(delegateSetupDetails, delegateGroup, accountId);
 
     ImmutableMap<String, String> scriptParams = getJarAndScriptRunTimeParamMap(
         TemplateParameters.builder()
@@ -4526,11 +4537,11 @@ public class DelegateServiceImpl implements DelegateService {
       DelegateSetupDetails delegateSetupDetails, DelegateGroup delegateGroup, String accountId) {
     if (delegateGroup.isNg()) {
       outboxService.save(
-          DelegateGroupUpsertEvent.builder()
+          DelegateUpsertEvent.builder()
               .accountIdentifier(accountId)
               .orgIdentifier(delegateSetupDetails != null ? delegateSetupDetails.getOrgIdentifier() : null)
               .projectIdentifier(delegateSetupDetails != null ? delegateSetupDetails.getProjectIdentifier() : null)
-              .delegateGroupId(delegateGroup.getUuid())
+              .delegateGroupIdentifier(delegateGroup.getIdentifier())
               .delegateSetupDetails(delegateSetupDetails)
               .build());
     } else {

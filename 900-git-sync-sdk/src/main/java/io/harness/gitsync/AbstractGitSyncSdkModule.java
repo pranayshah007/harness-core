@@ -10,11 +10,11 @@ package io.harness.gitsync;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
-import io.harness.AuthorizationServiceHeader;
 import io.harness.EntityType;
 import io.harness.SCMGrpcClientModule;
 import io.harness.ScmConnectionConfig;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.cache.HarnessCacheManager;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.eventsframework.EventsFrameworkConstants;

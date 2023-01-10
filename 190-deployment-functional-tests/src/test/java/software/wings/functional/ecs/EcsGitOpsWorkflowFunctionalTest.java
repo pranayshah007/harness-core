@@ -59,9 +59,9 @@ import software.wings.beans.ServiceVariableType;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.Workflow;
 import software.wings.beans.appmanifest.StoreType;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.infra.InfrastructureDefinition;
+import software.wings.persistence.artifact.Artifact;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;

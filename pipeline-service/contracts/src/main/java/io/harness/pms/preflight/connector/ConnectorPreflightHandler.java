@@ -145,22 +145,22 @@ public class ConnectorPreflightHandler {
       String projectIdentifier, Map<Scope, List<String>> scopeToConnectorIdentifiers) {
     List<ConnectorResponseDTO> connectorResponses = new ArrayList<>();
     if (scopeToConnectorIdentifiers.containsKey(Scope.ACCOUNT)) {
-      connectorResponses =
-          getConnectorResponsesFromNgManager(accountIdentifier, null, null, scopeToConnectorIdentifiers, Scope.ACCOUNT);
+      connectorResponses.addAll(
+          getUpdatedConnectorResponses(accountIdentifier, null, null, scopeToConnectorIdentifiers, Scope.ACCOUNT));
     }
     if (scopeToConnectorIdentifiers.containsKey(Scope.ORG)) {
-      connectorResponses = getConnectorResponsesFromNgManager(
-          accountIdentifier, orgIdentifier, null, scopeToConnectorIdentifiers, Scope.ORG);
+      connectorResponses.addAll(
+          getUpdatedConnectorResponses(accountIdentifier, orgIdentifier, null, scopeToConnectorIdentifiers, Scope.ORG));
     }
     if (scopeToConnectorIdentifiers.containsKey(Scope.PROJECT)) {
-      connectorResponses = getConnectorResponsesFromNgManager(
-          accountIdentifier, orgIdentifier, projectIdentifier, scopeToConnectorIdentifiers, Scope.PROJECT);
+      connectorResponses.addAll(getUpdatedConnectorResponses(
+          accountIdentifier, orgIdentifier, projectIdentifier, scopeToConnectorIdentifiers, Scope.PROJECT));
     }
     return connectorResponses;
   }
 
   @VisibleForTesting
-  List<ConnectorResponseDTO> getConnectorResponsesFromNgManager(String accountIdentifier, String orgIdentifier,
+  List<ConnectorResponseDTO> getUpdatedConnectorResponses(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, Map<Scope, List<String>> scopeToConnectorIdentifiers, Scope scope) {
     List<ConnectorResponseDTO> connectorResponses = new ArrayList<>();
     long currentPage = 0;

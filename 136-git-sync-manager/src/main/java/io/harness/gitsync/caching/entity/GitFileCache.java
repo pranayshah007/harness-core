@@ -18,8 +18,10 @@ import io.harness.ng.DbAliases;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UpdatedAtAware;
+import io.harness.persistence.UuidAccess;
 
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
 import java.util.Date;
 import java.util.List;
 import lombok.AccessLevel;
@@ -30,7 +32,8 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
+import lombok.experimental.Wither;
+import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -46,12 +49,14 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @TypeAlias("io.harness.gitsync.caching.entity.gitFileCache")
 @FieldNameConstants(innerTypeName = "GitFileCacheKeys")
 @OwnedBy(PIPELINE)
-public class GitFileCache implements PersistentEntity, CreatedAtAware, UpdatedAtAware {
+public class GitFileCache implements PersistentEntity, CreatedAtAware, UuidAccess, UpdatedAtAware {
+  @Wither @Id @dev.morphia.annotations.Id String uuid;
   String accountIdentifier;
-  String gitProvider;
+  GitProvider gitProvider;
   String repoName;
   String ref;
   String completeFilepath;
+  boolean isDefaultBranch;
   GitFileObject gitFileObject;
   long createdAt;
   @FdTtlIndex Date validUntil;
@@ -60,13 +65,14 @@ public class GitFileCache implements PersistentEntity, CreatedAtAware, UpdatedAt
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
-                 .name("accountIdentifier_gitProvider_repoName_ref_completeFilepath_unique_idx")
+                 .name("accountIdentifier_gitProvider_repoName_ref_completeFilepath_isDefaultBranch_unique_idx")
                  .unique(true)
                  .field(GitFileCacheKeys.accountIdentifier)
                  .field(GitFileCacheKeys.gitProvider)
                  .field(GitFileCacheKeys.repoName)
                  .field(GitFileCacheKeys.ref)
                  .field(GitFileCacheKeys.completeFilepath)
+                 .field(GitFileCacheKeys.isDefaultBranch)
                  .build())
         .build();
   }

@@ -106,7 +106,7 @@ public class PipelineStageStep implements AsyncExecutableWithRbac<PipelineStageS
     responseDto = pipelineExecutor.runPipelineAsChildPipeline(ambiance.getSetupAbstractions().get("accountId"),
         stepParameters.getOrg(), stepParameters.getProject(), stepParameters.getPipeline(),
         ambiance.getMetadata().getModuleType(), stepParameters.getPipelineInputs(), false, false,
-        stepParameters.getInputSetReferences(), info);
+        stepParameters.getInputSetReferences(), info, ambiance.getMetadata().getIsDebug());
 
     if (responseDto == null) {
       throw new InvalidRequestException(
@@ -120,11 +120,12 @@ public class PipelineStageStep implements AsyncExecutableWithRbac<PipelineStageS
     return AsyncExecutableResponse.newBuilder().addCallbackIds(responseDto.getPlanExecution().getUuid()).build();
   }
 
-  private PipelineStageInfo prepareParentStageInfo(Ambiance ambiance, PipelineStageStepParameters stepParameters) {
+  public PipelineStageInfo prepareParentStageInfo(Ambiance ambiance, PipelineStageStepParameters stepParameters) {
     return PipelineStageInfo.newBuilder()
         .setExecutionId(ambiance.getPlanExecutionId())
-        .setStageNodeExecutionId(ambiance.getStageExecutionId())
+        .setStageNodeId(stepParameters.getStageNodeId())
         .setHasParentPipeline(true)
+        .setRunSequence(ambiance.getMetadata().getRunSequence())
         .setIdentifier(ambiance.getMetadata().getPipelineIdentifier())
         .setProjectId(ambiance.getSetupAbstractions().get("projectIdentifier"))
         .setOrgId(ambiance.getSetupAbstractions().get("orgIdentifier"))
@@ -157,7 +158,7 @@ public class PipelineStageStep implements AsyncExecutableWithRbac<PipelineStageS
         .stepOutcome(StepResponse.StepOutcome.builder()
                          .name(OutputExpressionConstants.OUTPUT)
                          .outcome(pipelineStageHelper.resolveOutputVariables(
-                             stepParameters.getOutputs().getValue(), nodeExecution))
+                             stepParameters.getOutputs().getValue(), nodeExecution.getAmbiance()))
                          .build())
         .build();
   }

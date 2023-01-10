@@ -7,8 +7,8 @@
 
 package io.harness.delegate.eventstream;
 
-import static io.harness.AuthorizationServiceHeader.MANAGER;
 import static io.harness.annotations.dev.HarnessTeam.DEL;
+import static io.harness.authorization.AuthorizationServiceHeader.MANAGER;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ORGANIZATION_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.PROJECT_ENTITY;

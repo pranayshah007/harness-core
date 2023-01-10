@@ -7,8 +7,8 @@
 
 package io.harness.pms.outbox;
 
-import static io.harness.AuthorizationServiceHeader.PIPELINE_SERVICE;
 import static io.harness.audit.beans.AuthenticationInfoDTO.fromSecurityPrincipal;
+import static io.harness.authorization.AuthorizationServiceHeader.PIPELINE_SERVICE;
 import static io.harness.security.PrincipalContextData.PRINCIPAL_CONTEXT;
 
 import io.harness.ModuleType;

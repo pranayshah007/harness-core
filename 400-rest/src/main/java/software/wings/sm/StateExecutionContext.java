@@ -14,7 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.shell.ScriptType;
 
-import software.wings.beans.artifact.Artifact;
+import software.wings.persistence.artifact.Artifact;
 
 import java.util.List;
 import lombok.Builder;

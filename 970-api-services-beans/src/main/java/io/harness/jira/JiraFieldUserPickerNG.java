@@ -7,12 +7,13 @@
 
 package io.harness.jira;
 
+import io.harness.jira.JiraInstanceData.JiraDeploymentType;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.bson.types.ObjectId;
 
 @Data
 @NoArgsConstructor
@@ -23,8 +24,8 @@ public class JiraFieldUserPickerNG {
   private String accountId;
   private String name;
 
-  public JiraFieldUserPickerNG(String identifier) {
-    if (ObjectId.isValid(identifier)) {
+  public JiraFieldUserPickerNG(String identifier, JiraDeploymentType jiraDeploymentType) {
+    if (JiraDeploymentType.CLOUD.equals(jiraDeploymentType)) {
       this.accountId = identifier;
     } else {
       this.name = identifier;

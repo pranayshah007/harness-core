@@ -31,6 +31,7 @@ import io.harness.cdng.execution.helper.StageExecutionHelper;
 import io.harness.cdng.infra.InfrastructureMapper;
 import io.harness.cdng.infra.InfrastructureValidator;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.infra.yaml.AsgInfrastructure;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
 import io.harness.cdng.infra.yaml.CustomDeploymentInfrastructure;
 import io.harness.cdng.infra.yaml.EcsInfrastructure;
@@ -649,6 +650,13 @@ abstract class AbstractInfrastructureTaskExecutableStep {
           ConnectorType.SPOT.name()));
     }
 
+    if (InfrastructureKind.ASG.equals(infrastructure.getKind())
+        && !(connectorInfo.get(0).getConnectorConfig() instanceof AwsConnectorDTO)) {
+      throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
+          connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
+          ConnectorType.AWS.name()));
+    }
+
     saveExecutionLog(logCallback, color("Connector validated", Green));
   }
 
@@ -705,6 +713,11 @@ abstract class AbstractInfrastructureTaskExecutableStep {
       case InfrastructureKind.ELASTIGROUP:
         ElastigroupInfrastructure elastigroupInfrastructure = (ElastigroupInfrastructure) infrastructure;
         infrastructureStepHelper.validateExpression(elastigroupInfrastructure.getConnectorRef());
+        break;
+
+      case InfrastructureKind.ASG:
+        AsgInfrastructure asgInfrastructure = (AsgInfrastructure) infrastructure;
+        infrastructureStepHelper.validateExpression(asgInfrastructure.getConnectorRef(), asgInfrastructure.getRegion());
         break;
 
       case InfrastructureKind.KUBERNETES_AZURE:

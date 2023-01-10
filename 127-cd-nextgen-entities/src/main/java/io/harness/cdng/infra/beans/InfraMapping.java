@@ -8,6 +8,7 @@
 package io.harness.cdng.infra.beans;
 
 import io.harness.annotations.StoreIn;
+import io.harness.cdng.infra.yaml.AsgInfrastructure;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
 import io.harness.cdng.infra.yaml.CustomDeploymentInfrastructure;
 import io.harness.cdng.infra.yaml.EcsInfrastructure;
@@ -26,7 +27,7 @@ import io.harness.pms.sdk.core.data.Outcome;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import org.mongodb.morphia.annotations.Entity;
+import dev.morphia.annotations.Entity;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 @JsonSubTypes({
@@ -40,7 +41,8 @@ import org.mongodb.morphia.annotations.Entity;
       @JsonSubTypes.Type(value = EcsInfrastructure.class, name = "ECS"),
       @JsonSubTypes.Type(value = ElastigroupInfrastructure.class, name = "Elastigroup"),
       @JsonSubTypes.Type(value = CustomDeploymentInfrastructure.class, name = "custom-deployment"),
-      @JsonSubTypes.Type(value = TanzuApplicationServiceInfrastructure.class, name = "tanzu-application-service")
+      @JsonSubTypes.Type(value = TanzuApplicationServiceInfrastructure.class, name = "tanzu-application-service"),
+      @JsonSubTypes.Type(value = AsgInfrastructure.class, name = "Asg"),
 })
 @StoreIn(DbAliases.NG_MANAGER)
 @Entity(value = "infrastructureMapping")

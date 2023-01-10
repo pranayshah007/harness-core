@@ -76,11 +76,11 @@ import software.wings.beans.Log.Builder;
 import software.wings.beans.Service;
 import software.wings.beans.ServiceTemplate;
 import software.wings.beans.SettingAttribute;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.command.Command;
 import software.wings.beans.command.CommandUnit;
 import software.wings.beans.infrastructure.Host;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.impl.AwsHelperService;
 import software.wings.service.impl.AwsUtils;
 import software.wings.service.impl.aws.model.AwsAmiResizeData;
@@ -115,6 +115,7 @@ import com.github.reinert.jjschema.Attributes;
 import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
+import dev.morphia.Key;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -123,7 +124,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.Key;
 
 @Slf4j
 @OwnedBy(CDP)

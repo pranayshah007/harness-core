@@ -23,5 +23,6 @@ import lombok.experimental.SuperBuilder;
 @EqualsAndHashCode(callSuper = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class TerragruntPlanTaskParameters extends AbstractTerragruntTaskParameters {
+  TerragruntCommandType commandType;
   boolean exportJsonPlan;
 }

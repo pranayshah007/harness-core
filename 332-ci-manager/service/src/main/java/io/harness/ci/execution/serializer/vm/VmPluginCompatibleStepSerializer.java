@@ -44,7 +44,7 @@ public class VmPluginCompatibleStepSerializer {
     long timeout = TimeoutUtils.getTimeoutInSeconds(parameterFieldTimeout, pluginCompatibleStep.getDefaultTimeout());
     StageInfraDetails.Type type = stageInfraDetails.getType();
     Map<String, String> envVars = pluginSettingUtils.getPluginCompatibleEnvVariables(
-        pluginCompatibleStep, identifier, timeout, ambiance, Type.VM);
+        pluginCompatibleStep, identifier, timeout, ambiance, Type.VM, true);
     String image = CIStepInfoUtils.getPluginCustomStepImage(
         pluginCompatibleStep, ciExecutionConfigService, Type.VM, AmbianceUtils.getAccountId(ambiance));
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);

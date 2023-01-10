@@ -29,13 +29,13 @@ import static software.wings.beans.ServiceTemplate.Builder.aServiceTemplate;
 import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
 import static software.wings.beans.StringValue.Builder.aStringValue;
 import static software.wings.beans.Variable.VariableBuilder.aVariable;
-import static software.wings.beans.artifact.Artifact.Builder.anArtifact;
 import static software.wings.beans.command.Command.Builder.aCommand;
 import static software.wings.beans.command.CommandExecutionContext.Builder.aCommandExecutionContext;
 import static software.wings.beans.command.ExecCommandUnit.Builder.anExecCommandUnit;
 import static software.wings.beans.command.ServiceCommand.Builder.aServiceCommand;
 import static software.wings.beans.command.TailFilePatternEntry.Builder.aTailFilePatternEntry;
 import static software.wings.beans.infrastructure.Host.Builder.aHost;
+import static software.wings.persistence.artifact.Artifact.Builder.anArtifact;
 import static software.wings.sm.StateMachineExecutor.DEFAULT_STATE_TIMEOUT_MILLIS;
 import static software.wings.sm.WorkflowStandardParams.Builder.aWorkflowStandardParams;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
@@ -122,7 +122,6 @@ import software.wings.beans.TemplateExpression;
 import software.wings.beans.Variable;
 import software.wings.beans.VariableType;
 import software.wings.beans.WinRmConnectionAttributes;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.beans.command.AbstractCommandUnit;
@@ -142,6 +141,8 @@ import software.wings.beans.template.command.SshCommandTemplate;
 import software.wings.common.TemplateExpressionProcessor;
 import software.wings.delegatetasks.aws.AwsCommandHelper;
 import software.wings.exception.ShellScriptException;
+import software.wings.persistence.artifact.Artifact;
+import software.wings.persistence.artifact.ArtifactFile;
 import software.wings.service.impl.ActivityHelperService;
 import software.wings.service.impl.servicetemplates.ServiceTemplateHelper;
 import software.wings.service.intfc.ActivityService;
@@ -1107,7 +1108,8 @@ public class CommandStateTest extends WingsBaseTest {
                                                 .build());
 
     if (artifact != null) {
-      commandExecutionContext.setArtifactFiles(artifact.getArtifactFiles());
+      commandExecutionContext.setArtifactFiles(
+          artifact.getArtifactFiles().stream().map(ArtifactFile::toDTO).collect(Collectors.toList()));
       commandExecutionContext.setMetadata(artifact.getMetadata());
     }
     return builder.setupAbstraction(Cd1SetupFields.ENV_ID_FIELD, ENV_ID)

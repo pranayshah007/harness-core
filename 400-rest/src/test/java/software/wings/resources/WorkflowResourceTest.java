@@ -41,6 +41,7 @@ import software.wings.WingsBaseTest;
 import software.wings.beans.Workflow;
 import software.wings.beans.stats.CloneMetadata;
 import software.wings.exception.WingsExceptionMapper;
+import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.AuthService;
 import software.wings.service.intfc.WorkflowService;
 import software.wings.utils.ResourceTestRule;
@@ -63,6 +64,7 @@ import org.mockito.Captor;
 public class WorkflowResourceTest extends WingsBaseTest {
   private static final WorkflowService WORKFLOW_SERVICE = mock(WorkflowService.class);
   private static final AuthService AUTH_SERVICE = mock(AuthService.class);
+  private static final AppService APP_SERVICE = mock(AppService.class);
 
   @Captor private ArgumentCaptor<PageRequest<Workflow>> pageRequestArgumentCaptor;
 
@@ -70,10 +72,11 @@ public class WorkflowResourceTest extends WingsBaseTest {
    * The constant RESOURCES.
    */
   @ClassRule
-  public static final ResourceTestRule RESOURCES = ResourceTestRule.builder()
-                                                       .instance(new WorkflowResource(WORKFLOW_SERVICE, AUTH_SERVICE))
-                                                       .type(WingsExceptionMapper.class)
-                                                       .build();
+  public static final ResourceTestRule RESOURCES =
+      ResourceTestRule.builder()
+          .instance(new WorkflowResource(WORKFLOW_SERVICE, AUTH_SERVICE, APP_SERVICE))
+          .type(WingsExceptionMapper.class)
+          .build();
 
   private static String APP_ID = "APP_ID";
   private static String WORKFLOW_ID = "WORKFLOW_ID";

@@ -7,11 +7,11 @@
 
 package io.harness;
 
-import static io.harness.AuthorizationServiceHeader.PIPELINE_SERVICE;
 import static io.harness.OrchestrationEventsFrameworkConstants.INITIATE_NODE_EVENT_CONSUMER;
 import static io.harness.OrchestrationEventsFrameworkConstants.INITIATE_NODE_EVENT_PRODUCER;
 import static io.harness.OrchestrationEventsFrameworkConstants.PARTIAL_PLAN_EVENT_CONSUMER;
 import static io.harness.OrchestrationEventsFrameworkConstants.SDK_RESPONSE_EVENT_CONSUMER;
+import static io.harness.authorization.AuthorizationServiceHeader.PIPELINE_SERVICE;
 import static io.harness.eventsframework.EventsFrameworkConstants.INITIATE_NODE_EVENT_BATCH_SIZE;
 import static io.harness.eventsframework.EventsFrameworkConstants.INITIATE_NODE_EVENT_MAX_TOPIC_SIZE;
 import static io.harness.eventsframework.EventsFrameworkConstants.INITIATE_NODE_EVENT_TOPIC;

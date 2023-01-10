@@ -9,6 +9,8 @@ package io.harness.ng.core.artifacts.resources;
 
 import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.INDER;
+import static io.harness.rule.OwnerRule.SHIVAM;
+import static io.harness.rule.OwnerRule.VINICIUS;
 import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -30,14 +32,17 @@ import io.harness.beans.IdentifierRef;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GoogleArtifactRegistryConfig;
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryImagePathsDTO;
 import io.harness.cdng.artifact.resources.artifactory.service.ArtifactoryResourceService;
+import io.harness.cdng.artifact.resources.custom.CustomResourceService;
 import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARResponseDTO;
 import io.harness.cdng.artifact.resources.googleartifactregistry.service.GARResourceService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
+import io.harness.ng.core.artifacts.resources.custom.CustomScriptInfo;
 import io.harness.ng.core.artifacts.resources.util.ArtifactResourceUtils;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.environment.beans.Environment;
@@ -56,9 +61,14 @@ import io.harness.rule.Owner;
 import io.harness.template.remote.TemplateResourceClient;
 import io.harness.utils.IdentifierRefHelper;
 
+import software.wings.helpers.ext.jenkins.BuildDetails;
+
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import org.junit.Test;
@@ -78,6 +88,7 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
   @Mock GARResourceService garResourceService;
   @Mock ArtifactoryResourceService artifactoryResourceService;
   @Mock AccessControlClient accessControlClient;
+  @Mock CustomResourceService customResourceService;
   private static final String ACCOUNT_ID = "accountId";
   private static final String ORG_ID = "orgId";
   private static final String PROJECT_ID = "projectId";
@@ -208,6 +219,33 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
   }
 
   @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testResolveParameterFieldValuesNoTemplates() throws IOException {
+    Call<ResponseDTO<MergeInputSetResponseDTOPMS>> mergeInputSetCall = mock(Call.class);
+    when(pipelineServiceClient.getMergeInputSetFromPipelineTemplate(
+             any(), any(), any(), any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(mergeInputSetCall);
+    when(mergeInputSetCall.execute())
+        .thenReturn(Response.success(ResponseDTO.newResponse(MergeInputSetResponseDTOPMS.builder()
+                                                                 .isErrorResponse(false)
+                                                                 .completePipelineYaml(pipelineYamlWithoutTemplates)
+                                                                 .build())));
+    ParameterField<String> paramWithExpression = new ParameterField<>();
+    paramWithExpression.updateWithExpression("<+pipeline.variables.image_path>");
+    ParameterField<String> paramWithoutExpression = new ParameterField<>();
+    paramWithoutExpression.updateWithValue("value");
+    List<ParameterField<String>> paramFields = Arrays.asList(paramWithExpression, paramWithoutExpression);
+    artifactResourceUtils.resolveParameterFieldValues(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "", paramFields,
+        "pipeline.stages.test.spec.serviceConfig.serviceDefinition.spec.artifacts.primary.spec.tag",
+        GitEntityFindInfoDTO.builder().build(), "");
+    assertThat(paramWithExpression.getValue()).isEqualTo("library/nginx");
+    assertThat(paramWithoutExpression.getValue()).isEqualTo("value");
+    verify(pipelineServiceClient)
+        .getMergeInputSetFromPipelineTemplate(any(), any(), any(), any(), any(), any(), any(), any(), any(), any());
+  }
+
+  @Test
   @Owner(developers = INDER)
   @Category(UnitTests.class)
   public void testGetResolvedPathWithImagePathAsExpressionFromTemplate() throws IOException {
@@ -233,6 +271,42 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
         "pipeline.stages.test.spec.serviceConfig.serviceDefinition.spec.artifacts.primary.spec.tag",
         GitEntityFindInfoDTO.builder().build(), "");
     assertThat(imagePath).isEqualTo("library/nginx");
+    verify(pipelineServiceClient)
+        .getMergeInputSetFromPipelineTemplate(any(), any(), any(), any(), any(), any(), any(), any(), any(), any());
+    verify(templateResourceClient).applyTemplatesOnGivenYaml(any(), any(), any(), any(), any(), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testResolveParameterFieldValuesFromTemplate() throws IOException {
+    Call<ResponseDTO<MergeInputSetResponseDTOPMS>> mergeInputSetCall = mock(Call.class);
+    when(pipelineServiceClient.getMergeInputSetFromPipelineTemplate(
+             any(), any(), any(), any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(mergeInputSetCall);
+    when(mergeInputSetCall.execute())
+        .thenReturn(Response.success(ResponseDTO.newResponse(MergeInputSetResponseDTOPMS.builder()
+                                                                 .isErrorResponse(false)
+                                                                 .completePipelineYaml(pipelineYamlWithTemplate)
+                                                                 .build())));
+
+    Call<ResponseDTO<TemplateMergeResponseDTO>> mergeTemplateToYamlCall = mock(Call.class);
+    when(templateResourceClient.applyTemplatesOnGivenYaml(any(), any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(mergeTemplateToYamlCall);
+    when(mergeTemplateToYamlCall.execute())
+        .thenReturn(Response.success(ResponseDTO.newResponse(
+            TemplateMergeResponseDTO.builder().mergedPipelineYaml(pipelineYamlWithoutTemplates).build())));
+
+    ParameterField<String> paramWithExpression = new ParameterField<>();
+    paramWithExpression.updateWithExpression("<+pipeline.variables.image_path>");
+    ParameterField<String> paramWithoutExpression = new ParameterField<>();
+    paramWithoutExpression.updateWithValue("value");
+    List<ParameterField<String>> paramFields = Arrays.asList(paramWithExpression, paramWithoutExpression);
+    artifactResourceUtils.resolveParameterFieldValues(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "", paramFields,
+        "pipeline.stages.test.spec.serviceConfig.serviceDefinition.spec.artifacts.primary.spec.tag",
+        GitEntityFindInfoDTO.builder().build(), "");
+    assertThat(paramWithExpression.getValue()).isEqualTo("library/nginx");
+    assertThat(paramWithoutExpression.getValue()).isEqualTo("value");
     verify(pipelineServiceClient)
         .getMergeInputSetFromPipelineTemplate(any(), any(), any(), any(), any(), any(), any(), any(), any(), any());
     verify(templateResourceClient).applyTemplatesOnGivenYaml(any(), any(), any(), any(), any(), any(), any(), any());
@@ -288,6 +362,43 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
   }
 
   @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testResolveParameterFieldValuesWithImagePathAsServiceAndEnvExpression() throws IOException {
+    String yaml = readFile("artifacts/pipeline-without-ser-env-refactoring.yaml");
+    mockMergeInputSetCall(yaml);
+    mockServiceGetCall("svc1");
+    mockEnvironmentGetCall();
+
+    ParameterField<String> paramServiceNormal = new ParameterField<>();
+    paramServiceNormal.updateWithExpression("<+service.name>");
+    ParameterField<String> paramEnvNormal = new ParameterField<>();
+    paramEnvNormal.updateWithExpression("<+env.name>");
+    List<ParameterField<String>> paramFieldsNormal = Arrays.asList(paramServiceNormal, paramEnvNormal);
+
+    ParameterField<String> paramServiceParallel = new ParameterField<>();
+    paramServiceParallel.updateWithExpression("<+service.name>");
+    ParameterField<String> paramEnvParallel = new ParameterField<>();
+    paramEnvParallel.updateWithExpression("<+env.name>");
+    List<ParameterField<String>> paramFieldsParallel = Arrays.asList(paramServiceParallel, paramEnvParallel);
+
+    // resolve expressions like <+service.name> and <+env.name> in normal stage
+    artifactResourceUtils.resolveParameterFieldValues(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
+        paramFieldsNormal, "pipeline.stages.test.spec.serviceConfig.serviceDefinition.spec.artifacts.primary.spec.tag",
+        GitEntityFindInfoDTO.builder().build(), "");
+    assertThat(paramServiceNormal.getValue()).isEqualTo("svc1");
+    assertThat(paramEnvNormal.getValue()).isEqualTo("env1");
+
+    // resolve expressions like <+service.name> and <+env.name> in parallel stage
+    artifactResourceUtils.resolveParameterFieldValues(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
+        paramFieldsParallel,
+        "pipeline.stages.test2.spec.serviceConfig.serviceDefinition.spec.artifacts.primary.spec.tag",
+        GitEntityFindInfoDTO.builder().build(), "");
+    assertThat(paramServiceParallel.getValue()).isEqualTo("svc1");
+    assertThat(paramEnvParallel.getValue()).isEqualTo("env1");
+  }
+
+  @Test
   @Owner(developers = INDER)
   @Category(UnitTests.class)
   public void testGetResolvedPathWithImagePathAsServiceAndEnvExpressionAfterSerEnvRefactoring() throws IOException {
@@ -340,6 +451,45 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
   }
 
   @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testResolveParameterFieldValuesWithImagePathAsServiceAndEnvExpressionAfterSerEnvRefactoring()
+      throws IOException {
+    String yaml = readFile("artifacts/pipeline-with-service-env-ref.yaml");
+    mockMergeInputSetCall(yaml);
+    mockServiceV2GetCall("variableTestSvc");
+    mockEnvironmentV2GetCall();
+
+    ParameterField<String> paramServiceNormal = new ParameterField<>();
+    paramServiceNormal.updateWithExpression("<+service.name>");
+    ParameterField<String> paramEnvNormal = new ParameterField<>();
+    paramEnvNormal.updateWithExpression("<+env.name>");
+    List<ParameterField<String>> paramFieldsNormal = Arrays.asList(paramServiceNormal, paramEnvNormal);
+
+    ParameterField<String> paramServiceParallel = new ParameterField<>();
+    paramServiceParallel.updateWithExpression("<+service.name>");
+    ParameterField<String> paramEnvParallel = new ParameterField<>();
+    paramEnvParallel.updateWithExpression("<+env.name>");
+    List<ParameterField<String>> paramFieldsParallel = Arrays.asList(paramServiceParallel, paramEnvParallel);
+
+    // resolve expressions like <+service.name> and <+env.name> in normal stage
+    artifactResourceUtils.resolveParameterFieldValues(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
+        paramFieldsNormal,
+        "pipeline.stages.test.spec.service.serviceInputs.serviceDefinition.spec.artifacts.primary.spec.tag",
+        GitEntityFindInfoDTO.builder().build(), "");
+    assertThat(paramServiceNormal.getValue()).isEqualTo("svc1");
+    assertThat(paramEnvNormal.getValue()).isEqualTo("env1");
+
+    // resolve expressions like <+service.name> and <+env.name> in parallel stage
+    artifactResourceUtils.resolveParameterFieldValues(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "",
+        paramFieldsParallel,
+        "pipeline.stages.test2.spec.service.serviceInputs.serviceDefinition.spec.artifacts.primary.spec.tag",
+        GitEntityFindInfoDTO.builder().build(), "");
+    assertThat(paramServiceParallel.getValue()).isEqualTo("svc1");
+    assertThat(paramEnvParallel.getValue()).isEqualTo("env1");
+  }
+
+  @Test
   @Owner(developers = INDER)
   @Category(UnitTests.class)
   public void testGetResolvedPathWhenServiceAndEnvironmentDoesNotHaveYaml() throws IOException {
@@ -361,6 +511,32 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
         GitEntityFindInfoDTO.builder().build(), "");
     assertThat(imagePath).isEqualTo("env1");
   }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testResolveParameterFieldValuesWhenServiceAndEnvironmentDoesNotHaveYaml() throws IOException {
+    String yaml = readFile("artifacts/pipeline-without-ser-env-refactoring.yaml");
+    mockMergeInputSetCall(yaml);
+    when(serviceEntityService.get(anyString(), anyString(), anyString(), eq("svc1"), anyBoolean()))
+        .thenReturn(Optional.of(ServiceEntity.builder().name("svc1").identifier("svc1").build()));
+
+    when(environmentService.get(anyString(), anyString(), anyString(), eq("env1"), anyBoolean()))
+        .thenReturn(Optional.of(Environment.builder().name("env1").identifier("env1").build()));
+
+    ParameterField<String> paramService = new ParameterField<>();
+    paramService.updateWithExpression("<+service.name>");
+    ParameterField<String> paramEnv = new ParameterField<>();
+    paramEnv.updateWithExpression("<+env.name>");
+    List<ParameterField<String>> paramFields = Arrays.asList(paramService, paramEnv);
+
+    artifactResourceUtils.resolveParameterFieldValues(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_ID, "", paramFields,
+        "pipeline.stages.test.spec.serviceConfig.serviceDefinition.spec.artifacts.primary.spec.tag",
+        GitEntityFindInfoDTO.builder().build(), "");
+    assertThat(paramService.getValue()).isEqualTo("svc1");
+    assertThat(paramEnv.getValue()).isEqualTo("env1");
+  }
+
   @Test
   @Owner(developers = vivekveman)
   @Category(UnitTests.class)
@@ -398,6 +574,33 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
     assertThat(spyartifactResourceUtils.getBuildDetailsV2GAR(null, null, null, null, null, "accountId", "orgId",
                    "projectId", "pipeId", "version", "versionRegex", "", "", "serviceref", null))
         .isEqualTo(buildDetails);
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testGetBuildDetailsV2Custom() throws IOException {
+    // spy for ArtifactResourceUtils
+    ArtifactResourceUtils spyartifactResourceUtils = spy(artifactResourceUtils);
+    CustomArtifactConfig customArtifactConfig = CustomArtifactConfig.builder()
+                                                    .identifier("test")
+                                                    .primaryArtifact(true)
+                                                    .version(ParameterField.createValueField("build-x"))
+                                                    .build();
+
+    // Creating IdentifierRef for mock
+    IdentifierRef identifierRef =
+        IdentifierRefHelper.getIdentifierRef("connectorref", "accountId", "orgId", "projectId");
+
+    doReturn(customArtifactConfig)
+        .when(spyartifactResourceUtils)
+        .locateArtifactInService(any(), any(), any(), any(), any());
+    doReturn(Collections.singletonList(BuildDetails.Builder.aBuildDetails().withArtifactPath("Test").build()))
+        .when(customResourceService)
+        .getBuilds("test", "version", "path", null, "accountId", "orgId", "projectId", 1234, null);
+    List<BuildDetails> buildDetails = spyartifactResourceUtils.getCustomGetBuildDetails("path", "version",
+        CustomScriptInfo.builder().build(), "test", "accountId", "orgId", "projectId", null, null, null);
+    assertThat(buildDetails).isNotNull();
   }
 
   @Test
@@ -464,8 +667,10 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
         artifactResourceUtils.locateArtifactInService(ACCOUNT_ID, ORG_ID, PROJECT_ID, "svc1", imageTagFqnWithinService);
 
     assertThat(artifactConfig).isNotNull();
-    assertThat(((DockerHubArtifactConfig) artifactConfig).getConnectorRef()).isNotNull();
-    assertThat(((DockerHubArtifactConfig) artifactConfig).getImagePath()).isNotNull();
+    assertThat(((DockerHubArtifactConfig) artifactConfig).getConnectorRef().getValue())
+        .isEqualTo("account.harnessImage");
+    assertThat(((DockerHubArtifactConfig) artifactConfig).getImagePath().getExpressionValue())
+        .isEqualTo("library/<+service.name>");
   }
 
   @Test
@@ -523,6 +728,77 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
     assertThat(artifactConfig).isNotNull();
     assertThat(((DockerHubArtifactConfig) artifactConfig).getConnectorRef()).isNotNull();
     assertThat(((DockerHubArtifactConfig) artifactConfig).getImagePath()).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testLocateArtifactForSourcesFromTemplateWithTemplateInputs() throws IOException {
+    String serviceYaml = readFile("artifacts/service-with-primary-artifact-source-templates.yaml");
+    YamlNode serviceNode = YamlNode.fromYamlPath(serviceYaml, "service");
+
+    String imageTagFqnWithinService =
+        "serviceDefinition.spec.artifacts.primary.sources.withInputs1.template.templateInputs.spec.tag";
+
+    YamlNode artifactSpecNode = YamlNodeUtils.goToPathUsingFqn(serviceNode, imageTagFqnWithinService);
+    when(serviceEntityService.getYamlNodeForFqn(anyString(), anyString(), anyString(), anyString(), anyString()))
+        .thenReturn(artifactSpecNode);
+
+    Call<ResponseDTO<TemplateResponseDTO>> callRequest = mock(Call.class);
+
+    String artifactSourceTemplate = readFile("artifacts/artifact-source-template-2.yaml");
+
+    doReturn(callRequest).when(templateResourceClient).get(any(), any(), any(), any(), any(), anyBoolean());
+    when(callRequest.execute())
+        .thenReturn(Response.success(
+            ResponseDTO.newResponse(TemplateResponseDTO.builder()
+                                        .templateEntityType(TemplateEntityType.ARTIFACT_SOURCE_TEMPLATE)
+                                        .yaml(artifactSourceTemplate)
+                                        .build())));
+
+    ArtifactConfig artifactConfig =
+        artifactResourceUtils.locateArtifactInService(ACCOUNT_ID, ORG_ID, PROJECT_ID, "svc1", imageTagFqnWithinService);
+    // final artifact config created by merging template inputs with template
+    assertThat(artifactConfig).isNotNull();
+    assertThat(((DockerHubArtifactConfig) artifactConfig).getConnectorRef().getValue())
+        .isEqualTo("account.harnessImage");
+    assertThat(((DockerHubArtifactConfig) artifactConfig).getImagePath().getValue()).isEqualTo("library/nginx");
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testLocateArtifactForSourceWithAllTemplateInputs() throws IOException {
+    String serviceYaml = readFile("artifacts/service-with-primary-artifact-source-templates.yaml");
+    YamlNode serviceNode = YamlNode.fromYamlPath(serviceYaml, "service");
+
+    String imageTagFqnWithinService =
+        "serviceDefinition.spec.artifacts.primary.sources.withAllInputs.template.templateInputs.spec.tag";
+
+    YamlNode artifactSpecNode = YamlNodeUtils.goToPathUsingFqn(serviceNode, imageTagFqnWithinService);
+    when(serviceEntityService.getYamlNodeForFqn(anyString(), anyString(), anyString(), anyString(), anyString()))
+        .thenReturn(artifactSpecNode);
+
+    Call<ResponseDTO<TemplateResponseDTO>> callRequest = mock(Call.class);
+
+    String artifactSourceTemplate = readFile("artifacts/artifact-source-template-all-inputs.yaml");
+
+    doReturn(callRequest).when(templateResourceClient).get(any(), any(), any(), any(), any(), anyBoolean());
+    when(callRequest.execute())
+        .thenReturn(Response.success(
+            ResponseDTO.newResponse(TemplateResponseDTO.builder()
+                                        .templateEntityType(TemplateEntityType.ARTIFACT_SOURCE_TEMPLATE)
+                                        .yaml(artifactSourceTemplate)
+                                        .build())));
+
+    ArtifactConfig artifactConfig =
+        artifactResourceUtils.locateArtifactInService(ACCOUNT_ID, ORG_ID, PROJECT_ID, "svc1", imageTagFqnWithinService);
+
+    // final artifact config will have Inputs but the API call will already contain concrete imagePath, connectorRef
+    // so it not be overriden
+    assertThat(artifactConfig).isNotNull();
+    assertThat(((DockerHubArtifactConfig) artifactConfig).getConnectorRef().getExpressionValue()).isEqualTo("<+input>");
+    assertThat(((DockerHubArtifactConfig) artifactConfig).getImagePath().getExpressionValue()).isEqualTo("<+input>");
   }
 
   private void mockEnvironmentGetCall() {

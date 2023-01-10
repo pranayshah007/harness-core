@@ -55,7 +55,6 @@ public class K8sDeleteStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.K8s.spec.execution.steps.K8s_Delete_Resource_Name.spec.deleteResources.spec.resourceNames",
             "pipeline.stages.K8s.spec.execution.steps.K8s_Delete_Resource_Name.timeout",
             "pipeline.stages.K8s.spec.execution.steps.K8s_Delete_Resource_Name.name",
-            "pipeline.stages.K8s.spec.execution.steps.K8s_Delete_Resource_Name.spec.skipDryRun",
             "pipeline.stages.K8s.spec.execution.steps.K8s_Delete_Resource_Name.spec.delegateSelectors",
             "pipeline.stages.K8s.spec.execution.steps.K8s_Delete_Resource_Name.description");
   }
@@ -69,7 +68,6 @@ public class K8sDeleteStepVariableCreatorTest extends CategoryTest {
     assertThat(fqnPropertiesList)
         .containsOnly("pipeline.stages.K8s.spec.execution.steps.K8s_Delete_Manifest_Path.spec.delegateSelectors",
             "pipeline.stages.K8s.spec.execution.steps.K8s_Delete_Manifest_Path.name",
-            "pipeline.stages.K8s.spec.execution.steps.K8s_Delete_Manifest_Path.spec.skipDryRun",
             "pipeline.stages.K8s.spec.execution.steps.K8s_Delete_Manifest_Path.description",
             "pipeline.stages.K8s.spec.execution.steps.K8s_Delete_Manifest_Path.timeout",
             "pipeline.stages.K8s.spec.execution.steps.K8s_Delete_Manifest_Path.spec.deleteResources.spec.manifestPaths",
@@ -84,7 +82,6 @@ public class K8sDeleteStepVariableCreatorTest extends CategoryTest {
         "cdng/variables/pipelineWithK8sDeleteSteps.json", k8sDeleteStepVariableCreator, K8sDeleteStepNode.class, 2);
     assertThat(fqnPropertiesList)
         .containsOnly("pipeline.stages.K8s.spec.execution.steps.K8s_Delete_Release_Name.spec.delegateSelectors",
-            "pipeline.stages.K8s.spec.execution.steps.K8s_Delete_Release_Name.spec.skipDryRun",
             "pipeline.stages.K8s.spec.execution.steps.K8s_Delete_Release_Name.spec.deleteResources.spec.deleteNamespace",
             "pipeline.stages.K8s.spec.execution.steps.K8s_Delete_Release_Name.timeout",
             "pipeline.stages.K8s.spec.execution.steps.K8s_Delete_Release_Name.description",

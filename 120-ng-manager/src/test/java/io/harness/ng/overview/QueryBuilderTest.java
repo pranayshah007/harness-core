@@ -7,6 +7,7 @@
 
 package io.harness.ng.overview;
 
+import static io.harness.rule.OwnerRule.ABHISHEK;
 import static io.harness.rule.OwnerRule.MEENAKSHI;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 
@@ -265,9 +266,61 @@ public class QueryBuilderTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testQueryBuilderServiceDeployments() {
     String expectedQueryResult =
-        "select status, time_entity, COUNT(*) as numberOfRecords from (select service_status as status, service_startts as execution_time, time_bucket_gapfill(86400000, service_startts, 1620000000000, 1620950400000) as time_entity, pipeline_execution_summary_cd_id  from service_infra_info as sii, pipeline_execution_summary_cd as pesi where pesi.accountid='account' and pesi.orgidentifier='org' and pesi.projectidentifier='project' and service_id='service_id' and pesi.id=sii.pipeline_execution_summary_cd_id and sii.service_startts>=1620000000000 and sii.service_startts<1620950400000) as service where status != '' group by status, time_entity;";
+        "select status, time_entity, COUNT(*) as numberOfRecords from (select service_status as status, service_startts as execution_time, time_bucket_gapfill(86400000, service_startts, 1620000000000, 1620950400000) as time_entity, pipeline_execution_summary_cd_id  from service_infra_info as sii, pipeline_execution_summary_cd as pesi where sii.service_id is not null and pesi.accountid='account' and pesi.orgidentifier='org' and pesi.projectidentifier='project' and sii.service_id='service_id' and pesi.id=sii.pipeline_execution_summary_cd_id and sii.service_startts>=1620000000000 and sii.service_startts<1620950400000) as service where status != '' group by status, time_entity;";
     String queryResult = new CDOverviewDashboardServiceImpl().queryBuilderServiceDeployments(
         "account", "org", "project", 1620000000000L, 1620950400000L, 1, "service_id");
+    assertThat(queryResult).isEqualTo(expectedQueryResult);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testQueryBuilderServiceDeployments_withoutServiceId() {
+    String expectedQueryResult =
+        "select status, time_entity, COUNT(*) as numberOfRecords from (select service_status as status, service_startts as execution_time, time_bucket_gapfill(86400000, service_startts, 1620000000000, 1620950400000) as time_entity, pipeline_execution_summary_cd_id  from service_infra_info as sii, pipeline_execution_summary_cd as pesi where sii.service_id is not null and pesi.accountid='account' and pesi.orgidentifier='org' and pesi.projectidentifier='project' and pesi.id=sii.pipeline_execution_summary_cd_id and sii.service_startts>=1620000000000 and sii.service_startts<1620950400000) as service where status != '' group by status, time_entity;";
+    String queryResult = new CDOverviewDashboardServiceImpl().queryBuilderServiceDeployments(
+        "account", "org", "project", 1620000000000L, 1620950400000L, 1, null);
+    assertThat(queryResult).isEqualTo(expectedQueryResult);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void test_queryActiveServiceDeploymentsInfo_WithoutServiceIdBuildIdEnvId() {
+    String expectedQueryResult =
+        "select distinct on (env_id,infrastructureIdentifier) tag, env_id, env_name, service_id, service_name, infrastructureIdentifier, infrastructureName, artifact_image, pipeline_execution_summary_cd_id from service_infra_info where accountid='account' and orgidentifier='org' and projectidentifier='project' and service_status = 'SUCCESS' AND tag is not null AND service_id is not null order by env_id , infrastructureIdentifier, service_endts DESC;";
+    String queryResult = new CDOverviewDashboardServiceImpl().queryActiveServiceDeploymentsInfo(
+        "account", "org", "project", null, null, null);
+    assertThat(queryResult).isEqualTo(expectedQueryResult);
+  }
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void test_queryActiveServiceDeploymentsInfo_WithoutServiceIdBuildId() {
+    String expectedQueryResult =
+        "select distinct on (env_id,infrastructureIdentifier) tag, env_id, env_name, service_id, service_name, infrastructureIdentifier, infrastructureName, artifact_image, pipeline_execution_summary_cd_id from service_infra_info where accountid='account' and orgidentifier='org' and projectidentifier='project' and service_status = 'SUCCESS' AND tag is not null AND service_id is not null and env_id='envId' order by env_id , infrastructureIdentifier, service_endts DESC;";
+    String queryResult = new CDOverviewDashboardServiceImpl().queryActiveServiceDeploymentsInfo(
+        "account", "org", "project", null, null, "envId");
+    assertThat(queryResult).isEqualTo(expectedQueryResult);
+  }
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void test_queryActiveServiceDeploymentsInfo_WithoutBuildIdEnvId() {
+    String expectedQueryResult =
+        "select distinct on (env_id,infrastructureIdentifier) tag, env_id, env_name, service_id, service_name, infrastructureIdentifier, infrastructureName, artifact_image, pipeline_execution_summary_cd_id from service_infra_info where accountid='account' and orgidentifier='org' and projectidentifier='project' and service_status = 'SUCCESS' AND tag is not null AND service_id is not null and service_id='svc1' order by env_id , infrastructureIdentifier, service_endts DESC;";
+    String queryResult = new CDOverviewDashboardServiceImpl().queryActiveServiceDeploymentsInfo(
+        "account", "org", "project", "svc1", null, null);
+    assertThat(queryResult).isEqualTo(expectedQueryResult);
+  }
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void test_queryActiveServiceDeploymentsInfo() {
+    String expectedQueryResult =
+        "select distinct on (env_id,infrastructureIdentifier) tag, env_id, env_name, service_id, service_name, infrastructureIdentifier, infrastructureName, artifact_image, pipeline_execution_summary_cd_id from service_infra_info where accountid='account' and orgidentifier='org' and projectidentifier='project' and service_status = 'SUCCESS' AND tag is not null AND service_id is not null and service_id='svc1' and tag='buildId' and env_id='envId' order by env_id , infrastructureIdentifier, service_endts DESC;";
+    String queryResult = new CDOverviewDashboardServiceImpl().queryActiveServiceDeploymentsInfo(
+        "account", "org", "project", "svc1", "buildId", "envId");
     assertThat(queryResult).isEqualTo(expectedQueryResult);
   }
 }

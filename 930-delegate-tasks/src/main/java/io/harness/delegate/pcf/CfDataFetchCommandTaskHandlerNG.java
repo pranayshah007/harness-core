@@ -90,7 +90,8 @@ public class CfDataFetchCommandTaskHandlerNG extends CfCommandTaskNGHandler {
 
       cfInfraMappingDataResponseNG.setCommandExecutionStatus(CommandExecutionStatus.SUCCESS);
     } catch (Exception e) {
-      log.error("Exception in processing CF DataFetch task", e);
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Exception in processing CF DataFetch task", sanitizedException);
       cfInfraMappingDataResult.setOrganizations(emptyList());
       cfInfraMappingDataResult.setSpaces(emptyList());
       cfInfraMappingDataResult.setRouteMaps(emptyList());

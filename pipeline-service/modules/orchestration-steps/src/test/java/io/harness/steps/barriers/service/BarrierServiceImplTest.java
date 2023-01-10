@@ -427,7 +427,8 @@ public class BarrierServiceImplTest extends OrchestrationStepsTestBase {
     BarrierExecutionInstance barrierExecutionInstance = obtainBarrierExecutionInstance();
     barrierService.save(barrierExecutionInstance);
 
-    when(nodeExecutionService.get(anyString())).thenReturn(NodeExecution.builder().status(Status.SUCCEEDED).build());
+    when(nodeExecutionService.getWithFieldsIncluded(anyString(), any()))
+        .thenReturn(NodeExecution.builder().status(Status.SUCCEEDED).build());
 
     barrierService.update(barrierExecutionInstance);
     BarrierExecutionInstance updated = barrierService.get(barrierExecutionInstance.getUuid());
@@ -463,7 +464,8 @@ public class BarrierServiceImplTest extends OrchestrationStepsTestBase {
     barrierService.save(barrierExecutionInstance);
 
     when(waitNotifyEngine.doneWith(anyString(), any())).thenReturn("");
-    when(nodeExecutionService.get(anyString())).thenReturn(NodeExecution.builder().status(Status.EXPIRED).build());
+    when(nodeExecutionService.getWithFieldsIncluded(anyString(), any()))
+        .thenReturn(NodeExecution.builder().status(Status.EXPIRED).build());
 
     barrierService.update(barrierExecutionInstance);
     BarrierExecutionInstance updated = barrierService.get(barrierExecutionInstance.getUuid());

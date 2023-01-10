@@ -54,3 +54,15 @@ metrics:
     metricDefinition: Perpetual tasks in invalid state
     type: LastValue
     unit: count
+  - metricName: delegate_upgrade
+    metricDefinition: Immutable delegate upgrade check cnt
+    type: Count
+    unit: "1"
+  - metricName: upgrader_upgrade
+    metricDefinition: Upgrader upgrade check cnt
+    type: Count
+    unit: "1"
+  - metricName: delegate_legacy_upgrade
+    metricDefinition: Immutable delegate legacy upgrade check cnt
+    type: Count
+    unit: "1"

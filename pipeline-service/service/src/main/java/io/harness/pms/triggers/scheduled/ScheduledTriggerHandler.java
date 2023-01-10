@@ -13,8 +13,8 @@ import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.
 import static java.time.Duration.ofMinutes;
 import static java.time.Duration.ofSeconds;
 
-import io.harness.AuthorizationServiceHeader;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.execution.PlanExecution;
 import io.harness.iterator.PersistenceIteratorFactory;

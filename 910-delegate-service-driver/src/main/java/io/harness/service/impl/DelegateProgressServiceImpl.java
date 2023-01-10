@@ -26,11 +26,11 @@ import io.harness.waiter.WaitNotifyEngine;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.util.HashSet;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @Singleton
 @Slf4j
@@ -69,7 +69,10 @@ public class DelegateProgressServiceImpl implements DelegateProgressService {
         log.info("Process won the task progress response {}.", lockedTaskProgressResponse.getUuid());
         ProgressData data;
         if (disableDeserialization) {
-          data = BinaryResponseData.builder().data(lockedTaskProgressResponse.getProgressData()).build();
+          data = BinaryResponseData.builder()
+                     .data(lockedTaskProgressResponse.getProgressData())
+                     .usingKryoWithoutReference(lockedTaskProgressResponse.isUsingKryoWithoutReference())
+                     .build();
         } else {
           data = lockedTaskProgressResponse.isUsingKryoWithoutReference()
               ? (ProgressData) referenceFalseKryoSerializer.asInflatedObject(

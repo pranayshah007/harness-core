@@ -45,6 +45,7 @@ public class SplunkConnectorImpl implements BaseConnector {
         .splunkUrl(splunkConfig.getSplunkUrl())
         .username(splunkConfig.getUsername())
         .passwordRef(MigratorUtility.getSecretRef(migratedEntities, splunkConfig.getEncryptedPassword()))
+        .accountId(settingAttribute.getAccountId())
         .build();
   }
 }

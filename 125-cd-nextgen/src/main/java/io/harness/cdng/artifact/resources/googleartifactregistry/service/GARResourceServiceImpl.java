@@ -17,7 +17,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARResponseDTO;
-import io.harness.cdng.artifact.utils.ArtifactStepHelper;
+import io.harness.cdng.artifact.utils.ArtifactUtils;
 import io.harness.common.NGTaskType;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
@@ -188,7 +188,7 @@ public class GARResourceServiceImpl implements GARResourceService {
                                                         .artifactTaskType(artifactTaskType)
                                                         .attributes(delegateRequest)
                                                         .build();
-    Map<String, String> abstractions = ArtifactStepHelper.getTaskSetupAbstractions(ngAccess);
+    Map<String, String> abstractions = ArtifactUtils.getTaskSetupAbstractions(ngAccess);
     final DelegateTaskRequest delegateTaskRequest =
         DelegateTaskRequest.builder()
             .accountId(ngAccess.getAccountIdentifier())

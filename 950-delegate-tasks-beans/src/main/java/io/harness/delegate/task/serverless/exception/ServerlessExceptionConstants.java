@@ -70,6 +70,15 @@ public class ServerlessExceptionConstants {
 
   public final String SERVERLESS_GIT_FILES_DOWNLOAD_FAILED = "Failed while trying to fetch files from manifest store ";
 
+  public final String SERVERLESS_S3_FILES_DOWNLOAD_HINT = "Please check the following Harness S3 Manifest Inputs\n"
+      + " Aws Credentials\n"
+      + " S3 Bucket Name\n"
+      + " Region\n"
+      + " FilePath";
+
+  public final String SERVERLESS_S3_FILES_DOWNLOAD_FAILED =
+      "Failed while fetching the zip file [%s] from S3 bucket [%s] in region [%s]";
+
   public final String SERVERLESS_FETCH_DEPLOY_OUTPUT_FAILED = "failed to fetch deployment output";
 
   public final String SERVERLESS_FETCH_DEPLOY_OUTPUT_HINT = "failed to fetch deployment output";

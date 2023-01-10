@@ -7,7 +7,7 @@
 
 package software.wings.app;
 
-import static io.harness.AuthorizationServiceHeader.MANAGER;
+import static io.harness.authorization.AuthorizationServiceHeader.MANAGER;
 import static io.harness.eventsframework.EventsFrameworkConstants.CG_GENERAL_EVENT;
 import static io.harness.eventsframework.EventsFrameworkConstants.CG_GENERAL_EVENT_BATCH_SIZE;
 import static io.harness.eventsframework.EventsFrameworkConstants.CG_GENERAL_EVENT_MAX_PROCESSING_TIME;

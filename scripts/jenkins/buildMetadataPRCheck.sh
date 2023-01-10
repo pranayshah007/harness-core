@@ -24,6 +24,15 @@ else
     elif [[ "${ghprbTargetBranch}" == "release/ci-manager/"* ]]; then
       export VERSION_FILE=332-ci-manager/build.properties
       break
+    elif [[ "${ghprbTargetBranch}" == "release/delegate/"* ]]; then
+      export VERSION_FILE=260-delegate/build.properties
+      break
+    elif [[ "${ghprbTargetBranch}" == "release/batch-processing/"* ]]; then
+          export VERSION_FILE=batch-processing/build.properties
+          break
+    elif [[ "${ghprbTargetBranch}" == "release/ce-nextgen/"* ]]; then
+          export VERSION_FILE=ce-nextgen/build.properties
+          break
     else
       export VERSION_FILE=build.properties
     fi

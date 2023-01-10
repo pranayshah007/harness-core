@@ -17,6 +17,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.pms.dashboards.ExecutionsCount;
 import io.harness.pms.dashboards.LandingDashboardRequestPMS;
 import io.harness.pms.dashboards.PipelinesCount;
 
@@ -47,6 +48,16 @@ public interface PMSLandingDashboardResource {
   @ApiOperation(value = "Get pipelines count", nickname = "getPipelinesCount")
   @NGAccessControlCheck(resourceType = "ACCOUNT", permission = "core_account_view")
   ResponseDTO<PipelinesCount> getPipelinesCount(
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @NotNull @QueryParam(NGResourceFilterConstants.START_TIME) long startInterval,
+      @NotNull @QueryParam(NGResourceFilterConstants.END_TIME) long endInterval,
+      @NotNull LandingDashboardRequestPMS landingDashboardRequestPMS);
+
+  @POST
+  @Path("/executionsCount")
+  @ApiOperation(value = "Get pipeline executions count", nickname = "getExecutionsCount")
+  @NGAccessControlCheck(resourceType = "ACCOUNT", permission = "core_account_view")
+  ResponseDTO<ExecutionsCount> getExecutionsCount(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
       @NotNull @QueryParam(NGResourceFilterConstants.START_TIME) long startInterval,
       @NotNull @QueryParam(NGResourceFilterConstants.END_TIME) long endInterval,

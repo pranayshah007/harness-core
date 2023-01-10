@@ -1,0 +1,19 @@
+trigger:
+  name: test
+  identifier: test
+  enabled: true
+  orgIdentifier: default
+  projectIdentifier: testProj
+  pipelineIdentifier: testPipeline
+  source:
+    type: Webhook
+    spec:
+      type: Custom
+      spec: {}
+  inputYaml: |
+    pipeline:
+      identifier: testing
+      variables:
+      - name: Var1
+        type: Number
+        value: ""

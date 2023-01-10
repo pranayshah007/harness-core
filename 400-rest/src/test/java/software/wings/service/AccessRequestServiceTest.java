@@ -45,6 +45,7 @@ import software.wings.service.intfc.UserService;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
+import dev.morphia.query.UpdateOperations;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
@@ -54,7 +55,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @OwnedBy(HarnessTeam.PL)
 @TargetModule(HarnessModule._970_RBAC_CORE)
@@ -178,6 +178,31 @@ public class AccessRequestServiceTest extends WingsBaseTest {
     } catch (Exception ex) {
       assertThat(ex).isInstanceOf(InvalidAccessRequestException.class);
     }
+  }
+
+  @Test
+  @Owner(developers = NANDAN)
+  @Category(UnitTests.class)
+  public void testAccessRequest_getAccos() {
+    AccessRequest accessRequest = AccessRequest.builder()
+                                      .accountId(ACCOUNT_ID)
+                                      .accessActive(true)
+                                      .accessType(AccessRequest.AccessType.GROUP_ACCESS)
+                                      .memberIds(Sets.newHashSet("user1", "user2"))
+                                      .harnessUserGroupId("groupId")
+                                      .build();
+    wingsPersistence.save(accessRequest);
+    accessRequest = AccessRequest.builder()
+                        .accountId("account1")
+                        .accessActive(true)
+                        .accessType(AccessRequest.AccessType.MEMBER_ACCESS)
+                        .memberIds(Sets.newHashSet("user1", "user2"))
+                        .build();
+    wingsPersistence.save(accessRequest);
+    harnessUserGroup = HarnessUserGroup.builder().uuid("groupId").memberIds(Sets.newHashSet("user1")).build();
+    wingsPersistence.save(harnessUserGroup);
+    List<String> ids = accessRequestService.getAccountsHavingActiveAccessRequestForUser("user1");
+    assertThat(ids.size()).isEqualTo(2);
   }
 
   @Test

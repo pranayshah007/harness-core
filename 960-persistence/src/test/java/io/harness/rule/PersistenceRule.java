@@ -23,6 +23,7 @@ import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
+import io.harness.maintenance.MaintenanceController;
 import io.harness.metrics.modules.MetricsModule;
 import io.harness.mongo.MongoPersistence;
 import io.harness.mongo.queue.MongoQueueConsumer;
@@ -58,6 +59,7 @@ import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import com.google.inject.name.Named;
+import dev.morphia.converters.TypeConverter;
 import java.io.Closeable;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
@@ -69,7 +71,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.rules.MethodRule;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
-import org.mongodb.morphia.converters.TypeConverter;
 
 @Slf4j
 public class PersistenceRule implements MethodRule, InjectorRuleMixin, MongoRuleMixin {
@@ -89,6 +90,7 @@ public class PersistenceRule implements MethodRule, InjectorRuleMixin, MongoRule
       }
     }
 
+    MaintenanceController.forceMaintenance(true);
     final QueueListenerController queueListenerController = injector.getInstance(QueueListenerController.class);
     queueListenerController.register(injector.getInstance(TestTopicQueuableObjectListener.class), 1);
     queueListenerController.register(injector.getInstance(TestNoTopicQueuableObjectListener.class), 1);

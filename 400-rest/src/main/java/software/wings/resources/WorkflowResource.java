@@ -59,6 +59,7 @@ import software.wings.security.UserThreadLocal;
 import software.wings.security.annotations.ApiKeyAuthorized;
 import software.wings.security.annotations.AuthRule;
 import software.wings.security.annotations.Scope;
+import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.ArtifactStreamServiceBindingService;
 import software.wings.service.intfc.AuthService;
 import software.wings.service.intfc.WorkflowService;
@@ -97,6 +98,7 @@ import javax.ws.rs.QueryParam;
 @OwnedBy(HarnessTeam.CDC)
 public class WorkflowResource {
   @Inject private ArtifactStreamServiceBindingService artifactStreamServiceBindingService;
+  private AppService appService;
 
   private WorkflowService workflowService;
   private AuthService authService;
@@ -108,9 +110,10 @@ public class WorkflowResource {
    * @param authService the auth service
    */
   @Inject
-  public WorkflowResource(WorkflowService workflowService, AuthService authService) {
+  public WorkflowResource(WorkflowService workflowService, AuthService authService, AppService appService) {
     this.workflowService = workflowService;
     this.authService = authService;
+    this.appService = appService;
   }
 
   /**
@@ -142,6 +145,10 @@ public class WorkflowResource {
     }
     if (isNotEmpty(appIds)) {
       pageRequest.addFilter("appId", IN, appIds.toArray());
+      String accountId = appService.getAccountIdByAppId(appIds.get(0));
+      if (accountId != null) {
+        pageRequest.addFilter("accountId", EQ, accountId);
+      }
     }
 
     if (!details) {

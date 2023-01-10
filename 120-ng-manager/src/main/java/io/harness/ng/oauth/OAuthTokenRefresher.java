@@ -7,7 +7,7 @@
 
 package io.harness.ng.oauth;
 
-import static io.harness.AuthorizationServiceHeader.NG_MANAGER;
+import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.connector.entities.embedded.gitlabconnector.GitlabConnector.GitlabConnectorKeys;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.REGULAR;

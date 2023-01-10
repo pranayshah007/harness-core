@@ -19,3 +19,6 @@ sh        , hash
 sql       , double_hyphen
 ts        , slash_star
 tsx       , slash_star
+bazel     , hash
+bzl       , hash
+

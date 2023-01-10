@@ -7,8 +7,8 @@
 
 package io.harness.platform.notification;
 
-import static io.harness.AuthorizationServiceHeader.NOTIFICATION_SERVICE;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.authorization.AuthorizationServiceHeader.NOTIFICATION_SERVICE;
 import static io.harness.notification.NotificationServiceConstants.MAILSERVICE;
 import static io.harness.notification.NotificationServiceConstants.MSTEAMSSERVICE;
 import static io.harness.notification.NotificationServiceConstants.PAGERDUTYSERVICE;
@@ -79,6 +79,7 @@ import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
+import dev.morphia.converters.TypeConverter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -88,7 +89,6 @@ import javax.validation.Validation;
 import javax.validation.ValidatorFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.parameternameprovider.ReflectionParameterNameProvider;
-import org.mongodb.morphia.converters.TypeConverter;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import ru.vyarus.guice.validator.ValidationModule;

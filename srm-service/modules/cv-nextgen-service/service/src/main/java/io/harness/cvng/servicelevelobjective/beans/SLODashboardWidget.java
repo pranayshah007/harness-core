@@ -52,7 +52,7 @@ public class SLODashboardWidget {
   @NotNull double sloTargetPercentage;
   @NotNull List<Point> errorBudgetBurndown;
   @NotNull List<Point> sloPerformanceTrend;
-  @NotNull @Deprecated boolean isRecalculatingSLI;
+  @NotNull boolean isRecalculatingSLI;
   @NotNull boolean isCalculatingSLI;
   @Value
   @Builder
@@ -66,19 +66,6 @@ public class SLODashboardWidget {
     long timestamp;
     double value;
     boolean enabled;
-  }
-
-  @Value
-  @Builder
-  public static class MonitoredServiceDetail {
-    String monitoredServiceIdentifier;
-    String monitoredServiceName;
-    String healthSourceIdentifier;
-    String healthSourceName;
-    String serviceIdentifier;
-    String serviceName;
-    String environmentIdentifier;
-    String environmentName;
   }
 
   @Value

@@ -31,6 +31,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 
 import software.wings.service.impl.AwsApiHelperService;
+import software.wings.service.impl.aws.client.CloseableAmazonWebServiceClient;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;

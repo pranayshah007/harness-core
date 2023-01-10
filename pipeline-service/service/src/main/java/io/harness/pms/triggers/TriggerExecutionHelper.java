@@ -7,11 +7,12 @@
 
 package io.harness.pms.triggers;
 
-import static io.harness.AuthorizationServiceHeader.PIPELINE_SERVICE;
+import static io.harness.authorization.AuthorizationServiceHeader.PIPELINE_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
 import static io.harness.ngtriggers.Constants.EVENT_CORRELATION_ID;
 import static io.harness.ngtriggers.Constants.GIT_USER;
 import static io.harness.ngtriggers.Constants.PR;
@@ -27,9 +28,9 @@ import static io.harness.pms.plan.execution.PlanExecutionInterruptType.ABORTALL;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
-import io.harness.AuthorizationServiceHeader;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.plan.PlanExecutionService;
@@ -39,6 +40,7 @@ import io.harness.exception.TriggerException;
 import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.expression.common.ExpressionConstants;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
@@ -217,16 +219,9 @@ public class TriggerExecutionHelper {
         }
 
         GitSyncBranchContext gitSyncContextWithRepoAndFilePath =
-            GitSyncBranchContext.builder()
-                .gitBranchInfo(GitEntityInfo.builder()
-                                   .repoName(pipelineEntityToExecute.get().getRepo())
-                                   .filePath(pipelineEntityToExecute.get().getFilePath())
-                                   .branch(branch)
-                                   .build())
-                .build();
+            getGitSyncContextWithRepoAndFilePath(pipelineEntityToExecute.get(), branch);
         gitSyncBranchContextByteString =
             pmsGitSyncHelper.serializeGitSyncBranchContext(gitSyncContextWithRepoAndFilePath);
-
         log.info(
             "Triggering execution for pipeline with identifier:  {} , in org: {} , ProjectId: {} , accountIdentifier: {} , For Trigger: {},  in branch {}, repo {} , filePath {}",
             ngTriggerEntity.getTargetIdentifier(), ngTriggerEntity.getOrgIdentifier(),
@@ -252,6 +247,14 @@ public class TriggerExecutionHelper {
               .setPipelineIdentifier(pipelineEntity.getIdentifier())
               .setHarnessVersion(pipelineEntity.getHarnessVersion());
 
+      if (isNotEmpty(pipelineEntity.getConnectorRef())) {
+        executionMetaDataBuilder.setPipelineConnectorRef(pipelineEntity.getConnectorRef());
+      }
+      if (pipelineEntity.getStoreType() != null) {
+        executionMetaDataBuilder.setPipelineStoreType(getPipelineStoreType(pipelineEntity.getStoreType()));
+      } else {
+        log.warn("The storeType is null for the pipeline: " + pipelineEntity.getIdentifier());
+      }
       if (gitSyncBranchContextByteString != null) {
         executionMetaDataBuilder.setGitSyncBranchContext(gitSyncBranchContextByteString);
       }
@@ -286,7 +289,8 @@ public class TriggerExecutionHelper {
           TemplateMergeResponseDTO templateMergeResponseDTO =
               pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity.getAccountId(),
                   pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineYaml, false,
-                  featureFlagService.isEnabled(pipelineEntity.getAccountId(), FeatureName.OPA_PIPELINE_GOVERNANCE));
+                  featureFlagService.isEnabled(pipelineEntity.getAccountId(), FeatureName.OPA_PIPELINE_GOVERNANCE),
+                  BOOLEAN_FALSE_VALUE);
           pipelineYaml = templateMergeResponseDTO.getMergedPipelineYaml();
           pipelineYamlWithTemplateRef = templateMergeResponseDTO.getMergedPipelineYamlWithTemplateRef() == null
               ? pipelineYaml
@@ -582,5 +586,28 @@ public class TriggerExecutionHelper {
   public boolean isBranchExpr(String pipelineBranch) {
     return pipelineBranch.startsWith(ExpressionConstants.EXPR_START)
         && pipelineBranch.endsWith(ExpressionConstants.EXPR_END);
+  }
+
+  private PipelineStoreType getPipelineStoreType(StoreType storeType) {
+    if (StoreType.REMOTE.equals(storeType)) {
+      return PipelineStoreType.REMOTE;
+    } else if (StoreType.INLINE.equals(storeType)) {
+      return PipelineStoreType.INLINE;
+    } else {
+      return PipelineStoreType.UNDEFINED;
+    }
+  }
+
+  @VisibleForTesting
+  GitSyncBranchContext getGitSyncContextWithRepoAndFilePath(PipelineEntity pipelineEntityToExecute, String branch) {
+    return GitSyncBranchContext.builder()
+        .gitBranchInfo(GitEntityInfo.builder()
+                           .repoName(pipelineEntityToExecute.getRepo())
+                           .filePath(pipelineEntityToExecute.getFilePath())
+                           .branch(branch)
+                           .yamlGitConfigId(pipelineEntityToExecute.getRepo())
+                           .connectorRef(pipelineEntityToExecute.getConnectorRef())
+                           .build())
+        .build();
   }
 }

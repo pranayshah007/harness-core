@@ -130,5 +130,5 @@ public interface UserGroupService {
    * @param userGroup UserGroup to be updated
    * @return UserGroup This returns created user group.
    */
-  UserGroup updateDefaultUserGroup(UserGroupDTO userGroup);
+  UserGroup updateDefaultUserGroup(UserGroup userGroup);
 }

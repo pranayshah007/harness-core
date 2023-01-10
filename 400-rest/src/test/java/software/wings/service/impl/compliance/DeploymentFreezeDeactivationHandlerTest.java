@@ -16,7 +16,6 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.powermock.api.mockito.PowerMockito.when;
 
-import io.harness.SystemWrapper;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -24,6 +23,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.category.element.UnitTests;
 import io.harness.governance.TimeRangeBasedFreezeConfig;
 import io.harness.rule.Owner;
+import io.harness.utils.system.SystemWrapper;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.governance.GovernanceConfig;

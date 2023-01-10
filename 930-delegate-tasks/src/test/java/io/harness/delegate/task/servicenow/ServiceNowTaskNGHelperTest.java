@@ -31,6 +31,8 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowConnectorDTO;
+import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
+import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.HintException;
 import io.harness.exception.ServiceNowException;
@@ -59,6 +61,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import okhttp3.MediaType;
 import okhttp3.ResponseBody;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -85,7 +88,15 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
   private static final String TEMPLATE_NAME = "test_incident_template";
 
   @Mock private SecretDecryptionService secretDecryptionService;
+  @Mock private ILogStreamingTaskClient logStreamingTaskClient;
+  @Mock private NGDelegateLogCallback logCallback;
   @InjectMocks private ServiceNowTaskNgHelper serviceNowTaskNgHelper;
+
+  @Before
+  public void setup() throws Exception {
+    logCallback = Mockito.mock(NGDelegateLogCallback.class);
+    PowerMockito.whenNew(NGDelegateLogCallback.class).withAnyArguments().thenReturn(logCallback);
+  }
 
   @Test
   @Owner(developers = PRABU)
@@ -105,7 +116,8 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
         serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
                                                          .action(ServiceNowActionNG.VALIDATE_CREDENTIALS)
                                                          .serviceNowConnectorDTO(serviceNowConnectorDTO)
-                                                         .build());
+                                                         .build(),
+            null);
     assertThat(response.getDelegateMetaInfo()).isNull();
     verify(secretDecryptionService).decrypt(any(), any());
   }
@@ -129,7 +141,8 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
             -> serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
                                                                 .action(ServiceNowActionNG.VALIDATE_CREDENTIALS)
                                                                 .serviceNowConnectorDTO(serviceNowConnectorDTO)
-                                                                .build()))
+                                                                .build(),
+                null))
         .isInstanceOf(HintException.class)
         .hasMessage(
             "Check if the ServiceNow credentials are correct and you have necessary permissions to access the incident table");
@@ -167,7 +180,8 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
                                                          .action(ServiceNowActionNG.GET_TICKET_CREATE_METADATA)
                                                          .serviceNowConnectorDTO(serviceNowConnectorDTO)
                                                          .ticketType("incident")
-                                                         .build());
+                                                         .build(),
+            logStreamingTaskClient);
     assertThat(response.getDelegateMetaInfo()).isNull();
     assertThat(response.getServiceNowFieldNGList()).hasSize(2);
     assertThat(
@@ -208,7 +222,8 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
                                                          .serviceNowConnectorDTO(serviceNowConnectorDTO)
                                                          .ticketType("incident")
                                                          .ticketNumber(TICKET_NUMBER)
-                                                         .build());
+                                                         .build(),
+            logStreamingTaskClient);
 
     assertThat(response.getDelegateMetaInfo()).isNull();
     assertThat(response.getTicket().getNumber()).isEqualTo(TICKET_NUMBER);
@@ -264,7 +279,8 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
                                                          .templateName(TEMPLATE_NAME)
                                                          .useServiceNowTemplate(true)
                                                          .ticketType("incident")
-                                                         .build());
+                                                         .build(),
+            logStreamingTaskClient);
 
     assertThat(response.getDelegateMetaInfo()).isNull();
 
@@ -303,7 +319,8 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
                                                          .action(ServiceNowActionNG.GET_METADATA)
                                                          .serviceNowConnectorDTO(serviceNowConnectorDTO)
                                                          .ticketType("incident")
-                                                         .build());
+                                                         .build(),
+            logStreamingTaskClient);
 
     assertThat(response.getDelegateMetaInfo()).isNull();
     assertThat(response.getServiceNowFieldNGList()).hasSize(2);
@@ -365,7 +382,8 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
                                                          .useServiceNowTemplate(true)
                                                          .ticketType("incident")
                                                          .ticketNumber(TICKET_NUMBER)
-                                                         .build());
+                                                         .build(),
+            logStreamingTaskClient);
 
     assertThat(response.getDelegateMetaInfo()).isNull();
 
@@ -408,7 +426,8 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
                                                          .templateListLimit(1)
                                                          .templateListOffset(0)
                                                          .templateName(TEMPLATE_NAME)
-                                                         .build());
+                                                         .build(),
+            logStreamingTaskClient);
 
     assertThat(response.getDelegateMetaInfo()).isNull();
     assertThat(response.getServiceNowTemplateList()).hasSize(1);
@@ -482,7 +501,8 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
                                                          .useServiceNowTemplate(false)
                                                          .ticketType("incident")
                                                          .fields(fieldmap)
-                                                         .build());
+                                                         .build(),
+            logStreamingTaskClient);
 
     assertThat(response.getDelegateMetaInfo()).isNull();
 
@@ -535,7 +555,8 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
                                                          .ticketType("incident")
                                                          .fields(fieldmap)
                                                          .ticketNumber(TICKET_NUMBER)
-                                                         .build());
+                                                         .build(),
+            logStreamingTaskClient);
 
     assertThat(response.getDelegateMetaInfo()).isNull();
 
@@ -590,7 +611,8 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
                                                          .useServiceNowTemplate(true)
                                                          .ticketType("incident")
                                                          .ticketNumber(TICKET_NUMBER)
-                                                         .build());
+                                                         .build(),
+            logStreamingTaskClient);
 
     assertThat(response.getDelegateMetaInfo()).isNull();
 
@@ -630,7 +652,8 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
                                                          .serviceNowConnectorDTO(serviceNowConnectorDTO)
                                                          .stagingTableName(stagingTable)
                                                          .importData(importData)
-                                                         .build());
+                                                         .build(),
+            logStreamingTaskClient);
     ServiceNowImportSetResponseNG importSetResponse = response.getServiceNowImportSetResponseNG();
     assertThat(response.getDelegateMetaInfo()).isNull();
     assertThat(importSetResponse.getServiceNowImportSetTransformMapResultList()).hasSize(3);
@@ -686,9 +709,12 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
                                                      .serviceNowConnectorDTO(serviceNowConnectorDTO)
                                                      .stagingTableName(stagingTable)
                                                      .importData("    ")
-                                                     .build());
+                                                     .build(),
+        logStreamingTaskClient);
     verify(secretDecryptionService, times(2)).decrypt(any(), any());
     verify(serviceNowRestClient).createImportSet(anyString(), eq(stagingTable), eq("all"), eq(new HashMap<>()));
+    verify(logCallback, times(6)).saveExecutionLog(any());
+    verify(logCallback, times(2)).saveExecutionLog(any(), any());
   }
 
   @Test
@@ -719,7 +745,8 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
                                                        .serviceNowConnectorDTO(serviceNowConnectorDTO)
                                                        .stagingTableName(stagingTable)
                                                        .importData(importData)
-                                                       .build());
+                                                       .build(),
+          logStreamingTaskClient);
       fail("Expected failure as import set is missing from response");
     } catch (ServiceNowException ex) {
       assertThat(ex.getParams().get("message"))
@@ -736,7 +763,8 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
                                                        .serviceNowConnectorDTO(serviceNowConnectorDTO)
                                                        .stagingTableName(stagingTable)
                                                        .importData(importData)
-                                                       .build());
+                                                       .build(),
+          logStreamingTaskClient);
       fail("Expected failure as import set is missing from response");
     } catch (ServiceNowException ex) {
       assertThat(ex.getParams().get("message"))
@@ -753,12 +781,15 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
                                                        .serviceNowConnectorDTO(serviceNowConnectorDTO)
                                                        .stagingTableName(stagingTable)
                                                        .importData(importData)
-                                                       .build());
+                                                       .build(),
+          logStreamingTaskClient);
       fail("Expected failure as import set is missing from response");
     } catch (ServiceNowException ex) {
       assertThat(ex.getParams().get("message"))
           .isEqualTo(String.format("InvalidArgumentsException: Field not found: %s", "staging_table"));
     }
+    verify(logCallback, times(9)).saveExecutionLog(any());
+    verify(logCallback, times(3)).saveExecutionLog(any(), any());
   }
 
   @Test
@@ -781,7 +812,8 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
         serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
                                                          .action(ServiceNowActionNG.GET_IMPORT_SET_STAGING_TABLES)
                                                          .serviceNowConnectorDTO(serviceNowConnectorDTO)
-                                                         .build());
+                                                         .build(),
+            logStreamingTaskClient);
     List<ServiceNowStagingTable> stagingTableList = response.getServiceNowStagingTableList();
     assertThat(response.getDelegateMetaInfo()).isNull();
     assertThat(stagingTableList).hasSize(4);
@@ -811,7 +843,8 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
       serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
                                                        .action(ServiceNowActionNG.GET_IMPORT_SET_STAGING_TABLES)
                                                        .serviceNowConnectorDTO(serviceNowConnectorDTO)
-                                                       .build());
+                                                       .build(),
+          logStreamingTaskClient);
       fail("Expected failure as invalid response");
     } catch (ServiceNowException ex) {
       assertThat(ex.getParams().get("message"))

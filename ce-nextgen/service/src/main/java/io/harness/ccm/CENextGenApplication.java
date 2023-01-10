@@ -7,14 +7,14 @@
 
 package io.harness.ccm;
 
-import static io.harness.AuthorizationServiceHeader.BATCH_PROCESSING;
-import static io.harness.AuthorizationServiceHeader.DEFAULT;
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.authorization.AuthorizationServiceHeader.BATCH_PROCESSING;
+import static io.harness.authorization.AuthorizationServiceHeader.DEFAULT;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 
-import io.harness.AuthorizationServiceHeader;
 import io.harness.Microservice;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.ccm.eventframework.CENGEventConsumerService;
 import io.harness.ccm.migration.CENGCoreMigrationProvider;
 import io.harness.ccm.service.impl.PerspectivesRestrictionUsageImpl;
@@ -57,6 +57,8 @@ import io.harness.security.annotations.PublicApi;
 import io.harness.threading.ExecutorModule;
 import io.harness.threading.ThreadPool;
 import io.harness.token.remote.TokenClient;
+import io.harness.yaml.YamlSdkConfiguration;
+import io.harness.yaml.YamlSdkInitHelper;
 
 import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -203,6 +205,7 @@ public class CENextGenApplication extends Application<CENextGenConfiguration> {
     registerScheduledJobs(injector);
     registerMigrations(injector);
     registerOasResource(configuration, environment, injector);
+    registerYamlSdk(injector);
 
     if (BooleanUtils.isTrue(configuration.getEnableOpentelemetry())) {
       registerTraceFilter(environment, injector);
@@ -367,5 +370,14 @@ public class CENextGenApplication extends Application<CENextGenConfiguration> {
 
     injector.getInstance(EnforcementSdkRegisterService.class)
         .initialize(restrictionUsageRegisterConfiguration, customConfig);
+  }
+
+  private void registerYamlSdk(Injector injector) {
+    YamlSdkConfiguration yamlSdkConfiguration = YamlSdkConfiguration.builder()
+                                                    .requireSchemaInit(true)
+                                                    .requireSnippetInit(true)
+                                                    .requireValidatorInit(true)
+                                                    .build();
+    YamlSdkInitHelper.initialize(injector, yamlSdkConfiguration);
   }
 }

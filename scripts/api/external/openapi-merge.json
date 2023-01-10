@@ -1,0 +1,29 @@
+{
+  "inputs": [
+    {
+      "inputFile": "../../../970-ng-commons/contracts/openapi/v1/openapi.yaml"
+    },
+    {
+      "inputFile": "../../../access-control/contracts/openapi/v1/openapi.yaml"
+    },
+    {
+      "inputFile": "../../../120-ng-manager/contracts/openapi/v1/openapi.yaml"
+    },
+    {
+      "inputFile": "../../../440-connector-nextgen/contracts/openapi/v1/openapi.yaml"
+    },
+    {
+      "inputFile": "../../../platform-service/modules/resource-group-service/contracts/openapi/v1/openapi.yaml"
+    },
+    {
+      "inputFile": "../../../platform-service/modules/audit-service/contracts/openapi/v1/openapi.yaml"
+    },
+    {
+      "inputFile": "../../../pipeline-service/contracts/openapi/v1/openapi.yaml"
+    },
+    {
+      "inputFile": "../../../840-template-service/contracts/openapi/v1/openapi.yaml"
+    }
+  ],
+  "output": "merged.yaml"
+}

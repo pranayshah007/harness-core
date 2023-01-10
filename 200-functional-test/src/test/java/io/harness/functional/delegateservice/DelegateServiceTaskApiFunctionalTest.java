@@ -139,7 +139,7 @@ public class DelegateServiceTaskApiFunctionalTest extends AbstractFunctionalTest
                     .setExpressionFunctorToken(HashGenerator.generateIntegerHash())
                     .build(),
                 httpTaskParameters.fetchRequiredExecutionCapabilities(null), null, Duration.ZERO, false, false,
-                Collections.emptyList(), false, null)
+                Collections.emptyList(), false, null, false)
             .getTaskId();
 
     DelegateResponseData responseData =
@@ -194,7 +194,7 @@ public class DelegateServiceTaskApiFunctionalTest extends AbstractFunctionalTest
                     .setExpressionFunctorToken(HashGenerator.generateIntegerHash())
                     .build(),
                 httpTaskParameters.fetchRequiredExecutionCapabilities(null), null, Duration.ZERO, false, false,
-                Collections.emptyList(), false, null)
+                Collections.emptyList(), false, null, false)
             .getTaskId();
 
     DelegateResponseData responseData =
@@ -253,7 +253,7 @@ public class DelegateServiceTaskApiFunctionalTest extends AbstractFunctionalTest
                     .setExpressionFunctorToken(HashGenerator.generateIntegerHash())
                     .build(),
                 httpTaskParameters.fetchRequiredExecutionCapabilities(null), Arrays.asList(NON_EXISTING_SELECTOR),
-                Duration.ZERO, false, false, Collections.emptyList(), false, null))
+                Duration.ZERO, false, false, Collections.emptyList(), false, null, false))
         .isInstanceOf(DelegateServiceDriverException.class)
         .hasMessage("Unexpected error occurred while submitting task.")
         .hasRootCauseMessage("INTERNAL: Delegates are not available");
@@ -302,7 +302,7 @@ public class DelegateServiceTaskApiFunctionalTest extends AbstractFunctionalTest
                     .setExpressionFunctorToken(HashGenerator.generateIntegerHash())
                     .build(),
                 httpTaskParameters.fetchRequiredExecutionCapabilities(null), null, Duration.ZERO, false, false,
-                Collections.emptyList(), false, null)
+                Collections.emptyList(), false, null, false)
             .getTaskId();
 
     Poller.pollFor(Duration.ofMinutes(5), Duration.ofSeconds(5), () -> {
@@ -361,7 +361,7 @@ public class DelegateServiceTaskApiFunctionalTest extends AbstractFunctionalTest
                     .setExpressionFunctorToken(HashGenerator.generateIntegerHash())
                     .build(),
                 emptyList(), Arrays.asList(NON_EXISTING_SELECTOR), Duration.ZERO, false, false, Collections.emptyList(),
-                false, null)
+                false, null, false)
             .getTaskId();
 
     Poller.pollFor(Duration.ofMinutes(5), Duration.ofSeconds(5), () -> {

@@ -9,8 +9,6 @@ package software.wings.scheduler;
 
 import static io.harness.maintenance.MaintenanceController.getMaintenanceFlag;
 
-import static java.util.Arrays.asList;
-
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.WingsException;
 import io.harness.maintenance.MaintenanceController;
@@ -43,7 +41,6 @@ public class JobScheduler extends HQuartzScheduler implements ConfigChangeListen
         scheduler = createScheduler(getDefaultProperties());
 
         ConfigurationController configurationController = injector.getInstance(Key.get(ConfigurationController.class));
-        configurationController.register(this, asList(ConfigChangeEvent.PrimaryChanged));
 
         if (!getMaintenanceFlag() && configurationController.isPrimary()) {
           scheduler.start();

@@ -28,7 +28,6 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
 
-import software.wings.beans.artifact.Artifact;
 import software.wings.graphql.datafetcher.DataFetcherUtils;
 import software.wings.graphql.schema.query.QLPageQueryParameters;
 import software.wings.graphql.schema.type.QLArtifactConnection;
@@ -37,8 +36,11 @@ import software.wings.graphql.schema.type.aggregation.QLIdFilter;
 import software.wings.graphql.schema.type.aggregation.QLIdOperator;
 import software.wings.graphql.schema.type.aggregation.QLNoOpSortCriteria;
 import software.wings.graphql.schema.type.aggregation.artifact.QLArtifactFilter;
+import software.wings.persistence.artifact.Artifact;
 
 import com.google.inject.Inject;
+import dev.morphia.query.FieldEnd;
+import dev.morphia.query.Query;
 import graphql.schema.DataFetchingEnvironment;
 import java.util.Arrays;
 import java.util.List;
@@ -50,8 +52,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.mongodb.morphia.query.FieldEnd;
-import org.mongodb.morphia.query.Query;
 
 public class ArtifactConnectionDataFetcherTest extends CategoryTest {
   private DataFetcherUtils utils = mock(DataFetcherUtils.class);

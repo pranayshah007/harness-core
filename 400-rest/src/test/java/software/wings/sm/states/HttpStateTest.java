@@ -22,7 +22,7 @@ import static software.wings.api.ServiceTemplateElement.Builder.aServiceTemplate
 import static software.wings.beans.Application.Builder.anApplication;
 import static software.wings.beans.Environment.Builder.anEnvironment;
 import static software.wings.beans.Variable.VariableBuilder.aVariable;
-import static software.wings.beans.artifact.Artifact.Builder.anArtifact;
+import static software.wings.persistence.artifact.Artifact.Builder.anArtifact;
 import static software.wings.sm.ContextElement.ARTIFACT;
 import static software.wings.sm.StateExecutionInstance.Builder.aStateExecutionInstance;
 import static software.wings.sm.states.HttpState.Builder.aHttpState;

@@ -62,7 +62,8 @@ public class InputSetErrorsHelperTest extends CategoryTest {
     String inputSetWrongFile = "inputSetWrong1.yml";
     String inputSetWrongYaml = readFile(inputSetWrongFile);
 
-    InputSetErrorWrapperDTOPMS errorWrapperDTOPMS = InputSetErrorsHelper.getErrorMap(yaml, inputSetWrongYaml);
+    InputSetErrorWrapperDTOPMS errorWrapperDTOPMS =
+        InputSetErrorsHelper.getErrorMap(yaml, inputSetWrongYaml, "inputSetIdentifier");
     assertThat(errorWrapperDTOPMS).isNotNull();
     assertThat(errorWrapperDTOPMS.getErrorPipelineYaml())
         .isEqualTo("pipeline:\n"
@@ -86,7 +87,8 @@ public class InputSetErrorsHelperTest extends CategoryTest {
 
     String inputSetFile = "inputSet1.yml";
     String inputSetYaml = readFile(inputSetFile);
-    InputSetErrorWrapperDTOPMS emptyErrorWrapperDTOPMS = InputSetErrorsHelper.getErrorMap(yaml, inputSetYaml);
+    InputSetErrorWrapperDTOPMS emptyErrorWrapperDTOPMS =
+        InputSetErrorsHelper.getErrorMap(yaml, inputSetYaml, "inputSetIdentifier");
     assertThat(emptyErrorWrapperDTOPMS).isNull();
   }
 
@@ -100,13 +102,15 @@ public class InputSetErrorsHelperTest extends CategoryTest {
     String inputSetCorrectFile = "input-set-for-validators.yaml";
     String inputSetCorrect = readFile(inputSetCorrectFile);
 
-    InputSetErrorWrapperDTOPMS errorMap = InputSetErrorsHelper.getErrorMap(pipelineYaml, inputSetCorrect);
+    InputSetErrorWrapperDTOPMS errorMap =
+        InputSetErrorsHelper.getErrorMap(pipelineYaml, inputSetCorrect, "inputSetIdentifier");
     assertThat(errorMap).isNull();
 
     String inputSetWrongFile = "wrong-input-set-for-validators.yaml";
     String inputSetWrong = readFile(inputSetWrongFile);
 
-    InputSetErrorWrapperDTOPMS errorMapWrong = InputSetErrorsHelper.getErrorMap(pipelineYaml, inputSetWrong);
+    InputSetErrorWrapperDTOPMS errorMapWrong =
+        InputSetErrorsHelper.getErrorMap(pipelineYaml, inputSetWrong, "inputSetIdentifier");
     assertThat(errorMapWrong).isNotNull();
     Map<String, InputSetErrorResponseDTOPMS> uuidToErrorResponseMap = errorMapWrong.getUuidToErrorResponseMap();
     assertThat(uuidToErrorResponseMap.size()).isEqualTo(5);

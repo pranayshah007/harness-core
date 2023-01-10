@@ -21,6 +21,7 @@ import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnauthorizedException;
+import io.harness.exception.WingsException;
 import io.harness.mappers.AccountMapper;
 import io.harness.ng.core.dto.UserInviteDTO;
 import io.harness.ng.core.user.PasswordChangeDTO;
@@ -142,6 +143,13 @@ public class UserResourceNG {
   @POST
   @Path("/signup-invite/community")
   public RestResponse<UserInfo> createCommunityUserAndCompleteSignup(SignupInviteDTO request) {
+    try {
+      signupService.validateEmail(request.getEmail());
+    } catch (WingsException exception) {
+      throw new InvalidRequestException(
+          String.format("%s is an invalid email.Please add a valid email and try again.", request.getEmail()),
+          exception);
+    }
     if (!accountService.listAllAccountsWithoutTheGlobalAccount().isEmpty()) {
       throw new InvalidRequestException(COMMUNITY_ACCOUNT_EXISTS);
     }
@@ -248,7 +256,7 @@ public class UserResourceNG {
   @GET
   @Path("/{userId}")
   public RestResponse<Optional<UserInfo>> getUser(@PathParam("userId") String userId,
-      @QueryParam("includeSupportAccounts") @DefaultValue("true") Boolean includeSupportAccounts) {
+      @QueryParam("includeSupportAccounts") @DefaultValue("false") Boolean includeSupportAccounts) {
     try {
       User user = userService.get(userId, includeSupportAccounts);
       return new RestResponse<>(Optional.ofNullable(convertUserToNgUser(user)));
@@ -343,8 +351,8 @@ public class UserResourceNG {
       if (user != null && user.getAccounts() != null) {
         isUserInAccount = user.getAccounts().stream().anyMatch(account -> account.getUuid().equals(accountId));
       }
-      if (!isUserInAccount && user != null && user.getSupportAccounts() != null) {
-        isUserInAccount = user.getSupportAccounts().stream().anyMatch(account -> account.getUuid().equals(accountId));
+      if (!isUserInAccount && user != null) {
+        isUserInAccount = userService.ifUserHasAccessToSupportAccount(userId, accountId);
       }
       if (!isUserInAccount) {
         log.error(String.format("User %s does not belong to account %s", userId, accountId));

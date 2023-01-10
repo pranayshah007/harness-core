@@ -485,6 +485,8 @@ TASK_TYPES:
       value: SPLUNK
     - name: SpotInst
       value: SPOTINST
+    - name: Stackdriver
+      value: STACKDRIVER
     - name: Sumo Logic
       value: SUMO
     - name: Terraform

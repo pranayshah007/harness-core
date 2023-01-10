@@ -9,6 +9,7 @@ package io.harness.cvng.core.services.impl;
 
 import io.harness.cvng.activity.entities.Activity;
 import io.harness.cvng.activity.services.api.ActivityService;
+import io.harness.cvng.beans.change.ChangeEventDTO;
 import io.harness.cvng.beans.cvnglog.CVNGLogType;
 import io.harness.cvng.cdng.entities.CVNGStepTask;
 import io.harness.cvng.cdng.services.api.CVNGStepTaskService;
@@ -20,6 +21,7 @@ import io.harness.cvng.core.entities.CVNGLog;
 import io.harness.cvng.core.entities.DataCollectionTask;
 import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.core.services.api.CVNGLogService;
+import io.harness.cvng.core.services.api.ChangeEventService;
 import io.harness.cvng.core.services.api.DataCollectionTaskService;
 import io.harness.cvng.core.services.api.DebugService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
@@ -68,6 +70,8 @@ public class DebugServiceImpl implements DebugService {
   @Inject ActivityService activityService;
   @Inject CVNGLogService cvngLogService;
   @Inject OrchestrationService orchestrationService;
+
+  @Inject ChangeEventService changeEventService;
   public static final Integer RECORDS_BATCH_SIZE = 100;
 
   @Override
@@ -238,5 +242,10 @@ public class DebugServiceImpl implements DebugService {
 
   public DataCollectionTask retryDataCollectionTask(ProjectParams projectParams, String identifier) {
     return dataCollectionTaskService.updateRetry(projectParams, identifier);
+  }
+
+  @Override
+  public boolean registerInternalChangeEvent(ProjectParams projectParams, ChangeEventDTO changeEventDTO) {
+    return changeEventService.register(changeEventDTO);
   }
 }

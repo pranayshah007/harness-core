@@ -104,6 +104,7 @@ import io.harness.logging.LogCallback;
 import software.wings.utils.ArtifactType;
 
 import com.azure.core.http.rest.Response;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.File;
@@ -603,15 +604,33 @@ public class AzureAppServiceDeploymentService {
       newName = DEFAULT_JAR_ARTIFACT_NAME;
       logCallback.saveExecutionLog(String.format("Renaming %s to %s", artifactFile.getName(), newName));
     } else {
-      int lastIndexOf = absolutePath.lastIndexOf('_');
-      newName = absolutePath.substring(0, lastIndexOf);
+      int suffixSeparator = determineSuffixSeparator(absolutePath);
+      if (suffixSeparator > -1) {
+        int lastIndexOf = absolutePath.lastIndexOf((char) suffixSeparator);
+        newName = absolutePath.substring(0, lastIndexOf);
+      } else {
+        newName = absolutePath;
+      }
     }
-    File oldFile = new File(absolutePath);
-    File newFile = new File(newName);
+    var oldFile = new File(absolutePath);
+    var newFile = new File(newName);
     if (!oldFile.renameTo(newFile)) {
       throw new InvalidRequestException(String.format(FILE_RENAME_FAILURE, absolutePath, newName));
     }
     return newFile;
+  }
+
+  @VisibleForTesting
+  protected int determineSuffixSeparator(String absolutePath) {
+    if (absolutePath.endsWith("/")) {
+      absolutePath = absolutePath.substring(0, absolutePath.length() - 1);
+    }
+    int lastIndexOf = absolutePath.lastIndexOf('/');
+    var fileName = absolutePath.substring(lastIndexOf + 1);
+    if (fileName.matches(".*_[0-9]*")) {
+      return '_';
+    }
+    return -1;
   }
 
   private Mono deployZipToSlotAndLog(

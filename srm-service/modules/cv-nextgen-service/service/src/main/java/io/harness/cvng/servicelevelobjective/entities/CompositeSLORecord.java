@@ -11,17 +11,19 @@ import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cvng.analysis.entities.VerificationTaskBase;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
-import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
-import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UuidAware;
 
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
+import dev.morphia.annotations.Version;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.Date;
@@ -36,9 +38,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
-import org.mongodb.morphia.annotations.Version;
 
 @Data
 @Builder(buildMethodName = "unsafeBuild")
@@ -51,7 +50,7 @@ import org.mongodb.morphia.annotations.Version;
 @Entity(value = "compositeSLORecords", noClassnameStored = true)
 @HarnessEntity(exportable = true)
 @OwnedBy(HarnessTeam.CV)
-public class CompositeSLORecord implements PersistentEntity, UuidAware, UpdatedAtAware, CreatedAtAware {
+public class CompositeSLORecord extends VerificationTaskBase implements PersistentEntity, UuidAware {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
@@ -76,8 +75,7 @@ public class CompositeSLORecord implements PersistentEntity, UuidAware, UpdatedA
   @Setter(AccessLevel.PRIVATE) private long epochMinute;
   private double runningBadCount;
   private double runningGoodCount;
-  private long lastUpdatedAt;
-  private long createdAt;
+
   private int sloVersion;
   @Builder.Default @FdTtlIndex private Date validUntil = Date.from(OffsetDateTime.now().plusDays(180).toInstant());
 }

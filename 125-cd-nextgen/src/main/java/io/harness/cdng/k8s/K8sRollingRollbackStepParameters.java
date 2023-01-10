@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.manifest.yaml.K8sStepCommandFlag;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.k8s.K8sCommandUnitConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -33,9 +34,10 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.k8s.K8sRollingRollbackStepParameters")
 public class K8sRollingRollbackStepParameters extends K8sRollingRollbackBaseStepInfo implements K8sSpecParameters {
   @Builder(builderMethodName = "infoBuilder")
-  public K8sRollingRollbackStepParameters(ParameterField<Boolean> skipDryRun, ParameterField<Boolean> pruningEnabled,
-      ParameterField<List<TaskSelectorYaml>> delegateSelectors, String rollingStepFqn) {
-    super(skipDryRun, pruningEnabled, delegateSelectors, rollingStepFqn);
+  public K8sRollingRollbackStepParameters(ParameterField<Boolean> pruningEnabled,
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors, String rollingStepFqn,
+      List<K8sStepCommandFlag> commandFlags) {
+    super(pruningEnabled, delegateSelectors, rollingStepFqn, commandFlags);
   }
 
   @Nonnull

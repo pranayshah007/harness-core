@@ -136,7 +136,7 @@ ciManagerClientConfig:
   readTimeOutSeconds: 15
 
 cvngClientConfig:
-  baseUrl: http://localhost:6060/cv/api/
+  baseUrl: http://localhost:6457/cv/api/
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
 
@@ -204,6 +204,17 @@ gitSyncServerConfig:
       certFilePath: cert.pem
     - port: 13002
 
+gitService:
+  caching:
+    validCacheDurationInMillis: ${GIT_SERVICE_CACHING_VALID_CACHE_DURATION:-600000}
+    maxCacheDurationInMillis: ${GIT_SERVICE_CACHING_MAX_CACHE_DURATION:-86400000}
+    backgroundUpdateThreadPool:
+      corePoolSize: ${GIT_SERVICE_CACHING_BACKGROUND_UPDATE_THREAD_POOL_CORE_SIZE:-1}
+      maxPoolSize: ${GIT_SERVICE_CACHING_BACKGROUND_UPDATE_THREAD_POOL_MAX_SIZE:-10}
+      idleTime: ${GIT_SERVICE_CACHING_BACKGROUND_UPDATE_THREAD_POOL_IDLE_TIME:-60}
+      timeUnit: ${GIT_SERVICE_CACHING_BACKGROUND_UPDATE_THREAD_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
+
+
 shouldDeployWithGitSync: true
 
 fileServiceConfiguration:
@@ -259,7 +270,7 @@ pmsGrpcClientConfig:
   target: localhost:12011
   authority: localhost
 
-shouldConfigureWithPMS: ${SHOULD_CONFIGURE_WITH_PMS:-false}
+shouldConfigureWithPMS: ${SHOULD_CONFIGURE_WITH_PMS:-true}
 
 ceAwsSetupConfig:
   accessKey: ce_aws_accessKey_placeholder

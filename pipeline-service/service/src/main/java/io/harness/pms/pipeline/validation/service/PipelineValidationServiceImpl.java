@@ -66,7 +66,7 @@ public class PipelineValidationServiceImpl implements PipelineValidationService 
       PipelineEntity pipelineEntity) {
     validateYaml(accountIdentifier, orgIdentifier, projectIdentifier, yamlWithTemplatesResolved,
         pipelineEntity.getYaml(), pipelineEntity.getHarnessVersion());
-    GovernanceMetadata governanceMetadata = pipelineGovernanceService.validateGovernanceRulesAndThrowExceptionIfDenied(
+    GovernanceMetadata governanceMetadata = pipelineGovernanceService.validateGovernanceRules(
         accountIdentifier, orgIdentifier, projectIdentifier, resolvedYamlWithTemplateRefs);
     return PipelineValidationResponse.builder().governanceMetadata(governanceMetadata).build();
   }

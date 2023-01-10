@@ -13,7 +13,7 @@ import static io.harness.delegate.k8s.K8sTestConstants.DAEMON_SET_YAML;
 import static io.harness.delegate.k8s.K8sTestConstants.DEPLOYMENT_YAML;
 import static io.harness.k8s.releasehistory.IK8sRelease.Status.Failed;
 import static io.harness.k8s.releasehistory.IK8sRelease.Status.InProgress;
-import static io.harness.k8s.releasehistory.ReleaseHistory.defaultVersion;
+import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_NUMBER_LABEL_KEY;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.rule.OwnerRule.ABOSII;
@@ -25,6 +25,9 @@ import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -43,6 +46,7 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
 import io.harness.exception.KubernetesTaskException;
+import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
 import io.harness.k8s.exception.KubernetesExceptionExplanation;
 import io.harness.k8s.exception.KubernetesExceptionHints;
 import io.harness.k8s.exception.KubernetesExceptionMessages;
@@ -55,13 +59,20 @@ import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
 import io.harness.k8s.releasehistory.IK8sRelease;
+import io.harness.k8s.releasehistory.IK8sReleaseHistory;
+import io.harness.k8s.releasehistory.K8SLegacyReleaseHistory;
 import io.harness.k8s.releasehistory.K8sLegacyRelease;
+import io.harness.k8s.releasehistory.K8sRelease;
+import io.harness.k8s.releasehistory.K8sReleaseHistory;
+import io.harness.k8s.releasehistory.K8sReleaseSecretHelper;
 import io.harness.k8s.releasehistory.ReleaseHistory;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
 import io.harness.rule.Owner;
 
+import io.kubernetes.client.openapi.models.V1Secret;
+import io.kubernetes.client.openapi.models.V1SecretBuilder;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -83,6 +94,7 @@ public class K8sCanaryBaseHandlerTest extends CategoryTest {
 
   @Mock private LogCallback logCallback;
   @Mock private Kubectl client;
+  @Mock private K8sReleaseHandler releaseHandler;
 
   private final String namespace = "default";
   private final K8sDelegateTaskParams delegateTaskParams = K8sDelegateTaskParams.builder().build();
@@ -91,6 +103,7 @@ public class K8sCanaryBaseHandlerTest extends CategoryTest {
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
+    doReturn(releaseHandler).when(k8sTaskHelperBase).getReleaseHandler(anyBoolean());
   }
 
   @Test
@@ -162,13 +175,19 @@ public class K8sCanaryBaseHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testDeploymentWorkloadsForCanary() throws Exception {
     K8sCanaryHandlerConfig k8sCanaryHandlerConfig = prepareValidWorkloads();
-    k8sCanaryHandlerConfig.setReleaseHistory(ReleaseHistory.createNew());
+    k8sCanaryHandlerConfig.setUseDeclarativeRollback(true);
+    k8sCanaryHandlerConfig.setReleaseHistory(
+        K8sReleaseHistory.builder().releaseHistory(Collections.emptyList()).build());
 
-    doNothing().when(k8sTaskHelperBase).cleanup(any(), any(), any(), any());
+    doNothing().when(releaseHandler).cleanReleaseHistory(any());
+    doReturn(K8sRelease.builder().releaseSecret(new V1Secret()).build())
+        .when(releaseHandler)
+        .createRelease(any(), anyInt());
+
     boolean result =
         k8sCanaryBaseHandler.prepareForCanary(k8sCanaryHandlerConfig, delegateTaskParams, false, logCallback, false);
     assertThat(result).isTrue();
-    verify(k8sTaskHelperBase, times(1)).cleanup(any(), any(), any(), any());
+    verify(releaseHandler, times(1)).cleanReleaseHistory(any());
     verify(k8sTaskHelperBase, times(1)).getResourcesInTableFormat(any());
   }
 
@@ -177,19 +196,67 @@ public class K8sCanaryBaseHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testDeploymentWorkloadsForCanaryCleanupCanaryTrue() throws Exception {
     K8sCanaryHandlerConfig k8sCanaryHandlerConfig = prepareValidWorkloads();
-    List<K8sLegacyRelease> releaseList = new ArrayList<>();
-    releaseList.add(K8sLegacyRelease.builder().number(1).status(IK8sRelease.Status.InProgress).build());
-    k8sCanaryHandlerConfig.setReleaseHistory(
-        ReleaseHistory.builder().version(defaultVersion).releases(releaseList).build());
-    ArgumentCaptor<ReleaseHistory> captor = ArgumentCaptor.forClass(ReleaseHistory.class);
-    doNothing().when(k8sTaskHelperBase).cleanup(any(), any(), captor.capture(), any());
+    k8sCanaryHandlerConfig.setUseDeclarativeRollback(true);
+    V1Secret inProgressReleaseSecret = new V1SecretBuilder().build();
+    K8sReleaseSecretHelper.putLabelsItem(inProgressReleaseSecret, RELEASE_NUMBER_LABEL_KEY, "1");
+    K8sRelease inProgressRelease = K8sRelease.builder().releaseSecret(inProgressReleaseSecret).build();
+    inProgressRelease.updateReleaseStatus(InProgress);
+    List<K8sRelease> releaseList = List.of(inProgressRelease);
+
+    k8sCanaryHandlerConfig.setCurrentReleaseNumber(2);
+    k8sCanaryHandlerConfig.setReleaseHistory(K8sReleaseHistory.builder().releaseHistory(releaseList).build());
+
+    ArgumentCaptor<K8sReleaseHistory> releaseHistoryArgumentCaptor = ArgumentCaptor.forClass(K8sReleaseHistory.class);
+    ArgumentCaptor<Integer> releaseNumberCaptor = ArgumentCaptor.forClass(Integer.class);
+    doReturn(null)
+        .when(k8sTaskHelperBase)
+        .createReleaseHistoryCleanupRequest(
+            any(), releaseHistoryArgumentCaptor.capture(), any(), any(), any(), releaseNumberCaptor.capture(), any());
+    doNothing().when(releaseHandler).cleanReleaseHistory(any());
     boolean result =
         k8sCanaryBaseHandler.prepareForCanary(k8sCanaryHandlerConfig, delegateTaskParams, false, logCallback, false);
     assertThat(result).isTrue();
-    assertThat(captor.getValue().getRelease(1).getStatus()).isEqualTo(Failed);
-    assertThat(captor.getValue().getRelease(2).getStatus()).isEqualTo(InProgress);
-    verify(k8sTaskHelperBase, times(1)).cleanup(any(), any(), any(), any());
+    assertThat(releaseHistoryArgumentCaptor.getValue().getLatestRelease().getReleaseStatus()).isEqualTo(Failed);
+    assertThat(releaseNumberCaptor.getValue()).isEqualTo(2);
+    verify(releaseHandler, times(1)).saveRelease(any());
+    verify(releaseHandler, times(1)).cleanReleaseHistory(any());
     verify(k8sTaskHelperBase, times(1)).getResourcesInTableFormat(any());
+  }
+
+  @Test
+  @Owner(developers = NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void testDeploymentWorkloadsForLegacyCanaryCleanupCanaryTrue() throws Exception {
+    K8sCanaryHandlerConfig k8sCanaryHandlerConfig = prepareValidWorkloads();
+    k8sCanaryHandlerConfig.setUseDeclarativeRollback(false);
+
+    List<K8sLegacyRelease> releaseList = new ArrayList<>();
+    releaseList.add(K8sLegacyRelease.builder().number(1).status(IK8sRelease.Status.InProgress).build());
+    k8sCanaryHandlerConfig.setReleaseHistory(K8SLegacyReleaseHistory.builder()
+                                                 .releaseHistory(ReleaseHistory.builder().releases(releaseList).build())
+                                                 .build());
+    k8sCanaryHandlerConfig.setCurrentReleaseNumber(2);
+
+    ArgumentCaptor<K8SLegacyReleaseHistory> releaseHistoryArgumentCaptor =
+        ArgumentCaptor.forClass(K8SLegacyReleaseHistory.class);
+    ArgumentCaptor<Integer> releaseNumberCaptor = ArgumentCaptor.forClass(Integer.class);
+
+    doReturn(null)
+        .when(k8sTaskHelperBase)
+        .createReleaseHistoryCleanupRequest(
+            any(), releaseHistoryArgumentCaptor.capture(), any(), any(), any(), releaseNumberCaptor.capture(), any());
+    doNothing().when(releaseHandler).cleanReleaseHistory(any());
+
+    boolean result =
+        k8sCanaryBaseHandler.prepareForCanary(k8sCanaryHandlerConfig, delegateTaskParams, false, logCallback, false);
+    assertThat(result).isTrue();
+
+    assertThat(releaseHistoryArgumentCaptor.getValue().getReleaseHistory().getRelease(1).getReleaseStatus())
+        .isEqualTo(Failed);
+    assertThat(releaseNumberCaptor.getValue()).isEqualTo(2);
+    verify(releaseHandler, times(1)).cleanReleaseHistory(any());
+    verify(k8sTaskHelperBase, times(1)).getResourcesInTableFormat(any());
+    verify(k8sTaskHelperBase, times(1)).addRevisionNumber(anyList(), anyInt());
   }
 
   @Test
@@ -304,7 +371,8 @@ public class K8sCanaryBaseHandlerTest extends CategoryTest {
     KubernetesResource deployment = ManifestHelper.processYaml(DEPLOYMENT_YAML).get(0);
     K8sCanaryHandlerConfig canaryHandlerConfig = new K8sCanaryHandlerConfig();
     K8sDelegateTaskParams delegateTaskParams = K8sDelegateTaskParams.builder().build();
-    ReleaseHistory releaseHistory = ReleaseHistory.createNew();
+    ReleaseHistory releaseHist = ReleaseHistory.createNew();
+    K8SLegacyReleaseHistory releaseHistory = K8SLegacyReleaseHistory.builder().releaseHistory(releaseHist).build();
     List<KubernetesResource> resources = asList(
         KubernetesResource.builder()
             .resourceId(KubernetesResourceId.builder().versioned(true).name("object-1").kind("configMap").build())
@@ -314,13 +382,14 @@ public class K8sCanaryBaseHandlerTest extends CategoryTest {
     canaryHandlerConfig.setReleaseHistory(releaseHistory);
     canaryHandlerConfig.setReleaseName("release-01");
     canaryHandlerConfig.setClient(client);
+    doReturn(K8sLegacyRelease.builder().build()).when(releaseHandler).createRelease(any(), anyInt());
 
     boolean success =
         k8sCanaryBaseHandler.prepareForCanary(canaryHandlerConfig, delegateTaskParams, false, logCallback, false);
 
     assertThat(success).isTrue();
     assertThat(canaryHandlerConfig.getCanaryWorkload()).isNotNull();
-    verify(k8sTaskHelperBase, times(1)).cleanup(client, delegateTaskParams, releaseHistory, logCallback);
+    verify(releaseHandler, times(1)).cleanReleaseHistory(any());
   }
 
   @Test
@@ -369,24 +438,26 @@ public class K8sCanaryBaseHandlerTest extends CategoryTest {
   @Test
   @Owner(developers = ABOSII)
   @Category(UnitTests.class)
-  public void testFailAndSaveKubernetesRelease() throws IOException {
-    String releaseHistoryAsYaml = "dummy content";
-    ReleaseHistory releaseHistory = mock(ReleaseHistory.class);
+  public void testFailAndSaveKubernetesRelease() throws Exception {
+    IK8sReleaseHistory releaseHistory = mock(IK8sReleaseHistory.class);
+    IK8sRelease currentRelease = mock(IK8sRelease.class);
+
     K8sCanaryHandlerConfig canaryHandlerConfig = new K8sCanaryHandlerConfig();
     canaryHandlerConfig.setReleaseHistory(releaseHistory);
     canaryHandlerConfig.setKubernetesConfig(kubernetesConfig);
-    doReturn(releaseHistoryAsYaml).when(releaseHistory).getAsYaml();
+    canaryHandlerConfig.setUseDeclarativeRollback(false);
+    canaryHandlerConfig.setReleaseName("release");
+    canaryHandlerConfig.setCurrentRelease(currentRelease);
 
-    k8sCanaryBaseHandler.failAndSaveKubernetesRelease(canaryHandlerConfig, "release");
+    k8sCanaryBaseHandler.failAndSaveRelease(canaryHandlerConfig);
 
-    verify(releaseHistory, times(1)).setReleaseStatus(Failed);
     verify(k8sTaskHelperBase, times(1))
-        .saveReleaseHistoryInConfigMap(kubernetesConfig, "release", releaseHistoryAsYaml);
+        .saveRelease(false, false, kubernetesConfig, currentRelease, releaseHistory, "release");
   }
 
   private void assertInvalidWorkloadsInManifest(boolean result, String expectedMessage) throws Exception {
     assertThat(result).isFalse();
-    verify(k8sTaskHelperBase, never()).cleanup(any(), any(), any(), any());
+    verify(releaseHandler, never()).cleanReleaseHistory(any());
     verify(k8sTaskHelperBase, times(1)).getResourcesInTableFormat(any());
 
     ArgumentCaptor<String> msgCaptor = ArgumentCaptor.forClass(String.class);

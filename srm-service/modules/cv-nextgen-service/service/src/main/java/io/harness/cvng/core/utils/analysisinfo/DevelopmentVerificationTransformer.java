@@ -8,6 +8,7 @@
 package io.harness.cvng.core.utils.analysisinfo;
 
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition.AnalysisDTO;
+import io.harness.cvng.core.beans.healthsource.QueryDefinition;
 import io.harness.cvng.core.entities.AnalysisInfo.DeploymentVerification;
 
 import java.util.Objects;
@@ -21,6 +22,13 @@ public class DevelopmentVerificationTransformer {
           .enabled(analysisDTO.getDeploymentVerification().getEnabled())
           .serviceInstanceMetricPath(analysisDTO.getDeploymentVerification().getServiceInstanceMetricPath())
           .build();
+    }
+    return null;
+  }
+
+  public static DeploymentVerification transformQueryDefinitiontoEntity(QueryDefinition queryDefinition) {
+    if (Objects.nonNull(queryDefinition) && Objects.nonNull(queryDefinition.getContinuousVerificationEnabled())) {
+      return DeploymentVerification.builder().enabled(queryDefinition.getContinuousVerificationEnabled()).build();
     }
     return null;
   }

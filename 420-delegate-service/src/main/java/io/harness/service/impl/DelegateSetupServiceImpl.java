@@ -42,7 +42,7 @@ import io.harness.delegate.beans.DelegateSetupDetails;
 import io.harness.delegate.beans.DelegateToken;
 import io.harness.delegate.beans.DelegateToken.DelegateTokenKeys;
 import io.harness.delegate.beans.DelegateTokenStatus;
-import io.harness.delegate.events.DelegateGroupUpsertEvent;
+import io.harness.delegate.events.DelegateUpsertEvent;
 import io.harness.delegate.filter.DelegateFilterPropertiesDTO;
 import io.harness.delegate.filter.DelegateInstanceConnectivityStatus;
 import io.harness.delegate.utils.DelegateEntityOwnerHelper;
@@ -60,9 +60,14 @@ import software.wings.service.intfc.ownership.OwnedByAccount;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.query.Criteria;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -77,11 +82,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
+import javax.validation.constraints.NotNull;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Criteria;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @Singleton
 @ValidateOnExecution
@@ -286,15 +289,19 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
     Query<DelegateProfile> query = persistence.createQuery(DelegateProfile.class)
                                        .filter(DelegateProfileKeys.accountId, accountId)
                                        .filter(DelegateProfileKeys.ng, true);
+    Query<DelegateProfile> filterIdentifiersQuery = persistence.createQuery(DelegateProfile.class)
+                                                        .filter(DelegateProfileKeys.accountId, accountId)
+                                                        .filter(DelegateProfileKeys.ng, true);
 
     DelegateEntityOwner owner = DelegateEntityOwnerHelper.buildOwner(orgId, projectId);
     if (owner != null) {
       query.field(DelegateProfileKeys.owner).equal(owner);
+      filterIdentifiersQuery.field(DelegateProfileKeys.owner).equal(owner);
     } else {
       // Account level delegate configurations
       query.field(DelegateProfileKeys.owner).doesNotExist();
+      filterIdentifiersQuery.field(DelegateProfileKeys.owner).doesNotExist();
     }
-    Query<DelegateProfile> filterIdentifiersQuery = query.cloneQuery();
     query.field(DelegateProfileKeys.uuid).in(identifiers);
     List<String> existingRecordsKeys = query.asKeyList().stream().map(key -> (String) key.getId()).collect(toList());
 
@@ -422,6 +429,7 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
     long lastHeartBeat = groupDelegates.stream().mapToLong(Delegate::getLastHeartBeat).max().orElse(0);
     AtomicInteger countOfDelegatesConnected = new AtomicInteger();
     AtomicBoolean isDelegateTokenActiveAtGroupLevel = new AtomicBoolean(true);
+    List<Delegate> connectedDelegates = new ArrayList<>();
     List<DelegateGroupListing.DelegateInner> delegateInstanceDetails =
         groupDelegates.stream()
             .map(delegate -> {
@@ -440,6 +448,7 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
               isDelegateTokenActiveAtGroupLevel.compareAndSet(!isTokenActive, false);
               if (isDelegateConnected) {
                 delegateId.set(delegate.getUuid());
+                connectedDelegates.add(delegate);
               }
               return DelegateGroupListing.DelegateInner.builder()
                   .uuid(delegate.getUuid())
@@ -460,8 +469,10 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
       connectivityStatus = GROUP_STATUS_CONNECTED;
     }
 
-    String groupVersion =
-        groupDelegates.stream().min(Comparator.comparing(Delegate::getVersion)).map(Delegate::getVersion).orElse(null);
+    String groupVersion = connectedDelegates.stream()
+                              .min(Comparator.comparing(Delegate::getVersion))
+                              .map(Delegate::getVersion)
+                              .orElse(null);
 
     return DelegateGroupDetails.builder()
         .groupId(delegateGroupId)
@@ -641,11 +652,11 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
     DelegateGroup updatedDelegateGroup =
         persistence.findAndModify(updateQuery, updateOperations, HPersistence.returnNewOptions);
 
-    outboxService.save(DelegateGroupUpsertEvent.builder()
+    outboxService.save(DelegateUpsertEvent.builder()
                            .accountIdentifier(accountId)
                            .orgIdentifier(orgId)
                            .projectIdentifier(projectId)
-                           .delegateGroupId(updatedDelegateGroup.getUuid())
+                           .delegateGroupIdentifier(updatedDelegateGroup.getIdentifier())
                            .delegateSetupDetails(DelegateSetupDetails.builder()
                                                      .identifier(updatedDelegateGroup.getIdentifier())
                                                      .tags(updatedDelegateGroup.getTags())
@@ -707,11 +718,11 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
       DelegateGroup updatedDelegateGroup =
           persistence.findAndModify(updateQuery, updateOperations, HPersistence.returnNewOptions);
 
-      outboxService.save(DelegateGroupUpsertEvent.builder()
+      outboxService.save(DelegateUpsertEvent.builder()
                              .accountIdentifier(accountIdentifier)
                              .orgIdentifier(orgIdentifier)
                              .projectIdentifier(projectIdentifier)
-                             .delegateGroupId(updatedDelegateGroup.getUuid())
+                             .delegateGroupIdentifier(updatedDelegateGroup.getIdentifier())
                              .delegateSetupDetails(DelegateSetupDetails.builder()
                                                        .identifier(updatedDelegateGroup.getIdentifier())
                                                        .tags(updatedDelegateGroup.getTags())
@@ -835,6 +846,22 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
       return AutoUpgrade.SYNCHRONIZING;
     }
     return AutoUpgrade.OFF;
+  }
+
+  @Override
+  public void updateDelegateGroupValidity(@NotNull String accountId, @NotNull String delegateGroupId) {
+    try {
+      Query<DelegateGroup> delegateGroupQuery = persistence.createQuery(DelegateGroup.class)
+                                                    .filter(DelegateGroupKeys.accountId, accountId)
+                                                    .filter(DelegateGroupKeys.uuid, delegateGroupId);
+      UpdateOperations<DelegateGroup> updateOperations =
+          persistence.createUpdateOperations(DelegateGroup.class)
+              .set(DelegateGroupKeys.validUntil,
+                  Date.from(OffsetDateTime.now().plusDays(DelegateGroup.TTL.toDays()).toInstant()));
+      persistence.update(delegateGroupQuery, updateOperations);
+    } catch (Exception e) {
+      log.info("Exception occurred while updating delegate group validity.", e);
+    }
   }
 
   private boolean checkForDelegateGroupsHavingAllTags(DelegateGroup delegateGroup, DelegateGroupTags tags) {

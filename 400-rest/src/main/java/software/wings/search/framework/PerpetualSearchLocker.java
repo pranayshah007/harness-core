@@ -17,6 +17,7 @@ import software.wings.search.framework.SearchDistributedLock.SearchDistributedLo
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import java.time.Instant;
 import java.util.Date;
 import java.util.concurrent.Executors;
@@ -24,7 +25,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
 
 /**
  * A lock implementation based on

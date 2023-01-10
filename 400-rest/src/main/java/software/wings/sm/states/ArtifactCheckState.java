@@ -10,10 +10,10 @@ package software.wings.sm.states;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
-import static software.wings.beans.artifact.Artifact.ContentStatus;
-import static software.wings.beans.artifact.Artifact.ContentStatus.DOWNLOADED;
-import static software.wings.beans.artifact.Artifact.ContentStatus.FAILED;
-import static software.wings.beans.artifact.Artifact.ContentStatus.METADATA_ONLY;
+import static software.wings.persistence.artifact.Artifact.ContentStatus;
+import static software.wings.persistence.artifact.Artifact.ContentStatus.DOWNLOADED;
+import static software.wings.persistence.artifact.Artifact.ContentStatus.FAILED;
+import static software.wings.persistence.artifact.Artifact.ContentStatus.METADATA_ONLY;
 
 import static java.util.stream.Collectors.toList;
 
@@ -26,8 +26,8 @@ import io.harness.delay.DelayEventHelper;
 import io.harness.delay.DelayEventNotifyData;
 import io.harness.tasks.ResponseData;
 
-import software.wings.beans.artifact.Artifact;
-import software.wings.beans.artifact.Artifact.Status;
+import software.wings.persistence.artifact.Artifact;
+import software.wings.persistence.artifact.Artifact.Status;
 import software.wings.service.intfc.ArtifactService;
 import software.wings.sm.ExecutionContext;
 import software.wings.sm.ExecutionResponse;

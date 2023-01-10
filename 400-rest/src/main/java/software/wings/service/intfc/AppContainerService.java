@@ -13,7 +13,7 @@ import io.harness.delegate.beans.FileBucket;
 import io.harness.validation.Create;
 import io.harness.validation.Update;
 
-import software.wings.beans.AppContainer;
+import software.wings.persistence.AppContainer;
 import software.wings.service.intfc.ownership.OwnedByAccount;
 
 import java.io.File;

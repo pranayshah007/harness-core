@@ -146,6 +146,7 @@ public class EntityYamlRootNames {
   public static final String BUILD_AND_PUSH_DOCKER_REGISTRY = "BuildAndPushDockerRegistry";
   public static final String ACTION_STEP = "Action";
   public static final String BITRISE_STEP = "Bitrise";
+  public static final String CONTAINER_STEP = "Container";
 
   public static final String NG_FILE = "NgFile";
   public static final String QUEUE = "Lock";
@@ -188,4 +189,22 @@ public class EntityYamlRootNames {
   public static final String TERRAGRUNT_APPLY = "TerragruntApply";
   public static final String TERRAGRUNT_DESTROY = "TerragruntDestroy";
   public static final String TERRAGRUNT_ROLLBACK = "TerragruntRollback";
+  public static final String IACM_TERRAFORM_PLAN = "IACMTerraformPlan";
+  public static final String IACM_TEMPLATE = "IACMTemplate";
+
+  public static final String ELASTIGROUP_BG_STAGE_SETUP = "ElastigroupBGStageSetup";
+  public static final String ELASTIGROUP_SWAP_ROUTE = "ElastigroupSwapRoute";
+  public static final String ASG_CANARY_DEPLOY = "AsgCanaryDeploy";
+  public static final String ASG_CANARY_DELETE = "AsgCanaryDelete";
+  public static final String TAS_SWAP_ROUTES_STEP = "SwapRoutes";
+  public static final String TAS_SWAP_ROLLBACK_STEP = "SwapRollback";
+  public static final String TAS_APP_RESIZE_STEP = "AppResize";
+  public static final String TAS_ROLLBACK_STEP = "AppRollback";
+  public static final String TAS_CANARY_APP_SETUP_STEP = "CanaryAppSetup";
+  public static final String TAS_BG_APP_SETUP_STEP = "BGAppSetup";
+  public static final String TAS_BASIC_APP_SETUP_STEP = "BasicAppSetup";
+  public static final String TANZU_COMMAND_STEP = "TanzuCommand";
+  public static final String ASG_ROLLING_DEPLOY = "AsgRollingDeploy";
+  public static final String ASG_ROLLING_ROLLBACK = "AsgRollingRollback";
+  public static final String CCM_GOVERNANCE_RULE = "policies";
 }

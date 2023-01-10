@@ -114,4 +114,44 @@ public class ProgressUpdateServiceTest extends WaitEngineTestBase {
     Morpheus.sleep(Duration.ofMinutes(2));
     assertThat(waitInstanceService.fetchForProcessingProgressUpdate(new HashSet<>(), currentTimeMillis())).isNull();
   }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  @RealMongo
+  public void testModifyAndFetchWaitInstanceForNoExistingResponseAndNullUsingKryoWithoutReference()
+      throws InterruptedException {
+    final WaitInstance waitInstance = WaitInstance.builder()
+                                          .uuid(waitInstanceId)
+                                          .callback(new TestNotifyCallback())
+                                          .progressCallback(new TestProgressCallback())
+                                          .publisher(TEST_PUBLISHER)
+                                          .correlationIds(Collections.singletonList(correlationId))
+                                          .waitingOnCorrelationIds(Collections.singletonList(correlationId))
+                                          .build();
+    persistenceWrapper.save(waitInstance);
+
+    persistenceWrapper.save(ProgressUpdate.builder()
+                                .uuid(generateUuid())
+                                .correlationId(correlationId)
+                                .createdAt(currentTimeMillis() - 1000)
+                                .expireProcessing(currentTimeMillis() + 60000)
+                                .usingKryoWithoutReference(null)
+                                .progressData(kryoSerializer.asDeflatedBytes(
+                                    StringNotifyProgressData.builder().data("progress1-" + generateUuid()).build()))
+                                .build());
+
+    persistenceWrapper.save(ProgressUpdate.builder()
+                                .uuid(generateUuid())
+                                .correlationId(correlationId)
+                                .createdAt(currentTimeMillis())
+                                .expireProcessing(currentTimeMillis())
+                                .usingKryoWithoutReference(null)
+                                .progressData(kryoSerializer.asDeflatedBytes(
+                                    StringNotifyProgressData.builder().data("progress1-" + generateUuid()).build()))
+                                .build());
+
+    Morpheus.sleep(Duration.ofMinutes(2));
+    assertThat(waitInstanceService.fetchForProcessingProgressUpdate(new HashSet<>(), currentTimeMillis())).isNull();
+  }
 }

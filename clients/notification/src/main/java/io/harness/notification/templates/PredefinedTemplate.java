@@ -66,7 +66,15 @@ public enum PredefinedTemplate {
   FREEZE_SLACK_ALERT("notification_templates/slack_test.txt", "freeze_slack_alert"),
   FREEZE_PD_ALERT("notification_templates/pd_test.txt", "freeze_pagerduty_alert"),
   FREEZE_MSTEAMS_ALERT("notification_templates/msteams_test.txt", "freeze_msteams_alert"),
-  EMAIL_SMP_LICENSE_ALERT("templates/email_smp_license_alert.txt", "email_smp_license_alert");
+  EMAIL_SMP_LICENSE_ALERT("templates/email_smp_license_alert.txt", "email_smp_license_alert"),
+  PIPELINE_REJECTED_EMAIL_ALERT(
+      "notification_templates/pipeline_rejected_email_test.txt", "pipeline_rejected_email_alert"),
+  PIPELINE_REJECTED_SLACK_ALERT(
+      "notification_templates/pipeline_rejected_slack_test.txt", "pipeline_rejected_slack_alert"),
+  PIPELINE_REJECTED_PD_ALERT(
+      "notification_templates/pipeline_rejected_pd_test.txt", "pipeline_rejected_pagerduty_alert"),
+  PIPELINE_REJECTED_MSTEAMS_ALERT(
+      "notification_templates/pipeline_rejected_msteams_test.txt", "pipeline_rejected_msteams_alert");
 
   private String path;
   private String identifier;

@@ -43,6 +43,7 @@ import io.harness.exception.WingsException;
 import io.harness.git.GitClientHelper;
 import io.harness.gitsync.GitSyncTestBase;
 import io.harness.gitsync.beans.GitRepositoryDTO;
+import io.harness.gitsync.caching.service.GitFileCacheService;
 import io.harness.gitsync.common.dtos.GitBranchesResponseDTO;
 import io.harness.gitsync.common.dtos.GitRepositoryResponseDTO;
 import io.harness.gitsync.common.dtos.ScmCommitFileResponseDTO;
@@ -72,6 +73,8 @@ import io.harness.utils.NGFeatureFlagHelperService;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -105,12 +108,15 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
   PageRequest pageRequest;
   Scope scope;
   ScmConnector scmConnector;
+  @Mock GitFileCacheService gitFileCacheService;
+  ExecutorService executorService = Executors.newFixedThreadPool(1);
 
   @Before
   public void setup() throws Exception {
     MockitoAnnotations.initMocks(this);
-    scmFacilitatorService = new ScmFacilitatorServiceImpl(gitSyncConnectorHelper, connectorService,
-        scmOrchestratorService, ngFeatureFlagHelperService, gitClientEnabledHelper);
+    scmFacilitatorService =
+        new ScmFacilitatorServiceImpl(gitSyncConnectorHelper, connectorService, scmOrchestratorService,
+            ngFeatureFlagHelperService, gitClientEnabledHelper, gitFileCacheService, executorService);
     pageRequest = PageRequest.builder().build();
     GithubConnectorDTO githubConnector = GithubConnectorDTO.builder()
                                              .connectionType(GitConnectionType.ACCOUNT)

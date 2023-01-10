@@ -8,6 +8,7 @@
 package io.harness.pms.pipeline;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
 import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
@@ -42,6 +43,7 @@ import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperD
 import io.harness.execution.NodeExecution;
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.helper.GitImportInfoDTO;
+import io.harness.gitaware.helper.MoveConfigRequestDTO;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -218,7 +220,9 @@ public class PipelineResourceTest extends CategoryTest {
         .validateAndCreatePipeline(entity, true);
     TemplateMergeResponseDTO templateMergeResponseDTO =
         TemplateMergeResponseDTO.builder().mergedPipelineYaml(yaml).build();
-    doReturn(templateMergeResponseDTO).when(pipelineTemplateHelper).resolveTemplateRefsInPipeline(entity);
+    doReturn(templateMergeResponseDTO)
+        .when(pipelineTemplateHelper)
+        .resolveTemplateRefsInPipeline(entity, BOOLEAN_FALSE_VALUE);
     ResponseDTO<String> identifier = pipelineResource.createPipeline(
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null, null, null, null, null, yaml);
     assertThat(identifier.getData()).isNotEmpty();
@@ -290,9 +294,9 @@ public class PipelineResourceTest extends CategoryTest {
         .getAndValidatePipeline(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, false, false, false);
     TemplateMergeResponseDTO templateMergeResponseDTO =
         TemplateMergeResponseDTO.builder().mergedPipelineYaml(yaml).build();
-    doReturn(templateMergeResponseDTO).when(pipelineTemplateHelper).resolveTemplateRefsInPipeline(any());
+    doReturn(templateMergeResponseDTO).when(pipelineTemplateHelper).resolveTemplateRefsInPipeline(any(), any());
     ResponseDTO<PMSPipelineResponseDTO> responseDTO = pipelineResource.getPipelineByIdentifier(
-        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, true, false, "false");
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, true, false, BOOLEAN_FALSE_VALUE);
     assertThat(responseDTO.getData().getVersion()).isEqualTo(1L);
     assertThat(responseDTO.getData().getYamlPipeline()).isEqualTo(yaml);
     assertThat(responseDTO.getData().getYamlSchemaErrorWrapper()).isNull();
@@ -322,9 +326,9 @@ public class PipelineResourceTest extends CategoryTest {
         .getAndValidatePipeline(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, false, true, false);
     TemplateMergeResponseDTO templateMergeResponseDTO =
         TemplateMergeResponseDTO.builder().mergedPipelineYaml(yaml).build();
-    doReturn(templateMergeResponseDTO).when(pipelineTemplateHelper).resolveTemplateRefsInPipeline(any());
+    doReturn(templateMergeResponseDTO).when(pipelineTemplateHelper).resolveTemplateRefsInPipeline(any(), any());
     ResponseDTO<PMSPipelineResponseDTO> responseDTO = pipelineResource.getPipelineByIdentifier(
-        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, true, true, "false");
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, true, true, BOOLEAN_FALSE_VALUE);
     assertThat(responseDTO.getData().getVersion()).isEqualTo(1L);
     assertThat(responseDTO.getData().getYamlPipeline()).isEqualTo(yaml);
     assertThat(responseDTO.getData().getYamlSchemaErrorWrapper()).isNull();
@@ -354,7 +358,7 @@ public class PipelineResourceTest extends CategoryTest {
         .getAndValidatePipeline(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, false, false, true);
     TemplateMergeResponseDTO templateMergeResponseDTO =
         TemplateMergeResponseDTO.builder().mergedPipelineYaml(yaml).build();
-    doReturn(templateMergeResponseDTO).when(pipelineTemplateHelper).resolveTemplateRefsInPipeline(any());
+    doReturn(templateMergeResponseDTO).when(pipelineTemplateHelper).resolveTemplateRefsInPipeline(any(), any());
     ResponseDTO<PMSPipelineResponseDTO> responseDTO = pipelineResource.getPipelineByIdentifier(
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, true, false, "true");
     assertThat(responseDTO.getData().getVersion()).isEqualTo(1L);
@@ -373,9 +377,9 @@ public class PipelineResourceTest extends CategoryTest {
         .getAndValidatePipeline(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, false, false, false);
     doThrow(new InvalidRequestException("random exception"))
         .when(pipelineTemplateHelper)
-        .resolveTemplateRefsInPipeline(any());
+        .resolveTemplateRefsInPipeline(any(), any());
     ResponseDTO<PMSPipelineResponseDTO> responseDTO = pipelineResource.getPipelineByIdentifier(
-        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, true, false, "false");
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, true, false, BOOLEAN_FALSE_VALUE);
     assertThat(responseDTO.getData().getVersion()).isEqualTo(1L);
     assertThat(responseDTO.getData().getYamlPipeline()).isEqualTo(yaml);
     assertThat(responseDTO.getData().getYamlSchemaErrorWrapper()).isNull();
@@ -396,7 +400,7 @@ public class PipelineResourceTest extends CategoryTest {
         .getAndValidatePipeline(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, false, false, false);
 
     ResponseDTO<PMSPipelineResponseDTO> responseDTO = pipelineResource.getPipelineByIdentifier(
-        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, true, false, "false");
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, true, false, BOOLEAN_FALSE_VALUE);
     PMSPipelineResponseDTO data = responseDTO.getData();
     assertThat(data.getEntityValidityDetails().isValid()).isFalse();
     assertThat(data.getEntityValidityDetails().getInvalidYaml()).isEqualTo(yaml);
@@ -415,7 +419,7 @@ public class PipelineResourceTest extends CategoryTest {
         .getAndValidatePipeline(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, false, false, false);
 
     ResponseDTO<PMSPipelineResponseDTO> responseDTO = pipelineResource.getPipelineByIdentifier(
-        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, true, false, "false");
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, true, false, BOOLEAN_FALSE_VALUE);
     PMSPipelineResponseDTO data = responseDTO.getData();
     assertThat(data.getEntityValidityDetails().isValid()).isFalse();
     assertThat(data.getEntityValidityDetails().getInvalidYaml()).isEqualTo(yaml);
@@ -435,7 +439,7 @@ public class PipelineResourceTest extends CategoryTest {
 
     assertThatThrownBy(()
                            -> pipelineResource.getPipelineByIdentifier(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
-                               incorrectPipelineIdentifier, null, true, false, "false"))
+                               incorrectPipelineIdentifier, null, true, false, BOOLEAN_FALSE_VALUE))
         .isInstanceOf(EntityNotFoundException.class)
         .hasMessage(String.format(
             "Pipeline with the given ID: %s does not exist or has been deleted", incorrectPipelineIdentifier));
@@ -450,7 +454,7 @@ public class PipelineResourceTest extends CategoryTest {
         TemplateMergeResponseDTO.builder().mergedPipelineYaml(yaml).build();
     doReturn(templateMergeResponseDTO)
         .when(pipelineTemplateHelper)
-        .resolveTemplateRefsInPipeline(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, yaml);
+        .resolveTemplateRefsInPipeline(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, yaml, BOOLEAN_FALSE_VALUE);
     assertThatThrownBy(()
                            -> pipelineResource.updatePipeline(null, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
                                incorrectPipelineIdentifier, null, null, null, null, yaml))
@@ -470,7 +474,7 @@ public class PipelineResourceTest extends CategoryTest {
         TemplateMergeResponseDTO.builder().mergedPipelineYaml(yaml).build();
     doReturn(templateMergeResponseDTO)
         .when(pipelineTemplateHelper)
-        .resolveTemplateRefsInPipeline(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, yaml);
+        .resolveTemplateRefsInPipeline(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, yaml, BOOLEAN_FALSE_VALUE);
     ResponseDTO<String> responseDTO = pipelineResource.updatePipeline(
         null, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, null, null, yaml);
     assertThat(responseDTO.getData()).isEqualTo(PIPELINE_IDENTIFIER);
@@ -483,7 +487,7 @@ public class PipelineResourceTest extends CategoryTest {
     GovernanceMetadata governanceMetadata = GovernanceMetadata.newBuilder().setDeny(true).build();
     PipelineCRUDResult pipelineCRUDResult =
         PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).pipelineEntity(entityWithVersion).build();
-    doReturn(pipelineCRUDResult).when(pmsPipelineService).validateAndUpdatePipeline(entity, ChangeType.MODIFY, true);
+    doReturn(pipelineCRUDResult).when(pmsPipelineService).validateAndUpdatePipeline(entity, ChangeType.MODIFY, false);
     ResponseDTO<PipelineSaveResponse> responseDTO = pipelineResource.updatePipelineV2(
         null, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, null, null, yaml);
     assertThat(responseDTO.getData().getGovernanceMetadata().getDeny()).isTrue();
@@ -498,7 +502,7 @@ public class PipelineResourceTest extends CategoryTest {
                  .governanceMetadata(GovernanceMetadata.newBuilder().setDeny(false).build())
                  .build())
         .when(pmsPipelineService)
-        .validateAndUpdatePipeline(entity, ChangeType.MODIFY, true);
+        .validateAndUpdatePipeline(entity, ChangeType.MODIFY, false);
     ResponseDTO<PipelineSaveResponse> responseDTO = pipelineResource.updatePipelineV2(
         null, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, null, null, yaml);
     assertThat(responseDTO.getData().getGovernanceMetadata()).isNotNull();
@@ -513,7 +517,7 @@ public class PipelineResourceTest extends CategoryTest {
   public void testUpdatePipelineWithSchemaErrors() {
     doThrow(JsonSchemaValidationException.class)
         .when(pmsPipelineService)
-        .validateAndUpdatePipeline(entity, ChangeType.MODIFY, true);
+        .validateAndUpdatePipeline(entity, ChangeType.MODIFY, false);
     assertThatThrownBy(()
                            -> pipelineResource.updatePipeline(null, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
                                PIPELINE_IDENTIFIER, null, null, null, null, yaml))
@@ -653,7 +657,7 @@ public class PipelineResourceTest extends CategoryTest {
     pipelineResource.validatePipelineByYAML(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, yaml);
     verify(pmsPipelineServiceHelper, times(1))
         .resolveTemplatesAndValidatePipeline(
-            PMSPipelineDtoMapper.toPipelineEntity(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, yaml));
+            PMSPipelineDtoMapper.toPipelineEntity(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, yaml), false);
   }
 
   @Test
@@ -672,7 +676,7 @@ public class PipelineResourceTest extends CategoryTest {
         .when(pmsPipelineService)
         .getAndValidatePipeline(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, false);
     pipelineResource.validatePipelineByIdentifier(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER);
-    verify(pmsPipelineServiceHelper, times(0)).resolveTemplatesAndValidatePipeline(entity, false);
+    verify(pmsPipelineServiceHelper, times(0)).resolveTemplatesAndValidatePipeline(entity, false, false);
   }
 
   @Test
@@ -694,7 +698,9 @@ public class PipelineResourceTest extends CategoryTest {
     String extraYaml = yaml + "extra";
     TemplateMergeResponseDTO templateMergeResponseDTO =
         TemplateMergeResponseDTO.builder().mergedPipelineYaml(extraYaml).build();
-    doReturn(templateMergeResponseDTO).when(pipelineTemplateHelper).resolveTemplateRefsInPipeline(entity);
+    doReturn(templateMergeResponseDTO)
+        .when(pipelineTemplateHelper)
+        .resolveTemplateRefsInPipeline(entity, BOOLEAN_FALSE_VALUE);
     ResponseDTO<TemplatesResolvedPipelineResponseDTO> templateResolvedPipelineYaml =
         pipelineResource.getTemplateResolvedPipelineYaml(
             ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null);
@@ -754,7 +760,7 @@ public class PipelineResourceTest extends CategoryTest {
                                                 .build();
     doReturn(pipelineCRUDResult)
         .when(pmsPipelineService)
-        .validateAndUpdatePipeline(simplifiedEntity, ChangeType.MODIFY, true);
+        .validateAndUpdatePipeline(simplifiedEntity, ChangeType.MODIFY, false);
     ResponseDTO<PipelineSaveResponse> responseDTO = pipelineResource.updatePipelineV2(
         null, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, null, null, simplifiedYaml);
     assertThat(responseDTO.getData().getIdentifier()).isEqualTo(PIPELINE_IDENTIFIER);
@@ -774,5 +780,28 @@ public class PipelineResourceTest extends CategoryTest {
     PMSPipelineListRepoResponse pmsPipelineListRepoResponse =
         pmsPipelineService.getListOfRepos(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER);
     assertEquals(pmsPipelineListRepoResponse, repoResponse);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testMoveConfigs() {
+    MoveConfigOperationDTO moveConfigOperationDTO =
+        MoveConfigOperationDTO.builder().moveConfigOperationType(MoveConfigOperationType.INLINE_TO_REMOTE).build();
+    doReturn(PipelineCRUDResult.builder().pipelineEntity(entityWithVersion).build())
+        .when(pmsPipelineService)
+        .moveConfig(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, moveConfigOperationDTO);
+
+    MoveConfigRequestDTO moveConfigRequestDTO =
+        MoveConfigRequestDTO.builder()
+            .pipelineIdentifier(PIPELINE_IDENTIFIER)
+            .isNewBranch(false)
+            .moveConfigOperationType(io.harness.gitaware.helper.MoveConfigOperationType.INLINE_TO_REMOTE)
+            .build();
+
+    ResponseDTO<MoveConfigResponse> responseDTO = pipelineResource.moveConfig(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, moveConfigRequestDTO);
+
+    assertEquals(responseDTO.getData().getPipelineIdentifier(), PIPELINE_IDENTIFIER);
   }
 }

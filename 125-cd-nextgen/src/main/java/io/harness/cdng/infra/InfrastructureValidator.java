@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.infra.yaml.AsgInfrastructure;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
 import io.harness.cdng.infra.yaml.EcsInfrastructure;
 import io.harness.cdng.infra.yaml.ElastigroupInfrastructure;
@@ -85,6 +86,10 @@ public class InfrastructureValidator {
 
       case InfrastructureKind.TAS:
         validateTanzuApplicationServiceInfrastructure((TanzuApplicationServiceInfrastructure) infrastructure);
+        break;
+
+      case InfrastructureKind.ASG:
+        validateAsgInfrastructure((AsgInfrastructure) infrastructure);
         break;
 
       default:
@@ -253,6 +258,16 @@ public class InfrastructureValidator {
 
     if (!hasValueOrExpression(infrastructure.getSpace())) {
       throw new InvalidArgumentsException(Pair.of("Space", "cannot be empty"));
+    }
+  }
+
+  private void validateAsgInfrastructure(AsgInfrastructure infrastructure) {
+    if (!hasValueOrExpression(infrastructure.getConnectorRef())) {
+      throw new InvalidArgumentsException(Pair.of("connectorRef", "cannot be empty"));
+    }
+
+    if (!hasValueOrExpression(infrastructure.getRegion())) {
+      throw new InvalidArgumentsException(Pair.of("region", "cannot be empty"));
     }
   }
 

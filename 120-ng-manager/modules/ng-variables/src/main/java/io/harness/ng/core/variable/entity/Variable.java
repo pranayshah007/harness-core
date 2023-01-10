@@ -24,13 +24,13 @@ import io.harness.persistence.PersistentEntity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
 import java.util.Arrays;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -46,7 +46,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document("variables")
 @Persistent
 public abstract class Variable implements PersistentEntity, NGAccountAccess {
-  @Id @org.mongodb.morphia.annotations.Id String id;
+  @Id @dev.morphia.annotations.Id String id;
   @NotEmpty @EntityIdentifier String identifier;
   @NotEmpty @NGEntityName String name;
   String description;

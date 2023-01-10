@@ -6,9 +6,9 @@
                     debug_port="6014"
                     blaze-command="run"
                     keep-in-sync="true">
-        <blaze-target>//280-batch-processing:module</blaze-target>
+        <blaze-target>//batch-processing/service:module</blaze-target>
         <blaze-user-exe-flag>server</blaze-user-exe-flag>
-        <blaze-user-exe-flag>$PROJECT_DIR$/../280-batch-processing/batch-processing-config.yml</blaze-user-exe-flag>
+        <blaze-user-exe-flag>$PROJECT_DIR$/../batch-processing/service/batch-processing-config.yml</blaze-user-exe-flag>
     </blaze-settings>
     <method v="2">
         <option name="Blaze.BeforeRunTask" enabled="true"/>

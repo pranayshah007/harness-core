@@ -7,10 +7,10 @@
 
 package io.harness.ng.core.service.resources;
 
+import static io.harness.artifact.ArtifactUtilities.getArtifactoryRegistryUrl;
+import static io.harness.cdng.artifact.resources.artifactory.service.ArtifactoryResourceServiceImpl.getConnector;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.ng.accesscontrol.PlatformPermissions.VIEW_PROJECT_PERMISSION;
-import static io.harness.ng.accesscontrol.PlatformResourceTypes.PROJECT;
 import static io.harness.rbac.CDNGRbacPermissions.SERVICE_CREATE_PERMISSION;
 import static io.harness.rbac.CDNGRbacPermissions.SERVICE_UPDATE_PERMISSION;
 import static io.harness.rbac.CDNGRbacPermissions.SERVICE_VIEW_PERMISSION;
@@ -38,16 +38,24 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
+import io.harness.beans.IdentifierRef;
+import io.harness.beans.Scope;
 import io.harness.cdng.artifact.ArtifactSummary;
 import io.harness.cdng.artifact.bean.yaml.ArtifactSourceConfig;
+import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
 import io.harness.cdng.artifact.utils.ArtifactSourceTemplateHelper;
+import io.harness.cdng.manifest.yaml.K8sCommandFlagType;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
+import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.OrgAndProjectValidationHelper;
 import io.harness.ng.core.artifact.ArtifactSourceYamlRequestDTO;
+import io.harness.ng.core.artifacts.resources.util.ArtifactResourceUtils.ArtifactInternalDTO;
 import io.harness.ng.core.beans.NGEntityTemplateResponseDTO;
 import io.harness.ng.core.beans.ServiceV2YamlMetadata;
 import io.harness.ng.core.beans.ServicesV2YamlMetadataDTO;
@@ -56,6 +64,7 @@ import io.harness.ng.core.customDeployment.helper.CustomDeploymentYamlHelper;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.remote.utils.ScopeAccessHelper;
 import io.harness.ng.core.service.dto.ServiceRequestDTO;
 import io.harness.ng.core.service.dto.ServiceResponse;
 import io.harness.ng.core.service.entity.ArtifactSourcesResponseDTO;
@@ -69,11 +78,18 @@ import io.harness.ng.core.service.services.ServiceEntityManagementService;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.pms.rbac.NGResourceType;
+import io.harness.pms.yaml.YamlField;
+import io.harness.pms.yaml.YamlNode;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.rbac.CDNGRbacUtility;
 import io.harness.repositories.UpsertOptions;
 import io.harness.security.annotations.NextGenManagerAuth;
+import io.harness.utils.IdentifierRefHelper;
+import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.PageUtils;
+import io.harness.utils.YamlPipelineUtils;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -86,9 +102,14 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -154,6 +175,10 @@ public class ServiceResourceV2 {
   private final OrgAndProjectValidationHelper orgAndProjectValidationHelper;
   @Inject CustomDeploymentYamlHelper customDeploymentYamlHelper;
   @Inject ArtifactSourceTemplateHelper artifactSourceTemplateHelper;
+  private ServiceEntityYamlSchemaHelper serviceSchemaHelper;
+  private ScopeAccessHelper scopeAccessHelper;
+
+  private final NGFeatureFlagHelperService featureFlagService;
   public static final String SERVICE_PARAM_MESSAGE = "Service Identifier for the entity";
   public static final String SERVICE_YAML_METADATA_INPUT_PARAM_MESSAGE = "List of Service Identifiers for the entities";
 
@@ -191,6 +216,15 @@ public class ServiceResourceV2 {
       throw new NotFoundException(format("Service with identifier [%s] in project [%s], org [%s] not found",
           serviceIdentifier, projectIdentifier, orgIdentifier));
     }
+
+    if (featureFlagService.isEnabled(accountId, FeatureName.CDS_ARTIFACTORY_REPOSITORY_URL_MANDATORY)) {
+      ServiceEntity service =
+          updateArtifactoryRegistryUrlIfEmpty(serviceEntity.get(), accountId, orgIdentifier, projectIdentifier);
+      Optional<ServiceEntity> serviceResponse = Optional.ofNullable(service);
+      return ResponseDTO.newResponse(
+          version, serviceResponse.map(ServiceElementMapper::toResponseWrapper).orElse(null));
+    }
+
     return ResponseDTO.newResponse(version, serviceEntity.map(ServiceElementMapper::toResponseWrapper).orElse(null));
   }
 
@@ -210,7 +244,7 @@ public class ServiceResourceV2 {
     accessControlClient.checkForAccessOrThrow(
         ResourceScope.of(accountId, serviceRequestDTO.getOrgIdentifier(), serviceRequestDTO.getProjectIdentifier()),
         Resource.of(NGResourceType.SERVICE, null), SERVICE_CREATE_PERMISSION);
-
+    serviceSchemaHelper.validateSchema(accountId, serviceRequestDTO.getYaml());
     ServiceEntity serviceEntity = ServiceElementMapper.toServiceEntity(accountId, serviceRequestDTO);
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
         serviceEntity.getOrgIdentifier(), serviceEntity.getProjectIdentifier(), serviceEntity.getAccountId());
@@ -239,6 +273,8 @@ public class ServiceResourceV2 {
           ResourceScope.of(accountId, serviceRequestDTO.getOrgIdentifier(), serviceRequestDTO.getProjectIdentifier()),
           Resource.of(NGResourceType.SERVICE, null), SERVICE_CREATE_PERMISSION);
     }
+    serviceRequestDTOs.forEach(
+        serviceRequestDTO -> serviceSchemaHelper.validateSchema(accountId, serviceRequestDTO.getYaml()));
     List<ServiceEntity> serviceEntities =
         serviceRequestDTOs.stream()
             .map(serviceRequestDTO -> ServiceElementMapper.toServiceEntity(accountId, serviceRequestDTO))
@@ -284,6 +320,7 @@ public class ServiceResourceV2 {
     accessControlClient.checkForAccessOrThrow(
         ResourceScope.of(accountId, serviceRequestDTO.getOrgIdentifier(), serviceRequestDTO.getProjectIdentifier()),
         Resource.of(NGResourceType.SERVICE, serviceRequestDTO.getIdentifier()), SERVICE_UPDATE_PERMISSION);
+    serviceSchemaHelper.validateSchema(accountId, serviceRequestDTO.getYaml());
     ServiceEntity requestService = ServiceElementMapper.toServiceEntity(accountId, serviceRequestDTO);
     requestService.setVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
     ServiceEntity updatedService = serviceEntityService.update(requestService);
@@ -305,6 +342,7 @@ public class ServiceResourceV2 {
     accessControlClient.checkForAccessOrThrow(
         ResourceScope.of(accountId, serviceRequestDTO.getOrgIdentifier(), serviceRequestDTO.getProjectIdentifier()),
         Resource.of(NGResourceType.SERVICE, serviceRequestDTO.getIdentifier()), SERVICE_UPDATE_PERMISSION);
+    serviceSchemaHelper.validateSchema(accountId, serviceRequestDTO.getYaml());
     ServiceEntity requestService = ServiceElementMapper.toServiceEntity(accountId, serviceRequestDTO);
     requestService.setVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
@@ -344,12 +382,14 @@ public class ServiceResourceV2 {
       @QueryParam("deploymentTemplateIdentifier") String deploymentTemplateIdentifier,
       @Parameter(
           description = "The version label of deployment template if infrastructure is of type custom deployment")
-      @QueryParam("versionLabel") String versionLabel) {
+      @QueryParam("versionLabel") String versionLabel,
+      @Parameter(description = "Specify true if all accessible Services are to be included") @QueryParam(
+          "includeAllServicesAccessibleAtScope") @DefaultValue("false") boolean includeAllServicesAccessibleAtScope) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
         Resource.of(NGResourceType.SERVICE, null), SERVICE_VIEW_PERMISSION, "Unauthorized to list services");
 
-    Criteria criteria = ServiceFilterHelper.createCriteriaForGetList(
-        accountId, orgIdentifier, projectIdentifier, false, searchTerm, type, gitOpsEnabled);
+    Criteria criteria = ServiceFilterHelper.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier, false,
+        searchTerm, type, gitOpsEnabled, includeAllServicesAccessibleAtScope);
     Pageable pageRequest;
     if (isNotEmpty(serviceIdentifiers)) {
       criteria.and(ServiceEntityKeys.identifier).in(serviceIdentifiers);
@@ -407,11 +447,12 @@ public class ServiceResourceV2 {
       @Parameter(
           description = "The version label of deployment template if infrastructure is of type custom deployment")
       @QueryParam("versionLabel") String versionLabel) {
-    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
-        Resource.of(PROJECT, projectIdentifier), VIEW_PROJECT_PERMISSION, "Unauthorized to list services");
+    accessControlClient.checkForAccessOrThrow(List.of(scopeAccessHelper.getPermissionCheckDtoForViewAccessForScope(
+                                                  Scope.of(accountId, orgIdentifier, projectIdentifier))),
+        "Unauthorized to list services");
 
     Criteria criteria = ServiceFilterHelper.createCriteriaForGetList(
-        accountId, orgIdentifier, projectIdentifier, false, searchTerm, type, gitOpsEnabled);
+        accountId, orgIdentifier, projectIdentifier, false, searchTerm, type, gitOpsEnabled, false);
     if (isNotEmpty(serviceIdentifiers)) {
       criteria.and(ServiceEntityKeys.identifier).in(serviceIdentifiers);
     }
@@ -522,6 +563,12 @@ public class ServiceResourceV2 {
   }
 
   private ServiceV2YamlMetadata createServiceV2YamlMetadata(ServiceEntity serviceEntity) {
+    if (featureFlagService.isEnabled(
+            serviceEntity.getAccountId(), FeatureName.CDS_ARTIFACTORY_REPOSITORY_URL_MANDATORY)) {
+      serviceEntity = updateArtifactoryRegistryUrlIfEmpty(serviceEntity, serviceEntity.getAccountId(),
+          serviceEntity.getOrgIdentifier(), serviceEntity.getProjectIdentifier());
+    }
+
     if (isBlank(serviceEntity.getYaml())) {
       log.info("Service with identifier {} is not configured with a Service definition. Service Yaml is empty",
           serviceEntity.getIdentifier());
@@ -529,6 +576,8 @@ public class ServiceResourceV2 {
           .serviceIdentifier(serviceEntity.getIdentifier())
           .serviceYaml("")
           .inputSetTemplateYaml("")
+          .projectIdentifier(serviceEntity.getProjectIdentifier())
+          .orgIdentifier(serviceEntity.getOrgIdentifier())
           .build();
     }
 
@@ -538,6 +587,8 @@ public class ServiceResourceV2 {
         .serviceIdentifier(serviceEntity.getIdentifier())
         .serviceYaml(serviceEntity.getYaml())
         .inputSetTemplateYaml(serviceInputSetYaml)
+        .orgIdentifier(serviceEntity.getOrgIdentifier())
+        .projectIdentifier(serviceEntity.getProjectIdentifier())
         .build();
   }
 
@@ -622,6 +673,120 @@ public class ServiceResourceV2 {
       String oldServiceInputsYaml) {
     return ResponseDTO.newResponse(serviceEntityService.mergeServiceInputs(
         accountId, orgIdentifier, projectIdentifier, serviceIdentifier, oldServiceInputsYaml));
+  }
+
+  @GET
+  @Path("/k8s/command-flags")
+  @ApiOperation(value = "Get Command flags for K8s", nickname = "k8sCmdFlags")
+  @Operation(operationId = "k8sCmdFlags", summary = "Retrieving the list of Kubernetes Command Options",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "Returns the list of Kubernetes Command Options")
+      })
+  public ResponseDTO<Set<K8sCommandFlagType>>
+  getK8sCommandFlags(@QueryParam("serviceSpecType") @NotNull String serviceSpecType) {
+    Set<K8sCommandFlagType> k8sCmdFlags = new HashSet<>();
+    for (K8sCommandFlagType k8sCommandFlagType : K8sCommandFlagType.values()) {
+      if (k8sCommandFlagType.getServiceSpecTypes().contains(serviceSpecType)) {
+        k8sCmdFlags.add(k8sCommandFlagType);
+      }
+    }
+    return ResponseDTO.newResponse(k8sCmdFlags);
+  }
+
+  private ServiceEntity updateArtifactoryRegistryUrlIfEmpty(
+      ServiceEntity serviceEntity, String accountId, String orgIdentifier, String projectIdentifier) {
+    String serviceYaml = serviceEntity.getYaml();
+    YamlNode node = validateAndGetYamlNode(serviceYaml);
+    JsonNode serviceNode = node.getCurrJsonNode().get("service");
+    JsonNode artifactSpecNode = serviceNode.get("serviceDefinition").get("spec").get("artifacts").get("primary");
+    ArtifactInternalDTO artifactDTO;
+    try {
+      artifactDTO = YamlUtils.read(artifactSpecNode.toString(), ArtifactInternalDTO.class);
+    } catch (IOException e) {
+      throw new InvalidRequestException("Unable to read artifact spec in service yaml", e);
+    }
+    ArtifactoryRegistryArtifactConfig artifactoryRegistryArtifactConfig =
+        (ArtifactoryRegistryArtifactConfig) artifactDTO.spec;
+    ArtifactSourceType artifactSourceType = artifactDTO.sourceType;
+    if (artifactSourceType != ArtifactSourceType.ARTIFACTORY_REGISTRY) {
+      return serviceEntity;
+    }
+    String repositoryUrl = artifactoryRegistryArtifactConfig.getRepositoryUrl().getValue();
+    if (artifactoryRegistryArtifactConfig.getRepositoryFormat().getValue().equals("docker")) {
+      if (EmptyPredicate.isEmpty(repositoryUrl)) {
+        String artifactoryConnectorRef = artifactoryRegistryArtifactConfig.getConnectorRef().getValue();
+        IdentifierRef connectorRef =
+            IdentifierRefHelper.getIdentifierRef(artifactoryConnectorRef, accountId, orgIdentifier, projectIdentifier);
+        ArtifactoryConnectorDTO connector = getConnector(connectorRef);
+        repositoryUrl = getArtifactoryRegistryUrl(
+            connector.getArtifactoryServerUrl(), null, artifactoryRegistryArtifactConfig.getRepository().getValue());
+      }
+    }
+    Map<String, Object> resMap = getResMap(node, repositoryUrl);
+    serviceEntity.setYaml(YamlPipelineUtils.writeYamlString(resMap));
+    return serviceEntity;
+  }
+
+  private YamlNode validateAndGetYamlNode(String yaml) {
+    if (isEmpty(yaml)) {
+      throw new InvalidRequestException("Service YAML is empty.");
+    }
+    YamlNode yamlNode = null;
+    try {
+      yamlNode = YamlUtils.readTree(yaml).getNode();
+    } catch (IOException e) {
+      log.error("Could not convert yaml to JsonNode. Yaml:\n" + yaml, e);
+    }
+    return yamlNode;
+  }
+
+  private Map<String, Object> getResMap(YamlNode yamlNode, String url) {
+    Map<String, Object> resMap = new LinkedHashMap<>();
+    List<YamlField> childFields = yamlNode.fields();
+    boolean connectorRefFlag = false;
+    // Iterating over the YAML
+    for (YamlField childYamlField : childFields) {
+      String fieldName = childYamlField.getName();
+      if (fieldName.equals("connectorRef")) {
+        connectorRefFlag = true;
+      }
+      JsonNode value = childYamlField.getNode().getCurrJsonNode();
+      if (value.isValueNode() || YamlUtils.checkIfNodeIsArrayWithPrimitiveTypes(value)) {
+        // Value -> ValueNode
+        resMap.put(fieldName, value);
+      } else if (value.isArray()) {
+        // Value -> ArrayNode
+        resMap.put(fieldName, getResMapInArray(childYamlField.getNode(), url));
+      } else {
+        // Value -> ObjectNode
+        resMap.put(fieldName, getResMap(childYamlField.getNode(), url));
+      }
+    }
+    if (connectorRefFlag == true) {
+      resMap.put("repositoryUrl", url);
+    }
+    return resMap;
+  }
+
+  // Gets the ResMap if the yamlNode is of the type Array
+  private List<Object> getResMapInArray(YamlNode yamlNode, String url) {
+    List<Object> arrayList = new ArrayList<>();
+    // Iterate over the array
+    for (YamlNode arrayElement : yamlNode.asArray()) {
+      if (yamlNode.getCurrJsonNode().isValueNode()) {
+        // Value -> LeafNode
+        arrayList.add(arrayElement);
+      } else if (arrayElement.isArray()) {
+        // Value -> Array
+        arrayList.add(getResMapInArray(arrayElement, url));
+      } else {
+        // Value -> Object
+        arrayList.add(getResMap(arrayElement, url));
+      }
+    }
+    return arrayList;
   }
 
   private List<ServiceResponse> filterByPermissionAndId(

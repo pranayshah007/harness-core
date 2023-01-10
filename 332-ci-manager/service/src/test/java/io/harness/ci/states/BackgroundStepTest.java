@@ -35,7 +35,7 @@ import io.harness.beans.sweepingoutputs.StepLogKeyDetails;
 import io.harness.beans.sweepingoutputs.StepTaskDetails;
 import io.harness.beans.sweepingoutputs.VmStageInfraDetails;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
-import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYamlSpec;
+import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml.K8sDirectInfraYamlSpec;
 import io.harness.category.element.UnitTests;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.config.CIExecutionServiceConfig;

@@ -150,14 +150,36 @@ def is_valid_month_folder(folderstr):
     return True
 
 def send_event_for_processing(folders_to_ingest, jsonData):
+    active_months_in_gcs_bucket = {}
+    for path in folders_to_ingest:
+        ps = path.split("/")
+        accountIdInPath = ps[0].split(":")[1] #AROAXVZVVGMCF7KFQSJ37:o0yschY0RrGZJ2JFGEpvdw
+        if len(ps) == 4:
+            monthfolder = ps[-1]  # last folder in path
+        elif len(ps) == 5:
+            monthfolder = ps[-2]  # second last folder in path
+        report_year = monthfolder.split("-")[0][:4]
+        report_month = monthfolder.split("-")[0][4:6]
+        if accountIdInPath in active_months_in_gcs_bucket:
+            active_months_in_gcs_bucket[accountIdInPath].append(f"{report_year}-{report_month}-01")
+        else:
+            active_months_in_gcs_bucket[accountIdInPath] = [f"{report_year}-{report_month}-01"]
+
     print("Sending events for respective folders")
+    # sending a single event for triggering historical update of each accountId.
+    processed_accounts = set()
     for path in folders_to_ingest:
         event_data = {}
         sp = path.split('/')
         event_data["accountId"] = sp[0].split(":")[1] #AROAXVZVVGMCF7KFQSJ37:o0yschY0RrGZJ2JFGEpvdw
         event_data["path"] = path
         event_data["bucket"] = jsonData["bucket"]
+        if event_data["accountId"] not in processed_accounts:
+            event_data["triggerHistoricalCostUpdateInPreferredCurrency"] = True
+            event_data["disableHistoricalUpdateForMonths"] = active_months_in_gcs_bucket[event_data["accountId"]]
         send_event(event_data)
+        processed_accounts.add(event_data["accountId"])
+
 
 def send_event(event_data):
     message_json = json.dumps({

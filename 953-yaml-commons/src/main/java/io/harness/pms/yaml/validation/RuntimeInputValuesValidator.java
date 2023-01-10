@@ -128,7 +128,7 @@ public class RuntimeInputValuesValidator {
     ParameterField<?> inputSetField;
     inputSetField = getInputSetParameterField(objectToValidateValue);
     String objectToValidateFieldValue;
-    if (inputSetField == null || inputSetField.getValue() == null) {
+    if (inputSetField == null || inputSetField.obtainValue() == null) {
       objectToValidateFieldValue = objectToValidateValue;
     } else {
       objectToValidateFieldValue = inputSetField.getValue().toString();

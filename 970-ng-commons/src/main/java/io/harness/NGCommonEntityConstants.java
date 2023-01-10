@@ -46,6 +46,7 @@ public class NGCommonEntityConstants {
   public static final String DELETED_KEY = "deleted";
   public static final String PIPELINE_KEY = "pipelineIdentifier";
   public static final String PIPELINE_EXECUTION_ID = "pipelineExecutionId";
+  public static final String LAST_DEPLOYED_AT = "lastDeployedAt";
   public static final String INPUT_SET_IDENTIFIER_KEY = "inputSetIdentifier";
   public static final String ENVIRONMENT_IDENTIFIER_KEY = "environmentIdentifier";
   public static final String STATUS = "status";
@@ -80,6 +81,7 @@ public class NGCommonEntityConstants {
   public static final String FILE_IDENTIFIER_KEY = "fileIdentifier";
   public static final Integer MAX_PAGE_SIZE = 10000;
   public static final String EXPIRY_TIME = "expiryTime";
+  public static final String SORT = "sort";
 
   // TODO(UTSAV): Move to ce-nextgen
   public static final String IS_EVENTS_ENABLED = "eventsEnabled";
@@ -147,7 +149,6 @@ public class NGCommonEntityConstants {
   public static final String INFRA_IDENTIFIER = "infraIdentifier";
 
   public static final String CLUSTER_IDENTIFIER = "clusterIdentifier";
-
   public static final String INFRA = "infra";
   public static final String OVERRIDES_ONLY = "overridesOnly";
   public static final String RUNTIME_INPUTS_TEMPLATE = "Runtime inputs template YAML";
@@ -166,4 +167,5 @@ public class NGCommonEntityConstants {
   public static final String PARENT_JOB_NAME = "parentJobName";
   public static final String HARNESS_IMAGE = "harnessImage";
   public static final String METHOD_NAME = "methodName";
+  public static final String AGENT_KEY = "agentIdentifier";
 }

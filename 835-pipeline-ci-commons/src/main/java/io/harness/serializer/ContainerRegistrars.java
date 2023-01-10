@@ -7,7 +7,9 @@
 
 package io.harness.serializer;
 
+import io.harness.morphia.MorphiaRegistrar;
 import io.harness.serializer.kryo.ContainerKryoRegistrar;
+import io.harness.serializer.kryo.ContainerMorphiaRegistrar;
 import io.harness.serializer.kryo.NotificationBeansKryoRegistrar;
 
 import com.google.common.collect.ImmutableSet;
@@ -17,7 +19,13 @@ public class ContainerRegistrars {
       ImmutableSet.<Class<? extends KryoRegistrar>>builder()
           .addAll(DelegateTasksBeansRegistrars.kryoRegistrars)
           .addAll(YamlBeansModuleRegistrars.kryoRegistrars)
+          .addAll(PmsSdkCoreModuleRegistrars.kryoRegistrars)
+          .addAll(DelegateServiceBeansRegistrars.kryoRegistrars)
+          .addAll(WaitEngineRegistrars.kryoRegistrars)
           .add(NotificationBeansKryoRegistrar.class)
           .add(ContainerKryoRegistrar.class)
           .build();
+
+  public static final ImmutableSet<Class<? extends MorphiaRegistrar>> morphiaRegistrars =
+      ImmutableSet.<Class<? extends MorphiaRegistrar>>builder().add(ContainerMorphiaRegistrar.class).build();
 }

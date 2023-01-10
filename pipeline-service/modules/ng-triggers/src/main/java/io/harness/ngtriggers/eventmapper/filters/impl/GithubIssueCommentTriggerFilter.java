@@ -55,6 +55,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import java.time.Duration;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -67,6 +68,7 @@ public class GithubIssueCommentTriggerFilter implements TriggerFilter {
   private TaskExecutionUtils taskExecutionUtils;
   private ConnectorUtils connectorUtils;
   private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   private WebhookEventPayloadParser webhookEventPayloadParser;
   private PayloadConditionsTriggerFilter payloadConditionsTriggerFilter;
   private WebhookParserSCMService webhookParserSCMService;
@@ -237,7 +239,9 @@ public class GithubIssueCommentTriggerFilter implements TriggerFilter {
 
     if (BinaryResponseData.class.isAssignableFrom(responseData.getClass())) {
       BinaryResponseData binaryResponseData = (BinaryResponseData) responseData;
-      Object object = kryoSerializer.asInflatedObject(binaryResponseData.getData());
+      Object object = binaryResponseData.isUsingKryoWithoutReference()
+          ? referenceFalseKryoSerializer.asInflatedObject(binaryResponseData.getData())
+          : kryoSerializer.asInflatedObject(binaryResponseData.getData());
       if (object instanceof GitApiTaskResponse) {
         return (GitApiTaskResponse) object;
       } else if (object instanceof ErrorResponseData) {

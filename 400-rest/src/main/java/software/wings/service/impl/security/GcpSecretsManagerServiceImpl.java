@@ -46,10 +46,10 @@ import software.wings.service.intfc.security.GcpSecretsManagerService;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.mongodb.DuplicateKeyException;
+import dev.morphia.query.Query;
 import java.util.Arrays;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
 
 @OwnedBy(PL)
 @TargetModule(_360_CG_MANAGER)

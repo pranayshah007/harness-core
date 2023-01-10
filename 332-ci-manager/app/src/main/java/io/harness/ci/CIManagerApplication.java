@@ -18,13 +18,13 @@ import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCH
 
 import static java.util.Collections.singletonList;
 
-import io.harness.AuthorizationServiceHeader;
 import io.harness.Microservice;
 import io.harness.ModuleType;
 import io.harness.PipelineServiceUtilityModule;
 import io.harness.SCMGrpcClientModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.migration.CIManagerMigrationProvider;
+import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.cache.CacheModule;
 import io.harness.ci.app.InspectCommand;
 import io.harness.ci.enforcement.BuildRestrictionUsageImpl;
@@ -33,6 +33,7 @@ import io.harness.ci.enforcement.BuildsPerMonthRestrictionUsageImpl;
 import io.harness.ci.enforcement.TotalBuildsRestrictionUsageImpl;
 import io.harness.ci.execution.ObserverEventConsumer;
 import io.harness.ci.execution.OrchestrationExecutionEventHandlerRegistrar;
+import io.harness.ci.execution.queue.CIExecutionPoller;
 import io.harness.ci.plan.creator.CIModuleInfoProvider;
 import io.harness.ci.plan.creator.CIPipelineServiceInfoProvider;
 import io.harness.ci.plan.creator.filter.CIFilterCreationResponseMerger;
@@ -65,8 +66,9 @@ import io.harness.ng.core.CorrelationFilter;
 import io.harness.ng.core.TraceFilter;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
-import io.harness.persistence.Store;
 import io.harness.persistence.UserProvider;
+import io.harness.persistence.store.Store;
+import io.harness.plugin.PluginMetadataRecordsJob;
 import io.harness.pms.contracts.plan.JsonExpansionInfo;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.events.base.PipelineEventConsumerController;
@@ -128,6 +130,7 @@ import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
+import dev.morphia.converters.TypeConverter;
 import io.dropwizard.Application;
 import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
 import io.dropwizard.configuration.SubstitutingSourceProvider;
@@ -158,7 +161,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.log4j.LogManager;
 import org.glassfish.jersey.server.model.Resource;
 import org.hibernate.validator.parameternameprovider.ReflectionParameterNameProvider;
-import org.mongodb.morphia.converters.TypeConverter;
 import org.springframework.core.convert.converter.Converter;
 import ru.vyarus.guice.validator.ValidationModule;
 
@@ -309,6 +311,8 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
 
     log.info("CIManagerApplication DEPLOY_VERSION = " + System.getenv().get(DEPLOY_VERSION));
     initializeCiManagerMonitoring(injector);
+
+    initializePluginPublisher(injector);
     registerOasResource(configuration, environment, injector);
     log.info("Starting app done");
     MaintenanceController.forceMaintenance(false);
@@ -438,6 +442,9 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
     environment.lifecycle().manage(injector.getInstance(QueueListenerController.class));
     environment.lifecycle().manage(injector.getInstance(NotifierScheduledExecutorService.class));
     environment.lifecycle().manage(injector.getInstance(PipelineEventConsumerController.class));
+    environment.lifecycle().manage(injector.getInstance(CIExecutionPoller.class));
+    // Do not remove as it's used for MaintenanceController for shutdown mode
+    environment.lifecycle().manage(injector.getInstance(MaintenanceController.class));
   }
 
   private void registerPmsSdkEvents(Injector injector) {
@@ -559,5 +566,10 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
   private void initializeCiManagerMonitoring(Injector injector) {
     log.info("Initializing CI Manager Monitoring");
     injector.getInstance(CiTelemetryRecordsJob.class).scheduleTasks();
+  }
+
+  private void initializePluginPublisher(Injector injector) {
+    log.info("Initializing plugin metadata publishing job");
+    injector.getInstance(PluginMetadataRecordsJob.class).scheduleTasks();
   }
 }

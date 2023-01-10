@@ -29,6 +29,8 @@ service DelegateService {
   rpc SubmitTask(SubmitTaskRequest) returns (SubmitTaskResponse);
 
   rpc CancelTask(CancelTaskRequest) returns (CancelTaskResponse);
+  rpc CancelTaskV2(CancelTaskRequest) returns (CancelTaskResponse);
+
   rpc TaskProgress(TaskProgressRequest) returns (TaskProgressResponse);
   rpc TaskProgressUpdates(TaskProgressUpdatesRequest) returns (stream TaskProgressUpdatesResponse);
 

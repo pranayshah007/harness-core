@@ -41,6 +41,7 @@ import software.wings.beans.LogColor;
 import software.wings.beans.LogHelper;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.Map;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
@@ -50,6 +51,7 @@ public class ServiceNowApprovalCallback extends AbstractApprovalCallback impleme
   private final String approvalInstanceId;
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
   @Builder
   public ServiceNowApprovalCallback(String approvalInstanceId) {
@@ -76,7 +78,10 @@ public class ServiceNowApprovalCallback extends AbstractApprovalCallback impleme
     ServiceNowTaskNGResponse serviceNowTaskNGResponse;
     try {
       ResponseData responseData = response.values().iterator().next();
-      responseData = (ResponseData) kryoSerializer.asInflatedObject(((BinaryResponseData) responseData).getData());
+      BinaryResponseData binaryResponseData = (BinaryResponseData) responseData;
+      responseData = (ResponseData) (binaryResponseData.isUsingKryoWithoutReference()
+              ? referenceFalseKryoSerializer.asInflatedObject(binaryResponseData.getData())
+              : kryoSerializer.asInflatedObject(binaryResponseData.getData()));
       if (responseData instanceof ErrorNotifyResponseData) {
         handleErrorNotifyResponse(
             logCallback, (ErrorNotifyResponseData) responseData, "Failed to fetch ServiceNow ticket:");

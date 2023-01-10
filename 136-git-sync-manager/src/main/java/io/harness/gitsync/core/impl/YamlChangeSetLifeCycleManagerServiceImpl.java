@@ -7,7 +7,7 @@
 
 package io.harness.gitsync.core.impl;
 
-import static io.harness.AuthorizationServiceHeader.NG_MANAGER;
+import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.gitsync.common.beans.YamlChangeSetStatus.RUNNING;
 import static io.harness.gitsync.common.beans.YamlChangeSetStatus.getTerminalStatusList;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;

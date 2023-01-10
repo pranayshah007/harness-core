@@ -31,4 +31,6 @@ public interface GitCommitRepository extends CrudRepository<GitCommit, String> {
 
   Optional<GitCommit> findFirstByAccountIdentifierAndRepoURLAndBranchNameAndGitSyncDirectionOrderByCreatedAtDesc(
       String accountIdentifier, String repoURL, String branchName, String gitSyncDirection);
+
+  List<GitCommit> findAllByAccountIdentifier(String accountIdentifier);
 }

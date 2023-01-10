@@ -6,6 +6,7 @@
  */
 
 package io.harness.cvng;
+
 import static io.harness.cvng.CVConstants.SERVICE_BASE_URL;
 import static io.harness.swagger.SwaggerBundleConfigurationFactory.buildSwaggerBundleConfiguration;
 
@@ -17,6 +18,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cache.CacheConfig;
 import io.harness.cf.CfClientConfig;
 import io.harness.cvng.core.NGManagerServiceConfig;
+import io.harness.cvng.notification.config.ErrorTrackingClientConfig;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.enforcement.client.EnforcementClientConfiguration;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.ff.FeatureFlagConfig;
@@ -29,6 +32,7 @@ import io.harness.reflection.HarnessReflections;
 import io.harness.remote.ManagerAuthConfig;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.secret.ConfigSecret;
+import io.harness.timescaledb.TimeScaleDBConfig;
 
 import software.wings.app.PortalConfig;
 
@@ -66,7 +70,6 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.glassfish.jersey.server.model.Resource;
 import org.reflections.Reflections;
 
 @Data
@@ -92,6 +95,7 @@ public class VerificationConfiguration extends Configuration {
   @JsonProperty("featureFlagConfig") private FeatureFlagConfig featureFlagConfig;
   @JsonProperty("cacheConfig") private CacheConfig cacheConfig;
   @JsonProperty("accessControlClientConfig") private AccessControlClientConfiguration accessControlClientConfiguration;
+  @JsonProperty("errorTrackingClientConfig") private ErrorTrackingClientConfig errorTrackingClientConfig;
   @JsonProperty("distributedLockImplementation")
   private DistributedLockImplementation distributedLockImplementation = DistributedLockImplementation.MONGO;
   private ServiceHttpClientConfig templateServiceClientConfig;
@@ -103,6 +107,8 @@ public class VerificationConfiguration extends Configuration {
   @JsonProperty("basePathPrefix") String basePathPrefix = "";
   @JsonProperty(value = "enableOpentelemetry") private Boolean enableOpentelemetry;
   public static final String RESOURCE_PACKAGE = "io.harness.cvng";
+  @JsonProperty("enableDashboardTimescale") private Boolean enableDashboardTimescale;
+  @JsonProperty("timescaledb") private TimeScaleDBConfig timeScaleDBConfig;
 
   private String portalUrl;
   /**
@@ -144,7 +150,7 @@ public class VerificationConfiguration extends Configuration {
       if (!resource.getPackage().getName().endsWith("resources")) {
         throw new IllegalStateException("Resource classes should be in resources package." + resource);
       }
-      if (Resource.isAcceptable(resource)) {
+      if (resource.isInterface() || EmptyPredicate.isEmpty(resource.getInterfaces())) {
         resourcePackages.add(resource.getPackage().getName());
       }
     });

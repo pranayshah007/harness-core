@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.pipeline.CDStepInfo;
+import io.harness.cdng.pipeline.CDAbstractStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.CommandStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -42,7 +42,7 @@ import org.springframework.data.annotation.TypeAlias;
 @SimpleVisitorHelper(helperClass = CommandStepInfoVisitorHelper.class)
 @TypeAlias("commandStepInfo")
 @RecasterAlias("io.harness.cdng.ssh.CommandStepInfo")
-public class CommandStepInfo extends CommandBaseStepInfo implements CDStepInfo, Visitable {
+public class CommandStepInfo extends CommandBaseStepInfo implements CDAbstractStepInfo, Visitable {
   List<NGVariable> environmentVariables;
   @VariableExpression(skipVariableExpression = true) List<NGVariable> outputVariables;
 

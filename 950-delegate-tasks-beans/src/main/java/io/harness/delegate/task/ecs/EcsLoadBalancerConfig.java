@@ -14,10 +14,12 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.expression.Expression;
 
 import lombok.Builder;
+import lombok.Data;
 import lombok.Value;
 import lombok.experimental.NonFinal;
 
 @Value
+@Data
 @Builder
 @OwnedBy(HarnessTeam.CDP)
 public class EcsLoadBalancerConfig {

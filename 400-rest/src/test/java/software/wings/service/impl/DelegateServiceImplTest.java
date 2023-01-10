@@ -90,9 +90,9 @@ import io.harness.delegate.beans.K8sPermissionType;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.TaskDataV2;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
-import io.harness.delegate.events.DelegateGroupDeleteEvent;
-import io.harness.delegate.events.DelegateGroupUpsertEvent;
+import io.harness.delegate.events.DelegateDeleteEvent;
 import io.harness.delegate.events.DelegateUnregisterEvent;
+import io.harness.delegate.events.DelegateUpsertEvent;
 import io.harness.delegate.service.DelegateVersionService;
 import io.harness.delegate.service.intfc.DelegateNgTokenService;
 import io.harness.delegate.task.http.HttpTaskParameters;
@@ -129,7 +129,7 @@ import software.wings.beans.VaultConfig;
 import software.wings.events.TestUtils;
 import software.wings.expression.ManagerPreviewExpressionEvaluator;
 import software.wings.features.api.UsageLimitedFeature;
-import software.wings.helpers.ext.mail.EmailData;
+import software.wings.persistence.mail.EmailData;
 import software.wings.service.impl.TemplateParameters.TemplateParametersBuilder;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.AssignDelegateService;
@@ -221,6 +221,7 @@ public class DelegateServiceImplTest extends WingsBaseTest {
 
   @Before
   public void setUp() throws IllegalAccessException {
+    when(accountService.getFromCacheWithFallback(ACCOUNT_ID)).thenReturn(Account.Builder.anAccount().build());
     when(broadcasterFactory.lookup(anyString(), anyBoolean())).thenReturn(broadcaster);
     FieldUtils.writeField(delegateTaskService, "retryObserverSubject", retryObserverSubject, true);
     FieldUtils.writeField(delegateService, "subject", new Subject<>(), true);
@@ -448,6 +449,36 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   }
 
   @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void shouldAcquireDelegateTaskWithTaskDataV2WhitelistedDelegateAndFFisOFF() {
+    final String taskId = "XYZ";
+    final Delegate delegate = createDelegateBuilder().build();
+    when(delegateCache.get(ACCOUNT_ID, delegate.getUuid(), false)).thenReturn(delegate);
+    when(assignDelegateService.getEligibleDelegatesToExecuteTask(any(DelegateTask.class)))
+        .thenReturn(new ArrayList<>(singletonList(DELEGATE_ID)));
+    when(assignDelegateService.getConnectedDelegateList(any(), any()))
+        .thenReturn(new ArrayList<>(singletonList(DELEGATE_ID)));
+
+    final DelegateTask delegateTask = getDelegateTaskV2();
+    doReturn(delegateTask)
+        .when(spydelegateTaskServiceClassic)
+        .getUnassignedDelegateTask(ACCOUNT_ID, "XYZ", delegate.getUuid());
+
+    doReturn(getDelegateTaskPackage())
+        .when(spydelegateTaskServiceClassic)
+        .assignTask(delegate.getUuid(), taskId, delegateTask, null);
+
+    when(assignDelegateService.canAssign(delegate.getUuid(), delegateTask)).thenReturn(true);
+    when(assignDelegateService.isWhitelisted(delegateTask, delegate.getUuid())).thenReturn(true);
+    when(assignDelegateService.shouldValidate(delegateTask, delegate.getUuid())).thenReturn(false);
+
+    spydelegateTaskServiceClassic.acquireDelegateTask(ACCOUNT_ID, delegate.getUuid(), taskId, null);
+
+    verify(spydelegateTaskServiceClassic).assignTask(delegate.getUuid(), taskId, delegateTask, null);
+  }
+
+  @Test
   @Owner(developers = ROHITKARELIA)
   @Category(UnitTests.class)
   public void shouldNotAcquireDelegateTaskIfTaskIsNull() {
@@ -476,6 +507,29 @@ public class DelegateServiceImplTest extends WingsBaseTest {
                   .parameters(new Object[] {HttpTaskParameters.builder().url("https://www.google.com").build()})
                   .timeout(DEFAULT_ASYNC_CALL_TIMEOUT)
                   .build())
+        .tags(new ArrayList<>())
+        .build();
+  }
+
+  private DelegateTask getDelegateTaskV2() {
+    return DelegateTask.builder()
+        .uuid(generateUuid())
+        .accountId(ACCOUNT_ID)
+        .waitId(generateUuid())
+        .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, APP_ID)
+        .version(VERSION)
+        .data(TaskData.builder()
+                  .async(false)
+                  .taskType(TaskType.HTTP.name())
+                  .parameters(new Object[] {HttpTaskParameters.builder().url("https://www.google.com").build()})
+                  .timeout(DEFAULT_ASYNC_CALL_TIMEOUT)
+                  .build())
+        .taskDataV2(TaskDataV2.builder()
+                        .async(false)
+                        .taskType(TaskType.HTTP.name())
+                        .parameters(new Object[] {HttpTaskParameters.builder().url("https://www.google.com").build()})
+                        .timeout(DEFAULT_ASYNC_CALL_TIMEOUT)
+                        .build())
         .tags(new ArrayList<>())
         .build();
   }
@@ -1073,17 +1127,17 @@ public class DelegateServiceImplTest extends WingsBaseTest {
     assertThat(outboxEvent.getResourceScope().equals(new ProjectScope(ACCOUNT_ID, ORG_ID, PROJECT_ID))).isTrue();
     assertThat(outboxEvent.getResource())
         .isEqualTo(Resource.builder()
-                       .type(ResourceTypeConstants.DELEGATE_GROUPS)
-                       .identifier(delegateGroup)
+                       .type(ResourceTypeConstants.DELEGATE)
+                       .identifier(DELEGATE_GROUP_IDENTIFIER)
                        .labels(Collections.singletonMap("resourceName", "testDelegateGroupName"))
                        .build());
-    assertThat(outboxEvent.getEventType()).isEqualTo(DelegateGroupUpsertEvent.builder().build().getEventType());
-    DelegateGroupUpsertEvent delegateGroupUpsertEvent =
-        HObjectMapper.NG_DEFAULT_OBJECT_MAPPER.readValue(outboxEvent.getEventData(), DelegateGroupUpsertEvent.class);
-    assertThat(delegateGroupUpsertEvent.getAccountIdentifier()).isEqualTo(ACCOUNT_ID);
-    assertThat(delegateGroupUpsertEvent.getOrgIdentifier()).isEqualTo(ORG_ID);
-    assertThat(delegateGroupUpsertEvent.getProjectIdentifier()).isEqualTo(PROJECT_ID);
-    assertThat(delegateGroupUpsertEvent.getDelegateSetupDetails())
+    assertThat(outboxEvent.getEventType()).isEqualTo(DelegateUpsertEvent.builder().build().getEventType());
+    DelegateUpsertEvent delegateUpsertEvent =
+        HObjectMapper.NG_DEFAULT_OBJECT_MAPPER.readValue(outboxEvent.getEventData(), DelegateUpsertEvent.class);
+    assertThat(delegateUpsertEvent.getAccountIdentifier()).isEqualTo(ACCOUNT_ID);
+    assertThat(delegateUpsertEvent.getOrgIdentifier()).isEqualTo(ORG_ID);
+    assertThat(delegateUpsertEvent.getProjectIdentifier()).isEqualTo(PROJECT_ID);
+    assertThat(delegateUpsertEvent.getDelegateSetupDetails())
         .isEqualTo(DelegateSetupDetails.builder()
                        .name(TEST_DELEGATE_GROUP_NAME)
                        .orgIdentifier(ORG_ID)
@@ -1105,17 +1159,17 @@ public class DelegateServiceImplTest extends WingsBaseTest {
     assertThat(outboxEvent.getResourceScope().equals(new ProjectScope(ACCOUNT_ID, ORG_ID, PROJECT_ID))).isTrue();
     assertThat(outboxEvent.getResource())
         .isEqualTo(Resource.builder()
-                       .type(ResourceTypeConstants.DELEGATE_GROUPS)
-                       .identifier(delegateGroup)
+                       .type(ResourceTypeConstants.DELEGATE)
+                       .identifier(DELEGATE_GROUP_IDENTIFIER)
                        .labels(Collections.singletonMap("resourceName", "testDelegateGroupName"))
                        .build());
-    assertThat(outboxEvent.getEventType()).isEqualTo(DelegateGroupDeleteEvent.builder().build().getEventType());
-    DelegateGroupDeleteEvent delegateGroupDeleteEvent =
-        HObjectMapper.NG_DEFAULT_OBJECT_MAPPER.readValue(outboxEvent.getEventData(), DelegateGroupDeleteEvent.class);
-    assertThat(delegateGroupDeleteEvent.getAccountIdentifier()).isEqualTo(ACCOUNT_ID);
-    assertThat(delegateGroupDeleteEvent.getOrgIdentifier()).isEqualTo(ORG_ID);
-    assertThat(delegateGroupDeleteEvent.getProjectIdentifier()).isEqualTo(PROJECT_ID);
-    assertThat(delegateGroupDeleteEvent.getDelegateSetupDetails())
+    assertThat(outboxEvent.getEventType()).isEqualTo(DelegateDeleteEvent.builder().build().getEventType());
+    DelegateDeleteEvent delegateDeleteEvent =
+        HObjectMapper.NG_DEFAULT_OBJECT_MAPPER.readValue(outboxEvent.getEventData(), DelegateDeleteEvent.class);
+    assertThat(delegateDeleteEvent.getAccountIdentifier()).isEqualTo(ACCOUNT_ID);
+    assertThat(delegateDeleteEvent.getOrgIdentifier()).isEqualTo(ORG_ID);
+    assertThat(delegateDeleteEvent.getProjectIdentifier()).isEqualTo(PROJECT_ID);
+    assertThat(delegateDeleteEvent.getDelegateSetupDetails())
         .isEqualTo(DelegateSetupDetails.builder()
                        .orgIdentifier(ORG_ID)
                        .name("testDelegateGroupName")
@@ -1353,7 +1407,9 @@ public class DelegateServiceImplTest extends WingsBaseTest {
     DelegateGroup delegateGroup2 =
         delegateService.upsertDelegateGroup(TEST_DELEGATE_GROUP_NAME, ACCOUNT_ID, delegateSetupDetails2);
 
-    assertThat(delegateGroup1).isEqualTo(delegateGroup2);
+    assertThat(delegateGroup1.getIdentifier()).isEqualTo(delegateGroup2.getIdentifier());
+    assertThat(delegateGroup1.getName()).isEqualTo(delegateGroup2.getName());
+    assertThat(delegateGroup1.getOwner()).isEqualTo(delegateGroup2.getOwner());
   }
 
   @Test

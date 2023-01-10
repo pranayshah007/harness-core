@@ -63,7 +63,8 @@ public class LocalSchemaGetter implements SchemaGetter {
         accountIdentifier, null, null, null, yamlSchemaWithDetailsList));
     partialSchemaDTOList.add(customStageYamlSchemaService.getCustomStageYamlSchema(
         accountIdentifier, null, null, null, yamlSchemaWithDetailsList));
-    // TODO: add pipelineStageYamlSchemaService after PIE-5634 gets fixed (prashantsharma)
+    partialSchemaDTOList.add(pipelineStageYamlSchemaService.getPipelineStageYamlSchema(
+        accountIdentifier, null, null, null, yamlSchemaWithDetailsList));
     return partialSchemaDTOList;
   }
 

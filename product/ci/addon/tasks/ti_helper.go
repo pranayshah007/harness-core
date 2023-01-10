@@ -37,7 +37,7 @@ var (
 	newJunit = junit.New
 )
 
-func collectCg(ctx context.Context, stepID, cgDir string, timeMs int64, log *zap.SugaredLogger, cgSt time.Time) error {
+func collectCg(ctx context.Context, stepID, cgDir string, timeMs int64, log *zap.SugaredLogger, start time.Time) error {
 	if external.IsManualExecution() {
 		log.Infow("Skipping call graph collection since it is a manual run")
 		return nil
@@ -74,17 +74,17 @@ func collectCg(ctx context.Context, stepID, cgDir string, timeMs int64, log *zap
 		DataDir: cgDir,
 		TimeMs:  timeMs,
 	}
-	log.Infow(fmt.Sprintf("Sending cgRequest %s to lite engine", req.GetDataDir()))
-	_, err = client.Client().UploadCg(ctx, req)
+	resp, err := client.Client().UploadCg(ctx, req)
 	if err != nil {
 		return errors.Wrap(err, "failed to upload cg to ti server")
 	}
-	cgTime := time.Since(cgSt)
-	log.Infow(fmt.Sprintf("Successfully uploaded partial callgraph in %s time", cgTime))
+
+	log.Infow(resp.CgMsg)
+	log.Infow(fmt.Sprintf("Successfully uploaded callgraph in %s time", time.Since(start)))
 	return nil
 }
 
-func collectTestReports(ctx context.Context, reports []*pb.Report, stepID string, log *zap.SugaredLogger) error {
+func collectTestReports(ctx context.Context, reports []*pb.Report, stepID string, log *zap.SugaredLogger, start time.Time) error {
 	// Test cases from reports are identified at a per-step level and won't cause overwriting/clashes
 	// at the backend.
 	if len(reports) == 0 {
@@ -150,6 +150,9 @@ func collectTestReports(ctx context.Context, reports []*pb.Report, stepID string
 		if err != nil {
 			return err
 		}
+	}
+	if len(reports) > 0 {
+		log.Infow(fmt.Sprintf("Successfully collected test reports in %s time", time.Since(start)))
 	}
 	return nil
 }

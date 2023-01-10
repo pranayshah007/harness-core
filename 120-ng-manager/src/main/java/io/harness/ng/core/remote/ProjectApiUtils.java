@@ -10,12 +10,8 @@ package io.harness.ng.core.remote;
 import static io.harness.beans.SortOrder.Builder.aSortOrder;
 import static io.harness.beans.SortOrder.OrderType.DESC;
 
-import static javax.ws.rs.core.UriBuilder.fromPath;
-
-import io.harness.NGCommonEntityConstants;
 import io.harness.beans.SortOrder;
 import io.harness.ng.beans.PageRequest;
-import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.dto.ProjectDTO;
 import io.harness.ng.core.entities.Project;
 import io.harness.ng.core.entities.Project.ProjectKeys;
@@ -23,28 +19,23 @@ import io.harness.spec.server.ng.v1.model.CreateProjectRequest;
 import io.harness.spec.server.ng.v1.model.ModuleType;
 import io.harness.spec.server.ng.v1.model.ProjectResponse;
 import io.harness.spec.server.ng.v1.model.UpdateProjectRequest;
+import io.harness.utils.ApiUtils;
 import io.harness.utils.PageUtils;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import io.dropwizard.jersey.validation.JerseyViolationException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.validation.ConstraintViolation;
 import javax.validation.Validator;
-import javax.ws.rs.core.Link;
-import javax.ws.rs.core.Response.ResponseBuilder;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.EnumUtils;
 import org.springframework.data.domain.Pageable;
 
 public class ProjectApiUtils {
-  public static final int PAGE = 1;
-
   private final Validator validator;
 
   @Inject
@@ -111,20 +102,13 @@ public class ProjectApiUtils {
     proj.setDescription(project.getDescription());
     proj.setColor(project.getColor());
     proj.setModules(toApiModules(project.getModules()));
-    proj.setTags(getTags(project.getTags()));
+    proj.setTags(ApiUtils.getTags(project.getTags()));
 
     projectResponse.setProject(proj);
     projectResponse.setCreated(project.getCreatedAt());
     projectResponse.setUpdated(project.getLastModifiedAt());
 
     return projectResponse;
-  }
-
-  private Map<String, String> getTags(List<NGTag> tags) {
-    if (CollectionUtils.isEmpty(tags)) {
-      return Collections.emptyMap();
-    }
-    return tags.stream().collect(Collectors.toMap(NGTag::getKey, NGTag::getValue));
   }
 
   public Pageable getPageRequest(int page, int limit, String sort, String order) {
@@ -157,36 +141,5 @@ public class ProjectApiUtils {
       default:
         return null;
     }
-  }
-
-  public ResponseBuilder addLinksHeader(
-      ResponseBuilder responseBuilder, String path, int currentResultCount, int page, int limit) {
-    ArrayList<Link> links = new ArrayList<>();
-
-    links.add(Link.fromUri(fromPath(path)
-                               .queryParam(NGCommonEntityConstants.PAGE, page)
-                               .queryParam(NGCommonEntityConstants.PAGE_SIZE, limit)
-                               .build())
-                  .rel(NGCommonEntityConstants.SELF_REL)
-                  .build());
-
-    if (page >= PAGE) {
-      links.add(Link.fromUri(fromPath(path)
-                                 .queryParam(NGCommonEntityConstants.PAGE, page - 1)
-                                 .queryParam(NGCommonEntityConstants.PAGE_SIZE, limit)
-                                 .build())
-                    .rel(NGCommonEntityConstants.PREVIOUS_REL)
-                    .build());
-    }
-    if (limit == currentResultCount) {
-      links.add(Link.fromUri(fromPath(path)
-                                 .queryParam(NGCommonEntityConstants.PAGE, page + 1)
-                                 .queryParam(NGCommonEntityConstants.PAGE_SIZE, limit)
-                                 .build())
-                    .rel(NGCommonEntityConstants.NEXT_REL)
-                    .build());
-    }
-
-    return responseBuilder.links(links.toArray(new Link[links.size()]));
   }
 }

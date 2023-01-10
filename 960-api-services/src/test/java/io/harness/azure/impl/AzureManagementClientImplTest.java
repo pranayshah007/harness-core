@@ -42,11 +42,13 @@ import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 
 import com.azure.core.http.HttpClient;
+import com.azure.core.http.HttpPipeline;
 import com.azure.core.http.policy.HttpLogDetailLevel;
 import com.azure.core.http.rest.PagedIterable;
 import com.azure.core.http.rest.Response;
 import com.azure.core.http.rest.SimpleResponse;
 import com.azure.core.management.polling.PollResult;
+import com.azure.core.management.profile.AzureProfile;
 import com.azure.core.util.polling.LongRunningOperationStatus;
 import com.azure.core.util.polling.PollResponse;
 import com.azure.core.util.polling.PollerFlux;
@@ -105,6 +107,8 @@ public class AzureManagementClientImplTest extends CategoryTest {
 
     MockedStatic<AzureResourceManager> azureMockStatic = mockStatic(AzureResourceManager.class);
     azureMockStatic.when(AzureResourceManager::configure).thenReturn(configurable);
+    azureMockStatic.when(() -> AzureResourceManager.authenticate(any(HttpPipeline.class), any(AzureProfile.class)))
+        .thenReturn(authenticated);
     when(configurable.withLogLevel(any(HttpLogDetailLevel.class))).thenReturn(configurable);
     when(configurable.withHttpClient(any(HttpClient.class))).thenReturn(configurable);
     when(configurable.withRetryPolicy(any())).thenReturn(configurable);

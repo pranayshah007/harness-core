@@ -85,5 +85,15 @@ public class NGDelegateLogCallbackTest extends CategoryTest implements MockableT
                               .build();
     assertThat(change).isEqualTo(true);
     assertThat(commandUnitsProgress.getCommandUnitProgressMap().get("unit1")).isEqualTo(commandUnitProgress);
+
+    change = ngDelegateLogCallback.updateCommandUnitProgressMap(
+        CommandExecutionStatus.RUNNING, now, commandUnitsProgress.getCommandUnitProgressMap());
+    assertThat(change).isEqualTo(false);
+    assertThat(commandUnitsProgress.getCommandUnitProgressMap().get("unit1")).isEqualTo(commandUnitProgress);
+
+    change = ngDelegateLogCallback.updateCommandUnitProgressMap(
+        CommandExecutionStatus.SUCCESS, now, commandUnitsProgress.getCommandUnitProgressMap());
+    assertThat(change).isEqualTo(false);
+    assertThat(commandUnitsProgress.getCommandUnitProgressMap().get("unit1")).isEqualTo(commandUnitProgress);
   }
 }

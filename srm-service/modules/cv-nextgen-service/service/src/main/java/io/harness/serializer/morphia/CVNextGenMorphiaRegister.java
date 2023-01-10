@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.activity.entities.Activity;
 import io.harness.cvng.activity.entities.DeploymentActivity;
 import io.harness.cvng.activity.entities.HarnessCDCurrentGenActivity;
+import io.harness.cvng.activity.entities.InternalChangeActivity;
 import io.harness.cvng.activity.entities.KubernetesActivity;
 import io.harness.cvng.activity.entities.KubernetesClusterActivity;
 import io.harness.cvng.activity.entities.PagerDutyActivity;
@@ -35,6 +36,7 @@ import io.harness.cvng.analysis.entities.TimeSeriesLearningEngineTask;
 import io.harness.cvng.analysis.entities.TimeSeriesLoadTestLearningEngineTask;
 import io.harness.cvng.analysis.entities.TimeSeriesRiskSummary;
 import io.harness.cvng.analysis.entities.TimeSeriesShortTermHistory;
+import io.harness.cvng.analysis.entities.VerificationTaskBase;
 import io.harness.cvng.cdng.entities.CVNGStepTask;
 import io.harness.cvng.core.entities.AppDynamicsCVConfig;
 import io.harness.cvng.core.entities.AwsPrometheusCVConfig;
@@ -59,6 +61,8 @@ import io.harness.cvng.core.entities.MetricPack;
 import io.harness.cvng.core.entities.MonitoredService;
 import io.harness.cvng.core.entities.MonitoringSourcePerpetualTask;
 import io.harness.cvng.core.entities.NewRelicCVConfig;
+import io.harness.cvng.core.entities.NextGenLogCVConfig;
+import io.harness.cvng.core.entities.NextGenMetricCVConfig;
 import io.harness.cvng.core.entities.PagerDutyWebhook;
 import io.harness.cvng.core.entities.PrometheusCVConfig;
 import io.harness.cvng.core.entities.SLIDataCollectionTask;
@@ -83,6 +87,8 @@ import io.harness.cvng.core.entities.changeSource.PagerDutyChangeSource;
 import io.harness.cvng.core.entities.demo.CVNGDemoDataIndex;
 import io.harness.cvng.core.entities.demo.CVNGDemoPerpetualTask;
 import io.harness.cvng.dashboard.entities.HeatMap;
+import io.harness.cvng.downtime.entities.Downtime;
+import io.harness.cvng.downtime.entities.EntityUnavailabilityStatuses;
 import io.harness.cvng.migration.beans.CVNGSchema;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule;
 import io.harness.cvng.notification.entities.NotificationRule;
@@ -149,6 +155,7 @@ public class CVNextGenMorphiaRegister implements MorphiaRegistrar {
     set.add(ClusteredLog.class);
     set.add(BlueGreenVerificationJob.class);
     set.add(DeploymentDataCollectionTask.class);
+    set.add(InternalChangeActivity.class);
     set.add(AppDynamicsCVConfig.class);
     set.add(DeploymentLogAnalysis.class);
     set.add(TestVerificationJob.class);
@@ -226,6 +233,11 @@ public class CVNextGenMorphiaRegister implements MorphiaRegistrar {
     set.add(CompositeSLORecord.class);
     set.add(AutoVerificationJob.class);
     set.add(TimeSeriesCanaryLearningEngineTask_v2.class);
+    set.add(VerificationTaskBase.class);
+    set.add(NextGenMetricCVConfig.class);
+    set.add(NextGenLogCVConfig.class);
+    set.add(Downtime.class);
+    set.add(EntityUnavailabilityStatuses.class);
   }
 
   @Override

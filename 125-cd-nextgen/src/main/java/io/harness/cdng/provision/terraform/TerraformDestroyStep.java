@@ -12,8 +12,8 @@ import static io.harness.cdng.provision.terraform.TerraformPlanCommand.DESTROY;
 import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.delegate.beans.TaskData;
@@ -31,7 +31,6 @@ import io.harness.logging.UnitProgress;
 import io.harness.ng.core.EntityDetail;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
-import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
@@ -59,7 +58,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
-public class TerraformDestroyStep extends TaskExecutableWithRollbackAndRbac<TerraformTaskNGResponse> {
+public class TerraformDestroyStep extends CdTaskExecutable<TerraformTaskNGResponse> {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.TERRAFORM_DESTROY.getYamlType())
                                                .setStepCategory(StepCategory.STEP)
@@ -161,8 +160,7 @@ public class TerraformDestroyStep extends TaskExecutableWithRollbackAndRbac<Terr
                     : helper.getEnvironmentVariablesMap(spec.getEnvironmentVariables()))
             .timeoutInMillis(
                 StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
-            .useOptimizedTfPlan(
-                cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.OPTIMIZED_TF_PLAN_NG))
+            .useOptimizedTfPlan(true)
             .build();
 
     TaskData taskData =
@@ -213,8 +211,7 @@ public class TerraformDestroyStep extends TaskExecutableWithRollbackAndRbac<Terr
                     : inheritOutput.getEnvironmentVariables())
             .timeoutInMillis(
                 StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
-            .useOptimizedTfPlan(
-                cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.OPTIMIZED_TF_PLAN_NG))
+            .useOptimizedTfPlan(true)
             .build();
 
     TaskData taskData =
@@ -255,8 +252,7 @@ public class TerraformDestroyStep extends TaskExecutableWithRollbackAndRbac<Terr
                 : terraformConfig.getEnvironmentVariables())
         .timeoutInMillis(
             StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
-        .useOptimizedTfPlan(
-            cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.OPTIMIZED_TF_PLAN_NG));
+        .useOptimizedTfPlan(true);
     if (terraformConfig.getConfigFiles() != null) {
       builder.configFile(helper.getGitFetchFilesConfig(
           terraformConfig.getConfigFiles().toGitStoreConfig(), ambiance, TerraformStepHelper.TF_CONFIG_FILES));

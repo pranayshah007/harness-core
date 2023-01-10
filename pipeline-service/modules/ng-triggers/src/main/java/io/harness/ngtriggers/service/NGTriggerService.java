@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.HeaderConfig;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
+import io.harness.ngtriggers.beans.dto.TriggerYamlDiffDTO;
 import io.harness.ngtriggers.beans.dto.WebhookEventProcessingDetails;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.beans.entity.TriggerWebhookEvent;
@@ -76,4 +77,5 @@ public interface NGTriggerService {
 
   void checkAuthorization(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, List<HeaderConfig> headerConfigs);
+  TriggerYamlDiffDTO getTriggerYamlDiff(TriggerDetails triggerDetails);
 }

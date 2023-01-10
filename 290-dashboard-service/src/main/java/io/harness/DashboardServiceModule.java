@@ -7,11 +7,12 @@
 
 package io.harness;
 
-import static io.harness.AuthorizationServiceHeader.DASHBOAD_AGGREGATION_SERVICE;
+import static io.harness.authorization.AuthorizationServiceHeader.DASHBOAD_AGGREGATION_SERVICE;
 
 import io.harness.account.AccountClientModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.govern.ProviderModule;
 import io.harness.organization.OrganizationClientModule;
 import io.harness.overviewdashboard.dashboardaggregateservice.impl.OverviewDashboardServiceImpl;

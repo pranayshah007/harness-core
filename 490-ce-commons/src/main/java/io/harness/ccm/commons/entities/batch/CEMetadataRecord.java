@@ -8,6 +8,7 @@
 package io.harness.ccm.commons.entities.batch;
 
 import io.harness.annotations.StoreIn;
+import io.harness.ccm.commons.beans.currency.CurrencyPreferenceRecord;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
@@ -17,14 +18,14 @@ import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UuidAware;
 
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
 
 @Data
 @Builder
@@ -53,4 +54,5 @@ public final class CEMetadataRecord implements PersistentEntity, UuidAware, Acco
   private Boolean segmentModuleInterfaceLoadedEventSent;
   private long lastUpdatedAt;
   private Boolean dataGeneratedForCloudProvider;
+  private CurrencyPreferenceRecord currencyPreference;
 }

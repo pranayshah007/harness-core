@@ -7,6 +7,7 @@
 
 package io.harness.ccm.graphql.dto.recommendation;
 
+import io.harness.ccm.commons.beans.recommendation.RecommendationState;
 import io.harness.ccm.commons.beans.recommendation.ResourceType;
 import io.harness.ccm.views.graphql.QLCEViewFilterWrapper;
 
@@ -26,6 +27,7 @@ public class K8sRecommendationFilterDTO {
   List<String> namespaces;
   List<String> clusterNames;
   List<ResourceType> resourceTypes;
+  List<RecommendationState> recommendationStates;
 
   // generic field filter, supporting perspective
   @Schema(name = "perspectiveFilters", description = "Get Recommendations for a perspective")

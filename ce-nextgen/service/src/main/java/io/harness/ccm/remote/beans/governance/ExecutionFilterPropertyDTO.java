@@ -32,6 +32,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
@@ -40,26 +41,29 @@ import lombok.experimental.FieldDefaults;
 @Data
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@ApiModel("ExecutionFilterProperty")
+@ApiModel("ExecutionFilterProperties")
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode(callSuper = true)
 @OwnedBy(CE)
 @Schema(
     name = "ExecutionFilterProperty", description = "Properties of the Execution Filter Property defined in Harness")
 public class ExecutionFilterPropertyDTO extends FilterPropertiesDTO {
-  @Schema(description = "This is the list of Policy Names on which filter will be applied.") List<String> rulesId;
-  @Schema(description = "This is the list of Policy pack name on which filter will be applied.") List<String> ruleSet;
+  @Schema(description = "This is the list of Policy Names on which filter will be applied.") List<String> ruleIds;
+  @Schema(description = "This is the list of Policy pack name on which filter will be applied.")
+  List<String> ruleSetIds;
   @Schema(description = "This is the list of region on which filter will be applied.") List<String> region;
+  @Schema(description = "ruleEnforcementId") List<String> ruleEnforcementId;
   @Schema(description = "execution status") ExecutionStatus executionStatus;
   @Schema(description = "Cloud provider") RuleCloudProviderType cloudProvider;
-  @Schema(description = "target Account") String targetAccount;
-  @Schema(description = "List of filters to be applied on execution Time") List<CCMTimeFilter> timeFilters;
+  @Schema(description = "target Account") List<String> targetAccount;
+  @Schema(description = "List of filters to be applied on execution Time") List<CCMTimeFilter> time;
   @Schema(description = "Query Offset") Integer offset;
   @Schema(description = "Query Limit") Integer limit;
 
   @Override
   @Schema(type = "string", allowableValues = {"RuleExecution"})
   public FilterType getFilterType() {
-    return FilterType.POLICYEXECUTION;
+    return FilterType.RULEEXECUTION;
   }
 }

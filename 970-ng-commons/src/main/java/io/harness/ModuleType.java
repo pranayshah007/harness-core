@@ -20,11 +20,12 @@ import java.util.List;
 public enum ModuleType {
   @JsonProperty("CD") CD("Continuous Deployment"),
   @JsonProperty("CI") CI("Continuous Integration"),
-  @JsonProperty("CV") CV("Continuous Verification"),
+  @JsonProperty("CV") @Deprecated CV("Continuous Verification"),
   @JsonProperty("CF") CF("Continuous Features"),
   @JsonProperty("CE") CE("Continuous Efficiency"),
   @JsonProperty("STO") STO("Security Testing Orchestration"),
   @JsonProperty("CHAOS") CHAOS("Chaos Engineering"),
+  @JsonProperty("SRM") SRM("Service Reliability Management"),
 
   // TODO: Remove internal flag once licensing is added.
   @JsonProperty("CODE") CODE("Code", true, true),

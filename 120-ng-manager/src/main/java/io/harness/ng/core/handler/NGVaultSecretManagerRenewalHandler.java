@@ -7,8 +7,8 @@
 
 package io.harness.ng.core.handler;
 
-import static io.harness.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.connector.entities.Connector.ConnectorKeys;
 import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.REGULAR;
 import static io.harness.security.encryption.AccessType.APP_ROLE;

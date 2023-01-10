@@ -611,10 +611,6 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
             .secret(SecretRefData.builder().identifier(secretIdentifier).scope(Scope.PROJECT).build())
             .type(SecretVariableDTO.Type.TEXT)
             .build();
-    if (expectedDBCall) {
-      when(encryptedDataDao.get(accountIdentifier, orgIdentifier, projectIdentifier, secretIdentifier))
-          .thenReturn(NGEncryptedData.builder().identifier(secretIdentifier).build());
-    }
     when(ngFeatureFlagHelperService.isEnabled(anyString(), eq(FeatureName.PL_ACCESS_SECRET_DYNAMICALLY_BY_PATH)))
         .thenReturn(featureEnabled);
     when(dynamicSecretReferenceHelper.validateAndGetSecretRefParsedData(anyString()))
@@ -624,31 +620,6 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
         .get(accountIdentifier, orgIdentifier, projectIdentifier, secretIdentifier);
     verify(ngEncryptedDataService, times(expectedDBCall ? 0 : 1))
         .getFromReferenceExpression(accountIdentifier, orgIdentifier, projectIdentifier, secretIdentifier);
-  }
-
-  @Test
-  @Owner(developers = NISHANT)
-  @Category(UnitTests.class)
-  public void testGetEncryptionDetailsForNonExistingSecret() {
-    String accountIdentifier = randomAlphabetic(10);
-    String orgIdentifier = randomAlphabetic(10);
-    String projectIdentifier = randomAlphabetic(10);
-    String secretIdentifier = randomAlphabetic(10);
-    NGAccess ngAccess = BaseNGAccess.builder()
-                            .accountIdentifier(accountIdentifier)
-                            .orgIdentifier(orgIdentifier)
-                            .projectIdentifier(projectIdentifier)
-                            .build();
-    SecretVariableDTO secretVariableDTO =
-        SecretVariableDTO.builder()
-            .name(secretIdentifier)
-            .secret(SecretRefData.builder().identifier(secretIdentifier).scope(Scope.PROJECT).build())
-            .type(SecretVariableDTO.Type.TEXT)
-            .build();
-    when(encryptedDataDao.get(accountIdentifier, orgIdentifier, projectIdentifier, secretIdentifier)).thenReturn(null);
-    exceptionRule.expect(SecretManagementException.class);
-    exceptionRule.expectMessage(String.format("Secret [%s] not found or has been deleted.", secretIdentifier));
-    ngEncryptedDataService.getEncryptionDetails(ngAccess, secretVariableDTO);
   }
 
   @Test

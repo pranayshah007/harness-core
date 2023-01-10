@@ -26,9 +26,10 @@ import io.harness.accesscontrol.roleassignments.RoleAssignment;
 import io.harness.accesscontrol.roleassignments.RoleAssignmentFilter;
 import io.harness.accesscontrol.roleassignments.RoleAssignmentFilter.RoleAssignmentFilterBuilder;
 import io.harness.accesscontrol.roleassignments.RoleAssignmentService;
+import io.harness.accesscontrol.scopes.ScopeDTO;
 import io.harness.accesscontrol.scopes.core.Scope;
 import io.harness.accesscontrol.scopes.core.ScopeService;
-import io.harness.accesscontrol.scopes.harness.HarnessScopeLevel;
+import io.harness.accesscontrol.scopes.harness.ScopeMapper;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.beans.PageRequest;
@@ -50,6 +51,8 @@ public class RoleAssignmentActionValidator implements HarnessActionValidator<Rol
   private static final List<String> MANAGED_RESOURCE_GROUP_IDENTIFIERS = ImmutableList.of(
       ALL_RESOURCES_INCLUDING_CHILD_SCOPES_RESOURCE_GROUP_IDENTIFIER, DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER,
       DEFAULT_ORGANIZATION_LEVEL_RESOURCE_GROUP_IDENTIFIER, DEFAULT_PROJECT_LEVEL_RESOURCE_GROUP_IDENTIFIER);
+  private static final List<String> MANAGED_ROLES =
+      ImmutableList.of(ACCOUNT_ADMIN_ROLE, ORGANIZATION_ADMIN_ROLE, PROJECT_ADMIN_ROLE);
 
   @Inject
   public RoleAssignmentActionValidator(
@@ -71,26 +74,16 @@ public class RoleAssignmentActionValidator implements HarnessActionValidator<Rol
     }
     RoleAssignmentFilterBuilder builder = RoleAssignmentFilter.builder();
     RoleAssignmentFilter roleAssignmentFilter;
-    if (HarnessScopeLevel.ACCOUNT.equals(scope.getLevel())
-        && ACCOUNT_ADMIN_ROLE.equals(roleAssignment.getRoleIdentifier())) {
+    if (MANAGED_ROLES.contains(roleAssignment.getRoleIdentifier())) {
+      ScopeDTO scopeDTO = ScopeMapper.toDTO(scope);
       roleAssignmentFilter =
-          builder.scopeFilter(roleAssignment.getScopeIdentifier())
+          builder
+              .scopeFilter(
+                  ScopeMapper.fromDTO(ScopeDTO.builder().accountIdentifier(scopeDTO.getAccountIdentifier()).build())
+                      .toString())
               .roleFilter(Sets.newHashSet(ACCOUNT_ADMIN_ROLE))
               .resourceGroupFilter(Sets.newHashSet(ALL_RESOURCES_INCLUDING_CHILD_SCOPES_RESOURCE_GROUP_IDENTIFIER))
               .build();
-    } else if (HarnessScopeLevel.ORGANIZATION.equals(scope.getLevel())
-        && ORGANIZATION_ADMIN_ROLE.equals(roleAssignment.getRoleIdentifier())) {
-      roleAssignmentFilter =
-          builder.scopeFilter(roleAssignment.getScopeIdentifier())
-              .roleFilter(Sets.newHashSet(ORGANIZATION_ADMIN_ROLE))
-              .resourceGroupFilter(Sets.newHashSet(ALL_RESOURCES_INCLUDING_CHILD_SCOPES_RESOURCE_GROUP_IDENTIFIER))
-              .build();
-    } else if (HarnessScopeLevel.PROJECT.equals(scope.getLevel())
-        && PROJECT_ADMIN_ROLE.equals(roleAssignment.getRoleIdentifier())) {
-      roleAssignmentFilter = builder.scopeFilter(roleAssignment.getScopeIdentifier())
-                                 .roleFilter(Sets.newHashSet(PROJECT_ADMIN_ROLE))
-                                 .resourceGroupFilter(Sets.newHashSet(DEFAULT_PROJECT_LEVEL_RESOURCE_GROUP_IDENTIFIER))
-                                 .build();
     } else {
       return ValidationResult.builder().valid(true).build();
     }
@@ -100,7 +93,7 @@ public class RoleAssignmentActionValidator implements HarnessActionValidator<Rol
       return ValidationResult.builder()
           .valid(false)
           .errorMessage(
-              "Please add another Admin assigned to All Resources Resource Group before deleting this role assignment.")
+              "There is no account admin present in this account. Please add an Account Admin assigned to [All Resources Including Child Scopes] Resource Group at the account level before deleting this role assignment.")
           .build();
     }
     return ValidationResult.builder().valid(true).build();

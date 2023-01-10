@@ -16,6 +16,7 @@ import static java.util.stream.Collectors.toList;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.delegate.beans.SecretDetail;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsConnectorDTO;
@@ -42,6 +43,7 @@ import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateRequest
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.s3.S3ArtifactDelegateRequest;
 import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.security.encryption.EncryptionConfig;
 
 import software.wings.helpers.ext.jenkins.JobDetails;
 
@@ -303,6 +305,30 @@ public class ArtifactDelegateRequestUtils {
         .executionId(executionId)
         .workingDirectory("/tmp")
         .accountId(accountId)
+        .build();
+  }
+
+  public CustomArtifactDelegateRequest getCustomDelegateRequest(String artifactsArrayPath, String versionRegex,
+      String type, ArtifactSourceType sourceType, String versionPath, String script, Map<String, String> attributes,
+      Map<String, String> inputs, String version, String executionId, long timeout, String accountId,
+      Map<String, EncryptionConfig> encryptionConfigs, Map<String, SecretDetail> secretDetails, int expressionToken) {
+    return CustomArtifactDelegateRequest.builder()
+        .artifactsArrayPath(artifactsArrayPath)
+        .attributes(attributes)
+        .versionRegex(trim(versionRegex))
+        .sourceType(sourceType)
+        .type(type)
+        .versionPath(versionPath)
+        .script(script)
+        .timeout(timeout)
+        .inputs(inputs)
+        .version(version)
+        .executionId(executionId)
+        .workingDirectory("/tmp")
+        .accountId(accountId)
+        .encryptionConfigs(encryptionConfigs)
+        .secretDetails(secretDetails)
+        .expressionFunctorToken(expressionToken)
         .build();
   }
 

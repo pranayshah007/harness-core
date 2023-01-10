@@ -7,6 +7,7 @@
 
 package io.harness.cdng.envGroup.mappers.services;
 
+import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -385,7 +386,8 @@ public class EnvironmentGroupServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testFormCriteria() {
     // CASE1: search term as null and deleted is false
-    Criteria actualCriteria = environmentGroupService.formCriteria(ACC_ID, ORG_ID, PRO_ID, false, null, null, null);
+    Criteria actualCriteria =
+        environmentGroupService.formCriteria(ACC_ID, ORG_ID, PRO_ID, false, null, null, null, false);
     Document criteriaObject = actualCriteria.getCriteriaObject();
     assertThat(criteriaObject.get(EnvironmentGroupKeys.accountId)).isEqualTo(ACC_ID);
     assertThat(criteriaObject.get(EnvironmentGroupKeys.orgIdentifier)).isEqualTo(ORG_ID);
@@ -393,7 +395,7 @@ public class EnvironmentGroupServiceImplTest extends CategoryTest {
     assertThat(criteriaObject.get(EnvironmentGroupKeys.deleted)).isEqualTo(false);
 
     // CASE2: search term as null and deleted is true
-    actualCriteria = environmentGroupService.formCriteria(ACC_ID, ORG_ID, PRO_ID, true, null, null, null);
+    actualCriteria = environmentGroupService.formCriteria(ACC_ID, ORG_ID, PRO_ID, true, null, null, null, false);
     criteriaObject = actualCriteria.getCriteriaObject();
     assertThat(criteriaObject.get(EnvironmentGroupKeys.accountId)).isEqualTo(ACC_ID);
     assertThat(criteriaObject.get(EnvironmentGroupKeys.orgIdentifier)).isEqualTo(ORG_ID);
@@ -401,11 +403,13 @@ public class EnvironmentGroupServiceImplTest extends CategoryTest {
     assertThat(criteriaObject.get(EnvironmentGroupKeys.deleted)).isEqualTo(true);
 
     // CASE3: special character in search term
-    assertThatThrownBy(() -> environmentGroupService.formCriteria(ACC_ID, ORG_ID, PRO_ID, false, "*", null, null))
+    assertThatThrownBy(
+        () -> environmentGroupService.formCriteria(ACC_ID, ORG_ID, PRO_ID, false, "*", null, null, false))
         .isInstanceOf(InvalidRequestException.class);
 
     // CASE4: testing the search query
-    assertThatCode(() -> environmentGroupService.formCriteria(ACC_ID, ORG_ID, PRO_ID, false, "searchTerm", null, null))
+    assertThatCode(
+        () -> environmentGroupService.formCriteria(ACC_ID, ORG_ID, PRO_ID, false, "searchTerm", null, null, false))
         .doesNotThrowAnyException();
   }
 
@@ -417,12 +421,13 @@ public class EnvironmentGroupServiceImplTest extends CategoryTest {
     EnvironmentGroupFilterPropertiesDTO filterPropertiesDTO = EnvironmentGroupFilterPropertiesDTO.builder().build();
 
     // case1: passing both identifier and filter
-    assertThatThrownBy(
-        () -> environmentGroupService.formCriteria(ACC_ID, ORG_ID, PRO_ID, false, null, filterId, filterPropertiesDTO));
+    assertThatThrownBy(()
+                           -> environmentGroupService.formCriteria(
+                               ACC_ID, ORG_ID, PRO_ID, false, null, filterId, filterPropertiesDTO, false));
 
     // case2: passing filter id only
     ArgumentCaptor<String> filterIdCapture = ArgumentCaptor.forClass(String.class);
-    environmentGroupService.formCriteria(ACC_ID, ORG_ID, PRO_ID, false, null, filterId, null);
+    environmentGroupService.formCriteria(ACC_ID, ORG_ID, PRO_ID, false, null, filterId, null, false);
     verify(environmentGroupServiceHelper, times(1))
         .populateEnvGroupFilterUsingIdentifier(any(), any(), any(), any(), filterIdCapture.capture());
     assertThat(filterIdCapture.getValue()).isEqualTo(filterId);
@@ -430,8 +435,42 @@ public class EnvironmentGroupServiceImplTest extends CategoryTest {
     // case2: passing filter properties only
     ArgumentCaptor<EnvironmentGroupFilterPropertiesDTO> envGroupDTOCapture =
         ArgumentCaptor.forClass(EnvironmentGroupFilterPropertiesDTO.class);
-    environmentGroupService.formCriteria(ACC_ID, ORG_ID, PRO_ID, false, null, null, filterPropertiesDTO);
+    environmentGroupService.formCriteria(ACC_ID, ORG_ID, PRO_ID, false, null, null, filterPropertiesDTO, false);
     verify(environmentGroupServiceHelper, times(1)).populateEnvGroupFilter(any(), envGroupDTOCapture.capture());
     assertThat(envGroupDTOCapture.getValue()).isEqualTo(filterPropertiesDTO);
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testCreateOrgLevelEnvGroup() {
+    EnvironmentGroupEntity savedOrgLevelEntity = getEnvironmentGroupEntity(ACC_ID, ORG_ID, null, ENV_GROUP_ID);
+    doReturn(savedOrgLevelEntity).when(environmentGroupRepository).create(savedOrgLevelEntity);
+    mockIdentifierRefProto(savedOrgLevelEntity);
+
+    environmentGroupService.create(savedOrgLevelEntity);
+    verify(environmentGroupRepository, times(1)).create(savedOrgLevelEntity);
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testGetOrgLevelEnvGroup() {
+    environmentGroupService.get(ACC_ID, ORG_ID, PRO_ID, "org.OrgLevelEnvGroup", false);
+    // fetch without the project id
+    verify(environmentGroupRepository, times(1))
+        .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndDeletedNot(
+            ACC_ID, ORG_ID, null, "OrgLevelEnvGroup", true);
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testGetAccountLevelEnvGroup() {
+    environmentGroupService.get(ACC_ID, ORG_ID, PRO_ID, "account.AccountLevelEnvGroup", false);
+    // fetch without the org, project id
+    verify(environmentGroupRepository, times(1))
+        .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndDeletedNot(
+            ACC_ID, null, null, "AccountLevelEnvGroup", true);
   }
 }

@@ -17,6 +17,7 @@ import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.Resolver;
 
 import java.util.List;
+import javax.validation.constraints.NotNull;
 
 @OwnedBy(CDC)
 public interface ExecutionSweepingOutputService extends Resolver<ExecutionSweepingOutput> {
@@ -25,4 +26,7 @@ public interface ExecutionSweepingOutputService extends Resolver<ExecutionSweepi
       Ambiance ambiance, String name, List<String> nodeIds);
   List<OptionalSweepingOutput> listOutputsWithGivenNameAndRuntimeIds(
       Ambiance ambiance, String name, List<String> nodeIds);
+  // Consume value only if resolveOptional is not found
+  String consumeOptional(
+      @NotNull Ambiance ambiance, @NotNull String name, ExecutionSweepingOutput value, String groupName);
 }

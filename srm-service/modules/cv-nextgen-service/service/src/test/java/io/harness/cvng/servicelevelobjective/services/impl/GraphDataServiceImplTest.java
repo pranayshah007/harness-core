@@ -13,6 +13,7 @@ import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.
 import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.NO_DATA;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ARPITJ;
+import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
 import static io.harness.rule.OwnerRule.KAMAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -22,7 +23,6 @@ import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
-import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.beans.params.TimeRangeParams;
 import io.harness.cvng.core.entities.EntityDisableTime;
 import io.harness.cvng.core.entities.MonitoredService;
@@ -36,12 +36,13 @@ import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDetailsD
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
 import io.harness.cvng.servicelevelobjective.beans.slospec.CompositeServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.beans.slospec.SimpleServiceLevelObjectiveSpec;
-import io.harness.cvng.servicelevelobjective.entities.CompositeSLORecord;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIRecordParam;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
+import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator.ServiceLevelIndicatorKeys;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
+import io.harness.cvng.servicelevelobjective.entities.TimePeriod;
 import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
@@ -53,6 +54,7 @@ import com.google.inject.Inject;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -71,11 +73,10 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
   @Inject private ServiceLevelIndicatorService serviceLevelIndicatorService;
   @Inject private ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
   @Inject private SLIRecordService sliRecordService;
-  @Inject private HPersistence hPersistence;
   private MonitoredService monitoredService;
   private String sliId;
-  private Instant startTime;
-  private Instant endTime;
+  private SimpleServiceLevelObjective simpleServiceLevelObjective1;
+  @Inject private HPersistence hPersistence;
 
   private BuilderFactory builderFactory;
   private String verificationTaskId;
@@ -96,9 +97,8 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
     simpleServiceLevelObjectiveSpec1.setHealthSourceRef(generateUuid());
     simpleServiceLevelObjectiveDTO1.setSpec(simpleServiceLevelObjectiveSpec1);
     serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), simpleServiceLevelObjectiveDTO1);
-    SimpleServiceLevelObjective simpleServiceLevelObjective1 =
-        (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
-            builderFactory.getProjectParams(), simpleServiceLevelObjectiveDTO1.getIdentifier());
+    simpleServiceLevelObjective1 = (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
+        builderFactory.getProjectParams(), simpleServiceLevelObjectiveDTO1.getIdentifier());
 
     MonitoredServiceDTO monitoredServiceDTO2 = builderFactory.monitoredServiceDTOBuilder()
                                                    .sources(MonitoredServiceDTO.Sources.builder().build())
@@ -146,22 +146,8 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
         builderFactory.getProjectParams(), serviceLevelObjectiveV2DTO.getIdentifier());
 
     verificationTaskId = compositeServiceLevelObjective.getUuid();
-    //        monitoredService = createMonitoredService();
     sliId = createServiceLevelIndicator();
     serviceLevelIndicator = getServiceLevelIndicator();
-    startTime = TIME_FOR_TESTS.minus(10, ChronoUnit.MINUTES);
-    endTime = TIME_FOR_TESTS.minus(5, ChronoUnit.MINUTES);
-  }
-
-  private MonitoredService createMonitoredService() {
-    MonitoredServiceDTO monitoredServiceDTO =
-        builderFactory.monitoredServiceDTOBuilder().identifier("monitoredServiceIdentifier").build();
-    monitoredServiceDTO.setSources(MonitoredServiceDTO.Sources.builder().build());
-    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
-    return monitoredServiceService.getMonitoredService(
-        MonitoredServiceParams.builderWithProjectParams(builderFactory.getProjectParams())
-            .monitoredServiceIdentifier("monitoredServiceIdentifier")
-            .build());
   }
 
   private String createServiceLevelIndicator() {
@@ -176,90 +162,38 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
     return serviceLevelIndicatorService.getServiceLevelIndicator(builderFactory.getProjectParams(), sliId);
   }
 
-  //    @Test
-  //    @Owner(developers = KAMAL)
-  //    @Category(UnitTests.class)
-  //    public void testGetGraphData_noData() {
-  //        assertThat(
-  //                graphDataService
-  //                        .getGraphData(serviceLevelIndicator, clock.instant(), clock.instant(), 10,
-  //                        SLIMissingDataType.GOOD, 0) .getSloPerformanceTrend())
-  //                .isEmpty();
-  //    }
-  //
-  //    @Test
-  //    @Owner(developers = KAMAL)
-  //    @Category(UnitTests.class)
-  //    public void testGetGraphData_withAllStates() {
-  //        Instant startTime = Instant.parse("2020-07-27T10:50:00Z").minus(Duration.ofMinutes(10));
-  //        List<SLIRecord.SLIState> sliStates = Arrays.asList(BAD, GOOD, GOOD, NO_DATA, GOOD, GOOD, BAD, BAD, BAD,
-  //        BAD); createData(startTime, sliStates);
-  //
-  //        assertThat(graphDataService
-  //                .getGraphData(serviceLevelIndicator, startTime.minus(Duration.ofHours(1)),
-  //                        startTime.plus(Duration.ofMinutes(11)), 10, SLIMissingDataType.GOOD, 0)
-  //                .getSloPerformanceTrend())
-  //                .hasSize(6);
-  //    }
-  //
-  //    @Test
-  //    @Owner(developers = KARAN_SARASWAT)
-  //    @Category(UnitTests.class)
-  //    public void testGetGraphData_withAllStates_WithRangedErrorBudgetBurned() {
-  //        Instant startTime = Instant.parse("2020-07-27T10:50:00Z").minus(Duration.ofMinutes(15));
-  //        List<SLIRecord.SLIState> sliStates =
-  //                Arrays.asList(BAD, GOOD, GOOD, BAD, NO_DATA, NO_DATA, BAD, BAD, BAD, BAD, GOOD, NO_DATA, BAD, BAD,
-  //                GOOD);
-  //        createData(startTime, sliStates);
-  //
-  //        SLODashboardWidget.SLOGraphData sloGraphData = graphDataService.getGraphData(serviceLevelIndicator,
-  //                startTime.minus(Duration.ofHours(1)), startTime.plus(Duration.ofMinutes(16)), 15,
-  //                SLIMissingDataType.GOOD, 0, TimeRangeParams.builder()
-  //                        .startTime(startTime.plus(Duration.ofMinutes(2)))
-  //                        .endTime(startTime.plus(Duration.ofMinutes(12)))
-  //                        .build());
-  //        assertThat(sloGraphData.getSloPerformanceTrend()).hasSize(6);
-  //        assertThat(sloGraphData.getErrorBudgetBurned())
-  //                .isEqualTo(5); // as sliRecord last in range timestamp is less than the filter end time
-  //
-  //        sloGraphData = graphDataService.getGraphData(serviceLevelIndicator, startTime.minus(Duration.ofHours(1)),
-  //                startTime.plus(Duration.ofMinutes(11)), 10, SLIMissingDataType.GOOD, 0,
-  //                TimeRangeParams.builder()
-  //                        .startTime(startTime.plus(Duration.ofSeconds(121)))
-  //                        .endTime(startTime.plus(Duration.ofSeconds(750)))
-  //                        .build());
-  //        assertThat(sloGraphData.getErrorBudgetBurned()).isEqualTo(5);
-  //    }
-  //
-  //    @Test
-  //    @Owner(developers = KAMAL)
-  //    @Category(UnitTests.class)
-  //    public void testGetGraphData_9TotalPointsWith5AsMaxValue() {
-  //        Instant startTime = Instant.parse("2020-07-27T10:50:00Z").minus(Duration.ofMinutes(10));
-  //        List<SLIRecord.SLIState> sliStates = Arrays.asList(BAD, GOOD, GOOD, NO_DATA, GOOD, GOOD, BAD, BAD, BAD,
-  //        BAD); createData(startTime, sliStates);
-  //
-  //        assertThat(graphDataService
-  //                .getGraphData(serviceLevelIndicator, startTime.minus(Duration.ofHours(10)),
-  //                        startTime.plus(Duration.ofMinutes(1000)), 10, SLIMissingDataType.GOOD, 0)
-  //                .getSloPerformanceTrend())
-  //                .hasSize(6);
-  //    }
-  //
-  //    @Test
-  //    @Owner(developers = KAMAL)
-  //    @Category(UnitTests.class)
-  //    public void testGetGraphData_recalculation() {
-  //        Instant startTime = Instant.parse("2020-07-27T10:50:00Z").minus(Duration.ofMinutes(10));
-  //        List<SLIRecord.SLIState> sliStates = Arrays.asList(BAD, GOOD, GOOD, NO_DATA, GOOD, GOOD, BAD, BAD, BAD,
-  //        BAD); createData(startTime, sliStates);
-  //
-  //        assertThat(graphDataService
-  //                .getGraphData(serviceLevelIndicator, startTime, startTime.plus(Duration.ofMinutes(20)), 10,
-  //                        SLIMissingDataType.GOOD, 1)
-  //                .isRecalculatingSLI())
-  //                .isTrue();
-  //    }
+  @Test
+  @Owner(developers = DEEPAK_CHHIKARA)
+  @Category(UnitTests.class)
+  public void testNoDataCollectionAfterSLOCreation() {
+    LocalDateTime currentLocalDate =
+        LocalDateTime.ofInstant(clock.instant(), simpleServiceLevelObjective1.getZoneOffset());
+    TimePeriod timePeriod = simpleServiceLevelObjective1.getCurrentTimeRange(currentLocalDate);
+    Instant currentTimeMinute = DateTimeUtils.roundDownTo1MinBoundary(clock.instant());
+    SLODashboardWidget.SLOGraphData sloGraphData = graphDataService.getGraphData(simpleServiceLevelObjective1,
+        timePeriod.getStartTime(simpleServiceLevelObjective1.getZoneOffset()), currentTimeMinute, 14400, null);
+    assertThat(sloGraphData.isCalculatingSLI()).isEqualTo(false);
+  }
+
+  @Test
+  @Owner(developers = DEEPAK_CHHIKARA)
+  @Category(UnitTests.class)
+  public void testNoDataCollectionAfterSLOCreation_AfterTime() {
+    LocalDateTime currentLocalDate =
+        LocalDateTime.ofInstant(clock.instant(), simpleServiceLevelObjective1.getZoneOffset());
+    Long createdTime = TIME_FOR_TESTS.minus(15, ChronoUnit.MINUTES).toEpochMilli();
+    hPersistence.update(hPersistence.createQuery(ServiceLevelIndicator.class),
+        hPersistence.createUpdateOperations(ServiceLevelIndicator.class)
+            .set(ServiceLevelIndicatorKeys.createdAt, createdTime)
+            .set(ServiceLevelIndicatorKeys.lastUpdatedAt, createdTime));
+
+    TimePeriod timePeriod = simpleServiceLevelObjective1.getCurrentTimeRange(currentLocalDate);
+    Instant currentTimeMinute = DateTimeUtils.roundDownTo1MinBoundary(clock.instant());
+    SLODashboardWidget.SLOGraphData sloGraphData = graphDataService.getGraphData(simpleServiceLevelObjective1,
+        timePeriod.getStartTime(simpleServiceLevelObjective1.getZoneOffset()), currentTimeMinute, 14400, null);
+    assertThat(sloGraphData.isCalculatingSLI()).isEqualTo(true);
+    assertThat(sloGraphData.isRecalculatingSLI()).isEqualTo(false);
+  }
 
   @Test
   @Owner(developers = ARPITJ)
@@ -542,27 +476,6 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
       List<Double> expectedBurndown, int expectedErrorBudgetRemaining) {
     testGraphCalculation(
         sliStates, SLIMissingDataType.GOOD, expectedSLITrend, expectedBurndown, expectedErrorBudgetRemaining);
-  }
-
-  private List<CompositeSLORecord> createSLORecords(
-      Instant start, Instant end, List<Double> runningGoodCount, List<Double> runningBadCount) {
-    int index = 0;
-    List<CompositeSLORecord> sloRecords = new ArrayList<>();
-    for (Instant instant = start; instant.isBefore(end); instant = instant.plus(1, ChronoUnit.MINUTES)) {
-      CompositeSLORecord sloRecord = CompositeSLORecord.builder()
-                                         .verificationTaskId(verificationTaskId)
-                                         .sloId(compositeServiceLevelObjective.getUuid())
-                                         .version(0)
-                                         .runningBadCount(runningBadCount.get(index))
-                                         .runningGoodCount(runningGoodCount.get(index))
-                                         .sloVersion(0)
-                                         .timestamp(instant)
-                                         .build();
-      sloRecords.add(sloRecord);
-      index++;
-    }
-    hPersistence.save(sloRecords);
-    return sloRecords;
   }
 
   private void createData(Instant startTime, List<SLIRecord.SLIState> sliStates) {

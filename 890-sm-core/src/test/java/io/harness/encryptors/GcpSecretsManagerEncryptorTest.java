@@ -9,6 +9,7 @@ package io.harness.encryptors;
 
 import static io.harness.eraro.ErrorCode.GCP_SECRET_OPERATION_ERROR;
 import static io.harness.govern.IgnoreThrowable.ignoredOnPurpose;
+import static io.harness.rule.OwnerRule.NISHANT;
 import static io.harness.rule.OwnerRule.PIYUSH;
 import static io.harness.rule.OwnerRule.SHREYAS;
 import static io.harness.rule.OwnerRule.TEJAS;
@@ -48,14 +49,18 @@ import java.util.LinkedList;
 import java.util.List;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 
 public class GcpSecretsManagerEncryptorTest extends CategoryTest {
   private GcpSecretsManagerEncryptor gcpSecretsManagerEncryptor;
   private SecretManagerServiceClient secretManagerServiceClient;
   private GcpSecretsManagerConfig gcpSecretsManagerConfig;
   private GoogleCredentials googleCredentials;
+
+  @Rule public ExpectedException expectedException = ExpectedException.none();
 
   String mockedProjectId = "MockProjectName";
   String secretName = "MockedSecret";
@@ -296,5 +301,17 @@ public class GcpSecretsManagerEncryptorTest extends CategoryTest {
     EncryptedRecord updatedRecord = gcpSecretsManagerEncryptor.renameSecret(
         accountId, SecretText.builder().name(secretName).build(), existingRecord, gcpSecretsManagerConfig);
     assertThat(updatedRecord).isEqualTo(existingRecord);
+  }
+
+  @Test
+  @Owner(developers = NISHANT)
+  @Category(UnitTests.class)
+  public void testGetGoogleCredentialsForMissingConnectorCredentials() {
+    GcpSecretsManagerConfig gcpSecretsManagerConfig = GcpSecretsManagerConfig.builder().build();
+    expectedException.expect(SecretManagementException.class);
+    expectedException.expectMessage(
+        "GCP Secret Manager credentials are missing. Please check if the credentials secret exists.");
+    when(gcpSecretsManagerEncryptor.getGoogleCredentials(gcpSecretsManagerConfig)).thenCallRealMethod();
+    gcpSecretsManagerEncryptor.getGoogleCredentials(gcpSecretsManagerConfig);
   }
 }

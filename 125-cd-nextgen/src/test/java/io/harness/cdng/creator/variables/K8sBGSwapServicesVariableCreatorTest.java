@@ -54,7 +54,6 @@ public class K8sBGSwapServicesVariableCreatorTest extends CategoryTest {
         K8sBGSwapServicesStepNode.class);
     assertThat(fqnPropertiesList)
         .containsOnly("pipeline.stages.K8s.spec.execution.steps.K8s_BG_Swap_Services.description",
-            "pipeline.stages.K8s.spec.execution.steps.K8s_BG_Swap_Services.spec.skipDryRun",
             "pipeline.stages.K8s.spec.execution.steps.K8s_BG_Swap_Services.name",
             "pipeline.stages.K8s.spec.execution.steps.K8s_BG_Swap_Services.spec.delegateSelectors",
             "pipeline.stages.K8s.spec.execution.steps.K8s_BG_Swap_Services.timeout");

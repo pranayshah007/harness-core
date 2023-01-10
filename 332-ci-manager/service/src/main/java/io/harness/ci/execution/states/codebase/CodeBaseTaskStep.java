@@ -27,6 +27,7 @@ import io.harness.beans.execution.ManualExecutionSource;
 import io.harness.beans.execution.PRWebhookEvent;
 import io.harness.beans.execution.WebhookEvent;
 import io.harness.beans.execution.WebhookExecutionSource;
+import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.sweepingoutputs.Build;
 import io.harness.beans.sweepingoutputs.CodebaseSweepingOutput;
 import io.harness.beans.sweepingoutputs.CodebaseSweepingOutput.CodeBaseCommit;
@@ -103,11 +104,13 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
     }
 
     ManualExecutionSource manualExecutionSource = (ManualExecutionSource) executionSource;
-    ConnectorDetails connectorDetails =
-        connectorUtils.getConnectorDetails(AmbianceUtils.getNgAccess(ambiance), stepParameters.getConnectorRef());
+    ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(AmbianceUtils.getNgAccess(ambiance),
+        RunTimeInputHandler.resolveStringParameterV2("connectorRef", STEP_TYPE.getType(),
+            ambiance.getStageExecutionId(), stepParameters.getConnectorRef(), false));
 
-    ScmGitRefTaskParams scmGitRefTaskParams =
-        obtainTaskParameters(manualExecutionSource, connectorDetails, stepParameters.getRepoName());
+    ScmGitRefTaskParams scmGitRefTaskParams = obtainTaskParameters(manualExecutionSource, connectorDetails,
+        RunTimeInputHandler.resolveStringParameterV2(
+            "repoName", STEP_TYPE.getType(), ambiance.getStageExecutionId(), stepParameters.getRepoName(), false));
 
     final TaskData taskData = TaskData.builder()
                                   .async(true)
@@ -147,10 +150,13 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
       StepInputPackage inputPackage, PassThroughData passThroughData) {
     ExecutionSource executionSource = stepParameters.getExecutionSource();
     CodebaseSweepingOutput codebaseSweepingOutput = null;
+    String connectorRef = RunTimeInputHandler.resolveStringParameterV2(
+        "connectorRef", STEP_TYPE.getType(), ambiance.getStageExecutionId(), stepParameters.getConnectorRef(), false);
+    String repoName = RunTimeInputHandler.resolveStringParameterV2(
+        "repoName", STEP_TYPE.getType(), ambiance.getStageExecutionId(), stepParameters.getRepoName(), false);
     if (executionSource.getType() == MANUAL) {
       NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
-      ConnectorDetails connectorDetails =
-          connectorUtils.getConnectorDetails(ngAccess, stepParameters.getConnectorRef());
+      ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(ngAccess, connectorRef);
       // fetch scm details via manager
       if (connectorUtils.hasApiAccess(connectorDetails)) {
         ManualExecutionSource manualExecutionSource = (ManualExecutionSource) executionSource;
@@ -158,8 +164,8 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
         String prNumber = manualExecutionSource.getPrNumber();
         String tag = manualExecutionSource.getTag();
         try {
-          ScmConnector scmConnector = scmGitRefManager.getScmConnector(
-              connectorDetails, ngAccess.getAccountIdentifier(), stepParameters.getRepoName());
+          ScmConnector scmConnector =
+              scmGitRefManager.getScmConnector(connectorDetails, ngAccess.getAccountIdentifier(), repoName);
           ScmGitRefTaskResponseData response = scmGitRefManager.fetchCodebaseMetadata(
               scmConnector, connectorDetails.getIdentifier(), branch, prNumber, tag);
           saveScmResponseToSweepingOutput(ambiance, stepParameters, response);
@@ -172,7 +178,7 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
               .build();
         }
       } else {
-        String repoUrl = CodebaseUtils.getCompleteURLFromConnector(connectorDetails, stepParameters.getRepoName());
+        String repoUrl = CodebaseUtils.getCompleteURLFromConnector(connectorDetails, repoName);
         codebaseSweepingOutput = buildManualCodebaseSweepingOutput((ManualExecutionSource) executionSource, repoUrl);
       }
     } else if (executionSource.getType() == WEBHOOK) {

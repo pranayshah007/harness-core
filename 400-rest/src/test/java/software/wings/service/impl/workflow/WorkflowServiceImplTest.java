@@ -24,7 +24,7 @@ import static software.wings.beans.PhaseStepType.PRE_DEPLOYMENT;
 import static software.wings.beans.PhaseStepType.VERIFY_SERVICE;
 import static software.wings.beans.Workflow.WorkflowBuilder.aWorkflow;
 import static software.wings.beans.WorkflowPhase.WorkflowPhaseBuilder.aWorkflowPhase;
-import static software.wings.beans.artifact.Artifact.Builder.anArtifact;
+import static software.wings.persistence.artifact.Artifact.Builder.anArtifact;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.APP_ID;
 import static software.wings.utils.WingsTestConstants.APP_MANIFEST_NAME;
@@ -102,11 +102,11 @@ import software.wings.beans.appmanifest.HelmChart;
 import software.wings.beans.appmanifest.LastDeployedHelmChartInformation;
 import software.wings.beans.appmanifest.ManifestSummary;
 import software.wings.beans.appmanifest.StoreType;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.deployment.DeploymentMetadata;
 import software.wings.beans.stats.CloneMetadata;
 import software.wings.dl.WingsPersistence;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.ApplicationManifestService;
 import software.wings.service.intfc.ArtifactService;
@@ -123,6 +123,10 @@ import software.wings.sm.states.EnvState.EnvStateKeys;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
+import dev.morphia.query.FieldEnd;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
+import dev.morphia.query.UpdateOperations;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -135,10 +139,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mongodb.morphia.query.FieldEnd;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)

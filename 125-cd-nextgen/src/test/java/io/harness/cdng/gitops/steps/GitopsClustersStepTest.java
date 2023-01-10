@@ -31,6 +31,7 @@ import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
@@ -42,11 +43,13 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
 import org.junit.Before;
@@ -248,46 +251,68 @@ public class GitopsClustersStepTest extends CategoryTest {
 
   // Test cases
   private Object[][] getData() {
-    final Object[] set1 = new Object[] {
-        ClusterStepParameters.builder()
-            .envGroupRef("envGroupId")
-            .deployToAllEnvs(true)
-            .envClusterRefs(asList(
-                EnvClusterRefs.builder().envRef("env1Id").deployToAll(false).clusterRefs(Set.of("c1", "c2")).build()))
-            .build(),
-        new GitopsClustersOutcome(new ArrayList<>())
-            .appendCluster(
-                new Metadata("envGroupId", null), new Metadata("env1Id", null), new Metadata("c1", "c1-name"), Map.of())
-            .appendCluster(new Metadata("envGroupId", null), new Metadata("env1Id", null),
-                new Metadata("c2", "c2-name"), Map.of())};
-
-    final Object[] set2 =
+    final Object[] set1 =
         new Object[] {ClusterStepParameters.builder()
-                          .envClusterRefs(asList(EnvClusterRefs.builder().envRef("env1Id").deployToAll(true).build()))
+                          .envGroupRef("envGroupId")
+                          .deployToAllEnvs(true)
+                          .envClusterRefs(asList(EnvClusterRefs.builder()
+                                                     .envRef("env1Id")
+                                                     .deployToAll(false)
+                                                     .clusterRefs(Set.of("c1", "c2"))
+                                                     .envType(EnvironmentType.PreProduction.toString())
+                                                     .build()))
                           .build(),
             new GitopsClustersOutcome(new ArrayList<>())
-                .appendCluster(new Metadata("env1Id", null), new Metadata("account.x1", "x1-name"))
-                .appendCluster(new Metadata("env1Id", null), new Metadata("organization.x2", "x2-name"))
-                .appendCluster(new Metadata("env1Id", null), new Metadata("c1", "c1-name"))
-                .appendCluster(new Metadata("env1Id", null), new Metadata("c2", "c2-name"))};
+                .appendCluster(new Metadata("envGroupId", null), new Metadata("env1Id", null),
+                    EnvironmentType.PreProduction.toString(), new Metadata("c1", "c1-name"), Map.of())
+                .appendCluster(new Metadata("envGroupId", null), new Metadata("env1Id", null),
+                    EnvironmentType.PreProduction.toString(), new Metadata("c2", "c2-name"), Map.of())};
+
+    final Object[] set2 = new Object[] {ClusterStepParameters.builder()
+                                            .envClusterRefs(asList(EnvClusterRefs.builder()
+                                                                       .envRef("env1Id")
+                                                                       .deployToAll(true)
+                                                                       .envType(EnvironmentType.Production.toString())
+                                                                       .build()))
+                                            .build(),
+        new GitopsClustersOutcome(new ArrayList<>())
+            .appendCluster(new Metadata("env1Id", null), new Metadata("account.x1", "x1-name"),
+                EnvironmentType.Production.toString())
+            .appendCluster(new Metadata("env1Id", null), new Metadata("organization.x2", "x2-name"),
+                EnvironmentType.Production.toString())
+            .appendCluster(
+                new Metadata("env1Id", null), new Metadata("c1", "c1-name"), EnvironmentType.Production.toString())
+            .appendCluster(
+                new Metadata("env1Id", null), new Metadata("c2", "c2-name"), EnvironmentType.Production.toString())};
 
     final Object[] set3 = new Object[] {
         ClusterStepParameters.builder()
-            .envClusterRefs(asList(EnvClusterRefs.builder().envRef("env2Id").deployToAll(true).build()))
+            .envClusterRefs(asList(EnvClusterRefs.builder()
+                                       .envRef("env2Id")
+                                       .deployToAll(true)
+                                       .envType(EnvironmentType.Production.toString())
+                                       .build()))
             .build(),
         new GitopsClustersOutcome(new ArrayList<>())
-            .appendCluster(new Metadata("env2Id", null), new Metadata("c3", "c3-name"))
-            .appendCluster(new Metadata("env2Id", null), new Metadata("c4", "c4-name")),
+            .appendCluster(
+                new Metadata("env2Id", null), new Metadata("c3", "c3-name"), EnvironmentType.Production.toString())
+            .appendCluster(
+                new Metadata("env2Id", null), new Metadata("c4", "c4-name"), EnvironmentType.Production.toString()),
     };
 
     final Object[] set4 = new Object[] {
         ClusterStepParameters.builder()
-            .envClusterRefs(
-                asList(EnvClusterRefs.builder().envRef("env2Id").deployToAll(false).clusterRefs(Set.of("c4")).build()))
+            .envClusterRefs(asList(EnvClusterRefs.builder()
+                                       .envRef("env2Id")
+                                       .deployToAll(false)
+                                       .clusterRefs(Set.of("c4"))
+                                       .envType(EnvironmentType.Production.toString())
+                                       .build()))
             .deployToAllEnvs(false)
             .build(),
         new GitopsClustersOutcome(new ArrayList<>())
-            .appendCluster(new Metadata("env2Id", null), new Metadata("c4", "c4-name")),
+            .appendCluster(
+                new Metadata("env2Id", null), new Metadata("c4", "c4-name"), EnvironmentType.Production.toString()),
     };
 
     return new Object[][] {set1, set2, set3, set4};
@@ -312,7 +337,7 @@ public class GitopsClustersStepTest extends CategoryTest {
   @Owner(developers = OwnerRule.ROHITKARELIA)
   @Category(UnitTests.class)
   public void testToGitOpsOutcomeForServiceOverrides() {
-    Map<String, GitopsClustersStep.IndividualClusterInternal> validatedClusters = new HashMap<>();
+    Map<String, List<GitopsClustersStep.IndividualClusterInternal>> validatedClusters = new HashMap<>();
     GitopsClustersStep.IndividualClusterInternal c1IndividualCluster =
         GitopsClustersStep.IndividualClusterInternal.builder()
             .clusterName("c1-Ref")
@@ -320,7 +345,7 @@ public class GitopsClustersStepTest extends CategoryTest {
             .envRef("env1")
             .envVariables(Map.of("k1", "v1"))
             .build();
-    validatedClusters.put("c1", c1IndividualCluster);
+    validatedClusters.put("c1", Arrays.asList(c1IndividualCluster));
     Map<String, Object> svcVariables = Map.of("k1", "sv1");
     Map<String, Map<String, Object>> envSvcOverrideVars = Map.of("env1", Map.of("k1", "svcEnvOveride1"));
 
@@ -334,7 +359,7 @@ public class GitopsClustersStepTest extends CategoryTest {
   @Owner(developers = OwnerRule.ROHITKARELIA)
   @Category(UnitTests.class)
   public void testToGitOpsOutcomeForEnvrionmentOveride() {
-    Map<String, GitopsClustersStep.IndividualClusterInternal> validatedClusters = new HashMap<>();
+    Map<String, List<GitopsClustersStep.IndividualClusterInternal>> validatedClusters = new HashMap<>();
     GitopsClustersStep.IndividualClusterInternal c1IndividualCluster =
         GitopsClustersStep.IndividualClusterInternal.builder()
             .clusterName("c1-Ref")
@@ -342,12 +367,41 @@ public class GitopsClustersStepTest extends CategoryTest {
             .envRef("env1")
             .envVariables(Map.of("k1", "v1"))
             .build();
-    validatedClusters.put("c1", c1IndividualCluster);
+    validatedClusters.put("c1", Arrays.asList(c1IndividualCluster));
     Map<String, Object> svcVariables = Map.of("k1", "sv1");
 
     GitopsClustersOutcome outcome = step.toOutcome(validatedClusters, svcVariables, Map.of());
     assertThat(outcome).isNotNull();
     String k1 = outcome.getClustersData().get(0).variables.get("k1").toString();
     assertThat(k1).isEqualTo("v1");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.MEENA)
+  @Category(UnitTests.class)
+  public void testMultipleEnvsToOneCluster() {
+    Map<String, List<GitopsClustersStep.IndividualClusterInternal>> validatedClusters = new HashMap<>();
+    GitopsClustersStep.IndividualClusterInternal env1 = GitopsClustersStep.IndividualClusterInternal.builder()
+                                                            .clusterName("c1-Ref")
+                                                            .clusterRef("c1Ref")
+                                                            .envRef("env1")
+                                                            .build();
+    GitopsClustersStep.IndividualClusterInternal env2 = GitopsClustersStep.IndividualClusterInternal.builder()
+                                                            .clusterName("c1-Ref")
+                                                            .clusterRef("c1Ref")
+                                                            .envRef("env2")
+                                                            .build();
+    GitopsClustersStep.IndividualClusterInternal env3 = GitopsClustersStep.IndividualClusterInternal.builder()
+                                                            .clusterName("c1-Ref")
+                                                            .clusterRef("c1Ref")
+                                                            .envRef("env3")
+                                                            .build();
+    validatedClusters.put("c1", Arrays.asList(env1, env2, env3));
+
+    GitopsClustersOutcome outcome = step.toOutcome(validatedClusters, new HashMap<>(), new HashMap<>());
+    assertThat(outcome).isNotNull();
+    assertThat(
+        outcome.getClustersData().stream().map(GitopsClustersOutcome.ClusterData::getEnvId).collect(Collectors.toSet()))
+        .containsExactlyInAnyOrder("env1", "env2", "env3");
   }
 }

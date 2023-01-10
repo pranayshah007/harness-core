@@ -19,4 +19,6 @@ import lombok.Value;
 public class ElastigroupStepExecutorParams {
   boolean shouldOpenFetchFilesLogStream;
   String startupScript;
+  String elastigroupConfiguration;
+  String image;
 }

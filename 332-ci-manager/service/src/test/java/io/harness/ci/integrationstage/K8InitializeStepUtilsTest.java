@@ -17,7 +17,7 @@ import static io.harness.rule.OwnerRule.SHUBHAM;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import io.harness.beans.environment.K8BuildJobEnvInfo;
+import io.harness.beans.environment.ConnectorConversionInfo;
 import io.harness.beans.environment.pod.container.ContainerDefinitionInfo;
 import io.harness.beans.executionargs.CIExecutionArgs;
 import io.harness.beans.stages.IntegrationStageNode;
@@ -312,7 +312,7 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
     IntegrationStageConfig integrationStageConfig =
         IntegrationStageConfigImpl.builder().execution(executionElementConfig).build();
     Ambiance ambiance = Ambiance.newBuilder().build();
-    Map<String, List<K8BuildJobEnvInfo.ConnectorConversionInfo>> stepConnectorRefs =
+    Map<String, List<ConnectorConversionInfo>> stepConnectorRefs =
         k8InitializeStepUtils.getStepConnectorRefs(integrationStageConfig, ambiance);
     assertThat(stepConnectorRefs.size()).isEqualTo(2);
     assertThat(stepConnectorRefs.containsKey("step-docker")).isTrue();

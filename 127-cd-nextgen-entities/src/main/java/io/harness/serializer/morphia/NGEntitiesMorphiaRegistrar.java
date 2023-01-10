@@ -29,6 +29,7 @@ import io.harness.cdng.artifact.outcome.GithubPackagesArtifactOutcome;
 import io.harness.cdng.artifact.outcome.JenkinsArtifactOutcome;
 import io.harness.cdng.artifact.outcome.S3ArtifactOutcome;
 import io.harness.cdng.gitops.entity.Cluster;
+import io.harness.cdng.infra.beans.AsgInfraMapping;
 import io.harness.cdng.infra.beans.AzureWebAppInfraMapping;
 import io.harness.cdng.infra.beans.CustomDeploymentInfraMapping;
 import io.harness.cdng.infra.beans.EcsInfraMapping;
@@ -69,6 +70,7 @@ public class NGEntitiesMorphiaRegistrar implements MorphiaRegistrar {
     set.add(SshWinRmAwsInfraMapping.class);
     set.add(AzureWebAppInfraMapping.class);
     set.add(ElastigroupInfraMapping.class);
+    set.add(AsgInfraMapping.class);
     set.add(CustomDeploymentInfraMapping.class);
     set.add(EcsInfraMapping.class);
     set.add(InfraMapping.class);

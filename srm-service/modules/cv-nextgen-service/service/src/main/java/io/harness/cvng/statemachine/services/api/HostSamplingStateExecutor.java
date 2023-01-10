@@ -93,6 +93,7 @@ public abstract class HostSamplingStateExecutor<T extends HostSamplingState> ext
            Post deployment hosts are n3, n4
            */
           Set<String> testHosts = new HashSet<>();
+          // TODO: This should be no data state, control & test hosts should be empty.
           Set<String> controlHosts = new HashSet<>(preDeploymentHosts);
           analysisInputBuilder = analysisInputBuilder.controlHosts(controlHosts).testHosts(testHosts);
           analysisState.setInputs(analysisInputBuilder.build());

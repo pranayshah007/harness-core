@@ -1,0 +1,45 @@
+failureStrategies:
+  - onFailure:
+      errors:
+        - AllErrors
+      action:
+        type: StageRollback
+spec:
+  execution:
+    steps:
+      - step:
+          name: "Basic App Setup"
+          identifier: basicSetupStep
+          type: BasicAppSetup
+          timeout: 10m
+          spec:
+            tasInstanceCountType: FromManifest
+            existingVersionToKeep: 3
+            additionalRoutes: []
+      - step:
+          type: Verify
+          name: Verify
+          identifier: Verify
+          timeout: 2h
+          spec: {}
+      - step:
+          name: "Deploy Step"
+          identifier: deployStep
+          type: AppResize
+          timeout: 10m
+          spec:
+            newAppInstances:
+              type: Percentage
+              spec:
+                value: 100
+            oldAppInstances:
+              type: Count
+              spec:
+                value: 0
+    rollbackSteps:
+      - step:
+          name: "App Rollback"
+          identifier: appRollback
+          type: AppRollback
+          timeout: 10m
+          spec: {}

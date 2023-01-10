@@ -41,4 +41,9 @@ public class FilterCustomRepositoryImpl implements FilterCustomRepository {
     return PageableExecutionUtils.getPage(
         filters, pageable, () -> mongoTemplate.count(Query.of(query).limit(-1).skip(-1), Filter.class));
   }
+  @Override
+  public List<Filter> deleteAll(Criteria criteria) {
+    Query query = new Query(criteria);
+    return mongoTemplate.findAllAndRemove(query, Filter.class);
+  }
 }

@@ -33,6 +33,9 @@ import software.wings.dl.WingsPersistence;
 import software.wings.service.intfc.UserGroupService;
 
 import com.google.inject.Inject;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -45,9 +48,6 @@ import javax.ws.rs.core.Response.Status;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.util.Strings;
-import org.mongodb.morphia.query.FindOptions;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @Slf4j
 @OwnedBy(PL)
@@ -200,7 +200,8 @@ public class ScimGroupServiceImpl implements ScimGroupService {
   public Response updateGroup(String groupId, String accountId, PatchRequest patchRequest) {
     String operation = isNotEmpty(patchRequest.getOperations()) ? patchRequest.getOperations().toString() : null;
     String schemas = isNotEmpty(patchRequest.getSchemas()) ? patchRequest.getSchemas().toString() : null;
-    log.info("Patch Request Logging\nOperations {}\n, Schemas {}\n,External Id {}\n, Meta {}, for accountId {}",
+    log.info(
+        "SCIM: Updating Group: Patch Request Logging\nOperations {}\n, Schemas {}\n,External Id {}\n, Meta {}, for accountId {}",
         operation, schemas, patchRequest.getExternalId(), patchRequest.getMeta(), accountId);
     UserGroup existingGroup = userGroupService.get(accountId, groupId);
 

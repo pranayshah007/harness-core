@@ -91,6 +91,11 @@ public class NGDelegateLogCallback implements LogCallback {
       change = true;
     } else {
       CommandUnitProgress commandUnitProgress = commandUnitProgressMap.get(commandUnitName);
+      if (CommandExecutionStatus.isTerminalStatus(commandUnitProgress.getStatus())) {
+        log.warn("Skipped updating command unit status as the unit: {} has already reached terminal status: {}",
+            commandUnitName, commandUnitProgress.getStatus());
+        return false;
+      }
       commandUnitProgressBuilder.startTime(commandUnitProgress.getStartTime());
       if (commandUnitProgress.getStatus() != commandExecutionStatus) {
         change = true;

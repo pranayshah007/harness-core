@@ -18,14 +18,14 @@ import io.harness.persistence.HPersistence;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import javax.ws.rs.InternalServerErrorException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CDC)

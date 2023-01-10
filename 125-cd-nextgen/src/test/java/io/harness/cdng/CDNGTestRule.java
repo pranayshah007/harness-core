@@ -7,7 +7,7 @@
 
 package io.harness.cdng;
 
-import static io.harness.AuthorizationServiceHeader.NG_MANAGER;
+import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.cache.CacheBackend.CAFFEINE;
 import static io.harness.cache.CacheBackend.NOOP;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
@@ -99,6 +99,7 @@ import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
+import dev.morphia.converters.TypeConverter;
 import io.dropwizard.jackson.Jackson;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.serializer.HObjectMapper;
@@ -117,7 +118,6 @@ import org.junit.rules.MethodRule;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
 import org.mockito.Mockito;
-import org.mongodb.morphia.converters.TypeConverter;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.mongodb.MongoTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;

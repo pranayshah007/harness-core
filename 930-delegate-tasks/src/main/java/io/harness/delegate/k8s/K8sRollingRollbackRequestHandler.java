@@ -44,8 +44,8 @@ import io.harness.logging.LogCallback;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
-import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -74,26 +74,27 @@ public class K8sRollingRollbackRequestHandler extends K8sRequestHandler {
         (K8sRollingRollbackDeployRequest) k8sDeployRequest;
     LogCallback initLogCallback =
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Init, true, commandUnitsProgress);
-
+    Map<String, String> k8sCommandFlag = k8sRollingRollbackDeployRequest.getK8sCommandFlags();
     init(k8sRollingRollbackDeployRequest, k8sDelegateTaskParams, initLogCallback);
 
     ResourceRecreationStatus resourceRecreationStatus = NO_RESOURCE_CREATED;
     if (k8sRollingRollbackDeployRequest.isPruningEnabled()) {
-      resourceRecreationStatus = recreatePrunedResources(rollbackHandlerConfig,
-          k8sRollingRollbackDeployRequest.getReleaseNumber(), k8sRollingRollbackDeployRequest.getPrunedResourceIds(),
-          k8sDelegateTaskParams, logStreamingTaskClient, commandUnitsProgress);
+      resourceRecreationStatus =
+          recreatePrunedResources(rollbackHandlerConfig, rollbackHandlerConfig.getCurrentReleaseNumber(),
+              k8sRollingRollbackDeployRequest.getPrunedResourceIds(), k8sDelegateTaskParams, logStreamingTaskClient,
+              commandUnitsProgress, k8sRollingRollbackDeployRequest.isUseDeclarativeRollback(), k8sCommandFlag);
 
       LogCallback deleteResourcesLogCallback = k8sTaskHelperBase.getLogCallback(
           logStreamingTaskClient, DeleteFailedReleaseResources, true, commandUnitsProgress);
       rollbackBaseHandler.deleteNewResourcesForCurrentFailedRelease(rollbackHandlerConfig,
-          k8sRollingRollbackDeployRequest.getReleaseNumber(), deleteResourcesLogCallback, k8sDelegateTaskParams);
+          rollbackHandlerConfig.getCurrentReleaseNumber(), deleteResourcesLogCallback, k8sDelegateTaskParams);
     }
     Set<KubernetesResourceId> recreatedResourceIds = rollbackBaseHandler.getResourcesRecreated(
         k8sRollingRollbackDeployRequest.getPrunedResourceIds(), resourceRecreationStatus);
     rollbackBaseHandler.rollback(rollbackHandlerConfig, k8sDelegateTaskParams,
-        k8sRollingRollbackDeployRequest.getReleaseNumber(),
+        rollbackHandlerConfig.getCurrentReleaseNumber(),
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Rollback, true, commandUnitsProgress),
-        recreatedResourceIds, true);
+        recreatedResourceIds, true, k8sCommandFlag);
 
     LogCallback waitForSteadyStateLogCallback =
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, WaitForSteadyState, true, commandUnitsProgress);
@@ -104,9 +105,7 @@ public class K8sRollingRollbackRequestHandler extends K8sRequestHandler {
     K8sRollingDeployRollbackResponse response =
         K8sRollingDeployRollbackResponse.builder()
             .k8sPodList(rollbackBaseHandler.getPods(k8sRollingRollbackDeployRequest.getTimeoutIntervalInMin(),
-                rollbackHandlerConfig.getPreviousManagedWorkloads(),
-                rollbackHandlerConfig.getPreviousCustomManagedWorkloads(), rollbackHandlerConfig.getKubernetesConfig(),
-                k8sRollingRollbackDeployRequest.getReleaseName()))
+                rollbackHandlerConfig, k8sRollingRollbackDeployRequest.getReleaseName()))
             .recreatedResourceIds(recreatedResourceIds)
             .build();
 
@@ -120,7 +119,7 @@ public class K8sRollingRollbackRequestHandler extends K8sRequestHandler {
   }
 
   private void init(K8sRollingRollbackDeployRequest rollbackRequest, K8sDelegateTaskParams k8sDelegateTaskParams,
-      LogCallback logCallback) throws IOException {
+      LogCallback logCallback) throws Exception {
     logCallback.saveExecutionLog("Initializing..\n");
     logCallback.saveExecutionLog(
         color(String.format("Release Name: [%s]", rollbackRequest.getReleaseName()), Yellow, Bold));
@@ -129,6 +128,9 @@ public class K8sRollingRollbackRequestHandler extends K8sRequestHandler {
         containerDeploymentDelegateBaseHelper.createKubernetesConfig(rollbackRequest.getK8sInfraDelegateConfig()));
     rollbackHandlerConfig.setClient(
         Kubectl.client(k8sDelegateTaskParams.getKubectlPath(), k8sDelegateTaskParams.getKubeconfigPath()));
+    rollbackHandlerConfig.setUseDeclarativeRollback(rollbackRequest.isUseDeclarativeRollback());
+    rollbackHandlerConfig.setCurrentReleaseNumber(rollbackRequest.getReleaseNumber());
+    rollbackHandlerConfig.setK8sDelegateTaskParams(k8sDelegateTaskParams);
 
     rollbackBaseHandler.init(rollbackHandlerConfig, rollbackRequest.getReleaseName(), logCallback);
   }
@@ -140,14 +142,23 @@ public class K8sRollingRollbackRequestHandler extends K8sRequestHandler {
 
   private ResourceRecreationStatus recreatePrunedResources(K8sRollingRollbackHandlerConfig rollbackHandlerConfig,
       Integer releaseNumber, List<KubernetesResourceId> prunedResources, K8sDelegateTaskParams k8sDelegateTaskParams,
-      ILogStreamingTaskClient logStreamingTaskClient, CommandUnitsProgress commandUnitsProgress) {
+      ILogStreamingTaskClient logStreamingTaskClient, CommandUnitsProgress commandUnitsProgress,
+      boolean useDeclarativeRollback, Map<String, String> commandFlags) {
     LogCallback recreateResourcesCallback =
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, RecreatePrunedResource, true, commandUnitsProgress);
 
     ResourceRecreationStatus resourceRecreationStatus = NO_RESOURCE_CREATED;
+
+    if (useDeclarativeRollback) {
+      recreateResourcesCallback.saveExecutionLog(
+          "Declarative rollback is enabled. Pruned resources will be recreated when applying older manifests during rollback.",
+          INFO, SUCCESS);
+      return resourceRecreationStatus;
+    }
+
     try {
-      resourceRecreationStatus = rollbackBaseHandler.recreatePrunedResources(
-          rollbackHandlerConfig, releaseNumber, prunedResources, recreateResourcesCallback, k8sDelegateTaskParams);
+      resourceRecreationStatus = rollbackBaseHandler.recreatePrunedResources(rollbackHandlerConfig, releaseNumber,
+          prunedResources, recreateResourcesCallback, k8sDelegateTaskParams, commandFlags);
       rollbackBaseHandler.logResourceRecreationStatus(resourceRecreationStatus, recreateResourcesCallback);
     } catch (Exception e) {
       resourceRecreationStatus = RESOURCE_CREATION_FAILED;

@@ -26,11 +26,23 @@ public class CDStageMetaDataServiceImpl implements CDStageMetaDataService {
 
   @Override
   public ResponseDTO<CDStageMetaDataDTO> getServiceAndEnvironmentRef(YamlNode stageLevelYamlNode) {
-    ResponseDTO<CDStageMetaDataDTO> responseDTO = requestExecutor.execute(
-        nextGenClient.getCDStageMetaData(CdDeployStageMetadataRequestDTO.builder()
-                                             .stageIdentifier(stageLevelYamlNode.getIdentifier())
-                                             .pipelineYaml(getPipelineYamlNode(stageLevelYamlNode).toString())
-                                             .build()));
+    YamlNode pipelineYamlNode = getPipelineYamlNode(stageLevelYamlNode);
+    if (Objects.isNull(pipelineYamlNode)) {
+      Log.error("Pipeline not found in given Yaml, By passing validation check");
+      return null;
+    }
+    ResponseDTO<CDStageMetaDataDTO> responseDTO;
+
+    try {
+      responseDTO = requestExecutor.execute(
+          nextGenClient.getCDStageMetaData(CdDeployStageMetadataRequestDTO.builder()
+                                               .stageIdentifier(stageLevelYamlNode.getIdentifier())
+                                               .pipelineYaml(pipelineYamlNode.toString())
+                                               .build()));
+    } catch (Exception e) {
+      Log.error("Exception occurred while fetching service and environment reference, Exception: " + e.getMessage());
+      return null;
+    }
     if (Objects.isNull(responseDTO) || Objects.isNull(responseDTO.getData().getServiceRef())
         || Objects.isNull(responseDTO.getData().getEnvironmentRef())) {
       Log.error("Invalid Response for Service Ref and Environment Ref in pipeline: "
@@ -41,6 +53,9 @@ public class CDStageMetaDataServiceImpl implements CDStageMetaDataService {
 
   private YamlNode getPipelineYamlNode(YamlNode yamlNode) {
     Preconditions.checkNotNull(yamlNode, "Invalid yaml. Can't find pipeline.");
+    if (Objects.isNull(yamlNode)) {
+      return null;
+    }
     if (yamlNode.getField(CVNGStepUtils.PIPELINE) != null) {
       return yamlNode;
     }

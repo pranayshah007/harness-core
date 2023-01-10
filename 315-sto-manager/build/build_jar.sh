@@ -12,5 +12,5 @@ if [ "${PLATFORM}" == "jenkins" ]; then
 fi
 BAZEL_DIRS=${HOME}/.bazel-dirs
 BAZEL_ARGUMENTS="--show_timestamps --announce_rc --experimental_convenience_symlinks=normal --remote_download_outputs=all --symlink_prefix=${BAZEL_DIRS}/"
-STO_MODULE="//315-sto-manager:module //315-sto-manager:module_deploy.jar"
+STO_MODULE="//315-sto-manager/app:module //315-sto-manager/app:module_deploy.jar"
 bazel ${bazelrc} build $STO_MODULE ${BAZEL_ARGUMENTS}

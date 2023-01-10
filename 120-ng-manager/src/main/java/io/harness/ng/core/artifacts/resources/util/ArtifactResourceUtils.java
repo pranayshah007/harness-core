@@ -25,6 +25,7 @@ import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GoogleArtifactRegistryConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.Nexus2RegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusConstant;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryDockerConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryMavenConfig;
@@ -33,31 +34,37 @@ import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryNugetConfig
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryRawConfig;
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryImagePathsDTO;
 import io.harness.cdng.artifact.resources.artifactory.service.ArtifactoryResourceService;
+import io.harness.cdng.artifact.resources.custom.CustomResourceService;
 import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARResponseDTO;
 import io.harness.cdng.artifact.resources.googleartifactregistry.service.GARResourceService;
 import io.harness.cdng.artifact.resources.nexus.dtos.NexusResponseDTO;
 import io.harness.cdng.artifact.resources.nexus.service.NexusResourceService;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.common.NGExpressionUtils;
+import io.harness.data.algorithm.HashGenerator;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.evaluators.CDExpressionEvaluator;
 import io.harness.evaluators.CDYamlExpressionEvaluator;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
+import io.harness.ng.core.artifacts.resources.custom.CustomScriptInfo;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.ServiceEntityService;
+import io.harness.ng.core.service.services.impl.InputSetMergeUtility;
 import io.harness.ng.core.template.TemplateApplyRequestDTO;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.pipeline.remote.PipelineServiceClient;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.inputset.MergeInputSetResponseDTOPMS;
 import io.harness.pms.inputset.MergeInputSetTemplateRequestDTO;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
@@ -66,6 +73,11 @@ import io.harness.remote.client.NGRestUtils;
 import io.harness.template.remote.TemplateResourceClient;
 import io.harness.template.yaml.TemplateRefHelper;
 import io.harness.utils.IdentifierRefHelper;
+import io.harness.yaml.core.variables.NGVariable;
+import io.harness.yaml.utils.NGVariablesUtils;
+
+import software.wings.helpers.ext.jenkins.BuildDetails;
+import software.wings.helpers.ext.nexus.NexusRepositories;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -73,6 +85,7 @@ import com.fasterxml.jackson.databind.node.TextNode;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -93,6 +106,7 @@ public class ArtifactResourceUtils {
   @Inject GARResourceService garResourceService;
   @Inject ArtifactoryResourceService artifactoryResourceService;
   @Inject AccessControlClient accessControlClient;
+  @Inject CustomResourceService customResourceService;
 
   // Checks whether field is fixed value or not, if empty then also we return false for fixed value.
   public static boolean isFieldFixedValue(String fieldValue) {
@@ -157,6 +171,52 @@ public class ArtifactResourceUtils {
       imagePath = CDYamlExpressionEvaluator.renderExpression(imagePath);
     }
     return imagePath;
+  }
+
+  public void resolveParameterFieldValues(String accountId, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, String runtimeInputYaml, List<ParameterField<String>> parameterFields, String fqnPath,
+      GitEntityFindInfoDTO gitEntityBasicInfo, String serviceId) {
+    boolean shouldResolveExpression = false;
+    for (ParameterField<String> param : parameterFields) {
+      if (isResolvableParameterField(param)) {
+        shouldResolveExpression = true;
+        break;
+      }
+    }
+    if (!shouldResolveExpression) {
+      return;
+    }
+    String mergedCompleteYaml = getMergedCompleteYaml(
+        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, runtimeInputYaml, gitEntityBasicInfo);
+    if (isNotEmpty(mergedCompleteYaml) && TemplateRefHelper.hasTemplateRef(mergedCompleteYaml)) {
+      mergedCompleteYaml = applyTemplatesOnGivenYaml(
+          accountId, orgIdentifier, projectIdentifier, mergedCompleteYaml, gitEntityBasicInfo);
+    }
+    String[] split = fqnPath.split("\\.");
+    String stageIdentifier = split[2];
+    YamlConfig yamlConfig = new YamlConfig(mergedCompleteYaml);
+    Map<FQN, Object> fqnObjectMap = yamlConfig.getFqnToValueMap();
+
+    if (isEmpty(serviceId)) {
+      // pipelines with inline service definitions
+      serviceId = getServiceRef(fqnObjectMap, stageIdentifier);
+    }
+    // get environment ref
+    String environmentId = getEnvironmentRef(fqnObjectMap, stageIdentifier);
+    List<YamlField> aliasYamlField =
+        getAliasYamlFields(accountId, orgIdentifier, projectIdentifier, serviceId, environmentId);
+    CDYamlExpressionEvaluator CDYamlExpressionEvaluator =
+        new CDYamlExpressionEvaluator(mergedCompleteYaml, fqnPath, aliasYamlField);
+    for (ParameterField<String> param : parameterFields) {
+      String paramValue = (String) param.fetchFinalValue();
+      if (isResolvableParameterField(param) && EngineExpressionEvaluator.hasExpressions(paramValue)) {
+        param.updateWithValue(CDYamlExpressionEvaluator.renderExpression(paramValue));
+      }
+    }
+  }
+
+  private boolean isResolvableParameterField(ParameterField<String> parameterField) {
+    return parameterField.isExpression() && !parameterField.isExecutionInput();
   }
 
   public String getResolvedExpression(String accountId, String orgIdentifier, String projectIdentifier,
@@ -269,6 +329,7 @@ public class ArtifactResourceUtils {
     YamlNode artifactTagLeafNode =
         serviceEntityService.getYamlNodeForFqn(accountId, orgId, projectId, serviceRef, imageTagFqn);
 
+    // node from service will have updated details
     YamlNode artifactSpecNode = artifactTagLeafNode.getParentNode().getParentNode();
 
     if (artifactSpecNode.getParentNode() != null
@@ -302,7 +363,13 @@ public class ArtifactResourceUtils {
         YamlNode artifactTemplateSpecNode;
         try {
           artifactTemplateSpecNode = YamlNode.fromYamlPath(response.getYaml(), "template/spec");
-          artifactSpecNode = artifactTemplateSpecNode;
+
+          String inputSetYaml = YamlUtils.writeYamlString(new YamlField(artifactSpecNode));
+          String originalYaml = YamlUtils.writeYamlString(new YamlField(artifactTemplateSpecNode));
+          String mergedArtifactYamlConfig =
+              InputSetMergeUtility.mergeRuntimeInputValuesIntoOriginalYamlForArrayNode(originalYaml, inputSetYaml);
+
+          artifactSpecNode = YamlUtils.readTree(mergedArtifactYamlConfig).getNode();
         } catch (IOException e) {
           throw new InvalidRequestException("Cannot read spec from the artifact source template");
         }
@@ -318,11 +385,11 @@ public class ArtifactResourceUtils {
     return artifactDTO.spec;
   }
 
-  static class ArtifactInternalDTO {
-    @JsonProperty("type") ArtifactSourceType sourceType;
+  public static class ArtifactInternalDTO {
+    @JsonProperty("type") public ArtifactSourceType sourceType;
     @JsonProperty("spec")
     @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
-    ArtifactConfig spec;
+    public ArtifactConfig spec;
   }
 
   public NexusResponseDTO getBuildDetails(String nexusConnectorIdentifier, String repositoryName, String repositoryPort,
@@ -403,6 +470,82 @@ public class ArtifactResourceUtils {
         nexusConnectorIdentifier = nexusRegistryArtifactConfig.getConnectorRef().getValue();
       }
     }
+
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(nexusConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+
+    groupId = getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, runtimeInputYaml,
+        groupId, fqnPath, gitEntityBasicInfo, serviceRef);
+    artifactRepositoryUrl = getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        runtimeInputYaml, artifactRepositoryUrl, fqnPath, gitEntityBasicInfo, serviceRef);
+    artifactId = getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, runtimeInputYaml,
+        artifactId, fqnPath, gitEntityBasicInfo, serviceRef);
+    repositoryPort = getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        runtimeInputYaml, repositoryPort, fqnPath, gitEntityBasicInfo, serviceRef);
+    packageName = getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        runtimeInputYaml, packageName, fqnPath, gitEntityBasicInfo, serviceRef);
+    group = getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, runtimeInputYaml,
+        group, fqnPath, gitEntityBasicInfo, serviceRef);
+    repositoryName = getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        runtimeInputYaml, repositoryName, fqnPath, gitEntityBasicInfo, serviceRef);
+    artifactPath = getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        runtimeInputYaml, artifactPath, fqnPath, gitEntityBasicInfo, serviceRef);
+    return nexusResourceService.getBuildDetails(connectorRef, repositoryName, repositoryPort, artifactPath,
+        repositoryFormat, artifactRepositoryUrl, orgIdentifier, projectIdentifier, groupId, artifactId, extension,
+        classifier, packageName, group);
+  }
+
+  public NexusResponseDTO getBuildDetailsNexus2(String nexusConnectorIdentifier, String repositoryName,
+      String repositoryPort, String artifactPath, String repositoryFormat, String artifactRepositoryUrl,
+      String orgIdentifier, String projectIdentifier, String groupId, String artifactId, String extension,
+      String classifier, String packageName, String pipelineIdentifier, String fqnPath,
+      GitEntityFindInfoDTO gitEntityBasicInfo, String runtimeInputYaml, String serviceRef, String accountId,
+      String group) {
+    if (isNotEmpty(serviceRef)) {
+      final ArtifactConfig artifactSpecFromService =
+          locateArtifactInService(accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
+      Nexus2RegistryArtifactConfig nexus2RegistryArtifactConfig =
+          (Nexus2RegistryArtifactConfig) artifactSpecFromService;
+      switch (nexus2RegistryArtifactConfig.getRepositoryFormat().getValue()) {
+        case NexusConstant.NPM:
+          NexusRegistryNpmConfig nexusRegistryNpmConfig =
+              (NexusRegistryNpmConfig) nexus2RegistryArtifactConfig.getNexusRegistryConfigSpec();
+          packageName =
+              isEmpty(packageName) ? (String) nexusRegistryNpmConfig.getPackageName().fetchFinalValue() : packageName;
+          break;
+        case NexusConstant.NUGET:
+          NexusRegistryNugetConfig nexusRegistryNugetConfig =
+              (NexusRegistryNugetConfig) nexus2RegistryArtifactConfig.getNexusRegistryConfigSpec();
+          packageName =
+              isEmpty(packageName) ? (String) nexusRegistryNugetConfig.getPackageName().fetchFinalValue() : packageName;
+          break;
+        case NexusConstant.MAVEN:
+          NexusRegistryMavenConfig nexusRegistryMavenConfig =
+              (NexusRegistryMavenConfig) nexus2RegistryArtifactConfig.getNexusRegistryConfigSpec();
+          if (isEmpty(artifactId) || isEmpty(groupId)) {
+            artifactId = nexusRegistryMavenConfig.getArtifactId().fetchFinalValue().toString();
+            groupId = nexusRegistryMavenConfig.getGroupId().fetchFinalValue().toString();
+            classifier = nexusRegistryMavenConfig.getClassifier().getValue();
+            extension = nexusRegistryMavenConfig.getExtension().getValue();
+          }
+
+          break;
+        default:
+          throw new NotFoundException(String.format("Repository Format [%s] is not supported",
+              nexus2RegistryArtifactConfig.getRepositoryFormat().getValue()));
+      }
+
+      if (isEmpty(repositoryName)) {
+        repositoryName = (String) nexus2RegistryArtifactConfig.getRepository().fetchFinalValue();
+      }
+      if (isEmpty(repositoryFormat)) {
+        repositoryFormat = (String) nexus2RegistryArtifactConfig.getRepositoryFormat().fetchFinalValue();
+      }
+      if (isEmpty(nexusConnectorIdentifier)) {
+        nexusConnectorIdentifier = nexus2RegistryArtifactConfig.getConnectorRef().fetchFinalValue().toString();
+      }
+    }
+
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(nexusConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
 
@@ -515,5 +658,134 @@ public class ArtifactResourceUtils {
 
     return artifactoryResourceService.getImagePaths(
         repositoryType, connectorRef, orgIdentifier, projectIdentifier, resolvedRepository);
+  }
+
+  public List<NexusRepositories> getRepositoriesNexus3(String orgIdentifier, String projectIdentifier,
+      String repositoryFormat, String accountId, String pipelineIdentifier, String runtimeInputYaml,
+      String nexusConnectorIdentifier, String fqnPath, GitEntityFindInfoDTO gitEntityBasicInfo, String serviceRef) {
+    if (isNotEmpty(serviceRef)) {
+      final ArtifactConfig artifactSpecFromService =
+          locateArtifactInService(accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
+      NexusRegistryArtifactConfig nexusRegistryArtifactConfig = (NexusRegistryArtifactConfig) artifactSpecFromService;
+      if (isEmpty(nexusConnectorIdentifier)) {
+        nexusConnectorIdentifier = nexusRegistryArtifactConfig.getConnectorRef().getValue();
+      }
+      if (isEmpty(repositoryFormat) || repositoryFormat.equalsIgnoreCase("defaultParam")) {
+        repositoryFormat = nexusRegistryArtifactConfig.getRepositoryFormat().fetchFinalValue().toString();
+      }
+    }
+    repositoryFormat = getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        runtimeInputYaml, repositoryFormat, fqnPath, gitEntityBasicInfo, serviceRef);
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(nexusConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+    return nexusResourceService.getRepositories(connectorRef, orgIdentifier, projectIdentifier, repositoryFormat);
+  }
+
+  public List<NexusRepositories> getRepositoriesNexus2(String orgIdentifier, String projectIdentifier,
+      String repositoryFormat, String accountId, String pipelineIdentifier, String runtimeInputYaml,
+      String nexusConnectorIdentifier, String fqnPath, GitEntityFindInfoDTO gitEntityBasicInfo, String serviceRef) {
+    if (isNotEmpty(serviceRef)) {
+      final ArtifactConfig artifactSpecFromService =
+          locateArtifactInService(accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
+      Nexus2RegistryArtifactConfig nexus2RegistryArtifactConfig =
+          (Nexus2RegistryArtifactConfig) artifactSpecFromService;
+      if (isEmpty(nexusConnectorIdentifier)) {
+        nexusConnectorIdentifier = nexus2RegistryArtifactConfig.getConnectorRef().getValue();
+      }
+      if (isEmpty(repositoryFormat) || repositoryFormat.equalsIgnoreCase("defaultParam")) {
+        repositoryFormat = nexus2RegistryArtifactConfig.getRepositoryFormat().fetchFinalValue().toString();
+      }
+    }
+    repositoryFormat = getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        runtimeInputYaml, repositoryFormat, fqnPath, gitEntityBasicInfo, serviceRef);
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(nexusConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+    return nexusResourceService.getRepositories(connectorRef, orgIdentifier, projectIdentifier, repositoryFormat);
+  }
+
+  public List<BuildDetails> getCustomGetBuildDetails(String arrayPath, String versionPath,
+      CustomScriptInfo customScriptInfo, String serviceRef, String accountId, String orgIdentifier,
+      String projectIdentifier, String fqnPath, String pipelineIdentifier, GitEntityFindInfoDTO gitEntityBasicInfo) {
+    String script = customScriptInfo.getScript();
+    List<NGVariable> inputs = customScriptInfo.getInputs();
+    List<TaskSelectorYaml> delegateSelector = customScriptInfo.getDelegateSelector();
+    int secretFunctor = HashGenerator.generateIntegerHash();
+    if (isNotEmpty(serviceRef)) {
+      final ArtifactConfig artifactSpecFromService =
+          locateArtifactInService(accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
+      io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig customArtifactConfig =
+          (io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig) artifactSpecFromService;
+      if (isEmpty(customScriptInfo.getScript())) {
+        if (customArtifactConfig.getScripts() != null
+            && customArtifactConfig.getScripts().getFetchAllArtifacts() != null
+            && customArtifactConfig.getScripts().getFetchAllArtifacts().getShellScriptBaseStepInfo() != null
+            && customArtifactConfig.getScripts().getFetchAllArtifacts().getShellScriptBaseStepInfo().getSource() != null
+            && customArtifactConfig.getScripts()
+                    .getFetchAllArtifacts()
+                    .getShellScriptBaseStepInfo()
+                    .getSource()
+                    .getSpec()
+                != null) {
+          io.harness.cdng.artifact.bean.yaml.customartifact.CustomScriptInlineSource customScriptInlineSource =
+              (io.harness.cdng.artifact.bean.yaml.customartifact.CustomScriptInlineSource) customArtifactConfig
+                  .getScripts()
+                  .getFetchAllArtifacts()
+                  .getShellScriptBaseStepInfo()
+                  .getSource()
+                  .getSpec();
+          if (customScriptInlineSource.getScript() != null
+              && isNotEmpty(customScriptInlineSource.getScript().fetchFinalValue().toString())) {
+            script = customScriptInlineSource.getScript().fetchFinalValue().toString();
+          }
+        }
+        if (customScriptInfo.getInputs() != null && isEmpty(customScriptInfo.getInputs())) {
+          inputs = customArtifactConfig.getInputs();
+        }
+        if (customScriptInfo.getDelegateSelector() != null && isEmpty(customScriptInfo.getDelegateSelector())) {
+          delegateSelector =
+              (List<io.harness.plancreator.steps.TaskSelectorYaml>) customArtifactConfig.getDelegateSelectors()
+                  .fetchFinalValue();
+        }
+      }
+
+      if (isEmpty(script) || script.equalsIgnoreCase("<+input>")) {
+        return Collections.emptyList();
+      }
+
+      if (isEmpty(arrayPath) && customArtifactConfig.getScripts() != null
+          && customArtifactConfig.getScripts().getFetchAllArtifacts() != null
+          && customArtifactConfig.getScripts().getFetchAllArtifacts().getArtifactsArrayPath() != null) {
+        arrayPath = customArtifactConfig.getScripts()
+                        .getFetchAllArtifacts()
+                        .getArtifactsArrayPath()
+                        .fetchFinalValue()
+                        .toString();
+      }
+      if (isEmpty(versionPath) && customArtifactConfig.getScripts() != null
+          && customArtifactConfig.getScripts().getFetchAllArtifacts() != null
+          && customArtifactConfig.getScripts().getFetchAllArtifacts().getVersionPath() != null) {
+        versionPath =
+            customArtifactConfig.getScripts().getFetchAllArtifacts().getVersionPath().fetchFinalValue().toString();
+      }
+    }
+
+    if (isEmpty(arrayPath) || arrayPath.equalsIgnoreCase("<+input>")) {
+      throw new io.harness.exception.HintException("Array path can not be empty");
+    }
+
+    if (isEmpty(versionPath) || versionPath.equalsIgnoreCase("<+input>")) {
+      throw new io.harness.exception.HintException("Version path can not be empty");
+    }
+    if (isNotEmpty(customScriptInfo.getRuntimeInputYaml())) {
+      script = getResolvedExpression(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+          customScriptInfo.getRuntimeInputYaml(), script, fqnPath, gitEntityBasicInfo, serviceRef, secretFunctor);
+      arrayPath = getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+          customScriptInfo.getRuntimeInputYaml(), arrayPath, fqnPath, gitEntityBasicInfo, serviceRef);
+      versionPath = getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+          customScriptInfo.getRuntimeInputYaml(), versionPath, fqnPath, gitEntityBasicInfo, serviceRef);
+    }
+    return customResourceService.getBuilds(script, versionPath, arrayPath,
+        NGVariablesUtils.getStringMapVariables(inputs, 0L), accountId, orgIdentifier, projectIdentifier, secretFunctor,
+        delegateSelector);
   }
 }

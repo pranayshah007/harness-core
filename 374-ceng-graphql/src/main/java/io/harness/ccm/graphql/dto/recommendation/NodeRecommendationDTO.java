@@ -7,6 +7,7 @@
 
 package io.harness.ccm.graphql.dto.recommendation;
 
+import io.harness.ccm.commons.beans.recommendation.CCMJiraDetails;
 import io.harness.ccm.commons.beans.recommendation.NodePoolId;
 import io.harness.ccm.commons.beans.recommendation.TotalResourceUsage;
 import io.harness.ccm.commons.beans.recommendation.models.RecommendClusterRequest;
@@ -26,4 +27,5 @@ public class NodeRecommendationDTO implements RecommendationDetailsDTO {
   RecommendationResponse current;
   RecommendationResponse recommended;
   TotalResourceUsage totalResourceUsage;
+  CCMJiraDetails jiraDetails;
 }

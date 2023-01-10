@@ -1,0 +1,472 @@
+{
+  "_id" : "639055172e12b40f9eb6f575",
+  "runSequence" : 32,
+  "accountId" : "OgiB4-xETamKNVAz-wQRjw",
+  "orgIdentifier" : "Ng_Pipelines_K8s_Organisations",
+  "projectIdentifier" : "CdpNgGoldenPipelinesProject",
+  "pipelineIdentifier" : "Azure_Web_Apps",
+  "planExecutionId" : "iTDQmlTWRUGVlHiDIB5RTw",
+  "name" : "Azure Web Apps ",
+  "pipelineDeleted" : false,
+  "internalStatus" : "SUCCEEDED",
+  "status" : "SUCCESS",
+  "inputSetYaml" : "pipeline:\n  identifier: Azure_Web_Apps\n  stages:\n    - stage:\n        identifier: Canary_zip_deployment_linux\n        type: Deployment\n        spec:\n          service:\n            serviceInputs:\n              serviceDefinition:\n                type: AzureWebApp\n                spec:\n                  artifacts:\n                    primary:\n                      type: ArtifactoryRegistry\n                      spec:\n                        artifactPath: spring-boot-hello.jar.zip\n",
+  "pipelineTemplate" : "pipeline:\n  identifier: \"Azure_Web_Apps\"\n  stages:\n  - stage:\n      identifier: \"Canary_zip_deployment_linux\"\n      type: \"Deployment\"\n      spec:\n        service:\n          serviceInputs:\n            serviceDefinition:\n              type: \"AzureWebApp\"\n              spec:\n                artifacts:\n                  primary:\n                    type: \"ArtifactoryRegistry\"\n                    spec:\n                      artifactPath: \"<+input>\"\n",
+  "executionInputConfigured" : false,
+  "tags" : [],
+  "moduleInfo" : {
+    "cd" : {
+      "__recast" : "io.harness.cdng.pipeline.executions.beans.CDPipelineModuleInfo",
+      "envGroupIdentifiers" : [],
+      "envIdentifiers" : [
+        "azure_webapp_environment"
+      ],
+      "environmentTypes" : [
+        "PreProduction"
+      ],
+      "freezeIdentifiers" : [],
+      "infrastructureIdentifiers" : [
+        "azure_webapp_infrastructure"
+      ],
+      "infrastructureNames" : [
+        "azure_webapp_infrastructure"
+      ],
+      "infrastructureTypes" : [
+        "AzureWebApp"
+      ],
+      "serviceDefinitionTypes" : [
+        "AzureWebApp"
+      ],
+      "serviceIdentifiers" : [
+        "azure_webapp_artifactory_service",
+        "azure_webapp_docker_windows_service",
+        "azure_webapp_docker_service",
+        "azure_webapp_ja_artifactory_service"
+      ]
+    }
+  },
+  "layoutNodeMap" : {
+    "k-8s_imtQGSlDGbt7NDKbA" : {
+      "nodeType" : "Deployment",
+      "nodeGroup" : "STAGE",
+      "nodeIdentifier" : "Basic_Container_Windows",
+      "name" : "Basic Container Windows",
+      "nodeUuid" : "k-8s_imtQGSlDGbt7NDKbA",
+      "status" : "SUCCESS",
+      "module" : "cd",
+      "moduleInfo" : {
+        "cd" : {
+          "__recast" : "io.harness.cdng.pipeline.executions.beans.CDStageModuleInfo",
+          "rollbackDuration" : 0,
+          "serviceInfo" : {
+            "__recast" : "io.harness.cdng.pipeline.executions.beans.ServiceExecutionSummary",
+            "identifier" : "azure_webapp_docker_windows_service",
+            "displayName" : "azure_webapp_docker_windows_service",
+            "deploymentType" : "AzureWebApp",
+            "gitOpsEnabled" : false,
+            "artifacts" : {
+              "__recast" : "io.harness.cdng.pipeline.executions.beans.ServiceExecutionSummary$ArtifactsSummary",
+              "primary" : {
+                "__recast" : "io.harness.ngpipeline.pipeline.executions.beans.DockerArtifactSummary",
+                "imagePath" : "library/hello-world",
+                "tag" : "nanoserver-ltsc2022"
+              },
+              "sidecars" : []
+            }
+          },
+          "infraExecutionSummary" : {
+            "__recast" : "io.harness.cdng.pipeline.executions.beans.InfraExecutionSummary",
+            "identifier" : "azure_webapp_environment",
+            "name" : "azure_webapp_environment",
+            "type" : "PreProduction",
+            "infrastructureIdentifier" : "azure_webapp_infrastructure",
+            "infrastructureName" : "azure_webapp_infrastructure"
+          }
+        }
+      },
+      "edgeLayoutList" : {
+        "currentNodeChildren" : [],
+        "nextIds" : [
+          "hAQOeXA4T_WYX2-QEn6wCA"
+        ]
+      },
+      "isRollbackStageNode" : false,
+      "executionInputConfigured" : false,
+      "nodeExecutionId" : "DUuh8nAJQ4a_zxdtoTQCsg",
+      "nodeRunInfo" : {
+        "whenCondition" : "<+OnPipelineSuccess>",
+        "evaluatedCondition" : true,
+        "expressions" : [
+          {
+            "expression" : "OnPipelineSuccess",
+            "expressionValue" : "true",
+            "count" : 1
+          }
+        ]
+      },
+      "startTs" : 1670403430625,
+      "failureInfo" : {
+        "message" : "",
+        "_class" : "io.harness.beans.ExecutionErrorInfo"
+      },
+      "failureInfoDTO" : {
+        "message" : "",
+        "failureTypeList" : [],
+        "responseMessages" : [],
+        "_class" : "io.harness.dto.FailureInfoDTO"
+      },
+      "endTs" : 1670403575743
+    },
+    "gYY54NQJRKaTwlvWwTXsxw_rollbackStage" : {
+      "nodeType" : "Deployment",
+      "nodeGroup" : "STAGE",
+      "nodeIdentifier" : "gYY54NQJRKaTwlvWwTXsxw_rollbackStage",
+      "name" : "Canary zip deployment linux (Rollback Stage)",
+      "nodeUuid" : "gYY54NQJRKaTwlvWwTXsxw_rollbackStage",
+      "status" : "NOTSTARTED",
+      "module" : "cd",
+      "moduleInfo" : {
+        "cd" : {}
+      },
+      "edgeLayoutList" : {
+        "currentNodeChildren" : [],
+        "nextIds" : [
+          "hAQOeXA4T_WYX2-QEn6wCA_rollbackStage"
+        ]
+      },
+      "isRollbackStageNode" : true
+    },
+    "hSqsfY1oR_aFLqEpShyb-w_rollbackStage" : {
+      "nodeType" : "Deployment",
+      "nodeGroup" : "STAGE",
+      "nodeIdentifier" : "hSqsfY1oR_aFLqEpShyb-w_rollbackStage",
+      "name" : "Basic Jar Windows Package deployment (Rollback Stage)",
+      "nodeUuid" : "hSqsfY1oR_aFLqEpShyb-w_rollbackStage",
+      "status" : "NOTSTARTED",
+      "module" : "cd",
+      "moduleInfo" : {
+        "cd" : {}
+      },
+      "edgeLayoutList" : {
+        "currentNodeChildren" : [],
+        "nextIds" : []
+      },
+      "isRollbackStageNode" : true
+    },
+    "gYY54NQJRKaTwlvWwTXsxw" : {
+      "nodeType" : "Deployment",
+      "nodeGroup" : "STAGE",
+      "nodeIdentifier" : "Canary_zip_deployment_linux",
+      "name" : "Canary zip deployment linux",
+      "nodeUuid" : "gYY54NQJRKaTwlvWwTXsxw",
+      "status" : "SUCCESS",
+      "module" : "cd",
+      "moduleInfo" : {
+        "cd" : {
+          "__recast" : "io.harness.cdng.pipeline.executions.beans.CDStageModuleInfo",
+          "rollbackDuration" : 0,
+          "serviceInfo" : {
+            "__recast" : "io.harness.cdng.pipeline.executions.beans.ServiceExecutionSummary",
+            "identifier" : "azure_webapp_ja_artifactory_service",
+            "displayName" : "azure_webapp_zip_artifactory_service",
+            "deploymentType" : "AzureWebApp",
+            "gitOpsEnabled" : false,
+            "artifacts" : {
+              "__recast" : "io.harness.cdng.pipeline.executions.beans.ServiceExecutionSummary$ArtifactsSummary",
+              "primary" : {
+                "__recast" : "io.harness.cdng.artifact.ArtifactoryGenericArtifactSummary",
+                "artifactPath" : "spring-boot-hello.jar.zip",
+                "artifactDirectory" : "/"
+              },
+              "sidecars" : []
+            }
+          },
+          "infraExecutionSummary" : {
+            "__recast" : "io.harness.cdng.pipeline.executions.beans.InfraExecutionSummary",
+            "identifier" : "azure_webapp_environment",
+            "name" : "azure_webapp_environment",
+            "type" : "PreProduction",
+            "infrastructureIdentifier" : "azure_webapp_infrastructure",
+            "infrastructureName" : "azure_webapp_infrastructure"
+          }
+        }
+      },
+      "edgeLayoutList" : {
+        "currentNodeChildren" : [],
+        "nextIds" : []
+      },
+      "isRollbackStageNode" : false,
+      "executionInputConfigured" : false,
+      "nodeExecutionId" : "s6EYF3mvQI-OI3z1vVi50A",
+      "nodeRunInfo" : {
+        "whenCondition" : "<+OnPipelineSuccess>",
+        "evaluatedCondition" : true,
+        "expressions" : [
+          {
+            "expression" : "OnPipelineSuccess",
+            "expressionValue" : "true",
+            "count" : 1
+          }
+        ]
+      },
+      "startTs" : 1670403858517,
+      "endTs" : 1670404155590,
+      "failureInfo" : {
+        "message" : "",
+        "_class" : "io.harness.beans.ExecutionErrorInfo"
+      },
+      "failureInfoDTO" : {
+        "message" : "",
+        "failureTypeList" : [],
+        "responseMessages" : [],
+        "_class" : "io.harness.dto.FailureInfoDTO"
+      }
+    },
+    "k-8s_imtQGSlDGbt7NDKbA_rollbackStage" : {
+      "nodeType" : "Deployment",
+      "nodeGroup" : "STAGE",
+      "nodeIdentifier" : "k-8s_imtQGSlDGbt7NDKbA_rollbackStage",
+      "name" : "Basic Container Windows (Rollback Stage)",
+      "nodeUuid" : "k-8s_imtQGSlDGbt7NDKbA_rollbackStage",
+      "status" : "NOTSTARTED",
+      "module" : "cd",
+      "moduleInfo" : {
+        "cd" : {}
+      },
+      "edgeLayoutList" : {
+        "currentNodeChildren" : [],
+        "nextIds" : [
+          "hSqsfY1oR_aFLqEpShyb-w_rollbackStage"
+        ]
+      },
+      "isRollbackStageNode" : true
+    },
+    "hAQOeXA4T_WYX2-QEn6wCA_rollbackStage" : {
+      "nodeType" : "Deployment",
+      "nodeGroup" : "STAGE",
+      "nodeIdentifier" : "hAQOeXA4T_WYX2-QEn6wCA_rollbackStage",
+      "name" : "BlueGreen Container Linux Deployment (Rollback Stage)",
+      "nodeUuid" : "hAQOeXA4T_WYX2-QEn6wCA_rollbackStage",
+      "status" : "NOTSTARTED",
+      "module" : "cd",
+      "moduleInfo" : {
+        "cd" : {}
+      },
+      "edgeLayoutList" : {
+        "currentNodeChildren" : [],
+        "nextIds" : [
+          "k-8s_imtQGSlDGbt7NDKbA_rollbackStage"
+        ]
+      },
+      "isRollbackStageNode" : true
+    },
+    "hAQOeXA4T_WYX2-QEn6wCA" : {
+      "nodeType" : "Deployment",
+      "nodeGroup" : "STAGE",
+      "nodeIdentifier" : "BlueGreen_Container_Deployment",
+      "name" : "BlueGreen Container Linux Deployment",
+      "nodeUuid" : "hAQOeXA4T_WYX2-QEn6wCA",
+      "status" : "SUCCESS",
+      "module" : "cd",
+      "moduleInfo" : {
+        "cd" : {
+          "__recast" : "io.harness.cdng.pipeline.executions.beans.CDStageModuleInfo",
+          "rollbackDuration" : 0,
+          "serviceInfo" : {
+            "__recast" : "io.harness.cdng.pipeline.executions.beans.ServiceExecutionSummary",
+            "identifier" : "azure_webapp_docker_service",
+            "displayName" : "azure_webapp_docker_service",
+            "deploymentType" : "AzureWebApp",
+            "gitOpsEnabled" : false,
+            "artifacts" : {
+              "__recast" : "io.harness.cdng.pipeline.executions.beans.ServiceExecutionSummary$ArtifactsSummary",
+              "primary" : {
+                "__recast" : "io.harness.ngpipeline.pipeline.executions.beans.DockerArtifactSummary",
+                "imagePath" : "crccheck/hello-world",
+                "tag" : "v1.0.0"
+              },
+              "sidecars" : []
+            }
+          },
+          "infraExecutionSummary" : {
+            "__recast" : "io.harness.cdng.pipeline.executions.beans.InfraExecutionSummary",
+            "identifier" : "azure_webapp_environment",
+            "name" : "azure_webapp_environment",
+            "type" : "PreProduction",
+            "infrastructureIdentifier" : "azure_webapp_infrastructure",
+            "infrastructureName" : "azure_webapp_infrastructure"
+          }
+        }
+      },
+      "edgeLayoutList" : {
+        "currentNodeChildren" : [],
+        "nextIds" : [
+          "gYY54NQJRKaTwlvWwTXsxw"
+        ]
+      },
+      "isRollbackStageNode" : false,
+      "executionInputConfigured" : false,
+      "nodeExecutionId" : "jmg_XvdpSFKNqJzftNRRew",
+      "nodeRunInfo" : {
+        "whenCondition" : "<+OnPipelineSuccess>",
+        "evaluatedCondition" : true,
+        "expressions" : [
+          {
+            "expression" : "OnPipelineSuccess",
+            "expressionValue" : "true",
+            "count" : 1
+          }
+        ]
+      },
+      "startTs" : 1670403575815,
+      "endTs" : 1670403858442,
+      "failureInfo" : {
+        "message" : "",
+        "_class" : "io.harness.beans.ExecutionErrorInfo"
+      },
+      "failureInfoDTO" : {
+        "message" : "",
+        "failureTypeList" : [],
+        "responseMessages" : [],
+        "_class" : "io.harness.dto.FailureInfoDTO"
+      }
+    },
+    "hSqsfY1oR_aFLqEpShyb-w" : {
+      "nodeType" : "Deployment",
+      "nodeGroup" : "STAGE",
+      "nodeIdentifier" : "basic_jar_windows_Package_deployment",
+      "name" : "Basic Jar Windows Package deployment",
+      "nodeUuid" : "hSqsfY1oR_aFLqEpShyb-w",
+      "status" : "SUCCESS",
+      "module" : "cd",
+      "moduleInfo" : {
+        "cd" : {
+          "__recast" : "io.harness.cdng.pipeline.executions.beans.CDStageModuleInfo",
+          "rollbackDuration" : 0,
+          "serviceInfo" : {
+            "__recast" : "io.harness.cdng.pipeline.executions.beans.ServiceExecutionSummary",
+            "identifier" : "azure_webapp_artifactory_service",
+            "displayName" : "azure_webapp_artifactory_service",
+            "deploymentType" : "AzureWebApp",
+            "gitOpsEnabled" : false,
+            "artifacts" : {
+              "__recast" : "io.harness.cdng.pipeline.executions.beans.ServiceExecutionSummary$ArtifactsSummary",
+              "primary" : {
+                "__recast" : "io.harness.cdng.artifact.ArtifactoryGenericArtifactSummary",
+                "artifactPath" : "spring-boot-hello.jar.zip",
+                "artifactDirectory" : "/"
+              },
+              "sidecars" : []
+            }
+          },
+          "infraExecutionSummary" : {
+            "__recast" : "io.harness.cdng.pipeline.executions.beans.InfraExecutionSummary",
+            "identifier" : "azure_webapp_environment",
+            "name" : "azure_webapp_environment",
+            "type" : "PreProduction",
+            "infrastructureIdentifier" : "azure_webapp_infrastructure",
+            "infrastructureName" : "azure_webapp_infrastructure"
+          }
+        }
+      },
+      "edgeLayoutList" : {
+        "currentNodeChildren" : [],
+        "nextIds" : [
+          "k-8s_imtQGSlDGbt7NDKbA"
+        ]
+      },
+      "isRollbackStageNode" : false,
+      "executionInputConfigured" : false,
+      "nodeExecutionId" : "cbJFL40hTvWR6rg3VEUKFA",
+      "nodeRunInfo" : {
+        "whenCondition" : "<+OnPipelineSuccess>",
+        "evaluatedCondition" : true,
+        "expressions" : [
+          {
+            "expression" : "OnPipelineSuccess",
+            "expressionValue" : "true",
+            "count" : 1
+          }
+        ]
+      },
+      "startTs" : 1670403351661,
+      "endTs" : 1670403430495,
+      "failureInfo" : {
+        "message" : "",
+        "_class" : "io.harness.beans.ExecutionErrorInfo"
+      },
+      "failureInfoDTO" : {
+        "message" : "",
+        "failureTypeList" : [],
+        "responseMessages" : [],
+        "_class" : "io.harness.dto.FailureInfoDTO"
+      }
+    }
+  },
+  "modules" : [
+    "cd"
+  ],
+  "startingNodeId" : "hSqsfY1oR_aFLqEpShyb-w",
+  "executionTriggerInfo" : {
+    "triggerType" : "MANUAL",
+    "triggeredBy" : {
+      "uuid" : "4QWHXCwYQN2dU8fVWqv3sg",
+      "identifier" : "automationpipelinesng@mailinator.com",
+      "extraInfo" : {
+        "email" : "automationpipelinesng@mailinator.com"
+      }
+    },
+    "isRerun" : true,
+    "rerunInfo" : {
+      "rootExecutionId" : "FZMMv5dSRhixLdp2v8vnXA",
+      "rootTriggerType" : "MANUAL",
+      "prevExecutionId" : "7Hy-nLzsTOy2JtLzSNOQdw",
+      "prevTriggerType" : "MANUAL"
+    }
+  },
+  "governanceMetadata" : {
+    "id" : "0",
+    "timestamp" : "1670403351258",
+    "status" : "pass",
+    "accountId" : "OgiB4-xETamKNVAz-wQRjw",
+    "orgId" : "Ng_Pipelines_K8s_Organisations",
+    "projectId" : "CdpNgGoldenPipelinesProject",
+    "entity" : "accountIdentifier%3AOgiB4-xETamKNVAz-wQRjw%2ForgIdentifier%3ANg_Pipelines_K8s_Organisations%2FprojectIdentifier%3ACdpNgGoldenPipelinesProject%2FpipelineIdentifier%3AAzure_Web_Apps",
+    "type" : "pipeline",
+    "action" : "onrun",
+    "created" : "1670403351246"
+  },
+  "stagesExecutionMetadata" : {
+    "isStagesExecution" : false
+  },
+  "allowStagesExecution" : false,
+  "storeType" : "INLINE",
+  "startTs" : 1670403351259,
+  "retryExecutionMetadata" : {
+    "parentExecutionId" : "iTDQmlTWRUGVlHiDIB5RTw",
+    "rootExecutionId" : "iTDQmlTWRUGVlHiDIB5RTw"
+  },
+  "parentStageInfo" : {
+    "hasParentPipeline_" : false,
+    "stageNodeExecutionId_" : "",
+    "executionId_" : "",
+    "identifier_" : "",
+    "projectId_" : "",
+    "orgId_" : "",
+    "memoizedIsInitialized" : -1,
+    "unknownFields" : {
+      "fields" : {}
+    },
+    "memoizedSize" : -1,
+    "memoizedHashCode" : 0
+  },
+  "isLatestExecution" : true,
+  "createdAt" : 1670403351428,
+  "lastUpdatedAt" : 1670403351428,
+  "version" : 46,
+  "_class" : "planExecutionsSummary",
+  "endTs" : 1670404155674,
+  "executedModules" : [
+    "cd"
+  ]
+}

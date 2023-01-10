@@ -48,6 +48,8 @@ public class InstallUtils {
   private static final String amd64 = "amd64";
   private static final String arm64 = "arm64";
 
+  private List<ClientTool> internalToolsList = Arrays.asList(ClientTool.SCM);
+
   public static String getPath(final ClientTool tool, final ClientToolVersion version) {
     final Path toolPath = toolPaths.get(tool, version);
     if (toolPath != null) {
@@ -159,7 +161,7 @@ public class InstallUtils {
     }
 
     // 4. Download the tool
-    if (!configuration.isClientToolsDownloadDisabled()) {
+    if (!configuration.isClientToolsDownloadDisabled() || isInternalTool(tool)) {
       try {
         log.info("{} not found at {}. Installing.", tool.getBinaryName(), versionedToolPath);
         createDirectoryIfDoesNotExist(versionedToolPath.getParent());
@@ -191,6 +193,10 @@ public class InstallUtils {
       log.info("{} download disabled. Skipping install.", tool.getBinaryName());
       return null;
     }
+  }
+
+  private static boolean isInternalTool(ClientTool tool) {
+    return internalToolsList.contains(tool);
   }
 
   private static Path getVersionedPath(final ClientTool tool, final ClientToolVersion toolVersion) {

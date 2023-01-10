@@ -118,6 +118,7 @@ import io.harness.delegate.ecs.EcsCommandTaskNGHandler;
 import io.harness.delegate.ecs.EcsPrepareRollbackCommandTaskHandler;
 import io.harness.delegate.ecs.EcsRollingDeployCommandTaskHandler;
 import io.harness.delegate.ecs.EcsRollingRollbackCommandTaskHandler;
+import io.harness.delegate.ecs.EcsRunTaskArnCommandTaskHandler;
 import io.harness.delegate.ecs.EcsRunTaskCommandTaskHandler;
 import io.harness.delegate.exceptionhandler.handler.AmazonClientExceptionHandler;
 import io.harness.delegate.exceptionhandler.handler.AmazonServiceExceptionHandler;
@@ -133,6 +134,7 @@ import io.harness.delegate.exceptionhandler.handler.SCMExceptionHandler;
 import io.harness.delegate.exceptionhandler.handler.SecretExceptionHandler;
 import io.harness.delegate.exceptionhandler.handler.SocketExceptionHandler;
 import io.harness.delegate.exceptionhandler.handler.TerraformRuntimeExceptionHandler;
+import io.harness.delegate.exceptionhandler.handler.TerragruntRuntimeExceptionHandler;
 import io.harness.delegate.http.HttpTaskNG;
 import io.harness.delegate.k8s.K8sApplyRequestHandler;
 import io.harness.delegate.k8s.K8sBGRequestHandler;
@@ -147,8 +149,6 @@ import io.harness.delegate.k8s.K8sSwapServiceSelectorsHandler;
 import io.harness.delegate.message.MessageService;
 import io.harness.delegate.message.MessageServiceImpl;
 import io.harness.delegate.message.MessengerType;
-import io.harness.delegate.pcf.CfCommandTaskNGHandler;
-import io.harness.delegate.pcf.CfDataFetchCommandTaskHandlerNG;
 import io.harness.delegate.provider.DelegateConfigurationServiceProviderImpl;
 import io.harness.delegate.provider.DelegatePropertiesServiceProviderImpl;
 import io.harness.delegate.serverless.ServerlessAwsLambdaDeployCommandTaskHandler;
@@ -167,10 +167,6 @@ import io.harness.delegate.service.K8sGlobalConfigServiceImpl;
 import io.harness.delegate.service.LogAnalysisStoreServiceImpl;
 import io.harness.delegate.service.MetricDataStoreServiceImpl;
 import io.harness.delegate.service.tasklogging.DelegateLogServiceImpl;
-import io.harness.delegate.task.BuildSourceTask;
-import io.harness.delegate.task.MicrosoftTeamsSenderDelegateTask;
-import io.harness.delegate.task.PagerDutySenderDelegateTask;
-import io.harness.delegate.task.SlackSenderDelegateTask;
 import io.harness.delegate.task.artifactory.ArtifactoryDelegateTask;
 import io.harness.delegate.task.artifacts.ArtifactSourceDelegateRequest;
 import io.harness.delegate.task.artifacts.DelegateArtifactTaskHandler;
@@ -212,6 +208,11 @@ import io.harness.delegate.task.aws.AwsCodeCommitApiDelegateTask;
 import io.harness.delegate.task.aws.AwsCodeCommitDelegateTask;
 import io.harness.delegate.task.aws.AwsDelegateTask;
 import io.harness.delegate.task.aws.S3FetchFilesTaskNG;
+import io.harness.delegate.task.aws.asg.AsgCanaryDeleteTaskNG;
+import io.harness.delegate.task.aws.asg.AsgCanaryDeployTaskNG;
+import io.harness.delegate.task.aws.asg.AsgPrepareRollbackDataTaskNG;
+import io.harness.delegate.task.aws.asg.AsgRollingDeployTaskNG;
+import io.harness.delegate.task.aws.asg.AsgRollingRollbackTaskNG;
 import io.harness.delegate.task.azure.appservice.AzureAppServiceTaskParameters.AzureAppServiceTaskType;
 import io.harness.delegate.task.azure.appservice.webapp.AzureWebAppTaskNG;
 import io.harness.delegate.task.azure.appservice.webapp.handler.AzureWebAppFetchPreDeploymentDataRequestHandler;
@@ -239,6 +240,7 @@ import io.harness.delegate.task.azure.exception.AzureClientExceptionHandler;
 import io.harness.delegate.task.azure.resource.operation.AzureResourceProvider;
 import io.harness.delegate.task.azureartifacts.AzureArtifactsTestConnectionDelegateTask;
 import io.harness.delegate.task.azureartifacts.AzureArtifactsValidationHandler;
+import io.harness.delegate.task.buildsource.BuildSourceTask;
 import io.harness.delegate.task.cek8s.CEKubernetesTestConnectionDelegateTask;
 import io.harness.delegate.task.cek8s.CEKubernetesValidationHandler;
 import io.harness.delegate.task.cf.PcfCommandTask;
@@ -262,7 +264,16 @@ import io.harness.delegate.task.ecs.EcsCommandTaskNG;
 import io.harness.delegate.task.ecs.EcsCommandTypeNG;
 import io.harness.delegate.task.ecs.EcsGitFetchRunTask;
 import io.harness.delegate.task.ecs.EcsGitFetchTask;
+import io.harness.delegate.task.ecs.EcsRunTaskArnTask;
 import io.harness.delegate.task.ecs.EcsS3FetchTask;
+import io.harness.delegate.task.elastigroup.ElastigroupBGStageSetupCommandTaskNG;
+import io.harness.delegate.task.elastigroup.ElastigroupDeployTask;
+import io.harness.delegate.task.elastigroup.ElastigroupParametersFetchTask;
+import io.harness.delegate.task.elastigroup.ElastigroupPreFetchTaskNG;
+import io.harness.delegate.task.elastigroup.ElastigroupRollbackTask;
+import io.harness.delegate.task.elastigroup.ElastigroupSetupCommandTaskNG;
+import io.harness.delegate.task.elastigroup.ElastigroupStartupScriptFetchRunTask;
+import io.harness.delegate.task.elastigroup.ElastigroupSwapRouteCommandTaskNG;
 import io.harness.delegate.task.executioncapability.BatchCapabilityCheckTask;
 import io.harness.delegate.task.gcp.GcpTask;
 import io.harness.delegate.task.gcp.GcpTaskType;
@@ -306,11 +317,11 @@ import io.harness.delegate.task.ldap.NGLdapValidateUserQuerySettingTask;
 import io.harness.delegate.task.manifests.CustomManifestFetchTask;
 import io.harness.delegate.task.manifests.CustomManifestFetchTaskNG;
 import io.harness.delegate.task.manifests.CustomManifestValuesFetchTask;
+import io.harness.delegate.task.microsoftteams.MicrosoftTeamsSenderDelegateTask;
 import io.harness.delegate.task.nexus.NexusDelegateTask;
 import io.harness.delegate.task.nexus.NexusValidationHandler;
+import io.harness.delegate.task.pagerduty.PagerDutySenderDelegateTask;
 import io.harness.delegate.task.pcf.CfCommandRequest.PcfCommandType;
-import io.harness.delegate.task.pcf.CfCommandTaskNG;
-import io.harness.delegate.task.pcf.CfCommandTypeNG;
 import io.harness.delegate.task.pcf.TasConnectorValidationTask;
 import io.harness.delegate.task.pdc.HostConnectivityValidationDelegateTask;
 import io.harness.delegate.task.scm.ScmDelegateClientImpl;
@@ -347,10 +358,19 @@ import io.harness.delegate.task.shell.winrm.WinRmCopyCommandHandler;
 import io.harness.delegate.task.shell.winrm.WinRmDownloadArtifactCommandHandler;
 import io.harness.delegate.task.shell.winrm.WinRmInitCommandHandler;
 import io.harness.delegate.task.shell.winrm.WinRmScriptCommandHandler;
+import io.harness.delegate.task.slack.SlackSenderDelegateTask;
 import io.harness.delegate.task.spot.SpotDelegateTask;
 import io.harness.delegate.task.ssh.NGCommandUnitType;
 import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactType;
 import io.harness.delegate.task.stepstatus.StepStatusTask;
+import io.harness.delegate.task.tas.TasAppResizeTask;
+import io.harness.delegate.task.tas.TasBGSetupTask;
+import io.harness.delegate.task.tas.TasBasicSetupTask;
+import io.harness.delegate.task.tas.TasCommandTask;
+import io.harness.delegate.task.tas.TasDataFetchTask;
+import io.harness.delegate.task.tas.TasRollbackTask;
+import io.harness.delegate.task.tas.TasSwapRollbackTask;
+import io.harness.delegate.task.tas.TasSwapRouteTask;
 import io.harness.delegate.task.terraform.TFTaskType;
 import io.harness.delegate.task.terraform.TerraformBaseHelper;
 import io.harness.delegate.task.terraform.TerraformBaseHelperImpl;
@@ -1802,9 +1822,13 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.FETCH_S3_FILE_TASK).toInstance(S3FetchFilesTask.class);
 
     mapBinder.addBinding(TaskType.TERRAFORM_PROVISION_TASK).toInstance(TerraformProvisionTask.class);
+    mapBinder.addBinding(TaskType.TERRAFORM_PROVISION_TASK_V2).toInstance(TerraformProvisionTask.class);
     mapBinder.addBinding(TaskType.TERRAFORM_INPUT_VARIABLES_OBTAIN_TASK)
         .toInstance(TerraformInputVariablesObtainTask.class);
+    mapBinder.addBinding(TaskType.TERRAFORM_INPUT_VARIABLES_OBTAIN_TASK_V2)
+        .toInstance(TerraformInputVariablesObtainTask.class);
     mapBinder.addBinding(TaskType.TERRAFORM_FETCH_TARGETS_TASK).toInstance(TerraformFetchTargetsTask.class);
+    mapBinder.addBinding(TaskType.TERRAFORM_FETCH_TARGETS_TASK_V2).toInstance(TerraformFetchTargetsTask.class);
     mapBinder.addBinding(TaskType.TERRAGRUNT_PROVISION_TASK).toInstance(TerragruntProvisionTask.class);
     mapBinder.addBinding(TaskType.KUBERNETES_SWAP_SERVICE_SELECTORS_TASK)
         .toInstance(KubernetesSwapServiceSelectorsTask.class);
@@ -1930,13 +1954,6 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.TRIGGER_AUTHENTICATION_TASK).toInstance(TriggerAuthenticationTask.class);
     mapBinder.addBinding(TaskType.HELM_FETCH_CHART_VERSIONS_TASK_NG).toInstance(HelmFetchChartVersionTaskNG.class);
 
-    // TAS NG
-    MapBinder<String, CfCommandTaskNGHandler> CfTaskTypeToTaskHandlerMap =
-        MapBinder.newMapBinder(binder(), String.class, CfCommandTaskNGHandler.class);
-    CfTaskTypeToTaskHandlerMap.addBinding(CfCommandTypeNG.DATA_FETCH.name()).to(CfDataFetchCommandTaskHandlerNG.class);
-
-    mapBinder.addBinding(TaskType.CF_COMMAND_TASK_NG).toInstance(CfCommandTaskNG.class);
-
     // ECS NG
     MapBinder<String, EcsCommandTaskNGHandler> ecsTaskTypeToTaskHandlerMap =
         MapBinder.newMapBinder(binder(), String.class, EcsCommandTaskNGHandler.class);
@@ -1959,22 +1976,58 @@ public class DelegateModule extends AbstractModule {
     ecsTaskTypeToTaskHandlerMap.addBinding(EcsCommandTypeNG.ECS_BLUE_GREEN_ROLLBACK.name())
         .to(EcsBlueGreenRollbackCommandTaskHandler.class);
     ecsTaskTypeToTaskHandlerMap.addBinding(EcsCommandTypeNG.ECS_RUN_TASK.name()).to(EcsRunTaskCommandTaskHandler.class);
+    ecsTaskTypeToTaskHandlerMap.addBinding(EcsCommandTypeNG.ECS_RUN_TASK_ARN.name())
+        .to(EcsRunTaskArnCommandTaskHandler.class);
 
     mapBinder.addBinding(TaskType.ECS_GIT_FETCH_TASK_NG).toInstance(EcsGitFetchTask.class);
     mapBinder.addBinding(TaskType.ECS_GIT_FETCH_RUN_TASK_NG).toInstance(EcsGitFetchRunTask.class);
     mapBinder.addBinding(TaskType.ECS_COMMAND_TASK_NG).toInstance(EcsCommandTaskNG.class);
     mapBinder.addBinding(TaskType.ECS_S3_FETCH_TASK_NG).toInstance(EcsS3FetchTask.class);
+    mapBinder.addBinding(TaskType.ECS_RUN_TASK_ARN).toInstance(EcsRunTaskArnTask.class);
+
+    // ASG NG
+    mapBinder.addBinding(TaskType.AWS_ASG_CANARY_DEPLOY_TASK_NG).toInstance(AsgCanaryDeployTaskNG.class);
+    mapBinder.addBinding(TaskType.AWS_ASG_CANARY_DELETE_TASK_NG).toInstance(AsgCanaryDeleteTaskNG.class);
+    mapBinder.addBinding(TaskType.AWS_ASG_ROLLING_DEPLOY_TASK_NG).toInstance(AsgRollingDeployTaskNG.class);
+    mapBinder.addBinding(TaskType.AWS_ASG_PREPARE_ROLLBACK_DATA_TASK_NG).toInstance(AsgPrepareRollbackDataTaskNG.class);
+    mapBinder.addBinding(TaskType.AWS_ASG_ROLLING_ROLLBACK_TASK_NG).toInstance(AsgRollingRollbackTaskNG.class);
 
     bind(EcsV2Client.class).to(EcsV2ClientImpl.class);
     bind(ElbV2Client.class).to(ElbV2ClientImpl.class);
     mapBinder.addBinding(TaskType.AZURE_NG_ARM).toInstance(AzureResourceCreationTaskNG.class);
     mapBinder.addBinding(TaskType.SHELL_SCRIPT_PROVISION).toInstance(ShellScriptProvisionTaskNG.class);
+    mapBinder.addBinding(TaskType.ELASTIGROUP_STARTUP_SCRIPT_FETCH_RUN_TASK_NG)
+        .toInstance(ElastigroupStartupScriptFetchRunTask.class);
+    mapBinder.addBinding(TaskType.ELASTIGROUP_PARAMETERS_FETCH_RUN_TASK_NG)
+        .toInstance(ElastigroupParametersFetchTask.class);
+    mapBinder.addBinding(TaskType.ELASTIGROUP_SETUP_COMMAND_TASK_NG).toInstance(ElastigroupSetupCommandTaskNG.class);
+    mapBinder.addBinding(TaskType.ELASTIGROUP_PRE_FETCH_TASK_NG).toInstance(ElastigroupPreFetchTaskNG.class);
+    mapBinder.addBinding(TaskType.ELASTIGROUP_DEPLOY).toInstance(ElastigroupDeployTask.class);
     mapBinder.addBinding(TaskType.TERRAFORM_SECRET_CLEANUP_TASK_NG).toInstance(TerraformSecretCleanupTaskNG.class);
     mapBinder.addBinding(TaskType.TERRAGRUNT_PLAN_TASK_NG).toInstance(TerragruntPlanTaskNG.class);
     mapBinder.addBinding(TaskType.TERRAGRUNT_APPLY_TASK_NG).toInstance(TerragruntApplyTaskNG.class);
     mapBinder.addBinding(TaskType.TERRAGRUNT_DESTROY_TASK_NG).toInstance(TerragruntDestroyTaskNG.class);
     mapBinder.addBinding(TaskType.TERRAGRUNT_ROLLBACK_TASK_NG).toInstance(TerragruntRollbackTaskNG.class);
     mapBinder.addBinding(TaskType.GITOPS_FETCH_APP_TASK).toInstance(GitOpsFetchAppTask.class);
+    mapBinder.addBinding(TaskType.CONTAINER_INITIALIZATION).toInstance(CIInitializeTask.class);
+    mapBinder.addBinding(TaskType.ELASTIGROUP_ROLLBACK).toInstance(ElastigroupRollbackTask.class);
+    mapBinder.addBinding(TaskType.CONTAINER_EXECUTE_STEP).toInstance(CIExecuteStepTask.class);
+    mapBinder.addBinding(TaskType.CONTAINER_LE_STATUS).toInstance(StepStatusTask.class);
+    mapBinder.addBinding(TaskType.CONTAINER_CLEANUP).toInstance(CICleanupTask.class);
+    mapBinder.addBinding(TaskType.ELASTIGROUP_BG_STAGE_SETUP_COMMAND_TASK_NG)
+        .toInstance(ElastigroupBGStageSetupCommandTaskNG.class);
+    mapBinder.addBinding(TaskType.ELASTIGROUP_SWAP_ROUTE_COMMAND_TASK_NG)
+        .toInstance(ElastigroupSwapRouteCommandTaskNG.class);
+
+    // TAS NG
+    mapBinder.addBinding(TaskType.TAS_BG_SETUP).toInstance(TasBGSetupTask.class);
+    mapBinder.addBinding(TaskType.TAS_BASIC_SETUP).toInstance(TasBasicSetupTask.class);
+    mapBinder.addBinding(TaskType.TAS_SWAP_ROUTES).toInstance(TasSwapRouteTask.class);
+    mapBinder.addBinding(TaskType.TAS_APP_RESIZE).toInstance(TasAppResizeTask.class);
+    mapBinder.addBinding(TaskType.TAS_ROLLBACK).toInstance(TasRollbackTask.class);
+    mapBinder.addBinding(TaskType.TAS_SWAP_ROLLBACK).toInstance(TasSwapRollbackTask.class);
+    mapBinder.addBinding(TaskType.TANZU_COMMAND).toInstance(TasCommandTask.class);
+    mapBinder.addBinding(TaskType.TAS_DATA_FETCH).toInstance(TasDataFetchTask.class);
   }
 
   private void registerSecretManagementBindings() {
@@ -2165,5 +2218,7 @@ public class DelegateModule extends AbstractModule {
         exception -> exceptionHandlerMapBinder.addBinding(exception).to(AzureBPRuntimeExceptionHandler.class));
     AzureClientExceptionHandler.exceptions().forEach(
         exception -> exceptionHandlerMapBinder.addBinding(exception).to(AzureClientExceptionHandler.class));
+    TerragruntRuntimeExceptionHandler.exceptions().forEach(
+        exception -> exceptionHandlerMapBinder.addBinding(exception).to(TerragruntRuntimeExceptionHandler.class));
   }
 }

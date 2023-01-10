@@ -14,7 +14,6 @@ import static org.joor.Reflect.on;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.when;
 
 import io.harness.PipelineServiceTestBase;
 import io.harness.PipelineSettingsService;
@@ -117,11 +116,10 @@ public class PipelineServiceFormCriteriaTest extends PipelineServiceTestBase {
         .updatePipelineInfo(pipelineEntity, PipelineVersion.V0);
     doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())
         .when(pmsPipelineServiceHelperMocked)
-        .resolveTemplatesAndValidatePipeline(any(), anyBoolean());
+        .resolveTemplatesAndValidatePipeline(any(), anyBoolean(), anyBoolean());
     doReturn(TemplateMergeResponseDTO.builder().build())
         .when(pipelineTemplateHelper)
-        .resolveTemplateRefsInPipeline(any(), anyBoolean());
-    when(pipelineSettingsService.getMaxPipelineCreationCount(any())).thenReturn(Long.MAX_VALUE);
+        .resolveTemplateRefsInPipeline(any(), anyBoolean(), anyBoolean());
 
     pmsPipelineService.validateAndCreatePipeline(pipelineEntity, true);
 

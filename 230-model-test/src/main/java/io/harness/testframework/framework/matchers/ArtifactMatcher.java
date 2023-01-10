@@ -7,7 +7,7 @@
 
 package io.harness.testframework.framework.matchers;
 
-import software.wings.beans.artifact.Artifact;
+import software.wings.persistence.artifact.Artifact;
 
 import java.util.List;
 

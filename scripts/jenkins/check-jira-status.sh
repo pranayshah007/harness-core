@@ -23,13 +23,13 @@ function check_bug_ticket(){
     echo "ERROR: JIRA FIELD: bug resolution is empty" >> /tmp/error_fields
   fi
   if [ "$2" = "null" ]; then
-    echo "ERROR: JIRA FIELD: jira_resolved_as is not selected" >> /tmp/error_fields
+    echo "ERROR: JIRA FIELD: Jira Resolved As is not selected" >>/tmp/error_fields
   fi
   if [ "$3" = "null" ]; then
-    echo "ERROR: JIRA FIELD: phase_injected is not selected" >> /tmp/error_fields
+    echo "ERROR: JIRA FIELD: Phase Defect Injected is not selected" >>/tmp/error_fields
   fi
   if [ "$4" = "null" ]; then
-    echo "ERROR: JIRA FIELD: what_changed is not updated" >> /tmp/error_fields
+    echo "ERROR: JIRA FIELD: What Changed ? is not updated" >> /tmp/error_fields
   fi
 
   if [ -f /tmp/error_fields ]; then
@@ -41,10 +41,10 @@ function check_bug_ticket(){
 # function to check field for Story ticket
 function check_story_ticket(){
   if [ $1 = "null" ]; then
-    echo "ERROR: JIRA FIELD: FF added is not updated, Please update FF added to proceed" >> /tmp/error_fields
+    echo "ERROR: JIRA FIELD: FF Added is not updated, Please update FF added to proceed" >> /tmp/error_fields
   fi
   if [ $2 = "null" ]; then
-    echo "ERROR: JIRA FIELD: what_changed is not updated" >>/tmp/error_fields
+    echo "ERROR: JIRA FIELD: What Changed ? is not updated" >>/tmp/error_fields
   fi
 
   if [ -f /tmp/error_fields ]; then
@@ -53,18 +53,15 @@ function check_story_ticket(){
   fi
 }
 
-
-
 SHDIR=$(dirname "$0")
 PROJFILE="$SHDIR/jira-projects.txt"
 check_file_present $PROJFILE
 PROJECTS=$(<$PROJFILE)
 
-
 # Check commit message if there's a single commit
-if [ $(git rev-list --count $ghprbActualCommit ^origin/develop)  -eq 1 ]; then
-    ghprbPullTitle=$(git log -1 --format="%s" $ghprbActualCommit)
-fi
+#if [ $(git rev-list --count $ghprbActualCommit ^origin/develop)  -eq 1 ]; then
+#    ghprbPullTitle=$(git log -1 --format="%s" $ghprbActualCommit)
+#fi
 KEY=`echo "${ghprbPullTitle}" | grep -o -iE "\[(${PROJECTS})-[0-9]+]:" | grep -o -iE "(${PROJECTS})-[0-9]+"`
 
 echo "JIRA Key is : $KEY "
@@ -110,8 +107,6 @@ then
   exit 1
 fi
 
-
-
 echo "issueType is ${issuetype}"
 echo "INFO: Checking JIRA STATUS OF issueType ${issuetype}"
 
@@ -120,6 +115,5 @@ if [ $issuetype = "Bug" ]; then
 elif [ $issuetype = "Story" ]; then
   check_story_ticket $ff_added $what_changed
 fi
-
 
 echo "JIRA Key is : $KEY is having all the mandatory details"

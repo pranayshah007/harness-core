@@ -29,7 +29,7 @@ import io.harness.delegate.beans.FileUploadLimit;
 import io.harness.rule.Owner;
 
 import software.wings.app.MainConfiguration;
-import software.wings.beans.BaseFile;
+import software.wings.persistence.BaseFile;
 import software.wings.service.intfc.FileService;
 
 import java.io.ByteArrayInputStream;

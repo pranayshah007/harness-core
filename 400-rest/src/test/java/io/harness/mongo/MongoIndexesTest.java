@@ -15,7 +15,7 @@ import io.harness.agent.sdk.HarnessAlwaysRun;
 import io.harness.category.element.UnitTests;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.HPersistence;
-import io.harness.persistence.Store;
+import io.harness.persistence.store.Store;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
@@ -23,6 +23,8 @@ import software.wings.beans.Account;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import dev.morphia.Morphia;
+import dev.morphia.ObjectFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
@@ -32,8 +34,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mongodb.morphia.Morphia;
-import org.mongodb.morphia.ObjectFactory;
 
 @Slf4j
 public class MongoIndexesTest extends WingsBaseTest {
@@ -64,6 +64,9 @@ public class MongoIndexesTest extends WingsBaseTest {
     List<String> expectedIndexes;
     try (InputStream in = getClass().getResourceAsStream("/mongo/indexes.txt")) {
       expectedIndexes = IOUtils.readLines(in, "UTF-8");
+    }
+    for (int i = 0; i < expectedIndexes.size(); i++) {
+      assertThat(expectedIndexes.get(i)).isEqualTo(indexes.get(i));
     }
 
     assertThat(indexes).isEqualTo(expectedIndexes);

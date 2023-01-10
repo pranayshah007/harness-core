@@ -7,8 +7,8 @@
 
 package io.harness.app;
 
-import static io.harness.AuthorizationServiceHeader.CI_MANAGER;
-import static io.harness.AuthorizationServiceHeader.MANAGER;
+import static io.harness.authorization.AuthorizationServiceHeader.CI_MANAGER;
+import static io.harness.authorization.AuthorizationServiceHeader.MANAGER;
 import static io.harness.eventsframework.EventsFrameworkConstants.DEFAULT_MAX_PROCESSING_TIME;
 import static io.harness.eventsframework.EventsFrameworkConstants.DEFAULT_READ_BATCH_SIZE;
 import static io.harness.eventsframework.EventsFrameworkConstants.OBSERVER_EVENT_CHANNEL;
@@ -32,6 +32,8 @@ import io.harness.ci.buildstate.SecretDecryptorViaNg;
 import io.harness.ci.enforcement.CIBuildEnforcer;
 import io.harness.ci.enforcement.CIBuildEnforcerImpl;
 import io.harness.ci.execution.DelegateTaskEventListener;
+import io.harness.ci.execution.queue.CIInitTaskMessageProcessor;
+import io.harness.ci.execution.queue.CIInitTaskMessageProcessorImpl;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.ff.impl.CIFeatureFlagServiceImpl;
 import io.harness.ci.license.CILicenseService;
@@ -64,6 +66,7 @@ import io.harness.grpc.DelegateServiceDriverGrpcClientModule;
 import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.grpc.client.AbstractManagerGrpcClientModule;
 import io.harness.grpc.client.ManagerGrpcClientModule;
+import io.harness.iacmserviceclient.IACMServiceClientModule;
 import io.harness.impl.scm.ScmServiceClientImpl;
 import io.harness.licensing.remote.NgLicenseHttpClientModule;
 import io.harness.lock.DistributedLockImplementation;
@@ -210,6 +213,7 @@ public class CIManagerServiceModule extends AbstractModule {
   protected void configure() {
     install(PrimaryVersionManagerModule.getInstance());
     bind(CIManagerConfiguration.class).toInstance(ciManagerConfiguration);
+    bind(CIInitTaskMessageProcessor.class).to(CIInitTaskMessageProcessorImpl.class);
     bind(HPersistence.class).to(MongoPersistence.class).in(Singleton.class);
     bind(BuildNumberService.class).to(BuildNumberServiceImpl.class);
     bind(CIYamlSchemaService.class).to(CIYamlSchemaServiceImpl.class).in(Singleton.class);
@@ -227,11 +231,23 @@ public class CIManagerServiceModule extends AbstractModule {
     install(NgLicenseHttpClientModule.getInstance(ciManagerConfiguration.getNgManagerClientConfig(),
         ciManagerConfiguration.getNgManagerServiceSecret(), CI_MANAGER.getServiceId()));
 
+    bind(ExecutorService.class)
+        .annotatedWith(Names.named("ciInitTaskExecutor"))
+        .toInstance(ThreadPool.create(
+            10, 30, 5, TimeUnit.SECONDS, new ThreadFactoryBuilder().setNameFormat("Init-Task-Handler-%d").build()));
+
     bind(ScheduledExecutorService.class)
         .annotatedWith(Names.named("ciTelemetryPublisherExecutor"))
         .toInstance(new ScheduledThreadPoolExecutor(1,
             new ThreadFactoryBuilder()
                 .setNameFormat("ci-telemetry-publisher-Thread-%d")
+                .setPriority(Thread.NORM_PRIORITY)
+                .build()));
+    bind(ScheduledExecutorService.class)
+        .annotatedWith(Names.named("pluginMetadataPublishExecutor"))
+        .toInstance(new ScheduledThreadPoolExecutor(1,
+            new ThreadFactoryBuilder()
+                .setNameFormat("plugin-metadata-publisher-Thread-%d")
                 .setPriority(Thread.NORM_PRIORITY)
                 .build()));
     bind(AwsClient.class).to(AwsClientImpl.class);
@@ -315,6 +331,7 @@ public class CIManagerServiceModule extends AbstractModule {
         ciManagerConfiguration.getManagerServiceSecret(), CI_MANAGER.getServiceId()));
     install(new TIServiceClientModule(ciManagerConfiguration.getTiServiceConfig()));
     install(new STOServiceClientModule(ciManagerConfiguration.getStoServiceConfig()));
+    install(new IACMServiceClientModule(ciManagerConfiguration.getIacmServiceConfig()));
     install(new AccountClientModule(ciManagerConfiguration.getManagerClientConfig(),
         ciManagerConfiguration.getNgManagerServiceSecret(), CI_MANAGER.toString()));
     install(EnforcementClientModule.getInstance(ciManagerConfiguration.getNgManagerClientConfig(),

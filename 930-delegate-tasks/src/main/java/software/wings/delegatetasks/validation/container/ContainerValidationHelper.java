@@ -29,9 +29,9 @@ import software.wings.settings.SettingValue;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.annotations.Transient;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.annotations.Transient;
 
 @Singleton
 @Slf4j

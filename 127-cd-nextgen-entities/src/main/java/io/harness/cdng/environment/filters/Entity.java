@@ -7,11 +7,13 @@
 
 package io.harness.cdng.environment.filters;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
 import org.codehaus.jackson.annotate.JsonProperty;
 
+@RecasterAlias("io.harness.cdng.environment.filters.Entity")
 @OwnedBy(HarnessTeam.CDC)
 public enum Entity {
   @JsonProperty("infrastructures") infrastructures,

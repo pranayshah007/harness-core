@@ -53,7 +53,7 @@ public class UserJourneyResource {
   @Path("/create")
   @ApiOperation(value = "saves user journey", nickname = "saveUserJourney")
   public RestResponse<UserJourneyResponse> saveUserJourney(
-      @NotNull @BeanParam ProjectParams projectParams, @NotNull @Valid @Body UserJourneyDTO userJourneyDTO) {
+      @Valid @BeanParam ProjectParams projectParams, @NotNull @Valid @Body UserJourneyDTO userJourneyDTO) {
     return new RestResponse<>(userJourneyService.create(projectParams, userJourneyDTO));
   }
 
@@ -62,7 +62,7 @@ public class UserJourneyResource {
   @ExceptionMetered
   @ApiOperation(value = "get all user journeys", nickname = "getAllJourneys")
   @NGAccessControlCheck(resourceType = SLO, permission = VIEW_PERMISSION)
-  public ResponseDTO<PageResponse<UserJourneyResponse>> getAllJourneys(@NotNull @BeanParam ProjectParams projectParams,
+  public ResponseDTO<PageResponse<UserJourneyResponse>> getAllJourneys(@Valid @BeanParam ProjectParams projectParams,
       @QueryParam("offset") @NotNull Integer offset, @QueryParam("pageSize") @NotNull Integer pageSize) {
     return ResponseDTO.newResponse(userJourneyService.getUserJourneys(projectParams, offset, pageSize));
   }

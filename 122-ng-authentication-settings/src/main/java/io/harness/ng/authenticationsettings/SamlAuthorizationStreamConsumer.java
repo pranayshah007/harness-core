@@ -7,8 +7,8 @@
 
 package io.harness.ng.authenticationsettings;
 
-import static io.harness.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.eventsframework.EventsFrameworkConstants.SAML_AUTHORIZATION_ASSERTION;
 
 import io.harness.annotations.dev.OwnedBy;

@@ -24,6 +24,7 @@ import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.azure.webapp.beans.AzureWebAppPreDeploymentDataOutput;
 import io.harness.cdng.azure.webapp.beans.AzureWebAppSlotDeploymentDataOutput;
 import io.harness.cdng.azure.webapp.beans.AzureWebAppSwapSlotsDataOutput;
+import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.execution.azure.webapps.AzureWebAppsStageExecutionDetails;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.delegate.beans.instancesync.mapper.AzureWebAppToServerInstanceInfoMapper;
@@ -38,7 +39,6 @@ import io.harness.delegate.task.azure.artifact.AzureArtifactType;
 import io.harness.exception.ExceptionUtils;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.plancreator.steps.common.StepElementParameters;
-import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.SkipTaskRequest;
@@ -64,7 +64,7 @@ import org.jetbrains.annotations.NotNull;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
-public class AzureWebAppRollbackStep extends TaskExecutableWithRollbackAndRbac<AzureWebAppTaskResponse> {
+public class AzureWebAppRollbackStep extends CdTaskExecutable<AzureWebAppTaskResponse> {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.AZURE_WEBAPP_ROLLBACK.getYamlType())
                                                .setStepCategory(StepCategory.STEP)

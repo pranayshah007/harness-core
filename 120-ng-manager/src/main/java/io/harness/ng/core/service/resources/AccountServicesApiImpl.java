@@ -33,9 +33,10 @@ public class AccountServicesApiImpl extends AbstractServicesApiImpl implements A
   @Inject
   AccountServicesApiImpl(ServiceEntityService serviceEntityService, AccessControlClient accessControlClient,
       ServiceEntityManagementService serviceEntityManagementService,
-      OrgAndProjectValidationHelper orgAndProjectValidationHelper, ServiceResourceApiUtils serviceResourceApiUtils) {
+      OrgAndProjectValidationHelper orgAndProjectValidationHelper, ServiceResourceApiUtils serviceResourceApiUtils,
+      ServiceEntityYamlSchemaHelper serviceSchemaHelper) {
     super(serviceEntityService, accessControlClient, serviceEntityManagementService, orgAndProjectValidationHelper,
-        serviceResourceApiUtils);
+        serviceResourceApiUtils, serviceSchemaHelper);
   }
 
   @Override

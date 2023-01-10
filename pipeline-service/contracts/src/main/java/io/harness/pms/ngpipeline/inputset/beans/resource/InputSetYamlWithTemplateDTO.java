@@ -35,8 +35,6 @@ public class InputSetYamlWithTemplateDTO {
   String inputSetTemplateYaml;
   // InputSet Yaml used during execution
   String inputSetYaml;
-  // Template-Yaml of pipeline at the time of requesting execution history.
-  String latestTemplateYaml;
   // Execution Inputs.
   Map<String, String> expressionValues;
 }

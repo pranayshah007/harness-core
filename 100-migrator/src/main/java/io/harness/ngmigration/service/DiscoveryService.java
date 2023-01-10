@@ -44,7 +44,6 @@ import software.wings.ngmigration.DiscoveryNode;
 import software.wings.ngmigration.DiscoveryResult;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.ngmigration.NGMigrationEntityType;
-import software.wings.ngmigration.NGMigrationStatus;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -219,23 +218,6 @@ public class DiscoveryService {
     return DiscoveryResult.builder().entities(entities).links(graph).root(node.getEntityNode().getEntityId()).build();
   }
 
-  public NGMigrationStatus getMigrationStatus(DiscoveryResult discoveryResult) {
-    if (EmptyPredicate.isEmpty(discoveryResult.getEntities())) {
-      return NGMigrationStatus.builder().status(true).build();
-    }
-    boolean possible = true;
-    List<String> errors = new ArrayList<>();
-    for (CgEntityNode node : discoveryResult.getEntities().values()) {
-      NgMigrationService ngMigration = migrationFactory.getMethod(node.getType());
-      NGMigrationStatus migrationStatus = ngMigration.canMigrate(node.getEntity());
-      if (!migrationStatus.isStatus()) {
-        possible = false;
-        errors.addAll(migrationStatus.getReasons());
-      }
-    }
-    return NGMigrationStatus.builder().status(possible).reasons(errors).build();
-  }
-
   private void exportImg(
       Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, Set<CgEntityId>> graph, String filePath) {
     MutableGraph vizGraph = getGraphViz(entities, graph);
@@ -392,6 +374,16 @@ public class DiscoveryService {
       return new ArrayList<>();
     }
     List<NGYamlFile> files = new ArrayList<>();
+
+    // Load all migrated entities for the CG entities before actual migration
+    for (CgEntityId cgEntityId : entities.keySet()) {
+      NGYamlFile yamlFile =
+          migrationFactory.getMethod(cgEntityId.getType()).getExistingYaml(inputDTO, entities, cgEntityId);
+      if (yamlFile != null) {
+        migratedEntities.put(cgEntityId, yamlFile);
+        files.add(yamlFile);
+      }
+    }
 
     // Note: Special case: Migrate environments
     // We are doing this because when we migrate infra we need to reference environment

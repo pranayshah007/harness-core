@@ -89,7 +89,6 @@ import software.wings.beans.PhysicalInfrastructureMapping;
 import software.wings.beans.Service;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.WorkflowExecution;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.infrastructure.Host;
 import software.wings.beans.infrastructure.instance.InstanceType;
 import software.wings.beans.infrastructure.instance.info.AzureVMSSInstanceInfo;
@@ -102,6 +101,7 @@ import software.wings.beans.infrastructure.instance.key.deployment.AwsLambdaDepl
 import software.wings.beans.infrastructure.instance.key.deployment.ContainerDeploymentKey;
 import software.wings.beans.infrastructure.instance.key.deployment.DeploymentKey;
 import software.wings.beans.infrastructure.instance.key.deployment.PcfDeploymentKey;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.impl.instance.sync.ContainerSync;
 import software.wings.service.impl.workflow.WorkflowServiceHelper;
 import software.wings.service.intfc.AppService;

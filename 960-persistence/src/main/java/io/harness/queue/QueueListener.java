@@ -19,10 +19,9 @@ import static java.time.Duration.ofSeconds;
 
 import io.harness.exception.ExceptionLogger;
 import io.harness.exception.WingsException;
+import io.harness.logging.DelayLogContext;
+import io.harness.logging.ProcessTimeLogContext;
 import io.harness.manage.GlobalContextManager.GlobalContextGuard;
-import io.harness.mongo.DelayLogContext;
-import io.harness.mongo.MessageLogContext;
-import io.harness.mongo.ProcessTimeLogContext;
 import io.harness.queue.QueueConsumer.Filter;
 
 import com.google.inject.Inject;
@@ -125,7 +124,7 @@ public abstract class QueueListener<T extends Queuable> implements Runnable {
       try (GlobalContextGuard guard = initGlobalContextGuard(message.getGlobalContext())) {
         long delay = startTime - message.getEarliestGet().toInstant().toEpochMilli();
         try (DelayLogContext ignore2 = new DelayLogContext(delay, OVERRIDE_ERROR)) {
-          log.info("Working on message");
+          log.debug("Working on message");
         }
 
         onMessage(message);
@@ -142,7 +141,7 @@ public abstract class QueueListener<T extends Queuable> implements Runnable {
     } finally {
       long processTime = currentTimeMillis() - startTime;
       try (ProcessTimeLogContext ignore2 = new ProcessTimeLogContext(processTime, OVERRIDE_ERROR)) {
-        log.info("Done with message");
+        log.debug("Done with message");
       } catch (Throwable exception) {
         log.error("Exception while recording the processing of message", exception);
       }

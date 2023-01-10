@@ -51,9 +51,9 @@ import software.wings.beans.Variable;
 import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.appmanifest.HelmChart;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.deployment.WorkflowVariablesMetadata;
 import software.wings.dl.WingsPersistence;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.intfc.InfrastructureDefinitionService;
 import software.wings.service.intfc.InfrastructureMappingService;
 import software.wings.service.intfc.PipelineService;
@@ -69,6 +69,8 @@ import software.wings.sm.WorkflowStandardParams;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -84,8 +86,6 @@ import javax.validation.constraints.NotNull;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
 
 @Slf4j
 @OwnedBy(CDC)

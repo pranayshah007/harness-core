@@ -461,10 +461,10 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
     List<String> updatedFiles = new ArrayList<>();
     logCallback.saveExecutionLog("Updating files with the following variables.");
     for (GitFile gitFile : fetchFilesResult.getFiles()) {
+      logCallback.saveExecutionLog(String.format("\n%s:", gitFile.getFilePath()));
       Map<String, String> stringObjectMap = filesToVariablesMap.get(gitFile.getFilePath());
-      stringObjectMap.forEach((k, v)
-                                  -> logCallback.saveExecutionLog(
-                                      format("Modifying %s:%s", color(k, White, Bold), color(v, White, Bold)), INFO));
+      stringObjectMap.forEach(
+          (k, v) -> logCallback.saveExecutionLog(format("%s:%s", color(k, White, Bold), color(v, White, Bold)), INFO));
       if (gitFile.getFilePath().toLowerCase().endsWith(".json")) {
         updatedFiles.add(replaceFields(gitFile.getFileContent(), stringObjectMap));
       } else {

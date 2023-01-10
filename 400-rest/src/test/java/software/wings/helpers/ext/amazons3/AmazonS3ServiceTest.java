@@ -25,9 +25,9 @@ import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.AwsConfig;
-import software.wings.beans.artifact.ArtifactFile;
 import software.wings.delegatetasks.DelegateFileManager;
 import software.wings.helpers.ext.jenkins.BuildDetails;
+import software.wings.persistence.artifact.ArtifactFile;
 import software.wings.service.impl.AwsHelperService;
 import software.wings.service.intfc.aws.delegate.AwsS3HelperServiceDelegate;
 
@@ -47,6 +47,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -138,7 +139,8 @@ public class AmazonS3ServiceTest extends WingsBaseTest {
 
       ListNotifyResponseData listNotifyResponseData =
           amazonS3Service.downloadArtifacts(awsConfig, null, "bucket1", Lists.newArrayList("key1"), null, null, null);
-      List<ArtifactFile> artifactFileList = (List<ArtifactFile>) listNotifyResponseData.getData();
+      List<ArtifactFile> artifactFileList =
+          listNotifyResponseData.getData().stream().map(ArtifactFile::fromDTO).collect(Collectors.toList());
       ArtifactFile artifactFile = new ArtifactFile();
       artifactFile.setName("key1");
       assertThat(artifactFileList).hasSize(1);

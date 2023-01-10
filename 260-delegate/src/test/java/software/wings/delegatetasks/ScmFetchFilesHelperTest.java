@@ -48,8 +48,13 @@ import software.wings.beans.dto.SettingAttribute;
 import software.wings.beans.yaml.GitFetchFilesResult;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
+import lombok.SneakyThrows;
+import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -87,15 +92,17 @@ public class ScmFetchFilesHelperTest extends WingsBaseTest {
         .when(scmDelegateClient)
         .processScmRequest(any());
     spyScmFetchFilesHelper.downloadFilesUsingScm("manifests", gitFileConfig, gitConfig, logCallback);
-    File file = new File("manifests/test2/path.txt");
+    File file = new File("manifests/test/test2/path.txt");
     assertThat(file.exists()).isTrue();
   }
 
   @Test
+  @SneakyThrows(IOException.class)
   @Owner(developers = TMACARI)
   @Category(UnitTests.class)
   public void testShouldDownloadFilesUsingScmByFolderRootPath() {
     ScmFetchFilesHelper spyScmFetchFilesHelper = spy(scmFetchFilesHelper);
+    String encodedValue = Base64.getEncoder().encodeToString("content: abc".getBytes(StandardCharsets.UTF_8));
     LogCallback logCallback = mock(ExecutionLogCallback.class);
     GitConfig gitConfig = GitConfig.builder().repoUrl("helm-url").build();
     GitFileConfig gitFileConfigSlashRootPath = GitFileConfig.builder().filePath("/").build();
@@ -108,7 +115,7 @@ public class ScmFetchFilesHelperTest extends WingsBaseTest {
                         .fileBatchContentResponse(FileBatchContentResponse.newBuilder()
                                                       .addFileContents(FileContent.newBuilder()
                                                                            .setStatus(200)
-                                                                           .setContent("content")
+                                                                           .setContent(encodedValue)
                                                                            .setPath("test2/path.txt")
                                                                            .build())
                                                       .build())
@@ -117,7 +124,7 @@ public class ScmFetchFilesHelperTest extends WingsBaseTest {
                 .fileBatchContentResponse(FileBatchContentResponse.newBuilder()
                                               .addFileContents(FileContent.newBuilder()
                                                                    .setStatus(200)
-                                                                   .setContent("content")
+                                                                   .setContent(encodedValue)
                                                                    .setPath("test3/path.txt")
                                                                    .build())
                                               .build())
@@ -128,9 +135,12 @@ public class ScmFetchFilesHelperTest extends WingsBaseTest {
     File file2 = new File("manifests/test3/path.txt");
     assertThat(file.exists()).isTrue();
     assertThat(file2.exists()).isTrue();
+    assertThat(FileUtils.readFileToString(file, StandardCharsets.UTF_8)).isEqualTo("content: abc");
+    assertThat(FileUtils.readFileToString(file2, StandardCharsets.UTF_8)).isEqualTo("content: abc");
   }
 
   @Test
+  @SneakyThrows(IOException.class)
   @Owner(developers = TMACARI)
   @Category(UnitTests.class)
   public void testShouldDownloadFilesUsingScmByFilepath() {
@@ -155,6 +165,7 @@ public class ScmFetchFilesHelperTest extends WingsBaseTest {
     spyScmFetchFilesHelper.downloadFilesUsingScm("manifests", gitFileConfig, gitConfig, logCallback);
     File file = new File("manifests/test/test2/path.txt");
     assertThat(file.exists()).isTrue();
+    assertThat(FileUtils.readFileToString(file, StandardCharsets.UTF_8)).isEqualTo("content");
   }
 
   @Test

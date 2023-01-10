@@ -10,12 +10,14 @@ package io.harness.ngmigration.service.step;
 import io.harness.cdng.k8s.K8sBGSwapServicesStepInfo;
 import io.harness.cdng.k8s.K8sBGSwapServicesStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 
+import software.wings.beans.GraphNode;
+import software.wings.ngmigration.CgEntityId;
 import software.wings.sm.State;
 import software.wings.sm.states.KubernetesSwapServiceSelectors;
-import software.wings.yaml.workflow.StepYaml;
 
 import java.util.Collections;
 import java.util.Map;
@@ -23,12 +25,12 @@ import org.apache.commons.lang3.StringUtils;
 
 public class K8sSwapServiceSelectorsStepMapperImpl implements StepMapper {
   @Override
-  public String getStepType(StepYaml stepYaml) {
+  public String getStepType(GraphNode stepYaml) {
     return StepSpecTypeConstants.K8S_BG_SWAP_SERVICES;
   }
 
   @Override
-  public State getState(StepYaml stepYaml) {
+  public State getState(GraphNode stepYaml) {
     Map<String, Object> properties = StepMapper.super.getProperties(stepYaml);
     KubernetesSwapServiceSelectors state = new KubernetesSwapServiceSelectors(stepYaml.getName());
     state.parseProperties(properties);
@@ -36,13 +38,12 @@ public class K8sSwapServiceSelectorsStepMapperImpl implements StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(StepYaml stepYaml) {
-    KubernetesSwapServiceSelectors state = (KubernetesSwapServiceSelectors) getState(stepYaml);
+  public AbstractStepNode getSpec(Map<CgEntityId, NGYamlFile> migratedEntities, GraphNode graphNode) {
+    KubernetesSwapServiceSelectors state = (KubernetesSwapServiceSelectors) getState(graphNode);
     K8sBGSwapServicesStepNode k8sBGSwapServicesStepNode = new K8sBGSwapServicesStepNode();
-    baseSetup(stepYaml, k8sBGSwapServicesStepNode);
+    baseSetup(graphNode, k8sBGSwapServicesStepNode);
     K8sBGSwapServicesStepInfo stepInfo = new K8sBGSwapServicesStepInfo();
 
-    stepInfo.setSkipDryRun(ParameterField.createValueField(false));
     stepInfo.setBlueGreenSwapServicesStepFqn(state.getService2());
     stepInfo.setDelegateSelectors(ParameterField.createValueField(Collections.emptyList()));
     stepInfo.setBlueGreenStepFqn(state.getService1());
@@ -52,7 +53,7 @@ public class K8sSwapServiceSelectorsStepMapperImpl implements StepMapper {
   }
 
   @Override
-  public boolean areSimilar(StepYaml stepYaml1, StepYaml stepYaml2) {
+  public boolean areSimilar(GraphNode stepYaml1, GraphNode stepYaml2) {
     KubernetesSwapServiceSelectors state1 = (KubernetesSwapServiceSelectors) getState(stepYaml1);
     KubernetesSwapServiceSelectors state2 = (KubernetesSwapServiceSelectors) getState(stepYaml2);
     return StringUtils.equals(state1.getService1(), state2.getService1())

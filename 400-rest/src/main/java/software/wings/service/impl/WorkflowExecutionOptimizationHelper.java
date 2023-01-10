@@ -22,18 +22,22 @@ import io.harness.ff.FeatureFlagService;
 import io.harness.persistence.HPersistence;
 
 import software.wings.beans.Environment;
+import software.wings.beans.Pipeline;
+import software.wings.beans.Pipeline.PipelineKeys;
 import software.wings.beans.Service;
+import software.wings.beans.Workflow;
+import software.wings.beans.Workflow.WorkflowKeys;
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.DatastoreImpl;
+import dev.morphia.mapping.Mapper;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.DatastoreImpl;
-import org.mongodb.morphia.mapping.Mapper;
 
 @Singleton
 @Slf4j
@@ -64,6 +68,20 @@ public class WorkflowExecutionOptimizationHelper {
                                      .in(asList(filter.getFieldValues()))
                                      .asList();
         services.forEach(service -> appIds.add(service.getAppId()));
+      } else if (WorkflowExecutionKeys.pipelineSummary_pipelineId.equals(filter.getFieldName())) {
+        List<Pipeline> pipelines = hPersistence.createQuery(Pipeline.class)
+                                       .filter(PipelineKeys.accountId, accountId)
+                                       .field(PipelineKeys.uuid)
+                                       .in(asList(filter.getFieldValues()))
+                                       .asList();
+        pipelines.forEach(pipeline -> appIds.add(pipeline.getAppId()));
+      } else if (WorkflowExecutionKeys.workflowId.equals(filter.getFieldName())) {
+        List<Workflow> workflows = hPersistence.createQuery(Workflow.class)
+                                       .filter(WorkflowKeys.accountId, accountId)
+                                       .field(WorkflowKeys.uuid)
+                                       .in(asList(filter.getFieldValues()))
+                                       .asList();
+        workflows.forEach(workflow -> appIds.add(workflow.getAppId()));
       }
     });
 

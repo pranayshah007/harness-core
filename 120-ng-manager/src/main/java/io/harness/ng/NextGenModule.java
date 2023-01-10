@@ -7,12 +7,12 @@
 
 package io.harness.ng;
 
-import static io.harness.AuthorizationServiceHeader.CHAOS_SERVICE;
-import static io.harness.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.audit.ResourceTypeConstants.API_KEY;
 import static io.harness.audit.ResourceTypeConstants.CONNECTOR;
 import static io.harness.audit.ResourceTypeConstants.DELEGATE_CONFIGURATION;
+import static io.harness.audit.ResourceTypeConstants.DEPLOYMENT_FREEZE;
 import static io.harness.audit.ResourceTypeConstants.ENVIRONMENT;
+import static io.harness.audit.ResourceTypeConstants.ENVIRONMENT_GROUP;
 import static io.harness.audit.ResourceTypeConstants.FILE;
 import static io.harness.audit.ResourceTypeConstants.ORGANIZATION;
 import static io.harness.audit.ResourceTypeConstants.PROJECT;
@@ -23,6 +23,8 @@ import static io.harness.audit.ResourceTypeConstants.SETTING;
 import static io.harness.audit.ResourceTypeConstants.TOKEN;
 import static io.harness.audit.ResourceTypeConstants.USER;
 import static io.harness.audit.ResourceTypeConstants.VARIABLE;
+import static io.harness.authorization.AuthorizationServiceHeader.CHAOS_SERVICE;
+import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.eventsframework.EventsFrameworkConstants.INSTANCE_STATS;
 import static io.harness.eventsframework.EventsFrameworkConstants.SETUP_USAGE;
@@ -36,11 +38,15 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.USER_E
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.USER_SCOPE_RECONCILIATION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.VARIABLE_ENTITY;
 import static io.harness.lock.DistributedLockImplementation.MONGO;
+import static io.harness.ng.core.api.utils.JWTTokenFlowAuthFilterUtils.JWT_TOKEN_PUBLIC_KEYS_JSON_DATA_CACHE_KEY;
+import static io.harness.ng.core.api.utils.JWTTokenFlowAuthFilterUtils.JWT_TOKEN_SCIM_SETTINGS_DATA_CACHE_KEY;
+import static io.harness.ng.core.api.utils.JWTTokenFlowAuthFilterUtils.JWT_TOKEN_SERVICE_ACCOUNT_DATA_CACHE_KEY;
 import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCHESTRATION;
 
 import static java.lang.Boolean.TRUE;
 
 import io.harness.AccessControlClientModule;
+import io.harness.FreezeOutboxEventHandler;
 import io.harness.GitopsModule;
 import io.harness.Microservice;
 import io.harness.NgIteratorsConfig;
@@ -56,6 +62,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.PrimaryVersionManagerModule;
 import io.harness.audit.ResourceTypeConstants;
 import io.harness.audit.client.remote.AuditClientModule;
+import io.harness.cache.HarnessCacheManager;
 import io.harness.callback.DelegateCallback;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.callback.MongoDatabase;
@@ -103,6 +110,7 @@ import io.harness.freeze.service.impl.FreezeCRUDServiceImpl;
 import io.harness.freeze.service.impl.FreezeEvaluateServiceImpl;
 import io.harness.freeze.service.impl.FreezeSchemaServiceImpl;
 import io.harness.gitops.GitopsResourceClientModule;
+import io.harness.gitsync.GitServiceConfiguration;
 import io.harness.gitsync.GitSyncConfigClientModule;
 import io.harness.gitsync.GitSyncModule;
 import io.harness.gitsync.common.events.FullSyncMessageListener;
@@ -144,6 +152,9 @@ import io.harness.ng.core.api.NGModulesService;
 import io.harness.ng.core.api.NGSecretServiceV2;
 import io.harness.ng.core.api.TokenService;
 import io.harness.ng.core.api.UserGroupService;
+import io.harness.ng.core.api.cache.JwtTokenPublicKeysJsonData;
+import io.harness.ng.core.api.cache.JwtTokenScimAccountSettingsData;
+import io.harness.ng.core.api.cache.JwtTokenServiceAccountData;
 import io.harness.ng.core.api.impl.ApiKeyServiceImpl;
 import io.harness.ng.core.api.impl.DefaultUserGroupServiceImpl;
 import io.harness.ng.core.api.impl.NGModulesServiceImpl;
@@ -159,12 +170,17 @@ import io.harness.ng.core.entitysetupusage.EntitySetupUsageModule;
 import io.harness.ng.core.entitysetupusage.event.SetupUsageChangeEventMessageListener;
 import io.harness.ng.core.entitysetupusage.event.SetupUsageChangeEventMessageProcessor;
 import io.harness.ng.core.event.AccountSetupListener;
+import io.harness.ng.core.event.ApiKeyEventListener;
 import io.harness.ng.core.event.ConnectorEntityCRUDStreamListener;
 import io.harness.ng.core.event.EnvironmentGroupEntityCrudStreamListener;
+import io.harness.ng.core.event.FilterEventListener;
+import io.harness.ng.core.event.FreezeEventListener;
 import io.harness.ng.core.event.MessageListener;
 import io.harness.ng.core.event.MessageProcessor;
+import io.harness.ng.core.event.PollingDocumentEventListener;
 import io.harness.ng.core.event.ProjectEntityCRUDStreamListener;
 import io.harness.ng.core.event.SecretEntityCRUDStreamListener;
+import io.harness.ng.core.event.SettingsEventListener;
 import io.harness.ng.core.event.UserGroupEntityCRUDStreamListener;
 import io.harness.ng.core.event.UserMembershipReconciliationMessageProcessor;
 import io.harness.ng.core.event.UserMembershipStreamListener;
@@ -178,6 +194,7 @@ import io.harness.ng.core.impl.ProjectServiceImpl;
 import io.harness.ng.core.outbox.ApiKeyEventHandler;
 import io.harness.ng.core.outbox.DelegateProfileEventHandler;
 import io.harness.ng.core.outbox.EnvironmentEventHandler;
+import io.harness.ng.core.outbox.EnvironmentGroupOutboxEventHandler;
 import io.harness.ng.core.outbox.NextGenOutboxEventHandler;
 import io.harness.ng.core.outbox.OrganizationEventHandler;
 import io.harness.ng.core.outbox.ProjectEventHandler;
@@ -225,6 +242,7 @@ import io.harness.ng.userprofile.entities.BitbucketSCM.BitbucketSCMMapper;
 import io.harness.ng.userprofile.entities.GithubSCM.GithubSCMMapper;
 import io.harness.ng.userprofile.entities.GitlabSCM.GitlabSCMMapper;
 import io.harness.ng.userprofile.entities.SourceCodeManager.SourceCodeManagerMapper;
+import io.harness.ng.userprofile.event.SourceCodeManagerEventListener;
 import io.harness.ng.userprofile.services.api.SourceCodeManagerService;
 import io.harness.ng.userprofile.services.api.UserInfoService;
 import io.harness.ng.userprofile.services.impl.SourceCodeManagerServiceImpl;
@@ -289,6 +307,7 @@ import io.harness.timescaledb.retention.RetentionManagerImpl;
 import io.harness.token.TokenClientModule;
 import io.harness.tracing.AbstractPersistenceTracerModule;
 import io.harness.user.UserClientModule;
+import io.harness.version.VersionInfoManager;
 import io.harness.version.VersionModule;
 import io.harness.waiter.AbstractWaiterModule;
 import io.harness.waiter.AsyncWaitEngineImpl;
@@ -314,6 +333,7 @@ import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
+import dev.morphia.converters.TypeConverter;
 import io.dropwizard.jackson.Jackson;
 import java.util.HashSet;
 import java.util.List;
@@ -324,12 +344,15 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import javax.cache.Cache;
+import javax.cache.expiry.AccessedExpiryPolicy;
+import javax.cache.expiry.CreatedExpiryPolicy;
+import javax.cache.expiry.Duration;
 import javax.validation.Validation;
 import javax.validation.ValidatorFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.parameternameprovider.ReflectionParameterNameProvider;
 import org.jooq.ExecuteListener;
-import org.mongodb.morphia.converters.TypeConverter;
 import org.springframework.core.convert.converter.Converter;
 import ru.vyarus.guice.validator.ValidationModule;
 
@@ -487,6 +510,43 @@ public class NextGenModule extends AbstractModule {
     return String.format(RETENTION_PERIOD_FORMAT, this.appConfig.getCdTsDbRetentionPeriodMonths());
   }
 
+  @Provides
+  @Singleton
+  @Named(JWT_TOKEN_PUBLIC_KEYS_JSON_DATA_CACHE_KEY)
+  Cache<String, JwtTokenPublicKeysJsonData> getJwtTokenValidationJwtConsumerCache(
+      HarnessCacheManager harnessCacheManager, VersionInfoManager versionInfoManager) {
+    return harnessCacheManager.getCache(JWT_TOKEN_PUBLIC_KEYS_JSON_DATA_CACHE_KEY, String.class,
+        JwtTokenPublicKeysJsonData.class, AccessedExpiryPolicy.factoryOf(new Duration(TimeUnit.DAYS, 5)),
+        versionInfoManager.getVersionInfo().getBuildNo());
+  }
+
+  @Provides
+  @Singleton
+  @Named(JWT_TOKEN_SERVICE_ACCOUNT_DATA_CACHE_KEY)
+  Cache<String, JwtTokenServiceAccountData> getJwtTokenServiceAccountCache(
+      HarnessCacheManager harnessCacheManager, VersionInfoManager versionInfoManager) {
+    return harnessCacheManager.getCache(JWT_TOKEN_SERVICE_ACCOUNT_DATA_CACHE_KEY, String.class,
+        JwtTokenServiceAccountData.class, AccessedExpiryPolicy.factoryOf(new Duration(TimeUnit.DAYS, 5)),
+        versionInfoManager.getVersionInfo().getBuildNo());
+  }
+
+  @Provides
+  @Singleton
+  @Named(JWT_TOKEN_SCIM_SETTINGS_DATA_CACHE_KEY)
+  Cache<String, JwtTokenScimAccountSettingsData> getJwtTokenScimSettingsCache(
+      HarnessCacheManager harnessCacheManager, VersionInfoManager versionInfoManager) {
+    return harnessCacheManager.getCache(JWT_TOKEN_SCIM_SETTINGS_DATA_CACHE_KEY, String.class,
+        JwtTokenScimAccountSettingsData.class, CreatedExpiryPolicy.factoryOf(new Duration(TimeUnit.MINUTES, 2)),
+        versionInfoManager.getVersionInfo().getBuildNo());
+  }
+
+  @Provides
+  @Singleton
+  @Named("gitServiceConfiguration")
+  public GitServiceConfiguration getGitServiceConfiguration() {
+    return this.appConfig.getGitServiceConfiguration();
+  }
+
   @Override
   protected void configure() {
     install(VersionModule.getInstance());
@@ -580,7 +640,7 @@ public class NextGenModule extends AbstractModule {
         return WaiterConfiguration.builder().persistenceLayer(WaiterConfiguration.PersistenceLayer.SPRING).build();
       }
     });
-    install(new GitSyncModule());
+    install(GitSyncModule.getInstance(getGitServiceConfiguration()));
     install(new GitSyncConfigClientModule(appConfig.getNgManagerClientConfig(),
         appConfig.getNextGenConfig().getNgManagerServiceSecret(), NG_MANAGER.getServiceId()));
     install(new CdLicenseUsageCgModule(appConfig.getManagerClientConfig(),
@@ -890,11 +950,13 @@ public class NextGenModule extends AbstractModule {
     outboxEventHandlerMapBinder.addBinding(CONNECTOR).to(ConnectorEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(SERVICE).to(ServiceOutBoxEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(ENVIRONMENT).to(EnvironmentEventHandler.class);
+    outboxEventHandlerMapBinder.addBinding(ENVIRONMENT_GROUP).to(EnvironmentGroupOutboxEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(FILE).to(FileEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(API_KEY).to(ApiKeyEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(TOKEN).to(TokenEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(VARIABLE).to(VariableEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(SETTING).to(SettingEventHandler.class);
+    outboxEventHandlerMapBinder.addBinding(DEPLOYMENT_FREEZE).to(FreezeOutboxEventHandler.class);
   }
 
   private void registerEventsFrameworkMessageListeners() {
@@ -921,6 +983,24 @@ public class NextGenModule extends AbstractModule {
     bind(MessageListener.class)
         .annotatedWith(Names.named(EventsFrameworkMetadataConstants.USER_GROUP + ENTITY_CRUD))
         .to(UserGroupEntityCRUDStreamListener.class);
+    bind(MessageListener.class)
+        .annotatedWith(Names.named(EventsFrameworkMetadataConstants.FREEZE_CONFIG + ENTITY_CRUD))
+        .to(FreezeEventListener.class);
+    bind(MessageListener.class)
+        .annotatedWith(Names.named(EventsFrameworkMetadataConstants.FILTER + ENTITY_CRUD))
+        .to(FilterEventListener.class);
+    bind(MessageListener.class)
+        .annotatedWith(Names.named(EventsFrameworkMetadataConstants.SCM + ENTITY_CRUD))
+        .to(SourceCodeManagerEventListener.class);
+    bind(MessageListener.class)
+        .annotatedWith(Names.named(EventsFrameworkMetadataConstants.SETTINGS + ENTITY_CRUD))
+        .to(SettingsEventListener.class);
+    bind(MessageListener.class)
+        .annotatedWith(Names.named(EventsFrameworkMetadataConstants.API_KEY_ENTITY + ENTITY_CRUD))
+        .to(ApiKeyEventListener.class);
+    bind(MessageListener.class)
+        .annotatedWith(Names.named(EventsFrameworkMetadataConstants.POLLING_DOCUMENT + ENTITY_CRUD))
+        .to(PollingDocumentEventListener.class);
     bind(MessageListener.class)
         .annotatedWith(Names.named(EventsFrameworkMetadataConstants.GITOPS_CLUSTER_ENTITY + ENTITY_CRUD))
         .to(ClusterCrudStreamListener.class);

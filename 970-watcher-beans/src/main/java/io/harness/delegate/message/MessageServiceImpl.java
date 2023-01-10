@@ -25,7 +25,6 @@ import io.harness.serializer.JsonUtils;
 import io.harness.threading.Schedulable;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Splitter;
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import java.io.File;
@@ -33,6 +32,7 @@ import java.io.IOException;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +41,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
+import java.util.regex.Pattern;
 import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
@@ -93,9 +94,11 @@ public class MessageServiceImpl implements MessageService {
   public void writeMessageToChannel(
       MessengerType targetType, String targetProcessId, String message, String... params) {
     boolean isOutput = messengerType == targetType && processId.equals(targetProcessId);
-    String output = isOutput ? "Writing message" : "Sending message to " + targetType + " " + targetProcessId;
-    String paramStr = params != null ? join(", ", params) : "";
-    log.info("{}: {}({})", output, message, paramStr);
+    if (log.isDebugEnabled()) {
+      String output = isOutput ? "Writing message" : "Sending message to " + targetType + " " + targetProcessId;
+      String paramStr = params != null ? join(", ", params) : "";
+      log.info("{}: {}({})", output, message, paramStr);
+    }
     try {
       File channel = getMessageChannel(targetType, targetProcessId);
       List<String> messageContent = new ArrayList<>();
@@ -144,7 +147,7 @@ public class MessageServiceImpl implements MessageService {
           while (reader.hasNext()) {
             String line = reader.nextLine();
             if (StringUtils.startsWith(line, (isInput ? IN : OUT) + PRIMARY_DELIMITER)) {
-              List<String> components = Splitter.on(PRIMARY_DELIMITER).splitToList(line);
+              List<String> components = Arrays.asList(line.split(Pattern.quote(PRIMARY_DELIMITER)));
               long timestamp = Long.parseLong(components.get(1));
               if (timestamp > lastReadTimestamp) {
                 MessengerType fromType = MessengerType.valueOf(components.get(2));
@@ -156,7 +159,7 @@ public class MessageServiceImpl implements MessageService {
                   if (!params.contains(SECONDARY_DELIMITER)) {
                     msgParams.add(params);
                   } else {
-                    msgParams.addAll(Splitter.on(SECONDARY_DELIMITER).splitToList(params));
+                    msgParams.addAll(Arrays.asList(params.split(Pattern.quote(SECONDARY_DELIMITER))));
                   }
                 }
                 Message message = Message.builder()
@@ -232,8 +235,8 @@ public class MessageServiceImpl implements MessageService {
   }
 
   @Override
-  public Message waitForMessage(String messageName, long timeout) {
-    return waitForMessageOnChannel(messengerType, processId, messageName, timeout);
+  public Message waitForMessage(String messageName, long timeout, boolean printIntermediateMessages) {
+    return waitForMessageOnChannel(messengerType, processId, messageName, timeout, printIntermediateMessages);
   }
 
   @Override
@@ -242,8 +245,8 @@ public class MessageServiceImpl implements MessageService {
   }
 
   @Override
-  public Message waitForMessageOnChannel(
-      MessengerType sourceType, String sourceProcessId, String messageName, long timeout) {
+  public Message waitForMessageOnChannel(MessengerType sourceType, String sourceProcessId, String messageName,
+      long timeout, boolean printIntermediateMessages) {
     try {
       BlockingQueue<Message> queue = messageQueues.get(getMessageChannel(sourceType, sourceProcessId));
       if (queue == null) {
@@ -257,6 +260,9 @@ public class MessageServiceImpl implements MessageService {
         while (message == null || !messageName.equals(message.getMessage())) {
           try {
             message = queue.take();
+            if (printIntermediateMessages && message != null) {
+              log.info("Message received: {}", message.getMessage());
+            }
           } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
           }

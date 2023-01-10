@@ -8,6 +8,7 @@
 package io.harness.pms.approval.servicenow;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.rule.OwnerRule.ASHISHSANODIA;
 import static io.harness.rule.OwnerRule.PRABU;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -66,6 +67,7 @@ public class ServiceNowApprovalCallbackTest extends CategoryTest {
   @Mock private ApprovalInstanceService approvalInstanceService;
   @Mock private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Mock private KryoSerializer kryoSerializer;
+  @Mock private KryoSerializer referenceFalseKryoSerializer;
   private static String approvalInstanceId = "approvalInstanceId";
   @Mock ILogStreamingStepClient iLogStreamingStepClient;
   @Mock NGErrorHelper ngErrorHelper;
@@ -81,6 +83,7 @@ public class ServiceNowApprovalCallbackTest extends CategoryTest {
     on(serviceNowApprovalCallback).set("approvalInstanceService", approvalInstanceService);
     on(serviceNowApprovalCallback).set("logStreamingStepClientFactory", logStreamingStepClientFactory);
     on(serviceNowApprovalCallback).set("kryoSerializer", kryoSerializer);
+    on(serviceNowApprovalCallback).set("referenceFalseKryoSerializer", referenceFalseKryoSerializer);
     on(serviceNowApprovalCallback).set("ngErrorHelper", ngErrorHelper);
   }
 
@@ -161,6 +164,86 @@ public class ServiceNowApprovalCallbackTest extends CategoryTest {
     serviceNowApprovalCallback.push(response);
     // To throw exception while casting the response to ResponseData and catch the exception
     doReturn(null).when(kryoSerializer).asInflatedObject(any());
+    serviceNowApprovalCallback.push(response);
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testPushUsingKryoWithoutReference() {
+    MockedStatic<ServiceNowCriteriaEvaluator> mockStatic = Mockito.mockStatic(ServiceNowCriteriaEvaluator.class);
+    mockStatic.when(() -> ServiceNowCriteriaEvaluator.evaluateCriteria(any(), any())).thenReturn(true);
+    mockStatic.when(() -> ServiceNowCriteriaEvaluator.validateWithinChangeWindow(any(), any(), any())).thenReturn(true);
+    on(serviceNowApprovalCallback).set("approvalInstanceId", approvalInstanceId);
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .putSetupAbstractions("accountId", accountId)
+                            .putSetupAbstractions("orgIdentifier", orgIdentifier)
+                            .putSetupAbstractions("projectIdentifier", projectIdentifier)
+                            .putSetupAbstractions("pipelineIdentifier", pipelineIdentifier)
+                            .build();
+    ServiceNowApprovalInstance instance = getServiceNowApprovalInstance(ambiance);
+    Map<String, ResponseData> response = new HashMap<>();
+    response.put("data", BinaryResponseData.builder().usingKryoWithoutReference(true).build());
+    doReturn(ServiceNowTaskNGResponse.builder().ticket(new ServiceNowTicketNG()).build())
+        .when(referenceFalseKryoSerializer)
+        .asInflatedObject(any());
+    doReturn(iLogStreamingStepClient).when(logStreamingStepClientFactory).getLogStreamingStepClient(ambiance);
+    doReturn(instance).when(approvalInstanceService).get(approvalInstanceId);
+    serviceNowApprovalCallback.push(response);
+    verify(approvalInstanceService, times(1))
+        .finalizeStatus(eq(approvalInstanceId), eq(ApprovalStatus.EXPIRED), nullable(TicketNG.class));
+    verify(approvalInstanceService, times(1))
+        .finalizeStatus(eq(approvalInstanceId), eq(ApprovalStatus.APPROVED), nullable(TicketNG.class));
+
+    instance.setDeadline(Long.MAX_VALUE);
+
+    // testing the case when approval criteria met and change window criteria met
+    mockStatic.when(() -> ServiceNowCriteriaEvaluator.evaluateCriteria(any(), any())).thenReturn(true);
+    mockStatic.when(() -> ServiceNowCriteriaEvaluator.validateWithinChangeWindow(any(), any(), any())).thenReturn(true);
+    serviceNowApprovalCallback.push(response);
+    verify(approvalInstanceService, times(2))
+        .finalizeStatus(eq(approvalInstanceId), eq(ApprovalStatus.APPROVED), nullable(TicketNG.class));
+
+    // testing the case when approval criteria met and change window criteria not met
+    mockStatic.when(() -> ServiceNowCriteriaEvaluator.evaluateCriteria(any(), any())).thenReturn(true);
+    mockStatic.when(() -> ServiceNowCriteriaEvaluator.validateWithinChangeWindow(any(), any(), any()))
+        .thenReturn(false);
+    serviceNowApprovalCallback.push(response);
+    verify(approvalInstanceService, times(0)).finalizeStatus((String) any(), (ApprovalStatus) any(), (String) any());
+
+    when(ngErrorHelper.getErrorSummary(any()))
+        .thenAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class));
+    when(ServiceNowCriteriaEvaluator.evaluateCriteria(any(), any())).thenReturn(false);
+    serviceNowApprovalCallback.push(response);
+
+    JexlCriteriaSpecDTO rejectionCriteria = JexlCriteriaSpecDTO.builder().build();
+    instance.setRejectionCriteria(CriteriaSpecWrapperDTO.builder().criteriaSpecDTO(rejectionCriteria).build());
+    when(ServiceNowCriteriaEvaluator.evaluateCriteria(any(), eq(rejectionCriteria))).thenReturn(true);
+    serviceNowApprovalCallback.push(response);
+    instance.getApprovalCriteria().setCriteriaSpecDTO(JexlCriteriaSpecDTO.builder().expression("1==2").build());
+    rejectionCriteria.setExpression("b==b");
+    serviceNowApprovalCallback.push(response);
+    verify(approvalInstanceService)
+        .finalizeStatus(eq(approvalInstanceId), eq(ApprovalStatus.REJECTED), nullable(TicketNG.class));
+
+    when(ServiceNowCriteriaEvaluator.evaluateCriteria(any(), any()))
+        .thenThrow(new ApprovalStepNGException("error", true));
+    serviceNowApprovalCallback.push(response);
+    verify(approvalInstanceService)
+        .finalizeStatus(approvalInstanceId, ApprovalStatus.FAILED,
+            "Fatal error evaluating approval/rejection/change window criteria: error");
+
+    // Testing the case when approval criteria not available
+    instance.setApprovalCriteria(null);
+    assertThatThrownBy(() -> serviceNowApprovalCallback.push(response)).isInstanceOf(ServiceNowException.class);
+
+    doReturn(ServiceNowTaskNGResponse.builder().build()).when(referenceFalseKryoSerializer).asInflatedObject(any());
+    serviceNowApprovalCallback.push(response);
+    // To test case of error in kryo serialization
+    doReturn(ErrorNotifyResponseData.builder().build()).when(referenceFalseKryoSerializer).asInflatedObject(any());
+    serviceNowApprovalCallback.push(response);
+    // To throw exception while casting the response to ResponseData and catch the exception
+    doReturn(null).when(referenceFalseKryoSerializer).asInflatedObject(any());
     serviceNowApprovalCallback.push(response);
   }
 

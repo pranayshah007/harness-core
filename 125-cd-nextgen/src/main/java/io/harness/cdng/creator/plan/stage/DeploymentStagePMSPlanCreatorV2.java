@@ -8,6 +8,8 @@
 package io.harness.cdng.creator.plan.stage;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
@@ -19,10 +21,12 @@ import io.harness.cdng.creator.plan.service.ServiceAllInOnePlanCreatorUtils;
 import io.harness.cdng.creator.plan.service.ServicePlanCreatorHelper;
 import io.harness.cdng.envGroup.yaml.EnvGroupPlanCreatorConfig;
 import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
+import io.harness.cdng.environment.helper.EnvironmentInfraFilterHelper;
 import io.harness.cdng.environment.helper.EnvironmentsPlanCreatorHelper;
 import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.environment.yaml.EnvironmentsPlanCreatorConfig;
+import io.harness.cdng.environment.yaml.ServiceOverrideInputsYaml;
 import io.harness.cdng.pipeline.PipelineInfrastructure;
 import io.harness.cdng.pipeline.beans.DeploymentStageStepParameters;
 import io.harness.cdng.pipeline.beans.MultiDeploymentStepParameters;
@@ -35,7 +39,6 @@ import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
-import io.harness.exception.InvalidYamlException;
 import io.harness.exception.ngexception.NGFreezeException;
 import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
 import io.harness.freeze.helpers.FreezeRBACHelper;
@@ -91,9 +94,12 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Stage plan graph V1 -
@@ -141,6 +147,8 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   @Inject private FreezeEvaluateService freezeEvaluateService;
   @Inject @Named("PRIVILEGED") private AccessControlClient accessControlClient;
 
+  @Inject private EnvironmentInfraFilterHelper environmentInfraFilterHelper;
+
   @Override
   public Set<String> getSupportedStageTypes() {
     return Collections.singleton("Deployment");
@@ -182,9 +190,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     stageParameters.specConfig(getSpecParameters(specField.getNode().getUuid(), ctx, stageNode));
     String uuid = MultiDeploymentSpawnerUtils.getUuidForMultiDeployment(stageNode);
     List<AdviserObtainment> adviserObtainments = new ArrayList<>();
-    DeploymentStageConfig stageConfig = stageNode.getDeploymentStageConfig();
-    if (stageConfig.getServices() == null && stageConfig.getEnvironments() == null
-        && stageConfig.getEnvironmentGroup() == null) {
+    if (!MultiDeploymentSpawnerUtils.hasMultiDeploymentConfigured(stageNode)) {
       adviserObtainments = getAdviserObtainmentFromMetaData(ctx.getCurrentField());
     }
     // We need to swap the ids if strategy is present
@@ -211,12 +217,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   }
 
   public String getIdentifierWithExpression(PlanCreationContext ctx, DeploymentStageNode node, String identifier) {
-    if (node.getDeploymentStageConfig().getGitOpsEnabled()) {
-      return StrategyUtils.getIdentifierWithExpression(ctx, identifier);
-    }
-    if (node.getDeploymentStageConfig().getServices() != null
-        || node.getDeploymentStageConfig().getEnvironments() != null
-        || node.getDeploymentStageConfig().getEnvironmentGroup() != null) {
+    if (MultiDeploymentSpawnerUtils.hasMultiDeploymentConfigured(node)) {
       return identifier + StrategyValidationUtils.STRATEGY_IDENTIFIER_POSTFIX;
     }
     return StrategyUtils.getIdentifierWithExpression(ctx, identifier);
@@ -249,7 +250,10 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
           List<AdviserObtainment> adviserObtainments =
               addResourceConstraintDependencyWithWhenCondition(planCreationResponseMap, specField);
           String infraNodeId = addInfrastructureNode(planCreationResponseMap, stageNode, adviserObtainments);
-          String serviceNodeId = addServiceNode(specField, planCreationResponseMap, stageNode, infraNodeId);
+          Optional<String> provisionerIdOptional =
+              addProvisionerNodeIfNeeded(specField, planCreationResponseMap, stageNode, infraNodeId);
+          String serviceNextNodeId = provisionerIdOptional.isEmpty() ? infraNodeId : provisionerIdOptional.get();
+          String serviceNodeId = addServiceNode(specField, planCreationResponseMap, stageNode, serviceNextNodeId);
           addSpecNode(planCreationResponseMap, specField, serviceNodeId);
         }
       } else {
@@ -277,7 +281,10 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
       LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, DeploymentStageNode stageNode,
       YamlField specField, YamlField executionField) throws IOException {
     String infraNodeId = addGitOpsClustersNode(ctx, planCreationResponseMap, stageNode, executionField);
-    String serviceNodeId = addServiceNodeForGitOps(specField, planCreationResponseMap, stageNode, infraNodeId);
+    Optional<String> provisionerIdOptional =
+        addProvisionerNodeIfNeeded(specField, planCreationResponseMap, stageNode, infraNodeId);
+    String serviceNextNodeId = provisionerIdOptional.isEmpty() ? infraNodeId : provisionerIdOptional.get();
+    String serviceNodeId = addServiceNodeForGitOps(specField, planCreationResponseMap, stageNode, serviceNextNodeId);
     addSpecNode(planCreationResponseMap, specField, serviceNodeId);
 
     addCDExecutionDependencies(planCreationResponseMap, executionField);
@@ -392,22 +399,25 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     }
 
     String subType;
-    if (stageConfig.getEnvironments() == null) {
-      subType = MultiDeploymentSpawnerUtils.MULTI_SERVICE_DEPLOYMENT;
-    } else if (stageConfig.getServices() == null) {
-      subType = MultiDeploymentSpawnerUtils.MULTI_ENV_DEPLOYMENT;
-    } else {
-      subType = MultiDeploymentSpawnerUtils.MULTI_SERVICE_ENV_DEPLOYMENT;
-    }
-    if (stageConfig.getServices() != null && ParameterField.isBlank(stageConfig.getServices().getValues())) {
-      throw new InvalidYamlException(
-          "No values of services provided. Please provide at least one service for deployment");
-    }
-    if (stageConfig.getEnvironments() != null && ParameterField.isBlank(stageConfig.getEnvironments().getValues())) {
-      throw new InvalidYamlException(
-          "No values of environments provided. Please provide at least one service for deployment");
-    }
 
+    // If filters are present
+    if (featureFlagHelperService.isEnabled(ctx.getAccountIdentifier(), FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS)
+        && (environmentInfraFilterHelper.areFiltersPresent(stageNode.deploymentStageConfig.getEnvironments()))) {
+      subType = MultiDeploymentSpawnerUtils.MULTI_SERVICE_ENV_DEPLOYMENT;
+    } else {
+      if (stageConfig.getEnvironments() == null) {
+        subType = MultiDeploymentSpawnerUtils.MULTI_SERVICE_DEPLOYMENT;
+      } else if (stageConfig.getServices() == null) {
+        subType = MultiDeploymentSpawnerUtils.MULTI_ENV_DEPLOYMENT;
+      } else {
+        subType = MultiDeploymentSpawnerUtils.MULTI_SERVICE_ENV_DEPLOYMENT;
+      }
+    }
+    List<ServiceOverrideInputsYaml> servicesOverrides = null;
+    if (stageConfig.getEnvironment() != null
+        && EmptyPredicate.isNotEmpty(stageConfig.getEnvironment().getServicesOverrides())) {
+      servicesOverrides = stageConfig.getEnvironment().getServicesOverrides();
+    }
     MultiDeploymentStepParameters stepParameters =
         MultiDeploymentStepParameters.builder()
             .strategyType(StrategyType.MATRIX)
@@ -415,10 +425,49 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
             .environments(stageConfig.getEnvironments())
             .environmentGroup(stageConfig.getEnvironmentGroup())
             .services(stageConfig.getServices())
+            .serviceYamlV2(stageConfig.getService())
             .subType(subType)
+            .servicesOverrides(servicesOverrides)
             .build();
 
     buildMultiDeploymentMetadata(planCreationResponseMap, stageNode, ctx, stepParameters);
+  }
+
+  @NotNull
+  private static List<EnvironmentYamlV2> getFinalEnvsList(
+      List<EnvironmentYamlV2> envsFromYaml, List<EnvironmentYamlV2> mergedFilteredEnvs) {
+    List<EnvironmentYamlV2> finalyamlV2List = new ArrayList<>();
+    if (isNotEmpty(envsFromYaml)) {
+      for (EnvironmentYamlV2 e : envsFromYaml) {
+        List<EnvironmentYamlV2> list = mergedFilteredEnvs.stream()
+                                           .filter(in -> in.getEnvironmentRef().equals(e.getEnvironmentRef()))
+                                           .collect(Collectors.toList());
+        if (isNotEmpty(list) || ParameterField.isNull(e.getInfrastructureDefinitions())
+            || isEmpty(e.getInfrastructureDefinitions().getValue())) {
+          continue;
+        }
+        finalyamlV2List.add(e);
+      }
+    }
+    finalyamlV2List.addAll(mergedFilteredEnvs);
+    return finalyamlV2List;
+  }
+
+  @NotNull
+  private static List<EnvironmentYamlV2> getEnvOrEnvGrouplevelAndIndividualEnvFilteredEnvs(
+      Set<EnvironmentYamlV2> envsLevelEnvironmentYamlV2, Set<EnvironmentYamlV2> individualEnvironmentYamlV2) {
+    List<EnvironmentYamlV2> mergedFilteredEnvs = new ArrayList<>();
+    for (EnvironmentYamlV2 envYamlV2 : envsLevelEnvironmentYamlV2) {
+      List<EnvironmentYamlV2> eV2 = individualEnvironmentYamlV2.stream()
+                                        .filter(e -> e.getEnvironmentRef().equals(envYamlV2.getEnvironmentRef()))
+                                        .collect(Collectors.toList());
+      if (isNotEmpty(eV2)) {
+        continue;
+      }
+      mergedFilteredEnvs.add(envYamlV2);
+    }
+    mergedFilteredEnvs.addAll(individualEnvironmentYamlV2);
+    return mergedFilteredEnvs;
   }
 
   /**
@@ -488,7 +537,6 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
                              .build())
             .build());
   }
-
   private String addServiceNode(YamlField specField,
       LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, DeploymentStageNode stageNode,
       String nextNodeId) throws IOException {
@@ -501,16 +549,19 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
       service = stageNode.getDeploymentStageConfig().getService();
     }
 
+    ParameterField<String> envGroupRef = ParameterField.ofNull();
     EnvironmentYamlV2 environment;
-    if (stageNode.getDeploymentStageConfig().getEnvironments() != null
-        || stageNode.getDeploymentStageConfig().getEnvironmentGroup() != null) {
+    if (stageNode.getDeploymentStageConfig().getEnvironmentGroup() != null) {
+      environment = MultiDeploymentSpawnerUtils.getEnvironmentYamlV2Node();
+      envGroupRef = stageNode.getDeploymentStageConfig().getEnvironmentGroup().getEnvGroupRef();
+    } else if (stageNode.getDeploymentStageConfig().getEnvironments() != null) {
       environment = MultiDeploymentSpawnerUtils.getEnvironmentYamlV2Node();
     } else {
       environment = stageNode.getDeploymentStageConfig().getEnvironment();
     }
     String serviceNodeId = service.getUuid();
     planCreationResponseMap.putAll(ServiceAllInOnePlanCreatorUtils.addServiceNode(
-        specField, kryoSerializer, service, environment, serviceNodeId, nextNodeId, deploymentType));
+        specField, kryoSerializer, service, environment, serviceNodeId, nextNodeId, deploymentType, envGroupRef));
     return serviceNodeId;
   }
 
@@ -537,7 +588,8 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
               stageNode.deploymentStageConfig.getEnvironments(), serviceNodeId, nextNodeId, deploymentType));
     } else if (stageNode.deploymentStageConfig.getEnvironment() != null) {
       planCreationResponseMap.putAll(ServiceAllInOnePlanCreatorUtils.addServiceNode(specField, kryoSerializer, service,
-          stageNode.deploymentStageConfig.getEnvironment(), serviceNodeId, nextNodeId, deploymentType));
+          stageNode.deploymentStageConfig.getEnvironment(), serviceNodeId, nextNodeId, deploymentType,
+          ParameterField.ofNull()));
     }
 
     return serviceNodeId;
@@ -555,6 +607,28 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
         stageNode.getDeploymentStageConfig().getDeploymentType(), stageNode.skipInstances);
     planCreationResponseMap.put(node.getUuid(), PlanCreationResponse.builder().planNode(node).build());
     return node.getUuid();
+  }
+  private Optional<String> addProvisionerNodeIfNeeded(YamlField specField,
+      LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, DeploymentStageNode stageNode,
+      String infraNodeId) {
+    if (stageNode.getDeploymentStageConfig().getEnvironment() == null
+        || stageNode.getDeploymentStageConfig().getEnvironment().getProvisioner() == null) {
+      return Optional.empty();
+    }
+
+    YamlField envField = specField.getNode().getField(YAMLFieldNameConstants.ENVIRONMENT);
+    YamlField provisionerField = envField.getNode().getField(YAMLFieldNameConstants.PROVISIONER);
+    YamlField provisionerStepsField = provisionerField.getNode().getField(YAMLFieldNameConstants.STEPS);
+
+    Map<String, YamlField> stepsYamlFieldMap = new HashMap<>();
+    stepsYamlFieldMap.put(provisionerStepsField.getNode().getUuid(), provisionerStepsField);
+    planCreationResponseMap.put(provisionerStepsField.getNode().getUuid(),
+        PlanCreationResponse.builder().dependencies(DependenciesUtils.toDependenciesProto(stepsYamlFieldMap)).build());
+
+    PlanNode node = InfrastructurePmsPlanCreator.getProvisionerPlanNode(
+        provisionerField, provisionerStepsField.getUuid(), infraNodeId, kryoSerializer);
+    planCreationResponseMap.put(node.getUuid(), PlanCreationResponse.builder().planNode(node).build());
+    return Optional.of(node.getUuid());
   }
 
   private String addGitOpsClustersNode(PlanCreationContext ctx,

@@ -14,8 +14,10 @@ import static io.harness.ngtriggers.Constants.GIT_USER;
 import static io.harness.ngtriggers.Constants.TRIGGER_REF;
 import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.HARSH;
+import static io.harness.rule.OwnerRule.VINICIUS;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.when;
 
@@ -23,6 +25,9 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.HeaderConfig;
 import io.harness.category.element.UnitTests;
+import io.harness.gitsync.helpers.GitContextHelper;
+import io.harness.gitsync.interceptor.GitEntityInfo;
+import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
@@ -45,7 +50,10 @@ import io.harness.pms.contracts.plan.TriggeredBy;
 import io.harness.pms.contracts.triggers.ParsedPayload;
 import io.harness.pms.contracts.triggers.TriggerPayload;
 import io.harness.pms.contracts.triggers.Type;
+import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
+import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.inputset.MergeInputSetResponseDTOPMS;
+import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.product.ci.scm.proto.PullRequest;
 import io.harness.product.ci.scm.proto.PullRequestHook;
 import io.harness.product.ci.scm.proto.PushHook;
@@ -54,6 +62,7 @@ import io.harness.product.ci.scm.proto.User;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
+import com.google.protobuf.ByteString;
 import java.util.Arrays;
 import java.util.Map;
 import org.junit.Before;
@@ -72,6 +81,7 @@ public class TriggerExecutionHelperTest extends CategoryTest {
 
   private NGTriggerEntity ngTriggerEntity;
   private TriggerWebhookEvent triggerWebhookEvent;
+  @Mock PmsGitSyncHelper pmsGitSyncHelper;
   @Mock NGTriggerElementMapper ngTriggerElementMapper;
   @Mock PipelineServiceClient pipelineServiceClient;
   @Before
@@ -241,6 +251,31 @@ public class TriggerExecutionHelperTest extends CategoryTest {
         "eventId");
 
     assertTriggerBy(triggeredBy);
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testGetSerializedGitSyncContextWithRepoAndFilePath() {
+    String repo = "repo";
+    String filePath = "filePath";
+    String connectorRef = "connectorRef";
+    String branch = "branch";
+    PipelineEntity pipelineEntityToExecute =
+        PipelineEntity.builder().repo(repo).filePath(filePath).connectorRef(connectorRef).build();
+    GitSyncBranchContext gitSyncBranchContext =
+        triggerExecutionHelper.getGitSyncContextWithRepoAndFilePath(pipelineEntityToExecute, branch);
+    when(pmsGitSyncHelper.createGitSyncBranchContextGuardFromBytes(any(), eq(false)))
+        .thenReturn(new PmsGitSyncBranchContextGuard(gitSyncBranchContext, false));
+    try (PmsGitSyncBranchContextGuard ignore =
+             pmsGitSyncHelper.createGitSyncBranchContextGuardFromBytes(ByteString.copyFrom(new byte[2]), false)) {
+      GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
+      assertThat(gitEntityInfo).isNotNull();
+      assertThat(gitEntityInfo.getRepoName()).isEqualTo(repo);
+      assertThat(gitEntityInfo.getFilePath()).isEqualTo(filePath);
+      assertThat(gitEntityInfo.getConnectorRef()).isEqualTo(connectorRef);
+      assertThat(gitEntityInfo.getBranch()).isEqualTo(branch);
+    }
   }
 
   private void assertTriggerBy(TriggeredBy triggeredBy) {

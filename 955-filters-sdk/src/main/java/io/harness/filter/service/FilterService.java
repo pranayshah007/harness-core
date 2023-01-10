@@ -10,6 +10,7 @@ package io.harness.filter.service;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.Scope;
 import io.harness.filter.FilterType;
 import io.harness.filter.dto.FilterDTO;
 
@@ -23,6 +24,8 @@ public interface FilterService {
   FilterDTO update(String accountId, FilterDTO filterDTO);
 
   boolean delete(String accountId, String orgIdentifier, String projectIdentifier, String identifier, FilterType type);
+
+  void deleteByScope(Scope scope);
 
   FilterDTO get(String accountId, String orgIdentifier, String projectIdentifier, String identifier, FilterType type);
 

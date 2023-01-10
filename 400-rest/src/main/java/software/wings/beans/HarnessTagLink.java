@@ -18,6 +18,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EmbeddedUser;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAware;
@@ -35,14 +36,14 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
 
 @OwnedBy(HarnessTeam.CDC)
 @TargetModule(HarnessModule._957_CG_BEANS)
@@ -70,6 +71,11 @@ public class HarnessTagLink implements PersistentEntity, UuidAware, UpdatedAtAwa
                  .field(HarnessTagLinkKeys.accountId)
                  .field(HarnessTagLinkKeys.key)
                  .field(HarnessTagLinkKeys.value)
+                 .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("accountIdCreatedAt")
+                 .field(HarnessTagLinkKeys.accountId)
+                 .descSortField(HarnessTagLinkKeys.createdAt)
                  .build())
         .build();
   }

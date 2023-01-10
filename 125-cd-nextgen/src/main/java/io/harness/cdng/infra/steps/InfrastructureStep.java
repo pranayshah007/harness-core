@@ -34,6 +34,7 @@ import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
+import io.harness.cdng.infra.yaml.AsgInfrastructure;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
 import io.harness.cdng.infra.yaml.CustomDeploymentInfrastructure;
 import io.harness.cdng.infra.yaml.EcsInfrastructure;
@@ -384,6 +385,14 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
       }
     }
 
+    if (InfrastructureKind.ASG.equals(infrastructure.getKind())) {
+      if (!(connectorInfo.get(0).getConnectorConfig() instanceof AwsConnectorDTO)) {
+        throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
+            connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
+            ConnectorType.AWS.name()));
+      }
+    }
+
     saveExecutionLogSafely(logCallback, color("Connector validated", Green));
   }
 
@@ -488,6 +497,11 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
             (TanzuApplicationServiceInfrastructure) infrastructure;
         infrastructureStepHelper.validateExpression(tanzuApplicationServiceInfrastructure.getConnectorRef(),
             tanzuApplicationServiceInfrastructure.getOrganization(), tanzuApplicationServiceInfrastructure.getSpace());
+        break;
+
+      case InfrastructureKind.ASG:
+        AsgInfrastructure asgInfrastructure = (AsgInfrastructure) infrastructure;
+        infrastructureStepHelper.validateExpression(asgInfrastructure.getConnectorRef(), asgInfrastructure.getRegion());
         break;
 
       default:

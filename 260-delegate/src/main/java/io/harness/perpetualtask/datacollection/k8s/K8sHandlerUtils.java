@@ -28,7 +28,9 @@ public class K8sHandlerUtils<ApiType extends KubernetesObject> {
       @SuppressWarnings("unchecked") ApiType copy = (ApiType) Yaml.load(Yaml.dump(resource));
       return copy;
     } catch (IOException e) {
-      log.warn("Serialization round trip should clone", e);
+      if (log.isDebugEnabled()) {
+        log.debug("Serialization round trip should clone", e);
+      }
       return resource;
     }
   }

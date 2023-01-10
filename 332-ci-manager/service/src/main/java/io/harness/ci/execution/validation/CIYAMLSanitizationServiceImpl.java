@@ -9,7 +9,6 @@ package io.harness.ci.validation;
 
 import static io.harness.beans.steps.CIStepInfoType.RUN;
 import static io.harness.beans.steps.CIStepInfoType.RUN_TESTS;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.beans.steps.CIAbstractStepNode;
 import io.harness.beans.steps.CIStepInfo;
@@ -21,40 +20,20 @@ import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.pms.yaml.ParameterField;
 
 import com.google.inject.Inject;
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class CIYAMLSanitizationServiceImpl implements CIYAMLSanitizationService {
-  Set<String> maliciousMiningPatterns = new HashSet<>();
-  static final String MALICIOUS_PATTERNS_FILE = "suspiciousMiningPatterns.txt";
-
+  @Inject private CIMiningPatternJob ciMiningPatternJob;
   @Inject
-  public CIYAMLSanitizationServiceImpl() {
-    if (maliciousMiningPatterns.isEmpty()) {
-      try (InputStream inputStream =
-               Thread.currentThread().getContextClassLoader().getResourceAsStream(MALICIOUS_PATTERNS_FILE);
-           BufferedReader bufferedReader =
-               new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
-        String line = bufferedReader.readLine();
-        while (isNotEmpty(line)) {
-          maliciousMiningPatterns.add(line.trim());
-          line = bufferedReader.readLine();
-        }
-      } catch (Exception e) {
-        log.error("Failed to read malicious patterns from file.", e);
-      }
-    }
-  }
+  public CIYAMLSanitizationServiceImpl() {}
 
   @Override
   public boolean validate(List<ExecutionWrapperConfig> wrapper) {
+    Set<String> maliciousMiningPatterns = ciMiningPatternJob.getMaliciousMiningPatterns();
+
     for (ExecutionWrapperConfig executionWrapper : wrapper) {
       if (executionWrapper.getStep() == null || executionWrapper.getStep().isNull()) {
         continue;

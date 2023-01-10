@@ -344,8 +344,9 @@ public class SshCommandStepHelper extends CDStepHelper {
         .host(onDelegate ? null : getHost(commandStepParameters))
         .useWinRMKerberosUniqueCacheFile(
             cdFeatureFlagHelper.isEnabled(accountId, FeatureName.WINRM_KERBEROS_CACHE_UNIQUE_FILE))
-        .disableWinRMCommandEncodingFFSet(true)
-        .winrmScriptCommandSplit(true)
+        .disableWinRMCommandEncodingFFSet(
+            cdFeatureFlagHelper.isEnabled(accountId, FeatureName.DISABLE_WINRM_COMMAND_ENCODING_NG))
+        .winrmScriptCommandSplit(cdFeatureFlagHelper.isEnabled(accountId, FeatureName.WINRM_SCRIPT_COMMAND_SPLIT_NG))
         .build();
   }
 
@@ -371,8 +372,9 @@ public class SshCommandStepHelper extends CDStepHelper {
         .host(onDelegate ? null : getHost(commandStepParameters))
         .useWinRMKerberosUniqueCacheFile(
             cdFeatureFlagHelper.isEnabled(accountId, FeatureName.WINRM_KERBEROS_CACHE_UNIQUE_FILE))
-        .disableWinRMCommandEncodingFFSet(true)
-        .winrmScriptCommandSplit(true)
+        .disableWinRMCommandEncodingFFSet(
+            cdFeatureFlagHelper.isEnabled(accountId, FeatureName.DISABLE_WINRM_COMMAND_ENCODING_NG))
+        .winrmScriptCommandSplit(cdFeatureFlagHelper.isEnabled(accountId, FeatureName.WINRM_SCRIPT_COMMAND_SPLIT_NG))
         .build();
   }
 

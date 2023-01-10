@@ -24,6 +24,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifacts.jenkins.beans.JenkinsInternalConfig;
 import io.harness.artifacts.jenkins.service.JenkinsRegistryService;
 import io.harness.artifacts.jenkins.service.JenkinsRegistryUtils;
+import io.harness.beans.ExecutionStatus;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.connector.jenkins.JenkinsAuthType;
 import io.harness.delegate.beans.connector.jenkins.JenkinsAuthenticationDTO;
@@ -52,6 +53,7 @@ import com.google.inject.name.Named;
 import com.offbytwo.jenkins.client.JenkinsHttpClient;
 import com.offbytwo.jenkins.client.JenkinsHttpConnection;
 import com.offbytwo.jenkins.model.Build;
+import com.offbytwo.jenkins.model.BuildResult;
 import com.offbytwo.jenkins.model.BuildWithDetails;
 import com.offbytwo.jenkins.model.JobWithDetails;
 import com.offbytwo.jenkins.model.QueueReference;
@@ -71,6 +73,7 @@ import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
@@ -78,14 +81,14 @@ import org.mockito.junit.MockitoRule;
 public class JenkinsArtifactTaskHandlerTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   @Mock @Named("jenkinsExecutor") private ExecutorService jenkinsExecutor;
-  @InjectMocks JenkinsArtifactTaskHandler jenkinsArtifactTaskHandler;
+  @Spy @InjectMocks JenkinsArtifactTaskHandler jenkinsArtifactTaskHandler;
   @Mock JenkinsRegistryService jenkinsRegistryService;
+  @Mock CustomBuildWithDetails customBuildWithDetails;
   @Mock JenkinsRegistryUtils jenkinsRegistryUtils;
   @Mock private JenkinsFactory jenkinsFactory;
   @Mock private Jenkins jenkins;
   @Mock private JenkinsHttpConnection jenkinsHttpConnection;
   @Mock Build jenkinsBuild;
-  @Mock private CustomBuildWithDetails customBuildWithDetails;
   @Mock private BuildWithDetails buildWithDetails;
   @Mock private QueueReference queueReference;
   @Mock private EncryptionService encryptionService;
@@ -120,6 +123,10 @@ public class JenkinsArtifactTaskHandlerTest extends CategoryTest {
     when(jenkinsHttpConnection.get(any(), any())).thenReturn(customBuildWithDetails);
     when(buildWithDetails.isBuilding()).thenReturn(false);
     when(buildWithDetails.getConsoleOutputText()).thenReturn("console output");
+    when(buildWithDetails.getNumber()).thenReturn(20);
+    when(buildWithDetails.getDescription()).thenReturn("Jenkins Build");
+    when(buildWithDetails.getDisplayName()).thenReturn("Jenkins# 20");
+    when(buildWithDetails.getFullDisplayName()).thenReturn("Jenkins# 20");
   }
 
   @Test
@@ -462,7 +469,7 @@ public class JenkinsArtifactTaskHandlerTest extends CategoryTest {
   @Test
   @Owner(developers = SHIVAM)
   @Category(UnitTests.class)
-  public void testTriggerBuild() throws IOException, URISyntaxException {
+  public void testTriggerBuild() {
     try {
       String jobName = "FIS_Cleared_Derivatives_Core/NextGen/Build Custom Branch Images/keepbranch%2Fbo-development";
       JenkinsConnectorDTO jenkinsConnectorDTO =
@@ -494,5 +501,309 @@ public class JenkinsArtifactTaskHandlerTest extends CategoryTest {
     } catch (Exception ex) {
       verify(jenkinsBuildTaskNGResponse).setErrorMessage(ExceptionUtils.getMessage(ex));
     }
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testPollTaskForNull() throws IOException, URISyntaxException {
+    String jobName = "FIS_Cleared_Derivatives_Core/NextGen/Build Custom Branch Images/keepbranch%2Fbo-development";
+    JenkinsConnectorDTO jenkinsConnectorDTO =
+        JenkinsConnectorDTO.builder()
+            .jenkinsUrl("https://Jenkins.com")
+            .auth(JenkinsAuthenticationDTO.builder().authType(JenkinsAuthType.USER_PASSWORD).build())
+            .build();
+    JenkinsArtifactDelegateRequest jenkinsArtifactDelegateRequest =
+        JenkinsArtifactDelegateRequest.builder()
+            .artifactPaths(Collections.singletonList("artifactPath"))
+            .jobName(jobName)
+            .jenkinsConnectorDTO(jenkinsConnectorDTO)
+            .useConnectorUrlForJobExecution(true)
+            .buildNumber("tag")
+            .queuedBuildUrl(queueItemUrlPart)
+            .build();
+    BuildDetails buildDetails = BuildDetails.Builder.aBuildDetails().withNumber("tag12").build();
+    queueItemUrlPart = jenkinsArtifactDelegateRequest.getQueuedBuildUrl();
+
+    JenkinsInternalConfig jenkinsInternalConfig =
+        JenkinsRequestResponseMapper.toJenkinsInternalConfig(jenkinsArtifactDelegateRequest);
+    jobName = URLEncoder.encode(jobName, StandardCharsets.UTF_8.toString());
+    when(jenkinsBuild.getNumber()).thenReturn(20);
+    Build jenkinsBuild = new Build(220, buildUrl);
+    when(jenkinsRegistryUtils.getBuild(new QueueReference(queueItemUrlPart), jenkinsInternalConfig))
+        .thenReturn(jenkinsBuild);
+
+    CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
+    ArtifactTaskExecutionResponse artifactTaskExecutionResponse =
+        jenkinsArtifactTaskHandler.pollTask(jenkinsArtifactDelegateRequest, logCallback);
+    assertThat(artifactTaskExecutionResponse.getJenkinsBuildTaskNGResponse().getExecutionStatus())
+        .isEqualTo(ExecutionStatus.FAILED);
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testPollTask() throws IOException, URISyntaxException {
+    String jobName = "FIS_Cleared_Derivatives_Core/NextGen/Build Custom Branch Images/keepbranch%2Fbo-development";
+    JenkinsConnectorDTO jenkinsConnectorDTO =
+        JenkinsConnectorDTO.builder()
+            .jenkinsUrl("https://Jenkins.com")
+            .auth(JenkinsAuthenticationDTO.builder().authType(JenkinsAuthType.USER_PASSWORD).build())
+            .build();
+    JenkinsArtifactDelegateRequest jenkinsArtifactDelegateRequest =
+        JenkinsArtifactDelegateRequest.builder()
+            .artifactPaths(Collections.singletonList("artifactPath"))
+            .jobName(jobName)
+            .jenkinsConnectorDTO(jenkinsConnectorDTO)
+            .useConnectorUrlForJobExecution(true)
+            .buildNumber("tag")
+            .queuedBuildUrl(queueItemUrlPart)
+            .captureEnvironmentVariable(true)
+            .build();
+    BuildDetails buildDetails = BuildDetails.Builder.aBuildDetails().withNumber("tag12").build();
+    queueItemUrlPart = jenkinsArtifactDelegateRequest.getQueuedBuildUrl();
+
+    JenkinsInternalConfig jenkinsInternalConfig =
+        JenkinsRequestResponseMapper.toJenkinsInternalConfig(jenkinsArtifactDelegateRequest);
+    jobName = URLEncoder.encode(jobName, StandardCharsets.UTF_8.toString());
+    when(buildWithDetails.getResult()).thenReturn(BuildResult.SUCCESS);
+    doReturn(buildWithDetails).when(jenkinsArtifactTaskHandler).waitForJobExecutionToFinish(any(), any(), any(), any());
+    when(jenkinsBuild.getNumber()).thenReturn(20);
+    when(jenkinsRegistryUtils.getBuild(any(), any())).thenReturn(jenkinsBuild);
+
+    when(jenkinsBuild.details()).thenReturn(buildWithDetails);
+    ArtifactTaskExecutionResponse artifactTaskExecutionResponse =
+        jenkinsArtifactTaskHandler.pollTask(jenkinsArtifactDelegateRequest, logCallback);
+    assertThat(artifactTaskExecutionResponse.getJenkinsBuildTaskNGResponse().getExecutionStatus())
+        .isEqualTo(ExecutionStatus.SUCCESS);
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testPollTaskUnstableAsSuccess() throws IOException, URISyntaxException {
+    String jobName = "FIS_Cleared_Derivatives_Core/NextGen/Build Custom Branch Images/keepbranch%2Fbo-development";
+    JenkinsConnectorDTO jenkinsConnectorDTO =
+        JenkinsConnectorDTO.builder()
+            .jenkinsUrl("https://Jenkins.com")
+            .auth(JenkinsAuthenticationDTO.builder().authType(JenkinsAuthType.USER_PASSWORD).build())
+            .build();
+    JenkinsArtifactDelegateRequest jenkinsArtifactDelegateRequest =
+        JenkinsArtifactDelegateRequest.builder()
+            .artifactPaths(Collections.singletonList("artifactPath"))
+            .jobName(jobName)
+            .jenkinsConnectorDTO(jenkinsConnectorDTO)
+            .useConnectorUrlForJobExecution(true)
+            .buildNumber("tag")
+            .queuedBuildUrl(queueItemUrlPart)
+            .unstableStatusAsSuccess(true)
+            .captureEnvironmentVariable(true)
+            .build();
+    BuildDetails buildDetails = BuildDetails.Builder.aBuildDetails().withNumber("tag12").build();
+    queueItemUrlPart = jenkinsArtifactDelegateRequest.getQueuedBuildUrl();
+
+    JenkinsInternalConfig jenkinsInternalConfig =
+        JenkinsRequestResponseMapper.toJenkinsInternalConfig(jenkinsArtifactDelegateRequest);
+    jobName = URLEncoder.encode(jobName, StandardCharsets.UTF_8.toString());
+    when(buildWithDetails.getResult()).thenReturn(BuildResult.UNSTABLE);
+
+    doReturn(buildWithDetails).when(jenkinsArtifactTaskHandler).waitForJobExecutionToFinish(any(), any(), any(), any());
+    when(jenkinsBuild.getNumber()).thenReturn(20);
+    when(jenkinsRegistryUtils.getBuild(any(), any())).thenReturn(jenkinsBuild);
+
+    when(jenkinsBuild.details()).thenReturn(buildWithDetails);
+    ArtifactTaskExecutionResponse artifactTaskExecutionResponse =
+        jenkinsArtifactTaskHandler.pollTask(jenkinsArtifactDelegateRequest, logCallback);
+    assertThat(artifactTaskExecutionResponse.getJenkinsBuildTaskNGResponse().getExecutionStatus())
+        .isEqualTo(ExecutionStatus.SUCCESS);
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testPollTaskUnstable() throws IOException, URISyntaxException {
+    String jobName = "FIS_Cleared_Derivatives_Core/NextGen/Build Custom Branch Images/keepbranch%2Fbo-development";
+    JenkinsConnectorDTO jenkinsConnectorDTO =
+        JenkinsConnectorDTO.builder()
+            .jenkinsUrl("https://Jenkins.com")
+            .auth(JenkinsAuthenticationDTO.builder().authType(JenkinsAuthType.USER_PASSWORD).build())
+            .build();
+    JenkinsArtifactDelegateRequest jenkinsArtifactDelegateRequest =
+        JenkinsArtifactDelegateRequest.builder()
+            .artifactPaths(Collections.singletonList("artifactPath"))
+            .jobName(jobName)
+            .jenkinsConnectorDTO(jenkinsConnectorDTO)
+            .useConnectorUrlForJobExecution(true)
+            .buildNumber("tag")
+            .queuedBuildUrl(queueItemUrlPart)
+            .captureEnvironmentVariable(true)
+            .build();
+    BuildDetails buildDetails = BuildDetails.Builder.aBuildDetails().withNumber("tag12").build();
+    queueItemUrlPart = jenkinsArtifactDelegateRequest.getQueuedBuildUrl();
+
+    JenkinsInternalConfig jenkinsInternalConfig =
+        JenkinsRequestResponseMapper.toJenkinsInternalConfig(jenkinsArtifactDelegateRequest);
+    jobName = URLEncoder.encode(jobName, StandardCharsets.UTF_8.toString());
+    when(buildWithDetails.getResult()).thenReturn(BuildResult.UNSTABLE);
+
+    doReturn(buildWithDetails).when(jenkinsArtifactTaskHandler).waitForJobExecutionToFinish(any(), any(), any(), any());
+    when(jenkinsBuild.getNumber()).thenReturn(20);
+    when(jenkinsRegistryUtils.getBuild(any(), any())).thenReturn(jenkinsBuild);
+
+    when(jenkinsBuild.details()).thenReturn(buildWithDetails);
+    ArtifactTaskExecutionResponse artifactTaskExecutionResponse =
+        jenkinsArtifactTaskHandler.pollTask(jenkinsArtifactDelegateRequest, logCallback);
+    assertThat(artifactTaskExecutionResponse.getJenkinsBuildTaskNGResponse().getExecutionStatus())
+        .isEqualTo(ExecutionStatus.FAILED);
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testPollTaskFailed() throws IOException, URISyntaxException {
+    String jobName = "FIS_Cleared_Derivatives_Core/NextGen/Build Custom Branch Images/keepbranch%2Fbo-development";
+    JenkinsConnectorDTO jenkinsConnectorDTO =
+        JenkinsConnectorDTO.builder()
+            .jenkinsUrl("https://Jenkins.com")
+            .auth(JenkinsAuthenticationDTO.builder().authType(JenkinsAuthType.USER_PASSWORD).build())
+            .build();
+    JenkinsArtifactDelegateRequest jenkinsArtifactDelegateRequest =
+        JenkinsArtifactDelegateRequest.builder()
+            .artifactPaths(Collections.singletonList("artifactPath"))
+            .jobName(jobName)
+            .jenkinsConnectorDTO(jenkinsConnectorDTO)
+            .useConnectorUrlForJobExecution(true)
+            .buildNumber("tag")
+            .queuedBuildUrl(queueItemUrlPart)
+            .captureEnvironmentVariable(true)
+            .build();
+    BuildDetails buildDetails = BuildDetails.Builder.aBuildDetails().withNumber("tag12").build();
+    queueItemUrlPart = jenkinsArtifactDelegateRequest.getQueuedBuildUrl();
+
+    JenkinsInternalConfig jenkinsInternalConfig =
+        JenkinsRequestResponseMapper.toJenkinsInternalConfig(jenkinsArtifactDelegateRequest);
+    jobName = URLEncoder.encode(jobName, StandardCharsets.UTF_8.toString());
+    when(buildWithDetails.getResult()).thenReturn(BuildResult.FAILURE);
+
+    doReturn(buildWithDetails).when(jenkinsArtifactTaskHandler).waitForJobExecutionToFinish(any(), any(), any(), any());
+    when(jenkinsBuild.getNumber()).thenReturn(20);
+    when(jenkinsRegistryUtils.getBuild(any(), any())).thenReturn(jenkinsBuild);
+
+    when(jenkinsBuild.details()).thenReturn(buildWithDetails);
+    ArtifactTaskExecutionResponse artifactTaskExecutionResponse =
+        jenkinsArtifactTaskHandler.pollTask(jenkinsArtifactDelegateRequest, logCallback);
+    assertThat(artifactTaskExecutionResponse.getJenkinsBuildTaskNGResponse().getExecutionStatus())
+        .isEqualTo(ExecutionStatus.FAILED);
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testPollTaskException() throws IOException, URISyntaxException {
+    String jobName = "FIS_Cleared_Derivatives_Core/NextGen/Build Custom Branch Images/keepbranch%2Fbo-development";
+    JenkinsConnectorDTO jenkinsConnectorDTO =
+        JenkinsConnectorDTO.builder()
+            .jenkinsUrl("https://Jenkins.com")
+            .auth(JenkinsAuthenticationDTO.builder().authType(JenkinsAuthType.USER_PASSWORD).build())
+            .build();
+    JenkinsArtifactDelegateRequest jenkinsArtifactDelegateRequest =
+        JenkinsArtifactDelegateRequest.builder()
+            .artifactPaths(Collections.singletonList("artifactPath"))
+            .jobName(jobName)
+            .jenkinsConnectorDTO(jenkinsConnectorDTO)
+            .useConnectorUrlForJobExecution(true)
+            .buildNumber("tag")
+            .queuedBuildUrl(queueItemUrlPart)
+            .captureEnvironmentVariable(true)
+            .build();
+    BuildDetails buildDetails = BuildDetails.Builder.aBuildDetails().withNumber("tag12").build();
+    queueItemUrlPart = jenkinsArtifactDelegateRequest.getQueuedBuildUrl();
+
+    JenkinsInternalConfig jenkinsInternalConfig =
+        JenkinsRequestResponseMapper.toJenkinsInternalConfig(jenkinsArtifactDelegateRequest);
+    jobName = URLEncoder.encode(jobName, StandardCharsets.UTF_8.toString());
+    when(buildWithDetails.getResult()).thenReturn(BuildResult.SUCCESS);
+    when(jenkinsBuild.getNumber()).thenReturn(20);
+    when(jenkinsRegistryUtils.getBuild(any(), any())).thenReturn(jenkinsBuild);
+    when(jenkinsBuild.details()).thenReturn(buildWithDetails);
+    ArtifactTaskExecutionResponse artifactTaskExecutionResponse =
+        jenkinsArtifactTaskHandler.pollTask(jenkinsArtifactDelegateRequest, logCallback);
+    assertThat(artifactTaskExecutionResponse.getJenkinsBuildTaskNGResponse().getExecutionStatus())
+        .isEqualTo(ExecutionStatus.FAILED);
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testPollTaskExceptionForEnvParam() throws IOException, URISyntaxException {
+    String jobName = "FIS_Cleared_Derivatives_Core/NextGen/Build Custom Branch Images/keepbranch%2Fbo-development";
+    JenkinsConnectorDTO jenkinsConnectorDTO =
+        JenkinsConnectorDTO.builder()
+            .jenkinsUrl("https://Jenkins.com")
+            .auth(JenkinsAuthenticationDTO.builder().authType(JenkinsAuthType.USER_PASSWORD).build())
+            .build();
+    JenkinsArtifactDelegateRequest jenkinsArtifactDelegateRequest =
+        JenkinsArtifactDelegateRequest.builder()
+            .artifactPaths(Collections.singletonList("artifactPath"))
+            .jobName(jobName)
+            .jenkinsConnectorDTO(jenkinsConnectorDTO)
+            .useConnectorUrlForJobExecution(true)
+            .buildNumber("tag")
+            .queuedBuildUrl(queueItemUrlPart)
+            .captureEnvironmentVariable(true)
+            .build();
+    BuildDetails buildDetails = BuildDetails.Builder.aBuildDetails().withNumber("tag12").build();
+    queueItemUrlPart = jenkinsArtifactDelegateRequest.getQueuedBuildUrl();
+
+    JenkinsInternalConfig jenkinsInternalConfig =
+        JenkinsRequestResponseMapper.toJenkinsInternalConfig(jenkinsArtifactDelegateRequest);
+    jobName = URLEncoder.encode(jobName, StandardCharsets.UTF_8.toString());
+    when(buildWithDetails.getResult()).thenReturn(BuildResult.SUCCESS);
+    when(jenkinsBuild.getNumber()).thenReturn(20);
+    when(jenkinsRegistryUtils.getBuild(any(), any())).thenReturn(jenkinsBuild);
+    when(jenkinsBuild.details()).thenReturn(buildWithDetails);
+    when(buildWithDetails.getParameters()).thenThrow(RuntimeException.class);
+    doReturn(buildWithDetails).when(jenkinsArtifactTaskHandler).waitForJobExecutionToFinish(any(), any(), any(), any());
+    ArtifactTaskExecutionResponse artifactTaskExecutionResponse =
+        jenkinsArtifactTaskHandler.pollTask(jenkinsArtifactDelegateRequest, logCallback);
+    assertThat(artifactTaskExecutionResponse.getJenkinsBuildTaskNGResponse().getExecutionStatus())
+        .isEqualTo(ExecutionStatus.SUCCESS);
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testPollTaskWingsException() throws IOException, URISyntaxException {
+    String jobName = "FIS_Cleared_Derivatives_Core/NextGen/Build Custom Branch Images/keepbranch%2Fbo-development";
+    JenkinsConnectorDTO jenkinsConnectorDTO =
+        JenkinsConnectorDTO.builder()
+            .jenkinsUrl("https://Jenkins.com")
+            .auth(JenkinsAuthenticationDTO.builder().authType(JenkinsAuthType.USER_PASSWORD).build())
+            .build();
+    JenkinsArtifactDelegateRequest jenkinsArtifactDelegateRequest =
+        JenkinsArtifactDelegateRequest.builder()
+            .artifactPaths(Collections.singletonList("artifactPath"))
+            .jobName(jobName)
+            .jenkinsConnectorDTO(jenkinsConnectorDTO)
+            .useConnectorUrlForJobExecution(true)
+            .buildNumber("tag")
+            .queuedBuildUrl(queueItemUrlPart)
+            .captureEnvironmentVariable(true)
+            .build();
+    BuildDetails buildDetails = BuildDetails.Builder.aBuildDetails().withNumber("tag12").build();
+    queueItemUrlPart = jenkinsArtifactDelegateRequest.getQueuedBuildUrl();
+
+    JenkinsInternalConfig jenkinsInternalConfig =
+        JenkinsRequestResponseMapper.toJenkinsInternalConfig(jenkinsArtifactDelegateRequest);
+    jobName = URLEncoder.encode(jobName, StandardCharsets.UTF_8.toString());
+    when(buildWithDetails.getResult()).thenThrow(RuntimeException.class);
+    when(jenkinsBuild.getNumber()).thenReturn(20);
+    when(jenkinsRegistryUtils.getBuild(any(), any())).thenReturn(jenkinsBuild);
+    when(jenkinsBuild.details()).thenReturn(buildWithDetails);
+    doReturn(buildWithDetails).when(jenkinsArtifactTaskHandler).waitForJobExecutionToFinish(any(), any(), any(), any());
+    ArtifactTaskExecutionResponse artifactTaskExecutionResponse =
+        jenkinsArtifactTaskHandler.pollTask(jenkinsArtifactDelegateRequest, logCallback);
+    assertThat(artifactTaskExecutionResponse.getJenkinsBuildTaskNGResponse().getExecutionStatus())
+        .isEqualTo(ExecutionStatus.FAILED);
   }
 }

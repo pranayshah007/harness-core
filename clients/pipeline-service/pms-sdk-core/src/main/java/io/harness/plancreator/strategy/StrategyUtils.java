@@ -7,9 +7,6 @@
 
 package io.harness.plancreator.strategy;
 
-import static io.harness.expression.common.ExpressionConstants.EXPR_END;
-import static io.harness.expression.common.ExpressionConstants.EXPR_END_ESC;
-import static io.harness.expression.common.ExpressionConstants.EXPR_START_ESC;
 import static io.harness.plancreator.strategy.StrategyConstants.ITEM;
 import static io.harness.plancreator.strategy.StrategyConstants.ITERATION;
 import static io.harness.plancreator.strategy.StrategyConstants.ITERATIONS;
@@ -25,6 +22,8 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.STEPS;
 import static io.harness.strategy.StrategyValidationUtils.STRATEGY_IDENTIFIER_POSTFIX_ESCAPED;
 
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
+import io.harness.expression.EngineExpressionEvaluator;
+import io.harness.expression.common.ExpressionMode;
 import io.harness.jackson.JsonNodeUtils;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
@@ -252,34 +251,9 @@ public class StrategyUtils {
 
   public String replaceExpressions(
       String jsonString, Map<String, String> combinations, int currentIteration, int totalIteration, String itemValue) {
-    Map<String, String> expressions = createExpressions(combinations, currentIteration, totalIteration, itemValue);
-    String result = jsonString;
-    for (Map.Entry<String, String> expression : expressions.entrySet()) {
-      result = result.replaceAll(expression.getKey(), expression.getValue());
-    }
-    return result;
-  }
-
-  // Todo: Replace with our expression engine after the change
-  public Map<String, String> createExpressions(
-      Map<String, String> combinations, int currentIteration, int totalIteration, String itemValue) {
-    Map<String, String> expressionsMap = new HashMap<>();
-    String matrixExpression = EXPR_START_ESC + "matrix.%s" + EXPR_END_ESC;
-    String strategyMatrixExpression = EXPR_START_ESC + "strategy.matrix.%s" + EXPR_END_ESC;
-    String repeatExpression = EXPR_START_ESC + "repeat.item" + EXPR_END_ESC;
-
-    for (Map.Entry<String, String> entry : combinations.entrySet()) {
-      expressionsMap.put(String.format(matrixExpression, entry.getKey()), entry.getValue());
-      expressionsMap.put(String.format(strategyMatrixExpression, entry.getKey()), entry.getValue());
-    }
-    expressionsMap.put(EXPR_START_ESC + "strategy.iteration" + EXPR_END_ESC, String.valueOf(currentIteration));
-    expressionsMap.put(EXPR_START_ESC + "strategy.iterations" + EXPR_END, String.valueOf(totalIteration));
-    expressionsMap.put(EXPR_START_ESC + "step.iteration" + EXPR_END_ESC, String.valueOf(currentIteration));
-    expressionsMap.put(EXPR_START_ESC + "step.iterations" + EXPR_END, String.valueOf(totalIteration));
-    expressionsMap.put(EXPR_START_ESC + "step.totalIterations" + EXPR_END, String.valueOf(totalIteration));
-
-    expressionsMap.put(repeatExpression, itemValue == null ? "" : itemValue);
-    return expressionsMap;
+    EngineExpressionEvaluator evaluator =
+        new StrategyExpressionEvaluator(combinations, currentIteration, totalIteration, itemValue);
+    return (String) evaluator.resolve(jsonString, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
   }
 
   /**
@@ -320,17 +294,7 @@ public class StrategyUtils {
       if (level.getStrategyMetadata().hasMatrixMetadata()) {
         // MatrixMapLocal can contain either a string as value or a json as value.
         Map<String, String> matrixMapLocal = level.getStrategyMetadata().getMatrixMetadata().getMatrixValuesMap();
-        Map<String, Object> objectMap = new HashMap<>();
-        for (Map.Entry<String, String> entry : matrixMapLocal.entrySet()) {
-          // We are trying to check if it is a valid json or not. If yes, then we add it as map inside our object
-          // else store it as string
-          try {
-            objectMap.put(entry.getKey(), JsonUtils.asMap(entry.getValue()));
-          } catch (Exception ex) {
-            objectMap.put(entry.getKey(), entry.getValue());
-          }
-        }
-        matrixValuesMap.putAll(objectMap);
+        matrixValuesMap.putAll(getMatrixMapFromCombinations(matrixMapLocal));
       }
       if (level.getStrategyMetadata().hasForMetadata()) {
         repeatValuesMap.put(ITEM, level.getStrategyMetadata().getForMetadata().getValue());
@@ -345,6 +309,20 @@ public class StrategyUtils {
     strategyObjectMap.put(REPEAT, repeatValuesMap);
 
     return strategyObjectMap;
+  }
+
+  public Map<String, Object> getMatrixMapFromCombinations(Map<String, String> combinationsMap) {
+    Map<String, Object> objectMap = new HashMap<>();
+    for (Map.Entry<String, String> entry : combinationsMap.entrySet()) {
+      // We are trying to check if it is a valid json or not. If yes, then we add it as map inside our object
+      // else store it as string
+      try {
+        objectMap.put(entry.getKey(), JsonUtils.asMap(entry.getValue()));
+      } catch (Exception ex) {
+        objectMap.put(entry.getKey(), entry.getValue());
+      }
+    }
+    return objectMap;
   }
 
   public AdviserObtainment getAdviserObtainmentsForParallelStepParent(

@@ -101,7 +101,6 @@ import software.wings.beans.WorkflowExecution;
 import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.beans.appmanifest.HelmChart;
 import software.wings.beans.appmanifest.ManifestSummary;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.deployment.DeploymentMetadata;
 import software.wings.beans.deployment.DeploymentMetadata.Include;
@@ -132,6 +131,7 @@ import software.wings.dl.WingsPersistence;
 import software.wings.helpers.ext.trigger.response.TriggerDeploymentNeededResponse;
 import software.wings.helpers.ext.trigger.response.TriggerResponse;
 import software.wings.infra.InfrastructureDefinition;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.scheduler.ScheduledTriggerJob;
 import software.wings.service.ArtifactStreamHelper;
 import software.wings.service.impl.AppLogContext;
@@ -165,6 +165,9 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import dev.morphia.FindAndModifyOptions;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -185,9 +188,6 @@ import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.mongodb.morphia.FindAndModifyOptions;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 import org.quartz.TriggerKey;
 
 @OwnedBy(CDC)
@@ -2515,6 +2515,48 @@ public class TriggerServiceImpl implements TriggerService {
     }
     if (envParamaterized) {
       validateAndAuthorizeEnvironment(trigger, existing, variables);
+    }
+  }
+
+  @Override
+  public void authorizeRead(Trigger trigger) {
+    WorkflowType workflowType = trigger.getWorkflowType();
+    try {
+      triggerAuthHandler.authorizeRead(trigger.getAppId(), trigger);
+    } catch (WingsException ex) {
+      throw new WingsException(
+          "User does not have read permission on " + (workflowType == PIPELINE ? "Pipeline" : "Workflow"), USER);
+    }
+  }
+  @Override
+  public void authorizeUpdate(Trigger trigger) {
+    WorkflowType workflowType = trigger.getWorkflowType();
+    try {
+      triggerAuthHandler.authorizeUpdate(trigger.getAppId(), trigger);
+    } catch (WingsException ex) {
+      throw new WingsException(
+          "User does not have update permission on " + (workflowType == PIPELINE ? "Pipeline" : "Workflow"), USER);
+    }
+  }
+
+  @Override
+  public void authorizeSave(Trigger trigger) {
+    WorkflowType workflowType = trigger.getWorkflowType();
+    try {
+      triggerAuthHandler.authorizeCreate(trigger.getAppId(), trigger);
+    } catch (WingsException ex) {
+      throw new WingsException(
+          "User does not have create permission on " + (workflowType == PIPELINE ? "Pipeline" : "Workflow"), USER);
+    }
+  }
+  @Override
+  public void authorizeDeletion(Trigger trigger) {
+    WorkflowType workflowType = trigger.getWorkflowType();
+    try {
+      triggerAuthHandler.authorizeDeletion(trigger.getAppId(), trigger);
+    } catch (WingsException ex) {
+      throw new WingsException(
+          "User does not have delete permission on " + (workflowType == PIPELINE ? "Pipeline" : "Workflow"), USER);
     }
   }
 

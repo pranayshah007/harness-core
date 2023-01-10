@@ -44,7 +44,6 @@ import software.wings.beans.Service;
 import software.wings.beans.Variable;
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.appmanifest.HelmChart;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.deployment.DeploymentMetadata;
 import software.wings.beans.deployment.WorkflowVariablesMetadata;
 import software.wings.graphql.datafetcher.MutationContext;
@@ -76,6 +75,7 @@ import software.wings.graphql.schema.type.QLWorkflowStageExecution.QLWorkflowSta
 import software.wings.graphql.schema.type.aggregation.deployment.QLDeploymentTag;
 import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
 import software.wings.infra.InfrastructureDefinition;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.security.ExecutableElementsFilter;
 import software.wings.security.PermissionAttribute;
 import software.wings.service.impl.AppLogContext;

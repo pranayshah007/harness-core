@@ -13,6 +13,7 @@ import static junit.framework.TestCase.assertEquals;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 
@@ -20,14 +21,13 @@ import io.harness.PipelineServiceTestBase;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
-import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity.InputSetEntityKeys;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType;
 import io.harness.pms.ngpipeline.inputset.service.InputSetValidationHelper;
 import io.harness.pms.ngpipeline.inputset.service.PMSInputSetService;
 import io.harness.pms.pipeline.PipelineEntity;
-import io.harness.pms.pipeline.service.PMSPipelineService;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.rule.Owner;
 import io.harness.spec.server.pipeline.v1.model.InputSetCreateRequestBody;
 import io.harness.spec.server.pipeline.v1.model.InputSetResponseBody;
@@ -59,8 +59,6 @@ public class InputSetsApiImplTest extends PipelineServiceTestBase {
   InputSetsApiImpl inputSetsApiImpl;
   @Mock PMSInputSetService pmsInputSetService;
   @Mock InputSetsApiUtils inputSetsApiUtils;
-  @Mock PMSPipelineService pipelineService;
-  @Mock GitSyncSdkService gitSyncSdkService;
   private static final String account = randomAlphabetic(10);
   private static final String org = randomAlphabetic(10);
   private static final String project = randomAlphabetic(10);
@@ -84,7 +82,7 @@ public class InputSetsApiImplTest extends PipelineServiceTestBase {
   @Before
   public void setUp() throws IOException {
     MockitoAnnotations.initMocks(this);
-    inputSetsApiImpl = new InputSetsApiImpl(pmsInputSetService, inputSetsApiUtils, pipelineService, gitSyncSdkService);
+    inputSetsApiImpl = new InputSetsApiImpl(pmsInputSetService, inputSetsApiUtils);
 
     String inputSetFilename = "inputSet1.yml";
     inputSetYaml = readFile(inputSetFilename);
@@ -123,17 +121,14 @@ public class InputSetsApiImplTest extends PipelineServiceTestBase {
   @Owner(developers = MANKRIT)
   @Category(UnitTests.class)
   public void testCreateInputSet() {
-    doReturn(pipelineYaml)
-        .when(inputSetsApiUtils)
-        .getPipelineYaml(any(), any(), any(), any(), any(), any(), any(), any());
-    doReturn(inputSetEntity).when(pmsInputSetService).create(any(), any(), any());
+    doReturn(inputSetEntity).when(pmsInputSetService).create(any(), anyBoolean());
     doReturn(inputSetResponseBody).when(inputSetsApiUtils).getInputSetResponse(any());
     InputSetCreateRequestBody inputSetCreateRequestBody = new InputSetCreateRequestBody();
     inputSetCreateRequestBody.setSlug(inputSet);
     inputSetCreateRequestBody.setName(inputSetName);
     inputSetCreateRequestBody.setInputSetYaml(inputSetYaml);
-    Response response =
-        inputSetsApiImpl.createInputSet(inputSetCreateRequestBody, pipeline, org, project, account, null, null);
+    doReturn(PipelineVersion.V0).when(inputSetsApiUtils).inputSetVersion(any(), any());
+    Response response = inputSetsApiImpl.createInputSet(inputSetCreateRequestBody, pipeline, org, project, account);
     InputSetResponseBody responseBody = (InputSetResponseBody) response.getEntity();
     assertEquals(responseBody.getInputSetYaml(), inputSetYaml);
     assertEquals(responseBody.getName(), inputSetName);
@@ -157,7 +152,7 @@ public class InputSetsApiImplTest extends PipelineServiceTestBase {
   public void testGetInputSet() {
     doReturn(Optional.of(inputSetEntity))
         .when(pmsInputSetService)
-        .get(account, org, project, pipeline, inputSet, false, null, null);
+        .get(account, org, project, pipeline, inputSet, false, null, null, true);
     doReturn(inputSetResponseBody).when(inputSetsApiUtils).getInputSetResponse(any());
     InputSetCreateRequestBody inputSetCreateRequestBody = new InputSetCreateRequestBody();
     inputSetCreateRequestBody.setSlug(inputSet);
@@ -176,18 +171,16 @@ public class InputSetsApiImplTest extends PipelineServiceTestBase {
   @Owner(developers = MANKRIT)
   @Category(UnitTests.class)
   public void testUpdateInputSet() {
-    doReturn(pipelineYaml)
-        .when(inputSetsApiUtils)
-        .getPipelineYaml(any(), any(), any(), any(), any(), any(), any(), any());
-    doReturn(inputSetEntity).when(pmsInputSetService).update(any(), any(), any(), any());
+    doReturn(inputSetEntity).when(pmsInputSetService).update(any(), any(), anyBoolean());
+    doReturn(PipelineVersion.V0).when(inputSetsApiUtils).inputSetVersion(any(), any());
     doReturn(inputSetResponseBody).when(inputSetsApiUtils).getInputSetResponse(any());
     InputSetUpdateRequestBody inputSetUpdateRequestBody = new InputSetUpdateRequestBody();
     inputSetUpdateRequestBody.setSlug(inputSet);
     inputSetUpdateRequestBody.setName(inputSetName);
     inputSetUpdateRequestBody.setInputSetYaml(inputSetYaml);
 
-    Response response = inputSetsApiImpl.updateInputSet(
-        inputSetUpdateRequestBody, pipeline, org, project, inputSet, account, null, null);
+    Response response =
+        inputSetsApiImpl.updateInputSet(inputSetUpdateRequestBody, pipeline, org, project, inputSet, account);
     InputSetResponseBody responseBody = (InputSetResponseBody) response.getEntity();
     assertEquals(responseBody.getInputSetYaml(), inputSetYaml);
     assertEquals(responseBody.getName(), inputSetName);

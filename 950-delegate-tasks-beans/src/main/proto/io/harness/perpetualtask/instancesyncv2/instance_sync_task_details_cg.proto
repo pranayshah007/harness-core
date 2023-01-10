@@ -15,6 +15,12 @@ message InstanceSyncTrackedDeploymentDetails {
   repeated CgDeploymentReleaseDetails deployment_details = 1;
   string perpetual_task_id = 2;
   string account_id = 3;
+  ResponseBatchConfig response_batch_config = 4;
+}
+
+message ResponseBatchConfig {
+  int32 instance_count = 1;
+  int32 release_count = 2;
 }
 
 message CgDeploymentReleaseDetails {

@@ -32,7 +32,6 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.azure.webapp.AzureWebAppStepHelper;
 import io.harness.cdng.expressions.CDExpressionResolver;
-import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.yaml.GithubStore;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
@@ -112,7 +111,6 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
   @Mock private SecretManagerClientService secretManagerClientService;
   @Mock private AzureWebAppStepHelper azureWebAppStepHelper;
   @Mock private AzureARMConfigDAL azureARMConfigDAL;
-  @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
   @Mock private AzureCommonHelper azureCommonHelper;
   @Mock private CDExpressionResolver cdExpressionResolver;
   @Captor ArgumentCaptor<List<EntityDetail>> captor;
@@ -136,7 +134,6 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
     doReturn(sshKeySpecDTO).when(gitConfigAuthenticationInfoHelper).getSSHKey(any(), any(), any(), any());
     List<EncryptedDataDetail> apiEncryptedDataDetails = new ArrayList<>();
     doReturn(apiEncryptedDataDetails).when(secretManagerClientService).getEncryptionDetails(any(), any());
-    doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), any());
   }
 
   @Test
@@ -197,10 +194,6 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
             .build();
     parameterFileBuilder.setStore(fileStoreConfigWrapper);
     templateFileBuilder.setStore(templateStore);
-    when(cdExpressionResolver.updateExpressions(azureHelperTest.getAmbiance(), fileStoreConfigWrapper.getSpec()))
-        .thenReturn(fileStoreConfigWrapper.getSpec());
-    when(cdExpressionResolver.updateExpressions(azureHelperTest.getAmbiance(), templateStore.getSpec()))
-        .thenReturn(templateStore.getSpec());
     stepParameters.setConfigurationParameters(AzureCreateARMResourceStepConfigurationParameters.builder()
                                                   .templateFile(templateFileBuilder)
                                                   .parameters(parameterFileBuilder)
@@ -238,8 +231,6 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
             .build();
     parameterFileBuilder.setStore(fileStoreConfigWrapper);
     templateFileBuilder.setStore(templateStore);
-    when(cdExpressionResolver.updateExpressions(azureHelperTest.getAmbiance(), templateStore.getSpec()))
-        .thenReturn(templateStore.getSpec());
 
     stepParameters.setConfigurationParameters(AzureCreateARMResourceStepConfigurationParameters.builder()
                                                   .templateFile(templateFileBuilder)
@@ -400,6 +391,14 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
     when(azureCommonHelper.getAzureEncryptionDetails(any(), any())).thenReturn(new ArrayList<>());
     AzureCreateARMResourcePassThroughData passData = AzureCreateARMResourcePassThroughData.builder().build();
     when(azureCommonHelper.getAzureCreatePassThroughData(any())).thenReturn(passData);
+    AppSettingsFile templateFile = AppSettingsFile.create("foobar");
+    AppSettingsFile parametersFile = AppSettingsFile.create("barbar");
+    when(azureWebAppStepHelper.fetchFileContentFromHarnessStore(
+             azureHelperTest.getAmbiance(), AZURE_TEMPLATE_SELECTOR, (HarnessStore) templateStore.getSpec()))
+        .thenReturn(templateFile);
+    when(azureWebAppStepHelper.fetchFileContentFromHarnessStore(
+             azureHelperTest.getAmbiance(), AZURE_PARAMETER_SELECTOR, (HarnessStore) fileStoreConfigWrapper.getSpec()))
+        .thenReturn(parametersFile);
 
     Mockito.mockStatic(StepUtils.class);
     when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
@@ -613,6 +612,8 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
 
     Class<ArrayList<TaskSelector>> delegateSelectors = (Class<ArrayList<TaskSelector>>) (Class) ArrayList.class;
     ArgumentCaptor<ArrayList<TaskSelector>> taskSelectorsArgumentCaptor = ArgumentCaptor.forClass(delegateSelectors);
+    when(cdExpressionResolver.renderExpression(any(), eq("template"))).thenReturn("template");
+    when(cdExpressionResolver.renderExpression(any(), eq("file"))).thenReturn("file");
     when(azureCommonHelper.getAzureEncryptionDetails(any(), any())).thenReturn(new ArrayList<>());
     when(azureCommonHelper.getAzureConnectorConfig(any(), any()))
         .thenReturn((AzureConnectorDTO) azureHelperTest.createAzureConnectorDTO().getConnectorConfig());
@@ -634,6 +635,7 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
     assertThat(taskNGParameters.getAzureARMTaskType()).isEqualTo(AzureARMTaskType.ARM_DEPLOYMENT);
     assertThat(taskDataArgumentCaptor.getValue().getTaskType()).isEqualTo(TaskType.AZURE_NG_ARM.name());
     assertThat(taskSelectorsArgumentCaptor.getValue().get(0).getSelector()).isEqualTo("create-d-selector-1");
+    verify(cdExpressionResolver, times(2)).renderExpression(any(), any());
   }
 
   @Test
@@ -656,6 +658,8 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
     StepElementParameters step = createStep("RG", templateStore, fileStoreConfigWrapper);
     GitFetchResponse response = getGitFetchResponseForParametersOnly();
     Mockito.mockStatic(StepUtils.class);
+    when(cdExpressionResolver.renderExpression(any(), eq("Inline"))).thenReturn("Inline");
+    when(cdExpressionResolver.renderExpression(any(), eq("file"))).thenReturn("file");
     when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
     ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
@@ -685,6 +689,7 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
     assertThat(taskNGParameters.getAzureARMTaskType()).isEqualTo(AzureARMTaskType.ARM_DEPLOYMENT);
     assertThat(taskDataArgumentCaptor.getValue().getTaskType()).isEqualTo(TaskType.AZURE_NG_ARM.name());
     assertThat(taskSelectorsArgumentCaptor.getValue().get(0).getSelector()).isEqualTo("create-d-selector-1");
+    verify(cdExpressionResolver, times(2)).renderExpression(any(), any());
   }
 
   @Test
@@ -715,6 +720,8 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
 
     Class<ArrayList<TaskSelector>> delegateSelectors = (Class<ArrayList<TaskSelector>>) (Class) ArrayList.class;
     ArgumentCaptor<ArrayList<TaskSelector>> taskSelectorsArgumentCaptor = ArgumentCaptor.forClass(delegateSelectors);
+    when(cdExpressionResolver.renderExpression(any(), eq("template"))).thenReturn("template");
+    when(cdExpressionResolver.renderExpression(any(), eq("file"))).thenReturn("file");
     when(azureCommonHelper.getAzureEncryptionDetails(any(), any())).thenReturn(new ArrayList<>());
     when(azureCommonHelper.getAzureConnectorConfig(any(), any()))
         .thenReturn((AzureConnectorDTO) azureHelperTest.createAzureConnectorDTO().getConnectorConfig());
@@ -736,6 +743,7 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
     assertThat(taskNGParameters.getAzureARMTaskType()).isEqualTo(AzureARMTaskType.ARM_DEPLOYMENT);
     assertThat(taskDataArgumentCaptor.getValue().getTaskType()).isEqualTo(TaskType.AZURE_NG_ARM.name());
     assertThat(taskSelectorsArgumentCaptor.getValue().get(0).getSelector()).isEqualTo("create-d-selector-1");
+    verify(cdExpressionResolver, times(2)).renderExpression(any(), any());
   }
 
   @Test
@@ -760,6 +768,8 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
     StepElementParameters step = createStep("MNG", templateStore, fileStoreConfigWrapper);
     GitFetchResponse response = getGitFetchResponse();
     Mockito.mockStatic(StepUtils.class);
+    when(cdExpressionResolver.renderExpression(any(), eq("template"))).thenReturn("template");
+    when(cdExpressionResolver.renderExpression(any(), eq("file"))).thenReturn("file");
     when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
     ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
@@ -787,6 +797,7 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
     assertThat(taskNGParameters.getAzureARMTaskType()).isEqualTo(AzureARMTaskType.ARM_DEPLOYMENT);
     assertThat(taskDataArgumentCaptor.getValue().getTaskType()).isEqualTo(TaskType.AZURE_NG_ARM.name());
     assertThat(taskSelectorsArgumentCaptor.getValue().get(0).getSelector()).isEqualTo("create-d-selector-1");
+    verify(cdExpressionResolver, times(2)).renderExpression(any(), any());
   }
 
   @Test
@@ -900,6 +911,8 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
 
     Class<ArrayList<TaskSelector>> delegateSelectors = (Class<ArrayList<TaskSelector>>) (Class) ArrayList.class;
     ArgumentCaptor<ArrayList<TaskSelector>> taskSelectorsArgumentCaptor = ArgumentCaptor.forClass(delegateSelectors);
+    when(cdExpressionResolver.renderExpression(any(), eq("template"))).thenReturn("template");
+    when(cdExpressionResolver.renderExpression(any(), eq("file"))).thenReturn("file");
     when(azureCommonHelper.getAzureEncryptionDetails(any(), any())).thenReturn(new ArrayList<>());
     when(azureCommonHelper.getAzureConnectorConfig(any(), any()))
         .thenReturn((AzureConnectorDTO) azureHelperTest.createAzureConnectorDTO().getConnectorConfig());
@@ -921,6 +934,7 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
     assertThat(taskNGParameters.getAzureARMTaskType()).isEqualTo(AzureARMTaskType.ARM_DEPLOYMENT);
     assertThat(taskDataArgumentCaptor.getValue().getTaskType()).isEqualTo(TaskType.AZURE_NG_ARM.name());
     assertThat(taskSelectorsArgumentCaptor.getValue().get(0).getSelector()).isEqualTo("create-d-selector-1");
+    verify(cdExpressionResolver, times(2)).renderExpression(any(), any());
   }
 
   @Test

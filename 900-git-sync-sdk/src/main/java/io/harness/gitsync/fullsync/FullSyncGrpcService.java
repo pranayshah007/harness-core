@@ -12,8 +12,8 @@ import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 
 import static java.util.stream.Collectors.toCollection;
 
-import io.harness.AuthorizationServiceHeader;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.exception.ExceptionUtils;
 import io.harness.gitsync.FileChanges;
 import io.harness.gitsync.FullSyncChangeSet;

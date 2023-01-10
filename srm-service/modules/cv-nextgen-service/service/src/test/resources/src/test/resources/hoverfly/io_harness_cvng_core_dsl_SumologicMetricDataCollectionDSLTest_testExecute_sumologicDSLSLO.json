@@ -1,0 +1,169 @@
+{
+  "data": {
+    "pairs": [
+      {
+        "request": {
+          "path": [
+            {
+              "matcher": "exact",
+              "value": "/api/v1/metrics/results"
+            }
+          ],
+          "method": [
+            {
+              "matcher": "exact",
+              "value": "POST"
+            }
+          ],
+          "destination": [
+            {
+              "matcher": "exact",
+              "value": "api.in.sumologic.com"
+            }
+          ],
+          "scheme": [
+            {
+              "matcher": "exact",
+              "value": "https"
+            }
+          ],
+          "body": [
+            {
+              "matcher": "json",
+              "value": "{\n    \"query\": \"query\": [{\"query\":\"metric=Mem_UsedPercent | avg | quantize to 1m using avg\"}],\n    \"startTime\":1671102931000,\n    \"endTime\":1671103231000\n}"
+            }
+          ]
+        },
+        "response": {
+          "status": 400,
+          "body": "{\n  \"status\" : 400,\n  \"id\" : \"AB0KG-AUEZG-BGW8E\",\n  \"code\" : \"service.argument.invalid\",\n  \"message\" : \"The request body you've provided is invalid. The value for field 'query' is not of type 'ArrayList'.\"\n}",
+          "encodedBody": false,
+          "headers": {
+            "Connection": [
+              "keep-alive"
+            ],
+            "Content-Length": [
+              "207"
+            ],
+            "Content-Type": [
+              "application/json"
+            ],
+            "Date": [
+              "Fri, 23 Dec 2022 03:18:25 GMT"
+            ],
+            "Expires": [
+              "Thu, 01 Jan 1970 00:00:00 GMT"
+            ],
+            "Hoverfly": [
+              "Was-Here"
+            ],
+            "Set-Cookie": [
+              "AWSALB=RrbREHcP253t3FM9XRJOPh8ZqtMtsCbd0yQNJGJ6njMlNheOnS1xKfGbOEeIpQAQ40ylqxvl5vIb08q/XdSrejWcwU1MS6FS0C0RfftwwvWo5jUJBThRbLQF+4yk; Expires=Fri, 30 Dec 2022 03:18:25 GMT; Path=/",
+              "AWSALBCORS=RrbREHcP253t3FM9XRJOPh8ZqtMtsCbd0yQNJGJ6njMlNheOnS1xKfGbOEeIpQAQ40ylqxvl5vIb08q/XdSrejWcwU1MS6FS0C0RfftwwvWo5jUJBThRbLQF+4yk; Expires=Fri, 30 Dec 2022 03:18:25 GMT; Path=/; SameSite=None; Secure",
+              "SUMOAPIID=node014u3dxqm1h76k4lmj5eca8i4168787.node0; Path=/; Secure; HttpOnly"
+            ],
+            "Strict-Transport-Security": [
+              "max-age=15552000"
+            ],
+            "X-Content-Type-Options": [
+              "nosniff"
+            ],
+            "X-Frame-Options": [
+              "DENY"
+            ],
+            "X-Xss-Protection": [
+              "1; mode=block"
+            ]
+          },
+          "templated": false
+        }
+      },
+      {
+        "request": {
+          "path": [
+            {
+              "matcher": "exact",
+              "value": "/api/v1/metrics/results"
+            }
+          ],
+          "method": [
+            {
+              "matcher": "exact",
+              "value": "POST"
+            }
+          ],
+          "destination": [
+            {
+              "matcher": "exact",
+              "value": "api.in.sumologic.com"
+            }
+          ],
+          "scheme": [
+            {
+              "matcher": "exact",
+              "value": "https"
+            }
+          ],
+          "body": [
+            {
+              "matcher": "json",
+              "value": "{\n    \"query\": [{\"query\":\"metric=Mem_UsedPercent | avg | quantize to 1m using avg\"}],\n    \"startTime\":1671102931000,\n    \"endTime\":1671103231000\n}"
+            }
+          ]
+        },
+        "response": {
+          "status": 200,
+          "body": "{\"error\":false,\"errorMessage\":null,\"errorInstanceId\":null,\"errorKey\":null,\"keyedErrors\":[],\"response\":[{\"rowId\":\"\",\"results\":[{\"metric\":{\"dimensions\":[{\"key\":\"metric\",\"value\":\"avg\"}],\"algoId\":1},\"horAggs\":{\"min\":11.887580561652495,\"max\":11.947571916935459,\"avg\":11.912316229515529,\"sum\":59.56158114757764,\"count\":5,\"latest\":11.894973040846411},\"datapoints\":{\"timestamp\":[1671102960000,1671103020000,1671103080000,1671103140000,1671103200000],\"value\":[11.947571916935459,11.932826052802167,11.898629575341108,11.887580561652495,11.894973040846411],\"outlierParams\":[{\"anomalyScore\":0.0,\"baseline\":0.0,\"unit\":0.0,\"lowerBound\":0.0,\"upperBound\":0.0,\"isOutlier\":false,\"outlier\":false},{\"anomalyScore\":0.0,\"baseline\":0.0,\"unit\":0.0,\"lowerBound\":0.0,\"upperBound\":0.0,\"isOutlier\":false,\"outlier\":false},{\"anomalyScore\":0.0,\"baseline\":0.0,\"unit\":0.0,\"lowerBound\":0.0,\"upperBound\":0.0,\"isOutlier\":false,\"outlier\":false},{\"anomalyScore\":0.0,\"baseline\":0.0,\"unit\":0.0,\"lowerBound\":0.0,\"upperBound\":0.0,\"isOutlier\":false,\"outlier\":false},{\"anomalyScore\":0.0,\"baseline\":0.0,\"unit\":0.0,\"lowerBound\":0.0,\"upperBound\":0.0,\"isOutlier\":false,\"outlier\":false}],\"max\":[11.947571916935459,11.932826052802167,11.898629575341108,11.887580561652495,11.894973040846411],\"min\":[11.947571916935459,11.932826052802167,11.898629575341108,11.887580561652495,11.894973040846411],\"avg\":[11.947571916935459,11.932826052802167,11.898629575341108,11.887580561652495,11.894973040846411],\"count\":[1,1,1,1,1],\"isFilled\":[false,false,false,false,false]}}]}],\"queryInfo\":{\"startTime\":1671102960000,\"endTime\":1671103260000,\"desiredQuantizationInSecs\":{\"empty\":false,\"defined\":true},\"actualQuantizationInSecs\":60,\"sessionIdStr\":\"\"}}",
+          "encodedBody": false,
+          "headers": {
+            "Connection": [
+              "keep-alive"
+            ],
+            "Content-Type": [
+              "application/json;charset=utf-8"
+            ],
+            "Date": [
+              "Fri, 23 Dec 2022 03:18:53 GMT"
+            ],
+            "Expires": [
+              "Thu, 01 Jan 1970 00:00:00 GMT"
+            ],
+            "Hoverfly": [
+              "Was-Here"
+            ],
+            "Set-Cookie": [
+              "AWSALB=ex3a3PR+UjTXx8Z+maoY1GvGkZwCMOiNKgO6isZ1SOTXThJW/0t4X6KjsF/7R3QIe5yaze8g2bZkFAJevDrbW8ea62JWn95OGP8FgTdBgE3hJvDpMiPThTV0qN0l; Expires=Fri, 30 Dec 2022 03:18:52 GMT; Path=/",
+              "AWSALBCORS=ex3a3PR+UjTXx8Z+maoY1GvGkZwCMOiNKgO6isZ1SOTXThJW/0t4X6KjsF/7R3QIe5yaze8g2bZkFAJevDrbW8ea62JWn95OGP8FgTdBgE3hJvDpMiPThTV0qN0l; Expires=Fri, 30 Dec 2022 03:18:52 GMT; Path=/; SameSite=None; Secure",
+              "SUMOAPIID=node0ehp9uh69hszkmnr91n26k7cx168577.node0; Path=/; Secure; HttpOnly"
+            ],
+            "Strict-Transport-Security": [
+              "max-age=15552000"
+            ],
+            "Vary": [
+              "Accept-Encoding, User-Agent"
+            ],
+            "X-Content-Type-Options": [
+              "nosniff"
+            ],
+            "X-Frame-Options": [
+              "DENY"
+            ],
+            "X-Xss-Protection": [
+              "1; mode=block"
+            ]
+          },
+          "templated": false
+        }
+      }
+    ],
+    "globalActions": {
+      "delays": [],
+      "delaysLogNormal": []
+    }
+  },
+  "meta": {
+    "schemaVersion": "v5",
+    "hoverflyVersion": "v1.4.0",
+    "timeExported": "2022-12-23T08:49:09+05:30"
+  }
+}

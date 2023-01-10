@@ -10,15 +10,18 @@ package io.harness.ngmigration.service.step;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepInfo;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepNode;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsParameterField;
+import io.harness.cdng.jenkins.jenkinsstep.JenkinsParameterFieldType;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 
+import software.wings.beans.GraphNode;
+import software.wings.ngmigration.CgEntityId;
 import software.wings.sm.State;
 import software.wings.sm.states.JenkinsState;
-import software.wings.yaml.workflow.StepYaml;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,12 +30,12 @@ import java.util.stream.Collectors;
 
 public class JenkinsStepMapperImpl implements StepMapper {
   @Override
-  public String getStepType(StepYaml stepYaml) {
+  public String getStepType(GraphNode stepYaml) {
     return StepSpecTypeConstants.JENKINS_BUILD;
   }
 
   @Override
-  public State getState(StepYaml stepYaml) {
+  public State getState(GraphNode stepYaml) {
     Map<String, Object> properties = StepMapper.super.getProperties(stepYaml);
     JenkinsState state = new JenkinsState(stepYaml.getName());
     state.parseProperties(properties);
@@ -40,10 +43,10 @@ public class JenkinsStepMapperImpl implements StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(StepYaml stepYaml) {
-    JenkinsState state = (JenkinsState) getState(stepYaml);
+  public AbstractStepNode getSpec(Map<CgEntityId, NGYamlFile> migratedEntities, GraphNode graphNode) {
+    JenkinsState state = (JenkinsState) getState(graphNode);
     JenkinsBuildStepNode stepNode = new JenkinsBuildStepNode();
-    baseSetup(stepYaml, stepNode);
+    baseSetup(graphNode, stepNode);
 
     List<JenkinsParameterField> jobParams = new ArrayList<>();
     if (EmptyPredicate.isNotEmpty(state.getJobParameters())) {
@@ -53,6 +56,7 @@ public class JenkinsStepMapperImpl implements StepMapper {
                           -> JenkinsParameterField.builder()
                                  .name(param.getKey())
                                  .value(ParameterField.createValueField(param.getValue()))
+                                 .type(ParameterField.createValueField(JenkinsParameterFieldType.STRING))
                                  .build())
                       .collect(Collectors.toList());
     }
@@ -72,7 +76,7 @@ public class JenkinsStepMapperImpl implements StepMapper {
   }
 
   @Override
-  public boolean areSimilar(StepYaml stepYaml1, StepYaml stepYaml2) {
+  public boolean areSimilar(GraphNode stepYaml1, GraphNode stepYaml2) {
     // We can parameterize almost everything in Jenkins step. So customers could templatize
     return true;
   }

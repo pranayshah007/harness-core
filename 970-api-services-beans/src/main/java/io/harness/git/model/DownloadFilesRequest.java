@@ -18,4 +18,5 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 public class DownloadFilesRequest extends FetchFilesByPathRequest {
   private String destinationDirectory;
+  private boolean trackCommitReference;
 }

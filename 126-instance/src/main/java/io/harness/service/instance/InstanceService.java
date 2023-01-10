@@ -78,7 +78,7 @@ public interface InstanceService {
 
   AggregationResults<InstancesByBuildId> getActiveInstancesByServiceIdEnvIdAndBuildIds(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String serviceId, String envId, List<String> buildIds,
-      long timestampInMs, int limit);
+      long timestampInMs, int limit, String infraId, String clusterId, String pipelineExecutionId);
   List<Instance> getActiveInstanceDetails(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String serviceId, String envId, String infraId, String clusterIdentifier, String pipelineExecutionId,
       String buildId, int limit);
@@ -97,4 +97,10 @@ public interface InstanceService {
       String accountId, String orgId, String projectId, long startTS, long endTS);
 
   long countDistinctActiveServicesDeployedInInterval(String accountId, long startTS, long endTS);
+
+  void deleteForAgent(@NotEmpty String accountIdentifier, @NotEmpty String orgIdentifier,
+      @NotEmpty String projectIdentifier, @NotEmpty String agentIdentifier);
+
+  List<InstanceDTO> getActiveInstancesByServiceId(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String serviceIdentifier, String agentIdentifier);
 }

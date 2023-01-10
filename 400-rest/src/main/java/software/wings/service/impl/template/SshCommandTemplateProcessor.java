@@ -62,12 +62,12 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import de.danielbechler.diff.ObjectDifferBuilder;
 import de.danielbechler.diff.node.DiffNode;
+import dev.morphia.query.Query;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
 
 @Singleton
 @Slf4j

@@ -7,11 +7,14 @@
 
 package io.harness.cvng.notification.entities;
 
+import io.harness.cvng.notification.beans.ErrorTrackingEventStatus;
+import io.harness.cvng.notification.beans.ErrorTrackingEventType;
 import io.harness.cvng.notification.beans.MonitoredServiceChangeEventType;
 import io.harness.cvng.notification.beans.NotificationRuleConditionType;
 import io.harness.cvng.notification.beans.NotificationRuleType;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import dev.morphia.query.UpdateOperations;
 import java.util.List;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -19,7 +22,6 @@ import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @JsonTypeName("MONITORED_SERVICE")
 @Data
@@ -61,6 +63,14 @@ public class MonitoredServiceNotificationRule extends NotificationRule {
   public static class MonitoredServiceChangeObservedCondition extends MonitoredServiceNotificationRuleCondition {
     public final NotificationRuleConditionType type = NotificationRuleConditionType.CHANGE_OBSERVED;
     @NonNull List<MonitoredServiceChangeEventType> changeEventTypes;
+  }
+
+  @SuperBuilder
+  @Data
+  public static class MonitoredServiceCodeErrorCondition extends MonitoredServiceNotificationRuleCondition {
+    public final NotificationRuleConditionType type = NotificationRuleConditionType.CODE_ERRORS;
+    @NonNull List<ErrorTrackingEventType> errorTrackingEventTypes;
+    @NonNull List<ErrorTrackingEventStatus> errorTrackingEventStatus;
   }
 
   public static class MonitoredServiceNotificationRuleUpdatableEntity

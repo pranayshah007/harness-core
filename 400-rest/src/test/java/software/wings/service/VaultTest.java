@@ -133,6 +133,7 @@ import software.wings.settings.SettingVariableTypes;
 import com.google.common.collect.Lists;
 import com.google.common.io.ByteStreams;
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -164,7 +165,6 @@ import org.junit.runners.Parameterized.Parameters;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mongodb.morphia.query.Query;
 
 /**
  * Created by rsingh on 11/3/17.
@@ -1828,7 +1828,7 @@ public class VaultTest extends WingsBaseTest {
             .build();
 
     // The above created secret text should be returned by the list secrets call.
-    PageResponse<EncryptedData> response = secretManager.listSecrets(accountId, pageRequest, null, null, true);
+    PageResponse<EncryptedData> response = secretManager.listSecrets(accountId, pageRequest, null, null, true, false);
     assertThat(response.getResponse()).isNotEmpty();
     assertThat(response.getResponse().size()).isEqualTo(1);
     EncryptedData encryptedData = response.getResponse().get(0);
@@ -1841,7 +1841,7 @@ public class VaultTest extends WingsBaseTest {
     wingsPersistence.save(account);
 
     // The old secret should still be returned by the list secrets call.
-    response = secretManager.listSecrets(accountId, pageRequest, null, null, true);
+    response = secretManager.listSecrets(accountId, pageRequest, null, null, true, false);
     assertThat(response.getResponse()).isNotEmpty();
     assertThat(response.getResponse().size()).isEqualTo(1);
 
@@ -2257,7 +2257,7 @@ public class VaultTest extends WingsBaseTest {
   private Thread startTransitionListener() throws IllegalAccessException {
     transitionEventListener = new SecretMigrationEventListener(kmsTransitionConsumer);
     FieldUtils.writeField(transitionEventListener, "timer", new TimerScheduledExecutorService(), true);
-    FieldUtils.writeField(transitionEventListener, "queueController", new ConfigurationController(1), true);
+    FieldUtils.writeField(transitionEventListener, "queueController", new ConfigurationController(), true);
     FieldUtils.writeField(transitionEventListener, "queueConsumer", transitionKmsQueue, true);
     FieldUtils.writeField(transitionEventListener, "secretService", secretService, true);
 

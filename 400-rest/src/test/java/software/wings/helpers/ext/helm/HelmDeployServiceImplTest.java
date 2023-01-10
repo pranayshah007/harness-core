@@ -10,6 +10,7 @@ package software.wings.helpers.ext.helm;
 import static io.harness.annotations.dev.HarnessModule._930_DELEGATE_TASKS;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.filesystem.FileIo.deleteDirectoryAndItsContentIfExists;
 import static io.harness.helm.HelmCommandType.RELEASE_HISTORY;
 import static io.harness.helm.HelmSubCommandType.TEMPLATE;
 import static io.harness.k8s.model.HelmVersion.V2;
@@ -19,6 +20,7 @@ import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.ANSHUL;
+import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 import static io.harness.rule.OwnerRule.TMACARI;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
@@ -1196,7 +1198,8 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
             .sourceRepoConfig(K8sDelegateManifestConfig.builder().manifestStoreTypes(StoreType.Local).build())
             .build();
 
-    assertThatThrownBy(() -> spyHelmDeployService.fetchRepo(helmInstallCommandRequest, LONG_TIMEOUT_INTERVAL))
+    assertThatThrownBy(
+        () -> spyHelmDeployService.fetchRepo(helmInstallCommandRequest, LONG_TIMEOUT_INTERVAL, logCallback))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageContaining("Unsupported store type");
   }
@@ -1208,7 +1211,7 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
             .build();
     doNothing().when(spyHelmDeployService).fetchSourceRepo(helmInstallCommandRequest);
 
-    spyHelmDeployService.fetchRepo(helmInstallCommandRequest, LONG_TIMEOUT_INTERVAL);
+    spyHelmDeployService.fetchRepo(helmInstallCommandRequest, LONG_TIMEOUT_INTERVAL, logCallback);
 
     verify(spyHelmDeployService, times(1)).fetchSourceRepo(helmInstallCommandRequest);
   }
@@ -1220,7 +1223,7 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
             .build();
     doNothing().when(spyHelmDeployService).fetchChartRepo(helmInstallCommandRequest, LONG_TIMEOUT_INTERVAL);
 
-    spyHelmDeployService.fetchRepo(helmInstallCommandRequest, LONG_TIMEOUT_INTERVAL);
+    spyHelmDeployService.fetchRepo(helmInstallCommandRequest, LONG_TIMEOUT_INTERVAL, logCallback);
 
     verify(spyHelmDeployService, times(1)).fetchChartRepo(helmInstallCommandRequest, LONG_TIMEOUT_INTERVAL);
   }
@@ -1773,17 +1776,17 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
                                   .build())
             .build();
 
-    assertThatThrownBy(() -> helmDeployService.fetchCustomSourceManifest(request))
+    assertThatThrownBy(() -> helmDeployService.fetchCustomSourceManifest(request, logCallback))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageContaining("Can not use store type: CUSTOM, with feature flag off");
 
     request.setRepoConfig(null);
-    assertThatThrownBy(() -> helmDeployService.fetchCustomSourceManifest(request))
+    assertThatThrownBy(() -> helmDeployService.fetchCustomSourceManifest(request, logCallback))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageContaining("Source Config can not be null");
 
     request.setRepoConfig(K8sDelegateManifestConfig.builder().customManifestEnabled(true).build());
-    assertThatThrownBy(() -> helmDeployService.fetchCustomSourceManifest(request))
+    assertThatThrownBy(() -> helmDeployService.fetchCustomSourceManifest(request, logCallback))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageContaining("Custom Manifest Source can not be null");
   }
@@ -1816,7 +1819,7 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
         .when(customManifestFetchTaskHelper)
         .downloadAndUnzipCustomSourceManifestFiles(anyString(), anyString(), anyString());
 
-    helmDeployService.fetchCustomSourceManifest(request);
+    helmDeployService.fetchCustomSourceManifest(request, logCallback);
 
     verify(customManifestFetchTaskHelper, times(1))
         .downloadAndUnzipCustomSourceManifestFiles(anyString(), anyString(), anyString());
@@ -1825,5 +1828,44 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
     assertThat(workingDir.list()).hasSize(1);
     assertThat(workingDir.list()).contains("test.yaml");
     FileIo.deleteDirectoryAndItsContentIfExists(workingDirPath);
+  }
+
+  @Test
+  @Owner(developers = NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void testFetchCustomSourceException() throws Exception {
+    final String manifestDirPath = "./repository/helm/source/ACTIVITY_ID/";
+    try {
+      HelmInstallCommandRequest request =
+          HelmInstallCommandRequest.builder()
+              .executionLogCallback(executionLogCallback)
+              .activityId("ACTIVITY_ID")
+              .accountId("ACCOUNT_ID")
+              .sourceRepoConfig(K8sDelegateManifestConfig.builder()
+                                    .customManifestEnabled(true)
+                                    .customManifestSource(CustomManifestSource.builder()
+                                                              .script("script")
+                                                              .filePaths(singletonList("file1/test.yaml"))
+                                                              .zippedManifestFileId("fileId")
+                                                              .build())
+                                    .build())
+              .build();
+
+      FileIo.createDirectoryIfDoesNotExist(manifestDirPath);
+      FileIo.writeFile(manifestDirPath + "/test.yaml", new byte[] {});
+
+      doNothing()
+          .when(customManifestFetchTaskHelper)
+          .downloadAndUnzipCustomSourceManifestFiles(anyString(), anyString(), anyString());
+
+      assertThatThrownBy(() -> helmDeployService.fetchCustomSourceManifest(request, logCallback))
+          .isInstanceOf(InvalidRequestException.class)
+          .hasMessage(
+              "Provided helm chart path point to a file inside the helm chart. Path to the helm chart directory should be provided instead")
+          .hasRootCauseInstanceOf(IOException.class);
+
+    } finally {
+      deleteDirectoryAndItsContentIfExists(manifestDirPath.toString());
+    }
   }
 }

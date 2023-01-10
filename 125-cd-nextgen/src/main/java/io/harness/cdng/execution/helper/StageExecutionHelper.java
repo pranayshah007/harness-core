@@ -30,6 +30,7 @@ import io.harness.cdng.execution.StageExecutionInfo;
 import io.harness.cdng.execution.StageExecutionInfo.StageExecutionInfoBuilder;
 import io.harness.cdng.execution.azure.webapps.AzureWebAppsStageExecutionDetails;
 import io.harness.cdng.execution.service.StageExecutionInfoService;
+import io.harness.cdng.execution.spot.elastigroup.ElastigroupStageExecutionDetails;
 import io.harness.cdng.execution.sshwinrm.SshWinRmStageExecutionDetails;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.InstanceDeploymentInfo;
@@ -83,6 +84,23 @@ public class StageExecutionHelper {
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private InstanceDeploymentInfoService instanceDeploymentInfoService;
 
+  public boolean shouldSaveStageExecutionInfo(String infrastructureKind) {
+    return InfrastructureKind.PDC.equals(infrastructureKind)
+        || InfrastructureKind.SSH_WINRM_AZURE.equals(infrastructureKind)
+        || InfrastructureKind.SSH_WINRM_AWS.equals(infrastructureKind)
+        || InfrastructureKind.AZURE_WEB_APP.equals(infrastructureKind)
+        || InfrastructureKind.CUSTOM_DEPLOYMENT.equals(infrastructureKind)
+        || InfrastructureKind.ELASTIGROUP.equals(infrastructureKind);
+  }
+
+  public boolean isRollbackArtifactRequiredPerInfrastructure(String infrastructureKind) {
+    return isSshWinRmInfrastructureKind(infrastructureKind)
+        || InfrastructureKind.CUSTOM_DEPLOYMENT.equals(infrastructureKind);
+  }
+  public boolean isInfrastructureSupportCommands(String infrastructureKind) {
+    return isSshWinRmInfrastructureKind(infrastructureKind)
+        || InfrastructureKind.CUSTOM_DEPLOYMENT.equals(infrastructureKind);
+  }
   public boolean isSshWinRmInfrastructureKind(String infrastructureKind) {
     return InfrastructureKind.PDC.equals(infrastructureKind)
         || InfrastructureKind.SSH_WINRM_AZURE.equals(infrastructureKind)
@@ -290,6 +308,9 @@ public class StageExecutionHelper {
       Optional<ArtifactOutcome> artifactOutcome = cdStepHelper.resolveArtifactsOutcome(ambiance);
       List<ArtifactOutcome> artifactsOutcome = artifactOutcome.map(Lists::newArrayList).orElse(new ArrayList<>());
       return Optional.of(CustomDeploymentExecutionDetails.builder().artifactsOutcome(artifactsOutcome).build());
+    } else if (InfrastructureKind.ELASTIGROUP.equals(infrastructureKind)) {
+      return Optional.of(
+          ElastigroupStageExecutionDetails.builder().pipelineExecutionId(ambiance.getPlanExecutionId()).build());
     }
     Optional<ArtifactOutcome> artifactOutcome = cdStepHelper.resolveArtifactsOutcome(ambiance);
     List<ArtifactOutcome> artifactsOutcome = artifactOutcome.map(Lists::newArrayList).orElse(new ArrayList<>());

@@ -154,13 +154,35 @@ def get_csv_paths(jsonData):
     return list(unique_cur_paths)
 
 def send_event_for_processing(unique_cur_paths, jsonData):
+    active_months_in_gcs_bucket = {}
+    for path in unique_cur_paths:
+        ps = path.split("/")
+        accountIdInPath = ps[0]
+        path_length = len(ps)
+        if path_length in [3, 4]:
+            monthfolder = ps[-1]  # last folder in path
+        elif path_length == 5:
+            monthfolder = ps[-1]  # last folder in path
+        report_year = monthfolder.split("-")[0][:4]
+        report_month = monthfolder.split("-")[0][4:6]
+        if accountIdInPath in active_months_in_gcs_bucket:
+            active_months_in_gcs_bucket[accountIdInPath].append(f"{report_year}-{report_month}-01")
+        else:
+            active_months_in_gcs_bucket[accountIdInPath] = [f"{report_year}-{report_month}-01"]
+    # sending a single event for triggering historical update of each accountId.
+    processed_accounts = set()
     for path in unique_cur_paths:
         event_data = {}
         sp = path.split('/')
         event_data["accountId"] = sp[0]
         event_data["path"] = path
         event_data["bucket"] = jsonData["bucket"]
+        if event_data["accountId"] not in processed_accounts:
+            event_data["triggerHistoricalCostUpdateInPreferredCurrency"] = True
+            event_data["disableHistoricalUpdateForMonths"] = active_months_in_gcs_bucket[event_data["accountId"]]
         send_event(event_data)
+        processed_accounts.add(event_data["accountId"])
+
 
 def send_event(event_data):
     message_json = json.dumps({
