@@ -721,6 +721,14 @@ permissions:
       - account
       - organization
       - project
+  - identifier: srm_admin
+      name: Give admin access to user
+      status: ACTIVE
+      includeInAllRoles: false
+      allowedScopeLevels:
+        - account
+        - organization
+        - project
   - identifier: chi_slo_view
     name: View SLO
     status: ACTIVE

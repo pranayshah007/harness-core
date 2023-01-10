@@ -45,6 +45,8 @@ public class WebhookServiceImpl implements WebhookService {
 
   @Inject AccessControlClient accessControlClient;
 
+  public static final String SRM_ADMIN = "srm_admin";
+
   @Override
   public void createPagerdutyWebhook(
       MonitoredServiceParams monitoredServiceParams, String token, String webhookId, String changeSourceId) {
@@ -131,7 +133,8 @@ public class WebhookServiceImpl implements WebhookService {
       }
     }
     if (hasApiKey) {
-      accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier), )
+      accessControlClient.hasAccess(
+          ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier), null, SRM_ADMIN);
     }
 
     throw new InvalidRequestException(

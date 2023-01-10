@@ -11,6 +11,7 @@ import io.harness.cvng.core.beans.CustomChangeWebhookEvent;
 import io.harness.cvng.core.beans.PagerDutyWebhookEvent;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.services.api.WebhookService;
+import io.harness.cvng.utils.SRMServiceAuthIfHasApiKey;
 import io.harness.security.annotations.PublicApi;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
@@ -49,11 +50,13 @@ public class WebhookResource {
   @Timed
   @PublicApi
   @ExceptionMetered
+  @SRMServiceAuthIfHasApiKey
   @ApiOperation(value = "accepts a custom change webhook request", nickname = "handleCustomChangeWebhookRequest")
   public void handleCustomChangeWebhookRequest(@NotNull @BeanParam ProjectParams projectParams,
       @NotNull @QueryParam("monitoredServiceIdentifier") String monitoredServiceIdentifier,
       @NotNull @QueryParam("changeSourceIdentifier") String changeSourceIdentifier,
       @Body @Valid CustomChangeWebhookEvent customChangeWebhookEvent) {
+    webhookService.checkAuthorization(projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(), );
     webhookService.handleCustomChangeWebhook(
         projectParams, monitoredServiceIdentifier, changeSourceIdentifier, customChangeWebhookEvent);
   }

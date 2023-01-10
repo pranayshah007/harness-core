@@ -7,6 +7,7 @@
 
 package io.harness.cvng;
 
+import static io.harness.NGConstants.X_API_KEY;
 import static io.harness.authorization.AuthorizationServiceHeader.BEARER;
 import static io.harness.authorization.AuthorizationServiceHeader.CV_NEXT_GEN;
 import static io.harness.authorization.AuthorizationServiceHeader.DEFAULT;
@@ -104,6 +105,7 @@ import io.harness.cvng.statemachine.beans.AnalysisOrchestratorStatus;
 import io.harness.cvng.statemachine.entities.AnalysisOrchestrator;
 import io.harness.cvng.statemachine.entities.AnalysisOrchestrator.AnalysisOrchestratorKeys;
 import io.harness.cvng.statemachine.jobs.AnalysisOrchestrationJob;
+import io.harness.cvng.utils.SRMServiceAuthIfHasApiKey;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance.ExecutionStatus;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance.VerificationJobInstanceKeys;
@@ -1040,7 +1042,9 @@ public class VerificationApplication extends Application<VerificationConfigurati
     Map<String, String> serviceToSecretMapping = new HashMap<>();
     Predicate<Pair<ResourceInfo, ContainerRequestContext>> predicate = resourceInfoAndRequest
         -> resourceInfoAndRequest.getKey().getResourceMethod().getAnnotation(NextGenManagerAuth.class) != null
-        || resourceInfoAndRequest.getKey().getResourceClass().getAnnotation(NextGenManagerAuth.class) != null;
+        || resourceInfoAndRequest.getKey().getResourceClass().getAnnotation(NextGenManagerAuth.class) != null
+        || (resourceInfoAndRequest.getKey().getResourceClass().getAnnotation(SRMServiceAuthIfHasApiKey.class) != null
+            && resourceInfoAndRequest.getValue().getHeaders().get(X_API_KEY) != null);
     serviceToSecretMapping.put(BEARER.getServiceId(), configuration.getManagerAuthConfig().getJwtAuthSecret());
     serviceToSecretMapping.put(
         IDENTITY_SERVICE.getServiceId(), configuration.getManagerAuthConfig().getJwtIdentityServiceSecret());
