@@ -33,8 +33,8 @@ public class CIBuildEnforcerImpl implements CIBuildEnforcer {
     // if the limits are override for a specific account, give priority to those
     if (executionLimits.getOverrideConfigMap().containsKey(accountId)) {
       log.info("overridden limits for the account: {}, total: {}, mac: {}", accountId,
-          queueExecutionUtils.getActiveExecutionsCount(accountId),
-          queueExecutionUtils.getActiveMacExecutionsCount(accountId));
+          executionLimits.getOverrideConfigMap().get(accountId).getDefaultTotalExecutionCount(),
+          executionLimits.getOverrideConfigMap().get(accountId).getDefaultMacExecutionCount());
       return currExecutionCount <= executionLimits.getOverrideConfigMap().get(accountId).getDefaultTotalExecutionCount()
           && macExecutionsCount <= executionLimits.getOverrideConfigMap().get(accountId).getDefaultMacExecutionCount();
     }
