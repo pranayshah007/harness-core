@@ -770,7 +770,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   }
 
   private String getDelegateIdForFirstBroadcast(DelegateTask delegateTask, List<String> eligibleListOfDelegates) {
-    if (isRedisForDelegateServiceEnabled()) {
+    if (true) {
       return getMostResourceAvailableDelegateIdForFirstBroadcast(delegateTask, eligibleListOfDelegates);
     }
     for (String delegateId : eligibleListOfDelegates) {

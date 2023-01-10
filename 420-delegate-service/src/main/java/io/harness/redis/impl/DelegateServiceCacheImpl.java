@@ -8,6 +8,7 @@
 package io.harness.redis.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.DEL;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.serializer.DelegateServiceCacheRegistrar.DELEGATES_FROM_GROUP_CACHE;
 import static io.harness.serializer.DelegateServiceCacheRegistrar.DELEGATE_CACHE;
 import static io.harness.serializer.DelegateServiceCacheRegistrar.DELEGATE_GROUP_CACHE;
@@ -54,7 +55,7 @@ public class DelegateServiceCacheImpl implements DelegateServiceCache {
   public void updateDelegateTaskCache(@NotNull String delegateId, UpdateOperation updateOperation) {
     log.info("DelegateServiceCache: Before update {} for operation {} ", getDelegateTaskCache(delegateId),
         updateOperation.toString());
-    if (taskCache.getCachedMap() == null) {
+    if (taskCache.getCachedMap() == null || isEmpty(delegateId)) {
       log.error("Unable to fetch delegate task cache from redis cache");
       return;
     }
@@ -65,7 +66,8 @@ public class DelegateServiceCacheImpl implements DelegateServiceCache {
       return;
     }
     updateCache(delegateId, updateOperation);
-    log.info("DelegateServiceCache: After update {} for operation {} ", getDelegateTaskCache(delegateId),updateOperation.toString());
+    log.info("DelegateServiceCache: After update {} for operation {} ", getDelegateTaskCache(delegateId),
+        updateOperation.toString());
   }
 
   @Override
