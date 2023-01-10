@@ -47,11 +47,12 @@ public class DelegateServiceCacheImpl implements DelegateServiceCache {
 
   @Override
   public AtomicInteger getDelegateTaskCache(String delegateId) {
-    return taskCache.getCachedMap().get(delegateId);
+    return taskCache.getCachedMap() != null ? taskCache.getCachedMap().get(delegateId) : new AtomicInteger(0);
   }
 
   @Override
   public void updateDelegateTaskCache(@NotNull String delegateId, UpdateOperation updateOperation) {
+    log.info("DelegateServiceCache: Before update {}", getDelegateCache(delegateId));
     if (taskCache.getCachedMap() == null) {
       log.error("Unable to fetch delegate task cache from redis cache");
       return;
@@ -63,6 +64,7 @@ public class DelegateServiceCacheImpl implements DelegateServiceCache {
       return;
     }
     updateCache(delegateId, updateOperation);
+    log.info("DelegateServiceCache: After update {}", getDelegateCache(delegateId));
   }
 
   @Override

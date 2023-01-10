@@ -17,6 +17,7 @@ import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.TaskGroup;
 import io.harness.persistence.HPersistence;
 import io.harness.queueservice.infc.DelegateResourceCriteria;
+import io.harness.redis.intfc.DelegateServiceCache;
 import io.harness.service.intfc.DelegateCache;
 
 import software.wings.beans.TaskType;
@@ -38,6 +39,7 @@ import lombok.extern.slf4j.Slf4j;
 public class OrderByTotalNumberOfTaskAssignedCriteria implements DelegateResourceCriteria {
   @Inject private HPersistence persistence;
   @Inject private DelegateCache delegateCache;
+  @Inject private DelegateServiceCache delegateServiceCache;
   final Comparator<Map.Entry<String, Integer>> valueComparator = Map.Entry.comparingByValue(Comparator.naturalOrder());
 
   @Inject
@@ -49,7 +51,20 @@ public class OrderByTotalNumberOfTaskAssignedCriteria implements DelegateResourc
   @Override
   public List<Delegate> getFilteredEligibleDelegateList(
       List<Delegate> delegateList, TaskType taskType, String accountId) {
-    return listOfDelegatesSortedByNumberOfTaskAssigned(accountId, taskType);
+    return listOfDelegatesSortedByNumberOfTaskAssignedFromRedis(delegateList, accountId);
+  }
+  private List<Delegate> listOfDelegatesSortedByNumberOfTaskAssignedFromRedis(
+      List<Delegate> delegateList, String accountId) {
+    TreeMap<String, Integer> numberOfTaskAssigned = new TreeMap<>();
+    for (Delegate delegate : delegateList) {
+      numberOfTaskAssigned.put(
+          delegate.getUuid(), delegateServiceCache.getDelegateTaskCache(delegate.getUuid()).intValue());
+    }
+    return numberOfTaskAssigned.entrySet()
+        .stream()
+        .sorted(valueComparator)
+        .map(entry -> updateDelegateWithNumberTaskAssigned(entry, accountId))
+        .collect(Collectors.toList());
   }
 
   private List<Delegate> listOfDelegatesSortedByNumberOfTaskAssigned(String accountId, TaskType taskType) {
@@ -94,11 +109,7 @@ public class OrderByTotalNumberOfTaskAssignedCriteria implements DelegateResourc
           .collect(Collectors.toList());
     }
     return delegateTaskList;
-  }
-
-  private Map<String, Integer> listOfDelegatesSortedByNumberOfTaskAssignedFromRedisCache(String accountId) {
-    // TBD
-    return null;
+    // delegateServiceCache.getDelegateCache(delegateId)
   }
 
   public static <T> Predicate<T> distinctByKey(Function<T, Object> function) {

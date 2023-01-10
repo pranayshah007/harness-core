@@ -727,6 +727,8 @@ executorsConfig:
 
 disableDelegateMgmtInManager: false
 
+enableRedisForDelegateService: false
+
 secretsConfiguration:
   secretResolutionEnabled: false
   gcpSecretManagerProject: harness-playground

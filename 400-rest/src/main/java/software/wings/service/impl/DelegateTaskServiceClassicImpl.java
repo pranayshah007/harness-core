@@ -1582,7 +1582,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     // If the task wasn't updated because delegateId already exists then query for the task with the delegateId in
     // case client is retrying the request
     copyTaskDataV2ToTaskData(task);
-    if (isRedisForDelegateServiceEnabled()) {
+    if (true) {
       delegateServiceCache.updateDelegateTaskCache(delegateId, DelegateServiceCacheImpl.UpdateOperation.INCREMENT);
     }
     if (task != null) {
@@ -2031,7 +2031,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   }
 
   private boolean isRedisForDelegateServiceEnabled() {
-    return mainConfiguration.getEnableRedisForDelegateService();
+    return mainConfiguration.isEnableRedisForDelegateService();
   }
 
   @Override

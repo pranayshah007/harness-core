@@ -61,15 +61,15 @@ public class DelegateServiceCacheRegistrar extends AbstractModule {
   @Provides
   @Named(DELEGATES_FROM_GROUP_CACHE)
   @Singleton
-  public RLocalCachedMap<String, String> getDelegatesFromGroupCache(DelegateRedissonCacheManager cacheManager) {
-    return cacheManager.getCache(DELEGATES_FROM_GROUP_CACHE, String.class, String.class, getLocalCachedMapOptions(30));
+  public RLocalCachedMap<String, List<Delegate>> getDelegatesFromGroupCache(DelegateRedissonCacheManager cacheManager) {
+    return cacheManager.getCache(DELEGATES_FROM_GROUP_CACHE, String.class, List.class, getLocalCachedMapOptions(30));
   }
 
   @Provides
   @Named(PTS_COUNT_ACCOUNT_CACHE)
   @Singleton
-  public RLocalCachedMap<String, String> getPerpetualTasksCountInAccount(DelegateRedissonCacheManager cacheManager) {
-    return cacheManager.getCache(PTS_COUNT_ACCOUNT_CACHE, String.class, String.class, getLocalCachedMapOptions(30));
+  public RLocalCachedMap<String, Integer> getPerpetualTasksCountInAccount(DelegateRedissonCacheManager cacheManager) {
+    return cacheManager.getCache(PTS_COUNT_ACCOUNT_CACHE, String.class, Integer.class, getLocalCachedMapOptions(30));
   }
 
   @Override
