@@ -793,12 +793,6 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     if (filteredDelegateList.isEmpty() || isNotEmpty(filteredDelegateList.get())) {
       return eligibleListOfDelegates.get(random.nextInt(eligibleListOfDelegates.size()));
     }
-    for (String delegateId : filteredDelegateList.get()) {
-      if (assignDelegateService.isDelegateGroupWhitelisted(delegateTask, delegateId)
-          || assignDelegateService.isWhitelisted(delegateTask, delegateId)) {
-        return delegateId;
-      }
-    }
     return filteredDelegateList.get().get(0);
   }
   List<Delegate> getDelegatesList(List<String> eligibleDelegateId, String accountId) {
