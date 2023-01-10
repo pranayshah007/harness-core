@@ -43,6 +43,10 @@ public class CgInstanceSyncTaskDetailsService {
     mongoPersistence.save(taskDetails);
   }
 
+  public boolean delete(String taskDetailsId) {
+    return mongoPersistence.delete(InstanceSyncTaskDetails.class, taskDetailsId);
+  }
+
   public InstanceSyncTaskDetails getForId(String taskDetailsId) {
     return mongoPersistence.get(InstanceSyncTaskDetails.class, taskDetailsId);
   }

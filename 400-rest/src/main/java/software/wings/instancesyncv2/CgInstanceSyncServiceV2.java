@@ -25,11 +25,13 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.perpetualtask.PerpetualTaskClientContextDetails;
 import io.harness.perpetualtask.PerpetualTaskId;
 import io.harness.perpetualtask.PerpetualTaskSchedule;
+import io.harness.perpetualtask.PerpetualTaskService;
 import io.harness.perpetualtask.instancesyncv2.CgDeploymentReleaseDetails;
 import io.harness.perpetualtask.instancesyncv2.CgInstanceSyncResponse;
 import io.harness.perpetualtask.instancesyncv2.InstanceSyncData;
 import io.harness.perpetualtask.instancesyncv2.InstanceSyncTrackedDeploymentDetails;
 import io.harness.perpetualtask.instancesyncv2.ResponseBatchConfig;
+import io.harness.perpetualtask.internal.PerpetualTaskRecord;
 import io.harness.serializer.KryoSerializer;
 
 import software.wings.api.DeploymentEvent;
@@ -80,7 +82,7 @@ import org.apache.commons.lang3.StringUtils;
 public class CgInstanceSyncServiceV2 {
   private final DeploymentService deploymentService;
   public static final String AUTO_SCALE = "AUTO_SCALE";
-  public static final int PERPETUAL_TASK_INTERVAL = 10;
+  public static final int PERPETUAL_TASK_INTERVAL = 2;
   public static final int PERPETUAL_TASK_TIMEOUT = 5;
   private final CgInstanceSyncV2DeploymentHelperFactory helperFactory;
   private final DelegateServiceGrpcClient delegateServiceClient;
@@ -90,8 +92,8 @@ public class CgInstanceSyncServiceV2 {
   private final KryoSerializer kryoSerializer;
   private final InstanceHandlerFactoryService instanceHandlerFactory;
   private final PersistentLocker persistentLocker;
-  private FeatureFlagService featureFlagService;
-  private InstanceSyncPerpetualTaskService instanceSyncPerpetualTaskService;
+  private final FeatureFlagService featureFlagService;
+  private final InstanceSyncPerpetualTaskService instanceSyncPerpetualTaskService;
 
   private static final int INSTANCE_COUNT_LIMIT =
       Integer.parseInt(System.getenv().getOrDefault("INSTANCE_SYNC_RESPONSE_BATCH_INSTANCE_COUNT", "100"));
@@ -182,9 +184,11 @@ public class CgInstanceSyncServiceV2 {
                  InfrastructureMapping.class, infraMapping.getUuid(), Duration.ofSeconds(180))) {
           instanceSyncPerpetualTaskService.restorePerpetualTasks(result.getAccountId(), infraMapping);
         }
+        taskDetailsService.delete(taskDetails.getUuid());
       }
-
-      // TODO: cleanup v2 perpetual task
+      // Todo : to delete instanceSyncTaskDetails and V2 PT (also consider batching logic will deleting perpetual task)
+      instanceSyncPerpetualTaskService.deletePerpetualTask(
+          result.getAccountId(), instanceSyncTaskDetails.get(0).getInfraMappingId(), perpetualTaskId, true);
     }
 
     if (!result.getExecutionStatus().equals(CommandExecutionStatus.SUCCESS.name())) {
