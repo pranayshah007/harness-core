@@ -175,19 +175,22 @@ public class CgInstanceSyncServiceV2 {
           result.getAccountId(), perpetualTaskId);
       List<InstanceSyncTaskDetails> instanceSyncTaskDetails =
           taskDetailsService.fetchAllForPerpetualTask(result.getAccountId(), perpetualTaskId);
+
       for (InstanceSyncTaskDetails taskDetails : instanceSyncTaskDetails) {
-        InfrastructureMapping infraMapping =
-            infrastructureMappingService.get(taskDetails.getAppId(), taskDetails.getInfraMappingId());
         try (AcquiredLock lock = persistentLocker.tryToAcquireLock(
-                 InfrastructureMapping.class, infraMapping.getUuid(), Duration.ofSeconds(180))) {
-          instanceSyncPerpetualTaskService.restorePerpetualTasks(result.getAccountId(), infraMapping);
+                 InstanceSyncTaskDetails.class, taskDetails.getUuid(), Duration.ofSeconds(180))) {
+          InfrastructureMapping infraMapping =
+              infrastructureMappingService.get(taskDetails.getAppId(), taskDetails.getInfraMappingId());
+          try (AcquiredLock lock2 = persistentLocker.tryToAcquireLock(
+                   InfrastructureMapping.class, infraMapping.getUuid(), Duration.ofSeconds(180))) {
+            instanceSyncPerpetualTaskService.restorePerpetualTasks(result.getAccountId(), infraMapping);
+          }
+          taskDetailsService.delete(taskDetails.getUuid());
         }
-        taskDetailsService.delete(taskDetails.getUuid());
       }
 
-      // Todo : to delete instanceSyncTaskDetails and V2 PT (also consider batching logic will deleting perpetual task)
-      instanceSyncPerpetualTaskService.deletePerpetualTask(
-          result.getAccountId(), instanceSyncTaskDetails.get(0).getInfraMappingId(), perpetualTaskId, true);
+      delegateServiceClient.deletePerpetualTask(AccountId.newBuilder().setId(result.getAccountId()).build(),
+          PerpetualTaskId.newBuilder().setId(perpetualTaskId).build());
     }
 
     if (!result.getExecutionStatus().equals(CommandExecutionStatus.SUCCESS.name())) {
