@@ -1344,10 +1344,11 @@ public class WingsApplication extends Application<MainConfiguration> {
         new Schedulable("Failed while broadcasting perpetual tasks",
             () -> injector.getInstance(PerpetualTaskServiceImpl.class).broadcastToDelegate()),
         0L, 10L, TimeUnit.SECONDS);
-
-    delegateExecutor.scheduleWithFixedDelay(
-        new Schedulable("Failed to dequeue delegate task", injector.getInstance(DelegateTaskQueueService.class)), 0L,
-        15L, TimeUnit.SECONDS);
+    if (configuration.getQueueServiceConfig().isEnableQueueAndDequeue()) {
+      delegateExecutor.scheduleWithFixedDelay(
+          new Schedulable("Failed to dequeue delegate task", injector.getInstance(DelegateTaskQueueService.class)), 0L,
+          15L, TimeUnit.SECONDS);
+    }
   }
 
   public void registerObservers(MainConfiguration configuration, Injector injector, Environment environment) {

@@ -180,16 +180,20 @@ public class MongoFileServiceImpl implements FileService {
                            .checksum(gridFSFile.getMD5())
                            .build();
       } else {
-        fileMetadata =
-            FileMetadata.builder()
-                .fileName(gridFSFile.getFilename())
-                .fileUuid(fileId)
-                .fileLength(gridFSFile.getLength())
-                .checksumType(ChecksumType.MD5)
-                .checksum(gridFSFile.getMD5())
-                .mimeType(metadata.getString("contentType"))
-                .metadata(metadata.entrySet().stream().collect(Collectors.toMap(Entry::getKey, Entry::getValue)))
-                .build();
+        Map<String, Object> nonNullMetadata = new HashMap<>();
+        nonNullMetadata = metadata.entrySet()
+                              .stream()
+                              .filter(e -> e.getValue() != null)
+                              .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+        fileMetadata = FileMetadata.builder()
+                           .fileName(gridFSFile.getFilename())
+                           .fileUuid(fileId)
+                           .fileLength(gridFSFile.getLength())
+                           .checksumType(ChecksumType.MD5)
+                           .checksum(gridFSFile.getMD5())
+                           .mimeType(metadata.getString("contentType"))
+                           .metadata(nonNullMetadata)
+                           .build();
       }
     }
 

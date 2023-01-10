@@ -43,6 +43,8 @@ import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceInputsMergedResponseDto;
 import io.harness.ng.core.service.mappers.ServiceElementMapper;
 import io.harness.ng.core.service.mappers.ServiceFilterHelper;
+import io.harness.ng.core.service.services.validators.NoOpServiceEntityValidator;
+import io.harness.ng.core.service.services.validators.ServiceEntityValidatorFactory;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.outbox.api.OutboxService;
@@ -82,6 +84,8 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
   @Mock private EntitySetupUsageServiceImpl entitySetupUsageService;
   @Mock private ServiceOverrideService serviceOverrideService;
   @Mock private ServiceEntitySetupUsageHelper entitySetupUsageHelper;
+  @Mock private ServiceEntityValidatorFactory serviceEntityValidatorFactory;
+  @Mock private NoOpServiceEntityValidator noOpServiceEntityValidator;
   @Inject @InjectMocks private ServiceEntityServiceImpl serviceEntityService;
   private static final String ACCOUNT_ID = "ACCOUNT_ID";
   private static final String ORG_ID = "ORG_ID";
@@ -108,6 +112,8 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     Reflect.on(serviceEntityService).set("outboxService", outboxService);
     Reflect.on(serviceEntityService).set("serviceOverrideService", serviceOverrideService);
     Reflect.on(serviceEntityService).set("entitySetupUsageHelper", entitySetupUsageHelper);
+    Reflect.on(serviceEntityService).set("serviceEntityValidatorFactory", serviceEntityValidatorFactory);
+    when(serviceEntityValidatorFactory.getServiceEntityValidator(any())).thenReturn(noOpServiceEntityValidator);
   }
   @Parameterized.Parameters
   public static Collection<Object[]> data() {
