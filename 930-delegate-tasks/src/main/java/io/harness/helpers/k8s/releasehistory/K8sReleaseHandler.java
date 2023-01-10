@@ -11,11 +11,16 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.k8s.model.KubernetesConfig;
+import io.harness.k8s.model.KubernetesResourceId;
 import io.harness.k8s.releasehistory.IK8sRelease;
 import io.harness.k8s.releasehistory.IK8sReleaseHistory;
-import io.harness.k8s.releasehistory.K8sReleaseCleanupDTO;
+import io.harness.k8s.releasehistory.K8sBGReleaseHistoryCleanupDTO;
+import io.harness.k8s.releasehistory.K8sReleaseHistoryCleanupDTO;
 import io.harness.k8s.releasehistory.K8sReleasePersistDTO;
+import io.harness.logging.LogCallback;
 
+import java.io.IOException;
+import java.util.List;
 import javax.validation.constraints.NotNull;
 
 @OwnedBy(CDP)
@@ -24,5 +29,8 @@ public interface K8sReleaseHandler {
       throws Exception;
   IK8sRelease createRelease(@NotNull String name, @NotNull int number);
   void saveRelease(@NotNull K8sReleasePersistDTO releasePersistDTO) throws Exception;
-  void cleanReleaseHistory(@NotNull K8sReleaseCleanupDTO releaseCleanupDTO) throws Exception;
+  void cleanReleaseHistory(@NotNull K8sReleaseHistoryCleanupDTO releaseCleanupDTO) throws Exception;
+  void cleanReleaseHistoryBG(@NotNull K8sBGReleaseHistoryCleanupDTO releaseHistoryCleanupDTO) throws Exception;
+  List<KubernetesResourceId> getResourceIdsToDelete(
+      String releaseName, KubernetesConfig kubernetesConfig, LogCallback logCallback) throws IOException;
 }

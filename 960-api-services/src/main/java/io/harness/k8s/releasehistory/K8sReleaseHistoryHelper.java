@@ -47,4 +47,8 @@ public class K8sReleaseHistoryHelper {
         .flatMap(Collection::stream)
         .collect(Collectors.toSet());
   }
+
+  public static Set<String> getReleaseNumbersFromReleases(List<K8sRelease> releases) {
+    return releases.stream().map(release -> String.valueOf(release.getReleaseNumber())).collect(Collectors.toSet());
+  }
 }

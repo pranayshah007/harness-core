@@ -2518,6 +2518,48 @@ public class TriggerServiceImpl implements TriggerService {
     }
   }
 
+  @Override
+  public void authorizeRead(Trigger trigger) {
+    WorkflowType workflowType = trigger.getWorkflowType();
+    try {
+      triggerAuthHandler.authorizeRead(trigger.getAppId(), trigger);
+    } catch (WingsException ex) {
+      throw new WingsException(
+          "User does not have read permission on " + (workflowType == PIPELINE ? "Pipeline" : "Workflow"), USER);
+    }
+  }
+  @Override
+  public void authorizeUpdate(Trigger trigger) {
+    WorkflowType workflowType = trigger.getWorkflowType();
+    try {
+      triggerAuthHandler.authorizeUpdate(trigger.getAppId(), trigger);
+    } catch (WingsException ex) {
+      throw new WingsException(
+          "User does not have update permission on " + (workflowType == PIPELINE ? "Pipeline" : "Workflow"), USER);
+    }
+  }
+
+  @Override
+  public void authorizeSave(Trigger trigger) {
+    WorkflowType workflowType = trigger.getWorkflowType();
+    try {
+      triggerAuthHandler.authorizeCreate(trigger.getAppId(), trigger);
+    } catch (WingsException ex) {
+      throw new WingsException(
+          "User does not have create permission on " + (workflowType == PIPELINE ? "Pipeline" : "Workflow"), USER);
+    }
+  }
+  @Override
+  public void authorizeDeletion(Trigger trigger) {
+    WorkflowType workflowType = trigger.getWorkflowType();
+    try {
+      triggerAuthHandler.authorizeDeletion(trigger.getAppId(), trigger);
+    } catch (WingsException ex) {
+      throw new WingsException(
+          "User does not have delete permission on " + (workflowType == PIPELINE ? "Pipeline" : "Workflow"), USER);
+    }
+  }
+
   private void validateAndAuthorizeEnvironment(Trigger trigger, boolean existing, List<Variable> variables) {
     String templatizedEnvVariableName = WorkflowServiceTemplateHelper.getTemplatizedEnvVariableName(variables);
     if (isNotEmpty(templatizedEnvVariableName)) {

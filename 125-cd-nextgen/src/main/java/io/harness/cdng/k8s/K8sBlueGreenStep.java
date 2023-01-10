@@ -136,7 +136,8 @@ public class K8sBlueGreenStep extends TaskChainExecutableWithRollbackAndRbac imp
             .useLatestKustomizeVersion(cdStepHelper.isUseLatestKustomizeVersion(accountId))
             .useNewKubectlVersion(cdStepHelper.isUseNewKubectlVersion(accountId))
             .pruningEnabled(pruningEnabled)
-            .useK8sApiForSteadyStateCheck(cdStepHelper.shouldUseK8sApiForSteadyStateCheck(accountId));
+            .useK8sApiForSteadyStateCheck(cdStepHelper.shouldUseK8sApiForSteadyStateCheck(accountId))
+            .useDeclarativeRollback(cdStepHelper.useDeclarativeRollback(accountId));
 
     if (cdFeatureFlagHelper.isEnabled(accountId, FeatureName.NG_K8_COMMAND_FLAGS)) {
       Map<String, String> k8sCommandFlag =

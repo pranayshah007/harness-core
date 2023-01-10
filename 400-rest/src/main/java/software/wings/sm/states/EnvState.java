@@ -130,8 +130,6 @@ import org.slf4j.Logger;
 @FieldNameConstants(innerTypeName = "EnvStateKeys")
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)
 public class EnvState extends State implements WorkflowState {
-  public static final Integer ENV_STATE_TIMEOUT_MILLIS = 7 * 24 * 60 * 60 * 1000;
-
   private static final Pattern secretNamePattern = Pattern.compile("\\$\\{secrets.getValue\\([^{}]+\\)}");
   private static final Pattern secretManagerObtainPattern = Pattern.compile("\\$\\{secretManager.obtain\\([^{}]+\\)}");
 
@@ -619,7 +617,7 @@ public class EnvState extends State implements WorkflowState {
   @Override
   public Integer getTimeoutMillis() {
     if (super.getTimeoutMillis() == null) {
-      return ENV_STATE_TIMEOUT_MILLIS;
+      return INFINITE_TIMEOUT;
     }
     return super.getTimeoutMillis();
   }

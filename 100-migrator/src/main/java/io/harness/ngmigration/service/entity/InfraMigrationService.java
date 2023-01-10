@@ -60,7 +60,6 @@ import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.DiscoveryNode;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.ngmigration.NGMigrationEntityType;
-import software.wings.ngmigration.NGMigrationStatus;
 import software.wings.service.intfc.InfrastructureDefinitionService;
 
 import com.google.inject.Inject;
@@ -151,27 +150,6 @@ public class InfraMigrationService extends NgMigrationService {
   @Override
   public DiscoveryNode discover(String accountId, String appId, String entityId) {
     return discover(infrastructureDefinitionService.get(appId, entityId));
-  }
-
-  @Override
-  public NGMigrationStatus canMigrate(NGMigrationEntity entity) {
-    InfrastructureDefinition infra = (InfrastructureDefinition) entity;
-    if (infra.getCloudProviderType() != KUBERNETES_CLUSTER) {
-      return NGMigrationStatus.builder()
-          .status(false)
-          .reasons(
-              Collections.singletonList(String.format("%s infra with cloud provider %s is not supported with migration",
-                  infra.getName(), infra.getCloudProviderType())))
-          .build();
-    }
-    if (!(infra.getInfrastructure() instanceof DirectKubernetesInfrastructure)) {
-      return NGMigrationStatus.builder()
-          .status(false)
-          .reasons(Collections.singletonList(String.format(
-              "Issue With %s infra. We currently support only Direct Infra with migration", infra.getName())))
-          .build();
-    }
-    return NGMigrationStatus.builder().status(true).build();
   }
 
   @Override

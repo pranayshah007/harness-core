@@ -121,6 +121,7 @@ public class NGTriggerEntity implements PersistentEntity, PersistentNGCronIterab
   @Singular @Size(max = 128) List<NGTag> tags;
   @Builder.Default Boolean enabled = Boolean.TRUE;
   String pollInterval;
+  String webhookId;
   @FdIndex private List<Long> nextIterations; // List of activation times for cron triggers
   @Builder.Default Long ymlVersion = Long.valueOf(3);
 

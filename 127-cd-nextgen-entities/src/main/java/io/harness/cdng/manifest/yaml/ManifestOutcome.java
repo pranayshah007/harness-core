@@ -42,6 +42,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
       @JsonSubTypes.Type(value = AsgScalingPolicyManifestOutcome.class, name = ManifestType.AsgScalingPolicy),
       @JsonSubTypes.Type(value = AsgScheduledUpdateGroupActionManifestOutcome.class,
           name = ManifestType.AsgScheduledUpdateGroupAction),
+      @JsonSubTypes.Type(value = GoogleCloudFunctionDefinitionManifestOutcome.class,
+          name = ManifestType.GoogleCloudFunctionDefinition),
 })
 public interface ManifestOutcome extends Outcome, WithIdentifier {
   String getIdentifier();

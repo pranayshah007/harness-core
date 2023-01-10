@@ -43,6 +43,7 @@ import io.harness.cvng.core.entities.VerificationTask.DeploymentInfo;
 import io.harness.cvng.core.entities.VerificationTask.TaskType;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.utils.CVNGObjectUtils;
+import io.harness.cvng.models.VerificationType;
 import io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
@@ -73,6 +74,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
+import org.apache.commons.collections4.CollectionUtils;
 
 public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSeriesAnalysisService {
   public static final int DEFAULT_PAGE_SIZE = 10;
@@ -348,14 +350,19 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
       String verifyStepExecutionId, DeploymentTimeSeriesAnalysisFilter deploymentTimeSeriesAnalysisFilter) {
     List<DeploymentTimeSeriesAnalysis> latestDeploymentTimeSeriesAnalysis =
         getLatestDeploymentTimeSeriesAnalysis(accountId, verifyStepExecutionId, deploymentTimeSeriesAnalysisFilter);
-    Set<String> requestedHealthSources = new HashSet<>(deploymentTimeSeriesAnalysisFilter.getHealthSourceIdentifiers());
-    Set<String> requestedTransactionGroups = new HashSet<>(deploymentTimeSeriesAnalysisFilter.getTransactionNames());
+    Set<String> requestedHealthSources =
+        new HashSet<>(CollectionUtils.emptyIfNull(deploymentTimeSeriesAnalysisFilter.getHealthSourceIdentifiers()));
+    Set<String> requestedTransactionGroups =
+        new HashSet<>(CollectionUtils.emptyIfNull(deploymentTimeSeriesAnalysisFilter.getTransactionNames()));
     VerificationJobInstance verificationJobInstance =
         verificationJobInstanceService.getVerificationJobInstance(verifyStepExecutionId);
 
     List<CVConfig> cvConfigs = verificationJobInstance.getResolvedJob().getCvConfigs();
     Map<String, CVConfig> cvConfigMap =
-        cvConfigs.stream().collect(Collectors.toMap(CVConfig::getUuid, cvConfig -> cvConfig, (u, v) -> v));
+        CollectionUtils.emptyIfNull(cvConfigs)
+            .stream()
+            .filter(cvConfig -> cvConfig.getVerificationType() == VerificationType.TIME_SERIES)
+            .collect(Collectors.toMap(CVConfig::getUuid, cvConfig -> cvConfig, (u, v) -> v));
 
     List<MetricsAnalysis> metricsAnalyses = new ArrayList<>();
 
@@ -371,12 +378,16 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
           && !requestedHealthSources.contains(healthSourceIdentifier)) {
         continue;
       }
+      List<? extends AnalysisInfo> metricInfos = cvConfig.getMetricInfos();
+      Map<String, ? extends AnalysisInfo> metricInfoMap = metricInfos.stream().collect(
+          Collectors.toMap(AnalysisInfo::getMetricName, metricInfo -> metricInfo, (u, v) -> v));
       Set<MetricDefinition> metricDefinitions = cvConfig.getMetricPack().getMetrics();
       Map<String, MetricDefinition> metricDefinitionMap = metricDefinitions.stream().collect(
           Collectors.toMap(MetricDefinition::getName, metricDefinition -> metricDefinition, (u, v) -> v));
       for (TransactionMetricHostData transactionMetricHostData : timeSeriesAnalysis.getTransactionMetricSummaries()) {
         String metricName = transactionMetricHostData.getMetricName();
         MetricDefinition metricDefinition = metricDefinitionMap.get(metricName);
+        AnalysisInfo analysisInfo = metricInfoMap.get(metricName);
         AnalysisResult analysisResult = AnalysisResult.fromRisk(transactionMetricHostData.getRisk());
         String transactionGroup = transactionMetricHostData.getTransactionName();
         if (isAnalysisResultExcluded(deploymentTimeSeriesAnalysisFilter, analysisResult)
@@ -387,11 +398,11 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
         MetricsAnalysis metricsAnalysis =
             MetricsAnalysis.builder()
                 .metricName(metricName)
-                .metricIdentifier(metricDefinition.getIdentifier())
+                .metricIdentifier(analysisInfo.getIdentifier())
                 .healthSourceIdentifier(healthSourceIdentifier)
                 .metricType(getMetricTypeFromCvConfigAndMetricDefinition(cvConfig, metricDefinition))
                 .transactionGroup(transactionGroup)
-                .thresholds(metricDefinition.getThresholds()
+                .thresholds(CollectionUtils.emptyIfNull(metricDefinition.getThresholds())
                                 .stream()
                                 .map(VerifyStepMetricsAnalysisUtils::getMetricThresholdFromTimeSeriesThreshold)
                                 .collect(Collectors.toList()))

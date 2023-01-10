@@ -10,6 +10,7 @@ package io.harness.event.reconciliation.deployment;
 import static software.wings.app.ManagerCacheRegistrar.DEPLOYMENT_RECONCILIATION_CACHE;
 
 import io.harness.event.reconciliation.deployment.DeploymentReconRecord.DeploymentReconRecordKeys;
+import io.harness.mongo.index.BasicDBUtils;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 
@@ -38,7 +39,8 @@ public class DeploymentReconRecordRepository {
       return deploymentReconRecord;
     }
     FindOptions findOptions = new FindOptions();
-    findOptions.hint(DeploymentReconRecord.getHint("accountId_entityClass_durationEndTs_sorted"));
+    findOptions.hint(BasicDBUtils.getIndexObject(
+        DeploymentReconRecord.mongoIndexes(), "accountId_entityClass_durationEndTs_sorted"));
     try (HIterator<DeploymentReconRecord> iterator =
              new HIterator<>(persistence.createQuery(DeploymentReconRecord.class)
                                  .field(DeploymentReconRecordKeys.accountId)

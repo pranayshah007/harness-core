@@ -16,6 +16,7 @@ import static java.util.Collections.emptyList;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.infra.beans.CustomDeploymentInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.PdcInfrastructureOutcome;
@@ -40,7 +41,6 @@ import io.harness.logging.UnitProgress;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
-import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.tasks.SkipTaskRequest;
@@ -70,7 +70,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(CDP)
-public class CommandStep extends TaskExecutableWithRollbackAndRbac<CommandTaskResponse> {
+public class CommandStep extends CdTaskExecutable<CommandTaskResponse> {
   public static final StepType STEP_TYPE =
       StepType.newBuilder().setType(ExecutionNodeType.COMMAND.getYamlType()).setStepCategory(StepCategory.STEP).build();
 

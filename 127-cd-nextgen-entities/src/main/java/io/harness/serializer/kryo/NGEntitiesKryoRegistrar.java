@@ -98,6 +98,7 @@ import io.harness.cdng.manifest.yaml.GcsStoreConfig;
 import io.harness.cdng.manifest.yaml.GitLabStore;
 import io.harness.cdng.manifest.yaml.GitStore;
 import io.harness.cdng.manifest.yaml.GithubStore;
+import io.harness.cdng.manifest.yaml.GoogleCloudFunctionDefinitionManifestOutcome;
 import io.harness.cdng.manifest.yaml.HelmChartManifestOutcome;
 import io.harness.cdng.manifest.yaml.HelmCommandFlagType;
 import io.harness.cdng.manifest.yaml.HelmManifestCommandFlag;
@@ -133,6 +134,7 @@ import io.harness.cdng.manifest.yaml.kinds.EcsScalingPolicyDefinitionManifest;
 import io.harness.cdng.manifest.yaml.kinds.EcsServiceDefinitionManifest;
 import io.harness.cdng.manifest.yaml.kinds.EcsTaskDefinitionManifest;
 import io.harness.cdng.manifest.yaml.kinds.GitOpsDeploymentRepoManifest;
+import io.harness.cdng.manifest.yaml.kinds.GoogleCloudFunctionDefinitionManifest;
 import io.harness.cdng.manifest.yaml.kinds.HelmChartManifest;
 import io.harness.cdng.manifest.yaml.kinds.K8sManifest;
 import io.harness.cdng.manifest.yaml.kinds.KustomizeManifest;
@@ -367,5 +369,7 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(AsgScheduledUpdateGroupActionManifestOutcome.class, 140065);
     kryo.register(AsgInfrastructureOutcome.class, 140066);
     kryo.register(AsgInfrastructure.class, 140067);
+    kryo.register(GoogleCloudFunctionDefinitionManifest.class, 140068);
+    kryo.register(GoogleCloudFunctionDefinitionManifestOutcome.class, 140069);
   }
 }

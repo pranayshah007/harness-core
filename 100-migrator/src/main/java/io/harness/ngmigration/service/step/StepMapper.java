@@ -27,6 +27,7 @@ import software.wings.sm.State;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 
 public interface StepMapper {
@@ -39,6 +40,10 @@ public interface StepMapper {
   State getState(GraphNode stepYaml);
 
   AbstractStepNode getSpec(Map<CgEntityId, NGYamlFile> migratedEntities, GraphNode graphNode);
+
+  default Set<String> getExpressions(GraphNode graphNode) {
+    return Collections.emptySet();
+  }
 
   default TemplateStepNode getTemplateSpec(Map<CgEntityId, NGYamlFile> migratedEntities, GraphNode graphNode) {
     return null;

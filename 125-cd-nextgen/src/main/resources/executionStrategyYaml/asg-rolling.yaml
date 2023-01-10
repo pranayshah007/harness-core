@@ -1,0 +1,23 @@
+failureStrategies:
+  - onFailure:
+      errors:
+        - AllErrors
+      action:
+        type: StageRollback
+spec:
+  execution:
+    steps:
+      - step:
+          name: "Asg Rolling Deploy"
+          identifier: AsgRollingDeploy
+          type: AsgRollingDeploy
+          timeout: 10m
+          spec:
+            useAlreadyRunningInstances: false
+    rollbackSteps:
+      - step:
+          name: "Asg Rolling Rollback"
+          identifier: AsgRollingRollback
+          type: AsgRollingRollback
+          timeout: 10m
+          spec: {}

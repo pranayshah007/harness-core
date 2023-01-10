@@ -57,7 +57,6 @@ import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.DiscoveryNode;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.ngmigration.NGMigrationEntityType;
-import software.wings.ngmigration.NGMigrationStatus;
 import software.wings.service.intfc.ApplicationManifestService;
 import software.wings.service.intfc.ConfigService;
 import software.wings.service.intfc.EnvironmentService;
@@ -167,17 +166,6 @@ public class EnvironmentMigrationService extends NgMigrationService {
   @Override
   public DiscoveryNode discover(String accountId, String appId, String entityId) {
     return discover(environmentService.get(appId, entityId));
-  }
-
-  @Override
-  public NGMigrationStatus canMigrate(NGMigrationEntity entity) {
-    return NGMigrationStatus.builder().status(true).build();
-  }
-
-  @Override
-  public NGMigrationStatus canMigrate(
-      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId) {
-    return NGMigrationStatus.builder().status(true).build();
   }
 
   @Override

@@ -567,6 +567,7 @@ public class BudgetUtils {
         .type(budget.getType())
         .budgetMonthlyBreakdown(budget.getBudgetMonthlyBreakdown())
         .isBudgetGroup(false)
+        .parentId(budget.getParentBudgetGroupId())
         .build();
   }
 }

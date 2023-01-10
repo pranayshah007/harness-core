@@ -323,18 +323,18 @@ public class ViewBillingServiceHelper {
   }
 
   public QLCEViewTrendInfo getForecastCostBillingStats(
-      Double forecastCost, Double totalCost, Instant startInstant, Instant endInstant) {
+      Double forecastCost, Double totalCost, Instant startInstant, Instant endInstant, Currency currency) {
     String forecastCostDescription = "";
     String forecastCostValue = "";
-    Double statsTrend = 0.0;
+    double statsTrend = 0.0;
 
     if (forecastCost != null) {
       boolean isYearRequired = viewsQueryHelper.isYearRequired(startInstant, endInstant);
       String startInstantFormat = viewsQueryHelper.getTotalCostFormattedDate(startInstant, isYearRequired);
       String endInstantFormat = viewsQueryHelper.getTotalCostFormattedDate(endInstant, isYearRequired);
       forecastCostDescription = format(COST_DESCRIPTION, startInstantFormat, endInstantFormat);
-      forecastCostValue =
-          format(COST_VALUE, viewsQueryHelper.formatNumber(viewsQueryHelper.getRoundedDoubleValue(forecastCost)));
+      forecastCostValue = format(COST_VALUE, currency.getSymbol(),
+          viewsQueryHelper.formatNumber(viewsQueryHelper.getRoundedDoubleValue(forecastCost)));
       statsTrend = viewsQueryHelper.getRoundedDoubleValue(((forecastCost - totalCost) / totalCost) * 100);
     } else {
       forecastCost = 0.0;

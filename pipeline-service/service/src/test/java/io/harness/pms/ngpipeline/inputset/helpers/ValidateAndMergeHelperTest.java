@@ -26,7 +26,6 @@ import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetTemplateResponseDTOPMS;
-import io.harness.pms.ngpipeline.inputset.exceptions.InvalidInputSetException;
 import io.harness.pms.ngpipeline.inputset.service.PMSInputSetService;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
@@ -52,8 +51,6 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
   private static final String orgId = "orgId";
   private static final String projectId = "projectId";
   private static final String pipelineId = "Test_Pipline11";
-  private static final String branch = null;
-  private static final String repoId = null;
 
   @Test
   @Owner(developers = NAMAN)
@@ -87,60 +84,6 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(format("Pipeline [%s] under Project[%s], Organization [%s] doesn't exist or has been deleted.",
             pipelineId, projectId, orgId));
-  }
-
-  @Test
-  @Owner(developers = NAMAN)
-  @Category(UnitTests.class)
-  public void testMergeInputSetForInvalidInputSets() {
-    doReturn(false).when(gitSyncSdkService).isGitSyncEnabled(accountId, orgId, projectId);
-    String pipelineYaml = "pipeline:\n"
-        + "  stages:\n"
-        + "  - stage:\n"
-        + "      identifier: s1\n"
-        + "      description: <+input>\n"
-        + "  - stage:\n"
-        + "      identifier: s2\n"
-        + "      description: <+input>\n";
-    String validInputSetYaml = "inputSet:\n"
-        + "  pipeline:\n"
-        + "    stages:\n"
-        + "    - stage:\n"
-        + "        identifier: s1\n"
-        + "        description: desc\n";
-    PipelineEntity pipelineEntity = PipelineEntity.builder().yaml(pipelineYaml).storeType(StoreType.REMOTE).build();
-    doReturn(Optional.of(pipelineEntity))
-        .when(pmsPipelineService)
-        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
-
-    String invalidIdentifier = "invalidIdentifier";
-    InputSetEntity invalidEntity = InputSetEntity.builder()
-                                       .isInvalid(true)
-                                       .identifier(invalidIdentifier)
-                                       .inputSetEntityType(InputSetEntityType.INPUT_SET)
-                                       .storeType(StoreType.REMOTE)
-                                       .build();
-    doReturn(Optional.of(invalidEntity))
-        .when(pmsInputSetService)
-        .getWithoutValidations(accountId, orgId, projectId, pipelineId, invalidIdentifier, false);
-
-    String validIdentifier = "validIdentifier";
-    InputSetEntity validEntity = InputSetEntity.builder()
-                                     .isInvalid(false)
-                                     .identifier(validIdentifier)
-                                     .inputSetEntityType(InputSetEntityType.INPUT_SET)
-                                     .yaml(validInputSetYaml)
-                                     .storeType(StoreType.REMOTE)
-                                     .build();
-    doReturn(Optional.of(validEntity))
-        .when(pmsInputSetService)
-        .getWithoutValidations(accountId, orgId, projectId, pipelineId, validIdentifier, false);
-
-    assertThatThrownBy(()
-                           -> validateAndMergeHelper.getMergeInputSetFromPipelineTemplate(accountId, orgId, projectId,
-                               pipelineId, Arrays.asList(invalidIdentifier, validIdentifier), branch, repoId, null))
-        .isInstanceOf(InvalidInputSetException.class)
-        .hasMessage("Some of the references provided are invalid");
   }
 
   @Test
@@ -191,6 +134,7 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testGetMergeInputSetFromPipelineTemplate() {
+    doReturn(false).when(gitSyncSdkService).isGitSyncEnabled(accountId, orgId, projectId);
     String pipelineYaml = "pipeline:\n"
         + "  stages:\n"
         + "  - stage:\n"
@@ -305,7 +249,59 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
                            -> validateAndMergeHelper.getMergeInputSetFromPipelineTemplate(accountId, orgId, projectId,
                                pipelineId, List.of("forS1"), null, null, Collections.singletonList("s2")))
         .isInstanceOf(WingsException.class)
-        .hasMessage("Please move either the input-set inline to remote or pipeline remote to inline.");
+        .hasMessage("Please move the input-set from inline to remote.");
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testGetMergeInputSetFromPipelineTemplateWhenPipelineIsRemoteAndOverlaidInputSetIsInline() {
+    String pipelineYaml = "pipeline:\n"
+        + "  stages:\n"
+        + "  - stage:\n"
+        + "      identifier: s1\n"
+        + "      key: <+input>\n"
+        + "  - stage:\n"
+        + "      identifier: s2\n"
+        + "      key1: <+input>";
+    PipelineEntity pipeline = PipelineEntity.builder().yaml(pipelineYaml).storeType(StoreType.REMOTE).build();
+    doReturn(Optional.of(pipeline))
+        .when(pmsPipelineService)
+        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
+
+    String yamlForS1 = "inputSet:\n"
+        + "  pipeline:\n"
+        + "    stages:\n"
+        + "    - stage:\n"
+        + "        identifier: s1\n"
+        + "        key: s1Value1";
+
+    InputSetEntity forS1 = InputSetEntity.builder()
+                               .identifier("forS1")
+                               .yaml(yamlForS1)
+                               .inputSetEntityType(InputSetEntityType.INPUT_SET)
+                               .storeType(StoreType.INLINE)
+                               .build();
+
+    doReturn(Optional.of(forS1))
+        .when(pmsInputSetService)
+        .getWithoutValidations(accountId, orgId, projectId, pipelineId, "forS1", false);
+
+    InputSetEntity overlaidIS = InputSetEntity.builder()
+                                    .identifier("overlaidIS1")
+                                    .yaml(yamlForS1)
+                                    .storeType(StoreType.REMOTE)
+                                    .inputSetReferences(Collections.singletonList("forS1"))
+                                    .build();
+    doReturn(Optional.of(overlaidIS))
+        .when(pmsInputSetService)
+        .getWithoutValidations(accountId, orgId, projectId, pipelineId, "overlaidIS1", false);
+
+    assertThatThrownBy(()
+                           -> validateAndMergeHelper.getMergeInputSetFromPipelineTemplate(accountId, orgId, projectId,
+                               pipelineId, List.of("overlaidIS1"), null, null, Collections.singletonList("s2")))
+        .isInstanceOf(WingsException.class)
+        .hasMessage("Please move the input-set from inline to remote.");
   }
 
   private String getPipelineYamlWithNoRuntime() {

@@ -14,9 +14,9 @@ import io.harness.factory.ClosingFactory;
 import io.harness.mongo.HObjectFactory;
 import io.harness.mongo.MongoConfig;
 import io.harness.mongo.ObjectFactoryModule;
-import io.harness.mongo.QueryFactory;
 import io.harness.mongo.index.migrator.Migrator;
 import io.harness.morphia.MorphiaModule;
+import io.harness.persistence.QueryFactory;
 import io.harness.persistence.UserProvider;
 import io.harness.serializer.KryoModule;
 
@@ -104,7 +104,8 @@ public class TestMongoModule extends AbstractModule implements MongoRuleMixin {
     }
 
     AdvancedDatastore datastore = (AdvancedDatastore) morphia.createDatastore(mongoClient, databaseName);
-    datastore.setQueryFactory(new QueryFactory(MongoConfig.builder().build()));
+    MongoConfig mongoConfig = MongoConfig.builder().build();
+    datastore.setQueryFactory(new QueryFactory(mongoConfig.getTraceMode(), mongoConfig.getMaxOperationTimeInMillis()));
     ((HObjectFactory) objectFactory).setDatastore(datastore);
     return datastore;
   }

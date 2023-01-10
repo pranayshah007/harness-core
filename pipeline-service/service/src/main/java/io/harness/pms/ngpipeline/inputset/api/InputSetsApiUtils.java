@@ -16,7 +16,6 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityInfo;
-import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.pms.inputset.InputSetErrorDTOPMS;
 import io.harness.pms.inputset.InputSetErrorResponseDTOPMS;
@@ -196,22 +195,6 @@ public class InputSetsApiUtils {
         .description(updateRequestBody.getDescription())
         .tags(updateRequestBody.getTags())
         .build();
-  }
-
-  public String getPipelineYaml(String accountId, String orgIdentifier, String projectIdentifier,
-      String pipelineIdentifier, String pipelineBranch, String pipelineRepoID, PMSPipelineService pipelineService,
-      GitSyncSdkService gitSyncSdkService) {
-    boolean isOldGitSyncFlow = gitSyncSdkService.isGitSyncEnabled(accountId, orgIdentifier, projectIdentifier);
-    final String pipelineYaml;
-    if (isOldGitSyncFlow) {
-      pipelineYaml = InputSetValidationHelper.getPipelineYamlForOldGitSyncFlow(pipelineService, accountId,
-          orgIdentifier, projectIdentifier, pipelineIdentifier, pipelineBranch, pipelineRepoID);
-    } else {
-      PipelineEntity pipelineEntity = InputSetValidationHelper.getPipelineEntity(
-          pipelineService, accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
-      pipelineYaml = pipelineEntity.getYaml();
-    }
-    return pipelineYaml;
   }
 
   public String inputSetVersion(String accountId, String yaml) {

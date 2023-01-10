@@ -7,11 +7,16 @@
 
 package io.harness.cvng.cdng.beans.v2;
 
-import lombok.Value;
+import lombok.AccessLevel;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import lombok.experimental.SuperBuilder;
 
-@Value
+@Data
 @SuperBuilder
+@NoArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class MetricValue {
   long timestamp;
   Double value;

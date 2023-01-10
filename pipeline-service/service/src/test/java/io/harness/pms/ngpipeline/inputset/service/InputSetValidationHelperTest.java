@@ -32,7 +32,6 @@ import io.harness.manage.GlobalContextManager;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetYamlDiffDTO;
-import io.harness.pms.ngpipeline.inputset.exceptions.InvalidInputSetException;
 import io.harness.pms.ngpipeline.inputset.helpers.InputSetSanitizer;
 import io.harness.pms.ngpipeline.inputset.helpers.ValidateAndMergeHelper;
 import io.harness.pms.pipeline.PipelineEntity;
@@ -79,29 +78,10 @@ public class InputSetValidationHelperTest extends CategoryTest {
   @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
-  public void testValidateInputSetForNonExistentPipeline() {
-    doReturn(Optional.empty())
-        .when(pipelineService)
-        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
-    InputSetEntity inputSetEntity = InputSetEntity.builder()
-                                        .accountId(accountId)
-                                        .orgIdentifier(orgId)
-                                        .projectIdentifier(projectId)
-                                        .pipelineIdentifier(pipelineId)
-                                        .build();
-    assertThatThrownBy(
-        () -> InputSetValidationHelper.validateInputSet(inputSetService, pipelineService, inputSetEntity, false, false))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessage(PipelineCRUDErrorResponse.errorMessageForPipelineNotFound(orgId, projectId, pipelineId));
-  }
-
-  @Test
-  @Owner(developers = NAMAN)
-  @Category(UnitTests.class)
   public void testValidateInputSetForInvalidStoreType() {
     doReturn(Optional.of(PipelineEntity.builder().storeType(StoreType.INLINE).build()))
         .when(pipelineService)
-        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
+        .getPipeline(accountId, orgId, projectId, pipelineId, false, true);
     setupGitContext(GitEntityInfo.builder().storeType(StoreType.REMOTE).build());
     InputSetEntity inputSetEntity = InputSetEntity.builder()
                                         .accountId(accountId)
@@ -109,8 +89,7 @@ public class InputSetValidationHelperTest extends CategoryTest {
                                         .projectIdentifier(projectId)
                                         .pipelineIdentifier(pipelineId)
                                         .build();
-    assertThatThrownBy(
-        () -> InputSetValidationHelper.validateInputSet(inputSetService, pipelineService, inputSetEntity, true, false))
+    assertThatThrownBy(() -> InputSetValidationHelper.checkForPipelineStoreType(inputSetEntity, pipelineService))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Input Set should have the same Store Type as the Pipeline it is for");
   }
@@ -132,8 +111,7 @@ public class InputSetValidationHelperTest extends CategoryTest {
                                         .yaml(yaml)
                                         .inputSetEntityType(InputSetEntityType.INPUT_SET)
                                         .build();
-    assertThatThrownBy(
-        () -> InputSetValidationHelper.validateInputSet(null, pipelineService, inputSetEntity, false, false))
+    assertThatThrownBy(() -> InputSetValidationHelper.validateInputSet(null, inputSetEntity, false))
         .hasMessage("Identifier cannot be empty");
   }
 
@@ -154,8 +132,7 @@ public class InputSetValidationHelperTest extends CategoryTest {
                                         .yaml(yaml)
                                         .inputSetEntityType(InputSetEntityType.INPUT_SET)
                                         .build();
-    assertThatThrownBy(
-        () -> InputSetValidationHelper.validateInputSet(null, pipelineService, inputSetEntity, false, false))
+    assertThatThrownBy(() -> InputSetValidationHelper.validateInputSet(null, inputSetEntity, false))
         .hasMessage("Input Set identifier length cannot be more that 63 characters.");
   }
 
@@ -177,8 +154,7 @@ public class InputSetValidationHelperTest extends CategoryTest {
                                         .yaml(inputSetYamlWithNoProjOrOrg)
                                         .inputSetEntityType(InputSetEntityType.INPUT_SET)
                                         .build();
-    assertThatThrownBy(
-        () -> InputSetValidationHelper.validateInputSet(inputSetService, pipelineService, inputSetEntity, true, false))
+    assertThatThrownBy(() -> InputSetValidationHelper.validateInputSet(inputSetService, inputSetEntity, false))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Organization identifier is missing in the YAML. Please give a valid Organization identifier");
 
@@ -192,8 +168,7 @@ public class InputSetValidationHelperTest extends CategoryTest {
                                          .yaml(inputSetYamlWithNoProj)
                                          .inputSetEntityType(InputSetEntityType.INPUT_SET)
                                          .build();
-    assertThatThrownBy(
-        () -> InputSetValidationHelper.validateInputSet(inputSetService, pipelineService, inputSetEntity1, true, false))
+    assertThatThrownBy(() -> InputSetValidationHelper.validateInputSet(inputSetService, inputSetEntity1, false))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Project identifier is missing in the YAML. Please give a valid Project identifier");
   }
@@ -220,112 +195,11 @@ public class InputSetValidationHelperTest extends CategoryTest {
                                         .storeType(StoreType.REMOTE)
                                         .build();
     // no exception should be thrown
-    InputSetValidationHelper.validateInputSet(inputSetService, pipelineService, inputSetEntity, true, false);
+    InputSetValidationHelper.validateInputSet(inputSetService, inputSetEntity, false);
 
     setupGitContext(GitEntityInfo.builder().storeType(StoreType.REMOTE).isNewBranch(true).baseBranch("br").build());
     // no exception should be thrown
-    InputSetValidationHelper.validateInputSet(inputSetService, pipelineService, inputSetEntity, true, false);
-  }
-
-  @Test
-  @Owner(developers = NAMAN)
-  @Category(UnitTests.class)
-  public void testValidateInputSetWithErrors() {
-    PipelineEntity pipelineEntity = PipelineEntity.builder().yaml(pipelineYaml).storeType(StoreType.INLINE).build();
-    doReturn(Optional.of(pipelineEntity))
-        .when(pipelineService)
-        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
-
-    String inputSetFile = "inputSetWrong1.yml";
-    String inputSetYaml = readFile(inputSetFile);
-    InputSetEntity inputSetEntity = InputSetEntity.builder()
-                                        .accountId(accountId)
-                                        .orgIdentifier(orgId)
-                                        .projectIdentifier(projectId)
-                                        .pipelineIdentifier(pipelineId)
-                                        .yaml(inputSetYaml)
-                                        .inputSetEntityType(InputSetEntityType.INPUT_SET)
-                                        .build();
-    assertThatThrownBy(
-        () -> InputSetValidationHelper.validateInputSet(inputSetService, pipelineService, inputSetEntity, true, false))
-        .isInstanceOf(InvalidInputSetException.class);
-  }
-
-  @Test
-  @Owner(developers = NAMAN)
-  @Category(UnitTests.class)
-  public void testValidateInputSetForOldGitSync() {
-    PipelineEntity pipelineEntity = PipelineEntity.builder().yaml(pipelineYaml).build();
-    doReturn(Optional.of(pipelineEntity))
-        .when(pipelineService)
-        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
-
-    String inputSetFile = "inputset1-with-org-proj-id.yaml";
-    String inputSetYaml = readFile(inputSetFile);
-    InputSetEntity inputSetEntity = InputSetEntity.builder()
-                                        .accountId(accountId)
-                                        .orgIdentifier(orgId)
-                                        .projectIdentifier(projectId)
-                                        .pipelineIdentifier(pipelineId)
-                                        .yaml(inputSetYaml)
-                                        .inputSetEntityType(InputSetEntityType.INPUT_SET)
-                                        .build();
-
-    // no exception should be thrown here
-    InputSetValidationHelper.validateInputSetForOldGitSync(inputSetService, pipelineService, inputSetEntity, "", "");
-    InputSetValidationHelper.validateInputSetForOldGitSync(
-        inputSetService, pipelineService, inputSetEntity, "branch", "repo");
-  }
-
-  @Test
-  @Owner(developers = NAMAN)
-  @Category(UnitTests.class)
-  public void testValidateInputSetForOldGitSyncWithErrors() {
-    PipelineEntity pipelineEntity = PipelineEntity.builder().yaml(pipelineYaml).storeType(StoreType.INLINE).build();
-    doReturn(Optional.of(pipelineEntity))
-        .when(pipelineService)
-        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
-
-    String inputSetFile = "inputSetWrong1.yml";
-    String inputSetYaml = readFile(inputSetFile);
-    InputSetEntity inputSetEntity = InputSetEntity.builder()
-                                        .accountId(accountId)
-                                        .orgIdentifier(orgId)
-                                        .projectIdentifier(projectId)
-                                        .pipelineIdentifier(pipelineId)
-                                        .yaml(inputSetYaml)
-                                        .inputSetEntityType(InputSetEntityType.INPUT_SET)
-                                        .build();
-    assertThatThrownBy(()
-                           -> InputSetValidationHelper.validateInputSetForOldGitSync(
-                               inputSetService, pipelineService, inputSetEntity, "", ""))
-        .isInstanceOf(InvalidInputSetException.class);
-    assertThatThrownBy(()
-                           -> InputSetValidationHelper.validateInputSetForOldGitSync(
-                               inputSetService, pipelineService, inputSetEntity, "branch", "repo"))
-        .isInstanceOf(InvalidInputSetException.class);
-  }
-
-  @Test
-  @Owner(developers = NAMAN)
-  @Category(UnitTests.class)
-  public void testValidateInputSetForOldGitSyncWithNonExistentPipeline() {
-    doReturn(Optional.empty())
-        .when(pipelineService)
-        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
-    String inputSetYaml = "anything";
-    InputSetEntity inputSetEntity = InputSetEntity.builder()
-                                        .accountId(accountId)
-                                        .orgIdentifier(orgId)
-                                        .projectIdentifier(projectId)
-                                        .pipelineIdentifier(pipelineId)
-                                        .yaml(inputSetYaml)
-                                        .inputSetEntityType(InputSetEntityType.INPUT_SET)
-                                        .build();
-    assertThatThrownBy(()
-                           -> InputSetValidationHelper.validateInputSetForOldGitSync(
-                               inputSetService, pipelineService, inputSetEntity, "", ""))
-        .isInstanceOf(InvalidRequestException.class);
+    InputSetValidationHelper.validateInputSet(inputSetService, inputSetEntity, false);
   }
 
   @Test
@@ -496,6 +370,6 @@ public class InputSetValidationHelperTest extends CategoryTest {
                                         .harnessVersion(PipelineVersion.V1)
                                         .build();
     // no exception should be thrown
-    InputSetValidationHelper.validateInputSet(inputSetService, pipelineService, inputSetEntity, true, false);
+    InputSetValidationHelper.validateInputSet(inputSetService, inputSetEntity, false);
   }
 }

@@ -17,8 +17,8 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.flow.BackoffScheduler;
 import io.harness.logging.AutoLogContext;
+import io.harness.logging.DelayLogContext;
 import io.harness.logging.LoggingListener;
-import io.harness.mongo.DelayLogContext;
 import io.harness.threading.Schedulable;
 
 import com.google.common.annotations.VisibleForTesting;

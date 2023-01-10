@@ -373,7 +373,7 @@ public class EnvStateTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldGetTimeout() {
     Integer timeoutMillis = envState.getTimeoutMillis();
-    assertThat(timeoutMillis).isEqualTo(EnvState.ENV_STATE_TIMEOUT_MILLIS);
+    assertThat(timeoutMillis).isEqualTo(EnvState.INFINITE_TIMEOUT);
   }
 
   @Test

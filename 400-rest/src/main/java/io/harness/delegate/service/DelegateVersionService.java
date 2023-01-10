@@ -80,8 +80,8 @@ public class DelegateVersionService {
   }
 
   /**
-   * Separate function to generate delegate image tag for helm delegates in ng. Keeping a separate function for
-   * helm delegates because we don't want to pass igNgDelegate parameter as part of above function.
+   * Separate function to generate delegate image tag for delegates in ng. Keeping a separate function for
+   * ng delegates because we don't want to pass igNgDelegate parameter as part of above function.
    *
    * @param accountId
    * @return

@@ -10,11 +10,16 @@ package io.harness.cvng.cdng.beans.v2;
 import io.harness.cvng.beans.job.Sensitivity;
 import io.harness.cvng.beans.job.VerificationJobType;
 
-import lombok.Value;
+import lombok.AccessLevel;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import lombok.experimental.SuperBuilder;
 
-@Value
+@Data
 @SuperBuilder
+@NoArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class VerificationSpec {
   VerificationJobType analysisType;
   Sensitivity sensitivity;

@@ -227,18 +227,25 @@ public class NGTriggerElementMapper {
       return;
     }
 
+    // Currently, enabled only for GITHUB
     if (newEntity.getType() == WEBHOOK) {
       if (!GITHUB.getEntityMetadataName().equalsIgnoreCase(existingEntity.getMetadata().getWebhook().getType())) {
         return;
       }
 
-      // Currently, enabled only for GITHUB
-      boolean isWebhookPollingEnabled = isWebhookPollingEnabled(
-          existingEntity.getType(), existingEntity.getAccountId(), existingEntity.getPollInterval());
+      // Check if polling was previously enabled or if it is being enabled now
+      String pollInterval =
+          isEmpty(existingEntity.getPollInterval()) ? newEntity.getPollInterval() : existingEntity.getPollInterval();
+
+      boolean isWebhookPollingEnabled =
+          isWebhookPollingEnabled(existingEntity.getType(), existingEntity.getAccountId(), pollInterval);
 
       if (isWebhookPollingEnabled) {
-        if (newEntity.getPollInterval() == null) {
-          throw new InvalidRequestException("Polling Interval cannot be null");
+        if (isNotEmpty(existingEntity.getPollInterval()) && isEmpty(newEntity.getPollInterval())) {
+          throw new InvalidRequestException(
+              String.format("Polling is previously enabled with a value %s. The value cannot be empty or null. "
+                      + "Please enter 0 to unsubscribe or a value greater than 2m and less than 60m to subscribe",
+                  existingEntity.getPollInterval()));
         }
         // Copy entities for webhook git polling
         copyFields(existingEntity, newEntity);
@@ -247,6 +254,10 @@ public class NGTriggerElementMapper {
   }
 
   private void copyFields(NGTriggerEntity existingEntity, NGTriggerEntity newEntity) {
+    if (existingEntity.getMetadata().getBuildMetadata() == null) {
+      log.info("Previously polling was not enabled. Trigger {} updated with polling", newEntity.getIdentifier());
+      return;
+    }
     PollingConfig existingPollingConfig = existingEntity.getMetadata().getBuildMetadata().getPollingConfig();
 
     if (existingPollingConfig != null && isNotEmpty(existingPollingConfig.getSignature())) {
@@ -269,22 +280,24 @@ public class NGTriggerElementMapper {
 
   public NGTriggerEntity toTriggerEntity(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       NGTriggerConfigV2 config, String yaml, boolean withServiceV2) {
-    NGTriggerEntityBuilder entityBuilder = NGTriggerEntity.builder()
-                                               .name(config.getName())
-                                               .identifier(config.getIdentifier())
-                                               .description(config.getDescription())
-                                               .yaml(yaml)
-                                               .type(config.getSource().getType())
-                                               .accountId(accountIdentifier)
-                                               .orgIdentifier(orgIdentifier)
-                                               .projectIdentifier(projectIdentifier)
-                                               .targetIdentifier(config.getPipelineIdentifier())
-                                               .targetType(TargetType.PIPELINE)
-                                               .metadata(toMetadata(config.getSource(), accountIdentifier))
-                                               .enabled(config.getEnabled())
-                                               .pollInterval(config.getSource().getPollInterval())
-                                               .withServiceV2(withServiceV2)
-                                               .tags(TagMapper.convertToList(config.getTags()));
+    NGTriggerEntityBuilder entityBuilder =
+        NGTriggerEntity.builder()
+            .name(config.getName())
+            .identifier(config.getIdentifier())
+            .description(config.getDescription())
+            .yaml(yaml)
+            .type(config.getSource().getType())
+            .accountId(accountIdentifier)
+            .orgIdentifier(orgIdentifier)
+            .projectIdentifier(projectIdentifier)
+            .targetIdentifier(config.getPipelineIdentifier())
+            .targetType(TargetType.PIPELINE)
+            .metadata(toMetadata(config.getSource(), accountIdentifier))
+            .enabled(config.getEnabled())
+            .pollInterval(config.getSource().getPollInterval() != null ? config.getSource().getPollInterval() : EMPTY)
+            .webhookId(config.getSource().getWebhookId())
+            .withServiceV2(withServiceV2)
+            .tags(TagMapper.convertToList(config.getTags()));
 
     if (config.getSource().getType() == NGTriggerType.SCHEDULED) {
       entityBuilder.nextIterations(new ArrayList<>());

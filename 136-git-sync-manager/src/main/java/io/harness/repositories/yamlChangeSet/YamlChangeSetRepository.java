@@ -31,4 +31,6 @@ public interface YamlChangeSetRepository
       List<String> accountIds, List<String> status, Long cutOffTime);
 
   List<YamlChangeSet> findByAccountIdAndQueueKeyAndStatus(String accountId, String queueKey, String status);
+
+  List<YamlChangeSet> findAllByAccountId(String accountId);
 }

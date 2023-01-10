@@ -188,7 +188,7 @@ ciExecutionServiceConfig:
       entrypoint:
         - /kaniko/kaniko-docker
     buildAndPushECRConfig:
-      image: plugins/kaniko-ecr:1.6.6
+      image: plugins/kaniko-ecr:1.6.11
       entrypoint:
         - /kaniko/kaniko-ecr
     buildAndPushGCRConfig:

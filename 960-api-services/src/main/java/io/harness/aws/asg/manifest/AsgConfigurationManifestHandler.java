@@ -23,7 +23,7 @@ import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.amazonaws.services.autoscaling.model.CreateAutoScalingGroupRequest;
 import com.amazonaws.services.autoscaling.model.LifecycleHookSpecification;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -141,14 +141,16 @@ public class AsgConfigurationManifestHandler extends AsgManifestHandler<CreateAu
       String asgConfiguration = createAutoScalingGroupRequestFromAutoScalingGroupConfiguration(
           autoScalingGroup, lifecycleHookSpecificationList);
 
+      List<String> asgConfigurationList = new ArrayList<>();
+      asgConfigurationList.add(asgConfiguration);
+
       Map<String, List<String>> asgManifestsDataForRollback = chainState.getAsgManifestsDataForRollback();
       if (asgManifestsDataForRollback == null) {
-        Map<String, List<String>> asgManifestsDataForRollback2 = new HashMap<>() {
-          { put(AsgConfiguration, Collections.singletonList(asgConfiguration)); }
-        };
+        Map<String, List<String>> asgManifestsDataForRollback2 = new HashMap<>();
+        asgManifestsDataForRollback2.put(AsgConfiguration, asgConfigurationList);
         chainState.setAsgManifestsDataForRollback(asgManifestsDataForRollback2);
       } else {
-        asgManifestsDataForRollback.put(AsgConfiguration, Collections.singletonList(asgConfiguration));
+        asgManifestsDataForRollback.put(AsgConfiguration, asgConfigurationList);
         chainState.setAsgManifestsDataForRollback(asgManifestsDataForRollback);
       }
     }
@@ -160,6 +162,11 @@ public class AsgConfigurationManifestHandler extends AsgManifestHandler<CreateAu
     CreateAutoScalingGroupRequest createAutoScalingGroupRequest =
         AsgContentParser.parseJson(autoScalingGroupContent, CreateAutoScalingGroupRequest.class, false);
     createAutoScalingGroupRequest.setLifecycleHookSpecificationList(lifecycleHookSpecificationList);
+    createAutoScalingGroupRequest.setServiceLinkedRoleARN(null);
+    if ((createAutoScalingGroupRequest.getVPCZoneIdentifier()).equals("")) {
+      createAutoScalingGroupRequest.setVPCZoneIdentifier(null);
+    }
+
     return AsgContentParser.toString(createAutoScalingGroupRequest, false);
   }
 

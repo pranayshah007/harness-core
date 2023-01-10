@@ -8,6 +8,7 @@
 package io.harness.k8s.releasehistory;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_KEY;
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_LABEL_QUERY_LIST_FORMAT;
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_LABEL_QUERY_SET_FORMAT;
@@ -16,6 +17,8 @@ import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_NUMBER_L
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_OWNER_LABEL_KEY;
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_OWNER_LABEL_VALUE;
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_SECRET_LABELS_MAP;
+import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_SECRET_NAME_PREFIX;
+import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_SECRET_RELEASE_COLOR_KEY;
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_STATUS_LABEL_KEY;
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.SECRET_LABEL_DELIMITER;
 
@@ -52,7 +55,7 @@ public class K8sReleaseSecretHelper {
   }
 
   public String generateName(@NotNull String releaseName, int releaseNumber) {
-    return String.join(RELEASE_NAME_DELIMITER, RELEASE_KEY, releaseName, String.valueOf(releaseNumber));
+    return String.join(RELEASE_NAME_DELIMITER, RELEASE_SECRET_NAME_PREFIX, releaseName, String.valueOf(releaseNumber));
   }
 
   public Map<String, String> generateLabels(@NotNull String releaseName, int releaseNumber, @NotNull String status) {
@@ -74,6 +77,17 @@ public class K8sReleaseSecretHelper {
     return EMPTY;
   }
 
+  public String getSecretName(@NotNull V1Secret release) {
+    if (release.getMetadata() != null && isNotEmpty(release.getMetadata().getName())) {
+      return release.getMetadata().getName();
+    }
+    return EMPTY;
+  }
+
+  public V1Secret putLabelsItem(@NotNull K8sRelease release, @NotNull String labelKey, @NotNull String labelValue) {
+    return putLabelsItem(release.getReleaseSecret(), labelKey, labelValue);
+  }
+
   public V1Secret putLabelsItem(@NotNull V1Secret release, @NotNull String labelKey, @NotNull String labelValue) {
     V1ObjectMeta objectMeta = release.getMetadata();
     if (objectMeta == null) {
@@ -83,5 +97,20 @@ public class K8sReleaseSecretHelper {
     objectMeta.putLabelsItem(labelKey, labelValue);
     release.setMetadata(objectMeta);
     return release;
+  }
+
+  public boolean checkReleaseColor(@NotNull V1Secret releaseSecret, @NotNull String colorToCheck) {
+    return colorToCheck.equals(getReleaseLabelValue(releaseSecret, RELEASE_SECRET_RELEASE_COLOR_KEY));
+  }
+
+  public static V1Secret resetSecretVersionMetadata(@NotNull V1Secret releaseSecret) {
+    // This avoids 409 (Object has been modified) exceptions
+    V1ObjectMeta secretMeta = releaseSecret.getMetadata();
+    if (secretMeta != null) {
+      secretMeta.setResourceVersion(null);
+      secretMeta.setUid(null);
+      secretMeta.setSelfLink(null);
+    }
+    return releaseSecret;
   }
 }

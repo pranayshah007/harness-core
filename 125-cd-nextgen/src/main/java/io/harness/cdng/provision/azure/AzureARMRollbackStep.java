@@ -22,6 +22,7 @@ import io.harness.azure.model.ARMScopeType;
 import io.harness.azure.model.AzureConstants;
 import io.harness.azure.model.AzureDeploymentMode;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.provision.azure.beans.AzureARMConfig;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
@@ -38,7 +39,6 @@ import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
-import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.SkipTaskRequest;
@@ -61,7 +61,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(CDP)
-public class AzureARMRollbackStep extends TaskExecutableWithRollbackAndRbac<AzureARMTaskNGResponse> {
+public class AzureARMRollbackStep extends CdTaskExecutable<AzureARMTaskNGResponse> {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.AZURE_ROLLBACK_ARM_RESOURCE.getYamlType())
                                                .setStepCategory(StepCategory.STEP)

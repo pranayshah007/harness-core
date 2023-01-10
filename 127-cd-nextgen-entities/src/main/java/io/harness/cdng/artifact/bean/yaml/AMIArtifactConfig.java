@@ -9,6 +9,7 @@ package io.harness.cdng.artifact.bean.yaml;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.AMI_ARTIFACTS_NAME;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
@@ -26,6 +27,7 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.validation.OneOfField;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
+import io.harness.yaml.YamlSchemaTypes;
 import io.harness.yaml.core.VariableExpression;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -76,12 +78,18 @@ public class AMIArtifactConfig implements ArtifactConfig, Visitable, WithConnect
   /**
    * AMI Tags
    */
-  @Wither ParameterField<List<AMITag>> tags;
+  @YamlSchemaTypes(value = {runtime})
+  @ApiModelProperty(dataType = SwaggerConstants.AMI_TAG_LIST_CLASSPATH)
+  @Wither
+  ParameterField<List<AMITag>> tags;
 
   /**
    * AMI Filters
    */
-  @Wither ParameterField<List<AMIFilter>> filters;
+  @YamlSchemaTypes(value = {runtime})
+  @ApiModelProperty(dataType = SwaggerConstants.AMI_FILTER_LIST_CLASSPATH)
+  @Wither
+  ParameterField<List<AMIFilter>> filters;
 
   /**
    * Version

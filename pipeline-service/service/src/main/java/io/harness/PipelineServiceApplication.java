@@ -107,7 +107,6 @@ import io.harness.pms.inputset.gitsync.InputSetYamlDTO;
 import io.harness.pms.instrumentaion.InstrumentationPipelineEndEventHandler;
 import io.harness.pms.migration.PipelineCoreMigrationProvider;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
-import io.harness.pms.ngpipeline.inputset.observers.InputSetPipelineObserver;
 import io.harness.pms.notification.orchestration.handlers.NotificationInformHandler;
 import io.harness.pms.notification.orchestration.handlers.StageStartNotificationHandler;
 import io.harness.pms.notification.orchestration.handlers.StageStatusUpdateNotificationEventHandler;
@@ -445,13 +444,11 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
 
     // Register Pipeline Outbox Observers
     PipelineOutboxEventHandler pipelineOutboxEventHandler =
-        (PipelineOutboxEventHandler) injector.getInstance(Key.get(PipelineOutboxEventHandler.class));
+        injector.getInstance(Key.get(PipelineOutboxEventHandler.class));
     pipelineOutboxEventHandler.getPipelineActionObserverSubject().register(
         injector.getInstance(Key.get(PipelineSetupUsageHelper.class)));
     pipelineOutboxEventHandler.getPipelineActionObserverSubject().register(
         injector.getInstance(Key.get(PipelineEntityCrudObserver.class)));
-    pipelineOutboxEventHandler.getPipelineActionObserverSubject().register(
-        injector.getInstance(Key.get(InputSetPipelineObserver.class)));
 
     NodeExecutionServiceImpl nodeExecutionService =
         (NodeExecutionServiceImpl) injector.getInstance(Key.get(NodeExecutionService.class));

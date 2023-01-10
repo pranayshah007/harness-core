@@ -7,13 +7,20 @@
 
 package io.harness.cvng.cdng.beans.v2;
 
+import com.fasterxml.jackson.annotation.JsonTypeName;
+import lombok.AccessLevel;
+import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.Value;
+import lombok.NoArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import lombok.experimental.SuperBuilder;
 
-@Value
+@Data
+@NoArgsConstructor
 @EqualsAndHashCode(callSuper = false)
 @SuperBuilder
+@FieldDefaults(level = AccessLevel.PRIVATE)
+@JsonTypeName("LOAD_TEST_NODE")
 public class AnalysedLoadTestNode extends AbstractAnalysedNode {
   String deploymentTag;
   Long testStartTimestamp;

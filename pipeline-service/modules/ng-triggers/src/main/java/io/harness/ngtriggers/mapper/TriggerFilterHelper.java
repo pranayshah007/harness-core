@@ -137,6 +137,9 @@ public class TriggerFilterHelper {
     if (triggerEntity.getPollInterval() != null) {
       update.set(NGTriggerEntityKeys.pollInterval, triggerEntity.getPollInterval());
     }
+    if (triggerEntity.getWebhookId() != null) {
+      update.set(NGTriggerEntityKeys.webhookId, triggerEntity.getWebhookId());
+    }
     if (triggerEntity.getNextIterations() != null) {
       update.set(NGTriggerEntityKeys.nextIterations, triggerEntity.getNextIterations());
     }

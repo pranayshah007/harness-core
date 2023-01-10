@@ -111,10 +111,10 @@ import io.harness.ff.FeatureFlagService;
 import io.harness.lock.PersistentLocker;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
+import io.harness.logging.DelayLogContext;
 import io.harness.logging.DelegateDriverLogContext;
 import io.harness.logstreaming.LogStreamingServiceRestClient;
 import io.harness.metrics.intfc.DelegateMetricsService;
-import io.harness.mongo.DelayLogContext;
 import io.harness.network.SafeHttpCall;
 import io.harness.observer.RemoteObserverInformer;
 import io.harness.observer.Subject;
@@ -2016,6 +2016,12 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
             .collect(Collectors.joining("\n")));
   }
   private void saveDelegateTask(DelegateTask delegateTask, String accountId) {
+    if (mainConfiguration.getQueueServiceConfig() != null
+        && !mainConfiguration.getQueueServiceConfig().isEnableQueueAndDequeue()) {
+      persistence.save(delegateTask);
+      return;
+    }
+
     if (featureFlagService.isEnabled(QUEUE_CI_EXECUTIONS, accountId)
         && !delegateTaskQueueService.isResourceAvailableToAssignTask(delegateTask)) {
       delegateTaskQueueService.enqueue(delegateTask);

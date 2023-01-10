@@ -32,7 +32,6 @@ import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.DiscoveryNode;
 import software.wings.ngmigration.NGMigrationEntity;
-import software.wings.ngmigration.NGMigrationStatus;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.inject.Inject;
@@ -66,15 +65,8 @@ public abstract class NgMigrationService {
 
   public abstract DiscoveryNode discover(String accountId, String appId, String entityId);
 
-  public abstract NGMigrationStatus canMigrate(NGMigrationEntity entity);
-
   public static String getYamlString(NGYamlFile yamlFile) {
     return NGYamlUtils.getYamlString(yamlFile.getYaml());
-  }
-
-  public NGMigrationStatus canMigrate(
-      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId) {
-    return canMigrate(entities.get(entityId).getEntity());
   }
 
   public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,

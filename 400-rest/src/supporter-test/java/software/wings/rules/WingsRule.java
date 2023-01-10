@@ -351,6 +351,7 @@ public class WingsRule implements MethodRule, InjectorRuleMixin, MongoRuleMixin 
                                                                     .connectTimeOutSeconds(15)
                                                                     .build())
                                             .topic("delegate-service")
+                                            .enableQueueAndDequeue(false)
                                             .build());
     configuration.setAccessControlClientConfiguration(
         AccessControlClientConfiguration.builder()

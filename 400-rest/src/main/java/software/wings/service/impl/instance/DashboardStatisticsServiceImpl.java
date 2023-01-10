@@ -63,6 +63,7 @@ import io.harness.exception.NoResultFoundException;
 import io.harness.exception.WingsException;
 import io.harness.exception.WingsException.ReportTarget;
 import io.harness.ff.FeatureFlagService;
+import io.harness.mongo.index.BasicDBUtils;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 import io.harness.time.EpochUtils;
@@ -418,7 +419,7 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
           .field(InstanceKeys.deletedAt)
           .greaterThanOrEq(timestamp);
       FindOptions findOptions = wingsPersistence.analyticNodePreferenceOptions();
-      findOptions.hint(Instance.getHint("instance_index7"));
+      findOptions.hint(BasicDBUtils.getIndexObject(Instance.mongoIndexes(), "instance_index7"));
       instanceSet.addAll(cloneQuery.asList(findOptions));
     }
 
@@ -460,7 +461,7 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
     }
 
     FindOptions findOptions = wingsPersistence.analyticNodePreferenceOptions();
-    findOptions.hint(Instance.getHint("instance_index7"));
+    findOptions.hint(BasicDBUtils.getIndexObject(Instance.mongoIndexes(), "instance_index7"));
     Instance instance = query.get(findOptions);
     if (instance == null) {
       return timestamp;

@@ -23,12 +23,13 @@ import static java.lang.String.format;
 import static java.time.Duration.ofSeconds;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.aws.CloseableAmazonWebServiceClient;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.logging.LogCallback;
+
+import software.wings.service.impl.aws.client.CloseableAmazonWebServiceClient;
 
 import com.amazonaws.AmazonWebServiceClient;
 import com.amazonaws.services.autoscaling.AmazonAutoScalingClient;
@@ -436,8 +437,7 @@ public class AsgSdkManager {
     return resultList.get(0);
   }
 
-  public void deleteAsgService(AutoScalingGroup autoScalingGroup) {
-    String asgName = autoScalingGroup.getAutoScalingGroupName();
+  public void deleteAsg(String asgName) {
     String operationName = format("Delete Asg %s", asgName);
     info("Operation `%s` has started", operationName);
     DeleteAutoScalingGroupRequest deleteAutoScalingGroupRequest =
@@ -616,7 +616,7 @@ public class AsgSdkManager {
 
   private UpdateAutoScalingGroupRequest createAsgRequestToUpdateAsgRequestMapper(
       CreateAutoScalingGroupRequest createAutoScalingGroupRequest) {
-    String createAutoScalingGroupRequestContent = AsgContentParser.toString(createAutoScalingGroupRequest, true);
+    String createAutoScalingGroupRequestContent = AsgContentParser.toString(createAutoScalingGroupRequest, false);
     return AsgContentParser.parseJson(createAutoScalingGroupRequestContent, UpdateAutoScalingGroupRequest.class, false);
   }
 

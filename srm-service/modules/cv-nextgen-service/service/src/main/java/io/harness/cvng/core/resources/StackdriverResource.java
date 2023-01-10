@@ -9,7 +9,7 @@ package io.harness.cvng.core.resources;
 
 import io.harness.annotations.ExposeInternalException;
 import io.harness.cvng.core.beans.TimeSeriesSampleDTO;
-import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.core.beans.params.ProjectScopedProjectParams;
 import io.harness.cvng.core.beans.stackdriver.StackdriverDashboardDTO;
 import io.harness.cvng.core.beans.stackdriver.StackdriverDashboardDetail;
 import io.harness.cvng.core.services.api.StackdriverService;
@@ -55,7 +55,7 @@ public class StackdriverResource {
   @ExceptionMetered
   @ApiOperation(value = "get all stackdriver dashboards", nickname = "getStackdriverDashboards")
   public ResponseDTO<PageResponse<StackdriverDashboardDTO>> getStackdriverDashboards(
-      @NotNull @BeanParam ProjectParams projectParams,
+      @NotNull @BeanParam ProjectScopedProjectParams projectParams,
       @NotNull @QueryParam("connectorIdentifier") final String connectorIdentifier,
       @QueryParam("pageSize") @NotNull int pageSize, @QueryParam("offset") @NotNull int offset,
       @QueryParam("filter") String filter, @NotNull @QueryParam("tracingId") String tracingId) {
@@ -70,7 +70,7 @@ public class StackdriverResource {
   @ExceptionMetered
   @ApiOperation(value = "get details about one dashboard", nickname = "getStackdriverDashboardDetail")
   public ResponseDTO<List<StackdriverDashboardDetail>> getStackdriverDashboardDetail(
-      @NotNull @BeanParam ProjectParams projectParams,
+      @NotNull @BeanParam ProjectScopedProjectParams projectParams,
       @NotNull @QueryParam("connectorIdentifier") final String connectorIdentifier,
       @QueryParam("path") @NotNull String path, @NotNull @QueryParam("tracingId") String tracingId) {
     return ResponseDTO.newResponse(stackdriverService.getDashboardDetails(projectParams.getAccountIdentifier(),
@@ -82,7 +82,8 @@ public class StackdriverResource {
   @Timed
   @ExceptionMetered
   @ApiOperation(value = "get sample data for one metric", nickname = "getStackdriverSampleData")
-  public ResponseDTO<Set<TimeSeriesSampleDTO>> getStackdriverSampleData(@NotNull @BeanParam ProjectParams projectParams,
+  public ResponseDTO<Set<TimeSeriesSampleDTO>> getStackdriverSampleData(
+      @NotNull @BeanParam ProjectScopedProjectParams projectParams,
       @NotNull @QueryParam("connectorIdentifier") final String connectorIdentifier,
       @NotNull @QueryParam("tracingId") String tracingId, @NotNull Object metricDefinitionDTO) {
     return ResponseDTO.newResponse(

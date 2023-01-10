@@ -142,10 +142,7 @@ public class IdentifierRefHelper {
     if (isEmpty(scopedIdentifierConfig)) {
       throw new InvalidIdentifierRefException("Empty identifier values are not supported");
     }
-    if (scopedIdentifierConfig.contains("<+input>")) {
-      throw new InvalidIdentifierRefException(
-          "Artifactory Connector is required to fetch repositories. You can make this field Runtime input otherwise.");
-    }
+
     String[] identifierConfigStringSplit = scopedIdentifierConfig.split(IDENTIFIER_REF_DELIMITER);
 
     if (identifierConfigStringSplit.length == 1) {
