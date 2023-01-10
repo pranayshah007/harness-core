@@ -31,6 +31,58 @@ tags:
   - name: Project Services
     description: This contains APIs for Project-scoped Services.
 paths:
+  '/v1/orgs/{org}/projects/{project}/services/{service}':
+    get:
+      summary: Retrieve a service
+      operationId: get-service
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      description: Retrieves the specified service
+      security:
+        - x-api-key: []
+      responses:
+        '200':
+          $ref: '#/components/responses/ServiceResponse'
+      tags:
+        - Project Services
+    parameters:
+      - $ref: '#/components/parameters/OrgPathParam'
+      - $ref: '#/components/parameters/ProjectPathParam'
+      - $ref: '#/components/parameters/ServicePathParam'
+    put:
+      summary: Update Service
+      operationId: update-service
+      responses:
+        '200':
+          $ref: '#/components/responses/ServiceResponse'
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/ServiceRequest'
+      description: Updates the specified service
+      security:
+        - x-api-key: []
+      tags:
+        - Project Services
+    delete:
+      summary: Delete a Service
+      operationId: delete-service
+      responses:
+        '200':
+          $ref: '#/components/responses/ServiceResponse'
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - schema:
+            type: boolean
+            default: 'false'
+          in: query
+          name: forceDelete
+          description: Enable this field to force delete a service
+      description: Deletes the requested service
+      security:
+        - x-api-key: []
+      tags:
+        - Project Services
   '/v1/orgs/{org}/projects/{project}/services':
     get:
       summary: List Services
@@ -91,58 +143,6 @@ paths:
     parameters:
       - $ref: '#/components/parameters/OrgPathParam'
       - $ref: '#/components/parameters/ProjectPathParam'
-  '/v1/orgs/{org}/projects/{project}/services/{service}':
-    get:
-      summary: Retrieve a service
-      operationId: get-service
-      parameters:
-        - $ref: '#/components/parameters/AccountHeader'
-      description: Retrieves the specified service
-      security:
-        - x-api-key: []
-      responses:
-        '200':
-          $ref: '#/components/responses/ServiceResponse'
-      tags:
-        - Project Services
-    parameters:
-      - $ref: '#/components/parameters/OrgPathParam'
-      - $ref: '#/components/parameters/ProjectPathParam'
-      - $ref: '#/components/parameters/ServicePathParam'
-    put:
-      summary: Update Service
-      operationId: update-service
-      responses:
-        '200':
-          $ref: '#/components/responses/ServiceResponse'
-      parameters:
-        - $ref: '#/components/parameters/AccountHeader'
-      requestBody:
-        $ref: '#/components/requestBodies/ServiceRequest'
-      description: Updates the specified service
-      security:
-        - x-api-key: []
-      tags:
-        - Project Services
-    delete:
-      summary: Delete a Service
-      operationId: delete-service
-      responses:
-        '200':
-          $ref: '#/components/responses/ServiceResponse'
-      parameters:
-        - $ref: '#/components/parameters/AccountHeader'
-        - schema:
-            type: boolean
-            default: 'false'
-          in: query
-          name: forceDelete
-          description: Flag for force deletion of entities
-      description: Deletes the requested service
-      security:
-        - x-api-key: []
-      tags:
-        - Project Services
   '/v1/orgs/{org}/services/{service}':
     get:
       summary: Retrieve a service
