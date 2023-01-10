@@ -439,7 +439,9 @@ public enum TaskType {
   AWS_ASG_ROLLING_ROLLBACK_TASK_NG(TaskGroup.ASG, "AWS Asg Rolling Rollback"),
   TERRAFORM_PROVISION_TASK_V2(TaskGroup.TERRAFORM, "Terraform Provision Task V2"),
   TERRAFORM_INPUT_VARIABLES_OBTAIN_TASK_V2(TaskGroup.TERRAFORM, "Terraform Fetch Input variables Task V2"),
-  TERRAFORM_FETCH_TARGETS_TASK_V2(TaskGroup.TERRAFORM, "Terraform Fetch Targets Task V2");
+  TERRAFORM_FETCH_TARGETS_TASK_V2(TaskGroup.TERRAFORM, "Terraform Fetch Targets Task V2"),
+  GIT_TASK_NG(TaskGroup.GIT_NG, "Git Fetch Files Task");
+
   private final TaskGroup taskGroup;
   private final String displayName;
   private final Class<? extends TaskParameters> request;

@@ -641,6 +641,9 @@ import io.harness.delegate.task.git.GitOpsTaskType;
 import io.harness.delegate.task.git.NGGitOpsResponse;
 import io.harness.delegate.task.git.NGGitOpsTaskParams;
 import io.harness.delegate.task.git.TaskStatus;
+import io.harness.delegate.task.gitcommon.GitRequestFileConfig;
+import io.harness.delegate.task.gitcommon.GitTaskNGRequest;
+import io.harness.delegate.task.gitcommon.GitTaskNGResponse;
 import io.harness.delegate.task.gitops.GitOpsFetchAppTaskParams;
 import io.harness.delegate.task.gitops.GitOpsFetchAppTaskResponse;
 import io.harness.delegate.task.gitpolling.GitPollingSourceType;
@@ -1985,6 +1988,12 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AppSettingsFile.class, 55407);
     kryo.register(EncryptedAppSettingsFile.class, 55408);
     kryo.register(AzureWebAppSlotDeploymentExceptionData.class, 55409);
+
+    //GIT
+    kryo.register(GitTaskNGRequest.class, 573401);
+    kryo.register(GitTaskNGResponse.class, 573402);
+    kryo.register(io.harness.delegate.task.gitcommon.GitFetchFilesResult.class, 573403);
+    kryo.register(GitRequestFileConfig.class, 573404);
 
     // ECS
     kryo.register(EcsGitFetchRequest.class, 573501);

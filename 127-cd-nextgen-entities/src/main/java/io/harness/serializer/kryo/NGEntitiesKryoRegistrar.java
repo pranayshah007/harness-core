@@ -66,6 +66,7 @@ import io.harness.cdng.customdeployment.CustomDeploymentSecretNGVariable;
 import io.harness.cdng.customdeployment.CustomDeploymentStringNGVariable;
 import io.harness.cdng.infra.beans.CustomDeploymentInfrastructureOutcome;
 import io.harness.cdng.infra.beans.EcsInfrastructureOutcome;
+import io.harness.cdng.infra.beans.GoogleFunctionsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
 import io.harness.cdng.infra.beans.ServerlessAwsLambdaInfrastructureOutcome;
@@ -345,5 +346,6 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(VarsManifestOutcome.class, 140056);
     kryo.register(K8sCommandFlagType.class, 1400172);
     kryo.register(K8sStepCommandFlag.class, 1400173);
+    kryo.register(GoogleFunctionsInfrastructureOutcome.class, 1500001);
   }
 }

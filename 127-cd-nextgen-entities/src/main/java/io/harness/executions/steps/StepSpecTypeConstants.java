@@ -83,6 +83,8 @@ public interface StepSpecTypeConstants {
   String ECS_BLUE_GREEN_SWAP_TARGET_GROUPS = "EcsBlueGreenSwapTargetGroups";
   String ECS_BLUE_GREEN_ROLLBACK = "EcsBlueGreenRollback";
 
+  String GOOGLE_CLOUD_FUNCTIONS_DEPLOY = "DeployCloudFunction";
+
   String SHELL_SCRIPT_PROVISION = "ShellScriptProvision";
 
   String CHAOS_STEP = "Chaos";

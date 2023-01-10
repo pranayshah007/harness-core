@@ -16,6 +16,7 @@ import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
 import io.harness.cdng.infra.yaml.CustomDeploymentInfrastructure;
 import io.harness.cdng.infra.yaml.EcsInfrastructure;
 import io.harness.cdng.infra.yaml.ElastigroupInfrastructure;
+import io.harness.cdng.infra.yaml.GoogleFunctionsInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.InfrastructureConfig;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
@@ -133,6 +134,12 @@ public class InfrastructurePlanCreatorHelper {
         EcsInfrastructure ecsInfrastructure = (EcsInfrastructure) infrastructure;
         ecsInfrastructure.setInfraName(infraName);
         ecsInfrastructure.setInfraIdentifier(infraIdentifier);
+        return;
+
+      case InfrastructureKind.GOOGLE_CLOUD_FUNCTIONS:
+        GoogleFunctionsInfrastructure googleFunctionsInfrastructure = (GoogleFunctionsInfrastructure) infrastructure;
+        googleFunctionsInfrastructure.setInfraName(infraName);
+        googleFunctionsInfrastructure.setInfraIdentifier(infraIdentifier);
         return;
 
       case InfrastructureKind.ELASTIGROUP:

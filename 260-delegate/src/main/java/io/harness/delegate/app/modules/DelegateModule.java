@@ -284,6 +284,7 @@ import io.harness.delegate.task.git.NGGitCommandTask;
 import io.harness.delegate.task.git.NGGitOpsCommandTask;
 import io.harness.delegate.task.gitapi.DecryptGitAPIAccessTask;
 import io.harness.delegate.task.gitapi.GitApiTask;
+import io.harness.delegate.task.gitcommon.GitTaskNG;
 import io.harness.delegate.task.gitops.GitOpsFetchAppTask;
 import io.harness.delegate.task.helm.HelmCommandTaskNG;
 import io.harness.delegate.task.helm.HelmDeployServiceImplNG;
@@ -1983,6 +1984,9 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.ECS_COMMAND_TASK_NG).toInstance(EcsCommandTaskNG.class);
     mapBinder.addBinding(TaskType.ECS_S3_FETCH_TASK_NG).toInstance(EcsS3FetchTask.class);
     mapBinder.addBinding(TaskType.ECS_RUN_TASK_ARN).toInstance(EcsRunTaskArnTask.class);
+
+    //GIT
+    mapBinder.addBinding(TaskType.GIT_TASK_NG).toInstance(GitTaskNG.class);
 
     // ASG NG
     mapBinder.addBinding(TaskType.AWS_ASG_CANARY_DEPLOY_TASK_NG).toInstance(AsgCanaryDeployTaskNG.class);

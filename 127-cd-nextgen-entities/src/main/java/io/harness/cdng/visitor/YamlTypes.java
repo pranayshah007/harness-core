@@ -87,6 +87,9 @@ public interface YamlTypes {
   String ASG_ROLLING_DEPLOY = StepSpecTypeConstants.ASG_ROLLING_DEPLOY;
   String ASG_ROLLING_ROLLBACK = StepSpecTypeConstants.ASG_ROLLING_ROLLBACK;
 
+  String GOOGLE_CLOUD_FUNCTIONS_DEPLOY = StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_DEPLOY;
+
+
   String MANIFEST_LIST_CONFIG = "manifests";
   String MANIFEST_CONFIG = "manifest";
   String K8S_MANIFEST = ManifestType.K8Manifest;
