@@ -326,7 +326,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
 
   @Override
   public boolean delete(String accountId, String orgIdentifier, String projectIdentifier, String serviceRef,
-      Long version, Boolean forceDelete) {
+      Long version, boolean forceDelete) {
     checkArgument(isNotEmpty(accountId), "accountId must be present");
     checkArgument(isNotEmpty(serviceRef), "serviceRef must be present");
 

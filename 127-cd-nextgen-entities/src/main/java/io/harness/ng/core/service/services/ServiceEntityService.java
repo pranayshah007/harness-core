@@ -42,7 +42,7 @@ public interface ServiceEntityService {
   List<ServiceEntity> listRunTimePermission(Criteria criteria);
 
   boolean delete(String accountId, String orgIdentifier, String projectIdentifier, String serviceIdentifier,
-      Long version, Boolean forceDelete);
+      Long version, boolean forceDelete);
 
   Page<ServiceEntity> bulkCreate(String accountId, List<ServiceEntity> serviceEntities);
 
