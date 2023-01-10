@@ -16,8 +16,10 @@ import io.harness.ci.license.CILicenseService;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
 
 import com.google.inject.Inject;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CI)
+@Slf4j
 public class CIBuildEnforcerImpl implements CIBuildEnforcer {
   @Inject CILicenseService ciLicenseService;
   @Inject private QueueExecutionUtils queueExecutionUtils;
@@ -26,10 +28,13 @@ public class CIBuildEnforcerImpl implements CIBuildEnforcer {
   @Override
   public boolean checkBuildEnforcement(String accountId) {
     long currExecutionCount = queueExecutionUtils.getActiveExecutionsCount(accountId);
-    long macExecutionsCount = queueExecutionUtils.getActiveExecutionsCount(accountId);
+    long macExecutionsCount = queueExecutionUtils.getActiveMacExecutionsCount(accountId);
 
     // if the limits are override for a specific account, give priority to those
     if (executionLimits.getOverrideConfigMap().containsKey(accountId)) {
+      log.info("overridden limits for the account: {}, total: {}, mac: {}", accountId,
+          queueExecutionUtils.getActiveExecutionsCount(accountId),
+          queueExecutionUtils.getActiveMacExecutionsCount(accountId));
       return currExecutionCount <= executionLimits.getOverrideConfigMap().get(accountId).getDefaultTotalExecutionCount()
           && macExecutionsCount <= executionLimits.getOverrideConfigMap().get(accountId).getDefaultMacExecutionCount();
     }
