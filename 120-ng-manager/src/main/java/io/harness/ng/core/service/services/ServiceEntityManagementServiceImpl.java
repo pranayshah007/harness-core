@@ -28,7 +28,6 @@ import io.harness.remote.client.CGRestUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.service.instance.InstanceService;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import java.util.List;
 import lombok.AllArgsConstructor;
@@ -69,7 +68,7 @@ public class ServiceEntityManagementServiceImpl implements ServiceEntityManageme
         isNgSettingsFFEnabled(accountIdentifier) && isForceDeleteFFEnabledViaSettings(accountIdentifier);
     return isForceDeleteFFEnabled && isForceDeleteEnabledBySettings;
   }
-  @VisibleForTesting
+
   protected boolean isForceDeleteFFEnabledViaSettings(String accountIdentifier) {
     return parseBoolean(NGRestUtils
                             .getResponse(settingsClient.getSetting(
@@ -77,13 +76,11 @@ public class ServiceEntityManagementServiceImpl implements ServiceEntityManageme
                             .getValue());
   }
 
-  @VisibleForTesting
   protected boolean isForceDeleteFFEnabled(String accountIdentifier) {
     return CGRestUtils.getResponse(
         accountClient.isFeatureFlagEnabled(CDS_FORCE_DELETE_ENTITIES.name(), accountIdentifier));
   }
 
-  @VisibleForTesting
   protected boolean isNgSettingsFFEnabled(String accountIdentifier) {
     return CGRestUtils.getResponse(accountClient.isFeatureFlagEnabled(NG_SETTINGS.name(), accountIdentifier));
   }
