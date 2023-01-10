@@ -183,6 +183,13 @@ paths:
           $ref: '#/components/responses/ServiceResponse'
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
+        - schema:
+            type: boolean
+            default: 'false'
+          in: query
+          name: forceDelete
+          description: Enable this field to force delete a service
+
       description: Deletes the requested service
       security:
         - x-api-key: []
@@ -286,6 +293,12 @@ paths:
           $ref: '#/components/responses/ServiceResponse'
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
+        - schema:
+            type: boolean
+            default: 'false'
+          in: query
+          name: forceDelete
+          description: Enable this field to force delete a service
       description: Deletes the requested service
       security:
         - x-api-key: []
