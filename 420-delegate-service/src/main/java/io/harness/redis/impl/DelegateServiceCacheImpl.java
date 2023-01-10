@@ -52,7 +52,8 @@ public class DelegateServiceCacheImpl implements DelegateServiceCache {
 
   @Override
   public void updateDelegateTaskCache(@NotNull String delegateId, UpdateOperation updateOperation) {
-    log.info("DelegateServiceCache: Before update {}", getDelegateTaskCache(delegateId));
+    log.info("DelegateServiceCache: Before update {} for operation {} ", getDelegateTaskCache(delegateId),
+        updateOperation.toString());
     if (taskCache.getCachedMap() == null) {
       log.error("Unable to fetch delegate task cache from redis cache");
       return;
@@ -64,7 +65,7 @@ public class DelegateServiceCacheImpl implements DelegateServiceCache {
       return;
     }
     updateCache(delegateId, updateOperation);
-    log.info("DelegateServiceCache: After update {}", getDelegateTaskCache(delegateId));
+    log.info("DelegateServiceCache: After update {} for operation {} ", getDelegateTaskCache(delegateId),updateOperation.toString());
   }
 
   @Override
