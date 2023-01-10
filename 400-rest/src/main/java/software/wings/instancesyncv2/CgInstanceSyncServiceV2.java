@@ -13,9 +13,11 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.delegate.AccountId;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.exception.runtime.NoInstancesException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
@@ -43,6 +45,7 @@ import software.wings.service.impl.SettingsServiceImpl;
 import software.wings.service.impl.instance.InstanceHandler;
 import software.wings.service.impl.instance.InstanceHandlerFactoryService;
 import software.wings.service.impl.instance.InstanceSyncByPerpetualTaskHandler;
+import software.wings.service.impl.instance.InstanceSyncPerpetualTaskService;
 import software.wings.service.intfc.InfrastructureMappingService;
 import software.wings.service.intfc.instance.DeploymentService;
 import software.wings.settings.SettingVariableTypes;
@@ -87,6 +90,8 @@ public class CgInstanceSyncServiceV2 {
   private final KryoSerializer kryoSerializer;
   private final InstanceHandlerFactoryService instanceHandlerFactory;
   private final PersistentLocker persistentLocker;
+  private final FeatureFlagService featureFlagService;
+  private final InstanceSyncPerpetualTaskService instanceSyncPerpetualTaskService;
 
   private static final int INSTANCE_COUNT_LIMIT =
       Integer.parseInt(System.getenv().getOrDefault("INSTANCE_SYNC_RESPONSE_BATCH_INSTANCE_COUNT", "100"));
@@ -164,6 +169,26 @@ public class CgInstanceSyncServiceV2 {
 
   public void processInstanceSyncResult(String perpetualTaskId, CgInstanceSyncResponse result) {
     log.info("Got the result. Starting to process. Perpetual Task Id: [{}] and response [{}]", perpetualTaskId, result);
+
+    if (!featureFlagService.isEnabled(FeatureName.INSTANCE_SYNC_V2_CG, result.getAccountId())) {
+      log.info("Instance sync v2 was disabled for account {} and PT id {}. Restore V1 Perpetual tasks",
+          result.getAccountId(), perpetualTaskId);
+      List<InstanceSyncTaskDetails> instanceSyncTaskDetails =
+          taskDetailsService.fetchAllForPerpetualTask(result.getAccountId(), perpetualTaskId);
+      for (InstanceSyncTaskDetails taskDetails : instanceSyncTaskDetails) {
+        InfrastructureMapping infraMapping =
+            infrastructureMappingService.get(taskDetails.getAppId(), taskDetails.getInfraMappingId());
+        try (AcquiredLock lock = persistentLocker.tryToAcquireLock(
+                 InfrastructureMapping.class, infraMapping.getUuid(), Duration.ofSeconds(180))) {
+          instanceSyncPerpetualTaskService.restorePerpetualTasks(result.getAccountId(), infraMapping);
+        }
+        taskDetailsService.delete(taskDetails.getUuid());
+      }
+
+      // Todo : to delete instanceSyncTaskDetails and V2 PT (also consider batching logic will deleting perpetual task)
+      instanceSyncPerpetualTaskService.deletePerpetualTask(
+          result.getAccountId(), instanceSyncTaskDetails.get(0).getInfraMappingId(), perpetualTaskId, true);
+    }
 
     if (!result.getExecutionStatus().equals(CommandExecutionStatus.SUCCESS.name())) {
       log.error("Instance Sync failed for perpetual task: [{}] and response [{}], with error: [{}]", perpetualTaskId,
