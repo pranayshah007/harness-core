@@ -96,12 +96,14 @@ public class DelegateGrpcClientWrapper {
   }
 
   public String submitAsyncTask(DelegateTaskRequest delegateTaskRequest, Duration holdFor) {
-    return delegateServiceGrpcClient.submitAsyncTask(delegateTaskRequest, delegateCallbackTokenSupplier.get(), holdFor);
+    return delegateServiceGrpcClient.submitAsyncTask(
+        delegateTaskRequest, delegateCallbackTokenSupplier.get(), holdFor, false);
   }
 
-  public String submitAsyncTaskV2(DelegateTaskRequest delegateTaskRequest, Duration holdFor) {
+  public String submitAsyncTaskV2(
+      DelegateTaskRequest delegateTaskRequest, Duration holdFor, Boolean delegateSelectionLogTracking) {
     return delegateServiceGrpcClient.submitAsyncTaskV2(
-        delegateTaskRequest, delegateCallbackTokenSupplier.get(), holdFor);
+        delegateTaskRequest, delegateCallbackTokenSupplier.get(), holdFor, delegateSelectionLogTracking);
   }
 
   public boolean isTaskTypeSupported(AccountId accountId, TaskType taskType) {

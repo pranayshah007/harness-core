@@ -17,5 +17,4 @@ import jdk.jfr.Description;
 public interface CDStageMetaDataService {
   @Description("Method to get Service Ref and Environment Ref from Pipeline Yaml")
   ResponseDTO<CDStageMetaDataDTO> getServiceAndEnvironmentRef(YamlNode stageLevelYamlNode);
-  ResponseDTO<CDStageMetaDataDTO> getServiceAndEnvironmentRef(String stageIdentifier, String pipelineYaml);
 }

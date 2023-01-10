@@ -25,6 +25,7 @@ import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.provision.terraform.functor.TerraformPlanJsonFunctor;
 import io.harness.cdng.provision.terragrunt.outcome.TerragruntPlanOutcome;
 import io.harness.cdng.provision.terragrunt.outcome.TerragruntPlanOutcome.TerragruntPlanOutcomeBuilder;
@@ -41,7 +42,6 @@ import io.harness.logging.UnitProgress;
 import io.harness.ng.core.EntityDetail;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
-import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
@@ -68,7 +68,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
-public class TerragruntPlanStep extends TaskExecutableWithRollbackAndRbac<TerragruntPlanTaskResponse> {
+public class TerragruntPlanStep extends CdTaskExecutable<TerragruntPlanTaskResponse> {
   public static final StepType STEP_TYPE =
       TerragruntStepHelper.addStepType(ExecutionNodeType.TERRAGRUNT_PLAN.getYamlType());
   public static final String DEFAULT_TIMEOUT = "10m";

@@ -7,8 +7,8 @@
 
 package io.harness.cvng.core.utils.monitoredService;
 
-import io.harness.cvng.beans.TimeSeriesMetricType;
 import io.harness.cvng.core.beans.RiskProfile;
+import io.harness.cvng.core.beans.healthsource.HealthSourceParamsDTO;
 import io.harness.cvng.core.beans.healthsource.QueryDefinition;
 import io.harness.cvng.core.beans.healthsource.QueryParamsDTO;
 import io.harness.cvng.core.beans.monitoredService.MetricThreshold;
@@ -37,7 +37,7 @@ public class NextGenMetricSourceSpecTransformer
                           -> nextGenMetricCVConfig.getMetricInfos().forEach((NextGenMetricInfo metricInfo) -> {
       RiskProfile riskProfile = RiskProfile.builder()
                                     .category(nextGenMetricCVConfig.getMetricPack().getCategory())
-                                    .metricType(TimeSeriesMetricType.INFRA) // check how to get this.
+                                    .metricType(metricInfo.getMetricType())
                                     .thresholdTypes(nextGenMetricCVConfig.getThresholdTypeOfMetric(
                                         metricInfo.getMetricName(), nextGenMetricCVConfig))
                                     .build();
@@ -63,6 +63,7 @@ public class NextGenMetricSourceSpecTransformer
       queryDefinitions.add(queryDefinition);
     }));
     return NextGenHealthSourceSpec.builder()
+        .healthSourceParams(HealthSourceParamsDTO.getHealthSourceParamsDTO(cvConfigs.get(0).getHealthSourceParams()))
         .connectorRef(cvConfigs.get(0).getConnectorIdentifier())
         .dataSourceType(cvConfigs.get(0).getType())
         .queryDefinitions(queryDefinitions)

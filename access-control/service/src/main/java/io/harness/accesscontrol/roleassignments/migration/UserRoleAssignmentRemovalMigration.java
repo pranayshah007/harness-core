@@ -115,7 +115,7 @@ public class UserRoleAssignmentRemovalMigration implements NGMigration {
   }
 
   private void deleteAccountScopeRoleAssignmentsInBatch(List<String> accountIds) {
-    Streams.stream(Iterables.partition(accountIds, 1)).forEach(list -> {
+    Streams.stream(Iterables.partition(accountIds, 1000)).forEach(list -> {
       try {
         deleteAccountScopeRoleAssignments(list);
         Thread.sleep(10000);
@@ -142,7 +142,8 @@ public class UserRoleAssignmentRemovalMigration implements NGMigration {
                               .is(USER);
 
       long count = roleAssignmentRepository.deleteMulti(criteria);
-      log.info(DEBUG_MESSAGE + String.format("removed Account scope %s Role Assignments", count));
+      log.info(DEBUG_MESSAGE
+          + String.format("removed Account scope %s Role Assignments for accounts: %s", count, accountIds));
     } catch (Exception ex) {
       log.error(DEBUG_MESSAGE + String.format("Failed to delete Role assignments for accounts %s", accountIds));
     }

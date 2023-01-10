@@ -16,14 +16,14 @@ import software.wings.dl.WingsPersistence;
 
 import com.google.common.collect.Iterables;
 import com.google.inject.Inject;
+import dev.morphia.query.Criteria;
+import dev.morphia.query.FieldEnd;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
+import dev.morphia.query.UpdateResults;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Criteria;
-import org.mongodb.morphia.query.FieldEnd;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
-import org.mongodb.morphia.query.UpdateResults;
 
 @Slf4j
 public class CleanUpDirectK8sInfraMappingEncryptedFieldsMigration implements Migration {

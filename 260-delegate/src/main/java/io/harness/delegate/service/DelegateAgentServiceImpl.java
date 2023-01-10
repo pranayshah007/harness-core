@@ -1070,7 +1070,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     }, 0, 3, TimeUnit.MINUTES);
   }
 
-  private void checkForProfile() {
+  void checkForProfile() {
     if (shouldContactManager() && !executingProfile.get() && !isLocked(new File("profile")) && !frozen.get()) {
       try {
         log.debug("Checking for profile ...");
@@ -1095,9 +1095,9 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       log.warn(
           "Unable to check/start delegate profile, shouldContactManager :{}, currently executing profile :{}, isLocked :{}, frozen :{}.",
           shouldContactManager(), executingProfile.get(), isLocked(new File("profile")), frozen.get());
-      File profileLock = new File("profile.lock");
-      if (profileLock.lastModified() > TimeUnit.MINUTES.toMillis(10)) {
-        releaseLock(profileLock);
+      File profileFile = new File("profile");
+      if (!executingProfile.get() && isLocked(profileFile)) {
+        releaseLock(new File("profile"));
       }
     }
   }

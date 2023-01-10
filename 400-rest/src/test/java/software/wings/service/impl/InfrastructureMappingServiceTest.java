@@ -153,6 +153,9 @@ import com.amazonaws.services.ec2.model.Tag;
 import com.amazonaws.services.ecs.model.LaunchType;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
+import dev.morphia.Key;
+import dev.morphia.query.FieldEnd;
+import dev.morphia.query.UpdateOperations;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -170,9 +173,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mongodb.morphia.Key;
-import org.mongodb.morphia.query.FieldEnd;
-import org.mongodb.morphia.query.UpdateOperations;
 
 /**
  * Created by anubhaw on 1/10/17.

@@ -25,7 +25,6 @@ import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
-import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollback;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
@@ -40,6 +39,7 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.StepUtils;
+import io.harness.steps.executables.PipelineTaskExecutable;
 import io.harness.supplier.ThrowingSupplier;
 
 import software.wings.beans.TaskType;
@@ -53,7 +53,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(CDC)
 @Slf4j
-public class HttpStep extends TaskExecutableWithRollback<HttpStepResponse> {
+public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
   public static final StepType STEP_TYPE = StepSpecTypeConstants.HTTP_STEP_TYPE;
 
   @Inject private KryoSerializer kryoSerializer;
@@ -70,7 +70,7 @@ public class HttpStep extends TaskExecutableWithRollback<HttpStepResponse> {
   }
 
   @Override
-  public TaskRequest obtainTask(
+  public TaskRequest obtainTaskAfterRbac(
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
     int socketTimeoutMillis = (int) NGTimeConversionHelper.convertTimeStringToMilliseconds("10m");
     if (stepParameters.getTimeout() != null && stepParameters.getTimeout().getValue() != null) {
@@ -107,7 +107,7 @@ public class HttpStep extends TaskExecutableWithRollback<HttpStepResponse> {
   }
 
   @Override
-  public StepResponse handleTaskResult(Ambiance ambiance, StepElementParameters stepParameters,
+  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
       ThrowingSupplier<HttpStepResponse> responseSupplier) throws Exception {
     NGLogCallback logCallback = getNGLogCallback(logStreamingStepClientFactory, ambiance, null, true);
 
@@ -194,4 +194,7 @@ public class HttpStep extends TaskExecutableWithRollback<HttpStepResponse> {
     }
     return outputVariablesEvaluated;
   }
+
+  @Override
+  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {}
 }

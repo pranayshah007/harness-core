@@ -38,6 +38,7 @@ import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceServi
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import java.net.URISyntaxException;
 import java.time.Duration;
 import java.time.Instant;
@@ -51,7 +52,6 @@ import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.client.utils.URIBuilder;
-import org.mongodb.morphia.query.Query;
 
 @Slf4j
 public class LogClusterServiceImpl implements LogClusterService {

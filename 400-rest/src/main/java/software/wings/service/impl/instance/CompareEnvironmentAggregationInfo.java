@@ -11,12 +11,12 @@ import static io.harness.annotations.dev.HarnessTeam.DX;
 
 import io.harness.annotations.dev.OwnedBy;
 
+import dev.morphia.annotations.Id;
 import java.util.List;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.UtilityClass;
-import org.mongodb.morphia.annotations.Id;
 
 @FieldNameConstants(innerTypeName = "CompareEnvironmentAggregationInfoKeys")
 @Data

@@ -29,7 +29,6 @@ import io.harness.exception.AzureContainerRegistryException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.WingsException;
-import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 
 import software.wings.helpers.ext.azure.AcrGetRepositoryTagsResponse;
 import software.wings.helpers.ext.azure.AcrGetTokenResponse;
@@ -131,16 +130,14 @@ public class AzureContainerRegistryClientImpl extends AzureClient implements Azu
           azureContainerRegistryRestClient.listRepositoryTags(authHeader, repositoryName).execute();
 
       if (execute.errorBody() != null) {
-        throw new InvalidRequestException(
-            format("Unable to list repository tags, registryHost: %s, repositoryName: %s, %s", registryHost,
-                repositoryName, execute.errorBody().string()));
+        throw new InvalidRequestException("Unable to list repository tags for registryHost:" + registryHost
+            + " and repositoryName:" + repositoryName);
       }
 
       return execute.body().getTags();
     } catch (IOException e) {
       throw new InvalidRequestException(
-          format("Unable to list repository tags, registryHost: %s, repositoryName: %s", registryHost, repositoryName),
-          ExceptionMessageSanitizer.sanitizeException(e));
+          "Unable to list repository tags for registryHost:" + registryHost + " and repositoryName:" + repositoryName);
     }
   }
 

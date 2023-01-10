@@ -25,9 +25,9 @@ import software.wings.yaml.gitSync.YamlChangeSet;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.query.Query;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.ListUtils;
-import org.mongodb.morphia.query.Query;
 
 @Singleton
 @Slf4j

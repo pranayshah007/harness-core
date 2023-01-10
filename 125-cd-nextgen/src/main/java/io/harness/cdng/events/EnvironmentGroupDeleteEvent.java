@@ -19,6 +19,7 @@ import io.harness.ng.core.ResourceScope;
 import io.harness.ng.core.events.OutboxEventConstants;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -31,7 +32,7 @@ public class EnvironmentGroupDeleteEvent implements Event {
   private String accountIdentifier;
   private String orgIdentifier;
   private String projectIdentifier;
-  private EnvironmentGroupEntity environmentGroupEntity;
+  @NotNull private EnvironmentGroupEntity environmentGroupEntity;
 
   @JsonIgnore
   @Override

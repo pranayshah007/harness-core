@@ -84,7 +84,8 @@ import io.harness.ff.FeatureFlagService;
 import io.harness.git.model.ChangeType;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
-import io.harness.mongo.ProcessTimeLogContext;
+import io.harness.logging.ProcessTimeLogContext;
+import io.harness.mongo.index.BasicDBUtils;
 import io.harness.persistence.HIterator;
 import io.harness.rest.RestResponse;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -160,6 +161,8 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Stopwatch;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.Query;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -172,8 +175,6 @@ import java.util.stream.Collectors;
 import javax.validation.executable.ValidateOnExecution;
 import javax.ws.rs.core.HttpHeaders;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.FindOptions;
-import org.mongodb.morphia.query.Query;
 /**
  * The type Yaml git sync service.
  */
@@ -1359,7 +1360,8 @@ public class YamlGitServiceImpl implements YamlGitService {
 
     FindOptions findOptions = new FindOptions();
     if (featureFlagService.isNotEnabled(REMOVE_HINT_YAML_GIT_COMMITS, accountId)) {
-      findOptions.modifier("$hint", "gitCommitAccountIdStatusYgcLastUpdatedIdx");
+      findOptions.hint(
+          BasicDBUtils.getIndexObject(GitCommit.mongoIndexes(), "gitCommitAccountIdStatusYgcLastUpdatedIdx"));
     }
 
     GitCommit gitCommit = wingsPersistence.createQuery(GitCommit.class)
@@ -1374,7 +1376,8 @@ public class YamlGitServiceImpl implements YamlGitService {
     // This is to handle the old git commit records which doesn't have yamlGitConfigId
     if (gitCommit == null) {
       FindOptions findOptions_1 = new FindOptions();
-      findOptions_1.modifier("$hint", "gitCommitAccountIdStatusYgLastUpdatedIdx");
+      findOptions_1.hint(
+          BasicDBUtils.getIndexObject(GitCommit.mongoIndexes(), "gitCommitAccountIdStatusYgLastUpdatedIdx"));
 
       gitCommit = wingsPersistence.createQuery(GitCommit.class)
                       .filter(GitCommitKeys.accountId, accountId)

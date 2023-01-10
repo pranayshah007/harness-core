@@ -40,6 +40,7 @@ import io.harness.threading.ThreadPool;
 
 import com.google.inject.Inject;
 import com.mongodb.BasicDBObject;
+import dev.morphia.query.FilterOperator;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
@@ -47,7 +48,6 @@ import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mongodb.morphia.query.FilterOperator;
 
 @Slf4j
 public class PersistenceIrregularIteratorTest extends PersistenceTestBase {

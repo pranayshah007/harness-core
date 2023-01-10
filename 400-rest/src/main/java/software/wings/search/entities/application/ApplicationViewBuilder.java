@@ -32,6 +32,7 @@ import software.wings.search.framework.EntityInfo;
 import software.wings.search.framework.SearchEntityUtils;
 
 import com.google.inject.Inject;
+import dev.morphia.query.Sort;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -40,7 +41,6 @@ import java.util.Set;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.query.Sort;
 
 /**
  * Builder class to build Materialized View of

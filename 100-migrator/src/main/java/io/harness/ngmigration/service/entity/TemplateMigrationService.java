@@ -48,7 +48,6 @@ import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.DiscoveryNode;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.ngmigration.NGMigrationEntityType;
-import software.wings.ngmigration.NGMigrationStatus;
 import software.wings.service.intfc.template.TemplateService;
 
 import com.google.common.collect.ImmutableMap;
@@ -60,6 +59,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.MediaType;
 import okhttp3.RequestBody;
@@ -99,7 +99,12 @@ public class TemplateMigrationService extends NgMigrationService {
     Map<String, Long> summaryByType = entities.stream()
                                           .map(entity -> (Template) entity.getEntity())
                                           .collect(groupingBy(Template::getType, counting()));
-    return TemplateSummary.builder().count(entities.size()).typeSummary(summaryByType).build();
+    Set<String> expressions =
+        entities.stream()
+            .map(entity -> (Template) entity.getEntity())
+            .flatMap(template -> TemplateFactory.getTemplateService(template).getExpressions(template).stream())
+            .collect(Collectors.toSet());
+    return TemplateSummary.builder().count(entities.size()).typeSummary(summaryByType).expressions(expressions).build();
   }
 
   @Override
@@ -120,19 +125,6 @@ public class TemplateMigrationService extends NgMigrationService {
   @Override
   public DiscoveryNode discover(String accountId, String appId, String entityId) {
     return discover(templateService.get(entityId));
-  }
-
-  @Override
-  public NGMigrationStatus canMigrate(NGMigrationEntity entity) {
-    Template template = (Template) entity;
-    NgTemplateService ngTemplateService = TemplateFactory.getTemplateService(template);
-    if (ngTemplateService.isMigrationSupported()) {
-      return NGMigrationStatus.builder().status(true).build();
-    }
-    return NGMigrationStatus.builder()
-        .status(false)
-        .reasons(Collections.singletonList("Currently only shell script & http templates are supported"))
-        .build();
   }
 
   @Override

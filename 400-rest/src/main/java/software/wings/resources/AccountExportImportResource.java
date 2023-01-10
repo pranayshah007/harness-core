@@ -14,7 +14,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static software.wings.dl.exportimport.WingsMongoExportImport.getCollectionName;
 
-import static org.mindrot.jbcrypt.BCrypt.hashpw;
+import static org.springframework.security.crypto.bcrypt.BCrypt.hashpw;
 
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.dev.OwnedBy;
@@ -84,6 +84,8 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
+import dev.morphia.Morphia;
+import dev.morphia.query.Query;
 import io.swagger.annotations.Api;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -119,9 +121,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.types.ObjectId;
 import org.glassfish.jersey.media.multipart.FormDataParam;
-import org.mindrot.jbcrypt.BCrypt;
-import org.mongodb.morphia.Morphia;
-import org.mongodb.morphia.query.Query;
+import org.springframework.security.crypto.bcrypt.BCrypt;
 
 /**
  * This class provides REST APIs can be used to export metadata associated with one specific account from one

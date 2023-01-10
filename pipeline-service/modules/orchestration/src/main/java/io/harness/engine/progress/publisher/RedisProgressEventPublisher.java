@@ -14,6 +14,7 @@ import io.harness.engine.pms.commons.events.PmsEventSender;
 import io.harness.execution.NodeExecution;
 import io.harness.pms.contracts.progress.ProgressEvent;
 import io.harness.pms.events.base.PmsEventCategory;
+import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.tasks.BinaryResponseData;
 
 import com.google.inject.Inject;
@@ -28,14 +29,14 @@ public class RedisProgressEventPublisher implements ProgressEventPublisher {
 
   @Override
   public String publishEvent(String nodeExecutionId, BinaryResponseData progressData) {
-    NodeExecution nodeExecution = nodeExecutionService.get(nodeExecutionId);
+    NodeExecution nodeExecution =
+        nodeExecutionService.getWithFieldsIncluded(nodeExecutionId, NodeProjectionUtils.fieldsForProgressEvent);
     ProgressEvent progressEvent = ProgressEvent.newBuilder()
                                       .setAmbiance(nodeExecution.getAmbiance())
                                       .setExecutionMode(nodeExecution.getMode())
                                       .setStepParameters(nodeExecution.getResolvedStepParametersBytes())
                                       .setProgressBytes(ByteString.copyFrom(progressData.getData()))
-                                      // Uncomment the below line after first release in Jan.
-                                      // .setUsingKryoWithoutReference(progressData.getUsingKryoWithoutReference())
+                                      .setUsingKryoWithoutReference(progressData.getUsingKryoWithoutReference())
                                       .build();
 
     return eventSender.sendEvent(nodeExecution.getAmbiance(), progressEvent.toByteString(),

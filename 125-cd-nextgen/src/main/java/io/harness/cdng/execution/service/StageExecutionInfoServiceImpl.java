@@ -17,6 +17,7 @@ import io.harness.beans.Scope;
 import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.execution.ExecutionInfoUtility;
 import io.harness.cdng.execution.StageExecutionInfo;
+import io.harness.cdng.execution.StageExecutionInfo.StageExecutionInfoKeys;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.repositories.executions.StageExecutionInfoRepository;
@@ -36,6 +37,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.mongodb.core.query.Criteria;
 
 @Singleton
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
@@ -125,5 +127,20 @@ public class StageExecutionInfoServiceImpl implements StageExecutionInfoService 
     }
     return stageExecutionInfoRepository.listSucceededStageExecutionNotIncludeCurrent(
         executionInfoKey, stageExecutionId, limit);
+  }
+
+  private Criteria createScopeCriteria(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    Criteria criteria = new Criteria();
+    criteria.and(StageExecutionInfoKeys.accountIdentifier).is(accountIdentifier);
+    criteria.and(StageExecutionInfoKeys.orgIdentifier).is(orgIdentifier);
+    criteria.and(StageExecutionInfoKeys.projectIdentifier).is(projectIdentifier);
+    return criteria;
+  }
+
+  @Override
+  public void deleteAtAllScopes(Scope scope) {
+    Criteria criteria =
+        createScopeCriteria(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier());
+    stageExecutionInfoRepository.deleteAll(criteria);
   }
 }

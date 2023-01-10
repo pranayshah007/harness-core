@@ -44,6 +44,7 @@ import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.filter.SpringFilterExpander;
 import io.harness.mongo.iterator.provider.SpringPersistenceProvider;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
@@ -304,7 +305,8 @@ public class BarrierServiceImpl implements BarrierService, ForceProctor {
         return ABANDONED;
       }
     } else {
-      NodeExecution forcerNode = nodeExecutionService.get(forcerId.getValue());
+      NodeExecution forcerNode =
+          nodeExecutionService.getWithFieldsIncluded(forcerId.getValue(), NodeProjectionUtils.withStatus);
       status = forcerNode.getStatus();
     }
 

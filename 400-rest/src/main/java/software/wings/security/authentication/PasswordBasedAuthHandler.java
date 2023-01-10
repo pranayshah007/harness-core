@@ -17,7 +17,7 @@ import static io.harness.eraro.ErrorCode.USER_LOCKED;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
-import static org.mindrot.jbcrypt.BCrypt.checkpw;
+import static org.springframework.security.crypto.bcrypt.BCrypt.checkpw;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;

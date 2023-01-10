@@ -128,7 +128,6 @@ public class SetupUsageHelper {
             .setIdentifierRef(identifierRefProtoDTOHelper.createIdentifierRefProtoDTO(entity.getAccountId(),
                 entity.getOrgIdentifier(), entity.getProjectIdentifier(), entity.getIdentifier()))
             .setType(entity.getType())
-            .setName(entity.getName())
             .build();
 
     EntitySetupUsageCreateV2DTO entityReferenceDTO = EntitySetupUsageCreateV2DTO.newBuilder()

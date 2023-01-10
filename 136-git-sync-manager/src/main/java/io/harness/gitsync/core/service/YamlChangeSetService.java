@@ -71,4 +71,6 @@ public interface YamlChangeSetService {
   List<YamlChangeSet> list(@NotNull String queueKey, @NotNull String accountId, @NotNull YamlChangeSetStatus status);
 
   void markQueuedYamlChangeSetsWithMaxRetriesAsSkipped(int maxRetryCount);
+
+  void deleteByAccount(String accountId);
 }

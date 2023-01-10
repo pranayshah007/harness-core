@@ -34,6 +34,7 @@ import io.harness.steps.policy.PolicyStepSpecParameters;
 import io.harness.steps.policy.custom.CustomPolicyStepSpec;
 import io.harness.steps.policy.step.outcome.PolicyStepOutcome;
 import io.harness.steps.policy.step.outcome.PolicyStepOutcomeMapper;
+import io.harness.utils.PolicyEvalUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
@@ -141,8 +142,8 @@ public class PolicyStepTest extends CategoryTest {
     stepParameters = StepElementParameters.builder().name(stepName).spec(policyStepSpecParameters).build();
 
     String urlPolicySets = "ps1";
-    when(opaServiceClient.evaluateWithCredentialsByID(accountId, orgId, projectId, urlPolicySets,
-             PolicyStepHelper.getEntityMetadataString(stepName), payloadObj))
+    when(opaServiceClient.evaluateWithCredentialsByID(
+             accountId, orgId, projectId, urlPolicySets, PolicyEvalUtils.getEntityMetadataString(stepName), payloadObj))
         .thenReturn(request);
     when(SafeHttpCall.executeWithErrorMessage(request)).thenThrow(new HttpResponseException(400, "My Invalid Request"));
     StepResponse stepResponse = policyStep.executeSync(ambiance, stepParameters, null, null);
@@ -166,8 +167,8 @@ public class PolicyStepTest extends CategoryTest {
     stepParameters = StepElementParameters.builder().name(stepName).spec(policyStepSpecParameters).build();
 
     String urlPolicySets = "ps1";
-    when(opaServiceClient.evaluateWithCredentialsByID(accountId, orgId, projectId, urlPolicySets,
-             PolicyStepHelper.getEntityMetadataString(stepName), payloadObj))
+    when(opaServiceClient.evaluateWithCredentialsByID(
+             accountId, orgId, projectId, urlPolicySets, PolicyEvalUtils.getEntityMetadataString(stepName), payloadObj))
         .thenReturn(request);
     String errorString = "{\n"
         + "    \"identifier\" : \"thisSet\",\n"
@@ -195,8 +196,8 @@ public class PolicyStepTest extends CategoryTest {
     stepParameters = StepElementParameters.builder().name(stepName).spec(policyStepSpecParameters).build();
 
     String urlPolicySets = "ps1";
-    when(opaServiceClient.evaluateWithCredentialsByID(accountId, orgId, projectId, urlPolicySets,
-             PolicyStepHelper.getEntityMetadataString(stepName), payloadObj))
+    when(opaServiceClient.evaluateWithCredentialsByID(
+             accountId, orgId, projectId, urlPolicySets, PolicyEvalUtils.getEntityMetadataString(stepName), payloadObj))
         .thenReturn(request);
 
     OpaEvaluationResponseHolder evaluationResponse =
@@ -229,8 +230,8 @@ public class PolicyStepTest extends CategoryTest {
     stepParameters = StepElementParameters.builder().name(stepName).spec(policyStepSpecParameters).build();
 
     String urlPolicySets = "ps1";
-    when(opaServiceClient.evaluateWithCredentialsByID(accountId, orgId, projectId, urlPolicySets,
-             PolicyStepHelper.getEntityMetadataString(stepName), payloadObj))
+    when(opaServiceClient.evaluateWithCredentialsByID(
+             accountId, orgId, projectId, urlPolicySets, PolicyEvalUtils.getEntityMetadataString(stepName), payloadObj))
         .thenReturn(request);
 
     OpaEvaluationResponseHolder evaluationResponse = OpaEvaluationResponseHolder.builder().status("pass").build();

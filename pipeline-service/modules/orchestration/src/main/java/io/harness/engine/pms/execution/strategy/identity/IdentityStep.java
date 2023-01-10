@@ -22,6 +22,7 @@ import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.sdk.core.steps.executables.ChildExecutable;
 import io.harness.pms.sdk.core.steps.executables.ChildrenExecutable;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
@@ -43,9 +44,10 @@ public class IdentityStep
   @Override
   public ChildExecutableResponse obtainChild(
       Ambiance ambiance, IdentityStepParameters identityParams, StepInputPackage inputPackage) {
-    NodeExecution originalNodeExecution = nodeExecutionService.get(identityParams.getOriginalNodeExecutionId());
+    NodeExecution originalNodeExecution = nodeExecutionService.getWithFieldsIncluded(
+        identityParams.getOriginalNodeExecutionId(), NodeProjectionUtils.withExecutableResponses);
     // Copying the outputs
-    pmsSweepingOutputService.cloneForRetryExecution(ambiance, originalNodeExecution.getUuid());
+    pmsSweepingOutputService.cloneForRetryExecution(ambiance, identityParams.getOriginalNodeExecutionId());
     return originalNodeExecution.getExecutableResponses().get(0).getChild();
   }
 

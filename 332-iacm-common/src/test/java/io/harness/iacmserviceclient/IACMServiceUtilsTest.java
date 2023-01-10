@@ -19,9 +19,9 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.MockableTestMixin;
+import io.harness.beans.entities.IACMServiceConfig;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.GeneralException;
-import io.harness.iacm.beans.entities.IACMServiceConfig;
 import io.harness.rule.LifecycleRule;
 import io.harness.rule.Owner;
 

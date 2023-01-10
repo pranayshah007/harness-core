@@ -53,14 +53,12 @@ import software.wings.beans.Service;
 import software.wings.beans.appmanifest.AppManifestKind;
 import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.beans.appmanifest.ManifestFile;
-import software.wings.beans.appmanifest.StoreType;
 import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.DiscoveryNode;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.ngmigration.NGMigrationEntityType;
-import software.wings.ngmigration.NGMigrationStatus;
 import software.wings.service.intfc.ApplicationManifestService;
 
 import com.google.common.collect.Lists;
@@ -147,26 +145,6 @@ public class ManifestMigrationService extends NgMigrationService {
   @Override
   public DiscoveryNode discover(String accountId, String appId, String entityId) {
     return discover(applicationManifestService.getById(appId, entityId));
-  }
-
-  @Override
-  public NGMigrationStatus canMigrate(NGMigrationEntity entity) {
-    ApplicationManifest applicationManifest = (ApplicationManifest) entity;
-    if (StoreType.Remote.equals(applicationManifest.getStoreType())) {
-      return NGMigrationStatus.builder()
-          .status(false)
-          .reasons(Collections.singletonList("Only remote manifests are supported currently for migration"))
-          .build();
-    }
-    if (!SUPPORTED_MANIFEST_KIND.contains(applicationManifest.getKind())) {
-      return NGMigrationStatus.builder()
-          .status(false)
-          .reasons(Collections.singletonList(
-              String.format("Only %s type of manifests are currently supported with migration",
-                  SUPPORTED_MANIFEST_KIND.stream().map(AppManifestKind::name).collect(Collectors.joining(", ")))))
-          .build();
-    }
-    return NGMigrationStatus.builder().status(true).build();
   }
 
   @Override

@@ -8,6 +8,7 @@
 package io.harness.pms.pipeline.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
@@ -18,11 +19,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -35,6 +38,9 @@ import io.harness.entitysetupusageclient.remote.EntitySetupUsageClient;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ReferencedEntityException;
 import io.harness.git.model.ChangeType;
+import io.harness.gitaware.helper.GitAwareContextHelper;
+import io.harness.gitsync.beans.StoreType;
+import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -48,6 +54,8 @@ import io.harness.pms.helpers.PipelineCloneHelper;
 import io.harness.pms.pipeline.ClonePipelineDTO;
 import io.harness.pms.pipeline.DestinationPipelineConfig;
 import io.harness.pms.pipeline.ExecutionSummaryInfo;
+import io.harness.pms.pipeline.MoveConfigOperationDTO;
+import io.harness.pms.pipeline.MoveConfigOperationType;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.SourceIdentifierConfig;
 import io.harness.pms.pipeline.StepCategory;
@@ -95,6 +103,7 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
 
   @InjectMocks private PMSPipelineServiceImpl pmsPipelineService;
   @Inject private PMSPipelineRepository pmsPipelineRepository;
+  @Mock private PMSPipelineRepository pmsPipelineRepositoryMock;
   @Mock private PipelineCloneHelper pipelineCloneHelper;
   @Mock private PmsFeatureFlagService pmsFeatureFlagService;
 
@@ -333,6 +342,9 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
   public void testGetThrowException() {
+    doThrow(new InvalidRequestException("Invalid request"))
+        .when(pmsPipelineRepositoryMock)
+        .find(any(), any(), any(), any(), anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean());
     assertThatThrownBy(()
                            -> pmsPipelineService.getAndValidatePipeline(
                                accountId, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, false))
@@ -470,5 +482,42 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
     } catch (IOException ex) {
     }
     return request;
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testMovePipelineEntityInlineToRemote() {
+    MoveConfigOperationDTO moveConfigOperation =
+        MoveConfigOperationDTO.builder().moveConfigOperationType(MoveConfigOperationType.INLINE_TO_REMOTE).build();
+
+    doReturn(pipelineEntity)
+        .when(pmsPipelineRepositoryMock)
+        .updatePipelineEntity(any(), any(), any(), any(), any(), any());
+
+    PipelineEntity movePipelineEntity = pmsPipelineService.movePipelineEntity(
+        accountId, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, moveConfigOperation, pipelineEntity);
+
+    assertEquals(movePipelineEntity.getIdentifier(), pipelineEntity.getIdentifier());
+
+    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+    assertEquals(StoreType.REMOTE, gitEntityInfo.getStoreType());
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testMovePipelineEntityRemoteToInline() {
+    MoveConfigOperationDTO moveConfigOperation =
+        MoveConfigOperationDTO.builder().moveConfigOperationType(MoveConfigOperationType.REMOTE_TO_INLINE).build();
+
+    doReturn(pipelineEntity)
+        .when(pmsPipelineRepositoryMock)
+        .updatePipelineEntity(any(), any(), any(), any(), any(), any());
+
+    PipelineEntity movePipelineEntity = pmsPipelineService.movePipelineEntity(
+        accountId, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, moveConfigOperation, pipelineEntity);
+
+    assertEquals(movePipelineEntity.getIdentifier(), pipelineEntity.getIdentifier());
   }
 }

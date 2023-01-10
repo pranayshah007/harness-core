@@ -33,6 +33,7 @@ import io.harness.filter.service.FilterService;
 import io.harness.gitaware.dto.GitContextRequestParams;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitaware.helper.GitAwareEntityHelper;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
@@ -47,11 +48,13 @@ import io.harness.pms.filter.utils.ModuleInfoFilterUtils;
 import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
 import io.harness.pms.instrumentaion.PipelineInstrumentationConstants;
 import io.harness.pms.instrumentaion.PipelineInstrumentationUtils;
+import io.harness.pms.pipeline.MoveConfigOperationDTO;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
 import io.harness.pms.pipeline.PipelineEntityUtils;
 import io.harness.pms.pipeline.PipelineFilterPropertiesDto;
 import io.harness.pms.pipeline.PipelineImportRequestDTO;
+import io.harness.pms.pipeline.PipelineMetadataV2;
 import io.harness.pms.pipeline.governance.service.PipelineGovernanceService;
 import io.harness.pms.pipeline.validation.PipelineValidationResponse;
 import io.harness.pms.pipeline.validation.service.PipelineValidationService;
@@ -83,6 +86,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.Document;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Update;
 
 @Singleton
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
@@ -531,5 +535,37 @@ public class PMSPipelineServiceHelper {
       log.error("Unable to parse the Filter value", e);
     }
     return newEntity;
+  }
+
+  public Criteria getPipelineMetadataV2Criteria(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String pipelineIdentifier) {
+    return Criteria.where(PipelineMetadataV2.PipelineMetadataV2Keys.accountIdentifier)
+        .is(accountIdentifier)
+        .and(PipelineMetadataV2.PipelineMetadataV2Keys.orgIdentifier)
+        .is(orgIdentifier)
+        .and(PipelineMetadataV2.PipelineMetadataV2Keys.projectIdentifier)
+        .is(projectIdentifier)
+        .and(PipelineMetadataV2.PipelineMetadataV2Keys.identifier)
+        .is(pipelineIdentifier);
+  }
+  public Update getPipelineUpdateForInlineToRemote(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, MoveConfigOperationDTO moveConfigDTO) {
+    Update update = new Update();
+    update.set(PipelineEntityKeys.repo, moveConfigDTO.getRepoName());
+    update.set(PipelineEntityKeys.storeType, StoreType.REMOTE);
+    update.set(PipelineEntityKeys.filePath, moveConfigDTO.getFilePath());
+    update.set(PipelineEntityKeys.connectorRef, moveConfigDTO.getConnectorRef());
+    update.set(PipelineEntityKeys.repoURL,
+        gitAwareEntityHelper.getRepoUrl(accountIdentifier, orgIdentifier, projectIdentifier));
+    return update;
+  }
+  public Update getPipelineUpdateForRemoteToInline() {
+    Update update = new Update();
+    update.unset(PipelineEntityKeys.repo);
+    update.unset(PipelineEntityKeys.filePath);
+    update.unset(PipelineEntityKeys.connectorRef);
+    update.unset(PipelineEntityKeys.repoURL);
+    update.set(PipelineEntityKeys.storeType, StoreType.INLINE);
+    return update;
   }
 }

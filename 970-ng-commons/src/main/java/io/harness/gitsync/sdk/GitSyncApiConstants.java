@@ -67,5 +67,5 @@ public class GitSyncApiConstants {
   public static final String MOVE_CONFIG_PARAM_MESSAGE =
       "Tells weather the entity has to be moved from inline to remote or remote to inline";
 
-  public static final String MOVE_CONFIG_KEY = "Move config type";
+  public static final String MOVE_CONFIG_KEY = "moveConfigType";
 }

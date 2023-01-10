@@ -34,6 +34,7 @@ import com.codahale.metrics.annotation.Timed;
 import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
+import dev.morphia.annotations.Transient;
 import io.swagger.annotations.Api;
 import java.text.ParseException;
 import java.util.LinkedHashMap;
@@ -48,7 +49,6 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import org.mongodb.morphia.annotations.Transient;
 
 @Api("cvdash")
 @Path("/cvdash")

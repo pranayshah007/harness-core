@@ -7,6 +7,7 @@
 
 package io.harness.cvng.core.services.impl.sidekickexecutors;
 
+import static io.harness.cvng.CVNGTestConstants.FIXED_TIME_FOR_TESTS;
 import static io.harness.rule.OwnerRule.DHRUVX;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -37,6 +38,7 @@ import io.harness.reflection.HarnessReflections;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
+import java.time.Clock;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -56,6 +58,7 @@ public class VerificationTaskCleanupSideKickExecutorTest extends CvNextGenTestBa
   @Inject private MonitoredServiceService monitoredServiceService;
   @Inject private CVConfigService cvConfigService;
 
+  @Inject private Clock clock;
   private CVConfig cvConfig;
   private ServiceLevelIndicator sli;
   private String verificationTaskIdsForSli;
@@ -66,13 +69,22 @@ public class VerificationTaskCleanupSideKickExecutorTest extends CvNextGenTestBa
   @Before
   public void setup() {
     this.builderFactory = BuilderFactory.getDefault();
+    this.clock = FIXED_TIME_FOR_TESTS;
     this.cvConfig = createCVConfig();
     cvConfigService.save(cvConfig);
     this.sli = createSLI();
-    this.verificationTaskIdsForSli =
-        verificationTaskService.getSLIVerificationTaskId(builderFactory.getContext().getAccountId(), sli.getUuid());
-    this.verificationTaskId = verificationTaskService.getServiceGuardVerificationTaskId(
-        builderFactory.getContext().getAccountId(), cvConfig.getUuid());
+
+    VerificationTask slitask =
+        verificationTaskService.getSLITask(builderFactory.getContext().getAccountId(), sli.getUuid());
+    slitask.setCreatedAt(clock.millis());
+    hPersistence.save(slitask);
+    this.verificationTaskIdsForSli = slitask.getUuid();
+
+    VerificationTask serviceGuardtask =
+        verificationTaskService.getLiveMonitoringTask(builderFactory.getContext().getAccountId(), cvConfig.getUuid());
+    serviceGuardtask.setCreatedAt(clock.millis());
+    hPersistence.save(serviceGuardtask);
+    this.verificationTaskId = serviceGuardtask.getUuid();
   }
 
   @Test

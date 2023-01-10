@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CI;
 import static io.harness.beans.SwaggerConstants.BOOLEAN_CLASSPATH;
 import static io.harness.beans.SwaggerConstants.INTEGER_CLASSPATH;
 import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
+import static io.harness.beans.SwaggerConstants.STRING_LIST_CLASSPATH;
 import static io.harness.beans.SwaggerConstants.STRING_MAP_CLASSPATH;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
@@ -79,6 +80,9 @@ public class K8sDirectInfraYaml implements Infrastructure {
     @YamlSchemaTypes(value = {runtime})
     @ApiModelProperty(dataType = STRING_MAP_CLASSPATH)
     private ParameterField<Map<String, String>> nodeSelector;
+    @YamlSchemaTypes(value = {runtime})
+    @ApiModelProperty(dataType = STRING_LIST_CLASSPATH)
+    private ParameterField<List<String>> hostNames;
     @YamlSchemaTypes(value = {runtime})
     @ApiModelProperty(dataType = "[Lio.harness.beans.yaml.extended.infrastrucutre.k8.Toleration;")
     private ParameterField<List<Toleration>> tolerations;

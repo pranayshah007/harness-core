@@ -52,6 +52,7 @@ import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.io.Resources;
 import com.google.inject.Inject;
+import dev.morphia.query.Sort;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
@@ -71,7 +72,6 @@ import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-import org.mongodb.morphia.query.Sort;
 
 @Slf4j
 public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisService {

@@ -23,12 +23,12 @@ import software.wings.service.intfc.WorkflowExecutionService;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.mongodb.ReadPreference;
+import dev.morphia.query.FindOptions;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.FindOptions;
 
 /**
  * This migration will set instances deployed for the last 120 days of top level executions to TimeScaleDB

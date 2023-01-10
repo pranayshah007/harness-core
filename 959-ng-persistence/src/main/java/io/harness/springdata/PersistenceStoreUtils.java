@@ -15,7 +15,7 @@ import io.harness.annotations.StoreInMultiple;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.DbAliases;
-import io.harness.persistence.Store;
+import io.harness.persistence.store.Store;
 
 import java.util.Arrays;
 import java.util.HashSet;

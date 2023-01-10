@@ -87,7 +87,7 @@ import io.harness.ng.core.filter.ApiResponseFilter;
 import io.harness.notification.module.NotificationClientModule;
 import io.harness.outbox.OutboxEventPollService;
 import io.harness.persistence.HPersistence;
-import io.harness.persistence.Store;
+import io.harness.persistence.store.Store;
 import io.harness.plancreator.pipeline.PipelineConfig;
 import io.harness.plancreator.strategy.StrategyConstants;
 import io.harness.plancreator.strategy.StrategyMaxConcurrencyRestrictionUsageImpl;
@@ -107,7 +107,6 @@ import io.harness.pms.inputset.gitsync.InputSetYamlDTO;
 import io.harness.pms.instrumentaion.InstrumentationPipelineEndEventHandler;
 import io.harness.pms.migration.PipelineCoreMigrationProvider;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
-import io.harness.pms.ngpipeline.inputset.observers.InputSetPipelineObserver;
 import io.harness.pms.notification.orchestration.handlers.NotificationInformHandler;
 import io.harness.pms.notification.orchestration.handlers.StageStartNotificationHandler;
 import io.harness.pms.notification.orchestration.handlers.StageStatusUpdateNotificationEventHandler;
@@ -445,13 +444,11 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
 
     // Register Pipeline Outbox Observers
     PipelineOutboxEventHandler pipelineOutboxEventHandler =
-        (PipelineOutboxEventHandler) injector.getInstance(Key.get(PipelineOutboxEventHandler.class));
+        injector.getInstance(Key.get(PipelineOutboxEventHandler.class));
     pipelineOutboxEventHandler.getPipelineActionObserverSubject().register(
         injector.getInstance(Key.get(PipelineSetupUsageHelper.class)));
     pipelineOutboxEventHandler.getPipelineActionObserverSubject().register(
         injector.getInstance(Key.get(PipelineEntityCrudObserver.class)));
-    pipelineOutboxEventHandler.getPipelineActionObserverSubject().register(
-        injector.getInstance(Key.get(InputSetPipelineObserver.class)));
 
     NodeExecutionServiceImpl nodeExecutionService =
         (NodeExecutionServiceImpl) injector.getInstance(Key.get(NodeExecutionService.class));
@@ -459,19 +456,19 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
     NodeStartHelper nodeStartHelper = injector.getInstance(Key.get(NodeStartHelper.class));
 
     // NodeStatusUpdateObserver
-    nodeExecutionService.getStepStatusUpdateSubject().register(
+    nodeExecutionService.getNodeStatusUpdateSubject().register(
         injector.getInstance(Key.get(PlanExecutionService.class)));
-    nodeExecutionService.getStepStatusUpdateSubject().register(
+    nodeExecutionService.getNodeStatusUpdateSubject().register(
         injector.getInstance(Key.get(StageStatusUpdateNotificationEventHandler.class)));
-    nodeExecutionService.getStepStatusUpdateSubject().register(
+    nodeExecutionService.getNodeStatusUpdateSubject().register(
         injector.getInstance(Key.get(BarrierPositionHelperEventHandler.class)));
-    nodeExecutionService.getStepStatusUpdateSubject().register(injector.getInstance(Key.get(BarrierDropper.class)));
-    nodeExecutionService.getStepStatusUpdateSubject().register(
+    nodeExecutionService.getNodeStatusUpdateSubject().register(injector.getInstance(Key.get(BarrierDropper.class)));
+    nodeExecutionService.getNodeStatusUpdateSubject().register(
         injector.getInstance(Key.get(NodeExecutionStatusUpdateEventHandler.class)));
-    nodeExecutionService.getStepStatusUpdateSubject().register(
+    nodeExecutionService.getNodeStatusUpdateSubject().register(
         injector.getInstance(Key.get(ResourceRestraintObserver.class)));
 
-    nodeExecutionService.getStepStatusUpdateSubject().register(
+    nodeExecutionService.getNodeStatusUpdateSubject().register(
         injector.getInstance(Key.get(TimeoutInstanceRemover.class)));
 
     // NodeExecutionStartObserver

@@ -14,10 +14,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.infra.beans.host.HostFilter;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import dev.morphia.annotations.Id;
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;
-import org.mongodb.morphia.annotations.Id;
 import org.springframework.data.annotation.TypeAlias;
 
 @Data

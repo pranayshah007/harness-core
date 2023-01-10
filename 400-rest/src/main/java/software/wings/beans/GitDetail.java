@@ -7,9 +7,9 @@
 
 package software.wings.beans;
 
+import dev.morphia.annotations.Transient;
 import lombok.Builder;
 import lombok.Data;
-import org.mongodb.morphia.annotations.Transient;
 
 @Data
 @Builder

@@ -18,7 +18,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.IdentifierRef;
-import io.harness.cdng.common.beans.SetupAbstractionKeys;
+import io.harness.cdng.artifact.utils.ArtifactUtils;
 import io.harness.common.NGTaskType;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
@@ -49,6 +49,7 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 import javax.validation.Valid;
@@ -107,19 +108,15 @@ public class GcpHelperService {
                                               .gcpTaskType(gcpTaskType)
                                               .gcpRequest(gcpRequest)
                                               .build();
-    final DelegateTaskRequest delegateTaskRequest =
-        DelegateTaskRequest.builder()
-            .accountId(ngAccess.getAccountIdentifier())
-            .taskType(NGTaskType.GCP_TASK.name())
-            .taskParameters(gcpTaskParameters)
-            .executionTimeout(java.time.Duration.ofSeconds(30))
-            .taskSetupAbstraction(SetupAbstractionKeys.ng, "true")
-            .taskSetupAbstraction(
-                SetupAbstractionKeys.owner, ngAccess.getOrgIdentifier() + "/" + ngAccess.getProjectIdentifier())
-            .taskSetupAbstraction(SetupAbstractionKeys.orgIdentifier, ngAccess.getOrgIdentifier())
-            .taskSetupAbstraction(SetupAbstractionKeys.projectIdentifier, ngAccess.getProjectIdentifier())
-            .taskSelectors(gcpRequest.getDelegateSelectors())
-            .build();
+    Map<String, String> abstractions = ArtifactUtils.getTaskSetupAbstractions(ngAccess);
+    final DelegateTaskRequest delegateTaskRequest = DelegateTaskRequest.builder()
+                                                        .accountId(ngAccess.getAccountIdentifier())
+                                                        .taskType(NGTaskType.GCP_TASK.name())
+                                                        .taskParameters(gcpTaskParameters)
+                                                        .executionTimeout(java.time.Duration.ofSeconds(30))
+                                                        .taskSetupAbstractions(abstractions)
+                                                        .taskSelectors(gcpRequest.getDelegateSelectors())
+                                                        .build();
     try {
       return delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
     } catch (DelegateServiceDriverException ex) {

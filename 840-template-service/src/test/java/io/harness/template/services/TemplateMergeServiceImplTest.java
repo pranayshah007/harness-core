@@ -8,12 +8,14 @@
 package io.harness.template.services;
 
 import static io.harness.rule.OwnerRule.ABHINAV_MITTAL;
+import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -25,6 +27,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.ngexception.NGTemplateException;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.ng.core.template.TemplateReferenceSummary;
 import io.harness.ng.core.template.TemplateRetainVariablesResponse;
@@ -719,5 +722,49 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
     TemplateRetainVariablesResponse templateRetainVariablesResponse =
         templateMergeService.mergeTemplateInputs(originalTemplateYaml, yamlToBeUpdated);
     assertThat(updatedYaml).isEqualTo(templateRetainVariablesResponse.getMergedTemplateInputs());
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testGetTemplateInputsWithCaching() {
+    String filename = "template-step.yaml";
+    String shellScriptTemplateStepYaml = readFile(filename);
+    TemplateEntity templateEntity = TemplateEntity.builder()
+                                        .accountId(ACCOUNT_ID)
+                                        .orgIdentifier(ORG_ID)
+                                        .projectIdentifier(PROJECT_ID)
+                                        .yaml(shellScriptTemplateStepYaml)
+                                        .deleted(false)
+                                        .versionLabel("1")
+                                        .identifier("template1")
+                                        .templateScope(Scope.PROJECT)
+                                        .build();
+
+    when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, "template1", "1", false, true))
+        .thenReturn(Optional.of(templateEntity));
+    String templateInputYaml =
+        templateMergeService.getTemplateInputs(ACCOUNT_ID, ORG_ID, PROJECT_ID, "template1", "1", true);
+    String templateYaml = "type: \"ShellScript\"\n"
+        + "spec:\n"
+        + "  source:\n"
+        + "    type: \"Inline\"\n"
+        + "    spec:\n"
+        + "      script: \"<+input>\"\n"
+        + "timeout: \"<+input>\"\n"
+        + "";
+    assertThat(templateYaml).isEqualTo(templateInputYaml);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testGetTemplateInputsWhenGetFails() {
+    when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, "template1", "1", false, true))
+        .thenReturn(Optional.empty());
+    assertThrows(NGTemplateException.class,
+        () -> templateMergeService.getTemplateInputs(ACCOUNT_ID, ORG_ID, PROJECT_ID, "template1", "1", true));
   }
 }

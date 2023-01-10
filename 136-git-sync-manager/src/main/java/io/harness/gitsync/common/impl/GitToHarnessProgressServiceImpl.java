@@ -187,4 +187,11 @@ public class GitToHarnessProgressServiceImpl implements GitToHarnessProgressServ
     update.set(GitToHarnessProgressKeys.processingCommitId, processingCommitId);
     return update(uuid, update);
   }
+
+  @Override
+  public void deleteByAccount(String accountId) {
+    Criteria criteria = new Criteria();
+    criteria.and(GitToHarnessProgressKeys.accountIdentifier).is(accountId);
+    gitToHarnessProgressRepository.deleteAll(gitToHarnessProgressRepository.findAllByAccountIdentifier(accountId));
+  }
 }

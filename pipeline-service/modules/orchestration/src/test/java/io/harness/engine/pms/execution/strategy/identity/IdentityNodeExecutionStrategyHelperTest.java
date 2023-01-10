@@ -151,7 +151,7 @@ public class IdentityNodeExecutionStrategyHelperTest {
     identityNodeExecutionStrategyHelper.copyNodeExecutionsForRetriedNodes(nodeExecution, retryIdsList);
 
     verify(nodeExecutionService, times(1)).saveAll(nodeExecutionArgumentCaptor.capture());
-    verify(nodeExecutionService, times(1)).update(eq(nodeExecution.getUuid()), any());
+    verify(nodeExecutionService, times(1)).updateV2(eq(nodeExecution.getUuid()), any());
 
     List<NodeExecution> newNodeExecutions = nodeExecutionArgumentCaptor.getValue();
     assertEquals(newNodeExecutions.size(), retryIdsList.size());

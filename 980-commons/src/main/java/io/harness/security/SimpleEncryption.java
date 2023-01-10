@@ -17,6 +17,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.Charsets;
 import com.google.common.hash.Hashing;
 import com.google.common.io.BaseEncoding;
+import dev.morphia.annotations.Transient;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
@@ -35,7 +36,6 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
-import org.mongodb.morphia.annotations.Transient;
 
 /**
  * Very simple hardcoded encryption package for encrypting user passwords in persistence.
@@ -81,13 +81,12 @@ public class SimpleEncryption implements EncryptionInterface {
     }
     this.key = key.clone();
     this.salt = salt == null ? null : salt.clone();
+    try {
+      FACTORY = SecretKeyFactory.getInstance("PBEWithHmacSHA256AndAES_256");
+    } catch (NoSuchAlgorithmException e) {
+      throw new WingsException("SecretKeyFactory instance creation failed: ", e);
+    }
     this.secretKey = generateSecretKey(key, salt);
-  }
-
-  @Override
-  @JsonIgnore
-  public SecretKey getSecretKey() {
-    return this.secretKey;
   }
 
   @Override
@@ -152,11 +151,10 @@ public class SimpleEncryption implements EncryptionInterface {
 
   private SecretKey generateSecretKey(char[] key, byte[] salt) {
     try {
-      FACTORY = SecretKeyFactory.getInstance("PBEWithHmacSHA256AndAES_256");
       KeySpec spec = new PBEKeySpec(key, salt, 65536, 256);
       SecretKey tmp = FACTORY.generateSecret(spec);
       return new SecretKeySpec(tmp.getEncoded(), "AES");
-    } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+    } catch (InvalidKeySpecException e) {
       throw new WingsException("Encryption secret key generation failed: ", e);
     }
   }

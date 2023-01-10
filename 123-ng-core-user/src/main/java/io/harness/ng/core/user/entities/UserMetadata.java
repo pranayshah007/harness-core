@@ -17,6 +17,7 @@ import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -25,7 +26,6 @@ import lombok.Getter;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -53,7 +53,7 @@ public class UserMetadata implements PersistentEntity {
         .build();
   }
 
-  @Id @org.mongodb.morphia.annotations.Id String userId;
+  @Id @dev.morphia.annotations.Id String userId;
   @NotEmpty String email;
   String name;
   @Getter(value = AccessLevel.PRIVATE) @NotEmpty Boolean locked;

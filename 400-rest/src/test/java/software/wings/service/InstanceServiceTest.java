@@ -44,6 +44,7 @@ import software.wings.service.intfc.instance.InstanceService;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -57,7 +58,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mongodb.morphia.query.Query;
 
 /**
  *

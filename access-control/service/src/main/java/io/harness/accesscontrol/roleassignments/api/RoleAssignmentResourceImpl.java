@@ -272,7 +272,7 @@ public class RoleAssignmentResourceImpl implements RoleAssignmentResource {
                                 .scopeIdentifier(scope.toString())
                                 .managedFilter(NO_FILTER)
                                 .build();
-    List<RoleResponseDTO> roleResponseDTOs = roleService.list(pageRequest, roleFilter)
+    List<RoleResponseDTO> roleResponseDTOs = roleService.list(pageRequest, roleFilter, true)
                                                  .getContent()
                                                  .stream()
                                                  .map(roleDTOMapper::toResponseDTO)

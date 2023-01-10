@@ -14,10 +14,10 @@ import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.validation.Update;
 
 import com.github.reinert.jjschema.SchemaIgnore;
+import dev.morphia.annotations.Id;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Value;
-import org.mongodb.morphia.annotations.Id;
 
 @Value
 @Builder
