@@ -61,25 +61,6 @@ public class TailerModule extends ProviderModule {
     return new BackoffScheduler(ChronicleEventTailer.class.getSimpleName(), config.getMinDelay(), config.getMaxDelay());
   }
 
-  @Named("event-server-channel")
-  @Provides
-  @Singleton
-  @SneakyThrows
-  Channel channel() {
-    SslContext sslContext = GrpcSslContexts.forClient().trustManager(InsecureTrustManagerFactory.INSTANCE).build();
-    return NettyChannelBuilder.forTarget(config.publishTarget)
-        .overrideAuthority(config.publishAuthority)
-        .sslContext(sslContext)
-        .build();
-  }
-
-  @Provides
-  @Singleton
-  EventPublisherBlockingStub eventPublisherBlockingStub(
-      @Named("event-server-channel") Channel channel, CallCredentials callCredentials) {
-    return EventPublisherGrpc.newBlockingStub(channel).withCallCredentials(callCredentials);
-  }
-
   @Value
   @Builder
   public static class Config {
