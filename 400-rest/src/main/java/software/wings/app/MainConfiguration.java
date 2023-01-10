@@ -242,6 +242,8 @@ public class MainConfiguration extends Configuration implements AssetsBundleConf
 
   // If flag is enabled, only one thread does Notify response cleanup.
   @JsonProperty(value = "lockNotifyResponseCleanup") private boolean lockNotifyResponseCleanup;
+  @JsonProperty(value = "enableRedisForDelegateService", defaultValue = "false")
+  private boolean enableRedisForDelegateService;
 
   private int applicationPort;
   private boolean sslEnabled;

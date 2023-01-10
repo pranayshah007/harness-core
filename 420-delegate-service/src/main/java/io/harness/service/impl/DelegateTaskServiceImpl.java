@@ -31,6 +31,8 @@ import io.harness.observer.RemoteObserverInformer;
 import io.harness.observer.Subject;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
+import io.harness.redis.impl.DelegateServiceCacheImpl;
+import io.harness.redis.intfc.DelegateServiceCache;
 import io.harness.reflection.ReflectionUtils;
 import io.harness.serializer.KryoSerializer;
 import io.harness.service.dto.RetryDelegate;
@@ -68,6 +70,7 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
   @Inject private DelegateCallbackRegistry delegateCallbackRegistry;
   @Inject private KryoSerializer kryoSerializer;
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
+  @Inject private DelegateServiceCache delegateServiceCache;
 
   @Getter private Subject<DelegateTaskRetryObserver> retryObserverSubject = new Subject<>();
   @Inject private RemoteObserverInformer remoteObserverInformer;
@@ -187,6 +190,10 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
 
     if (taskQuery != null) {
       persistence.deleteOnServer(taskQuery);
+    }
+    if (true) {
+      delegateServiceCache.updateDelegateTaskCache(
+          delegateTask.getDelegateId(), DelegateServiceCacheImpl.UpdateOperation.DECREMENT);
     }
 
     delegateMetricsService.recordDelegateTaskResponseMetrics(delegateTask, response, DELEGATE_TASK_RESPONSE);

@@ -119,6 +119,9 @@ import io.harness.network.SafeHttpCall;
 import io.harness.observer.RemoteObserverInformer;
 import io.harness.observer.Subject;
 import io.harness.persistence.HPersistence;
+import io.harness.queueservice.ResourceBasedDelegateSelectionCheckForTask;
+import io.harness.redis.impl.DelegateServiceCacheImpl;
+import io.harness.redis.intfc.DelegateServiceCache;
 import io.harness.reflection.ExpressionReflectionUtils;
 import io.harness.reflection.ReflectionUtils;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
@@ -279,6 +282,8 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   @Inject @Named(EXPRESSION_EVALUATOR_EXECUTOR) ExecutorService expressionEvaluatorExecutor;
   @Inject @Getter private Subject<DelegateObserver> subject = new Subject<>();
   @Inject private DelegateTaskQueueService delegateTaskQueueService;
+  @Inject private ResourceBasedDelegateSelectionCheckForTask delegateSelectionCheckForTask;
+  @Inject private DelegateServiceCache delegateServiceCache;
 
   private static final SecureRandom random = new SecureRandom();
   private HarnessCacheManager harnessCacheManager;
@@ -765,6 +770,9 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   }
 
   private String getDelegateIdForFirstBroadcast(DelegateTask delegateTask, List<String> eligibleListOfDelegates) {
+    if (isRedisForDelegateServiceEnabled()) {
+      return getMostResourceAvailableDelegateIdForFirstBroadcast(delegateTask, eligibleListOfDelegates);
+    }
     for (String delegateId : eligibleListOfDelegates) {
       if (assignDelegateService.isDelegateGroupWhitelisted(delegateTask, delegateId)
           || assignDelegateService.isWhitelisted(delegateTask, delegateId)) {
@@ -774,6 +782,27 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     delegateMetricsService.recordDelegateTaskMetrics(delegateTask, DELEGATE_TASK_NO_FIRST_WHITELISTED);
     printCriteriaNoMatch(delegateTask);
     return eligibleListOfDelegates.get(random.nextInt(eligibleListOfDelegates.size()));
+  }
+
+  private String getMostResourceAvailableDelegateIdForFirstBroadcast(
+      DelegateTask delegateTask, List<String> eligibleListOfDelegates) {
+    TaskType taskType = TaskType.valueOf(delegateTask.getData().getTaskType());
+    List<Delegate> delegateList = getDelegatesList(eligibleListOfDelegates, delegateTask.getAccountId());
+    Optional<List<String>> filteredDelegateList =
+        delegateSelectionCheckForTask.perform(delegateList, taskType, delegateTask.getAccountId());
+    if (filteredDelegateList.isEmpty() || isNotEmpty(filteredDelegateList.get())) {
+      return eligibleListOfDelegates.get(random.nextInt(eligibleListOfDelegates.size()));
+    }
+    for (String delegateId : filteredDelegateList.get()) {
+      if (assignDelegateService.isDelegateGroupWhitelisted(delegateTask, delegateId)
+          || assignDelegateService.isWhitelisted(delegateTask, delegateId)) {
+        return delegateId;
+      }
+    }
+    return filteredDelegateList.get().get(0);
+  }
+  List<Delegate> getDelegatesList(List<String> eligibleDelegateId, String accountId) {
+    return eligibleDelegateId.stream().map(id -> delegateCache.get(accountId, id, false)).collect(Collectors.toList());
   }
 
   private void handleTaskFailureResponse(DelegateTask task, Exception exception) {
@@ -1553,6 +1582,9 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     // If the task wasn't updated because delegateId already exists then query for the task with the delegateId in
     // case client is retrying the request
     copyTaskDataV2ToTaskData(task);
+    if (isRedisForDelegateServiceEnabled()) {
+      delegateServiceCache.updateDelegateTaskCache(delegateId, DelegateServiceCacheImpl.UpdateOperation.INCREMENT);
+    }
     if (task != null) {
       try (
           DelayLogContext ignore = new DelayLogContext(task.getLastUpdatedAt() - task.getCreatedAt(), OVERRIDE_ERROR)) {
@@ -1996,6 +2028,10 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     } else {
       persistence.save(delegateTask);
     }
+  }
+
+  private boolean isRedisForDelegateServiceEnabled() {
+    return mainConfiguration.getEnableRedisForDelegateService();
   }
 
   @Override

@@ -27,7 +27,6 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-import lombok.Synchronized;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.redisson.api.RLocalCachedMap;
@@ -109,7 +108,6 @@ public class DelegateServiceCacheImpl implements DelegateServiceCache {
     return perpetualTaskCountAccountCache.get(delegateId);
   }
 
-  @Synchronized
   private void updateCache(String delegateId, UpdateOperation updateOperation) {
     if (updateOperation.equals(UpdateOperation.INCREMENT)) {
       taskCache.get(delegateId).getAndIncrement();
