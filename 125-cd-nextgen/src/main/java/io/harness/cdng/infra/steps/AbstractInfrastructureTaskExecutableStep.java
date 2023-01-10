@@ -28,10 +28,8 @@ import io.harness.cdng.customdeploymentng.CustomDeploymentInfrastructureHelper;
 import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.execution.helper.ExecutionInfoKeyMapper;
 import io.harness.cdng.execution.helper.StageExecutionHelper;
-import io.harness.cdng.infra.InfrastructureMapper;
-import io.harness.cdng.infra.InfrastructureProvisionerMapper;
+import io.harness.cdng.infra.InfrastructureOutcomeProvider;
 import io.harness.cdng.infra.InfrastructureValidator;
-import io.harness.cdng.infra.Provisionable;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.yaml.AsgInfrastructure;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
@@ -141,11 +139,10 @@ abstract class AbstractInfrastructureTaskExecutableStep {
   @Inject protected KryoSerializer kryoSerializer;
   @Inject protected StepHelper stepHelper;
   @Inject protected StageExecutionHelper stageExecutionHelper;
-  @Inject protected InfrastructureMapper infrastructureMapper;
   @Inject CustomDeploymentInfrastructureHelper customDeploymentInfrastructureHelper;
   @Inject private InfrastructureValidator infrastructureValidator;
   @Inject protected InstanceOutcomeHelper instanceOutcomeHelper;
-  @Inject protected InfrastructureProvisionerMapper infrastructureProvisionerMapper;
+  @Inject protected InfrastructureOutcomeProvider infrastructureOutcomeProvider;
 
   @Data
   @AllArgsConstructor
@@ -185,9 +182,7 @@ abstract class AbstractInfrastructureTaskExecutableStep {
     infrastructureValidator.validate(infrastructure);
 
     final InfrastructureOutcome infrastructureOutcome =
-        (infrastructure instanceof Provisionable && ((Provisionable) infrastructure).isDynamicallyProvisioned())
-        ? infrastructureProvisionerMapper.toOutcome(infrastructure, environmentOutcome, serviceOutcome)
-        : infrastructureMapper.toOutcome(infrastructure, environmentOutcome, serviceOutcome,
+        infrastructureOutcomeProvider.getOutcome(infrastructure, environmentOutcome, serviceOutcome,
             ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
 
     executionSweepingOutputService.consume(ambiance, INFRA_TASK_EXECUTABLE_STEP_OUTPUT,

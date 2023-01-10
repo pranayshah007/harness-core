@@ -15,7 +15,6 @@ import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
-import io.harness.cdng.infra.Provisionable;
 import io.harness.cdng.infra.beans.InfraMapping;
 import io.harness.cdng.infra.beans.PdcInfraMapping;
 import io.harness.cdng.infra.beans.PdcInfraMapping.PdcInfraMappingBuilder;
@@ -58,7 +57,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("PdcInfrastructure")
 @RecasterAlias("io.harness.cdng.infra.yaml.PdcInfrastructure")
 public class PdcInfrastructure
-    extends InfrastructureDetailsAbstract implements Infrastructure, Visitable, WithConnectorRef, Provisionable {
+    extends InfrastructureDetailsAbstract implements Infrastructure, Visitable, WithConnectorRef {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -152,7 +151,6 @@ public class PdcInfrastructure
     }
   }
 
-  @Override
   public boolean isDynamicallyProvisioned() {
     return ParameterFieldHelper.getBooleanParameterFieldValue(dynamicallyProvisioned);
   }

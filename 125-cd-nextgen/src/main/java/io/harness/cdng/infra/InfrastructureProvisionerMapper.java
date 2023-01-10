@@ -14,7 +14,6 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.expressionEvaluator.CDEngineExpressionEvaluator;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.PdcInfrastructureOutcome;
 import io.harness.cdng.infra.beans.host.HostAttributesFilter;
@@ -28,6 +27,7 @@ import io.harness.cdng.infra.yaml.PdcInfrastructure;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.delegate.beans.connector.pdcconnector.HostFilterType;
+import io.harness.evaluators.CDExpressionEvaluator;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.EngineExpressionEvaluator;
@@ -51,7 +51,7 @@ import org.apache.commons.io.IOUtils;
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
 public class InfrastructureProvisionerMapper {
-  @Inject private CDEngineExpressionEvaluator evaluator;
+  @Inject private CDExpressionEvaluator evaluator;
 
   @NotNull
   public InfrastructureOutcome toOutcome(

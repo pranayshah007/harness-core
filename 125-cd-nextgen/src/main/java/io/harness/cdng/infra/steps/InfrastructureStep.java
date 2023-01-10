@@ -27,10 +27,8 @@ import io.harness.cdng.customdeploymentng.CustomDeploymentInfrastructureHelper;
 import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.execution.helper.ExecutionInfoKeyMapper;
 import io.harness.cdng.execution.helper.StageExecutionHelper;
-import io.harness.cdng.infra.InfrastructureMapper;
-import io.harness.cdng.infra.InfrastructureProvisionerMapper;
+import io.harness.cdng.infra.InfrastructureOutcomeProvider;
 import io.harness.cdng.infra.InfrastructureValidator;
-import io.harness.cdng.infra.Provisionable;
 import io.harness.cdng.infra.beans.InfraMapping;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
@@ -128,11 +126,10 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
   @Inject private CDStepHelper cdStepHelper;
   @Inject ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private StageExecutionHelper stageExecutionHelper;
-  @Inject private InfrastructureMapper infrastructureMapper;
   @Inject private InfrastructureValidator infrastructureValidator;
   @Inject private CustomDeploymentInfrastructureHelper customDeploymentInfrastructureHelper;
   @Inject private InstanceOutcomeHelper instanceOutcomeHelper;
-  @Inject private InfrastructureProvisionerMapper infrastructureProvisionerMapper;
+  @Inject private InfrastructureOutcomeProvider infrastructureOutcomeProvider;
 
   @Override
   public Class<Infrastructure> getStepParametersClass() {
@@ -164,10 +161,8 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
 
     infrastructureValidator.validate(infrastructure);
 
-    InfrastructureOutcome infrastructureOutcome =
-        (infrastructure instanceof Provisionable && ((Provisionable) infrastructure).isDynamicallyProvisioned())
-        ? infrastructureProvisionerMapper.toOutcome(infrastructure, environmentOutcome, serviceOutcome)
-        : infrastructureMapper.toOutcome(infrastructure, environmentOutcome, serviceOutcome,
+    final InfrastructureOutcome infrastructureOutcome =
+        infrastructureOutcomeProvider.getOutcome(infrastructure, environmentOutcome, serviceOutcome,
             ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
 
     if (environmentOutcome != null) {

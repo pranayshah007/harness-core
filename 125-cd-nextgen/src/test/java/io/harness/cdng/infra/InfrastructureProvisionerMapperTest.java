@@ -16,7 +16,6 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.cdng.expressionEvaluator.CDEngineExpressionEvaluator;
 import io.harness.cdng.infra.beans.PdcInfrastructureOutcome;
 import io.harness.cdng.infra.beans.host.HostFilter;
 import io.harness.cdng.infra.beans.host.dto.AllHostsFilterDTO;
@@ -26,6 +25,7 @@ import io.harness.cdng.infra.yaml.InfrastructureDetailsAbstract;
 import io.harness.cdng.infra.yaml.PdcInfrastructure;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.delegate.beans.connector.pdcconnector.HostFilterType;
+import io.harness.evaluators.CDExpressionEvaluator;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.yaml.ParameterField;
@@ -45,7 +45,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 @OwnedBy(HarnessTeam.CDC)
 @RunWith(MockitoJUnitRunner.class)
 public class InfrastructureProvisionerMapperTest extends CategoryTest {
-  @Spy private CDEngineExpressionEvaluator evaluator;
+  @Spy private CDExpressionEvaluator evaluator;
 
   @InjectMocks private InfrastructureProvisionerMapper infrastructureProvisionerMapper;
 
