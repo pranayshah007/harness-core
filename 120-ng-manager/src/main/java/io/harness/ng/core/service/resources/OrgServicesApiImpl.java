@@ -49,7 +49,7 @@ public class OrgServicesApiImpl extends AbstractServicesApiImpl implements OrgSe
   @Override
   public Response deleteOrgScopedService(@OrgIdentifier String org, @ResourceIdentifier String service,
       @AccountIdentifier String account, Boolean forceDelete) {
-    return super.deleteServiceEntity(org, null, service, account, forceDelete);
+    return super.deleteServiceEntity(org, null, service, account, Boolean.TRUE == forceDelete);
   }
 
   @NGAccessControlCheck(resourceType = NGResourceType.SERVICE, permission = "core_service_view")
