@@ -205,7 +205,7 @@ if [[ "" != "$TI_SERVICE_ENDPOINT" ]]; then
 fi
 
 if [[ "" != "$OVERRIDE_EXEC_LIMIT_FOR_ACCOUNT" ]]; then
-  export OVERRIDE_EXEC_LIMIT_FOR_ACCOUNT; yq -i '.ciExecutionServiceConfig.executionLimits.overrideConfig[0]=env(GRPC_SERVER_PORT)' $OVERRIDE_EXEC_LIMIT_FOR_ACCOUNT
+  export OVERRIDE_EXEC_LIMIT_FOR_ACCOUNT; yq -i '.ciExecutionServiceConfig.executionLimits.overrideConfig[0]=env(OVERRIDE_EXEC_LIMIT_FOR_ACCOUNT)' $CONFIG_FILE
 fi
 
 if [[ "" != "$STO_SERVICE_ENDPOINT" ]]; then
