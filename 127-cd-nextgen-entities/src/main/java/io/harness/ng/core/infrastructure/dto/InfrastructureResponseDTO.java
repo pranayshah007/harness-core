@@ -7,6 +7,7 @@
 
 package io.harness.ng.core.infrastructure.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.ng.core.infrastructure.InfrastructureType;
 
@@ -31,7 +32,7 @@ public class InfrastructureResponseDTO {
   String projectIdentifier;
   String environmentRef;
   String name;
-  String description;
+  @JsonInclude(JsonInclude.Include.NON_NULL) String description;
   Map<String, String> tags;
   InfrastructureType type;
   ServiceDefinitionType deploymentType;

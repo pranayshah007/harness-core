@@ -14,6 +14,7 @@ import io.harness.ng.core.environment.dto.EnvironmentResponse;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.Map;
@@ -33,7 +34,9 @@ public class EnvironmentGroupResponseDTO {
   @Schema(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) String projectIdentifier;
   @Schema(description = NGCommonEntityConstants.IDENTIFIER_PARAM_MESSAGE) String identifier;
   @Schema(description = NGCommonEntityConstants.NAME_PARAM_MESSAGE) String name;
-  @Schema(description = NGCommonEntityConstants.DESCRIPTION) String description;
+  @Schema(description = NGCommonEntityConstants.DESCRIPTION)
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  String description;
   @Schema(description = NGCommonEntityConstants.COLOR_PARAM_MESSAGE) String color;
   @Schema(description = NGCommonEntityConstants.DELETED_PARAM_MESSAGE) boolean deleted;
   @Schema(description = NGCommonEntityConstants.TAGS) Map<String, String> tags;
