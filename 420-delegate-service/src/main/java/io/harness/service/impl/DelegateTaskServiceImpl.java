@@ -142,6 +142,10 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
           }
         }
         log.info("Response received for task: {} from Delegate: {}", taskId, delegateId);
+        if (true) {
+          delegateServiceCache.updateDelegateTaskCache(
+                  delegateTask.getDelegateId(), DelegateServiceCacheImpl.UpdateOperation.DECREMENT);
+        }
         handleResponse(delegateTask, taskQuery, response);
 
         retryObserverSubject.fireInform(DelegateTaskRetryObserver::onTaskResponseProcessed, delegateTask, delegateId);
@@ -190,10 +194,6 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
 
     if (taskQuery != null) {
       persistence.deleteOnServer(taskQuery);
-    }
-    if (true) {
-      delegateServiceCache.updateDelegateTaskCache(
-          delegateTask.getDelegateId(), DelegateServiceCacheImpl.UpdateOperation.DECREMENT);
     }
 
     delegateMetricsService.recordDelegateTaskResponseMetrics(delegateTask, response, DELEGATE_TASK_RESPONSE);
