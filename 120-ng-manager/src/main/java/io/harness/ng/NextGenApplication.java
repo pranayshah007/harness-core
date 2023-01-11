@@ -119,6 +119,7 @@ import io.harness.ng.core.handler.freezeHandlers.NgDeploymentFreezeActivationHan
 import io.harness.ng.core.migration.NGBeanMigrationProvider;
 import io.harness.ng.core.migration.ProjectMigrationProvider;
 import io.harness.ng.core.migration.UserGroupMigrationProvider;
+import io.harness.ng.core.remote.UserGroupRestrictionUsageImpl;
 import io.harness.ng.core.remote.licenserestriction.CloudCostK8sConnectorRestrictionsUsageImpl;
 import io.harness.ng.core.remote.licenserestriction.OrgRestrictionsUsageImpl;
 import io.harness.ng.core.remote.licenserestriction.ProjectRestrictionsUsageImpl;
@@ -986,6 +987,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
                     .put(FeatureRestrictionName.MULTIPLE_PROJECTS, ProjectRestrictionsUsageImpl.class)
                     .put(FeatureRestrictionName.MULTIPLE_ORGANIZATIONS, OrgRestrictionsUsageImpl.class)
                     .put(FeatureRestrictionName.MULTIPLE_SECRETS, SecretRestrictionUsageImpl.class)
+                    .put(FeatureRestrictionName.MULTIPLE_USER_GROUPS, UserGroupRestrictionUsageImpl.class)
                     .put(FeatureRestrictionName.SERVICES, ServiceRestrictionsUsageImpl.class)
                     .put(FeatureRestrictionName.CCM_K8S_CLUSTERS, CloudCostK8sConnectorRestrictionsUsageImpl.class)
                     .put(FeatureRestrictionName.DEPLOYMENTS_PER_MONTH, DeploymentsPerMonthRestrictionUsageImpl.class)
