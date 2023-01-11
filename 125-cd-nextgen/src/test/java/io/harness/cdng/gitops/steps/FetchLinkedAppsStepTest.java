@@ -7,6 +7,7 @@
 
 package io.harness.cdng.gitops.steps;
 
+import static io.harness.cdng.gitops.constants.GitopsConstants.GITOPS_SWEEPING_OUTPUT;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -171,7 +172,7 @@ public class FetchLinkedAppsStepTest extends CategoryTest {
     ThrowingSupplier<GitOpsFetchAppTaskResponse> throwingSupplier = () -> taskResponse;
     doReturn(null)
         .when(executionSweepingOutputService)
-        .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(GitopsClustersStep.GITOPS_SWEEPING_OUTPUT));
+        .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(GITOPS_SWEEPING_OUTPUT));
 
     Assertions
         .assertThatThrownBy(()

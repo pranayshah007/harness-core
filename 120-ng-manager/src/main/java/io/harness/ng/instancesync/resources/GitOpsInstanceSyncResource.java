@@ -16,7 +16,6 @@ import io.harness.cdng.gitops.beans.DeleteInstancesRequest;
 import io.harness.cdng.gitops.beans.GitOpsInstance;
 import io.harness.cdng.gitops.beans.GitOpsInstanceRequest;
 import io.harness.dtos.InstanceDTO;
-import io.harness.exception.InvalidRequestException;
 import io.harness.helper.GitOpsRequestDTOMapper;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
@@ -75,17 +74,37 @@ public class GitOpsInstanceSyncResource {
       @NotEmpty @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @NotEmpty @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @NotEmpty @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
-
+      @QueryParam(NGCommonEntityConstants.AGENT_KEY) String agentIdentifier,
       @NotNull @Valid List<GitOpsInstanceRequest> gitOpsInstanceRequestList) {
     if (isEmpty(gitOpsInstanceRequestList)) {
-      throw new InvalidRequestException("GitopsInstanceRequestList cannot be empty");
+      // TODO remove the condition after the params change in Gitops service is deployed
+      if (agentIdentifier != null) {
+        deleteInstances(accountId, orgIdentifier, projectIdentifier, agentIdentifier);
+      }
+      return ResponseDTO.newResponse(Boolean.TRUE);
+    } else {
+      return processInstances(accountId, orgIdentifier, projectIdentifier, agentIdentifier, gitOpsInstanceRequestList)
+          ? ResponseDTO.newResponse(Boolean.TRUE)
+          : ResponseDTO.newResponse(Boolean.FALSE);
     }
+  }
+
+  private Boolean processInstances(String accountId, String orgIdentifier, String projectIdentifier,
+      String agentIdentifier, List<GitOpsInstanceRequest> gitOpsInstanceRequestList) {
     List<GitOpsInstance> processedInstances =
         prepareInstanceSync(accountId, orgIdentifier, projectIdentifier, gitOpsInstanceRequestList);
+    if (processedInstances.isEmpty()) {
+      return false;
+    }
     final List<InstanceDTO> instanceDTOs =
         gitOpsRequestDTOMapper.toInstanceDTOList(accountId, orgIdentifier, projectIdentifier, processedInstances);
-    gitopsInstanceSyncService.processInstanceSync(accountId, orgIdentifier, projectIdentifier, instanceDTOs);
-    return ResponseDTO.newResponse(Boolean.TRUE);
+    return gitopsInstanceSyncService.processInstanceSync(
+        accountId, orgIdentifier, projectIdentifier, agentIdentifier, instanceDTOs);
+  }
+
+  private void deleteInstances(
+      String accountId, String orgIdentifier, String projectIdentifier, String agentIdentifier) {
+    gitopsInstanceSyncService.deleteInstancesForAgent(accountId, orgIdentifier, projectIdentifier, agentIdentifier);
   }
 
   @DELETE
@@ -102,6 +121,7 @@ public class GitOpsInstanceSyncResource {
 
   List<GitOpsInstance> prepareInstanceSync(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       List<GitOpsInstanceRequest> gitOpsInstanceRequestList) {
+    log.info("Processing {} Gitops instances for sync to NG", gitOpsInstanceRequestList.size());
     List<GitOpsInstance> instanceDTOs = new ArrayList<>();
 
     final List<GitOpsInstance> gitOpsInstanceDTOs = gitOpsRequestDTOMapper.toGitOpsInstanceList(

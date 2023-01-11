@@ -31,6 +31,7 @@ import software.wings.beans.Workflow.WorkflowKeys;
 import software.wings.dl.WingsPersistence;
 import software.wings.graphql.schema.mutation.event.EventsConfigValidationHelper;
 
+import dev.morphia.query.Query;
 import java.util.Arrays;
 import lombok.extern.slf4j.Slf4j;
 import org.assertj.core.api.Assertions;
@@ -43,7 +44,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
-import org.mongodb.morphia.query.Query;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CDC)

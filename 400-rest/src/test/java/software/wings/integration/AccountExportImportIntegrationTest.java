@@ -30,6 +30,7 @@ import software.wings.dl.exportimport.ExportMode;
 import software.wings.dl.exportimport.ImportStatusReport;
 import software.wings.service.intfc.instance.licensing.InstanceLimitProvider;
 
+import dev.morphia.annotations.Entity;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.util.zip.ZipEntry;
@@ -43,7 +44,6 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mongodb.morphia.annotations.Entity;
 
 /**
  * @author marklu on 10/25/18

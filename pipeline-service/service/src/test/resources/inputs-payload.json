@@ -1,0 +1,11 @@
+{
+  "inputs": {
+    "repo": "test-repo"
+  },
+  "repository": {
+    "reference": {
+      "type": "branch",
+      "value": "main"
+    }
+  }
+}

@@ -97,4 +97,5 @@ public class YAMLFieldNameConstants {
 
   public final String REPOSITORY = "repository";
   public final String DEFAULT = "default";
+  public final String REFERENCE = "reference";
 }

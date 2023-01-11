@@ -53,6 +53,6 @@ public class CDPMSStepPlanCreatorV2Test extends CDNGTestBase {
 
     PlanCreationContext ctx = PlanCreationContext.builder().currentField(currentNode).build();
     String rollingFqn = stepsPlanCreator.getExecutionStepFqn(ctx.getCurrentField(), K8S_ROLLING_DEPLOY);
-    assertThat(rollingFqn).isEqualTo("execution.steps.rolloutDeployment");
+    assertThat(rollingFqn).isEqualTo("stage.steps.rolloutDeployment");
   }
 }

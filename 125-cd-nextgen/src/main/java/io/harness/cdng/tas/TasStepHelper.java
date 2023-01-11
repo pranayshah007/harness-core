@@ -22,21 +22,27 @@ import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.CUSTOM_
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.DOCKER_REGISTRY_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.ECR_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.GCR_NAME;
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.GOOGLE_ARTIFACT_REGISTRY_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.JENKINS_NAME;
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.NEXUS2_REGISTRY_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.NEXUS3_REGISTRY_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceType.AMAZONS3;
 import static io.harness.delegate.task.artifacts.ArtifactSourceType.AZURE_ARTIFACTS;
 import static io.harness.delegate.task.artifacts.ArtifactSourceType.JENKINS;
+import static io.harness.delegate.task.artifacts.ArtifactSourceType.NEXUS2_REGISTRY;
 import static io.harness.delegate.task.artifacts.ArtifactSourceType.NEXUS3_REGISTRY;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
+import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
 import static io.harness.logging.UnitStatus.RUNNING;
 import static io.harness.pcf.model.PcfConstants.APPLICATION_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.INSTANCE_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.NAME_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.NO_ROUTE_MANIFEST_YML_ELEMENT;
+import static io.harness.pcf.model.PcfConstants.PCF_AUTOSCALAR_MANIFEST_INSTANCE_LIMITS_ELE;
+import static io.harness.pcf.model.PcfConstants.PCF_AUTOSCALAR_MANIFEST_RULES_ELE;
 import static io.harness.pcf.model.PcfConstants.PROCESSES_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.PROCESSES_TYPE_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.ROUTES_MANIFEST_YML_ELEMENT;
@@ -65,17 +71,16 @@ import io.harness.cdng.artifact.outcome.AzureArtifactsOutcome;
 import io.harness.cdng.artifact.outcome.CustomArtifactOutcome;
 import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
 import io.harness.cdng.artifact.outcome.EcrArtifactOutcome;
+import io.harness.cdng.artifact.outcome.GarArtifactOutcome;
 import io.harness.cdng.artifact.outcome.GcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.JenkinsArtifactOutcome;
 import io.harness.cdng.artifact.outcome.NexusArtifactOutcome;
 import io.harness.cdng.artifact.outcome.S3ArtifactOutcome;
 import io.harness.cdng.expressions.CDExpressionResolveFunctor;
-import io.harness.cdng.instance.outcome.InstanceOutcome;
-import io.harness.cdng.instance.outcome.InstancesOutcome;
-import io.harness.cdng.instance.outcome.TasOutcome;
 import io.harness.cdng.k8s.beans.CustomFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.GitFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
+import io.harness.cdng.manifest.ManifestConfigType;
 import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.steps.ManifestsOutcome;
 import io.harness.cdng.manifest.yaml.AutoScalerManifestOutcome;
@@ -87,14 +92,11 @@ import io.harness.cdng.manifest.yaml.TasManifestOutcome;
 import io.harness.cdng.manifest.yaml.VarsManifestOutcome;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
-import io.harness.cdng.ssh.output.HostsOutput;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
-import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
-import io.harness.delegate.beans.instancesync.info.TasServerInstanceInfo;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.beans.pcf.artifact.TasArtifactRegistryType;
@@ -152,7 +154,6 @@ import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
-import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.expression.EngineExpressionService;
@@ -166,7 +167,6 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.KryoSerializer;
-import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
 import io.harness.supplier.ThrowingSupplier;
@@ -200,6 +200,7 @@ import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -228,7 +229,6 @@ public class TasStepHelper {
 
   public static final String START_SLASH_ALL_MATCH = "\\A/+";
   public static final String END_SLASH_ALL_MATCH = "/+\\Z";
-  LogCallback logCallback;
 
   public TaskChainResponse startChainLink(
       TasStepExecutor tasStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters) {
@@ -237,18 +237,11 @@ public class TasStepHelper {
         manifestsOutcome, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
     cdStepHelper.validateManifestsOutcome(ambiance, manifestsOutcome);
 
-    List<AutoScalerManifestOutcome> autoScalerManifestOutcomeList = new ArrayList<>();
-    List<VarsManifestOutcome> varsManifestOutcomeList = new ArrayList<>();
-    TasManifestOutcome tasManifestOutcome = filterManifestOutcomesByTypeAndReturnTasManifest(
-        manifestsOutcome.values(), autoScalerManifestOutcomeList, varsManifestOutcomeList);
-
     TasStepPassThroughData tasStepPassThroughData = TasStepPassThroughData.builder()
-                                                        .tasManifestOutcome(tasManifestOutcome)
                                                         .manifestOutcomeList(new ArrayList<>(manifestsOutcome.values()))
-                                                        .varsManifestOutcomeList(varsManifestOutcomeList)
-                                                        .autoScalerManifestOutcomeList(autoScalerManifestOutcomeList)
                                                         .unitProgresses(new ArrayList<>())
                                                         .build();
+    filterManifestOutcomesByType(tasStepPassThroughData, manifestsOutcome.values());
     shouldExecuteStoreFetch(tasStepPassThroughData);
     tasStepPassThroughData.setShouldCloseFetchFilesStream(false);
     tasStepPassThroughData.setShouldOpenFetchFilesStream(
@@ -273,30 +266,30 @@ public class TasStepHelper {
     UnitProgress.Builder unitProgress = UnitProgress.newBuilder()
                                             .setStartTime(System.currentTimeMillis())
                                             .setUnitName(CfCommandUnitConstants.FetchCommandScript);
-    logCallback = cdStepHelper.getLogCallback(CfCommandUnitConstants.FetchCommandScript, ambiance, true);
-    String scriptString = null;
+    LogCallback logCallback = cdStepHelper.getLogCallback(CfCommandUnitConstants.FetchCommandScript, ambiance, true);
+    String scriptString;
     if (ManifestStoreType.HARNESS.equals(tasCommandStepParameters.getScript().getStore().getSpec().getKind())) {
       HarnessStore storeConfig = (HarnessStore) tasCommandStepParameters.getScript().getStore().getSpec();
       List<TasManifestFileContents> tasManifestFileContents =
           getFileContentsFromManifest(AmbianceUtils.getNgAccess(ambiance),
               getParameterFieldValue(storeConfig.getFiles()), "TasCommandScript", "TasCommandScript", logCallback);
       if (isEmpty(tasManifestFileContents) || tasManifestFileContents.size() > 1) {
-        logCallback.saveExecutionLog("Failed", INFO, FAILURE);
+        logCallback.saveExecutionLog("No or Multiple script found", INFO, FAILURE);
         throw new InvalidRequestException("No or Multiple script found", USER);
       }
       scriptString = tasManifestFileContents.get(0).getFileContent();
-      logCallback.saveExecutionLog("Done", INFO, SUCCESS);
+      logCallback.saveExecutionLog("Successfully fetched Tanzu Command Script from Harness Store", INFO, SUCCESS);
     } else if (ManifestStoreType.INLINE.equals(tasCommandStepParameters.getScript().getStore().getSpec().getKind())) {
       InlineStoreConfig storeConfig = (InlineStoreConfig) tasCommandStepParameters.getScript().getStore().getSpec();
       scriptString = storeConfig.extractContent();
-      logCallback.saveExecutionLog("Done", INFO, SUCCESS);
+      logCallback.saveExecutionLog("Successfully fetched Tanzu Command Script", INFO, SUCCESS);
     } else {
-      logCallback.saveExecutionLog("Failed", INFO, FAILURE);
+      logCallback.saveExecutionLog("Only Inline and Harness Store supported for TAS Command Scripts", INFO, FAILURE);
       throw new InvalidRequestException("Only Inline and Harness Store supported for TAS Command Scripts", USER);
     }
 
     if (isEmpty(scriptString)) {
-      logCallback.saveExecutionLog("Failed", INFO, FAILURE);
+      logCallback.saveExecutionLog("Script cannot be empty", INFO, FAILURE);
       throw new InvalidRequestException("Script cannot be empty", USER);
     }
 
@@ -309,31 +302,24 @@ public class TasStepHelper {
         manifestsOutcome, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
     cdStepHelper.validateManifestsOutcome(ambiance, manifestsOutcome);
 
-    List<AutoScalerManifestOutcome> autoScalerManifestOutcomeList = new ArrayList<>();
-    List<VarsManifestOutcome> varsManifestOutcomeList = new ArrayList<>();
-    TasManifestOutcome tasManifestOutcome = filterManifestOutcomesByTypeAndReturnTasManifest(
-        manifestsOutcome.values(), autoScalerManifestOutcomeList, varsManifestOutcomeList);
+    TasStepPassThroughData tasStepPassThroughData = TasStepPassThroughData.builder()
+                                                        .manifestOutcomeList(new ArrayList<>(manifestsOutcome.values()))
+                                                        .rawScript(rawScript)
+                                                        .build();
+
+    filterManifestOutcomesByType(tasStepPassThroughData, manifestsOutcome.values());
 
     final boolean serviceManifestStoreInGitSubset =
-        ManifestStoreType.isInGitSubset(tasManifestOutcome.getStore().getKind());
+        ManifestStoreType.isInGitSubset(tasStepPassThroughData.getTasManifestOutcome().getStore().getKind());
 
     // Finding Repo Root
     String repoRoot = "/";
     if (serviceManifestStoreInGitSubset) {
-      repoRoot = getRepoRoot(tasManifestOutcome);
+      repoRoot = getRepoRoot(tasStepPassThroughData.getTasManifestOutcome());
     }
 
-    final List<String> pathsFromScript = findPathFromScript(rawScript, repoRoot);
-
-    TasStepPassThroughData tasStepPassThroughData = TasStepPassThroughData.builder()
-                                                        .tasManifestOutcome(tasManifestOutcome)
-                                                        .manifestOutcomeList(new ArrayList<>(manifestsOutcome.values()))
-                                                        .varsManifestOutcomeList(varsManifestOutcomeList)
-                                                        .autoScalerManifestOutcomeList(autoScalerManifestOutcomeList)
-                                                        .rawScript(rawScript)
-                                                        .repoRoot(repoRoot)
-                                                        .pathsFromScript(pathsFromScript)
-                                                        .build();
+    tasStepPassThroughData.setPathsFromScript(findPathFromScript(rawScript, repoRoot));
+    tasStepPassThroughData.setRepoRoot(repoRoot);
 
     unitProgress.setEndTime(System.currentTimeMillis()).setStatus(UnitStatus.SUCCESS);
     tasStepPassThroughData.setUnitProgresses(new ArrayList<>(Arrays.asList(unitProgress.build())));
@@ -406,7 +392,7 @@ public class TasStepHelper {
       StepElementParameters stepElementParameters, TasStepPassThroughData tasStepPassThroughData) {
     Map<String, List<TasManifestFileContents>> localStoreFileMapContents = new HashMap<>();
     if (tasStepPassThroughData.getShouldExecuteHarnessStoreFetch()) {
-      logCallback = cdStepHelper.getLogCallback(
+      LogCallback logCallback = cdStepHelper.getLogCallback(
           CfCommandUnitConstants.FetchFiles, ambiance, tasStepPassThroughData.getShouldOpenFetchFilesStream());
       logCallback.saveExecutionLog("Starting manifest Fetch from Harness Store ", INFO);
       UnitProgress.Builder unitProgress = UnitProgress.newBuilder()
@@ -428,13 +414,14 @@ public class TasStepHelper {
       Ambiance ambiance, TasStepPassThroughData tasStepPassThroughData, LogCallback logCallback) {
     logCallback.saveExecutionLog(color(format("%nStarting Harness Fetch Files"), LogColor.White, LogWeight.Bold));
     if (ManifestStoreType.HARNESS.equals(tasStepPassThroughData.getTasManifestOutcome().getStore().getKind())) {
-      localStoreFileMapContents.put(tasStepPassThroughData.getTasManifestOutcome().getIdentifier(),
+      localStoreFileMapContents.put(String.valueOf(tasStepPassThroughData.getTasManifestOutcome().getOrder()),
           getFileContentsAsLocalStoreFetchFilesResult(
               tasStepPassThroughData.getTasManifestOutcome(), AmbianceUtils.getNgAccess(ambiance), logCallback));
     }
-    if (isNotEmpty(tasStepPassThroughData.getAutoScalerManifestOutcomeList())) {
-      localStoreFileMapContents.putAll(getFileContentsForLocalStore(
-          tasStepPassThroughData.getAutoScalerManifestOutcomeList(), AmbianceUtils.getNgAccess(ambiance), logCallback));
+    if (!isNull(tasStepPassThroughData.getAutoScalerManifestOutcome())) {
+      localStoreFileMapContents.putAll(
+          getFileContentsForLocalStore(singletonList(tasStepPassThroughData.getAutoScalerManifestOutcome()),
+              AmbianceUtils.getNgAccess(ambiance), logCallback));
     }
     if (isNotEmpty(tasStepPassThroughData.getVarsManifestOutcomeList())) {
       localStoreFileMapContents.putAll(getFileContentsForLocalStore(
@@ -524,33 +511,64 @@ public class TasStepHelper {
     return (ManifestsOutcome) manifestsOutcome.getOutcome();
   }
 
-  private TasManifestOutcome filterManifestOutcomesByTypeAndReturnTasManifest(
-      Collection<ManifestOutcome> manifestOutcomes, List<AutoScalerManifestOutcome> autoScalerManifestOutcomeList,
-      List<VarsManifestOutcome> varsManifestOutcomeList) {
+  private void filterManifestOutcomesByType(
+      TasStepPassThroughData tasStepPassThroughData, Collection<ManifestOutcome> manifestOutcomes) {
     if (isEmpty(manifestOutcomes)) {
       throw new InvalidRequestException("Manifests are mandatory for TAS step.", USER);
     }
-    List<ManifestOutcome> orderedManifestOutcomes = new ArrayList<>(manifestOutcomes)
-                                                        .stream()
-                                                        .sorted(Comparator.comparingInt(ManifestOutcome::getOrder))
-                                                        .collect(Collectors.toCollection(LinkedList::new));
+    List<ManifestOutcome> orderedManifestOutcomes =
+        new ArrayList<>(manifestOutcomes)
+            .stream()
+            .sorted(Comparator.comparingInt(ManifestOutcome::getOrder).reversed())
+            .collect(Collectors.toCollection(LinkedList::new));
     TasManifestOutcome tasManifestOutcome = null;
+    AutoScalerManifestOutcome autoScalerManifestOutcome = null;
+    boolean autoScalarManifestFound = false;
+    List<VarsManifestOutcome> varsManifestOutcomeList = new ArrayList<>();
     for (ManifestOutcome manifestOutcome : orderedManifestOutcomes) {
-      if (TAS_AUTOSCALER.equals(manifestOutcome.getType())) {
-        autoScalerManifestOutcomeList.add((AutoScalerManifestOutcome) manifestOutcome);
-      } else if (TAS_VARS.equals(manifestOutcome.getType())) {
-        varsManifestOutcomeList.add((VarsManifestOutcome) manifestOutcome);
-      } else if (TAS_MANIFEST.equals(manifestOutcome.getType())) {
-        if (isNull(tasManifestOutcome)) {
+      switch (manifestOutcome.getType()) {
+        case TAS_AUTOSCALER:
+          if (!isNull(autoScalerManifestOutcome) || autoScalarManifestFound) {
+            continue;
+          }
+          autoScalerManifestOutcome = (AutoScalerManifestOutcome) manifestOutcome;
+          autoScalarManifestFound = true;
+          break;
+        case TAS_VARS:
+          varsManifestOutcomeList.add((VarsManifestOutcome) manifestOutcome);
+          break;
+        case TAS_MANIFEST:
+          if (!isNull(tasManifestOutcome)) {
+            continue;
+          }
           tasManifestOutcome = (TasManifestOutcome) manifestOutcome;
-        } else {
-          throw new InvalidRequestException("There can be only a single TAS manifest", USER);
-        }
-      } else {
-        throw new InvalidRequestException(format("Invalid Manifest type: %s", manifestOutcome.getType()), USER);
+          if (!isEmpty(getParameterFieldValue(tasManifestOutcome.getAutoScalerPath()))) {
+            if (autoScalarManifestFound) {
+              tasManifestOutcome = TasManifestOutcome.builder()
+                                       .order(tasManifestOutcome.getOrder())
+                                       .cfCliVersion(tasManifestOutcome.getCfCliVersion())
+                                       .identifier(tasManifestOutcome.getIdentifier())
+                                       .varsPaths(tasManifestOutcome.getVarsPaths())
+                                       .store(tasManifestOutcome.getStore())
+                                       .build();
+            } else {
+              autoScalarManifestFound = true;
+            }
+          }
+          break;
+        default:
+          // Other types of manifest may be present due to overrides, so ignoring them
+          break;
       }
     }
-    return tasManifestOutcome;
+    if (isNull(tasManifestOutcome)) {
+      throw new InvalidRequestException("Tas Manifest is mandatory for TAS step.", USER);
+    }
+    Collections.reverse(varsManifestOutcomeList);
+    tasStepPassThroughData.setVarsManifestOutcomeList(varsManifestOutcomeList);
+    tasStepPassThroughData.setAutoScalerManifestOutcome(autoScalerManifestOutcome);
+    tasStepPassThroughData.setTasManifestOutcome(tasManifestOutcome);
+    tasStepPassThroughData.setMaxManifestOrder(orderedManifestOutcomes.get(0).getOrder());
   }
 
   public TaskChainResponse executeNextLink(TasStepExecutor tasStepExecutor, Ambiance ambiance,
@@ -586,11 +604,11 @@ public class TasStepHelper {
 
     return TaskChainResponse.builder()
         .chainEnd(true)
-        .passThroughData(
-            StepExceptionPassThroughData.builder()
-                .errorMessage("Done")
-                .unitProgressData(cdStepHelper.completeUnitProgressData(unitProgressData, ambiance, "Done"))
-                .build())
+        .passThroughData(StepExceptionPassThroughData.builder()
+                             .errorMessage("Failed to execute TAS step")
+                             .unitProgressData(cdStepHelper.completeUnitProgressData(
+                                 unitProgressData, ambiance, "Failed to execute TAS step"))
+                             .build())
         .build();
   }
 
@@ -679,7 +697,8 @@ public class TasStepHelper {
       List<? extends ManifestOutcome> aggregatedManifestOutcomes, NGAccess ngAccess, LogCallback logCallback) {
     return aggregatedManifestOutcomes.stream()
         .filter(manifestOutcome -> ManifestStoreType.HARNESS.equals(manifestOutcome.getStore().getKind()))
-        .collect(Collectors.toMap(ManifestOutcome::getIdentifier,
+        .collect(Collectors.toMap(manifestOutcome
+            -> String.valueOf(manifestOutcome.getOrder()),
             manifestOutcome
             -> getFileContentsFromManifest(ngAccess, ((HarnessStore) manifestOutcome.getStore()).getFiles().getValue(),
                 manifestOutcome.getType(), manifestOutcome.getIdentifier(), logCallback)));
@@ -726,7 +745,7 @@ public class TasStepHelper {
     for (ManifestOutcome outcome : manifestOutcomeList) {
       if (ManifestStoreType.CUSTOM_REMOTE.equals(outcome.getStore().getKind())) {
         CustomRemoteStoreConfig store = (CustomRemoteStoreConfig) outcome.getStore();
-        fetchFilesList.add(buildCustomManifestFetchConfig(outcome.getIdentifier(), true, false,
+        fetchFilesList.add(buildCustomManifestFetchConfig(String.valueOf(outcome.getOrder()), true, false,
             Arrays.asList(store.getFilePath().getValue()), store.getExtractionScript().getValue(), accountId));
         if (!isEmpty(store.getDelegateSelectors().getValue())) {
           delegateSelectors.addAll(getParameterFieldValue(store.getDelegateSelectors()));
@@ -746,11 +765,11 @@ public class TasStepHelper {
         delegateSelectors.addAll(getParameterFieldValue(customRemoteStoreConfig.getDelegateSelectors()));
       }
       if (manifestOutcome.getVarsPaths().getValue() != null) {
-        fetchFilesList.add(buildCustomManifestFetchConfig(
-            manifestOutcome.getIdentifier(), true, true, manifestOutcome.getVarsPaths().getValue(), null, accountId));
+        fetchFilesList.add(buildCustomManifestFetchConfig(String.valueOf(manifestOutcome.getOrder()), true, true,
+            manifestOutcome.getVarsPaths().getValue(), null, accountId));
       }
       if (manifestOutcome.getAutoScalerPath().getValue() != null) {
-        fetchFilesList.add(buildCustomManifestFetchConfig(manifestOutcome.getIdentifier(), true, true,
+        fetchFilesList.add(buildCustomManifestFetchConfig(String.valueOf(manifestOutcome.getOrder()), true, true,
             getParameterFieldValue(manifestOutcome.getAutoScalerPath()), null, accountId));
       }
     }
@@ -819,7 +838,6 @@ public class TasStepHelper {
                                   .parameters(new Object[] {gitFetchRequest})
                                   .build();
 
-    String taskName = TaskType.GIT_FETCH_NEXT_GEN_TASK.getDisplayName();
     ParameterField<List<TaskSelectorYaml>> stepLevelSelectors = null;
     if (stepElementParameters.getSpec() instanceof TasCanaryAppSetupStepParameters) {
       stepLevelSelectors = ((TasCanaryAppSetupStepParameters) stepElementParameters.getSpec()).getDelegateSelectors();
@@ -852,7 +870,8 @@ public class TasStepHelper {
     if (tasStepPassThroughData.getShouldExecuteGitStoreFetch()) {
       commandUnits.add(K8sCommandUnitConstants.FetchFiles);
     }
-    commandUnits.addAll(Arrays.asList(CfCommandUnitConstants.PcfSetup, CfCommandUnitConstants.Wrapup));
+    commandUnits.addAll(Arrays.asList(
+        CfCommandUnitConstants.VerifyManifests, CfCommandUnitConstants.PcfSetup, CfCommandUnitConstants.Wrapup));
     return commandUnits;
   }
 
@@ -877,15 +896,16 @@ public class TasStepHelper {
       StoreConfig storeConfig) {
     List<GitFetchFilesConfig> gitFetchFilesConfigs =
         mapManifestsToGitFetchFileConfig(tasStepPassThroughData.getVarsManifestOutcomeList(),
-            tasStepPassThroughData.getAutoScalerManifestOutcomeList(), ambiance);
+            tasStepPassThroughData.getAutoScalerManifestOutcome(), ambiance);
     TasManifestOutcome tasManifestOutcome = tasStepPassThroughData.getTasManifestOutcome();
 
     if (ManifestStoreType.isInGitSubset(storeConfig.getKind())) {
       GitStoreConfig gitStoreConfig = (GitStoreConfig) storeConfig;
       if (TAS_MANIFEST.equals(tasManifestOutcome.getType()) && hasOnlyOne(gitStoreConfig.getPaths())) {
         String validationMessage = format("Vars Manifest YAML with Id [%s]", tasManifestOutcome.getIdentifier());
-        gitFetchFilesConfigs.addAll(getManifestGitFetchFilesConfig(ambiance, tasManifestOutcome.getIdentifier(),
-            tasManifestOutcome.getStore(), validationMessage, tasManifestOutcome));
+        gitFetchFilesConfigs.addAll(
+            getManifestGitFetchFilesConfig(ambiance, String.valueOf(tasManifestOutcome.getOrder()),
+                tasManifestOutcome.getStore(), validationMessage, tasManifestOutcome));
       }
     }
 
@@ -899,7 +919,7 @@ public class TasStepHelper {
   }
 
   public List<GitFetchFilesConfig> mapManifestsToGitFetchFileConfig(List<VarsManifestOutcome> aggregatedVarsManifests,
-      List<AutoScalerManifestOutcome> aggregatedAutoScalerManifests, Ambiance ambiance) {
+      AutoScalerManifestOutcome autoScalerManifestOutcome, Ambiance ambiance) {
     List<GitFetchFilesConfig> gitFetchFilesConfigList =
         aggregatedVarsManifests.stream()
             .filter(varsManifestOutcome -> ManifestStoreType.isInGitSubset(varsManifestOutcome.getStore().getKind()))
@@ -907,15 +927,12 @@ public class TasStepHelper {
                 -> getGitFetchFilesConfig(ambiance, varsManifestOutcome.getStore(),
                     format("Vars YAML with Id [%s]", varsManifestOutcome.getIdentifier()), varsManifestOutcome))
             .collect(Collectors.toList());
-    gitFetchFilesConfigList.addAll(
-        aggregatedAutoScalerManifests.stream()
-            .filter(autoScalerManifestOutcome
-                -> ManifestStoreType.isInGitSubset(autoScalerManifestOutcome.getStore().getKind()))
-            .map(autoScalerManifestOutcome
-                -> getGitFetchFilesConfig(ambiance, autoScalerManifestOutcome.getStore(),
-                    format("AutoScaler YAML with Id [%s]", autoScalerManifestOutcome.getIdentifier()),
-                    autoScalerManifestOutcome))
-            .collect(Collectors.toList()));
+    if (!isNull(autoScalerManifestOutcome)
+        && ManifestStoreType.isInGitSubset(autoScalerManifestOutcome.getStore().getKind())) {
+      gitFetchFilesConfigList.add(getGitFetchFilesConfig(ambiance, autoScalerManifestOutcome.getStore(),
+          format("AutoScaler YAML with Id [%s]", autoScalerManifestOutcome.getIdentifier()),
+          autoScalerManifestOutcome));
+    }
     return gitFetchFilesConfigList;
   }
 
@@ -929,7 +946,7 @@ public class TasStepHelper {
     List<String> gitFilePaths = getParameterFieldValue(gitStoreConfig.getPaths());
 
     return populateGitFetchFilesConfig(gitStoreConfig, manifestOutcome, manifestOutcome.getType(), connectorDTO,
-        ambiance, manifestOutcome.getIdentifier(), gitFilePaths);
+        ambiance, String.valueOf(manifestOutcome.getOrder()), gitFilePaths);
   }
 
   protected List<GitFetchFilesConfig> getManifestGitFetchFilesConfig(Ambiance ambiance, String identifier,
@@ -968,49 +985,21 @@ public class TasStepHelper {
   public TaskChainResponse executeTasTask(Ambiance ambiance, StepElementParameters stepElementParameters,
       TasStepExecutor tasStepExecutor, TasStepPassThroughData tasStepPassThroughData,
       ManifestOutcome tasManifestOutcome) {
-    TasManifestsPackage tasManifestsPackage = getManifestFilesContents(ambiance,
-        tasStepPassThroughData.getGitFetchFilesResultMap(), tasStepPassThroughData.getCustomFetchContent(),
-        tasStepPassThroughData.getLocalStoreFileMapContents(), tasStepPassThroughData.getManifestOutcomeList());
-
-    CDExpressionResolveFunctor cdExpressionResolveFunctor =
-        new CDExpressionResolveFunctor(engineExpressionService, ambiance);
+    LogCallback logCallback = getLogCallback(CfCommandUnitConstants.VerifyManifests, ambiance, true);
+    UnitProgress.Builder unitProgress = UnitProgress.newBuilder()
+                                            .setStartTime(System.currentTimeMillis())
+                                            .setUnitName(CfCommandUnitConstants.VerifyManifests);
     Map<String, String> allFilesFetched = new HashMap<>();
-    if (tasStepPassThroughData.getGitFetchFilesResultMap() != null) {
-      for (FetchFilesResult entry : tasStepPassThroughData.getGitFetchFilesResultMap().values()) {
-        if (entry.getFiles() != null) {
-          for (int iterate = 0; iterate < entry.getFiles().size(); iterate++) {
-            allFilesFetched.put(entry.getFiles().get(iterate).getFilePath(),
-                (String) ExpressionEvaluatorUtils.updateExpressions(
-                    entry.getFiles().get(iterate).getFileContent(), cdExpressionResolveFunctor));
-          }
-        }
-      }
-    }
-    if (tasStepPassThroughData.getLocalStoreFileMapContents() != null) {
-      for (List<TasManifestFileContents> tasManifestFileContentsList :
-          tasStepPassThroughData.getLocalStoreFileMapContents().values()) {
-        for (TasManifestFileContents tasManifestFileContents : tasManifestFileContentsList) {
-          allFilesFetched.put(tasManifestFileContents.getFilePath(),
-              (String) ExpressionEvaluatorUtils.updateExpressions(
-                  tasManifestFileContents.getFileContent(), cdExpressionResolveFunctor));
-        }
-      }
-    }
-    if (tasStepPassThroughData.getCustomFetchContent() != null) {
-      for (Collection<CustomSourceFile> customSourceFileCollection :
-          tasStepPassThroughData.getCustomFetchContent().values()) {
-        for (CustomSourceFile customSourceFile : customSourceFileCollection) {
-          allFilesFetched.put(customSourceFile.getFilePath(),
-              (String) ExpressionEvaluatorUtils.updateExpressions(
-                  customSourceFile.getFileContent(), cdExpressionResolveFunctor));
-        }
-      }
-    }
-
+    TasManifestsPackage tasManifestsPackage =
+        getManifestFilesContents(ambiance, tasStepPassThroughData.getGitFetchFilesResultMap(),
+            tasStepPassThroughData.getCustomFetchContent(), tasStepPassThroughData.getLocalStoreFileMapContents(),
+            allFilesFetched, tasStepPassThroughData.getMaxManifestOrder(), logCallback);
+    unitProgress.setEndTime(System.currentTimeMillis()).setStatus(UnitStatus.SUCCESS);
+    logCallback.saveExecutionLog("Successfully verified all manifests", INFO, SUCCESS);
+    tasStepPassThroughData.getUnitProgresses().add(unitProgress.build());
     return tasStepExecutor.executeTasTask(tasManifestOutcome, ambiance, stepElementParameters,
         TasExecutionPassThroughData.builder()
             .applicationName(fetchTasApplicationName(tasManifestsPackage))
-            .infrastructure(tasStepPassThroughData.getInfrastructure())
             .zippedManifestId(tasStepPassThroughData.getZippedManifestFileId())
             .tasManifestsPackage(tasManifestsPackage)
             .repoRoot(tasStepPassThroughData.getRepoRoot())
@@ -1027,67 +1016,54 @@ public class TasStepHelper {
   public TasManifestsPackage getManifestFilesContents(Ambiance ambiance,
       Map<String, FetchFilesResult> gitFetchFilesResultMap,
       Map<String, Collection<CustomSourceFile>> customFetchContent,
-      Map<String, List<TasManifestFileContents>> localStoreFetchFilesResultMap,
-      List<ManifestOutcome> manifestOutcomes) {
+      Map<String, List<TasManifestFileContents>> localStoreFetchFilesResultMap, Map<String, String> allFilesFetched,
+      Integer maxManifestOrder, LogCallback logCallback) {
     TasManifestsPackage tasManifestsPackage = TasManifestsPackage.builder().variableYmls(new ArrayList<>()).build();
-    for (ManifestOutcome manifest : manifestOutcomes) {
-      String identifier = manifest.getIdentifier();
-      if (isNotEmpty(gitFetchFilesResultMap) && gitFetchFilesResultMap.containsKey(identifier)) {
-        FetchFilesResult gitFetchFilesResult = gitFetchFilesResultMap.get(identifier);
-        if (!isNull(gitFetchFilesResult)) {
-          if (manifest.getType().equals(TAS_MANIFEST)) {
-            GitStoreConfig gitStoreConfig = (GitStoreConfig) manifest.getStore();
-            for (GitFile file : gitFetchFilesResult.getFiles()) {
-              if (getParameterFieldValue(gitStoreConfig.getPaths()).get(0).equals(file.getFilePath())) {
-                addToPcfManifestPackageByType(tasManifestsPackage, List.of(file.getFileContent()), TAS_MANIFEST);
-              } else {
-                List<String> varsPaths = ((TasManifestOutcome) manifest).getVarsPaths().getValue();
-                if (!isEmpty(varsPaths) && varsPaths.contains(file.getFilePath())) {
-                  addToPcfManifestPackageByType(tasManifestsPackage, List.of(file.getFileContent()), TAS_VARS);
-                } else {
-                  addToPcfManifestPackageByType(tasManifestsPackage, List.of(file.getFileContent()), TAS_AUTOSCALER);
-                }
-              }
-            }
-          } else {
-            addToPcfManifestPackageByType(tasManifestsPackage,
-                gitFetchFilesResult.getFiles().stream().map(GitFile::getFileContent).collect(Collectors.toList()),
-                manifest.getType());
+    logCallback.saveExecutionLog("Verifying manifests", INFO);
+    CDExpressionResolveFunctor cdExpressionResolveFunctor =
+        new CDExpressionResolveFunctor(engineExpressionService, ambiance);
+    for (int manifestOrder = 0; manifestOrder <= maxManifestOrder; manifestOrder++) {
+      String manifestOrderId = String.valueOf(manifestOrder);
+      if (!isNull(gitFetchFilesResultMap) && gitFetchFilesResultMap.containsKey(manifestOrderId)) {
+        FetchFilesResult gitFetchFilesResult = gitFetchFilesResultMap.get(manifestOrderId);
+        if (!isNull(gitFetchFilesResult) && !isNull(gitFetchFilesResult.getFiles())) {
+          for (GitFile file : gitFetchFilesResult.getFiles()) {
+            String fileContent =
+                (String) ExpressionEvaluatorUtils.updateExpressions(file.getFileContent(), cdExpressionResolveFunctor);
+            addToPcfManifestPackageByType(tasManifestsPackage, fileContent, file.getFilePath(), logCallback);
+            allFilesFetched.put(file.getFilePath(), fileContent);
           }
         }
-      } else if (isNotEmpty(customFetchContent) && customFetchContent.containsKey(identifier)) {
-        Collection<CustomSourceFile> customSourceFiles = customFetchContent.get(identifier);
-        for (CustomSourceFile customSourceFile : customSourceFiles) {
-          if (manifest.getType().equals(TAS_MANIFEST)) {
-            CustomRemoteStoreConfig customRemoteStoreConfig = (CustomRemoteStoreConfig) manifest.getStore();
-            if (customSourceFile.getFilePath().equals(customRemoteStoreConfig.getFilePath().getValue())) {
-              addToPcfManifestPackageByType(
-                  tasManifestsPackage, List.of(customSourceFile.getFileContent()), TAS_MANIFEST);
-            } else {
-              List<String> varsPaths = ((TasManifestOutcome) manifest).getVarsPaths().getValue();
-              if (!isEmpty(varsPaths) && varsPaths.contains(customSourceFile.getFilePath())) {
-                addToPcfManifestPackageByType(
-                    tasManifestsPackage, List.of(customSourceFile.getFileContent()), TAS_VARS);
-              } else {
-                addToPcfManifestPackageByType(
-                    tasManifestsPackage, List.of(customSourceFile.getFileContent()), TAS_AUTOSCALER);
-              }
-            }
-          } else {
+      }
+      if (!isNull(customFetchContent) && customFetchContent.containsKey(manifestOrderId)) {
+        Collection<CustomSourceFile> customSourceFilesResult = customFetchContent.get(manifestOrderId);
+        if (!isNull(customSourceFilesResult)) {
+          for (CustomSourceFile file : customSourceFilesResult) {
+            String fileContent =
+                (String) ExpressionEvaluatorUtils.updateExpressions(file.getFileContent(), cdExpressionResolveFunctor);
+            addToPcfManifestPackageByType(tasManifestsPackage, fileContent, file.getFilePath(), logCallback);
+            allFilesFetched.put(file.getFilePath(), fileContent);
+          }
+        }
+      }
+      if (!isNull(localStoreFetchFilesResultMap) && localStoreFetchFilesResultMap.containsKey(manifestOrderId)) {
+        List<TasManifestFileContents> localStoreValuesFileContent = localStoreFetchFilesResultMap.get(manifestOrderId);
+        if (!isNull(localStoreValuesFileContent)) {
+          for (TasManifestFileContents tasManifestFileContents : localStoreValuesFileContent) {
+            String fileContent = (String) ExpressionEvaluatorUtils.updateExpressions(
+                tasManifestFileContents.getFileContent(), cdExpressionResolveFunctor);
             addToPcfManifestPackageByType(
-                tasManifestsPackage, List.of(customSourceFile.getFileContent()), manifest.getType());
+                tasManifestsPackage, fileContent, tasManifestFileContents.getFilePath(), logCallback);
+            allFilesFetched.put(tasManifestFileContents.getFilePath(), fileContent);
           }
-        }
-      } else if (isNotEmpty(localStoreFetchFilesResultMap) && localStoreFetchFilesResultMap.containsKey(identifier)) {
-        List<TasManifestFileContents> localStoreValuesFileContent = localStoreFetchFilesResultMap.get(identifier);
-        for (TasManifestFileContents tasManifestFileContent : localStoreValuesFileContent) {
-          addToPcfManifestPackageByType(tasManifestsPackage,
-              Collections.singletonList(tasManifestFileContent.getFileContent()),
-              tasManifestFileContent.getManifestType());
         }
       }
     }
-    return resolveExpressionsInManifests(ambiance, tasManifestsPackage);
+    if (isEmpty(tasManifestsPackage.getManifestYml())) {
+      logCallback.saveExecutionLog("No valid Tas Manifest found", ERROR, FAILURE);
+      throw new UnsupportedOperationException("No valid Tas Manifest found");
+    }
+    return tasManifestsPackage;
   }
 
   public TasManifestsPackage resolveExpressionsInManifests(Ambiance ambiance, TasManifestsPackage tasManifestsPackage) {
@@ -1111,31 +1087,36 @@ public class TasStepHelper {
   }
 
   public void addToPcfManifestPackageByType(
-      TasManifestsPackage tasManifestsPackage, List<String> fileContents, String manifestType) {
-    if (fileContents.isEmpty()) {
+      TasManifestsPackage tasManifestsPackage, String fileContent, String filePath, LogCallback executionLogCallback) {
+    if (isEmpty(fileContent)) {
       return;
     }
-    switch (manifestType) {
+    ManifestConfigType manifestConfigType = getManifestType(fileContent, filePath, executionLogCallback);
+    if (isNull(manifestConfigType)) {
+      return;
+    }
+    switch (manifestConfigType) {
       case TAS_AUTOSCALER:
-        if (!isNull(tasManifestsPackage.getAutoscalarManifestYml()) || fileContents.size() > 1) {
+        if (!isNull(tasManifestsPackage.getAutoscalarManifestYml())) {
           throw new UnsupportedOperationException("Only one AutoScalar Yml is supported");
         }
-        tasManifestsPackage.setAutoscalarManifestYml(fileContents.get(0));
+        tasManifestsPackage.setAutoscalarManifestYml(fileContent);
         break;
       case TAS_VARS:
         if (isNull(tasManifestsPackage.getVariableYmls())) {
           tasManifestsPackage.setVariableYmls(new ArrayList<>());
         }
-        tasManifestsPackage.getVariableYmls().addAll(fileContents);
+        tasManifestsPackage.getVariableYmls().add(fileContent);
         break;
       case TAS_MANIFEST:
-        if (!isNull(tasManifestsPackage.getManifestYml()) || fileContents.size() > 1) {
+        if (!isNull(tasManifestsPackage.getManifestYml())) {
           throw new UnsupportedOperationException("Only one Tas Manifest Yml is supported");
         }
-        tasManifestsPackage.setManifestYml(fileContents.get(0));
+        tasManifestsPackage.setManifestYml(fileContent);
         break;
       default:
-        throw new UnsupportedOperationException(format("Unsupported Manifest type: %s", manifestType));
+        // there wouldn't be a 4th type passed by getManifestType
+        break;
     }
   }
 
@@ -1143,9 +1124,7 @@ public class TasStepHelper {
     for (ManifestOutcome manifestOutcome : tasStepPassThroughData.getVarsManifestOutcomeList()) {
       shouldExecuteStoreFetch(tasStepPassThroughData, manifestOutcome);
     }
-    for (ManifestOutcome manifestOutcome : tasStepPassThroughData.getAutoScalerManifestOutcomeList()) {
-      shouldExecuteStoreFetch(tasStepPassThroughData, manifestOutcome);
-    }
+    shouldExecuteStoreFetch(tasStepPassThroughData, tasStepPassThroughData.getAutoScalerManifestOutcome());
     shouldExecuteStoreFetch(tasStepPassThroughData, tasStepPassThroughData.getTasManifestOutcome());
   }
 
@@ -1210,12 +1189,12 @@ public class TasStepHelper {
       ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
       yamlMap = (Map<String, Object>) mapper.readValue(applicationManifestYmlContent, Map.class);
     } catch (Exception e) {
-      throw new UnexpectedException("failed to get application Yaml Map", e);
+      throw new UnexpectedException("Failed to get applications from Tas Manifest", e);
     }
 
     List<Map> applicationsMaps = (List<Map>) yamlMap.get(APPLICATION_YML_ELEMENT);
     if (isEmpty(applicationsMaps)) {
-      throw new InvalidArgumentsException(Pair.of("Manifest", "contains no application config"));
+      throw new InvalidArgumentsException("Tas Manifest contains no application config");
     }
 
     // Always assume, 1st app is main application being deployed.
@@ -1227,7 +1206,7 @@ public class TasStepHelper {
 
   public Object getVariableValue(String content, String key) {
     try {
-      Map<String, Object> map = null;
+      Map<String, Object> map;
       ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
       map = mapper.readValue(content, Map.class);
       return map.get(key);
@@ -1325,8 +1304,10 @@ public class TasStepHelper {
       case DOCKER_REGISTRY_NAME:
       case ECR_NAME:
       case GCR_NAME:
+      case GOOGLE_ARTIFACT_REGISTRY_NAME:
       case ACR_NAME:
       case NEXUS3_REGISTRY_NAME:
+      case NEXUS2_REGISTRY_NAME:
       case ARTIFACTORY_REGISTRY_NAME:
       case AMAZON_S3_NAME:
       case JENKINS_NAME:
@@ -1350,6 +1331,7 @@ public class TasStepHelper {
       case AMAZON_S3_NAME:
         return artifactOutcome instanceof S3ArtifactOutcome;
       case NEXUS3_REGISTRY_NAME:
+      case NEXUS2_REGISTRY_NAME:
         NexusArtifactOutcome nexusArtifactOutcome = (NexusArtifactOutcome) artifactOutcome;
         return !RepositoryFormat.docker.name().equals(nexusArtifactOutcome.getRepositoryFormat());
       case JENKINS_NAME:
@@ -1399,6 +1381,14 @@ public class TasStepHelper {
         artifactConfigBuilder.image(gcrArtifactOutcome.getImage());
         artifactConfigBuilder.tag(gcrArtifactOutcome.getTag());
         artifactConfigBuilder.registryHostname(gcrArtifactOutcome.getRegistryHostname());
+        break;
+      case GOOGLE_ARTIFACT_REGISTRY_NAME:
+        GarArtifactOutcome garArtifactOutcome = (GarArtifactOutcome) artifactOutcome;
+        connectorInfo = cdStepHelper.getConnector(garArtifactOutcome.getConnectorRef(), ambiance);
+        artifactConfigBuilder.registryType(TasArtifactRegistryType.GAR);
+        artifactConfigBuilder.image(garArtifactOutcome.getImage());
+        artifactConfigBuilder.tag(garArtifactOutcome.getTag());
+        artifactConfigBuilder.registryHostname(garArtifactOutcome.getRegistryHostname());
         break;
       case NEXUS3_REGISTRY_NAME:
         NexusArtifactOutcome nexusArtifactOutcome = (NexusArtifactOutcome) artifactOutcome;
@@ -1482,16 +1472,28 @@ public class TasStepHelper {
         connectorInfoDTO = cdStepHelper.getConnector(s3ArtifactOutcome.getConnectorRef(), ambiance);
         break;
       case NEXUS3_REGISTRY_NAME:
-        NexusArtifactOutcome nexusArtifactOutcome = (NexusArtifactOutcome) artifactOutcome;
+        NexusArtifactOutcome nexus3ArtifactOutcome = (NexusArtifactOutcome) artifactOutcome;
         artifactConfigBuilder.sourceType(NEXUS3_REGISTRY);
         artifactConfigBuilder.artifactDetails(NexusTasArtifactRequestDetails.builder()
-                                                  .identifier(nexusArtifactOutcome.getIdentifier())
+                                                  .identifier(nexus3ArtifactOutcome.getIdentifier())
                                                   .certValidationRequired(false)
-                                                  .artifactUrl(nexusArtifactOutcome.getMetadata().get("url"))
-                                                  .metadata(nexusArtifactOutcome.getMetadata())
-                                                  .repositoryFormat(nexusArtifactOutcome.getRepositoryFormat())
+                                                  .artifactUrl(nexus3ArtifactOutcome.getMetadata().get("url"))
+                                                  .metadata(nexus3ArtifactOutcome.getMetadata())
+                                                  .repositoryFormat(nexus3ArtifactOutcome.getRepositoryFormat())
                                                   .build());
-        connectorInfoDTO = cdStepHelper.getConnector(nexusArtifactOutcome.getConnectorRef(), ambiance);
+        connectorInfoDTO = cdStepHelper.getConnector(nexus3ArtifactOutcome.getConnectorRef(), ambiance);
+        break;
+      case NEXUS2_REGISTRY_NAME:
+        NexusArtifactOutcome nexus2ArtifactOutcome = (NexusArtifactOutcome) artifactOutcome;
+        artifactConfigBuilder.sourceType(NEXUS2_REGISTRY);
+        artifactConfigBuilder.artifactDetails(NexusTasArtifactRequestDetails.builder()
+                                                  .identifier(nexus2ArtifactOutcome.getIdentifier())
+                                                  .certValidationRequired(false)
+                                                  .artifactUrl(nexus2ArtifactOutcome.getMetadata().get("url"))
+                                                  .metadata(nexus2ArtifactOutcome.getMetadata())
+                                                  .repositoryFormat(nexus2ArtifactOutcome.getRepositoryFormat())
+                                                  .build());
+        connectorInfoDTO = cdStepHelper.getConnector(nexus2ArtifactOutcome.getConnectorRef(), ambiance);
         break;
       case JENKINS_NAME:
         JenkinsArtifactOutcome jenkinsArtifactOutcome = (JenkinsArtifactOutcome) artifactOutcome;
@@ -1544,22 +1546,22 @@ public class TasStepHelper {
       return UnitProgressData.builder().unitProgresses(new ArrayList<>()).build();
     }
 
-    List<UnitProgress> finalUnitProgressList =
-        currentProgressData.getUnitProgresses()
-            .stream()
-            .map(unitProgress -> {
-              if (unitProgress.getStatus() == RUNNING) {
-                LogCallback logCallback = getLogCallback(unitProgress.getUnitName(), ambiance, false);
-                logCallback.saveExecutionLog(exceptionMessage, LogLevel.ERROR, FAILURE);
-                return UnitProgress.newBuilder(unitProgress)
-                    .setStatus(UnitStatus.FAILURE)
-                    .setEndTime(System.currentTimeMillis())
-                    .build();
-              }
+    List<UnitProgress> finalUnitProgressList = currentProgressData.getUnitProgresses()
+                                                   .stream()
+                                                   .map(unitProgress -> {
+                                                     if (unitProgress.getStatus() == RUNNING) {
+                                                       LogCallback logCallback =
+                                                           getLogCallback(unitProgress.getUnitName(), ambiance, false);
+                                                       logCallback.saveExecutionLog(exceptionMessage, ERROR, FAILURE);
+                                                       return UnitProgress.newBuilder(unitProgress)
+                                                           .setStatus(UnitStatus.FAILURE)
+                                                           .setEndTime(System.currentTimeMillis())
+                                                           .build();
+                                                     }
 
-              return unitProgress;
-            })
-            .collect(Collectors.toList());
+                                                     return unitProgress;
+                                                   })
+                                                   .collect(Collectors.toList());
 
     return UnitProgressData.builder().unitProgresses(finalUnitProgressList).build();
   }
@@ -1580,35 +1582,61 @@ public class TasStepHelper {
     }
   }
 
-  public void saveInstancesOutcome(Ambiance ambiance, List<ServerInstanceInfo> serverInstanceInfoList) {
-    InstancesOutcome instancesOutcome = buildInstancesOutcome(serverInstanceInfoList);
-    executionSweepingOutputService.consume(
-        ambiance, OutputExpressionConstants.INSTANCES, instancesOutcome, StepCategory.STAGE.name());
-    Set<String> instances = getInstances(serverInstanceInfoList);
-    executionSweepingOutputService.consume(ambiance, OutputExpressionConstants.OUTPUT,
-        HostsOutput.builder().hosts(instances).build(), StepCategory.STAGE.name());
-  }
-
-  private Set<String> getInstances(List<ServerInstanceInfo> instanceElements) {
-    return instanceElements.stream()
-        .map(instanceElement -> ((TasServerInstanceInfo) instanceElement).getId())
-        .collect(Collectors.toSet());
-  }
-
-  private InstancesOutcome buildInstancesOutcome(List<ServerInstanceInfo> instanceElements) {
-    List<InstanceOutcome> instanceOutcomeList = new ArrayList<>();
-    for (ServerInstanceInfo instance : instanceElements) {
-      TasServerInstanceInfo serverInstanceInfo = (TasServerInstanceInfo) instance;
-      instanceOutcomeList.add(InstanceOutcome.builder()
-                                  .name(serverInstanceInfo.getId())
-                                  .hostName(serverInstanceInfo.getId())
-                                  .pcfElement(TasOutcome.builder()
-                                                  .displayName(serverInstanceInfo.getTasApplicationName())
-                                                  .applicationId(serverInstanceInfo.getTasApplicationGuid())
-                                                  .instanceIndex(serverInstanceInfo.getInstanceIndex())
-                                                  .build())
-                                  .build());
+  public ManifestConfigType getManifestType(String content, @Nullable String fileName, LogCallback logCallback) {
+    Map<String, Object> map;
+    ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+    try {
+      map = mapper.readValue(content, Map.class);
+    } catch (Exception e) {
+      log.warn(getParseErrorMessage(fileName), e);
+      logCallback.saveExecutionLog(getParseErrorMessage(fileName), LogLevel.WARN);
+      logCallback.saveExecutionLog("Error: " + e.getMessage(), LogLevel.WARN);
+      return null;
     }
-    return InstancesOutcome.builder().instances(instanceOutcomeList).build();
+
+    if (isTasManifest(map)) {
+      return ManifestConfigType.TAS_MANIFEST;
+    }
+    if (isVariableManifest(map)) {
+      return ManifestConfigType.TAS_VARS;
+    }
+    if (isAutoscalarManifest(map)) {
+      return ManifestConfigType.TAS_AUTOSCALER;
+    }
+    log.warn(getParseErrorMessage(fileName));
+    logCallback.saveExecutionLog(getParseErrorMessage(fileName), LogLevel.WARN);
+    return null;
+  }
+
+  private String getParseErrorMessage(String fileName) {
+    return "Failed to parse file" + (isNotEmpty(fileName) ? " " + fileName : "") + ".";
+  }
+  private boolean isAutoscalarManifest(Map<String, Object> map) {
+    return map.containsKey(PCF_AUTOSCALAR_MANIFEST_INSTANCE_LIMITS_ELE)
+        && map.containsKey(PCF_AUTOSCALAR_MANIFEST_RULES_ELE);
+  }
+
+  private boolean isVariableManifest(Map<String, Object> map) {
+    Optional entryOptional = map.entrySet().stream().filter(entry -> isInvalidValue(entry.getValue())).findFirst();
+    return entryOptional.isEmpty();
+  }
+
+  private boolean isInvalidValue(Object value) {
+    return value instanceof Map;
+  }
+
+  private boolean isTasManifest(Map<String, Object> map) {
+    if (map.containsKey(APPLICATION_YML_ELEMENT)) {
+      List<Map> applicationMaps = (List<Map>) map.get(APPLICATION_YML_ELEMENT);
+      if (isEmpty(applicationMaps)) {
+        return false;
+      }
+
+      Map application = applicationMaps.get(0);
+      Map<String, Object> treeMap = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+      treeMap.putAll(application);
+      return treeMap.containsKey(NAME_MANIFEST_YML_ELEMENT);
+    }
+    return false;
   }
 }

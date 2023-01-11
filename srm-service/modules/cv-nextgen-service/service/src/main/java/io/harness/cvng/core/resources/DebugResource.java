@@ -15,6 +15,7 @@ import io.harness.cvng.core.beans.CompositeSLODebugResponse;
 import io.harness.cvng.core.beans.SLODebugResponse;
 import io.harness.cvng.core.beans.VerifyStepDebugResponse;
 import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.core.beans.params.ProjectScopedProjectParams;
 import io.harness.cvng.core.entities.DataCollectionTask;
 import io.harness.cvng.core.services.api.DebugService;
 import io.harness.rest.RestResponse;
@@ -47,9 +48,9 @@ public class DebugResource {
   @Timed
   @Path("slo/{identifier}")
   @ApiOperation(value = "Gets SLO debug data", nickname = "getSLODebugData", hidden = true)
-  public RestResponse<SLODebugResponse> getSLODebug(@NotNull @BeanParam ProjectParams projectParams,
+  public RestResponse<SLODebugResponse> getSLODebug(@NotNull @BeanParam ProjectScopedProjectParams projectParams,
       @ApiParam(required = true) @NotNull @PathParam("identifier") @ResourceIdentifier String identifier) {
-    return new RestResponse<>(debugService.getSLODebugResponse(projectParams, identifier));
+    return new RestResponse<>(debugService.getSLODebugResponse(projectParams.getProjectParams(), identifier));
   }
 
   @GET
@@ -65,9 +66,10 @@ public class DebugResource {
   @Timed
   @Path("verify-step/{identifier}")
   @ApiOperation(value = "Gets Verify Step debug data", nickname = "getVerifyStepDebugData", hidden = true)
-  public RestResponse<VerifyStepDebugResponse> getVerifyStepDebug(@NotNull @BeanParam ProjectParams projectParams,
+  public RestResponse<VerifyStepDebugResponse> getVerifyStepDebug(
+      @NotNull @BeanParam ProjectScopedProjectParams projectParams,
       @ApiParam(required = true) @NotNull @PathParam("identifier") @ResourceIdentifier String identifier) {
-    return new RestResponse<>(debugService.getVerifyStepDebugResponse(projectParams, identifier));
+    return new RestResponse<>(debugService.getVerifyStepDebugResponse(projectParams.getProjectParams(), identifier));
   }
 
   @PUT
@@ -76,9 +78,9 @@ public class DebugResource {
   @ApiOperation(
       value = "Updates DataCollectionTask for Debugging", nickname = "updateDataCollectionTaskDebugData", hidden = true)
   public RestResponse<DataCollectionTask>
-  updateDataCollectionTaskDebug(@NotNull @BeanParam ProjectParams projectParams,
+  updateDataCollectionTaskDebug(@NotNull @BeanParam ProjectScopedProjectParams projectParams,
       @ApiParam(required = true) @NotNull @PathParam("identifier") @ResourceIdentifier String identifier) {
-    return new RestResponse<>(debugService.retryDataCollectionTask(projectParams, identifier));
+    return new RestResponse<>(debugService.retryDataCollectionTask(projectParams.getProjectParams(), identifier));
   }
 
   @POST
@@ -86,7 +88,8 @@ public class DebugResource {
   @Path("change-event/register")
   @ApiOperation(value = "register a Change event for debugging", nickname = "registerChangeEventDebug", hidden = true)
   public RestResponse<Boolean> registerChangeEvent(
-      @NotNull @BeanParam ProjectParams projectParams, @NotNull @Body ChangeEventDTO changeEventDTO) {
-    return new RestResponse<>(debugService.registerInternalChangeEvent(projectParams, changeEventDTO));
+      @NotNull @BeanParam ProjectScopedProjectParams projectParams, @NotNull @Body ChangeEventDTO changeEventDTO) {
+    return new RestResponse<>(
+        debugService.registerInternalChangeEvent(projectParams.getProjectParams(), changeEventDTO));
   }
 }

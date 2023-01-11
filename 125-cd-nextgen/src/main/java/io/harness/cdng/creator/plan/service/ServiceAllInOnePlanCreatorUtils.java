@@ -19,6 +19,7 @@ import io.harness.cdng.creator.plan.stage.DeploymentStageConfig;
 import io.harness.cdng.creator.plan.stage.DeploymentStageNode;
 import io.harness.cdng.elastigroup.ElastigroupServiceSettingsStep;
 import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
+import io.harness.cdng.environment.helper.EnvironmentInfraFilterHelper;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.environment.yaml.EnvironmentsYaml;
 import io.harness.cdng.manifest.steps.ManifestsStepV2;
@@ -27,6 +28,7 @@ import io.harness.cdng.service.beans.ServiceUseFromStageV2;
 import io.harness.cdng.service.beans.ServiceYamlV2;
 import io.harness.cdng.service.steps.ServiceStepV3;
 import io.harness.cdng.service.steps.ServiceStepV3Parameters;
+import io.harness.cdng.service.steps.ServiceStepV3Parameters.ServiceStepV3ParametersBuilder;
 import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.UUIDGenerator;
@@ -88,18 +90,18 @@ public class ServiceAllInOnePlanCreatorUtils {
       serviceOverrideInputs =
           ParameterField.createExpressionField(true, SERVICE_OVERRIDE_INPUTS_EXPRESSION, null, false);
     }
-    final ServiceStepV3Parameters stepParameters = ServiceStepV3Parameters.builder()
-                                                       .serviceRef(finalServiceYaml.getServiceRef())
-                                                       .inputs(finalServiceYaml.getServiceInputs())
-                                                       .envRef(environmentYamlV2.getEnvironmentRef())
-                                                       .envInputs(environmentYamlV2.getEnvironmentInputs())
-                                                       .childrenNodeIds(childrenNodeIds)
-                                                       .serviceOverrideInputs(serviceOverrideInputs)
-                                                       .deploymentType(serviceType)
-                                                       .envGroupRef(envGroupRef)
-                                                       .build();
+    final ServiceStepV3ParametersBuilder stepParameters = ServiceStepV3Parameters.builder()
+                                                              .serviceRef(finalServiceYaml.getServiceRef())
+                                                              .inputs(finalServiceYaml.getServiceInputs())
 
-    return createPlanNode(kryoSerializer, serviceNodeId, nextNodeId, planCreationResponseMap, stepParameters);
+                                                              .childrenNodeIds(childrenNodeIds)
+                                                              .serviceOverrideInputs(serviceOverrideInputs)
+                                                              .deploymentType(serviceType)
+                                                              .envRef(environmentYamlV2.getEnvironmentRef())
+                                                              .envInputs(environmentYamlV2.getEnvironmentInputs())
+                                                              .envGroupRef(envGroupRef);
+
+    return createPlanNode(kryoSerializer, serviceNodeId, nextNodeId, planCreationResponseMap, stepParameters.build());
   }
 
   public LinkedHashMap<String, PlanCreationResponse> addServiceNodeForGitOpsEnvGroup(YamlField specField,
@@ -113,24 +115,31 @@ public class ServiceAllInOnePlanCreatorUtils {
 
     // add nodes for artifacts/manifests/files
     final List<String> childrenNodeIds = addChildrenNodes(planCreationResponseMap, serviceType);
-    final ServiceStepV3Parameters stepParameters =
+    ServiceStepV3ParametersBuilder stepParameters =
         ServiceStepV3Parameters.builder()
             .serviceRef(finalServiceYaml.getServiceRef())
             .inputs(finalServiceYaml.getServiceInputs())
-            .envGroupRef(environmentGroupYaml.getEnvGroupRef())
-            .envRefs(environmentGroupYaml.getEnvironments()
-                         .getValue()
-                         .stream()
-                         .map(e -> e.getEnvironmentRef())
-                         .collect(Collectors.toList()))
-            .envToEnvInputs(getMergedEnvironmentRuntimeInputs(environmentGroupYaml.getEnvironments().getValue()))
-            .envToSvcOverrideInputs(getMergedServiceOverrideInputs(environmentGroupYaml.getEnvironments().getValue()))
             .childrenNodeIds(childrenNodeIds)
             .deploymentType(serviceType)
             .gitOpsMultiSvcEnvEnabled(ParameterField.<Boolean>builder().value(true).build())
-            .build();
+            .envGroupRef(environmentGroupYaml.getEnvGroupRef());
 
-    return createPlanNode(kryoSerializer, serviceNodeId, nextNodeId, planCreationResponseMap, stepParameters);
+    if (EnvironmentInfraFilterHelper.areFiltersPresent(environmentGroupYaml)) {
+      stepParameters.environmentGroupYaml(environmentGroupYaml)
+          .envToEnvInputs(new HashMap<>())
+          .envToSvcOverrideInputs(new HashMap<>());
+    } else {
+      stepParameters
+          .envRefs(environmentGroupYaml.getEnvironments()
+                       .getValue()
+                       .stream()
+                       .map(e -> e.getEnvironmentRef())
+                       .collect(Collectors.toList()))
+          .envToEnvInputs(getMergedEnvironmentRuntimeInputs(environmentGroupYaml.getEnvironments().getValue()))
+          .envToSvcOverrideInputs(getMergedServiceOverrideInputs(environmentGroupYaml.getEnvironments().getValue()));
+    }
+
+    return createPlanNode(kryoSerializer, serviceNodeId, nextNodeId, planCreationResponseMap, stepParameters.build());
   }
 
   public LinkedHashMap<String, PlanCreationResponse> addServiceNodeForGitOpsEnvironments(YamlField specField,
@@ -144,23 +153,30 @@ public class ServiceAllInOnePlanCreatorUtils {
 
     // add nodes for artifacts/manifests/files
     final List<String> childrenNodeIds = addChildrenNodes(planCreationResponseMap, serviceType);
-    final ServiceStepV3Parameters stepParameters =
+    final ServiceStepV3ParametersBuilder stepParameters =
         ServiceStepV3Parameters.builder()
             .serviceRef(finalServiceYaml.getServiceRef())
-            .envRefs(environmentsYaml.getValues()
-                         .getValue()
-                         .stream()
-                         .map(e -> e.getEnvironmentRef())
-                         .collect(Collectors.toList()))
-            .envToEnvInputs(getMergedEnvironmentRuntimeInputs(environmentsYaml.getValues().getValue()))
-            .envToSvcOverrideInputs(getMergedServiceOverrideInputs(environmentsYaml.getValues().getValue()))
             .inputs(finalServiceYaml.getServiceInputs())
             .childrenNodeIds(childrenNodeIds)
             .deploymentType(serviceType)
-            .gitOpsMultiSvcEnvEnabled(ParameterField.<Boolean>builder().value(true).build())
-            .build();
+            .gitOpsMultiSvcEnvEnabled(ParameterField.<Boolean>builder().value(true).build());
 
-    return createPlanNode(kryoSerializer, serviceNodeId, nextNodeId, planCreationResponseMap, stepParameters);
+    if (EnvironmentInfraFilterHelper.areFiltersPresent(environmentsYaml)) {
+      stepParameters.environmentsYaml(environmentsYaml)
+          .envToEnvInputs(new HashMap<>())
+          .envToSvcOverrideInputs(new HashMap<>());
+    } else {
+      stepParameters
+          .envRefs(environmentsYaml.getValues()
+                       .getValue()
+                       .stream()
+                       .map(e -> e.getEnvironmentRef())
+                       .collect(Collectors.toList()))
+          .envToEnvInputs(getMergedEnvironmentRuntimeInputs(environmentsYaml.getValues().getValue()))
+          .envToSvcOverrideInputs(getMergedServiceOverrideInputs(environmentsYaml.getValues().getValue()));
+    }
+
+    return createPlanNode(kryoSerializer, serviceNodeId, nextNodeId, planCreationResponseMap, stepParameters.build());
   }
 
   private static LinkedHashMap<String, PlanCreationResponse> createPlanNode(KryoSerializer kryoSerializer,

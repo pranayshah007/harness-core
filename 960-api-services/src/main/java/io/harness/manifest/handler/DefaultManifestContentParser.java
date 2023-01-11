@@ -10,11 +10,15 @@ package io.harness.manifest.handler;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.aws.asg.AsgDummy;
 import io.harness.exception.InvalidRequestException;
 
+import com.amazonaws.event.ProgressListener;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -24,6 +28,9 @@ public class DefaultManifestContentParser {
 
   static {
     mapper.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
+    final var simpleModule = new SimpleModule().addAbstractTypeMapping(ProgressListener.class, AsgDummy.class);
+    mapper.registerModule(simpleModule);
+    mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
   }
 
   public <T> T parseJson(String json, Class<T> clazz) {

@@ -10,6 +10,7 @@ package io.harness.batch.processing.tasklet.util;
 import static io.harness.annotations.dev.HarnessTeam.CE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ccm.commons.dao.CEMetadataRecordDao;
 import io.harness.ccm.currency.Currency;
 import io.harness.ccm.graphql.core.currency.CurrencyPreferenceService;
 import io.harness.ccm.graphql.dto.common.CloudServiceProvider;
@@ -29,6 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(CE)
 public class CurrencyPreferenceHelperImpl implements CurrencyPreferenceHelper {
   @Inject private CurrencyPreferenceService currencyPreferenceService;
+  @Inject private CEMetadataRecordDao ceMetadataRecordDao;
 
   private final LoadingCache<CacheKey, Double> destinationCurrencyConversionFactorCache =
       Caffeine.newBuilder()
@@ -50,6 +52,15 @@ public class CurrencyPreferenceHelperImpl implements CurrencyPreferenceHelper {
     }
 
     return destinationCurrencyConversionFactor;
+  }
+
+  @Override
+  public Currency getDestinationCurrency(@NonNull final String accountId) {
+    Currency currency = ceMetadataRecordDao.getDestinationCurrency(accountId);
+    if (Currency.NONE == currency) {
+      currency = Currency.USD;
+    }
+    return currency;
   }
 
   @Value

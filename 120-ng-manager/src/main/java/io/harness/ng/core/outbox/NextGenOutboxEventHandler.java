@@ -34,11 +34,13 @@ public class NextGenOutboxEventHandler implements OutboxEventHandler {
       if (handler != null) {
         return handler.handle(outboxEvent);
       }
-      return false;
+      log.error("No outbox event handler found for eventType: '{}' and eventId: '{}'", outboxEvent.getEventType(),
+          outboxEvent.getId());
     } catch (Exception exception) {
-      log.error(
-          String.format("Unexpected error occurred during handling event of type %s", outboxEvent.getEventType()));
-      return false;
+      log.error(String.format("Unexpected error occurred during handling event of type %s", outboxEvent.getEventType()),
+          exception);
     }
+
+    return false;
   }
 }

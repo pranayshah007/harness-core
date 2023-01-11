@@ -43,9 +43,8 @@ import org.springframework.data.domain.Sort;
 
 @OwnedBy(HarnessTeam.DX)
 public class OrganizationApiUtilsTest extends CategoryTest {
-  public static final String SORT_SLUG_FIELD = "slug";
-  public static final String SORT_NAME_FIELD = "name";
   public static final String SORT_IDENTIFIER_FIELD = "identifier";
+  public static final String SORT_NAME_FIELD = "name";
   public static final String ASCENDING_ORDER = "ASC";
   public static final String DESCENDING_ORDER = "DESC";
   public static final String SORT_CREATED_FIELD = "created";
@@ -58,7 +57,7 @@ public class OrganizationApiUtilsTest extends CategoryTest {
   private String testFilesBasePath = "120-ng-manager/src/test/resources/server/stub/org/";
 
   private OrganizationApiUtils organizationApiUtils;
-  private String slug = "org_slug";
+  private String identifier = "org_identifier";
   private String name = "name";
   private String description = "description";
 
@@ -113,13 +112,13 @@ public class OrganizationApiUtilsTest extends CategoryTest {
   @Test(expected = JerseyViolationException.class)
   @Owner(developers = OwnerRule.ASHISHSANODIA)
   @Category(UnitTests.class)
-  public void testOrgDtoMappingValidationExceptionForMissingSlug() throws JsonProcessingException {
+  public void testOrgDtoMappingValidationExceptionForMissingIdentifier() throws JsonProcessingException {
     CreateOrganizationRequest organizationRequest = objectMapper.readValue(
         readFileAsString(testFilesBasePath + "create-org-request.json"), CreateOrganizationRequest.class);
     Set<ConstraintViolation<Object>> violations = validator.validate(organizationRequest);
     assertThat(violations.isEmpty()).as(violations.toString()).isTrue();
 
-    organizationRequest.getOrg().setSlug(null);
+    organizationRequest.getOrg().setIdentifier(null);
 
     organizationApiUtils.getOrganizationDto(organizationRequest);
   }
@@ -155,7 +154,7 @@ public class OrganizationApiUtilsTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testResponseMapping() {
     Organization organization = Organization.builder()
-                                    .identifier(slug)
+                                    .identifier(identifier)
                                     .name(name)
                                     .description(description)
                                     .createdAt(1234567890L)
@@ -167,7 +166,7 @@ public class OrganizationApiUtilsTest extends CategoryTest {
     OrganizationResponse organizationResponse = organizationApiUtils.getOrganizationResponse(organization);
 
     assertThat(organizationResponse.getOrg()).isNotNull();
-    assertThat(organizationResponse.getOrg().getSlug()).isEqualTo(slug);
+    assertThat(organizationResponse.getOrg().getIdentifier()).isEqualTo(identifier);
     assertThat(organizationResponse.getOrg().getName()).isEqualTo(name);
     assertThat(organizationResponse.getOrg().getDescription()).isEqualTo(description);
     assertThat(organizationResponse.getOrg().getTags()).isNotNull();
@@ -181,13 +180,13 @@ public class OrganizationApiUtilsTest extends CategoryTest {
   @Owner(developers = OwnerRule.ASHISHSANODIA)
   @Category(UnitTests.class)
   public void testPageRequestSortAndOrder() {
-    Pageable pageRequest = organizationApiUtils.getPageRequest(0, 10, "slug", "desc");
+    Pageable pageRequest = organizationApiUtils.getPageRequest(0, 10, "identifier", "desc");
     assertThat(pageRequest.getSort()).isNotNull();
     assertThat(pageRequest.getPageNumber()).isEqualTo(0);
     assertThat(pageRequest.getPageSize()).isEqualTo(10);
     assertThat(pageRequest.getSort()).isEqualTo(Sort.by(SORT_IDENTIFIER_FIELD).descending());
 
-    pageRequest = organizationApiUtils.getPageRequest(0, 10, SORT_SLUG_FIELD, ASCENDING_ORDER);
+    pageRequest = organizationApiUtils.getPageRequest(0, 10, SORT_IDENTIFIER_FIELD, ASCENDING_ORDER);
     assertThat(pageRequest.getSort()).isNotNull();
     assertThat(pageRequest.getSort()).isEqualTo(Sort.by(SORT_IDENTIFIER_FIELD).ascending());
 
@@ -211,11 +210,11 @@ public class OrganizationApiUtilsTest extends CategoryTest {
     assertThat(pageRequest.getSort()).isNotNull();
     assertThat(pageRequest.getSort()).isEqualTo(Sort.by(SORT_LAST_MODIFIED_AT_FIELD).descending());
 
-    pageRequest = organizationApiUtils.getPageRequest(0, 10, SORT_SLUG_FIELD, null);
+    pageRequest = organizationApiUtils.getPageRequest(0, 10, SORT_IDENTIFIER_FIELD, null);
     assertThat(pageRequest.getSort()).isNotNull();
     assertThat(pageRequest.getSort()).isEqualTo(Sort.by(SORT_IDENTIFIER_FIELD).descending());
 
-    pageRequest = organizationApiUtils.getPageRequest(0, 10, SORT_SLUG_FIELD, "asc");
+    pageRequest = organizationApiUtils.getPageRequest(0, 10, SORT_IDENTIFIER_FIELD, "asc");
     assertThat(pageRequest.getSort()).isNotNull();
     assertThat(pageRequest.getSort()).isEqualTo(Sort.by(SORT_IDENTIFIER_FIELD).descending());
   }

@@ -24,6 +24,7 @@ import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.data.PmsOutcome;
 
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
 import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.List;
@@ -32,7 +33,6 @@ import lombok.Value;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.UtilityClass;
 import lombok.experimental.Wither;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.TypeAlias;
@@ -80,7 +80,7 @@ public class OutcomeInstance implements PersistentEntity, UuidAccess {
         .build();
   }
 
-  @Wither @Id @org.mongodb.morphia.annotations.Id String uuid;
+  @Wither @Id @dev.morphia.annotations.Id String uuid;
 
   String planExecutionId;
   String stageExecutionId;

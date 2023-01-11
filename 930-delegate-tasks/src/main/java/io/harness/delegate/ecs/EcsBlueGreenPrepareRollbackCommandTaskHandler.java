@@ -164,7 +164,8 @@ public class EcsBlueGreenPrepareRollbackCommandTaskHandler extends EcsCommandTas
         Service updatedService = service.toBuilder().desiredCount(maxDesiredCount).build();
 
         // Get createServiceRequestBuilderString from service
-        String createServiceRequestBuilderString = EcsMapper.createCreateServiceRequestFromService(updatedService);
+        String createServiceRequestBuilderString =
+            ecsCommandTaskHelper.toYaml(EcsMapper.createCreateServiceRequestBuilderFromService(updatedService));
         prepareRollbackDataLogCallback.saveExecutionLog(
             format("Fetched Service Definition Details for Service %s", serviceName), LogLevel.INFO);
 

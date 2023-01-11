@@ -23,6 +23,7 @@ import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
 import org.springframework.data.annotation.TypeAlias;
@@ -43,6 +44,7 @@ public class ContainerBaseStepInfo {
 
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   public ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
   @YamlSchemaTypes(value = {string})

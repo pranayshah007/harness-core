@@ -10,6 +10,7 @@ package io.harness.steps.plugin;
 import static io.harness.beans.SwaggerConstants.BOOLEAN_CLASSPATH;
 import static io.harness.beans.SwaggerConstants.INTEGER_CLASSPATH;
 import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
+import static io.harness.beans.SwaggerConstants.STRING_MAP_CLASSPATH;
 import static io.harness.steps.plugin.ContainerStepConstants.MAX_RETRY;
 import static io.harness.steps.plugin.ContainerStepConstants.MIN_RETRY;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
@@ -92,7 +93,9 @@ public class ContainerStepInfo extends ContainerBaseStepInfo
 
   @NotNull @Valid private ContainerStepInfra infrastructure;
 
-  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) private ParameterField<Map<String, String>> envVariables;
+  @YamlSchemaTypes(value = {string})
+  @ApiModelProperty(dataType = STRING_MAP_CLASSPATH)
+  private ParameterField<Map<String, String>> envVariables;
 
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = BOOLEAN_CLASSPATH)

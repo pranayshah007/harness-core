@@ -18,7 +18,7 @@ import io.harness.delegate.beans.connector.CcmConnectorFilter;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.filter.FilterType;
 import io.harness.ng.beans.PageResponse;
-import io.harness.utils.RestCallToNGManagerClientUtils;
+import io.harness.remote.client.NGRestUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -67,7 +67,7 @@ public class NGConnectorHelper {
 
   PageResponse getConnectors(
       String accountId, int page, int size, ConnectorFilterPropertiesDTO connectorFilterPropertiesDTO) {
-    return RestCallToNGManagerClientUtils.execute(
+    return NGRestUtils.getResponse(
         connectorResourceClient.listConnectors(accountId, null, null, page, size, connectorFilterPropertiesDTO, false));
   }
 }

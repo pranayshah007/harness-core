@@ -17,7 +17,9 @@ import lombok.Data;
 public class K8sReleasePersistDTO {
   KubernetesConfig kubernetesConfig;
   IK8sRelease release;
+
+  // legacy fields
+  IK8sReleaseHistory releaseHistory;
   String releaseName;
-  String releaseHistoryYaml;
   boolean storeInSecrets;
 }

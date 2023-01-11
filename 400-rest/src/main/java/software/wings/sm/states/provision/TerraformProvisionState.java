@@ -28,7 +28,6 @@ import static io.harness.exception.WingsException.USER;
 import static io.harness.provision.TerraformConstants.BACKEND_CONFIGS_KEY;
 import static io.harness.provision.TerraformConstants.BACKEND_CONFIG_KEY;
 import static io.harness.provision.TerraformConstants.ENCRYPTED_BACKEND_CONFIGS_KEY;
-import static io.harness.provision.TerraformConstants.ENCRYPTED_BACKEND_CONFIG_KEY;
 import static io.harness.provision.TerraformConstants.ENCRYPTED_ENVIRONMENT_VARS_KEY;
 import static io.harness.provision.TerraformConstants.ENCRYPTED_VARIABLES_KEY;
 import static io.harness.provision.TerraformConstants.ENVIRONMENT_VARS_KEY;
@@ -187,6 +186,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.reinert.jjschema.Attributes;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -209,7 +209,6 @@ import lombok.experimental.FieldNameConstants;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
-import org.mongodb.morphia.query.Query;
 
 @FieldNameConstants(onlyExplicitlyIncluded = true, innerTypeName = "TerraformProvisionStateKeys")
 @Slf4j
@@ -648,15 +647,16 @@ public abstract class TerraformProvisionState extends State {
       others.put("qualifier", QUALIFIER_APPLY);
       collectVariables(others, terraformExecutionData.getVariables(), VARIABLES_KEY, ENCRYPTED_VARIABLES_KEY, true);
 
-      if (featureFlagService.isEnabled(TERRAFORM_REMOTE_BACKEND_CONFIG, context.getAccountId()) && backendConfig != null
-          && !backendConfig.getStoreType().equals(S3_STORE_TYPE)) {
-        if (LOCAL_STORE_TYPE.equals(getBackendConfig().getStoreType())) {
-          collectVariables(others, terraformExecutionData.getBackendConfigs(), BACKEND_CONFIG_KEY,
-              ENCRYPTED_BACKEND_CONFIG_KEY, false);
+      if (featureFlagService.isEnabled(TERRAFORM_REMOTE_BACKEND_CONFIG, context.getAccountId())
+          && terraformExecutionData.getBackendConfigs() != null
+          && !terraformExecutionData.getBackendConfigStoreType().equals(S3_STORE_TYPE)) {
+        if (LOCAL_STORE_TYPE.equals(terraformExecutionData.getBackendConfigStoreType())) {
+          collectVariables(others, terraformExecutionData.getBackendConfigs(), BACKEND_CONFIGS_KEY,
+              ENCRYPTED_BACKEND_CONFIGS_KEY, false);
         } else {
           // remote backend config
-          if (backendConfig.getRemoteBackendConfig() != null) {
-            GitFileConfig gitFileConfig = backendConfig.getRemoteBackendConfig();
+          if (terraformExecutionData.getRemoteBackendConfig() != null) {
+            GitFileConfig gitFileConfig = terraformExecutionData.getRemoteBackendConfig().getGitFileConfig();
             others.put(REMOTE_BE_CONFIG_GIT_BRANCH_KEY, gitFileConfig.getBranch());
             others.put(REMOTE_BE_CONFIG_GIT_CONNECTOR_ID_KEY, gitFileConfig.getConnectorId());
             others.put(REMOTE_BE_CONFIG_GIT_COMMIT_ID_KEY, gitFileConfig.getCommitId());
@@ -1241,26 +1241,23 @@ public abstract class TerraformProvisionState extends State {
             setTfVarFiles(tfVarFiles);
           }
 
-          if (featureFlagService.isEnabled(TERRAFORM_REMOTE_BACKEND_CONFIG, context.getAccountId())
-              && backendConfig != null) {
-            backendConfigStoreType = backendConfig.getStoreType();
-
-            if (!backendConfigStoreType.equals(S3_STORE_TYPE)) {
-              String gitFileConnectorId =
-                  (String) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_GIT_CONNECTOR_ID_KEY);
-              if (isNotEmpty(gitFileConnectorId)) {
-                GitFileConfig gitFileConfig =
-                    GitFileConfig.builder()
-                        .connectorId(gitFileConnectorId)
-                        .filePath((String) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_GIT_FILE_PATH_KEY))
-                        .branch((String) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_GIT_BRANCH_KEY))
-                        .commitId((String) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_GIT_COMMIT_ID_KEY))
-                        .useBranch((boolean) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_GIT_USE_BRANCH_KEY))
-                        .repoName((String) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_GIT_REPO_NAME_KEY))
-                        .build();
-                backendConfig.setRemoteBackendConfig(gitFileConfig);
-                remoteBackendGitFileConfig = fetchRemoteConfigGitSource(context);
-              }
+          if (featureFlagService.isEnabled(TERRAFORM_REMOTE_BACKEND_CONFIG, context.getAccountId())) {
+            String gitFileConnectorId = (String) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_GIT_CONNECTOR_ID_KEY);
+            if (isNotEmpty(gitFileConnectorId)) {
+              backendConfigStoreType = REMOTE_STORE_TYPE;
+              GitFileConfig gitFileConfig =
+                  GitFileConfig.builder()
+                      .connectorId(gitFileConnectorId)
+                      .filePath((String) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_GIT_FILE_PATH_KEY))
+                      .branch((String) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_GIT_BRANCH_KEY))
+                      .commitId((String) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_GIT_COMMIT_ID_KEY))
+                      .useBranch((boolean) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_GIT_USE_BRANCH_KEY))
+                      .repoName((String) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_GIT_REPO_NAME_KEY))
+                      .build();
+              TerraformBackendConfig remoteMetadataBackendConfig = new TerraformBackendConfig();
+              remoteMetadataBackendConfig.setRemoteBackendConfig(gitFileConfig);
+              setBackendConfig(remoteMetadataBackendConfig);
+              remoteBackendGitFileConfig = fetchRemoteConfigGitSource(context);
             }
           }
 
@@ -1271,7 +1268,7 @@ public abstract class TerraformProvisionState extends State {
                   S3FileConfig.builder()
                       .awsConfigId(backendAwsConfigId)
                       .s3URI((String) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_S3_URI_KEY))
-                      .s3URIList((List<String>) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_S3_URI_LIST_KEY))
+                      .s3URIList(getS3URIList(fileMetadata, REMOTE_BE_CONFIG_S3_URI_LIST_KEY))
                       .build();
 
               AwsConfig awsConfig = (AwsConfig) getAwsConfigSettingAttribute(backendAwsConfigId).getValue();
@@ -1303,12 +1300,11 @@ public abstract class TerraformProvisionState extends State {
 
           String tfVarS3FileConfigId = (String) fileMetadata.getMetadata().get(TF_VAR_FILES_S3_CONFIG_ID_KEY);
           if (isNotEmpty(tfVarS3FileConfigId)) {
-            S3FileConfig s3FileConfig =
-                S3FileConfig.builder()
-                    .awsConfigId(tfVarS3FileConfigId)
-                    .s3URI((String) fileMetadata.getMetadata().get(TF_VAR_FILES_S3_URI_KEY))
-                    .s3URIList((List<String>) fileMetadata.getMetadata().get(TF_VAR_FILES_S3_URI_LIST_KEY))
-                    .build();
+            S3FileConfig s3FileConfig = S3FileConfig.builder()
+                                            .awsConfigId(tfVarS3FileConfigId)
+                                            .s3URI((String) fileMetadata.getMetadata().get(TF_VAR_FILES_S3_URI_KEY))
+                                            .s3URIList(getS3URIList(fileMetadata, TF_VAR_FILES_S3_URI_LIST_KEY))
+                                            .build();
 
             setTfVarS3FileConfig(s3FileConfig);
           }
@@ -1565,10 +1561,9 @@ public abstract class TerraformProvisionState extends State {
 
   private Map<String, String> extractBackendConfigs(ExecutionContext context, FileMetadata fileMetadata) {
     Map<String, Object> rawBackendConfigs = null;
-    if (featureFlagService.isEnabled(TERRAFORM_REMOTE_BACKEND_CONFIG, context.getAccountId())) {
-      if (getBackendConfig() != null && LOCAL_STORE_TYPE.equals(getBackendConfig().getStoreType())) {
-        rawBackendConfigs = (Map<String, Object>) fileMetadata.getMetadata().get(BACKEND_CONFIG_KEY);
-      }
+    if (featureFlagService.isEnabled(TERRAFORM_REMOTE_BACKEND_CONFIG, context.getAccountId())
+        && getBackendConfig() != null && !LOCAL_STORE_TYPE.equals(getBackendConfig().getStoreType())) {
+      rawBackendConfigs = (Map<String, Object>) fileMetadata.getMetadata().get(BACKEND_CONFIG_KEY);
     } else {
       rawBackendConfigs = (Map<String, Object>) fileMetadata.getMetadata().get(BACKEND_CONFIGS_KEY);
     }
@@ -1601,6 +1596,14 @@ public abstract class TerraformProvisionState extends State {
       return tfVarFiles;
     }
     return tfVarFiles.stream().map(context::renderExpression).collect(toList());
+  }
+
+  private ArrayList<String> getS3URIList(FileMetadata fileMetadata, String key) {
+    Object uriListObject = fileMetadata.getMetadata().get(key);
+    if (uriListObject != null) {
+      return new ArrayList<>((List<String>) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_S3_URI_LIST_KEY));
+    }
+    return null;
   }
 
   protected List<String> resolveTargets(List<String> targets, ExecutionContext context) {

@@ -147,8 +147,6 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   @Inject private FreezeEvaluateService freezeEvaluateService;
   @Inject @Named("PRIVILEGED") private AccessControlClient accessControlClient;
 
-  @Inject private EnvironmentInfraFilterHelper environmentInfraFilterHelper;
-
   @Override
   public Set<String> getSupportedStageTypes() {
     return Collections.singleton("Deployment");
@@ -402,7 +400,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
 
     // If filters are present
     if (featureFlagHelperService.isEnabled(ctx.getAccountIdentifier(), FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS)
-        && (environmentInfraFilterHelper.areFiltersPresent(stageNode.deploymentStageConfig.getEnvironments()))) {
+        && (EnvironmentInfraFilterHelper.areFiltersPresent(stageNode.deploymentStageConfig.getEnvironments()))) {
       subType = MultiDeploymentSpawnerUtils.MULTI_SERVICE_ENV_DEPLOYMENT;
     } else {
       if (stageConfig.getEnvironments() == null) {
@@ -636,7 +634,6 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
       YamlField executionUuid) {
     PlanNode gitopsNode = null;
     final String postServiceStepUuid = "gitOpsClusters-" + UUIDGenerator.generateUuid();
-
     EnvironmentGroupYaml envGroupYaml = stageNode.getDeploymentStageConfig().getEnvironmentGroup();
     if (envGroupYaml != null) {
       EnvGroupPlanCreatorConfig config = envGroupPlanCreatorHelper.createEnvGroupPlanCreatorConfig(ctx, envGroupYaml);

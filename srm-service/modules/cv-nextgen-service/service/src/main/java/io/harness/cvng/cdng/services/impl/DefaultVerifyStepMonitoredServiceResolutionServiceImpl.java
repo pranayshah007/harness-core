@@ -67,6 +67,9 @@ public class DefaultVerifyStepMonitoredServiceResolutionServiceImpl
 
     ResponseDTO<CDStageMetaDataDTO> responseDTO =
         cdStageMetaDataService.getServiceAndEnvironmentRef(stageLevelYamlNode);
+    if (Objects.isNull(responseDTO)) {
+      return result;
+    }
     String serviceIdentifier = responseDTO.getData().getServiceRef();
     String envIdentifier = responseDTO.getData().getEnvironmentRef();
 

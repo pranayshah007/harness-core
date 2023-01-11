@@ -103,9 +103,12 @@ public class NotificationHelper {
         firstWindowEndTime =
             LocalDateTime.parse(freezeInfoConfig.getWindows().get(0).getEndTime(), FreezeTimeUtils.dtf);
       }
-      Pair<LocalDateTime, LocalDateTime> windowTimes =
-          FreezeTimeUtils.setCurrWindowStartAndEndTime(firstWindowStartTime, firstWindowEndTime,
-              freezeInfoConfig.getWindows().get(0).getRecurrence().getRecurrenceType(), timeZone);
+      Pair<LocalDateTime, LocalDateTime> windowTimes = Pair.of(firstWindowStartTime, firstWindowEndTime);
+      if (freezeInfoConfig.getWindows().get(0).getRecurrence() != null
+          && freezeInfoConfig.getWindows().get(0).getRecurrence().getRecurrenceType() != null) {
+        windowTimes = FreezeTimeUtils.setCurrWindowStartAndEndTime(firstWindowStartTime, firstWindowEndTime,
+            freezeInfoConfig.getWindows().get(0).getRecurrence().getRecurrenceType(), timeZone);
+      }
       data.put("START_TIME", windowTimes.getLeft().toString());
       data.put("END_TIME", windowTimes.getRight().toString());
       data.put("ACCOUNT_ID", accountId);

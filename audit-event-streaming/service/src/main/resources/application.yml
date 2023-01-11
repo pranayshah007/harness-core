@@ -1,0 +1,9 @@
+auditDbConfig:
+  uri: ${MONGO_URI:mongodb://localhost:27017/ng-audits}
+  connectTimeout: 30000
+  serverSelectionTimeout: 90000
+  socketTimeout: 360000
+  maxConnectionIdleTime: 600000
+  connectionsPerHost: 300
+  indexManagerMode: AUTO
+  aliasDBName: ng-audits

@@ -18,8 +18,8 @@ import static java.util.Collections.singletonList;
 import static org.joda.time.Months.monthsBetween;
 
 import io.harness.batch.processing.config.BatchMainConfig;
-import io.harness.batch.processing.mail.CEMailNotificationService;
 import io.harness.batch.processing.shard.AccountShardService;
+import io.harness.batch.processing.tasklet.util.CurrencyPreferenceHelper;
 import io.harness.ccm.BudgetCommon;
 import io.harness.ccm.budget.AlertThreshold;
 import io.harness.ccm.budget.BudgetBreakdown;
@@ -29,7 +29,6 @@ import io.harness.ccm.budget.entities.BudgetAlertsData;
 import io.harness.ccm.budget.utils.BudgetUtils;
 import io.harness.ccm.budgetGroup.BudgetGroup;
 import io.harness.ccm.budgetGroup.dao.BudgetGroupDao;
-import io.harness.ccm.commons.dao.CEMetadataRecordDao;
 import io.harness.ccm.commons.entities.billing.Budget;
 import io.harness.ccm.currency.Currency;
 import io.harness.notification.Team;
@@ -45,7 +44,6 @@ import software.wings.beans.notification.SlackNotificationSetting;
 import software.wings.beans.security.UserGroup;
 import software.wings.graphql.datafetcher.billing.CloudBillingHelper;
 import software.wings.graphql.datafetcher.budget.BudgetTimescaleQueryHelper;
-import software.wings.service.intfc.SlackMessageSender;
 import software.wings.service.intfc.instance.CloudToHarnessMappingService;
 
 import com.google.common.collect.ImmutableMap;
@@ -75,9 +73,7 @@ import retrofit2.Response;
 @Slf4j
 public class BudgetAlertsServiceImpl {
   @Autowired private TimeScaleDBService timeScaleDBService;
-  @Autowired private CEMailNotificationService emailNotificationService;
   @Autowired private NotificationResourceClient notificationResourceClient;
-  @Autowired private SlackMessageSender slackMessageSender;
   @Autowired private BudgetTimescaleQueryHelper budgetTimescaleQueryHelper;
   @Autowired private BudgetDao budgetDao;
   @Autowired private BudgetGroupDao budgetGroupDao;
@@ -85,7 +81,7 @@ public class BudgetAlertsServiceImpl {
   @Autowired private CloudToHarnessMappingService cloudToHarnessMappingService;
   @Autowired private AccountShardService accountShardService;
   @Autowired private CloudBillingHelper cloudBillingHelper;
-  @Autowired private CEMetadataRecordDao ceMetadataRecordDao;
+  @Autowired private CurrencyPreferenceHelper currencyPreferenceHelper;
 
   private static final String BUDGET_MAIL_ERROR = "Budget alert email couldn't be sent";
   private static final String NG_PATH_CONST = "ng/";
@@ -110,7 +106,7 @@ public class BudgetAlertsServiceImpl {
     accountIds.forEach(accountId -> {
       List<Budget> budgets = budgetDao.list(accountId);
       // [TODO]: Cache currency symbol for each account
-      Currency currency = getDestinationCurrency(accountId);
+      Currency currency = currencyPreferenceHelper.getDestinationCurrency(accountId);
       budgets.forEach(budget -> {
         updateCGBudget(budget);
         try {
@@ -346,7 +342,7 @@ public class BudgetAlertsServiceImpl {
       templateModel.put("url", budgetUrl);
       templateModel.put("BUDGET_NAME", budgetName);
       templateModel.put("THRESHOLD_PERCENTAGE", format("%.1f", alertThreshold.getPercentage()));
-      templateModel.put("CURRENT_COST", format("%s%s", currency.getSymbol(), format("%.2f", currentCost)));
+      templateModel.put("CURRENT_COST", format("%s%s", currency.getUtf8HexSymbol(), format("%.2f", currentCost)));
       templateModel.put("COST_TYPE", costType);
       templateModel.put("SUBJECT_COST_TYPE", subjectCostType);
       templateModel.put("PERIOD", period);
@@ -463,13 +459,5 @@ public class BudgetAlertsServiceImpl {
       default:
         return MONTH;
     }
-  }
-
-  private Currency getDestinationCurrency(String accountId) {
-    Currency currency = ceMetadataRecordDao.getDestinationCurrency(accountId);
-    if (Currency.NONE.equals(currency)) {
-      currency = Currency.USD;
-    }
-    return currency;
   }
 }

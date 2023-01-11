@@ -143,7 +143,10 @@ public class InstanceSyncPerpetualTaskMigrationJob implements Managed {
       FeatureName featureFlag, List<InfrastructureMapping> infrastructureMappings) {
     for (InfrastructureMapping infrastructureMapping : infrastructureMappings) {
       if (isFeatureFlagApplicableToInfraMapping(featureFlag, infrastructureMapping)) {
-        instanceSyncPerpetualTaskService.createPerpetualTasks(infrastructureMapping);
+        try (AcquiredLock lock = persistentLocker.tryToAcquireLock(
+                 InfrastructureMapping.class, infrastructureMapping.getUuid(), Duration.ofSeconds(180))) {
+          instanceSyncPerpetualTaskService.createPerpetualTasks(infrastructureMapping);
+        }
       }
     }
   }

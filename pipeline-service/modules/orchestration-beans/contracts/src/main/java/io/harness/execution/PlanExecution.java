@@ -29,6 +29,7 @@ import io.harness.pms.plan.execution.SetupAbstractionKeys;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
 import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.HashMap;
@@ -43,7 +44,6 @@ import lombok.experimental.FieldNameConstants;
 import lombok.experimental.NonFinal;
 import lombok.experimental.UtilityClass;
 import lombok.experimental.Wither;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -64,7 +64,7 @@ public class PlanExecution implements PersistentRegularIterable, UuidAccess, Pms
   public static final String EXEC_TAG_SET_BY_TRIGGER = "execution_trigger_tag_needed_for_abort";
   public static final long TTL_MONTHS = 6;
 
-  @Wither @Id @org.mongodb.morphia.annotations.Id String uuid;
+  @Wither @Id @dev.morphia.annotations.Id String uuid;
   @Wither @CreatedDate Long createdAt;
   String planId;
   Map<String, String> setupAbstractions;

@@ -63,6 +63,7 @@ import com.nimbusds.jose.KeyLengthException;
 import com.nimbusds.jose.crypto.DirectDecrypter;
 import com.nimbusds.jwt.EncryptedJWT;
 import com.nimbusds.jwt.JWTClaimsSet;
+import dev.morphia.query.Query;
 import java.io.UnsupportedEncodingException;
 import java.text.ParseException;
 import java.util.Optional;
@@ -72,7 +73,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.codec.digest.DigestUtils;
-import org.mongodb.morphia.query.Query;
 
 @Slf4j
 @Singleton

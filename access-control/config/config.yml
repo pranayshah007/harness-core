@@ -194,7 +194,7 @@ aggregatorModuleConfig:
     connect.backoff.initial.delay.ms: ${CONNECT_BACKOFF_INITIAL_DELAY_MS:-1000}
     connect.backoff.max.delay.ms: ${CONNECT_BACKOFF_MAX_DELAY_MS:-10000}
     connect.max.attempts: ${CONNECT_MAX_ATTEMPTS:-3}
-    mongodb.hosts: ${MONGODB_HOSTS:-rs0/localhost:27018,rs0/localhost:27019,rs0/localhost:27020}
+    mongodb.hosts: ${MONGODB_HOSTS:-rs0/localhost:27018,rs0/localhost:27019,rs0/127.0.0.1:27020}
     mongodb.name: ${MONGODB_NAME:-access_control_db}
     mongodb.user: ${MONGODB_USER:-""}
     mongodb.password: ${MONGODB_PASSWORD:-""}

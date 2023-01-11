@@ -78,6 +78,7 @@ public class DebeziumConfigurationTest extends CategoryTest {
     expectedProps.setProperty(DebeziumConfiguration.MAX_QUEUE_SIZE_IN_BYTES, "1000");
     expectedProps.setProperty(DebeziumConfiguration.MAX_QUEUE_SIZE, "4");
     expectedProps.setProperty(DebeziumConfiguration.MAX_BATCH_SIZE, "1");
+    expectedProps.setProperty("errors.max.retries", "-2");
     assertEquals(expectedProps, DebeziumConfiguration.getDebeziumProperties(debeziumConfig, redisConfig));
     expectedProps.setProperty(DebeziumConfiguration.OFFSET_STORAGE_KEY,
         DebeziumConstants.DEBEZIUM_OFFSET_PREFIX + debeziumConfig.getConnectorName() + "-"

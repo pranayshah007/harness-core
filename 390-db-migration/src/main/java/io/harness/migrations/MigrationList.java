@@ -72,6 +72,7 @@ import io.harness.migrations.all.CleanupSyncStatusForDeletedEntities;
 import io.harness.migrations.all.CloudWatchCVMigration;
 import io.harness.migrations.all.ConvertRestrictedTagsToNonRestrictedTagsForUnsupportedAccountTypes;
 import io.harness.migrations.all.CreateDefaultAlertNotificationRule;
+import io.harness.migrations.all.CreateLongerDataRetention;
 import io.harness.migrations.all.DanglingAppEnvReferenceRemovalMigration;
 import io.harness.migrations.all.DanglingUserInviteCleanupMigration;
 import io.harness.migrations.all.DataDogLogCvConfigMigration;
@@ -465,6 +466,7 @@ public class MigrationList {
         .add(Pair.of(380, AddImmutableDelegateEnabledFieldToAccountCollection.class))
         .add(Pair.of(381, AddRingDetailsToDelegateRing.class))
         .add(Pair.of(382, InitTerraformProvisionersSourceType.class))
+        .add(Pair.of(383, CreateLongerDataRetention.class))
         .build();
   }
 }

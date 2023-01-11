@@ -233,6 +233,9 @@ public class AnomalyEntityDao {
           case TIME_GRANULARITY:
             anomalyBuilder.timeGranularity(TimeGranularity.valueOf(resultSet.getString(field.getFieldName())));
             break;
+          case NOTIFICATION_SENT:
+            anomalyBuilder.notificationSent(resultSet.getBoolean(field.getFieldName()));
+            break;
           default:
             log.error("Unknown field : {} encountered while Resultset conversion in AnomalyDao", field);
         }

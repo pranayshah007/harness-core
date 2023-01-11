@@ -11,6 +11,7 @@ import static io.harness.rule.OwnerRule.ABHISHEK;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
@@ -378,12 +379,12 @@ public class InstanceDashboardServiceImplTest extends InstancesTestBase {
 
     when(instanceService.getActiveInstancesByServiceIdEnvIdAndBuildIds(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER,
              PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, ENV_IDENTIFIER, BUILD_IDS, 10,
-             InstanceSyncConstants.INSTANCE_LIMIT, infraId, clusterId, pipelineExecutionId, lastDeployedAt))
+             InstanceSyncConstants.INSTANCE_LIMIT, infraId, clusterId, pipelineExecutionId))
         .thenReturn(instanceDetailsByBuildIdAggregationResults);
     List<InstanceDetailsByBuildId> instanceDetailsByBuildIdList =
         instanceDashboardService.getActiveInstancesByServiceIdEnvIdAndBuildIds(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER,
             PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, ENV_IDENTIFIER, BUILD_IDS, 10, infraId, clusterId,
-            pipelineExecutionId, lastDeployedAt);
+            pipelineExecutionId, false);
     assertThat(instanceDetailsByBuildIdList.size()).isEqualTo(1);
     assertThat(instanceDetailsByBuildIdList.get(0).getBuildId()).isEqualTo("build1");
     assertThat(instanceDetailsByBuildIdList.get(0).getInstances().size()).isEqualTo(0);
@@ -537,16 +538,16 @@ public class InstanceDashboardServiceImplTest extends InstancesTestBase {
   public void test_getActiveInstanceDetails_infra() {
     InstanceDetailsDTO instanceDetailsDTO1 = InstanceDetailsDTO.builder().build();
     InstanceDetailsDTO instanceDetailsDTO2 = InstanceDetailsDTO.builder().build();
-    when(instanceDetailsMapper.toInstanceDetailsDTOList(anyList()))
+    when(instanceDetailsMapper.toInstanceDetailsDTOList(anyList(), anyBoolean()))
         .thenReturn(Arrays.asList(instanceDetailsDTO1, instanceDetailsDTO2));
 
     InstanceDetailsByBuildId instanceDetailsByBuildId = instanceDashboardService.getActiveInstanceDetails(
-        "accountId", "orgId", "projectId", "svc1", "env1", "infra1", null, "1", "1");
+        "accountId", "orgId", "projectId", "svc1", "env1", "infra1", null, "1", "1", false);
 
     verify(instanceService)
         .getActiveInstanceDetails("accountId", "orgId", "projectId", "svc1", "env1", "infra1", null, "1", "1",
             InstanceSyncConstants.INSTANCE_LIMIT);
-    verify(instanceDetailsMapper).toInstanceDetailsDTOList(anyList());
+    verify(instanceDetailsMapper).toInstanceDetailsDTOList(anyList(), anyBoolean());
 
     assertThat(instanceDetailsByBuildId.getInstances().get(0)).isEqualTo(instanceDetailsDTO1);
     assertThat(instanceDetailsByBuildId.getInstances().get(1)).isEqualTo(instanceDetailsDTO2);
@@ -558,16 +559,16 @@ public class InstanceDashboardServiceImplTest extends InstancesTestBase {
   public void test_getActiveInstanceDetails_cluster() {
     InstanceDetailsDTO instanceDetailsDTO1 = InstanceDetailsDTO.builder().build();
     InstanceDetailsDTO instanceDetailsDTO2 = InstanceDetailsDTO.builder().build();
-    when(instanceDetailsMapper.toInstanceDetailsDTOList(anyList()))
+    when(instanceDetailsMapper.toInstanceDetailsDTOList(anyList(), anyBoolean()))
         .thenReturn(Arrays.asList(instanceDetailsDTO1, instanceDetailsDTO2));
 
     InstanceDetailsByBuildId instanceDetailsByBuildId = instanceDashboardService.getActiveInstanceDetails(
-        "accountId", "orgId", "projectId", "svc1", "env1", null, "infra1", "1", "1");
+        "accountId", "orgId", "projectId", "svc1", "env1", null, "cluster1", "1", "1", false);
 
     verify(instanceService)
-        .getActiveInstanceDetails("accountId", "orgId", "projectId", "svc1", "env1", null, "infra1", "1", "1",
+        .getActiveInstanceDetails("accountId", "orgId", "projectId", "svc1", "env1", null, "cluster1", "1", "1",
             InstanceSyncConstants.INSTANCE_LIMIT);
-    verify(instanceDetailsMapper).toInstanceDetailsDTOList(anyList());
+    verify(instanceDetailsMapper).toInstanceDetailsDTOList(anyList(), anyBoolean());
 
     assertThat(instanceDetailsByBuildId.getInstances().get(0)).isEqualTo(instanceDetailsDTO1);
     assertThat(instanceDetailsByBuildId.getInstances().get(1)).isEqualTo(instanceDetailsDTO2);

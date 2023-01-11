@@ -55,12 +55,15 @@ import io.harness.gitsync.common.dtos.ScmGetBranchHeadCommitResponseDTO;
 import io.harness.gitsync.common.dtos.ScmGetFileByBranchRequestDTO;
 import io.harness.gitsync.common.dtos.ScmGetFileByCommitIdRequestDTO;
 import io.harness.gitsync.common.dtos.ScmGetFileResponseDTO;
+import io.harness.gitsync.common.dtos.ScmGetFileUrlRequestDTO;
+import io.harness.gitsync.common.dtos.ScmGetFileUrlResponseDTO;
 import io.harness.gitsync.common.dtos.ScmListFilesRequestDTO;
 import io.harness.gitsync.common.dtos.ScmListFilesResponseDTO;
 import io.harness.gitsync.common.dtos.ScmUpdateFileRequestDTO;
 import io.harness.gitsync.common.dtos.UpdateGitFileRequestDTO;
 import io.harness.gitsync.common.dtos.UserRepoResponse;
 import io.harness.gitsync.common.helper.GitClientEnabledHelper;
+import io.harness.gitsync.common.helper.GitFilePathHelper;
 import io.harness.gitsync.common.helper.GitSyncConnectorHelper;
 import io.harness.gitsync.common.helper.GitSyncUtils;
 import io.harness.gitsync.common.helper.ScmExceptionUtils;
@@ -111,13 +114,15 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
   GitClientEnabledHelper gitClientEnabledHelper;
   GitFileCacheService gitFileCacheService;
   ExecutorService executor;
+  GitFilePathHelper gitFilePathHelper;
 
   @Inject
   public ScmFacilitatorServiceImpl(GitSyncConnectorHelper gitSyncConnectorHelper,
       @Named("connectorDecoratorService") ConnectorService connectorService,
       ScmOrchestratorService scmOrchestratorService, NGFeatureFlagHelperService ngFeatureFlagHelperService,
       GitClientEnabledHelper gitClientEnabledHelper, GitFileCacheService gitFileCacheService,
-      @Named(GitSyncModule.GITX_BACKGROUND_CACHE_UPDATE_EXECUTOR_NAME) ExecutorService executor) {
+      @Named(GitSyncModule.GITX_BACKGROUND_CACHE_UPDATE_EXECUTOR_NAME) ExecutorService executor,
+      GitFilePathHelper gitFilePathHelper) {
     this.gitSyncConnectorHelper = gitSyncConnectorHelper;
     this.connectorService = connectorService;
     this.scmOrchestratorService = scmOrchestratorService;
@@ -125,6 +130,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
     this.gitClientEnabledHelper = gitClientEnabledHelper;
     this.gitFileCacheService = gitFileCacheService;
     this.executor = executor;
+    this.gitFilePathHelper = gitFilePathHelper;
   }
 
   @Override
@@ -435,6 +441,16 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
     return ScmListFilesResponseDTO.builder()
         .fileGitDetailsDTOList(
             ScmFileGitDetailsDTO.toScmFileGitDetailsDTOList(listFilesInCommitResponse.getFileGitDetailsList()))
+        .build();
+  }
+
+  @Override
+  public ScmGetFileUrlResponseDTO getFileUrl(ScmGetFileUrlRequestDTO scmGetFileUrlRequestDTO) {
+    GitRepositoryDTO gitRepositoryDTO = GitRepositoryDTO.builder().name(scmGetFileUrlRequestDTO.getRepoName()).build();
+    return ScmGetFileUrlResponseDTO.builder()
+        .fileURL(gitFilePathHelper.getFileUrl(scmGetFileUrlRequestDTO.getScope(),
+            scmGetFileUrlRequestDTO.getConnectorRef(), scmGetFileUrlRequestDTO.getBranch(),
+            scmGetFileUrlRequestDTO.getFilePath(), scmGetFileUrlRequestDTO.getCommitId(), gitRepositoryDTO))
         .build();
   }
 

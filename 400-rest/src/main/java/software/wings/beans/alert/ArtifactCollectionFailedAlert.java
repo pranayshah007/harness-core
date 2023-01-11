@@ -29,10 +29,10 @@ import software.wings.service.intfc.SettingsService;
 
 import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.inject.Inject;
+import dev.morphia.annotations.Transient;
 import lombok.Builder;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
-import org.mongodb.morphia.annotations.Transient;
 
 @OwnedBy(CDC)
 @Data

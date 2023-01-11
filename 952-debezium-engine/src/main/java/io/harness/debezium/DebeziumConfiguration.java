@@ -74,6 +74,9 @@ public class DebeziumConfiguration {
     Optional.ofNullable(debeziumConfig.getSslEnabled())
         .filter(x -> !x.isEmpty())
         .ifPresent(x -> props.setProperty(MONGODB_SSL_ENABLED, x));
+    // Set this value to -2, because debezium library has a logic to retry indefinitely if this value is >1, this is
+    // useful for us to recover from state when oplog is rotated
+    props.setProperty("errors.max.retries", "-2");
 
     /* begin connector properties */
     props.setProperty(CONNECTOR_CLASS, MONGO_DB_CONNECTOR);

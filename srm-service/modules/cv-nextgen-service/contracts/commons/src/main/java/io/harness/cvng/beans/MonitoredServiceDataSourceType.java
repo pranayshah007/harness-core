@@ -28,7 +28,8 @@ public enum MonitoredServiceDataSourceType {
   @JsonProperty("ElasticSearch") ELASTICSEARCH,
   @JsonProperty("CloudWatchMetrics") CLOUDWATCH_METRICS,
   @JsonProperty("AwsPrometheus") AWS_PROMETHEUS,
-  @JsonProperty("NextGenHealthSource") NEXT_GEN_HEALTH_SOURCE;
+  @JsonProperty("SumologicMetrics") SUMOLOGIC_METRICS,
+  @JsonProperty("SumologicLogs") SUMOLOGIC_LOG;
   public static final Map<DataSourceType, MonitoredServiceDataSourceType>
       dataSourceTypeMonitoredServiceDataSourceTypeMap = new HashMap<>();
   static {
@@ -48,7 +49,7 @@ public enum MonitoredServiceDataSourceType {
     dataSourceTypeMonitoredServiceDataSourceTypeMap.put(DataSourceType.ELASTICSEARCH, ELASTICSEARCH);
     dataSourceTypeMonitoredServiceDataSourceTypeMap.put(DataSourceType.CLOUDWATCH_METRICS, CLOUDWATCH_METRICS);
     dataSourceTypeMonitoredServiceDataSourceTypeMap.put(DataSourceType.AWS_PROMETHEUS, AWS_PROMETHEUS);
-    dataSourceTypeMonitoredServiceDataSourceTypeMap.put(DataSourceType.SUMOLOGIC_LOG, NEXT_GEN_HEALTH_SOURCE);
-    dataSourceTypeMonitoredServiceDataSourceTypeMap.put(DataSourceType.SUMOLOGIC_METRICS, NEXT_GEN_HEALTH_SOURCE);
+    dataSourceTypeMonitoredServiceDataSourceTypeMap.put(DataSourceType.SUMOLOGIC_LOG, SUMOLOGIC_LOG);
+    dataSourceTypeMonitoredServiceDataSourceTypeMap.put(DataSourceType.SUMOLOGIC_METRICS, SUMOLOGIC_METRICS);
   }
 }

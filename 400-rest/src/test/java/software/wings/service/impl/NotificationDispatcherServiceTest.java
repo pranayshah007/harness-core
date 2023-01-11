@@ -49,6 +49,8 @@ import software.wings.service.intfc.UserGroupService;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
+import dev.morphia.query.FieldEnd;
+import dev.morphia.query.UpdateOperations;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -57,8 +59,6 @@ import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mongodb.morphia.query.FieldEnd;
-import org.mongodb.morphia.query.UpdateOperations;
 
 public class NotificationDispatcherServiceTest extends WingsBaseTest {
   @Inject @InjectMocks private NotificationDispatcherServiceImpl notificationDispatcherService;

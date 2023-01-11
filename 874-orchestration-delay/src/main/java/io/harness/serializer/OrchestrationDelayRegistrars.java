@@ -12,8 +12,8 @@ import io.harness.serializer.kryo.OrchestrationDelayKryoRegistrar;
 import io.harness.serializer.morphia.OrchestrationDelayMorphiaRegistrar;
 
 import com.google.common.collect.ImmutableSet;
+import dev.morphia.converters.TypeConverter;
 import lombok.experimental.UtilityClass;
-import org.mongodb.morphia.converters.TypeConverter;
 
 @UtilityClass
 public class OrchestrationDelayRegistrars {

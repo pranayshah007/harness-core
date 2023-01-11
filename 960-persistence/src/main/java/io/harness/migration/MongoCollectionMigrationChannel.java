@@ -7,7 +7,7 @@
 
 package io.harness.migration;
 
-import io.harness.persistence.Store;
+import io.harness.persistence.store.Store;
 
 import lombok.Builder;
 import lombok.Value;

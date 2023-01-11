@@ -53,6 +53,7 @@ import software.wings.service.intfc.AuthService;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import dev.morphia.query.Query;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -66,7 +67,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mongodb.morphia.query.Query;
 
 @OwnedBy(HarnessTeam.DEL)
 @TargetModule(_955_ACCOUNT_MGMT)

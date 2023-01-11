@@ -12,6 +12,7 @@ import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.task.spot.elastigroup.rollback.ElastigroupRollbackTaskParameters;
 import io.harness.delegate.task.spot.elastigroup.rollback.ElastigroupRollbackTaskResponse;
@@ -20,7 +21,6 @@ import io.harness.exception.SkipRollbackException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
-import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.tasks.SkipTaskRequest;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
@@ -38,7 +38,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(CDP)
-public class ElastigroupRollbackStep extends TaskExecutableWithRollbackAndRbac<ElastigroupRollbackTaskResponse> {
+public class ElastigroupRollbackStep extends CdTaskExecutable<ElastigroupRollbackTaskResponse> {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.ELASTIGROUP_ROLLBACK.getYamlType())
                                                .setStepCategory(StepCategory.STEP)

@@ -14,27 +14,58 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ENTITY
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.PIPELINE_ENTITY;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
+import io.harness.engine.interrupts.InterruptService;
+import io.harness.engine.pms.data.PmsOutcomeService;
+import io.harness.engine.pms.data.PmsSweepingOutputService;
+import io.harness.eventsframework.EntityChangeLogContext;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.event.MessageListener;
 import io.harness.ngtriggers.service.NGTriggerService;
+import io.harness.pms.pipeline.service.PipelineMetadataService;
+import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
+import io.harness.pms.plan.execution.service.PmsExecutionSummaryService;
+import io.harness.pms.preflight.service.PreflightService;
+import io.harness.steps.barriers.service.BarrierService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.protobuf.InvalidProtocolBufferException;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.util.CloseableIterator;
 
 @OwnedBy(PIPELINE)
 @Slf4j
 @Singleton
 public class PipelineEntityCRUDStreamListener implements MessageListener {
   private final NGTriggerService ngTriggerService;
+  private final PipelineMetadataService pipelineMetadataService;
+  private final PmsExecutionSummaryService pmsExecutionSummaryService;
+  private final BarrierService barrierService;
+  private final PreflightService preflightService;
+  private final PmsSweepingOutputService pmsSweepingOutputService;
+  private final PmsOutcomeService pmsOutcomeService;
+  private final InterruptService interruptService;
 
   @Inject
-  public PipelineEntityCRUDStreamListener(NGTriggerService ngTriggerService) {
+  public PipelineEntityCRUDStreamListener(NGTriggerService ngTriggerService,
+      PipelineMetadataService pipelineMetadataService, PmsExecutionSummaryService pmsExecutionSummaryService,
+      BarrierService barrierService, PreflightService preflightService,
+      PmsSweepingOutputService pmsSweepingOutputService, PmsOutcomeService pmsOutcomeService,
+      InterruptService interruptService) {
     this.ngTriggerService = ngTriggerService;
+    this.pipelineMetadataService = pipelineMetadataService;
+    this.pmsExecutionSummaryService = pmsExecutionSummaryService;
+    this.barrierService = barrierService;
+    this.preflightService = preflightService;
+    this.pmsSweepingOutputService = pmsSweepingOutputService;
+    this.pmsOutcomeService = pmsOutcomeService;
+    this.interruptService = interruptService;
   }
 
   @Override
@@ -62,17 +93,102 @@ public class PipelineEntityCRUDStreamListener implements MessageListener {
   private boolean processAccountEntityChangeEvent(EntityChangeDTO entityChangeDTO, String action) {
     switch (action) {
       case DELETE_ACTION:
-        return processDeleteEvent(entityChangeDTO);
+        if (checkIfAnyRequiredFieldIsNotEmpty(entityChangeDTO)) {
+          try (EntityChangeLogContext logContext = new EntityChangeLogContext(entityChangeDTO)) {
+            return processDeleteEvent(entityChangeDTO);
+          }
+        } else {
+          return true;
+        }
       default:
     }
     return true;
   }
 
+  /**
+   * Delete the entities in background which can be slow processing and will not impact other operations for the
+   * customers.
+   * Mainly for deleting executions, metadata, background entities etc.
+   * @param entityChangeDTO
+   * @return
+   */
   private boolean processDeleteEvent(EntityChangeDTO entityChangeDTO) {
-    // Delete all triggers
-    return ngTriggerService.deleteAllForPipeline(entityChangeDTO.getAccountIdentifier().getValue(),
-        entityChangeDTO.getOrgIdentifier().getValue(), entityChangeDTO.getProjectIdentifier().getValue(),
-        entityChangeDTO.getIdentifier().getValue());
-    // delete all input sets
+    String accountId = entityChangeDTO.getAccountIdentifier().getValue();
+    String orgIdentifier = entityChangeDTO.getOrgIdentifier().getValue();
+    String projectIdentifier = entityChangeDTO.getProjectIdentifier().getValue();
+    String pipelineIdentifier = entityChangeDTO.getIdentifier().getValue();
+
+    deletePipelineMetadataDetails(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
+    deletePipelineExecutionsDetails(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
+
+    log.info("Processed deleting metadata and execution details for given pipeline");
+
+    return true;
+  }
+
+  // Delete all pipeline metadata details related to given pipeline identifier.
+  private void deletePipelineMetadataDetails(
+      String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier) {
+    // Delete all triggers, ignore any error
+    ngTriggerService.deleteAllForPipeline(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
+
+    // Delete the pipeline metadata to delete run-sequence, etc.
+    pipelineMetadataService.deletePipelineMetadata(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
+
+    // Deletes all related preflight data
+    preflightService.deleteAllPreflightEntityForGivenPipeline(
+        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
+  }
+
+  // Delete all execution related details using all planExecution for given pipelineIdentifier.
+  private void deletePipelineExecutionsDetails(
+      String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier) {
+    // Max batch size of planExecutionIds to delete related metadata, so that delete records are in limited range
+    int MAX_DELETION_BATCH_PROCESSING = 50;
+    Set<String> toBeDeletedPlanExecutions = new HashSet<>();
+
+    try (CloseableIterator<PipelineExecutionSummaryEntity> iterator =
+             pmsExecutionSummaryService.fetchPlanExecutionIdsFromAnalytics(
+                 accountId, orgIdentifier, projectIdentifier, pipelineIdentifier)) {
+      while (iterator.hasNext()) {
+        toBeDeletedPlanExecutions.add(iterator.next().getPlanExecutionId());
+
+        // If max deletion batch is reached, delete all its related entities
+        // We don't want to delete all executions for a pipeline together as total delete could be very high
+        if (toBeDeletedPlanExecutions.size() >= MAX_DELETION_BATCH_PROCESSING) {
+          deletePipelineExecutionsDetailsInternal(toBeDeletedPlanExecutions);
+          toBeDeletedPlanExecutions = new HashSet<>();
+        }
+      }
+    }
+
+    if (EmptyPredicate.isNotEmpty(toBeDeletedPlanExecutions)) {
+      deletePipelineExecutionsDetailsInternal(toBeDeletedPlanExecutions);
+    }
+  }
+
+  // Internal method which deletes all execution metadata for given planExecutions
+  private void deletePipelineExecutionsDetailsInternal(Set<String> planExecutionsToDelete) {
+    // Deletes the barrierInstances
+    barrierService.deleteAllForGivenPlanExecutionId(planExecutionsToDelete);
+    // Delete sweepingOutput
+    pmsSweepingOutputService.deleteAllSweepingOutputInstances(planExecutionsToDelete);
+    // Delete outcome instances
+    pmsOutcomeService.deleteAllOutcomesInstances(planExecutionsToDelete);
+    // Delete all interrupts
+    interruptService.deleteAllInterrupts(planExecutionsToDelete);
+  }
+
+  private boolean checkIfAnyRequiredFieldIsNotEmpty(EntityChangeDTO entityChangeDTO) {
+    String accountId = entityChangeDTO.getAccountIdentifier().getValue();
+    String orgIdentifier = entityChangeDTO.getOrgIdentifier().getValue();
+    String projectIdentifier = entityChangeDTO.getProjectIdentifier().getValue();
+    String pipelineIdentifier = entityChangeDTO.getIdentifier().getValue();
+    if (EmptyPredicate.isEmpty(accountId) || EmptyPredicate.isEmpty(orgIdentifier)
+        || EmptyPredicate.isEmpty(projectIdentifier) || EmptyPredicate.isEmpty(pipelineIdentifier)) {
+      log.warn("Either of required fields for Pipeline Delete event is empty - " + entityChangeDTO);
+      return false;
+    }
+    return true;
   }
 }

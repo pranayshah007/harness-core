@@ -453,6 +453,9 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.IACM)
   IACM_TERRAFORM_PLAN(ModuleType.IACM, EntityTypeConstants.IACM_TERRAFORM_PLAN, IdentifierRef.class,
       EntityYamlRootNames.IACM_TERRAFORM_PLAN),
+  @JsonProperty(EntityTypeConstants.IACM)
+  IACM_TEMPLATE(
+      ModuleType.IACM, EntityTypeConstants.IACM_TEMPLATE, IdentifierRef.class, EntityYamlRootNames.IACM_TEMPLATE),
   @JsonProperty(EntityTypeConstants.ELASTIGROUP_BG_STAGE_SETUP)
   ELASTIGROUP_BG_STAGE_SETUP_STEP(ModuleType.CD, EntityTypeConstants.ELASTIGROUP_BG_STAGE_SETUP, IdentifierRef.class,
       EntityYamlRootNames.ELASTIGROUP_BG_STAGE_SETUP),
@@ -494,7 +497,10 @@ public enum EntityType {
       EntityYamlRootNames.ASG_ROLLING_DEPLOY),
   @JsonProperty(EntityTypeConstants.ASG_ROLLING_ROLLBACK)
   ASG_ROLLING_ROLLBACK_STEP(ModuleType.CD, EntityTypeConstants.ASG_ROLLING_ROLLBACK, IdentifierRef.class,
-      EntityYamlRootNames.ASG_ROLLING_ROLLBACK);
+      EntityYamlRootNames.ASG_ROLLING_ROLLBACK),
+  @JsonProperty(EntityTypeConstants.CCM_GOVERNANCE_RULE_AWS)
+  CCM_GOVERNANCE_RULE_AWS(ModuleType.CE, EntityTypeConstants.CCM_GOVERNANCE_RULE_AWS, IdentifierRef.class,
+      EntityYamlRootNames.CCM_GOVERNANCE_RULE);
 
   private final ModuleType moduleType;
   String yamlName;

@@ -79,7 +79,7 @@ public abstract class InterruptPropagatorHandler {
                                  .map(NodeExecution::getUuid)
                                  .collect(Collectors.toList());
 
-    long updatedCount = nodeExecutionService.markLeavesDiscontinuing(interrupt.getPlanExecutionId(), targetIds);
+    long updatedCount = nodeExecutionService.markLeavesDiscontinuing(targetIds);
     return handleDiscontinuingNodes(updatedInterrupt, updatedCount);
   }
 

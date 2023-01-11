@@ -52,6 +52,9 @@ import io.harness.serializer.YamlUtils;
 import software.wings.beans.LogColor;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.inject.Inject;
@@ -522,34 +525,50 @@ public class EcsCommandTaskNGHelper {
       UpdateServiceRequest updateServiceRequest =
           EcsMapper.createServiceRequestToUpdateServiceRequest(createServiceRequest, forceNewDeployment);
 
-      // same as already running instances
-      if (sameAsAlreadyRunningInstances) {
-        updateServiceRequest = updateServiceRequest.toBuilder().desiredCount(null).build();
+      if (isSameAsCurrentService(updateServiceRequest, optionalService, ecsInfraConfig)) {
+        logCallback.saveExecutionLog(
+            color(format("Service %s is already up to date", optionalService.get().serviceName()), White, Bold),
+            LogLevel.INFO);
+      } else {
+        // same as already running instances
+        if (sameAsAlreadyRunningInstances) {
+          updateServiceRequest = updateServiceRequest.toBuilder().desiredCount(null).build();
+        }
+
+        logCallback.saveExecutionLog(
+            format("Updating Service %s with task definition %s and desired count %s %n",
+                updateServiceRequest.service(), updateServiceRequest.taskDefinition(),
+                updateServiceRequest.desiredCount() == null ? "same as existing" : updateServiceRequest.desiredCount()),
+            LogLevel.INFO);
+        UpdateServiceResponse updateServiceResponse =
+            updateService(updateServiceRequest, ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
+
+        List<ServiceEvent> eventsAlreadyProcessed = new ArrayList<>(updateServiceResponse.service().events());
+
+        ecsServiceSteadyStateCheck(logCallback, ecsInfraConfig.getAwsConnectorDTO(), createServiceRequest.cluster(),
+            createServiceRequest.serviceName(), ecsInfraConfig.getRegion(), timeoutInMillis, eventsAlreadyProcessed);
+
+        logCallback.saveExecutionLog(format("Updated Service %s with Arn %s %n", updateServiceRequest.service(),
+                                         updateServiceResponse.service().serviceArn()),
+            LogLevel.INFO);
       }
-
-      logCallback.saveExecutionLog(
-          format("Updating Service %s with task definition %s and desired count %s %n", updateServiceRequest.service(),
-              updateServiceRequest.taskDefinition(),
-              updateServiceRequest.desiredCount() == null ? "same as existing" : updateServiceRequest.desiredCount()),
-          LogLevel.INFO);
-      UpdateServiceResponse updateServiceResponse =
-          updateService(updateServiceRequest, ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
-
-      List<ServiceEvent> eventsAlreadyProcessed = new ArrayList<>(updateServiceResponse.service().events());
-
-      ecsServiceSteadyStateCheck(logCallback, ecsInfraConfig.getAwsConnectorDTO(), createServiceRequest.cluster(),
-          createServiceRequest.serviceName(), ecsInfraConfig.getRegion(), timeoutInMillis, eventsAlreadyProcessed);
-
-      logCallback.saveExecutionLog(format("Updated Service %s with Arn %s %n", updateServiceRequest.service(),
-                                       updateServiceResponse.service().serviceArn()),
-          LogLevel.INFO);
-
       registerScalableTargets(ecsScalableTargetManifestContentList, ecsInfraConfig.getAwsConnectorDTO(),
           service.serviceName(), ecsInfraConfig.getCluster(), ecsInfraConfig.getRegion(), logCallback);
 
       attachScalingPolicies(ecsScalingPolicyManifestContentList, ecsInfraConfig.getAwsConnectorDTO(),
           service.serviceName(), ecsInfraConfig.getCluster(), ecsInfraConfig.getRegion(), logCallback);
     }
+  }
+
+  private boolean isSameAsCurrentService(
+      UpdateServiceRequest updateServiceRequest, Optional<Service> optionalService, EcsInfraConfig ecsInfraConfig) {
+    Service service = optionalService.get();
+    CreateServiceRequest.Builder createServiceRequestBuilder =
+        EcsMapper.createCreateServiceRequestBuilderFromService(service);
+    createServiceRequestBuilder.cluster(ecsInfraConfig.getCluster());
+    UpdateServiceRequest currentUpdateServiceRequest =
+        EcsMapper.createServiceRequestToUpdateServiceRequest(createServiceRequestBuilder.build(), false);
+    return currentUpdateServiceRequest.equals(updateServiceRequest);
   }
 
   private boolean notAllDesiredTasksRunning(AwsInternalConfig awsConfig, String clusterName, String serviceName,
@@ -1441,5 +1460,12 @@ public class EcsCommandTaskNGHelper {
 
   public void printManifestContent(String manifestContent, LogCallback logCallback) {
     logCallback.saveExecutionLog(manifestContent);
+  }
+
+  public String toYaml(Object obj) throws JsonProcessingException {
+    ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
+    objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+    return objectMapper.writeValueAsString(obj);
   }
 }

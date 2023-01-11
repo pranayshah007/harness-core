@@ -130,6 +130,7 @@ import software.wings.sm.WorkflowStandardParamsExtensionService;
 import com.amazonaws.services.ec2.model.Instance;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import dev.morphia.Key;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -140,7 +141,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
-import org.mongodb.morphia.Key;
 
 @OwnedBy(CDP)
 public class AwsAmiServiceDeployStateTest extends WingsBaseTest {

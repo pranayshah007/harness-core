@@ -307,7 +307,7 @@ def update_fx_rate_column_in_raw_table(jsonData, azure_column_mapping):
 def insert_currencies_with_unit_conversion_factors_in_bq(jsonData, azure_column_mapping):
     ds = "%s.%s" % (PROJECTID, jsonData["datasetName"])
     current_timestamp = datetime.datetime.utcnow()
-    currentMonth = current_timestamp.month
+    currentMonth = f"{current_timestamp.month:02d}"
     currentYear = current_timestamp.year
 
     year, month = jsonData["reportYear"], jsonData["reportMonth"]
@@ -422,7 +422,7 @@ def fetch_default_conversion_factors_from_API(jsonData):
 
     # update currencyConversionFactorDefault table if reportMonth is current month
     current_timestamp = datetime.datetime.utcnow()
-    currentMonth = current_timestamp.month
+    currentMonth = f"{current_timestamp.month:02d}"
     currentYear = current_timestamp.year
     if str(year) != str(currentYear) or str(month) != str(currentMonth):
         return
@@ -513,7 +513,7 @@ def fetch_default_conversion_factors_from_billing_export(jsonData):
     year, month = jsonData["reportYear"], jsonData["reportMonth"]
     date_start = "%s-%s-01" % (year, month)
     current_timestamp = datetime.datetime.utcnow()
-    currentMonth = current_timestamp.month
+    currentMonth = f"{current_timestamp.month:02d}"
     currentYear = current_timestamp.year
     if str(year) != str(currentYear) or str(month) != str(currentMonth):
         return

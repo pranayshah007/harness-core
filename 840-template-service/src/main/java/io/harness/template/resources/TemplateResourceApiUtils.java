@@ -99,7 +99,7 @@ public class TemplateResourceApiUtils {
           "Gets Template along with Template inputs for template with identifier %s in project %s, org %s, account %s",
           templateIdentifier, project, org, account));
       TemplateWithInputsResponseDTO templateWithInputs =
-          templateService.getTemplateWithInputs(account, org, project, templateIdentifier, versionLabel);
+          templateService.getTemplateWithInputs(account, org, project, templateIdentifier, versionLabel, false);
       String version = "0";
       if (templateWithInputs != null && templateWithInputs.getTemplateResponseDTO() != null
           && templateWithInputs.getTemplateResponseDTO().getVersion() != null) {

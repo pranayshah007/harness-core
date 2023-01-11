@@ -7,27 +7,33 @@
 
 package io.harness.auditevent.streaming;
 
-import com.mongodb.client.FindIterable;
-import com.mongodb.client.MongoCursor;
+import io.harness.audit.entities.streaming.StreamingDestination;
+import io.harness.audit.entities.streaming.StreamingDestinationFilterProperties;
+import io.harness.auditevent.streaming.services.StreamingDestinationsService;
+import io.harness.spec.server.audit.v1.model.StreamingDestinationDTO;
+
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import org.bson.Document;
+import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.mongodb.core.MongoTemplate;
 
 @Slf4j
 public class AuditEventPublisherTasklet implements Tasklet {
-  @Autowired private MongoTemplate mongoTemplate;
+  @Autowired private StreamingDestinationsService streamingDestinationsService;
+
   @Override
   public RepeatStatus execute(StepContribution stepContribution, ChunkContext chunkContext) throws Exception {
-    FindIterable<Document> auditEvents = mongoTemplate.getCollection("auditEvents").find().batchSize(1000);
-    MongoCursor<Document> cursor = auditEvents.cursor();
-    while (cursor.hasNext()) {
-      log.info(cursor.next().toJson());
-    }
+    JobParameters jobParameters = chunkContext.getStepContext().getStepExecution().getJobParameters();
+    String accountIdentifier = jobParameters.getString("accountIdentifier");
+    List<StreamingDestination> streamingDestinations = streamingDestinationsService.list(accountIdentifier,
+        StreamingDestinationFilterProperties.builder().status(StreamingDestinationDTO.StatusEnum.ACTIVE).build());
+    streamingDestinations.forEach((StreamingDestination streamingDestination) -> {
+      log.info("Streaming destination: {}", streamingDestination.getIdentifier());
+    });
     return null;
   }
 }

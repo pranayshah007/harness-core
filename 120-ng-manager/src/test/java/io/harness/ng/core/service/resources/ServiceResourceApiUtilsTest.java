@@ -38,7 +38,7 @@ import org.junit.experimental.categories.Category;
 public class ServiceResourceApiUtilsTest extends CategoryTest {
   private ObjectMapper objectMapper;
   private Validator validator;
-  String slug = randomAlphabetic(10);
+  String identifier = randomAlphabetic(10);
   String name = randomAlphabetic(10);
   String account = randomAlphabetic(10);
   String org = randomAlphabetic(10);
@@ -60,7 +60,7 @@ public class ServiceResourceApiUtilsTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testServiceEntity() {
     ServiceRequest serviceRequest = new ServiceRequest();
-    serviceRequest.setSlug(slug);
+    serviceRequest.setIdentifier(identifier);
     serviceRequest.setName(name);
     serviceRequest.description(description);
     serviceRequest.setTags(null);
@@ -69,7 +69,7 @@ public class ServiceResourceApiUtilsTest extends CategoryTest {
     assertThat(violations.isEmpty()).as(violations.toString()).isTrue();
 
     assertEquals(account, serviceEntity.getAccountId());
-    assertEquals(slug, serviceEntity.getIdentifier());
+    assertEquals(identifier, serviceEntity.getIdentifier());
     assertEquals(name, serviceEntity.getName());
     assertEquals(org, serviceEntity.getOrgIdentifier());
     assertEquals(project, serviceEntity.getProjectIdentifier());
@@ -79,7 +79,7 @@ public class ServiceResourceApiUtilsTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testServiceResponse() {
     ServiceEntity serviceEntity = ServiceEntity.builder()
-                                      .identifier(slug)
+                                      .identifier(identifier)
                                       .accountId(account)
                                       .orgIdentifier(org)
                                       .projectIdentifier(project)
@@ -93,7 +93,7 @@ public class ServiceResourceApiUtilsTest extends CategoryTest {
     assertThat(violations.isEmpty()).as(violations.toString()).isTrue();
 
     assertEquals(account, serviceResponse.getService().getAccount());
-    assertEquals(slug, serviceResponse.getService().getSlug());
+    assertEquals(identifier, serviceResponse.getService().getIdentifier());
     assertEquals(name, serviceResponse.getService().getName());
     assertEquals(org, serviceResponse.getService().getOrg());
     assertEquals(project, serviceResponse.getService().getProject());
@@ -107,7 +107,7 @@ public class ServiceResourceApiUtilsTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testAccessListServiceResponse() {
     ServiceEntity serviceEntity = ServiceEntity.builder()
-                                      .identifier(slug)
+                                      .identifier(identifier)
                                       .accountId(account)
                                       .orgIdentifier(org)
                                       .projectIdentifier(project)
@@ -121,7 +121,7 @@ public class ServiceResourceApiUtilsTest extends CategoryTest {
     assertThat(violations.isEmpty()).as(violations.toString()).isTrue();
 
     assertEquals(account, serviceResponse.getService().getAccount());
-    assertEquals(slug, serviceResponse.getService().getSlug());
+    assertEquals(identifier, serviceResponse.getService().getIdentifier());
     assertEquals(name, serviceResponse.getService().getName());
     assertEquals(org, serviceResponse.getService().getOrg());
     assertEquals(project, serviceResponse.getService().getProject());
@@ -139,7 +139,7 @@ public class ServiceResourceApiUtilsTest extends CategoryTest {
     service.setAccount(account);
     service.setOrg(org);
     service.setProject(project);
-    service.setSlug(slug);
+    service.setIdentifier(identifier);
     service.setName(name);
     service.setDescription(description);
     serviceResponse.setService(service);
@@ -151,7 +151,7 @@ public class ServiceResourceApiUtilsTest extends CategoryTest {
     assertThat(violations.isEmpty()).as(violations.toString()).isTrue();
 
     assertEquals(CDNGRbacPermissions.SERVICE_RUNTIME_PERMISSION, permissionCheckDTO.getPermission());
-    assertEquals(slug, permissionCheckDTO.getResourceIdentifier());
+    assertEquals(identifier, permissionCheckDTO.getResourceIdentifier());
     assertEquals(org, permissionCheckDTO.getResourceScope().getOrgIdentifier());
     assertEquals(account, permissionCheckDTO.getResourceScope().getAccountIdentifier());
     assertEquals(project, permissionCheckDTO.getResourceScope().getProjectIdentifier());

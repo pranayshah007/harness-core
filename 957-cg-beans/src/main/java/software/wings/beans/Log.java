@@ -57,6 +57,8 @@ import com.google.cloud.datastore.Key;
 import com.google.cloud.datastore.LongValue;
 import com.google.cloud.datastore.StringValue;
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
 import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.util.Date;
@@ -67,8 +69,6 @@ import lombok.EqualsAndHashCode;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.UtilityClass;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
 
 @Data
 @EqualsAndHashCode(callSuper = false, exclude = {"validUntil"})
@@ -119,7 +119,7 @@ public class Log implements GoogleDataStoreAware, PersistentEntity, AccountDataR
   @Override
   public com.google.cloud.datastore.Entity convertToCloudStorageEntity(Datastore datastore) {
     Key taskKey = datastore.newKeyFactory()
-                      .setKind(Log.class.getAnnotation(org.mongodb.morphia.annotations.Entity.class).value())
+                      .setKind(Log.class.getAnnotation(dev.morphia.annotations.Entity.class).value())
                       .newKey(generateUuid());
     try {
       com.google.cloud.datastore.Entity.Builder logEntityBuilder =

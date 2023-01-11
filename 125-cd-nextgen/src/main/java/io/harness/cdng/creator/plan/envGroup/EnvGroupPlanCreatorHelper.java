@@ -15,7 +15,6 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.cdng.creator.plan.environment.EnvironmentPlanCreatorHelper;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.envGroup.services.EnvironmentGroupService;
@@ -28,15 +27,12 @@ import io.harness.cdng.environment.helper.EnvironmentPlanCreatorConfigMapper;
 import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.gitops.entity.Cluster;
-import io.harness.cdng.gitops.service.ClusterService;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.mappers.EnvironmentMapper;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
-import io.harness.pms.yaml.ParameterField;
-import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -62,8 +58,6 @@ public class EnvGroupPlanCreatorHelper {
   @Inject private EnvironmentGroupService environmentGroupService;
   @Inject private EnvironmentService environmentService;
   @Inject private EnvironmentInfraFilterHelper environmentInfraFilterHelper;
-  @Inject private ClusterService clusterService;
-  @Inject private NGFeatureFlagHelperService featureFlagHelperService;
 
   public EnvGroupPlanCreatorConfig createEnvGroupPlanCreatorConfig(
       PlanCreationContext ctx, EnvironmentGroupYaml envGroupYaml) {
@@ -89,52 +83,7 @@ public class EnvGroupPlanCreatorHelper {
     List<EnvironmentPlanCreatorConfig> envConfigs = new ArrayList<>();
     EnvGroupPlanCreatorConfigBuilder envGroupPlanCreatorConfigBuilder = EnvGroupPlanCreatorConfig.builder();
 
-    // Filters are specified so no environment exists in the yaml.
-    // Apply filtering based on provided filters on all environments and clusters in the envGroup
-    // If no clusters are eligible then throw an exception.
-
-    if (featureFlagHelperService.isEnabled(ctx.getAccountIdentifier(), FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS)
-        && ParameterField.isNotNull(envGroupYaml.getFilters()) && isNotEmpty(envGroupYaml.getFilters().getValue())) {
-      List<FilterYaml> filterYamls = envGroupYaml.getFilters().getValue();
-
-      // Environment Filtering applied
-      Set<Environment> filteredEnvs =
-          environmentInfraFilterHelper.applyFiltersOnEnvs(new HashSet<>(environments), filterYamls);
-
-      List<String> filteredEnvRefs = filteredEnvs.stream().map(Environment::getIdentifier).collect(Collectors.toList());
-
-      Map<String, io.harness.cdng.gitops.entity.Cluster> clsToCluster =
-          environmentInfraFilterHelper.getClusterRefToNGGitOpsClusterMap(
-              accountIdentifier, orgIdentifier, projectIdentifier, filteredEnvRefs);
-
-      Set<String> clsRefs = clsToCluster.values().stream().map(Cluster::getClusterRef).collect(Collectors.toSet());
-
-      // If no clusters exists for environment then we are done here
-      if (isNotEmpty(clsRefs)) {
-        List<io.harness.gitops.models.Cluster> clusterList = environmentInfraFilterHelper.fetchClustersFromGitOps(
-            accountIdentifier, orgIdentifier, projectIdentifier, clsRefs);
-
-        Set<io.harness.cdng.gitops.entity.Cluster> filteredClusters =
-            environmentInfraFilterHelper.applyFilteringOnClusters(
-                filterYamls, clsToCluster, new HashSet<>(clusterList));
-
-        List<EnvironmentYamlV2> environmentYamlV2List = new ArrayList<>();
-        for (Environment env : filteredEnvs) {
-          List<Cluster> clustersInEnv =
-              filteredClusters.stream().filter(e -> e.getEnvRef() != env.getIdentifier()).collect(Collectors.toList());
-          List<String> filteredClusterRefs =
-              clustersInEnv.stream().map(Cluster::getClusterRef).collect(Collectors.toList());
-
-          createEnvConfigsForFiltersFlow(envConfigs, env, filteredClusterRefs);
-
-          EnvironmentYamlV2 environmentYamlV2 =
-              EnvironmentYamlV2.builder().environmentRef(ParameterField.createValueField(env.getIdentifier())).build();
-          environmentYamlV2List.add(environmentYamlV2);
-        }
-
-        envGroupYaml.setEnvironments(ParameterField.createValueField(environmentYamlV2List));
-      }
-    } else {
+    if (!EnvironmentInfraFilterHelper.areFiltersPresent(envGroupYaml)) {
       List<EnvironmentYamlV2> envV2Yamls = envGroupYaml.getEnvironments().getValue();
       if (envGroupYaml.getDeployToAll().getValue()) {
         for (Environment env : environments) {
@@ -150,33 +99,32 @@ public class EnvGroupPlanCreatorHelper {
           createEnvConfigs(envConfigs, envV2Yaml, env);
         }
       } else {
+        List<EnvironmentPlanCreatorConfig> envConfigsForEnvironments = new ArrayList<>();
         for (EnvironmentYamlV2 envV2Yaml : envV2Yamls) {
           Environment environment = envMapping.get(envV2Yaml.getEnvironmentRef().getValue());
 
-          if (featureFlagHelperService.isEnabled(
-                  ctx.getAccountIdentifier(), FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS)
-              && isNotEmpty(envV2Yaml.getFilters().getValue())) {
-            processFiltersForEachEnvironment(
-                accountIdentifier, orgIdentifier, projectIdentifier, envV2Yaml, envConfigs, environment);
-          } else {
-            if (environment == null) {
-              throw new InvalidRequestException(format("Environment %s not found in environment group %s",
-                  envGroupYaml.getEnvGroupRef().getValue(), entity.get().getIdentifier()));
-            }
-            createEnvConfigs(envConfigs, envV2Yaml, environment);
+          if (environment == null) {
+            throw new InvalidRequestException(format("Environment %s not found in environment group %s",
+                envGroupYaml.getEnvGroupRef().getValue(), entity.get().getIdentifier()));
           }
+          createEnvConfigs(envConfigsForEnvironments, envV2Yaml, environment);
         }
+        envConfigs.addAll(envConfigsForEnvironments);
       }
     }
 
-    return envGroupPlanCreatorConfigBuilder.name(entity.get().getName())
+    envGroupPlanCreatorConfigBuilder.name(entity.get().getName())
         .identifier(entity.get().getIdentifier())
         .orgIdentifier(orgIdentifier)
         .projectIdentifier(projectIdentifier)
         .environmentGroupRef(envGroupYaml.getEnvGroupRef())
         .deployToAll(envGroupYaml.getDeployToAll().getValue())
-        .environmentPlanCreatorConfigs(envConfigs)
-        .build();
+        .environmentPlanCreatorConfigs(envConfigs);
+
+    if (isEmpty(envConfigs)) {
+      envGroupPlanCreatorConfigBuilder.environmentGroupYaml(envGroupYaml);
+    }
+    return envGroupPlanCreatorConfigBuilder.build();
   }
 
   private void processFiltersForEachEnvironment(String accountIdentifier, String orgIdentifier,

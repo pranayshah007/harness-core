@@ -97,6 +97,7 @@ public class InternalChangeConsumerServiceImpl implements InternalChangeConsumer
         changeEventDTO.setServiceIdentifier(internalChangeEventDTO.getServiceIdentifier(j));
         changeEventDTO.setEnvIdentifier(internalChangeEventDTO.getEnvironmentIdentifier(i));
         changeEventService.register(changeEventDTO);
+        changeEventDTO.setMonitoredServiceIdentifier(null);
       }
     }
   }

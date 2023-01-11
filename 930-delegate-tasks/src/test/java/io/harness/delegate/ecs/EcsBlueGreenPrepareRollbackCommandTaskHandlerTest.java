@@ -263,7 +263,8 @@ public class EcsBlueGreenPrepareRollbackCommandTaskHandlerTest extends CategoryT
     Service service = optionalService.get();
 
     // Get createServiceRequestBuilderString from service
-    String createServiceRequestBuilderString = EcsMapper.createCreateServiceRequestFromService(service);
+    String createServiceRequestBuilderString =
+        ecsCommandTaskHelper.toYaml(EcsMapper.createCreateServiceRequestBuilderFromService(service));
     assertThat(ecsBlueGreenPrepareRollbackDataResponse.getCommandExecutionStatus())
         .isEqualTo(CommandExecutionStatus.SUCCESS);
     assertThat(ecsBlueGreenPrepareRollbackDataResponse.getEcsBlueGreenPrepareRollbackDataResult()

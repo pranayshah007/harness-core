@@ -83,7 +83,8 @@ public class CIDelegateTaskExecutorTest extends CIExecutionTestBase {
                              .build();
 
     when(delegateCallbackTokenSupplier.get()).thenReturn(DelegateCallbackToken.newBuilder().build());
-    when(delegateServiceGrpcClient.submitAsyncTask(eq(expectedDelegateTaskRequest), any(), any())).thenReturn(TASK_ID);
+    when(delegateServiceGrpcClient.submitAsyncTask(eq(expectedDelegateTaskRequest), any(), any(), any()))
+        .thenReturn(TASK_ID);
 
     String taskId =
         ciDelegateTaskExecutor.queueTask(new HashMap<>(), task, new ArrayList<>(), new ArrayList<>(), false);
@@ -108,7 +109,7 @@ public class CIDelegateTaskExecutorTest extends CIExecutionTestBase {
                              .build();
 
     when(delegateCallbackTokenSupplier.get()).thenReturn(DelegateCallbackToken.newBuilder().build());
-    when(delegateServiceGrpcClient.submitAsyncTask(any(), any(), any())).thenReturn(TASK_ID);
+    when(delegateServiceGrpcClient.submitAsyncTask(any(), any(), any(), any())).thenReturn(TASK_ID);
 
     String taskId =
         ciDelegateTaskExecutor.queueTask(new HashMap<>(), task, new ArrayList<>(), new ArrayList<>(), false);
@@ -133,7 +134,7 @@ public class CIDelegateTaskExecutorTest extends CIExecutionTestBase {
                              .build();
 
     when(delegateCallbackTokenSupplier.get()).thenReturn(DelegateCallbackToken.newBuilder().build());
-    when(delegateServiceGrpcClient.submitAsyncTask(eq(expectedDelegateTaskRequestWithEmptyParams), any(), any()))
+    when(delegateServiceGrpcClient.submitAsyncTask(eq(expectedDelegateTaskRequestWithEmptyParams), any(), any(), any()))
         .thenReturn(TASK_ID);
 
     assertThatThrownBy(

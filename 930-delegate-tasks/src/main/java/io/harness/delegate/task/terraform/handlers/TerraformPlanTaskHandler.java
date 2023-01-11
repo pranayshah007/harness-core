@@ -121,8 +121,9 @@ public class TerraformPlanTaskHandler extends TerraformAbstractTaskHandler {
     }
 
     String tfVarDirectory = Paths.get(baseDir, TF_VAR_FILES_DIR).toString();
-    List<String> varFilePaths = terraformBaseHelper.checkoutRemoteVarFileAndConvertToVarFilePaths(
-        taskParameters.getVarFileInfos(), scriptDirectory, logCallback, taskParameters.getAccountId(), tfVarDirectory);
+    List<String> varFilePaths =
+        terraformBaseHelper.checkoutRemoteVarFileAndConvertToVarFilePaths(taskParameters.getVarFileInfos(),
+            scriptDirectory, logCallback, taskParameters.getAccountId(), tfVarDirectory, commitIdToFetchedFilesMap);
 
     String tfBackendConfigDirectory = Paths.get(baseDir, TF_BACKEND_CONFIG_DIR).toString();
 
@@ -131,11 +132,12 @@ public class TerraformPlanTaskHandler extends TerraformAbstractTaskHandler {
         ? TerraformHelperUtils.createFileFromStringContent(
             taskParameters.getBackendConfig(), scriptDirectory, TERRAFORM_BACKEND_CONFIGS_FILE_NAME)
         : taskParameters.getBackendConfig();
-    TerraformBackendConfigFileInfo configFileInfo = null;
+    TerraformBackendConfigFileInfo configFileInfo;
     if (taskParameters.getBackendConfigFileInfo() != null) {
       configFileInfo = taskParameters.getBackendConfigFileInfo();
-      backendConfigFile = terraformBaseHelper.checkoutRemoteBackendConfigFileAndConvertToFilePath(
-          configFileInfo, scriptDirectory, logCallback, taskParameters.getAccountId(), tfBackendConfigDirectory);
+      backendConfigFile =
+          terraformBaseHelper.checkoutRemoteBackendConfigFileAndConvertToFilePath(configFileInfo, scriptDirectory,
+              logCallback, taskParameters.getAccountId(), tfBackendConfigDirectory, commitIdToFetchedFilesMap);
     }
 
     try (PlanJsonLogOutputStream planJsonLogOutputStream =
@@ -175,21 +177,6 @@ public class TerraformPlanTaskHandler extends TerraformAbstractTaskHandler {
           format("Script execution finished with status: %s, exit-code %d",
               terraformStepResponse.getCliResponse().getCommandExecutionStatus(), detailedExitCode),
           INFO, CommandExecutionStatus.RUNNING);
-
-      if (isNotEmpty(taskParameters.getVarFileInfos())) {
-        terraformBaseHelper.addVarFilesCommitIdsToMap(
-            taskParameters.getAccountId(), taskParameters.getVarFileInfos(), commitIdToFetchedFilesMap);
-      }
-
-      if (taskParameters.getBackendConfigFileInfo() != null) {
-        terraformBaseHelper.addVarFilesCommitIdsToMap(
-            taskParameters.getAccountId(), taskParameters.getVarFileInfos(), commitIdToFetchedFilesMap);
-      }
-
-      if (configFileInfo != null) {
-        terraformBaseHelper.addBackendFileCommitIdsToMap(
-            taskParameters.getAccountId(), taskParameters.getBackendConfigFileInfo(), commitIdToFetchedFilesMap);
-      }
 
       File tfStateFile = TerraformHelperUtils.getTerraformStateFile(scriptDirectory, taskParameters.getWorkspace());
 

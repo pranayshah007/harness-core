@@ -778,13 +778,13 @@ public class EcsStepCommonHelper extends EcsStepUtils {
         runTaskDefinitionS3FetchFileConfig, runTaskRequestDefinitionS3FetchFileConfig);
   }
 
-  private EcsGitFetchFileConfig getEcsGitFetchFilesConfigFromManifestOutcome(
+  EcsGitFetchFileConfig getEcsGitFetchFilesConfigFromManifestOutcome(
       ManifestOutcome manifestOutcome, Ambiance ambiance, EcsStepHelper ecsStepHelper) {
     StoreConfig storeConfig = manifestOutcome.getStore();
-    GitStoreConfig gitStoreConfig = (GitStoreConfig) storeConfig;
     if (!ManifestStoreType.isInGitSubset(storeConfig.getKind())) {
       throw new InvalidRequestException("Invalid kind of storeConfig for Ecs step", USER);
     }
+    GitStoreConfig gitStoreConfig = (GitStoreConfig) storeConfig;
     return getEcsGitFetchFilesConfig(ambiance, gitStoreConfig, manifestOutcome, ecsStepHelper);
   }
 
@@ -932,7 +932,7 @@ public class EcsStepCommonHelper extends EcsStepUtils {
         .build();
   }
 
-  private TaskChainResponse getGitFetchFileRunTaskResponse(Ambiance ambiance, boolean shouldOpenLogStream,
+  TaskChainResponse getGitFetchFileRunTaskResponse(Ambiance ambiance, boolean shouldOpenLogStream,
       StepElementParameters stepElementParameters, EcsGitFetchPassThroughData ecsGitFetchPassThroughData,
       EcsGitFetchRunTaskFileConfig taskDefinitionEcsGitFetchRunTaskFileConfig,
       EcsGitFetchRunTaskFileConfig ecsRunTaskRequestDefinitionEcsGitFetchRunTaskFileConfig) {

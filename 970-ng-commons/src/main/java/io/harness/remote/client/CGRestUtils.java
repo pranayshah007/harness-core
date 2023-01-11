@@ -53,6 +53,15 @@ public class CGRestUtils {
     }
   }
 
+  public static <T> T getResponse(Call<RestResponse<T>> request, RetryPolicy<Response<RestResponse<T>>> retryPolicy) {
+    try {
+      Response<RestResponse<T>> response = Failsafe.with(retryPolicy).get(() -> executeRequest(request));
+      return handleResponse(response, DEFAULT_ERROR_MESSAGE);
+    } catch (FailsafeException ex) {
+      throw new UnexpectedException(DEFAULT_ERROR_MESSAGE, ex.getCause());
+    }
+  }
+
   public static <T> T getResponse(Call<RestResponse<T>> request, String defaultErrorMessage) {
     RetryPolicy<Response<RestResponse<T>>> retryPolicy = getRetryPolicy(format(defaultErrorMessage));
     try {
@@ -99,6 +108,16 @@ public class CGRestUtils {
   private <T> RetryPolicy<Response<RestResponse<T>>> getRetryPolicy(String failureMessage) {
     return new RetryPolicy<Response<RestResponse<T>>>()
         .withBackoff(1, 10, ChronoUnit.SECONDS)
+        .handle(IOException.class)
+        .handleResultIf(result -> !result.isSuccessful() && isRetryableHttpCode(result.code()))
+        .withMaxAttempts(MAX_ATTEMPTS)
+        .onFailedAttempt(event -> handleFailure(event, failureMessage));
+  }
+
+  public static <T> RetryPolicy<Response<RestResponse<T>>> getRetryPolicy(
+      String failureMessage, long initialDelay, long maxDelay, ChronoUnit chronoUnit) {
+    return new RetryPolicy<Response<RestResponse<T>>>()
+        .withBackoff(initialDelay, maxDelay, chronoUnit)
         .handle(IOException.class)
         .handleResultIf(result -> !result.isSuccessful() && isRetryableHttpCode(result.code()))
         .withMaxAttempts(MAX_ATTEMPTS)

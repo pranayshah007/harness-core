@@ -13,7 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.instancesync.InstanceSyncResourceClient;
-import io.harness.utils.RestCallToNGManagerClientUtils;
+import io.harness.remote.client.NGRestUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -36,7 +36,7 @@ public class InstanceSyncResponsePublisher {
     int retry = 0;
     while (!response && retry < 3) {
       try {
-        response = RestCallToNGManagerClientUtils.execute(instanceSyncResourceClient.sendPerpetualTaskResponse(
+        response = NGRestUtils.getResponse(instanceSyncResourceClient.sendPerpetualTaskResponse(
             accountIdentifier, perpetualTaskId, instanceSyncPerpetualTaskResponse));
       } catch (Exception exception) {
         log.error(

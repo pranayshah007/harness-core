@@ -9971,7 +9971,6 @@
                 "@maven//:io_kubernetes_client_java_api"
             ],
             "io.kubernetes.client.openapi.models": [
-                "@maven//:io_kubernetes_client_java_api",
                 "@maven//:io_kubernetes_client_java_api_fluent"
             ],
             "io.kubernetes.client.proto": [

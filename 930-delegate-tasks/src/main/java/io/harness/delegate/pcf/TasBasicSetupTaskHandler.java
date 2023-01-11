@@ -474,6 +474,7 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
       ApplicationDetail applicationDetail = cfDeploymentManager.getApplicationByName(cfRequestConfig);
       // Unmap routes from application having 0 instances
       if (isNotEmpty(applicationDetail.getUrls())) {
+        cfRequestConfig.setLoggedin(false);
         RetryPolicy retryPolicy =
             RetryPolicy.builder()
                 .userMessageOnFailure(String.format(

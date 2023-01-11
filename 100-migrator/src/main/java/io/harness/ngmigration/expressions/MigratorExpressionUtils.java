@@ -11,8 +11,14 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.expression.ExpressionEvaluatorUtils;
 
 import com.google.inject.Singleton;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 
 @Singleton
@@ -69,5 +75,29 @@ public class MigratorExpressionUtils {
     }
 
     return context;
+  }
+
+  public static Set<String> extractAll(String source) {
+    /*
+      Should start with `${`
+      Should end with `}`
+      Between the curly braces it can match any word character(a-z, A-Z, 0-9, _)
+    */
+    String pattern = "\\$\\{[\\w-.\"()]+}";
+    if (source == null) {
+      return Collections.emptySet();
+    }
+    Set<String> matches = new HashSet<>();
+    final Pattern compiled = Pattern.compile(pattern);
+    final Matcher matcher = compiled.matcher(source);
+    while (matcher.find()) {
+      String match = matcher.group();
+      if (!match.isEmpty()) {
+        matches.add(match);
+      }
+    }
+    // We only want to return what is within the curly braces.
+    // ${artifact.image} -> artifact.image
+    return matches.stream().map(str -> str.substring(2, str.length() - 1)).collect(Collectors.toSet());
   }
 }

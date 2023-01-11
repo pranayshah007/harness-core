@@ -50,10 +50,10 @@ public class ProtoBuildMapper {
    * folder as the proto files.
    *
    * @param srcs matched with the input pattern.
-   * @return dependency map from proto specific java symbols to proto target to depend on.
    * @throws IOException
    */
-  public SymbolDependencyMap protoToBuildTargetDependencyMap(String srcs) throws IOException {
+  public void protoToBuildTargetDependencyMap(final String srcs, final SymbolDependencyMap protoSymbolToDependency)
+      throws IOException {
     String pattern = Paths.get(workspace.toString(), srcs).toString();
     log.info("Parsing proto files: {}", pattern);
 
@@ -62,7 +62,7 @@ public class ProtoBuildMapper {
       paths.forEach(this::parseFile);
     }
 
-    return buildProtoSymbolToDependencyMap();
+    buildProtoSymbolToDependencyMap(protoSymbolToDependency);
   }
 
   private void parseFile(Path path) {
@@ -108,16 +108,12 @@ public class ProtoBuildMapper {
 
   /**
    * Constructs a symbol dependency map from class name corresponding to a Proto message to java target.
-   *
-   * @return symbol dependency map.
    */
-  private SymbolDependencyMap buildProtoSymbolToDependencyMap() {
-    SymbolDependencyMap protoSymbolToDependency = new SymbolDependencyMap();
+  private void buildProtoSymbolToDependencyMap(final SymbolDependencyMap protoSymbolToDependency) {
     for (Map.Entry<String, String> entry : protoMessageToProtoFolder.entrySet()) {
       Optional<String> javaTarget = findJavaTargetForFolder(entry.getValue());
-      javaTarget.ifPresent(target -> { protoSymbolToDependency.addSymbolTarget(entry.getKey(), target); });
+      javaTarget.ifPresent(target -> protoSymbolToDependency.addSymbolTarget(entry.getKey(), target));
     }
-    return protoSymbolToDependency;
   }
 
   /**

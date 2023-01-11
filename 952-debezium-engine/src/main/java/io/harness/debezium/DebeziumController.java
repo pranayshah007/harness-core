@@ -20,8 +20,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Singleton;
 import io.debezium.engine.ChangeEvent;
 import io.debezium.engine.DebeziumEngine;
-import io.debezium.engine.format.Json;
-import java.io.IOException;
 import java.time.Duration;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
@@ -39,14 +37,16 @@ public class DebeziumController<T extends MongoCollectionChangeConsumer> impleme
   private final ExecutorService executorService;
   private final PersistentLocker locker;
   private final AtomicBoolean shouldStop;
+  private final DebeziumService debeziumService;
 
-  public DebeziumController(
-      Properties props, T changeConsumer, PersistentLocker locker, ExecutorService executorService) {
+  public DebeziumController(Properties props, T changeConsumer, PersistentLocker locker,
+      ExecutorService executorService, DebeziumService debeziumService) {
     this.props = props;
     this.changeConsumer = changeConsumer;
     this.executorService = executorService;
     this.locker = locker;
     this.shouldStop = new AtomicBoolean(false);
+    this.debeziumService = debeziumService;
   }
 
   @Override
@@ -59,9 +59,10 @@ public class DebeziumController<T extends MongoCollectionChangeConsumer> impleme
           continue;
         }
         RLock rLock = (RLock) aggregatorLock.getLock();
-        debeziumEngine = getEngine(props);
+        debeziumEngine = debeziumService.getEngine(props, changeConsumer, changeConsumer.getCollection());
         Future<?> future = executorService.submit(debeziumEngine);
-        log.info("Starting Debezium Engine for Collection {} ...", changeConsumer.getCollection());
+        log.info("Starting Debezium Engine for Collection {} at {}", changeConsumer.getCollection(),
+            System.currentTimeMillis());
         while (!future.isDone() && rLock.isHeldByCurrentThread()) {
           log.info("primary lock remaining ttl {}, isHeldByCurrentThread {}, holdCount {}, name {}",
               rLock.remainTimeToLive(), rLock.isHeldByCurrentThread(), rLock.getHoldCount(), rLock.getName());
@@ -74,23 +75,12 @@ public class DebeziumController<T extends MongoCollectionChangeConsumer> impleme
         log.error("Primary sync stopped due to exception", e);
       } finally {
         try {
-          if (debeziumEngine != null) {
-            debeziumEngine.close();
-            TimeUnit.SECONDS.sleep(10);
-          }
-        } catch (IOException e) {
-          log.error("Failed to close debezium engine due to IO exception", e);
-        } catch (InterruptedException e) {
-          log.warn("Interrupted while waiting for debezium engine to close", e);
+          debeziumService.closeEngine(debeziumEngine, changeConsumer.getCollection());
         } catch (Exception e) {
-          log.error("Failed to close debezium engine due to unexpected exception", e);
+          log.error("Failed to close debezium engine due to exception", e);
         }
       }
     }
-  }
-
-  protected DebeziumEngine<ChangeEvent<String, String>> getEngine(Properties props) {
-    return DebeziumEngine.create(Json.class).using(props).notifying(changeConsumer).build();
   }
 
   @VisibleForTesting

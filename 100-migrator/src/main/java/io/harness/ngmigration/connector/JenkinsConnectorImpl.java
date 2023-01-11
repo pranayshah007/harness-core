@@ -49,18 +49,18 @@ public class JenkinsConnectorImpl implements BaseConnector {
       SettingAttribute settingAttribute, Set<CgEntityId> childEntities, Map<CgEntityId, NGYamlFile> migratedEntities) {
     JenkinsConfig jenkinsConfig = (JenkinsConfig) settingAttribute.getValue();
     JenkinsAuthenticationDTOBuilder jenkinsAuthenticationDTOBuilder = JenkinsAuthenticationDTO.builder();
-    if (USERNAME_AUTH_TYPE.equals(jenkinsConfig.getAuthMechanism())) {
+    if (JenkinsUtils.TOKEN_FIELD.equals(jenkinsConfig.getAuthMechanism())) {
+      jenkinsAuthenticationDTOBuilder.authType(BEARER_TOKEN)
+          .credentials(JenkinsBearerTokenDTO.builder()
+                           .tokenRef(MigratorUtility.getSecretRef(migratedEntities, jenkinsConfig.getEncryptedToken()))
+                           .build());
+    } else {
       jenkinsAuthenticationDTOBuilder.authType(USER_PASSWORD)
           .credentials(
               JenkinsUserNamePasswordDTO.builder()
                   .username(jenkinsConfig.getUsername())
                   .passwordRef(MigratorUtility.getSecretRef(migratedEntities, jenkinsConfig.getEncryptedPassword()))
                   .build());
-    } else if (JenkinsUtils.TOKEN_FIELD.equals(jenkinsConfig.getAuthMechanism())) {
-      jenkinsAuthenticationDTOBuilder.authType(BEARER_TOKEN)
-          .credentials(JenkinsBearerTokenDTO.builder()
-                           .tokenRef(MigratorUtility.getSecretRef(migratedEntities, jenkinsConfig.getEncryptedToken()))
-                           .build());
     }
     return JenkinsConnectorDTO.builder()
         .jenkinsUrl(jenkinsConfig.getJenkinsUrl())

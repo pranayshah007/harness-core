@@ -17,11 +17,11 @@ import io.harness.ng.DbAliases;
 import io.harness.notification.SmtpConfig;
 
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.annotation.Version;
@@ -45,7 +45,7 @@ public class NotificationSetting {
                  .build())
         .build();
   }
-  @Id @org.mongodb.morphia.annotations.Id String uuid;
+  @Id @dev.morphia.annotations.Id String uuid;
   String accountId;
   boolean sendNotificationViaDelegate;
   SmtpConfig smtpConfig;

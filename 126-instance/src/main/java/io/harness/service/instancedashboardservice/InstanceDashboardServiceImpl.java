@@ -235,24 +235,23 @@ public class InstanceDashboardServiceImpl implements InstanceDashboardService {
    * @param infraId
    * @param clusterId
    * @param pipelineExecutionId
-   * @param lastDeployedAt
    * @return List of buildId and instances
    */
   @Override
   public List<InstanceDetailsByBuildId> getActiveInstancesByServiceIdEnvIdAndBuildIds(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String serviceId, String envId, List<String> buildIds,
-      long timestampInMs, String infraId, String clusterId, String pipelineExecutionId, long lastDeployedAt) {
+      long timestampInMs, String infraId, String clusterId, String pipelineExecutionId, Boolean isGitops) {
     AggregationResults<InstancesByBuildId> buildIdAndInstancesAggregationResults =
         instanceService.getActiveInstancesByServiceIdEnvIdAndBuildIds(accountIdentifier, orgIdentifier,
             projectIdentifier, serviceId, envId, buildIds, timestampInMs, InstanceSyncConstants.INSTANCE_LIMIT, infraId,
-            clusterId, pipelineExecutionId, lastDeployedAt);
+            clusterId, pipelineExecutionId);
     List<InstanceDetailsByBuildId> buildIdAndInstancesList = new ArrayList<>();
 
     buildIdAndInstancesAggregationResults.getMappedResults().forEach(buildIdAndInstances -> {
       String buildId = buildIdAndInstances.getBuildId();
       List<Instance> instances = buildIdAndInstances.getInstances();
       buildIdAndInstancesList.add(new InstanceDetailsByBuildId(
-          buildId, instanceDetailsMapper.toInstanceDetailsDTOList(InstanceMapper.toDTO(instances))));
+          buildId, instanceDetailsMapper.toInstanceDetailsDTOList(InstanceMapper.toDTO(instances), isGitops)));
     });
 
     return buildIdAndInstancesList;
@@ -261,14 +260,14 @@ public class InstanceDashboardServiceImpl implements InstanceDashboardService {
   @Override
   public InstanceDetailsByBuildId getActiveInstanceDetails(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String serviceId, String envId, String infraId, String clusterIdentifier,
-      String pipelineExecutionId, String buildId) {
+      String pipelineExecutionId, String buildId, Boolean isGitops) {
     List<Instance> instancesByBuildId =
         instanceService.getActiveInstanceDetails(accountIdentifier, orgIdentifier, projectIdentifier, serviceId, envId,
             infraId, clusterIdentifier, pipelineExecutionId, buildId, InstanceSyncConstants.INSTANCE_LIMIT);
 
     return InstanceDetailsByBuildId.builder()
         .buildId(buildId)
-        .instances(instanceDetailsMapper.toInstanceDetailsDTOList(InstanceMapper.toDTO(instancesByBuildId)))
+        .instances(instanceDetailsMapper.toInstanceDetailsDTOList(InstanceMapper.toDTO(instancesByBuildId), isGitops))
         .build();
   }
 

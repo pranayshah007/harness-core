@@ -18,13 +18,13 @@ import io.harness.ng.DbAliases;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
 import java.util.List;
 import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
@@ -56,7 +56,7 @@ public class GitSyncSettings {
         .build();
   }
 
-  @org.springframework.data.annotation.Id @org.mongodb.morphia.annotations.Id private String uuid;
+  @org.springframework.data.annotation.Id @dev.morphia.annotations.Id private String uuid;
   private String accountIdentifier;
   private String projectIdentifier;
   private String orgIdentifier;

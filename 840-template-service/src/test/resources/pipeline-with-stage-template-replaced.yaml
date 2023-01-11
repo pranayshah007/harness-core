@@ -35,4 +35,5 @@ pipeline:
                 method: "GET"
                 headers: []
                 outputVariables: []
+                requestBody: "<+input>"
               timeout: "10s"

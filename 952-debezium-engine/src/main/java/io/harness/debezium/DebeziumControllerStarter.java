@@ -28,6 +28,7 @@ public class DebeziumControllerStarter {
   @Inject CfClient cfClient;
   @Inject @Named("DebeziumExecutorService") private ExecutorService debeziumExecutorService;
   @Inject private ChangeConsumerFactory consumerFactory;
+  @Inject private DebeziumService debeziumService;
 
   @SuppressWarnings({"rawtypes", "unchecked"})
   public void startDebeziumController(DebeziumConfig debeziumConfig, ChangeConsumerConfig changeConsumerConfig,
@@ -40,7 +41,7 @@ public class DebeziumControllerStarter {
                 debeziumConfig.getProducingCountPerBatch(), debeziumConfig.getRedisStreamSize(), cfClient);
         DebeziumController debeziumController = new DebeziumController(
             DebeziumConfiguration.getDebeziumProperties(debeziumConfig, redisLockConfig, monitoredCollection),
-            changeConsumer, locker, debeziumExecutorService);
+            changeConsumer, locker, debeziumExecutorService, debeziumService);
         debeziumExecutorService.submit(debeziumController);
         log.info("Starting Debezium Controller for Collection {} ...", monitoredCollection);
       } catch (Exception e) {

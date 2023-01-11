@@ -21,13 +21,13 @@ import software.wings.graphql.schema.type.aggregation.QLEnumOperator;
 import software.wings.graphql.schema.type.aggregation.cloudprovider.QLCEEnabledFilter;
 import software.wings.graphql.schema.type.aggregation.cloudprovider.QLCloudProviderFilter;
 
+import dev.morphia.query.Query;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mongodb.morphia.query.Query;
 
 public class CloudProviderQueryHelperTest extends WingsBaseTest {
   @InjectMocks CloudProviderQueryHelper helper;
