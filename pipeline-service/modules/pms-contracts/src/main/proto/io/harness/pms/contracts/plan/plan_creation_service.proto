@@ -62,6 +62,7 @@ message PlanCreationContextValue {
   string orgIdentifier = 5;
   string projectIdentifier = 6;
   bool isExecutionInputEnabled = 7;
+  Dependency globalDependency = 8;
 }
 
 message YamlFieldBlob {

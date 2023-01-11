@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
 import java.util.Map;
+import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -23,11 +24,14 @@ import lombok.NoArgsConstructor;
 public class WorkflowSummary extends BaseSummary {
   Map<String, Long> typeSummary;
   Map<String, Long> stepTypeSummary;
+  Set<String> expressions;
 
   @Builder
-  public WorkflowSummary(int count, Map<String, Long> typeSummary, Map<String, Long> stepTypeSummary) {
+  public WorkflowSummary(
+      int count, Map<String, Long> typeSummary, Map<String, Long> stepTypeSummary, Set<String> expressions) {
     super(count);
     this.typeSummary = typeSummary;
     this.stepTypeSummary = stepTypeSummary;
+    this.expressions = expressions;
   }
 }

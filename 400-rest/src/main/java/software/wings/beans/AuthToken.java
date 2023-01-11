@@ -20,13 +20,13 @@ import io.harness.mongo.index.FdTtlIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Transient;
 import java.time.OffsetDateTime;
 import java.util.Date;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Transient;
 
 @OwnedBy(PL)
 @Data

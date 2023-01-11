@@ -12,6 +12,7 @@ import static java.util.stream.Collectors.toSet;
 
 import io.harness.AccessControlClientConfiguration;
 import io.harness.ScmConnectionConfig;
+import io.harness.beans.entities.IACMServiceConfig;
 import io.harness.cache.CacheConfig;
 import io.harness.ci.beans.entities.LogServiceConfig;
 import io.harness.ci.beans.entities.TIServiceConfig;
@@ -20,7 +21,6 @@ import io.harness.enforcement.client.EnforcementClientConfiguration;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.grpc.client.GrpcClientConfig;
 import io.harness.grpc.server.GrpcServerConfig;
-import io.harness.iacm.beans.entities.IACMServiceConfig;
 import io.harness.mongo.MongoConfig;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.secret.ConfigSecret;

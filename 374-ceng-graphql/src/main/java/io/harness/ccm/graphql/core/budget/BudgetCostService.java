@@ -10,7 +10,10 @@ package io.harness.ccm.graphql.core.budget;
 import io.harness.ccm.budget.BudgetBreakdown;
 import io.harness.ccm.budget.BudgetPeriod;
 import io.harness.ccm.commons.entities.billing.Budget;
+import io.harness.ccm.commons.entities.budget.BudgetCostData;
 import io.harness.ccm.commons.entities.budget.BudgetData;
+
+import java.util.HashMap;
 
 public interface BudgetCostService {
   double getActualCost(Budget budget);
@@ -26,4 +29,7 @@ public interface BudgetCostService {
   Double[] getLastYearMonthlyCost(Budget budget);
   Double[] getLastYearMonthlyCost(String accountId, String perspectiveId, long startTime, BudgetPeriod period);
   BudgetData getBudgetTimeSeriesStats(Budget budget, BudgetBreakdown breakdown);
+  HashMap<Long, BudgetCostData> getBudgetHistory(Budget budget);
+  HashMap<Long, BudgetCostData> getBudgetHistory(
+      String accountId, String perspectiveId, long startOfPeriod, BudgetPeriod period, Double budgetAmount);
 }

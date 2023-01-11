@@ -139,6 +139,10 @@ if [[ "" != "$HOSTED_VM_SPLIT_LINUX_ARM64_POOL" ]]; then
   export HOSTED_VM_SPLIT_LINUX_ARM64_POOL; yq -i '.ciExecutionServiceConfig.hostedVmConfig.splitLinuxArm64Pool=env(HOSTED_VM_SPLIT_LINUX_ARM64_POOL)' $CONFIG_FILE
 fi
 
+if [[ "" != "$HOSTED_VM_SPLIT_WINDOWS_AMD64_POOL" ]]; then
+  export HOSTED_VM_SPLIT_WINDOWS_AMD64_POOL; yq -i '.ciExecutionServiceConfig.hostedVmConfig.splitLinuxAmd64Pool=env(HOSTED_VM_SPLIT_WINDOWS_AMD64_POOL)' $CONFIG_FILE
+fi
+
 if [[ "" != "$VM_ARTIFACTORY_UPLOAD_IMAGE" ]]; then
   export VM_ARTIFACTORY_UPLOAD_IMAGE; yq -i '.ciExecutionServiceConfig.stepConfig.vmImageConfig.artifactoryUpload=env(VM_ARTIFACTORY_UPLOAD_IMAGE)' $CONFIG_FILE
 fi
@@ -435,6 +439,14 @@ if [[ "$EVENTS_FRAMEWORK_USE_SENTINEL" == "true" ]]; then
       INDEX=$(expr $INDEX + 1)
     done
   fi
+fi
+
+if [[ "" != "$HSQS_BASE_URL" ]]; then
+  export HSQS_BASE_URL; yq -i '.ciExecutionServiceConfig.queueServiceClient.queueServiceConfig.baseUrl=env(HSQS_BASE_URL)' $CONFIG_FILE
+fi
+
+if [[ "" != "$HSQS_AUTH_TOKEN" ]]; then
+  export HSQS_AUTH_TOKEN; yq -i '.ciExecutionServiceConfig.queueServiceClient.authToken=env(HSQS_AUTH_TOKEN)' $CONFIG_FILE
 fi
 
 replace_key_value cacheConfig.cacheNamespace $CACHE_NAMESPACE

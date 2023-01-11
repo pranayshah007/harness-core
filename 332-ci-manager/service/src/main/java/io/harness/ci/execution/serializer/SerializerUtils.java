@@ -13,6 +13,8 @@ import io.harness.beans.FeatureName;
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.yaml.extended.CIShellType;
 import io.harness.ci.ff.CIFeatureFlagService;
+import io.harness.common.NGExpressionUtils;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
@@ -23,6 +25,9 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -147,5 +152,73 @@ public class SerializerUtils {
       default:
         return "";
     }
+  }
+
+  public static Map<String, String> getPortBindingMap(List<String> ports) {
+    if (EmptyPredicate.isEmpty(ports)) {
+      return Collections.emptyMap();
+    }
+    Map<String, String> portMapping = new HashMap<>();
+    ports.forEach(p -> {
+      if (EmptyPredicate.isEmpty(p)) {
+        throw new CIStageExecutionException("Port value cannot be empty");
+      }
+      String[] portList = p.split(":");
+      if (EmptyPredicate.isEmpty(portList) || portList.length < 2) {
+        throw new CIStageExecutionException(format("Port mapping is invalid: %s", p));
+      }
+      portMapping.put(portList[portList.length - 2], portList[portList.length - 1]);
+    });
+    return portMapping;
+  }
+
+  public static ParameterField<Boolean> getBooleanFieldFromJsonNodeMap(Map<String, JsonNode> map, String key) {
+    if (EmptyPredicate.isEmpty(map)) {
+      return ParameterField.ofNull();
+    }
+    JsonNode booleanJsonNode = map.get(key);
+    if (booleanJsonNode != null) {
+      if (booleanJsonNode.isTextual() && NGExpressionUtils.isExpressionField(booleanJsonNode.asText())) {
+        return ParameterField.createExpressionField(true, booleanJsonNode.asText(), null, false);
+      } else if (booleanJsonNode.isBoolean()) {
+        return ParameterField.createValueField(booleanJsonNode.asBoolean());
+      }
+    }
+    return ParameterField.ofNull();
+  }
+
+  public static ParameterField<String> getStringFieldFromJsonNodeMap(Map<String, JsonNode> map, String key) {
+    if (EmptyPredicate.isEmpty(map)) {
+      return ParameterField.ofNull();
+    }
+    JsonNode stringJsonNode = map.get(key);
+    if (stringJsonNode != null && stringJsonNode.isTextual()) {
+      if (NGExpressionUtils.isExpressionField(stringJsonNode.asText())) {
+        return ParameterField.createExpressionField(true, stringJsonNode.asText(), null, true);
+      }
+      return ParameterField.createValueField(stringJsonNode.asText());
+    }
+    return ParameterField.ofNull();
+  }
+
+  public static ParameterField<String> getListAsStringFromJsonNodeMap(Map<String, JsonNode> map, String key) {
+    if (EmptyPredicate.isEmpty(map)) {
+      return ParameterField.ofNull();
+    }
+    JsonNode arrayJsonNode = map.get(key);
+    if (arrayJsonNode != null && arrayJsonNode.isArray()) {
+      List<String> list = new ArrayList<>();
+      Iterator<JsonNode> elements = arrayJsonNode.elements();
+      while (elements.hasNext()) {
+        JsonNode element = elements.next();
+        list.add(element.asText());
+      }
+      String finalString = String.join(",", list);
+      if (NGExpressionUtils.isExpressionField(finalString)) {
+        return ParameterField.createExpressionField(true, finalString, null, true);
+      }
+      return ParameterField.createValueField(finalString);
+    }
+    return ParameterField.ofNull();
   }
 }

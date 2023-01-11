@@ -24,6 +24,7 @@ import io.harness.persistence.PersistentEntity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -32,7 +33,6 @@ import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Persistent;
 import org.springframework.data.annotation.TypeAlias;
@@ -49,7 +49,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Persistent
 @TypeAlias("NGSettingConfiguration")
 public class SettingConfiguration implements PersistentEntity {
-  @Id @org.mongodb.morphia.annotations.Id String id;
+  @Id @dev.morphia.annotations.Id String id;
   @NotEmpty @EntityIdentifier String identifier;
   @NotEmpty @NGEntityName String name;
   @NotNull SettingCategory category;

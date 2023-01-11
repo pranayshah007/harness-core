@@ -33,14 +33,12 @@ import io.harness.remote.client.NGRestUtils;
 
 import software.wings.beans.Pipeline;
 import software.wings.beans.PipelineStage;
-import software.wings.beans.PipelineStage.PipelineStageElement;
 import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.DiscoveryNode;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.ngmigration.NGMigrationEntityType;
-import software.wings.ngmigration.NGMigrationStatus;
 import software.wings.service.intfc.PipelineService;
 import software.wings.sm.StateType;
 
@@ -52,7 +50,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.MediaType;
 import okhttp3.RequestBody;
@@ -125,27 +122,6 @@ public class PipelineMigrationService extends NgMigrationService {
           format("Pipeline with id:[%s] in application with id:[%s] doesn't exist", entityId, appId));
     }
     return discover(pipeline);
-  }
-
-  @Override
-  public NGMigrationStatus canMigrate(NGMigrationEntity entity) {
-    Pipeline pipeline = (Pipeline) entity;
-    boolean possible = true;
-    List<String> errorReasons = new ArrayList<>();
-    if (isNotEmpty(pipeline.getPipelineStages())) {
-      List<PipelineStageElement> stageElements = pipeline.getPipelineStages()
-                                                     .stream()
-                                                     .flatMap(stage -> stage.getPipelineStageElements().stream())
-                                                     .collect(Collectors.toList());
-      for (PipelineStageElement stageElement : stageElements) {
-        if (!StateType.ENV_STATE.name().equals(stageElement.getType())) {
-          possible = false;
-          errorReasons.add(String.format(
-              "%s stage in %s pipeline is not possible to migrate", stageElement.getName(), pipeline.getName()));
-        }
-      }
-    }
-    return NGMigrationStatus.builder().status(possible).reasons(errorReasons).build();
   }
 
   @Override

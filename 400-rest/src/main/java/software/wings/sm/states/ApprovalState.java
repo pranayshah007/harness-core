@@ -137,6 +137,7 @@ import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import dev.morphia.annotations.Transient;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -165,7 +166,6 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
-import org.mongodb.morphia.annotations.Transient;
 
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)

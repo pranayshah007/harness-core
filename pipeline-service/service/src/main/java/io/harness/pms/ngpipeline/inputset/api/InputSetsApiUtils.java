@@ -11,11 +11,11 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityInfo;
-import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.pms.inputset.InputSetErrorDTOPMS;
 import io.harness.pms.inputset.InputSetErrorResponseDTOPMS;
@@ -24,6 +24,7 @@ import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.service.InputSetValidationHelper;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
+import io.harness.pms.utils.PipelineYamlHelper;
 import io.harness.spec.server.pipeline.v1.model.FQNtoError;
 import io.harness.spec.server.pipeline.v1.model.GitCreateDetails;
 import io.harness.spec.server.pipeline.v1.model.GitDetails;
@@ -34,17 +35,26 @@ import io.harness.spec.server.pipeline.v1.model.InputSetGitUpdateDetails;
 import io.harness.spec.server.pipeline.v1.model.InputSetResponseBody;
 import io.harness.spec.server.pipeline.v1.model.InputSetUpdateRequestBody;
 import io.harness.utils.ApiUtils;
+import io.harness.utils.PmsFeatureFlagHelper;
 
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 
+@Singleton
+@AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @OwnedBy(HarnessTeam.PIPELINE)
 public class InputSetsApiUtils {
+  @Inject private final PmsFeatureFlagHelper pmsFeatureFlagHelper;
+
   public InputSetResponseBody getInputSetResponse(InputSetEntity inputSetEntity) {
     InputSetResponseBody responseBody = new InputSetResponseBody();
     responseBody.setInputSetYaml(inputSetEntity.getYaml());
-    responseBody.setSlug(inputSetEntity.getIdentifier());
+    responseBody.setIdentifier(inputSetEntity.getIdentifier());
     responseBody.setName(inputSetEntity.getName());
     responseBody.setOrg(inputSetEntity.getOrgIdentifier());
     responseBody.setProject(inputSetEntity.getProjectIdentifier());
@@ -61,7 +71,7 @@ public class InputSetsApiUtils {
       InputSetEntity inputSetEntity, InputSetErrorWrapperDTOPMS errorWrapperDTO) {
     InputSetResponseBody responseBody = new InputSetResponseBody();
     responseBody.setInputSetYaml(inputSetEntity.getYaml());
-    responseBody.setSlug(inputSetEntity.getIdentifier());
+    responseBody.setIdentifier(inputSetEntity.getIdentifier());
     responseBody.setName(inputSetEntity.getName());
     responseBody.setOrg(inputSetEntity.getOrgIdentifier());
     responseBody.setProject(inputSetEntity.getProjectIdentifier());
@@ -166,7 +176,7 @@ public class InputSetsApiUtils {
       throw new InvalidRequestException("Create Request Body cannot be null.");
     }
     return InputSetRequestInfoDTO.builder()
-        .identifier(createRequestBody.getSlug())
+        .identifier(createRequestBody.getIdentifier())
         .name(createRequestBody.getName())
         .yaml(createRequestBody.getInputSetYaml())
         .description(createRequestBody.getDescription())
@@ -179,7 +189,7 @@ public class InputSetsApiUtils {
       throw new InvalidRequestException("Update Request Body cannot be null.");
     }
     return InputSetRequestInfoDTO.builder()
-        .identifier(updateRequestBody.getSlug())
+        .identifier(updateRequestBody.getIdentifier())
         .name(updateRequestBody.getName())
         .yaml(updateRequestBody.getInputSetYaml())
         .description(updateRequestBody.getDescription())
@@ -187,19 +197,8 @@ public class InputSetsApiUtils {
         .build();
   }
 
-  public String getPipelineYaml(String accountId, String orgIdentifier, String projectIdentifier,
-      String pipelineIdentifier, String pipelineBranch, String pipelineRepoID, PMSPipelineService pipelineService,
-      GitSyncSdkService gitSyncSdkService) {
-    boolean isOldGitSyncFlow = gitSyncSdkService.isGitSyncEnabled(accountId, orgIdentifier, projectIdentifier);
-    final String pipelineYaml;
-    if (isOldGitSyncFlow) {
-      pipelineYaml = InputSetValidationHelper.getPipelineYamlForOldGitSyncFlow(pipelineService, accountId,
-          orgIdentifier, projectIdentifier, pipelineIdentifier, pipelineBranch, pipelineRepoID);
-    } else {
-      PipelineEntity pipelineEntity = InputSetValidationHelper.getPipelineEntity(
-          pipelineService, accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
-      pipelineYaml = pipelineEntity.getYaml();
-    }
-    return pipelineYaml;
+  public String inputSetVersion(String accountId, String yaml) {
+    boolean isYamlSimplificationEnabled = pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.CI_YAML_VERSIONING);
+    return PipelineYamlHelper.getVersion(yaml, isYamlSimplificationEnabled);
   }
 }

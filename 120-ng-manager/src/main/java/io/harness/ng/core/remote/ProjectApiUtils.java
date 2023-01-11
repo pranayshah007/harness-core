@@ -129,7 +129,7 @@ public class ProjectApiUtils {
       sortField = PageUtils.SortFields.UNSUPPORTED;
     }
     switch (sortField) {
-      case SLUG:
+      case IDENTIFIER:
         return ProjectKeys.identifier;
       case NAME:
         return ProjectKeys.name;

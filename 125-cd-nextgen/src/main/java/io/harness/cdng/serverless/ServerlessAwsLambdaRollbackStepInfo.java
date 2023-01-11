@@ -10,7 +10,7 @@ package io.harness.cdng.serverless;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.pipeline.CDStepInfo;
+import io.harness.cdng.pipeline.CDAbstractStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.ServerlessAwsLambdaRollbackStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -42,7 +42,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("serverlessAwsLambdaRollbackStepInfo")
 @RecasterAlias("io.harness.cdng.serverless.ServerlessAwsLambdaRollbackStepInfo")
 public class ServerlessAwsLambdaRollbackStepInfo
-    extends ServerlessAwsLambdaRollbackBaseStepInfo implements CDStepInfo, Visitable {
+    extends ServerlessAwsLambdaRollbackBaseStepInfo implements CDAbstractStepInfo, Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)

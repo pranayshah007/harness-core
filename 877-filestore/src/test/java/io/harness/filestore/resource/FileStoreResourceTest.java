@@ -65,6 +65,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import javax.ws.rs.core.Response;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -106,6 +107,16 @@ public class FileStoreResourceTest extends CategoryTest {
   @Test
   @Owner(developers = IVAN)
   @Category(UnitTests.class)
+  public void shouldDeleteFileWith128CharsIdentifier() {
+    String identifier = RandomStringUtils.randomAlphanumeric(128);
+    doNothing().when(accessControlClient).checkForAccessOrThrow(any(), any(), eq(FILE_DELETE_PERMISSION));
+    fileStoreResource.delete(ACCOUNT, ORG, PROJECT, identifier);
+    verify(fileStoreService).delete(ACCOUNT, ORG, PROJECT, identifier);
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
   public void testDeleteWithAccessDeniedException() {
     doThrow(new NGAccessDeniedException("Principal doesn't have file delete permission", USER, null))
         .when(accessControlClient)
@@ -130,12 +141,48 @@ public class FileStoreResourceTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testDownloadFileWith128CharsIdentifier() {
+    String identifier = RandomStringUtils.randomAlphanumeric(128);
+    File file = new File("returnedFile-download-path");
+    doNothing().when(accessControlClient).checkForAccessOrThrow(any(), any(), eq(FILE_VIEW_PERMISSION));
+    when(fileStoreService.downloadFile(ACCOUNT, ORG, PROJECT, identifier)).thenReturn(file);
+    Response response = fileStoreResource.downloadFile(identifier, ACCOUNT, ORG, PROJECT);
+    File returnedFile = (File) response.getEntity();
+
+    assertThat(returnedFile).isNotNull();
+    assertThat(returnedFile.getPath()).isEqualTo(file.getPath());
+  }
+
+  @Test
   @Owner(developers = FILIP)
   @Category(UnitTests.class)
   public void testCreateFile() {
     final FileDTO createRequest = FileDTO.builder()
                                       .parentIdentifier("Root")
                                       .identifier("testfile")
+                                      .name("Test File")
+                                      .type(NGFileType.FILE)
+                                      .fileUsage(FileUsage.CONFIG)
+                                      .build();
+
+    ResponseDTO<FileDTO> response =
+        fileStoreResource.create(ACCOUNT, ORG, PROJECT, EMPTY_TAGS, getStreamWithDummyContent(), createRequest);
+
+    assertThat(response.getStatus()).isEqualTo(Status.SUCCESS);
+
+    verify(fileStoreService).create(any(), any());
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testCreateFileWith128CharsIdentifier() {
+    String identifier = RandomStringUtils.randomAlphanumeric(128);
+    final FileDTO createRequest = FileDTO.builder()
+                                      .parentIdentifier("Root")
+                                      .identifier(identifier)
                                       .name("Test File")
                                       .type(NGFileType.FILE)
                                       .fileUsage(FileUsage.CONFIG)
@@ -176,6 +223,27 @@ public class FileStoreResourceTest extends CategoryTest {
     final FileDTO updateRequest = FileDTO.builder()
                                       .parentIdentifier("Root")
                                       .identifier("testfile")
+                                      .name("Test File")
+                                      .type(NGFileType.FILE)
+                                      .fileUsage(FileUsage.CONFIG)
+                                      .build();
+
+    ResponseDTO<FileDTO> response = fileStoreResource.update(
+        ACCOUNT, ORG, PROJECT, IDENTIFIER, EMPTY_TAGS, updateRequest, getStreamWithDummyContent());
+
+    assertThat(response.getStatus()).isEqualTo(Status.SUCCESS);
+
+    verify(fileStoreService).update(any(), any());
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testUpdateFileWith128CharsIdentifier() {
+    String identifier = RandomStringUtils.randomAlphanumeric(128);
+    final FileDTO updateRequest = FileDTO.builder()
+                                      .parentIdentifier("Root")
+                                      .identifier(identifier)
                                       .name("Test File")
                                       .type(NGFileType.FILE)
                                       .fileUsage(FileUsage.CONFIG)

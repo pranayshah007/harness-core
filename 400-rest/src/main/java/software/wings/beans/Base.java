@@ -30,6 +30,9 @@ import software.wings.security.ThreadLocalUserProvider;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.github.reinert.jjschema.SchemaIgnore;
+import dev.morphia.annotations.Id;
+import dev.morphia.annotations.PrePersist;
+import dev.morphia.annotations.Transient;
 import java.util.HashMap;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
@@ -39,9 +42,6 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Id;
-import org.mongodb.morphia.annotations.PrePersist;
-import org.mongodb.morphia.annotations.Transient;
 
 /**
  * The Base class is used to extend all the bean classes that requires persistence. The base class

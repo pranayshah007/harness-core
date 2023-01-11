@@ -14,6 +14,11 @@ import io.harness.ccm.budget.BudgetPeriod;
 import io.harness.ccm.budget.BudgetScope;
 import io.harness.ccm.budget.dao.BudgetDao;
 import io.harness.ccm.budget.utils.BudgetUtils;
+import io.harness.ccm.budgetGroup.BudgetGroup;
+import io.harness.ccm.budgetGroup.BudgetGroupChildEntityDTO;
+import io.harness.ccm.budgetGroup.dao.BudgetGroupDao;
+import io.harness.ccm.budgetGroup.service.BudgetGroupService;
+import io.harness.ccm.budgetGroup.utils.BudgetGroupUtils;
 import io.harness.ccm.commons.entities.billing.Budget;
 import io.harness.ccm.commons.entities.budget.BudgetData;
 import io.harness.ccm.commons.utils.BigQueryHelper;
@@ -34,6 +39,8 @@ import org.apache.commons.lang3.ArrayUtils;
 @Slf4j
 public class BudgetServiceImpl implements BudgetService {
   @Inject private BudgetDao budgetDao;
+  @Inject private BudgetGroupDao budgetGroupDao;
+  @Inject private BudgetGroupService budgetGroupService;
   @Inject private CEViewService ceViewService;
   @Inject ViewsBillingService viewsBillingService;
   @Inject ViewsQueryHelper viewsQueryHelper;
@@ -50,6 +57,7 @@ public class BudgetServiceImpl implements BudgetService {
     updateBudgetStartTime(budget);
     updateBudgetEndTime(budget);
     updateBudgetCosts(budget);
+    updateBudgetHistory(budget);
     return budgetDao.save(budget);
   }
 
@@ -76,6 +84,8 @@ public class BudgetServiceImpl implements BudgetService {
                              .isNgBudget(budget.isNgBudget())
                              .startTime(budget.getStartTime())
                              .endTime(budget.getEndTime())
+                             .budgetMonthlyBreakdown(budget.getBudgetMonthlyBreakdown())
+                             .budgetHistory(budget.getBudgetHistory())
                              .build();
     return create(cloneBudget);
   }
@@ -122,6 +132,20 @@ public class BudgetServiceImpl implements BudgetService {
 
   @Override
   public boolean delete(String budgetId, String accountId) {
+    Budget budget = budgetDao.get(budgetId, accountId);
+    if (budget.getParentBudgetGroupId() != null) {
+      BudgetGroup parentBudgetGroup = budgetGroupDao.get(budget.getParentBudgetGroupId(), accountId);
+      BudgetGroupChildEntityDTO deletedChildEntity = parentBudgetGroup.getChildEntities()
+                                                         .stream()
+                                                         .filter(childEntity -> !childEntity.getId().equals(budgetId))
+                                                         .collect(Collectors.toList())
+                                                         .get(0);
+      parentBudgetGroup = budgetGroupService.updateProportionsOnDeletion(deletedChildEntity, parentBudgetGroup);
+      parentBudgetGroup = BudgetGroupUtils.updateBudgetGroupAmountOnChildEntityDeletion(parentBudgetGroup, budget);
+      budgetGroupService.updateCostsOfParentBudgetGroupsOnEntityDeletion(parentBudgetGroup);
+      BudgetGroup rootBudgetGroup = BudgetGroupUtils.getRootBudgetGroup(budget);
+      budgetGroupService.cascadeBudgetGroupAmount(rootBudgetGroup);
+    }
     return budgetDao.delete(budgetId, accountId);
   }
 
@@ -210,6 +234,11 @@ public class BudgetServiceImpl implements BudgetService {
     budget.setActualCost(actualCost);
     budget.setForecastCost(forecastCost);
     budget.setLastMonthCost(lastMonthCost);
+  }
+
+  @Override
+  public void updateBudgetHistory(Budget budget) {
+    budget.setBudgetHistory(budgetCostService.getBudgetHistory(budget));
   }
 
   private double getActualCostForPerspectiveBudget(Budget budget) {

@@ -10,7 +10,6 @@ package software.wings.delegatetasks.k8s;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.helm.HelmSubCommandType.TEMPLATE;
-import static io.harness.k8s.KubernetesConvention.ReleaseHistoryKeyName;
 import static io.harness.k8s.model.Kind.ConfigMap;
 import static io.harness.k8s.model.Kind.Deployment;
 import static io.harness.k8s.model.Kind.Namespace;
@@ -18,7 +17,6 @@ import static io.harness.k8s.model.Kind.Service;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACASIAN;
-import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.SAHIL;
 import static io.harness.rule.OwnerRule.TATHAGAT;
@@ -88,9 +86,6 @@ import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
-import io.harness.k8s.releasehistory.IK8sRelease;
-import io.harness.k8s.releasehistory.K8sLegacyRelease;
-import io.harness.k8s.releasehistory.ReleaseHistory;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LoggingInitializer;
@@ -116,7 +111,6 @@ import software.wings.helpers.ext.k8s.K8sManagerHelper;
 import software.wings.helpers.ext.k8s.request.K8sApplyTaskParameters;
 import software.wings.helpers.ext.k8s.request.K8sClusterConfig;
 import software.wings.helpers.ext.k8s.request.K8sDelegateManifestConfig;
-import software.wings.helpers.ext.k8s.request.K8sDeleteTaskParameters;
 import software.wings.helpers.ext.k8s.request.K8sRollingDeployRollbackTaskParameters;
 import software.wings.helpers.ext.k8s.request.K8sTaskParameters;
 import software.wings.helpers.ext.k8s.response.K8sApplyResponse;
@@ -126,7 +120,6 @@ import software.wings.service.intfc.GitService;
 import software.wings.service.intfc.security.EncryptionService;
 
 import com.google.inject.Inject;
-import io.kubernetes.client.openapi.models.V1ConfigMap;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -134,9 +127,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 import org.junit.Before;
 import org.junit.Test;
@@ -199,35 +190,6 @@ public class K8sTaskHelperTest extends CategoryTest {
     spyHelperBase = Mockito.spy(k8sTaskHelperBase);
     when(helmTaskHelperBase.isHelmLocalRepoSet()).thenReturn(false);
     when(helmTaskHelperBase.getHelmLocalRepositoryPath()).thenReturn("");
-  }
-
-  @Test
-  @Owner(developers = ADWAIT)
-  @Category(UnitTests.class)
-  public void testGetResourceIdsForDeletion() throws Exception {
-    K8sDeleteTaskParameters k8sDeleteTaskParameters =
-        K8sDeleteTaskParameters.builder().releaseName("releaseName").build();
-
-    ExecutionLogCallback executionLogCallback = logCallback;
-    doNothing().when(executionLogCallback).saveExecutionLog(anyString());
-
-    V1ConfigMap configMap = new V1ConfigMap();
-    configMap.setKind(ConfigMap.name());
-    doReturn(configMap).when(mockKubernetesContainerService).getConfigMap(any(), anyString());
-    List<KubernetesResourceId> kubernetesResourceIdList = getKubernetesResourceIdList("1");
-    ReleaseHistory releaseHistory = ReleaseHistory.createNew();
-    releaseHistory.setReleases(asList(
-        K8sLegacyRelease.builder().status(IK8sRelease.Status.Succeeded).resources(kubernetesResourceIdList).build()));
-
-    String releaseHistoryString = releaseHistory.getAsYaml();
-    Map<String, String> data = new HashMap<>();
-    data.put(ReleaseHistoryKeyName, releaseHistoryString);
-    configMap.setData(data);
-
-    helper.getResourceIdsForDeletion(
-        k8sDeleteTaskParameters, KubernetesConfig.builder().namespace("default").build(), executionLogCallback);
-
-    verify(mockK8sTaskHelperBase, times(1)).arrangeResourceIdsInDeletionOrder(any());
   }
 
   private List<KubernetesResourceId> getKubernetesResourceIdList(String suffix) {

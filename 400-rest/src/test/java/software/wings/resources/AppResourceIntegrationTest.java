@@ -31,6 +31,7 @@ import software.wings.utils.WingsIntegrationTestConstants;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -49,7 +50,6 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mongodb.morphia.query.Query;
 
 @Slf4j
 public class AppResourceIntegrationTest extends IntegrationTestBase {

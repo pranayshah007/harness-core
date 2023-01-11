@@ -8,6 +8,7 @@
 package io.harness.engine.pms.data;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.PRASHANT;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 
@@ -32,6 +33,7 @@ import io.harness.utils.DummySweepingOutput;
 
 import com.google.inject.Inject;
 import java.util.List;
+import java.util.Set;
 import org.bson.Document;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -154,6 +156,26 @@ public class PmsSweepingOutputServiceImplTest extends OrchestrationTestBase {
 
     Document output = resolve(ambiance, outputName);
     assertThat(output).isNull();
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void shouldTestDeleteAllSweepingOutputInstances() {
+    Ambiance ambiance = AmbianceTestUtils.buildAmbiance();
+    String outputName = "outcomeName";
+    DummySweepingOutput output1 = DummySweepingOutput.builder().test("test").build();
+    pmsSweepingOutputService.consume(ambiance, outputName, RecastOrchestrationUtils.toJson(output1), null);
+    validateResult(resolve(ambiance, outputName), "test");
+
+    String outputName2 = "outcomeName2";
+    pmsSweepingOutputService.consume(ambiance, outputName2, RecastOrchestrationUtils.toJson(output1), null);
+    validateResult(resolve(ambiance, outputName2), "test");
+
+    pmsSweepingOutputService.deleteAllSweepingOutputInstances(Set.of(AmbianceTestUtils.PLAN_EXECUTION_ID));
+    // As output don't exist anymore
+    assertThatThrownBy(() -> resolve(ambiance, outputName)).isInstanceOf(SweepingOutputException.class);
+    assertThatThrownBy(() -> resolve(ambiance, outputName2)).isInstanceOf(SweepingOutputException.class);
   }
 
   @Test

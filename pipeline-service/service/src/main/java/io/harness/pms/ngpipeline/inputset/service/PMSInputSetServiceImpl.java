@@ -8,7 +8,10 @@
 package io.harness.pms.ngpipeline.inputset.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER_SRE;
+import static io.harness.pms.pipeline.MoveConfigOperationType.INLINE_TO_REMOTE;
+import static io.harness.pms.pipeline.MoveConfigOperationType.REMOTE_TO_INLINE;
 
 import static java.lang.String.format;
 
@@ -39,14 +42,19 @@ import io.harness.gitsync.scm.EntityObjectIdUtils;
 import io.harness.gitsync.scm.beans.ScmGitMetaData;
 import io.harness.grpc.utils.StringValueUtils;
 import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
+import io.harness.pms.inputset.InputSetMoveConfigOperationDTO;
 import io.harness.pms.inputset.gitsync.InputSetYamlDTOMapper;
+import io.harness.pms.ngpipeline.inputset.api.InputSetsApiUtils;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity.InputSetEntityKeys;
+import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetImportRequestDTO;
 import io.harness.pms.ngpipeline.inputset.mappers.PMSInputSetElementMapper;
+import io.harness.pms.ngpipeline.inputset.mappers.PMSInputSetFilterHelper;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PipelineCRUDErrorResponse;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
@@ -76,26 +84,22 @@ import org.springframework.data.mongodb.core.query.Update;
 @OwnedBy(PIPELINE)
 public class PMSInputSetServiceImpl implements PMSInputSetService {
   @Inject private PMSInputSetRepository inputSetRepository;
-  @Inject private PMSPipelineService pmsPipelineService;
   @Inject private GitSyncSdkService gitSyncSdkService;
   @Inject private GitAwareEntityHelper gitAwareEntityHelper;
+  @Inject private PMSPipelineService pipelineService;
   @Inject private PMSPipelineRepository pmsPipelineRepository;
+  @Inject private InputSetsApiUtils inputSetsApiUtils;
 
   private static final String DUP_KEY_EXP_FORMAT_STRING =
       "Input set [%s] under Project[%s], Organization [%s] for Pipeline [%s] already exists";
 
   @Override
-  public InputSetEntity create(
-      InputSetEntity inputSetEntity, String pipelineBranch, String pipelineRepoID, boolean hasNewYamlStructure) {
+  public InputSetEntity create(InputSetEntity inputSetEntity, boolean hasNewYamlStructure) {
     boolean isOldGitSync = gitSyncSdkService.isGitSyncEnabled(inputSetEntity.getAccountIdentifier(),
         inputSetEntity.getOrgIdentifier(), inputSetEntity.getProjectIdentifier());
-    // New API flow do not support oldGitSync and has newYamlStructure,
-    // so validations for metadata in yaml isn't needed
-    if (isOldGitSync) {
-      InputSetValidationHelper.validateInputSetForOldGitSync(
-          this, pmsPipelineService, inputSetEntity, pipelineBranch, pipelineRepoID);
-    } else {
-      InputSetValidationHelper.validateInputSet(this, pmsPipelineService, inputSetEntity, true, hasNewYamlStructure);
+    InputSetValidationHelper.validateInputSet(this, inputSetEntity, hasNewYamlStructure);
+    if (!isOldGitSync) {
+      InputSetValidationHelper.checkForPipelineStoreType(inputSetEntity, pipelineService);
     }
 
     try {
@@ -125,27 +129,22 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
       boolean hasNewYamlStructure) {
     Optional<InputSetEntity> optionalInputSetEntity =
         getWithoutValidations(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, deleted);
-    if (!optionalInputSetEntity.isPresent()) {
+    if (optionalInputSetEntity.isEmpty()) {
       throw new InvalidRequestException(
           String.format("InputSet with the given ID: %s does not exist or has been deleted", identifier));
     }
 
     InputSetEntity inputSetEntity = optionalInputSetEntity.get();
-    if (gitSyncSdkService.isGitSyncEnabled(accountId, orgIdentifier, projectIdentifier)) {
-      InputSetValidationHelper.validateInputSetForOldGitSync(
-          this, pmsPipelineService, inputSetEntity, pipelineBranch, pipelineRepoID);
-    } else if (inputSetEntity.getStoreType() == StoreType.REMOTE) {
+    if (inputSetEntity.getStoreType() == StoreType.REMOTE) {
       ScmGitMetaData inputSetScmGitMetaData = GitAwareContextHelper.getScmGitMetaData();
       try {
-        InputSetValidationHelper.validateInputSet(this, pmsPipelineService, inputSetEntity, false, hasNewYamlStructure);
+        InputSetValidationHelper.validateInputSet(this, inputSetEntity, hasNewYamlStructure);
       } finally {
         // input set validation involves fetching the pipeline, which can change the global scm metadata to that of the
         // pipeline. Hence, it needs to be changed back to that of the input set once validation is complete,
         // irrespective of whether the validation throws an exception or not
         GitAwareContextHelper.updateScmGitMetaData(inputSetScmGitMetaData);
       }
-    } else {
-      InputSetValidationHelper.validateInputSet(this, pmsPipelineService, inputSetEntity, false, hasNewYamlStructure);
     }
     return optionalInputSetEntity;
   }
@@ -174,19 +173,10 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
   }
 
   @Override
-  public InputSetEntity update(ChangeType changeType, String pipelineBranch, String pipelineRepoID,
-      InputSetEntity inputSetEntity, boolean hasNewYamlStructure) {
+  public InputSetEntity update(ChangeType changeType, InputSetEntity inputSetEntity, boolean hasNewYamlStructure) {
     boolean isOldGitSync = gitSyncSdkService.isGitSyncEnabled(inputSetEntity.getAccountIdentifier(),
         inputSetEntity.getOrgIdentifier(), inputSetEntity.getProjectIdentifier());
-    // New API flow do not support oldGitSync and has newYamlStructure,
-    // so validations for metadata in yaml isn't needed
-    if (isOldGitSync) {
-      InputSetValidationHelper.validateInputSetForOldGitSync(
-          this, pmsPipelineService, inputSetEntity, pipelineBranch, pipelineRepoID);
-    } else {
-      InputSetValidationHelper.validateInputSet(this, pmsPipelineService, inputSetEntity, false, hasNewYamlStructure);
-    }
-
+    InputSetValidationHelper.validateInputSet(this, inputSetEntity, hasNewYamlStructure);
     if (isOldGitSync) {
       return updateForOldGitSync(inputSetEntity, changeType);
     }
@@ -426,9 +416,21 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
         accountIdentifier, orgIdentifier, projectIdentifier, inputSetIdentifier, isForceImport);
     String importedInputSetYAML =
         gitAwareEntityHelper.fetchYAMLFromRemote(accountIdentifier, orgIdentifier, projectIdentifier);
-    checkAndThrowMismatchInImportedInputSetMetadata(orgIdentifier, projectIdentifier, pipelineIdentifier,
-        inputSetIdentifier, inputSetImportRequestDTO, importedInputSetYAML);
-    InputSetEntity inputSetEntity = PMSInputSetElementMapper.toInputSetEntity(accountIdentifier, importedInputSetYAML);
+    String inputSetVersion = inputSetsApiUtils.inputSetVersion(accountIdentifier, importedInputSetYAML);
+    InputSetEntity inputSetEntity;
+    switch (inputSetVersion) {
+      case PipelineVersion.V1:
+        inputSetEntity = PMSInputSetElementMapper.toInputSetEntityV1(accountIdentifier, orgIdentifier,
+            projectIdentifier, pipelineIdentifier, importedInputSetYAML, InputSetEntityType.INPUT_SET);
+        break;
+      case PipelineVersion.V0:
+        checkAndThrowMismatchInImportedInputSetMetadata(orgIdentifier, projectIdentifier, pipelineIdentifier,
+            inputSetIdentifier, inputSetImportRequestDTO, importedInputSetYAML);
+        inputSetEntity = PMSInputSetElementMapper.toInputSetEntity(accountIdentifier, importedInputSetYAML);
+        break;
+      default:
+        throw new IllegalStateException("version not supported");
+    }
     inputSetEntity.setRepoURL(repoUrl);
     try {
       return inputSetRepository.saveForImportedYAML(inputSetEntity);
@@ -445,6 +447,80 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
       throw new InvalidRequestException(
           String.format("Error while saving input set [%s]: %s", inputSetEntity.getIdentifier(), e.getMessage()));
     }
+  }
+
+  @Override
+  public InputSetEntity moveConfig(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String inputSetIdentifier, InputSetMoveConfigOperationDTO inputSetMoveConfigOperationDTO) {
+    Optional<InputSetEntity> optionalInputSetEntity = getWithoutValidations(accountIdentifier, orgIdentifier,
+        projectIdentifier, inputSetMoveConfigOperationDTO.getPipelineIdentifier(), inputSetIdentifier, false);
+    if (optionalInputSetEntity.isEmpty()) {
+      throw new InvalidRequestException(
+          String.format("InputSet with the given ID: %s does not exist or has been deleted", inputSetIdentifier));
+    }
+
+    return moveInputSetEntity(accountIdentifier, orgIdentifier, projectIdentifier, inputSetMoveConfigOperationDTO,
+        optionalInputSetEntity.get());
+  }
+
+  @VisibleForTesting
+  protected InputSetEntity moveInputSetEntity(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      InputSetMoveConfigOperationDTO inputSetMoveConfigOperationDTO, InputSetEntity inputSetToMove) {
+    Criteria criteria = PMSInputSetFilterHelper.getCriteriaForFind(accountIdentifier, orgIdentifier, projectIdentifier,
+        inputSetMoveConfigOperationDTO.getPipelineIdentifier(), inputSetToMove.getIdentifier(), true);
+    Update update;
+
+    if (INLINE_TO_REMOTE.equals(inputSetMoveConfigOperationDTO.getMoveConfigOperationType())) {
+      setupGitContext(inputSetMoveConfigOperationDTO);
+
+      update = getUpdateForInputSetInlineToRemote(
+          accountIdentifier, orgIdentifier, projectIdentifier, inputSetMoveConfigOperationDTO);
+    } else if (REMOTE_TO_INLINE.equals(inputSetMoveConfigOperationDTO.getMoveConfigOperationType())) {
+      update = getUpdateForInputSetRemoteToInline();
+    } else {
+      log.error("Invalid move config operation provided: {}",
+          inputSetMoveConfigOperationDTO.getMoveConfigOperationType().name());
+      throw new InvalidRequestException(String.format("Invalid move config operation specified [%s].",
+          inputSetMoveConfigOperationDTO.getMoveConfigOperationType().name()));
+    }
+    return inputSetRepository.updateInputSetEntity(
+        inputSetToMove, criteria, update, inputSetMoveConfigOperationDTO.getMoveConfigOperationType());
+  }
+
+  private void setupGitContext(InputSetMoveConfigOperationDTO inputSetMoveConfig) {
+    GitAwareContextHelper.populateGitDetails(
+        GitEntityInfo.builder()
+            .branch(inputSetMoveConfig.getBranch())
+            .filePath(inputSetMoveConfig.getFilePath())
+            .commitMsg(inputSetMoveConfig.getCommitMessage())
+            .isNewBranch(isNotEmpty(inputSetMoveConfig.getBranch()) && isNotEmpty(inputSetMoveConfig.getBaseBranch()))
+            .baseBranch(inputSetMoveConfig.getBaseBranch())
+            .connectorRef(inputSetMoveConfig.getConnectorRef())
+            .storeType(StoreType.REMOTE)
+            .repoName(inputSetMoveConfig.getRepoName())
+            .build());
+  }
+
+  private Update getUpdateForInputSetInlineToRemote(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, InputSetMoveConfigOperationDTO inputSetMoveConfigOperationDTO) {
+    Update update = new Update();
+    update.set(InputSetEntityKeys.storeType, StoreType.REMOTE);
+    update.set(InputSetEntityKeys.repo, inputSetMoveConfigOperationDTO.getRepoName());
+    update.set(InputSetEntityKeys.filePath, inputSetMoveConfigOperationDTO.getFilePath());
+    update.set(InputSetEntityKeys.connectorRef, inputSetMoveConfigOperationDTO.getConnectorRef());
+    update.set(InputSetEntityKeys.repoURL,
+        gitAwareEntityHelper.getRepoUrl(accountIdentifier, orgIdentifier, projectIdentifier));
+    return update;
+  }
+
+  private Update getUpdateForInputSetRemoteToInline() {
+    Update update = new Update();
+    update.set(InputSetEntityKeys.storeType, StoreType.INLINE);
+    update.unset(InputSetEntityKeys.repo);
+    update.unset(InputSetEntityKeys.filePath);
+    update.unset(InputSetEntityKeys.connectorRef);
+    update.unset(InputSetEntityKeys.repoURL);
+    return update;
   }
 
   // todo: move to helper class when created during refactoring

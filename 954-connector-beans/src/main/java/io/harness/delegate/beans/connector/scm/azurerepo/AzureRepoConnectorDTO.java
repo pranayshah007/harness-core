@@ -161,7 +161,7 @@ public class AzureRepoConnectorDTO
   }
 
   @Override
-  public String getFileUrl(String branchName, String filePath, GitRepositoryDTO gitRepositoryDTO) {
+  public String getFileUrl(String branchName, String filePath, String commitId, GitRepositoryDTO gitRepositoryDTO) {
     final String FILE_URL_FORMAT = "%s?path=%s&version=GB%s";
     ScmConnectorHelper.validateGetFileUrlParams(branchName, filePath);
     String repoUrl = removeStartingAndEndingSlash(getGitConnectionUrl(gitRepositoryDTO));

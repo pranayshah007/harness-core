@@ -37,7 +37,7 @@ public class AsgRollingDeployStepParameters extends AsgRollingDeployBaseStepInfo
   }
 
   public List<String> getCommandUnits() {
-    return Arrays.asList(AsgCommandUnitConstants.fetchManifests.toString(), AsgCommandUnitConstants.deploy.toString(),
-        AsgCommandUnitConstants.prepareRollbackData.toString());
+    return Arrays.asList(AsgCommandUnitConstants.fetchManifests.toString(),
+        AsgCommandUnitConstants.prepareRollbackData.toString(), AsgCommandUnitConstants.deploy.toString());
   }
 }

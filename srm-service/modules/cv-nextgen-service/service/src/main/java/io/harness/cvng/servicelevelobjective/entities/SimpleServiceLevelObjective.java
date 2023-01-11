@@ -10,13 +10,13 @@ import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import dev.morphia.query.UpdateOperations;
 import java.util.List;
 import java.util.Optional;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @JsonTypeName("Simple")
 @Data

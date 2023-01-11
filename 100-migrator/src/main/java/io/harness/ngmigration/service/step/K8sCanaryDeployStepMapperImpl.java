@@ -20,22 +20,22 @@ import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 
+import software.wings.beans.GraphNode;
 import software.wings.beans.InstanceUnitType;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.sm.State;
 import software.wings.sm.states.k8s.K8sCanaryDeploy;
-import software.wings.yaml.workflow.StepYaml;
 
 import java.util.Map;
 
 public class K8sCanaryDeployStepMapperImpl implements StepMapper {
   @Override
-  public String getStepType(StepYaml stepYaml) {
+  public String getStepType(GraphNode stepYaml) {
     return StepSpecTypeConstants.K8S_CANARY_DEPLOY;
   }
 
   @Override
-  public State getState(StepYaml stepYaml) {
+  public State getState(GraphNode stepYaml) {
     Map<String, Object> properties = StepMapper.super.getProperties(stepYaml);
     K8sCanaryDeploy state = new K8sCanaryDeploy(stepYaml.getName());
     state.parseProperties(properties);
@@ -43,8 +43,8 @@ public class K8sCanaryDeployStepMapperImpl implements StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(Map<CgEntityId, NGYamlFile> migratedEntities, StepYaml stepYaml) {
-    K8sCanaryDeploy state = (K8sCanaryDeploy) getState(stepYaml);
+  public AbstractStepNode getSpec(Map<CgEntityId, NGYamlFile> migratedEntities, GraphNode graphNode) {
+    K8sCanaryDeploy state = (K8sCanaryDeploy) getState(graphNode);
     K8sCanaryStepNode k8sCanaryStepNode = new K8sCanaryStepNode();
     baseSetup(state, k8sCanaryStepNode);
     InstanceSelectionBase spec;
@@ -71,7 +71,7 @@ public class K8sCanaryDeployStepMapperImpl implements StepMapper {
   }
 
   @Override
-  public boolean areSimilar(StepYaml stepYaml1, StepYaml stepYaml2) {
+  public boolean areSimilar(GraphNode stepYaml1, GraphNode stepYaml2) {
     K8sCanaryDeploy state1 = (K8sCanaryDeploy) getState(stepYaml1);
     K8sCanaryDeploy state2 = (K8sCanaryDeploy) getState(stepYaml2);
     if (!state2.getInstanceUnitType().equals(state1.getInstanceUnitType())) {

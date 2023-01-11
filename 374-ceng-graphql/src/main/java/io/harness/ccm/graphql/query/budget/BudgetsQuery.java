@@ -11,13 +11,16 @@ import static io.harness.ccm.budget.AlertThresholdBase.ACTUAL_COST;
 import static io.harness.ccm.budget.AlertThresholdBase.FORECASTED_COST;
 
 import io.harness.ccm.budget.BudgetBreakdown;
+import io.harness.ccm.budget.BudgetSummary;
 import io.harness.ccm.budget.dao.BudgetDao;
 import io.harness.ccm.budget.utils.BudgetUtils;
+import io.harness.ccm.budgetGroup.BudgetGroup;
+import io.harness.ccm.budgetGroup.dao.BudgetGroupDao;
+import io.harness.ccm.budgetGroup.service.BudgetGroupService;
 import io.harness.ccm.commons.entities.billing.Budget;
 import io.harness.ccm.commons.entities.budget.BudgetData;
 import io.harness.ccm.graphql.core.budget.BudgetCostService;
 import io.harness.ccm.graphql.core.budget.BudgetService;
-import io.harness.ccm.graphql.dto.budget.BudgetSummary;
 import io.harness.ccm.graphql.utils.GraphQLUtils;
 import io.harness.ccm.graphql.utils.annotations.GraphQLApi;
 import io.harness.ccm.rbac.CCMRbacHelper;
@@ -40,7 +43,9 @@ import lombok.extern.slf4j.Slf4j;
 public class BudgetsQuery {
   @Inject private GraphQLUtils graphQLUtils;
   @Inject private BudgetDao budgetDao;
+  @Inject private BudgetGroupDao budgetGroupDao;
   @Inject private BudgetService budgetService;
+  @Inject private BudgetGroupService budgetGroupService;
   @Inject private BudgetCostService budgetCostService;
   @Inject private CCMRbacHelper rbacHelper;
 
@@ -69,6 +74,11 @@ public class BudgetsQuery {
         return buildBudgetSummary(budget, true);
       }
 
+      // If budget is null and budgetId is not null
+      // the budget group id might have been passed as budgetId
+      if (budget == null && budgetId != null) {
+        return buildBudgetGroupSummary(budgetGroupDao.get(budgetId, accountId));
+      }
     } catch (Exception e) {
       log.info("Exception while fetching budget for given perspective: ", e);
     }
@@ -99,8 +109,18 @@ public class BudgetsQuery {
       @GraphQLEnvironment final ResolutionEnvironment env,
       @GraphQLArgument(name = "breakdown") BudgetBreakdown breakdown) {
     final String accountId = graphQLUtils.getAccountIdentifier(env);
-    return budgetService.getBudgetTimeSeriesStats(
-        budgetDao.get(budgetId, accountId), breakdown == null ? BudgetBreakdown.YEARLY : breakdown);
+    // Check if any budget with this id exists
+    Budget budget = budgetDao.get(budgetId, accountId);
+
+    // If budget exists we return time series stats of the budget
+    if (budget != null) {
+      return budgetService.getBudgetTimeSeriesStats(budget, breakdown == null ? BudgetBreakdown.YEARLY : breakdown);
+    }
+
+    // If no budget exists with such id then we check if it's a budget group
+    // And we get the time series stats of the budget group
+    return budgetGroupService.getBudgetGroupTimeSeriesStats(
+        budgetGroupDao.get(budgetId, accountId), breakdown == null ? BudgetBreakdown.YEARLY : breakdown);
   }
 
   @GraphQLQuery(name = "budgetSummaryList", description = "List of budget cards for perspectives")
@@ -141,17 +161,46 @@ public class BudgetsQuery {
         .budgetAmount(budget.getBudgetAmount())
         .actualCost(actualCost)
         .forecastCost(budget.getForecastCost())
-        .timeLeft(BudgetUtils.getTimeLeftForBudget(budget))
+        .timeLeft(BudgetUtils.getTimeLeftForBudget(budget.getEndTime()))
         .timeUnit(BudgetUtils.DEFAULT_TIME_UNIT)
         .timeScope(BudgetUtils.getBudgetPeriod(budget).toString().toLowerCase())
-        .actualCostAlerts(BudgetUtils.getAlertThresholdsForBudget(budget, ACTUAL_COST))
-        .forecastCostAlerts(BudgetUtils.getAlertThresholdsForBudget(budget, FORECASTED_COST))
+        .actualCostAlerts(BudgetUtils.getAlertThresholdsForBudget(budget.getAlertThresholds(), ACTUAL_COST))
+        .forecastCostAlerts(BudgetUtils.getAlertThresholdsForBudget(budget.getAlertThresholds(), FORECASTED_COST))
         .alertThresholds(budget.getAlertThresholds())
-        .growthRate(BudgetUtils.getBudgetGrowthRate(budget))
         .period(BudgetUtils.getBudgetPeriod(budget))
-        .startTime(BudgetUtils.getBudgetStartTime(budget))
         .type(budget.getType())
+        .growthRate(BudgetUtils.getBudgetGrowthRate(budget))
+        .startTime(BudgetUtils.getBudgetStartTime(budget.getStartTime(), budget.getPeriod()))
         .budgetMonthlyBreakdown(budget.getBudgetMonthlyBreakdown())
+        .isBudgetGroup(false)
+        .build();
+  }
+
+  private BudgetSummary buildBudgetGroupSummary(BudgetGroup budgetGroup) {
+    if (budgetGroup == null) {
+      return null;
+    }
+
+    return BudgetSummary.builder()
+        .id(budgetGroup.getUuid())
+        .name(budgetGroup.getName())
+        .perspectiveId(null)
+        .perspectiveName(null)
+        .budgetAmount(budgetGroup.getBudgetGroupAmount())
+        .actualCost(budgetGroup.getActualCost())
+        .forecastCost(budgetGroup.getForecastCost())
+        .timeLeft(BudgetUtils.getTimeLeftForBudget(budgetGroup.getEndTime()))
+        .timeUnit(BudgetUtils.DEFAULT_TIME_UNIT)
+        .timeScope(budgetGroup.getPeriod().toString().toLowerCase())
+        .actualCostAlerts(BudgetUtils.getAlertThresholdsForBudget(budgetGroup.getAlertThresholds(), ACTUAL_COST))
+        .forecastCostAlerts(BudgetUtils.getAlertThresholdsForBudget(budgetGroup.getAlertThresholds(), FORECASTED_COST))
+        .alertThresholds(budgetGroup.getAlertThresholds())
+        .period(budgetGroup.getPeriod())
+        .type(null)
+        .growthRate(null)
+        .startTime(BudgetUtils.getBudgetStartTime(budgetGroup.getStartTime(), budgetGroup.getPeriod()))
+        .budgetMonthlyBreakdown(budgetGroup.getBudgetGroupMonthlyBreakdown())
+        .isBudgetGroup(true)
         .build();
   }
 }

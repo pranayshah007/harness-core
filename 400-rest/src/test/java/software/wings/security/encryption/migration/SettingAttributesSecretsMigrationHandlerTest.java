@@ -44,6 +44,8 @@ import software.wings.service.intfc.UsageRestrictionsService;
 import software.wings.service.intfc.newrelic.NewRelicService;
 
 import com.google.inject.Inject;
+import dev.morphia.query.FieldEnd;
+import dev.morphia.query.Query;
 import java.time.Duration;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
@@ -53,8 +55,6 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mongodb.morphia.query.FieldEnd;
-import org.mongodb.morphia.query.Query;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;

@@ -10,11 +10,13 @@ package io.harness.iterator;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.iterator.PersistenceIterator.ProcessMode.LOOP;
 import static io.harness.iterator.PersistenceIterator.ProcessMode.PUMP;
+import static io.harness.iterator.PersistenceIterator.ProcessMode.REDIS_BATCH;
 import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.IRREGULAR;
 import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.IRREGULAR_SKIP_MISSED;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.config.WorkersConfiguration;
+import io.harness.lock.PersistentLocker;
 import io.harness.metrics.HarnessMetricRegistry;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.MongoPersistenceIterator.MongoPersistenceIteratorBuilder;
@@ -25,6 +27,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+import com.google.inject.Key;
 import com.google.inject.Singleton;
 import java.security.SecureRandom;
 import java.time.Duration;
@@ -46,19 +49,6 @@ public final class PersistenceIteratorFactory {
   @Inject WorkersConfiguration workersConfiguration;
   @Inject HarnessMetricRegistry harnessMetricRegistry;
 
-  public <T extends PersistentIterable, F extends FilterExpander> PersistenceIterator createIterator(
-      Class<?> cls, MongoPersistenceIteratorBuilder<T, F> builder) {
-    if (!workersConfiguration.confirmWorkerIsActive(cls)) {
-      log.info("Worker {} is disabled in this setup", cls.getName());
-      return null;
-    }
-
-    log.info("Worker {} is enabled in this setup", cls.getName());
-    MongoPersistenceIterator<T, F> iterator = builder.build();
-    injector.injectMembers(iterator);
-    return iterator;
-  }
-
   @Value
   @Builder
   public static class PumpExecutorOptions {
@@ -67,18 +57,47 @@ public final class PersistenceIteratorFactory {
     private Duration interval;
   }
 
+  @Value
+  @Builder
+  public static class RedisBatchExecutorOptions {
+    private String name;
+    private int poolSize;
+    private Duration interval;
+  }
+
+  private String getWorkerDisabledLog(String className) {
+    return "Worker { " + className + " } is disabled in this setup";
+  }
+
+  private String getWorkerEnabledLog(String className) {
+    return "Worker { " + className + " } is enabled in this setup";
+  }
+
+  public <T extends PersistentIterable, F extends FilterExpander> PersistenceIterator createIterator(
+      Class<?> cls, MongoPersistenceIteratorBuilder<T, F> builder) {
+    if (!workersConfiguration.confirmWorkerIsActive(cls)) {
+      log.info(getWorkerDisabledLog(cls.getName()));
+      return null;
+    }
+
+    log.info(getWorkerEnabledLog(cls.getName()));
+    MongoPersistenceIterator<T, F> iterator = builder.build();
+    injector.injectMembers(iterator);
+    return iterator;
+  }
+
   private <T extends PersistentIterable, F extends FilterExpander> PersistenceIterator<T>
   createIteratorWithDedicatedThreadPool(PersistenceIterator.ProcessMode processMode, PumpExecutorOptions options,
       Class<?> cls, MongoPersistenceIteratorBuilder<T, F> builder) {
     if (!workersConfiguration.confirmWorkerIsActive(cls)) {
-      log.info("Worker {} is disabled in this setup", cls.getName());
+      log.info(getWorkerDisabledLog(cls.getName()));
       return null;
     }
 
-    String iteratorName = "Iterator-" + options.getName();
+    String iteratorName = "Iterator-" + options.name;
     ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(
-        options.getPoolSize(), new ThreadFactoryBuilder().setNameFormat(iteratorName).build());
-    log.info("Worker {} is enabled in this setup", cls.getName());
+        options.poolSize, new ThreadFactoryBuilder().setNameFormat(iteratorName).build());
+    log.info(getWorkerEnabledLog(cls.getName()));
 
     MetricRegistry metricRegistry = harnessMetricRegistry.getThreadPoolMetricRegistry();
     InstrumentedExecutorService instrumentedExecutorService =
@@ -86,8 +105,8 @@ public final class PersistenceIteratorFactory {
 
     MongoPersistenceIterator<T, F> iterator = builder.mode(processMode)
                                                   .executorService(instrumentedExecutorService)
-                                                  .semaphore(new Semaphore(options.getPoolSize()))
-                                                  .iteratorName(options.getName())
+                                                  .semaphore(new Semaphore(options.poolSize))
+                                                  .iteratorName(options.name)
                                                   .build();
     injector.injectMembers(iterator);
     long millis = options.interval.toMillis();
@@ -112,5 +131,33 @@ public final class PersistenceIteratorFactory {
   createPumpIteratorWithDedicatedThreadPool(
       PumpExecutorOptions options, Class<?> cls, MongoPersistenceIteratorBuilder<T, F> builder) {
     return createIteratorWithDedicatedThreadPool(PUMP, options, cls, builder);
+  }
+
+  public <T extends PersistentIterable, F extends FilterExpander> PersistenceIterator<T>
+  createRedisBatchIteratorWithDedicatedThreadPool(
+      RedisBatchExecutorOptions options, Class<?> cls, MongoPersistenceIteratorBuilder<T, F> builder) {
+    if (!workersConfiguration.confirmWorkerIsActive(cls)) {
+      log.info(getWorkerDisabledLog(cls.getName()));
+      return null;
+    }
+
+    String iteratorName = "Iterator-" + options.name;
+    ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(
+        options.poolSize, new ThreadFactoryBuilder().setNameFormat(iteratorName).build());
+    log.info(getWorkerEnabledLog(cls.getName()));
+
+    MongoPersistenceIterator<T, F> iterator =
+        builder.mode(REDIS_BATCH)
+            .threadPoolExecutor(executor)
+            .semaphore(new Semaphore(options.poolSize))
+            .iteratorName(options.name)
+            .persistentLocker(injector.getInstance(Key.get(PersistentLocker.class)))
+            .build();
+    injector.injectMembers(iterator);
+    long millis = options.interval.toMillis();
+    executor.scheduleAtFixedRate(
+        iterator::redisBatchProcess, random.nextInt((int) millis), millis, TimeUnit.MILLISECONDS);
+
+    return iterator;
   }
 }

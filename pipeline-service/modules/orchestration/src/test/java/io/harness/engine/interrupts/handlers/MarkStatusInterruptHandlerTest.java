@@ -124,7 +124,7 @@ public class MarkStatusInterruptHandlerTest extends CategoryTest {
 
     doReturn(NodeExecution.builder().status(fromStatus).uuid(nodeExecutionId).ambiance(ambiance).build())
         .when(nodeExecutionService)
-        .update(eq(nodeExecutionId), any());
+        .update(eq(nodeExecutionId), any(), any());
 
     // Returning Final status so planExecutionService should not be called.
     List<NodeExecution> nodeExecutionList =

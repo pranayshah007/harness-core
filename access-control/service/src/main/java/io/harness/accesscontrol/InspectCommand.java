@@ -15,11 +15,11 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.name.Names;
+import dev.morphia.AdvancedDatastore;
 import io.dropwizard.Application;
 import io.dropwizard.cli.ConfiguredCommand;
 import io.dropwizard.setup.Bootstrap;
 import net.sourceforge.argparse4j.inf.Namespace;
-import org.mongodb.morphia.AdvancedDatastore;
 
 public class InspectCommand<T extends io.dropwizard.Configuration> extends ConfiguredCommand<T> {
   private final Class<T> configurationClass;

@@ -26,6 +26,7 @@ import static software.wings.utils.WingsTestConstants.DELEGATE_NAME;
 import static software.wings.utils.WingsTestConstants.DELEGATE_PROFILE_ID;
 import static software.wings.utils.WingsTestConstants.HOST_NAME;
 
+import static dev.morphia.mapping.Mapper.ID_KEY;
 import static java.util.Arrays.asList;
 import static javax.ws.rs.client.Entity.entity;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -37,7 +38,6 @@ import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mongodb.morphia.mapping.Mapper.ID_KEY;
 
 import io.harness.CategoryTest;
 import io.harness.accesscontrol.acl.api.Resource;
@@ -62,6 +62,7 @@ import io.harness.delegate.beans.DelegateTags;
 import io.harness.delegate.beans.DelegateType;
 import io.harness.delegate.filter.DelegateFilterPropertiesDTO;
 import io.harness.delegate.resources.DelegateSetupResourceV2;
+import io.harness.delegate.service.intfc.DelegateInstallationCommandService;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.service.intfc.DelegateCache;
@@ -121,6 +122,8 @@ public class DelegateSetupResourceTest extends CategoryTest {
   private static final SubdomainUrlHelperIntfc subdomainUrlHelper = mock(SubdomainUrlHelperIntfc.class);
   private static final DelegateCache delegateCache = mock(DelegateCache.class);
   private static final AccessControlClient accessControlClient = mock(AccessControlClient.class);
+  private static final DelegateInstallationCommandService delegateInstallationCommandService =
+      mock(DelegateInstallationCommandService.class);
 
   @Parameter public String apiUrl;
 
@@ -133,7 +136,7 @@ public class DelegateSetupResourceTest extends CategoryTest {
   public static final ResourceTestRule RESOURCES =
       ResourceTestRule.builder()
           .instance(new DelegateSetupResource(delegateService, delegateScopeService, downloadTokenService,
-              subdomainUrlHelper, delegateCache, accessControlClient))
+              subdomainUrlHelper, delegateCache, accessControlClient, delegateInstallationCommandService))
           .instance(new DelegateSetupResourceV3(delegateService, delegateScopeService, downloadTokenService,
               subdomainUrlHelper, delegateCache, accessControlClient, delegateSetupService))
           .instance(new AbstractBinder() {

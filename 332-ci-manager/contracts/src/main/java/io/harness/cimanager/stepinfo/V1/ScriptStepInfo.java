@@ -71,12 +71,12 @@ public class ScriptStepInfo extends CIAbstractStepInfo implements WithConnectorR
   }
   @YamlSchemaTypes(value = {string})
   @ApiModelProperty(dataType = STRING_MAP_CLASSPATH)
-  ParameterField<Map<String, String>> env;
-  public ParameterField<Map<String, String>> getEnv() {
-    if (ParameterField.isNull(this.env)) {
-      this.env.setValue(Collections.emptyMap());
+  ParameterField<Map<String, String>> envs;
+  public ParameterField<Map<String, String>> getEnvs() {
+    if (ParameterField.isNull(this.envs)) {
+      this.envs.setValue(Collections.emptyMap());
     }
-    return this.env;
+    return this.envs;
   }
   @YamlSchemaTypes(value = {runtime})
   @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.reports.V1.Report", hidden = true)
@@ -88,7 +88,7 @@ public class ScriptStepInfo extends CIAbstractStepInfo implements WithConnectorR
     return this.reports;
   }
 
-  @ApiModelProperty(dataType = STRING_CLASSPATH) ParameterField<String> image;
+  @YamlSchemaTypes({runtime}) @ApiModelProperty(dataType = STRING_CLASSPATH) ParameterField<String> image;
   @YamlSchemaTypes({runtime}) @ApiModelProperty(dataType = BOOLEAN_CLASSPATH) ParameterField<Boolean> privileged;
   @YamlSchemaTypes({string}) @ApiModelProperty(dataType = INTEGER_CLASSPATH) ParameterField<Integer> user;
   @YamlSchemaTypes({runtime}) @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.beans.Shell") Shell shell;
@@ -97,15 +97,15 @@ public class ScriptStepInfo extends CIAbstractStepInfo implements WithConnectorR
   PullPolicy pull;
 
   @Builder
-  @ConstructorProperties({"uuid", "run", "outputs", "env", "reports", "image", "resources", "privileged", "user",
+  @ConstructorProperties({"uuid", "run", "outputs", "envs", "reports", "image", "resources", "privileged", "user",
       "shell", "pull", "volumes"})
   public ScriptStepInfo(String uuid, ParameterField<String> run, ParameterField<List<String>> outputs,
-      ParameterField<Map<String, String>> env, ParameterField<List<Report>> reports, ParameterField<String> image,
+      ParameterField<Map<String, String>> envs, ParameterField<List<Report>> reports, ParameterField<String> image,
       ContainerResource resources, ParameterField<Boolean> privileged, ParameterField<Integer> user, Shell shell,
       PullPolicy pull, ParameterField<List<Volume>> volumes) {
     this.uuid = uuid;
     this.run = run;
-    this.env = env;
+    this.envs = envs;
     this.reports = reports;
     this.outputs = outputs;
     this.image = image;

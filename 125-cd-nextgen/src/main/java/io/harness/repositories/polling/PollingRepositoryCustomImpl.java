@@ -133,4 +133,10 @@ public class PollingRepositoryCustomImpl implements PollingRepositoryCustom {
                                               .in(signatures));
     return mongoTemplate.findOne(query, PollingDocument.class);
   }
+
+  @Override
+  public List<PollingDocument> deleteAll(Criteria criteria) {
+    Query query = new Query(criteria);
+    return mongoTemplate.findAllAndRemove(query, PollingDocument.class);
+  }
 }

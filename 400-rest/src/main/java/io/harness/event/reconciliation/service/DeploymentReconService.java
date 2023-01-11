@@ -9,6 +9,7 @@ package io.harness.event.reconciliation.service;
 
 import io.harness.event.reconciliation.ReconciliationStatus;
 
+import software.wings.graphql.datafetcher.DataFetcherUtils;
 import software.wings.search.framework.ExecutionEntity;
 
 import java.util.Map;
@@ -18,5 +19,7 @@ public interface DeploymentReconService {
       String accountId, long durationStartTs, long durationEndTs, ExecutionEntity executionEntity);
   long getWFExecCountFromMongoDB(String accountId, long durationStartTs, long durationEndTs);
   boolean isStatusMismatchedAndUpdated(Map<String, String> tsdbRunningWFs);
+  boolean isStatusMismatchedAndUpdatedV2(String accountId, long durationStartTs, long durationEndTs,
+      String sourceEntityClass, String completedExecutionsQuery, DataFetcherUtils utils);
   void insertMissingRecords(String accountId, long durationStartTs, long durationEndTs);
 }

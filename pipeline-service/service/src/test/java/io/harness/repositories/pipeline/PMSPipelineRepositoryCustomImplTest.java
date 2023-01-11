@@ -8,6 +8,8 @@
 package io.harness.repositories.pipeline;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.pms.pipeline.MoveConfigOperationType.INLINE_TO_REMOTE;
+import static io.harness.pms.pipeline.MoveConfigOperationType.REMOTE_TO_INLINE;
 import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.SRIDHAR;
@@ -645,5 +647,75 @@ public class PMSPipelineRepositoryCustomImplTest extends CategoryTest {
 
     assertFalse(
         pipelineRepository.shouldRetryWithFallBackBranch(new ScmConflictException(scmBadRequest), branch, branch));
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testUpdatePipelineOperationsInlineToRemote() {
+    Criteria pipelineCriteria = new Criteria();
+    Update pipelineUpdate = new Update();
+    Criteria metadataCriteria = new Criteria();
+    Update metadataUpdate = new Update();
+
+    GitEntityInfo branchInfo = GitEntityInfo.builder()
+                                   .storeType(StoreType.REMOTE)
+                                   .connectorRef(connectorRef)
+                                   .repoName(repoName)
+                                   .branch(branch)
+                                   .filePath(filePath)
+                                   .build();
+    setupGitContext(branchInfo);
+    PipelineEntity pipelineToSave = PipelineEntity.builder()
+                                        .accountId(accountIdentifier)
+                                        .orgIdentifier(orgIdentifier)
+                                        .projectIdentifier(projectIdentifier)
+                                        .identifier(pipelineId)
+                                        .yaml(pipelineYaml)
+                                        .build();
+
+    PipelineEntity pipelineToSaveWithStoreTypeWithExtraFields =
+        pipelineToSave.withStoreType(StoreType.INLINE).withVersion(0L);
+    doReturn(pipelineToSaveWithStoreTypeWithExtraFields)
+        .when(mongoTemplate)
+        .findAndModify(any(), any(), any(), any(Class.class));
+
+    PipelineEntity movedPipeline = pipelineRepository.moveConfigOperations(
+        pipelineToSave, pipelineUpdate, pipelineCriteria, metadataUpdate, metadataCriteria, INLINE_TO_REMOTE);
+    verify(gitAwareEntityHelper, times(1)).createEntityOnGit(pipelineToSave, pipelineYaml, scope);
+
+    verify(mongoTemplate, times(1)).findAndModify(any(), any(), any(), any(Class.class));
+    verify(pipelineMetadataService, times(1)).update(any(), any());
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testUpdatePipelineOperationsRemoteToInline() {
+    Criteria pipelineCriteria = new Criteria();
+    Update pipelineUpdate = new Update();
+    Criteria metadataCriteria = new Criteria();
+    Update metadataUpdate = new Update();
+
+    PipelineEntity pipelineToSave = PipelineEntity.builder()
+                                        .accountId(accountIdentifier)
+                                        .orgIdentifier(orgIdentifier)
+                                        .projectIdentifier(projectIdentifier)
+                                        .identifier(pipelineId)
+                                        .yaml(pipelineYaml)
+                                        .build();
+
+    PipelineEntity pipelineToSaveWithStoreTypeWithExtraFields =
+        pipelineToSave.withStoreType(StoreType.INLINE).withVersion(0L);
+    doReturn(pipelineToSaveWithStoreTypeWithExtraFields)
+        .when(mongoTemplate)
+        .findAndModify(any(), any(), any(), any(Class.class));
+
+    PipelineEntity movedPipeline = pipelineRepository.moveConfigOperations(
+        pipelineToSave, pipelineUpdate, pipelineCriteria, metadataUpdate, metadataCriteria, REMOTE_TO_INLINE);
+    verify(gitAwareEntityHelper, times(0)).createEntityOnGit(pipelineToSave, pipelineYaml, scope);
+
+    verify(mongoTemplate, times(1)).findAndModify(any(), any(), any(), any(Class.class));
+    verify(pipelineMetadataService, times(1)).update(any(), any());
   }
 }

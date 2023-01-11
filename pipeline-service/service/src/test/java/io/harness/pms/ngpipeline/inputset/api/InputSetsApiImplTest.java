@@ -21,14 +21,13 @@ import io.harness.PipelineServiceTestBase;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
-import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity.InputSetEntityKeys;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType;
 import io.harness.pms.ngpipeline.inputset.service.InputSetValidationHelper;
 import io.harness.pms.ngpipeline.inputset.service.PMSInputSetService;
 import io.harness.pms.pipeline.PipelineEntity;
-import io.harness.pms.pipeline.service.PMSPipelineService;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.rule.Owner;
 import io.harness.spec.server.pipeline.v1.model.InputSetCreateRequestBody;
 import io.harness.spec.server.pipeline.v1.model.InputSetResponseBody;
@@ -60,8 +59,6 @@ public class InputSetsApiImplTest extends PipelineServiceTestBase {
   InputSetsApiImpl inputSetsApiImpl;
   @Mock PMSInputSetService pmsInputSetService;
   @Mock InputSetsApiUtils inputSetsApiUtils;
-  @Mock PMSPipelineService pipelineService;
-  @Mock GitSyncSdkService gitSyncSdkService;
   private static final String account = randomAlphabetic(10);
   private static final String org = randomAlphabetic(10);
   private static final String project = randomAlphabetic(10);
@@ -85,7 +82,7 @@ public class InputSetsApiImplTest extends PipelineServiceTestBase {
   @Before
   public void setUp() throws IOException {
     MockitoAnnotations.initMocks(this);
-    inputSetsApiImpl = new InputSetsApiImpl(pmsInputSetService, inputSetsApiUtils, pipelineService, gitSyncSdkService);
+    inputSetsApiImpl = new InputSetsApiImpl(pmsInputSetService, inputSetsApiUtils);
 
     String inputSetFilename = "inputSet1.yml";
     inputSetYaml = readFile(inputSetFilename);
@@ -104,7 +101,7 @@ public class InputSetsApiImplTest extends PipelineServiceTestBase {
                          .build();
 
     inputSetResponseBody = new InputSetResponseBody();
-    inputSetResponseBody.setSlug(inputSet);
+    inputSetResponseBody.setIdentifier(inputSet);
     inputSetResponseBody.setName(inputSetName);
     inputSetResponseBody.setInputSetYaml(inputSetYaml);
     inputSetResponseBody.setOrg(org);
@@ -124,20 +121,18 @@ public class InputSetsApiImplTest extends PipelineServiceTestBase {
   @Owner(developers = MANKRIT)
   @Category(UnitTests.class)
   public void testCreateInputSet() {
-    doReturn(pipelineYaml)
-        .when(inputSetsApiUtils)
-        .getPipelineYaml(any(), any(), any(), any(), any(), any(), any(), any());
-    doReturn(inputSetEntity).when(pmsInputSetService).create(any(), any(), any(), anyBoolean());
+    doReturn(inputSetEntity).when(pmsInputSetService).create(any(), anyBoolean());
     doReturn(inputSetResponseBody).when(inputSetsApiUtils).getInputSetResponse(any());
     InputSetCreateRequestBody inputSetCreateRequestBody = new InputSetCreateRequestBody();
-    inputSetCreateRequestBody.setSlug(inputSet);
+    inputSetCreateRequestBody.setIdentifier(inputSet);
     inputSetCreateRequestBody.setName(inputSetName);
     inputSetCreateRequestBody.setInputSetYaml(inputSetYaml);
+    doReturn(PipelineVersion.V0).when(inputSetsApiUtils).inputSetVersion(any(), any());
     Response response = inputSetsApiImpl.createInputSet(inputSetCreateRequestBody, pipeline, org, project, account);
     InputSetResponseBody responseBody = (InputSetResponseBody) response.getEntity();
     assertEquals(responseBody.getInputSetYaml(), inputSetYaml);
     assertEquals(responseBody.getName(), inputSetName);
-    assertEquals(responseBody.getSlug(), inputSet);
+    assertEquals(responseBody.getIdentifier(), inputSet);
     assertEquals(responseBody.getOrg(), org);
     assertEquals(responseBody.getProject(), project);
   }
@@ -160,14 +155,14 @@ public class InputSetsApiImplTest extends PipelineServiceTestBase {
         .get(account, org, project, pipeline, inputSet, false, null, null, true);
     doReturn(inputSetResponseBody).when(inputSetsApiUtils).getInputSetResponse(any());
     InputSetCreateRequestBody inputSetCreateRequestBody = new InputSetCreateRequestBody();
-    inputSetCreateRequestBody.setSlug(inputSet);
+    inputSetCreateRequestBody.setIdentifier(inputSet);
     inputSetCreateRequestBody.setInputSetYaml(inputSetYaml);
 
     Response response = inputSetsApiImpl.getInputSet(org, project, inputSet, pipeline, account, null, null, null);
     InputSetResponseBody responseBody = (InputSetResponseBody) response.getEntity();
     assertEquals(responseBody.getInputSetYaml(), inputSetYaml);
     assertEquals(responseBody.getName(), inputSetName);
-    assertEquals(responseBody.getSlug(), inputSet);
+    assertEquals(responseBody.getIdentifier(), inputSet);
     assertEquals(responseBody.getOrg(), org);
     assertEquals(responseBody.getProject(), project);
   }
@@ -176,13 +171,11 @@ public class InputSetsApiImplTest extends PipelineServiceTestBase {
   @Owner(developers = MANKRIT)
   @Category(UnitTests.class)
   public void testUpdateInputSet() {
-    doReturn(pipelineYaml)
-        .when(inputSetsApiUtils)
-        .getPipelineYaml(any(), any(), any(), any(), any(), any(), any(), any());
-    doReturn(inputSetEntity).when(pmsInputSetService).update(any(), any(), any(), any(), anyBoolean());
+    doReturn(inputSetEntity).when(pmsInputSetService).update(any(), any(), anyBoolean());
+    doReturn(PipelineVersion.V0).when(inputSetsApiUtils).inputSetVersion(any(), any());
     doReturn(inputSetResponseBody).when(inputSetsApiUtils).getInputSetResponse(any());
     InputSetUpdateRequestBody inputSetUpdateRequestBody = new InputSetUpdateRequestBody();
-    inputSetUpdateRequestBody.setSlug(inputSet);
+    inputSetUpdateRequestBody.setIdentifier(inputSet);
     inputSetUpdateRequestBody.setName(inputSetName);
     inputSetUpdateRequestBody.setInputSetYaml(inputSetYaml);
 
@@ -212,7 +205,7 @@ public class InputSetsApiImplTest extends PipelineServiceTestBase {
     assertThat(content).isNotEmpty();
     assertThat(content.size()).isEqualTo(1);
     InputSetResponseBody responseBody = content.get(0);
-    assertThat(responseBody.getSlug()).isEqualTo(inputSet);
+    assertThat(responseBody.getIdentifier()).isEqualTo(inputSet);
     assertThat(responseBody.getName()).isEqualTo(inputSetName);
   }
 }

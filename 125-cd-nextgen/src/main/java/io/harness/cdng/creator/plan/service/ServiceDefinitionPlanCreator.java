@@ -245,6 +245,6 @@ public class ServiceDefinitionPlanCreator extends ChildrenPlanCreator<YamlField>
         ImmutableSet.of(ServiceSpecType.KUBERNETES, ServiceSpecType.SSH, ServiceSpecType.WINRM,
             ServiceSpecType.NATIVE_HELM, ServiceSpecType.SERVERLESS_AWS_LAMBDA, ServiceSpecType.AZURE_WEBAPP,
             ServiceSpecType.ECS, ServiceSpecType.CUSTOM_DEPLOYMENT, ServiceSpecType.ELASTIGROUP, ServiceSpecType.TAS,
-            ServiceSpecType.ASG));
+            ServiceSpecType.ASG, ServiceSpecType.GOOGLE_CLOUD_FUNCTIONS));
   }
 }

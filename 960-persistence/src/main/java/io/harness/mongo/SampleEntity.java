@@ -16,9 +16,9 @@ import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UpdatedByAware;
 import io.harness.persistence.UuidAware;
 
+import dev.morphia.annotations.Id;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Id;
 
 @Data
 @FieldNameConstants(innerTypeName = "SampleEntityKeys")

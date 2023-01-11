@@ -26,6 +26,7 @@ import io.harness.steps.approval.step.entities.ApprovalInstance;
 import io.harness.steps.approval.step.servicenow.ServiceNowApprovalOutCome;
 import io.harness.steps.approval.step.servicenow.ServiceNowApprovalSpecParameters;
 
+import dev.morphia.annotations.Entity;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -35,7 +36,6 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.Persistent;
 import org.springframework.data.annotation.TypeAlias;
 

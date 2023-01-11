@@ -16,9 +16,9 @@ import software.wings.beans.Account;
 import software.wings.dl.WingsPersistence;
 
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import java.time.OffsetDateTime;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
 
 @Slf4j
 public class DeleteStaleSecretUsageLogs implements Migration {

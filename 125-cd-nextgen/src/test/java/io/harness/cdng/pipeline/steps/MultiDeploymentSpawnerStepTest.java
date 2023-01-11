@@ -8,13 +8,24 @@
 package io.harness.cdng.pipeline.steps;
 
 import static io.harness.rule.OwnerRule.SAHIL;
+import static io.harness.rule.OwnerRule.TATHAGAT;
 import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
+import io.harness.accesscontrol.acl.api.Principal;
+import io.harness.accesscontrol.acl.api.Resource;
+import io.harness.accesscontrol.acl.api.ResourceScope;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.common.beans.SetupAbstractionKeys;
+import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
 import io.harness.cdng.environment.helper.EnvironmentInfraFilterHelper;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.environment.yaml.EnvironmentsYaml;
@@ -28,6 +39,10 @@ import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
 import io.harness.pms.contracts.execution.MatrixMetadata;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.StrategyMetadata;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.contracts.plan.ExecutionPrincipalInfo;
+import io.harness.pms.contracts.plan.PrincipalType;
+import io.harness.pms.rbac.NGResourceType;
 import io.harness.pms.sdk.core.steps.io.StepResponseNotifyData;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
@@ -41,6 +56,7 @@ import org.assertj.core.util.Maps;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
@@ -49,6 +65,7 @@ import org.mockito.junit.MockitoRule;
 public class MultiDeploymentSpawnerStepTest extends CategoryTest {
   @Mock private NGFeatureFlagHelperService featureFlagHelperService;
   @Mock private EnvironmentInfraFilterHelper environmentInfraFilterHelper;
+  @Mock private AccessControlClient accessControlClient;
   @InjectMocks private final MultiDeploymentSpawnerStep multiDeploymentSpawnerStep = new MultiDeploymentSpawnerStep();
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
@@ -69,6 +86,50 @@ public class MultiDeploymentSpawnerStepTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetStepParametersClass() {
     assertThat(multiDeploymentSpawnerStep.getStepParametersClass()).isEqualTo(MultiDeploymentStepParameters.class);
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testValidateResourcesWithEnvironmentGroup() {
+    Map<String, String> setupAbstractions = new HashMap<>();
+    setupAbstractions.put(SetupAbstractionKeys.accountId, "account1");
+    setupAbstractions.put(SetupAbstractionKeys.orgIdentifier, "org1");
+    setupAbstractions.put(SetupAbstractionKeys.projectIdentifier, "project1");
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .putAllSetupAbstractions(setupAbstractions)
+                            .setMetadata(ExecutionMetadata.newBuilder()
+                                             .setPrincipalInfo(ExecutionPrincipalInfo.newBuilder()
+                                                                   .setPrincipalType(PrincipalType.USER)
+                                                                   .setPrincipal("Principal")
+                                                                   .build())
+                                             .build())
+                            .build();
+
+    MultiDeploymentStepParameters multiDeploymentStepParameters =
+        MultiDeploymentStepParameters.builder()
+            .childNodeId("test")
+            .environmentGroup(
+                EnvironmentGroupYaml.builder().envGroupRef(ParameterField.createValueField("org.envGroup1")).build())
+            .build();
+    multiDeploymentSpawnerStep.validateResources(ambiance, multiDeploymentStepParameters);
+
+    ArgumentCaptor<ResourceScope> resourceScopeCaptor = ArgumentCaptor.forClass(ResourceScope.class);
+    ArgumentCaptor<Resource> resourceCaptor = ArgumentCaptor.forClass(Resource.class);
+    verify(accessControlClient, times(1))
+        .checkForAccessOrThrow(
+            any(Principal.class), resourceScopeCaptor.capture(), resourceCaptor.capture(), anyString(), anyString());
+
+    ResourceScope resourceScope = resourceScopeCaptor.getValue();
+    assertThat(resourceScope).isNotNull();
+    assertThat(resourceScope.getAccountIdentifier()).isEqualTo("account1");
+    assertThat(resourceScope.getOrgIdentifier()).isEqualTo("org1");
+    assertThat(resourceScope.getProjectIdentifier()).isBlank();
+
+    Resource resource = resourceCaptor.getValue();
+    assertThat(resource).isNotNull();
+    assertThat(resource.getResourceIdentifier()).isEqualTo("envGroup1");
+    assertThat(resource.getResourceType()).isEqualTo(NGResourceType.ENVIRONMENT_GROUP);
   }
 
   @Test

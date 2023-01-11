@@ -116,6 +116,7 @@ import com.google.inject.Inject;
 import com.splunk.Job;
 import com.splunk.JobArgs;
 import com.splunk.JobCollection;
+import dev.morphia.query.Query;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -133,7 +134,6 @@ import org.junit.rules.ExpectedException;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mongodb.morphia.query.Query;
 import retrofit2.Call;
 
 /**

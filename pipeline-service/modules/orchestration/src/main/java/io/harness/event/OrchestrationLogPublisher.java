@@ -10,11 +10,8 @@ package io.harness.event;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.OrchestrationEventLog;
-import io.harness.engine.observers.NodeExecutionStartObserver;
 import io.harness.engine.observers.NodeStartInfo;
-import io.harness.engine.observers.NodeStatusUpdateObserver;
 import io.harness.engine.observers.NodeUpdateInfo;
-import io.harness.engine.observers.NodeUpdateObserver;
 import io.harness.engine.observers.PlanStatusUpdateObserver;
 import io.harness.engine.observers.StepDetailsUpdateInfo;
 import io.harness.engine.observers.StepDetailsUpdateObserver;
@@ -38,15 +35,12 @@ import javax.cache.Cache;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @Singleton
-public class OrchestrationLogPublisher
-    implements NodeUpdateObserver, NodeStatusUpdateObserver, PlanStatusUpdateObserver, StepDetailsUpdateObserver,
-               NodeExecutionStartObserver {
+public class OrchestrationLogPublisher implements PlanStatusUpdateObserver, StepDetailsUpdateObserver {
   @Inject private OrchestrationEventLogRepository orchestrationEventLogRepository;
   @Inject @Named(EventsFrameworkConstants.ORCHESTRATION_LOG) private Producer producer;
   @Inject @Named("orchestrationLogCache") Cache<String, Long> orchestrationLogCache;
   @Inject OrchestrationLogConfiguration orchestrationLogConfiguration;
 
-  @Override
   public void onNodeStatusUpdate(NodeUpdateInfo nodeUpdateInfo) {
     createAndHandleEventLog(nodeUpdateInfo.getPlanExecutionId(), nodeUpdateInfo.getNodeExecutionId(),
         OrchestrationEventType.NODE_EXECUTION_STATUS_UPDATE);
@@ -58,7 +52,6 @@ public class OrchestrationLogPublisher
         OrchestrationEventType.PLAN_EXECUTION_STATUS_UPDATE);
   }
 
-  @Override
   public void onNodeUpdate(NodeUpdateInfo nodeUpdateInfo) {
     createAndHandleEventLog(nodeUpdateInfo.getPlanExecutionId(), nodeUpdateInfo.getNodeExecutionId(),
         OrchestrationEventType.NODE_EXECUTION_UPDATE);
@@ -99,7 +92,7 @@ public class OrchestrationLogPublisher
                       .setData(orchestrationLogEvent.toByteString())
                       .build());
   }
-  @Override
+
   public void onNodeStart(NodeStartInfo nodeStartInfo) {
     createAndHandleEventLog(nodeStartInfo.getNodeExecution().getPlanExecutionId(),
         nodeStartInfo.getNodeExecution().getUuid(), OrchestrationEventType.NODE_EXECUTION_START);

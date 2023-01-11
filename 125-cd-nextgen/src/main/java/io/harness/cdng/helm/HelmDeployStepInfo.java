@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.pipeline.CDStepInfo;
+import io.harness.cdng.pipeline.CDAbstractStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.HelmDeployStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -40,7 +40,7 @@ import org.springframework.data.annotation.TypeAlias;
 @SimpleVisitorHelper(helperClass = HelmDeployStepInfoVisitorHelper.class)
 @TypeAlias("HelmDeployStepInfo")
 @RecasterAlias("io.harness.cdng.helm.HelmDeployStepInfo")
-public class HelmDeployStepInfo extends HelmDeployBaseStepInfo implements CDStepInfo, Visitable {
+public class HelmDeployStepInfo extends HelmDeployBaseStepInfo implements CDAbstractStepInfo, Visitable {
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 

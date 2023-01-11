@@ -7,6 +7,7 @@
 
 package io.harness.ccm.graphql.dto.recommendation;
 
+import io.harness.ccm.commons.beans.recommendation.RecommendationState;
 import io.harness.ccm.commons.beans.recommendation.ResourceType;
 
 import io.leangen.graphql.annotations.GraphQLNonNull;
@@ -26,6 +27,7 @@ public class RecommendationItemDTO {
   Double monthlySaving;
   Double monthlyCost;
   @GraphQLNonNull @NotNull ResourceType resourceType;
+  RecommendationState recommendationState;
   String jiraConnectorRef;
   String jiraIssueKey;
   String jiraStatus;

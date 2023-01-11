@@ -7,6 +7,7 @@
 
 package io.harness.pms.plan.execution.service;
 
+import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.SHALINI;
 
@@ -41,8 +42,11 @@ import io.harness.pms.plan.execution.beans.dto.EdgeLayoutListDTO;
 import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO;
 import io.harness.repositories.executions.PmsExecutionSummaryRepository;
 import io.harness.rule.Owner;
+import io.harness.utils.OrchestrationVisualisationTestHelper;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -52,6 +56,8 @@ import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -112,6 +118,33 @@ public class PmsExecutionSummaryServiceImplTest extends OrchestrationVisualizati
                         .build();
     pmsExecutionSummaryService.updateStrategyNode("planExecution", nodeExecution, update);
     verify(pmsGraphStepDetailsService, times(1)).fetchConcurrentChildInstance(nodeExecution.getUuid());
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void testFetchPlanExecutionIdsFromAnalytics() {
+    String projectId = "projectId";
+    String pipelineId = "pipelineId";
+    String accountId = "accountId";
+    String orgId = "orgId";
+
+    doReturn(OrchestrationVisualisationTestHelper.createCloseableIterator(Collections.emptyListIterator()))
+        .when(pmsExecutionSummaryRepository)
+        .fetchExecutionSummaryEntityFromAnalytics(any());
+    List<PipelineExecutionSummaryEntity> executionSummaryEntities = new LinkedList<>();
+    pmsExecutionSummaryService.fetchPlanExecutionIdsFromAnalytics(accountId, orgId, projectId, pipelineId);
+    Criteria criteria = Criteria.where(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.accountId)
+                            .is(accountId)
+                            .and(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.orgIdentifier)
+                            .is(orgId)
+                            .and(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.projectIdentifier)
+                            .is(projectId)
+                            .and(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.pipelineIdentifier)
+                            .is(pipelineId);
+    Query query = new Query(criteria);
+    query.fields().include(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.planExecutionId);
+    verify(pmsExecutionSummaryRepository, times(1)).fetchExecutionSummaryEntityFromAnalytics(query);
   }
 
   @Test

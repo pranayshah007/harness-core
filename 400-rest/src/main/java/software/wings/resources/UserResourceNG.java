@@ -21,6 +21,7 @@ import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnauthorizedException;
+import io.harness.exception.WingsException;
 import io.harness.mappers.AccountMapper;
 import io.harness.ng.core.dto.UserInviteDTO;
 import io.harness.ng.core.user.PasswordChangeDTO;
@@ -142,6 +143,13 @@ public class UserResourceNG {
   @POST
   @Path("/signup-invite/community")
   public RestResponse<UserInfo> createCommunityUserAndCompleteSignup(SignupInviteDTO request) {
+    try {
+      signupService.validateEmail(request.getEmail());
+    } catch (WingsException exception) {
+      throw new InvalidRequestException(
+          String.format("%s is an invalid email.Please add a valid email and try again.", request.getEmail()),
+          exception);
+    }
     if (!accountService.listAllAccountsWithoutTheGlobalAccount().isEmpty()) {
       throw new InvalidRequestException(COMMUNITY_ACCOUNT_EXISTS);
     }

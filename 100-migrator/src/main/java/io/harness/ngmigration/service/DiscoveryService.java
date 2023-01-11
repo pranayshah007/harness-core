@@ -44,7 +44,6 @@ import software.wings.ngmigration.DiscoveryNode;
 import software.wings.ngmigration.DiscoveryResult;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.ngmigration.NGMigrationEntityType;
-import software.wings.ngmigration.NGMigrationStatus;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -217,23 +216,6 @@ public class DiscoveryService {
       exportImg(entities, graph, filePath);
     }
     return DiscoveryResult.builder().entities(entities).links(graph).root(node.getEntityNode().getEntityId()).build();
-  }
-
-  public NGMigrationStatus getMigrationStatus(DiscoveryResult discoveryResult) {
-    if (EmptyPredicate.isEmpty(discoveryResult.getEntities())) {
-      return NGMigrationStatus.builder().status(true).build();
-    }
-    boolean possible = true;
-    List<String> errors = new ArrayList<>();
-    for (CgEntityNode node : discoveryResult.getEntities().values()) {
-      NgMigrationService ngMigration = migrationFactory.getMethod(node.getType());
-      NGMigrationStatus migrationStatus = ngMigration.canMigrate(node.getEntity());
-      if (!migrationStatus.isStatus()) {
-        possible = false;
-        errors.addAll(migrationStatus.getReasons());
-      }
-    }
-    return NGMigrationStatus.builder().status(possible).reasons(errors).build();
   }
 
   private void exportImg(

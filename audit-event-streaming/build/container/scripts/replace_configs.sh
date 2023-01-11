@@ -4,8 +4,7 @@
 # that can be found in the licenses directory at the root of this repository, also available at
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
-
-CONFIG_FILE=/opt/harness/audit-event-streaming-config.yml
+CONFIG_FILE=/opt/harness/application.yml
 
 replace_key_value () {
   CONFIG_KEY="$1";
@@ -15,31 +14,31 @@ replace_key_value () {
   fi
 }
 
-if [[ "" != "$MONGO_URI" ]]; then
-  export MONGO_URI; yq -i '.harness-mongo.uri=env(MONGO_URI)' $CONFIG_FILE
-fi
-
-if [[ "" != "$MONGO_READ_PREF_NAME" ]]; then
-  export MONGO_READ_PREF_NAME; yq -i '.harness-mongo.readPref.name=env(MONGO_READ_PREF_NAME)' $CONFIG_FILE
-fi
-
-if [[ "" != "$MONGO_READ_PREF_TAGS" ]]; then
-  IFS=',' read -ra TAG_ITEMS <<< "$MONGO_READ_PREF_TAGS"
-  for ITEM in "${TAG_ITEMS[@]}"; do
-    TAG_NAME=$(echo $ITEM | awk -F= '{print $1}')
-    TAG_VALUE=$(echo $ITEM | awk -F= '{print $2}')
-    export TAG_VALUE; export TAG_NAME; yq -i '.harness-mongo.readPref.tagSet.[env(TAG_NAME)]=env(TAG_VALUE)' $CONFIG_FILE
+write_mongo_params() {
+  IFS='&' read -ra PARAMS <<< "$2"
+  for PARAM_PAIR in "${PARAMS[@]}"; do
+    NAME=$(cut -d= -f 1 <<< "$PARAM_PAIR")
+    VALUE=$(cut -d= -f 2 <<< "$PARAM_PAIR")
+    export VALUE; export ARG1=$1; export NAME; yq -i '.env(ARG1).params.env(NAME)=env(VALUE)' $CONFIG_FILE
   done
+}
+
+write_mongo_hosts_and_ports() {
+  IFS=',' read -ra HOST_AND_PORT <<< "$2"
+  for INDEX in "${!HOST_AND_PORT[@]}"; do
+    HOST=$(cut -d: -f 1 <<< "${HOST_AND_PORT[$INDEX]}")
+    PORT=$(cut -d: -f 2 -s <<< "${HOST_AND_PORT[$INDEX]}")
+
+    export HOST; export ARG1=$1; export INDEX; yq -i '.env(ARG1).[env(INDEX)].host=env(HOST)' $CONFIG_FILE
+    if [[ "" != "$PORT" ]]; then
+      export PORT; export ARG1=$1; export INDEX; yq -i '.env(ARG1).[env(INDEX)].port=env(PORT)' $CONFIG_FILE
+    fi
+  done
+}
+
+echo "Mongo URI: $MONGO_URI"
+
+if [[ "" != "$MONGO_URI" ]]; then
+  export MONGO_URI; yq -i '.auditDbConfig.uri=env(MONGO_URI)' $CONFIG_FILE
 fi
 
-if [[ "" != "$MONGO_INDEX_MANAGER_MODE" ]]; then
-  export MONGO_INDEX_MANAGER_MODE; yq -i '.harness-mongo.indexManagerMode=env(MONGO_INDEX_MANAGER_MODE)' $CONFIG_FILE
-fi
-
-if [[ "" != "$EVEMTS_MONGO_INDEX_MANAGER_MODE" ]]; then
-  export EVEMTS_MONGO_INDEX_MANAGER_MODE; yq -i '.events-mongo.indexManagerMode=env(EVEMTS_MONGO_INDEX_MANAGER_MODE)' $CONFIG_FILE
-fi
-
-if [[ "" != "$MONGO_MAX_OPERATION_TIME_IN_MILLIS" ]]; then
-  export MONGO_MAX_OPERATION_TIME_IN_MILLIS; yq -i '.events-mongo.maxOperationTimeInMillis=env(MONGO_MAX_OPERATION_TIME_IN_MILLIS)' $CONFIG_FILE
-fi

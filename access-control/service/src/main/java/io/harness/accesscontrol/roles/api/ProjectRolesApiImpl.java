@@ -149,7 +149,7 @@ public class ProjectRolesApiImpl implements ProjectRolesApi {
     RoleFilter roleFilter =
         RoleFilter.builder().searchTerm(searchTerm).scopeIdentifier(scopeIdentifier).managedFilter(NO_FILTER).build();
     PageRequest pageRequest = ApiUtils.getPageRequest(page, limit, sort, order);
-    PageResponse<Role> pageResponse = roleService.list(pageRequest, roleFilter);
+    PageResponse<Role> pageResponse = roleService.list(pageRequest, roleFilter, true);
     ResponseBuilder responseBuilder = Response.ok();
     ResponseBuilder responseBuilderWithLinks = ApiUtils.addLinksHeader(responseBuilder,
         format("/v1/orgs/%s/projects/%s/roles)", org, project), pageResponse.getContent().size(), page, limit);
@@ -167,7 +167,7 @@ public class ProjectRolesApiImpl implements ProjectRolesApi {
         ResourceScope.of(account, org, project), Resource.of(ROLE, role), EDIT_ROLE_PERMISSION);
     HarnessScopeParams harnessScopeParams =
         HarnessScopeParams.builder().accountIdentifier(account).orgIdentifier(org).projectIdentifier(project).build();
-    if (!role.equals(body.getSlug())) {
+    if (!role.equals(body.getIdentifier())) {
       throw new InvalidRequestException("Role identifier in the request body and the URL do not match.");
     }
     String scopeIdentifier = ScopeMapper.fromParams(harnessScopeParams).toString();

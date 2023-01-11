@@ -417,9 +417,11 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     if (foundTriggerEntity.getType() == WEBHOOK
         && GITHUB.getEntityMetadataName().equalsIgnoreCase(foundTriggerEntity.getMetadata().getWebhook().getType())
         && pmsFeatureFlagService.isEnabled(foundTriggerEntity.getAccountId(), FeatureName.CD_GIT_WEBHOOK_POLLING)) {
-      String webhookId = foundTriggerEntity.getTriggerStatus().getWebhookInfo().getWebhookId();
-      String pollInterval = foundTriggerEntity.getPollInterval();
-      return !StringUtils.isEmpty(webhookId) && !StringUtils.isEmpty(pollInterval);
+      if (foundTriggerEntity.getTriggerStatus().getWebhookInfo() != null) {
+        String webhookId = foundTriggerEntity.getTriggerStatus().getWebhookInfo().getWebhookId();
+        String pollInterval = foundTriggerEntity.getPollInterval();
+        return !StringUtils.isEmpty(webhookId) && !StringUtils.isEmpty(pollInterval);
+      }
     }
     return false;
   }
@@ -668,8 +670,10 @@ public class NGTriggerServiceImpl implements NGTriggerService {
         if (pmsFeatureFlagService.isEnabled(
                 triggerDetails.getNgTriggerEntity().getAccountId(), FeatureName.CD_GIT_WEBHOOK_POLLING)) {
           String pollInterval = triggerDetails.getNgTriggerEntity().getPollInterval();
-          if (pollInterval == null) {
-            throw new InvalidArgumentsException("Poll Interval cannot be empty");
+          if (StringUtils.isEmpty(pollInterval)) {
+            log.info("Polling not enabled for trigger {}, pollInterval {} ",
+                triggerDetails.getNgTriggerEntity().getIdentifier(), pollInterval);
+            return;
           }
           int pollInt = NGTimeConversionHelper.convertTimeStringToMinutesZeroAllowed(
               triggerDetails.getNgTriggerEntity().getPollInterval());

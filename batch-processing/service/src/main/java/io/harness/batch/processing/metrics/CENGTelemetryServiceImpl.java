@@ -33,7 +33,7 @@ import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.licensing.beans.modules.AccountLicenseDTO;
 import io.harness.licensing.remote.NgLicenseHttpClient;
 import io.harness.ng.core.dto.ResponseDTO;
-import io.harness.utils.RestCallToNGManagerClientUtils;
+import io.harness.remote.client.NGRestUtils;
 
 import com.google.cloud.bigquery.BigQuery;
 import com.google.cloud.bigquery.QueryJobConfiguration;
@@ -130,7 +130,7 @@ public class CENGTelemetryServiceImpl implements CENGTelemetryService {
   private long getLicenseStartTime(String accountId) {
     try {
       Call<ResponseDTO<AccountLicenseDTO>> accountLicensesCall = ngLicenseHttpClient.getAccountLicensesDTO(accountId);
-      AccountLicenseDTO accountLicenseDTO = RestCallToNGManagerClientUtils.execute(accountLicensesCall);
+      AccountLicenseDTO accountLicenseDTO = NGRestUtils.getResponse(accountLicensesCall);
       return accountLicenseDTO.getAllModuleLicenses().get(ModuleType.CE).get(0).getStartTime();
     } catch (Exception ex) {
       log.error("Exception in fetching license startTime for accountId: {}", accountId, ex);

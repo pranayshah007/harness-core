@@ -9,6 +9,7 @@ package io.harness.engine;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.NAMAN;
+import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.doReturn;
@@ -25,6 +26,7 @@ import io.harness.opaclient.OpaServiceClient;
 import io.harness.opaclient.model.OpaConstants;
 import io.harness.opaclient.model.OpaEvaluationResponseHolder;
 import io.harness.opaclient.model.PipelineOpaEvaluationContext;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.rule.Owner;
 import io.harness.utils.PmsFeatureFlagService;
 
@@ -65,7 +67,7 @@ public class GovernanceServiceImplTest extends CategoryTest {
   public void testEvaluateGovernancePoliciesWithFlagOff() {
     doReturn(false).when(featureFlagService).isEnabled(accountId, FeatureName.OPA_PIPELINE_GOVERNANCE);
     GovernanceMetadata flagOffMetadata =
-        governanceService.evaluateGovernancePolicies(null, accountId, null, null, null, null);
+        governanceService.evaluateGovernancePolicies(null, accountId, null, null, null, null, PipelineVersion.V0);
     assertThat(flagOffMetadata.getDeny()).isFalse();
     assertThat(flagOffMetadata.getMessage()).isEqualTo("FF: [OPA_PIPELINE_GOVERNANCE] is disabled for account: [acc]");
   }
@@ -77,8 +79,8 @@ public class GovernanceServiceImplTest extends CategoryTest {
     doReturn(true).when(featureFlagService).isEnabled(accountId, FeatureName.OPA_PIPELINE_GOVERNANCE);
     MockedStatic<GovernanceServiceHelper> mockSettings = Mockito.mockStatic(GovernanceServiceHelper.class);
     when(GovernanceServiceHelper.createEvaluationContext("expandedJSON:")).thenThrow(new IOException());
-    GovernanceMetadata governanceMetadata =
-        governanceService.evaluateGovernancePolicies("expandedJSON:", accountId, null, null, null, null);
+    GovernanceMetadata governanceMetadata = governanceService.evaluateGovernancePolicies(
+        "expandedJSON:", accountId, null, null, null, null, PipelineVersion.V0);
     assertThat(governanceMetadata.getDeny()).isTrue();
     mockSettings.close();
   }
@@ -121,10 +123,20 @@ public class GovernanceServiceImplTest extends CategoryTest {
     when(GovernanceServiceHelper.mapResponseToMetadata(response)).thenReturn(expectedResponse);
 
     GovernanceMetadata governanceMetadata = governanceService.evaluateGovernancePolicies(
-        expandedJSON, accountId, orgId, projectId, action, planExecutionId);
+        expandedJSON, accountId, orgId, projectId, action, planExecutionId, PipelineVersion.V0);
     assertThat(governanceMetadata.getDeny()).isFalse();
     assertThat(governanceMetadata.getId()).isEqualTo("someID");
     mockSettings.close();
     mockSettings1.close();
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testEvaluateGovernancePoliciesForV1Yaml() {
+    doReturn(true).when(featureFlagService).isEnabled(accountId, FeatureName.OPA_PIPELINE_GOVERNANCE);
+    GovernanceMetadata governanceMetadata =
+        governanceService.evaluateGovernancePolicies(null, accountId, null, null, null, null, PipelineVersion.V1);
+    assertThat(governanceMetadata.getDeny()).isFalse();
   }
 }

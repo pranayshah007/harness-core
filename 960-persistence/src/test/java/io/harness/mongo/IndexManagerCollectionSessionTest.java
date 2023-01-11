@@ -28,11 +28,11 @@ import com.google.inject.Inject;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
+import dev.morphia.Morphia;
 import java.util.List;
 import java.util.Set;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mongodb.morphia.Morphia;
 
 public class IndexManagerCollectionSessionTest extends PersistenceTestBase {
   @Inject HPersistence persistence;

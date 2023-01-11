@@ -18,6 +18,7 @@ import io.harness.ng.DbAliases;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
@@ -25,7 +26,6 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
@@ -47,7 +47,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Persistent
 @OwnedBy(DX)
 public class GitBranch {
-  @JsonIgnore @Id @org.mongodb.morphia.annotations.Id String uuid;
+  @JsonIgnore @Id @dev.morphia.annotations.Id String uuid;
   @NotNull String accountIdentifier;
   @NotNull String repoURL;
   @NotEmpty String branchName;

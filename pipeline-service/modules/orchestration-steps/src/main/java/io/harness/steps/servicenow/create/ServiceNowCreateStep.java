@@ -17,7 +17,6 @@ import io.harness.delegate.task.servicenow.ServiceNowTaskNGParameters.ServiceNow
 import io.harness.delegate.task.servicenow.ServiceNowTaskNGResponse;
 import io.harness.ng.core.EntityDetail;
 import io.harness.plancreator.steps.common.StepElementParameters;
-import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepType;
@@ -28,6 +27,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.servicenow.ServiceNowActionNG;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.StepUtils;
+import io.harness.steps.executables.PipelineTaskExecutable;
 import io.harness.steps.servicenow.ServiceNowStepHelperService;
 import io.harness.steps.servicenow.ServiceNowStepUtils;
 import io.harness.supplier.ThrowingSupplier;
@@ -38,7 +38,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @OwnedBy(CDC)
-public class ServiceNowCreateStep extends TaskExecutableWithRollbackAndRbac<ServiceNowTaskNGResponse> {
+public class ServiceNowCreateStep extends PipelineTaskExecutable<ServiceNowTaskNGResponse> {
   public static final StepType STEP_TYPE = StepSpecTypeConstants.SERVICE_NOW_CREATE_STEP_TYPE;
 
   @Inject private PipelineRbacHelper pipelineRbacHelper;

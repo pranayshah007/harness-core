@@ -32,6 +32,7 @@ import software.wings.delegatetasks.DelegateLogService;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
+import dev.morphia.annotations.Transient;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -43,7 +44,6 @@ import java.util.stream.Collectors;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.annotations.Transient;
 
 @Slf4j
 public abstract class ContainerResizeCommandUnit extends AbstractCommandUnit {

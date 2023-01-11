@@ -9,7 +9,7 @@ package io.harness.cvng.core.resources;
 
 import io.harness.annotations.ExposeInternalException;
 import io.harness.cvng.core.beans.PrometheusSampleData;
-import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.core.beans.params.ProjectScopedProjectParams;
 import io.harness.cvng.core.beans.params.PrometheusConnectionParams;
 import io.harness.cvng.core.services.api.PrometheusService;
 import io.harness.ng.core.dto.ErrorDTO;
@@ -51,7 +51,7 @@ public class PrometheusResource {
   @Timed
   @ExceptionMetered
   @ApiOperation(value = "get all metric names", nickname = "getMetricNames")
-  public ResponseDTO<List<String>> getMetricNames(@NotNull @BeanParam ProjectParams projectParams,
+  public ResponseDTO<List<String>> getMetricNames(@NotNull @BeanParam ProjectScopedProjectParams projectParams,
       @QueryParam("filter") @DefaultValue("") String filter, @NotNull @QueryParam("tracingId") String tracingId,
       @BeanParam PrometheusConnectionParams prometheusConnectionParams) {
     return ResponseDTO.newResponse(prometheusService.getMetricNames(projectParams.getAccountIdentifier(),
@@ -63,7 +63,7 @@ public class PrometheusResource {
   @Timed
   @ExceptionMetered
   @ApiOperation(value = "get all label names", nickname = "getLabelNames")
-  public ResponseDTO<List<String>> getLabelNames(@NotNull @BeanParam ProjectParams projectParams,
+  public ResponseDTO<List<String>> getLabelNames(@NotNull @BeanParam ProjectScopedProjectParams projectParams,
       @NotNull @QueryParam("tracingId") String tracingId,
       @BeanParam PrometheusConnectionParams prometheusConnectionParams) {
     return ResponseDTO.newResponse(prometheusService.getLabelNames(projectParams.getAccountIdentifier(),
@@ -75,7 +75,7 @@ public class PrometheusResource {
   @Timed
   @ExceptionMetered
   @ApiOperation(value = "get all label values", nickname = "getLabeValues")
-  public ResponseDTO<List<String>> getLabeValues(@NotNull @BeanParam ProjectParams projectParams,
+  public ResponseDTO<List<String>> getLabeValues(@NotNull @BeanParam ProjectScopedProjectParams projectParams,
       @QueryParam("labelName") @NotNull String labelName, @NotNull @QueryParam("tracingId") String tracingId,
       @BeanParam PrometheusConnectionParams prometheusConnectionParams) {
     return ResponseDTO.newResponse(
@@ -88,8 +88,9 @@ public class PrometheusResource {
   @Timed
   @ExceptionMetered
   @ApiOperation(value = "get sample data", nickname = "getSampleData")
-  public ResponseDTO<List<PrometheusSampleData>> getSampleData(@NotNull @BeanParam ProjectParams projectParams,
-      @QueryParam("query") @NotNull String query, @NotNull @QueryParam("tracingId") String tracingId,
+  public ResponseDTO<List<PrometheusSampleData>> getSampleData(
+      @NotNull @BeanParam ProjectScopedProjectParams projectParams, @QueryParam("query") @NotNull String query,
+      @NotNull @QueryParam("tracingId") String tracingId,
       @BeanParam PrometheusConnectionParams prometheusConnectionParams) {
     return ResponseDTO.newResponse(
         prometheusService.getSampleData(projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),

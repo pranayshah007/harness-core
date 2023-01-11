@@ -247,6 +247,23 @@ if [[ "$EVENTS_FRAMEWORK_USE_SENTINEL" == "true" ]]; then
   fi
 fi
 
+if [[ "" != "$TIMESCALE_PASSWORD" ]]; then
+  yq write -i $CONFIG_FILE timescaledb.timescaledbPassword "$TIMESCALE_PASSWORD"
+fi
+
+if [[ "" != "$TIMESCALE_URI" ]]; then
+  yq write -i $CONFIG_FILE timescaledb.timescaledbUrl "$TIMESCALE_URI"
+fi
+
+if [[ "" != "$TIMESCALEDB_USERNAME" ]]; then
+  yq write -i $CONFIG_FILE timescaledb.timescaledbUsername "$TIMESCALEDB_USERNAME"
+fi
+
+if [[ "" != "$ENABLE_DASHBOARD_TIMESCALE" ]]; then
+  yq write -i $CONFIG_FILE enableDashboardTimescale $ENABLE_DASHBOARD_TIMESCALE
+fi
+
+
 replace_key_value cacheConfig.cacheNamespace $CACHE_NAMESPACE
 replace_key_value cacheConfig.cacheBackend $CACHE_BACKEND
 replace_key_value cacheConfig.enterpriseCacheEnabled $ENTERPRISE_CACHE_ENABLED
@@ -278,3 +295,4 @@ replace_key_value templateServiceSecret "$TEMPLATE_SERVICE_SECRET"
 replace_key_value enforcementClientConfiguration.enforcementCheckEnabled "$ENFORCEMENT_CHECK_ENABLED"
 
 replace_key_value enableOpentelemetry "$ENABLE_OPENTELEMETRY"
+

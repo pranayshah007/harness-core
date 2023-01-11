@@ -42,6 +42,7 @@ public class K8sBlueGreenDeployTaskParameters extends K8sTaskParameters implemen
   private boolean exportManifests;
   private boolean inheritManifests;
   private List<KubernetesResource> kubernetesResources;
+  private boolean useDeclarativeRollback;
 
   @Builder
   public K8sBlueGreenDeployTaskParameters(String accountId, String appId, String commandName, String activityId,
@@ -50,7 +51,7 @@ public class K8sBlueGreenDeployTaskParameters extends K8sTaskParameters implemen
       boolean skipDryRun, HelmVersion helmVersion, Boolean skipVersioningForAllK8sObjects,
       Set<String> delegateSelectors, boolean isPruningEnabled, boolean exportManifests, boolean inheritManifests,
       List<KubernetesResource> kubernetesResources, boolean useLatestChartMuseumVersion,
-      boolean useLatestKustomizeVersion, boolean useNewKubectlVersion) {
+      boolean useLatestKustomizeVersion, boolean useNewKubectlVersion, boolean useDeclarativeRollback) {
     super(accountId, appId, commandName, activityId, k8sClusterConfig, workflowExecutionId, releaseName,
         timeoutIntervalInMin, k8sTaskType, helmVersion, delegateSelectors, useLatestChartMuseumVersion,
         useLatestKustomizeVersion, useNewKubectlVersion);
@@ -62,6 +63,7 @@ public class K8sBlueGreenDeployTaskParameters extends K8sTaskParameters implemen
     this.exportManifests = exportManifests;
     this.inheritManifests = inheritManifests;
     this.kubernetesResources = kubernetesResources;
+    this.useDeclarativeRollback = useDeclarativeRollback;
   }
 
   @Override

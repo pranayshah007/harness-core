@@ -61,7 +61,7 @@ public class FargateResourceValues {
   }
 
   private static long gigabytesToBytes(double gb) {
-    return (long) gb * 1073741824L;
+    return (long) (gb * 1073741824L);
   }
 
   private static double cpuMillisToCores(long cpuMillis) {

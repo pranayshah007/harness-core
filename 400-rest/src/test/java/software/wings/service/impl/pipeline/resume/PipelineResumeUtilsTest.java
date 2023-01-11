@@ -86,6 +86,8 @@ import software.wings.sm.states.ForkState.ForkStateExecutionData;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -95,8 +97,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 
 public class PipelineResumeUtilsTest extends WingsBaseTest {
   @Mock private WingsPersistence mockWingsPersistence;

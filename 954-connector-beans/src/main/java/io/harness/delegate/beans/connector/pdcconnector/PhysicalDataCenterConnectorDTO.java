@@ -13,6 +13,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
+import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
+import io.harness.delegate.beans.connector.pdcconnector.outcome.HostOutcomeDTO;
+import io.harness.delegate.beans.connector.pdcconnector.outcome.PhysicalDataCenterConnectorOutcomeDTO;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -21,6 +24,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.validation.Valid;
 import lombok.Builder;
 import lombok.Data;
@@ -39,5 +43,19 @@ public class PhysicalDataCenterConnectorDTO extends ConnectorConfigDTO implement
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {
     return Collections.singletonList(this);
+  }
+
+  @Override
+  public ConnectorConfigOutcomeDTO toOutcome() {
+    return PhysicalDataCenterConnectorOutcomeDTO.builder()
+        .hosts(hosts.stream()
+                   .map(hostDTO
+                       -> HostOutcomeDTO.builder()
+                              .hostAttributes(hostDTO.getHostAttributes())
+                              .hostname(hostDTO.getHostName())
+                              .build())
+                   .collect(Collectors.toList()))
+        .delegateSelectors(this.delegateSelectors)
+        .build();
   }
 }

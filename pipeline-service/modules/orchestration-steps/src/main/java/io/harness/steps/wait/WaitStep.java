@@ -21,11 +21,10 @@ import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.execution.SdkGraphVisualizationDataService;
-import io.harness.pms.sdk.core.steps.executables.AsyncExecutable;
-import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.steps.StepSpecTypeConstants;
+import io.harness.steps.executables.PipelineAsyncExecutable;
 import io.harness.tasks.ResponseData;
 import io.harness.wait.WaitStepInstance;
 
@@ -33,14 +32,14 @@ import com.google.inject.Inject;
 import java.util.Map;
 
 @OwnedBy(PIPELINE)
-public class WaitStep implements AsyncExecutable<StepElementParameters> {
+public class WaitStep extends PipelineAsyncExecutable {
   public static final StepType STEP_TYPE = StepSpecTypeConstants.WAIT_STEP_TYPE;
   @Inject WaitStepService waitStepService;
   @Inject SdkGraphVisualizationDataService sdkGraphVisualizationDataService;
 
   @Override
-  public AsyncExecutableResponse executeAsync(Ambiance ambiance, StepElementParameters stepParameters,
-      StepInputPackage inputPackage, PassThroughData passThroughData) {
+  public AsyncExecutableResponse executeAsyncAfterRbac(
+      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
     String correlationId = UUIDGenerator.generateUuid();
     WaitStepParameters waitStepParameters = (WaitStepParameters) stepParameters.getSpec();
     int duration = 0;
@@ -61,7 +60,7 @@ public class WaitStep implements AsyncExecutable<StepElementParameters> {
   }
 
   @Override
-  public StepResponse handleAsyncResponse(
+  public StepResponse handleAsyncResponseInternal(
       Ambiance ambiance, StepElementParameters stepParameters, Map<String, ResponseData> responseDataMap) {
     String nodeExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
     String correlationId = waitStepService.findByNodeExecutionId(nodeExecutionId).get().getWaitStepInstanceId();

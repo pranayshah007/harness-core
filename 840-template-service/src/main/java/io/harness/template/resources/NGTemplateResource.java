@@ -587,8 +587,8 @@ public class NGTemplateResource {
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @Parameter(description = TEMPLATE_PARAM_MESSAGE) @PathParam(
           "templateIdentifier") @ResourceIdentifier String templateIdentifier,
-      @Parameter(description = "Template Label") @NotNull @QueryParam(
-          NGCommonEntityConstants.VERSION_LABEL_KEY) String templateLabel,
+      @Parameter(description = "Template Label") @NotNull @QueryParam(NGCommonEntityConstants.VERSION_LABEL_KEY)
+      String templateLabel, @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache,
       @Parameter(
           description = "This contains details of Git Entity") @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
@@ -597,8 +597,8 @@ public class NGTemplateResource {
     // returns templateInputs yaml
     log.info(String.format("Get Template inputs for template with identifier %s in project %s, org %s, account %s",
         templateIdentifier, projectId, orgId, accountId));
-    return ResponseDTO.newResponse(
-        templateMergeService.getTemplateInputs(accountId, orgId, projectId, templateIdentifier, templateLabel));
+    return ResponseDTO.newResponse(templateMergeService.getTemplateInputs(accountId, orgId, projectId,
+        templateIdentifier, templateLabel, NGTemplateDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache)));
   }
 
   @GET

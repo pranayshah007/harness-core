@@ -190,10 +190,13 @@ public interface EntityTypeConstants {
   String TERRAGRUNT_ROLLBACK = "TerragruntRollback";
   String CONTAINER_STEP = "Container";
   String IACM_TERRAFORM_PLAN = "IACMTerraformPlan";
+  String IACM_TEMPLATE = "IACMTemplate";
+
   String ELASTIGROUP_BG_STAGE_SETUP = "ElastigroupBGStageSetup";
   String ELASTIGROUP_SWAP_ROUTE = "ElastigroupSwapRoute";
   String ASG_CANARY_DEPLOY = "AsgCanaryDeploy";
   String ASG_CANARY_DELETE = "AsgCanaryDelete";
   String ASG_ROLLING_DEPLOY = "AsgRollingDeploy";
   String ASG_ROLLING_ROLLBACK = "AsgRollingRollback";
+  String CCM_GOVERNANCE_RULE_AWS = "GovernanceRuleAWS";
 }

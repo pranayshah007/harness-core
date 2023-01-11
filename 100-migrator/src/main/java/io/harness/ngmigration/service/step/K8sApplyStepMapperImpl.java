@@ -15,10 +15,10 @@ import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 
+import software.wings.beans.GraphNode;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.sm.State;
 import software.wings.sm.states.k8s.K8sApplyState;
-import software.wings.yaml.workflow.StepYaml;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -27,12 +27,12 @@ import org.apache.commons.lang3.StringUtils;
 
 public class K8sApplyStepMapperImpl implements StepMapper {
   @Override
-  public String getStepType(StepYaml stepYaml) {
+  public String getStepType(GraphNode stepYaml) {
     return StepSpecTypeConstants.K8S_APPLY;
   }
 
   @Override
-  public State getState(StepYaml stepYaml) {
+  public State getState(GraphNode stepYaml) {
     Map<String, Object> properties = StepMapper.super.getProperties(stepYaml);
     K8sApplyState state = new K8sApplyState(stepYaml.getName());
     state.parseProperties(properties);
@@ -40,8 +40,8 @@ public class K8sApplyStepMapperImpl implements StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(Map<CgEntityId, NGYamlFile> migratedEntities, StepYaml stepYaml) {
-    K8sApplyState state = (K8sApplyState) getState(stepYaml);
+  public AbstractStepNode getSpec(Map<CgEntityId, NGYamlFile> migratedEntities, GraphNode graphNode) {
+    K8sApplyState state = (K8sApplyState) getState(graphNode);
     K8sApplyStepNode k8sApplyStepNode = new K8sApplyStepNode();
     baseSetup(state, k8sApplyStepNode);
     K8sApplyStepInfo k8sApplyStepInfo =
@@ -60,7 +60,7 @@ public class K8sApplyStepMapperImpl implements StepMapper {
   }
 
   @Override
-  public boolean areSimilar(StepYaml stepYaml1, StepYaml stepYaml2) {
+  public boolean areSimilar(GraphNode stepYaml1, GraphNode stepYaml2) {
     // @deepak: Please re-evaluate
     return true;
   }

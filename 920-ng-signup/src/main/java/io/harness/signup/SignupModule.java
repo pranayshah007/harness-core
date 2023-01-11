@@ -9,13 +9,17 @@ package io.harness.signup;
 
 import static io.harness.annotations.dev.HarnessTeam.GTM;
 import static io.harness.configuration.DeployMode.DEPLOY_MODE;
+import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.SIGNUP_TOKEN;
 
 import io.harness.AccessControlClientConfiguration;
 import io.harness.AccessControlClientModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.configuration.DeployMode;
 import io.harness.ff.FeatureFlagModule;
+import io.harness.ng.core.event.MessageListener;
 import io.harness.remote.client.ServiceHttpClientConfig;
+import io.harness.signup.event.SignUpTokenEventListener;
 import io.harness.signup.notification.OnPremSignupNotificationHelper;
 import io.harness.signup.notification.SaasSignupNotificationHelper;
 import io.harness.signup.notification.SignupNotificationHelper;
@@ -63,6 +67,9 @@ public class SignupModule extends AbstractModule {
     install(AccessControlClientModule.getInstance(accessControlClientConfiguration, clientId));
     install(GoogleCloudFileModule.getInstance());
     bind(SignupService.class).to(SignupServiceImpl.class);
+    bind(MessageListener.class)
+        .annotatedWith(Names.named(SIGNUP_TOKEN + ENTITY_CRUD))
+        .to(SignUpTokenEventListener.class);
     String deployMode = System.getenv().get(DEPLOY_MODE);
 
     if (DeployMode.isOnPrem(deployMode)) {

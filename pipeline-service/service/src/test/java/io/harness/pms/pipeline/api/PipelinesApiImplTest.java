@@ -80,7 +80,7 @@ public class PipelinesApiImplTest extends CategoryTest {
   @Mock PipelineMetadataService pipelineMetadataService;
   @Mock PipelineAsyncValidationService pipelineAsyncValidationService;
 
-  String slug = "basichttpFail";
+  String identifier = "basichttpFail";
   String name = "basichttpFail";
   String account = randomAlphabetic(10);
   String org = randomAlphabetic(10);
@@ -103,7 +103,7 @@ public class PipelinesApiImplTest extends CategoryTest {
                  .accountId(account)
                  .orgIdentifier(org)
                  .projectIdentifier(project)
-                 .identifier(slug)
+                 .identifier(identifier)
                  .name(name)
                  .yaml(yaml)
                  .isDraft(false)
@@ -114,7 +114,7 @@ public class PipelinesApiImplTest extends CategoryTest {
                          .accountId(account)
                          .orgIdentifier(org)
                          .projectIdentifier(project)
-                         .identifier(slug)
+                         .identifier(identifier)
                          .name(name)
                          .yaml(yaml)
                          .stageCount(1)
@@ -129,7 +129,7 @@ public class PipelinesApiImplTest extends CategoryTest {
   public void testPipelineCreate() {
     PipelineCreateRequestBody pipelineRequestBody = new PipelineCreateRequestBody();
     pipelineRequestBody.setPipelineYaml(yaml);
-    pipelineRequestBody.setSlug(slug);
+    pipelineRequestBody.setIdentifier(identifier);
     pipelineRequestBody.setName(name);
     when(pmsPipelineService.validateAndCreatePipeline(any(), eq(false)))
         .thenReturn(PipelineCRUDResult.builder()
@@ -138,15 +138,15 @@ public class PipelinesApiImplTest extends CategoryTest {
                         .build());
     Response response = pipelinesApiImpl.createPipeline(pipelineRequestBody, org, project, account);
     PipelineCreateResponseBody responseBody = (PipelineCreateResponseBody) response.getEntity();
-    assertEquals(slug, responseBody.getSlug());
+    assertEquals(identifier, responseBody.getIdentifier());
   }
 
   @Test
   @Owner(developers = MANKRIT)
   @Category(UnitTests.class)
   public void testPipelineDelete() {
-    doReturn(true).when(pmsPipelineService).delete(account, org, project, slug, null);
-    Response deleteResponse = pipelinesApiImpl.deletePipeline(org, project, slug, account);
+    doReturn(true).when(pmsPipelineService).delete(account, org, project, identifier, null);
+    Response deleteResponse = pipelinesApiImpl.deletePipeline(org, project, identifier, account);
     assertThat(deleteResponse.getStatus()).isEqualTo(204);
   }
 
@@ -154,11 +154,11 @@ public class PipelinesApiImplTest extends CategoryTest {
   @Owner(developers = MANKRIT)
   @Category(UnitTests.class)
   public void testPipelineDeleteFail() {
-    doReturn(false).when(pmsPipelineService).delete(account, org, project, slug, null);
+    doReturn(false).when(pmsPipelineService).delete(account, org, project, identifier, null);
     try {
-      pipelinesApiImpl.deletePipeline(org, project, slug, account);
+      pipelinesApiImpl.deletePipeline(org, project, identifier, account);
     } catch (InvalidRequestException e) {
-      assertEquals(e.getMessage(), String.format("Pipeline with identifier %s cannot be deleted.", slug));
+      assertEquals(e.getMessage(), String.format("Pipeline with identifier %s cannot be deleted.", identifier));
     }
   }
 
@@ -177,11 +177,11 @@ public class PipelinesApiImplTest extends CategoryTest {
         .resolveTemplateRefsInPipeline(account, org, project, yaml, BOOLEAN_FALSE_VALUE);
     PipelineUpdateRequestBody requestBody = new PipelineUpdateRequestBody();
     requestBody.setPipelineYaml(yaml);
-    requestBody.setSlug(slug);
+    requestBody.setIdentifier(identifier);
     requestBody.setName(name);
-    Response response = pipelinesApiImpl.updatePipeline(requestBody, org, project, slug, account);
+    Response response = pipelinesApiImpl.updatePipeline(requestBody, org, project, identifier, account);
     PipelineCreateResponseBody responseBody = (PipelineCreateResponseBody) response.getEntity();
-    assertEquals(slug, responseBody.getSlug());
+    assertEquals(identifier, responseBody.getIdentifier());
   }
 
   @Test
@@ -199,10 +199,10 @@ public class PipelinesApiImplTest extends CategoryTest {
         .resolveTemplateRefsInPipeline(account, org, project, yaml, BOOLEAN_FALSE_VALUE);
     PipelineUpdateRequestBody requestBody = new PipelineUpdateRequestBody();
     requestBody.setPipelineYaml(yaml);
-    requestBody.setSlug(slug);
+    requestBody.setIdentifier(identifier);
     requestBody.setName(name);
     try {
-      pipelinesApiImpl.updatePipeline(requestBody, org, project, slug, account);
+      pipelinesApiImpl.updatePipeline(requestBody, org, project, identifier, account);
     } catch (PolicyEvaluationFailureException e) {
       assertEquals(e.getMessage(), "Policy Evaluation Failure");
     }
@@ -215,12 +215,12 @@ public class PipelinesApiImplTest extends CategoryTest {
     Optional<PipelineEntity> optional = Optional.ofNullable(entity);
     doReturn(optional)
         .when(pmsPipelineService)
-        .getAndValidatePipeline(account, org, project, slug, false, false, false);
+        .getAndValidatePipeline(account, org, project, identifier, false, false, false);
     Response response = pipelinesApiImpl.getPipeline(
-        org, project, slug, account, null, false, null, null, BOOLEAN_FALSE_VALUE, false, false);
+        org, project, identifier, account, null, false, null, null, BOOLEAN_FALSE_VALUE, false, false);
     PipelineGetResponseBody responseBody = (PipelineGetResponseBody) response.getEntity();
     assertEquals(yaml, responseBody.getPipelineYaml());
-    assertEquals(slug, responseBody.getSlug());
+    assertEquals(identifier, responseBody.getIdentifier());
     assertEquals(org, responseBody.getOrg());
     assertEquals(project, responseBody.getProject());
     assertEquals(true, responseBody.isValid().booleanValue());
@@ -232,12 +232,12 @@ public class PipelinesApiImplTest extends CategoryTest {
     Optional<PipelineEntity> optional = Optional.ofNullable(entity);
     doReturn(optional)
         .when(pmsPipelineService)
-        .getAndValidatePipeline(account, org, project, slug, false, false, false);
+        .getAndValidatePipeline(account, org, project, identifier, false, false, false);
     Response response = pipelinesApiImpl.getPipeline(
-        org, project, slug, account, null, false, null, null, BOOLEAN_FALSE_VALUE, null, false);
+        org, project, identifier, account, null, false, null, null, BOOLEAN_FALSE_VALUE, null, false);
     PipelineGetResponseBody responseBody = (PipelineGetResponseBody) response.getEntity();
     assertEquals(yaml, responseBody.getPipelineYaml());
-    assertEquals(slug, responseBody.getSlug());
+    assertEquals(identifier, responseBody.getIdentifier());
     assertEquals(org, responseBody.getOrg());
     assertEquals(project, responseBody.getProject());
   }
@@ -249,7 +249,7 @@ public class PipelinesApiImplTest extends CategoryTest {
     Optional<PipelineEntity> optional = Optional.ofNullable(entity);
     doReturn(optional)
         .when(pmsPipelineService)
-        .getAndValidatePipeline(account, org, project, slug, false, false, false);
+        .getAndValidatePipeline(account, org, project, identifier, false, false, false);
     String extraYaml = yaml + "extra";
     TemplateMergeResponseDTO templateMergeResponseDTO =
         TemplateMergeResponseDTO.builder().mergedPipelineYaml(extraYaml).build();
@@ -257,10 +257,10 @@ public class PipelinesApiImplTest extends CategoryTest {
         .when(pipelineTemplateHelper)
         .resolveTemplateRefsInPipeline(entity, BOOLEAN_FALSE_VALUE);
     Response response = pipelinesApiImpl.getPipeline(
-        org, project, slug, account, null, true, null, null, BOOLEAN_FALSE_VALUE, false, false);
+        org, project, identifier, account, null, true, null, null, BOOLEAN_FALSE_VALUE, false, false);
     PipelineGetResponseBody responseBody = (PipelineGetResponseBody) response.getEntity();
     assertEquals(extraYaml, responseBody.getTemplateAppliedPipelineYaml());
-    assertEquals(slug, responseBody.getSlug());
+    assertEquals(identifier, responseBody.getIdentifier());
     assertEquals(org, responseBody.getOrg());
     assertEquals(project, responseBody.getProject());
     assertEquals(true, responseBody.isValid().booleanValue());
@@ -272,10 +272,10 @@ public class PipelinesApiImplTest extends CategoryTest {
   public void testPipelineGetFailPolicyEvaluation() {
     doThrow(PolicyEvaluationFailureException.class)
         .when(pmsPipelineService)
-        .getAndValidatePipeline(account, org, project, slug, false, false, false);
+        .getAndValidatePipeline(account, org, project, identifier, false, false, false);
     PipelineGetResponseBody response =
         (PipelineGetResponseBody) pipelinesApiImpl
-            .getPipeline(org, project, slug, account, null, false, null, null, BOOLEAN_FALSE_VALUE, false, false)
+            .getPipeline(org, project, identifier, account, null, false, null, null, BOOLEAN_FALSE_VALUE, false, false)
             .getEntity();
     assertEquals(false, response.isValid().booleanValue());
   }
@@ -286,10 +286,10 @@ public class PipelinesApiImplTest extends CategoryTest {
   public void testPipelineGetFailInvalidYaml() {
     doThrow(InvalidYamlException.class)
         .when(pmsPipelineService)
-        .getAndValidatePipeline(account, org, project, slug, false, false, false);
+        .getAndValidatePipeline(account, org, project, identifier, false, false, false);
     PipelineGetResponseBody response =
         (PipelineGetResponseBody) pipelinesApiImpl
-            .getPipeline(org, project, slug, account, null, false, null, null, BOOLEAN_FALSE_VALUE, false, false)
+            .getPipeline(org, project, identifier, account, null, false, null, null, BOOLEAN_FALSE_VALUE, false, false)
             .getEntity();
     assertEquals(false, response.isValid().booleanValue());
   }
@@ -303,7 +303,7 @@ public class PipelinesApiImplTest extends CategoryTest {
     doReturn(pipelineEntities).when(pmsPipelineService).list(any(), any(), any(), any(), any(), any());
     doReturn(Collections.emptyMap())
         .when(pipelineMetadataService)
-        .getMetadataForGivenPipelineIds(account, org, project, Collections.singletonList(slug));
+        .getMetadataForGivenPipelineIds(account, org, project, Collections.singletonList(identifier));
     List<PipelineListResponseBody> content = (List<PipelineListResponseBody>) pipelinesApiImpl
                                                  .listPipelines(org, project, account, 0, 25, null, null, null, null,
                                                      null, null, null, null, null, null, null, null, null)
@@ -312,7 +312,7 @@ public class PipelinesApiImplTest extends CategoryTest {
     assertThat(content.size()).isEqualTo(1);
 
     PipelineListResponseBody responseBody = content.get(0);
-    assertThat(responseBody.getSlug()).isEqualTo(slug);
+    assertThat(responseBody.getIdentifier()).isEqualTo(identifier);
     assertThat(responseBody.getName()).isEqualTo(name);
   }
 
@@ -348,12 +348,14 @@ public class PipelinesApiImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testPipelineGetNoTemplatesWithCaching() {
     Optional<PipelineEntity> optional = Optional.ofNullable(entity);
-    doReturn(optional).when(pmsPipelineService).getAndValidatePipeline(account, org, project, slug, false, false, true);
+    doReturn(optional)
+        .when(pmsPipelineService)
+        .getAndValidatePipeline(account, org, project, identifier, false, false, true);
     Response response =
-        pipelinesApiImpl.getPipeline(org, project, slug, account, null, false, null, null, "true", false, false);
+        pipelinesApiImpl.getPipeline(org, project, identifier, account, null, false, null, null, "true", false, false);
     PipelineGetResponseBody responseBody = (PipelineGetResponseBody) response.getEntity();
     assertEquals(yaml, responseBody.getPipelineYaml());
-    assertEquals(slug, responseBody.getSlug());
+    assertEquals(identifier, responseBody.getIdentifier());
     assertEquals(org, responseBody.getOrg());
     assertEquals(project, responseBody.getProject());
     assertTrue(responseBody.isValid());

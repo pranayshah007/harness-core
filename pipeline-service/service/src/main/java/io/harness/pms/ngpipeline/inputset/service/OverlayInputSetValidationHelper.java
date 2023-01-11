@@ -42,8 +42,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 @OwnedBy(PIPELINE)
 @UtilityClass
 public class OverlayInputSetValidationHelper {
-  public void validateOverlayInputSet(
-      PMSInputSetService inputSetService, InputSetEntity inputSetEntity, String pipelineYaml) {
+  public void validateOverlayInputSet(PMSInputSetService inputSetService, InputSetEntity inputSetEntity) {
     String accountId = inputSetEntity.getAccountId();
     String orgIdentifier = inputSetEntity.getOrgIdentifier();
     String projectIdentifier = inputSetEntity.getProjectIdentifier();
@@ -68,7 +67,7 @@ public class OverlayInputSetValidationHelper {
     List<Optional<InputSetEntity>> inputSets = findAllReferredInputSets(
         inputSetService, inputSetReferences, accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
     Map<String, String> invalidReferences =
-        InputSetErrorsHelper.getInvalidInputSetReferences(inputSets, inputSetReferences, pipelineYaml);
+        InputSetErrorsHelper.getInvalidInputSetReferences(inputSets, inputSetReferences);
     if (!invalidReferences.isEmpty()) {
       OverlayInputSetErrorWrapperDTOPMS overlayInputSetErrorWrapperDTOPMS =
           OverlayInputSetErrorWrapperDTOPMS.builder().invalidReferences(invalidReferences).build();

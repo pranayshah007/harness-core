@@ -26,7 +26,7 @@ import io.harness.cvng.core.beans.monitoredService.metricThresholdSpec.MetricThr
 import io.harness.cvng.core.beans.params.filterParams.DeploymentTimeSeriesAnalysisFilter;
 import io.harness.cvng.core.entities.AnalysisInfo;
 import io.harness.cvng.core.entities.MetricCVConfig;
-import io.harness.cvng.core.entities.MetricPack;
+import io.harness.cvng.core.entities.MetricPack.MetricDefinition;
 import io.harness.cvng.core.entities.TimeSeriesThreshold;
 
 import java.util.HashSet;
@@ -67,7 +67,8 @@ public class VerifyStepMetricsAnalysisUtils {
     }
   }
 
-  public static MetricType getMetricTypeFromTimeSeriesMetricType(TimeSeriesMetricType timeSeriesMetricType) {
+  public static MetricType getMetricTypeFromMetricDefinition(MetricDefinition metricDefinition) {
+    TimeSeriesMetricType timeSeriesMetricType = metricDefinition.getType();
     switch (timeSeriesMetricType) {
       case RESP_TIME:
         return MetricType.PERFORMANCE_RESPONSE_TIME;
@@ -107,7 +108,7 @@ public class VerifyStepMetricsAnalysisUtils {
       DeploymentTimeSeriesAnalysisDTO.HostData hostData) {
     ControlDataType controlDataType =
         Objects.isNull(hostData.getNearestControlHost()) ? ControlDataType.AVERAGE : ControlDataType.MINIMUM_DEVIATION;
-    // TODO: Add appliedThresholds[] once LE is able to provide that info.
+    // TODO: Add appliedThresholds[], metric timestamp data once LE is able to provide that info.
     return AnalysedDeploymentTestDataNode.builder()
         .nodeIdentifier(hostData.getHostName().orElse(null))
         .analysisResult(AnalysisResult.fromRisk(hostData.getRisk()))
@@ -129,7 +130,8 @@ public class VerifyStepMetricsAnalysisUtils {
   public static List<AnalysedDeploymentTestDataNode> getFilteredAnalysedTestDataNodes(
       DeploymentTimeSeriesAnalysisDTO.TransactionMetricHostData transactionMetricHostData,
       DeploymentTimeSeriesAnalysisFilter deploymentTimeSeriesAnalysisFilter) {
-    Set<String> requestedTestNodes = new HashSet<>(deploymentTimeSeriesAnalysisFilter.getHostNames());
+    Set<String> requestedTestNodes =
+        new HashSet<>(CollectionUtils.emptyIfNull(deploymentTimeSeriesAnalysisFilter.getHostNames()));
     return transactionMetricHostData.getHostData()
         .stream()
         .filter((DeploymentTimeSeriesAnalysisDTO.HostData host) -> {
@@ -151,16 +153,15 @@ public class VerifyStepMetricsAnalysisUtils {
   }
 
   public static MetricType getMetricTypeFromCvConfigAndMetricDefinition(
-      MetricCVConfig<? extends AnalysisInfo> cvConfig, MetricPack.MetricDefinition metricDefinition) {
-    CVMonitoringCategory cvMonitoringCategory = cvConfig.getMetricPack().getCategory();
-    TimeSeriesMetricType timeSeriesMetricType = metricDefinition.getType();
+      MetricCVConfig<? extends AnalysisInfo> cvConfig, MetricDefinition metricDefinition) {
+    CVMonitoringCategory cvMonitoringCategory = cvConfig.getCategory();
     switch (cvMonitoringCategory) {
       case ERRORS:
         return MetricType.ERROR;
       case INFRASTRUCTURE:
         return MetricType.INFRASTRUCTURE;
       case PERFORMANCE:
-        return getMetricTypeFromTimeSeriesMetricType(timeSeriesMetricType);
+        return getMetricTypeFromMetricDefinition(metricDefinition);
       default:
         throw new IllegalArgumentException("Urecognised CVMonitoringCategory " + cvMonitoringCategory);
     }
