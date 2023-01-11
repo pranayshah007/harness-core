@@ -72,7 +72,7 @@ features:
         restrictionType: AVAILABILITY
         enabled: true
   - name: MULTIPLE_USER_GROUPS
-    description: Allow creating multiple secrets within an account
+    description: Allow creating multiple userGroups within an account
     restrictions:
       COMMUNITY:
         restrictionType: STATIC_LIMIT
@@ -89,7 +89,24 @@ features:
         restrictionType: AVAILABILITY
         enabled: true
   - name: MULTIPLE_SERVICE_ACCOUNTS
-    description: Allow creating multiple secrets within an account
+    description: Allow creating multiple service accounts within an account
+    restrictions:
+      COMMUNITY:
+        restrictionType: STATIC_LIMIT
+        limit: 1
+        clientName: ngmanager
+      FREE:
+        restrictionType: STATIC_LIMIT
+        limit: 100
+        clientName: ngmanager
+      TEAM:
+        restrictionType: AVAILABILITY
+        enabled: true
+      ENTERPRISE:
+        restrictionType: AVAILABILITY
+        enabled: true
+  - name: MULTIPLE_VARIABLES
+    description: Allow creating multiple variables within an account
     restrictions:
       COMMUNITY:
         restrictionType: STATIC_LIMIT
