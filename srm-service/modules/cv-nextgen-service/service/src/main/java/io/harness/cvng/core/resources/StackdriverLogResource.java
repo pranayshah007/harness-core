@@ -9,7 +9,7 @@ package io.harness.cvng.core.resources;
 
 import io.harness.annotations.ExposeInternalException;
 import io.harness.cvng.core.beans.LogSampleRequestDTO;
-import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.core.beans.params.ProjectScopedProjectParams;
 import io.harness.cvng.core.services.api.StackdriverService;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
@@ -51,7 +51,8 @@ public class StackdriverLogResource {
   @Timed
   @ExceptionMetered
   @ApiOperation(value = "get sample data for a query", nickname = "getStackdriverLogSampleData")
-  public ResponseDTO<List<LinkedHashMap>> getStackdriverSampleData(@NotNull @BeanParam ProjectParams projectParams,
+  public ResponseDTO<List<LinkedHashMap>> getStackdriverSampleData(
+      @NotNull @BeanParam ProjectScopedProjectParams projectParams,
       @NotNull @QueryParam("connectorIdentifier") final String connectorIdentifier,
       @NotNull @QueryParam("tracingId") String tracingId, @Body LogSampleRequestDTO logSampleRequestDTO) {
     return ResponseDTO.newResponse(stackdriverService.getSampleLogData(projectParams.getAccountIdentifier(),

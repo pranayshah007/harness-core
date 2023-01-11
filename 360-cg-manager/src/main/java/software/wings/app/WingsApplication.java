@@ -1288,9 +1288,15 @@ public class WingsApplication extends Application<MainConfiguration> {
         .scheduleWithFixedDelay(
             injector.getInstance(GitChangeSetRunnable.class), random.nextInt(5), 5L, TimeUnit.SECONDS);
 
-    injector.getInstance(DeploymentReconExecutorService.class)
-        .scheduleWithFixedDelay(
-            injector.getInstance(DeploymentReconTask.class), random.nextInt(60), 15 * 60L, TimeUnit.SECONDS);
+    if (configuration.getDataReconciliationConfig() == null) {
+      injector.getInstance(DeploymentReconExecutorService.class)
+          .scheduleWithFixedDelay(
+              injector.getInstance(DeploymentReconTask.class), random.nextInt(60), 15 * 60L, TimeUnit.SECONDS);
+    } else if (configuration.getDataReconciliationConfig().isEnabled()) {
+      injector.getInstance(DeploymentReconExecutorService.class)
+          .scheduleWithFixedDelay(injector.getInstance(DeploymentReconTask.class), random.nextInt(60),
+              configuration.getDataReconciliationConfig().getDuration(), TimeUnit.SECONDS);
+    }
 
     injector.getInstance(LookerEntityReconExecutorService.class)
         .scheduleWithFixedDelay(
@@ -1344,10 +1350,11 @@ public class WingsApplication extends Application<MainConfiguration> {
         new Schedulable("Failed while broadcasting perpetual tasks",
             () -> injector.getInstance(PerpetualTaskServiceImpl.class).broadcastToDelegate()),
         0L, 10L, TimeUnit.SECONDS);
-
-    delegateExecutor.scheduleWithFixedDelay(
-        new Schedulable("Failed to dequeue delegate task", injector.getInstance(DelegateTaskQueueService.class)), 0L,
-        15L, TimeUnit.SECONDS);
+    if (configuration.getQueueServiceConfig().isEnableQueueAndDequeue()) {
+      delegateExecutor.scheduleWithFixedDelay(
+          new Schedulable("Failed to dequeue delegate task", injector.getInstance(DelegateTaskQueueService.class)), 0L,
+          15L, TimeUnit.SECONDS);
+    }
   }
 
   public void registerObservers(MainConfiguration configuration, Injector injector, Environment environment) {

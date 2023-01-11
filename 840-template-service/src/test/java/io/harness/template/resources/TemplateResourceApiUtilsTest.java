@@ -172,7 +172,7 @@ public class TemplateResourceApiUtilsTest extends CategoryTest {
     templateResponse.setAccount(entity.getAccountId());
     templateResponse.setOrg(entity.getOrgIdentifier());
     templateResponse.setProject(entity.getProjectIdentifier());
-    templateResponse.setSlug(entity.getIdentifier());
+    templateResponse.setIdentifier(entity.getIdentifier());
     templateResponse.setName(entity.getName());
     templateResponse.setDescription(entity.getDescription());
     templateResponse.setYaml(entity.getYaml());
@@ -193,7 +193,7 @@ public class TemplateResourceApiUtilsTest extends CategoryTest {
             Resource.of(TEMPLATE, null), PermissionTypes.TEMPLATE_EDIT_PERMISSION);
     TemplateResponse templateResponseFinal = (TemplateResponse) response.getEntity();
     assertThat(response.getEntityTag().getValue()).isEqualTo("1");
-    assertEquals(templateResponseFinal.getSlug(), TEMPLATE_IDENTIFIER);
+    assertEquals(templateResponseFinal.getIdentifier(), TEMPLATE_IDENTIFIER);
   }
 
   @Test
@@ -208,7 +208,7 @@ public class TemplateResourceApiUtilsTest extends CategoryTest {
     templateResponse.setAccount(entity.getAccountId());
     templateResponse.setOrg(entity.getOrgIdentifier());
     templateResponse.setProject(entity.getProjectIdentifier());
-    templateResponse.setSlug(entity.getIdentifier());
+    templateResponse.setIdentifier(entity.getIdentifier());
     templateResponse.setName(entity.getName());
     templateResponse.setDescription(entity.getDescription());
     templateResponse.setYaml(entity.getYaml());
@@ -227,7 +227,7 @@ public class TemplateResourceApiUtilsTest extends CategoryTest {
         TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, false, null, null, null, null, null, null, false);
     TemplateWithInputsResponse templateResponseInput = (TemplateWithInputsResponse) response.getEntity();
     assertThat(response.getEntityTag().getValue()).isEqualTo("1");
-    assertEquals(templateResponseInput.getTemplate().getSlug(), TEMPLATE_IDENTIFIER);
+    assertEquals(templateResponseInput.getTemplate().getIdentifier(), TEMPLATE_IDENTIFIER);
     assertEquals(templateResponseInput.getInputs(), INPUT_YAML);
     verify(accessControlClient)
         .checkForAccessOrThrow(ResourceScope.of(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER),
@@ -259,7 +259,7 @@ public class TemplateResourceApiUtilsTest extends CategoryTest {
     templateResponse.setAccount(entity.getAccountId());
     templateResponse.setOrg(entity.getOrgIdentifier());
     templateResponse.setProject(entity.getProjectIdentifier());
-    templateResponse.setSlug(entity.getIdentifier());
+    templateResponse.setIdentifier(entity.getIdentifier());
     templateResponse.setName(entity.getName());
     templateResponse.setDescription(entity.getDescription());
     templateResponse.setYaml(entity.getYaml());
@@ -278,7 +278,7 @@ public class TemplateResourceApiUtilsTest extends CategoryTest {
     verify(accessControlClient)
         .checkForAccessOrThrow(ResourceScope.of(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER),
             Resource.of(TEMPLATE, TEMPLATE_IDENTIFIER), PermissionTypes.TEMPLATE_EDIT_PERMISSION);
-    assertEquals(templateResponseFinal.getSlug(), TEMPLATE_IDENTIFIER);
+    assertEquals(templateResponseFinal.getIdentifier(), TEMPLATE_IDENTIFIER);
   }
 
   @Test
@@ -335,7 +335,7 @@ public class TemplateResourceApiUtilsTest extends CategoryTest {
     templateMetadataSummaryResponse.setAccount(entity.getAccountId());
     templateMetadataSummaryResponse.setOrg(entity.getOrgIdentifier());
     templateMetadataSummaryResponse.setProject(entity.getProjectIdentifier());
-    templateMetadataSummaryResponse.setSlug(entity.getIdentifier());
+    templateMetadataSummaryResponse.setIdentifier(entity.getIdentifier());
     templateMetadataSummaryResponse.setName(entity.getName());
     templateMetadataSummaryResponse.setDescription(entity.getDescription());
     templateMetadataSummaryResponse.setVersionLabel(entity.getVersionLabel());
@@ -355,7 +355,7 @@ public class TemplateResourceApiUtilsTest extends CategoryTest {
     assertThat(templates.size()).isEqualTo(1);
 
     TemplateMetadataSummaryResponse responseDTO = templates.get(0);
-    assertThat(responseDTO.getSlug()).isEqualTo(TEMPLATE_IDENTIFIER);
+    assertThat(responseDTO.getIdentifier()).isEqualTo(TEMPLATE_IDENTIFIER);
     assertThat(responseDTO.getName()).isEqualTo(TEMPLATE_IDENTIFIER);
     verify(accessControlClient)
         .checkForAccessOrThrow(ResourceScope.of(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER),

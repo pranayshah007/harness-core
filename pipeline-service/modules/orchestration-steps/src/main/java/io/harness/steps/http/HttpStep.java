@@ -194,7 +194,4 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
     }
     return outputVariablesEvaluated;
   }
-
-  @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {}
 }

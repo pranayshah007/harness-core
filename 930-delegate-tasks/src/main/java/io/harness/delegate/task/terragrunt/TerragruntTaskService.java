@@ -187,8 +187,8 @@ public class TerragruntTaskService {
                                  .toAbsolutePath()
                                  .toString();
 
-    TerragruntClient terragruntClient = terragruntClientFactory.getClient(
-        scriptDirectory, parameters.getTimeoutInMillis(), parameters.getRunConfiguration().getRunType().name());
+    TerragruntClient terragruntClient = terragruntClientFactory.getClient(scriptDirectory,
+        parameters.getTimeoutInMillis(), logCallback, parameters.getRunConfiguration().getRunType().name());
     String terragruntWorkingDirectory = null;
     String backendFile = null;
     if (parameters.getBackendFilesStore() != null) {

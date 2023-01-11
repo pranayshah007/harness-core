@@ -19,6 +19,7 @@ import static software.wings.service.impl.instance.InstanceSyncTestConstants.ACC
 import static software.wings.service.impl.instance.InstanceSyncTestConstants.APP_NAME;
 import static software.wings.service.impl.instance.InstanceSyncTestConstants.ENV_NAME;
 import static software.wings.service.impl.instance.InstanceSyncTestConstants.SERVICE_NAME;
+import static software.wings.settings.SettingVariableTypes.KUBERNETES_CLUSTER;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -32,7 +33,9 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
+import io.harness.ff.FeatureFlagService;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
 import io.harness.perpetualtask.PerpetualTaskSchedule;
 import io.harness.perpetualtask.PerpetualTaskService;
@@ -83,6 +86,7 @@ public class ContainerInstanceSyncPerpetualTaskCreatorTest extends CategoryTest 
   @Mock private AppService appService;
   @Mock private EnvironmentService environmentService;
   @Mock private ServiceResourceService serviceResourceService;
+  @Mock private FeatureFlagService featureFlagService;
   private ContainerInfrastructureMapping infrastructureMapping;
 
   @Before
@@ -113,6 +117,7 @@ public class ContainerInstanceSyncPerpetualTaskCreatorTest extends CategoryTest 
   @Owner(developers = OwnerRule.ACASIAN)
   @Category(UnitTests.class)
   public void createK8sPerpetualTasks() {
+    doReturn(false).when(featureFlagService).isEnabled(eq(FeatureName.INSTANCE_SYNC_V2_CG), any());
     doReturn(getK8sContainerInstances())
         .when(instanceService)
         .getInstancesForAppAndInframapping(anyString(), anyString());
@@ -142,9 +147,34 @@ public class ContainerInstanceSyncPerpetualTaskCreatorTest extends CategoryTest 
   }
 
   @Test
+  @Owner(developers = OwnerRule.NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void createK8sPerpetualTasksInstanceSyncV2() {
+    doReturn(true).when(featureFlagService).isEnabled(eq(FeatureName.INSTANCE_SYNC_V2_CG), any());
+    doReturn(getK8sContainerInstances())
+        .when(instanceService)
+        .getInstancesForAppAndInframapping(anyString(), anyString());
+    doReturn("perpetual-task-id")
+        .when(perpetualTaskService)
+        .createTask(eq(PerpetualTaskType.CONTAINER_INSTANCE_SYNC), eq(InstanceSyncTestConstants.ACCOUNT_ID), any(),
+            any(), eq(false), eq(""));
+
+    ContainerInfrastructureMapping infraMapping = new DirectKubernetesInfrastructureMapping();
+    infraMapping.setAccountId(InstanceSyncTestConstants.ACCOUNT_ID);
+    infraMapping.setAppId(InstanceSyncTestConstants.APP_ID);
+    infraMapping.setUuid(InstanceSyncTestConstants.INFRA_MAPPING_ID);
+    infraMapping.setComputeProviderType(KUBERNETES_CLUSTER.name());
+    infraMapping.setDisplayName("infraName");
+    infraMapping.setAccountId(ACCOUNT_ID);
+    final List<String> perpetualTaskIds = perpetualTaskCreator.createPerpetualTasks(infraMapping);
+    assertThat(perpetualTaskIds).isEmpty();
+  }
+
+  @Test
   @Owner(developers = OwnerRule.ACASIAN)
   @Category(UnitTests.class)
   public void createAzurePerpetualTasks() {
+    doReturn(false).when(featureFlagService).isEnabled(eq(FeatureName.INSTANCE_SYNC_V2_CG), any());
     doReturn(getAzureContainerInstances())
         .when(instanceService)
         .getInstancesForAppAndInframapping(anyString(), anyString());
@@ -178,6 +208,7 @@ public class ContainerInstanceSyncPerpetualTaskCreatorTest extends CategoryTest 
   @Owner(developers = OwnerRule.ACASIAN)
   @Category(UnitTests.class)
   public void createAwsPerpetualTasks() {
+    doReturn(false).when(featureFlagService).isEnabled(eq(FeatureName.INSTANCE_SYNC_V2_CG), any());
     doReturn(getAwsContainerInstances())
         .when(instanceService)
         .getInstancesForAppAndInframapping(anyString(), anyString());

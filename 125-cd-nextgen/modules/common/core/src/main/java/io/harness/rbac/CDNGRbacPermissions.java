@@ -33,4 +33,5 @@ public class CDNGRbacPermissions {
   public final String ENVIRONMENT_GROUP_UPDATE_PERMISSION = "core_environmentgroup_edit";
   public final String ENVIRONMENT_GROUP_VIEW_PERMISSION = "core_environmentgroup_view";
   public final String ENVIRONMENT_GROUP_DELETE_PERMISSION = "core_environmentgroup_delete";
+  public final String ENVIRONMENT_GROUP_RUNTIME_PERMISSION = "core_environmentgroup_access";
 }

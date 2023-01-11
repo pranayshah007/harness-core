@@ -171,8 +171,9 @@ public class FileStoreResource {
   update(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(ACCOUNT_KEY) @NotBlank String accountIdentifier,
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(PROJECT_KEY) String projectIdentifier,
-      @Parameter(description = FILE_PARAM_MESSAGE) @NotBlank @EntityIdentifier @PathParam(IDENTIFIER_KEY)
-      String identifier, @Parameter(description = FILE_TAGS_MESSAGE) @FormDataParam("tags") String tagsJson,
+      @Parameter(description = FILE_PARAM_MESSAGE) @NotBlank @EntityIdentifier(maxLength = 128) @PathParam(
+          IDENTIFIER_KEY) String identifier,
+      @Parameter(description = FILE_TAGS_MESSAGE) @FormDataParam("tags") String tagsJson,
       @NotNull @BeanParam FileDTO file,
       @Parameter(description = FILE_CONTENT_MESSAGE) @FormDataParam("content") InputStream content) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
@@ -199,8 +200,8 @@ public class FileStoreResource {
         ApiResponse(responseCode = "default", description = "Get the Folder or File metadata")
       })
   public ResponseDTO<FileDTO>
-  getFile(@Parameter(description = FILE_PARAM_MESSAGE) @PathParam(
-              IDENTIFIER_KEY) @NotBlank @EntityIdentifier String identifier,
+  getFile(@Parameter(description = FILE_PARAM_MESSAGE) @PathParam(IDENTIFIER_KEY) @NotBlank @EntityIdentifier(
+              maxLength = 128) String identifier,
       @Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(ACCOUNT_KEY) @NotBlank String accountIdentifier,
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(PROJECT_KEY) String projectIdentifier) {
@@ -229,8 +230,8 @@ public class FileStoreResource {
         ApiResponse(responseCode = "default", description = "Download File content")
       })
   public Response
-  downloadFile(@Parameter(description = FILE_PARAM_MESSAGE) @PathParam(
-                   IDENTIFIER_KEY) @NotBlank @EntityIdentifier String fileIdentifier,
+  downloadFile(@Parameter(description = FILE_PARAM_MESSAGE) @PathParam(IDENTIFIER_KEY) @NotBlank @EntityIdentifier(
+                   maxLength = 128) String fileIdentifier,
       @Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(ACCOUNT_KEY) @NotBlank String accountIdentifier,
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(PROJECT_KEY) String projectIdentifier) {
@@ -280,7 +281,7 @@ public class FileStoreResource {
   delete(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(ACCOUNT_KEY) @NotBlank String accountIdentifier,
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(PROJECT_KEY) String projectIdentifier,
-      @Parameter(description = FILE_PARAM_MESSAGE) @NotBlank @EntityIdentifier @PathParam(
+      @Parameter(description = FILE_PARAM_MESSAGE) @NotBlank @EntityIdentifier(maxLength = 128) @PathParam(
           IDENTIFIER_KEY) String identifier) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(FILE, identifier), FILE_DELETE_PERMISSION);
@@ -350,7 +351,8 @@ public class FileStoreResource {
       @Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(ACCOUNT_KEY) @NotBlank String accountIdentifier,
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(PROJECT_KEY) String projectIdentifier,
-      @Parameter(description = FILE_PARAM_MESSAGE) @PathParam(IDENTIFIER_KEY) @EntityIdentifier String identifier,
+      @Parameter(description = FILE_PARAM_MESSAGE) @PathParam(IDENTIFIER_KEY) @EntityIdentifier(
+          maxLength = 128) String identifier,
       @RequestBody(required = true,
           description = FILE_YAML_DEFINITION_MESSAGE) @NotNull @Valid FileStoreRequest fileStoreRequest) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
@@ -386,8 +388,9 @@ public class FileStoreResource {
       @Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(ACCOUNT_KEY) @NotBlank String accountIdentifier,
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(PROJECT_KEY) String projectIdentifier,
-      @Parameter(description = FILE_PARAM_MESSAGE) @NotBlank @EntityIdentifier @PathParam(IDENTIFIER_KEY)
-      String identifier, @Parameter(description = ENTITY_TYPE_MESSAGE) @QueryParam(ENTITY_TYPE) EntityType entityType,
+      @Parameter(description = FILE_PARAM_MESSAGE) @NotBlank @EntityIdentifier(maxLength = 128) @PathParam(
+          IDENTIFIER_KEY) String identifier,
+      @Parameter(description = ENTITY_TYPE_MESSAGE) @QueryParam(ENTITY_TYPE) EntityType entityType,
       @QueryParam(SEARCH_TERM_KEY) String searchTerm) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(FILE, identifier), FILE_VIEW_PERMISSION);

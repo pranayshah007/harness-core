@@ -107,14 +107,16 @@ import io.harness.pms.inputset.gitsync.InputSetYamlDTO;
 import io.harness.pms.instrumentaion.InstrumentationPipelineEndEventHandler;
 import io.harness.pms.migration.PipelineCoreMigrationProvider;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
+import io.harness.pms.ngpipeline.inputset.observers.InputSetPipelineObserver;
 import io.harness.pms.notification.orchestration.handlers.NotificationInformHandler;
 import io.harness.pms.notification.orchestration.handlers.StageStartNotificationHandler;
 import io.harness.pms.notification.orchestration.handlers.StageStatusUpdateNotificationEventHandler;
 import io.harness.pms.outbox.PipelineOutboxEventHandler;
 import io.harness.pms.pipeline.PipelineEntity;
-import io.harness.pms.pipeline.PipelineEntityCrudObserver;
 import io.harness.pms.pipeline.PipelineSetupUsageHelper;
 import io.harness.pms.pipeline.gitsync.PipelineEntityGitSyncHelper;
+import io.harness.pms.pipeline.observer.PipelineEntityCrudObserver;
+import io.harness.pms.pipeline.observer.PipelineMetadataObserver;
 import io.harness.pms.plan.creation.PipelineServiceFilterCreationResponseMerger;
 import io.harness.pms.plan.creation.PipelineServiceInternalInfoProvider;
 import io.harness.pms.plan.execution.PmsExecutionServiceInfoProvider;
@@ -449,6 +451,12 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
         injector.getInstance(Key.get(PipelineSetupUsageHelper.class)));
     pipelineOutboxEventHandler.getPipelineActionObserverSubject().register(
         injector.getInstance(Key.get(PipelineEntityCrudObserver.class)));
+    pipelineOutboxEventHandler.getPipelineActionObserverSubject().register(
+        injector.getInstance(Key.get(InputSetPipelineObserver.class)));
+    // PipelineMetadataObserver is also added so that it is also deleted in sync so that runsequence starts with 0 again
+    // if same pipeline gets created
+    pipelineOutboxEventHandler.getPipelineActionObserverSubject().register(
+        injector.getInstance(Key.get(PipelineMetadataObserver.class)));
 
     NodeExecutionServiceImpl nodeExecutionService =
         (NodeExecutionServiceImpl) injector.getInstance(Key.get(NodeExecutionService.class));

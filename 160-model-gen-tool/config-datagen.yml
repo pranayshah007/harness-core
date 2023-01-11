@@ -317,3 +317,4 @@ delegateQueueServiceConfig:
     connectTimeOutSeconds: 15
     readTimeOutSeconds: 15
   topic: "delegate-service"
+  enableQueueAndDequeue: false

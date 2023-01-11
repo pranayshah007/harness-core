@@ -17,10 +17,20 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.springframework.data.repository.CrudRepository;
+import org.springframework.transaction.annotation.Transactional;
 
 @OwnedBy(PIPELINE)
 @HarnessRepo
+@Transactional
 public interface ResourceRestraintRepository extends CrudRepository<ResourceRestraint, String> {
   List<ResourceRestraint> findByUuidIn(Set<String> resourceRestraintUuids);
   Optional<ResourceRestraint> findByNameAndAccountId(String name, String accountId);
+
+  /**
+   * Deletes all records matching given accountId
+   * Uses - uniqueName idx
+   * @param accountId
+   * @return
+   */
+  long deleteByAccountId(String accountId);
 }

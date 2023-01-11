@@ -24,7 +24,7 @@ public enum FeatureName {
   SPG_ALLOW_REFRESH_PIPELINE_EXECUTION_BEFORE_CONTINUE_PIPELINE("Enables refresh pipeline when trigger "
           + "continue pipeline execution",
       HarnessTeam.SPG),
-  SPG_ALLOW_USE_WORKFLOW_VARIABLES_TO_CONDITION_OF_SKIP_PIPELINE_STAGE("Enables the use of workflow variables to skip"
+  SPG_ALLOW_WFLOW_VARIABLES_TO_CONDITION_SKIP_PIPELINE_STAGE("Enables the use of workflow variables to skip"
           + " pipeline stage",
       HarnessTeam.SPG),
   SPG_NG_GITHUB_WEBHOOK_AUTHENTICATION("Enables authentication for GitHub webhook triggers in NG", HarnessTeam.SPG),
@@ -556,7 +556,9 @@ public enum FeatureName {
   NG_K8_COMMAND_FLAGS("Added Support for adding Command flags to K8s commands. PM Rohan", HarnessTeam.CDP),
   CDS_FORCE_DELETE_ENTITIES("Enables force delete of entities irrespective of existing references.", HarnessTeam.CDC),
   CDP_PUBLISH_INSTANCE_STATS_FOR_ENV_NG(
-      "Publish instance stats at environment granularity in NG. PM Rohan", HarnessTeam.CDP);
+      "Publish instance stats at environment granularity in NG. PM Rohan", HarnessTeam.CDP),
+  DEPLOYMENT_RECONCILIATION_LOGIC_QUERY_OPTIMIZATIONS(
+      "Used to modify logic for reconciliation queries", HarnessTeam.CDC);
 
   @Deprecated
   FeatureName() {

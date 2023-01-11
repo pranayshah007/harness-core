@@ -48,8 +48,8 @@ public interface NGTemplateService {
   Optional<TemplateEntity> getMetadataOrThrowExceptionIfInvalid(String accountId, String orgIdentifier,
       String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted);
 
-  TemplateWithInputsResponseDTO getTemplateWithInputs(
-      String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, String versionLabel);
+  TemplateWithInputsResponseDTO getTemplateWithInputs(String accountId, String orgIdentifier, String projectIdentifier,
+      String templateIdentifier, String versionLabel, boolean loadFromCache);
 
   boolean delete(String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier,
       String versionLabel, Long version, String comments);

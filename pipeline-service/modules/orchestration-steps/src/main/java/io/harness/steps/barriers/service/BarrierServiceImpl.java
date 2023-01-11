@@ -50,6 +50,7 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.repositories.BarrierNodeRepository;
 import io.harness.springdata.HMongoTemplate;
+import io.harness.springdata.PersistenceUtils;
 import io.harness.steps.barriers.beans.BarrierExecutionInstance;
 import io.harness.steps.barriers.beans.BarrierExecutionInstance.BarrierExecutionInstanceKeys;
 import io.harness.steps.barriers.beans.BarrierPositionInfo;
@@ -74,6 +75,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import net.jodah.failsafe.Failsafe;
+import net.jodah.failsafe.RetryPolicy;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -404,5 +407,23 @@ public class BarrierServiceImpl implements BarrierService, ForceProctor {
       log.error("Error while processing yaml");
       throw e;
     }
+  }
+
+  @Override
+  public void deleteAllForGivenPlanExecutionId(Set<String> planExecutionIds) {
+    // Uses - planExecutionId_barrierState_stagesIdentifier_idx
+    Criteria planExecutionIdCriteria =
+        Criteria.where(BarrierExecutionInstanceKeys.planExecutionId).in(planExecutionIds);
+    Query query = new Query(planExecutionIdCriteria);
+
+    RetryPolicy<Object> retryPolicy =
+        getRetryPolicy("[Retrying]: Failed deleting BarrierExecutionInstance; attempt: {}",
+            "[Failed]: Failed deleting BarrierExecutionInstance; attempt: {}");
+
+    Failsafe.with(retryPolicy).get(() -> mongoTemplate.remove(query, BarrierExecutionInstance.class));
+  }
+
+  private RetryPolicy<Object> getRetryPolicy(String failedAttemptMessage, String failureMessage) {
+    return PersistenceUtils.getRetryPolicy(failedAttemptMessage, failureMessage);
   }
 }

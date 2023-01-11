@@ -23,7 +23,10 @@ import static java.util.function.Predicate.not;
 
 import io.harness.beans.ScopeLevel;
 import io.harness.beans.common.VariablesSweepingOutput;
+import io.harness.cdng.environment.helper.EnvironmentInfraFilterHelper;
 import io.harness.cdng.gitops.service.ClusterService;
+import io.harness.cdng.service.steps.ServiceStepOutcome;
+import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
@@ -35,6 +38,7 @@ import io.harness.logging.LogCallback;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.beans.PageResponse;
+import io.harness.ng.core.common.beans.NGTag;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -43,6 +47,7 @@ import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
+import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
@@ -87,6 +92,8 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
   @Inject private ExecutionSweepingOutputService executionSweepingOutputResolver;
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private EngineExpressionService engineExpressionService;
+  @Inject private EnvironmentInfraFilterHelper environmentInfraFilterHelper;
+  @Inject private OutcomeService outcomeService;
 
   private static final RetryPolicy<Object> retryPolicyForGitopsClustersFetch = RetryUtils.getRetryPolicy(
       "Error getting clusters from Harness GitOps...retrying", "Failed to fetch clusters from Harness GitOps",
@@ -109,6 +116,8 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
     final LogCallback logger = new NGLogCallback(logStreamingStepClientFactory, ambiance, null, true);
 
     log.info("Starting execution for GitOpsClustersStep [{}]", stepParameters);
+
+    performFiltering(stepParameters, ambiance);
 
     // Get Service Variables from sweeping output
     OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputResolver.resolveOptional(
@@ -165,6 +174,27 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
     }
 
     return stepResponseBuilder.status(Status.SUCCEEDED).build();
+  }
+
+  private void performFiltering(ClusterStepParameters stepParameters, Ambiance ambiance) {
+    if (stepParameters.getEnvironmentsYaml() == null && stepParameters.getEnvironmentGroupYaml() == null) {
+      return;
+    }
+    ServiceStepOutcome serviceOutcome = (ServiceStepOutcome) outcomeService.resolve(
+        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE));
+    List<NGTag> serviceTags = EnvironmentInfraFilterHelper.getNGTags(serviceOutcome.getTags());
+
+    List<EnvClusterRefs> envClusterRefs;
+    if (stepParameters.getEnvironmentGroupYaml() != null) {
+      envClusterRefs = environmentInfraFilterHelper.filterEnvGroupAndClusters(stepParameters.getEnvironmentGroupYaml(),
+          serviceTags, getAccountId(ambiance), getOrgIdentifier(ambiance), getProjectIdentifier(ambiance));
+      stepParameters.setEnvClusterRefs(envClusterRefs);
+    }
+    if (stepParameters.getEnvironmentsYaml() != null) {
+      envClusterRefs = environmentInfraFilterHelper.filterEnvsAndClusters(stepParameters.getEnvironmentsYaml(),
+          serviceTags, getAccountId(ambiance), getOrgIdentifier(ambiance), getProjectIdentifier(ambiance));
+      stepParameters.setEnvClusterRefs(envClusterRefs);
+    }
   }
 
   @Override

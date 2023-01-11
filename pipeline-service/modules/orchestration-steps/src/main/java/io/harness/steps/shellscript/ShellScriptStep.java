@@ -178,7 +178,4 @@ public class ShellScriptStep extends PipelineTaskExecutable<ShellScriptTaskRespo
       logStreamingStepClient.closeAllOpenStreamsWithPrefix(StepUtils.generateLogKeys(ambiance, emptyList()).get(0));
     }
   }
-
-  @Override
-  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {}
 }

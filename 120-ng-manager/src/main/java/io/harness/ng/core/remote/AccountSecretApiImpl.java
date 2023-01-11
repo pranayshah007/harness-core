@@ -97,9 +97,9 @@ public class AccountSecretApiImpl implements AccountSecretApi {
 
   @Override
   public Response updateAccountScopedSecret(SecretRequest secretRequest, String secret, String account) {
-    if (!Objects.equals(secretRequest.getSecret().getSlug(), secret)) {
+    if (!Objects.equals(secretRequest.getSecret().getIdentifier(), secret)) {
       throw new InvalidRequestException(
-          "Account scoped request is having different secret slug in payload and param", USER);
+          "Account scoped request is having different secret identifier in payload and param", USER);
     }
     if (nonNull(secretRequest.getSecret().getOrg()) || nonNull(secretRequest.getSecret().getProject())) {
       throw new InvalidRequestException("Account scoped request is having non null org or project", USER);
@@ -110,9 +110,9 @@ public class AccountSecretApiImpl implements AccountSecretApi {
   @Override
   public Response updateAccountScopedSecret(
       SecretRequest secretRequest, InputStream fileInputStream, String secret, String account) {
-    if (!Objects.equals(secretRequest.getSecret().getSlug(), secret)) {
+    if (!Objects.equals(secretRequest.getSecret().getIdentifier(), secret)) {
       throw new InvalidRequestException(
-          "Account scoped request is having different secret slug in payload and param", USER);
+          "Account scoped request is having different secret identifier in payload and param", USER);
     }
     if (nonNull(secretRequest.getSecret().getOrg()) || nonNull(secretRequest.getSecret().getProject())) {
       throw new InvalidRequestException("Account scoped request is having non null org or project", USER);

@@ -173,6 +173,7 @@ ciExecutionServiceConfig:
   hostedVmConfig:
     splitLinuxAmd64Pool: false
     splitLinuxArm64Pool: false
+    splitWindowsAmd64Pool: false
   stepConfig:
     # The below config is for K8 steps
     gitCloneConfig:

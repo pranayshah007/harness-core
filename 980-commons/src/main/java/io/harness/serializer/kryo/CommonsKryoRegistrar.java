@@ -67,6 +67,7 @@ import io.harness.exception.SecretNotFoundException;
 import io.harness.exception.ServiceNowException;
 import io.harness.exception.ShellExecutionException;
 import io.harness.exception.TerraformCommandExecutionException;
+import io.harness.exception.TerragruntCommandExecutionException;
 import io.harness.exception.UnauthorizedException;
 import io.harness.exception.UnexpectedException;
 import io.harness.exception.UnresolvedExpressionsException;
@@ -201,5 +202,6 @@ public class CommonsKryoRegistrar implements KryoRegistrar {
     kryo.register(TemplateInputsErrorMetadataDTO.class, 980034);
     kryo.register(AzureARMTaskException.class, 980035);
     kryo.register(AzureBPTaskException.class, 980037);
+    kryo.register(TerragruntCommandExecutionException.class, 10000262);
   }
 }

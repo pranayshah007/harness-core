@@ -54,6 +54,7 @@ public class PipelineAsyncValidationServiceImpl implements PipelineAsyncValidati
             .action(action)
             .params(ValidationParams.builder().pipelineEntity(entity).build())
             .result(ValidationResult.builder().build())
+            .startTs(System.currentTimeMillis())
             .build();
     PipelineValidationEvent savedPipelineValidationEvent =
         pipelineValidationEventRepository.save(pipelineValidationEvent);

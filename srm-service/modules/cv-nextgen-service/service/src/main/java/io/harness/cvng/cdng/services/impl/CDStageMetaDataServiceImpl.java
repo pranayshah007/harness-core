@@ -8,7 +8,7 @@
 package io.harness.cvng.cdng.services.impl;
 
 import io.harness.cvng.cdng.services.api.CDStageMetaDataService;
-import io.harness.cvng.client.NextGenClient;
+import io.harness.cvng.client.NextGenPrivilegedClient;
 import io.harness.cvng.client.RequestExecutor;
 import io.harness.ng.core.dto.CDStageMetaDataDTO;
 import io.harness.ng.core.dto.CdDeployStageMetadataRequestDTO;
@@ -21,7 +21,7 @@ import com.google.inject.Inject;
 import java.util.Objects;
 
 public class CDStageMetaDataServiceImpl implements CDStageMetaDataService {
-  @Inject private NextGenClient nextGenClient;
+  @Inject private NextGenPrivilegedClient nextGenPrivilegedClient;
   @Inject private RequestExecutor requestExecutor;
 
   @Override
@@ -35,10 +35,10 @@ public class CDStageMetaDataServiceImpl implements CDStageMetaDataService {
 
     try {
       responseDTO = requestExecutor.execute(
-          nextGenClient.getCDStageMetaData(CdDeployStageMetadataRequestDTO.builder()
-                                               .stageIdentifier(stageLevelYamlNode.getIdentifier())
-                                               .pipelineYaml(pipelineYamlNode.toString())
-                                               .build()));
+          nextGenPrivilegedClient.getCDStageMetaData(CdDeployStageMetadataRequestDTO.builder()
+                                                         .stageIdentifier(stageLevelYamlNode.getIdentifier())
+                                                         .pipelineYaml(pipelineYamlNode.toString())
+                                                         .build()));
     } catch (Exception e) {
       Log.error("Exception occurred while fetching service and environment reference, Exception: " + e.getMessage());
       return null;

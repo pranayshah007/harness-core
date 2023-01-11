@@ -73,12 +73,12 @@ public class ServiceDefinitionPlanCreatorTest extends CDNGTestBase {
   public void testGetSupportedTypes() {
     Map<String, Set<String>> supportedTypes = serviceDefinitionPlanCreator.getSupportedTypes();
     assertThat(supportedTypes.containsKey(YamlTypes.SERVICE_DEFINITION)).isEqualTo(true);
-    assertThat(supportedTypes.get(YamlTypes.SERVICE_DEFINITION).size()).isEqualTo(11);
+    assertThat(supportedTypes.get(YamlTypes.SERVICE_DEFINITION).size()).isEqualTo(12);
     assertThat(supportedTypes.get(YamlTypes.SERVICE_DEFINITION))
         .containsOnly(ServiceSpecType.KUBERNETES, ServiceSpecType.SSH, ServiceSpecType.WINRM,
             ServiceSpecType.NATIVE_HELM, ServiceSpecType.SERVERLESS_AWS_LAMBDA, ServiceSpecType.AZURE_WEBAPP,
             ServiceSpecType.ECS, ServiceSpecType.CUSTOM_DEPLOYMENT, ServiceSpecType.ELASTIGROUP, ServiceSpecType.TAS,
-            ServiceSpecType.ASG);
+            ServiceSpecType.ASG, ServiceSpecType.GOOGLE_CLOUD_FUNCTIONS);
   }
 
   private void checksForDependencies(PlanCreationResponse planCreationResponse, String nodeUuid) {

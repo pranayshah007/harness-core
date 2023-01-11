@@ -310,3 +310,7 @@ io.harness.ci.states.V1.InitStepV2DelegateTaskInfo
 io.harness.plancreator.policy.PolicyConfig
 io.harness.beans.steps.stepinfo.IACMTemplateInfo
 io.harness.beans.steps.nodes.iacm.IACMTemplateStepNode
+io.harness.beans.yaml.extended.beans.Splitting
+io.harness.beans.steps.nodes.V1.TestStepNode
+io.harness.beans.steps.nodes.V1.BackgroundStepNodeV1
+io.harness.beans.steps.stepinfo.V1.BackgroundStepInfoV1

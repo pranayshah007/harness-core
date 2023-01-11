@@ -66,7 +66,7 @@ public class ResourceGroupApiImplTest extends CategoryTest {
   private ResourceGroupResponse resourceGroupResponseOrg;
   private ResourceGroupResponse resourceGroupResponseProject;
 
-  String slug = randomAlphabetic(10);
+  String identifier = randomAlphabetic(10);
   String name = randomAlphabetic(10);
   String account = randomAlphabetic(10);
   String org = randomAlphabetic(10);
@@ -87,7 +87,7 @@ public class ResourceGroupApiImplTest extends CategoryTest {
             .resourceGroup(
                 ResourceGroupDTO.builder()
                     .accountIdentifier(account)
-                    .identifier(slug)
+                    .identifier(identifier)
                     .name(name)
                     .allowedScopeLevels(Collections.singleton("account"))
                     .includedScopes(Collections.singletonList(ScopeSelector.builder()
@@ -116,7 +116,7 @@ public class ResourceGroupApiImplTest extends CategoryTest {
             .resourceGroup(
                 ResourceGroupDTO.builder()
                     .accountIdentifier(account)
-                    .identifier(slug)
+                    .identifier(identifier)
                     .name(name)
                     .allowedScopeLevels(Collections.singleton("organization"))
                     .includedScopes(Collections.singletonList(ScopeSelector.builder()
@@ -145,7 +145,7 @@ public class ResourceGroupApiImplTest extends CategoryTest {
             .resourceGroup(
                 ResourceGroupDTO.builder()
                     .accountIdentifier(account)
-                    .identifier(slug)
+                    .identifier(identifier)
                     .name(name)
                     .allowedScopeLevels(Collections.singleton("project"))
                     .includedScopes(Collections.singletonList(ScopeSelector.builder()
@@ -189,7 +189,7 @@ public class ResourceGroupApiImplTest extends CategoryTest {
     resourceFilter.setAttributeValues(Collections.singletonList("resource1"));
 
     CreateResourceGroupRequest request = new CreateResourceGroupRequest();
-    request.setSlug(slug);
+    request.setIdentifier(identifier);
     request.setName(name);
     request.setIncludedScope(includedScopes);
     request.setResourceFilter(Collections.singletonList(resourceFilter));
@@ -201,7 +201,7 @@ public class ResourceGroupApiImplTest extends CategoryTest {
 
     Response response = accountResourceGroupApi.createResourceGroupAcc(request, account);
     ResourceGroupsResponse newResourceGroupResponse = (ResourceGroupsResponse) response.getEntity();
-    assertEquals(slug, newResourceGroupResponse.getSlug());
+    assertEquals(identifier, newResourceGroupResponse.getIdentifier());
     assertEquals(name, newResourceGroupResponse.getName());
     assertEquals(Collections.singletonList(ResourceGroupsResponse.AllowedScopeLevelsEnum.ACCOUNT),
         newResourceGroupResponse.getAllowedScopeLevels());
@@ -217,9 +217,9 @@ public class ResourceGroupApiImplTest extends CategoryTest {
         .thenReturn(Optional.ofNullable(resourceGroupResponseAcc));
     when(resourceGroupService.delete(any(Scope.class), any(String.class))).thenReturn(true);
 
-    Response response = accountResourceGroupApi.deleteResourceGroupAcc(slug, account);
+    Response response = accountResourceGroupApi.deleteResourceGroupAcc(identifier, account);
     ResourceGroupsResponse newResourceGroupResponse = (ResourceGroupsResponse) response.getEntity();
-    assertEquals(slug, newResourceGroupResponse.getSlug());
+    assertEquals(identifier, newResourceGroupResponse.getIdentifier());
     assertEquals(name, newResourceGroupResponse.getName());
     assertEquals(Collections.singletonList(ResourceGroupsResponse.AllowedScopeLevelsEnum.ACCOUNT),
         newResourceGroupResponse.getAllowedScopeLevels());
@@ -232,10 +232,10 @@ public class ResourceGroupApiImplTest extends CategoryTest {
     when(resourceGroupService.get(any(Scope.class), any(String.class), any(ManagedFilter.class)))
         .thenReturn(Optional.ofNullable(resourceGroupResponseAcc));
 
-    Response response = accountResourceGroupApi.getResourceGroupAcc(slug, account);
+    Response response = accountResourceGroupApi.getResourceGroupAcc(identifier, account);
     ResourceGroupsResponse resourceGroupsResponse = (ResourceGroupsResponse) response.getEntity();
     assertEquals(response.getStatus(), 200);
-    assertEquals(slug, resourceGroupsResponse.getSlug());
+    assertEquals(identifier, resourceGroupsResponse.getIdentifier());
   }
 
   @Test
@@ -245,7 +245,7 @@ public class ResourceGroupApiImplTest extends CategoryTest {
     when(resourceGroupService.get(any(Scope.class), any(String.class), any(ManagedFilter.class)))
         .thenReturn(Optional.empty());
     try {
-      accountResourceGroupApi.getResourceGroupAcc(slug, account);
+      accountResourceGroupApi.getResourceGroupAcc(identifier, account);
     } catch (InvalidRequestException e) {
       assertEquals("Resource Group with given identifier not found.", e.getMessage());
     }
@@ -263,7 +263,7 @@ public class ResourceGroupApiImplTest extends CategoryTest {
     List<ResourceGroupScope> includedScopes = Collections.singletonList(resourceGroupScope);
 
     CreateResourceGroupRequest request = new CreateResourceGroupRequest();
-    request.setSlug(slug);
+    request.setIdentifier(identifier);
     request.setName(name);
     request.setIncludedScope(includedScopes);
     request.setIncludeAllResources(true);
@@ -275,9 +275,9 @@ public class ResourceGroupApiImplTest extends CategoryTest {
     when(resourceGroupService.update(any(ResourceGroupDTO.class), any(Boolean.class)))
         .thenReturn(Optional.ofNullable(resourceGroupResponseAcc));
 
-    Response response = accountResourceGroupApi.updateResourceGroupAcc(request, slug, account);
+    Response response = accountResourceGroupApi.updateResourceGroupAcc(request, identifier, account);
     ResourceGroupsResponse newResourceGroupResponse = (ResourceGroupsResponse) response.getEntity();
-    assertEquals(slug, newResourceGroupResponse.getSlug());
+    assertEquals(identifier, newResourceGroupResponse.getIdentifier());
     assertEquals(name, newResourceGroupResponse.getName());
     assertEquals(Collections.singletonList(ResourceGroupsResponse.AllowedScopeLevelsEnum.ACCOUNT),
         newResourceGroupResponse.getAllowedScopeLevels());
@@ -296,7 +296,7 @@ public class ResourceGroupApiImplTest extends CategoryTest {
         ResourceGroupResponse.builder()
             .resourceGroup(ResourceGroupDTO.builder()
                                .accountIdentifier(account)
-                               .identifier(slug)
+                               .identifier(identifier)
                                .name(name)
                                .allowedScopeLevels(Collections.singleton("account"))
                                .build())
@@ -310,7 +310,7 @@ public class ResourceGroupApiImplTest extends CategoryTest {
 
     assertEquals(2, response.getLinks().size());
     assertEquals(1, entity.size());
-    assertEquals(slug, entity.get(0).getSlug());
+    assertEquals(identifier, entity.get(0).getIdentifier());
     assertEquals(name, entity.get(0).getName());
   }
 
@@ -332,7 +332,7 @@ public class ResourceGroupApiImplTest extends CategoryTest {
     resourceFilter.setAttributeValues(Collections.singletonList("resource1"));
 
     CreateResourceGroupRequest request = new CreateResourceGroupRequest();
-    request.setSlug(slug);
+    request.setIdentifier(identifier);
     request.setName(name);
     request.setIncludedScope(includedScopes);
     request.setResourceFilter(Collections.singletonList(resourceFilter));
@@ -344,7 +344,7 @@ public class ResourceGroupApiImplTest extends CategoryTest {
 
     Response response = orgResourceGroupsApi.createResourceGroupOrg(request, org, account);
     ResourceGroupsResponse newResourceGroupResponse = (ResourceGroupsResponse) response.getEntity();
-    assertEquals(slug, newResourceGroupResponse.getSlug());
+    assertEquals(identifier, newResourceGroupResponse.getIdentifier());
     assertEquals(name, newResourceGroupResponse.getName());
     assertEquals(Collections.singletonList(ResourceGroupsResponse.AllowedScopeLevelsEnum.ORGANIZATION),
         newResourceGroupResponse.getAllowedScopeLevels());
@@ -360,9 +360,9 @@ public class ResourceGroupApiImplTest extends CategoryTest {
         .thenReturn(Optional.ofNullable(resourceGroupResponseOrg));
     when(resourceGroupService.delete(any(Scope.class), any(String.class))).thenReturn(true);
 
-    Response response = orgResourceGroupsApi.deleteResourceGroupOrg(org, slug, account);
+    Response response = orgResourceGroupsApi.deleteResourceGroupOrg(org, identifier, account);
     ResourceGroupsResponse newResourceGroupResponse = (ResourceGroupsResponse) response.getEntity();
-    assertEquals(slug, newResourceGroupResponse.getSlug());
+    assertEquals(identifier, newResourceGroupResponse.getIdentifier());
     assertEquals(name, newResourceGroupResponse.getName());
     assertEquals(Collections.singletonList(ResourceGroupsResponse.AllowedScopeLevelsEnum.ORGANIZATION),
         newResourceGroupResponse.getAllowedScopeLevels());
@@ -375,10 +375,10 @@ public class ResourceGroupApiImplTest extends CategoryTest {
     when(resourceGroupService.get(any(Scope.class), any(String.class), any(ManagedFilter.class)))
         .thenReturn(Optional.ofNullable(resourceGroupResponseOrg));
 
-    Response response = orgResourceGroupsApi.getResourceGroupOrg(org, slug, account);
+    Response response = orgResourceGroupsApi.getResourceGroupOrg(org, identifier, account);
     ResourceGroupsResponse resourceGroupsResponse = (ResourceGroupsResponse) response.getEntity();
     assertEquals(response.getStatus(), 200);
-    assertEquals(slug, resourceGroupsResponse.getSlug());
+    assertEquals(identifier, resourceGroupsResponse.getIdentifier());
   }
 
   @Test
@@ -388,7 +388,7 @@ public class ResourceGroupApiImplTest extends CategoryTest {
     when(resourceGroupService.get(any(Scope.class), any(String.class), any(ManagedFilter.class)))
         .thenReturn(Optional.empty());
     try {
-      orgResourceGroupsApi.getResourceGroupOrg(org, slug, account);
+      orgResourceGroupsApi.getResourceGroupOrg(org, identifier, account);
     } catch (InvalidRequestException e) {
       assertEquals("Resource Group with given identifier not found.", e.getMessage());
     }
@@ -406,7 +406,7 @@ public class ResourceGroupApiImplTest extends CategoryTest {
     List<ResourceGroupScope> includedScopes = Collections.singletonList(resourceGroupScope);
 
     CreateResourceGroupRequest request = new CreateResourceGroupRequest();
-    request.setSlug(slug);
+    request.setIdentifier(identifier);
     request.setName(name);
     request.setIncludedScope(includedScopes);
     request.setIncludeAllResources(true);
@@ -418,9 +418,9 @@ public class ResourceGroupApiImplTest extends CategoryTest {
     when(resourceGroupService.update(any(ResourceGroupDTO.class), any(Boolean.class)))
         .thenReturn(Optional.ofNullable(resourceGroupResponseOrg));
 
-    Response response = orgResourceGroupsApi.updateResourceGroupOrg(request, org, slug, account);
+    Response response = orgResourceGroupsApi.updateResourceGroupOrg(request, org, identifier, account);
     ResourceGroupsResponse newResourceGroupResponse = (ResourceGroupsResponse) response.getEntity();
-    assertEquals(slug, newResourceGroupResponse.getSlug());
+    assertEquals(identifier, newResourceGroupResponse.getIdentifier());
     assertEquals(name, newResourceGroupResponse.getName());
     assertEquals(Collections.singletonList(ResourceGroupsResponse.AllowedScopeLevelsEnum.ORGANIZATION),
         newResourceGroupResponse.getAllowedScopeLevels());
@@ -440,7 +440,7 @@ public class ResourceGroupApiImplTest extends CategoryTest {
             .resourceGroup(ResourceGroupDTO.builder()
                                .accountIdentifier(account)
                                .orgIdentifier(org)
-                               .identifier(slug)
+                               .identifier(identifier)
                                .name(name)
                                .allowedScopeLevels(Collections.singleton("organization"))
                                .build())
@@ -454,7 +454,7 @@ public class ResourceGroupApiImplTest extends CategoryTest {
 
     assertEquals(2, response.getLinks().size());
     assertEquals(1, entity.size());
-    assertEquals(slug, entity.get(0).getSlug());
+    assertEquals(identifier, entity.get(0).getIdentifier());
     assertEquals(name, entity.get(0).getName());
   }
 
@@ -476,7 +476,7 @@ public class ResourceGroupApiImplTest extends CategoryTest {
     resourceFilter.setAttributeValues(Collections.singletonList("resource1"));
 
     CreateResourceGroupRequest request = new CreateResourceGroupRequest();
-    request.setSlug(slug);
+    request.setIdentifier(identifier);
     request.setName(name);
     request.setIncludedScope(includedScopes);
     request.setResourceFilter(Collections.singletonList(resourceFilter));
@@ -488,7 +488,7 @@ public class ResourceGroupApiImplTest extends CategoryTest {
 
     Response response = projectResourceGroupsApi.createResourceGroupProject(request, org, project, account);
     ResourceGroupsResponse newResourceGroupResponse = (ResourceGroupsResponse) response.getEntity();
-    assertEquals(slug, newResourceGroupResponse.getSlug());
+    assertEquals(identifier, newResourceGroupResponse.getIdentifier());
     assertEquals(name, newResourceGroupResponse.getName());
     assertEquals(Collections.singletonList(ResourceGroupsResponse.AllowedScopeLevelsEnum.PROJECT),
         newResourceGroupResponse.getAllowedScopeLevels());
@@ -504,9 +504,9 @@ public class ResourceGroupApiImplTest extends CategoryTest {
         .thenReturn(Optional.ofNullable(resourceGroupResponseProject));
     when(resourceGroupService.delete(any(Scope.class), any(String.class))).thenReturn(true);
 
-    Response response = projectResourceGroupsApi.deleteResourceGroupProject(org, project, slug, account);
+    Response response = projectResourceGroupsApi.deleteResourceGroupProject(org, project, identifier, account);
     ResourceGroupsResponse newResourceGroupResponse = (ResourceGroupsResponse) response.getEntity();
-    assertEquals(slug, newResourceGroupResponse.getSlug());
+    assertEquals(identifier, newResourceGroupResponse.getIdentifier());
     assertEquals(name, newResourceGroupResponse.getName());
     assertEquals(Collections.singletonList(ResourceGroupsResponse.AllowedScopeLevelsEnum.PROJECT),
         newResourceGroupResponse.getAllowedScopeLevels());
@@ -519,10 +519,10 @@ public class ResourceGroupApiImplTest extends CategoryTest {
     when(resourceGroupService.get(any(Scope.class), any(String.class), any(ManagedFilter.class)))
         .thenReturn(Optional.ofNullable(resourceGroupResponseProject));
 
-    Response response = projectResourceGroupsApi.getResourceGroupProject(org, project, slug, account);
+    Response response = projectResourceGroupsApi.getResourceGroupProject(org, project, identifier, account);
     ResourceGroupsResponse resourceGroupsResponse = (ResourceGroupsResponse) response.getEntity();
     assertEquals(response.getStatus(), 200);
-    assertEquals(slug, resourceGroupsResponse.getSlug());
+    assertEquals(identifier, resourceGroupsResponse.getIdentifier());
   }
 
   @Test
@@ -532,7 +532,7 @@ public class ResourceGroupApiImplTest extends CategoryTest {
     when(resourceGroupService.get(any(Scope.class), any(String.class), any(ManagedFilter.class)))
         .thenReturn(Optional.empty());
     try {
-      projectResourceGroupsApi.getResourceGroupProject(org, project, slug, account);
+      projectResourceGroupsApi.getResourceGroupProject(org, project, identifier, account);
     } catch (InvalidRequestException e) {
       assertEquals("Resource Group with given identifier not found.", e.getMessage());
     }
@@ -550,7 +550,7 @@ public class ResourceGroupApiImplTest extends CategoryTest {
     List<ResourceGroupScope> includedScopes = Collections.singletonList(resourceGroupScope);
 
     CreateResourceGroupRequest request = new CreateResourceGroupRequest();
-    request.setSlug(slug);
+    request.setIdentifier(identifier);
     request.setName(name);
     request.setIncludedScope(includedScopes);
     request.setIncludeAllResources(true);
@@ -562,9 +562,9 @@ public class ResourceGroupApiImplTest extends CategoryTest {
     when(resourceGroupService.update(any(ResourceGroupDTO.class), any(Boolean.class)))
         .thenReturn(Optional.ofNullable(resourceGroupResponseProject));
 
-    Response response = projectResourceGroupsApi.updateResourceGroupProject(request, org, project, slug, account);
+    Response response = projectResourceGroupsApi.updateResourceGroupProject(request, org, project, identifier, account);
     ResourceGroupsResponse newResourceGroupResponse = (ResourceGroupsResponse) response.getEntity();
-    assertEquals(slug, newResourceGroupResponse.getSlug());
+    assertEquals(identifier, newResourceGroupResponse.getIdentifier());
     assertEquals(name, newResourceGroupResponse.getName());
     assertEquals(Collections.singletonList(ResourceGroupsResponse.AllowedScopeLevelsEnum.PROJECT),
         newResourceGroupResponse.getAllowedScopeLevels());
@@ -585,7 +585,7 @@ public class ResourceGroupApiImplTest extends CategoryTest {
                                .accountIdentifier(account)
                                .orgIdentifier(org)
                                .projectIdentifier(project)
-                               .identifier(slug)
+                               .identifier(identifier)
                                .name(name)
                                .allowedScopeLevels(Collections.singleton("project"))
                                .build())
@@ -600,7 +600,7 @@ public class ResourceGroupApiImplTest extends CategoryTest {
 
     assertEquals(2, response.getLinks().size());
     assertEquals(1, entity.size());
-    assertEquals(slug, entity.get(0).getSlug());
+    assertEquals(identifier, entity.get(0).getIdentifier());
     assertEquals(name, entity.get(0).getName());
   }
   @Test
@@ -611,7 +611,7 @@ public class ResourceGroupApiImplTest extends CategoryTest {
     ManagedFilterEnum managed = ManagedFilterEnum.NO_FILTER;
     ResourceSelectorFilter selectorFilter = new ResourceSelectorFilter();
     selectorFilter.setResourceType("RESOURCE");
-    selectorFilter.setResourceSlug(randomAlphabetic(10));
+    selectorFilter.setResourceIdentifier(randomAlphabetic(10));
     List<ResourceSelectorFilter> selector = Collections.singletonList(selectorFilter);
     ResourceGroupFilterRequestBody requestBody = new ResourceGroupFilterRequestBody();
     requestBody.setAccount(account);
@@ -629,7 +629,7 @@ public class ResourceGroupApiImplTest extends CategoryTest {
                                .accountIdentifier(account)
                                .orgIdentifier(org)
                                .projectIdentifier(project)
-                               .identifier(slug)
+                               .identifier(identifier)
                                .name(name)
                                .allowedScopeLevels(Collections.singleton("project"))
                                .build())
@@ -643,7 +643,7 @@ public class ResourceGroupApiImplTest extends CategoryTest {
 
     assertEquals(2, response.getLinks().size());
     assertEquals(1, entity.size());
-    assertEquals(slug, entity.get(0).getSlug());
+    assertEquals(identifier, entity.get(0).getIdentifier());
     assertEquals(name, entity.get(0).getName());
   }
 }
