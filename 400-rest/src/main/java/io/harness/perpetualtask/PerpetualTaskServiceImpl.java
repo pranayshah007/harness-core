@@ -175,6 +175,35 @@ public class PerpetualTaskServiceImpl implements PerpetualTaskService, DelegateO
   }
 
   @Override
+  public PerpetualTaskRecord createPerpetualTaskRecord(String perpetualTaskType, String accountId,
+      PerpetualTaskClientContext clientContext, PerpetualTaskSchedule schedule, boolean allowDuplicate,
+      String taskDescription) {
+    try (AutoLogContext ignore0 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
+      if (!allowDuplicate) {
+        Optional<PerpetualTaskRecord> perpetualTaskMaybe =
+            perpetualTaskRecordDao.getExistingPerpetualTask(accountId, perpetualTaskType, clientContext);
+        if (perpetualTaskMaybe.isPresent()) {
+          PerpetualTaskRecord perpetualTaskRecord = perpetualTaskMaybe.get();
+          log.info("Perpetual task with id={} exists.", perpetualTaskRecord.getUuid());
+          return perpetualTaskRecord;
+        }
+      }
+
+      return PerpetualTaskRecord.builder()
+          .accountId(accountId)
+          .perpetualTaskType(perpetualTaskType)
+          .clientContext(clientContext)
+          .timeoutMillis(Durations.toMillis(schedule.getTimeout()))
+          .intervalSeconds(getTaskTimeInterval(schedule, accountId, perpetualTaskType))
+          .delegateId("")
+          .state(PerpetualTaskState.TASK_UNASSIGNED)
+          .assignIteration(currentTimeMillis())
+          .taskDescription(taskDescription)
+          .build();
+    }
+  }
+
+  @Override
   public boolean resetTask(String accountId, String taskId, PerpetualTaskExecutionBundle taskExecutionBundle) {
     try (AutoLogContext ignore0 = new AccountLogContext(accountId, OVERRIDE_ERROR);
          AutoLogContext ignore1 = new PerpetualTaskLogContext(taskId, OVERRIDE_ERROR)) {

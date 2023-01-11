@@ -15,6 +15,9 @@ public interface PerpetualTaskService {
   String createTask(String perpetualTaskType, String accountId, PerpetualTaskClientContext clientContext,
       PerpetualTaskSchedule schedule, boolean allowDuplicate, String taskDescription);
 
+  PerpetualTaskRecord createPerpetualTaskRecord(String perpetualTaskType, String accountId,
+      PerpetualTaskClientContext clientContext, PerpetualTaskSchedule schedule, boolean allowDuplicate,
+      String taskDescription);
   boolean resetTask(String accountId, String taskId, PerpetualTaskExecutionBundle taskExecutionBundle);
 
   long updateTasksSchedule(String accountId, String perpetualTaskType, long intervalInMillis);

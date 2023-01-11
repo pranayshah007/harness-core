@@ -136,6 +136,9 @@ public class CgInstanceSyncServiceV2 {
           .filter(this::hasDeploymentKey)
           .forEach(this::handlePerpetualTask);
 
+      instanceSyncPerpetualTaskService.createPerpetualTasksForNewDeploymentBackup(
+          deploymentSummaries, infrastructureMapping, true);
+
     } catch (Exception ex) {
       // We have to catch all kinds of exceptions, In case of any Failure we switch to instance sync V1
       throw new RuntimeException(
@@ -165,7 +168,11 @@ public class CgInstanceSyncServiceV2 {
     } else {
       updateInstanceSyncPerpetualTask(cloudProvider, configuredPerpetualTaskId);
     }
+    // Save V1 Perpetual task for backup
   }
+
+  private void savePerpetualTaskForBackup(
+      DeploymentSummary deploymentSummary, InfrastructureMapping infrastructureMapping) {}
 
   public void processInstanceSyncResult(String perpetualTaskId, CgInstanceSyncResponse result) {
     log.info("Got the result. Starting to process. Perpetual Task Id: [{}] and response [{}]", perpetualTaskId, result);

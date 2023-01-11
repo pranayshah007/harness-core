@@ -240,6 +240,24 @@ public class InstanceSyncPerpetualTaskServiceImpl implements InstanceSyncPerpetu
     }
   }
 
+  @Override
+  public void createPerpetualTasksForNewDeploymentBackup(
+      List<DeploymentSummary> deploymentSummaries, InfrastructureMapping infrastructureMapping, boolean backup) {
+    InstanceSyncByPerpetualTaskHandler handler = getInstanceHandler(infrastructureMapping);
+
+    List<PerpetualTaskRecord> existingTasks = getExistingPerpetualTasks(infrastructureMapping);
+
+    List<PerpetualTaskRecord> perpetualTaskRecords =
+        handler.getInstanceSyncPerpetualTaskCreator().createPerpetualTasksBackup(
+            deploymentSummaries, existingTasks, infrastructureMapping);
+
+    if (EmptyPredicate.isNotEmpty(perpetualTaskRecords)) {
+      perpetualTaskRecords.forEach(perpetualTaskRecord
+          -> instanceSyncPTBackupService.save(
+              infrastructureMapping.getAccountId(), infrastructureMapping.getUuid(), perpetualTaskRecord));
+    }
+  }
+
   private InfrastructureMapping get(String appId, String infraMappingId) {
     return wingsPersistence.getWithAppId(InfrastructureMapping.class, appId, infraMappingId);
   }

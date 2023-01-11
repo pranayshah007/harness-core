@@ -22,6 +22,7 @@ import static software.wings.service.InstanceSyncConstants.RELEASE_NAME;
 import static software.wings.service.InstanceSyncConstants.TIMEOUT_SECONDS;
 import static software.wings.service.impl.ContainerMetadataType.K8S;
 
+import static java.lang.System.currentTimeMillis;
 import static java.util.Objects.nonNull;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
@@ -31,6 +32,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
 import io.harness.perpetualtask.PerpetualTaskSchedule;
+import io.harness.perpetualtask.PerpetualTaskState;
 import io.harness.perpetualtask.PerpetualTaskType;
 import io.harness.perpetualtask.instancesync.ContainerInstanceSyncPerpetualTaskClientParams;
 import io.harness.perpetualtask.internal.PerpetualTaskRecord;
@@ -166,6 +168,49 @@ public class ContainerInstanceSyncPerpetualTaskCreator extends AbstractInstanceS
   }
 
   @Override
+  public List<PerpetualTaskRecord> createPerpetualTasksBackup(List<DeploymentSummary> deploymentSummaries,
+      List<PerpetualTaskRecord> existingPerpetualTasks, InfrastructureMapping infrastructureMapping) {
+    Set<ContainerMetadata> existingContainersMetadata =
+        existingPerpetualTasks.stream()
+            .map(record
+                -> ContainerMetadata.builder()
+                       .containerServiceName(record.getClientContext().getClientParams().get(
+                           InstanceSyncConstants.CONTAINER_SERVICE_NAME))
+                       .namespace(record.getClientContext().getClientParams().get(InstanceSyncConstants.NAMESPACE))
+                       .releaseName(record.getClientContext().getClientParams().get(InstanceSyncConstants.RELEASE_NAME))
+                       .type(extractContainerMetadataType(
+                           record.getClientContext().getClientParams().get(InstanceSyncConstants.CONTAINER_TYPE)))
+                       .clusterName(record.getClientContext().getClientParams().get(CLUSTER_NAME))
+                       .build())
+            .collect(Collectors.toSet());
+
+    Set<ContainerMetadata> newDeploymentContainersMetadata =
+        deploymentSummaries.stream()
+            .map(DeploymentSummary::getDeploymentInfo)
+            .filter(deploymentInfo
+                -> deploymentInfo instanceof BaseContainerDeploymentInfo || deploymentInfo instanceof K8sDeploymentInfo)
+            .flatMap(deploymentInfo -> extractContainerMetadata(deploymentInfo).stream())
+            .collect(Collectors.toSet());
+
+    SetView<ContainerMetadata> containersMetadataToExamine =
+        Sets.difference(newDeploymentContainersMetadata, existingContainersMetadata);
+
+    return containersMetadataToExamine.stream()
+        .map(containerMetadata
+            -> ContainerInstanceSyncPerpetualTaskClientParams.builder()
+                   .appId(infrastructureMapping.getAppId())
+                   .inframappingId(infrastructureMapping.getUuid())
+                   .containerSvcName(containerMetadata.getContainerServiceName())
+                   .namespace(containerMetadata.getNamespace())
+                   .releaseName(containerMetadata.getReleaseName())
+                   .containerType(nonNull(containerMetadata.getType()) ? containerMetadata.getType().name() : null)
+                   .clusterName(containerMetadata.getClusterName())
+                   .build())
+        .map(params -> createForBackup(params, infrastructureMapping))
+        .collect(Collectors.toList());
+  }
+
+  @Override
   public Optional<String> restorePerpetualTask(
       PerpetualTaskRecord perpetualTask, List<PerpetualTaskRecord> existingPerpetualTasks) {
     Set<ContainerMetadata> existingContainersMetadata =
@@ -219,6 +264,31 @@ public class ContainerInstanceSyncPerpetualTaskCreator extends AbstractInstanceS
         .collect(Collectors.toList());
   }
 
+  private PerpetualTaskRecord createForBackup(
+      ContainerInstanceSyncPerpetualTaskClientParams clientParams, InfrastructureMapping infraMapping) {
+    Map<String, String> clientParamMap = new HashMap<>();
+    clientParamMap.put(HARNESS_APPLICATION_ID, clientParams.getAppId());
+    clientParamMap.put(INFRASTRUCTURE_MAPPING_ID, clientParams.getInframappingId());
+    clientParamMap.put(NAMESPACE, clientParams.getNamespace());
+    clientParamMap.put(RELEASE_NAME, clientParams.getReleaseName());
+    clientParamMap.put(CONTAINER_SERVICE_NAME, clientParams.getContainerSvcName());
+    clientParamMap.put(CONTAINER_TYPE, Utils.emptyIfNull(clientParams.getContainerType()));
+
+    if (Objects.nonNull(clientParams.getClusterName())) {
+      clientParamMap.put(CLUSTER_NAME, clientParams.getClusterName());
+    }
+
+    PerpetualTaskClientContext clientContext =
+        PerpetualTaskClientContext.builder().clientParams(clientParamMap).build();
+
+    PerpetualTaskSchedule schedule = PerpetualTaskSchedule.newBuilder()
+                                         .setInterval(Durations.fromMinutes(INTERVAL_MINUTES))
+                                         .setTimeout(Durations.fromSeconds(TIMEOUT_SECONDS))
+                                         .build();
+
+    return perpetualTaskService.createPerpetualTaskRecord(PerpetualTaskType.CONTAINER_INSTANCE_SYNC,
+        infraMapping.getAccountId(), clientContext, schedule, ALLOW_DUPLICATE, getTaskDescription(infraMapping));
+  }
   private String create(
       ContainerInstanceSyncPerpetualTaskClientParams clientParams, InfrastructureMapping infraMapping) {
     Map<String, String> clientParamMap = new HashMap<>();
