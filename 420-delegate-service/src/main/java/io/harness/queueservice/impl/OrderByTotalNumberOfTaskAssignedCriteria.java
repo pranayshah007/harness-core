@@ -57,8 +57,7 @@ public class OrderByTotalNumberOfTaskAssignedCriteria implements DelegateResourc
       List<Delegate> delegateList, String accountId) {
     TreeMap<String, Integer> numberOfTaskAssigned = new TreeMap<>();
     for (Delegate delegate : delegateList) {
-      numberOfTaskAssigned.put(
-          delegate.getUuid(), delegateServiceCache.getDelegateTaskCache(delegate.getUuid()).intValue());
+      numberOfTaskAssigned.put(delegate.getUuid(), delegateServiceCache.getDelegateTaskCache(delegate.getUuid()).get());
     }
     return numberOfTaskAssigned.entrySet()
         .stream()
