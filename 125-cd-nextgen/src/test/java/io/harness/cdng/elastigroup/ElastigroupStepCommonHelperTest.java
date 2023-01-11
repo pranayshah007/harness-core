@@ -504,7 +504,7 @@ public class ElastigroupStepCommonHelperTest extends CDNGTestBase {
   @Test
   @Owner(developers = FILIP)
   @Category(UnitTests.class)
-  public void startChainLinkNoArtifactTest() {
+  public void startChainLinkPositiveTest() {
     // given
     Ambiance ambiance = anAmbiance();
 
