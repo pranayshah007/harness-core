@@ -634,6 +634,18 @@ public class JenkinsRegistryUtils {
     return jenkinsBuild;
   }
 
+  public String getJenkinsConsoleLogs(
+      JenkinsInternalConfig jenkinsInternalConfig, FolderJob job, String jobName, String jobId) {
+    try {
+      JenkinsCustomServer jenkinsServer = JenkinsClient.getJenkinsServer(jenkinsInternalConfig);
+      return jenkinsServer.getJenkinsConsoleLogs(job, jobName, jobId);
+    } catch (URISyntaxException e) {
+      throw new RuntimeException(e);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
   public Build getBuild(QueueReference queueReference, JenkinsInternalConfig jenkinsInternalConfig)
       throws IOException, URISyntaxException {
     log.info("Retrieving queued item for job URL {}", queueReference.getQueueItemUrlPart());
