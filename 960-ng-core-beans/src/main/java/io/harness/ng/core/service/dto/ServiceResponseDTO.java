@@ -9,6 +9,7 @@ package io.harness.ng.core.service.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Map;
 import lombok.AccessLevel;
@@ -27,7 +28,7 @@ public class ServiceResponseDTO {
   String orgIdentifier;
   String projectIdentifier;
   String name;
-  String description;
+  @JsonInclude(JsonInclude.Include.NON_NULL) String description;
   boolean deleted;
   Map<String, String> tags;
   @JsonIgnore Long version;
