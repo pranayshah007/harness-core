@@ -380,6 +380,11 @@ public class SecretManagerConnectorServiceImpl implements ConnectorService {
   }
 
   @Override
+  public Long countConnectors(String accountIdentifier) {
+    return defaultConnectorService.countConnectors(accountIdentifier);
+  }
+
+  @Override
   public boolean markEntityInvalid(String accountIdentifier, EntityReference entityReference, String invalidYaml) {
     return defaultConnectorService.markEntityInvalid(accountIdentifier, entityReference, invalidYaml);
   }
