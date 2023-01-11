@@ -32,9 +32,11 @@ import io.harness.authenticationservice.recaptcha.ReCaptchaVerifier;
 import io.harness.configuration.DeployMode;
 import io.harness.configuration.DeployVariant;
 import io.harness.eraro.ErrorCode;
+import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.SignupException;
 import io.harness.exception.UserAlreadyPresentException;
+import io.harness.exception.UserRegistrationException;
 import io.harness.exception.WeakPasswordException;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
@@ -308,7 +310,16 @@ public class SignupServiceImpl implements SignupService {
     UserInfo userInfo = null;
     try {
       userInfo = getResponse(userClient.completeSignupInvite(verificationToken.getEmail()));
-      verificationTokenRepository.delete(verificationToken);
+
+      executorService.submit(() -> {
+        try {
+          Thread.sleep(30000);
+          verificationTokenRepository.delete(verificationToken);
+        } catch (DuplicateFieldException | InterruptedException e) {
+          log.warn("Token already being deleted in the previous calls");
+        }
+      });
+
       sendSucceedTelemetryEvent(userInfo.getEmail(), userInfo.getUtmInfo(), userInfo.getDefaultAccountId(), userInfo,
           SignupType.SIGNUP_FORM_FLOW, userInfo.getAccounts().get(0).getAccountName(), referer, gaClientId);
 
