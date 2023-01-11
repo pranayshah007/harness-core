@@ -13,8 +13,10 @@ import io.harness.annotations.dev.OwnedBy;
 
 @OwnedBy(PIPELINE)
 public interface NGRegexValidatorConstants {
-  String IDENTIFIER_PATTERN = "^[a-zA-Z_][0-9a-zA-Z_]{0,63}$";
-  String PIPELINE_IDENTIFIER_PATTERN = "^[a-zA-Z_][0-9a-zA-Z_]{0,127}$";
+  String IDENTIFIER_PATTERN =
+      "^(?!or$|and$|eq$|ne$|it$|gt$|le$|ge$|div$|mod$|not$|null$|true$|false$|new$|var$|return$|step$|parallel$|stepGroup$|org$|account$)[a-zA-Z_][0-9a-zA-Z_]{0,63}$";
+  String PIPELINE_IDENTIFIER_PATTERN =
+      "^(?!or$|and$|eq$|ne$|it$|gt$|le$|ge$|div$|mod$|not$|null$|true$|false$|new$|var$|return$|step$|parallel$|stepGroup$|org$|account$)[a-zA-Z_][0-9a-zA-Z_]{0,127}$";
   String VARIABLE_NAME_PATTERN = "^[a-zA-Z_][0-9a-zA-Z_\\.$]{0,63}$";
   String NAME_PATTERN = "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$";
   String TIMEOUT_PATTERN =
