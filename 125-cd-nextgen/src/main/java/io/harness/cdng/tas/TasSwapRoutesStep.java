@@ -13,10 +13,12 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.TanzuApplicationServiceInfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.cdng.tas.outcome.TasAppResizeDataOutcome;
 import io.harness.cdng.tas.outcome.TasSetupDataOutcome;
 import io.harness.cdng.tas.outcome.TasSwapRouteDataOutcome;
 import io.harness.common.ParameterFieldHelper;
@@ -43,7 +45,6 @@ import io.harness.ng.core.BaseNGAccess;
 import io.harness.pcf.CfCommandUnitConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
-import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
@@ -76,7 +77,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
-public class TasSwapRoutesStep extends TaskExecutableWithRollbackAndRbac<CfCommandResponseNG> {
+public class TasSwapRoutesStep extends CdTaskExecutable<CfCommandResponseNG> {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.TAS_SWAP_ROUTES.getYamlType())
                                                .setStepCategory(StepCategory.STEP)
@@ -148,20 +149,40 @@ public class TasSwapRoutesStep extends TaskExecutableWithRollbackAndRbac<CfComma
 
     executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.TAS_SWAP_ROUTES_OUTCOME,
         tasSwapRouteDataOutcome, StepCategory.STEP.name());
-
-    CfSwapRouteCommandResponseNG cfSwapRouteCommandResponseNG = (CfSwapRouteCommandResponseNG) response;
-    List<ServerInstanceInfo> serverInstanceInfoList =
-        getServerInstanceInfoList(((CfSwapRouteCommandResponseNG) response).getCfSwapRouteCommandResult(), ambiance);
+    List<ServerInstanceInfo> serverInstanceInfoList = Collections.emptyList();
+    CfSwapRouteCommandResult cfSwapRouteCommandResult =
+        ((CfSwapRouteCommandResponseNG) response).getCfSwapRouteCommandResult();
+    if (isNull(cfSwapRouteCommandResult)) {
+      // for backward compatibility
+      if (tasAppResizeDataOptional.isFound()) {
+        serverInstanceInfoList = getServerInstanceInfoListFromAppResizeData(
+            ((CfSwapRouteCommandResponseNG) response).getNewApplicationName(),
+            (TasAppResizeDataOutcome) tasAppResizeDataOptional.getOutput(), ambiance);
+      }
+    } else {
+      serverInstanceInfoList = getServerInstanceInfoList(cfSwapRouteCommandResult, ambiance);
+    }
 
     StepResponse.StepOutcome stepOutcome =
         instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfoList);
-    //    tasStepHelper.saveInstancesOutcome(ambiance, serverInstanceInfoList);
 
     builder.unitProgressList(response.getUnitProgressData().getUnitProgresses());
     builder.status(Status.SUCCEEDED);
     builder.stepOutcome(stepOutcome);
     return builder.build();
   }
+
+  private List<ServerInstanceInfo> getServerInstanceInfoListFromAppResizeData(
+      String newApplicationName, TasAppResizeDataOutcome response, Ambiance ambiance) {
+    TanzuApplicationServiceInfrastructureOutcome infrastructureOutcome =
+        (TanzuApplicationServiceInfrastructureOutcome) outcomeService.resolve(
+            ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
+    List<CfInternalInstanceElement> instances = response.getCfInstanceElements();
+    return instances.stream()
+        .map(instance -> getServerInstance(newApplicationName, instance, infrastructureOutcome))
+        .collect(Collectors.toList());
+  }
+
   @Override
   public TaskRequest obtainTaskAfterRbac(
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
@@ -260,18 +281,21 @@ public class TasSwapRoutesStep extends TaskExecutableWithRollbackAndRbac<CfComma
         (TanzuApplicationServiceInfrastructureOutcome) outcomeService.resolve(
             ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
     List<CfInternalInstanceElement> instances = new ArrayList<>(Collections.emptyList());
+    if (response == null) {
+      return Collections.emptyList();
+    }
     instances.addAll(response.getNewAppInstances());
     return instances.stream()
-        .map(instance -> getServerInstance(instance, infrastructureOutcome))
+        .map(instance -> getServerInstance(null, instance, infrastructureOutcome))
         .collect(Collectors.toList());
   }
 
-  private ServerInstanceInfo getServerInstance(
-      CfInternalInstanceElement instance, TanzuApplicationServiceInfrastructureOutcome infrastructureOutcome) {
+  private ServerInstanceInfo getServerInstance(String newAppName, CfInternalInstanceElement instance,
+      TanzuApplicationServiceInfrastructureOutcome infrastructureOutcome) {
     return TasServerInstanceInfo.builder()
         .id(instance.getApplicationId() + ":" + instance.getInstanceIndex())
         .instanceIndex(instance.getInstanceIndex())
-        .tasApplicationName(instance.getDisplayName())
+        .tasApplicationName(isNull(newAppName) ? instance.getDisplayName() : newAppName)
         .tasApplicationGuid(instance.getApplicationId())
         .organization(infrastructureOutcome.getOrganization())
         .space(infrastructureOutcome.getSpace())

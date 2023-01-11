@@ -239,13 +239,27 @@ public class NGScimUserServiceImpl implements ScimUserService {
       if (StringUtils.isNotEmpty(displayName) && !displayName.equals(existingUser.getName())) {
         userMetadata.setName(displayName);
         userMetadata.setExternallyManaged(true);
-        ngUserService.updateUserMetadata(userMetadata);
+        log.info("NGSCIM: Updating name for user {} ; Updated name: {}", userId, displayName);
       }
+
+      String updatedEmail = getPrimaryEmail(scimUser);
+
+      if (CGRestUtils.getResponse(
+              accountClient.isFeatureFlagEnabled(FeatureName.UPDATE_EMAILS_VIA_SCIM.name(), accountId))
+          && !existingUser.getEmail().equals(updatedEmail)) {
+        userMetadata.setEmail(updatedEmail);
+        userMetadata.setExternallyManaged(true);
+        log.info("NGSCIM: Updating email for user {} ; Updated email: {}", userId, updatedEmail);
+      }
+
+      ngUserService.updateUserMetadata(userMetadata);
+      log.info("NGSCIM: Updated metadata for user: {}", userId);
 
       if (scimUser.getActive() != null && scimUser.getActive() == existingUser.isDisabled()) {
         log.info("NGSCIM: Updated user's {}, active: {}", userId, scimUser.getActive());
         changeScimUserDisabled(accountId, userId, !scimUser.getActive());
       }
+
       log.info("NGSCIM: Updating user completed - userId: {}, accountId: {}", userId, accountId);
 
       // @Todo: Not handling GIVEN_NAME AND FAMILY_NAME. Add if we need to persist them

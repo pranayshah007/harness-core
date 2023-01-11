@@ -189,6 +189,7 @@ public class CfCommandTaskHelperNG {
           artifactStream = downloadFromAwsS3(artifactConfig, artifactResponseBuilder, logCallback);
           break;
         case NEXUS3_REGISTRY:
+        case NEXUS2_REGISTRY:
           artifactStream = downloadFromNexus(artifactConfig, artifactResponseBuilder, logCallback);
           break;
         case JENKINS:
@@ -675,12 +676,6 @@ public class CfCommandTaskHelperNG {
                                       .build();
 
     cfServiceDataUpdated.add(cfServiceData);
-
-    // We want to downsize the app if the update count is equal to zero(in case web process is zero)
-    if (updateCount >= applicationDetail.getInstances() && updateCount != 0) {
-      executionLogCallback.saveExecutionLog("# No Downsize was required.\n");
-      return;
-    }
 
     // First disable App Auto scalar if attached with application
     if (cfDeployCommandRequestNG.isUseAppAutoScalar()) {

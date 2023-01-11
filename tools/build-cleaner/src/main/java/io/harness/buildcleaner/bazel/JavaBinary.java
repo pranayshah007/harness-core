@@ -12,25 +12,26 @@ import static io.harness.buildcleaner.bazel.WriteUtil.INDENTATION;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import java.util.Set;
+import lombok.Getter;
 
+@Getter
 public class JavaBinary {
   private final String name;
   private final String visibility;
   private final String mainClass;
-  private ImmutableSortedSet<String> srcs;
-  private ImmutableSortedSet<String> runTimeDeps;
-  private ImmutableSortedSet<String> deps;
+  //  private ImmutableSortedSet<String> srcs;
+  private final ImmutableSortedSet<String> runTimeDeps;
+  private final ImmutableSortedSet<String> deps;
+  private final Set<LoadStatement> loadStatements;
 
-  public JavaBinary(String name, String visibility, String mainClass, Set<String> runTimeDeps, Set<String> deps) {
+  public JavaBinary(final String name, final String visibility, final String mainClass, final Set<String> runTimeDeps,
+      final Set<String> deps) {
     this.name = name;
     this.visibility = visibility;
     this.mainClass = mainClass;
     this.runTimeDeps = ImmutableSortedSet.copyOf(runTimeDeps);
     this.deps = ImmutableSortedSet.copyOf(deps);
-  }
-
-  public String getName() {
-    return this.name;
+    this.loadStatements = ImmutableSet.of(new LoadStatement("@rules_java//java:defs.bzl", "java_binary"));
   }
 
   /* Returns the deps section as a s string. Eg:
@@ -57,12 +58,8 @@ public class JavaBinary {
     return response.toString();
   }
 
-  public ImmutableSet<String> getDeps() {
-    return (ImmutableSet<String>) this.deps;
-  }
-
-  public String toString() {
-    StringBuilder response = new StringBuilder();
+  public String toStarlark() {
+    final StringBuilder response = new StringBuilder();
     response.append("java_binary(\n");
 
     // Add name.

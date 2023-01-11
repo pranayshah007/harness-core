@@ -128,9 +128,14 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
 
   @Override
   public DelegateTokenDetails getDelegateToken(String accountId, String name) {
+    return getDelegateToken(accountId, name, false);
+  }
+
+  @Override
+  public DelegateTokenDetails getDelegateToken(String accountId, String name, boolean includeValue) {
     DelegateToken delegateToken = matchNameTokenQuery(accountId, name).get();
     if (delegateToken != null) {
-      return getDelegateTokenDetails(delegateToken, false);
+      return getDelegateTokenDetails(delegateToken, includeValue);
     }
     return null;
   }

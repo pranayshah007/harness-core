@@ -32,6 +32,7 @@ import java.util.Optional;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.data.mongodb.core.query.Criteria;
 
 @OwnedBy(PL)
 @NoArgsConstructor
@@ -112,6 +113,13 @@ public class SourceCodeManagerServiceImpl implements SourceCodeManagerService {
                    userIdentifier, name, accountIdentifier)
                 > 0)
         .isPresent();
+  }
+
+  @Override
+  public void deleteByAccount(String accountId) {
+    Criteria criteria = new Criteria();
+    criteria.and(SourceCodeManager.SCMKeys.accountIdentifier).is(accountId);
+    sourceCodeManagerRepository.deleteAll(sourceCodeManagerRepository.findAllByAccountIdentifier(accountId));
   }
 
   private Optional<String> getUserIdentifier() {

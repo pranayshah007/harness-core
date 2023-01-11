@@ -85,6 +85,7 @@ public class AsgRollingDeployCommandTaskHandler extends AsgCommandTaskNGHandler 
 
     try {
       AsgSdkManager asgSdkManager = asgTaskHelper.getAsgSdkManager(asgCommandRequest, logCallback);
+      asgSdkManager.info(format("Starting Rolling Deployment", Bold));
 
       AutoScalingGroupContainer autoScalingGroupContainer = executeRollingDeployWithInstanceRefresh(asgSdkManager,
           asgStoreManifestsContent, skipMatching, useAlreadyRunningInstances, instanceWarmup, minimumHealthyPercentage);
@@ -95,7 +96,7 @@ public class AsgRollingDeployCommandTaskHandler extends AsgCommandTaskNGHandler 
                                                           .build();
 
       logCallback.saveExecutionLog(
-          color("Deployment Finished Successfully", Green, Bold), INFO, CommandExecutionStatus.SUCCESS);
+          color("Rolling Deployment Finished Successfully", Green, Bold), INFO, CommandExecutionStatus.SUCCESS);
 
       return AsgRollingDeployResponse.builder()
           .asgRollingDeployResult(asgRollingDeployResult)

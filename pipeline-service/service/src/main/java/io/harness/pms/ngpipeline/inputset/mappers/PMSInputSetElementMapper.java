@@ -26,7 +26,6 @@ import io.harness.jackson.JsonNodeUtils;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.mapper.TagMapper;
 import io.harness.pms.inputset.InputSetErrorWrapperDTOPMS;
-import io.harness.pms.merger.helpers.InputSetTemplateHelper;
 import io.harness.pms.merger.helpers.InputSetYamlHelper;
 import io.harness.pms.ngpipeline.inputset.api.InputSetRequestInfoDTO;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
@@ -339,14 +338,12 @@ public class PMSInputSetElementMapper {
   }
 
   public InputSetEntity toInputSetEntityFromVersion(String accountId, String orgIdentifier, String projectIdentifier,
-      String pipelineIdentifier, String pipelineYaml, String inputSetYaml, String inputSetVersion,
-      InputSetEntityType inputSetEntityType) {
+      String pipelineIdentifier, String inputSetYaml, String inputSetVersion, InputSetEntityType inputSetEntityType) {
     switch (inputSetVersion) {
       case PipelineVersion.V1:
         return toInputSetEntityV1(
             accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetYaml, inputSetEntityType);
       case PipelineVersion.V0:
-        inputSetYaml = InputSetTemplateHelper.removeRuntimeInputFromYaml(pipelineYaml, inputSetYaml);
         return toInputSetEntity(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetYaml);
       default:
         throw new IllegalStateException("version not supported");
@@ -354,15 +351,13 @@ public class PMSInputSetElementMapper {
   }
 
   public InputSetEntity toInputSetEntityFromVersion(InputSetRequestInfoDTO requestInfoDTO, String accountId,
-      String orgIdentifier, String projectIdentifier, String pipelineIdentifier, String pipelineYaml,
-      String inputSetVersion) {
+      String orgIdentifier, String projectIdentifier, String pipelineIdentifier, String inputSetVersion) {
     switch (inputSetVersion) {
       case PipelineVersion.V1:
         return toInputSetEntityV1(requestInfoDTO, accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
       case PipelineVersion.V0:
-        String inputSetYaml = InputSetTemplateHelper.removeRuntimeInputFromYaml(pipelineYaml, requestInfoDTO.getYaml());
         return toInputSetEntity(
-            requestInfoDTO, accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetYaml);
+            requestInfoDTO, accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, requestInfoDTO.getYaml());
       default:
         throw new IllegalStateException("version not supported");
     }

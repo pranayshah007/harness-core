@@ -9,6 +9,7 @@ package io.harness.pms.plan.execution.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.SHALINI;
 
 import static junit.framework.TestCase.assertEquals;
@@ -19,10 +20,12 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
+import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
 import io.harness.rule.Owner;
 import io.harness.testlib.RealMongo;
 
 import com.google.inject.Inject;
+import java.util.LinkedList;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
@@ -30,6 +33,7 @@ import org.junit.experimental.categories.Category;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.util.CloseableIterator;
 
 @OwnedBy(PIPELINE)
 public class PmsExecutionSummaryReadHelperTest extends OrchestrationVisualizationTestBase {
@@ -77,8 +81,14 @@ public class PmsExecutionSummaryReadHelperTest extends OrchestrationVisualizatio
             .planExecutionId("planExecutionId3")
             .entityGitDetails(EntityGitDetails.builder().branch("branch2").repoName("repo2").build())
             .build();
-    Criteria criteria =
-        Criteria.where(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.pipelineIdentifier).is("pip1");
+    Criteria criteria = Criteria.where(PlanExecutionSummaryKeys.accountId)
+                            .is(ACCOUNT_ID)
+                            .and(PlanExecutionSummaryKeys.orgIdentifier)
+                            .is(ORG_ID)
+                            .and(PlanExecutionSummaryKeys.projectIdentifier)
+                            .is(PROJECT_ID)
+                            .and(PlanExecutionSummaryKeys.pipelineIdentifier)
+                            .is("pip1");
     query = new Query(criteria);
     mongoTemplate.save(pipelineExecutionSummaryEntity1);
     mongoTemplate.save(pipelineExecutionSummaryEntity3);
@@ -100,8 +110,35 @@ public class PmsExecutionSummaryReadHelperTest extends OrchestrationVisualizatio
   public void testFind() {
     List<PipelineExecutionSummaryEntity> pipelineExecutionSummaryEntityList = pmsExecutionSummaryReadHelper.find(query);
     assertEquals(pipelineExecutionSummaryEntityList.size(), 2);
-    assertThat(pipelineExecutionSummaryEntityList.contains(pipelineExecutionSummaryEntity1));
-    assertThat(pipelineExecutionSummaryEntityList.contains(pipelineExecutionSummaryEntity3));
+    assertThat(pipelineExecutionSummaryEntityList).contains(pipelineExecutionSummaryEntity1);
+    assertThat(pipelineExecutionSummaryEntityList).contains(pipelineExecutionSummaryEntity3);
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void testFetchExecutionSummaryEntityFromAnalytics() {
+    String ACCOUNT_ID = "accountId";
+    String ORG_ID = "orgId";
+    String PROJECT_ID = "projectId";
+    List<PipelineExecutionSummaryEntity> pipelineExecutionSummaryEntityList = new LinkedList<>();
+    Criteria criteria = Criteria.where(PlanExecutionSummaryKeys.accountId)
+                            .is(ACCOUNT_ID)
+                            .and(PlanExecutionSummaryKeys.orgIdentifier)
+                            .is(ORG_ID)
+                            .and(PlanExecutionSummaryKeys.projectIdentifier)
+                            .is(PROJECT_ID)
+                            .and(PlanExecutionSummaryKeys.pipelineIdentifier)
+                            .is("pip1");
+    Query q = new Query(criteria);
+    q.fields().include(PlanExecutionSummaryKeys.planExecutionId);
+    try (CloseableIterator<PipelineExecutionSummaryEntity> iterator =
+             pmsExecutionSummaryReadHelper.fetchExecutionSummaryEntityFromAnalytics(q)) {
+      while (iterator.hasNext()) {
+        pipelineExecutionSummaryEntityList.add(iterator.next());
+      }
+    }
+    assertThat(pipelineExecutionSummaryEntityList.size()).isEqualTo(2);
   }
 
   @Test
@@ -110,8 +147,7 @@ public class PmsExecutionSummaryReadHelperTest extends OrchestrationVisualizatio
   public void testFindListOfUniqueBranches() {
     List<String> branches = pmsExecutionSummaryReadHelper.findListOfUniqueBranches(query);
     assertEquals(branches.size(), 2);
-    assertThat(branches.contains(BRANCH_NAME));
-    assertThat(branches.contains("branch2"));
+    assertThat(branches).contains(BRANCH_NAME, "branch2");
   }
 
   @Test
@@ -120,7 +156,6 @@ public class PmsExecutionSummaryReadHelperTest extends OrchestrationVisualizatio
   public void testFindListOfUniqueRepositories() {
     List<String> repos = pmsExecutionSummaryReadHelper.findListOfUniqueRepositories(query);
     assertEquals(repos.size(), 2);
-    assertThat(repos.contains(REPO_NAME));
-    assertThat(repos.contains("repo2"));
+    assertThat(repos).contains(REPO_NAME, "repo2");
   }
 }

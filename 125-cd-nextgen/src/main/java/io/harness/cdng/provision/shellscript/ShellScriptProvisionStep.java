@@ -15,6 +15,7 @@ import static software.wings.beans.TaskType.SHELL_SCRIPT_PROVISION;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.ssh.SshCommandStepHelper;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
@@ -28,7 +29,6 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
-import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
@@ -56,7 +56,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
-public class ShellScriptProvisionStep extends TaskExecutableWithRollbackAndRbac<ShellScriptProvisionTaskNGResponse> {
+public class ShellScriptProvisionStep extends CdTaskExecutable<ShellScriptProvisionTaskNGResponse> {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.SHELL_SCRIPT_PROVISION.getYamlType())
                                                .setStepCategory(StepCategory.STEP)

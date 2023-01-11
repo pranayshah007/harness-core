@@ -221,7 +221,8 @@ public class PlanCreatorUtils {
     Optional<Repository> optionalRepository = RepositoryUtils.getRepositoryFromPipelineYaml(pipelineYaml);
     Repository repository = optionalRepository.orElse(Repository.builder().build());
     Optional<Reference> optionalReference = RepositoryUtils.getReferenceFromInputPayload(inputSetYaml);
-    repository.setReference(ParameterField.createValueField(optionalReference.orElse(null)));
+    repository.setReference(
+        optionalReference.map(ParameterField::createValueField).orElseGet(repository::getReference));
     return Map.of(YAMLFieldNameConstants.REPOSITORY, ByteString.copyFrom(kryoSerializer.asBytes(repository)));
   }
 }

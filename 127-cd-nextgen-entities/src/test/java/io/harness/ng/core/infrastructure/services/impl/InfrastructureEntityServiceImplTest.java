@@ -583,6 +583,33 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
     assertThat(listPostDeletion.getContent().size()).isEqualTo(1);
   }
 
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testModifyScopeToMatchEnvironment() {
+    String filename = "infrastructure-without-runtime-inputs.yaml";
+    String yaml = readFile(filename);
+    // infra request has org and project id but env is account level
+    InfrastructureEntity createInfraRequest = InfrastructureEntity.builder()
+                                                  .accountId(ACCOUNT_ID)
+                                                  .identifier("IDENTIFIER1")
+                                                  .orgIdentifier(ORG_ID)
+                                                  .projectIdentifier(PROJECT_ID)
+                                                  .envIdentifier("account.ENV_IDENTIFIER")
+                                                  .yaml(yaml)
+                                                  .deploymentType(ServiceDefinitionType.NATIVE_HELM)
+                                                  .build();
+
+    InfrastructureEntity createdInfra = infrastructureEntityService.create(createInfraRequest);
+    assertThat(createdInfra).isNotNull();
+    assertThat(createdInfra.getAccountId()).isEqualTo(createInfraRequest.getAccountId());
+    // account scoped infra
+    assertThat(createdInfra.getOrgIdentifier()).isNull();
+    assertThat(createdInfra.getProjectIdentifier()).isNull();
+    assertThat(createdInfra.getIdentifier()).isEqualTo(createInfraRequest.getIdentifier());
+    assertThat(createdInfra.getEnvIdentifier()).isEqualTo("ENV_IDENTIFIER");
+  }
+
   private String readFile(String filename) {
     ClassLoader classLoader = getClass().getClassLoader();
     try {

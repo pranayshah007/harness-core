@@ -36,11 +36,10 @@ import io.harness.execution.PlanExecution;
 import io.harness.generator.OrchestrationAdjacencyListGenerator;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
-import io.harness.plan.NodeType;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.events.OrchestrationEventType;
+import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.utils.StatusUtils;
-import io.harness.pms.plan.execution.ExecutionSummaryUpdateUtils;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.service.PmsExecutionSummaryService;
 import io.harness.repositories.orchestrationEventLog.OrchestrationEventLogRepository;
@@ -187,26 +186,13 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
           }
           nodeExecutionIds.add(nodeExecutionId);
           NodeExecution nodeExecution = nodeExecutionService.get(nodeExecutionId);
-          updateRequired = pmsExecutionSummaryService.addStageNodeInGraphIfUnderStrategy(
+          if (nodeExecution.getStepType().getStepCategory() == StepCategory.STRATEGY) {
+            log.info("Status" + nodeExecution.getStatus());
+          }
+
+          updateRequired = pmsExecutionSummaryService.handleNodeExecutionUpdateFromGraphUpdate(
                                planExecutionId, nodeExecution, executionSummaryUpdate)
               || updateRequired;
-          updateRequired =
-              pmsExecutionSummaryService.updateStrategyNode(planExecutionId, nodeExecution, executionSummaryUpdate)
-              || updateRequired;
-
-          if (OrchestrationUtils.isStageOrParallelStageNode(nodeExecution)
-              && nodeExecution.getNodeType() == NodeType.IDENTITY_PLAN_NODE
-              && StatusUtils.isFinalStatus(nodeExecution.getStatus())) {
-            updateRequired =
-                pmsExecutionSummaryService.updateStageOfIdentityType(planExecutionId, executionSummaryUpdate)
-                || updateRequired;
-          } else {
-            updateRequired =
-                ExecutionSummaryUpdateUtils.addPipelineUpdateCriteria(executionSummaryUpdate, nodeExecution)
-                || updateRequired;
-            updateRequired = ExecutionSummaryUpdateUtils.addStageUpdateCriteria(executionSummaryUpdate, nodeExecution)
-                || updateRequired;
-          }
           orchestrationGraph =
               graphStatusUpdateHelper.handleEventV2(planExecutionId, nodeExecution, orchestrationGraph);
       }

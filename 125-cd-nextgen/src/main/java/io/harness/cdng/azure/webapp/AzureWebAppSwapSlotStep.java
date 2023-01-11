@@ -19,6 +19,7 @@ import io.harness.beans.Scope;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.azure.webapp.beans.AzureWebAppPreDeploymentDataOutput;
 import io.harness.cdng.azure.webapp.beans.AzureWebAppSwapSlotsDataOutput;
+import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.execution.StageExecutionInfo.StageExecutionInfoKeys;
 import io.harness.cdng.execution.azure.webapps.AzureWebAppsStageExecutionDetails.AzureWebAppsStageExecutionDetailsKeys;
 import io.harness.cdng.execution.service.StageExecutionInfoService;
@@ -31,7 +32,6 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.plancreator.steps.common.StepElementParameters;
-import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.SkipTaskRequest;
@@ -55,7 +55,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
-public class AzureWebAppSwapSlotStep extends TaskExecutableWithRollbackAndRbac<AzureWebAppTaskResponse> {
+public class AzureWebAppSwapSlotStep extends CdTaskExecutable<AzureWebAppTaskResponse> {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.AZURE_SWAP_SLOT.getYamlType())
                                                .setStepCategory(StepCategory.STEP)

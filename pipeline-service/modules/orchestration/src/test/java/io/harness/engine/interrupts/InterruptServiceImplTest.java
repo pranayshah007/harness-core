@@ -12,6 +12,7 @@ import static io.harness.interrupts.Interrupt.State.DISCARDED;
 import static io.harness.interrupts.Interrupt.State.PROCESSING;
 import static io.harness.interrupts.Interrupt.State.REGISTERED;
 import static io.harness.rule.OwnerRule.ALEXEI;
+import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.PRASHANT;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -44,6 +45,7 @@ import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
 import java.util.List;
+import java.util.Set;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
@@ -121,6 +123,28 @@ public class InterruptServiceImplTest extends OrchestrationTestBase {
     List<Interrupt> interrupts = interruptService.fetchAllInterrupts(planExecutionId);
     assertThat(interrupts).isNotEmpty();
     assertThat(interrupts).hasSize(3);
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void testDeleteAllInterrupts() {
+    String planExecutionId = generateUuid();
+    saveInterruptList(planExecutionId, false);
+    String planExecutionId2 = generateUuid();
+    saveInterruptList(planExecutionId2, false);
+
+    List<Interrupt> interruptsForExecution1 = interruptService.fetchAllInterrupts(planExecutionId);
+    assertThat(interruptsForExecution1).isNotEmpty();
+    assertThat(interruptsForExecution1).hasSize(3);
+
+    List<Interrupt> interruptsForExecution2 = interruptService.fetchAllInterrupts(planExecutionId2);
+    assertThat(interruptsForExecution2).isNotEmpty();
+    assertThat(interruptsForExecution2).hasSize(3);
+
+    interruptService.deleteAllInterrupts(Set.of(planExecutionId));
+    interruptsForExecution1 = interruptService.fetchAllInterrupts(planExecutionId);
+    assertThat(interruptsForExecution1).isEmpty();
   }
 
   @Test

@@ -161,6 +161,8 @@ ciExecutionServiceConfig:
     enterprise:
       defaultTotalExecutionCount: 100
       defaultMacExecutionCount: 10
+    overrideConfig:
+      - "kmpySmUISimoRrJL6NL73w:1:1"
   pvcDefaultStorageSize: 25600
   delegateServiceEndpointVariableValue: "delegate-service:8080"
   addonImage: harness/ci-addon:1.16.1
@@ -173,6 +175,7 @@ ciExecutionServiceConfig:
   hostedVmConfig:
     splitLinuxAmd64Pool: false
     splitLinuxArm64Pool: false
+    splitWindowsAmd64Pool: false
   stepConfig:
     # The below config is for K8 steps
     gitCloneConfig:
@@ -188,7 +191,7 @@ ciExecutionServiceConfig:
       entrypoint:
         - /kaniko/kaniko-docker
     buildAndPushECRConfig:
-      image: plugins/kaniko-ecr:1.6.6
+      image: plugins/kaniko-ecr:1.6.11
       entrypoint:
         - /kaniko/kaniko-ecr
     buildAndPushGCRConfig:

@@ -87,4 +87,10 @@ public interface StageExecutionInfoService {
    */
   List<StageExecutionInfo> listLatestSuccessfulStageExecutionInfo(
       ExecutionInfoKey executionInfoKey, String stageExecutionId, int limit);
+
+  /**
+   * Delete stage execution by scope
+   * @param scope
+   */
+  void deleteAtAllScopes(Scope scope);
 }

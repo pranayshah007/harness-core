@@ -19,12 +19,10 @@ import io.harness.exception.ApprovalStepNGException;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.plancreator.steps.common.StepElementParameters;
-import io.harness.plancreator.steps.common.rollback.AsyncExecutableWithRollback;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.steps.OutputExpressionConstants;
@@ -34,6 +32,7 @@ import io.harness.steps.approval.step.ApprovalInstanceService;
 import io.harness.steps.approval.step.beans.ApprovalStatus;
 import io.harness.steps.approval.step.custom.beans.CustomApprovalResponseData;
 import io.harness.steps.approval.step.custom.entities.CustomApprovalInstance;
+import io.harness.steps.executables.PipelineAsyncExecutable;
 import io.harness.steps.shellscript.ShellType;
 import io.harness.tasks.ResponseData;
 
@@ -44,7 +43,7 @@ import java.util.List;
 import java.util.Map;
 
 @OwnedBy(CDC)
-public class CustomApprovalStep extends AsyncExecutableWithRollback {
+public class CustomApprovalStep extends PipelineAsyncExecutable {
   public static final StepType STEP_TYPE = StepSpecTypeConstants.CUSTOM_APPROVAL_STEP_TYPE;
 
   @Inject private ApprovalInstanceService approvalInstanceService;
@@ -52,8 +51,8 @@ public class CustomApprovalStep extends AsyncExecutableWithRollback {
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
 
   @Override
-  public AsyncExecutableResponse executeAsync(Ambiance ambiance, StepElementParameters stepParameters,
-      StepInputPackage inputPackage, PassThroughData passThroughData) {
+  public AsyncExecutableResponse executeAsyncAfterRbac(
+      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
     CustomApprovalInstance approvalInstance = CustomApprovalInstance.fromStepParameters(ambiance, stepParameters);
     openLogStream(ambiance, approvalInstance);
     approvalInstance = (CustomApprovalInstance) approvalInstanceService.save(approvalInstance);
@@ -80,7 +79,7 @@ public class CustomApprovalStep extends AsyncExecutableWithRollback {
   }
 
   @Override
-  public StepResponse handleAsyncResponse(
+  public StepResponse handleAsyncResponseInternal(
       Ambiance ambiance, StepElementParameters stepParameters, Map<String, ResponseData> responseDataMap) {
     try {
       CustomApprovalResponseData customApprovalResponseData =

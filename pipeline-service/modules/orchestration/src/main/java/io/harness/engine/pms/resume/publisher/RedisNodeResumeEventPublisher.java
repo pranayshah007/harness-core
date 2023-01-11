@@ -36,16 +36,12 @@ public class RedisNodeResumeEventPublisher implements NodeResumeEventPublisher {
 
   @Override
   public void publishEvent(ResumeMetadata resumeMetadata, Map<String, ResponseDataProto> responseMap, boolean isError) {
-    Map<String, ByteString> responseByteStringMap = new HashMap<>();
-    responseMap.forEach((key, value) -> responseByteStringMap.put(key, value.getResponse()));
-    NodeResumeEvent.Builder resumeEventBuilder =
-        NodeResumeEvent.newBuilder()
-            .setAmbiance(resumeMetadata.getAmbiance())
-            .setExecutionMode(resumeMetadata.getMode())
-            .setStepParameters(resumeMetadata.getResolvedStepParameters())
-            .setAsyncError(isError)
-            // Todo: After first release in Jan, this should be removed and responseData should be used.
-            .putAllResponse(responseByteStringMap);
+    NodeResumeEvent.Builder resumeEventBuilder = NodeResumeEvent.newBuilder()
+                                                     .setAmbiance(resumeMetadata.getAmbiance())
+                                                     .setExecutionMode(resumeMetadata.getMode())
+                                                     .setStepParameters(resumeMetadata.getResolvedStepParameters())
+                                                     .setAsyncError(isError)
+                                                     .putAllResponseData(responseMap);
 
     ChainDetails chainDetails = buildChainDetails(resumeMetadata);
     if (chainDetails != null) {

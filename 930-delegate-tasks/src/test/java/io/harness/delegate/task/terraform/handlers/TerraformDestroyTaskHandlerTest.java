@@ -17,8 +17,6 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -125,7 +123,6 @@ public class TerraformDestroyTaskHandlerTest extends CategoryTest {
     FileIo.createDirectoryIfDoesNotExist("sourceDir");
     File outputFile = new File("sourceDir/terraform-output.tfvars");
     FileUtils.touch(outputFile);
-    doNothing().when(terraformBaseHelper).addVarFilesCommitIdsToMap(any(), any(), any());
     when(terraformBaseHelper.executeTerraformDestroyStep(any()))
         .thenReturn(
             TerraformStepResponse.builder()
@@ -137,7 +134,6 @@ public class TerraformDestroyTaskHandlerTest extends CategoryTest {
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
     Files.deleteIfExists(Paths.get(outputFile.getPath()));
     Files.deleteIfExists(Paths.get("sourceDir"));
-    verify(terraformBaseHelper, times(1)).addVarFilesCommitIdsToMap(any(), any(), any());
   }
 
   @Test
@@ -163,7 +159,6 @@ public class TerraformDestroyTaskHandlerTest extends CategoryTest {
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
     Files.deleteIfExists(Paths.get(outputFile.getPath()));
     Files.deleteIfExists(Paths.get("sourceDir"));
-    verify(terraformBaseHelper, times(1)).addBackendFileCommitIdsToMap(any(), any(), any());
   }
 
   private TerraformTaskNGParameters getTerraformTaskParameters() {

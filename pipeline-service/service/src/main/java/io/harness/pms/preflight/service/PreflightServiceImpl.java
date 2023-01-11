@@ -60,6 +60,7 @@ import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
 @Singleton
@@ -189,6 +190,22 @@ public class PreflightServiceImpl implements PreflightService {
     }
     PreFlightEntity preFlightEntity = optionalPreFlightEntity.get();
     return PreFlightMapper.toPreFlightDTO(preFlightEntity);
+  }
+
+  @Override
+  public void deleteAllPreflightEntityForGivenPipeline(
+      String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier) {
+    // Uses - accountId_orgId_projectId_pipelineId_idx
+    Criteria criteria = Criteria.where(PreFlightEntityKeys.accountIdentifier)
+                            .is(accountId)
+                            .and(PreFlightEntityKeys.orgIdentifier)
+                            .is(orgIdentifier)
+                            .and(PreFlightEntityKeys.projectIdentifier)
+                            .is(projectIdentifier)
+                            .and(PreFlightEntityKeys.pipelineIdentifier)
+                            .is(pipelineIdentifier);
+    Query query = new Query(criteria);
+    preFlightRepository.deleteAllPreflightForGivenParams(query);
   }
 
   @VisibleForTesting

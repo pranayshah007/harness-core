@@ -42,9 +42,9 @@ public class PMSPipelineSummaryResponseDTO {
   String description;
   Map<String, String> tags;
   @Version Long version;
-  int numOfStages;
-  long createdAt;
-  long lastUpdatedAt;
+  Integer numOfStages;
+  Long createdAt;
+  Long lastUpdatedAt;
   Set<String> modules;
   ExecutionSummaryInfoDTO executionSummaryInfo;
   @NonFinal @Setter @Schema(hidden = true) List<RecentExecutionInfoDTO> recentExecutionsInfo;

@@ -22,6 +22,9 @@ public class DeploymentStepExecutionEntity implements ExecutionEntity<StateExecu
 
   private static final String RUNNING_EXECUTIONS =
       "SELECT ID,STATUS FROM DEPLOYMENT_STEP WHERE ACCOUNT_ID=? AND STATUS IN ('RUNNING','PAUSED');";
+
+  private static final String COMPLETED_EXECUTIONS =
+      "SELECT Count(ID) FROM DEPLOYMENT_STEP WHERE ACCOUNTID=? AND ((ENDTIME>=? AND ENDTIME<=?) AND STATUS IN ('ABORTED', 'ERROR', 'FAILED', 'SUCCESS', 'REJECTED', 'EXPIRED', 'SKIPPED')";
   private static final String ENTITY_COUNT =
       "SELECT COUNT(DISTINCT(ID)) FROM DEPLOYMENT_STEP WHERE ACCOUNT_ID=? AND ((START_TIME>=? AND START_TIME<=?) OR (END_TIME>=? AND END_TIME<=?));";
   private static final String DELETE_SET = "DELETE FROM DEPLOYMENT_STEP WHERE ID = ANY (?);";
@@ -36,6 +39,11 @@ public class DeploymentStepExecutionEntity implements ExecutionEntity<StateExecu
   @Override
   public String getRunningExecutionQuery() {
     return RUNNING_EXECUTIONS;
+  }
+
+  @Override
+  public String getCompletedExecutionsQuery() {
+    return COMPLETED_EXECUTIONS;
   }
 
   @Override

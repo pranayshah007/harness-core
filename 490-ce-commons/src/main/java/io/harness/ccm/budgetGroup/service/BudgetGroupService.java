@@ -30,4 +30,5 @@ public interface BudgetGroupService {
   BudgetData getBudgetGroupTimeSeriesStats(BudgetGroup budgetGroup, BudgetBreakdown breakdown);
   void cascadeBudgetGroupAmount(BudgetGroup budgetGroup);
   void updateBudgetGroupCosts(BudgetGroup budgetGroup);
+  void updateCostsOfParentBudgetGroupsOnEntityDeletion(BudgetGroup immediateParent);
 }

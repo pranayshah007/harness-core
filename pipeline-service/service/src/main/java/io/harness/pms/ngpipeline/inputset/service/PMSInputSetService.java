@@ -26,8 +26,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 @OwnedBy(PIPELINE)
 public interface PMSInputSetService {
   // pipeline branch and repo ID are needed for old git sync
-  InputSetEntity create(
-      InputSetEntity inputSetEntity, String pipelineBranch, String pipelineRepoID, boolean hasNewYamlStructure);
+  InputSetEntity create(InputSetEntity inputSetEntity, boolean hasNewYamlStructure);
 
   Optional<InputSetEntity> get(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String identifier, boolean deleted, String pipelineBranch, String pipelineRepoID,
@@ -37,8 +36,7 @@ public interface PMSInputSetService {
       String pipelineIdentifier, String identifier, boolean deleted);
 
   // pipeline branch and repo ID are needed for old git sync
-  InputSetEntity update(ChangeType changeType, String pipelineBranch, String pipelineRepoID,
-      InputSetEntity inputSetEntity, boolean hasNewYamlStructure);
+  InputSetEntity update(ChangeType changeType, InputSetEntity inputSetEntity, boolean hasNewYamlStructure);
 
   InputSetEntity syncInputSetWithGit(EntityDetailProtoDTO entityDetail);
 

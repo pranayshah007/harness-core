@@ -19,15 +19,22 @@ import software.wings.beans.template.Template;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.CDC)
 public interface NgTemplateService {
+  default Set<String> getExpressions(Template template) {
+    return Collections.emptySet();
+  }
+
   default boolean isMigrationSupported() {
     return false;
   }
+
   JsonNode getNgTemplateConfigSpec(Template template, String orgIdentifier, String projectIdentifier);
 
   String getNgTemplateStepName(Template template);

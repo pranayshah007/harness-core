@@ -73,6 +73,7 @@ pipeline:
                     script: "echo 1"
                 environmentVariables: []
                 outputVariables: []
+              timeout: "<+input>"
           - step:
               name: "Approval"
               identifier: "approval"
@@ -84,4 +85,5 @@ pipeline:
                 approvers:
                   minimumCount: 1
                   disallowPipelineExecutor: false
+                  userGroups: "<+input>"
                 approverInputs: []

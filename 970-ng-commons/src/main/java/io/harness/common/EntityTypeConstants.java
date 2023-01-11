@@ -198,4 +198,5 @@ public interface EntityTypeConstants {
   String ASG_CANARY_DELETE = "AsgCanaryDelete";
   String ASG_ROLLING_DEPLOY = "AsgRollingDeploy";
   String ASG_ROLLING_ROLLBACK = "AsgRollingRollback";
+  String CCM_GOVERNANCE_RULE_AWS = "GovernanceRuleAWS";
 }

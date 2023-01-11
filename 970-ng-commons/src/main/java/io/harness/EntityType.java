@@ -497,7 +497,10 @@ public enum EntityType {
       EntityYamlRootNames.ASG_ROLLING_DEPLOY),
   @JsonProperty(EntityTypeConstants.ASG_ROLLING_ROLLBACK)
   ASG_ROLLING_ROLLBACK_STEP(ModuleType.CD, EntityTypeConstants.ASG_ROLLING_ROLLBACK, IdentifierRef.class,
-      EntityYamlRootNames.ASG_ROLLING_ROLLBACK);
+      EntityYamlRootNames.ASG_ROLLING_ROLLBACK),
+  @JsonProperty(EntityTypeConstants.CCM_GOVERNANCE_RULE_AWS)
+  CCM_GOVERNANCE_RULE_AWS(ModuleType.CE, EntityTypeConstants.CCM_GOVERNANCE_RULE_AWS, IdentifierRef.class,
+      EntityYamlRootNames.CCM_GOVERNANCE_RULE);
 
   private final ModuleType moduleType;
   String yamlName;

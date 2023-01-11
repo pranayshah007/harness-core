@@ -34,6 +34,8 @@ import io.harness.connector.ConnectorResourceClient;
 import io.harness.outbox.api.OutboxService;
 import io.harness.rule.Owner;
 import io.harness.telemetry.TelemetryReporter;
+import io.harness.yaml.schema.YamlSchemaProvider;
+import io.harness.yaml.validator.YamlSchemaValidator;
 
 import java.io.IOException;
 import org.junit.Before;
@@ -59,11 +61,14 @@ public class GovernanceRuleResourceTest extends CategoryTest {
   private TransactionTemplate transactionTemplate = mock(TransactionTemplate.class);
   private OutboxService outboxService = mock(OutboxService.class);
   @Mock private TelemetryReporter telemetryReporter;
+  @Mock private YamlSchemaProvider yamlSchemaProvider;
+  @Mock private YamlSchemaValidator yamlSchemaValidator;
 
   private static final String ACCOUNT_ID = "ACCOUNT_ID";
   private static final String UUID = "UUID";
   private static final String NAME = "Name";
-  private static final String POLICY = "POLICY";
+  private static final String POLICY =
+      "policies:\n  - name: test\n    resource: elb\n    filters:\n      - Instances: []\n    actions:\n      - type: tag\n        tag: tag\n        value: tagged\n";
   private static final Boolean OOTB = false;
   private static final RuleCloudProviderType CLOUD = AWS;
 
@@ -86,7 +91,8 @@ public class GovernanceRuleResourceTest extends CategoryTest {
                .build();
     when(governanceRuleService.fetchById(ACCOUNT_ID, UUID, false)).thenReturn(rule);
     rulesManagement = new GovernanceRuleResource(governanceRuleService, ruleEnforcementService, ruleSetService,
-        connectorResourceClient, rulesExecutionService, telemetryReporter, transactionTemplate, outboxService);
+        connectorResourceClient, rulesExecutionService, telemetryReporter, transactionTemplate, outboxService,
+        yamlSchemaProvider, yamlSchemaValidator);
   }
 
   @Test

@@ -11,8 +11,8 @@ import static io.harness.beans.SortOrder.OrderType.DESC;
 import static io.harness.rule.OwnerRule.NISHANT;
 import static io.harness.spec.server.audit.v1.model.StreamingDestinationSpecDTO.TypeEnum.AWS_S3;
 import static io.harness.utils.PageUtils.SortFields.CREATED;
+import static io.harness.utils.PageUtils.SortFields.IDENTIFIER;
 import static io.harness.utils.PageUtils.SortFields.NAME;
-import static io.harness.utils.PageUtils.SortFields.SLUG;
 import static io.harness.utils.PageUtils.SortFields.UPDATED;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
@@ -122,7 +122,7 @@ public class StreamingDestinationsApiUtilsTest extends CategoryTest {
     StreamingDestinationResponse expectedResponse =
         new StreamingDestinationResponse()
             .streamingDestination(new StreamingDestinationDTO()
-                                      .slug(identifier)
+                                      .identifier(identifier)
                                       .name(name)
                                       .status(statusEnum)
                                       .connectorRef(connectorRef)
@@ -141,7 +141,7 @@ public class StreamingDestinationsApiUtilsTest extends CategoryTest {
   public void testGetPageRequest() {
     int page = RandomUtils.nextInt(0, MAX_PAGE_NUMBER);
     int limit = RandomUtils.nextInt(1, MAX_PAGE_SIZE);
-    Map<String, String> sortToField = Map.ofEntries(Map.entry(SLUG.value(), StreamingDestinationKeys.identifier),
+    Map<String, String> sortToField = Map.ofEntries(Map.entry(IDENTIFIER.value(), StreamingDestinationKeys.identifier),
         Map.entry(NAME.value(), StreamingDestinationKeys.name),
         Map.entry(CREATED.value(), StreamingDestinationKeys.createdAt),
         Map.entry(UPDATED.value(), StreamingDestinationKeys.lastModifiedDate));

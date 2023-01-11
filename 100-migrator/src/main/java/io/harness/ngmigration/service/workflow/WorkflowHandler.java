@@ -37,6 +37,10 @@ import io.harness.steps.template.TemplateStepNode;
 import io.harness.steps.wait.WaitStepInfo;
 import io.harness.steps.wait.WaitStepNode;
 import io.harness.when.beans.StepWhenCondition;
+import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
+import io.harness.yaml.core.failurestrategy.NGFailureType;
+import io.harness.yaml.core.failurestrategy.OnFailureConfig;
+import io.harness.yaml.core.failurestrategy.abort.AbortFailureActionConfig;
 import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.core.variables.NGVariableType;
 import io.harness.yaml.core.variables.StringNGVariable;
@@ -56,6 +60,7 @@ import software.wings.ngmigration.CgEntityId;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -423,6 +428,17 @@ public abstract class WorkflowHandler {
     return getDeploymentStageConfig(inferServiceDefinitionType(workflow), steps, rollbackSteps);
   }
 
+  List<FailureStrategyConfig> getDefaultFailureStrategy() {
+    FailureStrategyConfig failureStrategyConfig =
+        FailureStrategyConfig.builder()
+            .onFailure(OnFailureConfig.builder()
+                           .errors(Arrays.stream(NGFailureType.values()).collect(Collectors.toList()))
+                           .action(AbortFailureActionConfig.builder().build())
+                           .build())
+            .build();
+    return Collections.singletonList(failureStrategyConfig);
+  }
+
   JsonNode getDeploymentStageTemplateSpec(
       Map<CgEntityId, NGYamlFile> migratedEntities, Workflow workflow, StepMapperFactory stepMapperFactory) {
     List<ExecutionWrapperConfig> steps = new ArrayList<>();
@@ -449,7 +465,7 @@ public abstract class WorkflowHandler {
     Map<String, Object> templateSpec = ImmutableMap.<String, Object>builder()
                                            .put("type", "Deployment")
                                            .put("spec", getDeploymentStageConfig(workflow, steps, rollbackSteps))
-                                           .put("failureStrategies", new ArrayList<>())
+                                           .put("failureStrategies", getDefaultFailureStrategy())
                                            .put("variables", getVariables(workflow))
                                            .build();
     return JsonPipelineUtils.asTree(templateSpec);

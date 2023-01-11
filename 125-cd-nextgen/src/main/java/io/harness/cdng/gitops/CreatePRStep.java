@@ -8,6 +8,7 @@
 package io.harness.cdng.gitops;
 
 import static io.harness.annotations.dev.HarnessTeam.GITOPS;
+import static io.harness.cdng.gitops.constants.GitopsConstants.GITOPS_SWEEPING_OUTPUT;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.ListUtils.trimStrings;
@@ -17,10 +18,10 @@ import static org.apache.commons.lang3.StringUtils.trim;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.expressions.CDExpressionResolveFunctor;
 import io.harness.cdng.gitops.steps.GitOpsStepHelper;
 import io.harness.cdng.gitops.steps.GitopsClustersOutcome;
-import io.harness.cdng.gitops.steps.GitopsClustersStep;
 import io.harness.cdng.k8s.K8sStepHelper;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
@@ -39,7 +40,6 @@ import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
-import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
@@ -73,7 +73,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(GITOPS)
 @Slf4j
-public class CreatePRStep extends TaskExecutableWithRollbackAndRbac<NGGitOpsResponse> {
+public class CreatePRStep extends CdTaskExecutable<NGGitOpsResponse> {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.GITOPS_CREATE_PR.getYamlType())
                                                .setStepCategory(StepCategory.STEP)
@@ -181,7 +181,7 @@ public class CreatePRStep extends TaskExecutableWithRollbackAndRbac<NGGitOpsResp
 
     // Read environment outcome and iterate over clusterData to replace the cluster and env name
     OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputService.resolveOptional(
-        ambiance, RefObjectUtils.getOutcomeRefObject(GitopsClustersStep.GITOPS_SWEEPING_OUTPUT));
+        ambiance, RefObjectUtils.getOutcomeRefObject(GITOPS_SWEEPING_OUTPUT));
 
     Map<String, Map<String, String>> filePathsToVariables = new HashMap<>();
 

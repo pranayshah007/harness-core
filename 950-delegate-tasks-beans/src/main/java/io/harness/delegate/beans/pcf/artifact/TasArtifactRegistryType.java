@@ -18,7 +18,8 @@ public enum TasArtifactRegistryType {
   @JsonProperty("ARTIFACTORY_PRIVATE_REGISTRY") ARTIFACTORY_PRIVATE_REGISTRY("Artifactory Private Registry"),
   @JsonProperty("ECR") ECR("ECR"),
   @JsonProperty("GCR") GCR("GCR"),
-  @JsonProperty("NEXUS_PRIVATE_REGISTRY") NEXUS_PRIVATE_REGISTRY("Nexus Private Registry ");
+  @JsonProperty("NEXUS_PRIVATE_REGISTRY") NEXUS_PRIVATE_REGISTRY("Nexus Private Registry "),
+  @JsonProperty("GAR") GAR("GAR");
 
   private final String value;
 

@@ -48,6 +48,9 @@ public class RuleEnforcementDAO {
                                        .equal(rule.getUuid());
     UpdateOperations<RuleEnforcement> updateOperations = hPersistence.createUpdateOperations(RuleEnforcement.class);
     if (rule.getName() != null) {
+      if (fetchByName(rule.getAccountId(), rule.getName(), true) != null) {
+        throw new InvalidRequestException("Rule Enforcement with the given name already exits");
+      }
       updateOperations.set(RuleEnforcementId.name, rule.getName());
     }
     if (rule.getRuleIds() != null) {

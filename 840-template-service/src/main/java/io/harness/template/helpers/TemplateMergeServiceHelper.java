@@ -25,7 +25,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.common.EntityReferenceHelper;
-import io.harness.common.NGExpressionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.NGTemplateException;
@@ -49,12 +48,10 @@ import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -400,40 +397,11 @@ public class TemplateMergeServiceHelper {
     }
 
     try {
-      String finalMergedYaml = removeOmittedRuntimeInputsFromMergedYaml(mergedYaml, dummyTemplateInputsYaml);
-      return YamlUtils.readTree(finalMergedYaml).getNode().getCurrJsonNode().get(DUMMY_NODE);
+      return YamlUtils.readTree(mergedYaml).getNode().getCurrJsonNode().get(DUMMY_NODE);
     } catch (IOException e) {
       log.error("Could not convert merged yaml to JsonNode. Yaml:\n" + mergedYaml, e);
       throw new NGTemplateException("Could not convert merged yaml to JsonNode: " + e.getMessage());
     }
-  }
-
-  private String removeOmittedRuntimeInputsFromMergedYaml(String mergedYaml, String templateInputsYaml)
-      throws IOException {
-    JsonNode mergedYamlNode = YamlUtils.readTree(mergedYaml).getNode().getCurrJsonNode();
-
-    YamlConfig mergedYamlConfig = new YamlConfig(mergedYaml);
-    Map<FQN, Object> mergedYamlConfigMap = mergedYamlConfig.getFqnToValueMap();
-    Map<FQN, Object> templateInputsYamlConfigMap = new HashMap<>();
-    if (isNotEmpty(templateInputsYaml)) {
-      YamlConfig templateInputsYamlConfig = new YamlConfig(templateInputsYaml);
-      templateInputsYamlConfigMap = templateInputsYamlConfig.getFqnToValueMap();
-    }
-    Map<FQN, Object> resMap = new LinkedHashMap<>();
-
-    for (FQN key : mergedYamlConfigMap.keySet()) {
-      Object value = mergedYamlConfigMap.get(key);
-      if (!templateInputsYamlConfigMap.containsKey(key) && !(value instanceof ArrayNode)) {
-        String mergedValue = ((JsonNode) value).asText();
-        if (!NGExpressionUtils.matchesInputSetPattern(mergedValue)) {
-          resMap.put(key, value);
-        }
-      } else {
-        resMap.put(key, value);
-      }
-    }
-
-    return (new YamlConfig(resMap, mergedYamlNode)).getYaml();
   }
 
   /**

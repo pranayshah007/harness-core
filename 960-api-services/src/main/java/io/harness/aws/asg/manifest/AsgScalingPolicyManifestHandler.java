@@ -71,9 +71,8 @@ public class AsgScalingPolicyManifestHandler extends AsgManifestHandler<PutScali
 
       Map<String, List<String>> asgManifestsDataForRollback = chainState.getAsgManifestsDataForRollback();
       if (asgManifestsDataForRollback == null) {
-        Map<String, List<String>> asgManifestsDataForRollback2 = new HashMap<>() {
-          { put(AsgScalingPolicy, scalingPolicies); }
-        };
+        Map<String, List<String>> asgManifestsDataForRollback2 = new HashMap<>();
+        asgManifestsDataForRollback2.put(AsgScalingPolicy, scalingPolicies);
         chainState.setAsgManifestsDataForRollback(asgManifestsDataForRollback2);
       } else {
         asgManifestsDataForRollback.put(AsgScalingPolicy, scalingPolicies);

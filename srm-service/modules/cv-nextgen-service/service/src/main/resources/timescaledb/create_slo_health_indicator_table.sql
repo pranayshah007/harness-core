@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS SLO_HEALTH_INDICATOR (
                                                     SLOID TEXT,
                                                     STATUS TEXT,
                                                     ERRORBUDGETPERCENTAGE TEXT,
-                                                    ERRORBUDGETREMAINING TEXT
+                                                    ERRORBUDGETREMAINING TEXT,
                                                     UPDATEDAT TIMESTAMPTZ DEFAULT (NOW()),
 
     CONSTRAINT SLO_HEALTH_INDICATOR_UNIQUE_RECORD_INDEX UNIQUE(ACCOUNTID,ORGID,PROJECTID,SLOID)

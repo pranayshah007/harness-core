@@ -63,7 +63,7 @@ public class PluginStepInfoV1 extends CIAbstractStepInfo implements WithConnecto
   @YamlSchemaTypes(value = {runtime}) @ApiModelProperty(dataType = STRING_CLASSPATH) ParameterField<String> image;
   @YamlSchemaTypes(value = {runtime}) @ApiModelProperty(dataType = STRING_CLASSPATH) ParameterField<String> uses;
 
-  @YamlSchemaTypes(value = {runtime}) @ApiModelProperty(dataType = STRING_MAP_CLASSPATH) Map<String, String> env;
+  @YamlSchemaTypes(value = {runtime}) @ApiModelProperty(dataType = STRING_MAP_CLASSPATH) Map<String, String> envs;
 
   @YamlSchemaTypes({runtime}) @ApiModelProperty(dataType = BOOLEAN_CLASSPATH) ParameterField<Boolean> privileged;
   @YamlSchemaTypes({runtime}) @ApiModelProperty(dataType = INTEGER_CLASSPATH) ParameterField<Integer> user;
@@ -73,17 +73,17 @@ public class PluginStepInfoV1 extends CIAbstractStepInfo implements WithConnecto
 
   @Builder
   @ConstructorProperties(
-      {"uuid", "with", "image", "uses", "resources", "outputs", "env", "privileged", "user", "pull", "volumes"})
+      {"uuid", "with", "image", "uses", "resources", "envs", "privileged", "user", "pull", "volumes"})
   public PluginStepInfoV1(String uuid, ParameterField<Map<String, JsonNode>> with, ParameterField<String> image,
-      ParameterField<String> uses, ContainerResource resources, Map<String, String> env,
+      ParameterField<String> uses, ContainerResource resources, Map<String, String> envs,
       ParameterField<Boolean> privileged, ParameterField<Integer> user, PullPolicy pull,
       ParameterField<List<Volume>> volumes) {
     this.uuid = uuid;
     this.with = with;
     this.image = image;
     this.uses = uses;
-    this.env = env;
     this.resources = resources;
+    this.envs = envs;
     this.privileged = privileged;
     this.user = user;
     this.pull = pull;
