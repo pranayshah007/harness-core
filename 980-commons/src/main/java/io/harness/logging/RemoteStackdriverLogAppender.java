@@ -163,6 +163,7 @@ public abstract class RemoteStackdriverLogAppender<E> extends AppenderBase<E> {
     while (true) {
       synchronized (this) {
         // If logging is not initialized, just ignore the queue
+        // adding null check for logQueue in case of onPrem deploy type
         if (logging == null || logQueue == null || logQueue.isEmpty()) {
           return;
         }
