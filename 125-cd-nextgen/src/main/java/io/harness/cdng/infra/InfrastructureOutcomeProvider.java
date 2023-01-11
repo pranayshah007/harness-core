@@ -31,7 +31,7 @@ public class InfrastructureOutcomeProvider {
       final String projectIdentifier) {
     if (InfrastructureKind.PDC.equals(infrastructure.getKind())
         && ((PdcInfrastructure) infrastructure).isDynamicallyProvisioned()) {
-      infrastructureProvisionerMapper.toOutcome(infrastructure, environmentOutcome, service);
+      return infrastructureProvisionerMapper.toOutcome(infrastructure, environmentOutcome, service);
     }
 
     return infrastructureMapper.toOutcome(
