@@ -7,6 +7,15 @@
 
 package io.harness.cdng.elastigroup;
 
+import static io.harness.rule.OwnerRule.FILIP;
+import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.when;
+
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGTestBase;
 import io.harness.cdng.artifact.outcome.AMIArtifactOutcome;
@@ -16,12 +25,14 @@ import io.harness.cdng.elastigroup.beans.ElastigroupExecutionPassThroughData;
 import io.harness.cdng.elastigroup.beans.ElastigroupParametersFetchFailurePassThroughData;
 import io.harness.cdng.elastigroup.beans.ElastigroupStartupScriptFetchFailurePassThroughData;
 import io.harness.cdng.elastigroup.beans.ElastigroupStartupScriptFetchPassThroughData;
+import io.harness.cdng.elastigroup.beans.ElastigroupStepExceptionPassThroughData;
 import io.harness.cdng.elastigroup.beans.ElastigroupStepExecutorParams;
 import io.harness.cdng.elastigroup.config.StartupScriptOutcome;
 import io.harness.cdng.elastigroup.output.ElastigroupConfigurationOutput;
 import io.harness.cdng.infra.beans.ElastigroupInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.manifest.yaml.InlineStoreConfig;
+import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO;
@@ -34,7 +45,9 @@ import io.harness.delegate.task.elastigroup.request.ElastigroupSetupCommandReque
 import io.harness.delegate.task.elastigroup.response.ElastigroupStartupScriptFetchResponse;
 import io.harness.delegate.task.elastigroup.response.SpotInstConfig;
 import io.harness.delegate.task.git.TaskStatus;
-import io.harness.exception.InvalidRequestException;
+import io.harness.filestore.dto.node.FileNodeDTO;
+import io.harness.filestore.service.FileStoreService;
+import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -53,21 +66,20 @@ import io.harness.spotinst.model.ElastiGroup;
 import io.harness.steps.StepHelper;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
+
+import software.wings.beans.TaskType;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Optional;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
-import software.wings.beans.TaskType;
-
-import java.util.Arrays;
-
-import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.doReturn;
 
 public class ElastigroupStepCommonHelperTest extends CDNGTestBase {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
@@ -81,19 +93,22 @@ public class ElastigroupStepCommonHelperTest extends CDNGTestBase {
   @Mock protected OutcomeService outcomeService;
   @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
   @Mock private ElastigroupStepExecutor elastigroupStepExecutor;
-  @Spy private LogStreamingStepClientFactory logStreamingStepClientFactory;
+  @Mock private LogStreamingStepClientFactory logStreamingStepClientFactory;
+  @Mock private ILogStreamingStepClient logStreamingStepClient;
+  @Mock private FileStoreService fileStoreService;
 
   @InjectMocks private ElastigroupStepCommonHelper elastigroupStepCommonHelper;
+
+  @Before
+  public void setUp() throws Exception {
+    when(logStreamingStepClientFactory.getLogStreamingStepClient(any())).thenReturn(logStreamingStepClient);
+  }
 
   @Test
   @Owner(developers = {PIYUSH_BHUWALKA})
   @Category(UnitTests.class)
   public void renderCountTest() {
-    Ambiance ambiance = Ambiance.newBuilder()
-                            .putSetupAbstractions(SetupAbstractionKeys.accountId, "test-account")
-                            .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "test-org")
-                            .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "test-project")
-                            .build();
+    Ambiance ambiance = anAmbiance();
     int value = elastigroupStepCommonHelper.renderCount(ParameterField.<Integer>builder().build(), 2, ambiance);
     assertThat(value).isEqualTo(2);
   }
@@ -102,11 +117,7 @@ public class ElastigroupStepCommonHelperTest extends CDNGTestBase {
   @Owner(developers = {PIYUSH_BHUWALKA})
   @Category(UnitTests.class)
   public void getInfrastructureOutcomeTest() {
-    Ambiance ambiance = Ambiance.newBuilder()
-                            .putSetupAbstractions(SetupAbstractionKeys.accountId, "test-account")
-                            .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "test-org")
-                            .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "test-project")
-                            .build();
+    Ambiance ambiance = anAmbiance();
     InfrastructureOutcome infrastructureOutcome = ElastigroupInfrastructureOutcome.builder().build();
     doReturn(infrastructureOutcome)
         .when(outcomeService)
@@ -118,11 +129,7 @@ public class ElastigroupStepCommonHelperTest extends CDNGTestBase {
   @Owner(developers = {PIYUSH_BHUWALKA})
   @Category(UnitTests.class)
   public void renderExpressionTest() {
-    Ambiance ambiance = Ambiance.newBuilder()
-                            .putSetupAbstractions(SetupAbstractionKeys.accountId, "test-account")
-                            .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "test-org")
-                            .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "test-project")
-                            .build();
+    Ambiance ambiance = anAmbiance();
     String stringObject = "str";
     doReturn(stringObject).when(engineExpressionService).renderExpression(ambiance, stringObject);
     assertThat(elastigroupStepCommonHelper.renderExpression(ambiance, stringObject)).isEqualTo(stringObject);
@@ -142,11 +149,7 @@ public class ElastigroupStepCommonHelperTest extends CDNGTestBase {
   @Owner(developers = {PIYUSH_BHUWALKA})
   @Category(UnitTests.class)
   public void executeNextLinkTest() throws Exception {
-    Ambiance ambiance = Ambiance.newBuilder()
-                            .putSetupAbstractions(SetupAbstractionKeys.accountId, "test-account")
-                            .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "test-org")
-                            .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "test-project")
-                            .build();
+    Ambiance ambiance = anAmbiance();
     String startupScript = "startupScript";
     StepElementParameters stepElementParameters = StepElementParameters.builder().build();
     UnitProgressData unitProgressData = UnitProgressData.builder().build();
@@ -203,11 +206,7 @@ public class ElastigroupStepCommonHelperTest extends CDNGTestBase {
   @Owner(developers = {PIYUSH_BHUWALKA})
   @Category(UnitTests.class)
   public void addLoadBalancerConfigAfterExpressionEvaluationTest() {
-    Ambiance ambiance = Ambiance.newBuilder()
-                            .putSetupAbstractions(SetupAbstractionKeys.accountId, "test-account")
-                            .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "test-org")
-                            .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "test-project")
-                            .build();
+    Ambiance ambiance = anAmbiance();
     AwsLoadBalancerConfigYaml awsLoadBalancerConfigYaml =
         AwsLoadBalancerConfigYaml.builder()
             .loadBalancer(ParameterField.<String>builder().value("a").build())
@@ -222,7 +221,7 @@ public class ElastigroupStepCommonHelperTest extends CDNGTestBase {
                                                                                 .stageListenerPort("c")
                                                                                 .prodRuleArn("d")
                                                                                 .stageRuleArn("e")
-                                                                                .useSpecificRules(false)
+                                                                                .useSpecificRules(true)
                                                                                 .build();
     doReturn("a").when(engineExpressionService).renderExpression(ambiance, "a");
     doReturn("b").when(engineExpressionService).renderExpression(ambiance, "b");
@@ -239,11 +238,7 @@ public class ElastigroupStepCommonHelperTest extends CDNGTestBase {
   @Owner(developers = {PIYUSH_BHUWALKA})
   @Category(UnitTests.class)
   public void handleTaskExceptionTest() throws Exception {
-    Ambiance ambiance = Ambiance.newBuilder()
-                            .putSetupAbstractions(SetupAbstractionKeys.accountId, "test-account")
-                            .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "test-org")
-                            .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "test-project")
-                            .build();
+    Ambiance ambiance = anAmbiance();
     ElastigroupExecutionPassThroughData elastigroupExecutionPassThroughData =
         ElastigroupExecutionPassThroughData.builder().build();
     String message = "msg";
@@ -287,11 +282,7 @@ public class ElastigroupStepCommonHelperTest extends CDNGTestBase {
   @Owner(developers = {PIYUSH_BHUWALKA})
   @Category(UnitTests.class)
   public void queueElastigroupTaskTest() throws Exception {
-    Ambiance ambiance = Ambiance.newBuilder()
-                            .putSetupAbstractions(SetupAbstractionKeys.accountId, "test-account")
-                            .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "test-org")
-                            .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "test-project")
-                            .build();
+    Ambiance ambiance = anAmbiance();
     SpotCredentialDTO spotCredentialDTO = SpotCredentialDTO.builder().build();
     SpotConnectorDTO spotConnectorDTO = SpotConnectorDTO.builder().credential(spotCredentialDTO).build();
     SpotInstConfig spotInstConfig = SpotInstConfig.builder().spotConnectorDTO(spotConnectorDTO).build();
@@ -310,15 +301,11 @@ public class ElastigroupStepCommonHelperTest extends CDNGTestBase {
     assertThat(taskChainResponse.getPassThroughData()).isEqualTo(elastigroupExecutionPassThroughData);
   }
 
-  @Test(expected = InvalidRequestException.class)
+  //  @Test(expected = InvalidRequestException.class)
   @Owner(developers = {PIYUSH_BHUWALKA})
   @Category(UnitTests.class)
   public void startChainLinkTest() throws Exception {
-    Ambiance ambiance = Ambiance.newBuilder()
-                            .putSetupAbstractions(SetupAbstractionKeys.accountId, "test-account")
-                            .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "test-org")
-                            .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "test-project")
-                            .build();
+    Ambiance ambiance = anAmbiance();
 
     String startupScript = "startupScript";
     doReturn(startupScript).when(engineExpressionService).renderExpression(ambiance, startupScript);
@@ -360,6 +347,220 @@ public class ElastigroupStepCommonHelperTest extends CDNGTestBase {
 
     StepElementParameters stepElementParameters = StepElementParameters.builder().build();
 
-//    elastigroupStepCommonHelper.startChainLink(ambiance, stepElementParameters, passThroughData);
+    //    elastigroupStepCommonHelper.startChainLink(ambiance, stepElementParameters, passThroughData);
+  }
+
+  @Test
+  @Owner(developers = FILIP)
+  @Category(UnitTests.class)
+  public void startChainLinkNoStartupScriptAndNoConfigurationTest() {
+    // given
+    Ambiance ambiance = anAmbiance();
+
+    when(outcomeService.resolveOptional(any(), any())).thenReturn(OptionalOutcome.builder().build());
+
+    when(executionSweepingOutputService.resolveOptional(any(), any()))
+        .thenReturn(OptionalSweepingOutput.builder().build());
+
+    // when
+    TaskChainResponse taskChainResponse = elastigroupStepCommonHelper.startChainLink(ambiance, null, null);
+
+    // then
+    assertThat(taskChainResponse.isChainEnd()).isTrue();
+
+    assertThat(taskChainResponse.getPassThroughData())
+        .isNotNull()
+        .isInstanceOf(ElastigroupStepExceptionPassThroughData.class);
+
+    assertThat(((ElastigroupStepExceptionPassThroughData) taskChainResponse.getPassThroughData()).getErrorMessage())
+        .isEqualTo("Elastigroup Configuration provided is empty");
+  }
+
+  @Test
+  @Owner(developers = FILIP)
+  @Category(UnitTests.class)
+  public void startChainLinkUnsupportedStoreTypeTest() {
+    // given
+    Ambiance ambiance = anAmbiance();
+
+    StartupScriptOutcome startupScriptOutcome =
+        StartupScriptOutcome.builder().store(InlineStoreConfig.builder().build()).build();
+
+    when(outcomeService.resolveOptional(any(), any()))
+        .thenReturn(OptionalOutcome.builder().outcome(startupScriptOutcome).found(true).build());
+
+    // when
+    TaskChainResponse taskChainResponse = elastigroupStepCommonHelper.startChainLink(ambiance, null, null);
+
+    // then
+    assertThat(taskChainResponse.isChainEnd()).isTrue();
+
+    assertThat(taskChainResponse.getPassThroughData())
+        .isNotNull()
+        .isInstanceOf(ElastigroupStepExceptionPassThroughData.class);
+
+    assertThat(((ElastigroupStepExceptionPassThroughData) taskChainResponse.getPassThroughData()).getErrorMessage())
+        .isEqualTo("Store Type provided for Startup Script Not Supported");
+  }
+
+  @Test
+  @Owner(developers = FILIP)
+  @Category(UnitTests.class)
+  public void startChainLinkUnsupportedStoreTypeForConfigTest() {
+    // given
+    Ambiance ambiance = anAmbiance();
+
+    StartupScriptOutcome startupScriptOutcome =
+        StartupScriptOutcome.builder()
+            .store(HarnessStore.builder()
+                       .files(ParameterField.createValueField(Collections.singletonList("file1")))
+                       .build())
+            .build();
+
+    when(outcomeService.resolveOptional(any(), any()))
+        .thenReturn(OptionalOutcome.builder().outcome(startupScriptOutcome).found(true).build());
+
+    when(engineExpressionService.renderExpression(any(), any()))
+        .thenAnswer(invocationOnMock -> invocationOnMock.getArgument(1, String.class));
+
+    when(fileStoreService.getWithChildrenByPath(any(), any(), any(), any(), any()))
+        .thenReturn(Optional.of(FileNodeDTO.builder().content("Startup script content").build()));
+
+    ElastigroupConfigurationOutput elastigroupConfigurationOutput =
+        ElastigroupConfigurationOutput.builder().storeConfig(InlineStoreConfig.builder().build()).build();
+
+    when(executionSweepingOutputService.resolveOptional(any(), any()))
+        .thenReturn(OptionalSweepingOutput.builder().output(elastigroupConfigurationOutput).found(true).build());
+
+    // when
+    TaskChainResponse taskChainResponse = elastigroupStepCommonHelper.startChainLink(ambiance, null, null);
+
+    // then
+    assertThat(taskChainResponse.isChainEnd()).isTrue();
+
+    assertThat(taskChainResponse.getPassThroughData())
+        .isNotNull()
+        .isInstanceOf(ElastigroupStepExceptionPassThroughData.class);
+
+    assertThat(((ElastigroupStepExceptionPassThroughData) taskChainResponse.getPassThroughData()).getErrorMessage())
+        .isEqualTo("Store Type provided for Elastigroup Configuration is not supported");
+  }
+
+  @Test
+  @Owner(developers = FILIP)
+  @Category(UnitTests.class)
+  public void startChainLinkNoArtifactTest() {
+    // given
+    Ambiance ambiance = anAmbiance();
+
+    StartupScriptOutcome startupScriptOutcome =
+        StartupScriptOutcome.builder()
+            .store(HarnessStore.builder()
+                       .files(ParameterField.createValueField(Collections.singletonList("script1")))
+                       .build())
+            .build();
+
+    when(outcomeService.resolveOptional(
+             any(), eq(RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.STARTUP_SCRIPT))))
+        .thenReturn(OptionalOutcome.builder().outcome(startupScriptOutcome).found(true).build());
+
+    when(engineExpressionService.renderExpression(any(), any()))
+        .thenAnswer(invocationOnMock -> invocationOnMock.getArgument(1, String.class));
+
+    when(fileStoreService.getWithChildrenByPath(any(), any(), any(), eq("script1"), any()))
+        .thenReturn(Optional.of(FileNodeDTO.builder().content("Startup script content").build()));
+
+    ElastigroupConfigurationOutput elastigroupConfigurationOutput =
+        ElastigroupConfigurationOutput.builder()
+            .storeConfig(HarnessStore.builder()
+                             .files(ParameterField.createValueField(Collections.singletonList("config1")))
+                             .build())
+            .build();
+
+    when(executionSweepingOutputService.resolveOptional(any(), any()))
+        .thenReturn(OptionalSweepingOutput.builder().output(elastigroupConfigurationOutput).found(true).build());
+
+    when(fileStoreService.getWithChildrenByPath(any(), any(), any(), eq("config1"), any()))
+        .thenReturn(Optional.of(FileNodeDTO.builder().content("Config content").build()));
+
+    when(outcomeService.resolveOptional(
+             any(), eq(RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.ARTIFACTS))))
+        .thenReturn(OptionalOutcome.builder().build());
+
+    // when
+    TaskChainResponse taskChainResponse = elastigroupStepCommonHelper.startChainLink(ambiance, null, null);
+
+    // then
+    assertThat(taskChainResponse.isChainEnd()).isTrue();
+
+    assertThat(taskChainResponse.getPassThroughData())
+        .isNotNull()
+        .isInstanceOf(ElastigroupStepExceptionPassThroughData.class);
+
+    assertThat(((ElastigroupStepExceptionPassThroughData) taskChainResponse.getPassThroughData()).getErrorMessage())
+        .isEqualTo("AMI not available. Please specify the AMI artifact");
+  }
+
+  @Test
+  @Owner(developers = FILIP)
+  @Category(UnitTests.class)
+  public void startChainLinkNoArtifactTest() {
+    // given
+    Ambiance ambiance = anAmbiance();
+
+    StartupScriptOutcome startupScriptOutcome =
+        StartupScriptOutcome.builder()
+            .store(HarnessStore.builder()
+                       .files(ParameterField.createValueField(Collections.singletonList("script1")))
+                       .build())
+            .build();
+
+    when(outcomeService.resolveOptional(
+             any(), eq(RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.STARTUP_SCRIPT))))
+        .thenReturn(OptionalOutcome.builder().outcome(startupScriptOutcome).found(true).build());
+
+    when(engineExpressionService.renderExpression(any(), any()))
+        .thenAnswer(invocationOnMock -> invocationOnMock.getArgument(1, String.class));
+
+    when(fileStoreService.getWithChildrenByPath(any(), any(), any(), eq("script1"), any()))
+        .thenReturn(Optional.of(FileNodeDTO.builder().content("Startup script content").build()));
+
+    ElastigroupConfigurationOutput elastigroupConfigurationOutput =
+        ElastigroupConfigurationOutput.builder()
+            .storeConfig(HarnessStore.builder()
+                             .files(ParameterField.createValueField(Collections.singletonList("config1")))
+                             .build())
+            .build();
+
+    when(executionSweepingOutputService.resolveOptional(any(), any()))
+        .thenReturn(OptionalSweepingOutput.builder().output(elastigroupConfigurationOutput).found(true).build());
+
+    when(fileStoreService.getWithChildrenByPath(any(), any(), any(), eq("config1"), any()))
+        .thenReturn(Optional.of(FileNodeDTO.builder().content("Config content").build()));
+
+    when(outcomeService.resolveOptional(
+             any(), eq(RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.ARTIFACTS))))
+        .thenReturn(
+            OptionalOutcome.builder()
+                .outcome(
+                    ArtifactsOutcome.builder().primary(AMIArtifactOutcome.builder().amiId("amiId").build()).build())
+                .found(true)
+                .build());
+
+    // when
+    TaskChainResponse taskChainResponse = elastigroupStepCommonHelper.startChainLink(ambiance, null, null);
+
+    // then
+    assertThat(taskChainResponse.isChainEnd()).isFalse();
+
+    assertThat(taskChainResponse.getPassThroughData()).isNull();
+  }
+
+  private Ambiance anAmbiance() {
+    return Ambiance.newBuilder()
+        .putSetupAbstractions(SetupAbstractionKeys.accountId, "test-account")
+        .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "test-org")
+        .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "test-project")
+        .build();
   }
 }
