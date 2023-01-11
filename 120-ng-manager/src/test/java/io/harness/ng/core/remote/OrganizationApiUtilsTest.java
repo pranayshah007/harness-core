@@ -43,7 +43,6 @@ import org.springframework.data.domain.Sort;
 
 @OwnedBy(HarnessTeam.DX)
 public class OrganizationApiUtilsTest extends CategoryTest {
-  public static final String SORT_SLUG_FIELD = "slug";
   public static final String SORT_NAME_FIELD = "name";
   public static final String SORT_IDENTIFIER_FIELD = "identifier";
   public static final String ASCENDING_ORDER = "ASC";
@@ -181,13 +180,13 @@ public class OrganizationApiUtilsTest extends CategoryTest {
   @Owner(developers = OwnerRule.ASHISHSANODIA)
   @Category(UnitTests.class)
   public void testPageRequestSortAndOrder() {
-    Pageable pageRequest = organizationApiUtils.getPageRequest(0, 10, "slug", "desc");
+    Pageable pageRequest = organizationApiUtils.getPageRequest(0, 10, "identifier", "desc");
     assertThat(pageRequest.getSort()).isNotNull();
     assertThat(pageRequest.getPageNumber()).isEqualTo(0);
     assertThat(pageRequest.getPageSize()).isEqualTo(10);
     assertThat(pageRequest.getSort()).isEqualTo(Sort.by(SORT_IDENTIFIER_FIELD).descending());
 
-    pageRequest = organizationApiUtils.getPageRequest(0, 10, SORT_SLUG_FIELD, ASCENDING_ORDER);
+    pageRequest = organizationApiUtils.getPageRequest(0, 10, SORT_IDENTIFIER_FIELD, ASCENDING_ORDER);
     assertThat(pageRequest.getSort()).isNotNull();
     assertThat(pageRequest.getSort()).isEqualTo(Sort.by(SORT_IDENTIFIER_FIELD).ascending());
 
@@ -211,11 +210,11 @@ public class OrganizationApiUtilsTest extends CategoryTest {
     assertThat(pageRequest.getSort()).isNotNull();
     assertThat(pageRequest.getSort()).isEqualTo(Sort.by(SORT_LAST_MODIFIED_AT_FIELD).descending());
 
-    pageRequest = organizationApiUtils.getPageRequest(0, 10, SORT_SLUG_FIELD, null);
+    pageRequest = organizationApiUtils.getPageRequest(0, 10, SORT_IDENTIFIER_FIELD, null);
     assertThat(pageRequest.getSort()).isNotNull();
     assertThat(pageRequest.getSort()).isEqualTo(Sort.by(SORT_IDENTIFIER_FIELD).descending());
 
-    pageRequest = organizationApiUtils.getPageRequest(0, 10, SORT_SLUG_FIELD, "asc");
+    pageRequest = organizationApiUtils.getPageRequest(0, 10, SORT_IDENTIFIER_FIELD, "asc");
     assertThat(pageRequest.getSort()).isNotNull();
     assertThat(pageRequest.getSort()).isEqualTo(Sort.by(SORT_IDENTIFIER_FIELD).descending());
   }

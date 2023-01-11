@@ -11,6 +11,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.globalcontex.AuditGlobalContextData.AUDIT_ID;
+import static io.harness.persistence.HPersistence.ANALYTIC_STORE;
 import static io.harness.persistence.HPersistence.DEFAULT_STORE;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
@@ -425,10 +426,13 @@ public class AuditServiceImpl implements AuditService {
     //  Audit Files and Chunks clean up
     DBCollection auditFilesCollection = wingsPersistence.getCollection(DEFAULT_STORE, "audits.files");
     DBCollection auditChunksCollection = wingsPersistence.getCollection(DEFAULT_STORE, "audits.chunks");
+
+    DBCollection analyticAuditFilesCollection = wingsPersistence.getCollection(ANALYTIC_STORE, "audits.files");
+
     final BasicDBObject filter =
         new BasicDBObject().append("uploadDate", new BasicDBObject("$lt", Instant.ofEpochMilli(retentionMillis)));
     BasicDBObject projection = new BasicDBObject("_id", Boolean.TRUE);
-    try (DBCursor fileIdsToBeDeleted = auditFilesCollection.find(filter, projection).batchSize(batchSize)) {
+    try (DBCursor fileIdsToBeDeleted = analyticAuditFilesCollection.find(filter, projection).batchSize(batchSize)) {
       while (true) {
         List<ObjectId> fileIdsTobeDeletedList = new ArrayList<>();
         while (fileIdsToBeDeleted.hasNext()) {

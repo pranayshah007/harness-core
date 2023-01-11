@@ -21,7 +21,7 @@ import static io.harness.pcf.model.PcfConstants.CREATE_SERVICE_MANIFEST_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.DELIMITER;
 import static io.harness.pcf.model.PcfConstants.DOCKER_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.ENV_MANIFEST_YML_ELEMENT;
-import static io.harness.pcf.model.PcfConstants.HARNESS__STAGE__IDENTIFIER;
+import static io.harness.pcf.model.PcfConstants.HARNESS__INACTIVE__IDENTIFIER;
 import static io.harness.pcf.model.PcfConstants.HARNESS__STATUS__IDENTIFIER;
 import static io.harness.pcf.model.PcfConstants.IMAGE_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.INACTIVE_APP_NAME_SUFFIX;
@@ -351,7 +351,7 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
         break;
       }
       cfRequestConfig.setApplicationName(applicationSummary.getName());
-      if (cfDeploymentManager.isInActiveApplication(cfRequestConfig)) {
+      if (cfDeploymentManager.isInActiveApplicationNG(cfRequestConfig)) {
         inActiveApplication = applicationSummary;
         inActiveVersions.add(applicationSummary);
       }
@@ -706,7 +706,7 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
       envMap = new HashMap<>();
     }
 
-    envMap.put(HARNESS__STATUS__IDENTIFIER, HARNESS__STAGE__IDENTIFIER);
+    envMap.put(HARNESS__STATUS__IDENTIFIER, HARNESS__INACTIVE__IDENTIFIER);
     map.put(ENV_MANIFEST_YML_ELEMENT, envMap);
   }
   void prepareManifestYamlFile(CfCreateApplicationRequestData requestData) throws IOException {

@@ -698,6 +698,7 @@ cg:
       connectTimeOutSeconds: 15
       readTimeOutSeconds: 15
     topic: "delegate-service"
+    enableQueueAndDequeue: false
 
 ngClientConfig:
   baseUrl: https://127.0.0.1:7090

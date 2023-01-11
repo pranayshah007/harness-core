@@ -25,6 +25,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.util.CloseableIterator;
 
@@ -130,6 +131,18 @@ public interface NodeExecutionService {
    */
   CloseableIterator<NodeExecution> fetchChildrenNodeExecutionsIterator(
       String planExecutionId, String parentId, Set<String> fieldsToBeIncluded);
+
+  /**
+   * Returns iterator for children nodeExecution for given parentId(direct children only) with projection sort by
+   * CreatedAt (Desc) Uses - planExecutionId_parentId_createdAt_idx
+   * TODO(archit): Check if planExecutionId and sort is required or not
+   * @param planExecutionId
+   * @param parentId
+   * @param fieldsToBeIncluded
+   * @return
+   */
+  CloseableIterator<NodeExecution> fetchChildrenNodeExecutionsIterator(
+      String planExecutionId, String parentId, Direction sortOrderOfCreatedAt, Set<String> fieldsToBeIncluded);
 
   /**
    * Returns iterator for children nodeExecution for given parentId(direct children only) with projection (No Sort, thus

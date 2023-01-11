@@ -414,6 +414,7 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
         .branch("master")
         .fetchType(FetchType.BRANCH)
         .connectorName("conenctor")
+        .connectorId("connectorId")
         .gitConfigDTO(githubConnectorDTO)
         .path("manifest")
         .encryptedDataDetails(encryptionDataDetails)

@@ -15,9 +15,8 @@ import static io.harness.persistence.HQuery.QueryChecks.VALIDATE;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.logging.AutoLogContext;
-import io.harness.mongo.CollectionLogContext;
+import io.harness.mongo.log.CollectionLogContext;
 import io.harness.mongo.tracing.TraceMode;
-import io.harness.mongo.tracing.Tracer;
 import io.harness.observer.Subject;
 
 import com.google.common.collect.Sets;

@@ -54,7 +54,7 @@ import org.junit.experimental.categories.Category;
 
 @OwnedBy(PIPELINE)
 public class PipelinesApiUtilsTest extends CategoryTest {
-  String slug = randomAlphabetic(10);
+  String identifier = randomAlphabetic(10);
   String name = randomAlphabetic(10);
 
   Long lastUpdatedAt = 987654L;
@@ -102,8 +102,8 @@ public class PipelinesApiUtilsTest extends CategoryTest {
     YAMLSchemaErrorWrapper yamlSchemaErrorWrapper = yamlSchemaErrorWrappers.get(0);
     assertEquals("errorMessage", yamlSchemaErrorWrapper.getMessage());
     assertEquals("$.inputSet", yamlSchemaErrorWrapper.getFqn());
-    assertEquals("stage1", yamlSchemaErrorWrapper.getStageInfo().getSlug());
-    assertEquals("step1", yamlSchemaErrorWrapper.getStepInfo().getSlug());
+    assertEquals("stage1", yamlSchemaErrorWrapper.getStageInfo().getIdentifier());
+    assertEquals("step1", yamlSchemaErrorWrapper.getStepInfo().getIdentifier());
     assertEquals("trySomething", yamlSchemaErrorWrapper.getHintMessage());
   }
 
@@ -113,14 +113,14 @@ public class PipelinesApiUtilsTest extends CategoryTest {
   public void testGetResponseBody() {
     PipelineEntity pipelineEntity = PipelineEntity.builder()
                                         .yaml("yaml")
-                                        .identifier(slug)
+                                        .identifier(identifier)
                                         .orgIdentifier("org")
                                         .createdAt(123456L)
                                         .lastUpdatedAt(987654L)
                                         .build();
     PipelineGetResponseBody responseBody = PipelinesApiUtils.getGetResponseBody(pipelineEntity);
     assertEquals("yaml", responseBody.getPipelineYaml());
-    assertEquals(slug, responseBody.getSlug());
+    assertEquals(identifier, responseBody.getIdentifier());
     assertEquals("org", responseBody.getOrg());
     assertEquals(123456L, responseBody.getCreated().longValue());
     assertEquals(987654L, responseBody.getUpdated().longValue());
@@ -148,7 +148,7 @@ public class PipelinesApiUtilsTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetPipelines() {
     PMSPipelineSummaryResponseDTO pmsPipelineSummaryResponseDTO = PMSPipelineSummaryResponseDTO.builder()
-                                                                      .identifier(slug)
+                                                                      .identifier(identifier)
                                                                       .name(name)
                                                                       .createdAt(123456L)
                                                                       .lastUpdatedAt(987654L)
@@ -157,7 +157,7 @@ public class PipelinesApiUtilsTest extends CategoryTest {
     PipelineListResponseBody listResponseBody = PipelinesApiUtils.getPipelines(pmsPipelineSummaryResponseDTO);
     assertEquals(listResponseBody.getCreated().longValue(), 123456L);
     assertEquals(listResponseBody.getUpdated().longValue(), 987654L);
-    assertEquals(listResponseBody.getSlug(), slug);
+    assertEquals(listResponseBody.getIdentifier(), identifier);
     assertEquals(listResponseBody.getName(), name);
     assertEquals(listResponseBody.getStoreType(), StoreTypeEnum.INLINE);
   }
@@ -205,14 +205,14 @@ public class PipelinesApiUtilsTest extends CategoryTest {
 
     PipelineEntity pipelineEntity = PipelineEntity.builder()
                                         .yaml("yaml")
-                                        .identifier(slug)
+                                        .identifier(identifier)
                                         .orgIdentifier("org")
 
                                         .storeType(StoreType.REMOTE)
                                         .build();
     PipelineGetResponseBody responseBody = PipelinesApiUtils.getGetResponseBody(pipelineEntity);
     assertEquals("yaml", responseBody.getPipelineYaml());
-    assertEquals(slug, responseBody.getSlug());
+    assertEquals(identifier, responseBody.getIdentifier());
     assertEquals("org", responseBody.getOrg());
     assertEquals(
         CacheResponseMetadataDTO.CacheStateEnum.VALID_CACHE, responseBody.getCacheResponseMetadata().getCacheState());

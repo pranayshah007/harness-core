@@ -623,9 +623,6 @@ public class UserGroupServiceImpl implements UserGroupService {
     }
     List<User> groupMembers = userGroup.getMembers();
     log.info("[SAML_SYNC]: Group members in the user group- {} are: {}", userGroup.getName(), groupMembers);
-    if (isEmpty(groupMembers)) {
-      return userGroup;
-    }
 
     userGroup.getMemberIds().removeAll(members.stream().map(User::getUuid).collect(toList()));
     return updateMembers(userGroup, sendNotification, toBeAudited);

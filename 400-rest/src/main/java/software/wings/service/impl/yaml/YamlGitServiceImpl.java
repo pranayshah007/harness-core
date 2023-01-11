@@ -84,7 +84,8 @@ import io.harness.ff.FeatureFlagService;
 import io.harness.git.model.ChangeType;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
-import io.harness.mongo.ProcessTimeLogContext;
+import io.harness.logging.ProcessTimeLogContext;
+import io.harness.mongo.index.BasicDBUtils;
 import io.harness.persistence.HIterator;
 import io.harness.rest.RestResponse;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -1359,7 +1360,8 @@ public class YamlGitServiceImpl implements YamlGitService {
 
     FindOptions findOptions = new FindOptions();
     if (featureFlagService.isNotEnabled(REMOVE_HINT_YAML_GIT_COMMITS, accountId)) {
-      findOptions.hintString("gitCommitAccountIdStatusYgcLastUpdatedIdx");
+      findOptions.hint(
+          BasicDBUtils.getIndexObject(GitCommit.mongoIndexes(), "gitCommitAccountIdStatusYgcLastUpdatedIdx"));
     }
 
     GitCommit gitCommit = wingsPersistence.createQuery(GitCommit.class)
@@ -1374,7 +1376,8 @@ public class YamlGitServiceImpl implements YamlGitService {
     // This is to handle the old git commit records which doesn't have yamlGitConfigId
     if (gitCommit == null) {
       FindOptions findOptions_1 = new FindOptions();
-      findOptions_1.hintString("gitCommitAccountIdStatusYgLastUpdatedIdx");
+      findOptions_1.hint(
+          BasicDBUtils.getIndexObject(GitCommit.mongoIndexes(), "gitCommitAccountIdStatusYgLastUpdatedIdx"));
 
       gitCommit = wingsPersistence.createQuery(GitCommit.class)
                       .filter(GitCommitKeys.accountId, accountId)

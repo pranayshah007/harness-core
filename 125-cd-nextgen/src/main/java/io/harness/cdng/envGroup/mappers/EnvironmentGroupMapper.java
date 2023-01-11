@@ -140,13 +140,4 @@ public class EnvironmentGroupMapper {
                        .build())
         .build();
   }
-
-  public static EnvironmentGroupWrapperConfig toNGEnvironmentGroupConfig(String yaml) {
-    try {
-      return YamlUtils.read(yaml, EnvironmentGroupWrapperConfig.class);
-    } catch (IOException e) {
-      log.error("Cannot create environment group config", e);
-      throw new InvalidRequestException("Cannot create environment group config due to " + e.getMessage());
-    }
-  }
 }

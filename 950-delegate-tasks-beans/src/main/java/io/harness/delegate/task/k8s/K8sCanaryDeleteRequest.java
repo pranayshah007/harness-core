@@ -30,6 +30,7 @@ public class K8sCanaryDeleteRequest implements K8sDeployRequest {
   CommandUnitsProgress commandUnitsProgress;
   boolean useLatestKustomizeVersion;
   boolean useNewKubectlVersion;
+  boolean useDeclarativeRollback;
 
   @Override
   public ManifestDelegateConfig getManifestDelegateConfig() {

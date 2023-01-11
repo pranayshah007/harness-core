@@ -38,6 +38,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.data.util.CloseableIterator;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @Slf4j
@@ -212,6 +213,23 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
     Criteria criteria = Criteria.where(PlanExecutionSummaryKeys.planExecutionId).is(planExecutionId);
     Query query = new Query(criteria);
     pmsExecutionSummaryRepository.update(query, update);
+  }
+
+  @Override
+  public CloseableIterator<PipelineExecutionSummaryEntity> fetchPlanExecutionIdsFromAnalytics(
+      String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier) {
+    // Uses - accountId_organizationId_projectId_pipelineId idx
+    Criteria criteria = Criteria.where(PlanExecutionSummaryKeys.accountId)
+                            .is(accountId)
+                            .and(PlanExecutionSummaryKeys.orgIdentifier)
+                            .is(orgIdentifier)
+                            .and(PlanExecutionSummaryKeys.projectIdentifier)
+                            .is(projectIdentifier)
+                            .and(PlanExecutionSummaryKeys.pipelineIdentifier)
+                            .is(pipelineIdentifier);
+    Query query = new Query(criteria);
+    query.fields().include(PlanExecutionSummaryKeys.planExecutionId);
+    return pmsExecutionSummaryRepository.fetchExecutionSummaryEntityFromAnalytics(query);
   }
 
   public boolean addStageIdentityNodeInGraphIfUnderStrategy(String planExecutionId, NodeExecution nodeExecution,

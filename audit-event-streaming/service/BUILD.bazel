@@ -10,13 +10,9 @@ load("//:tools/bazel/macros.bzl", "run_analysis")
 HarnessTeam = "PL"
 
 shared_dependencies = [
-    "@batch//:com_fasterxml_jackson_core_jackson_databind",
-    "@batch//:com_azure_azure_core",
-    "@batch//:com_azure_azure_storage_blob",
-    "@batch//:com_azure_azure_storage_common",
-] + [
     "//:lombok",
     "//platform-service/modules/audit-service:module",
+    "//platform-service/modules/audit-service/contracts:module",
     "@maven//:org_codehaus_janino_janino",
     "@maven//:io_opencensus_opencensus_api",
     "@maven//:io_opencensus_opencensus_impl",

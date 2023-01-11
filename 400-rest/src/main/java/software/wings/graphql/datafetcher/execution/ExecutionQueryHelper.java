@@ -13,8 +13,10 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.beans.FeatureName;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.ff.FeatureFlagService;
 
 import software.wings.beans.EntityType;
 import software.wings.beans.WorkflowExecution;
@@ -29,6 +31,7 @@ import software.wings.graphql.schema.type.aggregation.deployment.QLDeploymentTag
 import software.wings.graphql.schema.type.aggregation.environment.QLEnvironmentTypeFilter;
 import software.wings.graphql.schema.type.aggregation.tag.QLTagInput;
 
+import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import dev.morphia.query.FieldEnd;
@@ -45,6 +48,17 @@ import lombok.extern.slf4j.Slf4j;
 public class ExecutionQueryHelper {
   @Inject protected DataFetcherUtils utils;
   @Inject protected TagHelper tagHelper;
+  @Inject protected FeatureFlagService featureFlagService;
+
+  public static List<String> nonRequiredFields = ImmutableList.of(WorkflowExecutionKeys.pipelineResumeId,
+      WorkflowExecutionKeys.message, WorkflowExecutionKeys.name, WorkflowExecutionKeys.appName,
+      WorkflowExecutionKeys.stateMachine, WorkflowExecutionKeys.isBaseline, WorkflowExecutionKeys.stageName,
+      WorkflowExecutionKeys.cdPageCandidate, WorkflowExecutionKeys.rollbackStartTs, WorkflowExecutionKeys.tags_name,
+      WorkflowExecutionKeys.awsLambdaExecutionSummaries, WorkflowExecutionKeys.breakdown,
+      WorkflowExecutionKeys.buildExecutionSummaries, WorkflowExecutionKeys.deployedCloudProviders,
+      WorkflowExecutionKeys.environments, WorkflowExecutionKeys.helmExecutionSummary,
+      WorkflowExecutionKeys.originalExecution, WorkflowExecutionKeys.keywords,
+      WorkflowExecutionKeys.statusInstanceBreakdownMap);
 
   public void setBaseQuery(List<QLBaseExecutionFilter> filters, Query query, String accountId) {
     if (isEmpty(filters)) {
@@ -191,6 +205,12 @@ public class ExecutionQueryHelper {
     }
     setBaseQuery(
         filters.stream().map(filter -> (QLBaseExecutionFilter) filter).collect(Collectors.toList()), query, accountId);
+
+    if (featureFlagService.isEnabled(FeatureName.SPG_WFE_PROJECTIONS_GRAPHQL_DEPLOYMENTS_PAGE, accountId)) {
+      for (String nonRequiredField : nonRequiredFields) {
+        query.project(nonRequiredField, false);
+      }
+    }
 
     filters.forEach(filter -> {
       FieldEnd<? extends Query<WorkflowExecution>> field;

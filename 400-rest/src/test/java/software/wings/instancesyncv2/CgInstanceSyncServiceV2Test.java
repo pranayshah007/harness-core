@@ -9,9 +9,12 @@ package software.wings.instancesyncv2;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import static software.wings.settings.SettingVariableTypes.KUBERNETES_CLUSTER;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -19,8 +22,9 @@ import static org.mockito.Mockito.verify;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.exception.InvalidRequestException;
 import io.harness.grpc.DelegateServiceGrpcClient;
+import io.harness.lock.AcquiredLock;
+import io.harness.lock.PersistentLocker;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.perpetualtask.PerpetualTaskId;
 import io.harness.perpetualtask.instancesyncv2.CgInstanceSyncResponse;
@@ -38,17 +42,26 @@ import software.wings.beans.DirectKubernetesInfrastructureMapping;
 import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.KubernetesClusterConfig;
 import software.wings.beans.SettingAttribute;
-import software.wings.instancesyncv2.handler.CgInstanceSyncV2HandlerFactory;
-import software.wings.instancesyncv2.handler.K8sInstanceSyncV2HandlerCg;
+import software.wings.beans.infrastructure.instance.key.deployment.K8sDeploymentKey;
+import software.wings.instancesyncv2.handler.CgInstanceSyncV2DeploymentHelperFactory;
+import software.wings.instancesyncv2.handler.K8sInstanceSyncV2DeploymentHelperCg;
+import software.wings.instancesyncv2.model.CgK8sReleaseIdentifier;
+import software.wings.instancesyncv2.model.CgReleaseIdentifiers;
 import software.wings.instancesyncv2.model.InstanceSyncTaskDetails;
 import software.wings.instancesyncv2.service.CgInstanceSyncTaskDetailsService;
 import software.wings.service.impl.SettingsServiceImpl;
+import software.wings.service.impl.instance.ContainerInstanceHandler;
+import software.wings.service.impl.instance.InstanceHandlerFactoryService;
 import software.wings.service.intfc.InfrastructureMappingService;
+import software.wings.service.intfc.instance.DeploymentService;
 import software.wings.service.intfc.instance.InstanceService;
 import software.wings.settings.SettingVariableTypes;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Set;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -64,10 +77,10 @@ import org.mockito.runners.MockitoJUnitRunner;
 public class CgInstanceSyncServiceV2Test extends CategoryTest {
   @Mock InfrastructureMapping infrastructureMapping = new DirectKubernetesInfrastructureMapping();
 
-  @Mock private K8sInstanceSyncV2HandlerCg k8sHandler;
+  @Mock private K8sInstanceSyncV2DeploymentHelperCg k8sHandler;
 
   @InjectMocks CgInstanceSyncServiceV2 cgInstanceSyncServiceV2;
-  @Mock CgInstanceSyncV2HandlerFactory handlerFactory;
+  @Mock CgInstanceSyncV2DeploymentHelperFactory handlerFactory;
   @Mock private DelegateServiceGrpcClient delegateServiceClient;
   @Mock private CgInstanceSyncTaskDetailsService taskDetailsService;
   @Mock private InfrastructureMappingService infrastructureMappingService;
@@ -75,6 +88,22 @@ public class CgInstanceSyncServiceV2Test extends CategoryTest {
   @Mock private KryoSerializer kryoSerializer;
 
   @Mock private InstanceService instanceService;
+  @Mock private PersistentLocker persistentLocker;
+  @Mock private AcquiredLock acquiredLock;
+  @Mock private ContainerInstanceHandler containerInstanceHandler;
+
+  @Mock private InstanceHandlerFactoryService instanceHandlerFactory;
+
+  @Mock private DeploymentService deploymentService;
+
+  @Before
+  public void setup() {
+    doReturn(acquiredLock).when(persistentLocker).waitToAcquireLock(any(), any(), any(), any());
+    doReturn(acquiredLock)
+        .when(persistentLocker)
+        .tryToAcquireLock(eq(InfrastructureMapping.class), any(), eq(Duration.ofSeconds(180)));
+    doReturn(containerInstanceHandler).when(instanceHandlerFactory).getInstanceHandler(any());
+  }
 
   @Test
   @Owner(developers = OwnerRule.NAMAN_TALAYCHA)
@@ -86,6 +115,7 @@ public class CgInstanceSyncServiceV2Test extends CategoryTest {
                                                                .appId("appId")
                                                                .infraMappingId("infraMappingId")
                                                                .accountId("accountId")
+                                                               .k8sDeploymentKey(K8sDeploymentKey.builder().build())
                                                                .deploymentInfo(K8sDeploymentInfo.builder()
                                                                                    .releaseName("releaseName")
                                                                                    .namespace("namespace")
@@ -96,6 +126,7 @@ public class CgInstanceSyncServiceV2Test extends CategoryTest {
 
     InfrastructureMapping infraMapping = new DirectKubernetesInfrastructureMapping();
     infraMapping.setComputeProviderSettingId("varID");
+    infraMapping.setComputeProviderType(String.valueOf(KUBERNETES_CLUSTER));
     doReturn(infraMapping).when(infrastructureMappingService).get(anyString(), anyString());
     doReturn(SettingAttribute.Builder.aSettingAttribute()
                  .withAccountId("accountId")
@@ -123,8 +154,7 @@ public class CgInstanceSyncServiceV2Test extends CategoryTest {
         .when(taskDetailsService)
         .fetchForCloudProvider(anyString(), anyString());
 
-    doReturn(k8sHandler).when(handlerFactory).getHandler(any(SettingVariableTypes.class));
-    doReturn(true).when(k8sHandler).isDeploymentInfoTypeSupported(any());
+    doReturn(k8sHandler).when(handlerFactory).getHelper(any(SettingVariableTypes.class));
 
     ArgumentCaptor<PerpetualTaskId> captor = ArgumentCaptor.forClass(PerpetualTaskId.class);
     cgInstanceSyncServiceV2.handleInstanceSync(deploymentEvent);
@@ -136,14 +166,10 @@ public class CgInstanceSyncServiceV2Test extends CategoryTest {
   }
 
   @Rule public ExpectedException expectedEx = ExpectedException.none();
-
   @Test
   @Owner(developers = OwnerRule.NAMAN_TALAYCHA)
   @Category(UnitTests.class)
   public void testHandleInstanceSyncNegativeCase() {
-    expectedEx.expect(InvalidRequestException.class);
-    expectedEx.expectMessage(
-        "Instance Sync V2 not enabled for deployment info type: software.wings.api.PcfDeploymentInfo");
     // unsupported Deployment info
     DeploymentEvent deploymentEvent =
         DeploymentEvent.builder()
@@ -157,6 +183,7 @@ public class CgInstanceSyncServiceV2Test extends CategoryTest {
 
     InfrastructureMapping infraMapping = new DirectKubernetesInfrastructureMapping();
     infraMapping.setComputeProviderSettingId("varID");
+    infraMapping.setComputeProviderType(String.valueOf(KUBERNETES_CLUSTER));
     doReturn(infraMapping).when(infrastructureMappingService).get(anyString(), anyString());
     doReturn(SettingAttribute.Builder.aSettingAttribute()
                  .withAccountId("accountId")
@@ -184,9 +211,7 @@ public class CgInstanceSyncServiceV2Test extends CategoryTest {
         .when(taskDetailsService)
         .fetchForCloudProvider(anyString(), anyString());
 
-    doReturn(k8sHandler).when(handlerFactory).getHandler(any(SettingVariableTypes.class));
-    doReturn(false).when(k8sHandler).isDeploymentInfoTypeSupported(any());
-
+    doReturn(k8sHandler).when(handlerFactory).getHelper(any(SettingVariableTypes.class));
     cgInstanceSyncServiceV2.handleInstanceSync(deploymentEvent);
   }
 
@@ -211,8 +236,7 @@ public class CgInstanceSyncServiceV2Test extends CategoryTest {
         .when(cloudProviderService)
         .get(anyString());
 
-    doReturn(k8sHandler).when(handlerFactory).getHandler(any(SettingVariableTypes.class));
-    doReturn(true).when(k8sHandler).isDeploymentInfoTypeSupported(any());
+    doReturn(k8sHandler).when(handlerFactory).getHelper(any(SettingVariableTypes.class));
 
     InstanceSyncTrackedDeploymentDetails instanceSyncTrackedDeploymentDetails =
         cgInstanceSyncServiceV2.fetchTaskDetails("perpetualTaskId", "accountId");
@@ -235,12 +259,20 @@ public class CgInstanceSyncServiceV2Test extends CategoryTest {
                                                  .setAccountId("accountId");
 
     builder.addInstanceData(instanceSyncData);
+    Set<CgReleaseIdentifiers> newIdentifiers = Collections.singleton(CgK8sReleaseIdentifier.builder()
+                                                                         .releaseName("releaseName")
+                                                                         .clusterName("clusterName")
+                                                                         .namespace("namespace")
+                                                                         .isHelmDeployment(false)
+                                                                         .build());
     doReturn(new byte[] {}).when(kryoSerializer).asBytes(any());
     doReturn(new byte[] {}).when(kryoSerializer).asDeflatedBytes(any());
     doReturn(InstanceSyncTaskDetails.builder()
                  .perpetualTaskId("perpetualTaskId")
                  .accountId("accountId")
                  .appId("appId")
+                 .infraMappingId("infraMappingId")
+                 .releaseIdentifiers(newIdentifiers)
                  .cloudProviderId("cpId")
                  .build())
         .when(taskDetailsService)
@@ -253,12 +285,13 @@ public class CgInstanceSyncServiceV2Test extends CategoryTest {
                  .build())
         .when(cloudProviderService)
         .get(anyString());
-
-    doReturn(k8sHandler).when(handlerFactory).getHandler(any(SettingVariableTypes.class));
-    doReturn(true).when(k8sHandler).isDeploymentInfoTypeSupported(any());
+    InfrastructureMapping infraMapping = new DirectKubernetesInfrastructureMapping();
+    infraMapping.setComputeProviderSettingId("varID");
+    doReturn(infraMapping).when(infrastructureMappingService).get(anyString(), anyString());
+    doReturn(k8sHandler).when(handlerFactory).getHelper(any(SettingVariableTypes.class));
     ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
     cgInstanceSyncServiceV2.processInstanceSyncResult("perpetualTaskId", builder.build());
-    verify(taskDetailsService, times(1)).updateLastRun(captor.capture());
+    verify(taskDetailsService, times(1)).updateLastRun(captor.capture(), any(), any());
     assertThat(captor.getValue()).isEqualTo("taskId");
   }
 }

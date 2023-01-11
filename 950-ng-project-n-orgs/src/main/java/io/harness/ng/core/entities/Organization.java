@@ -14,8 +14,8 @@ import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.NGEntityName;
-import io.harness.mongo.CollationLocale;
-import io.harness.mongo.CollationStrength;
+import io.harness.mongo.collation.CollationLocale;
+import io.harness.mongo.collation.CollationStrength;
 import io.harness.mongo.index.Collation;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
@@ -53,6 +53,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @TypeAlias("organizations")
 @ChangeDataCapture(table = "organizations", dataStore = "ng-harness", fields = {}, handler = "Organizations")
 @ChangeDataCapture(table = "tags_info", dataStore = "ng-harness", fields = {}, handler = "TagsInfoCD")
+@ChangeDataCapture(table = "tags_info_ng", dataStore = "ng-harness", fields = {}, handler = "TagsInfoNGCD")
 public class Organization implements PersistentEntity, NGAccountAccess {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()

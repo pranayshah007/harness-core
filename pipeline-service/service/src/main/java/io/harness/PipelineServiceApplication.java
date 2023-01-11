@@ -87,7 +87,7 @@ import io.harness.ng.core.filter.ApiResponseFilter;
 import io.harness.notification.module.NotificationClientModule;
 import io.harness.outbox.OutboxEventPollService;
 import io.harness.persistence.HPersistence;
-import io.harness.persistence.Store;
+import io.harness.persistence.store.Store;
 import io.harness.plancreator.pipeline.PipelineConfig;
 import io.harness.plancreator.strategy.StrategyConstants;
 import io.harness.plancreator.strategy.StrategyMaxConcurrencyRestrictionUsageImpl;
@@ -113,9 +113,10 @@ import io.harness.pms.notification.orchestration.handlers.StageStartNotification
 import io.harness.pms.notification.orchestration.handlers.StageStatusUpdateNotificationEventHandler;
 import io.harness.pms.outbox.PipelineOutboxEventHandler;
 import io.harness.pms.pipeline.PipelineEntity;
-import io.harness.pms.pipeline.PipelineEntityCrudObserver;
 import io.harness.pms.pipeline.PipelineSetupUsageHelper;
 import io.harness.pms.pipeline.gitsync.PipelineEntityGitSyncHelper;
+import io.harness.pms.pipeline.observer.PipelineEntityCrudObserver;
+import io.harness.pms.pipeline.observer.PipelineMetadataObserver;
 import io.harness.pms.plan.creation.PipelineServiceFilterCreationResponseMerger;
 import io.harness.pms.plan.creation.PipelineServiceInternalInfoProvider;
 import io.harness.pms.plan.execution.PmsExecutionServiceInfoProvider;
@@ -445,13 +446,17 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
 
     // Register Pipeline Outbox Observers
     PipelineOutboxEventHandler pipelineOutboxEventHandler =
-        (PipelineOutboxEventHandler) injector.getInstance(Key.get(PipelineOutboxEventHandler.class));
+        injector.getInstance(Key.get(PipelineOutboxEventHandler.class));
     pipelineOutboxEventHandler.getPipelineActionObserverSubject().register(
         injector.getInstance(Key.get(PipelineSetupUsageHelper.class)));
     pipelineOutboxEventHandler.getPipelineActionObserverSubject().register(
         injector.getInstance(Key.get(PipelineEntityCrudObserver.class)));
     pipelineOutboxEventHandler.getPipelineActionObserverSubject().register(
         injector.getInstance(Key.get(InputSetPipelineObserver.class)));
+    // PipelineMetadataObserver is also added so that it is also deleted in sync so that runsequence starts with 0 again
+    // if same pipeline gets created
+    pipelineOutboxEventHandler.getPipelineActionObserverSubject().register(
+        injector.getInstance(Key.get(PipelineMetadataObserver.class)));
 
     NodeExecutionServiceImpl nodeExecutionService =
         (NodeExecutionServiceImpl) injector.getInstance(Key.get(NodeExecutionService.class));

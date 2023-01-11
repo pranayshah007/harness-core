@@ -8,33 +8,24 @@
 package io.harness.beans.steps.stepinfo;
 
 import static io.harness.annotations.dev.HarnessTeam.IACM;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.CIStepInfo;
 import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.steps.TypeInfo;
-import io.harness.data.structure.CollectionUtils;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
-import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
-import io.harness.yaml.YamlSchemaTypes;
 import io.harness.yaml.core.VariableExpression;
-import io.harness.yaml.core.variables.OutputNGVariable;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
@@ -70,25 +61,6 @@ public class IACMStepInfo implements CIStepInfo {
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) protected String name;
   @VariableExpression(skipVariableExpression = true) @Min(MIN_RETRY) @Max(MAX_RETRY) protected int retry;
 
-  @YamlSchemaTypes(value = {runtime})
-  @VariableExpression(skipVariableExpression = true)
-  @ApiModelProperty(dataType = "[Lio.harness.yaml.core.variables.OutputNGVariable;")
-  protected ParameterField<List<OutputNGVariable>> outputVariables;
-
-  @VariableExpression(skipVariableExpression = true) protected static List<OutputNGVariable> defaultOutputVariables;
-
-  static {
-    defaultOutputVariables = Arrays.asList(OutputNGVariable.builder().name("JOB_ID").build(),
-        OutputNGVariable.builder().name("JOB_STATUS").build(), OutputNGVariable.builder().name("CRITICAL").build(),
-        OutputNGVariable.builder().name("HIGH").build(), OutputNGVariable.builder().name("MEDIUM").build(),
-        OutputNGVariable.builder().name("LOW").build(), OutputNGVariable.builder().name("INFO").build(),
-        OutputNGVariable.builder().name("UNASSIGNED").build(), OutputNGVariable.builder().name("TOTAL").build(),
-        OutputNGVariable.builder().name("NEW_CRITICAL").build(), OutputNGVariable.builder().name("NEW_HIGH").build(),
-        OutputNGVariable.builder().name("NEW_MEDIUM").build(), OutputNGVariable.builder().name("NEW_LOW").build(),
-        OutputNGVariable.builder().name("NEW_INFO").build(), OutputNGVariable.builder().name("NEW_UNASSIGNED").build(),
-        OutputNGVariable.builder().name("NEW_TOTAL").build());
-  }
-
   @Override
   public TypeInfo getNonYamlInfo() {
     return TypeInfo.builder().stepInfoType(CIStepInfoType.IACM).build();
@@ -106,15 +78,5 @@ public class IACMStepInfo implements CIStepInfo {
   @Override
   public String getFacilitatorType() {
     return OrchestrationFacilitatorType.ASYNC;
-  }
-
-  public ParameterField<List<OutputNGVariable>> getOutputVariables() {
-    return ParameterField.createValueField(
-        Stream
-            .concat(defaultOutputVariables.stream(),
-                (CollectionUtils.emptyIfNull((List<OutputNGVariable>) outputVariables.fetchFinalValue())).stream())
-            .collect(Collectors.toSet())
-            .stream()
-            .collect(Collectors.toList()));
   }
 }

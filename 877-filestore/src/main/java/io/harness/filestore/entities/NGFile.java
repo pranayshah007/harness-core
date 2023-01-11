@@ -16,8 +16,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.delegate.beans.ChecksumType;
-import io.harness.mongo.CollationLocale;
-import io.harness.mongo.CollationStrength;
+import io.harness.mongo.collation.CollationLocale;
+import io.harness.mongo.collation.CollationStrength;
 import io.harness.mongo.index.Collation;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
@@ -78,7 +78,7 @@ public class NGFile implements PersistentEntity, UuidAware, NGAccountAccess, NGO
   @EntityIdentifier(allowBlank = true) String orgIdentifier;
   @EntityIdentifier(allowBlank = true) String projectIdentifier;
 
-  @EntityIdentifier String identifier;
+  @EntityIdentifier(maxLength = 128) String identifier;
   @Size(max = 1024) String description;
   @Size(max = 128) List<NGTag> tags;
   @NotNull FileUsage fileUsage;

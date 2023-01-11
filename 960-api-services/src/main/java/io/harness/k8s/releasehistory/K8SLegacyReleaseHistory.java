@@ -11,7 +11,10 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.Data;
 
@@ -22,8 +25,8 @@ public class K8SLegacyReleaseHistory implements IK8sReleaseHistory {
   ReleaseHistory releaseHistory;
 
   @Override
-  public int getCurrentReleaseNumber() {
-    return releaseHistory.getCurrentReleaseNumber();
+  public int getAndIncrementLastReleaseNumber() {
+    return releaseHistory.getAndIncrementLatestReleaseNumber();
   }
 
   @Override
@@ -37,5 +40,33 @@ public class K8SLegacyReleaseHistory implements IK8sReleaseHistory {
       return releaseHistory.getLatestRelease();
     }
     return null;
+  }
+
+  @Override
+  public boolean isEmpty() {
+    return releaseHistory != null && EmptyPredicate.isEmpty(releaseHistory.getReleases());
+  }
+
+  @Override
+  public int size() {
+    if (releaseHistory != null && releaseHistory.getReleases() != null) {
+      return releaseHistory.getReleases().size();
+    }
+    return 0;
+  }
+
+  @Override
+  public IK8sReleaseHistory cloneInternal() {
+    return K8SLegacyReleaseHistory.builder().releaseHistory(releaseHistory.cloneInternal()).build();
+  }
+
+  @Override
+  public List<IK8sRelease> getReleasesMatchingColor(String color, int currentReleaseNumber) {
+    return releaseHistory.getReleases()
+        .stream()
+        .filter(release
+            -> currentReleaseNumber != release.getReleaseNumber() && release.getManagedWorkload() != null
+                && release.getManagedWorkload().getName().endsWith(color))
+        .collect(Collectors.toList());
   }
 }

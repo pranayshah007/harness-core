@@ -27,18 +27,20 @@ import lombok.Data;
 public class K8sTrafficSplitTaskParameters extends K8sTaskParameters {
   private String virtualServiceName;
   private List<IstioDestinationWeight> istioDestinationWeights;
+  private boolean useDeclarativeRollback;
 
   @Builder
   public K8sTrafficSplitTaskParameters(String accountId, String appId, String commandName, String activityId,
       K8sTaskType k8sTaskType, K8sClusterConfig k8sClusterConfig, String workflowExecutionId, String releaseName,
       Integer timeoutIntervalInMin, String virtualServiceName, List<IstioDestinationWeight> istioDestinationWeights,
       HelmVersion helmVersion, Set<String> delegateSelectors, boolean useLatestChartMuseumVersion,
-      boolean useLatestKustomizeVersion, boolean useNewKubectlVersion) {
+      boolean useLatestKustomizeVersion, boolean useNewKubectlVersion, boolean useDeclarativeRollback) {
     super(accountId, appId, commandName, activityId, k8sClusterConfig, workflowExecutionId, releaseName,
         timeoutIntervalInMin, k8sTaskType, helmVersion, delegateSelectors, useLatestChartMuseumVersion,
         useLatestKustomizeVersion, useNewKubectlVersion);
 
     this.virtualServiceName = virtualServiceName;
     this.istioDestinationWeights = istioDestinationWeights;
+    this.useDeclarativeRollback = useDeclarativeRollback;
   }
 }

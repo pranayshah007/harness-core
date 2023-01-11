@@ -110,7 +110,7 @@ public class PipelinesApiUtils {
     NodeInfo nodeInfo = new NodeInfo();
     nodeInfo.setFqn(errorInfo.getFqn());
     nodeInfo.setName(errorInfo.getName());
-    nodeInfo.setSlug(errorInfo.getIdentifier());
+    nodeInfo.setIdentifier(errorInfo.getIdentifier());
     nodeInfo.setType(errorInfo.getType());
     return nodeInfo;
   }
@@ -118,7 +118,7 @@ public class PipelinesApiUtils {
   public static PipelineGetResponseBody getGetResponseBody(PipelineEntity pipelineEntity) {
     PipelineGetResponseBody pipelineGetResponseBody = new PipelineGetResponseBody();
     pipelineGetResponseBody.setPipelineYaml(pipelineEntity.getYaml());
-    pipelineGetResponseBody.setSlug(pipelineEntity.getIdentifier());
+    pipelineGetResponseBody.setIdentifier(pipelineEntity.getIdentifier());
     pipelineGetResponseBody.setName(pipelineEntity.getName());
     pipelineGetResponseBody.setOrg(pipelineEntity.getOrgIdentifier());
     pipelineGetResponseBody.setProject(pipelineEntity.getProjectIdentifier());
@@ -230,7 +230,7 @@ public class PipelinesApiUtils {
 
   public static PipelineListResponseBody getPipelines(PMSPipelineSummaryResponseDTO pipelineDTO) {
     PipelineListResponseBody responseBody = new PipelineListResponseBody();
-    responseBody.setSlug(pipelineDTO.getIdentifier());
+    responseBody.setIdentifier(pipelineDTO.getIdentifier());
     responseBody.setName(pipelineDTO.getName());
     responseBody.setDescription(pipelineDTO.getDescription());
     responseBody.setTags(pipelineDTO.getTags());
@@ -379,7 +379,7 @@ public class PipelinesApiUtils {
       throw new InvalidRequestException("Create Request Body cannot be null.");
     }
     return PipelineRequestInfoDTO.builder()
-        .identifier(createRequestBody.getSlug())
+        .identifier(createRequestBody.getIdentifier())
         .name(createRequestBody.getName())
         .yaml(createRequestBody.getPipelineYaml())
         .description(createRequestBody.getDescription())
@@ -392,7 +392,7 @@ public class PipelinesApiUtils {
       throw new InvalidRequestException("Update Request Body cannot be null.");
     }
     return PipelineRequestInfoDTO.builder()
-        .identifier(updateRequestBody.getSlug())
+        .identifier(updateRequestBody.getIdentifier())
         .name(updateRequestBody.getName())
         .yaml(updateRequestBody.getPipelineYaml())
         .description(updateRequestBody.getDescription())

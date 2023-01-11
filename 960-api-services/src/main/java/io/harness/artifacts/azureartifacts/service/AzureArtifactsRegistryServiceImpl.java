@@ -378,6 +378,10 @@ public class AzureArtifactsRegistryServiceImpl implements AzureArtifactsRegistry
 
     AzureArtifactsFeeds azureArtifactsFeeds = feedsResponse.body();
 
+    if (azureArtifactsFeeds == null) {
+      return new ArrayList<>();
+    }
+
     return azureArtifactsFeeds.getValue();
   }
 

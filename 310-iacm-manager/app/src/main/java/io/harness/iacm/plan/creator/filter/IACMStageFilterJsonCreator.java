@@ -47,6 +47,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(HarnessTeam.IACM)
 public class IACMStageFilterJsonCreator extends GenericStageFilterJsonCreatorV2<IACMStageNode> {
+  private static final String IACM = "iacm";
   @Inject ConnectorUtils connectorUtils;
 
   @Override
@@ -78,25 +79,29 @@ public class IACMStageFilterJsonCreator extends GenericStageFilterJsonCreatorV2<
                                     .projectIdentifier(projectIdentifier)
                                     .build();
 
-    CodeBase ciCodeBase = null;
+    CodeBase iacmCodeBase = null;
     try {
       YamlNode properties =
           YamlUtils.getGivenYamlNodeFromParentPath(filterCreationContext.getCurrentField().getNode(), PROPERTIES);
-      YamlNode ciCodeBaseNode = properties.getField(CI).getNode().getField(CI_CODE_BASE).getNode();
-      ciCodeBase = IntegrationStageUtils.getCiCodeBase(ciCodeBaseNode);
+      YamlNode iacmCodeBaseNode = properties.getField(IACM).getNode().getField(CI_CODE_BASE).getNode();
+      iacmCodeBase = IntegrationStageUtils.getCiCodeBase(iacmCodeBaseNode);
     } catch (Exception ex) {
       // Ignore exception because code base is not mandatory in case git clone is false
-      log.warn("Failed to retrieve ciCodeBase from pipeline");
+      log.warn("Failed to retrieve iacmCodeBase from pipeline");
     }
 
-    if (ciCodeBase != null && ciCodeBase.getConnectorRef().getValue() != null) {
+    if (iacmCodeBase != null && iacmCodeBase.getConnectorRef().getValue() != null) {
       try {
         ConnectorDetails connectorDetails =
-            connectorUtils.getConnectorDetails(baseNGAccess, ciCodeBase.getConnectorRef().getValue());
+            connectorUtils.getConnectorDetails(baseNGAccess, iacmCodeBase.getConnectorRef().getValue());
         getGitRepo(connectorUtils.retrieveURL(connectorDetails));
       } catch (Exception exception) {
         log.warn("Failed to retrieve repo");
       }
+    } else if (iacmCodeBase == null) {
+      throw new CIStageExecutionException("IACM codebase is required for the IACM stage");
+    } else {
+      throw new CIStageExecutionException("IACM codebase connector is empty");
     }
 
     validateStage(stageNode);
@@ -147,7 +152,7 @@ public class IACMStageFilterJsonCreator extends GenericStageFilterJsonCreatorV2<
    * */
   public Set<EntityDetailProtoDTO> getReferredEntities(
       FilterCreationContext filterCreationContext, IACMStageNode stageNode) {
-    CodeBase ciCodeBase = null;
+    CodeBase iacmCodeBase = null;
     String accountIdentifier = filterCreationContext.getSetupMetadata().getAccountId();
     String orgIdentifier = filterCreationContext.getSetupMetadata().getOrgId();
     String projectIdentifier = filterCreationContext.getSetupMetadata().getProjectId();
@@ -155,21 +160,21 @@ public class IACMStageFilterJsonCreator extends GenericStageFilterJsonCreatorV2<
     try {
       YamlNode properties =
           YamlUtils.getGivenYamlNodeFromParentPath(filterCreationContext.getCurrentField().getNode(), PROPERTIES);
-      YamlNode ciCodeBaseNode = properties.getField(CI).getNode().getField(CI_CODE_BASE).getNode();
-      ciCodeBase = IntegrationStageUtils.getCiCodeBase(ciCodeBaseNode);
+      YamlNode ciCodeBaseNode = properties.getField(IACM).getNode().getField(CI_CODE_BASE).getNode();
+      iacmCodeBase = IntegrationStageUtils.getCiCodeBase(ciCodeBaseNode);
     } catch (Exception ex) {
       // Ignore exception because code base is not mandatory in case git clone is false
       log.warn("Failed to retrieve ciCodeBase from pipeline");
     }
 
     Set<EntityDetailProtoDTO> result = new HashSet<>();
-    if (ciCodeBase != null) {
+    if (iacmCodeBase != null) {
       String fullQualifiedDomainName =
           YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode()) + PATH_CONNECTOR
-          + YAMLFieldNameConstants.SPEC + PATH_CONNECTOR + ciCodeBase.getConnectorRef();
+          + YAMLFieldNameConstants.SPEC + PATH_CONNECTOR + iacmCodeBase.getConnectorRef();
 
       result.add(convertToEntityDetailProtoDTO(accountIdentifier, orgIdentifier, projectIdentifier,
-          fullQualifiedDomainName, ciCodeBase.getConnectorRef(), EntityTypeProtoEnum.CONNECTORS));
+          fullQualifiedDomainName, iacmCodeBase.getConnectorRef(), EntityTypeProtoEnum.CONNECTORS));
     }
 
     return result;

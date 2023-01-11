@@ -11,7 +11,15 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.steps.SdkCoreStepUtils.createStepResponseFromChildResponse;
 
+import static java.lang.String.format;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
+import io.harness.accesscontrol.acl.api.Principal;
+import io.harness.accesscontrol.acl.api.Resource;
+import io.harness.accesscontrol.acl.api.ResourceScope;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.beans.FeatureName;
+import io.harness.beans.IdentifierRef;
 import io.harness.cdng.creator.plan.environment.EnvironmentStepsUtils;
 import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
 import io.harness.cdng.environment.filters.FilterType;
@@ -32,6 +40,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
+import io.harness.exception.UnresolvedExpressionsException;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.ServiceEntityService;
@@ -39,14 +48,19 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
 import io.harness.pms.contracts.execution.MatrixMetadata;
 import io.harness.pms.contracts.execution.StrategyMetadata;
+import io.harness.pms.contracts.plan.ExecutionPrincipalInfo;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.rbac.NGResourceType;
+import io.harness.pms.rbac.PrincipalTypeProtoToPrincipalTypeMapper;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.rbac.CDNGRbacPermissions;
 import io.harness.steps.executable.ChildrenExecutableWithRollbackAndRbac;
 import io.harness.tasks.ResponseData;
+import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.NGFeatureFlagHelperService;
 
 import com.google.inject.Inject;
@@ -64,6 +78,7 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
   @Inject private NGFeatureFlagHelperService featureFlagHelperService;
   @Inject private EnvironmentInfraFilterHelper environmentInfraFilterHelper;
   @Inject private ServiceEntityService serviceEntityService;
+  @Inject private AccessControlClient accessControlClient;
 
   public static final StepType STEP_TYPE =
       StepType.newBuilder().setType("multiDeployment").setStepCategory(StepCategory.STRATEGY).build();
@@ -82,7 +97,33 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
 
   @Override
   public void validateResources(Ambiance ambiance, MultiDeploymentStepParameters stepParameters) {
-    // Do Nothing
+    if (stepParameters.getEnvironmentGroup() != null && stepParameters.getEnvironmentGroup().getEnvGroupRef() != null) {
+      final ParameterField<String> envGroupRef = stepParameters.getEnvironmentGroup().getEnvGroupRef();
+      if (envGroupRef.isExpression()) {
+        throw new UnresolvedExpressionsException(List.of(envGroupRef.getExpressionValue()));
+      }
+      if (isNotBlank(envGroupRef.getValue())) {
+        IdentifierRef envGroupIdentifierRef =
+            IdentifierRefHelper.getIdentifierRef(envGroupRef.getValue(), AmbianceUtils.getAccountId(ambiance),
+                AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance));
+
+        final ExecutionPrincipalInfo executionPrincipalInfo = ambiance.getMetadata().getPrincipalInfo();
+        final String principal = executionPrincipalInfo.getPrincipal();
+        if (isEmpty(principal)) {
+          return;
+        }
+
+        io.harness.accesscontrol.principals.PrincipalType principalType =
+            PrincipalTypeProtoToPrincipalTypeMapper.convertToAccessControlPrincipalType(
+                executionPrincipalInfo.getPrincipalType());
+        accessControlClient.checkForAccessOrThrow(Principal.of(principalType, principal),
+            ResourceScope.of(envGroupIdentifierRef.getAccountIdentifier(), envGroupIdentifierRef.getOrgIdentifier(),
+                envGroupIdentifierRef.getProjectIdentifier()),
+            Resource.of(NGResourceType.ENVIRONMENT_GROUP, envGroupIdentifierRef.getIdentifier()),
+            CDNGRbacPermissions.ENVIRONMENT_GROUP_RUNTIME_PERMISSION,
+            format("Validation for runtime access to environmentGroup: [%s] failed", envGroupRef.getValue()));
+      }
+    }
   }
 
   @Override

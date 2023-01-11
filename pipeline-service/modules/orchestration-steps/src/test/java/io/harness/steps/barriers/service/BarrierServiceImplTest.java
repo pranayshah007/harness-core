@@ -13,6 +13,7 @@ import static io.harness.distribution.barrier.Barrier.State.ENDURE;
 import static io.harness.distribution.barrier.Barrier.State.STANDING;
 import static io.harness.distribution.barrier.Barrier.State.TIMED_OUT;
 import static io.harness.rule.OwnerRule.ALEXEI;
+import static io.harness.rule.OwnerRule.ARCHIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -154,6 +155,95 @@ public class BarrierServiceImplTest extends OrchestrationStepsTestBase {
 
     assertThat(barrierExecutionInstance).isNotNull();
     assertThat(barrierExecutionInstance).isEqualTo(bar);
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  @RealMongo
+  public void testDeleteBarrierInstancesForNonExistentPlanExecution() {
+    String identifier = generateUuid();
+    String planExecutionId = generateUuid();
+
+    BarrierExecutionInstance bar = BarrierExecutionInstance.builder()
+                                       .uuid(generateUuid())
+                                       .identifier(identifier)
+                                       .planExecutionId(planExecutionId)
+                                       .build();
+    barrierNodeRepository.save(bar);
+
+    BarrierExecutionInstance barrierExecutionInstance =
+        barrierService.findByIdentifierAndPlanExecutionId(identifier, planExecutionId);
+
+    assertThat(barrierExecutionInstance).isNotNull();
+    assertThat(barrierExecutionInstance).isEqualTo(bar);
+
+    String toBeDeletedPlanExecution = "PLAN_EXECUTION_TO_BE_DELETED";
+    barrierService.deleteAllForGivenPlanExecutionId(Sets.newSet(toBeDeletedPlanExecution));
+
+    barrierExecutionInstance = barrierService.findByIdentifierAndPlanExecutionId(identifier, planExecutionId);
+
+    assertThat(barrierExecutionInstance).isNotNull();
+    assertThat(barrierExecutionInstance).isEqualTo(bar);
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  @RealMongo
+  public void testDeleteBarrierInstancesForPartialPlanExecutionIdsDelete() {
+    String identifier1 = generateUuid();
+    String planExecutionId1 = generateUuid();
+
+    // bar 1
+    BarrierExecutionInstance bar = BarrierExecutionInstance.builder()
+                                       .uuid(generateUuid())
+                                       .identifier(identifier1)
+                                       .planExecutionId(planExecutionId1)
+                                       .build();
+    barrierNodeRepository.save(bar);
+
+    BarrierExecutionInstance barrierExecutionInstance =
+        barrierService.findByIdentifierAndPlanExecutionId(identifier1, planExecutionId1);
+
+    assertThat(barrierExecutionInstance).isNotNull();
+    assertThat(barrierExecutionInstance).isEqualTo(bar);
+
+    // bar2
+    String identifier2 = generateUuid();
+    String planExecutionId2 = generateUuid();
+    bar = BarrierExecutionInstance.builder()
+              .uuid(generateUuid())
+              .identifier(identifier2)
+              .planExecutionId(planExecutionId2)
+              .build();
+    barrierNodeRepository.save(bar);
+
+    barrierExecutionInstance = barrierService.findByIdentifierAndPlanExecutionId(identifier2, planExecutionId2);
+
+    assertThat(barrierExecutionInstance).isNotNull();
+    assertThat(barrierExecutionInstance).isEqualTo(bar);
+
+    // bar 3
+    String identifier3 = generateUuid();
+    String planExecutionId3 = generateUuid();
+    bar = BarrierExecutionInstance.builder()
+              .uuid(generateUuid())
+              .identifier(identifier3)
+              .planExecutionId(planExecutionId3)
+              .build();
+    barrierNodeRepository.save(bar);
+
+    barrierExecutionInstance = barrierService.findByIdentifierAndPlanExecutionId(identifier3, planExecutionId3);
+    assertThat(barrierExecutionInstance).isNotNull();
+
+    barrierService.deleteAllForGivenPlanExecutionId(Sets.newSet(planExecutionId2, planExecutionId3));
+
+    barrierExecutionInstance = barrierService.findByIdentifierAndPlanExecutionId(identifier1, planExecutionId1);
+    assertThat(barrierExecutionInstance).isNotNull();
+
+    barrierExecutionInstance = barrierService.findByIdentifierAndPlanExecutionId(identifier2, planExecutionId2);
+    assertThat(barrierExecutionInstance).isNull();
   }
 
   @Test

@@ -13,6 +13,7 @@ import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.elastigroup.ElastigroupStepCommonHelper;
+import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.task.spot.elastigroup.deploy.ElastigroupDeployTaskParameters;
 import io.harness.delegate.task.spot.elastigroup.deploy.ElastigroupDeployTaskResponse;
@@ -20,7 +21,6 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
-import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -37,7 +37,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(CDP)
-public class ElastigroupDeployStep extends TaskExecutableWithRollbackAndRbac<ElastigroupDeployTaskResponse> {
+public class ElastigroupDeployStep extends CdTaskExecutable<ElastigroupDeployTaskResponse> {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.ELASTIGROUP_DEPLOY.getYamlType())
                                                .setStepCategory(StepCategory.STEP)

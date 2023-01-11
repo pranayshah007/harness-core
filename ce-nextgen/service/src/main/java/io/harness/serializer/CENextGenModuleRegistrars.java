@@ -7,9 +7,13 @@
 
 package io.harness.serializer;
 
+import io.harness.EntityType;
 import io.harness.ccm.serializer.CECommonsRegistrars;
+import io.harness.ccm.views.entities.RuleConfigAWS;
 import io.harness.morphia.MorphiaRegistrar;
+import io.harness.yaml.schema.beans.YamlSchemaRootClass;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import dev.morphia.converters.TypeConverter;
 import lombok.experimental.UtilityClass;
@@ -46,4 +50,15 @@ public class CENextGenModuleRegistrars {
 
   public static final ImmutableSet<Class<? extends Converter<?, ?>>> springConverters =
       ImmutableSet.<Class<? extends Converter<?, ?>>>builder().build();
+
+  public static final ImmutableList<YamlSchemaRootClass> yamlSchemaRegistrars =
+      ImmutableList.<YamlSchemaRootClass>builder()
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.CCM_GOVERNANCE_RULE_AWS)
+                   .availableAtProjectLevel(false)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(RuleConfigAWS.class)
+                   .build())
+          .build();
 }

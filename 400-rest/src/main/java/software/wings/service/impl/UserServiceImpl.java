@@ -56,8 +56,8 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
-import static org.mindrot.jbcrypt.BCrypt.checkpw;
-import static org.mindrot.jbcrypt.BCrypt.hashpw;
+import static org.springframework.security.crypto.bcrypt.BCrypt.checkpw;
+import static org.springframework.security.crypto.bcrypt.BCrypt.hashpw;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -282,7 +282,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.message.BasicNameValuePair;
-import org.mindrot.jbcrypt.BCrypt;
+import org.springframework.security.crypto.bcrypt.BCrypt;
 
 /**
  * Created by anubhaw on 3/9/16.
@@ -2665,7 +2665,7 @@ public class UserServiceImpl implements UserService {
    */
   @Override
   public boolean matchPassword(char[] password, String hash) {
-    return BCrypt.checkpw(new String(password), hash);
+    return checkpw(new String(password), hash);
   }
 
   @Override

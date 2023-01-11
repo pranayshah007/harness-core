@@ -99,7 +99,7 @@ public class OrganizationApiUtils {
       sortField = PageUtils.SortFields.UNSUPPORTED;
     }
     switch (sortField) {
-      case SLUG:
+      case IDENTIFIER:
         return OrganizationKeys.identifier;
       case NAME:
         return OrganizationKeys.name;

@@ -84,9 +84,9 @@ import org.springframework.data.mongodb.core.query.Update;
 @OwnedBy(PIPELINE)
 public class PMSInputSetServiceImpl implements PMSInputSetService {
   @Inject private PMSInputSetRepository inputSetRepository;
-  @Inject private PMSPipelineService pmsPipelineService;
   @Inject private GitSyncSdkService gitSyncSdkService;
   @Inject private GitAwareEntityHelper gitAwareEntityHelper;
+  @Inject private PMSPipelineService pipelineService;
   @Inject private PMSPipelineRepository pmsPipelineRepository;
   @Inject private InputSetsApiUtils inputSetsApiUtils;
 
@@ -94,17 +94,12 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
       "Input set [%s] under Project[%s], Organization [%s] for Pipeline [%s] already exists";
 
   @Override
-  public InputSetEntity create(
-      InputSetEntity inputSetEntity, String pipelineBranch, String pipelineRepoID, boolean hasNewYamlStructure) {
+  public InputSetEntity create(InputSetEntity inputSetEntity, boolean hasNewYamlStructure) {
     boolean isOldGitSync = gitSyncSdkService.isGitSyncEnabled(inputSetEntity.getAccountIdentifier(),
         inputSetEntity.getOrgIdentifier(), inputSetEntity.getProjectIdentifier());
-    // New API flow do not support oldGitSync and has newYamlStructure,
-    // so validations for metadata in yaml isn't needed
-    if (isOldGitSync) {
-      InputSetValidationHelper.validateInputSetForOldGitSync(
-          this, pmsPipelineService, inputSetEntity, pipelineBranch, pipelineRepoID);
-    } else {
-      InputSetValidationHelper.validateInputSet(this, pmsPipelineService, inputSetEntity, true, hasNewYamlStructure);
+    InputSetValidationHelper.validateInputSet(this, inputSetEntity, hasNewYamlStructure);
+    if (!isOldGitSync) {
+      InputSetValidationHelper.checkForPipelineStoreType(inputSetEntity, pipelineService);
     }
 
     try {
@@ -134,27 +129,22 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
       boolean hasNewYamlStructure) {
     Optional<InputSetEntity> optionalInputSetEntity =
         getWithoutValidations(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, deleted);
-    if (!optionalInputSetEntity.isPresent()) {
+    if (optionalInputSetEntity.isEmpty()) {
       throw new InvalidRequestException(
           String.format("InputSet with the given ID: %s does not exist or has been deleted", identifier));
     }
 
     InputSetEntity inputSetEntity = optionalInputSetEntity.get();
-    if (gitSyncSdkService.isGitSyncEnabled(accountId, orgIdentifier, projectIdentifier)) {
-      InputSetValidationHelper.validateInputSetForOldGitSync(
-          this, pmsPipelineService, inputSetEntity, pipelineBranch, pipelineRepoID);
-    } else if (inputSetEntity.getStoreType() == StoreType.REMOTE) {
+    if (inputSetEntity.getStoreType() == StoreType.REMOTE) {
       ScmGitMetaData inputSetScmGitMetaData = GitAwareContextHelper.getScmGitMetaData();
       try {
-        InputSetValidationHelper.validateInputSet(this, pmsPipelineService, inputSetEntity, false, hasNewYamlStructure);
+        InputSetValidationHelper.validateInputSet(this, inputSetEntity, hasNewYamlStructure);
       } finally {
         // input set validation involves fetching the pipeline, which can change the global scm metadata to that of the
         // pipeline. Hence, it needs to be changed back to that of the input set once validation is complete,
         // irrespective of whether the validation throws an exception or not
         GitAwareContextHelper.updateScmGitMetaData(inputSetScmGitMetaData);
       }
-    } else {
-      InputSetValidationHelper.validateInputSet(this, pmsPipelineService, inputSetEntity, false, hasNewYamlStructure);
     }
     return optionalInputSetEntity;
   }
@@ -183,19 +173,10 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
   }
 
   @Override
-  public InputSetEntity update(ChangeType changeType, String pipelineBranch, String pipelineRepoID,
-      InputSetEntity inputSetEntity, boolean hasNewYamlStructure) {
+  public InputSetEntity update(ChangeType changeType, InputSetEntity inputSetEntity, boolean hasNewYamlStructure) {
     boolean isOldGitSync = gitSyncSdkService.isGitSyncEnabled(inputSetEntity.getAccountIdentifier(),
         inputSetEntity.getOrgIdentifier(), inputSetEntity.getProjectIdentifier());
-    // New API flow do not support oldGitSync and has newYamlStructure,
-    // so validations for metadata in yaml isn't needed
-    if (isOldGitSync) {
-      InputSetValidationHelper.validateInputSetForOldGitSync(
-          this, pmsPipelineService, inputSetEntity, pipelineBranch, pipelineRepoID);
-    } else {
-      InputSetValidationHelper.validateInputSet(this, pmsPipelineService, inputSetEntity, false, hasNewYamlStructure);
-    }
-
+    InputSetValidationHelper.validateInputSet(this, inputSetEntity, hasNewYamlStructure);
     if (isOldGitSync) {
       return updateForOldGitSync(inputSetEntity, changeType);
     }

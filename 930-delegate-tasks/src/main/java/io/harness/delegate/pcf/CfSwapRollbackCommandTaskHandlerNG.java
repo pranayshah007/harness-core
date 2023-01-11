@@ -565,7 +565,8 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
   private void updateEnvVariableForApplication(CfRequestConfig cfRequestConfig, LogCallback executionLogCallback,
       String appName, boolean isActiveApplication) throws PivotalClientApiException {
     cfRequestConfig.setApplicationName(appName);
-    cfDeploymentManager.setEnvironmentVariableForAppStatus(cfRequestConfig, isActiveApplication, executionLogCallback);
+    cfDeploymentManager.setEnvironmentVariableForAppStatusNG(
+        cfRequestConfig, isActiveApplication, executionLogCallback);
   }
 
   private CfInBuiltVariablesUpdateValues performAppRenaming(NamingTransition transition,

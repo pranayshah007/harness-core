@@ -13,13 +13,14 @@ import (
 	"github.com/harness/harness-core/product/log-service/logger"
 	"github.com/harness/harness-core/product/log-service/store"
 	"github.com/harness/harness-core/product/log-service/stream"
+	"github.com/harness/harness-core/product/platform/client"
 
 	"github.com/go-chi/chi"
 )
 
 // Handler returns an http.Handler that exposes the
 // service resources.
-func Handler(stream stream.Stream, store store.Store, config config.Config) http.Handler {
+func Handler(stream stream.Stream, store store.Store, config config.Config, ngClient *client.HTTPClient) http.Handler {
 	r := chi.NewRouter()
 	r.Use(logger.Middleware)
 
@@ -30,7 +31,7 @@ func Handler(stream stream.Stream, store store.Store, config config.Config) http
 		// Validate the incoming request with a global secret and return back a token
 		// for the given account ID if the match is successful (if auth is enabled).
 		if !config.Auth.DisableAuth {
-			sr.Use(TokenGenerationMiddleware(config, true))
+			sr.Use(TokenGenerationMiddleware(config, true, ngClient))
 		}
 
 		sr.Get("/", HandleToken(config))
@@ -70,7 +71,7 @@ func Handler(stream stream.Stream, store store.Store, config config.Config) http
 		sr := chi.NewRouter()
 		// Validate the accountID in URL with the token generated above and authorize the request
 		if !config.Auth.DisableAuth {
-			sr.Use(AuthMiddleware(config))
+			sr.Use(AuthMiddleware(config, ngClient))
 		}
 
 		sr.Post("/", HandleOpen(stream))
@@ -87,7 +88,7 @@ func Handler(stream stream.Stream, store store.Store, config config.Config) http
 	r.Mount("/blob", func() http.Handler {
 		sr := chi.NewRouter()
 		if !config.Auth.DisableAuth {
-			sr.Use(AuthMiddleware(config))
+			sr.Use(AuthMiddleware(config, ngClient))
 		}
 
 		sr.Post("/", HandleUpload(store))

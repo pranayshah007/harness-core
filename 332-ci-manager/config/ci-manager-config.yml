@@ -173,6 +173,7 @@ ciExecutionServiceConfig:
   hostedVmConfig:
     splitLinuxAmd64Pool: false
     splitLinuxArm64Pool: false
+    splitWindowsAmd64Pool: false
   stepConfig:
     # The below config is for K8 steps
     gitCloneConfig:
@@ -188,7 +189,7 @@ ciExecutionServiceConfig:
       entrypoint:
         - /kaniko/kaniko-docker
     buildAndPushECRConfig:
-      image: plugins/kaniko-ecr:1.6.6
+      image: plugins/kaniko-ecr:1.6.11
       entrypoint:
         - /kaniko/kaniko-ecr
     buildAndPushGCRConfig:

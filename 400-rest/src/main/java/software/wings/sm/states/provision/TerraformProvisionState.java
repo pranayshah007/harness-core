@@ -28,7 +28,6 @@ import static io.harness.exception.WingsException.USER;
 import static io.harness.provision.TerraformConstants.BACKEND_CONFIGS_KEY;
 import static io.harness.provision.TerraformConstants.BACKEND_CONFIG_KEY;
 import static io.harness.provision.TerraformConstants.ENCRYPTED_BACKEND_CONFIGS_KEY;
-import static io.harness.provision.TerraformConstants.ENCRYPTED_BACKEND_CONFIG_KEY;
 import static io.harness.provision.TerraformConstants.ENCRYPTED_ENVIRONMENT_VARS_KEY;
 import static io.harness.provision.TerraformConstants.ENCRYPTED_VARIABLES_KEY;
 import static io.harness.provision.TerraformConstants.ENVIRONMENT_VARS_KEY;
@@ -648,15 +647,16 @@ public abstract class TerraformProvisionState extends State {
       others.put("qualifier", QUALIFIER_APPLY);
       collectVariables(others, terraformExecutionData.getVariables(), VARIABLES_KEY, ENCRYPTED_VARIABLES_KEY, true);
 
-      if (featureFlagService.isEnabled(TERRAFORM_REMOTE_BACKEND_CONFIG, context.getAccountId()) && backendConfig != null
-          && !backendConfig.getStoreType().equals(S3_STORE_TYPE)) {
-        if (LOCAL_STORE_TYPE.equals(getBackendConfig().getStoreType())) {
-          collectVariables(others, terraformExecutionData.getBackendConfigs(), BACKEND_CONFIG_KEY,
-              ENCRYPTED_BACKEND_CONFIG_KEY, false);
+      if (featureFlagService.isEnabled(TERRAFORM_REMOTE_BACKEND_CONFIG, context.getAccountId())
+          && terraformExecutionData.getBackendConfigs() != null
+          && !terraformExecutionData.getBackendConfigStoreType().equals(S3_STORE_TYPE)) {
+        if (LOCAL_STORE_TYPE.equals(terraformExecutionData.getBackendConfigStoreType())) {
+          collectVariables(others, terraformExecutionData.getBackendConfigs(), BACKEND_CONFIGS_KEY,
+              ENCRYPTED_BACKEND_CONFIGS_KEY, false);
         } else {
           // remote backend config
-          if (backendConfig.getRemoteBackendConfig() != null) {
-            GitFileConfig gitFileConfig = backendConfig.getRemoteBackendConfig();
+          if (terraformExecutionData.getRemoteBackendConfig() != null) {
+            GitFileConfig gitFileConfig = terraformExecutionData.getRemoteBackendConfig().getGitFileConfig();
             others.put(REMOTE_BE_CONFIG_GIT_BRANCH_KEY, gitFileConfig.getBranch());
             others.put(REMOTE_BE_CONFIG_GIT_CONNECTOR_ID_KEY, gitFileConfig.getConnectorId());
             others.put(REMOTE_BE_CONFIG_GIT_COMMIT_ID_KEY, gitFileConfig.getCommitId());
@@ -1241,26 +1241,23 @@ public abstract class TerraformProvisionState extends State {
             setTfVarFiles(tfVarFiles);
           }
 
-          if (featureFlagService.isEnabled(TERRAFORM_REMOTE_BACKEND_CONFIG, context.getAccountId())
-              && backendConfig != null) {
-            backendConfigStoreType = backendConfig.getStoreType();
-
-            if (!backendConfigStoreType.equals(S3_STORE_TYPE)) {
-              String gitFileConnectorId =
-                  (String) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_GIT_CONNECTOR_ID_KEY);
-              if (isNotEmpty(gitFileConnectorId)) {
-                GitFileConfig gitFileConfig =
-                    GitFileConfig.builder()
-                        .connectorId(gitFileConnectorId)
-                        .filePath((String) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_GIT_FILE_PATH_KEY))
-                        .branch((String) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_GIT_BRANCH_KEY))
-                        .commitId((String) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_GIT_COMMIT_ID_KEY))
-                        .useBranch((boolean) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_GIT_USE_BRANCH_KEY))
-                        .repoName((String) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_GIT_REPO_NAME_KEY))
-                        .build();
-                backendConfig.setRemoteBackendConfig(gitFileConfig);
-                remoteBackendGitFileConfig = fetchRemoteConfigGitSource(context);
-              }
+          if (featureFlagService.isEnabled(TERRAFORM_REMOTE_BACKEND_CONFIG, context.getAccountId())) {
+            String gitFileConnectorId = (String) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_GIT_CONNECTOR_ID_KEY);
+            if (isNotEmpty(gitFileConnectorId)) {
+              backendConfigStoreType = REMOTE_STORE_TYPE;
+              GitFileConfig gitFileConfig =
+                  GitFileConfig.builder()
+                      .connectorId(gitFileConnectorId)
+                      .filePath((String) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_GIT_FILE_PATH_KEY))
+                      .branch((String) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_GIT_BRANCH_KEY))
+                      .commitId((String) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_GIT_COMMIT_ID_KEY))
+                      .useBranch((boolean) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_GIT_USE_BRANCH_KEY))
+                      .repoName((String) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_GIT_REPO_NAME_KEY))
+                      .build();
+              TerraformBackendConfig remoteMetadataBackendConfig = new TerraformBackendConfig();
+              remoteMetadataBackendConfig.setRemoteBackendConfig(gitFileConfig);
+              setBackendConfig(remoteMetadataBackendConfig);
+              remoteBackendGitFileConfig = fetchRemoteConfigGitSource(context);
             }
           }
 
@@ -1564,10 +1561,9 @@ public abstract class TerraformProvisionState extends State {
 
   private Map<String, String> extractBackendConfigs(ExecutionContext context, FileMetadata fileMetadata) {
     Map<String, Object> rawBackendConfigs = null;
-    if (featureFlagService.isEnabled(TERRAFORM_REMOTE_BACKEND_CONFIG, context.getAccountId())) {
-      if (getBackendConfig() != null && LOCAL_STORE_TYPE.equals(getBackendConfig().getStoreType())) {
-        rawBackendConfigs = (Map<String, Object>) fileMetadata.getMetadata().get(BACKEND_CONFIG_KEY);
-      }
+    if (featureFlagService.isEnabled(TERRAFORM_REMOTE_BACKEND_CONFIG, context.getAccountId())
+        && getBackendConfig() != null && !LOCAL_STORE_TYPE.equals(getBackendConfig().getStoreType())) {
+      rawBackendConfigs = (Map<String, Object>) fileMetadata.getMetadata().get(BACKEND_CONFIG_KEY);
     } else {
       rawBackendConfigs = (Map<String, Object>) fileMetadata.getMetadata().get(BACKEND_CONFIGS_KEY);
     }

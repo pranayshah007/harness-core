@@ -16,6 +16,7 @@ import static io.harness.remote.client.NGRestUtils.getResponse;
 import static io.harness.template.beans.NGTemplateConstants.STABLE_VERSION;
 
 import static java.lang.String.format;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.EntityType;
 import io.harness.accesscontrol.acl.api.Resource;
@@ -56,6 +57,8 @@ import io.harness.ng.core.template.TemplateWithInputsResponseDTO;
 import io.harness.ng.core.template.exception.NGTemplateResolveExceptionV2;
 import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.organization.remote.OrganizationClient;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
+import io.harness.pms.yaml.YamlField;
 import io.harness.project.remote.ProjectClient;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.NGTemplateRepository;
@@ -426,8 +429,13 @@ public class NGTemplateServiceImpl implements NGTemplateService {
       boolean loadFromFallbackBranch) {
     enforcementClientService.checkAvailability(FeatureRestrictionName.TEMPLATE_SERVICE, accountId);
     try {
-      return templateServiceHelper.getTemplate(accountId, orgIdentifier, projectIdentifier, templateIdentifier,
-          versionLabel, deleted, false, loadFromCache, loadFromFallbackBranch);
+      Optional<TemplateEntity> templateOptional = templateServiceHelper.getTemplate(accountId, orgIdentifier,
+          projectIdentifier, templateIdentifier, versionLabel, deleted, false, loadFromCache, loadFromFallbackBranch);
+      if (templateOptional.isPresent() && StoreType.REMOTE.equals(templateOptional.get().getStoreType())) {
+        TemplateEntity templateEntity = templateOptional.get();
+        validateTemplateVersion(versionLabel, templateEntity);
+      }
+      return templateOptional;
     } catch (ExplanationException | HintException | ScmException e) {
       String errorMessage = getErrorMessage(templateIdentifier, versionLabel);
       log.error(errorMessage, e);
@@ -1232,6 +1240,22 @@ public class NGTemplateServiceImpl implements NGTemplateService {
       return templateEntity.getTemplateEntityType().isGitEntity();
     } else {
       return true;
+    }
+  }
+
+  private void validateTemplateVersion(String versionLabel, TemplateEntity templateEntity) {
+    if (isNotBlank(templateEntity.getYaml())) {
+      YamlField templateYamlField = TemplateUtils.getTemplateYamlFieldElseThrow(templateEntity.getOrgIdentifier(),
+          templateEntity.getProjectIdentifier(), templateEntity.getIdentifier(), templateEntity.getYaml());
+
+      String templateVersionFromGit =
+          templateYamlField.getNode().getStringValue(YAMLFieldNameConstants.TEMPLATE_VERSION);
+      if (EmptyPredicate.isNotEmpty(versionLabel) && EmptyPredicate.isNotEmpty(templateVersionFromGit)
+          && !versionLabel.equals(templateVersionFromGit)) {
+        throw new InvalidRequestException(format(
+            "Template version from remote template file [%s] does not match with template version in request [%s]. Each template version maps to a unique file on Git. Create a new version through harness or import a new version if the file is already created on Git",
+            templateVersionFromGit, versionLabel));
+      }
     }
   }
 }

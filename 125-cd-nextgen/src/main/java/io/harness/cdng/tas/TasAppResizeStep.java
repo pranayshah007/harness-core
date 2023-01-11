@@ -15,6 +15,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.TanzuApplicationServiceInfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
@@ -45,7 +46,6 @@ import io.harness.ng.core.BaseNGAccess;
 import io.harness.pcf.CfCommandUnitConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
-import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
@@ -79,7 +79,7 @@ import org.jetbrains.annotations.NotNull;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
-public class TasAppResizeStep extends TaskExecutableWithRollbackAndRbac<CfCommandResponseNG> {
+public class TasAppResizeStep extends CdTaskExecutable<CfCommandResponseNG> {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.TAS_APP_RESIZE.getYamlType())
                                                .setStepCategory(StepCategory.STEP)
@@ -132,7 +132,6 @@ public class TasAppResizeStep extends TaskExecutableWithRollbackAndRbac<CfComman
       List<ServerInstanceInfo> serverInstanceInfoList = getServerInstanceInfoList(response, ambiance);
       StepResponse.StepOutcome stepOutcome =
           instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfoList);
-      tasStepHelper.saveInstancesOutcome(ambiance, serverInstanceInfoList);
       builder.stepOutcome(stepOutcome);
     }
     executionSweepingOutputService.consume(

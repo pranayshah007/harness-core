@@ -16,6 +16,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageResponse;
 import io.harness.rule.Owner;
 
@@ -72,7 +73,7 @@ public class PageUtilsTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testOffsetAndLimit_whenNotEnoughElements() {
     assertThatThrownBy(() -> PageUtils.offsetAndLimit(Lists.newArrayList("1", "2"), 1, 4))
-        .isInstanceOf(IllegalStateException.class)
+        .isInstanceOf(InvalidRequestException.class)
         .hasMessage("for a list of size 2 the offset 1 and pagesize 4 is invalid");
   }
 

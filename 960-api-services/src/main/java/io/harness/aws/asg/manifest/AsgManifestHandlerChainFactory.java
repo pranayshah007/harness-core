@@ -9,6 +9,7 @@ package io.harness.aws.asg.manifest;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgConfiguration;
+import static io.harness.aws.asg.manifest.AsgManifestType.AsgInstanceRefresh;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgLaunchTemplate;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgScalingPolicy;
 
@@ -17,9 +18,8 @@ import io.harness.aws.asg.AsgSdkManager;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.manifest.handler.ManifestHandler;
 import io.harness.manifest.handler.ManifestHandlerChainFactory;
+import io.harness.manifest.request.ManifestRequest;
 
-import java.util.List;
-import java.util.Map;
 import lombok.Builder;
 
 @OwnedBy(CDP)
@@ -33,15 +33,16 @@ public class AsgManifestHandlerChainFactory extends ManifestHandlerChainFactory<
   }
 
   @Override
-  public ManifestHandler createHandler(
-      String manifestType, List<String> manifestContentList, Map<String, Object> overrideProperties) {
+  public ManifestHandler createHandler(String manifestType, ManifestRequest manifestRequest) {
     switch (manifestType) {
       case AsgLaunchTemplate:
-        return new AsgLaunchTemplateManifestHandler(this.asgSdkManager, manifestContentList, overrideProperties);
+        return new AsgLaunchTemplateManifestHandler(this.asgSdkManager, manifestRequest);
       case AsgConfiguration:
-        return new AsgConfigurationManifestHandler(this.asgSdkManager, manifestContentList, overrideProperties);
+        return new AsgConfigurationManifestHandler(this.asgSdkManager, manifestRequest);
       case AsgScalingPolicy:
-        return new AsgScalingPolicyManifestHandler(this.asgSdkManager, manifestContentList, overrideProperties);
+        return new AsgScalingPolicyManifestHandler(this.asgSdkManager, manifestRequest);
+      case AsgInstanceRefresh:
+        return new AsgInstanceRefreshHandler(this.asgSdkManager, manifestRequest);
       default:
         throw new InvalidArgumentsException("Invalid asgManifestType provided");
     }

@@ -40,7 +40,9 @@ public enum ManifestConfigType {
   @JsonProperty(ManifestType.AsgConfiguration) ASG_CONFIGURATION(ManifestType.AsgConfiguration),
   @JsonProperty(ManifestType.AsgScalingPolicy) ASG_SCALING_POLICY(ManifestType.AsgScalingPolicy),
   @JsonProperty(ManifestType.AsgScheduledUpdateGroupAction)
-  ASG_SCHEDULED_UPDATE_GROUP_ACTION(ManifestType.AsgScheduledUpdateGroupAction);
+  ASG_SCHEDULED_UPDATE_GROUP_ACTION(ManifestType.AsgScheduledUpdateGroupAction),
+  @JsonProperty(ManifestType.GoogleCloudFunctionDefinition)
+  CLOUD_FUNCTION_DEFINITION(ManifestType.GoogleCloudFunctionDefinition);
   private final String displayName;
 
   ManifestConfigType(String displayName) {

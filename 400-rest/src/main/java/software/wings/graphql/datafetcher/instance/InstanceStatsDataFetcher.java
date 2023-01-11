@@ -21,6 +21,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.FeatureName;
+import io.harness.dataretention.LongerDataRetentionService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
@@ -72,6 +73,7 @@ public class InstanceStatsDataFetcher
   @Inject private InstanceQueryHelper instanceMongoHelper;
   @Inject private TagHelper tagHelper;
   @Inject private FeatureFlagService featureFlagService;
+  @Inject LongerDataRetentionService longerDataRetentionService;
 
   @Override
   protected QLInstanceTagAggregation getTagAggregation(QLInstanceAggregation groupBy) {

@@ -9,7 +9,7 @@ package software.wings.sm.states.k8s;
 
 import static io.harness.annotations.dev.HarnessModule._870_CG_ORCHESTRATION;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.beans.FeatureName.INSTANCE_SYNC_V2_CG;
+import static io.harness.beans.FeatureName.CDP_USE_K8S_DECLARATIVE_ROLLBACK;
 import static io.harness.beans.FeatureName.NEW_KUBECTL_VERSION;
 import static io.harness.beans.FeatureName.PRUNE_KUBERNETES_RESOURCES;
 import static io.harness.beans.FeatureName.SKIP_ADDING_TRACK_LABEL_SELECTOR_IN_ROLLING;
@@ -189,6 +189,8 @@ public class K8sRollingDeploy extends AbstractK8sState {
             .useNewKubectlVersion(featureFlagService.isEnabled(NEW_KUBECTL_VERSION, infraMapping.getAccountId()))
             .skipAddingSelectorToDeployment(
                 featureFlagService.isEnabled(SKIP_ADDING_TRACK_LABEL_SELECTOR_IN_ROLLING, infraMapping.getAccountId()))
+            .useDeclarativeRollback(
+                featureFlagService.isEnabled(CDP_USE_K8S_DECLARATIVE_ROLLBACK, infraMapping.getAccountId()))
             .build();
 
     return queueK8sDelegateTask(context, k8sTaskParameters, appManifestMap);
@@ -245,9 +247,6 @@ public class K8sRollingDeploy extends AbstractK8sState {
 
     stateExecutionData.setNewInstanceStatusSummaries(
         fetchInstanceStatusSummaries(instanceElementListParam.getInstanceElements(), executionStatus));
-    if (featureFlagService.isEnabled(INSTANCE_SYNC_V2_CG, context.getAccountId())) {
-      stateExecutionData.setPodsList(newPods);
-    }
 
     K8sElement k8sElement = k8sStateHelper.fetchK8sElement(context);
     if (k8sElement == null) {

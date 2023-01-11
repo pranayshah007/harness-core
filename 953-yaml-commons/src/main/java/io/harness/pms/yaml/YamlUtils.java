@@ -328,7 +328,7 @@ public class YamlUtils {
     return response.toString();
   }
 
-  private List<String> getQualifiedNameList(
+  public List<String> getQualifiedNameList(
       YamlNode yamlNode, String fieldName, boolean shouldAppendStrategyExpression) {
     if (yamlNode.getParentNode() == null) {
       List<String> qualifiedNameList = new ArrayList<>();

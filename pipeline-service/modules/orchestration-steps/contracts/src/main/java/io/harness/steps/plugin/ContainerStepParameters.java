@@ -41,7 +41,6 @@ public class ContainerStepParameters extends ContainerBaseStepInfo implements Sp
 
   @JsonIgnore
   public List<String> getCommandUnits() {
-    return Arrays.asList(ContainerCommandUnitConstants.InitContainer, ContainerCommandUnitConstants.ContainerStep,
-        ContainerCommandUnitConstants.CleanContainer);
+    return Arrays.asList(ContainerCommandUnitConstants.InitContainer, ContainerCommandUnitConstants.ContainerStep);
   }
 }

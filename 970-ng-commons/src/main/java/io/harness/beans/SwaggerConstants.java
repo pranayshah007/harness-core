@@ -29,6 +29,9 @@ public interface SwaggerConstants {
 
   String ENVIRONMENT_YAML_LIST_CLASSPATH = "[Lio.harness.cdng.environment.yaml.EnvironmentYamlV2;";
 
+  String AMI_TAG_LIST_CLASSPATH = "[Lio.harness.delegate.task.artifacts.ami.AMITag;";
+  String AMI_FILTER_LIST_CLASSPATH = "[Lio.harness.delegate.task.artifacts.ami.AMIFilter;";
+
   String FILTER_YAML_LIST_CLASSPATH = "[Lio.harness.cdng.environment.filters.FilterYaml;";
   String JENKINS_PARAMETER_FIELD_CLASSPATH = "[Lio.harness.cdng.jenkins.jenkinsstep.JenkinsParameterField;";
   String INFRASTRUCTURE_DEFINITION_YAML_HOST_FILTER_CLASSPATH = "io.harness.cdng.infra.beans.host.HostFilter";

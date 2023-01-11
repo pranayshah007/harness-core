@@ -7,7 +7,7 @@
 
 package io.harness.beans.stages;
 
-import static io.harness.annotations.dev.HarnessTeam.STO;
+import static io.harness.annotations.dev.HarnessTeam.IACM;
 
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXTERNAL_PROPERTY;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
@@ -36,7 +36,7 @@ import org.springframework.data.annotation.TypeAlias;
 @EqualsAndHashCode(callSuper = true)
 @JsonTypeName(IACMStepSpecTypeConstants.IACM_STAGE)
 @TypeAlias("IACMStageNode")
-@OwnedBy(STO)
+@OwnedBy(IACM)
 @RecasterAlias("io.harness.beans.stages.IACMStageNode")
 public class IACMStageNode extends AbstractStageNode {
   @JsonProperty("type") @NotNull StepType type = StepType.IACM;

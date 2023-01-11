@@ -18,8 +18,6 @@ import javax.crypto.SecretKey;
  */
 @OwnedBy(PL)
 public interface EncryptionInterface {
-  SecretKey getSecretKey();
-
   byte[] encrypt(byte[] content);
 
   byte[] decrypt(byte[] encrypted);

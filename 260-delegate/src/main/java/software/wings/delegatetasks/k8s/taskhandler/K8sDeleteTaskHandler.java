@@ -40,6 +40,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
 import io.harness.k8s.K8sConstants;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.manifest.ManifestHelper;
@@ -47,8 +48,8 @@ import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
-import io.harness.k8s.releasehistory.K8sLegacyRelease;
-import io.harness.k8s.releasehistory.ReleaseHistory;
+import io.harness.k8s.releasehistory.IK8sRelease;
+import io.harness.k8s.releasehistory.IK8sReleaseHistory;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 
@@ -92,6 +93,7 @@ public class K8sDeleteTaskHandler extends K8sTaskHandler {
   private KubernetesConfig kubernetesConfig;
   private String manifestFilesDirectory;
   private List<KubernetesResourceId> resourceIdsToDelete;
+  private K8sReleaseHandler releaseHandler;
 
   @Override
   public K8sTaskExecutionResponse executeTaskInternal(
@@ -102,6 +104,7 @@ public class K8sDeleteTaskHandler extends K8sTaskHandler {
 
     K8sDeleteTaskParameters k8sDeleteTaskParameters = (K8sDeleteTaskParameters) k8sTaskParameters;
     releaseName = k8sDeleteTaskParameters.getReleaseName();
+    releaseHandler = k8sTaskHelperBase.getReleaseHandler(k8sDeleteTaskParameters.isUseDeclarativeRollback());
     manifestFilesDirectory = Paths.get(k8sDelegateTaskParams.getWorkingDirectory(), MANIFEST_FILES_DIR).toString();
     ExecutionLogCallback executionLogCallback =
         new ExecutionLogCallback(delegateLogService, k8sDeleteTaskParameters.getAccountId(),
@@ -265,21 +268,17 @@ public class K8sDeleteTaskHandler extends K8sTaskHandler {
 
   List<KubernetesResourceId> fetchAllCreatedResourceIdsForDeletion(
       K8sDeleteTaskParameters k8sDeleteTaskParameters, ExecutionLogCallback executionLogCallback) throws IOException {
-    return k8sTaskHelper.getResourceIdsForDeletion(k8sDeleteTaskParameters, kubernetesConfig, executionLogCallback);
+    return k8sTaskHelperBase.getResourceIdsForDeletion(k8sDeleteTaskParameters.isUseDeclarativeRollback(),
+        k8sDeleteTaskParameters.getReleaseName(), kubernetesConfig, executionLogCallback,
+        k8sDeleteTaskParameters.isDeleteNamespacesForRelease());
   }
   private List<KubernetesResourceId> getCanaryResourceIdsFromReleaseHistory(String releaseName, LogCallback logCallback)
-      throws IOException {
+      throws Exception {
     logCallback.saveExecutionLog(format("Getting canary workloads from release %s\n", releaseName));
-    String releaseHistoryData = k8sTaskHelperBase.getReleaseHistoryData(kubernetesConfig, releaseName);
+    IK8sReleaseHistory releaseHistory = releaseHandler.getReleaseHistory(kubernetesConfig, releaseName);
 
-    if (isEmpty(releaseHistoryData)) {
+    if (isEmpty(releaseHistory)) {
       logCallback.saveExecutionLog(format("Empty or missing release history for release %s", releaseName), WARN);
-      return Collections.emptyList();
-    }
-
-    ReleaseHistory releaseHistory = ReleaseHistory.createFromData(releaseHistoryData);
-    if (isEmpty(releaseHistory.getReleases())) {
-      logCallback.saveExecutionLog(format("No previous deployments found for release %s", releaseName), WARN);
       return Collections.emptyList();
     }
 
@@ -287,14 +286,14 @@ public class K8sDeleteTaskHandler extends K8sTaskHandler {
     // Since we may catch some interrupted exceptions during task abortions it may happen that we will fail the canary
     // release. To ensure that the latest release is actually a canary release we have a more deep logic
     // in K8s Canary Delete Step (we will rely on release history only when we queued K8s Canary Task and step expire)
-    K8sLegacyRelease release = releaseHistory.getLatestRelease();
-    if (InProgress != release.getStatus() && Failed != release.getStatus()) {
+    IK8sRelease release = releaseHistory.getLatestRelease();
+    if (InProgress != release.getReleaseStatus() && Failed != release.getReleaseStatus()) {
       logCallback.saveExecutionLog(
           format("Unable to identify any canary deployments for release %s.", releaseName), WARN);
       return Collections.emptyList();
     }
 
-    return release.getResources()
+    return release.getResourceIds()
         .stream()
         .filter(resource -> resource.getName().endsWith(K8sConstants.CANARY_WORKLOAD_SUFFIX_NAME))
         .collect(Collectors.toList());
