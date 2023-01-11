@@ -450,7 +450,7 @@ gitlabConfig:
 basePathPrefix: ${BASE_PATH_PREFIX:-""}
 
 enforcementClientConfiguration:
-  enforcementCheckEnabled: false
+  enforcementCheckEnabled: true
 
 # remove in a few cycles
 opaServerConfig:
