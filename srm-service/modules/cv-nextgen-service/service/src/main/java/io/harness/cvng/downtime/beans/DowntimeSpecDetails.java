@@ -23,13 +23,13 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonSubTypes({
-  @JsonSubTypes.Type(value = OnetimeDowntimeSpec.class, name = "Onetime")
-  , @JsonSubTypes.Type(value = RecurringDowntimeSpec.class, name = "Recurring"),
+  @JsonSubTypes.Type(value = OnetimeDowntimeSpecDetails.class, name = "Onetime")
+  , @JsonSubTypes.Type(value = RecurringDowntimeSpecDetails.class, name = "Recurring"),
 })
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = DOWNTIME_SPEC_TYPE, include = JsonTypeInfo.As.EXTERNAL_PROPERTY)
-public abstract class DowntimeSpec {
+public abstract class DowntimeSpecDetails {
   @ApiModelProperty(required = true) @NotNull String timezone;
-  @ApiModelProperty(required = true) long startTime;
+  @ApiModelProperty(required = true) @NotNull String dateTime;
 
   @JsonIgnore public abstract DowntimeType getType();
 }

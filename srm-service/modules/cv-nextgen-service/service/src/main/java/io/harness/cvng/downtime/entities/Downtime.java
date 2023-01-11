@@ -72,7 +72,6 @@ public class Downtime implements PersistentEntity, UuidAware, UpdatedAtAware, Cr
   @NotNull DowntimeCategory category;
   @NotNull DowntimeScope scope;
   @NotNull DowntimeType type;
-  @NotNull String timezone;
   @NotNull DowntimeDetails downtimeDetails;
   private List<EntityDetails> entityRefs;
   private boolean enabled;
@@ -85,6 +84,7 @@ public class Downtime implements PersistentEntity, UuidAware, UpdatedAtAware, Cr
   @SuperBuilder
   @EqualsAndHashCode
   public abstract static class DowntimeDetails {
+    @NotNull String timezone;
     public abstract DowntimeType getType();
   }
 
@@ -100,7 +100,7 @@ public class Downtime implements PersistentEntity, UuidAware, UpdatedAtAware, Cr
   @SuperBuilder
   @EqualsAndHashCode(callSuper = true)
   public static class OnetimeDurationBased extends OnetimeDowntimeDetails {
-    DowntimeDuration downtimeDuration;
+    @NotNull DowntimeDuration downtimeDuration;
     OnetimeDowntimeType onetimeDowntimeType = OnetimeDowntimeType.DURATION;
   }
 
@@ -108,7 +108,7 @@ public class Downtime implements PersistentEntity, UuidAware, UpdatedAtAware, Cr
   @SuperBuilder
   @EqualsAndHashCode(callSuper = true)
   public static class EndTimeBased extends OnetimeDowntimeDetails {
-    long endTime;
+    @NotNull long endTime;
     OnetimeDowntimeType onetimeDowntimeType = OnetimeDowntimeType.END_TIME;
   }
 
@@ -117,8 +117,8 @@ public class Downtime implements PersistentEntity, UuidAware, UpdatedAtAware, Cr
   @EqualsAndHashCode(callSuper = true)
   public static class RecurringDowntimeDetails extends DowntimeDetails {
     long recurrenceEndTime;
-    DowntimeDuration downtimeDuration;
-    DowntimeRecurrence downtimeRecurrence;
+    @NotNull DowntimeDuration downtimeDuration;
+    @NotNull DowntimeRecurrence downtimeRecurrence;
     private final DowntimeType type = DowntimeType.RECURRING;
   }
 

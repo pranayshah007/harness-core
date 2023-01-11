@@ -24,7 +24,7 @@ import lombok.experimental.SuperBuilder;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class OnetimeDowntimeSpec extends DowntimeSpec {
+public class OnetimeDowntimeSpecDetails extends DowntimeSpecDetails {
   @JsonProperty("type") OnetimeDowntimeType type;
   @JsonTypeInfo(
       use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXTERNAL_PROPERTY, visible = true)
@@ -60,7 +60,7 @@ public class OnetimeDowntimeSpec extends DowntimeSpec {
   @NoArgsConstructor
   @JsonIgnoreProperties(ignoreUnknown = true)
   public static class OnetimeEndTimeBasedSpec extends OnetimeSpec {
-    @NotNull private long endTime;
+    @NotNull private String endTime;
     @Override
     public OnetimeDowntimeType getType() {
       return OnetimeDowntimeType.END_TIME;

@@ -6,10 +6,10 @@
  */
 package io.harness.cvng.downtime.transformer;
 
-import io.harness.cvng.downtime.beans.DowntimeSpec;
+import io.harness.cvng.downtime.beans.DowntimeSpecDetails;
 import io.harness.cvng.downtime.entities.Downtime.DowntimeDetails;
 
-public interface DowntimeSpecDetailsTransformer<E extends DowntimeDetails, T extends DowntimeSpec> {
+public interface DowntimeSpecDetailsTransformer<E extends DowntimeDetails, T extends DowntimeSpecDetails> {
   E getDowntimeDetails(T spec);
   T getDowntimeSpec(E entity);
 }

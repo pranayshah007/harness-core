@@ -6,24 +6,25 @@
  */
 package io.harness.cvng.downtime.transformer;
 
-import io.harness.cvng.downtime.beans.RecurringDowntimeSpec;
+import io.harness.cvng.downtime.beans.RecurringDowntimeSpecDetails;
 import io.harness.cvng.downtime.entities.Downtime.RecurringDowntimeDetails;
+import io.harness.cvng.utils.DateTimeParser;
 
 public class RecurringDowntimeSpecDetailsTransformer
-    implements DowntimeSpecDetailsTransformer<RecurringDowntimeDetails, RecurringDowntimeSpec> {
+    implements DowntimeSpecDetailsTransformer<RecurringDowntimeDetails, RecurringDowntimeSpecDetails> {
   @Override
-  public RecurringDowntimeDetails getDowntimeDetails(RecurringDowntimeSpec spec) {
+  public RecurringDowntimeDetails getDowntimeDetails(RecurringDowntimeSpecDetails spec) {
     return RecurringDowntimeDetails.builder()
-        .recurrenceEndTime(spec.getRecurrenceEndTime())
+        .recurrenceEndTime(DateTimeParser.getEpochSecond(spec.getRecurrenceEndTime(), spec.getTimezone()))
         .downtimeDuration(spec.getDowntimeDuration())
         .downtimeRecurrence(spec.getDowntimeRecurrence())
         .build();
   }
 
   @Override
-  public RecurringDowntimeSpec getDowntimeSpec(RecurringDowntimeDetails entity) {
-    return RecurringDowntimeSpec.builder()
-        .recurrenceEndTime(entity.getRecurrenceEndTime())
+  public RecurringDowntimeSpecDetails getDowntimeSpec(RecurringDowntimeDetails entity) {
+    return RecurringDowntimeSpecDetails.builder()
+        .recurrenceEndTime(DateTimeParser.getDateTime(entity.getRecurrenceEndTime(), entity.getTimezone()))
         .downtimeDuration(entity.getDowntimeDuration())
         .downtimeRecurrence(entity.getDowntimeRecurrence())
         .build();

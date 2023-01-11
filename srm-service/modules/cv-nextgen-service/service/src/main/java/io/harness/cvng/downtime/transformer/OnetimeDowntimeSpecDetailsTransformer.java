@@ -6,44 +6,49 @@
  */
 package io.harness.cvng.downtime.transformer;
 
-import io.harness.cvng.downtime.beans.OnetimeDowntimeSpec;
-import io.harness.cvng.downtime.beans.OnetimeDowntimeSpec.OnetimeDurationBasedSpec;
-import io.harness.cvng.downtime.beans.OnetimeDowntimeSpec.OnetimeEndTimeBasedSpec;
+import io.harness.cvng.downtime.beans.OnetimeDowntimeSpecDetails;
+import io.harness.cvng.downtime.beans.OnetimeDowntimeSpecDetails.OnetimeDurationBasedSpec;
+import io.harness.cvng.downtime.beans.OnetimeDowntimeSpecDetails.OnetimeEndTimeBasedSpec;
 import io.harness.cvng.downtime.beans.OnetimeDowntimeType;
 import io.harness.cvng.downtime.entities.Downtime;
 import io.harness.cvng.downtime.entities.Downtime.OnetimeDowntimeDetails;
+import io.harness.cvng.utils.DateTimeParser;
 
 public class OnetimeDowntimeSpecDetailsTransformer
-    implements DowntimeSpecDetailsTransformer<OnetimeDowntimeDetails, OnetimeDowntimeSpec> {
+    implements DowntimeSpecDetailsTransformer<OnetimeDowntimeDetails, OnetimeDowntimeSpecDetails> {
   @Override
-  public OnetimeDowntimeDetails getDowntimeDetails(OnetimeDowntimeSpec spec) {
+  public OnetimeDowntimeDetails getDowntimeDetails(OnetimeDowntimeSpecDetails spec) {
     switch (spec.getSpec().getType()) {
       case DURATION:
         return Downtime.OnetimeDurationBased.builder()
             .downtimeDuration(((OnetimeDurationBasedSpec) spec.getSpec()).getDowntimeDuration())
             .build();
       case END_TIME:
-        return Downtime.EndTimeBased.builder().endTime(((OnetimeEndTimeBasedSpec) spec.getSpec()).getEndTime()).build();
+        return Downtime.EndTimeBased.builder()
+            .endTime(DateTimeParser.getEpochSecond(
+                ((OnetimeEndTimeBasedSpec) spec.getSpec()).getEndTime(), spec.getTimezone()))
+            .build();
       default:
         throw new IllegalStateException("type: " + spec.getSpec().getType() + " is not handled");
     }
   }
 
   @Override
-  public OnetimeDowntimeSpec getDowntimeSpec(OnetimeDowntimeDetails entity) {
+  public OnetimeDowntimeSpecDetails getDowntimeSpec(OnetimeDowntimeDetails entity) {
     switch (entity.getOnetimeDowntimeType()) {
       case DURATION:
-        return OnetimeDowntimeSpec.builder()
+        return OnetimeDowntimeSpecDetails.builder()
             .type(OnetimeDowntimeType.DURATION)
-            .spec(OnetimeDowntimeSpec.OnetimeDurationBasedSpec.builder()
+            .spec(OnetimeDowntimeSpecDetails.OnetimeDurationBasedSpec.builder()
                       .downtimeDuration(((Downtime.OnetimeDurationBased) entity).getDowntimeDuration())
                       .build())
             .build();
       case END_TIME:
-        return OnetimeDowntimeSpec.builder()
+        return OnetimeDowntimeSpecDetails.builder()
             .type(OnetimeDowntimeType.END_TIME)
-            .spec(OnetimeDowntimeSpec.OnetimeEndTimeBasedSpec.builder()
-                      .endTime(((Downtime.EndTimeBased) entity).getEndTime())
+            .spec(OnetimeDowntimeSpecDetails.OnetimeEndTimeBasedSpec.builder()
+                      .endTime(DateTimeParser.getDateTime(
+                          ((Downtime.EndTimeBased) entity).getEndTime(), entity.getTimezone()))
                       .build())
             .build();
       default:

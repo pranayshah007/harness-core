@@ -9,6 +9,8 @@ package io.harness.cvng.downtime.beans;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.gitsync.beans.YamlDTO;
 
+import software.wings.stencils.DefaultValue;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -39,7 +41,7 @@ public class DowntimeDTO implements YamlDTO {
   String description;
   @Size(max = 128) Map<String, String> tags;
   @ApiModelProperty(required = true) @NotNull DowntimeCategory category;
-  @ApiModelProperty(required = true) @NotNull DowntimeScope scope;
+  @ApiModelProperty(required = true) @DefaultValue("Project") DowntimeScope scope;
   @Valid @NotNull DowntimeSpecDTO spec;
   @ApiModelProperty(required = true) @NotNull List<EntityDetails> entityRefs;
   boolean enabled;

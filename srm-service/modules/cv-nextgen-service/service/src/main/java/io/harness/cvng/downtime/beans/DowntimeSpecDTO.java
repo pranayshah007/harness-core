@@ -25,7 +25,7 @@ public class DowntimeSpecDTO {
       visible = true)
   @Valid
   @NotNull
-  DowntimeSpec spec;
+  DowntimeSpecDetails spec;
 
   public DowntimeType getType() {
     return this.spec.getType();
