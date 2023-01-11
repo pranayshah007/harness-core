@@ -68,6 +68,7 @@ import io.harness.cvng.core.jobs.CompositeSLODataExecutorTaskHandler;
 import io.harness.cvng.core.jobs.DataCollectionTasksPerpetualTaskStatusUpdateHandler;
 import io.harness.cvng.core.jobs.DeploymentChangeEventConsumer;
 import io.harness.cvng.core.jobs.EntityCRUDStreamConsumer;
+import io.harness.cvng.core.jobs.FakeFeatureFlagSRMProducer;
 import io.harness.cvng.core.jobs.InternalChangeEventFFConsumer;
 import io.harness.cvng.core.jobs.MonitoringSourcePerpetualTaskHandler;
 import io.harness.cvng.core.jobs.PersistentLockCleanup;

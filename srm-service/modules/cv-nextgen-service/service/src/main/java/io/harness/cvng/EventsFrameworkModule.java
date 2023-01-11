@@ -84,8 +84,9 @@ public class EventsFrameworkModule extends AbstractModule {
               EventsFrameworkConstants.INTERNAL_CHANGE_EVENT_FF_BATCH_SIZE, redisConfig.getEnvNamespace()));
       bind(Producer.class)
           .annotatedWith(Names.named(EventsFrameworkConstants.INTERNAL_CHANGE_EVENT_FF))
-          .toInstance(RedisProducer.of(EventsFrameworkConstants.INTERNAL_CHANGE_EVENT_FF, redissonClient, 100,
-              CV_NEXT_GEN.getServiceId(), redisConfig.getEnvNamespace()));
+          .toInstance(RedisProducer.of(EventsFrameworkConstants.INTERNAL_CHANGE_EVENT_FF, redissonClient, 5000,
+              "internal_change_publisher", redisConfig.getEnvNamespace()));
+
       bind(Producer.class)
           .annotatedWith(Names.named(EventsFrameworkConstants.SETUP_USAGE))
           .toInstance(RedisProducer.of(EventsFrameworkConstants.SETUP_USAGE, redissonClient,

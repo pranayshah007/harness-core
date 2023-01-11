@@ -12,6 +12,7 @@ import io.harness.security.annotations.NextGenManagerAuth;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
+import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import java.util.List;
@@ -27,7 +28,7 @@ import retrofit2.http.Body;
 @Produces("application/json")
 @NextGenManagerAuth
 public class FakeFeatureFlagSRMEventResource {
-  private FakeFeatureFlagSRMProducer fakeFeatureFlagSRMProducer = new FakeFeatureFlagSRMProducer();
+  @Inject private FakeFeatureFlagSRMProducer fakeFeatureFlagSRMProducer;
 
   @POST
   @Path("register")
@@ -39,8 +40,7 @@ public class FakeFeatureFlagSRMEventResource {
   }
 
   @Data
-  @Builder
-  public class FFEventBody {
+  public static class FFEventBody {
     String accId;
     String orgId;
     String projectId;
