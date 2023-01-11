@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
@@ -423,7 +424,7 @@ public class ElastigroupStepCommonHelperTest extends CDNGTestBase {
     when(engineExpressionService.renderExpression(any(), any()))
         .thenAnswer(invocationOnMock -> invocationOnMock.getArgument(1, String.class));
 
-    when(fileStoreService.getWithChildrenByPath(any(), any(), any(), any(), any()))
+    when(fileStoreService.getWithChildrenByPath(any(), any(), any(), any(), anyBoolean()))
         .thenReturn(Optional.of(FileNodeDTO.builder().content("Startup script content").build()));
 
     ElastigroupConfigurationOutput elastigroupConfigurationOutput =
@@ -433,7 +434,8 @@ public class ElastigroupStepCommonHelperTest extends CDNGTestBase {
         .thenReturn(OptionalSweepingOutput.builder().output(elastigroupConfigurationOutput).found(true).build());
 
     // when
-    TaskChainResponse taskChainResponse = elastigroupStepCommonHelper.startChainLink(ambiance, null, null);
+    TaskChainResponse taskChainResponse = elastigroupStepCommonHelper.startChainLink(
+        ambiance, null, ElastigroupExecutionPassThroughData.builder().build());
 
     // then
     assertThat(taskChainResponse.isChainEnd()).isTrue();
@@ -467,7 +469,7 @@ public class ElastigroupStepCommonHelperTest extends CDNGTestBase {
     when(engineExpressionService.renderExpression(any(), any()))
         .thenAnswer(invocationOnMock -> invocationOnMock.getArgument(1, String.class));
 
-    when(fileStoreService.getWithChildrenByPath(any(), any(), any(), eq("script1"), any()))
+    when(fileStoreService.getWithChildrenByPath(any(), any(), any(), eq("script1"), anyBoolean()))
         .thenReturn(Optional.of(FileNodeDTO.builder().content("Startup script content").build()));
 
     ElastigroupConfigurationOutput elastigroupConfigurationOutput =
@@ -480,7 +482,7 @@ public class ElastigroupStepCommonHelperTest extends CDNGTestBase {
     when(executionSweepingOutputService.resolveOptional(any(), any()))
         .thenReturn(OptionalSweepingOutput.builder().output(elastigroupConfigurationOutput).found(true).build());
 
-    when(fileStoreService.getWithChildrenByPath(any(), any(), any(), eq("config1"), any()))
+    when(fileStoreService.getWithChildrenByPath(any(), any(), any(), eq("config1"), anyBoolean()))
         .thenReturn(Optional.of(FileNodeDTO.builder().content("Config content").build()));
 
     when(outcomeService.resolveOptional(
@@ -488,7 +490,8 @@ public class ElastigroupStepCommonHelperTest extends CDNGTestBase {
         .thenReturn(OptionalOutcome.builder().build());
 
     // when
-    TaskChainResponse taskChainResponse = elastigroupStepCommonHelper.startChainLink(ambiance, null, null);
+    TaskChainResponse taskChainResponse = elastigroupStepCommonHelper.startChainLink(
+        ambiance, null, ElastigroupExecutionPassThroughData.builder().build());
 
     // then
     assertThat(taskChainResponse.isChainEnd()).isTrue();
@@ -522,7 +525,7 @@ public class ElastigroupStepCommonHelperTest extends CDNGTestBase {
     when(engineExpressionService.renderExpression(any(), any()))
         .thenAnswer(invocationOnMock -> invocationOnMock.getArgument(1, String.class));
 
-    when(fileStoreService.getWithChildrenByPath(any(), any(), any(), eq("script1"), any()))
+    when(fileStoreService.getWithChildrenByPath(any(), any(), any(), eq("script1"), anyBoolean()))
         .thenReturn(Optional.of(FileNodeDTO.builder().content("Startup script content").build()));
 
     ElastigroupConfigurationOutput elastigroupConfigurationOutput =
@@ -535,7 +538,7 @@ public class ElastigroupStepCommonHelperTest extends CDNGTestBase {
     when(executionSweepingOutputService.resolveOptional(any(), any()))
         .thenReturn(OptionalSweepingOutput.builder().output(elastigroupConfigurationOutput).found(true).build());
 
-    when(fileStoreService.getWithChildrenByPath(any(), any(), any(), eq("config1"), any()))
+    when(fileStoreService.getWithChildrenByPath(any(), any(), any(), eq("config1"), anyBoolean()))
         .thenReturn(Optional.of(FileNodeDTO.builder().content("Config content").build()));
 
     when(outcomeService.resolveOptional(
@@ -547,13 +550,29 @@ public class ElastigroupStepCommonHelperTest extends CDNGTestBase {
                 .found(true)
                 .build());
 
+    when(elastigroupEntityHelper.getSpotInstConfig(any(), any()))
+        .thenReturn(
+            SpotInstConfig.builder()
+                .spotConnectorDTO(SpotConnectorDTO.builder().credential(SpotCredentialDTO.builder().build()).build())
+                .build());
+
     // when
-    TaskChainResponse taskChainResponse = elastigroupStepCommonHelper.startChainLink(ambiance, null, null);
+    TaskChainResponse taskChainResponse = elastigroupStepCommonHelper.startChainLink(ambiance,
+        StepElementParameters.builder()
+            .spec(ElastigroupSetupStepParameters.infoBuilder().name(ParameterField.createValueField("name")).build())
+            .build(),
+        ElastigroupExecutionPassThroughData.builder().build());
 
     // then
     assertThat(taskChainResponse.isChainEnd()).isFalse();
 
-    assertThat(taskChainResponse.getPassThroughData()).isNull();
+    assertThat(taskChainResponse.getPassThroughData())
+        .isNotNull()
+        .isInstanceOf(ElastigroupExecutionPassThroughData.class);
+
+    assertThat(
+        ((ElastigroupExecutionPassThroughData) taskChainResponse.getPassThroughData()).getElastigroupConfiguration())
+        .isEqualTo("Config content");
   }
 
   private Ambiance anAmbiance() {
