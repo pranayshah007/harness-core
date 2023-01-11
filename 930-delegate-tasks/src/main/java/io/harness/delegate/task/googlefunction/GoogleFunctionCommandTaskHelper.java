@@ -1,19 +1,27 @@
 package io.harness.delegate.task.googlefunction;
 
 import com.google.api.gax.longrunning.OperationFuture;
+import com.google.cloud.functions.v2.BuildConfig;
 import com.google.cloud.functions.v2.CreateFunctionRequest;
 import com.google.cloud.functions.v2.DeleteFunctionRequest;
 import com.google.cloud.functions.v2.Function;
 import com.google.cloud.functions.v2.GetFunctionRequest;
 import com.google.cloud.functions.v2.OperationMetadata;
+import com.google.cloud.functions.v2.Source;
+import com.google.cloud.functions.v2.StorageSource;
 import com.google.cloud.functions.v2.UpdateFunctionRequest;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.protobuf.Empty;
+import com.google.protobuf.FieldMask;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorCredentialDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpManualDetailsDTO;
+import io.harness.delegate.task.googlefunctions.GcpGoogleFunctionInfraConfig;
+import io.harness.delegate.task.googlefunctions.GoogleCloudStorageArtifactConfig;
+import io.harness.delegate.task.googlefunctions.GoogleFunctionArtifactConfig;
+import io.harness.delegate.task.googlefunctions.request.GoogleFunctionDeployRequest;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.runtime.SecretNotFoundRuntimeException;
@@ -21,6 +29,9 @@ import io.harness.googlefunctions.GcpInternalConfig;
 import io.harness.googlefunctions.GoogleCloudFunctionClient;
 import lombok.extern.slf4j.Slf4j;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutionException;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
@@ -32,10 +43,74 @@ import static io.harness.delegate.beans.connector.gcpconnector.GcpCredentialType
 public class GoogleFunctionCommandTaskHelper {
     @Inject private GoogleCloudFunctionClient googleCloudFunctionClient;
 
+    public Function deployFunction(GoogleFunctionDeployRequest googleFunctionDeployRequest) throws IOException, ExecutionException, InterruptedException {
+        GcpGoogleFunctionInfraConfig googleFunctionInfraConfig =
+                (GcpGoogleFunctionInfraConfig) googleFunctionDeployRequest.getGoogleFunctionInfraConfig();
+
+        CreateFunctionRequest.Builder createFunctionRequestBuilder = CreateFunctionRequest.parseFrom(
+                new ByteArrayInputStream(googleFunctionDeployRequest.getGoogleFunctionDeployManifestContent()
+                        .getBytes(StandardCharsets.UTF_8))).toBuilder();
+
+        // get function name
+        String functionName = getFunctionName(googleFunctionInfraConfig.getProject(),
+                googleFunctionInfraConfig.getRegion(), createFunctionRequestBuilder.getFunction().getName());
+
+        createFunctionRequestBuilder.setParent(getFunctionParent(googleFunctionInfraConfig.getProject(),
+                googleFunctionInfraConfig.getRegion()));
+
+        Function.Builder functionBuilder = createFunctionRequestBuilder.getFunctionBuilder();
+        BuildConfig.Builder buildConfigBuilder = functionBuilder.getBuildConfigBuilder();
+
+        // set artifact source
+        buildConfigBuilder.setSource(getArtifactSource(googleFunctionDeployRequest.getGoogleFunctionArtifactConfig()));
+        functionBuilder.setBuildConfig(buildConfigBuilder.build());
+        functionBuilder.setName(functionName);
+        createFunctionRequestBuilder.setFunction(functionBuilder.build());
+
+        //check if function already exists
+        Function existingFunction = getFunction(functionName, googleFunctionInfraConfig.getGcpConnectorDTO(),
+                googleFunctionInfraConfig.getProject(), googleFunctionInfraConfig.getRegion());
+
+        if(existingFunction==null) {
+            //create new function
+            return createFunction(createFunctionRequestBuilder.build(), googleFunctionInfraConfig.getGcpConnectorDTO(),
+                    googleFunctionInfraConfig.getProject(), googleFunctionInfraConfig.getRegion());
+        }
+        else {
+           //update existing function
+            FieldMask.Builder fieldMaskBuilder = FieldMask.parseFrom(new ByteArrayInputStream(
+                    googleFunctionDeployRequest.getUpdateFieldMaskContent()
+                    .getBytes(StandardCharsets.UTF_8))).toBuilder();
+            UpdateFunctionRequest updateFunctionRequest =
+                    UpdateFunctionRequest.newBuilder()
+                            .setFunction(createFunctionRequestBuilder.getFunction())
+                            .setUpdateMask(fieldMaskBuilder.build())
+                            .build();
+            return updateFunction(updateFunctionRequest, googleFunctionInfraConfig.getGcpConnectorDTO(),
+                    googleFunctionInfraConfig.getProject(), googleFunctionInfraConfig.getRegion());
+        }
+
+    }
+
+    private Source getArtifactSource(GoogleFunctionArtifactConfig googleFunctionArtifactConfig) {
+        if(googleFunctionArtifactConfig instanceof GoogleCloudStorageArtifactConfig) {
+            GoogleCloudStorageArtifactConfig googleCloudStorageArtifactConfig =
+                    (GoogleCloudStorageArtifactConfig) googleFunctionArtifactConfig;
+            StorageSource storageSource = StorageSource.newBuilder()
+                    .setBucket(googleCloudStorageArtifactConfig.getBucket())
+                    .setObject(googleCloudStorageArtifactConfig.getFilePath())
+                    .build();
+            return Source.newBuilder()
+                    .setStorageSource(storageSource)
+                    .build();
+        }
+        return null;
+    }
 
     public Function createFunction(CreateFunctionRequest createFunctionRequest, GcpConnectorDTO gcpConnectorDTO,
                                    String project, String region) throws ExecutionException, InterruptedException {
-        OperationFuture<Function, OperationMetadata> futureResponse = googleCloudFunctionClient.createFunction(createFunctionRequest, getGcpInternalConfig(gcpConnectorDTO, region,
+        OperationFuture<Function, OperationMetadata> futureResponse = googleCloudFunctionClient.createFunction(
+                createFunctionRequest, getGcpInternalConfig(gcpConnectorDTO, region,
                 project));
         return futureResponse.get();
     }
@@ -52,7 +127,7 @@ public class GoogleFunctionCommandTaskHelper {
                                 String project, String region) {
         return googleCloudFunctionClient.getFunction(
                 GetFunctionRequest.newBuilder()
-                        .setName("projects/"+project+"/locations/"+region+"/functions/"+functionName)
+                        .setName(functionName)
                         .build(),
                 getGcpInternalConfig(gcpConnectorDTO, region,
                         project));
@@ -65,6 +140,16 @@ public class GoogleFunctionCommandTaskHelper {
                         project));
          futureResponse.get();
     }
+
+    private String getFunctionName(String project, String region, String functionName) {
+        return "projects/" + project + "/locations/" + region +
+                "/functions" + functionName;
+    }
+
+    private String getFunctionParent(String project, String region) {
+        return "projects/" + project + "/locations/" + region;
+    }
+
 
 
     private GcpInternalConfig getGcpInternalConfig(GcpConnectorDTO gcpConnectorDTO, String region, String project) {

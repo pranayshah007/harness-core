@@ -1,16 +1,21 @@
 package io.harness.delegate.googlefunctions;
 
 import com.google.cloud.functions.v2.CreateFunctionRequest;
+import com.google.cloud.functions.v2.Function;
+import com.google.inject.Inject;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
+import io.harness.delegate.task.googlefunction.GoogleFunctionCommandTaskHelper;
 import io.harness.delegate.task.googlefunction.GoogleFunctionUtils;
 import io.harness.delegate.task.googlefunctions.GoogleFunctionInfraConfig;
 import io.harness.delegate.task.googlefunctions.request.GoogleFunctionCommandRequest;
 import io.harness.delegate.task.googlefunctions.request.GoogleFunctionDeployRequest;
 import io.harness.delegate.task.googlefunctions.response.GoogleFunctionCommandResponse;
+import io.harness.delegate.task.googlefunctions.response.GoogleFunctionDeployResponse;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.logging.CommandExecutionStatus;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
@@ -25,27 +30,23 @@ import java.nio.charset.StandardCharsets;
 public class GoogleFunctionDeployCommandTaskHandler extends GoogleFunctionCommandTaskHandler {
     private GoogleFunctionInfraConfig googleFunctionInfraConfig;
     private long timeoutInMillis;
+    @Inject private GoogleFunctionCommandTaskHelper googleFunctionCommandTaskHelper;
     @Override
     protected GoogleFunctionCommandResponse executeTaskInternal(GoogleFunctionCommandRequest googleFunctionCommandRequest,
                                                                 ILogStreamingTaskClient iLogStreamingTaskClient,
                                                                 CommandUnitsProgress commandUnitsProgress) throws Exception {
-        if (!(googleFunctionCommandRequest instanceof GoogleFunctionCommandRequest)) {
+        if (!(googleFunctionCommandRequest instanceof GoogleFunctionDeployRequest)) {
             throw new InvalidArgumentsException(Pair.of("googleFunctionCommandRequest", "Must be instance of " +
                     "GoogleFunctionCommandRequest"));
         }
         GoogleFunctionDeployRequest googleFunctionDeployRequest = (GoogleFunctionDeployRequest)
                 googleFunctionCommandRequest;
 
-        timeoutInMillis = googleFunctionDeployRequest.getTimeoutIntervalInMin() * 60000;
-        googleFunctionInfraConfig = googleFunctionDeployRequest.getGoogleFunctionInfraConfig();
-
         try{
-            CreateFunctionRequest createFunctionRequest = CreateFunctionRequest.parseFrom(
-                    new ByteArrayInputStream(googleFunctionDeployRequest.getGoogleFunctionDeployManifestContent()
-                            .getBytes(StandardCharsets.UTF_8)));
-            createFunctionRequest.
-
-
+            Function function = googleFunctionCommandTaskHelper.deployFunction(googleFunctionDeployRequest);
+            return GoogleFunctionDeployResponse.builder()
+                    .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                    .build();
         }
         catch(Exception e) {
 

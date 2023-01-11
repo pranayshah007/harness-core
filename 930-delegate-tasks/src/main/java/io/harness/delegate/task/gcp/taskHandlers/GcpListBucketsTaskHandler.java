@@ -28,6 +28,7 @@ import io.harness.security.encryption.SecretDecryptionService;
 
 import com.google.api.services.storage.Storage;
 import com.google.api.services.storage.model.Buckets;
+import com.google.cloud.storage.StorageOptions;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;

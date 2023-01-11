@@ -13,12 +13,11 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 @OwnedBy(CDP)
 public interface GoogleFunctionsStepExecutor {
-    TaskChainResponse executeTask(Ambiance ambiance, StepElementParameters stepParameters,
-                                  GoogleFunctionsExecutionPassThroughData executionPassThroughData, UnitProgressData unitProgressData,
-                                  GoogleFunctionsStepExecutorParams googleFunctionsStepExecutorParams);
+    TaskChainResponse executeDeployTask(Ambiance ambiance, StepElementParameters stepParameters,
+                                  GoogleFunctionsStepPassThroughData googleFunctionsStepPassThroughData, UnitProgressData unitProgressData);
 
     TaskChainResponse executePrepareRollbackTask(Ambiance ambiance, StepElementParameters stepParameters,
-                                                 GoogleFunctionsPrepareRollbackPassThroughData
-                                                 googleFunctionsPrepareRollbackPassThroughData,
+                                                 GoogleFunctionsStepPassThroughData googleFunctionsStepPassThroughData,
                                                  UnitProgressData unitProgressData);
+
 }

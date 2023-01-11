@@ -152,6 +152,7 @@ public class NextGenConfiguration extends Configuration {
   private static final String DEPLOYMENT_STAGE_PACKAGE = "io.harness.ng.core.deploymentstage";
   private static final String SERVICE_ENV_MIGRATION_RESOURCE_PACKAGE =
       "io.harness.ng.core.migration.serviceenvmigrationv2.resources";
+  private static final String GCP_PACKAGE = "io.harness.ng.core.gcp.resources";
   public static final Collection<Class<?>> HARNESS_RESOURCE_CLASSES = getResourceClasses();
 
   @JsonProperty("swagger") private SwaggerBundleConfiguration swaggerBundleConfiguration;
@@ -296,7 +297,7 @@ public class NextGenConfiguration extends Configuration {
                 NextGenConfiguration.CUSTOM_DEPLOYMENT_PACKAGE, NextGenConfiguration.FREEZE_RESOURCE_PACKAGE,
                 NextGenConfiguration.REFRESH_RESOURCE_PACKAGE, DEPLOYMENT_STAGE_PACKAGE,
                 NextGenConfiguration.MANIFEST_RESOURCE_PACKAGE, NextGenConfiguration.TAS_PACKAGE,
-                NextGenConfiguration.SERVICE_ENV_MIGRATION_RESOURCE_PACKAGE))
+                NextGenConfiguration.SERVICE_ENV_MIGRATION_RESOURCE_PACKAGE, NextGenConfiguration.GCP_PACKAGE))
         .collect(Collectors.toSet());
   }
 

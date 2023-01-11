@@ -440,7 +440,9 @@ public enum TaskType {
   TERRAFORM_PROVISION_TASK_V2(TaskGroup.TERRAFORM, "Terraform Provision Task V2"),
   TERRAFORM_INPUT_VARIABLES_OBTAIN_TASK_V2(TaskGroup.TERRAFORM, "Terraform Fetch Input variables Task V2"),
   TERRAFORM_FETCH_TARGETS_TASK_V2(TaskGroup.TERRAFORM, "Terraform Fetch Targets Task V2"),
-  GIT_TASK_NG(TaskGroup.GIT_NG, "Git Fetch Files Task");
+  GIT_TASK_NG(TaskGroup.GIT_NG, "Git Fetch Files Task"),
+  GOOGLE_CLOUD_STORAGE_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG, "Google Cloud Storage Artifact Task"),
+  GOOGLE_FUNCTION_COMMAND_TASK(TaskGroup.GOOGLE_FUNCTION, "Google Function Task");
 
   private final TaskGroup taskGroup;
   private final String displayName;

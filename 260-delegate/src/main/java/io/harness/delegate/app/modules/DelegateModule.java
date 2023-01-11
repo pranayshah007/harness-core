@@ -194,6 +194,10 @@ import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactD
 import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactTaskNG;
 import io.harness.delegate.task.artifacts.googleartifactregistry.GARArtifactTaskNG;
+import io.harness.delegate.task.artifacts.googlecloudstorage.GcsListBucketsTaskHandler;
+import io.harness.delegate.task.artifacts.googlecloudstorage.GoogleCloudStorageArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.googlecloudstorage.GoogleCloudStorageArtifactTaskHandler;
+import io.harness.delegate.task.artifacts.googlecloudstorage.GoogleCloudStorageArtifactTaskNG;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactTaskNG;
@@ -278,6 +282,7 @@ import io.harness.delegate.task.gcp.GcpTask;
 import io.harness.delegate.task.gcp.GcpTaskType;
 import io.harness.delegate.task.gcp.taskHandlers.GcpListBucketsTaskHandler;
 import io.harness.delegate.task.gcp.taskHandlers.GcpListClustersTaskHandler;
+import io.harness.delegate.task.gcp.taskHandlers.GcpListProjectsTaskHandler;
 import io.harness.delegate.task.gcp.taskHandlers.TaskHandler;
 import io.harness.delegate.task.git.GitFetchTaskNG;
 import io.harness.delegate.task.git.NGGitCommandTask;
@@ -1386,6 +1391,13 @@ public class DelegateModule extends AbstractModule {
     s3ArtifactServiceMapBinder.addBinding(S3ArtifactDelegateRequest.class).toInstance(S3ArtifactTaskHandler.class);
 
     MapBinder<Class<? extends ArtifactSourceDelegateRequest>, Class<? extends DelegateArtifactTaskHandler>>
+        googleCloudStorageArtifactServiceMapBinder =
+            MapBinder.newMapBinder(binder(), new TypeLiteral<Class<? extends ArtifactSourceDelegateRequest>>() {},
+                new TypeLiteral<Class<? extends DelegateArtifactTaskHandler>>() {});
+    googleCloudStorageArtifactServiceMapBinder.addBinding(GoogleCloudStorageArtifactDelegateRequest.class)
+        .toInstance(GoogleCloudStorageArtifactTaskHandler.class);
+
+    MapBinder<Class<? extends ArtifactSourceDelegateRequest>, Class<? extends DelegateArtifactTaskHandler>>
         githubPackagesArtifactServiceMapBinder =
             MapBinder.newMapBinder(binder(), new TypeLiteral<Class<? extends ArtifactSourceDelegateRequest>>() {},
                 new TypeLiteral<Class<? extends DelegateArtifactTaskHandler>>() {});
@@ -1457,6 +1469,9 @@ public class DelegateModule extends AbstractModule {
         MapBinder.newMapBinder(binder(), GcpTaskType.class, TaskHandler.class);
     gcpTaskTypeToTaskHandlerMap.addBinding(GcpTaskType.LIST_CLUSTERS).to(GcpListClustersTaskHandler.class);
     gcpTaskTypeToTaskHandlerMap.addBinding(GcpTaskType.LIST_BUCKETS).to(GcpListBucketsTaskHandler.class);
+    gcpTaskTypeToTaskHandlerMap.addBinding(GcpTaskType.LIST_PROJECTS).to(GcpListProjectsTaskHandler.class);
+    gcpTaskTypeToTaskHandlerMap.addBinding(GcpTaskType.LIST_GCS_BUCKETS_PER_PROJECT)
+        .to(GcsListBucketsTaskHandler.class);
 
     // Azure App Service tasks
     MapBinder<String, AbstractAzureAppServiceTaskHandler> azureAppServiceTaskTypeToTaskHandlerMap =
@@ -1856,6 +1871,8 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.BUILD_SOURCE_TASK).toInstance(BuildSourceTask.class);
     mapBinder.addBinding(TaskType.DOCKER_ARTIFACT_TASK_NG).toInstance(DockerArtifactTaskNG.class);
     mapBinder.addBinding(TaskType.AMAZON_S3_ARTIFACT_TASK_NG).toInstance(S3ArtifactTaskNG.class);
+    mapBinder.addBinding(TaskType.GOOGLE_CLOUD_STORAGE_ARTIFACT_TASK_NG)
+        .toInstance(GoogleCloudStorageArtifactTaskNG.class);
     mapBinder.addBinding(TaskType.JENKINS_ARTIFACT_TASK_NG).toInstance(JenkinsArtifactTaskNG.class);
     mapBinder.addBinding(TaskType.AZURE_ARTIFACT_TASK_NG).toInstance(AzureArtifactsTaskNG.class);
     mapBinder.addBinding(TaskType.AMI_ARTIFACT_TASK_NG).toInstance(AMIArtifactTaskNG.class);

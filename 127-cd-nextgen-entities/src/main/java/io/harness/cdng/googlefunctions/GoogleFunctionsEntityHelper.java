@@ -6,19 +6,25 @@ import com.google.inject.name.Named;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.beans.IdentifierRef;
-import io.harness.cdng.infra.beans.EcsInfrastructureOutcome;
+import io.harness.cdng.artifact.outcome.ArtifactOutcome;
+import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
+import io.harness.cdng.artifact.outcome.EcrArtifactOutcome;
+import io.harness.cdng.artifact.outcome.GoogleCloudStorageArtifactOutcome;
+import io.harness.cdng.artifact.outcome.S3ArtifactOutcome;
 import io.harness.cdng.infra.beans.GoogleFunctionsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
-import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
-import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
-import io.harness.delegate.task.ecs.EcsInfraConfig;
-import io.harness.delegate.task.ecs.EcsInfraType;
 import io.harness.delegate.task.googlefunctions.GcpGoogleFunctionInfraConfig;
+import io.harness.delegate.task.googlefunctions.GoogleCloudStorageArtifactConfig;
+import io.harness.delegate.task.googlefunctions.GoogleFunctionArtifactConfig;
 import io.harness.delegate.task.googlefunctions.GoogleFunctionInfraConfig;
+import io.harness.delegate.task.serverless.ServerlessArtifactConfig;
+import io.harness.delegate.task.serverless.ServerlessArtifactoryArtifactConfig;
+import io.harness.delegate.task.serverless.ServerlessEcrArtifactConfig;
+import io.harness.delegate.task.serverless.ServerlessS3ArtifactConfig;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.NGAccess;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
@@ -33,7 +39,6 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
-import static io.harness.ng.core.infrastructure.InfrastructureKind.ECS;
 import static io.harness.ng.core.infrastructure.InfrastructureKind.GOOGLE_CLOUD_FUNCTIONS;
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
@@ -72,7 +77,7 @@ public class GoogleFunctionsEntityHelper {
         return connectorDTO.get().getConnector();
     }
 
-    public GoogleFunctionInfraConfig getGoogleFunctionsConfig(InfrastructureOutcome infrastructureOutcome, NGAccess ngAccess) {
+    public GoogleFunctionInfraConfig getInfraConfig(InfrastructureOutcome infrastructureOutcome, NGAccess ngAccess) {
         ConnectorInfoDTO connectorDTO = getConnectorInfoDTO(infrastructureOutcome.getConnectorRef(), ngAccess);
         switch (infrastructureOutcome.getKind()) {
             case GOOGLE_CLOUD_FUNCTIONS:
@@ -88,6 +93,20 @@ public class GoogleFunctionsEntityHelper {
             default:
                 throw new UnsupportedOperationException(
                         format("Unsupported Infrastructure type: [%s]", infrastructureOutcome.getKind()));
+        }
+    }
+
+    public GoogleFunctionArtifactConfig getArtifactConfig(ArtifactOutcome artifactOutcome, NGAccess ngAccess) {
+        if (artifactOutcome instanceof GoogleCloudStorageArtifactOutcome) {
+            GoogleCloudStorageArtifactOutcome googleCloudStorageArtifactOutcome =
+                    (GoogleCloudStorageArtifactOutcome) artifactOutcome;
+            return GoogleCloudStorageArtifactConfig.builder()
+                    .bucket(googleCloudStorageArtifactOutcome.getBucket())
+                    .filePath(googleCloudStorageArtifactOutcome.getArtifactPath())
+                    .build();
+        } else {
+            throw new UnsupportedOperationException(
+                    format("Unsupported Artifact type: [%s]", artifactOutcome.getArtifactType()));
         }
     }
 }

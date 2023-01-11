@@ -416,6 +416,8 @@ import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.googlecloudstorage.GoogleCloudStorageArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.googlecloudstorage.GoogleCloudStorageArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateRequest;
@@ -628,12 +630,16 @@ import io.harness.delegate.task.elastigroup.response.ElastigroupSwapRouteRespons
 import io.harness.delegate.task.gcp.GcpTaskType;
 import io.harness.delegate.task.gcp.request.GcpListBucketsRequest;
 import io.harness.delegate.task.gcp.request.GcpListClustersRequest;
+import io.harness.delegate.task.gcp.request.GcpListProjectsRequest;
 import io.harness.delegate.task.gcp.request.GcpTaskParameters;
 import io.harness.delegate.task.gcp.request.GcpValidationRequest;
+import io.harness.delegate.task.gcp.request.GcsListBucketsRequest;
 import io.harness.delegate.task.gcp.response.GcpBucketDetails;
 import io.harness.delegate.task.gcp.response.GcpClusterListTaskResponse;
 import io.harness.delegate.task.gcp.response.GcpListBucketsResponse;
+import io.harness.delegate.task.gcp.response.GcpProjectListTaskResponse;
 import io.harness.delegate.task.gcp.response.GcpValidationTaskResponse;
+import io.harness.delegate.task.gcp.response.GcsBucketListResponse;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.git.GitFetchRequest;
 import io.harness.delegate.task.git.GitFetchResponse;
@@ -1435,6 +1441,8 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(S3HelmStoreDelegateConfig.class, 19702);
     kryo.register(GcsHelmStoreDelegateConfig.class, 19703);
     kryo.register(S3StoreDelegateConfig.class, 19706);
+    kryo.register(GoogleCloudStorageArtifactDelegateRequest.class, 197077777);
+    kryo.register(GoogleCloudStorageArtifactDelegateResponse.class, 19708888);
 
     kryo.register(SpotValidateTaskResponse.class, 21006);
     kryo.register(SpotTaskParams.class, 21007);
@@ -1573,6 +1581,10 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(TerraformTaskNGParameters.class, 543283);
     kryo.register(TFTaskType.class, 543284);
     kryo.register(TerraformTaskNGResponse.class, 543285);
+    kryo.register(GcpListProjectsRequest.class, 54327999);
+    kryo.register(GcpProjectListTaskResponse.class, 543279991);
+    kryo.register(GcsListBucketsRequest.class, 543279992);
+    kryo.register(GcsBucketListResponse.class, 54327993);
 
     kryo.register(ScmPushTaskParams.class, 553286);
     kryo.register(ScmPushTaskResponseData.class, 553287);

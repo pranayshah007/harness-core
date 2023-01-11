@@ -12,7 +12,7 @@ import static io.harness.expression.Expression.ALLOW_SECRETS;
 @Value
 @Builder
 @OwnedBy(HarnessTeam.CDP)
-public class GoogleCloudStorageArtifactConfig {
+public class GoogleCloudStorageArtifactConfig implements GoogleFunctionArtifactConfig {
     @NonFinal @Expression(ALLOW_SECRETS) String bucket;
     @NonFinal @Expression(ALLOW_SECRETS) String filePath;
 }

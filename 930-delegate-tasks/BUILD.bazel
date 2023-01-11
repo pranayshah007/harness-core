@@ -74,6 +74,7 @@ java_library(
         "@maven//:org_apache_commons_commons_email",
         "@maven//:org_jooq_joor",
         "@maven//:xerces_xercesImpl",
+        "@maven//:com_google_apis_google_api_services_cloudresourcemanager"
     ],
 )
 

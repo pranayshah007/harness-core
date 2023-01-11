@@ -6,7 +6,6 @@ import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.task.googlefunctions.GoogleFunctionArtifactConfig;
 import io.harness.delegate.task.googlefunctions.GoogleFunctionCommandTypeNG;
 import io.harness.delegate.task.googlefunctions.GoogleFunctionInfraConfig;
-import io.harness.delegate.task.googlefunctions.request.GoogleFunctionCommandRequest;
 import io.harness.expression.Expression;
 import io.harness.reflection.ExpressionReflectionUtils.NestedAnnotationResolver;
 import lombok.Builder;
@@ -27,4 +26,5 @@ public class GoogleFunctionDeployRequest implements GoogleFunctionCommandRequest
     @NonFinal @Expression(ALLOW_SECRETS) GoogleFunctionArtifactConfig googleFunctionArtifactConfig;
     @NonFinal @Expression(ALLOW_SECRETS) Integer timeoutIntervalInMin;
     @NonFinal @Expression(ALLOW_SECRETS) String googleFunctionDeployManifestContent;
+    @NonFinal @Expression(ALLOW_SECRETS) String updateFieldMaskContent;
 }

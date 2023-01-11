@@ -26,6 +26,7 @@ import io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GithubPackagesArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GoogleArtifactRegistryConfig;
+import io.harness.cdng.artifact.bean.yaml.GoogleCloudStorageArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.JenkinsArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.customartifact.CustomScriptInlineSource;
@@ -61,6 +62,7 @@ import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.gar.GarDelegateRequest;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.googlecloudstorage.GoogleCloudStorageArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.s3.S3ArtifactDelegateRequest;
@@ -496,5 +498,24 @@ public class ArtifactConfigToDelegateReqMapper {
     return ArtifactDelegateRequestUtils.getAcrDelegateRequest(acrArtifactConfig.getSubscriptionId().getValue(),
         acrArtifactConfig.getRegistry().getValue(), acrArtifactConfig.getRepository().getValue(), azureConnectorDTO,
         tag, tagRegex, null, encryptedDataDetails, ArtifactSourceType.ACR);
+  }
+
+  public GoogleCloudStorageArtifactDelegateRequest getGoogleCloudStorageArtifactDelegateRequest(
+      GoogleCloudStorageArtifactConfig artifactConfig, GcpConnectorDTO gcpConnectorDTO,
+      List<EncryptedDataDetail> encryptedDataDetails, String connectorRef) {
+    String project = artifactConfig.getProject().getValue();
+    String bucket = artifactConfig.getBucket().getValue();
+    String artifactPath = artifactConfig.getArtifactPath().getValue();
+    if (StringUtils.isBlank(project)) {
+      throw new InvalidRequestException("Please input project name.");
+    }
+    if (StringUtils.isBlank(bucket)) {
+      throw new InvalidRequestException("Please input bucket name.");
+    }
+    if (StringUtils.isBlank(artifactPath)) {
+      throw new InvalidRequestException("Please input artifact path.");
+    }
+    return ArtifactDelegateRequestUtils.getGoogleCloudStorageArtifactDelegateRequest(bucket, project, artifactPath,
+        gcpConnectorDTO, connectorRef, encryptedDataDetails, ArtifactSourceType.GOOGLE_CLOUD_STORAGE_ARTIFACT);
   }
 }
