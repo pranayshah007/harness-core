@@ -10,6 +10,7 @@ package io.harness.ng.serviceaccounts.service.impl;
 import static io.harness.accesscontrol.principals.PrincipalType.SERVICE_ACCOUNT;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.enforcement.constants.FeatureRestrictionName.MULTIPLE_SERVICE_ACCOUNTS;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.ng.core.utils.NGUtils.validate;
 import static io.harness.ng.core.utils.NGUtils.verifyValuesNotChanged;
@@ -22,6 +23,7 @@ import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.accesscontrol.AccessControlAdminClient;
+import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.principals.PrincipalDTO;
 import io.harness.accesscontrol.resourcegroups.api.ResourceGroupDTO;
 import io.harness.accesscontrol.roleassignments.api.RoleAssignmentAggregateResponseDTO;
@@ -29,6 +31,7 @@ import io.harness.accesscontrol.roleassignments.api.RoleAssignmentFilterDTO;
 import io.harness.accesscontrol.roles.api.RoleResponseDTO;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.ScopeLevel;
+import io.harness.enforcement.client.annotation.FeatureRestrictionCheck;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
@@ -85,8 +88,9 @@ public class ServiceAccountServiceImpl implements ServiceAccountService {
   @Inject private TokenService tokenService;
 
   @Override
-  public ServiceAccountDTO createServiceAccount(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, ServiceAccountDTO requestDTO) {
+  @FeatureRestrictionCheck(MULTIPLE_SERVICE_ACCOUNTS)
+  public ServiceAccountDTO createServiceAccount(@AccountIdentifier String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, ServiceAccountDTO requestDTO) {
     validateCreateServiceAccountRequest(accountIdentifier, orgIdentifier, projectIdentifier, requestDTO);
     ServiceAccount serviceAccount = ServiceAccountDTOMapper.getServiceAccountFromDTO(requestDTO);
     validate(serviceAccount);
@@ -361,5 +365,10 @@ public class ServiceAccountServiceImpl implements ServiceAccountService {
         .tokensCount(apiKeysCountMap.getOrDefault(serviceAccount.getIdentifier(), 0))
         .roleAssignmentsMetadataDTO(roleAssignmentsMap.getOrDefault(serviceAccount.getIdentifier(), new ArrayList<>()))
         .build();
+  }
+
+  @Override
+  public Long countServiceAccounts(String accountIdentifier) {
+    return serviceAccountRepository.countByAccountIdentifier(accountIdentifier);
   }
 }
