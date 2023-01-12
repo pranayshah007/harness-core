@@ -48,9 +48,9 @@ public class DelegateServiceCacheImpl implements DelegateServiceCache {
 
   @Override
   public AtomicInteger getDelegateTaskCache(String delegateId) {
-    if (taskCache.getCachedMap() != null && taskCache.getCachedMap().get(delegateId) != null) {
-      taskCache.getCachedMap().get(delegateId);
-    }
+    /* if (taskCache.getCachedMap() != null && taskCache.getCachedMap().get(delegateId) != null) {
+       taskCache.getCachedMap().get(delegateId);
+     }*/
     return taskCache.get(delegateId) != null ? taskCache.get(delegateId) : new AtomicInteger(0);
   }
 
