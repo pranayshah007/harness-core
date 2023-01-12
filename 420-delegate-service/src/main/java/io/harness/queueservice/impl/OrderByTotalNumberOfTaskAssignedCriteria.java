@@ -52,7 +52,12 @@ public class OrderByTotalNumberOfTaskAssignedCriteria implements DelegateResourc
   public List<Delegate> getFilteredEligibleDelegateList(
       List<Delegate> delegateList, TaskType taskType, String accountId) {
     List<Delegate> delegateListSorted = listOfDelegatesSortedByNumberOfTaskAssignedFromRedis(delegateList, accountId);
-    log.info("Delegate list sorted {}", delegateList);
+    log.info("Delegate list sorted {}", delegateList.size());
+    delegateList.forEach(delegate -> {
+      log.info("delegate id: {}, hostname: {} with task assigned for {},", delegate.getUuid(), delegate.getHostName(),
+          delegate.getNumberOfTaskAssigned());
+    });
+
     return delegateListSorted;
   }
   private List<Delegate> listOfDelegatesSortedByNumberOfTaskAssignedFromRedis(
