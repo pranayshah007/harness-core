@@ -791,8 +791,12 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     Optional<List<String>> filteredDelegateList =
         delegateSelectionCheckForTask.perform(delegateList, taskType, delegateTask.getAccountId());
     if (filteredDelegateList.isEmpty() || isNotEmpty(filteredDelegateList.get())) {
+      log.info("Filtered delegate list is empty");
       return eligibleListOfDelegates.get(random.nextInt(eligibleListOfDelegates.size()));
     }
+    log.info("Filtered delegate list : {}", filteredDelegateList.get());
+    log.info("Most resource available delegate for task id {}, is {}", delegateTask.getUuid(),
+        filteredDelegateList.get().get(0));
     return filteredDelegateList.get().get(0);
   }
   List<Delegate> getDelegatesList(List<String> eligibleDelegateId, String accountId) {
