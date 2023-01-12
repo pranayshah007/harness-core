@@ -324,8 +324,8 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   }
 
   @Override
-  public boolean delete(
-      String accountId, String orgIdentifier, String projectIdentifier, String serviceRef, Long version) {
+  public boolean delete(String accountId, String orgIdentifier, String projectIdentifier, String serviceRef,
+      Long version, Boolean forceDelete) {
     checkArgument(isNotEmpty(accountId), "accountId must be present");
     checkArgument(isNotEmpty(serviceRef), "serviceRef must be present");
 
@@ -336,7 +336,9 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
                                       .identifier(serviceRef)
                                       .version(version)
                                       .build();
-    checkThatServiceIsNotReferredByOthers(serviceEntity);
+    if (!forceDelete) {
+      checkThatServiceIsNotReferredByOthers(serviceEntity);
+    }
     Criteria criteria = getServiceEqualityCriteria(serviceEntity, false);
     Optional<ServiceEntity> serviceEntityOptional = get(accountId, orgIdentifier, projectIdentifier, serviceRef, false);
 

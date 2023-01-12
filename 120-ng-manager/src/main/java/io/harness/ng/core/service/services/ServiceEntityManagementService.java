@@ -12,6 +12,6 @@ import io.harness.annotations.dev.OwnedBy;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface ServiceEntityManagementService {
-  boolean deleteService(
-      String accountId, String orgIdentifier, String projectIdentifier, String serviceIdentifier, String ifMatch);
+  boolean deleteService(String accountId, String orgIdentifier, String projectIdentifier, String serviceIdentifier,
+      String ifMatch, Boolean forceDelete);
 }

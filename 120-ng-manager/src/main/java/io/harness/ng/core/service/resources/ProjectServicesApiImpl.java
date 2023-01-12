@@ -47,7 +47,7 @@ public class ProjectServicesApiImpl extends AbstractServicesApiImpl implements P
   @NGAccessControlCheck(resourceType = NGResourceType.SERVICE, permission = "core_service_delete")
   @Override
   public Response deleteService(@OrgIdentifier String org, @ProjectIdentifier String project,
-      @ResourceIdentifier String service, @AccountIdentifier String account) {
+      @ResourceIdentifier String service, @AccountIdentifier String account, ) {
     return super.deleteServiceEntity(org, project, service, account);
   }
 

@@ -86,7 +86,7 @@ public abstract class AbstractServicesApiImpl {
     if (serviceEntityOptional.isEmpty()) {
       throw new NotFoundException(String.format("Service with identifier [%s] not found", service));
     }
-    boolean deleted = serviceEntityManagementService.deleteService(account, org, project, service, "ifMatch");
+    boolean deleted = serviceEntityManagementService.deleteService(account, org, project, service, "ifMatch", false);
     if (!deleted) {
       throw new InvalidRequestException(String.format("Service with identifier [%s] could not be deleted", service));
     }
