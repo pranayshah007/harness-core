@@ -465,7 +465,7 @@ public class WatcherServiceImpl implements WatcherService {
     watchExecutor.scheduleWithFixedDelay(
         new Schedulable("Error while watching delegate", this::syncWatchDelegate), 0, 10, TimeUnit.SECONDS);
     upgradeExecutor.scheduleWithFixedDelay(
-        new Schedulable("Error while cleaning up garbage", this::cleanupOlderVersions), 1, 5, DAYS);
+        new Schedulable("Error while cleaning up garbage", this::cleanupOlderVersions), 1, 30, MINUTES);
   }
 
   private void logPerformance() {
@@ -1495,6 +1495,7 @@ public class WatcherServiceImpl implements WatcherService {
   private void cleanupOldDelegateVersions(Set<String> keepVersions) {
     try {
       if (isNotEmpty(System.getProperty(USER_DIR))) {
+        log.info("Cleaning up versions folder from {}", System.getProperty(USER_DIR));
         cleanupVersionFolders(new File(System.getProperty(USER_DIR)), keepVersions);
         cleanup(new File(System.getProperty(USER_DIR)), keepVersions, "backup.");
       }
