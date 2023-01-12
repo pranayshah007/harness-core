@@ -42,6 +42,13 @@ public class OrderByTotalNumberOfTaskAssignedCriteria implements DelegateResourc
   @Inject private DelegateServiceCache delegateServiceCache;
   final Comparator<Map.Entry<String, Integer>> valueComparator = Map.Entry.comparingByValue(Comparator.naturalOrder());
 
+  final Comparator<Delegate> delegateComparator = new Comparator<Delegate>() {
+    @Override
+    public int compare(Delegate d1, Delegate d2) {
+      return d1.getNumberOfTaskAssigned() - d2.getNumberOfTaskAssigned();
+    }
+  };
+
   @Inject
   public OrderByTotalNumberOfTaskAssignedCriteria(HPersistence persistence, DelegateCache delegateCache) {
     this.persistence = persistence;
@@ -51,26 +58,14 @@ public class OrderByTotalNumberOfTaskAssignedCriteria implements DelegateResourc
   @Override
   public List<Delegate> getFilteredEligibleDelegateList(
       List<Delegate> delegateList, TaskType taskType, String accountId) {
-    List<Delegate> delegateListSorted = listOfDelegatesSortedByNumberOfTaskAssignedFromRedis(delegateList, accountId);
-    log.info("Delegate list sorted {}", delegateList.size());
-    delegateList.forEach(delegate -> {
-      log.info("delegate id: {}, hostname: {} with task assigned for {},", delegate.getUuid(), delegate.getHostName(),
-          delegate.getNumberOfTaskAssigned());
-    });
-
-    return delegateListSorted;
+    return listOfDelegatesSortedByNumberOfTaskAssignedFromRedis(delegateList, accountId);
   }
   private List<Delegate> listOfDelegatesSortedByNumberOfTaskAssignedFromRedis(
       List<Delegate> delegateList, String accountId) {
-    TreeMap<String, Integer> numberOfTaskAssigned = new TreeMap<>();
-    for (Delegate delegate : delegateList) {
-      numberOfTaskAssigned.put(delegate.getUuid(), delegateServiceCache.getDelegateTaskCache(delegate.getUuid()).get());
-    }
-    return numberOfTaskAssigned.entrySet()
-        .stream()
-        .sorted(valueComparator)
-        .map(entry -> updateDelegateWithNumberTaskAssigned(entry, accountId))
-        .collect(Collectors.toList());
+    delegateList.forEach(delegate
+        -> delegate.setNumberOfTaskAssigned(delegateServiceCache.getDelegateTaskCache(delegate.getUuid()).get()));
+    delegateList.sort(delegateComparator);
+    return delegateList;
   }
 
   private List<Delegate> listOfDelegatesSortedByNumberOfTaskAssigned(
