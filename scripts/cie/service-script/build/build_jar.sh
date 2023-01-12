@@ -16,3 +16,11 @@ BAZEL_ARGUMENTS="--show_timestamps --announce_rc --experimental_convenience_syml
 SERVICE_MODULE="//${MODULE}/service:module //${MODULE}/service:module_deploy.jar"
 bazel ${bazelrc} build $SERVICE_MODULE ${BAZEL_ARGUMENTS}
 
+if [ $MODULE == "pipeline-service" ];
+then
+  bazel query "deps(//${MODULE}/service:module)" | grep -i "KryoRegistrar" | rev | cut -f 1 -d "/" | rev | cut -f 1 -d "." > /tmp/KryoDeps.text
+  cp scripts/interface-hash/module-deps.sh .
+  sh module-deps.sh //${MODULE}/service:module > /tmp/ProtoDeps.text
+  bazel ${bazelrc} run ${BAZEL_ARGUMENTS}  //001-microservice-intfc-tool:module -- kryo-file=/tmp/KryoDeps.text proto-file=/tmp/ProtoDeps.text ignore-json | grep "Codebase Hash:" > ${MODULE}-protocol.info
+  rm module-deps.sh /tmp/ProtoDeps.text /tmp/KryoDeps.text
+fi
