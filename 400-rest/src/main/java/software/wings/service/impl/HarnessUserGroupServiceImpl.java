@@ -99,8 +99,12 @@ public class HarnessUserGroupServiceImpl implements HarnessUserGroupService {
   private static class AccountComparator implements Comparator<Account>, Serializable {
     @Override
     public int compare(Account lhs, Account rhs) {
-      if (lhs.getAccountName() == null || rhs.getAccountName() == null) {
+      if (lhs.getAccountName() == null && rhs.getAccountName() == null) {
         return 0;
+      } else if (lhs.getAccountName() == null) {
+        return 1;
+      } else if (rhs.getAccountName() == null) {
+        return -1;
       }
       return lhs.getAccountName().compareToIgnoreCase(rhs.getAccountName());
     }
