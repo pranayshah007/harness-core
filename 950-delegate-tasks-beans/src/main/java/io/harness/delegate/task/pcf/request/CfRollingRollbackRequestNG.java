@@ -47,7 +47,6 @@ public class CfRollingRollbackRequestNG extends AbstractTasTaskRequest {
   String applicationName;
   TasArtifactConfig tasArtifactConfig;
   @Expression(ALLOW_SECRETS) List<String> routeMaps;
-  @Expression(ALLOW_SECRETS) List<String> failedDeploymentRouteMaps;
   boolean useAppAutoScalar;
   @Expression(ALLOW_SECRETS) TasManifestsPackage tasManifestsPackage;
   boolean isFirstDeployment;
@@ -58,7 +57,7 @@ public class CfRollingRollbackRequestNG extends AbstractTasTaskRequest {
       CommandUnitsProgress commandUnitsProgress, TasInfraConfig tasInfraConfig, boolean useCfCLI,
       CfCliVersion cfCliVersion, Integer timeoutIntervalInMin, TasArtifactConfig tasArtifactConfig,
       List<String> routeMaps, boolean useAppAutoScalar, TasManifestsPackage tasManifestsPackage, String applicationName,
-      int desiredCount, boolean isFirstDeployment, List<String> failedDeploymentRouteMaps) {
+      int desiredCount, boolean isFirstDeployment) {
     super(timeoutIntervalInMin, accountId, commandName, cfCommandTypeNG, commandUnitsProgress, tasInfraConfig, useCfCLI,
         cfCliVersion);
     this.applicationName = applicationName;
@@ -68,7 +67,6 @@ public class CfRollingRollbackRequestNG extends AbstractTasTaskRequest {
     this.tasManifestsPackage = tasManifestsPackage;
     this.isFirstDeployment = isFirstDeployment;
     this.desiredCount = desiredCount;
-    this.failedDeploymentRouteMaps = failedDeploymentRouteMaps;
   }
 
   @Override

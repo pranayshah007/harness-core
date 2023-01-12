@@ -122,22 +122,8 @@ public class TasRollingRollbackStep extends CdTaskExecutable<CfCommandResponseNG
     TasRollingDeployOutcome tasRollingDeployOutcome =
         (TasRollingDeployOutcome) tasRollingDeployOutcomeOptional.getOutput();
 
-    if (tasRollingDeployOutcome.isDeploymentStarted() == false) {
-      return TaskRequest.newBuilder()
-          .setSkipTaskRequest(
-              SkipTaskRequest.newBuilder().setMessage(" Deployment did not start , so skipping Rollback ").build())
-          .build();
-    }
-
     TasStageExecutionDetails tasStageExecutionDetails = tasStepHelper.findLastSuccessfulStageExecutionDetails(
         ambiance, tasInfraConfig, tasRollingDeployOutcome.getAppName());
-
-    if (tasRollingDeployOutcome.isFirstDeployment() == false && tasStageExecutionDetails == null) {
-      return TaskRequest.newBuilder()
-          .setSkipTaskRequest(
-              SkipTaskRequest.newBuilder().setMessage("No successful deployment found for the particular app").build())
-          .build();
-    }
 
     List<ArtifactOutcome> artifactOutcomes =
         tasStageExecutionDetails == null ? Collections.emptyList() : tasStageExecutionDetails.getArtifactsOutcome();
@@ -157,12 +143,11 @@ public class TasRollingRollbackStep extends CdTaskExecutable<CfCommandResponseNG
             .tasManifestsPackage(
                 tasStageExecutionDetails == null ? null : tasStageExecutionDetails.getTasManifestsPackage())
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
-            .isFirstDeployment(tasRollingDeployOutcome.isFirstDeployment())
+            .isFirstDeployment(tasStageExecutionDetails == null)
             .useAppAutoScalar(tasStageExecutionDetails != null && tasStageExecutionDetails.getIsAutoscalarEnabled())
             .desiredCount(tasStageExecutionDetails == null ? 0 : tasStageExecutionDetails.getDesiredCount())
             .routeMaps(tasStageExecutionDetails == null ? null : tasStageExecutionDetails.getRouteMaps())
             .cfCliVersion(tasStepHelper.cfCliVersionNGMapper(tasRollingDeployOutcome.getCfCliVersion()))
-            .failedDeploymentRouteMaps(tasRollingDeployOutcome.getRouteMaps())
             .build();
 
     final TaskData taskData = TaskData.builder()

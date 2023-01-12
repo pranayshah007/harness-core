@@ -211,9 +211,9 @@ public class CfRollingRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandle
                                                 .isUpsize(true)
                                                 .build()));
 
-      if (cfRollingRollbackRequestNG.getFailedDeploymentRouteMaps() != null) {
+      if (applicationDetail.getUrls() != null) {
         List<String> routesToBeRemoved = new ArrayList<>();
-        for (String route : cfRollingRollbackRequestNG.getFailedDeploymentRouteMaps()) {
+        for (String route : applicationDetail.getUrls()) {
           if (!cfRollingRollbackRequestNG.getRouteMaps().contains(route)) {
             routesToBeRemoved.add(route);
           }

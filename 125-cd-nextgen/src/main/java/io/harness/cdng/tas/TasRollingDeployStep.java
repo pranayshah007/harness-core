@@ -143,8 +143,6 @@ public class TasRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
                 .cfCliVersion(tasExecutionPassThroughData.getCfCliVersion())
                 .deploymentStarted(response.isDeploymentStarted())
                 .build();
-        executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.TAS_ROLLING_DEPLOY_OUTCOME,
-            tasRollingDeployOutcome, StepCategory.STEP.name());
         return StepResponse.builder()
             .status(Status.FAILED)
             .failureInfo(FailureInfo.newBuilder().setErrorMessage(response.getErrorMessage()).build())
@@ -181,9 +179,6 @@ public class TasRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
           ambiance, tasExecutionPassThroughData.getDesiredCountInFinalYaml(), appName, tasInfraConfig);
       tasStepHelper.updateIsFirstDeploymentField(
           ambiance, response.getCurrentProdInfo() == null, appName, tasInfraConfig);
-
-      executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.TAS_ROLLING_DEPLOY_OUTCOME,
-          tasRollingDeployOutcome, StepCategory.STEP.name());
 
       return StepResponse.builder()
           .status(Status.SUCCEEDED)
@@ -240,6 +235,15 @@ public class TasRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
             .useAppAutoScalar(!isNull(executionPassThroughData.getTasManifestsPackage().getAutoscalarManifestYml()))
             .desiredCount(executionPassThroughData.getDesiredCountInFinalYaml())
             .build();
+
+    TasRollingDeployOutcome tasRollingDeployOutcome =
+            TasRollingDeployOutcome.builder()
+                    .appName(executionPassThroughData.getApplicationName())
+                    .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
+                    .cfCliVersion(executionPassThroughData.getCfCliVersion())
+                    .build();
+    executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.TAS_ROLLING_DEPLOY_OUTCOME,
+            tasRollingDeployOutcome, StepCategory.STEP.name());
 
     TaskData taskData = TaskData.builder()
                             .parameters(new Object[] {taskParameters})
