@@ -13,10 +13,12 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.PlanExecutionMetadata;
+import io.harness.execution.PlanExecutionMetadata.PlanExecutionMetadataKeys;
 import io.harness.expression.LateBindingValue;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
+import com.google.common.collect.Sets;
 import java.io.IOException;
 import java.util.HashMap;
 
@@ -34,7 +36,9 @@ public class EventPayloadFunctor implements LateBindingValue {
   public Object bind() {
     try {
       PlanExecutionMetadata planExecutionMetadata =
-          planExecutionMetadataService.findByPlanExecutionId(ambiance.getPlanExecutionId())
+          planExecutionMetadataService
+              .findByPlanExecutionIdUsingProjections(
+                  ambiance.getPlanExecutionId(), Sets.newHashSet(PlanExecutionMetadataKeys.triggerJsonPayload))
               .orElseThrow(()
                                -> new IllegalStateException(
                                    "PlanExecution metadata null for planExecutionId " + ambiance.getPlanExecutionId()));

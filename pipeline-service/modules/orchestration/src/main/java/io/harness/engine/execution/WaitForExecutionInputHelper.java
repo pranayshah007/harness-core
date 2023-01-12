@@ -21,6 +21,7 @@ import io.harness.engine.utils.OrchestrationUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.ExecutionInputInstance;
 import io.harness.execution.PlanExecutionMetadata;
+import io.harness.execution.PlanExecutionMetadata.PlanExecutionMetadataKeys;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -33,6 +34,7 @@ import io.harness.utils.PmsFeatureFlagService;
 import io.harness.waiter.WaitNotifyEngine;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.time.Duration;
@@ -64,7 +66,8 @@ public class WaitForExecutionInputHelper {
       return false;
     }
     Optional<PlanExecutionMetadata> planExecutionMetadataOptional =
-        planExecutionMetadataService.findByPlanExecutionId(ambiance.getPlanExecutionId());
+        planExecutionMetadataService.findByPlanExecutionIdUsingProjections(
+            ambiance.getPlanExecutionId(), Sets.newHashSet(PlanExecutionMetadataKeys.yaml));
     if (planExecutionMetadataOptional.isPresent()) {
       Long currentTime = System.currentTimeMillis();
       String inputInstanceId = UUIDGenerator.generateUuid();

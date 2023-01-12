@@ -24,6 +24,7 @@ import io.harness.engine.interrupts.InterruptPackage;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.PlanExecutionMetadata;
+import io.harness.execution.PlanExecutionMetadata.PlanExecutionMetadataKeys;
 import io.harness.execution.StagesExecutionMetadata;
 import io.harness.filter.FilterType;
 import io.harness.filter.dto.FilterDTO;
@@ -66,6 +67,7 @@ import io.harness.serializer.JsonUtils;
 import io.harness.serializer.ProtoUtils;
 import io.harness.service.GraphGenerationService;
 
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.mongodb.client.result.UpdateResult;
@@ -586,7 +588,8 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
   @Override
   public ExecutionDataResponseDTO getExecutionData(String planExecutionId) {
     Optional<PlanExecutionMetadata> planExecutionMetadata =
-        planExecutionMetadataService.findByPlanExecutionId(planExecutionId);
+        planExecutionMetadataService.findByPlanExecutionIdUsingProjections(
+            planExecutionId, Sets.newHashSet(PlanExecutionMetadataKeys.yaml));
 
     if (!planExecutionMetadata.isPresent()) {
       throw new InvalidRequestException(

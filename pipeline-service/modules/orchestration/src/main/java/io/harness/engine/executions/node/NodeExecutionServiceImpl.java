@@ -38,6 +38,7 @@ import io.harness.execution.ExecutionModeUtils;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.execution.PlanExecutionMetadata;
+import io.harness.execution.PlanExecutionMetadata.PlanExecutionMetadataKeys;
 import io.harness.interrupts.InterruptEffect;
 import io.harness.observer.Subject;
 import io.harness.plan.Node;
@@ -596,7 +597,9 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     TriggerPayload triggerPayload = TriggerPayload.newBuilder().build();
     if (nodeExecution != null && nodeExecution.getAmbiance() != null) {
       PlanExecutionMetadata metadata =
-          planExecutionMetadataService.findByPlanExecutionId(nodeExecution.getAmbiance().getPlanExecutionId())
+          planExecutionMetadataService
+              .findByPlanExecutionIdUsingProjections(nodeExecution.getAmbiance().getPlanExecutionId(),
+                  Sets.newHashSet(PlanExecutionMetadataKeys.triggerPayload))
               .orElseThrow(()
                                -> new InvalidRequestException("No Metadata present for planExecution :"
                                    + nodeExecution.getAmbiance().getPlanExecutionId()));

@@ -15,6 +15,7 @@ import io.harness.repositories.PlanExecutionMetadataRepository;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.Optional;
+import java.util.Set;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @Singleton
@@ -34,5 +35,12 @@ public class PlanExecutionMetadataServiceImpl implements PlanExecutionMetadataSe
   @Override
   public PlanExecutionMetadata save(PlanExecutionMetadata planExecutionMetadata) {
     return planExecutionMetadataRepository.save(planExecutionMetadata);
+  }
+
+  @Override
+  public Optional<PlanExecutionMetadata> findByPlanExecutionIdUsingProjections(
+      String planExecutionId, Set<String> fieldsToInclude) {
+    return Optional.ofNullable(
+        planExecutionMetadataRepository.findByPlanExecutionIdUsingProjections(planExecutionId, fieldsToInclude));
   }
 }

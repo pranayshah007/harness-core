@@ -193,6 +193,7 @@ public class NotificationHelper {
     return pipelineExpressionHelper.generatePipelineUrl(ambiance);
   }
 
+  // Todo: Make change to use projections
   PlanExecutionMetadata getPlanExecutionMetadata(String planExecutionId) {
     Optional<PlanExecutionMetadata> optional = planExecutionMetadataService.findByPlanExecutionId(planExecutionId);
     if (!optional.isPresent()) {

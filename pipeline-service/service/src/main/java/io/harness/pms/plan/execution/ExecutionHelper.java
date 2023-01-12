@@ -34,6 +34,7 @@ import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.execution.PlanExecutionMetadata.Builder;
+import io.harness.execution.PlanExecutionMetadata.PlanExecutionMetadataKeys;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.logging.AutoLogContext;
@@ -89,6 +90,7 @@ import io.harness.utils.PmsFeatureFlagHelper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.protobuf.ByteString;
@@ -406,7 +408,9 @@ public class ExecutionHelper {
   private PlanExecutionMetadata.Builder populateTriggerDataForRerun(
       String originalExecutionId, PlanExecutionMetadata.Builder planExecutionMetadataBuilder) {
     Optional<PlanExecutionMetadata> prevMetadataOptional =
-        planExecutionMetadataService.findByPlanExecutionId(originalExecutionId);
+        planExecutionMetadataService.findByPlanExecutionIdUsingProjections(originalExecutionId,
+            Sets.newHashSet(
+                PlanExecutionMetadataKeys.triggerJsonPayload, PlanExecutionMetadataKeys.triggerJsonPayload));
 
     if (prevMetadataOptional.isPresent()) {
       PlanExecutionMetadata prevMetadata = prevMetadataOptional.get();

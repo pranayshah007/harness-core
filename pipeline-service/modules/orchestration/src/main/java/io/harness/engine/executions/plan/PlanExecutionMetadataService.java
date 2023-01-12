@@ -12,9 +12,23 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.execution.PlanExecutionMetadata;
 
 import java.util.Optional;
+import java.util.Set;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface PlanExecutionMetadataService {
   Optional<PlanExecutionMetadata> findByPlanExecutionId(String planExecutionId);
   PlanExecutionMetadata save(PlanExecutionMetadata planExecutionMetadata);
+
+  /**
+   * finds the PlanExecutionMetadata with only required fields
+   *
+   * Uses:
+   * - planExecutionId idx
+   *
+   * @param planExecutionId
+   * @param fieldsToInclude
+   * @return
+   */
+  Optional<PlanExecutionMetadata> findByPlanExecutionIdUsingProjections(
+      String planExecutionId, Set<String> fieldsToInclude);
 }

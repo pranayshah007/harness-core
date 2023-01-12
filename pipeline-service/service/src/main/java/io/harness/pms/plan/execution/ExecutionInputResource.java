@@ -20,6 +20,7 @@ import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.ExecutionInputInstance;
 import io.harness.execution.PlanExecutionMetadata;
+import io.harness.execution.PlanExecutionMetadata.PlanExecutionMetadataKeys;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
@@ -38,6 +39,7 @@ import io.harness.pms.variables.VariableCreatorMergeService;
 import io.harness.pms.variables.VariableMergeServiceResponse;
 import io.harness.utils.PmsFeatureFlagService;
 
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -198,7 +200,8 @@ public class ExecutionInputResource {
           required = true) @NotNull @QueryParam(NGCommonEntityConstants.PLAN_KEY) String planExecutionId) {
     log.info("Creating variables for pipeline execution.");
     Optional<PlanExecutionMetadata> planExecutionMetadataOptional =
-        planExecutionMetadataService.findByPlanExecutionId(planExecutionId);
+        planExecutionMetadataService.findByPlanExecutionIdUsingProjections(
+            planExecutionId, Sets.newHashSet(PlanExecutionMetadataKeys.yaml));
     if (planExecutionMetadataOptional.isPresent()) {
       VariableMergeServiceResponse variablesResponse =
           variableCreatorMergeService.createVariablesResponses(planExecutionMetadataOptional.get().getYaml(), false);
