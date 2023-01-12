@@ -275,9 +275,6 @@ public class AuthenticationManager {
    */
   public User loginUserForIdentityService(String email) {
     User user = userService.getUserByEmail(email);
-    if (user != null && user.getSupportAccounts() == null) {
-      userService.loadSupportAccounts(user, Set.of(AccountKeys.uuid));
-    }
     // Null check just in case identity service might accidentally forwarded wrong user to this cluster.
     if (user == null) {
       log.info("User {} doesn't exist in this manager cluster", email);
@@ -302,7 +299,9 @@ public class AuthenticationManager {
         userService.update(user);
       }
     }
-
+    if (user != null && isEmpty(user.getSupportAccounts())) {
+      userService.loadSupportAccounts(user, Set.of(AccountKeys.uuid));
+    }
     return user;
   }
 
