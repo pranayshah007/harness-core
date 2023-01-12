@@ -15,7 +15,7 @@ import static io.harness.beans.DelegateTask.Status.STARTED;
 import static io.harness.beans.DelegateTask.Status.runningStatuses;
 import static io.harness.beans.FeatureName.DEL_SECRET_EVALUATION_VERBOSE_LOGGING;
 import static io.harness.beans.FeatureName.GIT_HOST_CONNECTIVITY;
-import static io.harness.beans.FeatureName.QUEUE_CI_EXECUTIONS;
+import static io.harness.beans.FeatureName.QUEUE_CI_EXECUTIONS_DELEGATE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.SizeFunction.size;
@@ -1990,7 +1990,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
             .collect(Collectors.joining("\n")));
   }
   private void saveDelegateTask(DelegateTask delegateTask, String accountId) {
-    if (featureFlagService.isEnabled(QUEUE_CI_EXECUTIONS, accountId)
+    if (featureFlagService.isEnabled(QUEUE_CI_EXECUTIONS_DELEGATE, accountId)
         && !delegateTaskQueueService.isResourceAvailableToAssignTask(delegateTask)) {
       delegateTaskQueueService.enqueue(delegateTask);
     } else {
