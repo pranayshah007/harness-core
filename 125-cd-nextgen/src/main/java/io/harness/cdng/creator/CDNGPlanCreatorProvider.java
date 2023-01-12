@@ -1106,7 +1106,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
     StepInfo tasRollingDeploy =
         StepInfo.newBuilder()
-            .setName("Tas Rolling Deploy")
+            .setName("Rolling Deploy")
             .setType(StepSpecTypeConstants.TAS_ROLLING_DEPLOY)
             .setStepMetaData(StepMetaData.newBuilder().addCategory(TAS).setFolderPath(TAS).build())
             .setFeatureFlag(FeatureName.CDS_TAS_NG.name())
@@ -1114,7 +1114,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
     StepInfo tasRollingRollback =
         StepInfo.newBuilder()
-            .setName("Tas Rolling Rollback")
+            .setName("Rolling Rollback")
             .setType(StepSpecTypeConstants.TAS_ROLLING_ROLLBACK)
             .setStepMetaData(StepMetaData.newBuilder().addCategory(TAS).setFolderPath(TAS).build())
             .setFeatureFlag(FeatureName.CDS_TAS_NG.name())
