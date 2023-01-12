@@ -51,6 +51,9 @@ public class DelegateServiceCacheImpl implements DelegateServiceCache {
     /* if (taskCache.getCachedMap() != null && taskCache.getCachedMap().get(delegateId) != null) {
        taskCache.getCachedMap().get(delegateId);
      }*/
+    if (taskCache.get(delegateId) != null) {
+      log.info("Get delegate task count from cache {}. ", taskCache.get(delegateId));
+    }
     return taskCache.get(delegateId) != null ? taskCache.get(delegateId) : new AtomicInteger(0);
   }
 
