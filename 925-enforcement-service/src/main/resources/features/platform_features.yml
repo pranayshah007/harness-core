@@ -139,6 +139,23 @@ features:
       ENTERPRISE:
         restrictionType: AVAILABILITY
         enabled: true
+  - name: MULTIPLE_API_TOKENS
+    description: Allow creating multiple variables within an account
+    restrictions:
+      COMMUNITY:
+        restrictionType: STATIC_LIMIT
+        limit: 1
+        clientName: ngmanager
+      FREE:
+        restrictionType: STATIC_LIMIT
+        limit: 1
+        clientName: ngmanager
+      TEAM:
+        restrictionType: AVAILABILITY
+        enabled: true
+      ENTERPRISE:
+        restrictionType: AVAILABILITY
+        enabled: true
   - name: MULTIPLE_CONNECTORS
     description: Allow creating multiple connectors within an account
     restrictions:

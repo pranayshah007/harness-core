@@ -346,4 +346,9 @@ public class TokenServiceImpl implements TokenService {
       return tokenDTO;
     }
   }
+
+  @Override
+  public Long countApiTokens(String accountIdentifier) {
+    return tokenRepository.countByAccountIdentifier(accountIdentifier);
+  }
 }
