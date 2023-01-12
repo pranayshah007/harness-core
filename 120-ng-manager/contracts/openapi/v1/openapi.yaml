@@ -37,7 +37,7 @@ paths:
       operationId: get-service
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
-      description: Retrieves the specified service
+      description: 'Retrieves the specified service'
       security:
         - x-api-key: []
       responses:
@@ -72,12 +72,6 @@ paths:
           $ref: '#/components/responses/ServiceResponse'
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
-        - schema:
-            type: boolean
-            default: 'false'
-          in: query
-          name: forceDelete
-          description: Enable this field to force delete a service
       description: Deletes the requested service
       security:
         - x-api-key: []
@@ -149,9 +143,9 @@ paths:
       operationId: get-org-scoped-service
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
-      description: Retrieves the specified service
+      description: 'Retrieves the specified service'
       security:
-        - x-api-key: []
+        - x-api-key: [ ]
       responses:
         '200':
           $ref: '#/components/responses/ServiceResponse'
@@ -172,7 +166,7 @@ paths:
         $ref: '#/components/requestBodies/ServiceRequest'
       description: Updates the specified service
       security:
-        - x-api-key: []
+        - x-api-key: [ ]
       tags:
         - Org Services
     delete:
@@ -183,16 +177,9 @@ paths:
           $ref: '#/components/responses/ServiceResponse'
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
-        - schema:
-            type: boolean
-            default: 'false'
-          in: query
-          name: forceDelete
-          description: Enable this field to force delete a service
-
       description: Deletes the requested service
       security:
-        - x-api-key: []
+        - x-api-key: [ ]
       tags:
         - Org Services
   '/v1/orgs/{org}/services':
@@ -233,7 +220,7 @@ paths:
         - $ref: '#/components/parameters/AccountHeader'
         - $ref: '#/components/parameters/Order'
       security:
-        - x-api-key: []
+        - x-api-key: [ ]
       description: Returns a list of the services for which you have view permissions in the given project.
       tags:
         - Org Services
@@ -249,7 +236,7 @@ paths:
         $ref: '#/components/requestBodies/ServiceRequest'
       description: Creates a service
       security:
-        - x-api-key: []
+        - x-api-key: [ ]
       tags:
         - Org Services
     parameters:
@@ -260,9 +247,9 @@ paths:
       operationId: get-account-scoped-service
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
-      description: Retrieves the specified service
+      description: 'Retrieves the specified service'
       security:
-        - x-api-key: []
+        - x-api-key: [ ]
       responses:
         '200':
           $ref: '#/components/responses/ServiceResponse'
@@ -282,7 +269,7 @@ paths:
         $ref: '#/components/requestBodies/ServiceRequest'
       description: Updates the specified service
       security:
-        - x-api-key: []
+        - x-api-key: [ ]
       tags:
         - Account Services
     delete:
@@ -293,18 +280,12 @@ paths:
           $ref: '#/components/responses/ServiceResponse'
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
-        - schema:
-            type: boolean
-            default: 'false'
-          in: query
-          name: forceDelete
-          description: Enable this field to force delete a service
       description: Deletes the requested service
       security:
-        - x-api-key: []
+        - x-api-key: [ ]
       tags:
         - Account Services
-  /v1/services:
+  '/v1/services':
     get:
       summary: List services
       responses:
@@ -342,7 +323,7 @@ paths:
         - $ref: '#/components/parameters/AccountHeader'
         - $ref: '#/components/parameters/Order'
       security:
-        - x-api-key: []
+        - x-api-key: [ ]
       description: Returns a list of the services for which you have view permissions in the given project.
       tags:
         - Account Services
@@ -358,7 +339,7 @@ paths:
         $ref: '#/components/requestBodies/ServiceRequest'
       description: Creates a service
       security:
-        - x-api-key: []
+        - x-api-key: [ ]
       tags:
         - Account Services
     parameters: []
