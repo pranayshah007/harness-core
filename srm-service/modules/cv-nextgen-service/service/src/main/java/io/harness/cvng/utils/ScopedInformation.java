@@ -28,6 +28,16 @@ public class ScopedInformation {
     }
   }
 
+  public static String getScopedInformation(String accountId, String orgIdentifier, String projectIdentifier) {
+    Preconditions.checkNotNull(accountId, "accountIdentifier can't be null");
+    if (orgIdentifier == null && projectIdentifier == null) {
+      return "ACCOUNT." + accountId;
+    } else if (projectIdentifier == null) {
+      return "ORG." + accountId + '.' + orgIdentifier;
+    } else {
+      return "PROJECT." + accountId + '.' + orgIdentifier + '.' + projectIdentifier;
+    }
+  }
   public static ResourceParams getResourceParamsFromScopedIdentifier(String scopedIdentifier) {
     String[] splitScopedIdentifier = scopedIdentifier.split("\\.");
     if (splitScopedIdentifier.length == 5 && splitScopedIdentifier[0].equals("PROJECT")) {

@@ -7,8 +7,6 @@
 
 package io.harness.cvng.core.beans.monitoredService.healthSouceSpec;
 
-import static io.harness.cvng.CVConstants.DATA_SOURCE_TYPE;
-
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.core.beans.monitoredService.HealthSource.CVConfigUpdateResult;
 import io.harness.cvng.core.entities.CVConfig;
@@ -17,8 +15,6 @@ import io.harness.data.validator.EntityIdentifier;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import lombok.Data;
@@ -30,29 +26,10 @@ import org.hibernate.validator.constraints.NotEmpty;
 @Data
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-@JsonSubTypes({
-  @JsonSubTypes.Type(value = AppDynamicsHealthSourceSpec.class, name = "AppDynamics")
-  , @JsonSubTypes.Type(value = NewRelicHealthSourceSpec.class, name = "NewRelic"),
-      @JsonSubTypes.Type(value = StackdriverLogHealthSourceSpec.class, name = "StackdriverLog"),
-      @JsonSubTypes.Type(value = SplunkHealthSourceSpec.class, name = "Splunk"),
-      @JsonSubTypes.Type(value = PrometheusHealthSourceSpec.class, name = "Prometheus"),
-      @JsonSubTypes.Type(value = StackdriverMetricHealthSourceSpec.class, name = "Stackdriver"),
-      @JsonSubTypes.Type(value = DatadogMetricHealthSourceSpec.class, name = "DatadogMetrics"),
-      @JsonSubTypes.Type(value = DatadogLogHealthSourceSpec.class, name = "DatadogLog"),
-      @JsonSubTypes.Type(value = DynatraceHealthSourceSpec.class, name = "Dynatrace"),
-      @JsonSubTypes.Type(value = ErrorTrackingHealthSourceSpec.class, name = "ErrorTracking"),
-      @JsonSubTypes.Type(value = CustomHealthSourceMetricSpec.class, name = "CustomHealthMetric"),
-      @JsonSubTypes.Type(value = CustomHealthSourceLogSpec.class, name = "CustomHealthLog"),
-      @JsonSubTypes.Type(value = SplunkMetricHealthSourceSpec.class, name = "SplunkMetric"),
-      @JsonSubTypes.Type(value = ELKHealthSourceSpec.class, name = "ElasticSearch"),
-      @JsonSubTypes.Type(value = CloudWatchMetricsHealthSourceSpec.class, name = "CloudWatchMetrics"),
-      @JsonSubTypes.Type(value = AwsPrometheusHealthSourceSpec.class, name = "AwsPrometheus"),
-      @JsonSubTypes.Type(value = NextGenHealthSourceSpec.class, name = "NextGenHealthSource")
-})
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = DATA_SOURCE_TYPE, include = JsonTypeInfo.As.EXTERNAL_PROPERTY)
 @Schema(name = "HealthSource", description = "This is the Health Source entity defined in Harness")
 public abstract class HealthSourceSpec {
   @NotEmpty @EntityIdentifier(allowScoped = true) String connectorRef;
+
   public abstract CVConfigUpdateResult getCVConfigUpdateResult(String accountId, String orgIdentifier,
       String projectIdentifier, String environmentRef, String serviceRef, String monitoredServiceIdentifier,
       String identifier, String name, List<CVConfig> existingCVConfigs, MetricPackService metricPackService);

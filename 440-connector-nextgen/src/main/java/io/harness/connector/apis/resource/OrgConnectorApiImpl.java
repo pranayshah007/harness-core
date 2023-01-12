@@ -7,8 +7,8 @@
 
 package io.harness.connector.apis.resource;
 
+import static io.harness.NGCommonEntityConstants.DIFFERENT_IDENTIFIER_IN_PAYLOAD_AND_PARAM;
 import static io.harness.NGCommonEntityConstants.DIFFERENT_ORG_IN_PAYLOAD_AND_PARAM;
-import static io.harness.NGCommonEntityConstants.DIFFERENT_SLUG_IN_PAYLOAD_AND_PARAM;
 import static io.harness.NGCommonEntityConstants.ORG_SCOPED_REQUEST_NON_NULL_PROJECT;
 import static io.harness.NGConstants.HARNESS_SECRET_MANAGER_IDENTIFIER;
 import static io.harness.connector.accesscontrol.ConnectorsAccessControlPermissions.DELETE_CONNECTOR_PERMISSION;
@@ -93,7 +93,8 @@ public class OrgConnectorApiImpl implements OrgConnectorApi {
     boolean deleted = connectorService.delete(account, org, null, connector, false);
 
     if (!deleted) {
-      throw new InvalidRequestException(String.format("Connector with slug [%s] could not be deleted", connector));
+      throw new InvalidRequestException(
+          String.format("Connector with identifier [%s] could not be deleted", connector));
     }
     ConnectorResponseDTO responseDTO = connectorResponseDTO.get();
     ConnectorResponse connectorResponse = connectorApiUtils.toConnectorResponse(responseDTO);
@@ -155,8 +156,8 @@ public class OrgConnectorApiImpl implements OrgConnectorApi {
   @Override
   public Response updateOrgScopedConnector(ConnectorRequest connectorRequest, @OrgIdentifier String org,
       @ResourceIdentifier String connector, @AccountIdentifier String account) {
-    if (!Objects.equals(connectorRequest.getConnector().getSlug(), connector)) {
-      throw new InvalidRequestException(DIFFERENT_SLUG_IN_PAYLOAD_AND_PARAM, USER);
+    if (!Objects.equals(connectorRequest.getConnector().getIdentifier(), connector)) {
+      throw new InvalidRequestException(DIFFERENT_IDENTIFIER_IN_PAYLOAD_AND_PARAM, USER);
     }
     if (!Objects.equals(connectorRequest.getConnector().getOrg(), org)) {
       throw new InvalidRequestException(DIFFERENT_ORG_IN_PAYLOAD_AND_PARAM, USER);
@@ -165,7 +166,7 @@ public class OrgConnectorApiImpl implements OrgConnectorApi {
       throw new InvalidRequestException(ORG_SCOPED_REQUEST_NON_NULL_PROJECT, USER);
     }
 
-    if (HARNESS_SECRET_MANAGER_IDENTIFIER.equals(connectorRequest.getConnector().getSlug())) {
+    if (HARNESS_SECRET_MANAGER_IDENTIFIER.equals(connectorRequest.getConnector().getIdentifier())) {
       throw new InvalidRequestException("Update operation not supported for Harness Secret Manager");
     }
     ConnectorDTO connectorDTO = connectorApiUtils.toConnectorDTO(connectorRequest);
@@ -182,7 +183,7 @@ public class OrgConnectorApiImpl implements OrgConnectorApi {
     if (nonNull(request.getConnector().getProject())) {
       throw new InvalidRequestException(ORG_SCOPED_REQUEST_NON_NULL_PROJECT, USER);
     }
-    if (HARNESS_SECRET_MANAGER_IDENTIFIER.equals(request.getConnector().getSlug())) {
+    if (HARNESS_SECRET_MANAGER_IDENTIFIER.equals(request.getConnector().getIdentifier())) {
       throw new InvalidRequestException(
           String.format("%s cannot be used as connector identifier", HARNESS_SECRET_MANAGER_IDENTIFIER), USER);
     }

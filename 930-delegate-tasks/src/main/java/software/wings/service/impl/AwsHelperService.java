@@ -30,7 +30,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
-import io.harness.aws.AwsCallTracker;
+import io.harness.aws.util.AwsCallTracker;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.ExceptionUtils;

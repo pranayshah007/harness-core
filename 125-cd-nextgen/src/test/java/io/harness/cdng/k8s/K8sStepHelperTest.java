@@ -3892,7 +3892,7 @@ public class K8sStepHelperTest extends CategoryTest {
   @Test
   @Owner(developers = PRATYUSH)
   @Category(UnitTests.class)
-  public void shouldHandleCustomManifestValuesFetchResponseForOcTemplate() throws Exception {
+  public void shouldHandleCustomManifestValuesFetchResponseForOcTemplateWithGitStore() throws Exception {
     StepElementParameters rollingStepElementParams =
         StepElementParameters.builder().spec(K8sRollingStepParameters.infoBuilder().build()).build();
     doReturn(
@@ -3953,6 +3953,72 @@ public class K8sStepHelperTest extends CategoryTest {
     assertThat(taskChainResponse.getPassThroughData()).isEqualTo(updatedK8sStepPassThroughData);
     assertThat(taskChainResponse.getTaskRequest().getDelegateTaskRequest().getTaskName())
         .isEqualTo(TaskType.GIT_FETCH_NEXT_GEN_TASK.getDisplayName());
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void shouldHandleCustomManifestValuesFetchResponseForOcTemplate() throws Exception {
+    StepElementParameters rollingStepElementParams =
+        StepElementParameters.builder().spec(K8sRollingStepParameters.infoBuilder().build()).build();
+    K8sDirectInfrastructureOutcome k8sDirectInfrastructureOutcome = K8sDirectInfrastructureOutcome.builder().build();
+    doReturn(
+        Optional.of(ConnectorResponseDTO.builder()
+                        .connector(ConnectorInfoDTO.builder()
+                                       .connectorConfig(
+                                           GitConfigDTO.builder().gitAuthType(GitAuthType.HTTP).url(SOME_URL).build())
+                                       .name("test")
+                                       .build())
+
+                        .build()))
+        .when(connectorService)
+        .get(nullable(String.class), nullable(String.class), nullable(String.class), nullable(String.class));
+
+    StoreConfig store = GitStore.builder().connectorRef(ParameterField.createValueField("connectorRef")).build();
+    OpenshiftManifestOutcome openshiftManifestOutcome =
+        OpenshiftManifestOutcome.builder()
+            .identifier("OpenshiftTemplate")
+            .store(CustomRemoteStoreConfig.builder().build())
+            .paramsPaths(ParameterField.createValueField(asList("path/to/param.yaml")))
+            .build();
+    K8sStepPassThroughData passThroughData = K8sStepPassThroughData.builder()
+                                                 .manifestOutcome(openshiftManifestOutcome)
+                                                 .manifestOutcomeList(null)
+                                                 .infrastructure(k8sDirectInfrastructureOutcome)
+                                                 .shouldOpenFetchFilesStream(true)
+                                                 .build();
+    Map<String, Collection<CustomSourceFile>> valuesFilesContentMap = new HashMap<>();
+    valuesFilesContentMap.put("OpenshiftTemplate",
+        asList(CustomSourceFile.builder().fileContent("param yaml payload").filePath("path/to/param.yaml").build()));
+    UnitProgressData unitProgressData = UnitProgressData.builder().build();
+    CustomManifestValuesFetchResponse customManifestValuesFetchResponse =
+        CustomManifestValuesFetchResponse.builder()
+            .valuesFilesContentMap(valuesFilesContentMap)
+            .zippedManifestFileId("zip")
+            .commandExecutionStatus(SUCCESS)
+            .unitProgressData(unitProgressData)
+            .build();
+
+    Map<String, ResponseData> responseDataMap =
+        ImmutableMap.of("custom-manifest-values-fetch-response", customManifestValuesFetchResponse);
+    ThrowingSupplier responseDataSuplier = StrategyHelper.buildResponseDataSupplier(responseDataMap);
+
+    k8sStepHelper.executeNextLink(
+        k8sStepExecutor, ambiance, rollingStepElementParams, passThroughData, responseDataSuplier);
+
+    ArgumentCaptor<List> valuesFilesContentCaptor = ArgumentCaptor.forClass(List.class);
+    verify(k8sStepExecutor, times(1))
+        .executeK8sTask(eq(openshiftManifestOutcome), eq(ambiance), eq(rollingStepElementParams),
+            valuesFilesContentCaptor.capture(),
+            eq(K8sExecutionPassThroughData.builder()
+                    .infrastructure(k8sDirectInfrastructureOutcome)
+                    .lastActiveUnitProgressData(null)
+                    .zippedManifestId("zip")
+                    .build()),
+            eq(false), eq(null));
+    List<String> valuesFilesContent = valuesFilesContentCaptor.getValue();
+    assertThat(valuesFilesContent).isNotEmpty();
+    assertThat(valuesFilesContent.size()).isEqualTo(1);
   }
 
   private List<KustomizePatchesManifestOutcome> getKustomizePatchesManifestOutcomes(

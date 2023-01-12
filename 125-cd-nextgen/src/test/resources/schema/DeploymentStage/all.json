@@ -916,7 +916,8 @@
               "oneOf": [
                 {
                   "type": "integer",
-                  "format": "int32"
+                  "format": "int32",
+                  "minimum": 0
                 },
                 {
                   "type": "string",
@@ -929,7 +930,9 @@
               "oneOf": [
                 {
                   "type": "integer",
-                  "format": "int32"
+                  "format": "int32",
+                  "minimum": 0,
+                  "maximum": 100
                 },
                 {
                   "type": "string",

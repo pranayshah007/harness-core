@@ -68,7 +68,7 @@ public class StreamingServiceImplTest extends CategoryTest {
   private static final int RANDOM_STRING_CHAR_COUNT_15 = 15;
   private String accountIdentifier;
   private String id;
-  private String slug;
+  private String identifier;
   private String name;
   private StatusEnum statusEnum;
   private String bucket;
@@ -89,7 +89,7 @@ public class StreamingServiceImplTest extends CategoryTest {
 
     accountIdentifier = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10);
     id = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10);
-    slug = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10);
+    identifier = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10);
     name = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_15);
     statusEnum = StatusEnum.values()[RandomUtils.nextInt(0, StatusEnum.values().length - 1)];
     bucket = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10);
@@ -129,8 +129,8 @@ public class StreamingServiceImplTest extends CategoryTest {
     when(streamingDestinationRepository.save(any())).thenThrow(new DuplicateKeyException("duplicate key error"));
 
     expectedException.expect(DuplicateFieldException.class);
-    expectedException.expectMessage(
-        String.format("Streaming destination with identifier [%s] already exists.", streamingDestinationDTO.getSlug()));
+    expectedException.expectMessage(String.format(
+        "Streaming destination with identifier [%s] already exists.", streamingDestinationDTO.getIdentifier()));
 
     streamingService.create(randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10), streamingDestinationDTO);
   }
@@ -169,7 +169,8 @@ public class StreamingServiceImplTest extends CategoryTest {
     when(streamingDestinationRepository.findByAccountIdentifierAndIdentifier(anyString(), anyString()))
         .thenReturn(Optional.of(streamingDestination));
 
-    StreamingDestination savedStreamingDestination = streamingService.getStreamingDestination(accountIdentifier, slug);
+    StreamingDestination savedStreamingDestination =
+        streamingService.getStreamingDestination(accountIdentifier, identifier);
 
     verify(streamingDestinationRepository, times(1)).findByAccountIdentifierAndIdentifier(anyString(), anyString());
 
@@ -184,8 +185,8 @@ public class StreamingServiceImplTest extends CategoryTest {
     when(streamingDestinationRepository.findByAccountIdentifierAndIdentifier(anyString(), anyString()))
         .thenReturn(Optional.empty());
 
-    assertThatThrownBy(() -> streamingService.getStreamingDestination(accountIdentifier, slug))
-        .hasMessage(String.format("Streaming destination with identifier [%s] not found.", slug))
+    assertThatThrownBy(() -> streamingService.getStreamingDestination(accountIdentifier, identifier))
+        .hasMessage(String.format("Streaming destination with identifier [%s] not found.", identifier))
         .isInstanceOf(NoResultFoundException.class);
   }
 
@@ -200,7 +201,7 @@ public class StreamingServiceImplTest extends CategoryTest {
         .thenReturn(Optional.of(streamingDestination));
     when(streamingDestinationRepository.deleteByCriteria(any())).thenReturn(Boolean.TRUE);
 
-    boolean isDeleted = streamingService.delete(accountIdentifier, slug);
+    boolean isDeleted = streamingService.delete(accountIdentifier, identifier);
 
     verify(streamingDestinationRepository, times(1)).findByAccountIdentifierAndIdentifier(anyString(), anyString());
     verify(streamingDestinationRepository, times(1)).deleteByCriteria(criteriaArgumentCaptor.capture());
@@ -219,9 +220,9 @@ public class StreamingServiceImplTest extends CategoryTest {
         .thenReturn(Optional.of(streamingDestination));
     when(streamingDestinationRepository.deleteByCriteria(any())).thenReturn(Boolean.TRUE);
 
-    assertThatThrownBy(() -> streamingService.delete(accountIdentifier, slug))
-        .hasMessage(
-            String.format("Streaming destination with identifier [%s] cannot be deleted because it is active.", slug))
+    assertThatThrownBy(() -> streamingService.delete(accountIdentifier, identifier))
+        .hasMessage(String.format(
+            "Streaming destination with identifier [%s] cannot be deleted because it is active.", identifier))
         .isInstanceOf(InvalidRequestException.class);
 
     verify(streamingDestinationRepository, times(1)).findByAccountIdentifierAndIdentifier(anyString(), anyString());
@@ -253,7 +254,7 @@ public class StreamingServiceImplTest extends CategoryTest {
     when(streamingDestinationRepository.save(any())).thenReturn(newStreamingDestination);
 
     StreamingDestination responseStreamingDestination =
-        streamingService.update(slug, streamingDestinationDTO, accountIdentifier);
+        streamingService.update(identifier, streamingDestinationDTO, accountIdentifier);
 
     verify(streamingDestinationRepository, times(1)).findByAccountIdentifierAndIdentifier(anyString(), anyString());
     verify(streamingDestinationRepository, times(1)).save(any());
@@ -264,18 +265,18 @@ public class StreamingServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = KAPIL)
   @Category(UnitTests.class)
-  public void testUpdateStreamingDestination_withInvalidRequestException_forUnmatchedSlugInApiArgument() {
+  public void testUpdateStreamingDestination_withInvalidRequestException_forUnmatchedIdentifierInApiArgument() {
     StreamingDestinationDTO streamingDestinationDTO = getStreamingDestinationDTO();
-    streamingDestinationDTO.setSlug(slug + " changed");
+    streamingDestinationDTO.setIdentifier(identifier + " changed");
 
     StreamingDestination currentStreamingDestination = getStreamingDestination();
     when(streamingDestinationRepository.findByAccountIdentifierAndIdentifier(anyString(), anyString()))
         .thenReturn(Optional.of(currentStreamingDestination));
 
-    assertThatThrownBy(() -> streamingService.update(slug, streamingDestinationDTO, accountIdentifier))
+    assertThatThrownBy(() -> streamingService.update(identifier, streamingDestinationDTO, accountIdentifier))
         .hasMessage(String.format(
             "Streaming destination with identifier [%s] did not match with StreamingDestinationDTO identifier [%s]",
-            currentStreamingDestination.getIdentifier(), streamingDestinationDTO.getSlug()))
+            currentStreamingDestination.getIdentifier(), streamingDestinationDTO.getIdentifier()))
         .isInstanceOf(InvalidRequestException.class);
 
     verify(streamingDestinationRepository, times(1)).findByAccountIdentifierAndIdentifier(anyString(), anyString());
@@ -293,7 +294,7 @@ public class StreamingServiceImplTest extends CategoryTest {
     when(streamingDestinationRepository.findByAccountIdentifierAndIdentifier(anyString(), anyString()))
         .thenReturn(Optional.of(currentStreamingDestination));
 
-    assertThatThrownBy(() -> streamingService.update(slug, streamingDestinationDTO, accountIdentifier))
+    assertThatThrownBy(() -> streamingService.update(identifier, streamingDestinationDTO, accountIdentifier))
         .hasMessage(String.format(
             "Streaming destination with connectorRef [%s] did not match with StreamingDestinationDTO connectorRef [%s]",
             currentStreamingDestination.getConnectorRef(), streamingDestinationDTO.getConnectorRef()))
@@ -323,7 +324,7 @@ public class StreamingServiceImplTest extends CategoryTest {
         new AwsS3StreamingDestinationSpecDTO().bucket(bucket).type(StreamingDestinationSpecDTO.TypeEnum.AWS_S3);
 
     return new StreamingDestinationDTO()
-        .slug(slug)
+        .identifier(identifier)
         .name(name)
         .status(statusEnum)
         .connectorRef(connectorRef)
@@ -333,7 +334,7 @@ public class StreamingServiceImplTest extends CategoryTest {
   private StreamingDestination getStreamingDestination() {
     StreamingDestination streamingDestination = AwsS3StreamingDestination.builder().bucket(bucket).build();
     streamingDestination.setId(id);
-    streamingDestination.setIdentifier(slug);
+    streamingDestination.setIdentifier(identifier);
     streamingDestination.setName(name);
     streamingDestination.setType(StreamingDestinationSpecDTO.TypeEnum.AWS_S3);
     streamingDestination.setStatus(statusEnum);

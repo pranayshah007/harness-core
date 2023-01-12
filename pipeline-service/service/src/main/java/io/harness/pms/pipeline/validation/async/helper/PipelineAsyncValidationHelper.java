@@ -38,6 +38,9 @@ public class PipelineAsyncValidationHelper {
     Update update = new Update();
     update.set(PipelineValidationEventKeys.status, status);
     update.set(PipelineValidationEventKeys.result, result);
+    if (ValidationStatus.isFinalStatus(status)) {
+      update.set(PipelineValidationEventKeys.endTs, System.currentTimeMillis());
+    }
     return update;
   }
 }

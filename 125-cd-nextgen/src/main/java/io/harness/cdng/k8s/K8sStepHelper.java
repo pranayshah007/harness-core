@@ -743,8 +743,16 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
         }
       }
 
-      return executeOpenShiftParamsTask(
-          ambiance, stepElementParameters, openshiftParamManifestOutcomes, updatedK8sStepPassThroughData);
+      if (shouldExecuteGitFetchTask(openshiftParamManifestOutcomes)
+          || ManifestStoreType.isInGitSubset(k8sManifest.getStore().getKind())) {
+        return executeOpenShiftParamsTask(
+            ambiance, stepElementParameters, openshiftParamManifestOutcomes, updatedK8sStepPassThroughData);
+      } else {
+        LinkedList<ManifestOutcome> orderedParamsManifests = new LinkedList<>(openshiftParamManifestOutcomes);
+        orderedParamsManifests.addFirst(k8sManifest);
+        return executeK8sTask(ambiance, stepElementParameters, k8sStepExecutor, updatedK8sStepPassThroughData,
+            orderedParamsManifests, k8sManifest);
+      }
     }
 
     StoreConfig storeConfig = extractStoreConfigFromManifestOutcome(k8sManifest);

@@ -8,6 +8,7 @@
 package software.wings.graphql.datafetcher.execution;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.beans.FeatureName.SPG_OPTIMIZE_WORKFLOW_EXECUTIONS_LISTING_GRAPHQL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.HarnessModule;
@@ -18,12 +19,24 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 
+import software.wings.beans.Application;
 import software.wings.beans.EntityType;
+import software.wings.beans.Environment;
+import software.wings.beans.Environment.EnvironmentKeys;
+import software.wings.beans.Pipeline;
+import software.wings.beans.Service;
+import software.wings.beans.Service.ServiceKeys;
+import software.wings.beans.Workflow;
+import software.wings.beans.Workflow.WorkflowKeys;
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
+import software.wings.beans.trigger.Trigger;
+import software.wings.beans.trigger.Trigger.TriggerKeys;
+import software.wings.dl.WingsMongoPersistence;
 import software.wings.graphql.datafetcher.DataFetcherUtils;
 import software.wings.graphql.datafetcher.tag.TagHelper;
 import software.wings.graphql.schema.type.aggregation.QLIdFilter;
+import software.wings.graphql.schema.type.aggregation.QLIdOperator;
 import software.wings.graphql.schema.type.aggregation.QLNumberFilter;
 import software.wings.graphql.schema.type.aggregation.QLTimeFilter;
 import software.wings.graphql.schema.type.aggregation.deployment.QLDeploymentTagFilter;
@@ -36,7 +49,10 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import dev.morphia.query.FieldEnd;
 import dev.morphia.query.Query;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -48,7 +64,11 @@ import lombok.extern.slf4j.Slf4j;
 public class ExecutionQueryHelper {
   @Inject protected DataFetcherUtils utils;
   @Inject protected TagHelper tagHelper;
+  @Inject protected WingsMongoPersistence wingsMongoPersistence;
+
   @Inject protected FeatureFlagService featureFlagService;
+
+  private static final List<QLIdOperator> optimizableOperators = ImmutableList.of(QLIdOperator.EQUALS, QLIdOperator.IN);
 
   public static List<String> nonRequiredFields = ImmutableList.of(WorkflowExecutionKeys.pipelineResumeId,
       WorkflowExecutionKeys.message, WorkflowExecutionKeys.name, WorkflowExecutionKeys.appName,
@@ -64,6 +84,7 @@ public class ExecutionQueryHelper {
     if (isEmpty(filters)) {
       return;
     }
+    Map<Class, QLIdFilter> entityMap = new HashMap<>();
 
     filters.forEach(filter -> {
       FieldEnd<? extends Query<WorkflowExecution>> field;
@@ -78,6 +99,7 @@ public class ExecutionQueryHelper {
         field = query.field(WorkflowExecutionKeys.appId);
         QLIdFilter idFilter = filter.getApplication();
         utils.setIdFilter(field, idFilter);
+        entityMap.put(Application.class, idFilter);
       }
 
       if (filter.getCloudProvider() != null) {
@@ -102,24 +124,32 @@ public class ExecutionQueryHelper {
         field = query.field(WorkflowExecutionKeys.deployedEnvironments + ".uuid");
         QLIdFilter idFilter = filter.getEnvironment();
         utils.setIdFilter(field, idFilter);
+        field = query.field(WorkflowExecutionKeys.envIds);
+        utils.setIdFilter(field, idFilter);
+        entityMap.put(Environment.class, idFilter);
       }
 
       if (filter.getPipeline() != null) {
         field = query.field(WorkflowExecutionKeys.workflowId);
         QLIdFilter idFilter = filter.getPipeline();
         utils.setIdFilter(field, idFilter);
+        entityMap.put(Pipeline.class, idFilter);
       }
 
       if (filter.getWorkflow() != null) {
         field = query.field(WorkflowExecutionKeys.workflowId);
         QLIdFilter idFilter = filter.getWorkflow();
         utils.setIdFilter(field, idFilter);
+        entityMap.put(Workflow.class, idFilter);
       }
 
       if (filter.getService() != null) {
         field = query.field(WorkflowExecutionKeys.deployedServices);
         QLIdFilter idFilter = filter.getService();
         utils.setIdFilter(field, idFilter);
+        field = query.field(WorkflowExecutionKeys.serviceIds);
+        utils.setIdFilter(field, idFilter);
+        entityMap.put(Service.class, idFilter);
       }
 
       if (filter.getStartTime() != null) {
@@ -138,6 +168,7 @@ public class ExecutionQueryHelper {
         field = query.field(WorkflowExecutionKeys.deploymentTriggerId);
         QLIdFilter idFilter = filter.getTrigger();
         utils.setIdFilter(field, idFilter);
+        entityMap.put(Trigger.class, idFilter);
       }
 
       if (filter.getTriggeredBy() != null) {
@@ -155,6 +186,11 @@ public class ExecutionQueryHelper {
       if (filter.getApplicationId() != null) {
         field = query.field(WorkflowExecutionKeys.appId);
         field.equal(filter.getApplicationId());
+        entityMap.put(Application.class,
+            QLIdFilter.builder()
+                .values(new String[] {filter.getApplicationId()})
+                .operator(QLIdOperator.EQUALS)
+                .build());
       }
 
       if (filter.getTag() != null) {
@@ -197,6 +233,109 @@ public class ExecutionQueryHelper {
         utils.setIdFilter(field, helmChartVersionFilter);
       }
     });
+
+    if (featureFlagService.isEnabled(SPG_OPTIMIZE_WORKFLOW_EXECUTIONS_LISTING_GRAPHQL, accountId)) {
+      optimizeQuery(query, entityMap);
+    }
+  }
+
+  private void optimizeQuery(Query<WorkflowExecution> query, Map<Class, QLIdFilter> entityMap) {
+    QLIdFilter appIdFilter = entityMap.get(Application.class);
+
+    if (appIdFilter == null || appIdFilter.getOperator() != QLIdOperator.EQUALS) {
+      entityMap.forEach((klass, filter) -> {
+        if (!optimizableOperators.contains(filter.getOperator())) {
+          return;
+        }
+
+        if (klass == Environment.class) {
+          optimizeForEnvironment(query, filter);
+        } else if (klass == Service.class) {
+          optimizeForService(query, filter);
+        } else if (klass == Pipeline.class) {
+          optimizeForPipeline(query, filter);
+        } else if (klass == Workflow.class) {
+          optimizeForWorkflow(query, filter);
+        } else if (klass == Trigger.class) {
+          optimizeForTrigger(query, filter);
+        }
+      });
+    }
+  }
+
+  private void optimizeForTrigger(Query<WorkflowExecution> query, QLIdFilter filter) {
+    final FieldEnd<? extends Query<WorkflowExecution>> appField = query.field(WorkflowExecutionKeys.appId);
+    Set<String> appIds = new HashSet<>();
+    Query<Trigger> triggerQuery =
+        wingsMongoPersistence.createAnalyticsQuery(Trigger.class).project(TriggerKeys.appId, true);
+    final FieldEnd<? extends Query<?>> field = triggerQuery.field(TriggerKeys.uuid);
+    utils.setIdFilter(field, filter);
+    for (Trigger trigger : triggerQuery.asList()) {
+      appIds.add(trigger.getAppId());
+    }
+    final QLIdFilter newAppFilter =
+        QLIdFilter.builder().values(appIds.toArray(new String[0])).operator(filter.getOperator()).build();
+    utils.setIdFilter(appField, newAppFilter);
+  }
+
+  private void optimizeForPipeline(Query<WorkflowExecution> query, QLIdFilter filter) {
+    final FieldEnd<? extends Query<WorkflowExecution>> appField = query.field(WorkflowExecutionKeys.appId);
+    Set<String> appIds = new HashSet<>();
+    Query<Pipeline> pipelineQuery =
+        wingsMongoPersistence.createAnalyticsQuery(Pipeline.class).project(WorkflowKeys.appId, true);
+    final FieldEnd<? extends Query<?>> field = pipelineQuery.field(WorkflowKeys.uuid);
+    utils.setIdFilter(field, filter);
+    for (Pipeline pipeline : pipelineQuery.asList()) {
+      appIds.add(pipeline.getAppId());
+    }
+    final QLIdFilter newAppFilter =
+        QLIdFilter.builder().values(appIds.toArray(new String[0])).operator(filter.getOperator()).build();
+    utils.setIdFilter(appField, newAppFilter);
+  }
+
+  private void optimizeForWorkflow(Query<WorkflowExecution> query, QLIdFilter filter) {
+    final FieldEnd<? extends Query<WorkflowExecution>> appField = query.field(WorkflowExecutionKeys.appId);
+    Set<String> appIds = new HashSet<>();
+    Query<Workflow> workflowQuery =
+        wingsMongoPersistence.createAnalyticsQuery(Workflow.class).project(WorkflowKeys.appId, true);
+    final FieldEnd<? extends Query<?>> field = workflowQuery.field(WorkflowKeys.uuid);
+    utils.setIdFilter(field, filter);
+    for (Workflow workflow : workflowQuery.asList()) {
+      appIds.add(workflow.getAppId());
+    }
+    final QLIdFilter newAppFilter =
+        QLIdFilter.builder().values(appIds.toArray(new String[0])).operator(filter.getOperator()).build();
+    utils.setIdFilter(appField, newAppFilter);
+  }
+
+  private void optimizeForEnvironment(Query<WorkflowExecution> query, QLIdFilter filter) {
+    final FieldEnd<? extends Query<WorkflowExecution>> appField = query.field(WorkflowExecutionKeys.appId);
+    Set<String> appIds = new HashSet<>();
+    Query<Environment> envQuery =
+        wingsMongoPersistence.createAnalyticsQuery(Environment.class).project(EnvironmentKeys.appId, true);
+    final FieldEnd<? extends Query<?>> field = envQuery.field(EnvironmentKeys.uuid);
+    utils.setIdFilter(field, filter);
+    for (Environment environment : envQuery.asList()) {
+      appIds.add(environment.getAppId());
+    }
+    final QLIdFilter newAppFilter =
+        QLIdFilter.builder().values(appIds.toArray(new String[0])).operator(filter.getOperator()).build();
+    utils.setIdFilter(appField, newAppFilter);
+  }
+
+  private void optimizeForService(Query<WorkflowExecution> query, QLIdFilter filter) {
+    final FieldEnd<? extends Query<WorkflowExecution>> appField = query.field(WorkflowExecutionKeys.appId);
+    Set<String> appIds = new HashSet<>();
+    Query<Service> serviceQuery =
+        wingsMongoPersistence.createAnalyticsQuery(Service.class).project(ServiceKeys.appId, true);
+    final FieldEnd<? extends Query<?>> field = serviceQuery.field(EnvironmentKeys.uuid);
+    utils.setIdFilter(field, filter);
+    for (Service service : serviceQuery.asList()) {
+      appIds.add(service.getAppId());
+    }
+    final QLIdFilter newAppFilter =
+        QLIdFilter.builder().values(appIds.toArray(new String[0])).operator(filter.getOperator()).build();
+    utils.setIdFilter(appField, newAppFilter);
   }
 
   public void setQuery(List<QLExecutionFilter> filters, Query query, String accountId) {

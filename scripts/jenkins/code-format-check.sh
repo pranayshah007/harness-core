@@ -59,13 +59,48 @@ validate_proto() {
   fi
 }
 
+function check_graphql_files() {
+  GRAPHQL_FILES=($(git diff --name-only $BASE_SHA..$COMMIT_SHA | grep '\.graphql$' | xargs))
+
+  if [ ${#GRAPHQL_FILES[@]} -ge 1 ]; then
+    for file in ${GRAPHQL_FILES[@]}; do
+      if [ -f $file ]; then
+        prettier --write --print-width=120 $file
+      fi
+    done
+  else
+    echo "No graphql file in your branch"
+
+  fi
+
+}
+
+function check_java_and_proto_files() {
+  FILES=($(git diff --name-only $BASE_SHA..$COMMIT_SHA | grep "$1" | xargs))
+
+  if [ ${#FILES[@]} -ge 1 ]; then
+    for file in ${FILES[@]}; do
+      if [ -f $file ]; then
+        clang-format -i $file
+      fi
+    done
+  else
+    echo "No $1 file in your branch"
+  fi
+
+}
+
 #echo "Running Sort Pom"
 #executeWithRetry 'sortpom:sort'
 #echo "Sort Pom Completed"
+echo "checking graphql files ...."
+check_graphql_files
 
-find . -iname "*.graphql" | xargs -L 1 prettier --write --print-width=120
+echo "checking java files..."
+check_java_and_proto_files  "\.java$"
 
-find . \( -iname "*.java" -o -iname "*.proto" \) | xargs clang-format -i
+echo "checking proto files..."
+check_java_and_proto_files  "\.proto$"
 
 bazel run //:buildifier
 

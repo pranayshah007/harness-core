@@ -177,13 +177,13 @@ public abstract class AbstractServicesApiImpl {
   public Response updateServiceEntity(
       ServiceRequest serviceRequest, String org, String project, String service, String account) {
     throwExceptionForNoRequestDTO(serviceRequest);
-    if (!service.equals(serviceRequest.getSlug())) {
+    if (!service.equals(serviceRequest.getIdentifier())) {
       throw new InvalidRequestException(
           String.format("Identifier passed in request body: [%s] does not match resource identifier: [%s]",
-              serviceRequest.getSlug(), service));
+              serviceRequest.getIdentifier(), service));
     }
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(account, org, project),
-        Resource.of(NGResourceType.SERVICE, serviceRequest.getSlug()), SERVICE_UPDATE_PERMISSION);
+        Resource.of(NGResourceType.SERVICE, serviceRequest.getIdentifier()), SERVICE_UPDATE_PERMISSION);
     serviceSchemaHelper.validateSchema(account, serviceRequest.getYaml());
     ServiceEntity requestService = serviceResourceApiUtils.mapToServiceEntity(serviceRequest, org, project, account);
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
@@ -207,7 +207,7 @@ public abstract class AbstractServicesApiImpl {
       AccessControlDTO accessControlDTO = accessControlList.get(i);
       ServiceResponse serviceResponse = serviceList.get(i);
       if (accessControlDTO.isPermitted()
-          && serviceResponse.getService().getSlug().equals(accessControlDTO.getResourceIdentifier())) {
+          && serviceResponse.getService().getIdentifier().equals(accessControlDTO.getResourceIdentifier())) {
         filteredAccessControlDtoList.add(serviceResponse);
       }
     }

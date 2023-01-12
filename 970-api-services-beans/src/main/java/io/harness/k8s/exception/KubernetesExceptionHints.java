@@ -99,4 +99,5 @@ public class KubernetesExceptionHints {
   public final String INVALID_VALUES_YAML = "Please check if the given values yaml file(s) are valid YAMLs.";
   public final String BASE_64_ENCODED_CHECK =
       "If you have certs/secrets which are referenced in templates or values.yaml file(s), ensure that these secrets are base64 encoded";
+  public final String INVALID_TEMPLATE_PATH = "Please check if the given openshift template file are valid";
 }

@@ -37,7 +37,8 @@ public class PreFlightRepositoryCustomImpl implements PreFlightRepositoryCustom 
     Update update = new Update();
     update.set(PreFlightEntityKeys.connectorCheckResponse, entity.getConnectorCheckResponse());
     update.set(PreFlightEntityKeys.pipelineInputResponse, entity.getPipelineInputResponse());
-    RetryPolicy<Object> retryPolicy = getRetryPolicy();
+    RetryPolicy<Object> retryPolicy = getRetryPolicy("[Retrying]: Failed updating PreflightEntity; attempt: {}",
+        "[Failed]: Failed updating PreflightEntity; attempt: {}");
     return Failsafe.with(retryPolicy)
         .get(()
                  -> mongoTemplate.findAndModify(
@@ -47,15 +48,22 @@ public class PreFlightRepositoryCustomImpl implements PreFlightRepositoryCustom 
   @Override
   public PreFlightEntity update(Criteria criteria, Update update) {
     Query query = new Query(criteria);
-    RetryPolicy<Object> retryPolicy = getRetryPolicy();
+    RetryPolicy<Object> retryPolicy = getRetryPolicy("[Retrying]: Failed updating PreflightEntity; attempt: {}",
+        "[Failed]: Failed updating PreflightEntity; attempt: {}");
     return Failsafe.with(retryPolicy)
         .get(()
                  -> mongoTemplate.findAndModify(
                      query, update, new FindAndModifyOptions().returnNew(true), PreFlightEntity.class));
   }
 
-  private RetryPolicy<Object> getRetryPolicy() {
-    return PersistenceUtils.getRetryPolicy(
-        "[Retrying]: Failed updating Service; attempt: {}", "[Failed]: Failed updating Service; attempt: {}");
+  @Override
+  public void deleteAllPreflightForGivenParams(Query query) {
+    RetryPolicy<Object> retryPolicy = getRetryPolicy("[Retrying]: Failed deleting PreflightEntity; attempt: {}",
+        "[Failed]: Failed deleting PreflightEntity; attempt: {}");
+    Failsafe.with(retryPolicy).get(() -> mongoTemplate.remove(query, PreFlightEntity.class));
+  }
+
+  private RetryPolicy<Object> getRetryPolicy(String failedAttemptMessage, String failureMessage) {
+    return PersistenceUtils.getRetryPolicy(failedAttemptMessage, failureMessage);
   }
 }

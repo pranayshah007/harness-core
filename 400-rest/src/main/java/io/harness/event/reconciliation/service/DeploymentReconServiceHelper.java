@@ -11,6 +11,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.time.Duration.ofMinutes;
 
+import io.harness.beans.FeatureName;
 import io.harness.datacollection.utils.EmptyPredicate;
 import io.harness.event.reconciliation.DetectionStatus;
 import io.harness.event.reconciliation.ReconcilationAction;
@@ -18,6 +19,7 @@ import io.harness.event.reconciliation.ReconciliationStatus;
 import io.harness.event.reconciliation.deployment.DeploymentReconRecord;
 import io.harness.event.reconciliation.deployment.DeploymentReconRecord.DeploymentReconRecordKeys;
 import io.harness.event.reconciliation.deployment.DeploymentReconRecordRepository;
+import io.harness.ff.FeatureFlagService;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
 import io.harness.persistence.HPersistence;
@@ -121,7 +123,8 @@ public class DeploymentReconServiceHelper {
   public static ReconciliationStatus performReconciliationHelper(String accountId, long durationStartTs,
       long durationEndTs, TimeScaleDBService timeScaleDBService,
       DeploymentReconRecordRepository deploymentReconRecordRepository, HPersistence persistence,
-      PersistentLocker persistentLocker, DataFetcherUtils utils, ExecutionEntity executionEntity) {
+      PersistentLocker persistentLocker, DataFetcherUtils utils, ExecutionEntity executionEntity,
+      FeatureFlagService featureFlagService) {
     String sourceEntityClass = executionEntity.getSourceEntityClass().getCanonicalName();
 
     if (!timeScaleDBService.isValid()) {
@@ -166,78 +169,9 @@ public class DeploymentReconServiceHelper {
             accountId, id);
         record = fetchRecord(id, persistence);
 
-        boolean duplicatesDetected = false;
-        boolean missingRecordsDetected = false;
-        boolean statusMismatchDetected;
-
-        List<String> executionIDs = checkForDuplicates(accountId, durationStartTs, durationEndTs, timeScaleDBService,
-            executionEntity.getDuplicatesQuery(), utils, sourceEntityClass);
-        if (isNotEmpty(executionIDs)) {
-          duplicatesDetected = true;
-          log.warn("Duplicates detected for entity: [{}] accountId:[{}] in duration:[{}-{}], executionIDs:[{}]",
-              sourceEntityClass, accountId, new Date(durationStartTs), new Date(durationEndTs), executionIDs);
-          deleteDuplicates(accountId, durationStartTs, durationEndTs, executionIDs, timeScaleDBService,
-              executionEntity.getDeleteSetQuery(), sourceEntityClass);
-        }
-
-        long primaryCount =
-            executionEntity.getReconService().getWFExecCountFromMongoDB(accountId, durationStartTs, durationEndTs);
-        long secondaryCount = getWFExecutionCountFromTSDB(accountId, durationStartTs, durationEndTs, timeScaleDBService,
-            executionEntity.getEntityCountQuery(), utils, sourceEntityClass);
-        if (primaryCount > secondaryCount) {
-          missingRecordsDetected = true;
-          executionEntity.getReconService().insertMissingRecords(accountId, durationStartTs, durationEndTs);
-        } else if (primaryCount == secondaryCount) {
-          log.info("Everything is fine, no action required for entity: [{}] accountID:[{}] in duration:[{}-{}]",
-              sourceEntityClass, accountId, new Date(durationStartTs), new Date(durationEndTs));
-        } else {
-          log.error("Duplicates found again for entity: [{}] accountID:[{}] in duration:[{}-{}]", sourceEntityClass,
-              accountId, new Date(durationStartTs), new Date(durationEndTs));
-        }
-
-        Map<String, String> tsdbRunningWFs = getRunningWFsFromTSDB(accountId, durationStartTs, durationEndTs,
-            timeScaleDBService, executionEntity.getRunningExecutionQuery(), sourceEntityClass);
-        statusMismatchDetected = executionEntity.getReconService().isStatusMismatchedAndUpdated(tsdbRunningWFs);
-
-        DetectionStatus detectionStatus;
-        ReconcilationAction action;
-
-        if (!statusMismatchDetected) {
-          if (missingRecordsDetected && duplicatesDetected) {
-            detectionStatus = DetectionStatus.DUPLICATE_DETECTED_MISSING_RECORDS_DETECTED;
-            action = ReconcilationAction.DUPLICATE_REMOVAL_ADD_MISSING_RECORDS;
-          } else if (duplicatesDetected) {
-            detectionStatus = DetectionStatus.DUPLICATE_DETECTED;
-            action = ReconcilationAction.DUPLICATE_REMOVAL;
-          } else if (missingRecordsDetected) {
-            detectionStatus = DetectionStatus.MISSING_RECORDS_DETECTED;
-            action = ReconcilationAction.ADD_MISSING_RECORDS;
-          } else {
-            detectionStatus = DetectionStatus.SUCCESS;
-            action = ReconcilationAction.NONE;
-          }
-        } else {
-          if (missingRecordsDetected && duplicatesDetected) {
-            detectionStatus = DetectionStatus.DUPLICATE_DETECTED_MISSING_RECORDS_DETECTED_STATUS_MISMATCH_DETECTED;
-            action = ReconcilationAction.DUPLICATE_REMOVAL_ADD_MISSING_RECORDS_STATUS_RECONCILIATION;
-          } else if (duplicatesDetected) {
-            detectionStatus = DetectionStatus.DUPLICATE_DETECTED_STATUS_MISMATCH_DETECTED;
-            action = ReconcilationAction.DUPLICATE_REMOVAL_STATUS_RECONCILIATION;
-          } else if (missingRecordsDetected) {
-            detectionStatus = DetectionStatus.MISSING_RECORDS_DETECTED_STATUS_MISMATCH_DETECTED;
-            action = ReconcilationAction.ADD_MISSING_RECORDS_STATUS_RECONCILIATION;
-          } else {
-            detectionStatus = DetectionStatus.STATUS_MISMATCH_DETECTED;
-            action = ReconcilationAction.STATUS_RECONCILIATION;
-          }
-        }
-
-        UpdateOperations updateOperations = persistence.createUpdateOperations(DeploymentReconRecord.class);
-        updateOperations.set(DeploymentReconRecordKeys.detectionStatus, detectionStatus);
-        updateOperations.set(DeploymentReconRecordKeys.reconciliationStatus, ReconciliationStatus.SUCCESS);
-        updateOperations.set(DeploymentReconRecordKeys.reconcilationAction, action);
-        updateOperations.set(DeploymentReconRecordKeys.reconEndTs, System.currentTimeMillis());
-        deploymentReconRecordRepository.updateDeploymentReconRecord(record, updateOperations);
+        performReconciliationLogic(record, accountId, durationStartTs, durationEndTs, timeScaleDBService,
+            sourceEntityClass, deploymentReconRecordRepository, persistence, utils, executionEntity,
+            featureFlagService);
 
       } catch (Exception e) {
         log.error("Exception occurred while running reconciliation for entity: [{}] accountID:[{}] in duration:[{}-{}]",
@@ -258,6 +192,89 @@ public class DeploymentReconServiceHelper {
     return ReconciliationStatus.SUCCESS;
   }
 
+  private static void performReconciliationLogic(DeploymentReconRecord record, String accountId, long durationStartTs,
+      long durationEndTs, TimeScaleDBService timeScaleDBService, String sourceEntityClass,
+      DeploymentReconRecordRepository deploymentReconRecordRepository, HPersistence persistence, DataFetcherUtils utils,
+      ExecutionEntity executionEntity, FeatureFlagService featureFlagService) {
+    boolean duplicatesDetected = false;
+    boolean missingRecordsDetected = false;
+    boolean statusMismatchDetected;
+
+    List<String> executionIDs = checkForDuplicates(accountId, durationStartTs, durationEndTs, timeScaleDBService,
+        executionEntity.getDuplicatesQuery(), utils, sourceEntityClass);
+    if (isNotEmpty(executionIDs)) {
+      duplicatesDetected = true;
+      log.warn("Duplicates detected for entity: [{}] accountId:[{}] in duration:[{}-{}], executionIDs:[{}]",
+          sourceEntityClass, accountId, new Date(durationStartTs), new Date(durationEndTs), executionIDs);
+      deleteDuplicates(accountId, durationStartTs, durationEndTs, executionIDs, timeScaleDBService,
+          executionEntity.getDeleteSetQuery(), sourceEntityClass);
+    }
+
+    long primaryCount =
+        executionEntity.getReconService().getWFExecCountFromMongoDB(accountId, durationStartTs, durationEndTs);
+    long secondaryCount = getWFExecutionCountFromTSDB(accountId, durationStartTs, durationEndTs, timeScaleDBService,
+        executionEntity.getEntityCountQuery(), utils, sourceEntityClass);
+    if (primaryCount > secondaryCount) {
+      missingRecordsDetected = true;
+      executionEntity.getReconService().insertMissingRecords(accountId, durationStartTs, durationEndTs);
+    } else if (primaryCount == secondaryCount) {
+      log.info("Everything is fine, no action required for entity: [{}] accountID:[{}] in duration:[{}-{}]",
+          sourceEntityClass, accountId, new Date(durationStartTs), new Date(durationEndTs));
+    } else {
+      log.error("Duplicates found again for entity: [{}] accountID:[{}] in duration:[{}-{}]", sourceEntityClass,
+          accountId, new Date(durationStartTs), new Date(durationEndTs));
+    }
+
+    if (featureFlagService.isEnabled(FeatureName.DEPLOYMENT_RECONCILIATION_LOGIC_QUERY_OPTIMIZATIONS, accountId)) {
+      statusMismatchDetected = executionEntity.getReconService().isStatusMismatchedAndUpdatedV2(accountId,
+          durationStartTs, durationEndTs, executionEntity.getSourceEntityClass().getCanonicalName(),
+          executionEntity.getCompletedExecutionsQuery(), utils);
+    } else {
+      Map<String, String> tsdbRunningWFs = getRunningWFsFromTSDB(accountId, durationStartTs, durationEndTs,
+          timeScaleDBService, executionEntity.getRunningExecutionQuery(), sourceEntityClass);
+      statusMismatchDetected = executionEntity.getReconService().isStatusMismatchedAndUpdated(tsdbRunningWFs);
+    }
+
+    DetectionStatus detectionStatus;
+    ReconcilationAction action;
+
+    if (!statusMismatchDetected) {
+      if (missingRecordsDetected && duplicatesDetected) {
+        detectionStatus = DetectionStatus.DUPLICATE_DETECTED_MISSING_RECORDS_DETECTED;
+        action = ReconcilationAction.DUPLICATE_REMOVAL_ADD_MISSING_RECORDS;
+      } else if (duplicatesDetected) {
+        detectionStatus = DetectionStatus.DUPLICATE_DETECTED;
+        action = ReconcilationAction.DUPLICATE_REMOVAL;
+      } else if (missingRecordsDetected) {
+        detectionStatus = DetectionStatus.MISSING_RECORDS_DETECTED;
+        action = ReconcilationAction.ADD_MISSING_RECORDS;
+      } else {
+        detectionStatus = DetectionStatus.SUCCESS;
+        action = ReconcilationAction.NONE;
+      }
+    } else {
+      if (missingRecordsDetected && duplicatesDetected) {
+        detectionStatus = DetectionStatus.DUPLICATE_DETECTED_MISSING_RECORDS_DETECTED_STATUS_MISMATCH_DETECTED;
+        action = ReconcilationAction.DUPLICATE_REMOVAL_ADD_MISSING_RECORDS_STATUS_RECONCILIATION;
+      } else if (duplicatesDetected) {
+        detectionStatus = DetectionStatus.DUPLICATE_DETECTED_STATUS_MISMATCH_DETECTED;
+        action = ReconcilationAction.DUPLICATE_REMOVAL_STATUS_RECONCILIATION;
+      } else if (missingRecordsDetected) {
+        detectionStatus = DetectionStatus.MISSING_RECORDS_DETECTED_STATUS_MISMATCH_DETECTED;
+        action = ReconcilationAction.ADD_MISSING_RECORDS_STATUS_RECONCILIATION;
+      } else {
+        detectionStatus = DetectionStatus.STATUS_MISMATCH_DETECTED;
+        action = ReconcilationAction.STATUS_RECONCILIATION;
+      }
+    }
+
+    UpdateOperations updateOperations = persistence.createUpdateOperations(DeploymentReconRecord.class);
+    updateOperations.set(DeploymentReconRecordKeys.detectionStatus, detectionStatus);
+    updateOperations.set(DeploymentReconRecordKeys.reconciliationStatus, ReconciliationStatus.SUCCESS);
+    updateOperations.set(DeploymentReconRecordKeys.reconcilationAction, action);
+    updateOperations.set(DeploymentReconRecordKeys.reconEndTs, System.currentTimeMillis());
+    deploymentReconRecordRepository.updateDeploymentReconRecord(record, updateOperations);
+  }
   public static DeploymentReconRecord fetchRecord(String uuid, HPersistence persistence) {
     return persistence.get(DeploymentReconRecord.class, uuid);
   }
@@ -372,5 +389,33 @@ public class DeploymentReconServiceHelper {
       }
     }
     return runningWFs;
+  }
+
+  public static long getCompletedExecutionsFromTSDB(String accountId, long durationStartTs, long durationEndTs,
+      TimeScaleDBService timeScaleDBService, String sourceEntityClass, String query, DataFetcherUtils utils) {
+    int totalTries = 0;
+    while (totalTries <= 3) {
+      ResultSet resultSet = null;
+      try (Connection connection = timeScaleDBService.getDBConnection();
+           PreparedStatement statement = connection.prepareStatement(query)) {
+        statement.setString(1, accountId);
+        statement.setTimestamp(2, new Timestamp(durationStartTs), utils.getDefaultCalendar());
+        statement.setTimestamp(3, new Timestamp(durationEndTs), utils.getDefaultCalendar());
+        resultSet = statement.executeQuery();
+        if (resultSet.next()) {
+          return resultSet.getLong(1);
+        } else {
+          return 0;
+        }
+      } catch (SQLException ex) {
+        totalTries++;
+        log.warn(
+            "Failed to retrieve completed executions from TimeScaleDB for entity: [{}] accountID:[{}] in duration:[{}-{}], totalTries:[{}]",
+            sourceEntityClass, accountId, new Date(durationStartTs), new Date(durationEndTs), totalTries, ex);
+      } finally {
+        DBUtils.close(resultSet);
+      }
+    }
+    return 0;
   }
 }

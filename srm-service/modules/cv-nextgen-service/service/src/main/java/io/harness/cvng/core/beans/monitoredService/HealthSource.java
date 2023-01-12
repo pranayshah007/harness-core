@@ -10,13 +10,17 @@ package io.harness.cvng.core.beans.monitoredService;
 import static io.harness.cvng.CVConstants.DATA_SOURCE_TYPE;
 
 import io.harness.cvng.beans.MonitoredServiceDataSourceType;
+import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.HealthSourceDeserializer;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.HealthSourceSpec;
+import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.HealthSourceVersion;
+import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.NextGenHealthSourceSpec;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.data.validator.EntityIdentifier;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.ArrayList;
@@ -28,6 +32,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.Value;
 import lombok.experimental.FieldDefaults;
+import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.NotEmpty;
 
 @Data
@@ -35,13 +40,16 @@ import org.hibernate.validator.constraints.NotEmpty;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
 @Schema
+@JsonDeserialize(using = HealthSourceDeserializer.class)
+@JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
+@FieldNameConstants
 public class HealthSource {
   @NotEmpty String name;
   @NotEmpty @EntityIdentifier String identifier;
   @JsonProperty(DATA_SOURCE_TYPE) MonitoredServiceDataSourceType type;
 
-  @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = DATA_SOURCE_TYPE, include = JsonTypeInfo.As.EXTERNAL_PROPERTY,
-      visible = true)
+  HealthSourceVersion version;
+
   @Valid
   @NotNull
   @ApiModelProperty(
@@ -54,5 +62,12 @@ public class HealthSource {
     @Builder.Default List<CVConfig> updated = new ArrayList<>();
     @Builder.Default List<CVConfig> deleted = new ArrayList<>();
     @Builder.Default List<CVConfig> added = new ArrayList<>();
+  }
+
+  public HealthSourceVersion getVersion() {
+    if (spec instanceof NextGenHealthSourceSpec) {
+      return HealthSourceVersion.V2;
+    }
+    return version;
   }
 }

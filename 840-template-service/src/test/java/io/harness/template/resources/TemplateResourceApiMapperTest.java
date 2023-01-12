@@ -137,7 +137,7 @@ public class TemplateResourceApiMapperTest extends CategoryTest {
     assertEquals("Stage", templateMetadataSummaryResponse.getEntityType().toString());
     assertEquals("INLINE", templateMetadataSummaryResponse.getStoreType().toString());
     assertEquals("project", templateMetadataSummaryResponse.getScope().toString());
-    assertEquals(OBJECT_ID, templateMetadataSummaryResponse.getSlug());
+    assertEquals(OBJECT_ID, templateMetadataSummaryResponse.getIdentifier());
     assertEquals(true, templateMetadataSummaryResponse.isStableTemplate().booleanValue());
     assertEquals(123456789L, templateMetadataSummaryResponse.getUpdated().longValue());
     assertEquals(versionLabel, templateMetadataSummaryResponse.getVersionLabel());
@@ -188,7 +188,7 @@ public class TemplateResourceApiMapperTest extends CategoryTest {
     assertEquals(PROJ_IDENTIFIER, templateResponse.getProject());
     assertEquals(name, templateResponse.getName());
     assertEquals("Stage", templateResponse.getEntityType().toString());
-    assertEquals(OBJECT_ID, templateResponse.getSlug());
+    assertEquals(OBJECT_ID, templateResponse.getIdentifier());
     assertEquals(true, templateResponse.isStableTemplate().booleanValue());
     assertEquals(123456789L, templateResponse.getUpdated().longValue());
     assertEquals(versionLabel, templateResponse.getVersionLabel());
@@ -245,7 +245,7 @@ public class TemplateResourceApiMapperTest extends CategoryTest {
     assertEquals(PROJ_IDENTIFIER, templateResponse.getProject());
     assertEquals(name, templateResponse.getName());
     assertEquals("Stage", templateResponse.getEntityType().toString());
-    assertEquals(OBJECT_ID, templateResponse.getSlug());
+    assertEquals(OBJECT_ID, templateResponse.getIdentifier());
     assertEquals(true, templateResponse.isStableTemplate().booleanValue());
     assertEquals(123456789L, templateResponse.getUpdated().longValue());
     assertEquals("example_yaml", templateResponse.getYaml());
@@ -303,7 +303,7 @@ public class TemplateResourceApiMapperTest extends CategoryTest {
     assertEquals(PROJ_IDENTIFIER, templateResponse.getProject());
     assertEquals(name, templateResponse.getName());
     assertEquals("Stage", templateResponse.getEntityType().toString());
-    assertEquals(OBJECT_ID, templateResponse.getSlug());
+    assertEquals(OBJECT_ID, templateResponse.getIdentifier());
     assertEquals("example_yaml", templateResponse.getYaml());
     assertEquals(true, templateResponse.isStableTemplate().booleanValue());
     assertEquals(123456789L, templateResponse.getUpdated().longValue());

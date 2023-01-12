@@ -100,7 +100,7 @@ public class PipelinesApiImpl implements PipelinesApi {
           "Policy Evaluation Failure", governanceMetadata, createdEntity.getYaml());
     }
     PipelineCreateResponseBody responseBody = new PipelineCreateResponseBody();
-    responseBody.setSlug(createdEntity.getIdentifier());
+    responseBody.setIdentifier(createdEntity.getIdentifier());
     return Response.status(201).entity(responseBody).build();
   }
 
@@ -275,9 +275,10 @@ public class PipelinesApiImpl implements PipelinesApi {
     if (requestBody == null) {
       throw new InvalidRequestException("Pipeline Update request body must not be null.");
     }
-    if (!Objects.equals(pipeline, requestBody.getSlug())) {
-      throw new InvalidRequestException(String.format(
-          "Expected Pipeline identifier in Request Body to be [%s], but was [%s]", pipeline, requestBody.getSlug()));
+    if (!Objects.equals(pipeline, requestBody.getIdentifier())) {
+      throw new InvalidRequestException(
+          String.format("Expected Pipeline identifier in Request Body to be [%s], but was [%s]", pipeline,
+              requestBody.getIdentifier()));
     }
     GitAwareContextHelper.populateGitDetails(PipelinesApiUtils.populateGitUpdateDetails(requestBody.getGitDetails()));
     log.info(String.format(
@@ -293,7 +294,7 @@ public class PipelinesApiImpl implements PipelinesApi {
           "Policy Evaluation Failure", governanceMetadata, updatedEntity.getYaml());
     }
     PipelineCreateResponseBody responseBody = new PipelineCreateResponseBody();
-    responseBody.setSlug(updatedEntity.getIdentifier());
+    responseBody.setIdentifier(updatedEntity.getIdentifier());
     return Response.ok().entity(responseBody).build();
   }
 }

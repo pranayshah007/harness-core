@@ -14,7 +14,7 @@ settings :
       - PROJECT
   - identifier: disable_harness_built_in_secret_manager
     name: Disable Harness Built-In Secret Manager
-    category : CORE
+    category : CONNECTORS
     defaultValue: false
     valueType : BOOLEAN
     allowedScopes :

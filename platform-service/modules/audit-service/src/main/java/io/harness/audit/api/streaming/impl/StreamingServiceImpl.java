@@ -58,7 +58,7 @@ public class StreamingServiceImpl implements StreamingService {
       return streamingDestinationRepository.save(streamingDestination);
     } catch (DuplicateKeyException exception) {
       String message = String.format(
-          "Streaming destination with identifier [%s] already exists.", streamingDestinationDTO.getSlug());
+          "Streaming destination with identifier [%s] already exists.", streamingDestinationDTO.getIdentifier());
       log.error(message, exception);
       throw new DuplicateFieldException(message);
     }
@@ -162,7 +162,7 @@ public class StreamingServiceImpl implements StreamingService {
 
   private void validateUpdateRequest(String streamingDestinationIdentifier,
       StreamingDestinationDTO streamingDestinationDTO, StreamingDestination currentStreamingDestination) {
-    checkEqualityOrThrow(streamingDestinationIdentifier, streamingDestinationDTO.getSlug(), "identifier");
+    checkEqualityOrThrow(streamingDestinationIdentifier, streamingDestinationDTO.getIdentifier(), "identifier");
     checkEqualityOrThrow(
         currentStreamingDestination.getConnectorRef(), streamingDestinationDTO.getConnectorRef(), "connectorRef");
     checkEqualityOrThrow(

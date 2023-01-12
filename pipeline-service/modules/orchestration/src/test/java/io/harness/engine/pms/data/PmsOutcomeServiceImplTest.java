@@ -9,10 +9,12 @@ package io.harness.engine.pms.data;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ALEXEI;
+import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.PRASHANT;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anySet;
@@ -43,6 +45,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -112,6 +115,32 @@ public class PmsOutcomeServiceImplTest extends OrchestrationTestBase {
     Outcome outcome = RecastOrchestrationUtils.fromJson(
         pmsOutcomeService.resolve(ambiance, RefObjectUtils.getOutcomeRefObject(outcomeName)), Outcome.class);
     assertThat(outcome).isNull();
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void shouldTestDeleteAllOutcomesInstances() {
+    Ambiance ambiance = AmbianceTestUtils.buildAmbiance();
+    String outcomeName = "outcomeName";
+    Outcome outcome1 = DummyOrchestrationOutcome.builder().test("test").build();
+    pmsOutcomeService.consume(ambiance, outcomeName, RecastOrchestrationUtils.toJson(outcome1), null);
+    Outcome outcome = RecastOrchestrationUtils.fromJson(
+        pmsOutcomeService.resolve(ambiance, RefObjectUtils.getOutcomeRefObject(outcomeName)), Outcome.class);
+    assertThat(outcome).isInstanceOf(DummyOrchestrationOutcome.class);
+
+    String outcomeName2 = "outcomeName2";
+    pmsOutcomeService.consume(ambiance, outcomeName2, RecastOrchestrationUtils.toJson(outcome1), null);
+    Outcome outcome2 = RecastOrchestrationUtils.fromJson(
+        pmsOutcomeService.resolve(ambiance, RefObjectUtils.getOutcomeRefObject(outcomeName2)), Outcome.class);
+    assertThat(outcome2).isInstanceOf(DummyOrchestrationOutcome.class);
+
+    pmsOutcomeService.deleteAllOutcomesInstances(Set.of(AmbianceTestUtils.PLAN_EXECUTION_ID));
+    // As outcome don't exist anymore
+    assertThatThrownBy(() -> pmsOutcomeService.resolve(ambiance, RefObjectUtils.getOutcomeRefObject(outcomeName)))
+        .isInstanceOf(OutcomeException.class);
+    assertThatThrownBy(() -> pmsOutcomeService.resolve(ambiance, RefObjectUtils.getOutcomeRefObject(outcomeName2)))
+        .isInstanceOf(OutcomeException.class);
   }
 
   @Test

@@ -30,4 +30,6 @@ public interface PipelineMetadataV2RepositoryCustom {
       String accountId, String orgId, String projectIdentifier, String identifier);
 
   PipelineMetadataV2 update(Criteria criteria, Update update);
+
+  boolean delete(Criteria criteria);
 }

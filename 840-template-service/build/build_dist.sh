@@ -26,6 +26,8 @@ cp ../../keystore.jks .
 cp ../../840-template-service/key.pem .
 cp ../../840-template-service/cert.pem .
 cp ../../840-template-service/src/main/resources/redisson-jcache.yaml .
+cp ../../840-template-service/src/main/resources/jfr/default.jfc .
+cp ../../840-template-service/src/main/resources/jfr/profile.jfc .
 
 cp ../../dockerization/template-service/Dockerfile-template-service-jenkins-k8-openjdk ./Dockerfile
 cp ../../dockerization/template-service/Dockerfile-template-service-jenkins-k8-gcr-openjdk ./Dockerfile-gcr

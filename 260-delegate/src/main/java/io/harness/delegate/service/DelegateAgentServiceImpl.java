@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateTimeBasedUuid;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.delegate.app.DelegateApplication.getProcessId;
+import static io.harness.delegate.beans.DelegateType.HELM_DELEGATE;
 import static io.harness.delegate.beans.DelegateType.KUBERNETES;
 import static io.harness.delegate.clienttools.InstallUtils.areClientToolsInstalled;
 import static io.harness.delegate.clienttools.InstallUtils.setupClientTools;
@@ -431,6 +432,9 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     this.isImmutableDelegate = isImmutableDelegate;
     delegateConfiguration.setImmutable(isImmutableDelegate);
 
+    // check if someone used the older stateful set yaml with immutable image
+    checkForImmutbleAndStatefulset();
+
     try {
       // Initialize delegate process in background.
       backgroundExecutor.submit(() -> { initDelegateProcess(watched); });
@@ -452,6 +456,36 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       log.error("Exception while starting/running delegate", e);
     } catch (Exception e) {
       log.error("Exception while starting/running delegate", e);
+    }
+  }
+
+  /**
+   * for immutable delegate check if the hostname ends with a number.
+   * This will indicate that the customer started an immutable delegate with older stateful set yaml
+   */
+  @SuppressWarnings("PMD")
+  private void checkForImmutbleAndStatefulset() {
+    if (!this.isImmutableDelegate || !KUBERNETES.equals(DELEGATE_TYPE) || !HELM_DELEGATE.equals(DELEGATE_TYPE)) {
+      return;
+    }
+
+    int index = HOST_NAME.lastIndexOf("-");
+    if (index < 0) {
+      return;
+    }
+
+    try {
+      int delegateIndex = Integer.parseInt(HOST_NAME.substring(index + 1));
+      // a delegate can have a name like test-8bbd86b7b-23455 in which case we don't want to fail
+      if (delegateIndex < 1000) {
+        log.error("It appears that you have used a legacy delegate yaml with the newer delegate image."
+            + " Please note that for the delegate images formatted as YY.MM.XXXXX you should download a fresh yaml and not reuse legacy delegate yaml");
+        System.exit(1);
+      }
+    } catch (NumberFormatException e) {
+      log.info("{} is not from a stateful set, continuing", HOST_NAME);
+    } catch (StringIndexOutOfBoundsException e) {
+      log.info("{} is an unexpected name, continuing", HOST_NAME);
     }
   }
 

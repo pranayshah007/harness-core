@@ -14,6 +14,7 @@ import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.rule.OwnerRule.MOHIT_GARG;
 import static io.harness.rule.OwnerRule.PRABU;
 import static io.harness.rule.OwnerRule.YOGESH;
+import static io.harness.rule.OwnerRule.vivekveman;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -50,6 +51,7 @@ import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.outbox.api.OutboxService;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.repositories.UpsertOptions;
+import io.harness.repositories.service.spring.ServiceRepository;
 import io.harness.rule.Owner;
 import io.harness.utils.PageUtils;
 
@@ -86,6 +88,8 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
   @Mock private ServiceEntitySetupUsageHelper entitySetupUsageHelper;
   @Mock private ServiceEntityValidatorFactory serviceEntityValidatorFactory;
   @Mock private NoOpServiceEntityValidator noOpServiceEntityValidator;
+  @Mock private ServiceRepository serviceRepository;
+
   @Inject @InjectMocks private ServiceEntityServiceImpl serviceEntityService;
   private static final String ACCOUNT_ID = "ACCOUNT_ID";
   private static final String ORG_ID = "ORG_ID";
@@ -870,7 +874,37 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
         serviceEntityService.get("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", "account.NEW_IDENTIFIER", false);
     assertThat(deletedService.isPresent()).isTrue();
   }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testForceDeleteAllServicesInProject() {
+    ServiceEntity serviceEntity1 = ServiceEntity.builder()
+                                       .accountId("ACCOUNT_ID")
+                                       .identifier("IDENTIFIER_1")
+                                       .orgIdentifier("ORG_ID")
+                                       .projectIdentifier("PROJECT_ID")
+                                       .name("Service")
+                                       .build();
 
+    ServiceEntity serviceEntity2 = ServiceEntity.builder()
+                                       .accountId("ACCOUNT_ID")
+                                       .identifier("IDENTIFIER_2")
+                                       .orgIdentifier("ORG_ID")
+                                       .projectIdentifier("PROJECT_ID")
+                                       .name("Service")
+                                       .build();
+
+    // Create operations
+    serviceEntityService.create(serviceEntity1);
+    serviceEntityService.create(serviceEntity2);
+
+    boolean delete = serviceEntityService.forceDeleteAllInProject("ACCOUNT_ID", "ORG_ID", "PROJECT_ID");
+    assertThat(delete).isTrue();
+    verify(entitySetupUsageHelper, times(1))
+        .deleteSetupUsagesWithOnlyIdentifierInfo("IDENTIFIER_1", "ACCOUNT_ID", "ORG_ID", "PROJECT_ID");
+    verify(entitySetupUsageHelper, times(1))
+        .deleteSetupUsagesWithOnlyIdentifierInfo("IDENTIFIER_2", "ACCOUNT_ID", "ORG_ID", "PROJECT_ID");
+  }
   private String readFile(String filename) {
     ClassLoader classLoader = getClass().getClassLoader();
     try {

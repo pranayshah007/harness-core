@@ -21,10 +21,13 @@ import io.harness.utils.PolicyEvalUtils;
 
 import com.google.inject.Inject;
 
+// Task Executable with RBAC, Rollback and postTaskValidation
 @OwnedBy(PIPELINE)
 public abstract class PipelineTaskExecutable<R extends ResponseData> extends TaskExecutableWithCapabilities<R> {
   @Inject OpaServiceClient opaServiceClient;
 
+  // evaluating policies added in advanced section of the steps and updating status and failure info in the step
+  // response
   public StepResponse postTaskValidate(
       Ambiance ambiance, StepElementParameters stepParameters, StepResponse stepResponse) {
     if (Status.SUCCEEDED.equals(stepResponse.getStatus())) {
@@ -32,4 +35,7 @@ public abstract class PipelineTaskExecutable<R extends ResponseData> extends Tas
     }
     return stepResponse;
   }
+
+  @Override
+  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {}
 }
