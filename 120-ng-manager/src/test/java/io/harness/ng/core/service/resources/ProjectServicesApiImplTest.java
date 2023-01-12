@@ -251,7 +251,8 @@ public class ProjectServicesApiImplTest extends CategoryTest {
     when(orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(org, project, account))
         .thenReturn(true);
     when(serviceEntityService.get(any(), any(), any(), any(), eq(false))).thenReturn(Optional.of(entity));
-    when(serviceEntityManagementService.deleteService(any(), any(), any(), any(), any(), any())).thenReturn(true);
+    when(serviceEntityManagementService.deleteService(account, org, project, identifier, "ifMatch", false))
+        .thenReturn(true);
 
     Response response = projectServicesApiImpl.deleteServiceEntity(org, project, identifier, account, false);
 
