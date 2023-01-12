@@ -594,7 +594,7 @@ public class AccountServiceTest extends WingsBaseTest {
   @Owner(developers = SRINIVAS)
   @Category(UnitTests.class)
   public void shouldListSupportAccounts() {
-    Account account = anAccount().withCompanyName(HARNESS_NAME).build();
+    Account account = anAccount().withCompanyName(HARNESS_NAME).withAccountName("account").build();
     wingsPersistence.save(account);
     assertThat(accountService.get(account.getUuid())).isEqualTo(account);
     assertThat(accountService.listHarnessSupportAccounts(Collections.emptySet(), null).get(0).getUuid()).isNotEmpty();
