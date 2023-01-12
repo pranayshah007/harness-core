@@ -12,7 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.AutoLogContext.OverrideBehavior;
 import static io.harness.obfuscate.Obfuscator.obfuscate;
 
-import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
+import static software.wings.beans.CGConstants.APP_ID_KEY;
 import static software.wings.common.Constants.ACCOUNT_ID_KEY;
 
 import io.harness.alert.AlertData;
@@ -120,11 +120,13 @@ public class AlertCheckJob implements Job {
   @Override
   public void execute(JobExecutionContext jobExecutionContext) {
     executorService.submit(
-        () -> executeInternal((String) jobExecutionContext.getJobDetail().getJobDataMap().get(ACCOUNT_ID_KEY)));
+        ()
+            -> executeInternal((String) jobExecutionContext.getJobDetail().getJobDataMap().get(ACCOUNT_ID_KEY),
+                (String) jobExecutionContext.getJobDetail().getJobDataMap().get(APP_ID_KEY)));
   }
 
   @VisibleForTesting
-  void executeInternal(String accountId) {
+  void executeInternal(String accountId, String appId) {
     try (AccountLogContext ignore1 = new AccountLogContext(accountId, OverrideBehavior.OVERRIDE_ERROR)) {
       log.info("Checking account " + accountId + " for alert conditions.");
       List<Delegate> delegates = delegateService.getNonDeletedDelegatesForAccount(accountId);
@@ -137,26 +139,26 @@ public class AlertCheckJob implements Job {
         }
       }
       if (!isEmpty(delegates)) {
-        checkIfAnyDelegatesAreDown(accountId, delegates);
+        checkIfAnyDelegatesAreDown(accountId, appId, delegates);
       }
-      checkForInvalidValidSMTP(accountId);
+      checkForInvalidValidSMTP(accountId, appId);
     } catch (Exception e) {
       log.error("Exception happened in alert check for account {}", accountId);
     }
   }
 
   @VisibleForTesting
-  void checkForInvalidValidSMTP(String accountId) {
+  void checkForInvalidValidSMTP(String accountId, String appId) {
     if (!emailHelperUtils.isSmtpConfigValid(mainConfiguration.getSmtpConfig())
         && !emailHelperUtils.isSmtpConfigValid(emailHelperUtils.getSmtpConfig(accountId, false))) {
-      alertService.openAlert(accountId, GLOBAL_APP_ID, AlertType.INVALID_SMTP_CONFIGURATION,
+      alertService.openAlert(accountId, appId, AlertType.INVALID_SMTP_CONFIGURATION,
           InvalidSMTPConfigAlert.builder().accountId(accountId).build());
     } else {
-      alertService.closeAlertsOfType(accountId, GLOBAL_APP_ID, AlertType.INVALID_SMTP_CONFIGURATION);
+      alertService.closeAlertsOfType(accountId, appId, AlertType.INVALID_SMTP_CONFIGURATION);
     }
   }
 
-  private void checkIfAnyDelegatesAreDown(String accountId, List<Delegate> delegates) {
+  private void checkIfAnyDelegatesAreDown(String accountId, String appId, List<Delegate> delegates) {
     for (Delegate delegate : delegates) {
       // for cg and ecs delegates
       if (isNotEmpty(delegate.getDelegateGroupName())) {
@@ -169,17 +171,17 @@ public class AlertCheckJob implements Job {
                                 .build();
 
       if (delegate.getLastHeartBeat() >= System.currentTimeMillis() - MAX_HB_TIMEOUT) {
-        alertService.closeAlert(accountId, GLOBAL_APP_ID, AlertType.DelegatesDown, alertData);
+        alertService.closeAlert(accountId, appId, AlertType.DelegatesDown, alertData);
       } else {
-        alertService.openAlert(accountId, GLOBAL_APP_ID, AlertType.DelegatesDown, alertData);
+        alertService.openAlert(accountId, appId, AlertType.DelegatesDown, alertData);
       }
     }
     // this is currently for ecs delegates only
-    processDelegateWhichBelongsToGroup(accountId, delegates);
+    processDelegateWhichBelongsToGroup(accountId, appId, delegates);
   }
 
   @VisibleForTesting
-  protected void processDelegateWhichBelongsToGroup(String accountId, List<Delegate> delegates) {
+  protected void processDelegateWhichBelongsToGroup(String accountId, String appId, List<Delegate> delegates) {
     // for delegates that have grouping concept, dont send an alert unless all the delegates of a group are down
     Set<String> connectedScalingGroups = new HashSet<>();
     Set<String> allScalingGroups = new HashSet<>();
@@ -196,12 +198,12 @@ public class AlertCheckJob implements Job {
     for (String disconnectedScalingGroup : allScalingGroups) {
       AlertData alertData =
           DelegatesDownAlert.builder().accountId(accountId).delegateGroupName(disconnectedScalingGroup).build();
-      alertService.openAlert(accountId, GLOBAL_APP_ID, AlertType.DelegatesDown, alertData);
+      alertService.openAlert(accountId, appId, AlertType.DelegatesDown, alertData);
     }
     for (String connectedScalingGroup : connectedScalingGroups) {
       AlertData alertData =
           DelegatesDownAlert.builder().accountId(accountId).delegateGroupName(connectedScalingGroup).build();
-      alertService.closeAlert(accountId, GLOBAL_APP_ID, AlertType.DelegatesDown, alertData);
+      alertService.closeAlert(accountId, appId, AlertType.DelegatesDown, alertData);
     }
   }
 }

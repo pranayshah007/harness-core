@@ -7,6 +7,7 @@
 
 package software.wings.scheduler;
 
+import static software.wings.beans.CGConstants.APP_ID_KEY;
 import static software.wings.common.Constants.ACCOUNT_ID_KEY;
 
 import io.harness.scheduler.BackgroundSchedulerLocker;
@@ -91,8 +92,9 @@ public class LimitVicinityCheckerJob implements Job {
   public void execute(JobExecutionContext jobExecutionContext) {
     executorService.submit(() -> {
       String accountId = (String) jobExecutionContext.getJobDetail().getJobDataMap().get(ACCOUNT_ID_KEY);
+      String appId = (String) jobExecutionContext.getJobDetail().getJobDataMap().get(APP_ID_KEY);
       Objects.requireNonNull(accountId, "[LimitVicinityCheckerJob] Account Id must be passed in job context");
-      limitVicinityHandler.checkAndAct(accountId);
+      limitVicinityHandler.checkAndAct(accountId, appId);
     });
   }
 }

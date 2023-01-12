@@ -224,14 +224,14 @@ public class BuildSourceCallback implements OldNotifyCallback {
           artifactStreamService.updateCollectionStatus(accountId, artifactStreamId, STOPPED.name());
         }
         if (!GLOBAL_APP_ID.equals(appId)) {
-          alertService.openAlert(accountId, null, AlertType.ARTIFACT_COLLECTION_FAILED,
+          alertService.openAlert(accountId, appId, AlertType.ARTIFACT_COLLECTION_FAILED,
               ArtifactCollectionFailedAlert.builder()
                   .appId(appId)
                   .serviceId(artifactStream.getServiceId())
                   .artifactStreamId(artifactStreamId)
                   .build());
         } else {
-          alertService.openAlert(accountId, null, AlertType.ARTIFACT_COLLECTION_FAILED,
+          alertService.openAlert(accountId, appId, AlertType.ARTIFACT_COLLECTION_FAILED,
               ArtifactCollectionFailedAlert.builder()
                   .settingId(artifactStream.getSettingId())
                   .artifactStreamId(artifactStreamId)
@@ -250,7 +250,7 @@ public class BuildSourceCallback implements OldNotifyCallback {
         artifactStreamService.updateFailedCronAttemptsAndLastIteration(
             artifactStream.getAccountId(), artifactStream.getUuid(), 0, false);
         permitService.releasePermitByKey(artifactStream.getUuid());
-        alertService.closeAlert(accountId, null, AlertType.ARTIFACT_COLLECTION_FAILED,
+        alertService.closeAlert(accountId, artifactStream.fetchAppId(), AlertType.ARTIFACT_COLLECTION_FAILED,
             ArtifactCollectionFailedAlert.builder().artifactStreamId(artifactStreamId).build());
       } else {
         artifactStreamService.updateLastIterationFields(accountId, artifactStreamId, true);

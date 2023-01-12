@@ -8,7 +8,6 @@
 package software.wings.service.impl.instance.limits;
 
 import static software.wings.beans.Account.GLOBAL_ACCOUNT_ID;
-import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 
 import io.harness.alert.AlertData;
 import io.harness.limits.Action;
@@ -41,7 +40,7 @@ public class LimitVicinityHandlerImpl implements LimitVicinityHandler {
   private static final int PERCENT_TO_WARN_ON_DEFAULT = 80;
 
   @Override
-  public void checkAndAct(String accountId) {
+  public void checkAndAct(String accountId, String appId) {
     if (GLOBAL_ACCOUNT_ID.equals(accountId)) {
       return;
     }
@@ -49,10 +48,10 @@ public class LimitVicinityHandlerImpl implements LimitVicinityHandler {
     Arrays.stream(ActionType.values())
         .filter(actionType -> actionType.getAllowedLimitTypes().contains(LimitType.STATIC))
         .map(actionType -> new Action(accountId, actionType))
-        .forEach(this::handleAction);
+        .forEach(action -> handleAction(action, appId));
   }
 
-  private void handleAction(Action action) {
+  private void handleAction(Action action, String appId) {
     final int percentToWarnOn = percentToWarnOn();
     final String accountId = action.getAccountId();
 
@@ -75,9 +74,9 @@ public class LimitVicinityHandlerImpl implements LimitVicinityHandler {
           new ResourceUsageApproachingLimitAlert(limit, accountId, action.getActionType(), percentToWarnOn);
 
       if (checker.hasCrossedPercentLimit(percentToWarnOn)) {
-        alertService.openAlert(accountId, GLOBAL_APP_ID, AlertType.RESOURCE_USAGE_APPROACHING_LIMIT, alertData);
+        alertService.openAlert(accountId, appId, AlertType.RESOURCE_USAGE_APPROACHING_LIMIT, alertData);
       } else {
-        alertService.closeAlert(accountId, GLOBAL_APP_ID, AlertType.RESOURCE_USAGE_APPROACHING_LIMIT, alertData);
+        alertService.closeAlert(accountId, appId, AlertType.RESOURCE_USAGE_APPROACHING_LIMIT, alertData);
       }
     } else {
       log.error("Unhandled type of limit checker. Either alert for it, or explicitly exclude it. Class: {}",

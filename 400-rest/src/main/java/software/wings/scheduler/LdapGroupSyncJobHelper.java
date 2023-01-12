@@ -130,7 +130,7 @@ public class LdapGroupSyncJobHelper {
           if (ssoSettingService.isDefault(accountId, ssoId)) {
             ssoSettingService.sendSSONotReachableNotification(accountId, ldapSettings);
           } else {
-            ssoSettingService.raiseSyncFailureAlert(accountId, ssoId,
+            ssoSettingService.raiseSyncFailureAlert(accountId, ssoId, ssoSettings.getAppId(),
                 String.format(LdapConstants.SSO_PROVIDER_NOT_REACHABLE, ldapSettings.getDisplayName()));
           }
           return;
@@ -151,15 +151,15 @@ public class LdapGroupSyncJobHelper {
             endTime - startTime);
       } catch (WingsException exception) {
         if (exception.getCode() == ErrorCode.USER_GROUP_SYNC_FAILURE) {
-          ssoSettingService.raiseSyncFailureAlert(accountId, ssoId, exception.getMessage());
+          ssoSettingService.raiseSyncFailureAlert(accountId, ssoId, ldapSettings.getAppId(), exception.getMessage());
         } else {
-          ssoSettingService.raiseSyncFailureAlert(accountId, ssoId,
+          ssoSettingService.raiseSyncFailureAlert(accountId, ssoId, ldapSettings.getAppId(),
               String.format(LdapConstants.USER_GROUP_SYNC_FAILED, ldapSettings.getDisplayName())
                   + exception.getMessage());
         }
         ExceptionLogger.logProcessedMessages(exception, MANAGER, log);
       } catch (Exception ex) {
-        ssoSettingService.raiseSyncFailureAlert(accountId, ssoId,
+        ssoSettingService.raiseSyncFailureAlert(accountId, ssoId, ldapSettings.getAppId(),
             String.format(LdapConstants.USER_GROUP_SYNC_FAILED, ldapSettings.getDisplayName()) + ex.getMessage());
         log.error("LDAPIterator: Error while syncing ssoId {} in accountId {}", ssoId, accountId, ex);
       }
@@ -406,8 +406,8 @@ public class LdapGroupSyncJobHelper {
     } else {
       String userGroupsFailed =
           userGroupsFailedToSync.stream().map(UserGroup::getName).collect(Collectors.joining(", ", "[", "]"));
-      ssoSettingService.raiseSyncFailureAlert(
-          accountId, ssoId, String.format("LDAPIterator: Ldap Sync failed for groups: %s", userGroupsFailed));
+      ssoSettingService.raiseSyncFailureAlert(accountId, ssoId, ldapSettings.getAppId(),
+          String.format("LDAPIterator: Ldap Sync failed for groups: %s", userGroupsFailed));
     }
     // Sync the groups only if the state is still the same as we started. Else any change in the groups would have
     // already triggered another cron job and it will handle it.
@@ -437,8 +437,8 @@ public class LdapGroupSyncJobHelper {
     } else {
       String userGroupsFailed =
           userGroupsFailedToSync.stream().map(UserGroup::getName).collect(Collectors.joining(", ", "[", "]"));
-      ssoSettingService.raiseSyncFailureAlert(
-          accountId, ssoId, String.format("ParallelLDAPIterator: Ldap Sync failed for groups: %s", userGroupsFailed));
+      ssoSettingService.raiseSyncFailureAlert(accountId, ssoId, ldapSettings.getAppId(),
+          String.format("ParallelLDAPIterator: Ldap Sync failed for groups: %s", userGroupsFailed));
     }
     // Sync the groups only if the state is still the same as we started. Else any change in the groups would have
     // already triggered another cron job and it will handle it.

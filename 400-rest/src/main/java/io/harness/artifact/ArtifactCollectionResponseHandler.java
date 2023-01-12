@@ -209,7 +209,7 @@ public class ArtifactCollectionResponseHandler {
           artifactStream.getAccountId(), artifactStream.getUuid(), ArtifactStreamCollectionStatus.STOPPED.name());
     }
     alertService.openAlert(
-        artifactStream.getAccountId(), null, AlertType.ARTIFACT_COLLECTION_FAILED, artifactCollectionFailedAlert);
+        artifactStream.getAccountId(), artifactStream.getAppId(), AlertType.ARTIFACT_COLLECTION_FAILED, artifactCollectionFailedAlert);
     artifactStreamPTaskHelper.deletePerpetualTask(artifactStream.getAccountId(), artifactStream.getPerpetualTaskId());
   }
 }

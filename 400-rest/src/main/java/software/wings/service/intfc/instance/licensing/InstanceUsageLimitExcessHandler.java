@@ -14,7 +14,7 @@ public interface InstanceUsageLimitExcessHandler {
    *
    * @param accountId
    */
-  void handle(String accountId, double actualUsage);
+  void handle(String accountId, String appId, double actualUsage);
 
   /**
    * Violation: If am account's deployed SI usage is more than allowed usage, it is considered a violation.

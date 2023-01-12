@@ -56,6 +56,7 @@ public class InstanceStatsCollectorJob implements Job {
   public static final String GROUP = "INSTANCE_STATS_COLLECT_CRON_GROUP";
   public static final long TWO_MONTH_IN_MILLIS = 5184000000L;
   public static final String ACCOUNT_ID_KEY = "accountId";
+  public static final String APP_ID_KEY = "accountId";
 
   // 10 minutes
   private static final int SYNC_INTERVAL = 10;
@@ -124,6 +125,8 @@ public class InstanceStatsCollectorJob implements Job {
       return;
     }
 
+    String appId = (String) jobExecutionContext.getJobDetail().getJobDataMap().get(APP_ID_KEY);
+
     try (AutoLogContext ignore = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
       Account account = accountService.get(accountId);
       if (account == null || account.getLicenseInfo() == null || account.getLicenseInfo().getAccountStatus() == null
@@ -135,7 +138,7 @@ public class InstanceStatsCollectorJob implements Job {
           Objects.requireNonNull(accountId, "Account Id must be passed in job context");
           createStats(accountId);
           double ninety_five_percentile_usage = InstanceStatsUtils.actualUsage(accountId, instanceStatService);
-          instanceLimitHandler.handle(accountId, ninety_five_percentile_usage);
+          instanceLimitHandler.handle(accountId, appId, ninety_five_percentile_usage);
         });
       }
     }

@@ -107,7 +107,8 @@ public class ArtifactCollectionServiceAsyncImpl implements ArtifactCollectionSer
       artifactStreamService.updateFailedCronAttemptsAndLastIteration(
           artifactStream.getAccountId(), savedArtifact.getArtifactStreamId(), 0, false);
       permitService.releasePermitByKey(artifactStream.getUuid());
-      alertService.closeAlert(artifactStream.getAccountId(), null, AlertType.ARTIFACT_COLLECTION_FAILED,
+      alertService.closeAlert(artifactStream.getAccountId(), artifactStream.fetchAppId(),
+          AlertType.ARTIFACT_COLLECTION_FAILED,
           ArtifactCollectionFailedAlert.builder().artifactStreamId(artifactStream.getUuid()).build());
     }
     return savedArtifact;
@@ -149,14 +150,14 @@ public class ArtifactCollectionServiceAsyncImpl implements ArtifactCollectionSer
         if (PermitServiceImpl.shouldSendAlert(failedCronAttempts)) {
           String appId = artifactStream.fetchAppId();
           if (!GLOBAL_APP_ID.equals(appId)) {
-            alertService.openAlert(artifactStream.getAccountId(), null, AlertType.ARTIFACT_COLLECTION_FAILED,
+            alertService.openAlert(artifactStream.getAccountId(), appId, AlertType.ARTIFACT_COLLECTION_FAILED,
                 ArtifactCollectionFailedAlert.builder()
                     .appId(appId)
                     .serviceId(artifactStream.getServiceId())
                     .artifactStreamId(artifactStream.getUuid())
                     .build());
           } else {
-            alertService.openAlert(artifactStream.getAccountId(), null, AlertType.ARTIFACT_COLLECTION_FAILED,
+            alertService.openAlert(artifactStream.getAccountId(), appId, AlertType.ARTIFACT_COLLECTION_FAILED,
                 ArtifactCollectionFailedAlert.builder()
                     .settingId(artifactStream.getSettingId())
                     .artifactStreamId(artifactStream.getUuid())

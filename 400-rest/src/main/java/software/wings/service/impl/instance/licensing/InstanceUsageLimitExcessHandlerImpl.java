@@ -7,8 +7,6 @@
 
 package software.wings.service.impl.instance.licensing;
 
-import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
-
 import io.harness.alert.AlertData;
 import io.harness.limits.Action;
 import io.harness.limits.ActionType;
@@ -42,15 +40,15 @@ public class InstanceUsageLimitExcessHandlerImpl implements InstanceUsageLimitEx
       "{}% of allowed instance limits has been consumed. Please contact Harness support to increase limits.";
 
   @Override
-  public void handle(String accountId, double actualUsage) {
+  public void handle(String accountId, String appId, double actualUsage) {
     long percentLimit = 90L;
     boolean withinLimit = limitChecker.isWithinLimit(accountId, percentLimit, actualUsage);
     AlertData alertData = createAlertData(accountId, percentLimit);
 
     if (!withinLimit) {
-      alertService.openAlert(accountId, GLOBAL_APP_ID, AlertType.INSTANCE_USAGE_APPROACHING_LIMIT, alertData);
+      alertService.openAlert(accountId, appId, AlertType.INSTANCE_USAGE_APPROACHING_LIMIT, alertData);
     } else {
-      alertService.closeAlert(accountId, GLOBAL_APP_ID, AlertType.INSTANCE_USAGE_APPROACHING_LIMIT, alertData);
+      alertService.closeAlert(accountId, appId, AlertType.INSTANCE_USAGE_APPROACHING_LIMIT, alertData);
     }
   }
 

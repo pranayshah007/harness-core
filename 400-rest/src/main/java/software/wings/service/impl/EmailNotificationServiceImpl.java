@@ -91,12 +91,12 @@ public class EmailNotificationServiceImpl implements EmailNotificationService {
 
   private void sendEmailNotSentAlert(software.wings.helpers.ext.mail.EmailData emailData) {
     String errorString = emailUtils.getErrorString(emailData);
-    alertService.openAlert(emailData.getAccountId(), GLOBAL_APP_ID, AlertType.EMAIL_NOT_SENT_ALERT,
+    alertService.openAlert(emailData.getAccountId(), emailData.getAppId(), AlertType.EMAIL_NOT_SENT_ALERT,
         EmailSendingFailedAlert.builder().emailAlertData(errorString).build());
   }
 
   private void closeEmailNotSentAlert(software.wings.helpers.ext.mail.EmailData emailData) {
-    alertService.closeAlertsOfType(emailData.getAccountId(), GLOBAL_APP_ID, AlertType.EMAIL_NOT_SENT_ALERT);
+    alertService.closeAlertsOfType(emailData.getAccountId(), emailData.getAppId(), AlertType.EMAIL_NOT_SENT_ALERT);
   }
 
   private boolean sendEmailAsDelegateTask(SmtpConfig config, List<EncryptedDataDetail> encryptionDetails,

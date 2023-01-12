@@ -605,12 +605,12 @@ public class SSOSettingServiceImpl implements SSOSettingService {
   }
 
   @Override
-  public void raiseSyncFailureAlert(String accountId, String ssoId, String message) {
+  public void raiseSyncFailureAlert(String accountId, String ssoId, String appId, String message) {
     // We will send the alert message every 24 hours
     SSOSyncFailedAlert alertData =
         SSOSyncFailedAlert.builder().accountId(accountId).ssoId(ssoId).message(message).build();
     Optional<Alert> existingAlert =
-        alertService.findExistingAlert(accountId, GLOBAL_APP_ID, AlertType.USERGROUP_SYNC_FAILED, alertData);
+        alertService.findExistingAlert(accountId, appId, AlertType.USERGROUP_SYNC_FAILED, alertData);
     if (existingAlert.isPresent()) {
       Alert alert = existingAlert.get();
       long lastUpdatedAt = alert.getLastUpdatedAt();
@@ -620,7 +620,7 @@ public class SSOSettingServiceImpl implements SSOSettingService {
       }
     }
     closeSyncFailureAlertIfOpen(accountId, ssoId);
-    alertService.openAlert(accountId, GLOBAL_APP_ID, AlertType.USERGROUP_SYNC_FAILED, alertData);
+    alertService.openAlert(accountId, appId, AlertType.USERGROUP_SYNC_FAILED, alertData);
   }
 
   @Override

@@ -1283,8 +1283,8 @@ public class SettingsServiceImpl implements SettingsService {
         closeConnectivityErrorAlert(settingAttribute.getAccountId(), settingAttribute.getUuid());
         fieldsToRemove = Collections.singleton(SettingAttributeKeys.connectivityError);
       } else {
-        openConnectivityErrorAlert(settingAttribute.getAccountId(), settingAttribute.getUuid(),
-            settingAttribute.getCategory().name(), connErr);
+        openConnectivityErrorAlert(settingAttribute.getAccountId(), settingAttribute.getAppId(),
+            settingAttribute.getUuid(), settingAttribute.getCategory().name(), connErr);
         fieldsToRemove = Collections.emptySet();
         fields.put(SettingAttributeKeys.connectivityError, connErr);
       }
@@ -1955,14 +1955,14 @@ public class SettingsServiceImpl implements SettingsService {
 
   @Override
   public void openConnectivityErrorAlert(
-      String accountId, String settingId, String settingCategory, String connectivityError) {
+      String accountId, String appId, String settingId, String settingCategory, String connectivityError) {
     AlertData alertData = SettingAttributeValidationFailedAlert.builder()
                               .settingId(settingId)
                               .settingCategory(settingCategory)
                               .connectivityError(connectivityError)
                               .build();
-    alertService.closeAllAlerts(accountId, null, AlertType.SETTING_ATTRIBUTE_VALIDATION_FAILED, alertData);
-    alertService.openAlert(accountId, null, AlertType.SETTING_ATTRIBUTE_VALIDATION_FAILED, alertData);
+    alertService.closeAllAlerts(accountId, appId, AlertType.SETTING_ATTRIBUTE_VALIDATION_FAILED, alertData);
+    alertService.openAlert(accountId, appId, AlertType.SETTING_ATTRIBUTE_VALIDATION_FAILED, alertData);
   }
 
   @Override

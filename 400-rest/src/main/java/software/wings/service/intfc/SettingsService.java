@@ -168,7 +168,8 @@ public interface SettingsService extends OwnedByAccount, OwnedBySettingAttribute
 
   UsageRestrictions getUsageRestrictionsForSettingId(String settingId);
 
-  void openConnectivityErrorAlert(String accountId, String settingId, String settingCategory, String connectivityError);
+  void openConnectivityErrorAlert(
+      String accountId, String appId, String settingId, String settingCategory, String connectivityError);
 
   void closeConnectivityErrorAlert(String accountId, String settingId);
 

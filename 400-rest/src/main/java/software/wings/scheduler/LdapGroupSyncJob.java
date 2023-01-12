@@ -355,8 +355,8 @@ public class LdapGroupSyncJob implements Job {
     } else {
       String userGroupsFailed =
           userGroupsFailedToSync.stream().map(UserGroup::getName).collect(Collectors.joining(", ", "[", "]"));
-      ssoSettingService.raiseSyncFailureAlert(
-          accountId, ssoId, String.format("Ldap Sync failed for groups: %s", userGroupsFailed));
+      ssoSettingService.raiseSyncFailureAlert(accountId, ssoId, ldapSettings.getAppId(),
+          String.format("Ldap Sync failed for groups: %s", userGroupsFailed));
     }
     // Sync the groups only if the state is still the same as we started. Else any change in the groups would have
     // already triggered another cron job and it will handle it.

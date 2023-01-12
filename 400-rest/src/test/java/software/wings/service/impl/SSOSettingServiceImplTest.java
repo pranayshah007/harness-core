@@ -135,7 +135,7 @@ public class SSOSettingServiceImplTest extends WingsBaseTest {
     when(alertService.findExistingAlert(
              any(String.class), any(String.class), any(AlertType.class), any(AlertData.class)))
         .thenReturn(Optional.of(newAlert));
-    ssoSettingService.raiseSyncFailureAlert(accountId, ssoId, message);
+    ssoSettingService.raiseSyncFailureAlert(accountId, ssoId, newAlert.getAppId(), message);
     verify(alertService, times(0)).openAlert(any(), any(), any(), any());
 
     // case when a alert exists and before 24 hours, we need to create a alert and send mail
@@ -144,14 +144,14 @@ public class SSOSettingServiceImplTest extends WingsBaseTest {
     when(alertService.findExistingAlert(
              any(String.class), any(String.class), any(AlertType.class), any(AlertData.class)))
         .thenReturn(Optional.of(oldAlert));
-    ssoSettingService.raiseSyncFailureAlert(accountId, ssoId, message);
+    ssoSettingService.raiseSyncFailureAlert(accountId, ssoId, newAlert.getAppId(), message);
     verify(alertService, times(1)).openAlert(any(), any(), any(), any());
 
     // Case when no such alert exist, so we will create a new alert
     when(alertService.findExistingAlert(
              any(String.class), any(String.class), any(AlertType.class), any(AlertData.class)))
         .thenReturn(Optional.empty());
-    ssoSettingService.raiseSyncFailureAlert(accountId, ssoId, message);
+    ssoSettingService.raiseSyncFailureAlert(accountId, ssoId, newAlert.getAppId(), message);
     verify(alertService, times(2)).openAlert(any(), any(), any(), any());
   }
 

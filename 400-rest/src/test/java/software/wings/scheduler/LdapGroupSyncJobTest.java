@@ -119,7 +119,7 @@ public class LdapGroupSyncJobTest extends CategoryTest {
 
     ldapGroupSyncJob.syncUserGroups(account.getUuid(), ldapSettings, Collections.singletonList(userGroup), ssoId);
     verify(ssoSettingService, times(1))
-        .raiseSyncFailureAlert(account.getUuid(), ssoId,
+        .raiseSyncFailureAlert(account.getUuid(), ssoId, ldapSettings.getAppId(),
             "Ldap Sync failed for groups: "
                 + "[" + userGroup.getName() + "]");
   }

@@ -53,6 +53,7 @@ import org.mockito.MockitoAnnotations;
 
 public class AlertCheckJobTest extends WingsBaseTest {
   public static final String ACCOUNT_ID = "ACCOUNT_ID";
+  public static final String APP_ID = "APP_ID";
   @Mock private AlertService alertService;
   @Mock private DelegateService delegateService;
   @Mock private EmailHelperUtils emailHelperUtils;
@@ -78,7 +79,7 @@ public class AlertCheckJobTest extends WingsBaseTest {
     final Delegate delegate = saveDelegate("host1", 2, true);
     doReturn(Arrays.asList(delegate)).when(delegateService).getNonDeletedDelegatesForAccount(any());
     doNothing().when(alertService).closeAlert(any(), any(), any(), any());
-    alertCheckJob.executeInternal(ACCOUNT_ID);
+    alertCheckJob.executeInternal(ACCOUNT_ID, APP_ID);
     verify(alertService, times(1)).closeAlert(any(), any(), any(), any());
   }
 
@@ -95,7 +96,7 @@ public class AlertCheckJobTest extends WingsBaseTest {
 
     doNothing().when(alertService).closeAlert(any(), any(), any(), any());
 
-    alertCheckJob.executeInternal(ACCOUNT_ID);
+    alertCheckJob.executeInternal(ACCOUNT_ID, APP_ID);
     verify(alertService, times(1)).closeAlert(any(), any(), any(), any());
   }
 
@@ -122,7 +123,7 @@ public class AlertCheckJobTest extends WingsBaseTest {
     when(mainConfiguration.getSmtpConfig()).thenReturn(null);
     when(emailHelperUtils.isSmtpConfigValid(any(SmtpConfig.class))).thenReturn(false);
 
-    alertCheckJob.checkForInvalidValidSMTP(ACCOUNT_ID);
+    alertCheckJob.checkForInvalidValidSMTP(ACCOUNT_ID, APP_ID);
     verify(alertService, times(1)).openAlert(any(), any(), any(), any());
 
     ArgumentCaptor<AlertType> captor = ArgumentCaptor.forClass(AlertType.class);
@@ -157,7 +158,7 @@ public class AlertCheckJobTest extends WingsBaseTest {
 
     List<Delegate> delegates = Arrays.asList(delegate1, delegate2);
 
-    alertCheckJob.processDelegateWhichBelongsToGroup(ACCOUNT_ID, delegates);
+    alertCheckJob.processDelegateWhichBelongsToGroup(ACCOUNT_ID, APP_ID, delegates);
 
     verify(alertService, times(1))
         .openAlert(eq(ACCOUNT_ID), eq(GLOBAL_APP_ID), eq(AlertType.DelegatesDown),
@@ -178,7 +179,7 @@ public class AlertCheckJobTest extends WingsBaseTest {
                             .build();
     persistence.save(delegate);
     List<Delegate> delegates = Collections.singletonList(delegate);
-    alertCheckJob.processDelegateWhichBelongsToGroup(ACCOUNT_ID, delegates);
+    alertCheckJob.processDelegateWhichBelongsToGroup(ACCOUNT_ID, APP_ID, delegates);
     verify(alertService, times(1))
         .closeAlert(eq(ACCOUNT_ID), eq(GLOBAL_APP_ID), eq(AlertType.DelegatesDown),
             eq(DelegatesDownAlert.builder().accountId(ACCOUNT_ID).delegateGroupName(delegateGroupName).build()));

@@ -78,9 +78,11 @@ public interface SSOSettingService extends OwnedByAccount {
    *
    * @param accountId   account id
    * @param ssoId       sso id
+   * @param appId       application id
    * @param message     failure message
    */
-  void raiseSyncFailureAlert(@NotBlank String accountId, @NotBlank String ssoId, @NotBlank String message);
+  void raiseSyncFailureAlert(
+      @NotBlank String accountId, @NotBlank String ssoId, @NotBlank String appId, @NotBlank String message);
 
   /**
    * Close existing alert if open
