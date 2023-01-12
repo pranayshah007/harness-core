@@ -135,6 +135,8 @@ import io.harness.delegate.exceptionhandler.handler.SecretExceptionHandler;
 import io.harness.delegate.exceptionhandler.handler.SocketExceptionHandler;
 import io.harness.delegate.exceptionhandler.handler.TerraformRuntimeExceptionHandler;
 import io.harness.delegate.exceptionhandler.handler.TerragruntRuntimeExceptionHandler;
+import io.harness.delegate.googlefunctions.GoogleFunctionCommandTaskHandler;
+import io.harness.delegate.googlefunctions.GoogleFunctionDeployCommandTaskHandler;
 import io.harness.delegate.http.HttpTaskNG;
 import io.harness.delegate.k8s.K8sApplyRequestHandler;
 import io.harness.delegate.k8s.K8sBGRequestHandler;
@@ -292,6 +294,8 @@ import io.harness.delegate.task.gitapi.DecryptGitAPIAccessTask;
 import io.harness.delegate.task.gitapi.GitApiTask;
 import io.harness.delegate.task.gitcommon.GitTaskNG;
 import io.harness.delegate.task.gitops.GitOpsFetchAppTask;
+import io.harness.delegate.task.googlefunction.GoogleFunctionCommandTask;
+import io.harness.delegate.task.googlefunctions.GoogleFunctionCommandTypeNG;
 import io.harness.delegate.task.helm.HelmCommandTaskNG;
 import io.harness.delegate.task.helm.HelmDeployServiceImplNG;
 import io.harness.delegate.task.helm.HelmDeployServiceNG;
@@ -436,6 +440,8 @@ import io.harness.gcp.client.GcpClient;
 import io.harness.gcp.impl.GcpClientImpl;
 import io.harness.git.GitClientV2;
 import io.harness.git.GitClientV2Impl;
+import io.harness.googlefunctions.GoogleCloudFunctionClient;
+import io.harness.googlefunctions.GoogleCloudFunctionClientImpl;
 import io.harness.helm.HelmClient;
 import io.harness.helm.HelmClientImpl;
 import io.harness.helpers.EncryptDecryptHelperImpl;
@@ -2006,6 +2012,11 @@ public class DelegateModule extends AbstractModule {
     //GIT
     mapBinder.addBinding(TaskType.GIT_TASK_NG).toInstance(GitTaskNG.class);
 
+      MapBinder<String, GoogleFunctionCommandTaskHandler> googleFunctionCommandTaskHandlerMapBinder =
+              MapBinder.newMapBinder(binder(), String.class, GoogleFunctionCommandTaskHandler.class);
+      googleFunctionCommandTaskHandlerMapBinder.addBinding(GoogleFunctionCommandTypeNG.GOOGLE_FUNCTION_DEPLOY.name())
+              .to(GoogleFunctionDeployCommandTaskHandler.class);
+
     // ASG NG
     mapBinder.addBinding(TaskType.AWS_ASG_CANARY_DEPLOY_TASK_NG).toInstance(AsgCanaryDeployTaskNG.class);
     mapBinder.addBinding(TaskType.AWS_ASG_CANARY_DELETE_TASK_NG).toInstance(AsgCanaryDeleteTaskNG.class);
@@ -2015,6 +2026,7 @@ public class DelegateModule extends AbstractModule {
 
     bind(EcsV2Client.class).to(EcsV2ClientImpl.class);
     bind(ElbV2Client.class).to(ElbV2ClientImpl.class);
+    bind(GoogleCloudFunctionClient.class).to(GoogleCloudFunctionClientImpl.class);
     mapBinder.addBinding(TaskType.AZURE_NG_ARM).toInstance(AzureResourceCreationTaskNG.class);
     mapBinder.addBinding(TaskType.SHELL_SCRIPT_PROVISION).toInstance(ShellScriptProvisionTaskNG.class);
     mapBinder.addBinding(TaskType.ELASTIGROUP_STARTUP_SCRIPT_FETCH_RUN_TASK_NG)
@@ -2049,6 +2061,8 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.TAS_SWAP_ROLLBACK).toInstance(TasSwapRollbackTask.class);
     mapBinder.addBinding(TaskType.TANZU_COMMAND).toInstance(TasCommandTask.class);
     mapBinder.addBinding(TaskType.TAS_DATA_FETCH).toInstance(TasDataFetchTask.class);
+
+    mapBinder.addBinding(TaskType.GOOGLE_FUNCTION_COMMAND_TASK).toInstance(GoogleFunctionCommandTask.class);
   }
 
   private void registerSecretManagementBindings() {

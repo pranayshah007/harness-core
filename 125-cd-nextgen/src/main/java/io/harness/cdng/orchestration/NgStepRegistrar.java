@@ -51,6 +51,7 @@ import io.harness.cdng.gitops.MergePRStep;
 import io.harness.cdng.gitops.UpdateReleaseRepoStep;
 import io.harness.cdng.gitops.steps.FetchLinkedAppsStep;
 import io.harness.cdng.gitops.steps.GitopsClustersStep;
+import io.harness.cdng.googlefunctions.GoogleFunctionsDeployStep;
 import io.harness.cdng.helm.HelmDeployStep;
 import io.harness.cdng.helm.HelmRollbackStep;
 import io.harness.cdng.infra.steps.EnvironmentStep;
@@ -238,6 +239,8 @@ public class NgStepRegistrar {
     engineSteps.put(TasSwapRollbackStep.STEP_TYPE, TasSwapRollbackStep.class);
     engineSteps.put(TasAppResizeStep.STEP_TYPE, TasAppResizeStep.class);
     engineSteps.put(TasRollbackStep.STEP_TYPE, TasRollbackStep.class);
+
+    engineSteps.put(GoogleFunctionsDeployStep.STEP_TYPE, GoogleFunctionsDeployStep.class);
 
     return engineSteps;
   }

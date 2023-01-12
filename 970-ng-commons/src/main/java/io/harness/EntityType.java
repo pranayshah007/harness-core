@@ -500,7 +500,10 @@ public enum EntityType {
       EntityYamlRootNames.ASG_ROLLING_ROLLBACK),
   @JsonProperty(EntityTypeConstants.CCM_GOVERNANCE_RULE_AWS)
   CCM_GOVERNANCE_RULE_AWS(ModuleType.CE, EntityTypeConstants.CCM_GOVERNANCE_RULE_AWS, IdentifierRef.class,
-      EntityYamlRootNames.CCM_GOVERNANCE_RULE);
+      EntityYamlRootNames.CCM_GOVERNANCE_RULE),
+  @JsonProperty(EntityTypeConstants.GOOGLE_CLOUD_FUNCTIONS_DEPLOY)
+  GOOGLE_CLOUD_FUNCTIONS_DEPLOY(ModuleType.CD, EntityTypeConstants.GOOGLE_CLOUD_FUNCTIONS_DEPLOY, IdentifierRef.class,
+          EntityYamlRootNames.GOOGLE_CLOUD_FUNCTIONS_DEPLOY);
 
   private final ModuleType moduleType;
   String yamlName;

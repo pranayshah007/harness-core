@@ -2,8 +2,10 @@ package io.harness.googlefunctions;
 
 import com.google.api.gax.core.CredentialsProvider;
 import com.google.api.gax.core.FixedCredentialsProvider;
+import com.google.api.gax.rpc.ClientContext;
 import com.google.cloud.functions.v2.FunctionServiceClient;
 import com.google.cloud.functions.v2.FunctionServiceSettings;
+import com.google.cloud.functions.v2.stub.FunctionServiceStubSettings;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.harness.annotations.dev.HarnessTeam;
@@ -25,6 +27,7 @@ public class GoogleCloudClientHelper {
         CredentialsProvider credentialsProvider = FixedCredentialsProvider.create(
                 gcpCredentialsHelper.getGoogleCredentials(gcpInternalConfig.getServiceAccountKeyFileContent(),
                         gcpInternalConfig.isUseDelegate));
+        FunctionServiceStubSettings.Builder builder = FunctionServiceStubSettings.newBuilder((ClientContext)null);
         FunctionServiceSettings functionServiceSettings = FunctionServiceSettings.newBuilder()
                 .setCredentialsProvider(credentialsProvider)
                 .build();

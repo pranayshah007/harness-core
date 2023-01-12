@@ -40,6 +40,7 @@ import io.harness.cdng.gitops.CreatePRStepNode;
 import io.harness.cdng.gitops.MergePRStepNode;
 import io.harness.cdng.gitops.UpdateReleaseRepoStepNode;
 import io.harness.cdng.gitops.beans.FetchLinkedAppsStepNode;
+import io.harness.cdng.googlefunctions.GoogleFunctionsDeployStepNode;
 import io.harness.cdng.helm.HelmDeployStepNode;
 import io.harness.cdng.helm.HelmRollbackStepNode;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepNode;
@@ -946,5 +947,17 @@ public class CDNGRegistrars {
                                            .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
                                            .build())
                    .build())
+              .add(YamlSchemaRootClass.builder()
+                      .entityType(EntityType.GOOGLE_CLOUD_FUNCTIONS_DEPLOY)
+                      .availableAtProjectLevel(true)
+                      .availableAtOrgLevel(false)
+                      .availableAtAccountLevel(false)
+                      .clazz(GoogleFunctionsDeployStepNode.class)
+                      .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                              .namespace(SchemaNamespaceConstants.CD)
+                              .modulesSupported(Collections.singletonList(ModuleType.CD))
+                              .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                              .build())
+                      .build())
           .build();
 }

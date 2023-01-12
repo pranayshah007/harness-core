@@ -251,6 +251,6 @@ public class NGKryoRegistrar implements KryoRegistrar {
     kryo.register(ElastigroupBGStageSetupStepInfo.class, 12800);
     kryo.register(ElastigroupSwapRouteStepInfo.class, 12801);
 
-    kryo.register(GoogleFunctionsInfrastructure.class, 13000);
+    kryo.register(GoogleFunctionsInfrastructure.class, 12802);
   }
 }

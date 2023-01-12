@@ -12,8 +12,10 @@ import com.google.cloud.functions.v2.StorageSource;
 import com.google.cloud.functions.v2.UpdateFunctionRequest;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
 import com.google.protobuf.FieldMask;
+import com.google.protobuf.util.JsonFormat;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorCredentialDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
@@ -27,6 +29,7 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.runtime.SecretNotFoundRuntimeException;
 import io.harness.googlefunctions.GcpInternalConfig;
 import io.harness.googlefunctions.GoogleCloudFunctionClient;
+import io.harness.serializer.YamlUtils;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.ByteArrayInputStream;
@@ -47,9 +50,9 @@ public class GoogleFunctionCommandTaskHelper {
         GcpGoogleFunctionInfraConfig googleFunctionInfraConfig =
                 (GcpGoogleFunctionInfraConfig) googleFunctionDeployRequest.getGoogleFunctionInfraConfig();
 
-        CreateFunctionRequest.Builder createFunctionRequestBuilder = CreateFunctionRequest.parseFrom(
-                new ByteArrayInputStream(googleFunctionDeployRequest.getGoogleFunctionDeployManifestContent()
-                        .getBytes(StandardCharsets.UTF_8))).toBuilder();
+        CreateFunctionRequest.Builder createFunctionRequestBuilder = CreateFunctionRequest.newBuilder();
+        JsonFormat.parser().ignoringUnknownFields().merge(googleFunctionDeployRequest.getGoogleFunctionDeployManifestContent(),
+                createFunctionRequestBuilder);
 
         // get function name
         String functionName = getFunctionName(googleFunctionInfraConfig.getProject(),
@@ -78,9 +81,10 @@ public class GoogleFunctionCommandTaskHelper {
         }
         else {
            //update existing function
-            FieldMask.Builder fieldMaskBuilder = FieldMask.parseFrom(new ByteArrayInputStream(
-                    googleFunctionDeployRequest.getUpdateFieldMaskContent()
-                    .getBytes(StandardCharsets.UTF_8))).toBuilder();
+            FieldMask.Builder fieldMaskBuilder = FieldMask.newBuilder();
+            JsonFormat.parser().ignoringUnknownFields().merge(googleFunctionDeployRequest.getUpdateFieldMaskContent(),
+                    createFunctionRequestBuilder);
+
             UpdateFunctionRequest updateFunctionRequest =
                     UpdateFunctionRequest.newBuilder()
                             .setFunction(createFunctionRequestBuilder.getFunction())

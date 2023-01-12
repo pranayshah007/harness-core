@@ -8,6 +8,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.ecs.EcsRollingDeployBaseStepInfo;
 import io.harness.cdng.ecs.EcsRollingDeployStep;
 import io.harness.cdng.ecs.EcsRollingDeployStepParameters;
+import io.harness.cdng.pipeline.CDAbstractStepInfo;
 import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.EcsRollingDeployStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
@@ -37,7 +38,7 @@ import java.util.List;
 @JsonTypeName(StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_DEPLOY)
 @TypeAlias("googleFunctionsDeployStepInfo")
 @RecasterAlias("io.harness.cdng.googlefunctions.GoogleFunctionsDeployStepInfo")
-public class GoogleFunctionsDeployStepInfo extends GoogleFunctionsDeployBaseStepInfo implements CDStepInfo, Visitable {
+public class GoogleFunctionsDeployStepInfo extends GoogleFunctionsDeployBaseStepInfo implements CDAbstractStepInfo, Visitable {
     @JsonProperty(YamlNode.UUID_FIELD_NAME)
     @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
     @ApiModelProperty(hidden = true)

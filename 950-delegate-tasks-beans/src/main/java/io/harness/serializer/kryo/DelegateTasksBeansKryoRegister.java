@@ -657,6 +657,11 @@ import io.harness.delegate.task.gitpolling.GitPollingSourceType;
 import io.harness.delegate.task.gitpolling.GitPollingTaskType;
 import io.harness.delegate.task.gitpolling.github.GitHubPollingDelegateRequest;
 import io.harness.delegate.task.gitpolling.request.GitPollingTaskParameters;
+import io.harness.delegate.task.googlefunctions.GcpGoogleFunctionInfraConfig;
+import io.harness.delegate.task.googlefunctions.GoogleCloudStorageArtifactConfig;
+import io.harness.delegate.task.googlefunctions.GoogleFunctionCommandTypeNG;
+import io.harness.delegate.task.googlefunctions.request.GoogleFunctionDeployRequest;
+import io.harness.delegate.task.googlefunctions.response.GoogleFunctionDeployResponse;
 import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.helm.HelmCmdExecResponseNG;
 import io.harness.delegate.task.helm.HelmCommandFlag;
@@ -2204,5 +2209,12 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(EcsRunTaskArnRequest.class, 573583);
     kryo.register(TfVarS3Source.class, 573593);
     kryo.register(ConcurrentHashMap.class, 673567);
+
+    kryo.register(GoogleFunctionDeployRequest.class, 673568);
+    kryo.register(GoogleFunctionDeployResponse.class, 673569);
+    kryo.register(GcpGoogleFunctionInfraConfig.class, 673570);
+    kryo.register(GoogleCloudStorageArtifactConfig.class, 673571);
+    kryo.register(GoogleFunctionCommandTypeNG.class, 673572);
+
   }
 }

@@ -141,6 +141,7 @@ import io.harness.cdng.creator.plan.steps.ecs.EcsRunTaskStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.elastigroup.ElastigroupBGStageSetupStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.elastigroup.ElastigroupSetupStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.elastigroup.ElastigroupSwapRouteStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.googlefunctions.GoogleFunctionsDeployStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaDeployStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.terragrunt.TerragruntApplyStepPlanCreator;
@@ -170,6 +171,7 @@ import io.harness.cdng.creator.variables.GitOpsCreatePRStepVariableCreator;
 import io.harness.cdng.creator.variables.GitOpsFetchLinkedAppsStepVariableCreator;
 import io.harness.cdng.creator.variables.GitOpsMergePRStepVariableCreator;
 import io.harness.cdng.creator.variables.GitOpsUpdateReleaseRepoStepVariableCreator;
+import io.harness.cdng.creator.variables.GoogleFunctionsDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.HelmDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.HelmRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.K8sApplyStepVariableCreator;
@@ -418,6 +420,8 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new TasAppResizeStepPlanCreator());
     planCreators.add(new TasRollbackStepPlanCreator());
 
+    planCreators.add(new GoogleFunctionsDeployStepPlanCreator());
+
     injectorUtils.injectMembers(planCreators);
     return planCreators;
   }
@@ -536,6 +540,8 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new TasSwapRollbackStepVariableCreator());
     variableCreators.add(new TasAppResizeStepVariableCreator());
     variableCreators.add(new TasRollbackStepVariableCreator());
+
+    variableCreators.add(new GoogleFunctionsDeployStepVariableCreator());
 
     return variableCreators;
   }
@@ -791,6 +797,14 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setStepMetaData(StepMetaData.newBuilder().addCategory("ECS").setFolderPath("ECS").build())
             .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
             .build();
+
+    StepInfo googleFunctionDeploy =
+            StepInfo.newBuilder()
+                    .setName("Google Function Deploy")
+                    .setType(StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_DEPLOY)
+                    .setStepMetaData(StepMetaData.newBuilder().addCategory("Google Functions").setFolderPath("Google Functions").build())
+                    .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
+                    .build();
 
     StepInfo createStack = StepInfo.newBuilder()
                                .setName("CloudFormation Create Stack")
@@ -1163,6 +1177,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     stepInfos.add(elastigroupSwapRoute);
     stepInfos.add(asgRollingDeploy);
     stepInfos.add(asgRollingRollback);
+    stepInfos.add(googleFunctionDeploy);
     return stepInfos;
   }
 }

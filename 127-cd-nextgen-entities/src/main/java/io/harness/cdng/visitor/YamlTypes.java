@@ -131,6 +131,7 @@ public interface YamlTypes {
 
   String COMMAND_FLAGS_WRAPPER = "commandFlags";
   String REGION = "region";
+  String PROJECT = "project";
   String STAGE = "stage";
   String TEMPLATE = "template";
   String CREDENTIALS_REF = "credentialsRef";

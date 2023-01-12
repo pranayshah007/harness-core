@@ -144,8 +144,8 @@ public class GoogleFunctionsHelper extends CDStepHelper {
         } catch (Exception e) {
             return TaskChainResponse.builder()
                     .chainEnd(true)
-                    .passThroughData(ServerlessStepExceptionPassThroughData.builder()
-                            .errorMessage(ExceptionUtils.getMessage(e))
+                    .passThroughData(GoogleFunctionsStepExceptionPassThroughData.builder()
+                            .errorMsg(ExceptionUtils.getMessage(e))
                             .unitProgressData(completeUnitProgressData(unitProgressData, ambiance, e.getMessage()))
                             .build())
                     .build();
@@ -252,6 +252,7 @@ public class GoogleFunctionsHelper extends CDStepHelper {
                         .accountId(accountId)
                         .gitRequestFileConfigs(Collections.singletonList(gitRequestFileConfig))
                         .shouldOpenLogStream(shouldOpenLogStream)
+                        .commandUnitName(GoogleFunctionsCommandUnitConstants.fetchManifests.toString())
                         .build();
 
         final TaskData taskData = TaskData.builder()
