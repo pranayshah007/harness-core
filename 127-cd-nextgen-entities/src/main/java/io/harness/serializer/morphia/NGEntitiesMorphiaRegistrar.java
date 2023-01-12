@@ -44,6 +44,7 @@ import io.harness.cdng.infra.beans.SshWinRmAwsInfraMapping;
 import io.harness.cdng.infra.beans.SshWinRmAzureInfraMapping;
 import io.harness.cdng.infra.beans.TanzuApplicationServiceInfraMapping;
 import io.harness.cdng.manifest.yaml.ManifestsOutcome;
+import io.harness.cdng.moduleversioninfo.entity.ModuleVersionInfo;
 import io.harness.cdng.service.beans.ServiceConfig;
 import io.harness.cdng.service.beans.ServiceConfigOutcome;
 import io.harness.cdng.service.beans.ServiceOutcome;
@@ -80,6 +81,7 @@ public class NGEntitiesMorphiaRegistrar implements MorphiaRegistrar {
     set.add(PdcInfraMapping.class);
     set.add(SshWinRmAzureInfraMapping.class);
     set.add(TanzuApplicationServiceInfraMapping.class);
+    set.add(ModuleVersionInfo.class);
   }
 
   @Override

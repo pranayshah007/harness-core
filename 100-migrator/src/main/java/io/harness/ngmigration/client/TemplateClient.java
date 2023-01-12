@@ -12,8 +12,8 @@ import static io.harness.security.NextGenAuthenticationFilter.X_API_KEY;
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.connector.ConnectorResponseDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.template.beans.TemplateWrapperResponseDTO;
 
 import okhttp3.RequestBody;
 import retrofit2.Call;
@@ -25,7 +25,7 @@ import retrofit2.http.Query;
 @OwnedBy(HarnessTeam.CDC)
 public interface TemplateClient {
   @POST("templates")
-  Call<ResponseDTO<ConnectorResponseDTO>> createTemplate(@Header(X_API_KEY) String auth,
+  Call<ResponseDTO<TemplateWrapperResponseDTO>> createTemplate(@Header(X_API_KEY) String auth,
       @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @Query(NGCommonEntityConstants.ORG_KEY) String orgId,
       @Query(NGCommonEntityConstants.PROJECT_KEY) String projectId, @Body RequestBody templateYaml);

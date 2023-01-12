@@ -40,6 +40,7 @@ import software.wings.ngmigration.NGMigrationEntityType;
 import com.google.common.collect.ImmutableMap;
 import io.serializer.HObjectMapper;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -332,5 +333,10 @@ public class MigratorUtility {
     }
     return ParameterField.createValueField(
         files.stream().map(file -> "/" + ((FileYamlDTO) file.getYaml()).getName()).collect(Collectors.toList()));
+  }
+
+  public static ParameterField<List<String>> splitWithComma(String str) {
+    return ParameterField.createValueField(
+        Arrays.stream(str.split(",")).map(String::trim).filter(StringUtils::isNotBlank).collect(Collectors.toList()));
   }
 }

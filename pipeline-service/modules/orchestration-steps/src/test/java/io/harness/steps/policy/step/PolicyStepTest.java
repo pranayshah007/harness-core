@@ -32,9 +32,9 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
 import io.harness.steps.policy.PolicyStepSpecParameters;
 import io.harness.steps.policy.custom.CustomPolicyStepSpec;
-import io.harness.steps.policy.step.outcome.PolicyStepOutcome;
-import io.harness.steps.policy.step.outcome.PolicyStepOutcomeMapper;
 import io.harness.utils.PolicyEvalUtils;
+import io.harness.utils.PolicyStepOutcome;
+import io.harness.utils.PolicyStepOutcomeMapper;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;

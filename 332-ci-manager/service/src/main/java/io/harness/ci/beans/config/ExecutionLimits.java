@@ -27,7 +27,6 @@ public class ExecutionLimits {
   ExecutionLimitSpec team;
   ExecutionLimitSpec enterprise;
   List<String> overrideConfig;
-  @JsonIgnore Map<String, ExecutionLimitSpec> overrideConfigMap;
   @Value
   @Builder
   public static class ExecutionLimitSpec {

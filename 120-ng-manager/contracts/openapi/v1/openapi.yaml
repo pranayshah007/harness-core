@@ -868,6 +868,22 @@ paths:
         - Project Secret
       security:
         - x-api-key: []
+  /v1/module-versions:
+    get:
+      summary: List Module Versions
+      tags:
+        - Module Versions
+      responses:
+        '200':
+          $ref: '#/components/responses/ModuleVersionsListResponse'
+      operationId: list-module-versions
+      description: Lists Versions of different Modules.
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+      x-internal: true
 components:
   schemas:
     Service:
@@ -1597,6 +1613,49 @@ components:
           type: object
           description: Governance metadata information
       description: Secret response model
+    ModuleVersionsResponse:
+      title: Module Versions Response Body
+      type: object
+      description: Module Versions Response Body
+      properties:
+        name:
+          type: string
+          description: Module name
+        version:
+          type: string
+          description: Module version
+        display_name:
+          type: string
+          description: Module display name
+        updated:
+          type: string
+          description: Module updated at
+        version_url:
+          type: string
+          description: Module version URL
+        release_notes_link:
+          type: string
+          description: Module Release Notes link
+        microservices_version_info:
+          type: array
+          items:
+            $ref: '#/components/schemas/MicroserviceVersionInfo'
+    MicroserviceVersionInfo:
+      title: Microservice Version Info
+      x-stoplight:
+        id: 949355wt5fcyx
+      type: object
+      properties:
+        name:
+          type: string
+          description: Microservices name
+        version:
+          type: string
+          description: Microservices version URL
+        version_url:
+          type: string
+          description: Microservices version
+      description: Microservice Version Info
   securitySchemes:
     x-api-key:
       name: x-api-key
@@ -1993,6 +2052,23 @@ components:
           schema:
             type: string
           description: 'Links to related resources, in the format defined by [RFC 5988](https://tools.ietf.org/html/rfc5988#section-5). This will include a link with relation type `next` to the next page, if there is a next page.Link'
+          examples:
+            sample:
+              value: '<{url}?page=2&limit=1>; rel="next", <{url}?page=1&limit=1>; rel="self", <{url}?page=0&limit=1>; rel="previous", '
+    ModuleVersionsListResponse:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/ModuleVersionsResponse'
+          examples: {}
+      headers:
+        Link:
+          schema:
+            type: string
+          description: 'Links to related resources, in the format defined by [RFC 5988](https://tools.ietf.org/html/rfc5988#section-5). This will include a link with relation type `next` to the next page, if there is a next page.'
           examples:
             sample:
               value: '<{url}?page=2&limit=1>; rel="next", <{url}?page=1&limit=1>; rel="self", <{url}?page=0&limit=1>; rel="previous", '

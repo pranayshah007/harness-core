@@ -14,6 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -26,6 +27,7 @@ import io.harness.engine.pms.commons.events.PmsEventSender;
 import io.harness.execution.NodeExecution;
 import io.harness.interrupts.InterruptEffect;
 import io.harness.plan.PlanNode;
+import io.harness.pms.contracts.advisers.AdviseEvent;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -40,9 +42,12 @@ import io.harness.rule.Owner;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
+import com.google.protobuf.ByteString;
+import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.ArrayList;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
@@ -50,13 +55,12 @@ import org.mockito.Mock;
 public class RedisNodeAdviseEventPublisherTest extends OrchestrationTestBase {
   @Mock private NodeExecutionService nodeExecutionService;
   @Mock private PmsEventSender eventSender;
-
   @Inject @InjectMocks private RedisNodeAdviseEventPublisher publisher;
 
   @Test
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
-  public void shouldTestPublishEvent() {
+  public void shouldTestPublishEvent() throws InvalidProtocolBufferException {
     String planExecutionId = generateUuid();
     PlanNode planNode =
         PlanNode.builder()
@@ -70,6 +74,7 @@ public class RedisNodeAdviseEventPublisherTest extends OrchestrationTestBase {
         NodeExecution.builder()
             .uuid(generateUuid())
             .ambiance(Ambiance.newBuilder().setPlanExecutionId(planExecutionId).build())
+            .notifyId(generateUuid())
             .failureInfo(
                 FailureInfo.newBuilder().addFailureData(FailureData.newBuilder().setCode("200").build()).build())
             .interruptHistories(ImmutableList.of(
@@ -96,7 +101,44 @@ public class RedisNodeAdviseEventPublisherTest extends OrchestrationTestBase {
     String actualEventId = publisher.publishEvent(nodeExecution, planNode, Status.ABORTED);
 
     assertThat(actualEventId).isEqualTo(eventId);
+    ArgumentCaptor<ByteString> argumentCaptor = ArgumentCaptor.forClass(ByteString.class);
+    verify(eventSender).sendEvent(any(), argumentCaptor.capture(), any(), anyString(), anyBoolean());
 
-    verify(eventSender).sendEvent(any(), any(), any(), anyString(), anyBoolean());
+    AdviseEvent advisingEvent = AdviseEvent.parseFrom(argumentCaptor.getValue());
+    assertThat(advisingEvent.getNotifyId()).isEqualTo(nodeExecution.getNotifyId());
+    assertThat(advisingEvent.getAmbiance()).isEqualTo(nodeExecution.getAmbiance());
+    assertThat(advisingEvent.getToStatus()).isEqualTo(nodeExecution.getStatus());
+    assertThat(advisingEvent.getRetryIdsList()).isEqualTo(nodeExecution.getRetryIds());
+
+    nodeExecution =
+        NodeExecution.builder()
+            .uuid(generateUuid())
+            .ambiance(Ambiance.newBuilder().setPlanExecutionId(planExecutionId).build())
+            .failureInfo(
+                FailureInfo.newBuilder().addFailureData(FailureData.newBuilder().setCode("200").build()).build())
+            .interruptHistories(ImmutableList.of(
+                InterruptEffect.builder()
+                    .interruptType(InterruptType.ABORT)
+                    .interruptConfig(
+                        InterruptConfig.newBuilder()
+                            .setIssuedBy(
+                                IssuedBy.newBuilder()
+                                    .setTimeoutIssuer(
+                                        TimeoutIssuer.newBuilder().setTimeoutInstanceId(generateUuid()).build())
+                                    .buildPartial())
+                            .build())
+                    .build()))
+            .status(Status.RUNNING)
+            .retryIds(new ArrayList<>())
+            .planNode(planNode)
+            .build();
+
+    publisher.publishEvent(nodeExecution, planNode, Status.ABORTED);
+    argumentCaptor = ArgumentCaptor.forClass(ByteString.class);
+    verify(eventSender, times(2)).sendEvent(any(), argumentCaptor.capture(), any(), anyString(), anyBoolean());
+    advisingEvent = AdviseEvent.parseFrom(argumentCaptor.getValue());
+
+    // nodeExecution.getNotifyId is null, so advisingEvent.getNotifyId will come empty.
+    assertThat(advisingEvent.getNotifyId()).isEmpty();
   }
 }

@@ -9,6 +9,7 @@ package io.harness.cvng.cdng.beans.v2;
 
 import io.harness.cvng.beans.TimeSeriesThresholdComparisonType;
 
+import io.swagger.annotations.ApiModel;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -19,6 +20,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@ApiModel("MetricThresholdCriteriaV2")
 public class MetricThresholdCriteria {
   int actionableCount;
   TimeSeriesThresholdComparisonType measurementType;

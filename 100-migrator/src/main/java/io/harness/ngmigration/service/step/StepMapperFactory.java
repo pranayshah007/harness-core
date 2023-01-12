@@ -30,6 +30,7 @@ public class StepMapperFactory {
   @Inject K8sSwapServiceSelectorsStepMapperImpl k8sSwapServiceSelectorsStepMapper;
   @Inject K8sBlueGreenDeployStepMapperImpl k8sBlueGreenDeployStepMapper;
   @Inject JiraCreateUpdateStepMapperImpl jiraCreateUpdateStepMapper;
+
   @Inject UnsupportedStepMapperImpl unsupportedStepMapper;
 
   public StepMapper getStepMapper(String stepType) {
@@ -64,6 +65,7 @@ public class StepMapperFactory {
         return k8sBlueGreenDeployStepMapper;
       case "JIRA_CREATE_UPDATE":
         return jiraCreateUpdateStepMapper;
+      case "DC_NODE_SELECT":
       case "ARTIFACT_COLLECTION":
       case "ARTIFACT_CHECK":
         return emptyStepMapper;

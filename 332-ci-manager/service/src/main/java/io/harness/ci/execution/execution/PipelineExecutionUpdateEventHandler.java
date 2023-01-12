@@ -115,6 +115,9 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
           log.info("Received event with status {} to clean planExecutionId {}, stage {}", status,
               ambiance.getPlanExecutionId(), level.getIdentifier());
 
+          // TODO: Once Robust Cleanup implementation is done shift this after response from delegate is received.
+          queueExecutionUtils.deleteActiveExecutionRecord(level.getRuntimeId());
+
           DelegateTaskRequest delegateTaskRequest =
               getDelegateCleanupTaskRequest(ambiance, ciCleanupTaskParams, accountId);
 
@@ -134,8 +137,6 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
           // like in k8s node pressure evictions) - then this is where we move all of them to blob storage.
           ciLogServiceUtils.closeLogStream(AmbianceUtils.getAccountId(ambiance), logKey, true, true);
           // Now Delete the build from db while cleanup is happening. \
-          // TODO: Once Robust Cleanup implementation is done shift this after response from delegate is received.
-          queueExecutionUtils.deleteActiveExecutionRecord(level.getRuntimeId());
         }
       });
     } catch (Exception ex) {

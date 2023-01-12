@@ -7,6 +7,7 @@
 
 package io.harness.ngmigration.service.step;
 
+import io.harness.exception.InvalidRequestException;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.plancreator.steps.AbstractStepNode;
 
@@ -15,12 +16,12 @@ import software.wings.ngmigration.CgEntityId;
 import software.wings.sm.State;
 
 import java.util.Map;
-import org.apache.commons.lang3.NotImplementedException;
 
 public class UnsupportedStepMapperImpl implements StepMapper {
   @Override
   public String getStepType(GraphNode stepYaml) {
-    throw new NotImplementedException("Unsupported step");
+    throw new InvalidRequestException(
+        String.format("Unsupported step - %s of type %s", stepYaml.getName(), stepYaml.getType()));
   }
 
   @Override
@@ -30,7 +31,8 @@ public class UnsupportedStepMapperImpl implements StepMapper {
 
   @Override
   public AbstractStepNode getSpec(Map<CgEntityId, NGYamlFile> migratedEntities, GraphNode graphNode) {
-    throw new NotImplementedException("Unsupported step");
+    throw new InvalidRequestException(
+        String.format("Unsupported step - %s of type %s", graphNode.getName(), graphNode.getType()));
   }
 
   @Override

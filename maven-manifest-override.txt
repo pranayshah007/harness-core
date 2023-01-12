@@ -4,6 +4,7 @@ com.google.inject,@maven//:com_google_inject_guice
 com.google.inject.name,@maven//:com_google_inject_guice
 com.google.protobuf,@maven//:com_google_protobuf_protobuf_java
 com.mongodb,@maven//:org_mongodb_mongo_java_driver
+io.kubernetes.client.openapi.models,@maven//:io_kubernetes_client_java_api_fluent
 io.prometheus.client,@maven//:io_prometheus_simpleclient_dropwizard
 io.prometheus.client.Collector,@maven//:io_prometheus_simpleclient_dropwizard
 io.prometheus.client.dropwizard,@maven//:io_prometheus_simpleclient_dropwizard
