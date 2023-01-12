@@ -18,6 +18,7 @@ import io.harness.accesscontrol.roleassignments.migration.RoleAssignmentResource
 import io.harness.accesscontrol.roleassignments.migration.RoleAssignmentScopeAdditionMigration;
 import io.harness.accesscontrol.roleassignments.migration.SuperAdminViaAllResourcesMigration;
 import io.harness.accesscontrol.roleassignments.migration.UserRoleAssignmentRemovalMigration;
+import io.harness.accesscontrol.roleassignments.migration.UserViewerRoleAssignmentAdditionMigration;
 import io.harness.accesscontrol.scopes.harness.migration.ScopeMigration;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.migration.MigrationDetails;
@@ -60,6 +61,7 @@ public class AccessControlMongoBackgroundMigrationDetails implements MigrationDe
         .add(Pair.of(15, NoopMigration.class))
         .add(Pair.of(16, AccountBasicRoleAssignmentInternalFieldMigration.class))
         .add(Pair.of(17, UserRoleAssignmentRemovalMigration.class))
+        .add(Pair.of(18, UserViewerRoleAssignmentAdditionMigration.class))
         .build();
   }
 }
