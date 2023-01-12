@@ -45,7 +45,7 @@ public class OrderByTotalNumberOfTaskAssignedCriteria implements DelegateResourc
   final Comparator<Delegate> delegateComparator = new Comparator<Delegate>() {
     @Override
     public int compare(Delegate d1, Delegate d2) {
-      return d2.getNumberOfTaskAssigned() - d1.getNumberOfTaskAssigned();
+      return d1.getNumberOfTaskAssigned() - d2.getNumberOfTaskAssigned();
     }
   };
 
@@ -67,7 +67,7 @@ public class OrderByTotalNumberOfTaskAssignedCriteria implements DelegateResourc
     delegateList.sort(delegateComparator);
     delegateList.forEach(delegate
         -> log.info(
-            "delegate Id: {}, number of current task{}", delegate.getUuid(), delegate.getNumberOfTaskAssigned()));
+            "delegate Id: {}, number of current task {}", delegate.getUuid(), delegate.getNumberOfTaskAssigned()));
     return delegateList;
   }
 
