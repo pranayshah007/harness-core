@@ -13,6 +13,7 @@ java_library(
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     deps = [
+        "//931-secret-providers/src/java/software/wings/beans:module",
         "//970-api-services-beans:module",
         "//990-commons-test:module",
         "@maven//:junit_junit",
