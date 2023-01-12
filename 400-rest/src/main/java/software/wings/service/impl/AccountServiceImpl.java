@@ -969,6 +969,8 @@ public class AccountServiceImpl implements AccountService {
     Query<Account> query = wingsPersistence.createQuery(Account.class, excludeAuthority)
                                .filter(AccountKeys.isHarnessSupportAccessAllowed, Boolean.TRUE);
     if (isNotEmpty(fieldsToBeIncluded)) {
+      fieldsToBeIncluded.add(AccountKeys.accountName);
+      fieldsToBeIncluded.add(AccountKeys.encryptedLicenseInfo);
       for (String field : fieldsToBeIncluded) {
         query.project(field, true);
       }
