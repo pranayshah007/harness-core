@@ -165,7 +165,7 @@ public class CfRollingRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandle
                                           .newApplicationInfo(null)
                                           .currentProdInfo(null)
                                           .build();
-        logCallback.saveExecutionLog(color("\n# Deleting successfully", White, Bold));
+        logCallback.saveExecutionLog(color("\n# Deleted successfully", White, Bold));
         logCallback.saveExecutionLog("\n ----------  PCF Rolling Rollback completed successfully", INFO, SUCCESS);
         return cfRollingRollbackResponseNG;
       }

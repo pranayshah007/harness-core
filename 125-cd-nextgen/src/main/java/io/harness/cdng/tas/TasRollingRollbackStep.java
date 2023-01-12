@@ -112,7 +112,7 @@ public class TasRollingRollbackStep extends CdTaskExecutable<CfCommandResponseNG
         RefObjectUtils.getSweepingOutputRefObject(tasRollingRollbackStepParameters.getTasRollingDeployFqn() + "."
             + OutcomeExpressionConstants.TAS_ROLLING_DEPLOY_OUTCOME));
 
-    if (tasRollingDeployOutcomeOptional.isFound() == false) {
+    if (!tasRollingDeployOutcomeOptional.isFound()) {
       return TaskRequest.newBuilder()
           .setSkipTaskRequest(
               SkipTaskRequest.newBuilder().setMessage(" Outcome Not Found For Deploy Step, so skipping it ").build())

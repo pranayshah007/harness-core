@@ -355,7 +355,7 @@ public class TasStepHelper {
     if (!(infrastructureOutcome instanceof TanzuApplicationServiceInfrastructureOutcome)) {
       throw new InvalidArgumentsException(Pair.of("infrastructure",
           format("Invalid infrastructure type: %s, expected: %s", infrastructureOutcome.getKind(),
-              InfrastructureKind.AZURE_WEB_APP)));
+              InfrastructureKind.TAS)));
     }
     return (TanzuApplicationServiceInfrastructureOutcome) infrastructureOutcome;
   }
@@ -380,7 +380,7 @@ public class TasStepHelper {
         .scope(scope)
         .deploymentIdentifier(getDeploymentIdentifier(tasInfraConfig, appName))
         .envIdentifier(infrastructure.getEnvironment().getIdentifier())
-        .infraIdentifier(infrastructure.getInfraIdentifier())
+        .infraIdentifier(infrastructure.getInfrastructureKey())
         .serviceIdentifier(serviceOutcome.getIdentifier())
         .build();
   }
