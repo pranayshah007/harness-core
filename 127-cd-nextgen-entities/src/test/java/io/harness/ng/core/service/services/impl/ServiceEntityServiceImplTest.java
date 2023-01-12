@@ -905,6 +905,26 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     verify(entitySetupUsageHelper, times(1))
         .deleteSetupUsagesWithOnlyIdentifierInfo("IDENTIFIER_2", "ACCOUNT_ID", "ORG_ID", "PROJECT_ID");
   }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testForceDeleteService() {
+    final String id = UUIDGenerator.generateUuid();
+    ServiceEntity serviceEntity = ServiceEntity.builder()
+                                      .accountId("ACCOUNT_ID")
+                                      .identifier(id)
+                                      .orgIdentifier("ORG_ID")
+                                      .projectIdentifier("PROJECT_ID")
+                                      .name("Service")
+                                      .build();
+
+    serviceEntityService.create(serviceEntity);
+    when(entitySetupUsageService.listAllEntityUsage(anyInt(), anyInt(), anyString(), anyString(), any(), anyString()))
+        .thenReturn(Page.empty());
+    boolean delete = serviceEntityService.delete("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", id, 0L, true);
+    verify(entitySetupUsageService, times(0))
+        .listAllEntityUsage(anyInt(), anyInt(), anyString(), anyString(), any(), anyString());
+  }
   private String readFile(String filename) {
     ClassLoader classLoader = getClass().getClassLoader();
     try {
