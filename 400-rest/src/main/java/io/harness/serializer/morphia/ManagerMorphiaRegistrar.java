@@ -94,6 +94,8 @@ import software.wings.api.k8s.K8sApplicationManifestSourceInfo;
 import software.wings.api.k8s.K8sCanaryDeleteServiceElement;
 import software.wings.api.k8s.K8sExecutionSummary;
 import software.wings.api.k8s.K8sGitConfigMapInfo;
+import software.wings.api.k8s.K8sGitFetchInfo;
+import software.wings.api.k8s.K8sGitInfo;
 import software.wings.api.k8s.K8sHelmDeploymentElement;
 import software.wings.api.k8s.K8sStateExecutionData;
 import software.wings.api.lambda.AwsLambdaDeploymentInfo;
@@ -919,6 +921,8 @@ public class ManagerMorphiaRegistrar implements MorphiaRegistrar {
     w.put("api.JenkinsExecutionData", JenkinsExecutionData.class);
     w.put("api.k8s.k8sApplicationManifestInfo", K8sApplicationManifestSourceInfo.class);
     w.put("api.k8s.k8sGitConfigMapInfo", K8sGitConfigMapInfo.class);
+    w.put("api.k8s.k8sGitFetchInfo", K8sGitFetchInfo.class);
+    w.put("api.k8s.K8sGitInfo", K8sGitInfo.class);
     w.put("api.k8s.K8sHelmElement", K8sHelmDeploymentElement.class);
     w.put("api.k8s.K8sCanaryDeleteServiceElement", K8sCanaryDeleteServiceElement.class);
     w.put("api.k8s.K8sExecutionSummary", K8sExecutionSummary.class);

@@ -132,6 +132,7 @@ import software.wings.api.instancedetails.InstanceInfoVariables;
 import software.wings.api.k8s.K8sCanaryDeleteServiceElement;
 import software.wings.api.k8s.K8sElement;
 import software.wings.api.k8s.K8sGitConfigMapInfo;
+import software.wings.api.k8s.K8sGitFetchInfo;
 import software.wings.api.k8s.K8sHelmDeploymentElement;
 import software.wings.api.k8s.K8sStateExecutionData;
 import software.wings.beans.Account;
@@ -160,6 +161,7 @@ import software.wings.beans.infrastructure.instance.Instance;
 import software.wings.beans.infrastructure.instance.info.K8sPodInfo;
 import software.wings.beans.yaml.GitCommandExecutionResponse;
 import software.wings.beans.yaml.GitFetchFilesFromMultipleRepoResult;
+import software.wings.beans.yaml.GitFetchFilesResult;
 import software.wings.common.VariableProcessor;
 import software.wings.delegatetasks.aws.AwsCommandHelper;
 import software.wings.expression.ManagerExpressionEvaluator;
@@ -276,7 +278,7 @@ public class AbstractK8SStateTest extends WingsBaseTest {
   @Inject private ApplicationManifestService applicationManifestService;
 
   private static final String APPLICATION_MANIFEST_ID = "AppManifestId";
-
+  private static Map<String, GitFetchFilesResult> GIT_FETCH_FILES_RESULT_MAP = new HashMap<>();
   @InjectMocks
   private WorkflowStandardParams workflowStandardParams = aWorkflowStandardParams()
                                                               .withAppId(APP_ID)
@@ -355,6 +357,9 @@ public class AbstractK8SStateTest extends WingsBaseTest {
     doReturn(K8sClusterConfig.builder().build())
         .when(containerDeploymentManagerHelper)
         .getK8sClusterConfig(any(), any());
+
+    GIT_FETCH_FILES_RESULT_MAP.put(
+        "ServiceOverride", GitFetchFilesResult.builder().latestCommitSHA("commit example").build());
   }
 
   @Test
@@ -1900,5 +1905,68 @@ public class AbstractK8SStateTest extends WingsBaseTest {
     verify(mockedSweepingOutputService, times(1)).save(argumentCaptor.capture());
 
     assertThat(argumentCaptor.getValue().getName()).isEqualTo(K8sCanaryDeleteServiceElement.SWEEPING_OUTPUT_NAME);
+  }
+
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testHandleAsyncResponseForGitTaskWrapper_FF_COMMIT() {
+    GitCommandExecutionResponse gitCommandExecutionResponse =
+        GitCommandExecutionResponse.builder()
+            .gitCommandStatus(GitCommandExecutionResponse.GitCommandStatus.SUCCESS)
+            .gitCommandResult(GitFetchFilesFromMultipleRepoResult.builder()
+                                  .gitFetchFilesConfigMap(new HashMap<>())
+                                  .filesFromMultipleRepo(GIT_FETCH_FILES_RESULT_MAP)
+                                  .build())
+            .fetchedCommitIdsMap(Collections.singletonMap("Service", "CommitId"))
+            .build();
+    Map<String, ResponseData> response = new HashMap<>();
+    Map<K8sValuesLocation, ApplicationManifest> appManifestMap = new HashMap<>();
+    response.put(ACTIVITY_ID, gitCommandExecutionResponse);
+
+    K8sStateExecutor k8sStateExecutor = mock(K8sStateExecutor.class);
+    K8sStateExecutionData k8sStateExecutionData = (K8sStateExecutionData) context.getStateExecutionData();
+    k8sStateExecutionData.setCurrentTaskType(TaskType.GIT_COMMAND);
+    k8sStateExecutionData.setActivityId(ACTIVITY_ID);
+    k8sStateExecutionData.setValuesFiles(new HashMap<>());
+    k8sStateExecutionData.setApplicationManifestMap(appManifestMap);
+
+    Map<K8sValuesLocation, Collection<String>> valuesMap = new HashMap<>();
+    valuesMap.put(K8sValuesLocation.Environment, singletonList("EnvValues"));
+    when(applicationManifestUtils.getValuesFilesFromGitFetchFilesResponse(appManifestMap, gitCommandExecutionResponse))
+        .thenReturn(valuesMap);
+    doReturn(true).when(featureFlagService).isEnabled(any(), any());
+    doReturn(Service.builder().uuid("serviceId").build()).when(applicationManifestUtils).fetchServiceFromContext(any());
+    k8sCanaryDeploy.handleAsyncResponseWrapper(k8sStateExecutor, context, response);
+
+    ArgumentCaptor<SweepingOutputInstance> argumentCaptor = ArgumentCaptor.forClass(SweepingOutputInstance.class);
+    verify(mockedSweepingOutputService, times(2)).save(argumentCaptor.capture());
+    assertThat(argumentCaptor.getValue().getName())
+        .isEqualTo(K8sGitConfigMapInfo.SWEEPING_OUTPUT_NAME_PREFIX + "-serviceId");
+    assertThat(argumentCaptor.getValue().getAppId()).isEqualTo(APP_ID);
+
+    ArgumentCaptor<SweepingOutputInquiry> sweepingOutputInquiryCaptor =
+        ArgumentCaptor.forClass(SweepingOutputInquiry.class);
+    verify(mockedSweepingOutputService, times(2)).findSweepingOutput(sweepingOutputInquiryCaptor.capture());
+    assertThat(sweepingOutputInquiryCaptor.getAllValues().get(0).getName())
+        .isEqualTo(K8sGitFetchInfo.SWEEPING_OUTPUT_NAME_PREFIX);
+    assertThat(sweepingOutputInquiryCaptor.getAllValues().get(0).getAppId()).isEqualTo(APP_ID);
+    reset(mockedSweepingOutputService);
+    k8sRollingDeploy.handleAsyncResponseWrapper(k8sStateExecutor, context, response);
+    verify(mockedSweepingOutputService, times(1)).save(any());
+    verify(mockedSweepingOutputService, times(1)).findSweepingOutput(any());
+
+    reset(featureFlagService);
+    doReturn(false).when(featureFlagService).isEnabled(any(), any());
+    k8sCanaryDeploy.handleAsyncResponseWrapper(k8sStateExecutor, context, response);
+    k8sStateExecutionData = (K8sStateExecutionData) context.getStateExecutionData();
+    assertThat(k8sStateExecutionData.getValuesFiles().get(K8sValuesLocation.Environment)).containsExactly("EnvValues");
+    verify(mockedSweepingOutputService, times(1)).save(any());
+    verify(mockedSweepingOutputService, times(1)).findSweepingOutput(any());
+
+    reset(mockedSweepingOutputService);
+    k8sRollingDeploy.handleAsyncResponseWrapper(k8sStateExecutor, context, response);
+    verify(mockedSweepingOutputService, times(0)).save(any());
+    verify(mockedSweepingOutputService, times(0)).findSweepingOutput(any());
   }
 }

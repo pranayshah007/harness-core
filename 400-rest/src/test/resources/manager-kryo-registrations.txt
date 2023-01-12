@@ -1947,6 +1947,8 @@
 40023:software.wings.api.k8s.K8sGitConfigMapInfo
 40024:software.wings.api.k8s.K8sApplicationManifestSourceInfo
 40025:com.google.gson.internal.LinkedTreeMap
+40026:software.wings.api.k8s.K8sGitFetchInfo
+40027:software.wings.api.k8s.K8sGitInfo
 40028:io.harness.perpetualtask.PerpetualTaskSchedule
 40029:com.google.protobuf.Duration
 40030:io.harness.perpetualtask.PerpetualTaskClientContext
