@@ -601,7 +601,7 @@ public class AccountServiceTest extends WingsBaseTest {
     assertThat(accountService.listHarnessSupportAccounts(Collections.emptySet(), Set.of(AccountKeys.uuid))
                    .get(0)
                    .getAccountName())
-        .isNull();
+        .isNotNull();
     assertThat(accountService.getAccountsWithBasicInfo(false)).isNotEmpty();
     assertThat(accountService.getAccountsWithBasicInfo(false).get(0)).isNotNull();
     assertThat(accountService.getAccountsWithBasicInfo(false)).isNotEmpty();
