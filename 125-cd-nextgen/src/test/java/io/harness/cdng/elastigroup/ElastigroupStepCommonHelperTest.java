@@ -14,7 +14,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.category.element.UnitTests;
@@ -30,28 +33,35 @@ import io.harness.cdng.elastigroup.beans.ElastigroupStepExceptionPassThroughData
 import io.harness.cdng.elastigroup.beans.ElastigroupStepExecutorParams;
 import io.harness.cdng.elastigroup.config.StartupScriptOutcome;
 import io.harness.cdng.elastigroup.output.ElastigroupConfigurationOutput;
+import io.harness.cdng.execution.service.StageExecutionInfoService;
 import io.harness.cdng.infra.beans.ElastigroupInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.manifest.yaml.InlineStoreConfig;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO;
 import io.harness.delegate.beans.connector.spotconnector.SpotCredentialDTO;
+import io.harness.delegate.beans.elastigroup.ElastigroupPreFetchResult;
 import io.harness.delegate.beans.elastigroup.ElastigroupSetupResult;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.task.aws.LoadBalancerDetailsForBGDeployment;
 import io.harness.delegate.task.elastigroup.request.ElastigroupCommandRequest;
 import io.harness.delegate.task.elastigroup.request.ElastigroupSetupCommandRequest;
+import io.harness.delegate.task.elastigroup.response.ElastigroupPreFetchResponse;
 import io.harness.delegate.task.elastigroup.response.ElastigroupStartupScriptFetchResponse;
 import io.harness.delegate.task.elastigroup.response.SpotInstConfig;
 import io.harness.delegate.task.git.TaskStatus;
 import io.harness.filestore.dto.node.FileNodeDTO;
 import io.harness.filestore.service.FileStoreService;
+import io.harness.logging.CommandExecutionStatus;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
+import io.harness.ng.core.NGAccess;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
@@ -97,6 +107,7 @@ public class ElastigroupStepCommonHelperTest extends CDNGTestBase {
   @Mock private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Mock private ILogStreamingStepClient logStreamingStepClient;
   @Mock private FileStoreService fileStoreService;
+  @Mock private StageExecutionInfoService stageExecutionInfoService;
 
   @InjectMocks private ElastigroupStepCommonHelper elastigroupStepCommonHelper;
 
@@ -573,6 +584,102 @@ public class ElastigroupStepCommonHelperTest extends CDNGTestBase {
     assertThat(
         ((ElastigroupExecutionPassThroughData) taskChainResponse.getPassThroughData()).getElastigroupConfiguration())
         .isEqualTo("Config content");
+  }
+
+  @Test
+  @Owner(developers = FILIP)
+  @Category(UnitTests.class)
+  public void getEncryptedDataDetailTest() {
+    // Given
+    ConnectorInfoDTO connectorInfo = ConnectorInfoDTO.builder().build();
+    Ambiance ambiance = anAmbiance();
+    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+
+    // When
+    elastigroupStepCommonHelper.getEncryptedDataDetail(connectorInfo, ambiance);
+
+    // Then
+    verify(elastigroupEntityHelper).getEncryptionDataDetails(eq(connectorInfo), eq(ngAccess));
+  }
+
+  @Test
+  @Owner(developers = FILIP)
+  @Category(UnitTests.class)
+  public void executeNextLinkPreFetchRollbackTest() throws Exception {
+    // Given
+    ElastigroupPreFetchResponse response = ElastigroupPreFetchResponse.builder()
+                                               .commandExecutionStatus(CommandExecutionStatus.FAILURE)
+                                               .errorMessage("Example error message")
+                                               .build();
+
+    // When
+    final TaskChainResponse taskChainResponse =
+        elastigroupStepCommonHelper.executeNextLink(null, anAmbiance(), null, null, () -> response);
+
+    // Then
+    assertThat(taskChainResponse).isNotNull();
+
+    assertThat(taskChainResponse.isChainEnd()).isTrue();
+
+    assertThat(taskChainResponse.getPassThroughData())
+        .isNotNull()
+        .isInstanceOf(ElastigroupStepExceptionPassThroughData.class);
+
+    assertThat(((ElastigroupStepExceptionPassThroughData) taskChainResponse.getPassThroughData()).getErrorMessage())
+        .isNotNull()
+        .isEqualTo("Example error message");
+  }
+
+  @Test
+  @Owner(developers = FILIP)
+  @Category(UnitTests.class)
+  public void executeNextLinkPreFetchExceptionTest() throws Exception {
+    // Given
+    ElastigroupPreFetchResponse response =
+        ElastigroupPreFetchResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build();
+
+    // When
+    final TaskChainResponse taskChainResponse =
+        elastigroupStepCommonHelper.executeNextLink(null, anAmbiance(), null, null, () -> response);
+
+    // Then
+    assertThat(taskChainResponse).isNotNull();
+
+    assertThat(taskChainResponse.isChainEnd()).isTrue();
+
+    assertThat(taskChainResponse.getPassThroughData())
+        .isNotNull()
+        .isInstanceOf(ElastigroupStepExceptionPassThroughData.class);
+
+    assertThat(((ElastigroupStepExceptionPassThroughData) taskChainResponse.getPassThroughData()).getErrorMessage())
+        .isNotNull()
+        .isEqualTo("NullPointerException");
+  }
+
+  @Test
+  @Owner(developers = FILIP)
+  @Category(UnitTests.class)
+  public void executeNextLinkPreFetchTest() throws Exception {
+    // Given
+    ElastigroupPreFetchResponse response =
+        ElastigroupPreFetchResponse.builder()
+            .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+            .elastigroupPreFetchResult(
+                ElastigroupPreFetchResult.builder()
+                    .elastigroups(Collections.singletonList(ElastiGroup.builder().id("id").name("name").build()))
+                    .build())
+            .build();
+
+    ElastigroupExecutionPassThroughData passThroughData = ElastigroupExecutionPassThroughData.builder().build();
+
+    ElastigroupStepExecutor elastigroupStepExecutor = mock(ElastigroupStepExecutor.class);
+
+    // When
+    TaskChainResponse taskChainResponse = elastigroupStepCommonHelper.executeNextLink(
+        elastigroupStepExecutor, anAmbiance(), null, passThroughData, () -> response);
+
+    // Then
+    verify(elastigroupStepExecutor).executeElastigroupTask(eq(anAmbiance()), isNull(), eq(passThroughData), any());
   }
 
   private Ambiance anAmbiance() {
