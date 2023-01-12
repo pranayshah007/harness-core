@@ -37,7 +37,7 @@ public class CfRollingDeployResponseNG implements CfCommandResponseNG {
   String errorMessage;
   private TasApplicationInfo currentProdInfo;
   private TasApplicationInfo newApplicationInfo;
-  PcfManifestsPackage pcfManifestsPackage;
+  @Expression(ALLOW_SECRETS) PcfManifestsPackage pcfManifestsPackage;
   boolean deploymentStarted;
   private List<CfInternalInstanceElement> newAppInstances;
 

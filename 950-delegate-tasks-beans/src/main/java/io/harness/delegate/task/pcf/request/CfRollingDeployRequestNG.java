@@ -48,7 +48,7 @@ public class CfRollingDeployRequestNG extends AbstractTasTaskRequest {
   TasArtifactConfig tasArtifactConfig;
   @Expression(ALLOW_SECRETS) List<String> routeMaps;
   boolean useAppAutoScalar;
-  TasManifestsPackage tasManifestsPackage;
+  @Expression(ALLOW_SECRETS) TasManifestsPackage tasManifestsPackage;
   int desiredCount;
 
   @Builder

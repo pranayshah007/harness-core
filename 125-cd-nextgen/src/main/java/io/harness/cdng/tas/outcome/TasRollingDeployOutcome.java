@@ -10,6 +10,7 @@ package io.harness.cdng.tas.outcome;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.expression.Expression;
 import io.harness.pcf.model.CfCliVersionNG;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.data.Outcome;
@@ -21,6 +22,8 @@ import lombok.Setter;
 import lombok.Value;
 import lombok.experimental.NonFinal;
 import org.springframework.data.annotation.TypeAlias;
+
+import static io.harness.expression.Expression.ALLOW_SECRETS;
 
 @OwnedBy(HarnessTeam.CDP)
 @Value
@@ -35,5 +38,5 @@ public class TasRollingDeployOutcome implements Outcome, ExecutionSweepingOutput
   @Setter @NonFinal boolean isFirstDeployment;
   @Setter @NonFinal CfCliVersionNG cfCliVersion;
   @Setter @NonFinal boolean deploymentStarted;
-  @Setter @NonFinal List<String> routeMaps;
+  @Expression(ALLOW_SECRETS) @Setter @NonFinal List<String> routeMaps;
 }

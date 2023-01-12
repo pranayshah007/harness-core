@@ -49,7 +49,7 @@ public class CfRollingRollbackRequestNG extends AbstractTasTaskRequest {
   @Expression(ALLOW_SECRETS) List<String> routeMaps;
   @Expression(ALLOW_SECRETS) List<String> failedDeploymentRouteMaps;
   boolean useAppAutoScalar;
-  TasManifestsPackage tasManifestsPackage;
+  @Expression(ALLOW_SECRETS) TasManifestsPackage tasManifestsPackage;
   boolean isFirstDeployment;
   int desiredCount;
 
