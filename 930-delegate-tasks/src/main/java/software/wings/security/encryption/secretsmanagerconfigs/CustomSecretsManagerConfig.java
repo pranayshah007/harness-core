@@ -58,8 +58,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 @ToString(exclude = {"customSecretsManagerShellScript", "remoteHostConnector"})
 @EqualsAndHashCode(callSuper = true)
 @FieldNameConstants(innerTypeName = "CustomSecretsManagerConfigKeys")
-public class CustomSecretsManagerConfig
-    extends SecretManagerConfig {
+public class CustomSecretsManagerConfig extends SecretManagerConfig {
   private static final String TASK_SELECTORS = "Task Selectors";
   @NonNull @NotEmpty @Attributes(title = "Name") private String name;
   @NonNull @NotEmpty @Attributes(title = "Template Shell Script") private String templateId;
