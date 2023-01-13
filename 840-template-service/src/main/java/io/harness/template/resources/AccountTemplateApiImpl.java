@@ -45,8 +45,9 @@ public class AccountTemplateApiImpl implements AccountTemplateApi {
 
   @Override
   public Response deleteTemplateAcc(@ResourceIdentifier String templateIdentifier, String versionLabel,
-      @AccountIdentifier String account, String comments) {
-    return templateResourceApiUtils.deleteTemplate(account, null, null, templateIdentifier, versionLabel, comments);
+      @AccountIdentifier String account, String comments, Boolean forceDelete) {
+    return templateResourceApiUtils.deleteTemplate(
+        account, null, null, templateIdentifier, versionLabel, comments, Boolean.TRUE == forceDelete);
   }
 
   @Override

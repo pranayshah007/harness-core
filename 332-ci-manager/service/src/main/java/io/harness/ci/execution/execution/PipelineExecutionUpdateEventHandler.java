@@ -121,7 +121,7 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
           DelegateTaskRequest delegateTaskRequest =
               getDelegateCleanupTaskRequest(ambiance, ciCleanupTaskParams, accountId);
 
-          String taskId = delegateGrpcClientWrapper.submitAsyncTask(delegateTaskRequest, Duration.ZERO);
+          String taskId = delegateGrpcClientWrapper.submitAsyncTaskV2(delegateTaskRequest, Duration.ZERO);
           log.info("Submitted cleanup request with taskId {} for planExecutionId {}, stage {}", taskId,
               ambiance.getPlanExecutionId(), level.getIdentifier());
 

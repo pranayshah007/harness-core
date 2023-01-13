@@ -12,10 +12,10 @@ import static io.harness.audit.ResourceTypeConstants.SERVICE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.event.Event;
-import io.harness.ng.core.ProjectScope;
 import io.harness.ng.core.Resource;
 import io.harness.ng.core.ResourceScope;
 import io.harness.ng.core.service.entity.ServiceEntity;
+import io.harness.ng.core.utils.ResourceScopeUtils;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
@@ -36,7 +36,7 @@ public class ServiceUpdateEvent implements Event {
   @JsonIgnore
   @Override
   public ResourceScope getResourceScope() {
-    return new ProjectScope(accountIdentifier, newService.getOrgIdentifier(), newService.getProjectIdentifier());
+    return ResourceScopeUtils.getEntityScope(newService);
   }
 
   @JsonIgnore

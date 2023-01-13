@@ -16,14 +16,19 @@ public class ChangeConsumerFactory {
   @Inject private DebeziumProducerFactory producerFactory;
 
   @SuppressWarnings("unchecked")
-  public <T extends MongoCollectionChangeConsumer> T get(long sleepInterval, String collectionName,
-      ChangeConsumerConfig changeConsumerConfig, long producingCountPerBatch, int redisStreamSize, CfClient cfClient) {
+  public <T extends MongoCollectionChangeConsumer> T get(
+      ChangeConsumerConfig changeConsumerConfig, CfClient cfClient, String collection) {
     ConsumerType consumerType = changeConsumerConfig.getConsumerType();
     if (consumerType != null) {
       switch (consumerType) {
         case EVENTS_FRAMEWORK:
-          return (T) new EventsFrameworkChangeConsumer(
-              sleepInterval, collectionName, producerFactory, producingCountPerBatch, redisStreamSize, cfClient);
+          if (changeConsumerConfig.getConsumerMode() == ConsumerMode.SNAPSHOT) {
+            return (T) new EventsFrameworkChangeConsumerSnapshot(
+                changeConsumerConfig, cfClient, collection, producerFactory);
+          } else {
+            return (T) new EventsFrameworkChangeConsumerStreaming(
+                changeConsumerConfig, cfClient, collection, producerFactory);
+          }
         default:
           throw new InvalidRequestException("Change Consumer not Supported for " + consumerType.toString());
       }

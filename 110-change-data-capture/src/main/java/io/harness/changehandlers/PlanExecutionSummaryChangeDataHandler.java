@@ -106,6 +106,16 @@ public class PlanExecutionSummaryChangeDataHandler extends AbstractChangeDataHan
     }
   }
 
+  private void addCommonInfo(Map<String, String> columnValueMapping, DBObject dbObject) {
+    DBObject ciObject = (DBObject) (((BasicDBObject) dbObject.get("moduleInfo")).get("ci"));
+    if (ciObject.get("ciLicenseType") != null) {
+      columnValueMapping.put("ciLicenseType", ciObject.get("ciLicenseType").toString());
+    }
+    if (ciObject.get("ciEditionType") != null) {
+      columnValueMapping.put("ciEditionType", ciObject.get("ciEditionType").toString());
+    }
+  }
+
   @Override
   public Map<String, String> getColumnValueMapping(ChangeEvent<?> changeEvent, String[] fields) {
     if (changeEvent == null) {
@@ -158,6 +168,9 @@ public class PlanExecutionSummaryChangeDataHandler extends AbstractChangeDataHan
 
         // repoInfo
         commonHandlerRepoInfo(columnValueMapping, dbObject);
+
+        // commonInfo
+        addCommonInfo(columnValueMapping, dbObject);
       } else {
         return null;
       }

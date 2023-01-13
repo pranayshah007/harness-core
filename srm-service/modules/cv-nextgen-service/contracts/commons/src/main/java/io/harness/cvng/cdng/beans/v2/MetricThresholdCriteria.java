@@ -22,7 +22,7 @@ import lombok.experimental.SuperBuilder;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @ApiModel("MetricThresholdCriteriaV2")
 public class MetricThresholdCriteria {
-  int actionableCount;
+  Integer actionableCount;
   TimeSeriesThresholdComparisonType measurementType;
   Double greaterThanThreshold;
   Double lessThanThreshold;

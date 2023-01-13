@@ -55,6 +55,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -1010,7 +1011,7 @@ public class DeploymentTimeSeriesAnalysisServiceImplTest extends CvNextGenTestBa
             accountId, verificationJobInstanceId, deploymentTimeSeriesAnalysisFilter);
     assertThat(metricsAnalyses).hasSize(1);
     assertThat(metricsAnalyses.get(0).getMetricName()).isEqualTo("name");
-    assertThat(metricsAnalyses.get(0).getMetricIdentifier()).isNotBlank();
+    assertThat(metricsAnalyses.get(0).getMetricIdentifier()).isEqualTo("identifier");
     assertThat(metricsAnalyses.get(0).getTransactionGroup()).isEqualTo("txn");
     assertThat(metricsAnalyses.get(0).getHealthSourceIdentifier()).isEqualTo(cvConfig.getFullyQualifiedIdentifier());
     assertThat(metricsAnalyses.get(0).getAnalysisResult()).isEqualTo(AnalysisResult.UNHEALTHY);
@@ -1019,7 +1020,7 @@ public class DeploymentTimeSeriesAnalysisServiceImplTest extends CvNextGenTestBa
         .isEqualTo(AnalysisResult.NO_ANALYSIS);
     assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getAnalysisReason())
         .isEqualTo(AnalysisReason.NO_CONTROL_DATA);
-    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getAppliedThresholds()).isNull();
+    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getAppliedThresholds()).contains("thresholdId");
     assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getControlNodeIdentifier()).isNull();
     assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getControlDataType())
         .isEqualTo(ControlDataType.AVERAGE);
@@ -1148,12 +1149,18 @@ public class DeploymentTimeSeriesAnalysisServiceImplTest extends CvNextGenTestBa
 
   private DeploymentTimeSeriesAnalysisDTO.HostData createHostData(
       String hostName, int risk, Double score, List<Double> controlData, List<Double> testData) {
+    return createHostData(hostName, risk, score, controlData, testData, Collections.EMPTY_LIST);
+  }
+
+  private DeploymentTimeSeriesAnalysisDTO.HostData createHostData(String hostName, int risk, Double score,
+      List<Double> controlData, List<Double> testData, List<String> appliedThresholdIds) {
     return DeploymentTimeSeriesAnalysisDTO.HostData.builder()
         .hostName(hostName)
         .risk(risk)
         .score(score)
         .controlData(controlData)
         .testData(testData)
+        .appliedThresholdIds(appliedThresholdIds)
         .build();
   }
 
@@ -1227,11 +1234,12 @@ public class DeploymentTimeSeriesAnalysisServiceImplTest extends CvNextGenTestBa
   private DeploymentTimeSeriesAnalysis createDeploymentMetricAnalysis(String verificationTaskId) {
     DeploymentTimeSeriesAnalysisDTO.HostInfo hostInfo1 = createHostInfo("node1", -1, 0.0, false, true);
     DeploymentTimeSeriesAnalysisDTO.HostInfo hostInfo2 = createHostInfo("node2", 2, 2.2, false, true);
-    DeploymentTimeSeriesAnalysisDTO.HostData hostData1 = createHostData("node1", -1, 0.0, List.of(1D), List.of(1D));
+    DeploymentTimeSeriesAnalysisDTO.HostData hostData1 =
+        createHostData("node1", -1, 0.0, List.of(1D), List.of(1D), Arrays.asList("thresholdId"));
     DeploymentTimeSeriesAnalysisDTO.HostData hostData2 = createHostData("node2", 2, 2.0, List.of(1D), List.of(1D));
 
     DeploymentTimeSeriesAnalysisDTO.TransactionMetricHostData transactionMetricHostData1 =
-        createTransactionMetricHostData("txn", "name", 2, 0.5, Arrays.asList(hostData1, hostData2));
+        createTransactionMetricHostData("txn", "identifier", 2, 0.5, Arrays.asList(hostData1, hostData2));
 
     return DeploymentTimeSeriesAnalysis.builder()
         .accountId(accountId)

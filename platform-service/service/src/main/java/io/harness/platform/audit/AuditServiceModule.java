@@ -9,6 +9,7 @@ package io.harness.platform.audit;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.authorization.AuthorizationServiceHeader.AUDIT_SERVICE;
+import static io.harness.outbox.OutboxSDKConstants.DEFAULT_OUTBOX_POLL_CONFIGURATION;
 
 import io.harness.AccessControlClientModule;
 import io.harness.annotations.dev.OwnedBy;
@@ -21,12 +22,14 @@ import io.harness.audit.api.impl.AuditSettingsServiceImpl;
 import io.harness.audit.api.impl.AuditYamlServiceImpl;
 import io.harness.audit.api.streaming.StreamingService;
 import io.harness.audit.api.streaming.impl.StreamingServiceImpl;
+import io.harness.audit.client.remote.AuditClientModule;
 import io.harness.govern.ProviderModule;
 import io.harness.metrics.modules.MetricsModule;
 import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
+import io.harness.outbox.TransactionOutboxModule;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
@@ -125,6 +128,11 @@ public class AuditServiceModule extends AbstractModule {
     install(new AuditPersistenceModule());
 
     install(new AuditFilterModule());
+    install(new AuditClientModule(this.appConfig.getAuditServiceConfig().getAuditClientConfig(),
+        this.appConfig.getPlatformSecrets().getNgManagerServiceSecret(), AUDIT_SERVICE.getServiceId(),
+        this.appConfig.getAuditServiceConfig().isEnableAudit()));
+    install(new TransactionOutboxModule(DEFAULT_OUTBOX_POLL_CONFIGURATION, AUDIT_SERVICE.getServiceId(),
+        appConfig.getAuditServiceConfig().isExportMetricsToStackDriver()));
 
     bind(AuditYamlService.class).to(AuditYamlServiceImpl.class);
     bind(AuditService.class).to(AuditServiceImpl.class);

@@ -13,8 +13,10 @@ import io.harness.cvng.core.beans.healthsource.QueryDefinition;
 import io.harness.cvng.core.beans.healthsource.QueryParamsDTO;
 import io.harness.cvng.core.beans.monitoredService.MetricThreshold;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.NextGenHealthSourceSpec;
+import io.harness.cvng.core.constant.MonitoredServiceConstants;
 import io.harness.cvng.core.entities.NextGenMetricCVConfig;
 import io.harness.cvng.core.entities.NextGenMetricInfo;
+import io.harness.data.structure.EmptyPredicate;
 
 import com.google.common.base.Preconditions;
 import java.util.ArrayList;
@@ -59,6 +61,12 @@ public class NextGenMetricSourceSpecTransformer
               .stream()
               .filter(metricThreshold -> metricThreshold.getMetricName().equals(queryDefinition.getName()))
               .collect(Collectors.toList());
+      // We have already filtered out default thresholds so all the metric thresholds will always be of type custom
+      // here.
+      if (EmptyPredicate.isNotEmpty(metricThresholds)) {
+        metricThresholds.forEach(
+            metricThreshold -> metricThreshold.setMetricType(MonitoredServiceConstants.CUSTOM_METRIC_PACK));
+      }
       queryDefinition.getMetricThresholds().addAll(metricThresholds);
       queryDefinitions.add(queryDefinition);
     }));

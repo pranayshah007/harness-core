@@ -39,12 +39,14 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.steps.executables.PipelineTaskExecutable;
 import io.harness.supplier.ThrowingSupplier;
 
 import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -56,7 +58,8 @@ import lombok.extern.slf4j.Slf4j;
 public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
   public static final StepType STEP_TYPE = StepSpecTypeConstants.HTTP_STEP_TYPE;
 
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
+
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
 
   @Override
@@ -102,8 +105,8 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
             .parameters(new Object[] {httpTaskParametersNgBuilder.build()})
             .build();
 
-    return StepUtils.prepareTaskRequestWithTaskSelector(
-        ambiance, taskData, kryoSerializer, TaskSelectorYaml.toTaskSelector(httpStepParameters.delegateSelectors));
+    return TaskRequestsUtils.prepareTaskRequestWithTaskSelector(ambiance, taskData, referenceFalseKryoSerializer,
+        TaskSelectorYaml.toTaskSelector(httpStepParameters.delegateSelectors));
   }
 
   @Override

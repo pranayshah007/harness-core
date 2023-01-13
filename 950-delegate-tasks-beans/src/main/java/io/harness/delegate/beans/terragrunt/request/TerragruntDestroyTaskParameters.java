@@ -24,6 +24,5 @@ import lombok.experimental.SuperBuilder;
 @EqualsAndHashCode(callSuper = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class TerragruntDestroyTaskParameters extends AbstractTerragruntTaskParameters {
-  TerragruntCommandType commandType;
   EncryptedRecordData encryptedTfPlan;
 }

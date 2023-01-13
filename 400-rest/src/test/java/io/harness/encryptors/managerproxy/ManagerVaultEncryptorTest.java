@@ -57,7 +57,7 @@ public class ManagerVaultEncryptorTest extends CategoryTest {
     ArgumentCaptor<DelegateTask> delegateTaskArgumentCaptor = ArgumentCaptor.forClass(DelegateTask.class);
     doReturn(DeleteSecretTaskResponse.builder().build())
         .when(delegateService)
-        .executeTask(delegateTaskArgumentCaptor.capture());
+        .executeTaskV2(delegateTaskArgumentCaptor.capture());
 
     doReturn(EMPTY_MAP).when(managerEncryptorHelper).buildAbstractions(any());
     managerVaultEncryptor.deleteSecret(accountId, null, vaultConfig);

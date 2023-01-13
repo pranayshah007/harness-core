@@ -297,7 +297,8 @@ public class NGTriggerElementMapper {
             .pollInterval(config.getSource().getPollInterval() != null ? config.getSource().getPollInterval() : EMPTY)
             .webhookId(config.getSource().getWebhookId())
             .withServiceV2(withServiceV2)
-            .tags(TagMapper.convertToList(config.getTags()));
+            .tags(TagMapper.convertToList(config.getTags()))
+            .encryptedWebhookSecretIdentifier(config.getEncryptedWebhookSecretIdentifier());
 
     if (config.getSource().getType() == NGTriggerType.SCHEDULED) {
       entityBuilder.nextIterations(new ArrayList<>());

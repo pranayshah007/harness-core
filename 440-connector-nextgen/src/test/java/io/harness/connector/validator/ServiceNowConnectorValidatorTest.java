@@ -71,14 +71,14 @@ public class ServiceNowConnectorValidatorTest extends CategoryTest {
     when(encryptionHelper.getEncryptionDetail(any(), any(), any(), any())).thenReturn(null);
 
     when(ngSecretService.getEncryptionDetails(any(), any())).thenReturn(null);
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(ServiceNowTestConnectionTaskNGResponse.builder().canConnect(true).build());
 
     ConnectorValidationResult result = connectorValidator.validate(
         serviceNowConnectorDTO, ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, IDENTIFIER);
 
     assertThat(result.getStatus()).isEqualTo(SUCCESS);
-    verify(delegateGrpcClientWrapper).executeSyncTask(any());
+    verify(delegateGrpcClientWrapper).executeSyncTaskV2(any());
   }
 
   @Test
@@ -93,14 +93,14 @@ public class ServiceNowConnectorValidatorTest extends CategoryTest {
     when(encryptionHelper.getEncryptionDetail(any(), any(), any(), any())).thenReturn(null);
 
     when(ngSecretService.getEncryptionDetails(any(), any())).thenReturn(null);
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(ServiceNowTestConnectionTaskNGResponse.builder().canConnect(false).build());
 
     ConnectorValidationResult result = connectorValidator.validate(
         serviceNowConnectorDTO, ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, IDENTIFIER);
 
     assertThat(result.getStatus()).isEqualTo(FAILURE);
-    verify(delegateGrpcClientWrapper).executeSyncTask(any());
+    verify(delegateGrpcClientWrapper).executeSyncTaskV2(any());
   }
 
   @Test

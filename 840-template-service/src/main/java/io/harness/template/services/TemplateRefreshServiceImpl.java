@@ -57,32 +57,33 @@ public class TemplateRefreshServiceImpl implements TemplateRefreshService {
   private AccessControlClient accessControlClient;
 
   @Override
-  public void refreshAndUpdateTemplate(
-      String accountId, String orgId, String projectId, String templateIdentifier, String versionLabel) {
+  public void refreshAndUpdateTemplate(String accountId, String orgId, String projectId, String templateIdentifier,
+      String versionLabel, boolean loadFromCache) {
     TemplateEntityGetResponse templateEntityGetResponse =
-        getTemplate(accountId, orgId, projectId, templateIdentifier, versionLabel);
+        getTemplate(accountId, orgId, projectId, templateIdentifier, versionLabel, loadFromCache);
     TemplateEntity template = templateEntityGetResponse.getTemplateEntity();
     TemplateUtils.setupGitParentEntityDetails(
         accountId, orgId, projectId, template.getRepo(), template.getConnectorRef());
     String yaml = template.getYaml();
-    updateTemplate(accountId, orgId, projectId, templateIdentifier, versionLabel, yaml);
+    updateTemplate(accountId, orgId, projectId, templateIdentifier, versionLabel, yaml, loadFromCache);
   }
 
-  private void updateTemplate(
-      String accountId, String orgId, String projectId, String templateIdentifier, String versionLabel, String yaml) {
-    String refreshedYaml = refreshLinkedTemplateInputs(accountId, orgId, projectId, yaml);
+  private void updateTemplate(String accountId, String orgId, String projectId, String templateIdentifier,
+      String versionLabel, String yaml, boolean loadFromCache) {
+    String refreshedYaml = refreshLinkedTemplateInputs(accountId, orgId, projectId, yaml, loadFromCache);
     TemplateEntity templateEntity = NGTemplateDtoMapper.toTemplateEntity(
         accountId, orgId, projectId, templateIdentifier, versionLabel, refreshedYaml);
     templateService.updateTemplateEntity(templateEntity, ChangeType.MODIFY, false, "Refreshed template inputs");
   }
 
-  private void updateTemplateYamlAndGitDetails(String accountId, TemplateResponseDTO templateResponse) {
+  private void updateTemplateYamlAndGitDetails(
+      String accountId, TemplateResponseDTO templateResponse, boolean loadFromCache) {
     String orgId = templateResponse.getOrgIdentifier();
     String projectId = templateResponse.getProjectIdentifier();
     String templateIdentifier = templateResponse.getIdentifier();
     String versionLabel = templateResponse.getVersionLabel();
     String yaml = templateResponse.getYaml();
-    String refreshedYaml = refreshLinkedTemplateInputs(accountId, orgId, projectId, yaml);
+    String refreshedYaml = refreshLinkedTemplateInputs(accountId, orgId, projectId, yaml, loadFromCache);
     long startTime = System.currentTimeMillis();
     try (AutoLogContext ignore1 = new NgAutoLogContextForMethod(
              projectId, orgId, accountId, "validateTemplateInputs#updateTemplateYamlAndGitDetails", OVERRIDE_NESTS);) {
@@ -98,10 +99,10 @@ public class TemplateRefreshServiceImpl implements TemplateRefreshService {
     }
   }
 
-  private TemplateEntityGetResponse getTemplate(
-      String accountId, String orgId, String projectId, String templateIdentifier, String versionLabel) {
+  private TemplateEntityGetResponse getTemplate(String accountId, String orgId, String projectId,
+      String templateIdentifier, String versionLabel, boolean loadFromCache) {
     Optional<TemplateEntity> optionalTemplateEntity =
-        templateService.get(accountId, orgId, projectId, templateIdentifier, versionLabel, false, false);
+        templateService.get(accountId, orgId, projectId, templateIdentifier, versionLabel, false, loadFromCache);
 
     if (!optionalTemplateEntity.isPresent()) {
       throw new InvalidRequestException(
@@ -113,15 +114,16 @@ public class TemplateRefreshServiceImpl implements TemplateRefreshService {
   }
 
   @Override
-  public String refreshLinkedTemplateInputs(String accountId, String orgId, String projectId, String yaml) {
-    return templateInputsRefreshHelper.refreshTemplates(accountId, orgId, projectId, yaml);
+  public String refreshLinkedTemplateInputs(
+      String accountId, String orgId, String projectId, String yaml, boolean loadFromCache) {
+    return templateInputsRefreshHelper.refreshTemplates(accountId, orgId, projectId, yaml, loadFromCache);
   }
 
   @Override
-  public ValidateTemplateInputsResponseDTO validateTemplateInputsInTemplate(
-      String accountId, String orgId, String projectId, String templateIdentifier, String versionLabel) {
+  public ValidateTemplateInputsResponseDTO validateTemplateInputsInTemplate(String accountId, String orgId,
+      String projectId, String templateIdentifier, String versionLabel, boolean loadFromCache) {
     TemplateEntityGetResponse templateEntityGetResponse =
-        getTemplate(accountId, orgId, projectId, templateIdentifier, versionLabel);
+        getTemplate(accountId, orgId, projectId, templateIdentifier, versionLabel, loadFromCache);
     TemplateEntity template = templateEntityGetResponse.getTemplateEntity();
     TemplateUtils.setupGitParentEntityDetails(
         accountId, orgId, projectId, template.getRepo(), template.getConnectorRef());
@@ -142,14 +144,15 @@ public class TemplateRefreshServiceImpl implements TemplateRefreshService {
 
   @Override
   public ValidateTemplateInputsResponseDTO validateTemplateInputsForYaml(
-      String accountId, String orgId, String projectId, String yaml) {
+      String accountId, String orgId, String projectId, String yaml, boolean loadFromCache) {
     long start = System.currentTimeMillis();
     try (AutoLogContext ignore1 =
              new NgAutoLogContextForMethod(projectId, orgId, accountId, "validateTemplateInputs", OVERRIDE_NESTS);) {
       log.info(
           "[TemplateService] Starting validateTemplateInputsForYaml to pipeline yaml in project {}, org {}, account {}",
           projectId, orgId, accountId);
-      return templateInputsValidator.validateNestedTemplateInputsForGivenYaml(accountId, orgId, projectId, yaml);
+      return templateInputsValidator.validateNestedTemplateInputsForGivenYaml(
+          accountId, orgId, projectId, yaml, loadFromCache);
     } finally {
       log.info(
           "[TemplateService] validateTemplateInputsForYaml to pipeline yaml in project {}, org {}, account {} took {}ms ",
@@ -158,24 +161,24 @@ public class TemplateRefreshServiceImpl implements TemplateRefreshService {
   }
 
   @Override
-  public YamlDiffResponseDTO getYamlDiffOnRefreshingTemplate(
-      String accountId, String orgId, String projectId, String templateIdentifier, String versionLabel) {
+  public YamlDiffResponseDTO getYamlDiffOnRefreshingTemplate(String accountId, String orgId, String projectId,
+      String templateIdentifier, String versionLabel, boolean loadFromCache) {
     TemplateEntityGetResponse templateEntityGetResponse =
-        getTemplate(accountId, orgId, projectId, templateIdentifier, versionLabel);
+        getTemplate(accountId, orgId, projectId, templateIdentifier, versionLabel, loadFromCache);
     TemplateEntity template = templateEntityGetResponse.getTemplateEntity();
     TemplateUtils.setupGitParentEntityDetails(
         accountId, orgId, projectId, template.getRepo(), template.getConnectorRef());
     String templateYaml = template.getYaml();
-    String refreshedYaml = refreshLinkedTemplateInputs(accountId, orgId, projectId, templateYaml);
+    String refreshedYaml = refreshLinkedTemplateInputs(accountId, orgId, projectId, templateYaml, loadFromCache);
 
     return YamlDiffResponseDTO.builder().originalYaml(templateYaml).refreshedYaml(refreshedYaml).build();
   }
 
   @Override
-  public void recursivelyRefreshTemplates(
-      String accountId, String orgId, String projectId, String templateIdentifier, String versionLabel) {
+  public void recursivelyRefreshTemplates(String accountId, String orgId, String projectId, String templateIdentifier,
+      String versionLabel, boolean loadFromCache) {
     TemplateEntityGetResponse templateEntityGetResponse =
-        getTemplate(accountId, orgId, projectId, templateIdentifier, versionLabel);
+        getTemplate(accountId, orgId, projectId, templateIdentifier, versionLabel, loadFromCache);
     TemplateEntity template = templateEntityGetResponse.getTemplateEntity();
     TemplateUtils.setupGitParentEntityDetails(
         accountId, orgId, projectId, template.getRepo(), template.getConnectorRef());
@@ -186,30 +189,30 @@ public class TemplateRefreshServiceImpl implements TemplateRefreshService {
     }
 
     refreshTemplateInputsForErrorNodes(
-        accountId, orgId, projectId, validateTemplateInputsResponse.getErrorNodeSummary());
+        accountId, orgId, projectId, validateTemplateInputsResponse.getErrorNodeSummary(), loadFromCache);
   }
 
   @Override
   public YamlFullRefreshResponseDTO recursivelyRefreshTemplatesForYaml(
-      String accountId, String orgId, String projectId, String yaml) {
+      String accountId, String orgId, String projectId, String yaml, boolean loadFromCache) {
     ValidateTemplateInputsResponseDTO validateTemplateInputsResponse =
-        validateTemplateInputsForYaml(accountId, orgId, projectId, yaml);
+        validateTemplateInputsForYaml(accountId, orgId, projectId, yaml, loadFromCache);
 
     if (validateTemplateInputsResponse.isValidYaml()) {
       return YamlFullRefreshResponseDTO.builder().shouldRefreshYaml(false).build();
     }
     GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
     refreshTemplateInputsForErrorNodes(
-        accountId, orgId, projectId, validateTemplateInputsResponse.getErrorNodeSummary());
+        accountId, orgId, projectId, validateTemplateInputsResponse.getErrorNodeSummary(), loadFromCache);
 
     // Setting parent context again for fetching refreshLinkedTemplateInputs call
     GitAwareContextHelper.updateGitEntityContext(gitEntityInfo.toBuilder().build());
-    String refreshedYaml = refreshLinkedTemplateInputs(accountId, orgId, projectId, yaml);
+    String refreshedYaml = refreshLinkedTemplateInputs(accountId, orgId, projectId, yaml, loadFromCache);
     return YamlFullRefreshResponseDTO.builder().shouldRefreshYaml(true).refreshedYaml(refreshedYaml).build();
   }
 
   private void refreshTemplateInputsForErrorNodes(
-      String accountId, String orgId, String projectId, ErrorNodeSummary errorNodeSummary) {
+      String accountId, String orgId, String projectId, ErrorNodeSummary errorNodeSummary, boolean loadFromCache) {
     if (errorNodeSummary == null) {
       return;
     }
@@ -229,7 +232,7 @@ public class TemplateRefreshServiceImpl implements TemplateRefreshService {
             ResourceScope.of(accountId, templateResponse.getOrgIdentifier(), templateResponse.getProjectIdentifier()),
             Resource.of(TEMPLATE, templateResponse.getIdentifier()), PermissionTypes.TEMPLATE_EDIT_PERMISSION);
         GitAwareContextHelper.updateGitEntityContext(gitEntityInfo.toBuilder().build());
-        updateTemplateYamlAndGitDetails(accountId, templateResponse);
+        updateTemplateYamlAndGitDetails(accountId, templateResponse, loadFromCache);
         visitedTemplateSet.add(templateResponse);
       }
     }

@@ -21,6 +21,8 @@ import static io.harness.data.structure.CollectionUtils.distinctByKey;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.ModuleType;
+import io.harness.beans.FeatureName;
 import io.harness.cvng.activity.entities.Activity;
 import io.harness.cvng.activity.services.api.ActivityService;
 import io.harness.cvng.analysis.beans.Risk;
@@ -117,7 +119,11 @@ import io.harness.enforcement.client.services.EnforcementClientService;
 import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.licensing.LicenseStatus;
+import io.harness.licensing.beans.modules.AccountLicenseDTO;
+import io.harness.licensing.remote.NgLicenseHttpClient;
 import io.harness.ng.beans.PageResponse;
+import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.environment.dto.EnvironmentResponse;
 import io.harness.ng.core.mapper.TagMapper;
 import io.harness.notification.notificationclient.NotificationClient;
@@ -126,8 +132,10 @@ import io.harness.outbox.api.OutboxService;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.utils.PageUtils;
 
+import com.esotericsoftware.minlog.Log;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.annotations.VisibleForTesting;
@@ -173,6 +181,7 @@ import lombok.experimental.SuperBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
+import retrofit2.Call;
 
 @Slf4j
 public class MonitoredServiceServiceImpl implements MonitoredServiceService {
@@ -215,6 +224,8 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
   @Inject private ServiceLevelIndicatorService serviceLevelIndicatorService;
   @Inject private EnforcementClientService enforcementClientService;
   @Inject private FeatureFlagService featureFlagService;
+
+  @Inject NgLicenseHttpClient ngLicenseHttpClient;
   @Inject
   private Map<NotificationRuleConditionType, NotificationRuleTemplateDataGenerator>
       notificationRuleConditionTypeTemplateDataGeneratorMap;
@@ -1116,7 +1127,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
               .environmentName(environmentName)
               .changeSummary(changeSummary)
               .sloHealthIndicators(sloHealthIndicatorDTOMap.get(monitoredServiceListDTOBuilder.getIdentifier()))
-              .serviceLicenseEnabled(serviceLicenseEnabled)
+              .serviceMonitoringEnabled(serviceLicenseEnabled)
               .build());
     }
     return PageResponse.<MonitoredServiceListItemDTO>builder()
@@ -1260,16 +1271,8 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
   public HealthMonitoringFlagResponse setHealthMonitoringFlag(
       ProjectParams projectParams, String identifier, boolean enable) {
     MonitoredService monitoredService = getMonitoredService(projectParams, identifier);
-    if (enable == true
-        && featureFlagService.isFeatureFlagEnabled(
-            projectParams.getAccountIdentifier(), FeatureFlagNames.CVNG_LICENSE_ENFORCEMENT)) {
-      long increment = 0;
-      if (!isUniqueService(projectParams, monitoredService)) {
-        increment = 1;
-      }
-      enforcementClientService.checkAvailabilityWithIncrement(
-          FeatureRestrictionName.SRM_SERVICES, projectParams.getAccountIdentifier(), increment);
-    }
+    checkLicenseForMonitoredServiceToggle(projectParams, monitoredService, enable);
+
     Preconditions.checkNotNull(monitoredService, "Monitored service with identifier %s does not exists", identifier);
 
     MonitoredServiceParams monitoredServiceParams = MonitoredServiceParams.builder()
@@ -1329,6 +1332,40 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
         .identifier(identifier)
         .healthMonitoringEnabled(enable)
         .build();
+  }
+
+  private void checkLicenseForMonitoredServiceToggle(
+      ProjectParams projectParams, MonitoredService monitoredService, boolean enable) {
+    if (enable == true
+        && featureFlagService.isFeatureFlagEnabled(
+            projectParams.getAccountIdentifier(), FeatureFlagNames.CVNG_LICENSE_ENFORCEMENT)) {
+      AccountLicenseDTO accountLicenseDTO = null;
+      try {
+        Call<ResponseDTO<AccountLicenseDTO>> accountLicensesCall =
+            ngLicenseHttpClient.getAccountLicensesDTO(projectParams.getAccountIdentifier());
+        accountLicenseDTO = NGRestUtils.getResponse(accountLicensesCall);
+      } catch (Exception e) {
+        log.error("Failed to fetch License data");
+        throw e;
+      }
+
+      if ((!accountLicenseDTO.getAllModuleLicenses().get(ModuleType.SRM).isEmpty())
+          && accountLicenseDTO.getAllModuleLicenses()
+                 .get(ModuleType.SRM)
+                 .get(0)
+                 .getStatus()
+                 .equals(LicenseStatus.ACTIVE)) {
+        long increment = 0;
+        if (!isUniqueService(projectParams, monitoredService)) {
+          increment = 1;
+        }
+        enforcementClientService.checkAvailabilityWithIncrement(
+            FeatureRestrictionName.SRM_SERVICES, projectParams.getAccountIdentifier(), increment);
+      } else if (!featureFlagService.isFeatureFlagEnabled(
+                     projectParams.getAccountIdentifier(), FeatureName.CVNG_ENABLED.name())) {
+        throw new RuntimeException("Invalid License, Please Contact Harness Support");
+      }
+    }
   }
 
   private boolean isUniqueService(ProjectParams projectParams, MonitoredService monitoredService) {

@@ -24,6 +24,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
+import io.harness.cdng.provision.terraform.functor.TerraformPlanJsonFunctor;
 import io.harness.cdng.provision.terragrunt.outcome.TerragruntPlanOutcome;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
@@ -46,9 +47,13 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
+import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
+
+import software.wings.beans.VaultConfig;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -168,13 +173,21 @@ public class TerragruntPlanStepTest extends CategoryTest {
                 .build()));
     when(terragruntStepHelper.getBackendConfig(any(), any()))
         .thenReturn(InlineStoreDelegateConfig.builder().identifier("test-backend-id").build());
-    when(terragruntStepHelper.getEnvironmentVariablesMap(any())).thenReturn(new HashMap<>());
+    when(terragruntStepHelper.getEnvironmentVariablesMap(any())).thenReturn(new HashMap<>() {
+      { put("envKey", "envVal"); }
+    });
     when(terragruntStepHelper.getLatestFileId(any())).thenReturn(null);
+    when(terragruntStepHelper.getEncryptionDetails(any(), any(), any(), any()))
+        .thenReturn(List.of(EncryptedDataDetail.builder()
+                                .encryptionConfig(VaultConfig.builder().build())
+                                .encryptedData(EncryptedRecordData.builder().build())
+                                .build()));
     Mockito.mockStatic(StepUtils.class);
 
     terragruntPlanStep.obtainTaskAfterRbac(getAmbiance(), stepElementParameters, StepInputPackage.builder().build());
     PowerMockito.verifyStatic(StepUtils.class, times(1));
-    StepUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any());
+    StepUtils.prepareCDTaskRequest(
+        any(), taskDataArgumentCaptor.capture(), any(), any(), eq("Terragrunt Plan Task"), any(), any());
     assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
     assertThat(taskDataArgumentCaptor.getValue().getParameters()).isNotNull();
     TerragruntPlanTaskParameters params =
@@ -185,6 +198,8 @@ public class TerragruntPlanStepTest extends CategoryTest {
     assertThat(params.getRunConfiguration().getRunType()).isEqualTo(TerragruntTaskRunType.RUN_MODULE);
     assertThat(params.getRunConfiguration().getPath()).isEqualTo("test-path");
     assertThat(params.getTargets().get(0)).isEqualTo("test-target");
+    assertThat(params.getEnvVars().get("envKey")).isEqualTo("envVal");
+    assertThat(params.getEncryptedDataDetailList()).isNotEmpty();
     List<StoreDelegateConfig> inlineVar = params.getVarFiles();
     assertThat(((InlineStoreDelegateConfig) inlineVar.get(0)).getIdentifier()).isEqualTo("test-var1-id");
     assertThat(((InlineStoreDelegateConfig) params.getBackendFilesStore()).getIdentifier())
@@ -205,10 +220,17 @@ public class TerragruntPlanStepTest extends CategoryTest {
         TerragruntPlanTaskResponse.builder()
             .unitProgressData(UnitProgressData.builder().unitProgresses(unitProgresses).build())
             .stateFileId("test-stateFileId")
+            .planJsonFileId("test-planJsonFileId")
+            .configFilesSourceReference("test-configFileSourceRef")
+            .backendFileSourceReference("test-backendFileSourceRef")
+            .varFilesSourceReference(new HashMap<>() {
+              { put("test-var-file-ref-key", "test-var-file-ref-value"); }
+            })
             .build();
 
     TerragruntPlanStepParameters parameters =
         TerragruntPlanStepParameters.infoBuilder()
+            .stepFqn("step1")
             .provisionerIdentifier(ParameterField.createValueField("test-provisionerId"))
             .configuration(TerragruntPlanExecutionDataParameters.builder()
                                .command(TerragruntPlanCommand.APPLY)
@@ -226,6 +248,8 @@ public class TerragruntPlanStepTest extends CategoryTest {
             .build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(parameters).build();
 
+    when(terragruntStepHelper.saveTerraformPlanJsonOutput(any(), any(), any())).thenReturn("test-terraformJsonOutput");
+
     StepResponse stepResponse = terragruntPlanStep.handleTaskResultWithSecurityContext(
         ambiance, stepElementParameters, () -> terragruntTaskNGResponse);
 
@@ -234,10 +258,18 @@ public class TerragruntPlanStepTest extends CategoryTest {
     assertThat(stepResponse.getStepOutcomes()).hasSize(1);
     StepResponse.StepOutcome stepOutcome = ((List<StepResponse.StepOutcome>) stepResponse.getStepOutcomes()).get(0);
     assertThat(stepOutcome.getOutcome()).isInstanceOf(TerragruntPlanOutcome.class);
-    verify(terragruntStepHelper, times(1)).saveTerragruntInheritOutput(any(), any(), any());
-    verify(terragruntStepHelper, times(1)).updateParentEntityIdAndVersion(any(), any());
+    assertThat(stepOutcome.getOutcome().toViewJson()).isNotBlank();
+    TerragruntPlanOutcome terragruntPlanOutcome = (TerragruntPlanOutcome) stepOutcome.getOutcome();
+    assertThat(terragruntPlanOutcome.getJsonFilePath())
+        .isEqualTo(TerraformPlanJsonFunctor.getExpression("step1", "test-terraformJsonOutput"));
+    verify(terragruntStepHelper, times(1))
+        .saveTerragruntInheritOutput(eq(parameters), eq(terragruntTaskNGResponse), any());
+    verify(terragruntStepHelper, times(1)).updateParentEntityIdAndVersion(any(), eq("test-stateFileId"));
     verify(terragruntStepHelper, times(1)).generateFullIdentifier(any(), any());
-    verify(terragruntStepHelper, times(1)).saveTerragruntPlanExecutionDetails(any(), any(), any(), any());
-    verify(terragruntStepHelper, times(1)).saveTerraformPlanJsonOutput(any(), any(), any());
+    verify(terragruntStepHelper, times(1))
+        .saveTerragruntPlanExecutionDetails(
+            eq(ambiance), eq(terragruntTaskNGResponse), eq("test-provisionerId"), eq(parameters));
+    verify(terragruntStepHelper, times(1))
+        .saveTerraformPlanJsonOutput(eq(ambiance), eq(terragruntTaskNGResponse), eq("test-provisionerId"));
   }
 }

@@ -121,6 +121,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/AccountHeaderParam'
         - $ref: '#/components/parameters/Comments'
+        - $ref: '#/components/parameters/ForceDelete'
       tags:
         - Account Template
       description: Deletes particular version of Template at Account scope.
@@ -247,6 +248,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/AccountHeaderParam'
         - $ref: '#/components/parameters/Comments'
+        - $ref: '#/components/parameters/ForceDelete'
       tags:
         - Org Template
       description: Deletes particular version of Template at Organization scope.
@@ -377,6 +379,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/AccountHeaderParam'
         - $ref: '#/components/parameters/Comments'
+        - $ref: '#/components/parameters/ForceDelete'
       tags:
         - Project Template
       description: Deletes particular version of Template at Project scope.
@@ -1112,6 +1115,13 @@ components:
       schema:
         type: string
       description: 'Specify comment with respect to changes  '
+    ForceDelete:
+      name: forceDelete
+      in: query
+      schema:
+        type: boolean
+        default: false
+      description: Enable this field to force delete a template
     Limit:
       name: limit
       in: query

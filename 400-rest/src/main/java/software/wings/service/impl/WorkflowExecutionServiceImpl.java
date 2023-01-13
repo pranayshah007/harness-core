@@ -1222,7 +1222,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
       pageRequest.addFieldsIncluded(WorkflowExecutionKeys.pipelineExecution);
     }
 
-    List<WorkflowExecution> workflowExecutions = wingsPersistence.query(WorkflowExecution.class, pageRequest);
+    List<WorkflowExecution> workflowExecutions = wingsPersistence.queryAnalytics(WorkflowExecution.class, pageRequest);
     // Adding check for pse.getStateUuid() == null for backward compatibility. Can be removed later
     Map<String, LongSummaryStatistics> stateEstimatesSum =
         workflowExecutions.stream()
@@ -3625,7 +3625,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
             .addFilter(WorkflowExecutionKeys.status, IN, NEW, QUEUED, RUNNING, PAUSED)
             .addFieldsIncluded(WorkflowExecutionKeys.status)
             .build();
-
+    pageRequest.setOptions(Collections.singletonList(PageRequest.Option.SKIPCOUNT));
     PageResponse<WorkflowExecution> pageResponse = wingsPersistence.query(WorkflowExecution.class, pageRequest);
     if (pageResponse == null) {
       return null;
@@ -3860,7 +3860,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
                                                      .addFilter("status", IN, activeStatuses())
                                                      .addFieldsIncluded("uuid")
                                                      .build();
-
+    pageRequest.setOptions(Collections.singletonList(PageRequest.Option.SKIPCOUNT));
     PageResponse<WorkflowExecution> pageResponse = wingsPersistence.query(WorkflowExecution.class, pageRequest);
     if (isEmpty(pageResponse)) {
       return false;
@@ -5740,7 +5740,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     }
 
     if (isNotEmpty(workflowExecution.getInfraMappingIds())) {
-      workflowExecutionQuery.filter(WorkflowExecutionKeys.infraMappingIds, workflowExecution.getInfraMappingIds());
+      workflowExecutionQuery.field(WorkflowExecutionKeys.infraMappingIds).in(workflowExecution.getInfraMappingIds());
     }
 
     addressInefficientQueries(workflowExecutionQuery);
@@ -5772,7 +5772,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     }
 
     if (isNotEmpty(infraMappingList)) {
-      workflowExecutionQuery.filter(WorkflowExecutionKeys.infraMappingIds, new HashSet<>(infraMappingList));
+      workflowExecutionQuery.field(WorkflowExecutionKeys.infraMappingIds).in(new HashSet<>(infraMappingList));
     }
 
     addressInefficientQueries(workflowExecutionQuery);
@@ -5920,7 +5920,9 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
       pageRequestBuilder.addFilter(
           WorkflowExecutionKeys.infraMappingIds, IN, workflowExecution.getInfraMappingIds().toArray());
     }
-    return wingsPersistence.query(WorkflowExecution.class, pageRequestBuilder.build());
+    PageRequest pageRequest = pageRequestBuilder.build();
+    pageRequest.setOptions(Collections.singletonList(PageRequest.Option.SKIPCOUNT));
+    return wingsPersistence.query(WorkflowExecution.class, pageRequest);
   }
 
   @Override
@@ -6061,6 +6063,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
             .withOffset(String.valueOf(pageOffset))
             .addOrder(aSortOrder().withField(WorkflowExecutionKeys.createdAt, OrderType.DESC).build())
             .build();
+    pageRequest.setOptions(Collections.singletonList(PageRequest.Option.SKIPCOUNT));
 
     return wingsPersistence.query(WorkflowExecution.class, pageRequest);
   }
@@ -6087,6 +6090,8 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     if (!isEmpty(serviceId)) {
       pageRequest.addFilter(WorkflowExecutionKeys.serviceIds, EQ, serviceId);
     }
+    pageRequest.setOptions(Collections.singletonList(PageRequest.Option.SKIPCOUNT));
+
     final PageResponse<WorkflowExecution> workflowExecutions =
         listExecutions(pageRequest, false, true, false, false, false, false);
     if (workflowExecutions != null) {

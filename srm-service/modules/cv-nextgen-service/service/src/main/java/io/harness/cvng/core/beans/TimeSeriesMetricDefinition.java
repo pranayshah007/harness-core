@@ -24,6 +24,7 @@ import lombok.Data;
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class TimeSeriesMetricDefinition {
+  String id;
   String metricName;
   String metricIdentifier;
   TimeSeriesMetricType metricType;

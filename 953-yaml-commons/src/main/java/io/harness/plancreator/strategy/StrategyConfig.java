@@ -10,6 +10,7 @@ package io.harness.plancreator.strategy;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.beans.SwaggerConstants.INTEGER_CLASSPATH;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
@@ -38,7 +39,7 @@ public class StrategyConfig {
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
   String uuid;
-  @JsonProperty("matrix") MatrixConfigInterface matrixConfig;
+  @JsonProperty("matrix") @YamlSchemaTypes(value = {runtime}) ParameterField<MatrixConfigInterface> matrixConfig;
   @JsonProperty("repeat") HarnessForConfig repeat;
 
   @ApiModelProperty(dataType = INTEGER_CLASSPATH)

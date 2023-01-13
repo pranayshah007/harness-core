@@ -9,7 +9,7 @@ package io.harness.auditevent.streaming;
 
 import static io.harness.auditevent.streaming.AuditEventStreamingConstants.ACCOUNT_IDENTIFIER_PARAMETER_KEY;
 import static io.harness.auditevent.streaming.AuditEventStreamingConstants.AUDIT_EVENT_PUBLISHER_JOB;
-import static io.harness.auditevent.streaming.AuditEventStreamingConstants.START_TIME_PARAMETER_KEY;
+import static io.harness.auditevent.streaming.AuditEventStreamingConstants.JOB_START_TIME_PARAMETER_KEY;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -43,7 +43,7 @@ public class AuditEventJobScheduler {
     this.auditEventPublisherJob = auditEventPublisherJob;
   }
 
-  @Scheduled(cron = "* */1 * * * *") // run every 1 min
+  @Scheduled(cron = "0 */10 * * * *") // run every 10 min
   public void runEventCollectionBatchJob() {
     // TODO: Replace with real logic of fetching account identifier based in stateful set logic
     List<String> accountIdentifiers = new ArrayList<>();
@@ -55,7 +55,7 @@ public class AuditEventJobScheduler {
       log.info("Starting Event collection batch job");
       JobParameters jobParameters = new JobParameters(
           Map.ofEntries(Map.entry(ACCOUNT_IDENTIFIER_PARAMETER_KEY, new JobParameter(accountIdentifier)),
-              Map.entry(START_TIME_PARAMETER_KEY, new JobParameter(System.currentTimeMillis()))));
+              Map.entry(JOB_START_TIME_PARAMETER_KEY, new JobParameter(System.currentTimeMillis()))));
       jobLauncher.run(auditEventPublisherJob, jobParameters);
     } catch (JobExecutionAlreadyRunningException e) {
       throw new RuntimeException(e);

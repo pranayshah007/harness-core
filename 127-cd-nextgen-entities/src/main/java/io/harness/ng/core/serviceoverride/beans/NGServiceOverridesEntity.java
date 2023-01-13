@@ -16,6 +16,7 @@ import io.harness.data.validator.Trimmed;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
+import io.harness.ng.core.ScopeAware;
 import io.harness.persistence.PersistentEntity;
 
 import com.google.common.collect.ImmutableList;
@@ -42,7 +43,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @TypeAlias("io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity")
 @RecasterAlias("io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity")
 @OwnedBy(CDC)
-public class NGServiceOverridesEntity implements PersistentEntity {
+public class NGServiceOverridesEntity implements PersistentEntity, ScopeAware {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()

@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.delegate.task.gcp.taskHandlers;
+package io.harness.delegate.task.gcp.taskhandlers;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.connector.ConnectivityStatus.SUCCESS;
@@ -28,7 +28,6 @@ import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorCredentialDT
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpCredentialType;
 import io.harness.delegate.beans.connector.gcpconnector.GcpManualDetailsDTO;
-import io.harness.delegate.task.gcp.GcpRequestMapper;
 import io.harness.delegate.task.gcp.request.GcpValidationRequest;
 import io.harness.encryption.SecretRefData;
 import io.harness.gcp.client.GcpClient;
