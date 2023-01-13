@@ -35,6 +35,7 @@ import io.harness.delegate.task.elastigroup.response.SpotInstConfig;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
@@ -354,7 +355,29 @@ public class ElastigroupBGStageSetupStepTest extends CDNGTestBase {
         anAmbiance(), stepParameters, passThroughData, throwingSupplier);
 
     // Then
-    assertThat(response).isNotNull();
+    assertThat(response).isNotNull().extracting(StepResponse::getStatus).isEqualTo(Status.SUCCEEDED);
+  }
+
+  @Test
+  @Owner(developers = {FILIP})
+  @Category(UnitTests.class)
+  public void finalizeExecutionWithSecurityContextNegativeTest() throws Exception {
+    // Given
+    StepElementParameters stepParameters = StepElementParameters.builder().build();
+    ElastigroupExecutionPassThroughData passThroughData =
+        ElastigroupExecutionPassThroughData.builder()
+            .connectedCloudProvider(AwsConnectedCloudProvider.builder().build())
+            .build();
+    ThrowingSupplier<ResponseData> throwingSupplier = () -> {
+      throw new RuntimeException();
+    };
+
+    // When
+    elastigroupSetupStep.finalizeExecutionWithSecurityContext(
+        anAmbiance(), stepParameters, passThroughData, throwingSupplier);
+
+    // Then
+    verify(elastigroupStepCommonHelper).handleTaskException(eq(anAmbiance()), eq(passThroughData), any());
   }
 
   private Ambiance anAmbiance() {
