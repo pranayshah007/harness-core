@@ -9,6 +9,10 @@ package io.harness.cdng.elastigroup;
 
 import static io.harness.rule.OwnerRule.FILIP;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
+import static io.harness.spotinst.model.SpotInstConstants.DEFAULT_ELASTIGROUP_MAX_INSTANCES;
+import static io.harness.spotinst.model.SpotInstConstants.DEFAULT_ELASTIGROUP_MIN_INSTANCES;
+import static io.harness.spotinst.model.SpotInstConstants.DEFAULT_ELASTIGROUP_TARGET_INSTANCES;
+import static io.harness.spotinst.model.SpotInstConstants.GROUP_CONFIG_ELEMENT;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -74,12 +78,14 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
 import io.harness.spotinst.model.ElastiGroup;
+import io.harness.spotinst.model.ElastiGroupCapacity;
 import io.harness.steps.StepHelper;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 
 import software.wings.beans.TaskType;
 
+import com.google.gson.Gson;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Optional;
@@ -119,10 +125,28 @@ public class ElastigroupStepCommonHelperTest extends CDNGTestBase {
   @Test
   @Owner(developers = {PIYUSH_BHUWALKA})
   @Category(UnitTests.class)
-  public void renderCountTest() {
+  public void renderCountDefaultTest() {
     Ambiance ambiance = anAmbiance();
     int value = elastigroupStepCommonHelper.renderCount(ParameterField.<Integer>builder().build(), 2, ambiance);
     assertThat(value).isEqualTo(2);
+  }
+
+  @Test
+  @Owner(developers = {FILIP})
+  @Category(UnitTests.class)
+  public void renderCountValueFromParameterFieldTest() {
+    // given
+    Ambiance ambiance = anAmbiance();
+    ParameterField<Integer> parameterField = ParameterField.<Integer>builder().value(12).build();
+
+    when(engineExpressionService.renderExpression(any(), any()))
+        .thenAnswer(invocationOnMock -> invocationOnMock.getArgument(1));
+
+    // when
+    int value = elastigroupStepCommonHelper.renderCount(parameterField, 2, ambiance);
+
+    // then
+    assertThat(value).isEqualTo(12);
   }
 
   @Test
@@ -680,6 +704,73 @@ public class ElastigroupStepCommonHelperTest extends CDNGTestBase {
 
     // Then
     verify(elastigroupStepExecutor).executeElastigroupTask(eq(anAmbiance()), isNull(), eq(passThroughData), any());
+  }
+
+  @Test
+  @Owner(developers = FILIP)
+  @Category(UnitTests.class)
+  public void generateOriginalConfigFromJsonCurrentRunningTest() {
+    // Given
+    ElastiGroup elastigroup = ElastiGroup.builder()
+                                  .name("elastiname")
+                                  .id("elastiid")
+                                  .capacity(ElastiGroupCapacity.builder().target(5).minimum(2).maximum(10).build())
+                                  .build();
+    String json = new Gson().toJson(Collections.singletonMap(GROUP_CONFIG_ELEMENT, elastigroup));
+
+    ElastigroupInstances elastigroupInstances =
+        ElastigroupInstances.builder().type(ElastigroupInstancesType.CURRENT_RUNNING).build();
+
+    // When
+    ElastiGroup result =
+        elastigroupStepCommonHelper.generateOriginalConfigFromJson(json, elastigroupInstances, anAmbiance());
+
+    // Then
+    assertThat(result).isEqualTo(ElastiGroup.builder()
+                                     .name("elastiname")
+                                     .id("elastiid")
+                                     .capacity(ElastiGroupCapacity.builder()
+                                                   .target(DEFAULT_ELASTIGROUP_TARGET_INSTANCES)
+                                                   .minimum(DEFAULT_ELASTIGROUP_MIN_INSTANCES)
+                                                   .maximum(DEFAULT_ELASTIGROUP_MAX_INSTANCES)
+                                                   .build())
+                                     .build());
+  }
+
+  @Test
+  @Owner(developers = FILIP)
+  @Category(UnitTests.class)
+  public void generateOriginalConfigFromJsonFixedTest() {
+    // Given
+    ElastiGroup elastigroup = ElastiGroup.builder()
+                                  .name("elastiname")
+                                  .id("elastiid")
+                                  .capacity(ElastiGroupCapacity.builder().target(5).minimum(2).maximum(10).build())
+                                  .build();
+    String json = new Gson().toJson(Collections.singletonMap(GROUP_CONFIG_ELEMENT, elastigroup));
+
+    ElastigroupInstances elastigroupInstances = ElastigroupInstances.builder()
+                                                    .type(ElastigroupInstancesType.FIXED)
+                                                    .spec(ElastigroupFixedInstances.builder()
+                                                              .min(ParameterField.createValueField(20))
+                                                              .max(ParameterField.createValueField(40))
+                                                              .desired(ParameterField.createValueField(30))
+                                                              .build())
+                                                    .build();
+
+    when(engineExpressionService.renderExpression(any(), any()))
+        .thenAnswer(invocationOnMock -> invocationOnMock.getArgument(1));
+
+    // When
+    ElastiGroup result =
+        elastigroupStepCommonHelper.generateOriginalConfigFromJson(json, elastigroupInstances, anAmbiance());
+
+    // Then
+    assertThat(result).isEqualTo(ElastiGroup.builder()
+                                     .name("elastiname")
+                                     .id("elastiid")
+                                     .capacity(ElastiGroupCapacity.builder().target(30).minimum(20).maximum(40).build())
+                                     .build());
   }
 
   private Ambiance anAmbiance() {
