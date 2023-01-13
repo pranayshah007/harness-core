@@ -28,6 +28,7 @@ import static io.harness.remote.client.NGRestUtils.getResponse;
 import static software.wings.beans.Account.AccountKeys;
 import static software.wings.beans.User.Builder;
 
+import static com.google.common.collect.Sets.newHashSet;
 import static org.apache.cxf.common.util.UrlUtils.urlDecode;
 
 import io.harness.annotations.dev.HarnessModule;
@@ -300,7 +301,7 @@ public class AuthenticationManager {
       }
     }
     if (user != null && isEmpty(user.getSupportAccounts())) {
-      userService.loadSupportAccounts(user, Set.of(AccountKeys.uuid));
+      userService.loadSupportAccounts(user, newHashSet(AccountKeys.uuid));
     }
     return user;
   }
