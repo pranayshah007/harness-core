@@ -1490,10 +1490,10 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(TasConstants.class, 10000259);
     kryo.register(TasManifestsPackage.class, 10000260);
     kryo.register(CfSwapRouteCommandResult.class, 10000261);
-    kryo.register(CfRollingDeployRequestNG.class, 10000262);
-    kryo.register(CfRollingDeployResponseNG.class, 10000263);
-    kryo.register(CfRollingRollbackRequestNG.class, 10000264);
-    kryo.register(CfRollingRollbackResponseNG.class, 10000265);
+    kryo.register(CfRollingDeployRequestNG.class, 10000263);
+    kryo.register(CfRollingDeployResponseNG.class, 10000264);
+    kryo.register(CfRollingRollbackRequestNG.class, 10000265);
+    kryo.register(CfRollingRollbackResponseNG.class, 10000266);
 
     kryo.register(SecretType.class, 543214);
     kryo.register(ValueType.class, 543215);
