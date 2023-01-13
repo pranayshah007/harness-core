@@ -51,7 +51,11 @@ public class DebeziumConfiguration {
 
   public static Properties getDebeziumProperties(DebeziumConfig debeziumConfig, RedisConfig redisLockConfig) {
     Properties props = new Properties();
-    props.setProperty(SNAPSHOT_MODE, debeziumConfig.getSnapshotMode());
+    if (!debeziumConfig.getSnapshotMode().equals("all")) {
+      props.setProperty(SNAPSHOT_MODE, debeziumConfig.getSnapshotMode());
+    } else {
+      props.setProperty(SNAPSHOT_MODE, "initial");
+    }
     props.setProperty(CONNECTOR_NAME, debeziumConfig.getConnectorName());
     props.setProperty(OFFSET_STORAGE, RedisOffsetBackingStore.class.getName());
     props.setProperty(OFFSET_STORAGE_FILE_FILENAME, JsonUtils.asJson(redisLockConfig));

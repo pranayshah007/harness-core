@@ -711,6 +711,9 @@ executorsConfig:
     idleTime: ${DATA_RECONCILIATION_IDLE_TIME:-10}
     timeUnit: ${DATA_RECONCILIATION_IDLE_TIME_TIME_UNIT:-SECONDS}
 
+dataReconciliation:
+  enabled: true
+  duration: 900
 
 disableDelegateMgmtInManager: false
 

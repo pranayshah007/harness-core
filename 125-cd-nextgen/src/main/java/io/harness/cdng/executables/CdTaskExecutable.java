@@ -22,9 +22,12 @@ import io.harness.utils.PolicyEvalUtils;
 import com.google.inject.Inject;
 
 @OwnedBy(CDC)
+// Task Executable with RBAC, Rollback and postTaskValidation
 public abstract class CdTaskExecutable<R extends ResponseData> extends TaskExecutableWithCapabilities<R> {
   @Inject OpaServiceClient opaServiceClient;
 
+  // evaluating policies added in advanced section of the steps and updating status and failure info in the step
+  // response
   public StepResponse postTaskValidate(
       Ambiance ambiance, StepElementParameters stepParameters, StepResponse stepResponse) {
     if (Status.SUCCEEDED.equals(stepResponse.getStatus())) {

@@ -13,6 +13,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.service.entity.ServiceEntity;
+import io.harness.ng.core.service.mappers.NGServiceEntityMapper;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 
@@ -85,6 +86,40 @@ public class ServiceStepOutcomeTest {
     assertThat(outcome.getName()).isEqualTo("name");
     assertThat(outcome.getDescription()).isEqualTo("desc");
     assertThat(outcome.getType()).isEqualTo("k8s");
+    assertThat(outcome.getTags()).hasSize(1).containsOnlyKeys("k");
+    assertThat(outcome.isGitOpsEnabled()).isTrue();
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.HINGER)
+  @Category(UnitTests.class)
+  public void testToOutcomeWithServiceRef() {
+    ServiceEntity entity = ServiceEntity.builder()
+                               .identifier("serviceId")
+                               .accountId("accountId")
+                               .name("name")
+                               .type(ServiceDefinitionType.KUBERNETES)
+                               .tag(NGTag.builder().key("k").value("v").build())
+                               .gitOpsEnabled(true)
+                               .yaml("service:\n"
+                                   + "  identifier: \"serviceId\"\n"
+                                   + "  gitOpsEnabled: true\n"
+                                   + "  serviceDefinition:\n"
+                                   + "    type: \"Kubernetes\"\n"
+                                   + "    spec:\n"
+                                   + "      variables:\n"
+                                   + "      - name: \"variable1\"\n"
+                                   + "        type: \"String\"\n"
+                                   + "        value: \"<+input>\"")
+                               .description("desc")
+                               .build();
+
+    ServiceStepOutcome outcome = ServiceStepOutcome.fromServiceStepV2(
+        entity, NGServiceEntityMapper.toNGServiceConfig(entity).getNgServiceV2InfoConfig());
+    assertThat(outcome.getIdentifier()).isEqualTo("account.serviceId");
+    assertThat(outcome.getName()).isEqualTo("name");
+    assertThat(outcome.getDescription()).isEqualTo("desc");
+    assertThat(outcome.getType()).isEqualTo("Kubernetes");
     assertThat(outcome.getTags()).hasSize(1).containsOnlyKeys("k");
     assertThat(outcome.isGitOpsEnabled()).isTrue();
   }

@@ -22,6 +22,7 @@ import io.harness.pms.pipeline.filter.PipelineFilter;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.sdk.core.filter.creation.beans.FilterCreationContext;
 import io.harness.pms.sdk.core.pipeline.filters.ChildrenFilterJsonCreator;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 
@@ -78,7 +79,7 @@ public class StepGroupPmsFilterJsonCreator extends ChildrenFilterJsonCreator<Ste
   private void validateStrategy(StepGroupElementConfig field) {
     StrategyConfig strategy = field.getStrategy();
     if (strategy != null && containsCommandStep(field)
-        && (strategy.getMatrixConfig() != null
+        && ((ParameterField.isNotNull(strategy.getMatrixConfig()) && strategy.getMatrixConfig().getValue() != null)
             || (strategy.getParallelism() != null
                 && (strategy.getParallelism().getValue() != null
                     || strategy.getParallelism().getExpressionValue() != null)))) {

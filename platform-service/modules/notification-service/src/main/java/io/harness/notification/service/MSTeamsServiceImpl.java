@@ -176,7 +176,7 @@ public class MSTeamsServiceImpl implements ChannelService {
               .expressionFunctorToken(expressionFunctorToken)
               .executionTimeout(Duration.ofMinutes(1L))
               .build();
-      String taskId = delegateGrpcClientWrapper.submitAsyncTask(delegateTaskRequest, Duration.ZERO);
+      String taskId = delegateGrpcClientWrapper.submitAsyncTaskV2(delegateTaskRequest, Duration.ZERO);
       log.info("Async delegate task created with taskID {}", taskId);
       processingResponse = NotificationProcessingResponse.allSent(microsoftTeamsWebhookUrls.size());
     } else {

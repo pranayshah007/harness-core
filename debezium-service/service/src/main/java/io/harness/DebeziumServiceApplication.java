@@ -13,9 +13,11 @@ import io.harness.cf.AbstractCfModule;
 import io.harness.cf.CfClientConfig;
 import io.harness.cf.CfMigrationConfig;
 import io.harness.debezium.ChangeConsumerConfig;
+import io.harness.debezium.ConsumerMode;
 import io.harness.debezium.ConsumerType;
 import io.harness.debezium.DebeziumConfig;
 import io.harness.debezium.DebeziumControllerStarter;
+import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.ff.FeatureFlagConfig;
 import io.harness.health.HealthMonitor;
 import io.harness.health.HealthService;
@@ -137,11 +139,28 @@ public class DebeziumServiceApplication extends Application<DebeziumServiceConfi
 
     for (DebeziumConfig debeziumConfig : appConfig.getDebeziumConfigs()) {
       if (debeziumConfig.isEnabled()) {
+        ConsumerMode consumerMode = ConsumerMode.STREAMING;
+        EventsFrameworkConfiguration eventsFrameworkConfiguration = debeziumConfig.getEventsFrameworkConfiguration();
+        if (debeziumConfig.getSnapshotMode().equals("initial")) {
+          consumerMode = ConsumerMode.SNAPSHOT;
+          if (debeziumConfig.getEventsFrameworkConfiguration() == null) {
+            log.error("EventsFramework Configuration should be mentioned for snapshotting");
+            continue;
+          }
+        }
+        if (eventsFrameworkConfiguration == null) {
+          eventsFrameworkConfiguration = appConfig.getEventsFrameworkConfiguration();
+        }
         ChangeConsumerConfig changeConsumerConfig =
             ChangeConsumerConfig.builder()
+                .consumerMode(consumerMode)
                 .consumerType(ConsumerType.EVENTS_FRAMEWORK)
-                .eventsFrameworkConfiguration(appConfig.getEventsFrameworkConfiguration())
+                .eventsFrameworkConfiguration(eventsFrameworkConfiguration)
+                .producingCountPerBatch(debeziumConfig.getProducingCountPerBatch())
+                .redisStreamSize(debeziumConfig.getRedisStreamSize())
+                .sleepInterval(debeziumConfig.getSleepInterval())
                 .build();
+
         starter.startDebeziumController(debeziumConfig, changeConsumerConfig, locker, appConfig.getRedisLockConfig());
       }
     }

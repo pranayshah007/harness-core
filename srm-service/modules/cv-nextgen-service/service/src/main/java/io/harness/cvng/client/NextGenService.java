@@ -55,4 +55,6 @@ public interface NextGenService {
   Map<String, String> getServiceIdNameMap(ProjectParams projectParams, List<String> serviceIdentifiers);
 
   Map<String, String> getEnvironmentIdNameMap(ProjectParams projectParams, List<String> environmentIdentifiers);
+
+  List<ProjectDTO> listAccessibleProjects(String accountIdentifier);
 }

@@ -23,9 +23,7 @@ import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.persistence.AccountAccess;
-import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
-import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UuidAware;
 import io.harness.persistence.gitaware.GitAware;
 import io.harness.pms.yaml.PipelineVersion;
@@ -65,8 +63,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document("inputSetsPMS")
 @TypeAlias("inputSetsPMS")
 @HarnessEntity(exportable = true)
-public class InputSetEntity
-    implements GitAware, GitSyncableEntity, PersistentEntity, AccountAccess, UuidAware, CreatedAtAware, UpdatedAtAware {
+public class InputSetEntity implements GitAware, GitSyncableEntity, PersistentEntity, AccountAccess, UuidAware {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
@@ -115,8 +112,8 @@ public class InputSetEntity
   @NotEmpty InputSetEntityType inputSetEntityType;
   @Wither List<String> inputSetReferences;
 
-  @Setter @NonFinal @SchemaIgnore @FdIndex @CreatedDate long createdAt;
-  @Wither @Setter @NonFinal @SchemaIgnore @NotNull @LastModifiedDate long lastUpdatedAt;
+  @Setter @NonFinal @SchemaIgnore @FdIndex @CreatedDate Long createdAt;
+  @Wither @Setter @NonFinal @SchemaIgnore @NotNull @LastModifiedDate Long lastUpdatedAt;
   @Wither @Builder.Default Boolean deleted = Boolean.FALSE;
   @Wither @Version Long version;
 

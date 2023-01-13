@@ -12,6 +12,7 @@ HarnessTeam = "PL"
 shared_dependencies = [
     "//:lombok",
     "//platform-service/modules/audit-service:module",
+    "//platform-service/modules/audit-service/contracts:module",
     "@maven//:org_codehaus_janino_janino",
     "@maven//:io_opencensus_opencensus_api",
     "@maven//:io_opencensus_opencensus_impl",

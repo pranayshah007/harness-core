@@ -101,7 +101,7 @@ public class InputSetsApiImplTest extends PipelineServiceTestBase {
                          .build();
 
     inputSetResponseBody = new InputSetResponseBody();
-    inputSetResponseBody.setSlug(inputSet);
+    inputSetResponseBody.setIdentifier(inputSet);
     inputSetResponseBody.setName(inputSetName);
     inputSetResponseBody.setInputSetYaml(inputSetYaml);
     inputSetResponseBody.setOrg(org);
@@ -124,7 +124,7 @@ public class InputSetsApiImplTest extends PipelineServiceTestBase {
     doReturn(inputSetEntity).when(pmsInputSetService).create(any(), anyBoolean());
     doReturn(inputSetResponseBody).when(inputSetsApiUtils).getInputSetResponse(any());
     InputSetCreateRequestBody inputSetCreateRequestBody = new InputSetCreateRequestBody();
-    inputSetCreateRequestBody.setSlug(inputSet);
+    inputSetCreateRequestBody.setIdentifier(inputSet);
     inputSetCreateRequestBody.setName(inputSetName);
     inputSetCreateRequestBody.setInputSetYaml(inputSetYaml);
     doReturn(PipelineVersion.V0).when(inputSetsApiUtils).inputSetVersion(any(), any());
@@ -132,7 +132,7 @@ public class InputSetsApiImplTest extends PipelineServiceTestBase {
     InputSetResponseBody responseBody = (InputSetResponseBody) response.getEntity();
     assertEquals(responseBody.getInputSetYaml(), inputSetYaml);
     assertEquals(responseBody.getName(), inputSetName);
-    assertEquals(responseBody.getSlug(), inputSet);
+    assertEquals(responseBody.getIdentifier(), inputSet);
     assertEquals(responseBody.getOrg(), org);
     assertEquals(responseBody.getProject(), project);
   }
@@ -155,14 +155,14 @@ public class InputSetsApiImplTest extends PipelineServiceTestBase {
         .get(account, org, project, pipeline, inputSet, false, null, null, true);
     doReturn(inputSetResponseBody).when(inputSetsApiUtils).getInputSetResponse(any());
     InputSetCreateRequestBody inputSetCreateRequestBody = new InputSetCreateRequestBody();
-    inputSetCreateRequestBody.setSlug(inputSet);
+    inputSetCreateRequestBody.setIdentifier(inputSet);
     inputSetCreateRequestBody.setInputSetYaml(inputSetYaml);
 
     Response response = inputSetsApiImpl.getInputSet(org, project, inputSet, pipeline, account, null, null, null);
     InputSetResponseBody responseBody = (InputSetResponseBody) response.getEntity();
     assertEquals(responseBody.getInputSetYaml(), inputSetYaml);
     assertEquals(responseBody.getName(), inputSetName);
-    assertEquals(responseBody.getSlug(), inputSet);
+    assertEquals(responseBody.getIdentifier(), inputSet);
     assertEquals(responseBody.getOrg(), org);
     assertEquals(responseBody.getProject(), project);
   }
@@ -175,7 +175,7 @@ public class InputSetsApiImplTest extends PipelineServiceTestBase {
     doReturn(PipelineVersion.V0).when(inputSetsApiUtils).inputSetVersion(any(), any());
     doReturn(inputSetResponseBody).when(inputSetsApiUtils).getInputSetResponse(any());
     InputSetUpdateRequestBody inputSetUpdateRequestBody = new InputSetUpdateRequestBody();
-    inputSetUpdateRequestBody.setSlug(inputSet);
+    inputSetUpdateRequestBody.setIdentifier(inputSet);
     inputSetUpdateRequestBody.setName(inputSetName);
     inputSetUpdateRequestBody.setInputSetYaml(inputSetYaml);
 
@@ -205,7 +205,7 @@ public class InputSetsApiImplTest extends PipelineServiceTestBase {
     assertThat(content).isNotEmpty();
     assertThat(content.size()).isEqualTo(1);
     InputSetResponseBody responseBody = content.get(0);
-    assertThat(responseBody.getSlug()).isEqualTo(inputSet);
+    assertThat(responseBody.getIdentifier()).isEqualTo(inputSet);
     assertThat(responseBody.getName()).isEqualTo(inputSetName);
   }
 }

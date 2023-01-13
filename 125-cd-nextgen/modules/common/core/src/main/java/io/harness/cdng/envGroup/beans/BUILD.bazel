@@ -12,6 +12,7 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
+        "//127-cd-nextgen-entities:module",
         "//900-git-sync-sdk:module",
         "//955-filters-sdk:module",
         "//960-persistence:module",

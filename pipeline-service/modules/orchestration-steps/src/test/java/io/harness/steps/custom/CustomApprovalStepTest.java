@@ -122,8 +122,8 @@ public class CustomApprovalStepTest extends CategoryTest {
             .ticket(CustomApprovalTicketNG.builder().fields(ImmutableMap.of(STATUS, "APPROVED")).build())
             .build();
 
-    StepResponse stepResponse =
-        customApprovalStep.handleAsyncResponse(ambiance, null, ImmutableMap.of("xyz", responseData));
+    StepResponse stepResponse = customApprovalStep.handleAsyncResponse(
+        ambiance, StepElementParameters.builder().build(), ImmutableMap.of("xyz", responseData));
     verify(logStreamingStepClient).closeAllOpenStreamsWithPrefix(any());
     assertThat(stepResponse).isNotNull();
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);

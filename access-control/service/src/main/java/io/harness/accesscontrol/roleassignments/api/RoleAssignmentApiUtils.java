@@ -111,7 +111,7 @@ public class RoleAssignmentApiUtils {
 
   public PrincipalDTO getPrincipalDto(Principal principal) {
     PrincipalDTO principalDTO = PrincipalDTO.builder()
-                                    .identifier(principal.getSlug())
+                                    .identifier(principal.getIdentifier())
                                     .scopeLevel(principal.getScopeLevel())
                                     .type(getPrincipalType(principal.getType()))
                                     .build();
@@ -130,7 +130,7 @@ public class RoleAssignmentApiUtils {
 
   public RoleAssignmentDTO getRoleAssignmentDto(RoleAssignment request) {
     RoleAssignmentDTO roleAssignmentDTO = RoleAssignmentDTO.builder()
-                                              .identifier(request.getSlug())
+                                              .identifier(request.getIdentifier())
                                               .resourceGroupIdentifier(request.getResourceGroup())
                                               .roleIdentifier(request.getRole())
                                               .principal(getPrincipalDto(request.getPrincipal()))
@@ -165,7 +165,7 @@ public class RoleAssignmentApiUtils {
 
   private RoleAssignment getRoleAssignment(RoleAssignmentDTO roleAssignmentDto) {
     RoleAssignment roleAssignment = new RoleAssignment();
-    roleAssignment.setSlug(roleAssignmentDto.getIdentifier());
+    roleAssignment.setIdentifier(roleAssignmentDto.getIdentifier());
     roleAssignment.setResourceGroup(roleAssignmentDto.getResourceGroupIdentifier());
     roleAssignment.setRole(roleAssignmentDto.getRoleIdentifier());
     roleAssignment.setDisabled(roleAssignmentDto.isDisabled());
@@ -177,7 +177,7 @@ public class RoleAssignmentApiUtils {
 
   private Principal getPrincipal(PrincipalDTO principalDto) {
     Principal principal = new Principal();
-    principal.setSlug(principalDto.getIdentifier());
+    principal.setIdentifier(principalDto.getIdentifier());
     principal.setScopeLevel(principalDto.getScopeLevel());
     principal.setType(Principal.TypeEnum.valueOf(principalDto.getType().name()));
 
@@ -368,7 +368,7 @@ public class RoleAssignmentApiUtils {
       sortField = SortFields.UNSUPPORTED;
     }
     switch (sortField) {
-      case SLUG:
+      case IDENTIFIER:
         return RoleAssignmentDBOKeys.identifier;
       case CREATED:
         return RoleAssignmentDBOKeys.createdAt;
@@ -381,7 +381,7 @@ public class RoleAssignmentApiUtils {
   }
 
   public enum SortFields {
-    SLUG("slug"),
+    IDENTIFIER("identifier"),
     CREATED("created"),
     UPDATED("updated"),
     UNSUPPORTED(null);

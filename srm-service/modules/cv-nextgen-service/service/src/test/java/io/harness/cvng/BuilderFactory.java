@@ -1514,6 +1514,12 @@ public class BuilderFactory {
       return projectParams.getProjectIdentifier();
     }
 
+    public void setOrgIdentifier(String orgIdentifier) {
+      projectParams.setOrgIdentifier(orgIdentifier);
+    }
+    public void setProjectIdentifier(String projectIdentifier) {
+      projectParams.setProjectIdentifier(projectIdentifier);
+    }
     public ServiceEnvironmentParams getServiceEnvironmentParams() {
       return ServiceEnvironmentParams.builder()
           .accountIdentifier(projectParams.getAccountIdentifier())

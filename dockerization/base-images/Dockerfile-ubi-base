@@ -13,7 +13,7 @@
 #     -t <tag> \
 #     .
 
-FROM harness/ubi-base-image:8.7
+FROM harness/ubi-base-image:8.7-SECAPP-664
 CMD ["/bin/sh"]
 RUN dnf install -y microdnf && microdnf install curl libstdc++.i686 make bash unzip hostname tar gzip procps
 

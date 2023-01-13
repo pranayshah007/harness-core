@@ -226,6 +226,8 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
   @Before
   public void setup() throws IllegalAccessException {
     builderFactory = BuilderFactory.getDefault();
+    builderFactory.getContext().setProjectIdentifier("project");
+    builderFactory.getContext().setOrgIdentifier("orgIdentifier");
     healthSourceName = "health source name";
     healthSourceIdentifier = "healthSourceIdentifier";
     accountId = builderFactory.getContext().getAccountId();

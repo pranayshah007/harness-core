@@ -7,15 +7,15 @@
 
 package io.harness.engine.pms.advise.publisher;
 
-import static io.harness.data.structure.UUIDGenerator.generateUuid;
-
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.pms.commons.events.PmsEventSender;
 import io.harness.execution.NodeExecution;
 import io.harness.interrupts.InterruptEffect;
 import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.advisers.AdviseEvent;
+import io.harness.pms.contracts.advisers.AdviseEvent.Builder;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.events.base.PmsEventCategory;
@@ -35,20 +35,21 @@ public class RedisNodeAdviseEventPublisher implements NodeAdviseEventPublisher {
   @Override
   public String publishEvent(
       NodeExecution nodeExecution, FailureInfo failureInfo, PlanNode planNode, Status fromStatus) {
-    AdviseEvent adviseEvent =
-        AdviseEvent.newBuilder()
-            .setAmbiance(nodeExecution.getAmbiance())
-            .setFailureInfo(failureInfo)
-            .addAllAdviserObtainments(planNode.getAdviserObtainments())
-            .setIsPreviousAdviserExpired(isPreviousAdviserExpired(nodeExecution.getInterruptHistories()))
-            .addAllRetryIds(nodeExecution.getRetryIds())
-            .setNotifyId(generateUuid())
-            .setToStatus(nodeExecution.getStatus())
-            .setFromStatus(fromStatus)
-            .build();
+    Builder builder = AdviseEvent.newBuilder()
+                          .setAmbiance(nodeExecution.getAmbiance())
+                          .setFailureInfo(failureInfo)
+                          .addAllAdviserObtainments(planNode.getAdviserObtainments())
+                          .setIsPreviousAdviserExpired(isPreviousAdviserExpired(nodeExecution.getInterruptHistories()))
+                          .addAllRetryIds(nodeExecution.getRetryIds())
+                          .setToStatus(nodeExecution.getStatus())
+                          .setFromStatus(fromStatus);
 
-    return eventSender.sendEvent(nodeExecution.getAmbiance(), adviseEvent.toByteString(), PmsEventCategory.NODE_ADVISE,
-        nodeExecution.getModule(), true);
+    if (!EmptyPredicate.isEmpty(nodeExecution.getNotifyId())) {
+      builder.setNotifyId(nodeExecution.getNotifyId());
+    }
+
+    return eventSender.sendEvent(nodeExecution.getAmbiance(), builder.build().toByteString(),
+        PmsEventCategory.NODE_ADVISE, nodeExecution.getModule(), true);
   }
 
   private boolean isPreviousAdviserExpired(List<InterruptEffect> interruptHistories) {

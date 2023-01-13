@@ -623,7 +623,8 @@ public class NGTemplateResource {
       @Parameter(description = "Template Label") @NotNull @QueryParam(
           NGCommonEntityConstants.VERSION_LABEL_KEY) String templateLabel,
       @Parameter(
-          description = "This contains details of Git Entity") @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
+          description = "This contains details of Git Entity") @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
+      @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
         Resource.of(TEMPLATE, templateIdentifier), PermissionTypes.TEMPLATE_VIEW_PERMISSION);
     // if label not given, then consider stable template label
@@ -631,8 +632,8 @@ public class NGTemplateResource {
     log.info(String.format(
         "Gets Template along with Template inputs for template with identifier %s in project %s, org %s, account %s",
         templateIdentifier, projectId, orgId, accountId));
-    TemplateWithInputsResponseDTO templateWithInputs =
-        templateService.getTemplateWithInputs(accountId, orgId, projectId, templateIdentifier, templateLabel);
+    TemplateWithInputsResponseDTO templateWithInputs = templateService.getTemplateWithInputs(accountId, orgId,
+        projectId, templateIdentifier, templateLabel, NGTemplateDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache));
     String version = "0";
     if (templateWithInputs != null && templateWithInputs.getTemplateResponseDTO() != null
         && templateWithInputs.getTemplateResponseDTO().getVersion() != null) {

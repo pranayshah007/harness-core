@@ -13,6 +13,7 @@ import io.harness.persistence.PersistentEntity;
 public interface ExecutionEntity<T extends PersistentEntity> {
   DeploymentReconService getReconService();
   String getRunningExecutionQuery();
+  String getCompletedExecutionsQuery();
   String getEntityCountQuery();
   String getDuplicatesQuery();
   String getDeleteSetQuery();

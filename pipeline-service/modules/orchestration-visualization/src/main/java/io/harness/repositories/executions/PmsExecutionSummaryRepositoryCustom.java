@@ -19,6 +19,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.data.util.CloseableIterator;
 
 @OwnedBy(PIPELINE)
 public interface PmsExecutionSummaryRepositoryCustom {
@@ -34,4 +35,12 @@ public interface PmsExecutionSummaryRepositoryCustom {
 
   List<String> findListOfUniqueBranches(Criteria criteria);
   List<String> findListOfUniqueRepositories(Criteria criteria);
+
+  /**
+   * Returns iterator on PipelineExecutionSummaryEntity for given query having projection fields else throws exception
+   * The results are fetched from analytics peferred db node
+   * @param query
+   * @return
+   */
+  CloseableIterator<PipelineExecutionSummaryEntity> fetchExecutionSummaryEntityFromAnalytics(Query query);
 }

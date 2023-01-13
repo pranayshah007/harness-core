@@ -32,7 +32,7 @@ public class StreamingDestinationMapperTest extends CategoryTest {
   private static final int RANDOM_STRING_CHAR_COUNT_10 = 10;
   private static final int RANDOM_STRING_CHAR_COUNT_15 = 15;
   private String accountIdentifier;
-  private String slug;
+  private String identifier;
   private String name;
   private StatusEnum statusEnum;
   private String bucket;
@@ -45,7 +45,7 @@ public class StreamingDestinationMapperTest extends CategoryTest {
     this.streamingDestinationMapper = new StreamingDestinationMapper();
 
     accountIdentifier = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10);
-    slug = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10);
+    identifier = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10);
     name = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_15);
     statusEnum = StatusEnum.values()[RandomUtils.nextInt(0, StatusEnum.values().length - 1)];
     bucket = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_15);
@@ -63,7 +63,7 @@ public class StreamingDestinationMapperTest extends CategoryTest {
 
     StreamingDestination expectedStreamingDestination = AwsS3StreamingDestination.builder().bucket(bucket).build();
     expectedStreamingDestination.setAccountIdentifier(accountIdentifier);
-    expectedStreamingDestination.setIdentifier(slug);
+    expectedStreamingDestination.setIdentifier(identifier);
     expectedStreamingDestination.setName(name);
     expectedStreamingDestination.setStatus(statusEnum);
     expectedStreamingDestination.setConnectorRef(connectorRef);
@@ -78,7 +78,7 @@ public class StreamingDestinationMapperTest extends CategoryTest {
         new AwsS3StreamingDestinationSpecDTO().bucket(bucket).type(TypeEnum.AWS_S3);
 
     return new StreamingDestinationDTO()
-        .slug(slug)
+        .identifier(identifier)
         .name(name)
         .status(statusEnum)
         .connectorRef(connectorRef)

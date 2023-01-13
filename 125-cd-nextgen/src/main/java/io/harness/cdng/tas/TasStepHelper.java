@@ -121,6 +121,7 @@ import io.harness.delegate.task.pcf.artifact.TasContainerArtifactConfig.TasConta
 import io.harness.delegate.task.pcf.artifact.TasPackageArtifactConfig;
 import io.harness.delegate.task.pcf.artifact.TasPackageArtifactConfig.TasPackageArtifactConfigBuilder;
 import io.harness.delegate.task.pcf.request.TasManifestsPackage;
+import io.harness.delegate.task.pcf.response.CfCommandResponseNG;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidArgumentsException;
@@ -1539,7 +1540,9 @@ public class TasStepHelper {
         .encryptedDataDetails(encryptedDataDetails)
         .build();
   }
-
+  public static String getErrorMessage(CfCommandResponseNG cfCommandResponseNG) {
+    return cfCommandResponseNG.getErrorMessage() == null ? "" : cfCommandResponseNG.getErrorMessage();
+  }
   public UnitProgressData completeUnitProgressData(
       UnitProgressData currentProgressData, Ambiance ambiance, String exceptionMessage) {
     if (currentProgressData == null) {
