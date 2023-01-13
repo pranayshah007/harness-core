@@ -400,20 +400,6 @@ public class CfRollingRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandle
 
     updateArtifactDetails(requestData, cfRollingRollbackRequestNG, applicationToBeUpdated);
 
-    //    applicationToBeUpdated.put(INSTANCE_MANIFEST_YML_ELEMENT, 0);
-    //
-    //    if (applicationToBeUpdated.containsKey(PROCESSES_MANIFEST_YML_ELEMENT)) {
-    //      Object processes = applicationToBeUpdated.get(PROCESSES_MANIFEST_YML_ELEMENT);
-    //      if (processes instanceof ArrayList<?>) {
-    //        ArrayList<Map<String, Object>> allProcesses = (ArrayList<Map<String, Object>>) processes;
-    //        for (Map<String, Object> process : allProcesses) {
-    //          Object p = process.get(PROCESSES_TYPE_MANIFEST_YML_ELEMENT);
-    //          if ((p instanceof String) && (p.toString().equals(WEB_PROCESS_TYPE_MANIFEST_YML_ELEMENT))) {
-    //            process.put(INSTANCE_MANIFEST_YML_ELEMENT, 0);
-    //          }
-    //        }
-    //      }
-    //    }
     // Update routes.
     updateConfigWithRoutesIfRequired(requestData, applicationToBeUpdated, cfRollingRollbackRequestNG);
     // We do not want to change order

@@ -36,6 +36,7 @@ public interface CfSdkClient {
    */
   List<OrganizationSummary> getOrganizations(CfRequestConfig pcfRequestConfig)
       throws PivotalClientApiException, InterruptedException;
+
   /**
    * Get space for organization.
    *

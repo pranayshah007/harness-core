@@ -197,7 +197,7 @@ public class CfDeploymentManagerUnsupported implements CfDeploymentManager {
   @Override
   public ApplicationDetail createRollingApplicationWithSteadyStateCheck(CfCreateApplicationRequestData requestData,
       LogCallback executionLogCallback) throws PivotalClientApiException, InterruptedException {
-    throw new PivotalClientApiException("PCF operations not supported by this API.");
+    throw new PivotalClientApiException("TAS operations not supported by this API.");
   }
 
   @Override

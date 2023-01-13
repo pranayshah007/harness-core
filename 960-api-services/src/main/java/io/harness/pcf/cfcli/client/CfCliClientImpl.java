@@ -207,12 +207,13 @@ public class CfCliClientImpl implements CfCliClient {
 
   private String constructCfPushCommand(CfCreateApplicationRequestData requestData, String finalFilePath) {
     CfRequestConfig pcfRequestConfig = requestData.getCfRequestConfig();
-    if (!requestData.isVarsYmlFilePresent() && isEmpty(requestData.getStrategy())) {
+    if (!requestData.isVarsYmlFilePresent()) {
+      if (!isEmpty(requestData.getStrategy())) {
+        return CfCliCommandResolver.getRollingPushCliCommand(pcfRequestConfig.getCfCliPath(),
+            pcfRequestConfig.getCfCliVersion(), finalFilePath, requestData.getStrategy());
+      }
       return CfCliCommandResolver.getPushCliCommand(
           pcfRequestConfig.getCfCliPath(), pcfRequestConfig.getCfCliVersion(), finalFilePath);
-    } else if (!requestData.isVarsYmlFilePresent()) {
-      return CfCliCommandResolver.getPushCliCommand(pcfRequestConfig.getCfCliPath(), pcfRequestConfig.getCfCliVersion(),
-          finalFilePath, requestData.getStrategy());
     }
 
     List<String> varFiles = new ArrayList<>();
@@ -225,13 +226,13 @@ public class CfCliClientImpl implements CfCliClient {
       });
     }
 
-    if (isEmpty(requestData.getStrategy())) {
-      return CfCliCommandResolver.getPushCliCommand(
-          pcfRequestConfig.getCfCliPath(), pcfRequestConfig.getCfCliVersion(), finalFilePath, varFiles);
-    } else {
-      return CfCliCommandResolver.getPushCliCommand(pcfRequestConfig.getCfCliPath(), pcfRequestConfig.getCfCliVersion(),
-          finalFilePath, varFiles, requestData.getStrategy());
+    if (!isEmpty(requestData.getStrategy())) {
+      return CfCliCommandResolver.getRollingPushCliCommand(pcfRequestConfig.getCfCliPath(),
+          pcfRequestConfig.getCfCliVersion(), finalFilePath, varFiles, requestData.getStrategy());
     }
+
+    return CfCliCommandResolver.getPushCliCommand(
+        pcfRequestConfig.getCfCliPath(), pcfRequestConfig.getCfCliVersion(), finalFilePath, varFiles);
   }
 
   @VisibleForTesting

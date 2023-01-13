@@ -210,7 +210,7 @@ public interface CfCliCommandResolver {
         .getCommand();
   }
 
-  static String getPushCliCommand(
+  static String getRollingPushCliCommand(
       final String cfCliPath, CfCliVersion cfCliVersion, final String pathToManifest, final String strategy) {
     return PushCliCommand.builder()
         .cliPath(cfCliPath)
@@ -220,7 +220,7 @@ public interface CfCliCommandResolver {
         .getCommand();
   }
 
-  static String getPushCliCommand(final String cfCliPath, CfCliVersion cfCliVersion, final String pathToManifest,
+  static String getRollingPushCliCommand(final String cfCliPath, CfCliVersion cfCliVersion, final String pathToManifest,
       final List<String> variableFilePaths, final String strategy) {
     return PushCliCommand.builder()
         .cliPath(cfCliPath)

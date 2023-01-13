@@ -120,6 +120,7 @@ public class CfSdkClientImpl implements CfSdkClient {
     }
     return organizations;
   }
+
   private void handleExceptionForGetOrganizationsAPI(Throwable t, String apiName, StringBuilder errorBuilder) {
     log.error(PIVOTAL_CLOUD_FOUNDRY_LOG_PREFIX + "Exception Occurred while executing PCF api: " + apiName
         + " EXCEPTION: " + t.toString());
