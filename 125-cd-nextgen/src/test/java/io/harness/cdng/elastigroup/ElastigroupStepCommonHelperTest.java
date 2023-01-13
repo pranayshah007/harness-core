@@ -14,6 +14,7 @@ import static io.harness.spotinst.model.SpotInstConstants.DEFAULT_ELASTIGROUP_MI
 import static io.harness.spotinst.model.SpotInstConstants.DEFAULT_ELASTIGROUP_TARGET_INSTANCES;
 import static io.harness.spotinst.model.SpotInstConstants.GROUP_CONFIG_ELEMENT;
 
+import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -65,6 +66,9 @@ import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.ng.core.NGAccess;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.failure.FailureInfo;
+import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
@@ -448,9 +452,7 @@ public class ElastigroupStepCommonHelperTest extends CDNGTestBase {
 
     StartupScriptOutcome startupScriptOutcome =
         StartupScriptOutcome.builder()
-            .store(HarnessStore.builder()
-                       .files(ParameterField.createValueField(Collections.singletonList("file1")))
-                       .build())
+            .store(HarnessStore.builder().files(ParameterField.createValueField(singletonList("file1"))).build())
             .build();
 
     when(outcomeService.resolveOptional(any(), any()))
@@ -492,9 +494,7 @@ public class ElastigroupStepCommonHelperTest extends CDNGTestBase {
 
     StartupScriptOutcome startupScriptOutcome =
         StartupScriptOutcome.builder()
-            .store(HarnessStore.builder()
-                       .files(ParameterField.createValueField(Collections.singletonList("script1")))
-                       .build())
+            .store(HarnessStore.builder().files(ParameterField.createValueField(singletonList("script1"))).build())
             .build();
 
     when(outcomeService.resolveOptional(
@@ -509,9 +509,8 @@ public class ElastigroupStepCommonHelperTest extends CDNGTestBase {
 
     ElastigroupConfigurationOutput elastigroupConfigurationOutput =
         ElastigroupConfigurationOutput.builder()
-            .storeConfig(HarnessStore.builder()
-                             .files(ParameterField.createValueField(Collections.singletonList("config1")))
-                             .build())
+            .storeConfig(
+                HarnessStore.builder().files(ParameterField.createValueField(singletonList("config1"))).build())
             .build();
 
     when(executionSweepingOutputService.resolveOptional(any(), any()))
@@ -548,9 +547,7 @@ public class ElastigroupStepCommonHelperTest extends CDNGTestBase {
 
     StartupScriptOutcome startupScriptOutcome =
         StartupScriptOutcome.builder()
-            .store(HarnessStore.builder()
-                       .files(ParameterField.createValueField(Collections.singletonList("script1")))
-                       .build())
+            .store(HarnessStore.builder().files(ParameterField.createValueField(singletonList("script1"))).build())
             .build();
 
     when(outcomeService.resolveOptional(
@@ -565,9 +562,8 @@ public class ElastigroupStepCommonHelperTest extends CDNGTestBase {
 
     ElastigroupConfigurationOutput elastigroupConfigurationOutput =
         ElastigroupConfigurationOutput.builder()
-            .storeConfig(HarnessStore.builder()
-                             .files(ParameterField.createValueField(Collections.singletonList("config1")))
-                             .build())
+            .storeConfig(
+                HarnessStore.builder().files(ParameterField.createValueField(singletonList("config1"))).build())
             .build();
 
     when(executionSweepingOutputService.resolveOptional(any(), any()))
@@ -690,7 +686,7 @@ public class ElastigroupStepCommonHelperTest extends CDNGTestBase {
             .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
             .elastigroupPreFetchResult(
                 ElastigroupPreFetchResult.builder()
-                    .elastigroups(Collections.singletonList(ElastiGroup.builder().id("id").name("name").build()))
+                    .elastigroups(singletonList(ElastiGroup.builder().id("id").name("name").build()))
                     .build())
             .build();
 
@@ -771,6 +767,30 @@ public class ElastigroupStepCommonHelperTest extends CDNGTestBase {
                                      .id("elastiid")
                                      .capacity(ElastiGroupCapacity.builder().target(30).minimum(20).maximum(40).build())
                                      .build());
+  }
+
+  @Test
+  @Owner(developers = FILIP)
+  @Category(UnitTests.class)
+  public void handleStepExceptionFailureTest() {
+    // Given
+    ElastigroupStepExceptionPassThroughData stepException = ElastigroupStepExceptionPassThroughData.builder()
+                                                                .errorMessage("an error message")
+                                                                .unitProgressData(UnitProgressData.builder().build())
+                                                                .build();
+
+    // When
+    StepResponse response = elastigroupStepCommonHelper.handleStepExceptionFailure(stepException);
+
+    // Then
+    assertThat(response).isNotNull();
+
+    assertThat(response.getStatus()).isNotNull().isEqualTo(Status.FAILED);
+
+    assertThat(response.getFailureInfo())
+        .isNotNull()
+        .extracting(FailureInfo::getErrorMessage, FailureInfo::getFailureTypesList)
+        .containsExactly("an error message", singletonList(FailureType.APPLICATION_FAILURE));
   }
 
   private Ambiance anAmbiance() {
