@@ -972,17 +972,5 @@ public class CDNGRegistrars {
                                            .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
                                            .build())
                    .build())
-          .add(YamlSchemaRootClass.builder()
-                   .entityType(EntityType.ROUTE_MAPPING)
-                   .availableAtProjectLevel(true)
-                   .availableAtOrgLevel(false)
-                   .availableAtAccountLevel(false)
-                   .clazz(TasRouteMappingStepNode.class)
-                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
-                                           .namespace(SchemaNamespaceConstants.CD)
-                                           .modulesSupported(Collections.singletonList(ModuleType.CD))
-                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
-                                           .build())
-                   .build())
           .build();
 }
