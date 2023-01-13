@@ -634,15 +634,22 @@ public class JenkinsRegistryUtils {
     return jenkinsBuild;
   }
 
-  public String getJenkinsConsoleLogs(
-      JenkinsInternalConfig jenkinsInternalConfig, FolderJob job, String jobName, String jobId) {
+  public String getJenkinsConsoleLogs(JenkinsInternalConfig jenkinsInternalConfig, String jobName, String jobId) {
+    JobPathDetails jobPathDetails = constructJobPathDetails(jobName);
     try {
+      FolderJob folderJob = getFolderJob(jobPathDetails.getParentJobName(), jobPathDetails.getParentJobUrl());
       JenkinsCustomServer jenkinsServer = JenkinsClient.getJenkinsServer(jenkinsInternalConfig);
-      return jenkinsServer.getJenkinsConsoleLogs(job, jobName, jobId);
+      return jenkinsServer.getJenkinsConsoleLogs(folderJob, jobName, jobId);
     } catch (URISyntaxException e) {
-      throw new RuntimeException(e);
+      throw NestedExceptionUtils.hintWithExplanationException(
+          String.format("Error retrieving console logs for Job name %s: %s", jobName, e.getMessage()),
+          "Check if the Job is correct, the permissions are scoped for the authenticated user & check if the right connector chosen for fetching the Job details",
+          new UnauthorizedException("Error retrieving console logs", USER));
     } catch (IOException e) {
-      throw new RuntimeException(e);
+      throw NestedExceptionUtils.hintWithExplanationException(
+          String.format("Error retrieving console logs for Job name %s: %s", jobName, e.getMessage()),
+          "Check if the Job is correct, the permissions are scoped for the authenticated user & check if the right connector chosen for fetching the Job details",
+          new UnauthorizedException("Error retrieving console logs", USER));
     }
   }
 

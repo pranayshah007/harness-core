@@ -322,7 +322,7 @@ public class JenkinsArtifactTaskHandler extends DelegateArtifactTaskHandler<Jenk
         executionStatus = ExecutionStatus.FAILED;
       }
       String consoleLogs = jenkinsRegistryUtils.getJenkinsConsoleLogs(
-          jenkinsInternalConfig, null, attributesRequest.getJobName(), String.valueOf(jenkinsBuild.getNumber()));
+          jenkinsInternalConfig, attributesRequest.getJobName(), String.valueOf(jenkinsBuild.getNumber()));
       executionLogCallback.saveExecutionLog(consoleLogs, LogLevel.INFO);
     } catch (WingsException e) {
       ExceptionLogger.logProcessedMessages(e, DELEGATE, log);
