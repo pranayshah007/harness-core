@@ -15,6 +15,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -71,6 +72,7 @@ public class ServiceEntityManagementServiceTest extends CategoryTest {
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(
             "Service [identifier] under Project[projectIdentifier], Organization [orgIdentifier] couldn't be deleted since there are currently 2 active instances for the service");
+    verify(instanceService, never()).deleteAll(any());
   }
 
   @Test
@@ -83,6 +85,7 @@ public class ServiceEntityManagementServiceTest extends CategoryTest {
     serviceEntityManagementService.deleteService(
         accountIdentifier, orgIdentifier, projectIdentifier, identifier, "", false);
     verify(serviceEntityService).delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier, null, false);
+    verify(instanceService, never()).deleteAll(any());
   }
   @Test
   @Owner(developers = vivekveman)
@@ -102,6 +105,29 @@ public class ServiceEntityManagementServiceTest extends CategoryTest {
     serviceEntityManagementService.deleteService(
         accountIdentifier, orgIdentifier, projectIdentifier, identifier, "", true);
     verify(instanceService, times(1)).deleteAll(any());
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void shouldForceDeleteServiceInstanceFalse() {
+    doReturn(false).when(serviceEntityManagementService).isForceDeleteFFEnabled(accountIdentifier);
+    doReturn(true).when(serviceEntityManagementService).isNgSettingsFFEnabled(accountIdentifier);
+    doReturn(true).when(serviceEntityManagementService).isForceDeleteFFEnabledViaSettings(accountIdentifier);
+    List<InstanceDTO> instanceDTOList = new ArrayList<>();
+    instanceDTOList.add(getInstance());
+    instanceDTOList.add(getInstance());
+    when(instanceService.getActiveInstancesByServiceId(
+             eq(accountIdentifier), eq(orgIdentifier), eq(projectIdentifier), eq(identifier), anyLong()))
+        .thenReturn(instanceDTOList);
+    when(serviceEntityService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier, null, true))
+        .thenReturn(true);
+    assertThatThrownBy(()
+                           -> serviceEntityManagementService.deleteService(
+                               accountIdentifier, orgIdentifier, projectIdentifier, identifier, "", true))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(
+            "Parameter forcedDelete cannot be true. Force Delete is not enabled for account [accountIdentifier]");
+    verify(instanceService, never()).deleteAll(any());
   }
 
   private InstanceDTO getInstance() {
