@@ -1990,6 +1990,12 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
             .collect(Collectors.joining("\n")));
   }
   private void saveDelegateTask(DelegateTask delegateTask, String accountId) {
+    if (mainConfiguration.getQueueServiceConfig() != null
+        && !mainConfiguration.getQueueServiceConfig().isEnableQueueAndDequeue()) {
+      persistence.save(delegateTask);
+      return;
+    }
+
     if (featureFlagService.isEnabled(QUEUE_CI_EXECUTIONS, accountId)
         && !delegateTaskQueueService.isResourceAvailableToAssignTask(delegateTask)) {
       delegateTaskQueueService.enqueue(delegateTask);
