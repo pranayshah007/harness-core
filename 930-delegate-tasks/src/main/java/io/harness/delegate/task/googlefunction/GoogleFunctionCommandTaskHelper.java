@@ -1,18 +1,20 @@
 package io.harness.delegate.task.googlefunction;
 
+import com.google.api.client.util.Lists;
 import com.google.api.gax.longrunning.OperationFuture;
+import com.google.api.gax.longrunning.OperationSnapshot;
 import com.google.cloud.functions.v2.BuildConfig;
 import com.google.cloud.functions.v2.CreateFunctionRequest;
 import com.google.cloud.functions.v2.DeleteFunctionRequest;
 import com.google.cloud.functions.v2.Function;
-import com.google.cloud.functions.v2.GetFunctionRequest;
+import com.google.cloud.functions.v2.ListFunctionsRequest;
+import com.google.cloud.functions.v2.ListFunctionsResponse;
 import com.google.cloud.functions.v2.OperationMetadata;
 import com.google.cloud.functions.v2.Source;
 import com.google.cloud.functions.v2.StorageSource;
 import com.google.cloud.functions.v2.UpdateFunctionRequest;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
 import com.google.protobuf.FieldMask;
 import com.google.protobuf.util.JsonFormat;
@@ -31,10 +33,11 @@ import io.harness.googlefunctions.GcpInternalConfig;
 import io.harness.googlefunctions.GoogleCloudFunctionClient;
 import io.harness.serializer.YamlUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
@@ -71,26 +74,27 @@ public class GoogleFunctionCommandTaskHelper {
         createFunctionRequestBuilder.setFunction(functionBuilder.build());
 
         //check if function already exists
-        Function existingFunction = getFunction(functionName, googleFunctionInfraConfig.getGcpConnectorDTO(),
+        Optional<Function> existingFunctionOptional = getFunction(functionName, googleFunctionInfraConfig.getGcpConnectorDTO(),
                 googleFunctionInfraConfig.getProject(), googleFunctionInfraConfig.getRegion());
 
-        if(existingFunction==null) {
+        if(existingFunctionOptional.isEmpty()) {
             //create new function
             return createFunction(createFunctionRequestBuilder.build(), googleFunctionInfraConfig.getGcpConnectorDTO(),
                     googleFunctionInfraConfig.getProject(), googleFunctionInfraConfig.getRegion());
         }
         else {
            //update existing function
-            FieldMask.Builder fieldMaskBuilder = FieldMask.newBuilder();
-            JsonFormat.parser().ignoringUnknownFields().merge(googleFunctionDeployRequest.getUpdateFieldMaskContent(),
-                    createFunctionRequestBuilder);
 
-            UpdateFunctionRequest updateFunctionRequest =
+            UpdateFunctionRequest.Builder updateFunctionRequestBuilder =
                     UpdateFunctionRequest.newBuilder()
-                            .setFunction(createFunctionRequestBuilder.getFunction())
-                            .setUpdateMask(fieldMaskBuilder.build())
-                            .build();
-            return updateFunction(updateFunctionRequest, googleFunctionInfraConfig.getGcpConnectorDTO(),
+                            .setFunction(createFunctionRequestBuilder.getFunction());
+            if(StringUtils.isNotEmpty(googleFunctionDeployRequest.getUpdateFieldMaskContent())) {
+                FieldMask.Builder fieldMaskBuilder = FieldMask.newBuilder();
+                JsonFormat.parser().ignoringUnknownFields().merge(googleFunctionDeployRequest.getUpdateFieldMaskContent(),
+                        createFunctionRequestBuilder);
+                updateFunctionRequestBuilder.setUpdateMask(fieldMaskBuilder.build());
+            }
+            return updateFunction(updateFunctionRequestBuilder.build(), googleFunctionInfraConfig.getGcpConnectorDTO(),
                     googleFunctionInfraConfig.getProject(), googleFunctionInfraConfig.getRegion());
         }
 
@@ -113,6 +117,7 @@ public class GoogleFunctionCommandTaskHelper {
 
     public Function createFunction(CreateFunctionRequest createFunctionRequest, GcpConnectorDTO gcpConnectorDTO,
                                    String project, String region) throws ExecutionException, InterruptedException {
+
         OperationFuture<Function, OperationMetadata> futureResponse = googleCloudFunctionClient.createFunction(
                 createFunctionRequest, getGcpInternalConfig(gcpConnectorDTO, region,
                 project));
@@ -124,17 +129,40 @@ public class GoogleFunctionCommandTaskHelper {
         OperationFuture<Function, OperationMetadata> futureResponse = googleCloudFunctionClient.updateFunction(
                 updateFunctionRequest, getGcpInternalConfig(gcpConnectorDTO, region,
                 project));
-        return futureResponse.get();
+        OperationSnapshot operationSnapshot = futureResponse.getInitialFuture().get();
+        return null;
     }
 
-    public Function getFunction(String functionName, GcpConnectorDTO gcpConnectorDTO,
-                                String project, String region) {
-        return googleCloudFunctionClient.getFunction(
-                GetFunctionRequest.newBuilder()
-                        .setName(functionName)
-                        .build(),
-                getGcpInternalConfig(gcpConnectorDTO, region,
-                        project));
+    public Optional<Function> getFunction(String functionName, GcpConnectorDTO gcpConnectorDTO,
+                                          String project, String region ) {
+        List<Function> functions = Lists.newArrayList();
+        String pageToken = "";
+                do{
+                    ListFunctionsRequest.Builder listFunctionsRequestBuilder = ListFunctionsRequest.newBuilder()
+                            .setParent(getFunctionParent(project, region))
+                            .setPageSize(25);
+                    if(!StringUtils.isEmpty(pageToken)) {
+                        listFunctionsRequestBuilder.setPageToken(pageToken);
+                    }
+                    ListFunctionsResponse listFunctionsResponse =
+                            googleCloudFunctionClient.listFunction(listFunctionsRequestBuilder.build(),
+                                    getGcpInternalConfig(gcpConnectorDTO, region,
+                                            project));
+                    if(listFunctionsResponse==null) {
+                        break;
+                    }
+                    if(!listFunctionsResponse.getFunctionsList().isEmpty()) {
+                        functions.addAll(listFunctionsResponse.getFunctionsList());
+                    }
+                    pageToken = listFunctionsResponse.getNextPageToken();
+                }
+                while(!StringUtils.isEmpty(pageToken));
+        for(Function function: functions) {
+            if(function.getName().equals(functionName)) {
+                return Optional.of(function);
+            }
+        }
+        return Optional.empty();
     }
 
     public void deleteFunction(DeleteFunctionRequest deleteFunctionRequest, GcpConnectorDTO gcpConnectorDTO,
@@ -147,7 +175,7 @@ public class GoogleFunctionCommandTaskHelper {
 
     private String getFunctionName(String project, String region, String functionName) {
         return "projects/" + project + "/locations/" + region +
-                "/functions" + functionName;
+                "/functions/" + functionName;
     }
 
     private String getFunctionParent(String project, String region) {

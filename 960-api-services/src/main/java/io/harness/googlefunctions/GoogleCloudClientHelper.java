@@ -27,7 +27,6 @@ public class GoogleCloudClientHelper {
         CredentialsProvider credentialsProvider = FixedCredentialsProvider.create(
                 gcpCredentialsHelper.getGoogleCredentials(gcpInternalConfig.getServiceAccountKeyFileContent(),
                         gcpInternalConfig.isUseDelegate));
-        FunctionServiceStubSettings.Builder builder = FunctionServiceStubSettings.newBuilder((ClientContext)null);
         FunctionServiceSettings functionServiceSettings = FunctionServiceSettings.newBuilder()
                 .setCredentialsProvider(credentialsProvider)
                 .build();

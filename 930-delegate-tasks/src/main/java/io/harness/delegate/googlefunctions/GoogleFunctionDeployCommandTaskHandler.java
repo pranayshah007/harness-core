@@ -49,9 +49,9 @@ public class GoogleFunctionDeployCommandTaskHandler extends GoogleFunctionComman
                     .build();
         }
         catch(Exception e) {
-
+            log.error(e.getMessage());
+            throw e;
         }
 
-        return null;
     }
 }

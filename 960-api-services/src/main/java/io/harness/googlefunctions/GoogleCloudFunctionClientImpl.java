@@ -6,6 +6,8 @@ import com.google.cloud.functions.v2.DeleteFunctionRequest;
 import com.google.cloud.functions.v2.Function;
 import com.google.cloud.functions.v2.FunctionServiceClient;
 import com.google.cloud.functions.v2.GetFunctionRequest;
+import com.google.cloud.functions.v2.ListFunctionsRequest;
+import com.google.cloud.functions.v2.ListFunctionsResponse;
 import com.google.cloud.functions.v2.OperationMetadata;
 import com.google.cloud.functions.v2.UpdateFunctionRequest;
 import com.google.inject.Inject;
@@ -70,6 +72,18 @@ public class GoogleCloudFunctionClientImpl implements GoogleCloudFunctionClient 
             googleCloudClientHelper.logCall(CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName());
              client.deleteFunctionAsync(deleteFunctionRequest);
 
+        } catch (Exception e) {
+            googleCloudClientHelper.logError(CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName(), e.getMessage());
+            googleCloudClientHelper.handleException(e);
+        }
+        return null;
+    }
+
+    @Override
+    public ListFunctionsResponse listFunction(ListFunctionsRequest listFunctionsRequest, GcpInternalConfig gcpInternalConfig) {
+        try(FunctionServiceClient client = googleCloudClientHelper.getFunctionsClient(gcpInternalConfig)){
+            googleCloudClientHelper.logCall(CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName());
+            return client.listFunctions(listFunctionsRequest).getPage().getResponse();
         } catch (Exception e) {
             googleCloudClientHelper.logError(CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName(), e.getMessage());
             googleCloudClientHelper.handleException(e);

@@ -5,6 +5,8 @@ import com.google.cloud.functions.v2.CreateFunctionRequest;
 import com.google.cloud.functions.v2.DeleteFunctionRequest;
 import com.google.cloud.functions.v2.Function;
 import com.google.cloud.functions.v2.GetFunctionRequest;
+import com.google.cloud.functions.v2.ListFunctionsRequest;
+import com.google.cloud.functions.v2.ListFunctionsResponse;
 import com.google.cloud.functions.v2.OperationMetadata;
 import com.google.cloud.functions.v2.UpdateFunctionRequest;
 import com.google.protobuf.Empty;
@@ -18,4 +20,6 @@ public interface GoogleCloudFunctionClient {
     OperationFuture<Function, OperationMetadata> updateFunction(UpdateFunctionRequest updateFunctionRequest, GcpInternalConfig gcpInternalConfig);
 
     OperationFuture<Empty, OperationMetadata> deleteFunction(DeleteFunctionRequest deleteFunctionRequest, GcpInternalConfig gcpInternalConfig);
+
+    ListFunctionsResponse listFunction(ListFunctionsRequest listFunctionsRequest, GcpInternalConfig gcpInternalConfig);
 }
