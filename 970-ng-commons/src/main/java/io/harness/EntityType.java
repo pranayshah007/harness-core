@@ -503,13 +503,13 @@ public enum EntityType {
       EntityYamlRootNames.CCM_GOVERNANCE_RULE),
   @JsonProperty(EntityTypeConstants.TAS_ROLLING_DEPLOY)
   TAS_ROLLING_DEPLOY(ModuleType.CD, EntityTypeConstants.TAS_ROLLING_DEPLOY, IdentifierRef.class,
-          EntityYamlRootNames.TAS_ROLLING_DEPLOY),
+      EntityYamlRootNames.TAS_ROLLING_DEPLOY),
   @JsonProperty(EntityTypeConstants.TAS_ROLLING_ROLLBACK)
   TAS_ROLLING_ROLLBACK(ModuleType.CD, EntityTypeConstants.TAS_ROLLING_ROLLBACK, IdentifierRef.class,
-          EntityYamlRootNames.TAS_ROLLING_ROLLBACK),
+      EntityYamlRootNames.TAS_ROLLING_ROLLBACK),
   @JsonProperty(EntityTypeConstants.ROUTE_MAPPING)
   ROUTE_MAPPING(
-          ModuleType.CD, EntityTypeConstants.ROUTE_MAPPING, IdentifierRef.class, EntityYamlRootNames.ROUTE_MAPPING);
+      ModuleType.CD, EntityTypeConstants.ROUTE_MAPPING, IdentifierRef.class, EntityYamlRootNames.ROUTE_MAPPING);
 
   private final ModuleType moduleType;
   String yamlName;

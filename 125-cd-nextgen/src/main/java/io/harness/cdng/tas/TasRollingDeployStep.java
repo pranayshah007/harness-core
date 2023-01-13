@@ -237,13 +237,13 @@ public class TasRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
             .build();
 
     TasRollingDeployOutcome tasRollingDeployOutcome =
-            TasRollingDeployOutcome.builder()
-                    .appName(executionPassThroughData.getApplicationName())
-                    .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
-                    .cfCliVersion(executionPassThroughData.getCfCliVersion())
-                    .build();
+        TasRollingDeployOutcome.builder()
+            .appName(executionPassThroughData.getApplicationName())
+            .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
+            .cfCliVersion(executionPassThroughData.getCfCliVersion())
+            .build();
     executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.TAS_ROLLING_DEPLOY_OUTCOME,
-            tasRollingDeployOutcome, StepCategory.STEP.name());
+        tasRollingDeployOutcome, StepCategory.STEP.name());
 
     TaskData taskData = TaskData.builder()
                             .parameters(new Object[] {taskParameters})

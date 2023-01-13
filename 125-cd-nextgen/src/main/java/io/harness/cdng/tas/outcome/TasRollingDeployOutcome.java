@@ -7,6 +7,8 @@
 
 package io.harness.cdng.tas.outcome;
 
+import static io.harness.expression.Expression.ALLOW_SECRETS;
+
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -22,8 +24,6 @@ import lombok.Setter;
 import lombok.Value;
 import lombok.experimental.NonFinal;
 import org.springframework.data.annotation.TypeAlias;
-
-import static io.harness.expression.Expression.ALLOW_SECRETS;
 
 @OwnedBy(HarnessTeam.CDP)
 @Value

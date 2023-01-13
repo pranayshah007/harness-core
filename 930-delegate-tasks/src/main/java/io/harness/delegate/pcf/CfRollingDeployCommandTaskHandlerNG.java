@@ -158,7 +158,7 @@ public class CfRollingDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler 
               .cfRequestConfig(clonePcfRequestConfig(cfRequestConfig)
                                    .applicationName(cfRollingDeployRequestNG.getApplicationName())
                                    .routeMaps(cfRollingDeployRequestNG.getRouteMaps())
-                                    .timeOutIntervalInMins(cfRollingDeployRequestNG.getTimeoutIntervalInMin())
+                                   .timeOutIntervalInMins(cfRollingDeployRequestNG.getTimeoutIntervalInMin())
                                    .build())
               .artifactPath(artifactFile == null ? null : artifactFile.getAbsolutePath())
               .configPathVar(workingDirectory.getAbsolutePath())
