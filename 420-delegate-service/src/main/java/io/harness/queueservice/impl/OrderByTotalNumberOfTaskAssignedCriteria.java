@@ -27,6 +27,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Function;
@@ -40,12 +41,18 @@ public class OrderByTotalNumberOfTaskAssignedCriteria implements DelegateResourc
   @Inject private HPersistence persistence;
   @Inject private DelegateCache delegateCache;
   @Inject private DelegateServiceCache delegateServiceCache;
+  private final Random random = new Random();
+
   final Comparator<Map.Entry<String, Integer>> valueComparator = Map.Entry.comparingByValue(Comparator.naturalOrder());
 
   final Comparator<Delegate> delegateComparator = new Comparator<Delegate>() {
     @Override
     public int compare(Delegate d1, Delegate d2) {
-      return d1.getNumberOfTaskAssigned() - d2.getNumberOfTaskAssigned();
+      int diff = d1.getNumberOfTaskAssigned() - d2.getNumberOfTaskAssigned();
+      if (diff == 0) {
+        return Math.max(random.nextInt(), 0);
+      }
+      return diff;
     }
   };
 
