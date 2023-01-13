@@ -257,7 +257,5 @@ public class NGKryoRegistrar implements KryoRegistrar {
     kryo.register(TasRollingDeployStepParameters.class, 12803);
     kryo.register(TasRollingRollbackStepInfo.class, 12804);
     kryo.register(TasRollingRollbackStepParameters.class, 12805);
-    kryo.register(TasRouteMappingStepInfo.class, 12806);
-    kryo.register(TasRouteMappingStepParameters.class, 12807);
   }
 }
