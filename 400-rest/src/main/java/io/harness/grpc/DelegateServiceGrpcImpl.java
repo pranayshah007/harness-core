@@ -311,7 +311,6 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
         .data(data)
         .timeout(Durations.toMillis(taskDetails.getExecutionTimeout()))
         .expressionFunctorToken((int) taskDetails.getExpressionFunctorToken())
-        .expressions(taskDetails.getExpressionsMap())
         .serializationFormat(serializationFormat)
         .build();
   }
@@ -339,7 +338,6 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
         .data(data)
         .timeout(Durations.toMillis(taskDetails.getExecutionTimeout()))
         .expressionFunctorToken((int) taskDetails.getExpressionFunctorToken())
-        .expressions(taskDetails.getExpressionsMap())
         .serializationFormat(io.harness.beans.SerializationFormat.valueOf(serializationFormat.name()))
         .build();
   }

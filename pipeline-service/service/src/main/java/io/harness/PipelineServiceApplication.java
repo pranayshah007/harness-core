@@ -28,6 +28,7 @@ import io.harness.configuration.DeployVariant;
 import io.harness.consumers.GraphUpdateRedisConsumer;
 import io.harness.controller.PrimaryVersionChangeScheduler;
 import io.harness.delay.DelayEventListener;
+import io.harness.enforcement.MaxStaticValueRestrictionUsageImpl;
 import io.harness.enforcement.client.CustomRestrictionRegisterConfiguration;
 import io.harness.enforcement.client.RestrictionUsageRegisterConfiguration;
 import io.harness.enforcement.client.custom.CustomRestrictionInterface;
@@ -113,9 +114,10 @@ import io.harness.pms.notification.orchestration.handlers.StageStartNotification
 import io.harness.pms.notification.orchestration.handlers.StageStatusUpdateNotificationEventHandler;
 import io.harness.pms.outbox.PipelineOutboxEventHandler;
 import io.harness.pms.pipeline.PipelineEntity;
-import io.harness.pms.pipeline.PipelineEntityCrudObserver;
 import io.harness.pms.pipeline.PipelineSetupUsageHelper;
 import io.harness.pms.pipeline.gitsync.PipelineEntityGitSyncHelper;
+import io.harness.pms.pipeline.observer.PipelineEntityCrudObserver;
+import io.harness.pms.pipeline.observer.PipelineMetadataObserver;
 import io.harness.pms.plan.creation.PipelineServiceFilterCreationResponseMerger;
 import io.harness.pms.plan.creation.PipelineServiceInternalInfoProvider;
 import io.harness.pms.plan.execution.PmsExecutionServiceInfoProvider;
@@ -445,13 +447,17 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
 
     // Register Pipeline Outbox Observers
     PipelineOutboxEventHandler pipelineOutboxEventHandler =
-        (PipelineOutboxEventHandler) injector.getInstance(Key.get(PipelineOutboxEventHandler.class));
+        injector.getInstance(Key.get(PipelineOutboxEventHandler.class));
     pipelineOutboxEventHandler.getPipelineActionObserverSubject().register(
         injector.getInstance(Key.get(PipelineSetupUsageHelper.class)));
     pipelineOutboxEventHandler.getPipelineActionObserverSubject().register(
         injector.getInstance(Key.get(PipelineEntityCrudObserver.class)));
     pipelineOutboxEventHandler.getPipelineActionObserverSubject().register(
         injector.getInstance(Key.get(InputSetPipelineObserver.class)));
+    // PipelineMetadataObserver is also added so that it is also deleted in sync so that runsequence starts with 0 again
+    // if same pipeline gets created
+    pipelineOutboxEventHandler.getPipelineActionObserverSubject().register(
+        injector.getInstance(Key.get(PipelineMetadataObserver.class)));
 
     NodeExecutionServiceImpl nodeExecutionService =
         (NodeExecutionServiceImpl) injector.getInstance(Key.get(NodeExecutionService.class));
@@ -858,6 +864,15 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
                 ImmutableMap.<FeatureRestrictionName, Class<? extends RestrictionUsageInterface>>builder()
                     .put(FeatureRestrictionName.STRATEGY_MAX_CONCURRENT,
                         StrategyMaxConcurrencyRestrictionUsageImpl.class)
+                    .put(FeatureRestrictionName.MAX_PIPELINE_TIMEOUT_SECONDS, MaxStaticValueRestrictionUsageImpl.class)
+                    .put(FeatureRestrictionName.MAX_STAGE_TIMEOUT_SECONDS, MaxStaticValueRestrictionUsageImpl.class)
+                    .put(FeatureRestrictionName.MAX_STEP_TIMEOUT_SECONDS, MaxStaticValueRestrictionUsageImpl.class)
+                    .put(FeatureRestrictionName.MAX_CONCURRENT_ACTIVE_PIPELINE_EXECUTIONS,
+                        MaxStaticValueRestrictionUsageImpl.class)
+                    .put(FeatureRestrictionName.MAX_PARALLEL_STEP_IN_A_PIPELINE,
+                        MaxStaticValueRestrictionUsageImpl.class)
+                    .put(FeatureRestrictionName.PIPELINE_EXECUTION_DATA_RETENTION_DAYS,
+                        MaxStaticValueRestrictionUsageImpl.class)
                     .build())
             .build();
     CustomRestrictionRegisterConfiguration customConfig =

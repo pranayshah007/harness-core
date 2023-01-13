@@ -2983,7 +2983,8 @@
 10000259:io.harness.delegate.beans.pcf.TasConstants
 10000260:io.harness.delegate.task.pcf.request.TasManifestsPackage
 10000261:io.harness.delegate.beans.pcf.CfSwapRouteCommandResult
-10000262:io.harness.delegate.task.pcf.request.CfRollingDeployRequestNG
-10000263:io.harness.delegate.task.pcf.response.CfRollingDeployResponseNG
-10000264:io.harness.delegate.task.pcf.request.CfRollingRollbackRequestNG
-10000265:io.harness.delegate.task.pcf.response.CfRollingRollbackResponseNG
+10000262:io.harness.exception.TerragruntCommandExecutionException
+10000263:io.harness.delegate.task.pcf.request.CfRollingDeployRequestNG
+10000264:io.harness.delegate.task.pcf.response.CfRollingDeployResponseNG
+10000265:io.harness.delegate.task.pcf.request.CfRollingRollbackRequestNG
+10000266:io.harness.delegate.task.pcf.response.CfRollingRollbackResponseNG

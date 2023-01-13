@@ -63,6 +63,25 @@ public class YamlSubMapExtractor {
     return curr;
   }
 
+  public JsonNode getNodeForFQN(JsonNode config, FQN baseFQN) {
+    boolean prevWasParallel = false;
+    for (FQNNode node : baseFQN.getFqnList()) {
+      if (prevWasParallel) {
+        config = getObjectFromParallel((ArrayNode) config, node);
+        prevWasParallel = false;
+      } else if (node.getNodeType() == FQNNode.NodeType.KEY) {
+        config = config.get(node.getKey());
+      } else if (node.getNodeType() == FQNNode.NodeType.KEY_WITH_UUID) {
+        config = getObjectFromArrayNode((ArrayNode) config, node);
+      } else if (node.getNodeType() == FQNNode.NodeType.PARALLEL) {
+        prevWasParallel = true;
+      } else if (node.getNodeType() == FQNNode.NodeType.UUID) {
+        config = getObjectFromArrayNode((ArrayNode) config, node);
+      }
+    }
+    return config;
+  }
+
   private JsonNode getObjectFromArrayNode(ArrayNode curr, FQNNode node) {
     int size = curr.size();
     for (int i = 0; i < size; i++) {

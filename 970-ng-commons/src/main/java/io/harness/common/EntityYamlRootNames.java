@@ -206,6 +206,7 @@ public class EntityYamlRootNames {
   public static final String TANZU_COMMAND_STEP = "TanzuCommand";
   public static final String ASG_ROLLING_DEPLOY = "AsgRollingDeploy";
   public static final String ASG_ROLLING_ROLLBACK = "AsgRollingRollback";
+  public static final String CCM_GOVERNANCE_RULE = "policies";
   public static final String TAS_ROLLING_DEPLOY = "TasRollingDeploy";
   public static final String TAS_ROLLING_ROLLBACK = "TasRollingRollback";
   public static final String ROUTE_MAPPING = "RouteMapping";

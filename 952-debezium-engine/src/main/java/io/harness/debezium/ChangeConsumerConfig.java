@@ -20,4 +20,11 @@ public class ChangeConsumerConfig {
   // oneOf { EventsFrameworkConfiguration, HttpConfig }
   ConsumerType consumerType;
   EventsFrameworkConfiguration eventsFrameworkConfiguration;
+  // Interval for which debezium engine will go to sleep after producing a batch of {producingCountPerBatch} events
+  long sleepInterval;
+  long producingCountPerBatch;
+  // Length of redis stream
+  int redisStreamSize;
+  // Mode of consumer can be either one of snapshot or streaming
+  ConsumerMode consumerMode;
 }

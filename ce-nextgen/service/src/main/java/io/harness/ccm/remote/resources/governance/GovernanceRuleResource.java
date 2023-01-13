@@ -20,6 +20,7 @@ import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPL
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 import static io.harness.telemetry.Destination.AMPLITUDE;
 
+import io.harness.EntityType;
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.OwnedBy;
@@ -56,6 +57,7 @@ import io.harness.delegate.beans.connector.CEFeatures;
 import io.harness.delegate.beans.connector.CcmConnectorFilter;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.ceawsconnector.CEAwsConnectorDTO;
+import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.filter.FilterType;
 import io.harness.ng.beans.PageResponse;
@@ -68,9 +70,12 @@ import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.PublicApi;
 import io.harness.telemetry.Category;
 import io.harness.telemetry.TelemetryReporter;
+import io.harness.yaml.schema.YamlSchemaProvider;
+import io.harness.yaml.validator.YamlSchemaValidator;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.inject.Inject;
@@ -94,10 +99,12 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeoutException;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -147,6 +154,8 @@ public class GovernanceRuleResource {
   private final TransactionTemplate transactionTemplate;
   private final OutboxService outboxService;
   @Inject CENextGenConfiguration configuration;
+  @Inject private YamlSchemaProvider yamlSchemaProvider;
+  @Inject private YamlSchemaValidator yamlSchemaValidator;
   public static final String GLOBAL_ACCOUNT_ID = "__GLOBAL_ACCOUNT_ID__";
   public static final String MALFORMED_ERROR = "Request payload is malformed";
   private static final RetryPolicy<Object> transactionRetryRule = DEFAULT_RETRY_POLICY;
@@ -156,7 +165,7 @@ public class GovernanceRuleResource {
       RuleEnforcementService ruleEnforcementService, RuleSetService ruleSetService,
       ConnectorResourceClient connectorResourceClient, RuleExecutionService ruleExecutionService,
       TelemetryReporter telemetryReporter, @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate,
-      OutboxService outboxService) {
+      OutboxService outboxService, YamlSchemaProvider yamlSchemaProvider, YamlSchemaValidator yamlSchemaValidator) {
     this.governanceRuleService = governanceRuleService;
     //    this rbacHelper rbacHelper
     this.ruleEnforcementService = ruleEnforcementService;
@@ -166,6 +175,8 @@ public class GovernanceRuleResource {
     this.telemetryReporter = telemetryReporter;
     this.transactionTemplate = transactionTemplate;
     this.outboxService = outboxService;
+    this.yamlSchemaProvider = yamlSchemaProvider;
+    this.yamlSchemaValidator = yamlSchemaValidator;
   }
 
   // Internal API for OOTB rule creation
@@ -193,18 +204,21 @@ public class GovernanceRuleResource {
     }
     governanceRuleService.customRuleLimit(accountId);
     Rule rule = createRuleDTO.getRule();
-    if (governanceRuleService.fetchByName(accountId, rule.getName(), true) != null) {
-      throw new InvalidRequestException("Rule with given name already exits");
-    }
     if (!rule.getIsOOTB()) {
       rule.setAccountId(accountId);
     } else {
       rule.setAccountId(GLOBAL_ACCOUNT_ID);
     }
+    if (governanceRuleService.fetchByName(accountId, rule.getName(), true) != null) {
+      throw new InvalidRequestException("Rule with the given name already exits");
+    }
+
     // TO DO: Handle this for custom rules and git connectors
     rule.setStoreType(RuleStoreType.INLINE);
     rule.setVersionLabel("0.0.1");
     rule.setDeleted(false);
+    governanceRuleService.validateAWSSchema(rule);
+    governanceRuleService.custodianValidate(rule);
     governanceRuleService.save(rule);
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(MODULE, MODULE_NAME);
@@ -585,5 +599,25 @@ public class GovernanceRuleResource {
     }
     return ResponseDTO.newResponse(
         GovernanceEnqueueResponseDTO.builder().ruleExecutionId(enqueuedRuleExecutionIds).build());
+  }
+  @GET
+  @Path("entitySchema")
+  @Consumes(MediaType.APPLICATION_JSON)
+  @Produces(MediaType.APPLICATION_JSON)
+  @ApiOperation(value = "Get Schema for entity", nickname = "getSchemaForEntity")
+  @Operation(operationId = "getSchemaForEntity", description = "Get Schema for entity",
+      summary = "Get Schema for entity",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "Schema", content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+      })
+  public ResponseDTO<JsonNode>
+  getEntityYamlSchema(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.ENTITY_TYPE) EntityType entityType, Scope scope) {
+    return ResponseDTO.newResponse(
+        yamlSchemaProvider.getYamlSchema(entityType, orgIdentifier, projectIdentifier, scope));
   }
 }

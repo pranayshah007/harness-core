@@ -105,9 +105,9 @@ components:
       type: object
       description: Streaming Destination model
       properties:
-        slug:
+        identifier:
           type: string
-          description: Streaming Destination slug
+          description: Streaming Destination identifier
         name:
           type: string
           description: Streaming Destination name
@@ -123,7 +123,7 @@ components:
         spec:
           $ref: '#/components/schemas/StreamingDestinationSpecDTO'
       required:
-        - slug
+        - identifier
         - name
         - status
         - connector_ref
@@ -217,7 +217,7 @@ components:
       required: false
       schema:
         type: string
-      description: 'Slug field of the account the resource is scoped to. This is required for Authorization methods other than the x-api-key header. If you are using the x-api-key header, this can be skipped.'
+      description: 'Identifier field of the account the resource is scoped to. This is required for Authorization methods other than the x-api-key header. If you are using the x-api-key header, this can be skipped.'
     Sort:
       name: sort
       in: query
@@ -225,7 +225,7 @@ components:
       schema:
         type: string
         enum:
-          - slug
+          - identifier
           - name
           - created
           - updated
@@ -265,7 +265,7 @@ components:
             example-streaming-destination-response:
               value:
                 streaming_destination:
-                  slug: example_destination
+                  identifier: example_destination
                   name: example desitnation name
                   status: ACTIVE
                   connector_ref: account.example_connector
@@ -286,7 +286,7 @@ components:
             example-list-streaming-destination-response:
               value:
                 - streaming_destination:
-                    slug: example_destination
+                    identifier: example_destination
                     name: example desitnation name
                     status: ACTIVE
                     connector_ref: account.example_connector
@@ -309,7 +309,7 @@ components:
           examples:
             example-aws-s3-stream-destination-request:
               value:
-                slug: example_destination
+                identifier: example_destination
                 name: example destination name
                 status: ACTIVE
                 connector_ref: account.example_aws_connector

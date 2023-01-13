@@ -97,7 +97,7 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(SortCompoundMongoIndex.builder()
-                 .name("search")
+                 .name("search2")
                  .field(WorkflowExecutionKeys.workflowId)
                  .field(WorkflowExecutionKeys.status)
                  .descSortField(WorkflowExecutionKeys.endTs)

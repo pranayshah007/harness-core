@@ -18,6 +18,7 @@ import io.harness.ccm.budgetGroup.BudgetGroup;
 import io.harness.ccm.budgetGroup.BudgetGroupChildEntityDTO;
 import io.harness.ccm.budgetGroup.dao.BudgetGroupDao;
 import io.harness.ccm.budgetGroup.service.BudgetGroupService;
+import io.harness.ccm.budgetGroup.utils.BudgetGroupUtils;
 import io.harness.ccm.commons.entities.billing.Budget;
 import io.harness.ccm.commons.entities.budget.BudgetData;
 import io.harness.ccm.commons.utils.BigQueryHelper;
@@ -140,7 +141,10 @@ public class BudgetServiceImpl implements BudgetService {
                                                          .collect(Collectors.toList())
                                                          .get(0);
       parentBudgetGroup = budgetGroupService.updateProportionsOnDeletion(deletedChildEntity, parentBudgetGroup);
-      budgetGroupService.cascadeBudgetGroupAmount(parentBudgetGroup);
+      parentBudgetGroup = BudgetGroupUtils.updateBudgetGroupAmountOnChildEntityDeletion(parentBudgetGroup, budget);
+      budgetGroupService.updateCostsOfParentBudgetGroupsOnEntityDeletion(parentBudgetGroup);
+      BudgetGroup rootBudgetGroup = BudgetGroupUtils.getRootBudgetGroup(budget);
+      budgetGroupService.cascadeBudgetGroupAmount(rootBudgetGroup);
     }
     return budgetDao.delete(budgetId, accountId);
   }

@@ -82,7 +82,7 @@ public class TerragruntRollbackStep extends CdTaskExecutable<AbstractTerragruntT
   public TaskRequest obtainTaskAfterRbac(
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
     TerragruntRollbackStepParameters stepParametersSpec = (TerragruntRollbackStepParameters) stepParameters.getSpec();
-    log.info("Running Obtain Inline Task for Terragrunt Rollback Step");
+    log.info("Running Obtain Task for Terragrunt Rollback Step");
     String provisionerIdentifier = stepParametersSpec.getProvisionerIdentifier();
     String entityId =
         terragruntStepHelper.generateFullIdentifier(stepParametersSpec.getProvisionerIdentifier(), ambiance);

@@ -223,8 +223,9 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
       } else {
         cfRollbackCommandResult.setCfInstanceElements(cfInstanceElements);
       }
-      List<CfInternalInstanceElement> newAppInstances = getNewAppInstance(cfRequestConfig,
-          cfRollbackCommandRequestNG.getCfAppNamePrefix(), cfRollbackCommandRequestNG.isSwapRouteOccurred());
+      List<CfInternalInstanceElement> newAppInstances = getCurrentProdAppInstance(cfRequestConfig,
+          cfRollbackCommandRequestNG.getCfAppNamePrefix(), cfRollbackCommandRequestNG.isSwapRouteOccurred(),
+          cfRollbackCommandRequestNG.getActiveApplicationDetails());
       cfRollbackCommandResult.setNewAppInstances(newAppInstances);
     } catch (Exception e) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
@@ -254,14 +255,16 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
     return cfRollbackCommandResponseNG;
   }
 
-  private List<CfInternalInstanceElement> getNewAppInstance(CfRequestConfig cfRequestConfig, String cfAppNamePrefix,
-      boolean swapRouteOccurred) throws PivotalClientApiException {
-    if (!swapRouteOccurred) {
+  private List<CfInternalInstanceElement> getCurrentProdAppInstance(CfRequestConfig cfRequestConfig,
+      String cfAppNamePrefix, boolean swapRouteOccurred, TasApplicationInfo activeAppInfo)
+      throws PivotalClientApiException {
+    if (!swapRouteOccurred || isNull(activeAppInfo)) {
+      // in both cases we will not update anything
       return Collections.emptyList();
     }
     cfRequestConfig.setApplicationName(cfAppNamePrefix);
-    ApplicationDetail applicationDetail = cfDeploymentManager.getApplicationByName(cfRequestConfig);
     List<CfInternalInstanceElement> instances = new ArrayList<>();
+    ApplicationDetail applicationDetail = cfDeploymentManager.getApplicationByName(cfRequestConfig);
     applicationDetail.getInstanceDetails().forEach(instance
         -> instances.add(CfInternalInstanceElement.builder()
                              .applicationId(applicationDetail.getId())

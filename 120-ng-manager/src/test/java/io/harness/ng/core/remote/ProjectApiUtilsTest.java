@@ -43,9 +43,8 @@ import org.springframework.data.domain.Sort;
 
 @OwnedBy(HarnessTeam.DX)
 public class ProjectApiUtilsTest extends CategoryTest {
-  public static final String SORT_SLUG_FIELD = "slug";
-  public static final String SORT_NAME_FIELD = "name";
   public static final String SORT_IDENTIFIER_FIELD = "identifier";
+  public static final String SORT_NAME_FIELD = "name";
   public static final String ASCENDING_ORDER = "ASC";
   public static final String DESCENDING_ORDER = "DESC";
   public static final String SORT_CREATED_FIELD = "created";
@@ -58,7 +57,7 @@ public class ProjectApiUtilsTest extends CategoryTest {
   private String testFilesBasePath = "120-ng-manager/src/test/resources/server/stub/project/";
 
   private ProjectApiUtils projectApiUtils;
-  private String slug = "project_slug";
+  private String identifier = "project_identifier";
   private String name = "name";
   private String org = "org";
   String HARNESS_BLUE = "#0063F7";
@@ -114,13 +113,13 @@ public class ProjectApiUtilsTest extends CategoryTest {
   @Test(expected = JerseyViolationException.class)
   @Owner(developers = OwnerRule.ASHISHSANODIA)
   @Category(UnitTests.class)
-  public void testProjectDtoMappingValidationExceptionForMissingSlug() throws JsonProcessingException {
+  public void testProjectDtoMappingValidationExceptionForMissingIdentifier() throws JsonProcessingException {
     CreateProjectRequest projectRequest = objectMapper.readValue(
         readFileAsString(testFilesBasePath + "create-project-request-1.json"), CreateProjectRequest.class);
     Set<ConstraintViolation<Object>> violations = validator.validate(projectRequest);
     assertThat(violations.isEmpty()).as(violations.toString()).isTrue();
 
-    projectRequest.getProject().setSlug(null);
+    projectRequest.getProject().setIdentifier(null);
     projectApiUtils.getProjectDto(projectRequest);
   }
 
@@ -181,7 +180,7 @@ public class ProjectApiUtilsTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testResponseMapping() {
     Project project = Project.builder()
-                          .identifier(slug)
+                          .identifier(identifier)
                           .name(name)
                           .orgIdentifier(org)
                           .color(HARNESS_BLUE)
@@ -195,7 +194,7 @@ public class ProjectApiUtilsTest extends CategoryTest {
     ProjectResponse projectResponse = projectApiUtils.getProjectResponse(project);
 
     assertThat(projectResponse.getProject()).isNotNull();
-    assertThat(projectResponse.getProject().getSlug()).isEqualTo(slug);
+    assertThat(projectResponse.getProject().getIdentifier()).isEqualTo(identifier);
     assertThat(projectResponse.getProject().getName()).isEqualTo(name);
     assertThat(projectResponse.getProject().getOrg()).isEqualTo(org);
     assertThat(projectResponse.getProject().getColor()).isEqualTo(HARNESS_BLUE);
@@ -212,13 +211,13 @@ public class ProjectApiUtilsTest extends CategoryTest {
   @Owner(developers = OwnerRule.ASHISHSANODIA)
   @Category(UnitTests.class)
   public void testPageRequestSortAndOrder() {
-    Pageable pageRequest = projectApiUtils.getPageRequest(0, 10, "slug", "desc");
+    Pageable pageRequest = projectApiUtils.getPageRequest(0, 10, "identifier", "desc");
     assertThat(pageRequest.getSort()).isNotNull();
     assertThat(pageRequest.getPageNumber()).isEqualTo(0);
     assertThat(pageRequest.getPageSize()).isEqualTo(10);
     assertThat(pageRequest.getSort()).isEqualTo(Sort.by(SORT_IDENTIFIER_FIELD).descending());
 
-    pageRequest = projectApiUtils.getPageRequest(0, 10, SORT_SLUG_FIELD, ASCENDING_ORDER);
+    pageRequest = projectApiUtils.getPageRequest(0, 10, SORT_IDENTIFIER_FIELD, ASCENDING_ORDER);
     assertThat(pageRequest.getSort()).isNotNull();
     assertThat(pageRequest.getSort()).isEqualTo(Sort.by(SORT_IDENTIFIER_FIELD).ascending());
 
@@ -242,11 +241,11 @@ public class ProjectApiUtilsTest extends CategoryTest {
     assertThat(pageRequest.getSort()).isNotNull();
     assertThat(pageRequest.getSort()).isEqualTo(Sort.by(SORT_LAST_MODIFIED_AT_FIELD).descending());
 
-    pageRequest = projectApiUtils.getPageRequest(0, 10, SORT_SLUG_FIELD, null);
+    pageRequest = projectApiUtils.getPageRequest(0, 10, SORT_IDENTIFIER_FIELD, null);
     assertThat(pageRequest.getSort()).isNotNull();
     assertThat(pageRequest.getSort()).isEqualTo(Sort.by(SORT_IDENTIFIER_FIELD).descending());
 
-    pageRequest = projectApiUtils.getPageRequest(0, 10, SORT_SLUG_FIELD, "asc");
+    pageRequest = projectApiUtils.getPageRequest(0, 10, SORT_IDENTIFIER_FIELD, "asc");
     assertThat(pageRequest.getSort()).isNotNull();
     assertThat(pageRequest.getSort()).isEqualTo(Sort.by(SORT_IDENTIFIER_FIELD).descending());
   }

@@ -381,6 +381,63 @@ public class BudgetGroupUtils {
     return period == YEARLY && budgetBreakdown == MONTHLY;
   }
 
+  public static BudgetGroup getRootBudgetGroup(BudgetGroup budgetGroup) {
+    BudgetGroup rootBudgetGroup = budgetGroupDao.get(budgetGroup.getParentBudgetGroupId(), budgetGroup.getAccountId());
+    while (rootBudgetGroup.getParentBudgetGroupId() != null) {
+      rootBudgetGroup = budgetGroupDao.get(rootBudgetGroup.getParentBudgetGroupId(), rootBudgetGroup.getAccountId());
+    }
+    return rootBudgetGroup;
+  }
+
+  public static BudgetGroup getRootBudgetGroup(Budget budget) {
+    BudgetGroup rootBudgetGroup = budgetGroupDao.get(budget.getParentBudgetGroupId(), budget.getAccountId());
+    while (rootBudgetGroup.getParentBudgetGroupId() != null) {
+      rootBudgetGroup = budgetGroupDao.get(rootBudgetGroup.getParentBudgetGroupId(), rootBudgetGroup.getAccountId());
+    }
+    return rootBudgetGroup;
+  }
+
+  public static BudgetGroup updateBudgetGroupAmountOnChildEntityDeletion(
+      BudgetGroup budgetGroup, BudgetGroup childBudgetGroup) {
+    budgetGroup.setBudgetGroupAmount(
+        BudgetUtils.getRoundedValue(budgetGroup.getBudgetGroupAmount() - childBudgetGroup.getBudgetGroupAmount()));
+    if (budgetGroup.getPeriod() == YEARLY
+        && budgetGroup.getBudgetGroupMonthlyBreakdown().getBudgetBreakdown() == MONTHLY) {
+      List<ValueDataPoint> updatedBudgetGroupAmounts = new ArrayList<>();
+      Map<Long, Double> currentAmountPerTimestamp =
+          budgetGroup.getBudgetGroupMonthlyBreakdown().getBudgetMonthlyAmount().stream().collect(
+              Collectors.toMap(ValueDataPoint::getTime, ValueDataPoint::getValue));
+      childBudgetGroup.getBudgetGroupMonthlyBreakdown().getBudgetMonthlyAmount().forEach(entry
+          -> updatedBudgetGroupAmounts.add(
+              ValueDataPoint.builder()
+                  .time(entry.getTime())
+                  .value(BudgetUtils.getRoundedValue(currentAmountPerTimestamp.get(entry.getTime()) - entry.getValue()))
+                  .build()));
+      budgetGroup.getBudgetGroupMonthlyBreakdown().setBudgetMonthlyAmount(updatedBudgetGroupAmounts);
+    }
+    return budgetGroup;
+  }
+
+  public static BudgetGroup updateBudgetGroupAmountOnChildEntityDeletion(BudgetGroup budgetGroup, Budget childBudget) {
+    budgetGroup.setBudgetGroupAmount(
+        BudgetUtils.getRoundedValue(budgetGroup.getBudgetGroupAmount() - childBudget.getBudgetAmount()));
+    if (budgetGroup.getPeriod() == YEARLY
+        && budgetGroup.getBudgetGroupMonthlyBreakdown().getBudgetBreakdown() == MONTHLY) {
+      List<ValueDataPoint> updatedBudgetGroupAmounts = new ArrayList<>();
+      Map<Long, Double> currentAmountPerTimestamp =
+          budgetGroup.getBudgetGroupMonthlyBreakdown().getBudgetMonthlyAmount().stream().collect(
+              Collectors.toMap(ValueDataPoint::getTime, ValueDataPoint::getValue));
+      childBudget.getBudgetMonthlyBreakdown().getBudgetMonthlyAmount().forEach(entry
+          -> updatedBudgetGroupAmounts.add(
+              ValueDataPoint.builder()
+                  .time(entry.getTime())
+                  .value(BudgetUtils.getRoundedValue(currentAmountPerTimestamp.get(entry.getTime()) - entry.getValue()))
+                  .build()));
+      budgetGroup.getBudgetGroupMonthlyBreakdown().setBudgetMonthlyAmount(updatedBudgetGroupAmounts);
+    }
+    return budgetGroup;
+  }
+
   public static double getCascadedAmount(
       CascadeType cascadeType, Double totalNumberOfChildEntities, Double proportion, Double amount) {
     switch (cascadeType) {

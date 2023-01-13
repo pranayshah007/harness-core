@@ -37,6 +37,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.repository.support.PageableExecutionUtils;
+import org.springframework.data.util.CloseableIterator;
 
 @AllArgsConstructor(access = AccessLevel.PRIVATE, onConstructor = @__({ @Inject }))
 @Slf4j
@@ -173,5 +174,9 @@ public class PmsExecutionSummaryRepositoryCustomImpl implements PmsExecutionSumm
 
   private RetryPolicy<Object> getRetryPolicy(String failedAttemptMessage, String failureMessage) {
     return PersistenceUtils.getRetryPolicy(failedAttemptMessage, failureMessage);
+  }
+
+  public CloseableIterator<PipelineExecutionSummaryEntity> fetchExecutionSummaryEntityFromAnalytics(Query query) {
+    return pmsExecutionSummaryReadHelper.fetchExecutionSummaryEntityFromAnalytics(query);
   }
 }

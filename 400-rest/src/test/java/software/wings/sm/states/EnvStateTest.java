@@ -523,8 +523,8 @@ public class EnvStateTest extends WingsBaseTest {
     when(context.evaluateExpression(eq(disableAssertion), any(StateExecutionContext.class))).thenReturn(false);
     when(context.getStateExecutionInstance()).thenReturn(stateEI);
     when(workflowService.readWorkflowWithoutServices(any(), any())).thenReturn(workflow1);
-    when(featureFlagService.isEnabled(
-             eq(FeatureName.SPG_ALLOW_USE_WORKFLOW_VARIABLES_TO_CONDITION_OF_SKIP_PIPELINE_STAGE), any()))
+    when(
+        featureFlagService.isEnabled(eq(FeatureName.SPG_ALLOW_WFLOW_VARIABLES_TO_CONDITION_SKIP_PIPELINE_STAGE), any()))
         .thenReturn(true);
     ExecutionResponse response = envState.checkDisableAssertion(context, workflowService, logger);
     assertThat(response).isNull();
@@ -553,8 +553,8 @@ public class EnvStateTest extends WingsBaseTest {
     when(context.evaluateExpression(eq(disableAssertion), any(StateExecutionContext.class))).thenReturn(true);
     when(context.getStateExecutionInstance()).thenReturn(stateEI);
     when(workflowService.readWorkflowWithoutServices(any(), any())).thenReturn(workflow1);
-    when(featureFlagService.isEnabled(
-             eq(FeatureName.SPG_ALLOW_USE_WORKFLOW_VARIABLES_TO_CONDITION_OF_SKIP_PIPELINE_STAGE), any()))
+    when(
+        featureFlagService.isEnabled(eq(FeatureName.SPG_ALLOW_WFLOW_VARIABLES_TO_CONDITION_SKIP_PIPELINE_STAGE), any()))
         .thenReturn(true);
     ExecutionResponse response = envState.checkDisableAssertion(context, workflowService, logger);
     assertThat(response.getErrorMessage())
@@ -586,8 +586,8 @@ public class EnvStateTest extends WingsBaseTest {
     when(context.evaluateExpression(eq(disableAssertion), any(StateExecutionContext.class))).thenReturn("some");
     when(context.getStateExecutionInstance()).thenReturn(stateEI);
     when(workflowService.readWorkflowWithoutServices(any(), any())).thenReturn(workflow1);
-    when(featureFlagService.isEnabled(
-             eq(FeatureName.SPG_ALLOW_USE_WORKFLOW_VARIABLES_TO_CONDITION_OF_SKIP_PIPELINE_STAGE), any()))
+    when(
+        featureFlagService.isEnabled(eq(FeatureName.SPG_ALLOW_WFLOW_VARIABLES_TO_CONDITION_SKIP_PIPELINE_STAGE), any()))
         .thenReturn(true);
     ExecutionResponse response = envState.checkDisableAssertion(context, workflowService, logger);
     assertThat(response.getErrorMessage())

@@ -289,6 +289,15 @@ import io.harness.cvng.dashboard.services.impl.HeatMapServiceImpl;
 import io.harness.cvng.dashboard.services.impl.LogDashboardServiceImpl;
 import io.harness.cvng.dashboard.services.impl.ServiceDependencyGraphServiceImpl;
 import io.harness.cvng.dashboard.services.impl.TimeSeriesDashboardServiceImpl;
+import io.harness.cvng.downtime.beans.DowntimeType;
+import io.harness.cvng.downtime.services.api.DowntimeService;
+import io.harness.cvng.downtime.services.api.EntityUnavailabilityStatusesService;
+import io.harness.cvng.downtime.services.impl.DowntimeServiceImpl;
+import io.harness.cvng.downtime.services.impl.EntityUnavailabilityStatusesServiceImpl;
+import io.harness.cvng.downtime.transformer.DowntimeSpecDetailsTransformer;
+import io.harness.cvng.downtime.transformer.EntityUnavailabilityStatusesEntityAndDTOTransformer;
+import io.harness.cvng.downtime.transformer.OnetimeDowntimeSpecDetailsTransformer;
+import io.harness.cvng.downtime.transformer.RecurringDowntimeSpecDetailsTransformer;
 import io.harness.cvng.migration.impl.CVNGMigrationServiceImpl;
 import io.harness.cvng.migration.service.CVNGMigrationService;
 import io.harness.cvng.notification.beans.NotificationRuleConditionType;
@@ -870,6 +879,8 @@ public class CVServiceModule extends AbstractModule {
     bind(TimeSeriesThresholdService.class).to(TimeSeriesThresholdServiceImpl.class);
     bind(RiskCategoryService.class).to(RiskCategoryServiceImpl.class);
     bind(GraphDataService.class).to(GraphDataServiceImpl.class);
+    bind(DowntimeService.class).to(DowntimeServiceImpl.class);
+    bind(EntityUnavailabilityStatusesService.class).to(EntityUnavailabilityStatusesServiceImpl.class);
     MapBinder<ChangeSourceType, ChangeSourceSpecTransformer> changeSourceTypeChangeSourceSpecTransformerMapBinder =
         MapBinder.newMapBinder(binder(), ChangeSourceType.class, ChangeSourceSpecTransformer.class);
     changeSourceTypeChangeSourceSpecTransformerMapBinder.addBinding(ChangeSourceType.HARNESS_CD)
@@ -1108,6 +1119,16 @@ public class CVServiceModule extends AbstractModule {
     taskTypeAnalysisStateMachineServiceMapBinder.addBinding(VerificationTask.TaskType.COMPOSITE_SLO)
         .to(CompositeSLOAnalysisStateMachineServiceImpl.class);
     bind(HealthSourceOnboardingService.class).to(HealthSourceOnboardingServiceImpl.class);
+
+    MapBinder<DowntimeType, DowntimeSpecDetailsTransformer> downtimeTransformerMapBinder =
+        MapBinder.newMapBinder(binder(), DowntimeType.class, DowntimeSpecDetailsTransformer.class);
+    downtimeTransformerMapBinder.addBinding(DowntimeType.ONE_TIME)
+        .to(OnetimeDowntimeSpecDetailsTransformer.class)
+        .in(Scopes.SINGLETON);
+    downtimeTransformerMapBinder.addBinding(DowntimeType.RECURRING)
+        .to(RecurringDowntimeSpecDetailsTransformer.class)
+        .in(Scopes.SINGLETON);
+    bind(EntityUnavailabilityStatusesEntityAndDTOTransformer.class);
   }
 
   private void bindChangeSourceUpdatedEntity() {

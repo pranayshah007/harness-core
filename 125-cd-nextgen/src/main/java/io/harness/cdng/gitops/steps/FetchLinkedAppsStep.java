@@ -7,6 +7,7 @@
 
 package io.harness.cdng.gitops.steps;
 
+import static io.harness.cdng.gitops.constants.GitopsConstants.GITOPS_SWEEPING_OUTPUT;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
@@ -134,7 +135,7 @@ public class FetchLinkedAppsStep extends CdTaskExecutable<GitOpsFetchAppTaskResp
       }
 
       OptionalSweepingOutput optionalGitOpsSweepingOutput = executionSweepingOutputService.resolveOptional(
-          ambiance, RefObjectUtils.getOutcomeRefObject(GitopsClustersStep.GITOPS_SWEEPING_OUTPUT));
+          ambiance, RefObjectUtils.getOutcomeRefObject(GITOPS_SWEEPING_OUTPUT));
 
       if (optionalGitOpsSweepingOutput == null || !optionalGitOpsSweepingOutput.isFound()) {
         throw new InvalidRequestException("GitOps Clusters Outcome Not Found.");

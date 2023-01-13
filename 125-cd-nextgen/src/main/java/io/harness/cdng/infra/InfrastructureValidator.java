@@ -8,6 +8,8 @@
 package io.harness.cdng.infra;
 
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
+import static io.harness.common.ParameterFieldHelper.hasValueListOrExpression;
+import static io.harness.common.ParameterFieldHelper.hasValueOrExpression;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -36,6 +38,8 @@ import org.apache.commons.lang3.tuple.Pair;
 @OwnedBy(HarnessTeam.CDP)
 @Singleton
 public class InfrastructureValidator {
+  private static final String CANNOT_BE_EMPTY_ERROR_MSG = "cannot be empty";
+
   public void validate(Infrastructure infrastructure) {
     switch (infrastructure.getKind()) {
       case InfrastructureKind.KUBERNETES_DIRECT:
@@ -101,123 +105,140 @@ public class InfrastructureValidator {
   private void validateK8sDirectInfrastructure(K8SDirectInfrastructure infrastructure) {
     if (ParameterField.isNull(infrastructure.getNamespace())
         || isEmpty(getParameterFieldValue(infrastructure.getNamespace()))) {
-      throw new InvalidArgumentsException(Pair.of("namespace", "cannot be empty"));
+      throw new InvalidArgumentsException(Pair.of("namespace", CANNOT_BE_EMPTY_ERROR_MSG));
     }
 
     if (!hasValueOrExpression(infrastructure.getReleaseName())) {
-      throw new InvalidArgumentsException(Pair.of("releaseName", "cannot be empty"));
+      throw new InvalidArgumentsException(Pair.of("releaseName", CANNOT_BE_EMPTY_ERROR_MSG));
     }
   }
 
   private void validateK8sGcpInfrastructure(K8sGcpInfrastructure infrastructure) {
     if (ParameterField.isNull(infrastructure.getNamespace())
         || isEmpty(getParameterFieldValue(infrastructure.getNamespace()))) {
-      throw new InvalidArgumentsException(Pair.of("namespace", "cannot be empty"));
+      throw new InvalidArgumentsException(Pair.of("namespace", CANNOT_BE_EMPTY_ERROR_MSG));
     }
 
     if (!hasValueOrExpression(infrastructure.getReleaseName())) {
-      throw new InvalidArgumentsException(Pair.of("releaseName", "cannot be empty"));
+      throw new InvalidArgumentsException(Pair.of("releaseName", CANNOT_BE_EMPTY_ERROR_MSG));
     }
 
     if (ParameterField.isNull(infrastructure.getCluster())
         || isEmpty(getParameterFieldValue(infrastructure.getCluster()))) {
-      throw new InvalidArgumentsException(Pair.of("cluster", "cannot be empty"));
+      throw new InvalidArgumentsException(Pair.of("cluster", CANNOT_BE_EMPTY_ERROR_MSG));
     }
   }
 
   private void validateK8sAzureInfrastructure(K8sAzureInfrastructure infrastructure) {
     if (ParameterField.isNull(infrastructure.getNamespace())
         || isEmpty(getParameterFieldValue(infrastructure.getNamespace()))) {
-      throw new InvalidArgumentsException(Pair.of("namespace", "cannot be empty"));
+      throw new InvalidArgumentsException(Pair.of("namespace", CANNOT_BE_EMPTY_ERROR_MSG));
     }
 
     if (!hasValueOrExpression(infrastructure.getReleaseName())) {
-      throw new InvalidArgumentsException(Pair.of("releaseName", "cannot be empty"));
+      throw new InvalidArgumentsException(Pair.of("releaseName", CANNOT_BE_EMPTY_ERROR_MSG));
     }
 
     if (ParameterField.isNull(infrastructure.getCluster())
         || isEmpty(getParameterFieldValue(infrastructure.getCluster()))) {
-      throw new InvalidArgumentsException(Pair.of("cluster", "cannot be empty"));
+      throw new InvalidArgumentsException(Pair.of("cluster", CANNOT_BE_EMPTY_ERROR_MSG));
     }
 
     if (ParameterField.isNull(infrastructure.getSubscriptionId())
         || isEmpty(getParameterFieldValue(infrastructure.getSubscriptionId()))) {
-      throw new InvalidArgumentsException(Pair.of("subscription", "cannot be empty"));
+      throw new InvalidArgumentsException(Pair.of("subscription", CANNOT_BE_EMPTY_ERROR_MSG));
     }
 
     if (ParameterField.isNull(infrastructure.getResourceGroup())
         || isEmpty(getParameterFieldValue(infrastructure.getResourceGroup()))) {
-      throw new InvalidArgumentsException(Pair.of("resourceGroup", "cannot be empty"));
+      throw new InvalidArgumentsException(Pair.of("resourceGroup", CANNOT_BE_EMPTY_ERROR_MSG));
     }
   }
 
   private void validateAzureWebAppInfrastructure(AzureWebAppInfrastructure infrastructure) {
     if (ParameterField.isNull(infrastructure.getConnectorRef())
         || isEmpty(getParameterFieldValue(infrastructure.getConnectorRef()))) {
-      throw new InvalidArgumentsException(Pair.of("connectorRef", "cannot be empty"));
+      throw new InvalidArgumentsException(Pair.of("connectorRef", CANNOT_BE_EMPTY_ERROR_MSG));
     }
 
     if (ParameterField.isNull(infrastructure.getSubscriptionId())
         || isEmpty(getParameterFieldValue(infrastructure.getSubscriptionId()))) {
-      throw new InvalidArgumentsException(Pair.of("subscription", "cannot be empty"));
+      throw new InvalidArgumentsException(Pair.of("subscription", CANNOT_BE_EMPTY_ERROR_MSG));
     }
 
     if (ParameterField.isNull(infrastructure.getResourceGroup())
         || isEmpty(getParameterFieldValue(infrastructure.getResourceGroup()))) {
-      throw new InvalidArgumentsException(Pair.of("resourceGroup", "cannot be empty"));
+      throw new InvalidArgumentsException(Pair.of("resourceGroup", CANNOT_BE_EMPTY_ERROR_MSG));
     }
   }
 
   private void validatePdcInfrastructure(PdcInfrastructure infrastructure) {
     if (!hasValueOrExpression(infrastructure.getCredentialsRef())) {
-      throw new InvalidArgumentsException(Pair.of("credentialsRef", "cannot be empty"));
+      throw new InvalidArgumentsException(Pair.of("credentialsRef", CANNOT_BE_EMPTY_ERROR_MSG));
     }
 
-    if (!hasValueListOrExpression(infrastructure.getHosts())
-        && !hasValueOrExpression(infrastructure.getConnectorRef())) {
-      throw new InvalidArgumentsException(Pair.of("hosts", "cannot be empty"),
-          Pair.of("connectorRef", "cannot be empty"),
+    if (infrastructure.isDynamicallyProvisioned()) {
+      validateDynamicPdcInfrastructure(infrastructure);
+    } else {
+      validatePdcInfrastructure(infrastructure.getHosts(), infrastructure.getConnectorRef());
+    }
+  }
+
+  private void validatePdcInfrastructure(ParameterField<List<String>> hosts, ParameterField<String> connectorRef) {
+    if (!hasValueListOrExpression(hosts) && !hasValueOrExpression(connectorRef)) {
+      throw new InvalidArgumentsException(Pair.of("hosts", CANNOT_BE_EMPTY_ERROR_MSG),
+          Pair.of("connectorRef", CANNOT_BE_EMPTY_ERROR_MSG),
           new IllegalArgumentException("hosts and connectorRef are not defined"));
+    }
+  }
+
+  private void validateDynamicPdcInfrastructure(PdcInfrastructure infrastructure) {
+    if (!hasValueOrExpression(infrastructure.getHostObjectArray(), false)) {
+      throw new InvalidArgumentsException(Pair.of("hostObjectArray", CANNOT_BE_EMPTY_ERROR_MSG));
+    }
+
+    if (!hasValueOrExpression(infrastructure.getHostAttributes(), false)) {
+      throw new InvalidArgumentsException(Pair.of("hostAttributes", CANNOT_BE_EMPTY_ERROR_MSG));
     }
   }
 
   private void validateServerlessAwsInfrastructure(ServerlessAwsLambdaInfrastructure infrastructure) {
     if (ParameterField.isNull(infrastructure.getRegion())
         || isEmpty(getParameterFieldValue(infrastructure.getRegion()))) {
-      throw new InvalidArgumentsException(Pair.of("region", "cannot be empty"));
+      throw new InvalidArgumentsException(Pair.of("region", CANNOT_BE_EMPTY_ERROR_MSG));
     }
     if (!hasValueOrExpression(infrastructure.getStage())) {
-      throw new InvalidArgumentsException(Pair.of("stage", "cannot be empty"));
+      throw new InvalidArgumentsException(Pair.of("stage", CANNOT_BE_EMPTY_ERROR_MSG));
     }
   }
 
   private void validateSshWinRmAzureInfrastructure(SshWinRmAzureInfrastructure infrastructure) {
     if (!hasValueOrExpression(infrastructure.getConnectorRef())) {
-      throw new InvalidArgumentsException(Pair.of("connectorRef", "cannot be empty"));
+      throw new InvalidArgumentsException(Pair.of("connectorRef", CANNOT_BE_EMPTY_ERROR_MSG));
     }
     if (!hasValueOrExpression(infrastructure.getSubscriptionId())) {
-      throw new InvalidArgumentsException(Pair.of("subscriptionId", "cannot be empty"));
+      throw new InvalidArgumentsException(Pair.of("subscriptionId", CANNOT_BE_EMPTY_ERROR_MSG));
     }
     if (!hasValueOrExpression(infrastructure.getResourceGroup())) {
-      throw new InvalidArgumentsException(Pair.of("resourceGroup", "cannot be empty"));
+      throw new InvalidArgumentsException(Pair.of("resourceGroup", CANNOT_BE_EMPTY_ERROR_MSG));
     }
     if (!hasValueOrExpression(infrastructure.getCredentialsRef())) {
-      throw new InvalidArgumentsException(Pair.of("credentialsRef", "cannot be empty"));
+      throw new InvalidArgumentsException(Pair.of("credentialsRef", CANNOT_BE_EMPTY_ERROR_MSG));
     }
   }
 
   private void validateSshWinRmAwsInfrastructure(SshWinRmAwsInfrastructure infrastructure) {
     if (!hasValueOrExpression(infrastructure.getCredentialsRef())) {
-      throw new InvalidArgumentsException(Pair.of("credentialsRef", "cannot be empty"));
+      throw new InvalidArgumentsException(Pair.of("credentialsRef", CANNOT_BE_EMPTY_ERROR_MSG));
     }
     if (!hasValueOrExpression(infrastructure.getConnectorRef())) {
-      throw new InvalidArgumentsException(Pair.of("connectorRef", "cannot be empty"));
+      throw new InvalidArgumentsException(Pair.of("connectorRef", CANNOT_BE_EMPTY_ERROR_MSG));
     }
     if (!hasValueOrExpression(infrastructure.getRegion())) {
-      throw new InvalidArgumentsException(Pair.of("region", "cannot be empty"));
+      throw new InvalidArgumentsException(Pair.of("region", CANNOT_BE_EMPTY_ERROR_MSG));
     }
     if (!hasValueOrExpression(infrastructure.getHostConnectionType())) {
-      throw new InvalidArgumentsException(Pair.of("hostConnectionType", "cannot be empty"));
+      throw new InvalidArgumentsException(Pair.of("hostConnectionType", CANNOT_BE_EMPTY_ERROR_MSG));
     }
 
     if (infrastructure.getAwsInstanceFilter() == null) {
@@ -227,63 +248,47 @@ public class InfrastructureValidator {
 
   private void validateEcsInfrastructure(EcsInfrastructure infrastructure) {
     if (!hasValueOrExpression(infrastructure.getConnectorRef())) {
-      throw new InvalidArgumentsException(Pair.of("connectorRef", "cannot be empty"));
+      throw new InvalidArgumentsException(Pair.of("connectorRef", CANNOT_BE_EMPTY_ERROR_MSG));
     }
     if (!hasValueOrExpression(infrastructure.getCluster())) {
-      throw new InvalidArgumentsException(Pair.of("cluster", "cannot be empty"));
+      throw new InvalidArgumentsException(Pair.of("cluster", CANNOT_BE_EMPTY_ERROR_MSG));
     }
     if (!hasValueOrExpression(infrastructure.getRegion())) {
-      throw new InvalidArgumentsException(Pair.of("region", "cannot be empty"));
+      throw new InvalidArgumentsException(Pair.of("region", CANNOT_BE_EMPTY_ERROR_MSG));
     }
   }
 
   private void validateElastigroupInfrastructure(ElastigroupInfrastructure infrastructure) {
     if (!hasValueOrExpression(infrastructure.getConnectorRef())) {
-      throw new InvalidArgumentsException(Pair.of("connectorRef", "cannot be empty"));
+      throw new InvalidArgumentsException(Pair.of("connectorRef", CANNOT_BE_EMPTY_ERROR_MSG));
     }
 
     if (null == infrastructure.getConfiguration()) {
-      throw new InvalidArgumentsException(Pair.of("configuration", "cannot be empty"));
+      throw new InvalidArgumentsException(Pair.of("configuration", CANNOT_BE_EMPTY_ERROR_MSG));
     }
   }
 
   private void validateTanzuApplicationServiceInfrastructure(TanzuApplicationServiceInfrastructure infrastructure) {
     if (!hasValueOrExpression(infrastructure.getConnectorRef())) {
-      throw new InvalidArgumentsException(Pair.of("connectorRef", "cannot be empty"));
+      throw new InvalidArgumentsException(Pair.of("connectorRef", CANNOT_BE_EMPTY_ERROR_MSG));
     }
 
     if (!hasValueOrExpression(infrastructure.getOrganization())) {
-      throw new InvalidArgumentsException(Pair.of("Organization", "cannot be empty"));
+      throw new InvalidArgumentsException(Pair.of("Organization", CANNOT_BE_EMPTY_ERROR_MSG));
     }
 
     if (!hasValueOrExpression(infrastructure.getSpace())) {
-      throw new InvalidArgumentsException(Pair.of("Space", "cannot be empty"));
+      throw new InvalidArgumentsException(Pair.of("Space", CANNOT_BE_EMPTY_ERROR_MSG));
     }
   }
 
   private void validateAsgInfrastructure(AsgInfrastructure infrastructure) {
     if (!hasValueOrExpression(infrastructure.getConnectorRef())) {
-      throw new InvalidArgumentsException(Pair.of("connectorRef", "cannot be empty"));
+      throw new InvalidArgumentsException(Pair.of("connectorRef", CANNOT_BE_EMPTY_ERROR_MSG));
     }
 
     if (!hasValueOrExpression(infrastructure.getRegion())) {
-      throw new InvalidArgumentsException(Pair.of("region", "cannot be empty"));
+      throw new InvalidArgumentsException(Pair.of("region", CANNOT_BE_EMPTY_ERROR_MSG));
     }
-  }
-
-  private boolean hasValueOrExpression(ParameterField<String> parameterField) {
-    if (ParameterField.isNull(parameterField)) {
-      return false;
-    }
-
-    return parameterField.isExpression() || !isEmpty(getParameterFieldValue(parameterField));
-  }
-
-  private <T> boolean hasValueListOrExpression(ParameterField<List<T>> parameterField) {
-    if (ParameterField.isNull(parameterField)) {
-      return false;
-    }
-
-    return parameterField.isExpression() || !isEmpty(getParameterFieldValue(parameterField));
   }
 }

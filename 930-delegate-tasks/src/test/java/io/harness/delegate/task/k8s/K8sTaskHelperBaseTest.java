@@ -62,6 +62,7 @@ import static software.wings.beans.LogColor.Yellow;
 import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
 
+import static io.fabric8.utils.Files.getFileName;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -117,6 +118,7 @@ import io.harness.delegate.beans.connector.scm.github.GithubHttpAuthenticationTy
 import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubTokenSpecDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubUsernamePasswordDTO;
+import io.harness.delegate.beans.storeconfig.CustomRemoteStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GcsHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
@@ -186,6 +188,7 @@ import io.harness.k8s.releasehistory.ReleaseHistory;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
+import io.harness.manifest.CustomManifestSource;
 import io.harness.ng.core.dto.ErrorDetail;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.rule.Owner;
@@ -3170,6 +3173,61 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     assertThat(result).isEqualTo(renderedFiles);
     verify(openShiftDelegateService, times(1))
         .processTemplatization("manifest", ocPath, ocTemplatePath, executionLogCallback, valuesList);
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testRenderTemplateOpenshiftHarnessStore() throws Exception {
+    String ocPath = "/usr/bin/openshift";
+    String ocTemplatePath = "/usr/bin/openshift/template/openshiftTemplate.yaml";
+    List<String> valuesList = new ArrayList<>();
+    List<ManifestFiles> manifestFileList = asList(ManifestFiles.builder().filePath(ocTemplatePath).build());
+    ManifestDelegateConfig manifestDelegateConfig =
+        OpenshiftManifestDelegateConfig.builder()
+            .storeDelegateConfig(LocalFileStoreDelegateConfig.builder().manifestFiles(manifestFileList).build())
+            .build();
+    K8sDelegateTaskParams delegateTaskParams = K8sDelegateTaskParams.builder().ocPath(ocPath).build();
+    List<FileData> renderedFiles = new ArrayList<>();
+    doReturn(renderedFiles)
+        .when(openShiftDelegateService)
+        .processTemplatization("manifest", ocPath, ocTemplatePath.substring(1), executionLogCallback, valuesList);
+
+    List<FileData> result = k8sTaskHelperBase.renderTemplate(delegateTaskParams, manifestDelegateConfig, "manifest",
+        valuesList, "release", "namespace", executionLogCallback, 10);
+
+    assertThat(result).isEqualTo(renderedFiles);
+    verify(openShiftDelegateService, times(1))
+        .processTemplatization("manifest", ocPath, ocTemplatePath.substring(1), executionLogCallback, valuesList);
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testRenderTemplateOpenshiftCustomRemoteStore() throws Exception {
+    String ocPath = "/usr/bin/openshift";
+    String ocTemplatePath = "/usr/bin/openshift/template.yaml";
+    List<String> valuesList = new ArrayList<>();
+    ManifestDelegateConfig manifestDelegateConfig =
+        OpenshiftManifestDelegateConfig.builder()
+            .storeDelegateConfig(
+                CustomRemoteStoreDelegateConfig.builder()
+                    .customManifestSource(CustomManifestSource.builder().filePaths(asList(ocTemplatePath)).build())
+                    .build())
+            .build();
+    K8sDelegateTaskParams delegateTaskParams = K8sDelegateTaskParams.builder().ocPath(ocPath).build();
+    List<FileData> renderedFiles = new ArrayList<>();
+    String templateFileName = getFileName(ocTemplatePath);
+    doReturn(renderedFiles)
+        .when(openShiftDelegateService)
+        .processTemplatization("manifest", ocPath, templateFileName, executionLogCallback, valuesList);
+
+    List<FileData> result = k8sTaskHelperBase.renderTemplate(delegateTaskParams, manifestDelegateConfig, "manifest",
+        valuesList, "release", "namespace", executionLogCallback, 10);
+
+    assertThat(result).isEqualTo(renderedFiles);
+    verify(openShiftDelegateService, times(1))
+        .processTemplatization("manifest", ocPath, templateFileName, executionLogCallback, valuesList);
   }
 
   @Test

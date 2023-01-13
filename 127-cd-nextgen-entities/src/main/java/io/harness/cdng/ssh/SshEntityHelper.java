@@ -8,6 +8,7 @@
 package io.harness.cdng.ssh;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.cdng.ssh.SshWinRmConstants.HOSTNAME_HOST_ATTRIBUTE;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.exception.WingsException.USER;
@@ -77,6 +78,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.YamlPipelineUtils;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -295,9 +297,58 @@ public class SshEntityHelper {
 
   private Set<String> extractHostNames(PdcInfrastructureOutcome pdcDirectInfrastructure,
       PhysicalDataCenterConnectorDTO pdcConnectorDTO, NGAccess ngAccess) {
+    if (pdcDirectInfrastructure.isDynamicallyProvisioned()) {
+      return extractDynamicallyProvisionedHostNames(pdcDirectInfrastructure);
+    }
+
     return pdcDirectInfrastructure.useInfrastructureHosts()
         ? new HashSet<>(pdcDirectInfrastructure.getHosts())
         : toStringHostNames(extractConnectorHostNames(pdcDirectInfrastructure, pdcConnectorDTO.getHosts(), ngAccess));
+  }
+
+  @VisibleForTesting
+  Set<String> extractDynamicallyProvisionedHostNames(PdcInfrastructureOutcome pdcDirectInfrastructure) {
+    if (isEmpty(pdcDirectInfrastructure.getHosts())) {
+      return emptySet();
+    }
+    if (pdcDirectInfrastructure.getHostFilter() == null
+        || HostFilterType.ALL.equals(pdcDirectInfrastructure.getHostFilter().getType())) {
+      return new HashSet<>(pdcDirectInfrastructure.getHosts());
+    }
+
+    if (HostFilterType.HOST_ATTRIBUTES.equals(pdcDirectInfrastructure.getHostFilter().getType())) {
+      Map<String, String> hostAttributesFilter =
+          ((HostAttributesFilterDTO) pdcDirectInfrastructure.getHostFilter().getSpec()).getValue();
+      if (isEmpty(hostAttributesFilter)) {
+        return new HashSet<>(pdcDirectInfrastructure.getHosts());
+      }
+      List<Map<String, Object>> hostsAttributes = pdcDirectInfrastructure.getHostsAttributes();
+      if (isEmpty(hostsAttributes)) {
+        throw new InvalidArgumentsException("Host attributes filter cannot be applied on empty attributes list");
+      }
+
+      List<String> filteredHostNames = hostsAttributes.stream()
+                                           .filter(hostAttrs -> matchAllFilterAttrs(hostAttributesFilter, hostAttrs))
+                                           .map(filteredAttrs -> filteredAttrs.get(HOSTNAME_HOST_ATTRIBUTE))
+                                           .map(String.class ::cast)
+                                           .collect(Collectors.toList());
+
+      return pdcDirectInfrastructure.getHosts()
+          .stream()
+          .filter(filteredHostNames::contains)
+          .collect(Collectors.toSet());
+    } else {
+      throw new InvalidRequestException(
+          format("Unsupported host filter type found for dynamic provisioned PDC infra, %s",
+              pdcDirectInfrastructure.getHostFilter().getType()));
+    }
+  }
+
+  private boolean matchAllFilterAttrs(Map<String, String> hostAttrsFilter, Map<String, Object> hostAttrs) {
+    return hostAttrsFilter.entrySet().stream().allMatch((Map.Entry<String, String> hostAttrFilter) -> {
+      String filterKey = hostAttrFilter.getKey();
+      return hostAttrs.containsKey(filterKey) && hostAttrs.get(filterKey).equals(hostAttrFilter.getValue());
+    });
   }
 
   private Set<HostDTO> extractConnectorHostNames(

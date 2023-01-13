@@ -62,7 +62,7 @@ public class ServiceEntityManagementServiceTest extends CategoryTest {
         .thenReturn(instanceDTOList);
     assertThatThrownBy(()
                            -> serviceEntityManagementService.deleteService(
-                               accountIdentifier, orgIdentifier, projectIdentifier, identifier, ""))
+                               accountIdentifier, orgIdentifier, projectIdentifier, identifier, "", false))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(
             "Service [identifier] under Project[projectIdentifier], Organization [orgIdentifier] couldn't be deleted since there are currently 2 active instances for the service");
@@ -75,8 +75,9 @@ public class ServiceEntityManagementServiceTest extends CategoryTest {
     when(instanceService.getActiveInstancesByServiceId(
              eq(accountIdentifier), eq(orgIdentifier), eq(projectIdentifier), eq(identifier), anyLong()))
         .thenReturn(null);
-    serviceEntityManagementService.deleteService(accountIdentifier, orgIdentifier, projectIdentifier, identifier, "");
-    verify(serviceEntityService).delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier, null);
+    serviceEntityManagementService.deleteService(
+        accountIdentifier, orgIdentifier, projectIdentifier, identifier, "", false);
+    verify(serviceEntityService).delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier, null, false);
   }
 
   private InstanceDTO getInstance() {

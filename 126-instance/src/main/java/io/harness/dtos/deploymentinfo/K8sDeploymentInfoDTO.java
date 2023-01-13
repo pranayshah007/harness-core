@@ -8,6 +8,7 @@
 package io.harness.dtos.deploymentinfo;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.k8s.ServiceSpecType;
@@ -37,6 +38,9 @@ public class K8sDeploymentInfoDTO extends DeploymentInfoDTO {
 
   @Override
   public String prepareInstanceSyncHandlerKey() {
+    if (isNotEmpty(blueGreenStageColor)) {
+      return InstanceSyncKey.builder().part(releaseName).part(blueGreenStageColor).build().toString();
+    }
     return InstanceSyncKey.builder().part(releaseName).build().toString();
   }
 }

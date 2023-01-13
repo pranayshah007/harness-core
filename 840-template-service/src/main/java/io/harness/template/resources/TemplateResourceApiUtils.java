@@ -99,7 +99,7 @@ public class TemplateResourceApiUtils {
           "Gets Template along with Template inputs for template with identifier %s in project %s, org %s, account %s",
           templateIdentifier, project, org, account));
       TemplateWithInputsResponseDTO templateWithInputs =
-          templateService.getTemplateWithInputs(account, org, project, templateIdentifier, versionLabel);
+          templateService.getTemplateWithInputs(account, org, project, templateIdentifier, versionLabel, false);
       String version = "0";
       if (templateWithInputs != null && templateWithInputs.getTemplateResponseDTO() != null
           && templateWithInputs.getTemplateResponseDTO().getVersion() != null) {
@@ -190,14 +190,14 @@ public class TemplateResourceApiUtils {
 
   public Response deleteTemplate(@AccountIdentifier String account, @OrgIdentifier String org,
       @ProjectIdentifier String project, @ResourceIdentifier String templateIdentifier, String versionLabel,
-      String comments) {
+      String comments, boolean forceDelete) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(account, org, project),
         Resource.of(TEMPLATE, templateIdentifier), PermissionTypes.TEMPLATE_DELETE_PERMISSION);
     log.info(String.format("Deleting Template with identifier %s and versionLabel %s in project %s, org %s, account %s",
         templateIdentifier, versionLabel, project, org, account));
 
     templateService.delete(account, org, project, templateIdentifier, versionLabel,
-        isNumeric("ifMatch") ? parseLong("ifMatch") : null, comments);
+        isNumeric("ifMatch") ? parseLong("ifMatch") : null, comments, forceDelete);
     return Response.status(Response.Status.NO_CONTENT).build();
   }
 

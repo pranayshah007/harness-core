@@ -8,7 +8,7 @@
 package io.harness.cvng.dashboard.resources;
 
 import io.harness.annotations.ExposeInternalException;
-import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.core.beans.params.ProjectScopedProjectParams;
 import io.harness.cvng.dashboard.beans.ServiceDependencyGraphDTO;
 import io.harness.cvng.dashboard.services.api.ServiceDependencyGraphService;
 import io.harness.rest.RestResponse;
@@ -40,7 +40,8 @@ public class ServiceDependencyGraphResource {
   @Timed
   @ExceptionMetered
   @ApiOperation(value = "get service dependency graph", nickname = "getServiceDependencyGraph")
-  public RestResponse<ServiceDependencyGraphDTO> getServiceDependencyGraph(@BeanParam ProjectParams projectParams,
+  public RestResponse<ServiceDependencyGraphDTO> getServiceDependencyGraph(
+      @BeanParam ProjectScopedProjectParams projectParams,
       @QueryParam("environmentIdentifier") String environmentIdentifier,
       @QueryParam("serviceIdentifier") String serviceIdentifier,
       @QueryParam("monitoredServiceIdentifier") String monitoredServiceIdentifier, @QueryParam("filter") String filter,
@@ -48,10 +49,10 @@ public class ServiceDependencyGraphResource {
           defaultValue = "false") @NotNull final boolean servicesAtRiskFilter) {
     if (monitoredServiceIdentifier != null) {
       return new RestResponse<>(serviceDependencyGraphService.getDependencyGraph(
-          projectParams, Arrays.asList(monitoredServiceIdentifier), servicesAtRiskFilter, filter));
+          projectParams.getProjectParams(), Arrays.asList(monitoredServiceIdentifier), servicesAtRiskFilter, filter));
     } else {
       return new RestResponse<>(serviceDependencyGraphService.getDependencyGraph(
-          projectParams, serviceIdentifier, environmentIdentifier, servicesAtRiskFilter, filter));
+          projectParams.getProjectParams(), serviceIdentifier, environmentIdentifier, servicesAtRiskFilter, filter));
     }
   }
 }

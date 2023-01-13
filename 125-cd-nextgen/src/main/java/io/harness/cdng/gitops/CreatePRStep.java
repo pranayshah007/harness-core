@@ -8,6 +8,7 @@
 package io.harness.cdng.gitops;
 
 import static io.harness.annotations.dev.HarnessTeam.GITOPS;
+import static io.harness.cdng.gitops.constants.GitopsConstants.GITOPS_SWEEPING_OUTPUT;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.ListUtils.trimStrings;
@@ -21,7 +22,6 @@ import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.expressions.CDExpressionResolveFunctor;
 import io.harness.cdng.gitops.steps.GitOpsStepHelper;
 import io.harness.cdng.gitops.steps.GitopsClustersOutcome;
-import io.harness.cdng.gitops.steps.GitopsClustersStep;
 import io.harness.cdng.k8s.K8sStepHelper;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
@@ -181,7 +181,7 @@ public class CreatePRStep extends CdTaskExecutable<NGGitOpsResponse> {
 
     // Read environment outcome and iterate over clusterData to replace the cluster and env name
     OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputService.resolveOptional(
-        ambiance, RefObjectUtils.getOutcomeRefObject(GitopsClustersStep.GITOPS_SWEEPING_OUTPUT));
+        ambiance, RefObjectUtils.getOutcomeRefObject(GITOPS_SWEEPING_OUTPUT));
 
     Map<String, Map<String, String>> filePathsToVariables = new HashMap<>();
 

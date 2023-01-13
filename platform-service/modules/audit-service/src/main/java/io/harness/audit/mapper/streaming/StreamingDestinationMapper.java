@@ -18,7 +18,7 @@ public class StreamingDestinationMapper {
       String accountIdentifier, StreamingDestinationDTO streamingDestinationDTO) {
     StreamingDestination streamingDestination = getStreamingDestination(streamingDestinationDTO.getSpec());
     streamingDestination.setAccountIdentifier(accountIdentifier);
-    streamingDestination.setIdentifier(streamingDestinationDTO.getSlug());
+    streamingDestination.setIdentifier(streamingDestinationDTO.getIdentifier());
     streamingDestination.setName(streamingDestinationDTO.getName());
     streamingDestination.setStatus(streamingDestinationDTO.getStatus());
     streamingDestination.setConnectorRef(streamingDestinationDTO.getConnectorRef());

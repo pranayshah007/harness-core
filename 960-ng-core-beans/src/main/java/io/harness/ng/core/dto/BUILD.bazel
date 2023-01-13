@@ -14,6 +14,7 @@ java_library(
         "//:lombok",
         "//960-ng-core-beans/src/main/java/io/harness/ng/core/account:module",
         "//960-ng-core-beans/src/main/java/io/harness/ng/core/notification:module",
+        "//960-ng-core-beans/src/main/java/io/harness/ng/core/user/remote/dto:module",
         "//960-ng-core-beans/src/main/java/io/harness/ng/core/usergroups/filter:module",
         "//970-ng-commons:module",
         "//980-commons:module",

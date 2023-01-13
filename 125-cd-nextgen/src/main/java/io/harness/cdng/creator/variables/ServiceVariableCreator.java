@@ -89,6 +89,7 @@ public class ServiceVariableCreator {
         case ServiceSpecType.ELASTIGROUP:
         case ServiceSpecType.ASG:
         case ServiceSpecType.ECS:
+        case ServiceSpecType.GOOGLE_CLOUD_FUNCTIONS:
           YamlField specNode = serviceDefNode.getNode().getField(YamlTypes.SERVICE_SPEC);
           if (specNode != null) {
             addVariablesForKubernetesHelmServerlessElastigroupEcsServiceSpec(specNode, yamlPropertiesMap);

@@ -37,8 +37,7 @@ public class DebeziumControllerStarter {
     for (String monitoredCollection : collections) {
       try {
         MongoCollectionChangeConsumer changeConsumer =
-            consumerFactory.get(debeziumConfig.getSleepInterval(), monitoredCollection, changeConsumerConfig,
-                debeziumConfig.getProducingCountPerBatch(), debeziumConfig.getRedisStreamSize(), cfClient);
+            consumerFactory.get(changeConsumerConfig, cfClient, monitoredCollection);
         DebeziumController debeziumController = new DebeziumController(
             DebeziumConfiguration.getDebeziumProperties(debeziumConfig, redisLockConfig, monitoredCollection),
             changeConsumer, locker, debeziumExecutorService, debeziumService);

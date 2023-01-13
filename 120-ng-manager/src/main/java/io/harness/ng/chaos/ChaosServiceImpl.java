@@ -7,7 +7,10 @@
 
 package io.harness.ng.chaos;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.delegate.beans.NgSetupFields.NG;
+import static io.harness.delegate.beans.NgSetupFields.OWNER;
 import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCHESTRATION;
 
 import io.harness.beans.DelegateTaskRequest;
@@ -35,7 +38,9 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.time.Duration;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.Map;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
@@ -64,7 +69,8 @@ public class ChaosServiceImpl implements ChaosService {
                 chaosK8sRequest.getProjectId(), chaosK8sRequest.getK8sConnectorId(), chaosK8sRequest.getK8sManifest()))
             .taskType(TaskType.K8S_COMMAND_TASK_NG.name())
             .executionTimeout(Duration.ofMinutes(15))
-            .taskSetupAbstraction("ng", "true")
+            .taskSetupAbstractions(buildAbstractions(
+                chaosK8sRequest.getAccountId(), chaosK8sRequest.getOrgId(), chaosK8sRequest.getProjectId()))
             .logStreamingAbstractions(logAbstractions);
 
     if (EmptyPredicate.isNotEmpty(chaosK8sRequest.getDelegateId())) {
@@ -127,5 +133,29 @@ public class ChaosServiceImpl implements ChaosService {
         .useLatestKustomizeVersion(false)
         .useK8sApiForSteadyStateCheck(true)
         .build();
+  }
+
+  private Map<String, String> buildAbstractions(
+      String accountIdIdentifier, String orgIdentifier, String projectIdentifier) {
+    Map<String, String> abstractions = new HashMap<>(2);
+    String owner = getOwner(accountIdIdentifier, orgIdentifier, projectIdentifier);
+    if (isNotEmpty(owner)) {
+      abstractions.put(OWNER, owner);
+    }
+    abstractions.put(NG, "true");
+    return abstractions;
+  }
+
+  private static final String PROJECT_OWNER = "%s/%s";
+  private static final String ORG_OWNER = "%s";
+
+  private String getOwner(String accountIdIdentifier, String orgIdentifier, String projectIdentifier) {
+    String owner = null;
+    if (isNotEmpty(orgIdentifier) && isNotEmpty(projectIdentifier)) {
+      owner = String.format(PROJECT_OWNER, orgIdentifier, projectIdentifier);
+    } else if (isNotEmpty(orgIdentifier)) {
+      owner = String.format(ORG_OWNER, orgIdentifier);
+    }
+    return owner;
   }
 }

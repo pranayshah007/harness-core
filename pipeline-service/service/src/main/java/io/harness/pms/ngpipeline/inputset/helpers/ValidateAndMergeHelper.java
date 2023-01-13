@@ -26,12 +26,10 @@ import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
-import io.harness.pms.inputset.InputSetErrorWrapperDTOPMS;
 import io.harness.pms.merger.helpers.InputSetMergeHelper;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetTemplateResponseDTOPMS;
-import io.harness.pms.ngpipeline.inputset.exceptions.InvalidInputSetException;
 import io.harness.pms.ngpipeline.inputset.service.PMSInputSetService;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
@@ -39,6 +37,7 @@ import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.pipeline.service.PipelineCRUDErrorResponse;
 import io.harness.pms.plan.execution.StagesExecutionHelper;
 import io.harness.pms.stages.StagesExpressionExtractor;
+import io.harness.pms.yaml.PipelineVersion;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -199,12 +198,12 @@ public class ValidateAndMergeHelper {
   public String getMergeInputSetFromPipelineTemplate(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, List<String> inputSetReferences, String pipelineBranch, String pipelineRepoID,
       List<String> stageIdentifiers) {
+    Set<String> inputSetVersions = new HashSet<>();
     PipelineEntity pipelineEntity = getPipelineEntity(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, pipelineBranch, pipelineRepoID, false);
     String pipelineYaml = pipelineEntity.getYaml();
-    String pipelineTemplateForValidations = createTemplateFromPipeline(pipelineYaml);
     String pipelineTemplate = EmptyPredicate.isEmpty(stageIdentifiers)
-        ? pipelineTemplateForValidations
+        ? createTemplateFromPipeline(pipelineYaml)
         : createTemplateFromPipelineForGivenStages(pipelineYaml, stageIdentifiers);
 
     if (EmptyPredicate.isEmpty(pipelineTemplate)) {
@@ -212,58 +211,36 @@ public class ValidateAndMergeHelper {
           "Pipeline " + pipelineIdentifier + " does not have any runtime input. All existing input sets are invalid");
     }
 
-    Set<String> invalidReferences = new HashSet<>();
     List<String> inputSetYamlList = new ArrayList<>();
     inputSetReferences.forEach(identifier -> {
       Optional<InputSetEntity> entity = pmsInputSetService.getWithoutValidations(
           accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, false);
-      if (!entity.isPresent()) {
-        invalidReferences.add(identifier);
+      if (entity.isEmpty()) {
         return;
       }
       InputSetEntity inputSet = entity.get();
-      if (inputSet.getIsInvalid()) {
-        invalidReferences.add(identifier);
-        return;
-      }
-      if (!pipelineEntity.getStoreType().equals(inputSet.getStoreType())) {
-        throw NestedExceptionUtils.hintWithExplanationException(
-            "Please move either the input-set inline to remote or pipeline remote to inline.",
-            "The StoreType of pipeline and input-set are different.",
-            new InvalidRequestException(String.format(
-                "Pipeline %s of storeType [%s] cannot be used with input-set %s of storeType [%s], please migrate to same storeType to use them",
-                pipelineIdentifier, pipelineEntity.getStoreType().name(), inputSet.getIdentifier(),
-                inputSet.getStoreType().name())));
-      }
+      inputSetVersions.add(inputSet.getHarnessVersion());
+      checkAndThrowExceptionWhenPipelineAndInputSetStoreTypesAreDifferent(pipelineEntity, inputSet);
       if (inputSet.getInputSetEntityType() == InputSetEntityType.INPUT_SET) {
         inputSetYamlList.add(inputSet.getYaml());
-        if (InputSetErrorsHelper.getErrorMap(
-                pipelineTemplateForValidations, inputSet.getYaml(), inputSet.getIdentifier())
-            != null) {
-          invalidReferences.add(identifier);
-        }
       } else {
         List<String> overlayReferences = inputSet.getInputSetReferences();
         overlayReferences.forEach(id -> {
           Optional<InputSetEntity> entity2 = pmsInputSetService.getWithoutValidations(
               accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, id, false);
-          if (!entity2.isPresent()) {
-            invalidReferences.add(identifier);
-          } else {
-            inputSetYamlList.add(entity2.get().getYaml());
-            if (InputSetErrorsHelper.getErrorMap(
-                    pipelineTemplateForValidations, entity2.get().getYaml(), entity2.get().getIdentifier())
-                != null) {
-              invalidReferences.add(identifier);
-            }
-          }
+          entity2.ifPresent(inputSetEntity -> {
+            checkAndThrowExceptionWhenPipelineAndInputSetStoreTypesAreDifferent(pipelineEntity, entity2.get());
+            inputSetYamlList.add(inputSetEntity.getYaml());
+          });
         });
       }
     });
 
-    if (EmptyPredicate.isNotEmpty(invalidReferences)) {
-      throw new InvalidInputSetException("Some of the references provided are invalid",
-          InputSetErrorWrapperDTOPMS.builder().invalidInputSetReferences(new ArrayList<>(invalidReferences)).build());
+    if (inputSetVersions.contains(PipelineVersion.V0) && inputSetVersions.contains(PipelineVersion.V1)) {
+      throw new InvalidRequestException("Input set versions 0 and 1 are not compatible");
+    }
+    if (inputSetVersions.contains(PipelineVersion.V1)) {
+      return InputSetMergeHelper.mergeInputSetsV1(inputSetYamlList);
     }
 
     if (EmptyPredicate.isEmpty(stageIdentifiers)) {
@@ -282,5 +259,16 @@ public class ValidateAndMergeHelper {
       return InputSetMergeHelper.mergeInputSetIntoPipeline(pipelineYaml, mergedRuntimeInputYaml, false);
     }
     return mergeInputSetIntoPipelineForGivenStages(pipelineYaml, mergedRuntimeInputYaml, false, stageIdentifiers);
+  }
+
+  private void checkAndThrowExceptionWhenPipelineAndInputSetStoreTypesAreDifferent(
+      PipelineEntity pipelineEntity, InputSetEntity inputSetEntity) {
+    if (!pipelineEntity.getStoreType().equals(inputSetEntity.getStoreType())) {
+      throw NestedExceptionUtils.hintWithExplanationException("Please move the input-set from inline to remote.",
+          "The pipeline is remote and input-set is inline",
+          new InvalidRequestException(String.format(
+              "Remote Pipeline %s cannot be used with inline input-set %s, please move input-set to from inline to remote to use them",
+              pipelineEntity.getIdentifier(), inputSetEntity.getIdentifier())));
+    }
   }
 }

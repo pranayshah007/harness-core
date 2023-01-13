@@ -35,4 +35,11 @@ public interface BarrierService {
       String stageIdentifier, String planExecutionId, Set<State> stateSet);
   List<BarrierSetupInfo> getBarrierSetupInfoList(String yaml);
   Map<String, List<BarrierPositionInfo.BarrierPosition>> getBarrierPositionInfoList(String yaml);
+
+  /**
+   * Deletes barrierInstances for given planExecutionIds
+   * Uses - planExecutionId_barrierState_stagesIdentifier_idx
+   * @param planExecutionIds
+   */
+  void deleteAllForGivenPlanExecutionId(Set<String> planExecutionIds);
 }

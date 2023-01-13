@@ -14,6 +14,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.refobjects.RefObject;
 
 import java.util.List;
+import java.util.Set;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface PmsSweepingOutputService extends Resolver {
@@ -26,4 +27,11 @@ public interface PmsSweepingOutputService extends Resolver {
   List<ExecutionSweepingOutputInstance> fetchOutcomeInstanceByRuntimeId(String runtimeId);
 
   List<String> cloneForRetryExecution(Ambiance ambiance, String originalNodeExecutionUuid);
+
+  /**
+   * Delete all sweeping output instances for given planExecutionIds
+   * Uses - unique_levelRuntimeIdUniqueIdx2
+   * @param planExecutionIds
+   */
+  void deleteAllSweepingOutputInstances(Set<String> planExecutionIds);
 }

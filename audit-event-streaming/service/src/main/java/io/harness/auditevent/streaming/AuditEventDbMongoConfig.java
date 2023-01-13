@@ -11,10 +11,16 @@ import lombok.Data;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.context.annotation.PropertySources;
 
 @Data
 @Configuration
-@PropertySource(value = "classpath:audit-event-streaming-config.yml", factory = YamlPropertyLoaderFactory.class)
+@PropertySources({
+  @PropertySource(value = "classpath:application.yml", factory = YamlPropertyLoaderFactory.class)
+  ,
+      @PropertySource(
+          value = "file:./application.yml", ignoreResourceNotFound = true, factory = YamlPropertyLoaderFactory.class)
+})
 public class AuditEventDbMongoConfig {
   @Value("${auditDbConfig.uri}") private String uri;
 

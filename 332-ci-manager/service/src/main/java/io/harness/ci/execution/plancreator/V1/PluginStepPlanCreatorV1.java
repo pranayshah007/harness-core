@@ -51,7 +51,7 @@ public class PluginStepPlanCreatorV1 extends CIPMSStepPlanCreatorV2<PluginStepNo
         .pluginStepInfo(PluginStepInfo.builder()
                             .image(stepInfo.getImage())
                             .uses(stepInfo.getUses())
-                            .envVariables(stepInfo.getEnv())
+                            .envVariables(stepInfo.getEnvs())
                             .privileged(stepInfo.getPrivileged())
                             .resources(stepInfo.getResources())
                             .runAsUser(stepInfo.getUser())

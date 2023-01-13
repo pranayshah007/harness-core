@@ -11,7 +11,7 @@ import io.harness.annotations.ExposeInternalException;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.core.beans.TimeGraphResponse;
-import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.core.beans.params.ProjectScopedProjectParams;
 import io.harness.cvng.core.beans.sli.SLIOnboardingGraphs;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
@@ -48,11 +48,11 @@ public class ServiceLevelIndicatorResource {
   @Path("/onboarding-graph")
   @ApiOperation(value = "get Sli graph for onboarding UI", nickname = "getSliGraph")
   @Deprecated
-  public RestResponse<TimeGraphResponse> getGraph(@Valid @BeanParam ProjectParams projectParams,
+  public RestResponse<TimeGraphResponse> getGraph(@Valid @BeanParam ProjectScopedProjectParams projectParams,
       @PathParam("monitoredServiceIdentifier") String monitoredServiceIdentifier,
       @NotNull @Valid @Body ServiceLevelIndicatorDTO serviceLevelIndicatorDTO) {
     return new RestResponse<>(sliService
-                                  .getOnboardingGraphs(projectParams, monitoredServiceIdentifier,
+                                  .getOnboardingGraphs(projectParams.getProjectParams(), monitoredServiceIdentifier,
                                       serviceLevelIndicatorDTO, CorrelationContext.getCorrelationId())
                                   .getSliGraph());
   }
@@ -62,10 +62,10 @@ public class ServiceLevelIndicatorResource {
   @ExceptionMetered
   @Path("/onboarding-graphs")
   @ApiOperation(value = "get Sli and metric graphs for onboarding UI", nickname = "getSliOnboardingGraphs")
-  public RestResponse<SLIOnboardingGraphs> getGraphs(@BeanParam @Valid ProjectParams projectParams,
+  public RestResponse<SLIOnboardingGraphs> getGraphs(@BeanParam @Valid ProjectScopedProjectParams projectParams,
       @PathParam("monitoredServiceIdentifier") String monitoredServiceIdentifier,
       @NotNull @Valid @Body ServiceLevelIndicatorDTO serviceLevelIndicatorDTO) {
-    return new RestResponse<>(sliService.getOnboardingGraphs(
-        projectParams, monitoredServiceIdentifier, serviceLevelIndicatorDTO, CorrelationContext.getCorrelationId()));
+    return new RestResponse<>(sliService.getOnboardingGraphs(projectParams.getProjectParams(),
+        monitoredServiceIdentifier, serviceLevelIndicatorDTO, CorrelationContext.getCorrelationId()));
   }
 }

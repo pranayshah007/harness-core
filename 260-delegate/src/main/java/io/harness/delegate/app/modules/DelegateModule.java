@@ -134,6 +134,7 @@ import io.harness.delegate.exceptionhandler.handler.SCMExceptionHandler;
 import io.harness.delegate.exceptionhandler.handler.SecretExceptionHandler;
 import io.harness.delegate.exceptionhandler.handler.SocketExceptionHandler;
 import io.harness.delegate.exceptionhandler.handler.TerraformRuntimeExceptionHandler;
+import io.harness.delegate.exceptionhandler.handler.TerragruntRuntimeExceptionHandler;
 import io.harness.delegate.http.HttpTaskNG;
 import io.harness.delegate.k8s.K8sApplyRequestHandler;
 import io.harness.delegate.k8s.K8sBGRequestHandler;
@@ -276,9 +277,9 @@ import io.harness.delegate.task.elastigroup.ElastigroupSwapRouteCommandTaskNG;
 import io.harness.delegate.task.executioncapability.BatchCapabilityCheckTask;
 import io.harness.delegate.task.gcp.GcpTask;
 import io.harness.delegate.task.gcp.GcpTaskType;
-import io.harness.delegate.task.gcp.taskHandlers.GcpListBucketsTaskHandler;
-import io.harness.delegate.task.gcp.taskHandlers.GcpListClustersTaskHandler;
-import io.harness.delegate.task.gcp.taskHandlers.TaskHandler;
+import io.harness.delegate.task.gcp.taskhandlers.GcpListBucketsTaskHandler;
+import io.harness.delegate.task.gcp.taskhandlers.GcpListClustersTaskHandler;
+import io.harness.delegate.task.gcp.taskhandlers.TaskHandler;
 import io.harness.delegate.task.git.GitFetchTaskNG;
 import io.harness.delegate.task.git.NGGitCommandTask;
 import io.harness.delegate.task.git.NGGitOpsCommandTask;
@@ -2221,5 +2222,7 @@ public class DelegateModule extends AbstractModule {
         exception -> exceptionHandlerMapBinder.addBinding(exception).to(AzureBPRuntimeExceptionHandler.class));
     AzureClientExceptionHandler.exceptions().forEach(
         exception -> exceptionHandlerMapBinder.addBinding(exception).to(AzureClientExceptionHandler.class));
+    TerragruntRuntimeExceptionHandler.exceptions().forEach(
+        exception -> exceptionHandlerMapBinder.addBinding(exception).to(TerragruntRuntimeExceptionHandler.class));
   }
 }

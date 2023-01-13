@@ -19,7 +19,9 @@ import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.artifacts.comparator.BuildDetailsInternalComparatorAscending;
 import io.harness.artifacts.comparator.BuildDetailsInternalComparatorDescending;
+import io.harness.artifacts.docker.DockerImageTagResponse;
 import io.harness.artifacts.docker.DockerRegistryRestClient;
+import io.harness.artifacts.docker.DockerRegistryToken;
 import io.harness.artifacts.docker.HarborRestClient;
 import io.harness.artifacts.docker.beans.DockerInternalConfig;
 import io.harness.artifacts.docker.client.DockerRestClientFactory;
@@ -43,7 +45,6 @@ import io.harness.globalcontex.ErrorHandlingGlobalContextData;
 import io.harness.manage.GlobalContextManager;
 import io.harness.network.Http;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -61,10 +62,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.expiringmap.ExpirationPolicy;
 import net.jodah.expiringmap.ExpiringMap;
@@ -593,28 +590,5 @@ public class DockerRegistryServiceImpl implements DockerRegistryService {
     }
 
     return parseLink(headers.get("link"));
-  }
-
-  @JsonIgnoreProperties(ignoreUnknown = true)
-  @Data
-  @Builder
-  @NoArgsConstructor
-  @AllArgsConstructor
-  public static class DockerImageTagResponse {
-    private String name;
-    private List<String> tags;
-    private String link;
-  }
-
-  @JsonIgnoreProperties(ignoreUnknown = true)
-  @Data
-  @Builder
-  @NoArgsConstructor
-  @AllArgsConstructor
-  public static class DockerRegistryToken {
-    private String token;
-    private String access_token;
-    private Integer expires_in;
-    private String issued_at;
   }
 }

@@ -19,7 +19,7 @@ import static org.apache.commons.lang3.StringUtils.EMPTY;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.pcf.cfcli.CfCliCommandResolver;
+import io.harness.pcf.cfcli.resolver.CfCliCommandResolver;
 import io.harness.pcf.model.CfCliVersion;
 
 import software.wings.beans.LogColor;

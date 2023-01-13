@@ -9,6 +9,7 @@ package io.harness.cdng.aws.asg;
 
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 import static io.harness.exception.WingsException.USER;
@@ -371,8 +372,9 @@ public class AsgStepCommonHelper extends CDStepHelper {
       AsgRollingPrepareRollbackDataOutcomeBuilder asgPrepareRollbackDataOutcomeBuilder =
           AsgRollingPrepareRollbackDataOutcome.builder();
 
-      asgPrepareRollbackDataOutcomeBuilder.asgStoreManifestsContent(
-          asgPrepareRollbackDataResult.getAsgStoreManifestsContent());
+      asgPrepareRollbackDataOutcomeBuilder
+          .asgManifestsDataForRollback(asgPrepareRollbackDataResult.getAsgManifestsDataForRollback())
+          .asgName(asgPrepareRollbackDataResult.getAsgName());
 
       executionSweepingOutputService.consume(ambiance,
           OutcomeExpressionConstants.ASG_ROLLING_PREPARE_ROLLBACK_DATA_OUTCOME,
@@ -474,18 +476,28 @@ public class AsgStepCommonHelper extends CDStepHelper {
             format("Could not fetch manifest %s with identifier `%s` from Git", manifestType, identifier), USER);
       }
 
-      List<String> gitContents = gitFetchResponse.getFilesFromMultipleRepo()
-                                     .values()
-                                     .stream()
-                                     .filter(f -> isNotEmpty(f.getFiles()))
-                                     .map(f -> f.getFiles())
-                                     .flatMap(Collection::stream)
-                                     .map(GitFile::getFileContent)
-                                     .collect(Collectors.toList());
+      List<GitFile> gitFiles = gitFetchResponse.getFilesFromMultipleRepo()
+                                   .values()
+                                   .stream()
+                                   .filter(f -> isNotEmpty(f.getFiles()))
+                                   .map(f -> f.getFiles())
+                                   .flatMap(Collection::stream)
+                                   .peek(f -> {
+                                     if (isEmpty(f.getFileContent())) {
+                                       throw new InvalidRequestException(format(
+                                           "The following file %s in Git Store has empty content", f.getFilePath()));
+                                     }
+                                   })
+                                   .collect(Collectors.toList());
+
+      List<String> gitFilePaths = gitFiles.stream().map(f -> f.getFilePath()).collect(Collectors.toList());
+
+      List<String> gitContents = gitFiles.stream().map(f -> f.getFileContent()).collect(Collectors.toList());
 
       asgManifestFetchData.getGitFetchedManifestOutcomeIdentifiersMap().put(identifier, gitContents);
-      logger.infoBold(logCallback, "Successfully fetched %s manifest files with identifier `%s` from Git", manifestType,
-          identifier);
+      logger.infoBold(logCallback,
+          "Successfully fetched %s manifest files with identifier `%s` from Git:", manifestType, identifier);
+      gitFilePaths.stream().forEach(fp -> logger.info(logCallback, "- %s", fp));
     }
 
     gitFetchFilesConfig = asgManifestFetchData.getNextGitFetchFilesConfig();
@@ -493,7 +505,12 @@ public class AsgStepCommonHelper extends CDStepHelper {
     if (gitFetchFilesConfig != null) {
       identifier = gitFetchFilesConfig.getIdentifier();
       manifestType = gitFetchFilesConfig.getManifestType();
-      logger.info(logCallback, "Fetching %s manifest files with identifier `%s` from Git", manifestType, identifier);
+      logger.infoBold(
+          logCallback, "%nFetching %s manifest files with identifier `%s` from Git", manifestType, identifier);
+      logger.info(logCallback, "Fetching following Files:");
+      gitFetchFilesConfig.getGitStoreDelegateConfig().getPaths().stream().forEach(
+          fp -> logger.info(logCallback, "- %s", fp));
+
       return queueFetchGitTask(asgExecutionPassThroughData, ambiance, stepElementParameters);
     }
 
