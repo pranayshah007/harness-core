@@ -120,7 +120,7 @@ import io.harness.observer.RemoteObserverInformer;
 import io.harness.observer.Subject;
 import io.harness.persistence.HPersistence;
 import io.harness.queueservice.ResourceBasedDelegateSelectionCheckForTask;
-import io.harness.redis.impl.DelegateServiceCacheImpl;
+import io.harness.redis.intfc.DelegateRedissonCacheManager.CounterOperation;
 import io.harness.redis.intfc.DelegateServiceCache;
 import io.harness.reflection.ExpressionReflectionUtils;
 import io.harness.reflection.ReflectionUtils;
@@ -1587,7 +1587,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     // case client is retrying the request
     copyTaskDataV2ToTaskData(task);
     if (true) {
-      delegateServiceCache.updateDelegateTaskCache(delegateId, DelegateServiceCacheImpl.UpdateOperation.INCREMENT);
+      delegateServiceCache.delegateTaskCacheCounter(delegateId, CounterOperation.INCREMENT);
     }
     if (task != null) {
       try (

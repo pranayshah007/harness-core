@@ -13,18 +13,15 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateGroup;
 import io.harness.redis.impl.DelegateServiceCacheImpl;
-import io.harness.redis.impl.DelegateServiceCacheImpl.UpdateOperation;
+import io.harness.redis.intfc.DelegateRedissonCacheManager.CounterOperation;
 
 import com.google.inject.ImplementedBy;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @OwnedBy(DEL)
 @ImplementedBy(DelegateServiceCacheImpl.class)
 public interface DelegateServiceCache {
-  AtomicInteger getDelegateTaskCache(String delegateId);
-
-  void updateDelegateTaskCache(String delegateId, UpdateOperation updateOperation);
+  Integer delegateTaskCacheCounter(String delegateId, CounterOperation counterOperation);
 
   Delegate getDelegateCache(String delegateId);
 

@@ -17,6 +17,7 @@ import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.TaskGroup;
 import io.harness.persistence.HPersistence;
 import io.harness.queueservice.infc.DelegateResourceCriteria;
+import io.harness.redis.intfc.DelegateRedissonCacheManager.CounterOperation;
 import io.harness.redis.intfc.DelegateServiceCache;
 import io.harness.service.intfc.DelegateCache;
 
@@ -70,7 +71,8 @@ public class OrderByTotalNumberOfTaskAssignedCriteria implements DelegateResourc
   private List<Delegate> listOfDelegatesSortedByNumberOfTaskAssignedFromRedis(
       List<Delegate> delegateList, String accountId) {
     delegateList.forEach(delegate
-        -> delegate.setNumberOfTaskAssigned(delegateServiceCache.getDelegateTaskCache(delegate.getUuid()).get()));
+        -> delegate.setNumberOfTaskAssigned(
+            delegateServiceCache.delegateTaskCacheCounter(delegate.getUuid(), CounterOperation.GET)));
     delegateList.sort(delegateComparator);
     delegateList.forEach(delegate
         -> log.info(

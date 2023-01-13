@@ -24,13 +24,11 @@ import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.redisson.api.LocalCachedMapOptions;
 import org.redisson.api.RLocalCachedMap;
 
 @OwnedBy(DEL)
 public class DelegateServiceCacheRegistrar extends AbstractModule {
-  public static final String TASK_CACHE = "delegate_task";
   public static final String DELEGATE_CACHE = "delegate";
   public static final String DELEGATE_GROUP_CACHE = "delegate_group";
   public static final String DELEGATES_FROM_GROUP_CACHE = "delegates_from_group";
@@ -38,17 +36,10 @@ public class DelegateServiceCacheRegistrar extends AbstractModule {
   private static final Integer CACHE_SIZE = 10000;
 
   @Provides
-  @Named(TASK_CACHE)
-  @Singleton
-  public RLocalCachedMap<String, AtomicInteger> getTaskCache(DelegateRedissonCacheManager cacheManager) {
-    return cacheManager.getCache(TASK_CACHE, String.class, AtomicInteger.class, getLocalCachedMapOptions(0));
-  }
-
-  @Provides
   @Named(DELEGATE_CACHE)
   @Singleton
   public RLocalCachedMap<String, Delegate> getDelegateCache(DelegateRedissonCacheManager cacheManager) {
-    return cacheManager.getCache(TASK_CACHE, String.class, Delegate.class, getLocalCachedMapOptions(1));
+    return cacheManager.getCache(DELEGATE_CACHE, String.class, Delegate.class, getLocalCachedMapOptions(1));
   }
 
   @Provides
@@ -80,8 +71,6 @@ public class DelegateServiceCacheRegistrar extends AbstractModule {
   private void bindCaches() {
     MapBinder<String, RLocalCachedMap<?, ?>> rmapBinder =
         MapBinder.newMapBinder(binder(), TypeLiteral.get(String.class), new TypeLiteral<RLocalCachedMap<?, ?>>() {});
-    rmapBinder.addBinding(TASK_CACHE).to(Key.get(new TypeLiteral<RLocalCachedMap<String, AtomicInteger>>() {
-    }, Names.named(TASK_CACHE)));
     rmapBinder.addBinding(DELEGATE_CACHE).to(Key.get(new TypeLiteral<RLocalCachedMap<String, Delegate>>() {
     }, Names.named(DELEGATE_CACHE)));
     rmapBinder.addBinding(DELEGATE_GROUP_CACHE).to(Key.get(new TypeLiteral<RLocalCachedMap<String, DelegateGroup>>() {

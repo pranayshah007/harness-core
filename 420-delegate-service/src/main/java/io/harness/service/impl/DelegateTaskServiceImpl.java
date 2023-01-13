@@ -31,7 +31,7 @@ import io.harness.observer.RemoteObserverInformer;
 import io.harness.observer.Subject;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
-import io.harness.redis.impl.DelegateServiceCacheImpl;
+import io.harness.redis.intfc.DelegateRedissonCacheManager.CounterOperation;
 import io.harness.redis.intfc.DelegateServiceCache;
 import io.harness.reflection.ReflectionUtils;
 import io.harness.serializer.KryoSerializer;
@@ -143,8 +143,7 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
         }
         log.info("Response received for task: {} from Delegate: {}", taskId, delegateId);
         if (true) {
-          delegateServiceCache.updateDelegateTaskCache(
-                  delegateTask.getDelegateId(), DelegateServiceCacheImpl.UpdateOperation.DECREMENT);
+          delegateServiceCache.delegateTaskCacheCounter(delegateTask.getDelegateId(), CounterOperation.DECREMENT);
         }
         handleResponse(delegateTask, taskQuery, response);
 
