@@ -8,6 +8,7 @@
 package io.harness.gitsync.common.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.PR_CREATION_ERROR;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -15,6 +16,7 @@ import io.harness.beans.FileContentBatchResponse;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.PageRequestDTO;
 import io.harness.beans.Scope;
+import io.harness.beans.WebhookEncryptedSecretDTO;
 import io.harness.beans.gitsync.GitFileDetails;
 import io.harness.beans.gitsync.GitFileDetails.GitFileDetailsBuilder;
 import io.harness.beans.gitsync.GitFilePathDetails;
@@ -30,6 +32,8 @@ import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.git.YamlGitConfigDTO;
 import io.harness.delegate.task.scm.GitWebhookTaskType;
+import io.harness.encryption.SecretRefData;
+import io.harness.encryption.SecretRefHelper;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.ScmException;
 import io.harness.exception.WingsException;
@@ -47,8 +51,10 @@ import io.harness.gitsync.common.helper.PRFileListMapper;
 import io.harness.gitsync.common.helper.UserProfileHelper;
 import io.harness.gitsync.common.service.YamlGitConfigService;
 import io.harness.impl.ScmResponseStatusUtils;
+import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.userprofile.commons.SCMType;
 import io.harness.ng.webhook.UpsertWebhookRequestDTO;
+import io.harness.ngtriggers.WebhookSecretData;
 import io.harness.product.ci.scm.proto.Commit;
 import io.harness.product.ci.scm.proto.CompareCommitsResponse;
 import io.harness.product.ci.scm.proto.CreateBranchResponse;
@@ -63,6 +69,8 @@ import io.harness.product.ci.scm.proto.GetUserRepoResponse;
 import io.harness.product.ci.scm.proto.GetUserReposResponse;
 import io.harness.product.ci.scm.proto.ListBranchesWithDefaultResponse;
 import io.harness.product.ci.scm.proto.UpdateFileResponse;
+import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
+import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.service.ScmClient;
 import io.harness.tasks.DecryptGitApiAccessHelper;
 
@@ -79,18 +87,20 @@ public class ScmManagerFacilitatorServiceImpl extends AbstractScmClientFacilitat
   private ScmClient scmClient;
   private GitSyncConnectorHelper gitSyncConnectorHelper;
   private DecryptGitApiAccessHelper decryptGitApiAccessHelper;
+  private SecretManagerClientService secretManagerClientService;
 
   @Inject
   public ScmManagerFacilitatorServiceImpl(ScmClient scmClient,
       @Named("connectorDecoratorService") ConnectorService connectorService,
       ConnectorErrorMessagesHelper connectorErrorMessagesHelper, YamlGitConfigService yamlGitConfigService,
       DecryptGitApiAccessHelper decryptGitApiAccessHelper, GitSyncConnectorHelper gitSyncConnectorHelper,
-      UserProfileHelper userProfileHelper) {
+      UserProfileHelper userProfileHelper, SecretManagerClientService secretManagerClientService) {
     super(connectorService, connectorErrorMessagesHelper, yamlGitConfigService, userProfileHelper,
         gitSyncConnectorHelper);
     this.scmClient = scmClient;
     this.gitSyncConnectorHelper = gitSyncConnectorHelper;
     this.decryptGitApiAccessHelper = decryptGitApiAccessHelper;
+    this.secretManagerClientService = secretManagerClientService;
   }
 
   @Override
@@ -278,8 +288,13 @@ public class ScmManagerFacilitatorServiceImpl extends AbstractScmClientFacilitat
         gitSyncConnectorHelper.getDecryptedConnector(upsertWebhookRequestDTO.getAccountIdentifier(),
             upsertWebhookRequestDTO.getOrgIdentifier(), upsertWebhookRequestDTO.getProjectIdentifier(),
             upsertWebhookRequestDTO.getConnectorIdentifierRef(), upsertWebhookRequestDTO.getRepoURL());
-    GitWebhookDetails gitWebhookDetails =
-        GitWebhookDetails.builder().hookEventType(upsertWebhookRequestDTO.getHookEventType()).target(target).build();
+    final String webhookSecret = getWebhookSecret(upsertWebhookRequestDTO);
+    GitWebhookDetails gitWebhookDetails = GitWebhookDetails.builder()
+                                              .hookEventType(upsertWebhookRequestDTO.getHookEventType())
+                                              .target(target)
+                                              .secret(webhookSecret)
+                                              .build();
+
     if (gitWebhookTaskType.equals(GitWebhookTaskType.CREATE)) {
       return scmClient.createWebhook(decryptedConnector, gitWebhookDetails);
     } else {
@@ -378,5 +393,36 @@ public class ScmManagerFacilitatorServiceImpl extends AbstractScmClientFacilitat
     final ScmConnector decryptedConnector = gitSyncConnectorHelper.getDecryptedConnectorForNewGitX(
         scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), scmConnector);
     return scmClient.listFilesInCommit(decryptedConnector, request);
+  }
+
+  private String getWebhookSecret(UpsertWebhookRequestDTO upsertWebhookRequestDTO) {
+    String webhookSecret = null;
+    String secretIdentifierRef = upsertWebhookRequestDTO.getWebhookSecretIdentifierRef();
+    if (isNotEmpty(secretIdentifierRef)) {
+      final BaseNGAccess baseNGAccess = BaseNGAccess.builder()
+                                            .accountIdentifier(upsertWebhookRequestDTO.getAccountIdentifier())
+                                            .orgIdentifier(upsertWebhookRequestDTO.getOrgIdentifier())
+                                            .projectIdentifier(upsertWebhookRequestDTO.getProjectIdentifier())
+                                            .build();
+      SecretRefData secretRefData = SecretRefHelper.createSecretRef(secretIdentifierRef);
+      WebhookEncryptedSecretDTO webhookEncryptedSecretDTO =
+          WebhookEncryptedSecretDTO.builder().secretRef(secretRefData).build();
+      List<EncryptedDataDetail> encryptedDataDetail =
+          secretManagerClientService.getEncryptionDetails(baseNGAccess, webhookEncryptedSecretDTO);
+      WebhookSecretData webhookSecretData = WebhookSecretData.builder()
+                                                .webhookEncryptedSecretDTO(webhookEncryptedSecretDTO)
+                                                .encryptedDataDetails(encryptedDataDetail)
+                                                .build();
+      try {
+        decryptGitApiAccessHelper.decryptEncryptionDetails(webhookSecretData.getWebhookEncryptedSecretDTO(),
+            webhookSecretData.getEncryptedDataDetails(), upsertWebhookRequestDTO.getAccountIdentifier());
+        webhookSecret =
+            String.valueOf(webhookSecretData.getWebhookEncryptedSecretDTO().getSecretRef().getDecryptedValue());
+      } catch (Exception ex) {
+        throw new ExplanationException(
+            String.format("Error finding webhook secret key in secret manager: %s", secretIdentifierRef), ex);
+      }
+    }
+    return webhookSecret;
   }
 }

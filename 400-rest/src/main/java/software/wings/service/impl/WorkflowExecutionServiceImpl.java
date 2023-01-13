@@ -1222,7 +1222,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
       pageRequest.addFieldsIncluded(WorkflowExecutionKeys.pipelineExecution);
     }
 
-    List<WorkflowExecution> workflowExecutions = wingsPersistence.query(WorkflowExecution.class, pageRequest);
+    List<WorkflowExecution> workflowExecutions = wingsPersistence.queryAnalytics(WorkflowExecution.class, pageRequest);
     // Adding check for pse.getStateUuid() == null for backward compatibility. Can be removed later
     Map<String, LongSummaryStatistics> stateEstimatesSum =
         workflowExecutions.stream()

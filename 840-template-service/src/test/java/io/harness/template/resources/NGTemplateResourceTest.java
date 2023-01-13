@@ -293,9 +293,10 @@ public class NGTemplateResourceTest extends CategoryTest {
   public void testDeleteTemplate() {
     doReturn(true)
         .when(templateService)
-        .delete(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, null, "");
+        .delete(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, null, "", false);
     ResponseDTO<Boolean> responseDTO = templateResource.deleteTemplate(
-        "", ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, null, "");
+        "", ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, null, "", false);
     assertThat(responseDTO.getData()).isEqualTo(true);
     verify(accessControlClient)
         .checkForAccessOrThrow(ResourceScope.of(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER),
@@ -311,11 +312,11 @@ public class NGTemplateResourceTest extends CategoryTest {
     templateVersions.add("v2");
     doReturn(true)
         .when(templateService)
-        .deleteTemplates(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, templateVersions, "");
+        .deleteTemplates(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, templateVersions, "", false);
     ResponseDTO<Boolean> responseDTO = templateResource.deleteTemplateVersionsOfParticularIdentifier(ACCOUNT_ID,
         ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER,
         TemplateDeleteListRequestDTO.builder().templateVersionLabels(new ArrayList<>(templateVersions)).build(), null,
-        "");
+        "", false);
     assertThat(responseDTO.getData()).isEqualTo(true);
     verify(accessControlClient)
         .checkForAccessOrThrow(ResourceScope.of(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER),

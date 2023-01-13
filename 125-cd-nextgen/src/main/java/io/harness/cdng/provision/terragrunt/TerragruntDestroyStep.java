@@ -18,7 +18,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.executables.CdTaskExecutable;
-import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.terragrunt.request.TerragruntCommandType;
@@ -64,7 +63,6 @@ public class TerragruntDestroyStep extends CdTaskExecutable<TerragruntDestroyTas
 
   @Inject private TerragruntStepHelper helper;
   @Inject private KryoSerializer kryoSerializer;
-  @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
   @Inject private PipelineRbacHelper pipelineRbacHelper;
   @Inject private StepHelper stepHelper;
   @Inject public TerragruntConfigDAL terragruntConfigDAL;
@@ -147,7 +145,6 @@ public class TerragruntDestroyStep extends CdTaskExecutable<TerragruntDestroyTas
 
     builder.stateFileId(helper.getLatestFileId(entityId))
         .entityId(entityId)
-        .commandType(TerragruntCommandType.DESTROY)
         .workspace(ParameterFieldHelper.getParameterFieldValue(spec.getWorkspace()))
         .configFilesStore(helper.getGitFetchFilesConfig(
             spec.getConfigFiles().getStore().getSpec(), ambiance, TerragruntStepHelper.TG_CONFIG_FILES))
@@ -237,7 +234,7 @@ public class TerragruntDestroyStep extends CdTaskExecutable<TerragruntDestroyTas
   public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance,
       StepElementParameters stepElementParameters, ThrowingSupplier<TerragruntDestroyTaskResponse> responseSupplier)
       throws Exception {
-    log.info("Handling Task Result Inline for the Terragrunt Destroy Step");
+    log.info("Handling Task Result for the Terragrunt Destroy Step");
     StepResponseBuilder stepResponseBuilder = StepResponse.builder();
 
     TerragruntDestroyStepParameters parameters = (TerragruntDestroyStepParameters) stepElementParameters.getSpec();

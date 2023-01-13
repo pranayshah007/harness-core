@@ -11,6 +11,7 @@ import io.harness.ng.core.environment.beans.EnvironmentType;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Map;
 import lombok.AccessLevel;
@@ -22,6 +23,7 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonIgnoreProperties(ignoreUnknown = true)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(name = "EnvironmentResponseDetails", description = "This is the Environment entity defined in Harness")
 public class EnvironmentResponseDTO {
   String accountId;

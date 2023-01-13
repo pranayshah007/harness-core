@@ -497,7 +497,7 @@ public class TerragruntStepHelper {
     return null;
   }
 
-  public TerragruntBackendConfigFileConfig getTerragruntBackendConfigWithCommitIdReference(
+  private TerragruntBackendConfigFileConfig getTerragruntBackendConfigWithCommitIdReference(
       TerragruntBackendConfig backendConfig, String backendConfigCommitItReference) {
     if (backendConfig != null) {
       TerragruntBackendConfigSpec terragruntBackendConfigSpec = backendConfig.getTerragruntBackendConfigSpec();

@@ -329,6 +329,12 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
             accountId, orgId, projectId, null);
     if (freezeConfigEntityOptional.isPresent()) {
       FreezeConfigEntity freezeConfigEntity = freezeConfigEntityOptional.get();
+      String freezeYaml = freezeConfigEntity.getYaml();
+      FreezeConfig freezeConfig = NGFreezeDtoMapper.toFreezeConfig(freezeYaml);
+      boolean update = NGFreezeDtoMapper.setGlobalFreezeStatus(freezeConfig);
+      if (update) {
+        freezeConfigEntity = updateGlobalFreezeStatus(freezeConfig, freezeConfigEntity);
+      }
       return NGFreezeDtoMapper.prepareFreezeResponseDto(freezeConfigEntity);
     } else {
       String globalFreezeYaml = createGlobalFreezeConfigYaml();
@@ -401,7 +407,10 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
       String deploymentFreezeYaml = freezeConfigEntity.getYaml();
       FreezeConfig freezeConfig = NGFreezeDtoMapper.toFreezeConfig(deploymentFreezeYaml);
       freezeConfig.getFreezeInfoConfig().setStatus(freezeStatus);
-      freezeConfigEntity.setYaml(NGFreezeDtoMapper.toYaml(freezeConfig));
+      String yaml = NGFreezeDtoMapper.toYaml(freezeConfig);
+      NGFreezeDtoMapper.validateFreezeYaml(freezeConfig, freezeConfigEntity.getOrgIdentifier(),
+          freezeConfigEntity.getProjectIdentifier(), freezeConfigEntity.getType());
+      freezeConfigEntity.setYaml(yaml);
       freezeConfigEntity.setStatus(freezeStatus);
       updateNextIterations(freezeConfigEntity);
       FreezeConfigEntity finalFreezeConfigEntity = freezeConfigEntity;
@@ -427,6 +436,15 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
                                   .build())
             .build();
     return NGFreezeDtoMapper.toYaml(freezeConfig);
+  }
+
+  private FreezeConfigEntity updateGlobalFreezeStatus(
+      FreezeConfig freezeConfig, FreezeConfigEntity freezeConfigEntity) {
+    freezeConfig.getFreezeInfoConfig().setStatus(FreezeStatus.DISABLED);
+    freezeConfigEntity.setYaml(NGFreezeDtoMapper.toYaml(freezeConfig));
+    freezeConfigEntity.setStatus(FreezeStatus.DISABLED);
+    deleteFreezeWindowsIfDisabled(freezeConfigEntity);
+    return freezeConfigRepository.save(freezeConfigEntity);
   }
 
   private FreezeConfigEntity updateFreezeConfig(FreezeConfigEntity updatedFreezeConfigEntity, String orgId,

@@ -128,7 +128,7 @@ public class TasSwapRoutesStep extends CdTaskExecutable<CfCommandResponseNG> {
           StepCategory.STEP.name());
       return StepResponse.builder()
           .status(Status.FAILED)
-          .failureInfo(FailureInfo.newBuilder().setErrorMessage(response.getErrorMessage()).build())
+          .failureInfo(FailureInfo.newBuilder().setErrorMessage(TasStepHelper.getErrorMessage(response)).build())
           .unitProgressList(
               tasStepHelper
                   .completeUnitProgressData(response.getUnitProgressData(), ambiance, response.getErrorMessage())

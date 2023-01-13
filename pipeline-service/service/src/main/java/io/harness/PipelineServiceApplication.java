@@ -28,6 +28,7 @@ import io.harness.configuration.DeployVariant;
 import io.harness.consumers.GraphUpdateRedisConsumer;
 import io.harness.controller.PrimaryVersionChangeScheduler;
 import io.harness.delay.DelayEventListener;
+import io.harness.enforcement.MaxStaticValueRestrictionUsageImpl;
 import io.harness.enforcement.client.CustomRestrictionRegisterConfiguration;
 import io.harness.enforcement.client.RestrictionUsageRegisterConfiguration;
 import io.harness.enforcement.client.custom.CustomRestrictionInterface;
@@ -863,6 +864,15 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
                 ImmutableMap.<FeatureRestrictionName, Class<? extends RestrictionUsageInterface>>builder()
                     .put(FeatureRestrictionName.STRATEGY_MAX_CONCURRENT,
                         StrategyMaxConcurrencyRestrictionUsageImpl.class)
+                    .put(FeatureRestrictionName.MAX_PIPELINE_TIMEOUT_SECONDS, MaxStaticValueRestrictionUsageImpl.class)
+                    .put(FeatureRestrictionName.MAX_STAGE_TIMEOUT_SECONDS, MaxStaticValueRestrictionUsageImpl.class)
+                    .put(FeatureRestrictionName.MAX_STEP_TIMEOUT_SECONDS, MaxStaticValueRestrictionUsageImpl.class)
+                    .put(FeatureRestrictionName.MAX_CONCURRENT_ACTIVE_PIPELINE_EXECUTIONS,
+                        MaxStaticValueRestrictionUsageImpl.class)
+                    .put(FeatureRestrictionName.MAX_PARALLEL_STEP_IN_A_PIPELINE,
+                        MaxStaticValueRestrictionUsageImpl.class)
+                    .put(FeatureRestrictionName.PIPELINE_EXECUTION_DATA_RETENTION_DAYS,
+                        MaxStaticValueRestrictionUsageImpl.class)
                     .build())
             .build();
     CustomRestrictionRegisterConfiguration customConfig =

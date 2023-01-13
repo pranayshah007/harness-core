@@ -39,12 +39,14 @@ import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.steps.executables.PipelineTaskExecutable;
 import io.harness.supplier.ThrowingSupplier;
 
 import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -55,7 +57,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ShellScriptStep extends PipelineTaskExecutable<ShellScriptTaskResponseNG> {
   public static final StepType STEP_TYPE = StepSpecTypeConstants.SHELL_SCRIPT_STEP_TYPE;
 
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private StepHelper stepHelper;
   @Inject private ShellScriptHelperService shellScriptHelperService;
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
@@ -93,7 +95,7 @@ public class ShellScriptStep extends PipelineTaskExecutable<ShellScriptTaskRespo
             .parameters(new Object[] {taskParameters})
             .timeout(StepUtils.getTimeoutMillis(stepParameters.getTimeout(), StepUtils.DEFAULT_STEP_TIMEOUT))
             .build();
-    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+    return TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
         CollectionUtils.emptyIfNull(StepUtils.generateLogKeys(
             StepUtils.generateLogAbstractions(ambiance), Collections.singletonList(ShellScriptTaskNG.COMMAND_UNIT))),
         null, null, TaskSelectorYaml.toTaskSelector(shellScriptStepParameters.getDelegateSelectors()),
@@ -116,7 +118,7 @@ public class ShellScriptStep extends PipelineTaskExecutable<ShellScriptTaskRespo
             .parameters(new Object[] {taskParameters})
             .timeout(StepUtils.getTimeoutMillis(stepParameters.getTimeout(), StepUtils.DEFAULT_STEP_TIMEOUT))
             .build();
-    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer, units,
+    return TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer, units,
         TaskType.WIN_RM_SHELL_SCRIPT_TASK_NG.getDisplayName(),
         TaskSelectorYaml.toTaskSelector(shellScriptStepParameters.getDelegateSelectors()),
         stepHelper.getEnvironmentType(ambiance));

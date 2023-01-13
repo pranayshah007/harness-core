@@ -145,4 +145,39 @@ public class ParameterFieldHelper {
           format("Unable for parse parameter field value, finalValue: %s", parameterField.fetchFinalValue()));
     }
   }
+
+  public static <T> boolean hasValueOrExpression(ParameterField<T> parameterField, boolean allowExpression) {
+    if (ParameterField.isNull(parameterField)) {
+      return false;
+    }
+
+    T parameterFieldValue = getParameterFieldValue(parameterField);
+    if (parameterFieldValue instanceof String) {
+      return allowExpression ? (parameterField.isExpression() || !isEmpty((String) parameterFieldValue))
+                             : !isEmpty((String) parameterFieldValue);
+    }
+    if (parameterFieldValue instanceof Map) {
+      return allowExpression ? (parameterField.isExpression() || !isEmpty((Map) parameterFieldValue))
+                             : !isEmpty((Map) parameterFieldValue);
+    }
+
+    throw new InvalidArgumentsException(format(
+        "Unsupported value validation for parameter field, parameter field class: %s", parameterField.getClass()));
+  }
+
+  public boolean hasValueOrExpression(ParameterField<String> parameterField) {
+    if (ParameterField.isNull(parameterField)) {
+      return false;
+    }
+
+    return parameterField.isExpression() || !isEmpty(getParameterFieldValue(parameterField));
+  }
+
+  public <T> boolean hasValueListOrExpression(ParameterField<List<T>> parameterField) {
+    if (ParameterField.isNull(parameterField)) {
+      return false;
+    }
+
+    return parameterField.isExpression() || !isEmpty(getParameterFieldValue(parameterField));
+  }
 }

@@ -315,3 +315,6 @@ io.harness.beans.yaml.extended.beans.Splitting
 io.harness.beans.steps.nodes.V1.TestStepNode
 io.harness.beans.steps.nodes.V1.BackgroundStepNodeV1
 io.harness.beans.steps.stepinfo.V1.BackgroundStepInfoV1
+io.harness.steps.policy.step.outcome.PolicyStepOutcome
+io.harness.steps.policy.step.outcome.PolicySetOutcome
+io.harness.steps.policy.step.outcome.PolicyOutcome

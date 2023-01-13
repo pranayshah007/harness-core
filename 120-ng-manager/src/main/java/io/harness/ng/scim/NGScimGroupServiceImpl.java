@@ -110,11 +110,19 @@ public class NGScimGroupServiceImpl implements ScimGroupService {
     List<ScimGroup> scimGroupList = new ArrayList<>();
 
     if (StringUtils.isNotEmpty(searchQuery)) {
-      userGroupList = userGroupService.list(
-          Criteria.where(UserGroupKeys.accountIdentifier).is(accountId).and(UserGroupKeys.name).is(searchQuery),
+      userGroupList = userGroupService.list(Criteria.where(UserGroupKeys.accountIdentifier)
+                                                .is(accountId)
+                                                .and(UserGroupKeys.name)
+                                                .is(searchQuery)
+                                                .and(UserGroupKeys.externallyManaged)
+                                                .is(Boolean.TRUE),
           startIndex, count);
     } else {
-      return scimGroupList;
+      userGroupList = userGroupService.list(Criteria.where(UserGroupKeys.accountIdentifier)
+                                                .is(accountId)
+                                                .and(UserGroupKeys.externallyManaged)
+                                                .is(Boolean.TRUE),
+          startIndex, count);
     }
     if (isNotEmpty(userGroupList)) {
       for (UserGroup userGroup : userGroupList) {

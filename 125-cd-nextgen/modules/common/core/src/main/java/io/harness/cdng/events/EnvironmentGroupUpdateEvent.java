@@ -13,10 +13,10 @@ import static io.harness.audit.ResourceTypeConstants.ENVIRONMENT_GROUP;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.event.Event;
-import io.harness.ng.core.ProjectScope;
 import io.harness.ng.core.Resource;
 import io.harness.ng.core.ResourceScope;
 import io.harness.ng.core.events.OutboxEventConstants;
+import io.harness.ng.core.utils.ResourceScopeUtils;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import javax.validation.constraints.NotNull;
@@ -38,8 +38,7 @@ public class EnvironmentGroupUpdateEvent implements Event {
   @JsonIgnore
   @Override
   public ResourceScope getResourceScope() {
-    return new ProjectScope(accountIdentifier, newEnvironmentGroupEntity.getOrgIdentifier(),
-        newEnvironmentGroupEntity.getProjectIdentifier());
+    return ResourceScopeUtils.getEntityScope(newEnvironmentGroupEntity);
   }
 
   @JsonIgnore

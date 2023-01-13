@@ -378,6 +378,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   private final AtomicBoolean switchStorage = new AtomicBoolean(false);
   private final AtomicBoolean closingSocket = new AtomicBoolean(false);
   private final AtomicBoolean sentFirstHeartbeat = new AtomicBoolean(false);
+  private final Set<String> supportedTaskTypes = new HashSet<>();
 
   private Client client;
   private Socket socket;
@@ -595,7 +596,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         log.info("Registering delegate with delegate Type: {}, DelegateGroupName: {} that supports tasks: {}",
             DELEGATE_TYPE, DELEGATE_GROUP_NAME, supportedTasks);
       }
-
+      supportedTaskTypes.addAll(supportedTasks);
       final DelegateParamsBuilder builder =
           DelegateParams.builder()
               .ip(getLocalHostAddress())
@@ -1924,7 +1925,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   }
 
   private void dispatchDelegateTaskAsync(DelegateTaskEvent delegateTaskEvent) {
-    String delegateTaskId = delegateTaskEvent.getDelegateTaskId();
+    final String delegateTaskId = delegateTaskEvent.getDelegateTaskId();
     if (delegateTaskId == null) {
       log.warn("Delegate task id cannot be null");
       return;
@@ -1943,6 +1944,15 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     if (currentlyExecutingFutures.containsKey(delegateTaskEvent.getDelegateTaskId())) {
       log.info("Task [DelegateTaskEvent: {}] already queued, dropping this request ", delegateTaskEvent);
       return;
+    }
+
+    if (delegateTaskEvent.getTaskType() != null) {
+      if (!supportedTaskTypes.contains(delegateTaskEvent.getTaskType())) {
+        log.error("Task {} of type {} not supported by delegate", delegateTaskId, delegateTaskEvent.getTaskType());
+        return;
+      }
+    } else {
+      log.warn("Task type not available for Task {}", delegateTaskId);
     }
 
     DelegateTaskExecutionData taskExecutionData = DelegateTaskExecutionData.builder().build();
