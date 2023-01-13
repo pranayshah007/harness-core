@@ -786,7 +786,12 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
 
   private String getMostResourceAvailableDelegateIdForFirstBroadcast(
       DelegateTask delegateTask, List<String> eligibleListOfDelegates) {
-    TaskType taskType = TaskType.valueOf(delegateTask.getData().getTaskType());
+    if (delegateTask.getTaskDataV2() != null) {
+      TaskType taskType = TaskType.valueOf(delegateTask.getTaskDataV2().getTaskType());
+    } else {
+      TaskType taskType = TaskType.valueOf(delegateTask.getData().getTaskType());
+    }
+
     List<Delegate> delegateList = getDelegatesList(eligibleListOfDelegates, delegateTask.getAccountId());
     Optional<List<String>> filteredDelegateList =
         delegateSelectionCheckForTask.perform(delegateList, taskType, delegateTask.getAccountId());
