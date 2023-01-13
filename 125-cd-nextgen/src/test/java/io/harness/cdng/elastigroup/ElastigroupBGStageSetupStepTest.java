@@ -27,6 +27,7 @@ import io.harness.cdng.elastigroup.beans.ElastigroupStepExecutorParams;
 import io.harness.cdng.infra.beans.ElastigroupInfrastructureOutcome;
 import io.harness.delegate.beans.elastigroup.ElastigroupSetupResult;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
+import io.harness.delegate.task.elastigroup.request.AwsConnectedCloudProvider;
 import io.harness.delegate.task.elastigroup.request.ElastigroupSetupCommandRequest;
 import io.harness.delegate.task.elastigroup.response.ElastigroupPreFetchResponse;
 import io.harness.delegate.task.elastigroup.response.ElastigroupSetupResponse;
@@ -329,6 +330,31 @@ public class ElastigroupBGStageSetupStepTest extends CDNGTestBase {
 
     verify(elastigroupStepCommonHelper)
         .startChainLink(eq(anAmbiance()), eq(stepElementParameters), eq(passThroughData));
+  }
+
+  @Test
+  @Owner(developers = {FILIP})
+  @Category(UnitTests.class)
+  public void finalizeExecutionWithSecurityContextPositiveTest() throws Exception {
+    // Given
+    StepElementParameters stepParameters = StepElementParameters.builder().build();
+    ElastigroupExecutionPassThroughData passThroughData =
+        ElastigroupExecutionPassThroughData.builder()
+            .connectedCloudProvider(AwsConnectedCloudProvider.builder().build())
+            .build();
+    ThrowingSupplier<ResponseData> throwingSupplier = ()
+        -> ElastigroupSetupResponse.builder()
+               .elastigroupSetupResult(ElastigroupSetupResult.builder().build())
+               .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+               .unitProgressData(UnitProgressData.builder().build())
+               .build();
+
+    // When
+    final StepResponse response = elastigroupSetupStep.finalizeExecutionWithSecurityContext(
+        anAmbiance(), stepParameters, passThroughData, throwingSupplier);
+
+    // Then
+    assertThat(response).isNotNull();
   }
 
   private Ambiance anAmbiance() {
