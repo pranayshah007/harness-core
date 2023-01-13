@@ -34,6 +34,7 @@ public class TasExecutionPassThroughData implements PassThroughData {
   UnitProgressData lastActiveUnitProgressData;
   String zippedManifestId;
   @Expression(ALLOW_SECRETS) TasManifestsPackage tasManifestsPackage;
+  @Expression(ALLOW_SECRETS) TasManifestsPackage unresolvedTasManifestsPackage;
   Map<String, String> allFilesFetched;
   String repoRoot;
   CfCliVersionNG cfCliVersion;

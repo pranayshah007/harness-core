@@ -1125,10 +1125,11 @@ public class TasStepHelper {
                                             .setStartTime(System.currentTimeMillis())
                                             .setUnitName(CfCommandUnitConstants.VerifyManifests);
     Map<String, String> allFilesFetched = new HashMap<>();
+    TasManifestsPackage unresolvedTasManifestsPackage = TasManifestsPackage.builder().build();
     TasManifestsPackage tasManifestsPackage =
         getManifestFilesContents(ambiance, tasStepPassThroughData.getGitFetchFilesResultMap(),
             tasStepPassThroughData.getCustomFetchContent(), tasStepPassThroughData.getLocalStoreFileMapContents(),
-            allFilesFetched, tasStepPassThroughData.getMaxManifestOrder(), logCallback);
+            allFilesFetched, tasStepPassThroughData.getMaxManifestOrder(), unresolvedTasManifestsPackage, logCallback);
     unitProgress.setEndTime(System.currentTimeMillis()).setStatus(UnitStatus.SUCCESS);
     logCallback.saveExecutionLog("Successfully verified all manifests", INFO, SUCCESS);
     tasStepPassThroughData.getUnitProgresses().add(unitProgress.build());
@@ -1144,6 +1145,7 @@ public class TasStepHelper {
             .commandUnits(tasStepPassThroughData.getCommandUnits())
             .rawScript(tasStepPassThroughData.getRawScript())
             .desiredCountInFinalYaml(fetchTasInstaceCountInYaml(tasManifestsPackage))
+            .unresolvedTasManifestsPackage(unresolvedTasManifestsPackage)
             .build(),
         tasStepPassThroughData.getShouldOpenFetchFilesStream(),
         UnitProgressData.builder().unitProgresses(tasStepPassThroughData.getUnitProgresses()).build());
@@ -1153,7 +1155,7 @@ public class TasStepHelper {
       Map<String, FetchFilesResult> gitFetchFilesResultMap,
       Map<String, Collection<CustomSourceFile>> customFetchContent,
       Map<String, List<TasManifestFileContents>> localStoreFetchFilesResultMap, Map<String, String> allFilesFetched,
-      Integer maxManifestOrder, LogCallback logCallback) {
+      Integer maxManifestOrder, TasManifestsPackage unresolvedTasManifestPackage, LogCallback logCallback) {
     TasManifestsPackage tasManifestsPackage = TasManifestsPackage.builder().variableYmls(new ArrayList<>()).build();
     logCallback.saveExecutionLog("Verifying manifests", INFO);
     CDExpressionResolveFunctor cdExpressionResolveFunctor =
@@ -1167,6 +1169,8 @@ public class TasStepHelper {
             String fileContent =
                 (String) ExpressionEvaluatorUtils.updateExpressions(file.getFileContent(), cdExpressionResolveFunctor);
             addToPcfManifestPackageByType(tasManifestsPackage, fileContent, file.getFilePath(), logCallback);
+            addToPcfManifestPackageByType(
+                unresolvedTasManifestPackage, file.getFileContent(), file.getFilePath(), logCallback);
             allFilesFetched.put(file.getFilePath(), fileContent);
           }
         }
@@ -1178,6 +1182,8 @@ public class TasStepHelper {
             String fileContent =
                 (String) ExpressionEvaluatorUtils.updateExpressions(file.getFileContent(), cdExpressionResolveFunctor);
             addToPcfManifestPackageByType(tasManifestsPackage, fileContent, file.getFilePath(), logCallback);
+            addToPcfManifestPackageByType(
+                unresolvedTasManifestPackage, file.getFileContent(), file.getFilePath(), logCallback);
             allFilesFetched.put(file.getFilePath(), fileContent);
           }
         }
@@ -1190,6 +1196,8 @@ public class TasStepHelper {
                 tasManifestFileContents.getFileContent(), cdExpressionResolveFunctor);
             addToPcfManifestPackageByType(
                 tasManifestsPackage, fileContent, tasManifestFileContents.getFilePath(), logCallback);
+            addToPcfManifestPackageByType(unresolvedTasManifestPackage, tasManifestFileContents.getFileContent(),
+                tasManifestFileContents.getFilePath(), logCallback);
             allFilesFetched.put(tasManifestFileContents.getFilePath(), fileContent);
           }
         }

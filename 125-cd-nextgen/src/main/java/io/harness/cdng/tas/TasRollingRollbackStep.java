@@ -16,12 +16,14 @@ import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.execution.tas.TasStageExecutionDetails;
+import io.harness.cdng.expressions.CDExpressionResolveFunctor;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.TanzuApplicationServiceInfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.cdng.tas.outcome.TasRollingDeployOutcome;
 import io.harness.connector.ConnectorInfoDTO;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.connector.tasconnector.TasConnectorDTO;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
@@ -31,6 +33,7 @@ import io.harness.delegate.beans.pcf.CfInternalInstanceElement;
 import io.harness.delegate.task.pcf.CfCommandTypeNG;
 import io.harness.delegate.task.pcf.artifact.TasArtifactConfig;
 import io.harness.delegate.task.pcf.request.CfRollingRollbackRequestNG;
+import io.harness.delegate.task.pcf.request.TasManifestsPackage;
 import io.harness.delegate.task.pcf.response.CfCommandResponseNG;
 import io.harness.delegate.task.pcf.response.CfRollingRollbackResponseNG;
 import io.harness.delegate.task.pcf.response.TasInfraConfig;
@@ -39,6 +42,7 @@ import io.harness.exception.AccessDeniedException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.WingsException;
 import io.harness.executions.steps.ExecutionNodeType;
+import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.pcf.CfCommandUnitConstants;
@@ -52,6 +56,7 @@ import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
@@ -90,6 +95,7 @@ public class TasRollingRollbackStep extends CdTaskExecutable<CfCommandResponseNG
   @Inject private StepHelper stepHelper;
   @Inject private TasStepHelper tasStepHelper;
   @Inject private InstanceInfoService instanceInfoService;
+  @Inject private EngineExpressionService engineExpressionService;
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
@@ -130,6 +136,33 @@ public class TasRollingRollbackStep extends CdTaskExecutable<CfCommandResponseNG
     TasArtifactConfig tasArtifactConfig =
         artifactOutcomes.isEmpty() ? null : tasStepHelper.getPrimaryArtifactConfig(ambiance, artifactOutcomes.get(0));
 
+    TasManifestsPackage resolvedTasManifestsPackage =
+        tasStageExecutionDetails == null ? null : TasManifestsPackage.builder().build();
+    TasManifestsPackage unresolvedTasManifestsPackage =
+        tasStageExecutionDetails == null ? null : tasStageExecutionDetails.getTasManifestsPackage();
+
+    CDExpressionResolveFunctor cdExpressionResolveFunctor =
+        new CDExpressionResolveFunctor(engineExpressionService, ambiance);
+    if (unresolvedTasManifestsPackage != null
+        && EmptyPredicate.isNotEmpty(unresolvedTasManifestsPackage.getManifestYml())) {
+      resolvedTasManifestsPackage.setManifestYml((String) ExpressionEvaluatorUtils.updateExpressions(
+          unresolvedTasManifestsPackage.getManifestYml(), cdExpressionResolveFunctor));
+    }
+
+    if (unresolvedTasManifestsPackage != null
+        && EmptyPredicate.isNotEmpty(unresolvedTasManifestsPackage.getAutoscalarManifestYml())) {
+      resolvedTasManifestsPackage.setAutoscalarManifestYml((String) ExpressionEvaluatorUtils.updateExpressions(
+          unresolvedTasManifestsPackage.getAutoscalarManifestYml(), cdExpressionResolveFunctor));
+    }
+
+    List<String> varsYamlList = new ArrayList<>();
+    if (unresolvedTasManifestsPackage != null && unresolvedTasManifestsPackage.getVariableYmls() != null) {
+      for (String varsYaml : unresolvedTasManifestsPackage.getVariableYmls()) {
+        varsYamlList.add((String) ExpressionEvaluatorUtils.updateExpressions(varsYaml, cdExpressionResolveFunctor));
+      }
+      resolvedTasManifestsPackage.setVariableYmls(varsYamlList);
+    }
+
     CfRollingRollbackRequestNG cfRollingRollbackRequestNG =
         CfRollingRollbackRequestNG.builder()
             .applicationName(tasRollingDeployOutcome.getAppName())
@@ -140,8 +173,7 @@ public class TasRollingRollbackStep extends CdTaskExecutable<CfCommandResponseNG
             .tasInfraConfig(tasInfraConfig)
             .tasArtifactConfig(tasArtifactConfig)
             .cfCommandTypeNG(CfCommandTypeNG.TAS_ROLLING_ROLLBACK)
-            .tasManifestsPackage(
-                tasStageExecutionDetails == null ? null : tasStageExecutionDetails.getTasManifestsPackage())
+            .tasManifestsPackage(resolvedTasManifestsPackage)
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
             .isFirstDeployment(tasStageExecutionDetails == null)
             .useAppAutoScalar(tasStageExecutionDetails != null && tasStageExecutionDetails.getIsAutoscalarEnabled())

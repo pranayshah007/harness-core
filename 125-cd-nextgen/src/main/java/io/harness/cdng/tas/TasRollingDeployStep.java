@@ -169,7 +169,7 @@ public class TasRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
       StepResponse.StepOutcome stepOutcome =
           instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfoList);
       tasStepHelper.updateManifestFiles(
-          ambiance, tasExecutionPassThroughData.getTasManifestsPackage(), appName, tasInfraConfig);
+          ambiance, tasExecutionPassThroughData.getUnresolvedTasManifestsPackage(), appName, tasInfraConfig);
       tasStepHelper.updateAutoscalarEnabledField(ambiance,
           !isNull(tasExecutionPassThroughData.getTasManifestsPackage().getAutoscalarManifestYml()), appName,
           tasInfraConfig);
