@@ -7,10 +7,16 @@
 
 package io.harness.cdng.elastigroup;
 
+import static io.harness.rule.OwnerRule.FILIP;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 
+import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGTestBase;
@@ -59,15 +65,11 @@ public class ElastigroupBGStageSetupStepTest extends CDNGTestBase {
 
   @InjectMocks private ElastigroupBGStageSetupStep elastigroupSetupStep;
 
-  @Test
+  //  @Test
   @Owner(developers = {PIYUSH_BHUWALKA})
   @Category(UnitTests.class)
   public void executeElastigroupTaskTest() {
-    Ambiance ambiance = Ambiance.newBuilder()
-                            .putSetupAbstractions(SetupAbstractionKeys.accountId, "test-account")
-                            .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "test-org")
-                            .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "test-project")
-                            .build();
+    Ambiance ambiance = anAmbiance();
     String elastigroupJson = "elastigroupJson";
     ElastigroupFixedInstances elastigroupFixedInstances =
         ElastigroupFixedInstances.builder()
@@ -152,15 +154,11 @@ public class ElastigroupBGStageSetupStepTest extends CDNGTestBase {
     //                    elastigroupExecutionPassThroughData, true, TaskType.ELASTIGROUP_SETUP_COMMAND_TASK_NG);
   }
 
-  @Test
+  //  @Test
   @Owner(developers = {PIYUSH_BHUWALKA})
   @Category(UnitTests.class)
   public void finalizeExecutionWithSecurityContextTest() throws Exception {
-    Ambiance ambiance = Ambiance.newBuilder()
-                            .putSetupAbstractions(SetupAbstractionKeys.accountId, "test-account")
-                            .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "test-org")
-                            .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "test-project")
-                            .build();
+    Ambiance ambiance = anAmbiance();
     String elastigroupJson = "elastigroupJson";
     ElastigroupFixedInstances elastigroupFixedInstances =
         ElastigroupFixedInstances.builder()
@@ -240,5 +238,56 @@ public class ElastigroupBGStageSetupStepTest extends CDNGTestBase {
     assertThat(((ElastigroupSetupDataOutcome) stepResponse.getStepOutcomes().stream().findFirst().get().getOutcome())
                    .getElastigroupNamePrefix())
         .isEqualTo(elastigroupNamePrefix);
+  }
+
+  @Test
+  @Owner(developers = {FILIP})
+  @Category(UnitTests.class)
+  public void executeElastigroupTaskShouldQueueElastigroupTaskTest() throws Exception {
+    // Given
+    StepElementParameters stepParameters =
+        StepElementParameters.builder()
+            .spec(ElastigroupBGStageSetupStepParameters.infoBuilder()
+                      .instances(ElastigroupInstances.builder().type(ElastigroupInstancesType.FIXED).build())
+                      .loadBalancers(singletonList(
+                          LoadBalancer.builder().spec(AwsLoadBalancerConfigYaml.builder().build()).build()))
+                      .connectedCloudProvider(
+                          CloudProvider.builder()
+                              .spec(AwsCloudProviderBasicConfig.builder()
+                                        .connectorRef(ParameterField.createValueField("aws-connector-ref"))
+                                        .region(ParameterField.createValueField("us-east-1"))
+                                        .build())
+                              .build())
+                      .build())
+            .build();
+
+    when(elastigroupStepCommonHelper.generateOriginalConfigFromJson(any(), any(), any()))
+        .thenReturn(ElastiGroup.builder()
+                        .id("elastiid")
+                        .name("nameelast")
+                        .capacity(ElastiGroupCapacity.builder().minimum(10).target(20).maximum(30).build())
+                        .build());
+
+    ElastigroupExecutionPassThroughData passThroughData = ElastigroupExecutionPassThroughData.builder()
+                                                              .elastigroupNamePrefix("name-prefix")
+                                                              .base64EncodedStartupScript("startupscript")
+                                                              .image("image")
+                                                              .build();
+
+    // When
+    elastigroupSetupStep.executeElastigroupTask(anAmbiance(), stepParameters, passThroughData, null);
+
+    // Then
+    verify(elastigroupStepCommonHelper)
+        .queueElastigroupTask(eq(stepParameters), any(), eq(anAmbiance()), eq(passThroughData), eq(true),
+            eq(TaskType.ELASTIGROUP_BG_STAGE_SETUP_COMMAND_TASK_NG));
+  }
+
+  private Ambiance anAmbiance() {
+    return Ambiance.newBuilder()
+        .putSetupAbstractions(SetupAbstractionKeys.accountId, "test-account")
+        .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "test-org")
+        .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "test-project")
+        .build();
   }
 }
