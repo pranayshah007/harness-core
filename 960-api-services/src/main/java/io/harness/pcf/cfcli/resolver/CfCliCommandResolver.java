@@ -39,6 +39,7 @@ import java.util.List;
 @OwnedBy(HarnessTeam.CDP)
 public interface CfCliCommandResolver {
   String GREP = "| grep";
+  String ROLLING = "rolling";
 
   static String getApiCommand(
       final String cfCliPath, CfCliVersion cfCliVersion, final String endpoint, boolean skipSslValidation) {
@@ -211,24 +212,24 @@ public interface CfCliCommandResolver {
   }
 
   static String getRollingPushCliCommand(
-      final String cfCliPath, CfCliVersion cfCliVersion, final String pathToManifest, final String strategy) {
+      final String cfCliPath, CfCliVersion cfCliVersion, final String pathToManifest) {
     return PushCliCommand.builder()
         .cliPath(cfCliPath)
         .cliVersion(cfCliVersion)
-        .options(PushCliCommand.PushOptionsV7.builder().pathToManifest(pathToManifest).strategy(strategy).build())
+        .options(PushOptions.builder().pathToManifest(pathToManifest).strategy(ROLLING).build())
         .build()
         .getCommand();
   }
 
   static String getRollingPushCliCommand(final String cfCliPath, CfCliVersion cfCliVersion, final String pathToManifest,
-      final List<String> variableFilePaths, final String strategy) {
+      final List<String> variableFilePaths) {
     return PushCliCommand.builder()
         .cliPath(cfCliPath)
         .cliVersion(cfCliVersion)
-        .options(PushCliCommand.PushOptionsV7.builder()
+        .options(PushOptions.builder()
                      .pathToManifest(pathToManifest)
                      .variableFilePaths(variableFilePaths)
-                     .strategy(strategy)
+                     .strategy(ROLLING)
                      .build())
         .build()
         .getCommand();

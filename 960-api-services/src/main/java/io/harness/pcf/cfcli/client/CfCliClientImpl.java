@@ -209,8 +209,8 @@ public class CfCliClientImpl implements CfCliClient {
     CfRequestConfig pcfRequestConfig = requestData.getCfRequestConfig();
     if (!requestData.isVarsYmlFilePresent()) {
       if (!isEmpty(requestData.getStrategy())) {
-        return CfCliCommandResolver.getRollingPushCliCommand(pcfRequestConfig.getCfCliPath(),
-            pcfRequestConfig.getCfCliVersion(), finalFilePath, requestData.getStrategy());
+        return CfCliCommandResolver.getRollingPushCliCommand(
+            pcfRequestConfig.getCfCliPath(), pcfRequestConfig.getCfCliVersion(), finalFilePath);
       }
       return CfCliCommandResolver.getPushCliCommand(
           pcfRequestConfig.getCfCliPath(), pcfRequestConfig.getCfCliVersion(), finalFilePath);
@@ -227,8 +227,8 @@ public class CfCliClientImpl implements CfCliClient {
     }
 
     if (!isEmpty(requestData.getStrategy())) {
-      return CfCliCommandResolver.getRollingPushCliCommand(pcfRequestConfig.getCfCliPath(),
-          pcfRequestConfig.getCfCliVersion(), finalFilePath, varFiles, requestData.getStrategy());
+      return CfCliCommandResolver.getRollingPushCliCommand(
+          pcfRequestConfig.getCfCliPath(), pcfRequestConfig.getCfCliVersion(), finalFilePath, varFiles);
     }
 
     return CfCliCommandResolver.getPushCliCommand(

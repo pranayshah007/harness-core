@@ -27,8 +27,8 @@ import lombok.experimental.SuperBuilder;
 @Alias("P")
 public class PushCliCommand extends CfCliCommand {
   @Builder
-  PushCliCommand(
-      CfCliVersion cliVersion, String cliPath, GlobalOptions globalOptions, List<String> arguments, Options options) {
+  PushCliCommand(CfCliVersion cliVersion, String cliPath, GlobalOptions globalOptions, List<String> arguments,
+      PushOptions options) {
     super(cliVersion, cliPath, globalOptions, CfCliCommandType.PUSH, arguments, options);
   }
 
@@ -53,42 +53,13 @@ public class PushCliCommand extends CfCliCommand {
     @Option(value = "--vars-file") List<String> variableFilePaths;
     @Option(value = "--var") List<String> variableKeyValuePairs;
     @Option(value = "-t") String appStartTimeout;
-  }
-
-  @Value
-  @SuperBuilder
-  @EqualsAndHashCode(callSuper = true)
-  public static class PushOptionsV6 extends PushOptions {
-    @Option(value = "-d") String customDomain;
-    @Option(value = "--hostname") String hostname;
-    @Flag(value = "--no-hostname") boolean noHostname;
-    @Option(value = "--route-path") String routePath;
-  }
-
-  @SuperBuilder
-  public static class PushOptionsV7 implements Options {
-    @Option(value = "-b") String buildPack;
-    @Option(value = "-c") String startupCmd;
-    @Option(value = "--docker-image") String dockerImage;
-    @Option(value = "--docker-username") String dockerUsername;
-    @Option(value = "--droplet") String droplet;
-    @Option(value = "-f") String pathToManifest;
-    @Option(value = "--health-check-type") String healthCheckType;
-    @Option(value = "-i") String numberOfInstances;
-    @Option(value = "-k") String diskLimit;
-    @Option(value = "-m") String memoryLimit;
-    @Flag(value = "--no-manifest") boolean noManifest;
-    @Flag(value = "--no-route") boolean noRoute;
-    @Flag(value = "--no-start") boolean noStart;
-    @Option(value = "-p") String pathToApp;
-    @Flag(value = "--random-route") boolean randomRoute;
-    @Option(value = "-s") String stackToUse;
-    @Option(value = "--vars-file") List<String> variableFilePaths;
-    @Option(value = "--var") List<String> variableKeyValuePairs;
-    @Option(value = "-t") String appStartTimeout;
     @Option(value = "--endpoint") String healthCheckEndpoint;
     @Flag(value = "--no-wait") boolean noWait;
     @Option(value = "--strategy") String strategy;
     @Option(value = "--task") String task;
+    @Option(value = "-d") String customDomain;
+    @Option(value = "--hostname") String hostname;
+    @Flag(value = "--no-hostname") boolean noHostname;
+    @Option(value = "--route-path") String routePath;
   }
 }
