@@ -13,7 +13,7 @@
 #     -t <tag> \
 #     .
 
-FROM us.gcr.io/platform-205701/ubi/ubi-base:latest
+FROM us.gcr.io/platform-205701/ubi/ubi-base:BT-2715
 
 USER root
 
