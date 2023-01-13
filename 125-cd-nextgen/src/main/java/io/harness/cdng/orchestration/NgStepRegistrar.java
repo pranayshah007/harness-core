@@ -242,7 +242,6 @@ public class NgStepRegistrar {
     engineSteps.put(TasRollbackStep.STEP_TYPE, TasRollbackStep.class);
     engineSteps.put(TasRollingDeployStep.STEP_TYPE, TasRollingDeployStep.class);
     engineSteps.put(TasRollingRollbackStep.STEP_TYPE, TasRollingRollbackStep.class);
-    engineSteps.put(TasRouteMappingStep.STEP_TYPE, TasRouteMappingStep.class);
 
     return engineSteps;
   }
