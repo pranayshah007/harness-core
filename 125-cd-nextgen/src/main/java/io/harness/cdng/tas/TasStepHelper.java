@@ -32,6 +32,7 @@ import static io.harness.delegate.task.artifacts.ArtifactSourceType.JENKINS;
 import static io.harness.delegate.task.artifacts.ArtifactSourceType.NEXUS2_REGISTRY;
 import static io.harness.delegate.task.artifacts.ArtifactSourceType.NEXUS3_REGISTRY;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.filestore.utils.FileStoreNodeUtils.mapFileNodes;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.ERROR;
@@ -121,6 +122,7 @@ import io.harness.delegate.task.pcf.artifact.TasContainerArtifactConfig.TasConta
 import io.harness.delegate.task.pcf.artifact.TasPackageArtifactConfig;
 import io.harness.delegate.task.pcf.artifact.TasPackageArtifactConfig.TasPackageArtifactConfigBuilder;
 import io.harness.delegate.task.pcf.request.TasManifestsPackage;
+import io.harness.delegate.task.pcf.response.CfCommandResponseNG;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidArgumentsException;
@@ -480,8 +482,19 @@ public class TasStepHelper {
                                      .filePath(scopedFilePath.replaceFirst("^account:", ""))
                                      .build());
             logCallback.saveExecutionLog(color(format("- %s", scopedFilePath), LogColor.White));
+          } else if (NGFileType.FOLDER.equals(fileStoreNodeDTO.getType())) {
+            Integer folderPathLength = fileStoreNodeDTO.getPath().length();
+            manifestContents.addAll(mapFileNodes(fileStoreNodeDTO,
+                fileNode
+                -> TasManifestFileContents.builder()
+                       .manifestType(manifestType)
+                       .fileContent(fileNode.getContent())
+                       .filePath(fileNode.getPath().substring(folderPathLength))
+                       .build()));
+            logCallback.saveExecutionLog(color(format("- %s", scopedFilePath), LogColor.White));
           } else {
-            throw new UnsupportedOperationException("Only File type is supported. Please enter the correct file path");
+            throw new UnsupportedOperationException(
+                "The File/Folder type is not supported. Please enter the correct file path");
           }
         }
       }
@@ -1539,7 +1552,9 @@ public class TasStepHelper {
         .encryptedDataDetails(encryptedDataDetails)
         .build();
   }
-
+  public static String getErrorMessage(CfCommandResponseNG cfCommandResponseNG) {
+    return cfCommandResponseNG.getErrorMessage() == null ? "" : cfCommandResponseNG.getErrorMessage();
+  }
   public UnitProgressData completeUnitProgressData(
       UnitProgressData currentProgressData, Ambiance ambiance, String exceptionMessage) {
     if (currentProgressData == null) {

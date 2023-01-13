@@ -39,7 +39,9 @@ public interface NgTemplateService {
 
   String getNgTemplateStepName(Template template);
 
-  String getTimeoutString(Template template);
+  default String getTimeoutString(Template template) {
+    return "10m";
+  }
 
   default List<NGVariable> getTemplateVariables(Template template) {
     if (EmptyPredicate.isNotEmpty(template.getVariables())) {

@@ -14,6 +14,7 @@ import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
 import io.harness.cdng.environment.filters.FilterYaml;
 import io.harness.cdng.environment.yaml.EnvironmentsYaml;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
+import io.harness.pms.yaml.SkipAutoEvaluation;
 
 import java.util.List;
 import javax.validation.constraints.NotNull;
@@ -37,8 +38,8 @@ public class ClusterStepParameters implements StepParameters {
   private boolean deployToAllEnvs;
   @Singular private List<EnvClusterRefs> envClusterRefs;
   List<FilterYaml> filters;
-  EnvironmentGroupYaml environmentGroupYaml;
-  EnvironmentsYaml environmentsYaml;
+  @SkipAutoEvaluation EnvironmentGroupYaml environmentGroupYaml;
+  @SkipAutoEvaluation EnvironmentsYaml environmentsYaml;
 
   public static ClusterStepParameters WithEnvGroup(@NotNull Metadata envGroup) {
     return ClusterStepParameters.builder()

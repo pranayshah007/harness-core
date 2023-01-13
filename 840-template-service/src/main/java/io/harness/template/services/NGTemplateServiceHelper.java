@@ -566,12 +566,13 @@ public class NGTemplateServiceHelper {
   }
 
   public boolean deleteTemplate(String accountId, String orgIdentifier, String projectIdentifier,
-      String templateIdentifier, TemplateEntity templateToDelete, String versionLabel, String comments) {
+      String templateIdentifier, TemplateEntity templateToDelete, String versionLabel, String comments,
+      boolean forceDelete) {
     try {
       if (isOldGitSync(templateToDelete)) {
-        templateRepository.hardDeleteTemplateForOldGitSync(templateToDelete, comments);
+        templateRepository.hardDeleteTemplateForOldGitSync(templateToDelete, comments, forceDelete);
       } else {
-        templateRepository.deleteTemplate(templateToDelete, comments);
+        templateRepository.deleteTemplate(templateToDelete, comments, forceDelete);
       }
       return true;
     } catch (Exception e) {

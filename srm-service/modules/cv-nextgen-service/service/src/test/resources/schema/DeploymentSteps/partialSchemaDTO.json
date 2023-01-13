@@ -504,6 +504,22 @@
           ],
           "$schema": "http://json-schema.org/draft-07/schema#"
         },
+        "InputSetValidator": {
+          "type": "object",
+          "properties": {
+            "parameters": {
+              "type": "string"
+            },
+            "validatorType": {
+              "type": "string",
+              "enum": [
+                "ALLOWED_VALUES",
+                "REGEX"
+              ]
+            }
+          },
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
         "JsonNode": {
           "type": "object",
           "$schema": "http://json-schema.org/draft-07/schema#"
@@ -768,6 +784,72 @@
           },
           "$schema": "http://json-schema.org/draft-07/schema#"
         },
+        "ParameterField": {
+          "type": "object",
+          "properties": {
+            "defaultValue": {
+              "type": "object"
+            },
+            "executionInput": {
+              "type": "boolean"
+            },
+            "expression": {
+              "type": "boolean"
+            },
+            "expressionValue": {
+              "type": "string"
+            },
+            "inputSetValidator": {
+              "$ref": "#/definitions/cvng/InputSetValidator"
+            },
+            "jsonResponseField": {
+              "type": "boolean"
+            },
+            "responseField": {
+              "type": "string"
+            },
+            "typeString": {
+              "type": "boolean"
+            },
+            "value": {
+              "type": "object"
+            }
+          },
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "ParameterFieldMatrixConfigInterface": {
+          "type": "object",
+          "properties": {
+            "defaultValue": {
+              "$ref": "#/definitions/cvng/MatrixConfigInterface"
+            },
+            "executionInput": {
+              "type": "boolean"
+            },
+            "expression": {
+              "type": "boolean"
+            },
+            "expressionValue": {
+              "type": "string"
+            },
+            "inputSetValidator": {
+              "$ref": "#/definitions/cvng/InputSetValidator"
+            },
+            "jsonResponseField": {
+              "type": "boolean"
+            },
+            "responseField": {
+              "type": "string"
+            },
+            "typeString": {
+              "type": "boolean"
+            },
+            "value": {
+              "$ref": "#/definitions/cvng/MatrixConfigInterface"
+            }
+          },
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
         "PipelineRollbackFailureActionConfig": {
           "allOf": [
             {
@@ -955,7 +1037,16 @@
           "type": "object",
           "properties": {
             "matrix": {
-              "$ref": "#/definitions/cvng/MatrixConfigInterface"
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/cvng/ParameterFieldMatrixConfigInterface"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
             },
             "parallelism": {
               "oneOf": [

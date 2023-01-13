@@ -11,7 +11,9 @@ import io.harness.cvng.analysis.beans.DeploymentTimeSeriesAnalysisDTO;
 import io.harness.cvng.analysis.beans.Risk;
 import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.ThresholdConfigType;
+import io.harness.cvng.beans.TimeSeriesCustomThresholdActions;
 import io.harness.cvng.beans.TimeSeriesMetricType;
+import io.harness.cvng.beans.TimeSeriesThresholdActionType;
 import io.harness.cvng.beans.TimeSeriesThresholdCriteria;
 import io.harness.cvng.cdng.beans.v2.AnalysedDeploymentTestDataNode;
 import io.harness.cvng.cdng.beans.v2.AnalysisReason;
@@ -88,10 +90,13 @@ public class VerifyStepMetricsAnalysisUtils {
     // TODO: Add thresholdIdentifier once LE provides threshold details.
     return MetricThreshold.builder()
         .thresholdType(MetricThresholdActionType.getMetricThresholdActionType(timeSeriesThreshold.getAction()))
-        .action(
-            MetricCustomThresholdActions.getMetricCustomThresholdActions(timeSeriesThreshold.getCriteria().getAction()))
+        .action(MetricCustomThresholdActions.getMetricCustomThresholdActions(
+            timeSeriesThreshold.getAction().equals(TimeSeriesThresholdActionType.IGNORE)
+                ? TimeSeriesCustomThresholdActions.IGNORE
+                : timeSeriesThreshold.getCriteria().getAction()))
         .criteria(getMetricThresholdCriteriafromTimeSeriesThresholdCriteria(timeSeriesThreshold.getCriteria()))
         .isUserDefined(ThresholdConfigType.USER_DEFINED == timeSeriesThreshold.getThresholdConfigType())
+        .id(timeSeriesThreshold.getUuid())
         .build();
   }
 
@@ -108,7 +113,6 @@ public class VerifyStepMetricsAnalysisUtils {
       DeploymentTimeSeriesAnalysisDTO.HostData hostData) {
     ControlDataType controlDataType =
         Objects.isNull(hostData.getNearestControlHost()) ? ControlDataType.AVERAGE : ControlDataType.MINIMUM_DEVIATION;
-    // TODO: Add appliedThresholds[], metric timestamp data once LE is able to provide that info.
     return AnalysedDeploymentTestDataNode.builder()
         .nodeIdentifier(hostData.getHostName().orElse(null))
         .analysisResult(AnalysisResult.fromRisk(hostData.getRisk()))
@@ -117,6 +121,7 @@ public class VerifyStepMetricsAnalysisUtils {
         .controlNodeIdentifier(hostData.getNearestControlHost())
         .controlData(getMetricValuesFromRawValues(hostData.getControlData()))
         .testData(getMetricValuesFromRawValues(hostData.getTestData()))
+        .appliedThresholds(hostData.getAppliedThresholdIds())
         .build();
   }
 

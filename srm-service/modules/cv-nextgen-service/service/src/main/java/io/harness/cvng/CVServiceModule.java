@@ -404,6 +404,7 @@ import io.harness.cvng.verificationjob.services.impl.VerificationJobInstanceServ
 import io.harness.enforcement.client.EnforcementClientModule;
 import io.harness.eventsframework.EventsFrameworkMetadataConstants;
 import io.harness.govern.ProviderMethodInterceptor;
+import io.harness.licensing.remote.NgLicenseHttpClientModule;
 import io.harness.licensing.usage.interfaces.LicenseUsageInterface;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.mongo.MongoPersistence;
@@ -881,6 +882,9 @@ public class CVServiceModule extends AbstractModule {
     bind(GraphDataService.class).to(GraphDataServiceImpl.class);
     bind(DowntimeService.class).to(DowntimeServiceImpl.class);
     bind(EntityUnavailabilityStatusesService.class).to(EntityUnavailabilityStatusesServiceImpl.class);
+    install(NgLicenseHttpClientModule.getInstance(verificationConfiguration.getNgManagerClientConfig(),
+        verificationConfiguration.getNgManagerServiceSecret(), CV_NEXT_GEN.getServiceId()));
+
     MapBinder<ChangeSourceType, ChangeSourceSpecTransformer> changeSourceTypeChangeSourceSpecTransformerMapBinder =
         MapBinder.newMapBinder(binder(), ChangeSourceType.class, ChangeSourceSpecTransformer.class);
     changeSourceTypeChangeSourceSpecTransformerMapBinder.addBinding(ChangeSourceType.HARNESS_CD)

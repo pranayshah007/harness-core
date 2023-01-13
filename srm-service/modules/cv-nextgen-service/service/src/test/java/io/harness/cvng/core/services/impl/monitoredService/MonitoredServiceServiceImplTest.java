@@ -26,14 +26,19 @@ import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CvNextGenTestBase;
+import io.harness.ModuleType;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.CVNGTestConstants;
@@ -135,8 +140,15 @@ import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveS
 import io.harness.enforcement.client.services.EnforcementClientService;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.licensing.Edition;
+import io.harness.licensing.LicenseStatus;
+import io.harness.licensing.beans.modules.AccountLicenseDTO;
+import io.harness.licensing.beans.modules.ModuleLicenseDTO;
+import io.harness.licensing.beans.modules.SRMModuleLicenseDTO;
+import io.harness.licensing.remote.NgLicenseHttpClient;
 import io.harness.lock.PersistentLocker;
 import io.harness.ng.beans.PageResponse;
+import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.environment.dto.EnvironmentResponse;
 import io.harness.ng.core.mapper.TagMapper;
 import io.harness.notification.notificationclient.NotificationResultWithoutStatus;
@@ -174,8 +186,12 @@ import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.stubbing.Answer;
+import retrofit2.Call;
+import retrofit2.Response;
 
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
@@ -200,6 +216,8 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
   @Mock private PersistentLocker mockedPersistentLocker;
   @Mock private EnforcementClientService enforcementClientService;
   @Mock private FeatureFlagService featureFlagService;
+
+  @Mock private NgLicenseHttpClient ngLicenseHttpClient;
 
   private BuilderFactory builderFactory;
   String healthSourceName;
@@ -269,6 +287,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     FieldUtils.writeField(monitoredServiceService, "heatMapService", heatMapService, true);
     FieldUtils.writeField(monitoredServiceService, "notificationClient", notificationClient, true);
     FieldUtils.writeField(monitoredServiceService, "featureFlagService", featureFlagService, true);
+    FieldUtils.writeField(monitoredServiceService, "ngLicenseHttpClient", ngLicenseHttpClient, true);
   }
 
   @Test
@@ -1200,9 +1219,9 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     monitoredServiceListItemDTOS = monitoredServiceListItemDTOS.stream()
                                        .sorted(Comparator.comparing(MonitoredServiceListItemDTO::getIdentifier))
                                        .collect(toList());
-    assertThat(monitoredServiceListItemDTOS.get(0).isServiceLicenseEnabled()).isEqualTo(true);
-    assertThat(monitoredServiceListItemDTOS.get(1).isServiceLicenseEnabled()).isEqualTo(true);
-    assertThat(monitoredServiceListItemDTOS.get(2).isServiceLicenseEnabled()).isEqualTo(false);
+    assertThat(monitoredServiceListItemDTOS.get(0).isServiceMonitoringEnabled()).isEqualTo(true);
+    assertThat(monitoredServiceListItemDTOS.get(1).isServiceMonitoringEnabled()).isEqualTo(true);
+    assertThat(monitoredServiceListItemDTOS.get(2).isServiceMonitoringEnabled()).isEqualTo(false);
   }
 
   @Test
@@ -1229,10 +1248,10 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     monitoredServiceListItemDTOS = monitoredServiceListItemDTOS.stream()
                                        .sorted(Comparator.comparing(MonitoredServiceListItemDTO::getIdentifier))
                                        .collect(toList());
-    assertThat(monitoredServiceListItemDTOS.get(0).isServiceLicenseEnabled()).isEqualTo(true);
-    assertThat(monitoredServiceListItemDTOS.get(1).isServiceLicenseEnabled()).isEqualTo(true);
-    assertThat(monitoredServiceListItemDTOS.get(2).isServiceLicenseEnabled()).isEqualTo(false);
-    assertThat(monitoredServiceListItemDTOS.get(3).isServiceLicenseEnabled()).isEqualTo(true);
+    assertThat(monitoredServiceListItemDTOS.get(0).isServiceMonitoringEnabled()).isEqualTo(true);
+    assertThat(monitoredServiceListItemDTOS.get(1).isServiceMonitoringEnabled()).isEqualTo(true);
+    assertThat(monitoredServiceListItemDTOS.get(2).isServiceMonitoringEnabled()).isEqualTo(false);
+    assertThat(monitoredServiceListItemDTOS.get(3).isServiceMonitoringEnabled()).isEqualTo(true);
   }
 
   @Test
@@ -1486,6 +1505,103 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     updatedMonitoredService = getMonitoredService(monitoredServiceIdentifier);
     assertThat(updatedMonitoredService.isEnabled()).isTrue();
     getCVConfigs(updatedMonitoredService).forEach(cvConfig -> assertThat(cvConfig.isEnabled()).isTrue());
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testSetHealthMonitoringFlag_withLicense() {
+    when(ngLicenseHttpClient.getAccountLicensesDTO(Mockito.any()))
+        .thenAnswer((Answer<Call<ResponseDTO<AccountLicenseDTO>>>) invocation -> {
+          Call<ResponseDTO<AccountLicenseDTO>> call = Mockito.mock(Call.class);
+          Map<ModuleType, List<ModuleLicenseDTO>> testLicenses = new HashMap<>();
+          List<ModuleLicenseDTO> srmModuleLicenseDTOS = new ArrayList<>();
+          srmModuleLicenseDTOS.add(SRMModuleLicenseDTO.builder()
+                                       .numberOfServices(5)
+                                       .moduleType(ModuleType.SRM)
+                                       .edition(Edition.FREE)
+                                       .status(LicenseStatus.ACTIVE)
+                                       .build());
+          testLicenses.put(ModuleType.SRM, srmModuleLicenseDTOS);
+          when(call.execute())
+              .thenReturn(Response.success(
+                  ResponseDTO.newResponse(AccountLicenseDTO.builder().allModuleLicenses(testLicenses).build())));
+          when(call.clone()).thenReturn(null);
+          return call;
+        });
+    when(featureFlagService.isFeatureFlagEnabled(Mockito.any(), Mockito.any())).thenReturn(true);
+    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTO();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    monitoredServiceService.setHealthMonitoringFlag(
+        builderFactory.getContext().getProjectParams(), monitoredServiceIdentifier, false);
+    MonitoredService updatedMonitoredService = getMonitoredService(monitoredServiceIdentifier);
+    getCVConfigs(updatedMonitoredService).forEach(cvConfig -> assertThat(cvConfig.isEnabled()).isFalse());
+    assertThat(updatedMonitoredService.isEnabled()).isFalse();
+    monitoredServiceService.setHealthMonitoringFlag(
+        builderFactory.getContext().getProjectParams(), monitoredServiceIdentifier, true);
+    updatedMonitoredService = getMonitoredService(monitoredServiceIdentifier);
+    assertThat(updatedMonitoredService.isEnabled()).isTrue();
+    getCVConfigs(updatedMonitoredService).forEach(cvConfig -> assertThat(cvConfig.isEnabled()).isTrue());
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testSetHealthMonitoringFlag_withOnlyFeatureFlag() {
+    when(ngLicenseHttpClient.getAccountLicensesDTO(Mockito.any()))
+        .thenAnswer((Answer<Call<ResponseDTO<AccountLicenseDTO>>>) invocation -> {
+          Call<ResponseDTO<AccountLicenseDTO>> call = Mockito.mock(Call.class);
+          Map<ModuleType, List<ModuleLicenseDTO>> testLicenses = new HashMap<>();
+          testLicenses.put(ModuleType.SRM, new ArrayList<>());
+          when(call.execute())
+              .thenReturn(Response.success(
+                  ResponseDTO.newResponse(AccountLicenseDTO.builder().allModuleLicenses(testLicenses).build())));
+          return call;
+        });
+    when(featureFlagService.isFeatureFlagEnabled(Mockito.any(), Mockito.any())).thenReturn(true);
+    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTO();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    monitoredServiceService.setHealthMonitoringFlag(
+        builderFactory.getContext().getProjectParams(), monitoredServiceIdentifier, false);
+    MonitoredService updatedMonitoredService = getMonitoredService(monitoredServiceIdentifier);
+    getCVConfigs(updatedMonitoredService).forEach(cvConfig -> assertThat(cvConfig.isEnabled()).isFalse());
+    assertThat(updatedMonitoredService.isEnabled()).isFalse();
+    monitoredServiceService.setHealthMonitoringFlag(
+        builderFactory.getContext().getProjectParams(), monitoredServiceIdentifier, true);
+    updatedMonitoredService = getMonitoredService(monitoredServiceIdentifier);
+    assertThat(updatedMonitoredService.isEnabled()).isTrue();
+    getCVConfigs(updatedMonitoredService).forEach(cvConfig -> assertThat(cvConfig.isEnabled()).isTrue());
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testSetHealthMonitoringFlag_withInvalidSRMAccess() {
+    when(ngLicenseHttpClient.getAccountLicensesDTO(Mockito.any()))
+        .thenAnswer((Answer<Call<ResponseDTO<AccountLicenseDTO>>>) invocation -> {
+          Call<ResponseDTO<AccountLicenseDTO>> call = Mockito.mock(Call.class);
+          Map<ModuleType, List<ModuleLicenseDTO>> testLicenses = new HashMap<>();
+          testLicenses.put(ModuleType.SRM, new ArrayList<>());
+          when(call.execute())
+              .thenReturn(Response.success(
+                  ResponseDTO.newResponse(AccountLicenseDTO.builder().allModuleLicenses(testLicenses).build())));
+          return call;
+        });
+    when(featureFlagService.isFeatureFlagEnabled(Mockito.any(), Mockito.any())).thenReturn(true);
+    when(featureFlagService.isFeatureFlagEnabled(Mockito.any(), eq(FeatureName.CVNG_ENABLED.name()))).thenReturn(false);
+    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTO();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    monitoredServiceService.setHealthMonitoringFlag(
+        builderFactory.getContext().getProjectParams(), monitoredServiceIdentifier, false);
+    MonitoredService updatedMonitoredService = getMonitoredService(monitoredServiceIdentifier);
+    getCVConfigs(updatedMonitoredService).forEach(cvConfig -> assertThat(cvConfig.isEnabled()).isFalse());
+    assertThat(updatedMonitoredService.isEnabled()).isFalse();
+    try {
+      monitoredServiceService.setHealthMonitoringFlag(
+          builderFactory.getContext().getProjectParams(), monitoredServiceIdentifier, true);
+    } catch (Exception e) {
+      assertThat(e.getMessage()).isEqualTo("Invalid License, Please Contact Harness Support");
+    }
   }
 
   @Test

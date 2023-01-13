@@ -15,7 +15,7 @@ import io.harness.data.validator.EntityIdentifier;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.annotations.ApiModel;
 import java.util.List;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -26,7 +26,13 @@ import org.hibernate.validator.constraints.NotEmpty;
 @Data
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Schema(name = "HealthSource", description = "This is the Health Source entity defined in Harness")
+@ApiModel(description = "This is the Health Source entity defined in Harness",
+    subTypes = {AppDynamicsHealthSourceSpec.class, NewRelicHealthSourceSpec.class, StackdriverLogHealthSourceSpec.class,
+        SplunkHealthSourceSpec.class, PrometheusHealthSourceSpec.class, StackdriverMetricHealthSourceSpec.class,
+        DatadogMetricHealthSourceSpec.class, DatadogLogHealthSourceSpec.class, DynatraceHealthSourceSpec.class,
+        ErrorTrackingHealthSourceSpec.class, CustomHealthSourceMetricSpec.class, CustomHealthSourceLogSpec.class,
+        SplunkMetricHealthSourceSpec.class, ELKHealthSourceSpec.class, CloudWatchMetricsHealthSourceSpec.class,
+        AwsPrometheusHealthSourceSpec.class, NextGenHealthSourceSpec.class})
 public abstract class HealthSourceSpec {
   @NotEmpty @EntityIdentifier(allowScoped = true) String connectorRef;
 

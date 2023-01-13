@@ -46,8 +46,8 @@ public class NotifyResponseCleanupHelper {
 
     List<String> deleteResponses = new ArrayList<>();
     List<String> keys = persistenceWrapper.fetchNotifyResponseKeys(limit);
-    boolean needHandling = false;
     for (String key : keys) {
+      boolean needHandling = false;
       List<WaitInstance> waitInstances = persistenceWrapper.fetchWaitInstances(key);
 
       if (isEmpty(waitInstances)) {
@@ -67,7 +67,6 @@ public class NotifyResponseCleanupHelper {
           needHandling = true;
         }
       }
-
       if (needHandling) {
         waitNotifyEngine.handleNotifyResponse(key);
       }

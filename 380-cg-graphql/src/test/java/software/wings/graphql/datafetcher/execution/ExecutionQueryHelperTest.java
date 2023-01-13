@@ -9,18 +9,29 @@ package software.wings.graphql.datafetcher.execution;
 
 import static io.harness.rule.OwnerRule.DEEPAK_PUTHRAYA;
 import static io.harness.rule.OwnerRule.INDER;
+import static io.harness.rule.OwnerRule.LUCAS_SALES;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.EntityType;
+import software.wings.beans.Service;
 import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
+import software.wings.dl.WingsMongoPersistence;
 import software.wings.graphql.datafetcher.DataFetcherUtils;
 import software.wings.graphql.datafetcher.tag.TagHelper;
 import software.wings.graphql.schema.type.aggregation.QLIdFilter;
@@ -37,6 +48,7 @@ import com.google.inject.Inject;
 import dev.morphia.query.FieldEnd;
 import dev.morphia.query.Query;
 import java.util.Collections;
+import java.util.List;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
@@ -47,12 +59,41 @@ import org.mockito.Mockito;
 public class ExecutionQueryHelperTest extends WingsBaseTest {
   @Mock private DataFetcherUtils utils;
   @Mock private TagHelper tagHelper;
+  @Mock private FeatureFlagService featureFlagService;
+  @Mock private WingsMongoPersistence wingsMongoPersistence;
   @Inject @InjectMocks private ExecutionQueryHelper executionQueryHelper;
+
+  @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void shouldSetQueryFiltersCorrectly_optimizationFFEnabled() {
+    doReturn(true)
+        .when(featureFlagService)
+        .isEnabled(eq(FeatureName.SPG_OPTIMIZE_WORKFLOW_EXECUTIONS_LISTING_GRAPHQL), any());
+    QLBaseExecutionFilter filter = new QLBaseExecutionFilter();
+
+    Query query = mock(Query.class);
+    FieldEnd fieldEnd = Mockito.mock(FieldEnd.class);
+    Mockito.when(query.field(Matchers.any())).thenReturn(fieldEnd);
+    doReturn(query).when(wingsMongoPersistence).createAnalyticsQuery(any());
+    doReturn(query).when(query).project(anyString(), anyBoolean());
+    doReturn(List.of(Service.builder().appId("appId").build())).when(query).asList();
+    filter.setService(QLIdFilter.builder().operator(QLIdOperator.EQUALS).values(new String[] {"SERVICE"}).build());
+
+    Query query2 = Mockito.mock(Query.class);
+    FieldEnd fieldEnd2 = Mockito.mock(FieldEnd.class);
+    Mockito.when(query2.field(Matchers.any())).thenReturn(fieldEnd2);
+    executionQueryHelper.setBaseQuery(Collections.singletonList(filter), query2, "ACCOUNT_ID");
+    verify(query2, Mockito.times(1)).field(WorkflowExecutionKeys.appId);
+  }
 
   @Test
   @Owner(developers = DEEPAK_PUTHRAYA)
   @Category(UnitTests.class)
   public void shouldSetQueryFiltersCorrectlyQLBaseExecutionFilter() {
+    doReturn(false)
+        .when(featureFlagService)
+        .isEnabled(eq(FeatureName.SPG_OPTIMIZE_WORKFLOW_EXECUTIONS_LISTING_GRAPHQL), any());
     QLBaseExecutionFilter filter = new QLBaseExecutionFilter();
     filter.setExecution(QLIdFilter.builder().operator(QLIdOperator.EQUALS).values(new String[] {"EXEC"}).build());
     filter.setApplication(QLIdFilter.builder().operator(QLIdOperator.EQUALS).values(new String[] {"APP"}).build());
@@ -95,7 +136,7 @@ public class ExecutionQueryHelperTest extends WingsBaseTest {
     Mockito.verify(query, Mockito.times(1)).field(WorkflowExecutionKeys.deploymentTriggerId);
     Mockito.verify(query, Mockito.times(1)).field(WorkflowExecutionKeys.triggeredByID);
     Mockito.verify(query, Mockito.times(1)).field(WorkflowExecutionKeys.createdAt);
-    Mockito.verify(query, Mockito.times(1)).field(WorkflowExecutionKeys.envIds);
+    Mockito.verify(query, Mockito.times(2)).field(WorkflowExecutionKeys.envIds);
     Mockito.verify(query, Mockito.never()).field(WorkflowExecutionKeys.pipelineExecutionId);
     Mockito.verify(query, Mockito.times(1)).field(WorkflowExecutionKeys.executionArgs_artifacts_buildNo);
     Mockito.verify(query, Mockito.times(1)).field(WorkflowExecutionKeys.executionArgs_helmCharts_displayName);
@@ -105,6 +146,9 @@ public class ExecutionQueryHelperTest extends WingsBaseTest {
   @Owner(developers = DEEPAK_PUTHRAYA)
   @Category(UnitTests.class)
   public void shouldSetQueryFiltersCorrectlyQLExecutionFilter() {
+    doReturn(false)
+        .when(featureFlagService)
+        .isEnabled(eq(FeatureName.SPG_OPTIMIZE_WORKFLOW_EXECUTIONS_LISTING_GRAPHQL), any());
     QLExecutionFilter filter = new QLExecutionFilter();
     filter.setExecution(QLIdFilter.builder().operator(QLIdOperator.EQUALS).values(new String[] {"EXEC"}).build());
     filter.setApplication(QLIdFilter.builder().operator(QLIdOperator.EQUALS).values(new String[] {"APP"}).build());
@@ -149,7 +193,7 @@ public class ExecutionQueryHelperTest extends WingsBaseTest {
     Mockito.verify(query, Mockito.times(1)).field(WorkflowExecutionKeys.deploymentTriggerId);
     Mockito.verify(query, Mockito.times(1)).field(WorkflowExecutionKeys.triggeredByID);
     Mockito.verify(query, Mockito.times(1)).field(WorkflowExecutionKeys.createdAt);
-    Mockito.verify(query, Mockito.times(1)).field(WorkflowExecutionKeys.envIds);
+    Mockito.verify(query, Mockito.times(2)).field(WorkflowExecutionKeys.envIds);
     Mockito.verify(query, Mockito.times(1)).field(WorkflowExecutionKeys.pipelineExecutionId);
     Mockito.verify(utils, Mockito.times(1))
         .setIdFilter(eq(query.field(WorkflowExecutionKeys.pipelineExecutionId)),

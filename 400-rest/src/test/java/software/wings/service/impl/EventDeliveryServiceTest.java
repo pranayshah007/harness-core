@@ -155,7 +155,7 @@ public class EventDeliveryServiceTest extends WingsBaseTest {
     // We capture the argument and modify the waitId & expressionFunctorToken because the their values are auto
     // generated We are making those values constant & then proceed to compare
     ArgumentCaptor<DelegateTask> argument = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService, times(1)).queueTask(argument.capture());
+    verify(delegateService, times(1)).queueTaskV2(argument.capture());
     DelegateTask capturedValue = argument.getValue();
     capturedValue.setWaitId(WAIT_ID);
     capturedValue.getData().setExpressionFunctorToken(0);
@@ -182,7 +182,7 @@ public class EventDeliveryServiceTest extends WingsBaseTest {
                        .build();
     eventDeliveryService.deliveryEvent(event2, PERMIT_ID);
 
-    verify(delegateService, never()).queueTask(any());
+    verify(delegateService, never()).queueTaskV2(any());
     verify(eventService, times(2)).updateEventStatus(anyString(), eq(EventStatus.SKIPPED), any());
   }
 }

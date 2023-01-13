@@ -16,6 +16,7 @@ import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.enforcement.constants.RestrictionType;
 import io.harness.enforcement.exceptions.EnforcementServiceConnectionException;
 import io.harness.enforcement.exceptions.WrongFeatureStateException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
 import io.harness.plancreator.strategy.MatrixConfig;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -77,26 +78,31 @@ public class StrategyStep extends ChildrenExecutableWithRollbackAndRbac<Strategy
     } catch (EnforcementServiceConnectionException | WrongFeatureStateException e) {
       log.warn("Got exception while taking to enforcement service, taking default limit of 100 for maxConcurrency");
     }
-    if (stepParameters.getStrategyConfig().getMatrixConfig() != null) {
-      int maxConcurrency = 0;
-      if (!ParameterField.isBlank(
-              ((MatrixConfig) stepParameters.getStrategyConfig().getMatrixConfig()).getMaxConcurrency())) {
-        maxConcurrency =
-            ((MatrixConfig) stepParameters.getStrategyConfig().getMatrixConfig()).getMaxConcurrency().getValue();
+    if (ParameterField.isNotNull(stepParameters.getStrategyConfig().getMatrixConfig())) {
+      if (stepParameters.getStrategyConfig().getMatrixConfig().isExpression()) {
+        throw new InvalidRequestException("Expression for matrix at runtime could not be resolved!");
+      } else {
+        int maxConcurrency = 0;
+        if (!ParameterField.isBlank(
+                ((MatrixConfig) stepParameters.getStrategyConfig().getMatrixConfig().getValue()).getMaxConcurrency())) {
+          maxConcurrency = ((MatrixConfig) stepParameters.getStrategyConfig().getMatrixConfig().getValue())
+                               .getMaxConcurrency()
+                               .getValue();
+        }
+        List<Child> children =
+            matrixConfigService.fetchChildren(stepParameters.getStrategyConfig(), stepParameters.getChildNodeId());
+        if (maxConcurrency == 0) {
+          maxConcurrency = children.size();
+        }
+        if (maxConcurrency > maxConcurrencyLimitBasedOnPlan) {
+          maxConcurrency = maxConcurrencyLimitBasedOnPlan;
+        }
+        return ChildrenExecutableResponse.newBuilder()
+            .addAllChildren(children)
+            .setMaxConcurrency(maxConcurrency)
+            .setShouldProceedIfFailed(shouldProceedIfFailed)
+            .build();
       }
-      List<Child> children =
-          matrixConfigService.fetchChildren(stepParameters.getStrategyConfig(), stepParameters.getChildNodeId());
-      if (maxConcurrency == 0) {
-        maxConcurrency = children.size();
-      }
-      if (maxConcurrency > maxConcurrencyLimitBasedOnPlan) {
-        maxConcurrency = maxConcurrencyLimitBasedOnPlan;
-      }
-      return ChildrenExecutableResponse.newBuilder()
-          .addAllChildren(children)
-          .setMaxConcurrency(maxConcurrency)
-          .setShouldProceedIfFailed(shouldProceedIfFailed)
-          .build();
     }
     if (stepParameters.getStrategyConfig().getRepeat() != null) {
       int maxConcurrency = 0;

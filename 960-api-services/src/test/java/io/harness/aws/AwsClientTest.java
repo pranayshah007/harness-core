@@ -22,6 +22,7 @@ import static org.powermock.api.mockito.PowerMockito.mock;
 import static org.powermock.api.mockito.PowerMockito.spy;
 
 import io.harness.CategoryTest;
+import io.harness.aws.util.AwsCallTracker;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 

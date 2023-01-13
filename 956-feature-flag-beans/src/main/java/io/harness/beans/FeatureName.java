@@ -30,6 +30,8 @@ public enum FeatureName {
   SPG_NG_GITHUB_WEBHOOK_AUTHENTICATION("Enables authentication for GitHub webhook triggers in NG", HarnessTeam.SPG),
   SPG_ALLOW_DISABLE_TRIGGERS("Allow disabling triggers at application level for CG", HarnessTeam.SPG),
   SPG_ALLOW_UI_JIRA_CUSTOM_DATETIME_FIELD("Enables backend parse custom field time of jira as the UI", HarnessTeam.SPG),
+  SPG_ALLOW_TEMPLATE_ON_NEXUS_ARTIFACT(
+      "Enables UI to use artifactID and groupID as template or static value", HarnessTeam.SPG),
   SPG_ALLOW_DISABLE_USER_GITCONFIG(
       "Allow disabling local delegate user's .gitconfig when running git commands", HarnessTeam.SPG),
   SPG_NEW_DEPLOYMENT_FREEZE_EXCLUSIONS(
@@ -83,7 +85,6 @@ public enum FeatureName {
   ENABLE_WINRM_ENV_VARIABLES,
   FF_PIPELINE,
   FF_GITSYNC,
-  NG_TEMPLATE_GITX,
   FFM_1513,
   FFM_1512,
   FFM_1827,
@@ -320,6 +321,7 @@ public enum FeatureName {
   SERVICE_DASHBOARD_V2,
   CDC_ENVIRONMENT_DASHBOARD_NG("New environment details dashboard is behind this", HarnessTeam.CDC),
   CDC_DASHBOARD_ENHANCEMENT_NG("New APIs added to send trend object in response for change rates", HarnessTeam.CDC),
+  CDC_SERVICE_DASHBOARD_REVAMP_NG("Service Dashboard Revamp is behind this FF", HarnessTeam.CDC),
   DEBEZIUM_ENABLED,
   TEMPLATE_SCHEMA_VALIDATION,
   YAML_APIS_GRANULAR_PERMISSION,
@@ -355,6 +357,7 @@ public enum FeatureName {
 
   STO_STEP_PALETTE_V1("Enable first iteration of individual steps for STO", HarnessTeam.STO),
   STO_STEP_PALETTE_V2("Enable second iteration of individual steps for STO", HarnessTeam.STO),
+  STO_JIRA_INTEGRATION("Enable Jira integration for STO", HarnessTeam.STO),
   HOSTED_BUILDS("Used to enabled Hosted builds in paid accounts", HarnessTeam.CI),
   CD_ONBOARDING_ENABLED,
   SPOT_ELASTIGROUP_NG("Enables Spot Elastigroup implementation on NG", HarnessTeam.CDP),
@@ -398,6 +401,7 @@ public enum FeatureName {
   UPDATE_EMAILS_VIA_SCIM("Will enable updating emails in Harness via SCIM", HarnessTeam.PL),
   ELK_HEALTH_SOURCE("Will enable ELK health source in SRM", HarnessTeam.CV),
   SRM_COMPOSITE_SLO("Flag to start creating composite SLOs", HarnessTeam.CV),
+  SRM_DOWNTIME("Flag to start creating downtime", HarnessTeam.CV),
   CDP_USE_K8S_DECLARATIVE_ROLLBACK(
       "CG: Enable declarative rollback instead of imperative rollback for K8s, along with a new release history implementation. Release history is stored in individual secrets, instead of being consolidated and stored in a single configmap/secret. Old manifests are re-applied using `kubectl apply` (declarative rollback) instead of performing `kubectl rollout undo` (imperative rollback). See Jira ticket for more details: https://harness.atlassian.net/browse/CDS-2993",
       HarnessTeam.CDP),
@@ -445,6 +449,8 @@ public enum FeatureName {
   SPG_USE_NEW_METADATA("To use new metadata endpoint for jira server version greater than 9.0", HarnessTeam.SPG),
   SPG_OPTIMIZE_WORKFLOW_EXECUTIONS_LISTING(
       "Make the workflowExecutions listing better providing appId for children ids", HarnessTeam.SPG),
+  SPG_OPTIMIZE_WORKFLOW_EXECUTIONS_LISTING_GRAPHQL(
+      "Make the workflowExecutions listing better providing appId for children ids on graphql", HarnessTeam.SPG),
   CD_TRIGGER_CATALOG("Enables UI for Trigger catalog for Nexus ", HarnessTeam.CDC),
   SRM_HOST_SAMPLING_ENABLE("Enables Host Sampling feature for Learning Engine.", HarnessTeam.CV),
   SRM_LOG_HOST_SAMPLING_ENABLE("Enables Host Sampling for log for Learning Engine.", HarnessTeam.CV),
@@ -528,6 +534,7 @@ public enum FeatureName {
   PIE_NG_GITX_CACHING("FF to enable caching on new git experience", HarnessTeam.PIPELINE),
   INSTANT_DELEGATE_DOWN_ALERT("FF to instantly alert when delegates are down", HarnessTeam.SPG),
   QUEUE_CI_EXECUTIONS("FF to enable queueing in CI builds", HarnessTeam.CI),
+  QUEUE_CI_EXECUTIONS_CONCURRENCY("FF to enable queueing in CI builds", HarnessTeam.CI),
   WINRM_SCRIPT_COMMAND_SPLIT_NG(
       "Enables the new way of how to copy powershell/winrm script commands content to file on remote. (Copy is done in chunks of 6KB) ",
       HarnessTeam.CDP),
@@ -558,7 +565,9 @@ public enum FeatureName {
   CDP_PUBLISH_INSTANCE_STATS_FOR_ENV_NG(
       "Publish instance stats at environment granularity in NG. PM Rohan", HarnessTeam.CDP),
   DEPLOYMENT_RECONCILIATION_LOGIC_QUERY_OPTIMIZATIONS(
-      "Used to modify logic for reconciliation queries", HarnessTeam.CDC);
+      "Used to modify logic for reconciliation queries", HarnessTeam.CDC),
+  SPG_MODULE_VERSION_INFO("Enable version information on module level", HarnessTeam.SPG),
+  CIE_HOSTED_VMS_WINDOWS("FF for enabling hosted builds for windows amd64", HarnessTeam.CI);
 
   @Deprecated
   FeatureName() {

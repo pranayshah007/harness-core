@@ -84,8 +84,9 @@ def run_analysis_per_module(
         checkstyle_srcs = ["*"],
         pmd_srcs = ["*"],
         sonarqube_srcs = ["*.java"],
+        test_only = False,
         run_duplicated = True):
-    run_analysis(checkstyle_srcs = checkstyle_srcs, pmd_srcs = pmd_srcs, sonarqube_srcs = sonarqube_srcs, run_duplicated = run_duplicated)
+    run_analysis(checkstyle_srcs = checkstyle_srcs, pmd_srcs = pmd_srcs, sonarqube_srcs = sonarqube_srcs, run_pmd = not test_only, run_sonar = not test_only, run_duplicated = not test_only and run_duplicated)
 
 def run_analysis(
         checkstyle_srcs = ["src/**/*"],

@@ -161,6 +161,8 @@ ciExecutionServiceConfig:
     enterprise:
       defaultTotalExecutionCount: 100
       defaultMacExecutionCount: 10
+    overrideConfig:
+      - "kmpySmUISimoRrJL6NL73w:1:1"
   pvcDefaultStorageSize: 25600
   delegateServiceEndpointVariableValue: "delegate-service:8080"
   addonImage: harness/ci-addon:1.16.1

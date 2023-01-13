@@ -53,7 +53,5 @@ fi
 if [[ "${DEPLOY_MODE}" == "KUBERNETES" || "${DEPLOY_MODE}" == "KUBERNETES_ONPREM" || "${DEPLOY_VERSION}" == "COMMUNITY" ]]; then
     java $JAVA_OPTS -Dspring.config.location=/opt/harness/application.yml -jar $CAPSULE_JAR
 else
-    mkdir /opt/harness/logs/
-    touch /opt/harness/logs/audit-event-streaming.log
     java $JAVA_OPTS -Dspring.config.location=/opt/harness/application.yml -jar $CAPSULE_JAR  > /opt/harness/logs/audit-event-streaming.log 2>&1
 fi

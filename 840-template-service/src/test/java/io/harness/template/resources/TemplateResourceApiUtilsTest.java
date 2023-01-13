@@ -315,9 +315,10 @@ public class TemplateResourceApiUtilsTest extends CategoryTest {
   public void testDeleteTemplate() {
     doReturn(true)
         .when(templateService)
-        .delete(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, null, "");
+        .delete(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, null, "", false);
     Response response = templateResourceApiUtils.deleteTemplate(
-        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, null);
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, null, false);
     assertEquals(response.getStatus(), Response.Status.NO_CONTENT.getStatusCode());
     verify(accessControlClient)
         .checkForAccessOrThrow(ResourceScope.of(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER),

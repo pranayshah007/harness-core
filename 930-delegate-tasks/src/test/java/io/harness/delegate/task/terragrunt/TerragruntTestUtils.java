@@ -18,10 +18,11 @@ import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.InlineFileConfig;
 import io.harness.delegate.beans.storeconfig.InlineStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
+import io.harness.delegate.beans.terragrunt.request.TerragruntApplyTaskParameters;
 import io.harness.delegate.beans.terragrunt.request.TerragruntCommandType;
+import io.harness.delegate.beans.terragrunt.request.TerragruntDestroyTaskParameters;
 import io.harness.delegate.beans.terragrunt.request.TerragruntPlanTaskParameters;
 import io.harness.delegate.beans.terragrunt.request.TerragruntRunConfiguration;
-import io.harness.delegate.beans.terragrunt.request.TerragruntTaskRunType;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.terragrunt.v2.TerragruntClientImpl;
 
@@ -41,18 +42,21 @@ public class TerragruntTestUtils {
   public static final String TG_WORKSPACE = "test-workspace";
   public static final String TG_TARGET = "test-target";
   public static final String TG_VAR_FILE_CONTENT = "test-varFileContent";
-  public static final String TG_VAR_FILE_NAME = "test-terragrunt-${UUID}.tfvars";
+  public static final String TG_VAR_FILE_NAME = "test-terragrunt-12345.tfvars";
   public static final String TG_STATE_ID = "test-stateId";
   public static final String TG_TF_PLAN_JSON = "test-tfPlanJson";
-  public static final String TG_BACKEND_FILE = "test-backendFile";
+  public static final String TG_BACKEND_FILE = "backendFileDirectory/test-backendFile.tfvars";
   public static final String TG_BACKEND_FILE_SOURCE_REF = "test-backendFileSourceRef";
   public static final String TG_CONFIG_FILE_SOURCE_REF = "test-configFileSourceRef";
   public static final String TG_WORKING_DIR = "workingDir/";
   public static final String TG_SCRIPT_DIR = "scriptDirectory/";
-  public static final String TG_VAR_FILES_DIR = "scriptDirectory/";
+  public static final String TG_VAR_FILES_DIR = "varFilesDirectory/";
+  public static final String TG_BE_FILES_DIR = "backendFileDirectory/";
+  public static final String TG_TEST_BASE_DIR = "/test-baseDir";
+
   public static final String TEST_TERRAFORM_VERSION = "1.3.6";
 
-  public TerragruntPlanTaskParameters createPlanTaskParameters() {
+  public TerragruntPlanTaskParameters createPlanTaskParameters(TerragruntRunConfiguration runConfiguration) {
     List<InlineFileConfig> files = new ArrayList<>();
     files.add(InlineFileConfig.builder().content(TG_VAR_FILE_CONTENT).name(TG_VAR_FILE_NAME).build());
     StoreDelegateConfig varFiles = InlineStoreDelegateConfig.builder().files(files).build();
@@ -67,9 +71,69 @@ public class TerragruntTestUtils {
         .accountId(ACCOUNT_ID)
         .timeoutInMillis(1000)
         .entityId(ENTITY_ID)
-        .runConfiguration(
-            TerragruntRunConfiguration.builder().runType(TerragruntTaskRunType.RUN_MODULE).path(TG_RUN_PATH).build())
-        .envVars(new HashMap<>())
+        .runConfiguration(runConfiguration)
+        .envVars(new HashMap<>() {
+          { put("TEST_ENV_VAR_K_1", "TEST_ENV_VAR_V_1"); }
+        })
+        .commandUnitsProgress(null)
+        .workspace(TG_WORKSPACE)
+        .targets(new ArrayList<>() {
+          { add(TG_TARGET); }
+        })
+        .encryptedDataDetailList(List.of(EncryptedDataDetail.builder().build()))
+        .varFiles(Collections.singletonList(varFiles))
+        .backendFilesStore(backendFileStore)
+        .configFilesStore(GitStoreDelegateConfig.builder().build())
+        .stateFileId("test-state-file-id")
+        .build();
+  }
+
+  public TerragruntApplyTaskParameters createApplyTaskParameters(TerragruntRunConfiguration runConfiguration) {
+    List<InlineFileConfig> files = new ArrayList<>();
+    files.add(InlineFileConfig.builder().content(TG_VAR_FILE_CONTENT).name(TG_VAR_FILE_NAME).build());
+    StoreDelegateConfig varFiles = InlineStoreDelegateConfig.builder().files(files).build();
+
+    List<InlineFileConfig> backendFiles = new ArrayList<>();
+    backendFiles.add(InlineFileConfig.builder().build());
+    StoreDelegateConfig backendFileStore = InlineStoreDelegateConfig.builder().files(backendFiles).build();
+
+    return TerragruntApplyTaskParameters.builder()
+        .accountId(ACCOUNT_ID)
+        .timeoutInMillis(1000)
+        .entityId(ENTITY_ID)
+        .runConfiguration(runConfiguration)
+        .envVars(new HashMap<>() {
+          { put("TEST_ENV_VAR_K_1", "TEST_ENV_VAR_V_1"); }
+        })
+        .commandUnitsProgress(null)
+        .workspace(TG_WORKSPACE)
+        .targets(new ArrayList<>() {
+          { add(TG_TARGET); }
+        })
+        .encryptedDataDetailList(List.of(EncryptedDataDetail.builder().build()))
+        .varFiles(Collections.singletonList(varFiles))
+        .backendFilesStore(backendFileStore)
+        .configFilesStore(GitStoreDelegateConfig.builder().build())
+        .build();
+  }
+
+  public TerragruntDestroyTaskParameters createDestroyTaskParameters(TerragruntRunConfiguration runConfiguration) {
+    List<InlineFileConfig> files = new ArrayList<>();
+    files.add(InlineFileConfig.builder().content(TG_VAR_FILE_CONTENT).name(TG_VAR_FILE_NAME).build());
+    StoreDelegateConfig varFiles = InlineStoreDelegateConfig.builder().files(files).build();
+
+    List<InlineFileConfig> backendFiles = new ArrayList<>();
+    backendFiles.add(InlineFileConfig.builder().build());
+    StoreDelegateConfig backendFileStore = InlineStoreDelegateConfig.builder().files(backendFiles).build();
+
+    return TerragruntDestroyTaskParameters.builder()
+        .accountId(ACCOUNT_ID)
+        .timeoutInMillis(1000)
+        .entityId(ENTITY_ID)
+        .runConfiguration(runConfiguration)
+        .envVars(new HashMap<>() {
+          { put("TEST_ENV_VAR_K_1", "TEST_ENV_VAR_V_1"); }
+        })
         .commandUnitsProgress(null)
         .workspace(TG_WORKSPACE)
         .targets(new ArrayList<>() {
@@ -89,10 +153,11 @@ public class TerragruntTestUtils {
         .varFilesSourceReference(new HashMap<>() {
           { put("test-varFileId-1", "test-ref1"); }
         })
+        .varFilesDirectory(TG_VAR_FILES_DIR)
+        .varFiles(List.of(TG_VAR_FILE_NAME))
         .configFilesSourceReference(TG_CONFIG_FILE_SOURCE_REF)
         .terragruntWorkingDirectory(TG_WORKING_DIR)
         .scriptDirectory(TG_SCRIPT_DIR)
-        .varFilesDirectory(TG_VAR_FILES_DIR)
         .client(TerragruntClientImpl.builder()
                     .terraformVersion(Version.parse(TEST_TERRAFORM_VERSION))
                     .cliHelper(cliHelper)
