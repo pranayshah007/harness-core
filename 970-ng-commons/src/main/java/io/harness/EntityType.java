@@ -506,10 +506,7 @@ public enum EntityType {
       EntityYamlRootNames.TAS_ROLLING_DEPLOY),
   @JsonProperty(EntityTypeConstants.TAS_ROLLING_ROLLBACK)
   TAS_ROLLING_ROLLBACK(ModuleType.CD, EntityTypeConstants.TAS_ROLLING_ROLLBACK, IdentifierRef.class,
-      EntityYamlRootNames.TAS_ROLLING_ROLLBACK),
-  @JsonProperty(EntityTypeConstants.ROUTE_MAPPING)
-  ROUTE_MAPPING(
-      ModuleType.CD, EntityTypeConstants.ROUTE_MAPPING, IdentifierRef.class, EntityYamlRootNames.ROUTE_MAPPING);
+      EntityYamlRootNames.TAS_ROLLING_ROLLBACK);
 
   private final ModuleType moduleType;
   String yamlName;

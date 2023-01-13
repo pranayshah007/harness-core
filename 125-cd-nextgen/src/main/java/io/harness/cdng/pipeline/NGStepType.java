@@ -238,9 +238,7 @@ public enum NGStepType {
       "Rolling Deploy", Arrays.asList(ServiceDefinitionType.TAS), "TAS", StepSpecTypeConstants.TAS_ROLLING_DEPLOY),
   @JsonProperty(StepSpecTypeConstants.TAS_ROLLING_ROLLBACK)
   TAS_ROLLING_ROLLBACK(
-      "Rolling Rollback", Arrays.asList(ServiceDefinitionType.TAS), "TAS", StepSpecTypeConstants.TAS_ROLLING_ROLLBACK),
-  @JsonProperty(StepSpecTypeConstants.ROUTE_MAPPING)
-  ROUTE_MAPPING("Route Mapping", Arrays.asList(ServiceDefinitionType.TAS), "TAS", StepSpecTypeConstants.ROUTE_MAPPING);
+      "Rolling Rollback", Arrays.asList(ServiceDefinitionType.TAS), "TAS", StepSpecTypeConstants.TAS_ROLLING_ROLLBACK); 
 
   private String displayName;
   private List<ServiceDefinitionType> serviceDefinitionTypes;

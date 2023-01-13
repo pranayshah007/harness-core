@@ -201,5 +201,4 @@ public interface EntityTypeConstants {
   String CCM_GOVERNANCE_RULE_AWS = "GovernanceRuleAWS";
   String TAS_ROLLING_DEPLOY = "TasRollingDeploy";
   String TAS_ROLLING_ROLLBACK = "TasRollingRollback";
-  String ROUTE_MAPPING = "RouteMapping";
 }

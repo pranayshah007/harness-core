@@ -190,5 +190,4 @@ public interface YamlTypes {
 
   String TAS_ROLLING_DEPLOY = StepSpecTypeConstants.TAS_ROLLING_DEPLOY;
   String TAS_ROLLING_ROLLBACK = StepSpecTypeConstants.TAS_ROLLING_ROLLBACK;
-  String ROUTE_MAPPING = StepSpecTypeConstants.ROUTE_MAPPING;
 }

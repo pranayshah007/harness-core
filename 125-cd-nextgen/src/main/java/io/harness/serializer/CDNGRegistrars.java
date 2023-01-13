@@ -79,7 +79,6 @@ import io.harness.cdng.tas.TasCommandStepNode;
 import io.harness.cdng.tas.TasRollbackStepNode;
 import io.harness.cdng.tas.TasRollingDeployStepNode;
 import io.harness.cdng.tas.TasRollingRollbackStepNode;
-import io.harness.cdng.tas.TasRouteMappingStepNode;
 import io.harness.cdng.tas.TasSwapRollbackStepNode;
 import io.harness.cdng.tas.TasSwapRoutesStepNode;
 import io.harness.morphia.MorphiaRegistrar;
