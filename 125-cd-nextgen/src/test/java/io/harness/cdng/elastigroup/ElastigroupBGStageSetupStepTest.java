@@ -28,6 +28,7 @@ import io.harness.cdng.infra.beans.ElastigroupInfrastructureOutcome;
 import io.harness.delegate.beans.elastigroup.ElastigroupSetupResult;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.task.elastigroup.request.ElastigroupSetupCommandRequest;
+import io.harness.delegate.task.elastigroup.response.ElastigroupPreFetchResponse;
 import io.harness.delegate.task.elastigroup.response.ElastigroupSetupResponse;
 import io.harness.delegate.task.elastigroup.response.SpotInstConfig;
 import io.harness.logging.CommandExecutionStatus;
@@ -36,6 +37,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
+import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
@@ -281,6 +283,52 @@ public class ElastigroupBGStageSetupStepTest extends CDNGTestBase {
     verify(elastigroupStepCommonHelper)
         .queueElastigroupTask(eq(stepParameters), any(), eq(anAmbiance()), eq(passThroughData), eq(true),
             eq(TaskType.ELASTIGROUP_BG_STAGE_SETUP_COMMAND_TASK_NG));
+  }
+
+  @Test
+  @Owner(developers = {FILIP})
+  @Category(UnitTests.class)
+  public void getStepParametersClassTest() {
+    assertThat(elastigroupSetupStep.getStepParametersClass()).isEqualTo(StepElementParameters.class);
+  }
+
+  @Test
+  @Owner(developers = {FILIP})
+  @Category(UnitTests.class)
+  public void executeNextLinkWithSecurityContextTest() throws Exception {
+    // Given
+    StepElementParameters stepElementParameters = StepElementParameters.builder().build();
+    StepInputPackage stepInputPackage = StepInputPackage.builder().build();
+    ElastigroupExecutionPassThroughData passThroughData = ElastigroupExecutionPassThroughData.builder().build();
+    ThrowingSupplier<ResponseData> responseDataThrowingSupplier = () -> ElastigroupPreFetchResponse.builder().build();
+
+    // When
+    elastigroupSetupStep.executeNextLinkWithSecurityContext(
+        anAmbiance(), stepElementParameters, stepInputPackage, passThroughData, responseDataThrowingSupplier);
+
+    // Then
+    verify(elastigroupStepCommonHelper)
+        .executeNextLink(eq(elastigroupSetupStep), eq(anAmbiance()), eq(stepElementParameters), eq(passThroughData),
+            eq(responseDataThrowingSupplier));
+  }
+
+  @Test
+  @Owner(developers = {FILIP})
+  @Category(UnitTests.class)
+  public void startChainLinkAfterRbacTest() {
+    // Given
+    StepElementParameters stepElementParameters = StepElementParameters.builder().build();
+    StepInputPackage stepInputPackage = StepInputPackage.builder().build();
+
+    // When
+    elastigroupSetupStep.startChainLinkAfterRbac(anAmbiance(), stepElementParameters, stepInputPackage);
+
+    // Then
+    ElastigroupExecutionPassThroughData passThroughData =
+        ElastigroupExecutionPassThroughData.builder().blueGreen(true).build();
+
+    verify(elastigroupStepCommonHelper)
+        .startChainLink(eq(anAmbiance()), eq(stepElementParameters), eq(passThroughData));
   }
 
   private Ambiance anAmbiance() {
