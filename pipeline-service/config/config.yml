@@ -508,3 +508,5 @@ orchestrationRestrictionConfiguration:
     enterprise: ${MAX_STEP_TIMEOUT_ENTERPRISE:-0}
 
 grpcNegotiationType: ${GRPC_NEGOTIATION_TYPE:-TLS}
+
+lockNotifyResponseCleanup: ${LOCK_NOTIFY_RESPONSE_CLEANUP:-true}

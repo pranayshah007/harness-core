@@ -21,6 +21,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.mongo.helper.SecondaryMongoTemplateHolder;
 import io.harness.serializer.KryoSerializer;
 import io.harness.springdata.SpringDataMongoUtils;
 import io.harness.tasks.ResponseData;
@@ -38,6 +39,7 @@ import io.harness.waiter.WaitInstanceTimeoutCallback;
 
 import com.google.common.base.Stopwatch;
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.mongodb.client.result.DeleteResult;
 import java.time.Duration;
@@ -55,18 +57,35 @@ import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.data.util.CloseableIterator;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
+@Singleton
 public class SpringPersistenceWrapper implements PersistenceWrapper {
-  @Inject private MongoTemplate mongoTemplate;
-  @Inject private KryoSerializer kryoSerializer;
-  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
-  @Inject private TimeoutEngine timeoutEngine;
-  @Inject private TransactionTemplate transactionTemplate;
+  private static final int MAX_BATCH_SIZE = 500;
+  private MongoTemplate mongoTemplate;
+  private MongoTemplate secondaryMongoTemplate;
+  private KryoSerializer kryoSerializer;
+  private KryoSerializer referenceFalseKryoSerializer;
+  private TimeoutEngine timeoutEngine;
+  private TransactionTemplate transactionTemplate;
+  private FindAndModifyOptions findAndModifyOptions;
 
-  private FindAndModifyOptions findAndModifyOptions = new FindAndModifyOptions().returnNew(false).upsert(false);
+  @Inject
+  public SpringPersistenceWrapper(MongoTemplate mongoTemplate,
+      SecondaryMongoTemplateHolder secondaryMongoTemplateHolder, KryoSerializer kryoSerializer,
+      @Named("referenceFalseKryoSerializer") KryoSerializer referenceFalseKryoSerializer, TimeoutEngine timeoutEngine,
+      TransactionTemplate transactionTemplate) {
+    this.mongoTemplate = mongoTemplate;
+    this.secondaryMongoTemplate = secondaryMongoTemplateHolder.getSecondaryMongoTemplate();
+    this.kryoSerializer = kryoSerializer;
+    this.referenceFalseKryoSerializer = referenceFalseKryoSerializer;
+    this.timeoutEngine = timeoutEngine;
+    this.transactionTemplate = transactionTemplate;
+    this.findAndModifyOptions = new FindAndModifyOptions().returnNew(false).upsert(false);
+  }
 
   @Override
   public void deleteWaitInstance(WaitInstance waitInstance) {
@@ -94,10 +113,29 @@ public class SpringPersistenceWrapper implements PersistenceWrapper {
     return notifyResponses.stream().map(NotifyResponse::getUuid).collect(Collectors.toList());
   }
 
+  /**
+   * Fetching notify responses for createdAt less than given limit and only uuid are returned in projection
+   * This is fetched from secondary node with MAX_BATCH_SIZE
+   * @param limit
+   * @return
+   */
+  public CloseableIterator<NotifyResponse> fetchNotifyResponseKeysFromSecondary(long limit) {
+    Query query = query(where(NotifyResponseKeys.createdAt).lt(limit));
+    query.fields().include(NotifyResponseKeys.uuid);
+    query.cursorBatchSize(MAX_BATCH_SIZE);
+    return secondaryMongoTemplate.stream(query, NotifyResponse.class);
+  }
+
   @Override
   public List<WaitInstance> fetchWaitInstances(String correlationId) {
     Query query = query(where(WaitInstanceKeys.correlationIds).is(correlationId));
     return mongoTemplate.find(query, WaitInstance.class);
+  }
+
+  public CloseableIterator<WaitInstance> fetchWaitInstancesFromSecondary(String correlationId) {
+    Query query = query(where(WaitInstanceKeys.correlationIds).is(correlationId));
+    query.cursorBatchSize(MAX_BATCH_SIZE);
+    return secondaryMongoTemplate.stream(query, WaitInstance.class);
   }
 
   @Override
