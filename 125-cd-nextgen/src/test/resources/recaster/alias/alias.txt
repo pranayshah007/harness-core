@@ -703,6 +703,3 @@ io.harness.cdng.tas.TasRouteMappingStepNode
 io.harness.cdng.tas.TasRollingDeployStepNode
 io.harness.cdng.tas.outcome.TasRollingDeployOutcome
 io.harness.cdng.tas.TasRollingRollbackStepParameters
-io.harness.cdng.tas.TasRouteType
-io.harness.cdng.tas.TasRouteMappingStepInfo
-io.harness.cdng.tas.TasRouteMappingStepParameters
