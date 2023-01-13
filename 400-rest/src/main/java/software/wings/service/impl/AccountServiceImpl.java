@@ -973,6 +973,7 @@ public class AccountServiceImpl implements AccountService {
         query.project(field, true);
       }
     }
+    log.info("Load support accounts excluding users accounts {}", excludedAccountIds);
 
     List<Account> accountList = new ArrayList<>();
     try (HIterator<Account> iterator = new HIterator<>(query.fetch())) {
@@ -982,6 +983,7 @@ public class AccountServiceImpl implements AccountService {
           accountList.add(account);
         }
       }
+      log.info("Loaded {} accounts", accountList.size());
     }
     return accountList;
   }

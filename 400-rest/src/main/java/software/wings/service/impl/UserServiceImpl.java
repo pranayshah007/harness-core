@@ -3138,6 +3138,7 @@ public class UserServiceImpl implements UserService {
   @Override
   public void loadSupportAccounts(User user, Set<String> fieldsToBeIncluded) {
     if (user == null) {
+      log.info("User is null");
       return;
     }
 
@@ -3148,7 +3149,7 @@ public class UserServiceImpl implements UserService {
 
       Set<String> restrictedAccountsIds = accountService.getAccountsWithDisabledHarnessUserGroupAccess();
       restrictedAccountsIds.removeAll(excludeAccounts);
-
+      log.info("Excluding restricted Account Ids {}", restrictedAccountsIds);
       List<Account> supportAccountList = new ArrayList<>();
       supportAccountList.addAll(accountList);
       if (isNotEmpty(restrictedAccountsIds)) {
@@ -3158,6 +3159,7 @@ public class UserServiceImpl implements UserService {
           restrictedAccountsWithActiveAccessRequest.forEach(account -> supportAccountList.add(account));
         }
       }
+      log.info("User has total {} support accounts", supportAccountList.size());
       user.setSupportAccounts(supportAccountList);
     }
   }
@@ -3193,7 +3195,7 @@ public class UserServiceImpl implements UserService {
         });
       }
     });
-
+    log.info("Total {} restricted accounts has active access", accountSet.size());
     return accountSet;
   }
 

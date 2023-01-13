@@ -96,6 +96,7 @@ public class HarnessUserGroupServiceImpl implements HarnessUserGroupService {
     }
     List<Account> supportedAccounts = accountService.listHarnessSupportAccounts(excludeAccountIds, fieldsToBeIncluded);
     supportedAccounts.sort(new AccountComparator());
+    log.info("Total {} Support Accounts exists", supportedAccounts.size());
     return supportedAccounts;
   }
 
@@ -209,6 +210,9 @@ public class HarnessUserGroupServiceImpl implements HarnessUserGroupService {
     Query<HarnessUserGroup> query = wingsPersistence.createQuery(HarnessUserGroup.class, excludeAuthority);
     query.filter("memberIds", userId);
     Key<HarnessUserGroup> userGroupKey = query.getKey();
+    if (userGroupKey != null) {
+      log.info("User {} is part of Harness User group", userId);
+    }
     return userGroupKey != null;
   }
 

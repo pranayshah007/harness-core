@@ -107,11 +107,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.annotation.Nullable;
 import javax.cache.Cache;
@@ -532,10 +528,21 @@ public class UserResource {
   @AuthRule(permissionType = LOGGED_IN)
   public RestResponse<User> get() {
     User user = UserThreadLocal.get().getPublicUser(false);
-    if (isEmpty(user.getSupportAccounts())) {
-      userService.loadSupportAccounts(user);
+    Map<String, String> logContext = new HashMap<>();
+    if (isNotEmpty(user.getUuid())) {
+      logContext.put("userId", user.getUuid());
     }
-    return new RestResponse<>(user);
+    if (isNotEmpty(user.getEmail())) {
+      logContext.put("userEmail", user.getEmail());
+    }
+    logContext.put("contextKey", String.valueOf(UUID.randomUUID()));
+    try (AutoLogContext ignore1 = new AutoLogContext(logContext, OVERRIDE_ERROR)) {
+      log.info("Loading support accounts for users/user endpoint for user {}", user);
+      if (isEmpty(user.getSupportAccounts())) {
+        userService.loadSupportAccounts(user);
+      }
+      return new RestResponse<>(user);
+    }
   }
 
   /**
@@ -576,7 +583,15 @@ public class UserResource {
   @ExceptionMetered
   @IdentityServiceAuth
   public RestResponse<User> loginUser(@QueryParam("email") String email) {
-    return new RestResponse<>(authenticationManager.loginUserForIdentityService(urlDecode(email)));
+    Map<String, String> logContext = new HashMap<>();
+    if (isNotEmpty(email)) {
+      logContext.put("userEmail", email);
+    }
+    logContext.put("contextKey", String.valueOf(UUID.randomUUID()));
+    try (AutoLogContext ignore1 = new AutoLogContext(logContext, OVERRIDE_ERROR)) {
+      log.info("Trying to login user {}", email);
+      return new RestResponse<>(authenticationManager.loginUserForIdentityService(urlDecode(email)));
+    }
   }
 
   /**
@@ -659,6 +674,7 @@ public class UserResource {
   @ExceptionMetered
   public RestResponse<User> switchAccount(
       @HeaderParam(HttpHeaders.AUTHORIZATION) String authorization, @QueryParam("accountId") String accountId) {
+    log.info("switch-account");
     return new RestResponse<>(
         authenticationManager.switchAccount(authenticationManager.extractToken(authorization, "Bearer"), accountId));
   }
@@ -726,7 +742,7 @@ public class UserResource {
     String basicAuthToken = authenticationManager.extractToken(loginBody.getAuthorization(), BASIC);
 
     validateCaptchaToken(captchaToken);
-
+    log.info("Trying to login to account {} having request {}", accountId, loginBody);
     // accountId field is optional, it could be null.
     return new RestResponse<>(authenticationManager.defaultLoginAccount(basicAuthToken, accountId));
   }
@@ -813,6 +829,7 @@ public class UserResource {
   @Timed
   @ExceptionMetered
   public RestResponse<User> redirectlogin(SsoRedirectRequest request) {
+    log.info("SSO login {}", request);
     return new RestResponse<>(authenticationManager.ssoRedirectLogin(request.getJwtToken()));
   }
 

@@ -7,8 +7,10 @@
 
 package software.wings.resources;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.USER_DOES_NOT_EXIST;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
@@ -20,6 +22,7 @@ import io.harness.beans.PageResponse;
 import io.harness.beans.SearchFilter;
 import io.harness.beans.SearchFilter.Operator;
 import io.harness.exception.WingsException;
+import io.harness.logging.AutoLogContext;
 import io.harness.ng.core.switchaccount.RestrictedSwitchAccountInfo;
 import io.harness.rest.RestResponse;
 
@@ -41,7 +44,10 @@ import io.swagger.annotations.Api;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
@@ -84,7 +90,15 @@ public class IdentityServiceResource {
   @Timed
   @ExceptionMetered
   public RestResponse<User> loginUser(@QueryParam("email") String email) {
-    return new RestResponse<>(authenticationManager.loginUserForIdentityService(urlDecode(email)));
+    Map<String, String> logContext = new HashMap<>();
+    if (isNotEmpty(email)) {
+      logContext.put("userEmail", email);
+    }
+    logContext.put("contextKey", String.valueOf(UUID.randomUUID()));
+    try (AutoLogContext ignore1 = new AutoLogContext(logContext, OVERRIDE_ERROR)) {
+      log.info("Trying to login user {}", email);
+      return new RestResponse<>(authenticationManager.loginUserForIdentityService(urlDecode(email)));
+    }
   }
 
   private String urlDecode(String encoded) {
@@ -146,6 +160,7 @@ public class IdentityServiceResource {
     if (user == null) {
       throw new WingsException(USER_DOES_NOT_EXIST, USER);
     } else {
+      log.info("Trying to get user {} details", user);
       if (userService.isFFToAvoidLoadingSupportAccountsUnncessarilyDisabled()) {
         return new RestResponse<>(user.getPublicUser(true));
       }
