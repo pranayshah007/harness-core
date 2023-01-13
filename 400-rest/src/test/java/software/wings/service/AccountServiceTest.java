@@ -594,14 +594,14 @@ public class AccountServiceTest extends WingsBaseTest {
   @Owner(developers = SRINIVAS)
   @Category(UnitTests.class)
   public void shouldListSupportAccounts() {
-    Account account = anAccount().withCompanyName(HARNESS_NAME).build();
+    Account account = anAccount().withCompanyName(HARNESS_NAME).withAccountName("account").build();
     wingsPersistence.save(account);
     assertThat(accountService.get(account.getUuid())).isEqualTo(account);
     assertThat(accountService.listHarnessSupportAccounts(Collections.emptySet(), null).get(0).getUuid()).isNotEmpty();
     assertThat(accountService.listHarnessSupportAccounts(Collections.emptySet(), Set.of(AccountKeys.uuid))
                    .get(0)
                    .getAccountName())
-        .isNull();
+        .isNotNull();
     assertThat(accountService.getAccountsWithBasicInfo(false)).isNotEmpty();
     assertThat(accountService.getAccountsWithBasicInfo(false).get(0)).isNotNull();
     assertThat(accountService.getAccountsWithBasicInfo(false)).isNotEmpty();
