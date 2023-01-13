@@ -862,6 +862,9 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
     return InfrastructureConfig.builder()
         .infrastructureDefinitionConfig(
             InfrastructureDefinitionConfig.builder()
+                .orgIdentifier("orgId")
+                .projectIdentifier("projectId")
+                .identifier("infra-id")
                 .type(InfrastructureType.PDC)
                 .spec(PdcInfrastructure.builder()
                           .connectorRef(ParameterField.createValueField("awsconnector"))
@@ -876,6 +879,9 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
     return InfrastructureConfig.builder()
         .infrastructureDefinitionConfig(
             InfrastructureDefinitionConfig.builder()
+                .orgIdentifier("orgId")
+                .projectIdentifier("projectId")
+                .identifier("infra-id")
                 .type(InfrastructureType.SSH_WINRM_AZURE)
                 .spec(SshWinRmAzureInfrastructure.builder()
                           .connectorRef(ParameterField.createValueField("azureconnector"))
@@ -891,6 +897,9 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
     return InfrastructureConfig.builder()
         .infrastructureDefinitionConfig(
             InfrastructureDefinitionConfig.builder()
+                .orgIdentifier("orgId")
+                .projectIdentifier("projectId")
+                .identifier("infra-id")
                 .type(InfrastructureType.SSH_WINRM_AWS)
                 .spec(SshWinRmAwsInfrastructure.builder()
                           .connectorRef(ParameterField.createValueField("awsconnector"))

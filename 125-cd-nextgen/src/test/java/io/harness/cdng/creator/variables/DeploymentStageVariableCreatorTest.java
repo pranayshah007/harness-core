@@ -217,6 +217,8 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
     String infraYaml = Resources.toString(infraYamlFile, Charsets.UTF_8);
 
     InfrastructureEntity infrastructureEntity = InfrastructureEntity.builder()
+                                                    .identifier("infra")
+                                                    .name("infra")
                                                     .accountId(ACCOUNT_ID)
                                                     .orgIdentifier(ORG_IDENTIFIER)
                                                     .projectIdentifier(PROJ_IDENTIFIER)
@@ -317,6 +319,8 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
     String infraYaml = Resources.toString(infraYamlFile, Charsets.UTF_8);
 
     InfrastructureEntity infrastructureEntity = InfrastructureEntity.builder()
+                                                    .identifier("infra")
+                                                    .name("infra")
                                                     .accountId(ACCOUNT_ID)
                                                     .orgIdentifier(ORG_IDENTIFIER)
                                                     .projectIdentifier(PROJ_IDENTIFIER)

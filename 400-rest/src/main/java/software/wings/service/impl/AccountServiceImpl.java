@@ -968,8 +968,12 @@ public class AccountServiceImpl implements AccountService {
   public List<Account> listHarnessSupportAccounts(Set<String> excludedAccountIds, Set<String> fieldsToBeIncluded) {
     Query<Account> query = wingsPersistence.createQuery(Account.class, excludeAuthority)
                                .filter(AccountKeys.isHarnessSupportAccessAllowed, Boolean.TRUE);
+    Set<String> fieldsToBeProjected = new HashSet<>();
     if (isNotEmpty(fieldsToBeIncluded)) {
-      for (String field : fieldsToBeIncluded) {
+      fieldsToBeProjected.addAll(fieldsToBeIncluded);
+      fieldsToBeProjected.add("accountName");
+      fieldsToBeProjected.add("encryptedLicenseInfo");
+      for (String field : fieldsToBeProjected) {
         query.project(field, true);
       }
     }
