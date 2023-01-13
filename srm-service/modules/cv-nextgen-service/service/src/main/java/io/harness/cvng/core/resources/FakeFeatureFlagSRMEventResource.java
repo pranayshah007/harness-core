@@ -48,6 +48,8 @@ public class FakeFeatureFlagSRMEventResource {
     List<String> envs;
     long startTime;
     long endTime;
+    String name;
+    String user;
     List<String> descriptions;
     String changeEventLink;
     String internalChangeLink;
