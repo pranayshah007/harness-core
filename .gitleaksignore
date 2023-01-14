@@ -1,1 +1,4 @@
-https://hooks.slack.com/services/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:batch-processing/service/src/test/java/io/harness/batch/processing/anomalydetection/AnomalyAlertsServiceImplTest.java:57
+#For More Info: https://github.com/zricethezav/gitleaks/blob/master/.gitleaksignore
+
+#CommitID:FilePath:TypeOfSecret:LineNumber
+aee83e4f314e220afbf237a39d6520e292823d6e:batch-processing/service/src/test/java/io/harness/batch/processing/anomalydetection/AnomalyAlertsServiceImplTest.java:slack-web-hook:57

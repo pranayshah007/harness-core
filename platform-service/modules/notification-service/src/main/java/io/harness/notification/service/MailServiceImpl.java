@@ -234,7 +234,7 @@ public class MailServiceImpl implements ChannelService {
                                   .build())
               .executionTimeout(Duration.ofMinutes(1L))
               .build();
-      String taskId = delegateGrpcClientWrapper.submitAsyncTask(delegateTaskRequest, Duration.ZERO);
+      String taskId = delegateGrpcClientWrapper.submitAsyncTaskV2(delegateTaskRequest, Duration.ZERO);
       log.info("Async delegate task created with taskID {}.", taskId);
       notificationProcessingResponse = NotificationProcessingResponse.allSent(emailIds.size());
     } else {

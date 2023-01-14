@@ -6,8 +6,8 @@ pipeline:
     versionLabel: 1
   stages:
   - stage:
-      identifier: "lvl2temp"
       name: "lvl2temp"
+      identifier: "lvl2temp"
       template:
         templateRef: "stg_temp2"
         versionLabel: "1"

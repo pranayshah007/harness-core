@@ -149,6 +149,7 @@ public class NextGenHealthSourceSpec extends MetricHealthSourceSpec {
       });
     }
   }
+  @JsonIgnore
   public DataSourceType getDataSourceType() {
     return dataSourceType;
   }

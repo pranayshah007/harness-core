@@ -99,4 +99,9 @@ public class DecryptGitApiAccessHelper {
     return encryptionHelper.getEncryptionDetail(decryptableEntity, ngAccess.getAccountIdentifier(),
         ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
   }
+
+  public DecryptableEntity decryptEncryptionDetails(
+      DecryptableEntity decryptableEntity, List<EncryptedDataDetail> encryptedDataDetails, String accountId) {
+    return ngEncryptorService.decryptEncryptedDetails(decryptableEntity, encryptedDataDetails, accountId);
+  }
 }

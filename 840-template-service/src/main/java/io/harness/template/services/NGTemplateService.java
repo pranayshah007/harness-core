@@ -48,14 +48,14 @@ public interface NGTemplateService {
   Optional<TemplateEntity> getMetadataOrThrowExceptionIfInvalid(String accountId, String orgIdentifier,
       String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted);
 
-  TemplateWithInputsResponseDTO getTemplateWithInputs(
-      String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, String versionLabel);
+  TemplateWithInputsResponseDTO getTemplateWithInputs(String accountId, String orgIdentifier, String projectIdentifier,
+      String templateIdentifier, String versionLabel, boolean loadFromCache);
 
   boolean delete(String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier,
-      String versionLabel, Long version, String comments);
+      String versionLabel, Long version, String comments, boolean forceDelete);
 
   boolean deleteTemplates(String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier,
-      Set<String> templateVersions, String comments);
+      Set<String> templateVersions, String comments, boolean forceDelete);
 
   Page<TemplateEntity> list(Criteria criteria, Pageable pageable, String accountId, String orgIdentifier,
       String projectIdentifier, Boolean getDistinctFromBranches);

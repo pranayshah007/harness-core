@@ -10,8 +10,10 @@ package io.harness.ng.scim;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.BOOPESH;
+import static io.harness.rule.OwnerRule.TEJAS;
 import static io.harness.rule.OwnerRule.UJJAWAL;
 
+import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -38,13 +40,17 @@ import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.scim.ScimListResponse;
 import io.harness.scim.ScimUser;
+import io.harness.serializer.JsonUtils;
 
 import software.wings.beans.Account;
 import software.wings.beans.UserInvite;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import javax.ws.rs.core.Response;
 import org.junit.Before;
@@ -324,5 +330,43 @@ public class NGScimUserServiceImplTest extends NgManagerTestBase {
     assertThat(scimUser.getUserName()).isEqualTo(userInfo.getEmail());
     assertThat(scimUser.getId()).isNotNull();
     assertThat(scimUser.getId()).isEqualTo(userInfo.getUuid());
+  }
+
+  @Test
+  @Owner(developers = TEJAS)
+  @Category(UnitTests.class)
+  public void testUpdateUserNameAndEmail() {
+    String name = randomAlphabetic(10);
+    String updatedName = randomAlphabetic(10);
+    String email = "username@harness.io";
+    String updatedEmail = "username123@harness.io";
+    String VALUE = "value";
+    String PRIMARY = "primary";
+    String userId = randomAlphabetic(10);
+    String accountId = randomAlphabetic(10);
+
+    UserInfo userInfo = UserInfo.builder().admin(true).email(email).name(name).uuid(userId).build();
+
+    UserMetadataDTO userMetadataDTO = UserMetadataDTO.builder().name(name).email(email).build();
+    Map<String, Object> emailMap = new HashMap<>() {
+      {
+        put(VALUE, updatedEmail);
+        put(PRIMARY, true);
+      }
+    };
+    ScimUser scimUser = new ScimUser();
+    scimUser.setUserName(updatedName);
+    scimUser.setEmails(JsonUtils.asTree(Collections.singletonList(emailMap)));
+
+    when(ngUserService.getUserById(userId)).thenReturn(Optional.of(userInfo));
+    when(ngUserService.getUserMetadata(userId)).thenReturn(Optional.of(userMetadataDTO));
+    when(ngUserService.updateScimUser(accountId, userId, scimUser)).thenReturn(true);
+
+    scimUserService.updateUser(userId, accountId, scimUser);
+
+    userMetadataDTO.setName(updatedName);
+    userMetadataDTO.setExternallyManaged(true);
+    userMetadataDTO.setEmail(updatedEmail);
+    verify(ngUserService, times(1)).updateUserMetadata(userMetadataDTO);
   }
 }

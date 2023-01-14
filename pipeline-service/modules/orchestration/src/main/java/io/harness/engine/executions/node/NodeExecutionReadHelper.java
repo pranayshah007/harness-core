@@ -27,7 +27,7 @@ import org.springframework.data.util.CloseableIterator;
 @OwnedBy(PIPELINE)
 @Singleton
 public class NodeExecutionReadHelper {
-  private static int MAX_BATCH_SIZE = 1000;
+  private static final int MAX_BATCH_SIZE = 1000;
   private final MongoTemplate mongoTemplate;
   private final MongoTemplate analyticsMongoTemplate;
 

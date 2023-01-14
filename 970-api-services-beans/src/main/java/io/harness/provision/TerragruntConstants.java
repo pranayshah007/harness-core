@@ -26,6 +26,8 @@ public final class TerragruntConstants {
   public static final String TERRAGRUNT_SHOW_COMMAND_FORMAT = "terragrunt show %s";
   public static final String TERRAGRUNT_RUN_ALL_APPLY_COMMAND_FORMAT =
       "terragrunt run-all apply -input=false --terragrunt-non-interactive %s %s";
+  public static final String TERRAGRUNT_RUN_ALL_APPLY_COMMAND_FORMAT_WITH_EXTERNAL_DEPENDENCY =
+      "terragrunt run-all apply -input=false --terragrunt-non-interactive --terragrunt-include-external-dependencies %s %s";
   public static final String TERRAGRUNT_RUN_ALL_PLAN_COMMAND_FORMAT =
       "terragrunt run-all plan -out=tfplan -input=false %s %s";
   public static final String TERRAGRUNT_RUN_ALL_PLAN_DESTROY_COMMAND_FORMAT =

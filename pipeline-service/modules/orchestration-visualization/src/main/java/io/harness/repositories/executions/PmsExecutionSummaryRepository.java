@@ -26,4 +26,6 @@ public interface PmsExecutionSummaryRepository
   Optional<PipelineExecutionSummaryEntity>
   findByAccountIdAndOrgIdentifierAndProjectIdentifierAndPlanExecutionIdAndPipelineDeletedNot(String accountId,
       String orgIdentifier, String projectIdentifier, String planExecutionId, boolean notPipelineDeleted);
+
+  Optional<PipelineExecutionSummaryEntity> findByPlanExecutionId(String planExecutionId);
 }

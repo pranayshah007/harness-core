@@ -129,8 +129,14 @@ auditServiceConfig:
   enableAuditService: true
   hostname: ${HOSTNAME:-localhost}
   basePathPrefix: ${BASE_PATH_PREFIX:-""}
+  enableAudit: false
+  auditClientConfig:
+    baseUrl: http://localhost:9005/api/
+    connectTimeOutSeconds: 15
+    readTimeOutSeconds: 15
 
   enableOpentelemetry: false
+  exportMetricsToStackDriver: false
 
 resourceGroupServiceConfig:
   enableResourceGroup: true

@@ -108,11 +108,12 @@ public class TerragruntPlanTaskNG extends AbstractDelegateRunnableTask {
 
       LogCallback fetchFilesLogCallback =
           taskService.getLogCallback(getLogStreamingTaskClient(), FETCH_CONFIG_FILES, commandUnitsProgress);
+      LogCallback planLogCallback = taskService.getLogCallback(getLogStreamingTaskClient(), PLAN, commandUnitsProgress);
+
       TerragruntContext terragruntContext =
-          taskService.prepareTerragrunt(fetchFilesLogCallback, planTaskParameters, baseDir);
+          taskService.prepareTerragrunt(fetchFilesLogCallback, planTaskParameters, baseDir, planLogCallback);
 
       TerragruntClient client = terragruntContext.getClient();
-      LogCallback planLogCallback = taskService.getLogCallback(getLogStreamingTaskClient(), PLAN, commandUnitsProgress);
 
       executeWithErrorHandling(client::init,
           createCliRequest(TerragruntCliRequest.builder(), terragruntContext, planTaskParameters).build(),

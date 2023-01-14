@@ -66,10 +66,10 @@ public class RoleAssignmentApiUtilsTest extends AccessControlTestBase {
   @Rule public ExpectedException exceptionRule = ExpectedException.none();
 
   private RoleAssignmentApiUtils roleAssignmentApiUtils;
-  private static final String SLUG = "slug";
-  private static final String ROLE_SLUG = "role_slug";
-  private static final String RESOURCE_GROUP_SLUG = "resource_group_slug";
-  private static final String PRINCIPAL_SLUG = "principal_slug";
+  private static final String IDENTIFIER = "identifier";
+  private static final String ROLE_IDENTIFIER = "role_identifier";
+  private static final String RESOURCE_GROUP_IDENTIFIER = "resource_group_identifier";
+  private static final String PRINCIPAL_IDENTIFIER = "principal_identifier";
   private static final String SCOPE_LEVEL = "ACCOUNT";
   private static final String ACCOUNT = "account";
   private static final String ORG = "org";
@@ -103,24 +103,24 @@ public class RoleAssignmentApiUtilsTest extends AccessControlTestBase {
   @Category(UnitTests.class)
   public void testGetRoleAssignmentDto() {
     Principal principal = new Principal();
-    principal.setSlug(PRINCIPAL_SLUG);
+    principal.setIdentifier(PRINCIPAL_IDENTIFIER);
     principal.setScopeLevel(SCOPE_LEVEL);
     principal.setType(Principal.TypeEnum.USER);
 
     RoleAssignment request = new RoleAssignment();
-    request.setSlug(SLUG);
-    request.setRole(ROLE_SLUG);
-    request.setResourceGroup(RESOURCE_GROUP_SLUG);
+    request.setIdentifier(IDENTIFIER);
+    request.setRole(ROLE_IDENTIFIER);
+    request.setResourceGroup(RESOURCE_GROUP_IDENTIFIER);
     request.setDisabled(true);
     request.setManaged(true);
     request.setPrincipal(principal);
 
     RoleAssignmentDTO roleAssignmentDto = roleAssignmentApiUtils.getRoleAssignmentDto(request);
 
-    assertThat(roleAssignmentDto.getIdentifier()).isEqualTo(SLUG);
-    assertThat(roleAssignmentDto.getRoleIdentifier()).isEqualTo(ROLE_SLUG);
-    assertThat(roleAssignmentDto.getResourceGroupIdentifier()).isEqualTo(RESOURCE_GROUP_SLUG);
-    assertThat(roleAssignmentDto.getPrincipal().getIdentifier()).isEqualTo(PRINCIPAL_SLUG);
+    assertThat(roleAssignmentDto.getIdentifier()).isEqualTo(IDENTIFIER);
+    assertThat(roleAssignmentDto.getRoleIdentifier()).isEqualTo(ROLE_IDENTIFIER);
+    assertThat(roleAssignmentDto.getResourceGroupIdentifier()).isEqualTo(RESOURCE_GROUP_IDENTIFIER);
+    assertThat(roleAssignmentDto.getPrincipal().getIdentifier()).isEqualTo(PRINCIPAL_IDENTIFIER);
     assertThat(roleAssignmentDto.getPrincipal().getScopeLevel()).isEqualTo(SCOPE_LEVEL);
     assertThat(roleAssignmentDto.getPrincipal().getType()).isEqualTo(PrincipalType.USER);
     assertThat(roleAssignmentDto.isDisabled()).isEqualTo(true);
@@ -131,13 +131,16 @@ public class RoleAssignmentApiUtilsTest extends AccessControlTestBase {
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
   public void testGetRoleAssignmentResponse() {
-    PrincipalDTO principalDTO =
-        PrincipalDTO.builder().type(PrincipalType.USER).identifier(PRINCIPAL_SLUG).scopeLevel(SCOPE_LEVEL).build();
+    PrincipalDTO principalDTO = PrincipalDTO.builder()
+                                    .type(PrincipalType.USER)
+                                    .identifier(PRINCIPAL_IDENTIFIER)
+                                    .scopeLevel(SCOPE_LEVEL)
+                                    .build();
 
     RoleAssignmentDTO roleAssignmentDto = RoleAssignmentDTO.builder()
-                                              .identifier(SLUG)
-                                              .roleIdentifier(ROLE_SLUG)
-                                              .resourceGroupIdentifier(RESOURCE_GROUP_SLUG)
+                                              .identifier(IDENTIFIER)
+                                              .roleIdentifier(ROLE_IDENTIFIER)
+                                              .resourceGroupIdentifier(RESOURCE_GROUP_IDENTIFIER)
                                               .managed(true)
                                               .disabled(true)
                                               .principal(principalDTO)
@@ -156,12 +159,13 @@ public class RoleAssignmentApiUtilsTest extends AccessControlTestBase {
 
     assertThat(roleAssignmentResponse.getCreated()).isEqualTo(1234567890L);
     assertThat(roleAssignmentResponse.getUpdated()).isEqualTo(1234567890L);
-    assertThat(roleAssignmentResponse.getRoleAssignment().getSlug()).isEqualTo(SLUG);
-    assertThat(roleAssignmentResponse.getRoleAssignment().getRole()).isEqualTo(ROLE_SLUG);
-    assertThat(roleAssignmentResponse.getRoleAssignment().getResourceGroup()).isEqualTo(RESOURCE_GROUP_SLUG);
+    assertThat(roleAssignmentResponse.getRoleAssignment().getIdentifier()).isEqualTo(IDENTIFIER);
+    assertThat(roleAssignmentResponse.getRoleAssignment().getRole()).isEqualTo(ROLE_IDENTIFIER);
+    assertThat(roleAssignmentResponse.getRoleAssignment().getResourceGroup()).isEqualTo(RESOURCE_GROUP_IDENTIFIER);
     assertThat(roleAssignmentResponse.getRoleAssignment().isDisabled()).isEqualTo(true);
     assertThat(roleAssignmentResponse.getRoleAssignment().isManaged()).isEqualTo(true);
-    assertThat(roleAssignmentResponse.getRoleAssignment().getPrincipal().getSlug()).isEqualTo(PRINCIPAL_SLUG);
+    assertThat(roleAssignmentResponse.getRoleAssignment().getPrincipal().getIdentifier())
+        .isEqualTo(PRINCIPAL_IDENTIFIER);
     assertThat(roleAssignmentResponse.getRoleAssignment().getPrincipal().getType()).isEqualTo(Principal.TypeEnum.USER);
     assertThat(roleAssignmentResponse.getRoleAssignment().getPrincipal().getScopeLevel()).isEqualTo(SCOPE_LEVEL);
   }

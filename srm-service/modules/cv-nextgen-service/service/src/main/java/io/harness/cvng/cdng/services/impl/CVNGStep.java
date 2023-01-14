@@ -41,7 +41,6 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.Level;
 import io.harness.plancreator.steps.common.StepElementParameters;
-import io.harness.plancreator.steps.common.rollback.AsyncExecutableWithRollback;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
@@ -52,11 +51,11 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.Outcome;
-import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.steps.executable.AsyncExecutableWithCapabilities;
 import io.harness.tasks.ProgressData;
 import io.harness.tasks.ResponseData;
 
@@ -81,7 +80,7 @@ import org.springframework.data.annotation.TypeAlias;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CV)
-public class CVNGStep extends AsyncExecutableWithRollback {
+public class CVNGStep extends AsyncExecutableWithCapabilities {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(CVNGStepType.CVNG_VERIFY.getDisplayName())
                                                .setStepCategory(StepCategory.STEP)
@@ -97,8 +96,8 @@ public class CVNGStep extends AsyncExecutableWithRollback {
   private Map<MonitoredServiceSpecType, VerifyStepMonitoredServiceResolutionService> verifyStepCvConfigServiceMap;
 
   @Override
-  public AsyncExecutableResponse executeAsync(Ambiance ambiance, StepElementParameters stepElementParameters,
-      StepInputPackage inputPackage, PassThroughData passThroughData) {
+  public AsyncExecutableResponse executeAsyncAfterRbac(
+      Ambiance ambiance, StepElementParameters stepElementParameters, StepInputPackage inputPackage) {
     log.info("ExecuteAsync called for CVNGStep");
     CVNGStepParameter stepParameters = (CVNGStepParameter) stepElementParameters.getSpec();
     String accountId = AmbianceUtils.getAccountId(ambiance);
@@ -305,6 +304,7 @@ public class CVNGStep extends AsyncExecutableWithRollback {
     String verifyStepExecutionId;
     ActivityStatusDTO activityStatusDTO;
   }
+
   @Value
   @Builder
   @JsonTypeName("verifyStepOutcome")
@@ -318,7 +318,7 @@ public class CVNGStep extends AsyncExecutableWithRollback {
   }
 
   @Override
-  public StepResponse handleAsyncResponse(
+  public StepResponse handleAsyncResponseInternal(
       Ambiance ambiance, StepElementParameters stepElementParameters, Map<String, ResponseData> responseDataMap) {
     log.info("handleAsyncResponse async response");
     CVNGStepParameter stepParameters = (CVNGStepParameter) stepElementParameters.getSpec();
@@ -422,4 +422,7 @@ public class CVNGStep extends AsyncExecutableWithRollback {
         .startTime(verficationStartTime)
         .resolvedJob(verificationJob);
   }
+
+  @Override
+  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {}
 }

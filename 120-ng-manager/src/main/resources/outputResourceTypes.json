@@ -22,7 +22,7 @@
       "id": "Group",
       "documentationUri": "https://docs.harness.io/category/fe0577j8ie-access-management",
       "name": "Group",
-      "endpoint": "/Group",
+      "endpoint": "/Groups",
       "description": "Groups",
       "schema": "urn:ietf:params:scim:schemas:core:2.0:Group"
     }

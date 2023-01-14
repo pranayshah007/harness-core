@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: permissionsConfiguration
-version: 42
+version: 43
 permissions:
   - identifier: core_project_delete
     name: Delete Project
@@ -1326,3 +1326,24 @@ permissions:
     includedInAllRoles: false
     allowedScopeLevels:
       - account
+  - identifier: iac_stack_view
+    name: View IAC Stack
+    status: STAGING
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: iac_stack_edit
+    name: Create or Edit IAC Stack
+    status: STAGING
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: iac_stack_delete
+    name: Delete IAC Stack
+    status: STAGING
+    allowedScopeLevels:
+      - account
+      - organization
+      - project

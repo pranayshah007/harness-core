@@ -73,6 +73,8 @@ public class SLODashboardResourceTest extends CvNextGenTestBase {
   public void setup() {
     injector.injectMembers(sloDashboardResource);
     builderFactory = BuilderFactory.getDefault();
+    builderFactory.getContext().setProjectIdentifier("project");
+    builderFactory.getContext().setOrgIdentifier("orgIdentifier");
     metricPackService.createDefaultMetricPackAndThresholds(builderFactory.getContext().getAccountId(),
         builderFactory.getContext().getOrgIdentifier(), builderFactory.getContext().getProjectIdentifier());
     MonitoredServiceDTO monitoredServiceDTO = builderFactory.monitoredServiceDTOBuilder().build();

@@ -13,7 +13,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
-import io.harness.aws.AwsCallTracker;
+import io.harness.aws.util.AwsCallTracker;
 
 import software.wings.beans.AwsConfig;
 import software.wings.cloudprovider.aws.AwsClusterService;

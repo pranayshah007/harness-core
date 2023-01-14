@@ -37,7 +37,7 @@ import io.harness.cdng.customdeployment.CustomDeploymentStringNGVariable;
 import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.execution.helper.StageExecutionHelper;
 import io.harness.cdng.expressions.CDExpressionResolver;
-import io.harness.cdng.infra.InfrastructureMapper;
+import io.harness.cdng.infra.InfrastructureOutcomeProvider;
 import io.harness.cdng.infra.InfrastructureValidator;
 import io.harness.cdng.infra.beans.AwsInstanceFilter;
 import io.harness.cdng.infra.beans.CustomDeploymentInfrastructureOutcome;
@@ -152,7 +152,7 @@ import org.mockito.Spy;
 
 public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
   @Mock private InfrastructureEntityService infrastructureEntityService;
-  @Mock private InfrastructureMapper infrastructureMapper;
+  @Mock private InfrastructureOutcomeProvider infrastructureOutcomeProvider;
   @Mock InfrastructureValidator infrastructureValidator;
   @Mock private InfrastructureStepHelper infrastructureStepHelper;
   @Mock private CDStepHelper cdStepHelper = Mockito.spy(CDStepHelper.class);
@@ -382,7 +382,7 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
             .build())
         .when(cdStepHelper)
         .getSshInfraDelegateConfig(any(InfrastructureOutcome.class), any(Ambiance.class));
-    when(infrastructureMapper.toOutcome(any(), any(), any(), any(), any(), any()))
+    when(infrastructureOutcomeProvider.getOutcome(any(), any(), any(), any(), any(), any()))
         .thenReturn(SshWinRmAwsInfrastructureOutcome.builder()
                         .connectorRef("awsconnector")
                         .hostConnectionType("PrivateIP")
@@ -427,7 +427,7 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
         .getSshInfraDelegateConfig(any(InfrastructureOutcome.class), any(Ambiance.class));
 
     mockInfra(azureInfra);
-    when(infrastructureMapper.toOutcome(any(), any(), any(), any(), any(), any()))
+    when(infrastructureOutcomeProvider.getOutcome(any(), any(), any(), any(), any(), any()))
         .thenReturn(SshWinRmAzureInfrastructureOutcome.builder()
                         .connectorRef("azureconnector")
                         .subscriptionId("dev-subscription")
@@ -862,6 +862,9 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
     return InfrastructureConfig.builder()
         .infrastructureDefinitionConfig(
             InfrastructureDefinitionConfig.builder()
+                .orgIdentifier("orgId")
+                .projectIdentifier("projectId")
+                .identifier("infra-id")
                 .type(InfrastructureType.PDC)
                 .spec(PdcInfrastructure.builder()
                           .connectorRef(ParameterField.createValueField("awsconnector"))
@@ -876,6 +879,9 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
     return InfrastructureConfig.builder()
         .infrastructureDefinitionConfig(
             InfrastructureDefinitionConfig.builder()
+                .orgIdentifier("orgId")
+                .projectIdentifier("projectId")
+                .identifier("infra-id")
                 .type(InfrastructureType.SSH_WINRM_AZURE)
                 .spec(SshWinRmAzureInfrastructure.builder()
                           .connectorRef(ParameterField.createValueField("azureconnector"))
@@ -891,6 +897,9 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
     return InfrastructureConfig.builder()
         .infrastructureDefinitionConfig(
             InfrastructureDefinitionConfig.builder()
+                .orgIdentifier("orgId")
+                .projectIdentifier("projectId")
+                .identifier("infra-id")
                 .type(InfrastructureType.SSH_WINRM_AWS)
                 .spec(SshWinRmAwsInfrastructure.builder()
                           .connectorRef(ParameterField.createValueField("awsconnector"))

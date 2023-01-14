@@ -21,6 +21,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SimilarWorkflowDetail {
+  private String appName;
+  private String workflowName;
   private String workflowId;
   private String appId;
 }

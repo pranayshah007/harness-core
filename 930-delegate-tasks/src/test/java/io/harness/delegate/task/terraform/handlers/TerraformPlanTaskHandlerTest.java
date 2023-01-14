@@ -17,8 +17,6 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -150,7 +148,6 @@ public class TerraformPlanTaskHandlerTest extends CategoryTest {
     Files.deleteIfExists(Paths.get(outputFile.getPath()));
     Files.deleteIfExists(Paths.get(planFile.getPath()));
     Files.deleteIfExists(Paths.get("sourceDir"));
-    verify(terraformBaseHelper, times(1)).addVarFilesCommitIdsToMap(any(), any(), any());
   }
 
   @Test
@@ -182,7 +179,6 @@ public class TerraformPlanTaskHandlerTest extends CategoryTest {
     Files.deleteIfExists(Paths.get(outputFile.getPath()));
     Files.deleteIfExists(Paths.get(planFile.getPath()));
     Files.deleteIfExists(Paths.get("sourceDir"));
-    verify(terraformBaseHelper, times(1)).addBackendFileCommitIdsToMap(any(), any(), any());
   }
 
   private TerraformTaskNGParameters getTerraformTaskParameters() {

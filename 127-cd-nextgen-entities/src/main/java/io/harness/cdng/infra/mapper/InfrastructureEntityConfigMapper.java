@@ -22,10 +22,14 @@ import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.utils.YamlPipelineUtils;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.experimental.UtilityClass;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.math3.util.Pair;
 
 @OwnedBy(PIPELINE)
 @UtilityClass
@@ -48,6 +52,7 @@ public class InfrastructureEntityConfigMapper {
       try {
         final InfrastructureConfig config =
             YamlPipelineUtils.read(infrastructureEntity.getYaml(), InfrastructureConfig.class);
+        validateFieldsOrThrow(config, infrastructureEntity);
         infrastructure = config.getInfrastructureDefinitionConfig().getSpec();
         allowSimultaneousDeployments = config.getInfrastructureDefinitionConfig().isAllowSimultaneousDeployments();
         deploymentType = config.getInfrastructureDefinitionConfig().getDeploymentType();
@@ -55,6 +60,7 @@ public class InfrastructureEntityConfigMapper {
         throw new InvalidRequestException("Cannot create infrastructure config due to " + e.getMessage());
       }
     }
+
     return InfrastructureConfig.builder()
         .infrastructureDefinitionConfig(InfrastructureDefinitionConfig.builder()
                                             .name(infrastructureEntity.getName())
@@ -82,5 +88,44 @@ public class InfrastructureEntityConfigMapper {
                    .infrastructureDefinitionConfig(config.getInfrastructureDefinitionConfig())
                    .build())
         .collect(Collectors.toList());
+  }
+
+  private static void validateFieldsOrThrow(InfrastructureConfig fromYaml, InfrastructureEntity requestedEntity) {
+    Map<String, Pair<String, String>> mismatchedEntries = new HashMap<>();
+    if (StringUtils.compare(
+            fromYaml.getInfrastructureDefinitionConfig().getOrgIdentifier(), requestedEntity.getOrgIdentifier())
+        != 0) {
+      mismatchedEntries.put("Org Identifier",
+          new Pair<>(
+              fromYaml.getInfrastructureDefinitionConfig().getOrgIdentifier(), requestedEntity.getOrgIdentifier()));
+    }
+    if (StringUtils.compare(
+            fromYaml.getInfrastructureDefinitionConfig().getProjectIdentifier(), requestedEntity.getProjectIdentifier())
+        != 0) {
+      mismatchedEntries.put("Project Identifier",
+          new Pair<>(fromYaml.getInfrastructureDefinitionConfig().getProjectIdentifier(),
+              requestedEntity.getProjectIdentifier()));
+    }
+    if (StringUtils.compare(
+            fromYaml.getInfrastructureDefinitionConfig().getIdentifier(), requestedEntity.getIdentifier())
+        != 0) {
+      mismatchedEntries.put("InfrastructureDefinition Identifier",
+          new Pair<>(fromYaml.getInfrastructureDefinitionConfig().getIdentifier(), requestedEntity.getIdentifier()));
+    }
+    if (StringUtils.compare(fromYaml.getInfrastructureDefinitionConfig().getName(), requestedEntity.getName()) != 0) {
+      mismatchedEntries.put("InfraStructureDefinition Name",
+          new Pair<>(fromYaml.getInfrastructureDefinitionConfig().getName(), requestedEntity.getName()));
+    }
+    if (StringUtils.compare(
+            fromYaml.getInfrastructureDefinitionConfig().getType().toString(), requestedEntity.getType().toString())
+        != 0) {
+      mismatchedEntries.put("InfrastructureDefinition type",
+          new Pair<>(
+              fromYaml.getInfrastructureDefinitionConfig().getType().toString(), requestedEntity.getType().toString()));
+    }
+    if (isNotEmpty(mismatchedEntries)) {
+      throw new InvalidRequestException(
+          "Found mismatch in following fields between yaml and requested value respectively: " + mismatchedEntries);
+    }
   }
 }

@@ -16,7 +16,7 @@ import static io.harness.provision.TerragruntConstants.TERRAGRUNT_OUTPUT_COMMAND
 import static io.harness.provision.TerragruntConstants.TERRAGRUNT_PLAN_COMMAND_FORMAT;
 import static io.harness.provision.TerragruntConstants.TERRAGRUNT_PLAN_DESTROY_COMMAND_FORMAT;
 import static io.harness.provision.TerragruntConstants.TERRAGRUNT_REFRESH_COMMAND_FORMAT;
-import static io.harness.provision.TerragruntConstants.TERRAGRUNT_RUN_ALL_APPLY_COMMAND_FORMAT;
+import static io.harness.provision.TerragruntConstants.TERRAGRUNT_RUN_ALL_APPLY_COMMAND_FORMAT_WITH_EXTERNAL_DEPENDENCY;
 import static io.harness.provision.TerragruntConstants.TERRAGRUNT_RUN_ALL_DESTROY_COMMAND_FORMAT;
 import static io.harness.provision.TerragruntConstants.TERRAGRUNT_RUN_ALL_INIT_COMMAND_FORMAT;
 import static io.harness.provision.TerragruntConstants.TERRAGRUNT_RUN_ALL_OUTPUT_COMMAND_FORMAT;
@@ -82,7 +82,7 @@ public class TerragruntCommandUtils {
   }
 
   public String runAllApply(String targetArgs, String varParams) {
-    return format(TERRAGRUNT_RUN_ALL_APPLY_COMMAND_FORMAT, targetArgs, varParams);
+    return format(TERRAGRUNT_RUN_ALL_APPLY_COMMAND_FORMAT_WITH_EXTERNAL_DEPENDENCY, targetArgs, varParams);
   }
 
   public String destroy(String autoApproveArg, String targetArgs, String varParams) {
