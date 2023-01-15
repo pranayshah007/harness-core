@@ -23,8 +23,6 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(CDP)
 @UtilityClass
 public class FileStoreUtils {
-  public static final Pattern FILE_PATH_PATTERN = Pattern.compile("^(/)([^/\0]+(/)?)++$");
-
   public static boolean nameChanged(NGFile oldNGFile, FileDTO fileDto) {
     return !oldNGFile.getName().equals(fileDto.getName());
   }
