@@ -97,7 +97,7 @@ public class NGManagerEncryptorHelper {
             .accountId(accountId)
             .taskSetupAbstractions(buildAbstractions(parameters.getEncryptionConfig()))
             .build();
-    DelegateResponseData delegateResponseData = delegateService.executeSyncTask(delegateTaskRequest);
+    DelegateResponseData delegateResponseData = delegateService.executeSyncTaskV2(delegateTaskRequest);
     DelegateTaskUtils.validateDelegateTaskResponse(delegateResponseData);
     if (!(delegateResponseData instanceof FetchSecretTaskResponse)) {
       throw new SecretManagementException(SECRET_MANAGEMENT_ERROR, "Unknown Response from delegate", USER);
@@ -115,7 +115,7 @@ public class NGManagerEncryptorHelper {
             .accountId(accountId)
             .taskSetupAbstractions(buildAbstractions(parameters.getEncryptionConfig()))
             .build();
-    DelegateResponseData delegateResponseData = delegateService.executeSyncTask(delegateTaskRequest);
+    DelegateResponseData delegateResponseData = delegateService.executeSyncTaskV2(delegateTaskRequest);
     DelegateTaskUtils.validateDelegateTaskResponse(delegateResponseData);
     if (!(delegateResponseData instanceof ValidateSecretReferenceTaskResponse)) {
       throw new SecretManagementException(SECRET_MANAGEMENT_ERROR, "Unknown Response from delegate", USER);
@@ -133,7 +133,7 @@ public class NGManagerEncryptorHelper {
             .accountId(accountId)
             .taskSetupAbstractions(buildAbstractions(parameters.getEncryptionConfig()))
             .build();
-    DelegateResponseData delegateResponseData = delegateService.executeSyncTask(delegateTaskRequest);
+    DelegateResponseData delegateResponseData = delegateService.executeSyncTaskV2(delegateTaskRequest);
     DelegateTaskUtils.validateDelegateTaskResponse(delegateResponseData);
     if (!(delegateResponseData instanceof ValidateSecretManagerConfigurationTaskResponse)) {
       throw new SecretManagementException(SECRET_MANAGEMENT_ERROR, "Unknown Response from delegate", USER);
@@ -159,7 +159,7 @@ public class NGManagerEncryptorHelper {
             .taskSetupAbstractions(buildAbstractions(parameters.getEncryptionConfig()))
             .expressionFunctorToken(expressionFunctorToken)
             .build();
-    DelegateResponseData delegateResponseData = delegateService.executeSyncTask(delegateTaskRequest);
+    DelegateResponseData delegateResponseData = delegateService.executeSyncTaskV2(delegateTaskRequest);
     DelegateTaskUtils.validateDelegateTaskResponse(delegateResponseData);
     if (!(delegateResponseData instanceof FetchCustomSecretTaskResponse)) {
       throw new SecretManagementException(SECRET_MANAGEMENT_ERROR, "Unknown Response from delegate", USER);
@@ -179,7 +179,7 @@ public class NGManagerEncryptorHelper {
             .taskSetupAbstractions(buildAbstractions(parameters.getEncryptionConfig()))
             .expressionFunctorToken(expressionFunctorToken)
             .build();
-    DelegateResponseData delegateResponseData = delegateService.executeSyncTask(delegateTaskRequest);
+    DelegateResponseData delegateResponseData = delegateService.executeSyncTaskV2(delegateTaskRequest);
     DelegateTaskUtils.validateDelegateTaskResponse(delegateResponseData);
     if (!(delegateResponseData instanceof ValidateCustomSecretManagerSecretReferenceTaskResponse)) {
       throw new SecretManagementException(SECRET_MANAGEMENT_ERROR, "Unknown Response from delegate", USER);
@@ -200,7 +200,7 @@ public class NGManagerEncryptorHelper {
             .taskSetupAbstractions(buildAbstractions(parameters.getEncryptionConfig()))
             .expressionFunctorToken(expressionFunctorToken)
             .build();
-    DelegateResponseData delegateResponseData = delegateService.executeSyncTask(delegateTaskRequest);
+    DelegateResponseData delegateResponseData = delegateService.executeSyncTaskV2(delegateTaskRequest);
     DelegateTaskUtils.validateDelegateTaskResponse(delegateResponseData);
     if (!(delegateResponseData instanceof ValidateCustomSecretManagerSecretReferenceTaskResponse)) {
       throw new SecretManagementException(SECRET_MANAGEMENT_ERROR, "Unknown Response from delegate", USER);

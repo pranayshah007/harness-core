@@ -87,9 +87,12 @@ public class CompositeSLORecordServiceImpl implements CompositeSLORecordService 
   }
 
   @Override
-  public CompositeSLORecord getLatestCompositeSLORecordWithVersion(String sloId, int sloVersion) {
+  public CompositeSLORecord getLatestCompositeSLORecordWithVersion(
+      String sloId, Instant startTimeForCurrentRange, int sloVersion) {
     return hPersistence.createQuery(CompositeSLORecord.class, excludeAuthorityCount)
         .filter(CompositeSLORecordKeys.sloId, sloId)
+        .field(CompositeSLORecordKeys.timestamp)
+        .greaterThanOrEq(startTimeForCurrentRange)
         .filter(CompositeSLORecordKeys.sloVersion, sloVersion)
         .order(Sort.descending(CompositeSLORecordKeys.timestamp))
         .get();

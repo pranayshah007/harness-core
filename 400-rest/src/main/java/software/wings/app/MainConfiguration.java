@@ -136,6 +136,7 @@ public class MainConfiguration extends Configuration implements AssetsBundleConf
   @JsonProperty(defaultValue = "50") private int jenkinsBuildQuerySize = 50;
   @JsonProperty("iteratorsConfig") private IteratorsConfig iteratorsConfig;
   @JsonProperty("executorsConfig") private ExecutorsConfig executorsConfig;
+  @JsonProperty("dataReconciliation") private DataReconciliationConfig dataReconciliationConfig;
   @JsonProperty private io.harness.delegate.beans.FileUploadLimit fileUploadLimits = new FileUploadLimit();
   @JsonProperty("backgroundScheduler") private SchedulerConfig backgroundSchedulerConfig = new SchedulerConfig();
   @JsonProperty("serviceScheduler") private SchedulerConfig serviceSchedulerConfig = new SchedulerConfig();

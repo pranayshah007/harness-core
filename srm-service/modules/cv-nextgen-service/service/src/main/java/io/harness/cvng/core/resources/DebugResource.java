@@ -14,6 +14,8 @@ import io.harness.cvng.beans.change.ChangeEventDTO;
 import io.harness.cvng.core.beans.CompositeSLODebugResponse;
 import io.harness.cvng.core.beans.SLODebugResponse;
 import io.harness.cvng.core.beans.VerifyStepDebugResponse;
+import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.HealthSourceSpec;
+import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.NextGenHealthSourceSpec;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.ProjectScopedProjectParams;
 import io.harness.cvng.core.entities.DataCollectionTask;
@@ -91,5 +93,14 @@ public class DebugResource {
       @NotNull @BeanParam ProjectScopedProjectParams projectParams, @NotNull @Body ChangeEventDTO changeEventDTO) {
     return new RestResponse<>(
         debugService.registerInternalChangeEvent(projectParams.getProjectParams(), changeEventDTO));
+  }
+
+  @POST
+  @Timed
+  @Path("health-source-spec")
+  @ApiOperation(value = "get health source spec", nickname = "getHealthSourceSpec")
+  public RestResponse<HealthSourceSpec> validateHealthSourceSpec(
+      @NotNull @BeanParam ProjectScopedProjectParams projectParams) {
+    return new RestResponse<>(NextGenHealthSourceSpec.builder().build());
   }
 }

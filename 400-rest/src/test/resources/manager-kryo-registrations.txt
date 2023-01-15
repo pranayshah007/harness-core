@@ -2170,7 +2170,7 @@
 70004:io.harness.accesscontrol.NGAccessDeniedException
 71100:software.wings.service.impl.ThirdPartyApiCallLog.ThirdPartyApiCallField
 71101:software.wings.service.impl.ThirdPartyApiCallLog.FieldType
-71102:software.wings.beans.Log
+71102:software.wings.beans.dto.Log
 71103:io.harness.logging.LogLevel
 71104:software.wings.delegatetasks.manifest.ManifestCollectionExecutionResponse
 71105:software.wings.delegatetasks.manifest.ManifestCollectionResponse
@@ -2783,6 +2783,8 @@
 573591:io.harness.delegate.task.aws.asg.AsgRollingRollbackResponse
 573592:io.harness.delegate.task.aws.asg.AsgRollingRollbackResult
 573593:software.wings.api.terraform.TfVarS3Source
+573594:io.harness.delegate.task.k8s.K8sDryRunManifestRequest
+573595:io.harness.delegate.task.k8s.K8sDryRunManifestResponse
 573600:io.harness.delegate.exception.ElastigroupNGException
 573601:io.harness.delegate.task.elastigroup.response.SpotInstConfig
 573602:io.harness.delegate.task.elastigroup.response.ElastigroupParametersFetchResponse
@@ -2984,3 +2986,7 @@
 10000260:io.harness.delegate.task.pcf.request.TasManifestsPackage
 10000261:io.harness.delegate.beans.pcf.CfSwapRouteCommandResult
 10000262:io.harness.exception.TerragruntCommandExecutionException
+10000263:io.harness.delegate.task.pcf.request.CfRollingDeployRequestNG
+10000264:io.harness.delegate.task.pcf.response.CfRollingDeployResponseNG
+10000265:io.harness.delegate.task.pcf.request.CfRollingRollbackRequestNG
+10000266:io.harness.delegate.task.pcf.response.CfRollingRollbackResponseNG

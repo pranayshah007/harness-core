@@ -14,7 +14,7 @@ java_library(
         "//:lombok",
         "//960-ng-core-beans/src/main/java/io/harness/ng/core/dto:module",
         "//960-ng-core-beans/src/main/java/io/harness/ng/core/invites/dto:module",
-        "//980-commons:module",
+        "//980-commons/src/main/java/io/harness/exception:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
         "@maven//:com_fasterxml_jackson_core_jackson_annotations",
         "@maven//:io_swagger_core_v3_swagger_annotations",

@@ -26,7 +26,9 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.event.timeseries.processor.utils.DateUtils;
 import io.harness.exception.UnknownEnumTypeException;
 import io.harness.models.ActiveServiceInstanceInfoV2;
+import io.harness.models.ArtifactDeploymentDetailModel;
 import io.harness.models.EnvBuildInstanceCount;
+import io.harness.models.EnvironmentInstanceCountModel;
 import io.harness.models.InstanceDetailsByBuildId;
 import io.harness.models.constants.TimescaleConstants;
 import io.harness.models.dashboard.InstanceCountDetailsByEnvTypeAndServiceId;
@@ -40,13 +42,16 @@ import io.harness.ng.core.dashboard.ExecutionStatusInfo;
 import io.harness.ng.core.dashboard.GitInfo;
 import io.harness.ng.core.dashboard.InfrastructureInfo;
 import io.harness.ng.core.dashboard.ServiceDeploymentInfo;
+import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.EnvironmentType;
+import io.harness.ng.core.environment.services.impl.EnvironmentServiceImpl;
 import io.harness.ng.core.mapper.TagMapper;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.overview.dto.ActiveServiceDeploymentsInfo;
 import io.harness.ng.overview.dto.ActiveServiceInstanceSummary;
 import io.harness.ng.overview.dto.ActiveServiceInstanceSummaryV2;
+import io.harness.ng.overview.dto.ArtifactDeploymentDetail;
 import io.harness.ng.overview.dto.BuildIdAndInstanceCount;
 import io.harness.ng.overview.dto.ChangeRate;
 import io.harness.ng.overview.dto.DashboardWorkloadDeployment;
@@ -65,6 +70,7 @@ import io.harness.ng.overview.dto.EnvBuildIdAndInstanceCountInfoList;
 import io.harness.ng.overview.dto.EnvIdCountPair;
 import io.harness.ng.overview.dto.EnvironmentDeploymentInfo;
 import io.harness.ng.overview.dto.EnvironmentInfoByServiceId;
+import io.harness.ng.overview.dto.EnvironmentInstanceDetails;
 import io.harness.ng.overview.dto.ExecutionDeployment;
 import io.harness.ng.overview.dto.ExecutionDeploymentInfo;
 import io.harness.ng.overview.dto.HealthDeploymentDashboard;
@@ -138,6 +144,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   @Inject ServiceEntityService serviceEntityService;
   @Inject InstanceDashboardService instanceDashboardService;
   @Inject ServiceEntityService serviceEntityServiceImpl;
+  @Inject EnvironmentServiceImpl environmentService;
 
   private String tableNameCD = "pipeline_execution_summary_cd";
   private String tableNameServiceAndInfra = "service_infra_info";
@@ -2651,6 +2658,101 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
       return buildId;
     }
     return String.format("%s:%s", artifactPath, buildId);
+  }
+
+  @Override
+  public EnvironmentInstanceDetails getEnvironmentInstanceDetails(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceIdentifier) {
+    Boolean isGitOps = isGitopsEnabled(accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier);
+    List<EnvironmentInstanceCountModel> environmentInstanceCounts =
+        instanceDashboardService.getInstanceCountForEnvironmentFilteredByService(
+            accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, isGitOps);
+
+    List<String> envIds = new ArrayList<>();
+    Map<String, Integer> envToCountMap = new HashMap<>();
+
+    constructEnvironmentCountMap(environmentInstanceCounts, envToCountMap, envIds);
+
+    List<Environment> environments = environmentService.fetchesNonDeletedEnvironmentFromListOfIdentifiers(
+        accountIdentifier, orgIdentifier, projectIdentifier, envIds);
+    Map<String, String> envIdToEnvNameMap = new HashMap<>();
+    Map<String, EnvironmentType> envIdToEnvTypeMap = new HashMap<>();
+
+    constructEnvironmentNameAndTypeMap(environments, envIdToEnvNameMap, envIdToEnvTypeMap);
+
+    List<ArtifactDeploymentDetailModel> artifactDeploymentDetails = instanceDashboardService.getLastDeployedInstance(
+        accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, true, isGitOps);
+    Map<String, ArtifactDeploymentDetail> artifactDeploymentDetailsMap =
+        constructEnvironmentToArtifactDeploymentMap(artifactDeploymentDetails);
+
+    return getEnvironmentInstanceDetailsFromMap(
+        artifactDeploymentDetailsMap, envToCountMap, envIdToEnvNameMap, envIdToEnvTypeMap);
+  }
+
+  public EnvironmentInstanceDetails getEnvironmentInstanceDetailsFromMap(
+      Map<String, ArtifactDeploymentDetail> artifactDeploymentDetailsMap, Map<String, Integer> envToCountMap,
+      Map<String, String> envIdToEnvNameMap, Map<String, EnvironmentType> envIdToEnvTypeMap) {
+    List<EnvironmentInstanceDetails.EnvironmentInstanceDetail> environmentInstanceDetails = new ArrayList<>();
+
+    for (Map.Entry<String, Integer> entry : envToCountMap.entrySet()) {
+      final String envId = entry.getKey();
+      final EnvironmentType envType = envIdToEnvTypeMap.get(envId);
+      final String envName = envIdToEnvNameMap.get(envId);
+      final Integer count = entry.getValue();
+      final ArtifactDeploymentDetail artifactDeploymentDetail = artifactDeploymentDetailsMap.get(envId);
+      environmentInstanceDetails.add(EnvironmentInstanceDetails.EnvironmentInstanceDetail.builder()
+                                         .environmentType(envType)
+                                         .envId(envId)
+                                         .envName(envName)
+                                         .artifactDeploymentDetail(artifactDeploymentDetail)
+                                         .count(count)
+                                         .build());
+    }
+
+    return EnvironmentInstanceDetails.builder().environmentInstanceDetails(environmentInstanceDetails).build();
+  }
+
+  public Map<String, ArtifactDeploymentDetail> constructEnvironmentToArtifactDeploymentMap(
+      List<ArtifactDeploymentDetailModel> artifactDeploymentDetails) {
+    Map<String, ArtifactDeploymentDetail> map = new HashMap<>();
+    for (ArtifactDeploymentDetailModel artifactDeploymentDetail : artifactDeploymentDetails) {
+      final String envId = artifactDeploymentDetail.getEnvIdentifier();
+      if (envId == null) {
+        continue;
+      }
+      map.putIfAbsent(envId,
+          ArtifactDeploymentDetail.builder()
+              .artifact(artifactDeploymentDetail.getDisplayName())
+              .lastDeployedAt(artifactDeploymentDetail.getLastDeployedAt())
+              .build());
+    }
+    return map;
+  }
+
+  public void constructEnvironmentNameAndTypeMap(List<Environment> environments, Map<String, String> envIdToNameMap,
+      Map<String, EnvironmentType> envIdToEnvTypeMap) {
+    for (Environment environment : environments) {
+      final String envId = environment.getIdentifier();
+      if (envId == null) {
+        continue;
+      }
+      final String envName = environment.getName();
+      final EnvironmentType environmentType = environment.getType();
+      envIdToNameMap.put(envId, envName);
+      envIdToEnvTypeMap.put(envId, environmentType);
+    }
+  }
+
+  public void constructEnvironmentCountMap(List<EnvironmentInstanceCountModel> environmentInstanceCounts,
+      Map<String, Integer> envToCountMap, List<String> envIds) {
+    for (EnvironmentInstanceCountModel environmentInstanceCountModel : environmentInstanceCounts) {
+      final String envId = environmentInstanceCountModel.getEnvIdentifier();
+      if (envId == null) {
+        continue;
+      }
+      envToCountMap.put(envId, environmentInstanceCountModel.getCount());
+      envIds.add(envId);
+    }
   }
 
   private List<InstanceGroupedByArtifactList.InstanceGroupedByArtifact> groupedByArtifacts(

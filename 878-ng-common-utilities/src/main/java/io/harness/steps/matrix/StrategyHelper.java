@@ -53,8 +53,12 @@ public class StrategyHelper {
     }
     StrategyConfig strategyConfig = JsonPipelineUtils.read(node.toString(), StrategyConfig.class);
     StrategyValidationUtils.validateStrategyNode(strategyConfig);
-    if (strategyConfig.getMatrixConfig() != null) {
-      return matrixConfigService.expandJsonNode(strategyConfig, nodeWithStrategy, maxExpansionLimit);
+    if (ParameterField.isNotNull(strategyConfig.getMatrixConfig())) {
+      if (strategyConfig.getMatrixConfig().isExpression()) {
+        throw new InvalidRequestException("Expression for matrix at runtime could not be resolved!");
+      } else {
+        return matrixConfigService.expandJsonNode(strategyConfig, nodeWithStrategy, maxExpansionLimit);
+      }
     }
     if (!ParameterField.isBlank(strategyConfig.getParallelism())) {
       return parallelismStrategyConfigService.expandJsonNode(strategyConfig, nodeWithStrategy, maxExpansionLimit);

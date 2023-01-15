@@ -657,6 +657,15 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
 
   private void modifyInfraRequest(InfrastructureEntity requestInfra) {
     requestInfra.setName(requestInfra.getName().trim());
+    // convert to scope of the environment
+    String[] envRefSplit = StringUtils.split(requestInfra.getEnvIdentifier(), ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
+    if (envRefSplit != null && envRefSplit.length == 2) {
+      IdentifierRef envIdentifierRef = IdentifierRefHelper.getIdentifierRef(requestInfra.getEnvIdentifier(),
+          requestInfra.getAccountId(), requestInfra.getOrgIdentifier(), requestInfra.getProjectIdentifier());
+      requestInfra.setOrgIdentifier(envIdentifierRef.getOrgIdentifier());
+      requestInfra.setProjectIdentifier(envIdentifierRef.getProjectIdentifier());
+      requestInfra.setEnvIdentifier(envIdentifierRef.getIdentifier());
+    }
   }
 
   private void modifyInfraRequestBatch(List<InfrastructureEntity> infrastructureEntityList) {

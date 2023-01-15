@@ -181,6 +181,7 @@ import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideInfoConfig;
+import io.harness.pcf.model.CfCliVersionNG;
 import io.harness.serializer.KryoRegistrar;
 
 import com.esotericsoftware.kryo.Kryo;
@@ -371,5 +372,6 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(AsgInfrastructure.class, 140067);
     kryo.register(GoogleCloudFunctionDefinitionManifest.class, 140068);
     kryo.register(GoogleCloudFunctionDefinitionManifestOutcome.class, 140069);
+    kryo.register(CfCliVersionNG.class, 140070);
   }
 }

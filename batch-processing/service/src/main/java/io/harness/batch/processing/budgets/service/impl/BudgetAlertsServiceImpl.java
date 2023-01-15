@@ -112,7 +112,8 @@ public class BudgetAlertsServiceImpl {
         try {
           checkAndSendAlerts(buildBudgetCommon(budget, null), currency);
         } catch (Exception e) {
-          log.error("Can't send alert for budget : {}, Exception: ", budget.getUuid(), e);
+          log.error("Can't send alert for budget : {}, accountId: {}, Exception: ", budget.getUuid(),
+              budget.getAccountId(), e);
         }
       });
       List<BudgetGroup> budgetGroups = budgetGroupDao.list(accountId, Integer.MAX_VALUE, 0);
@@ -120,7 +121,8 @@ public class BudgetAlertsServiceImpl {
         try {
           checkAndSendAlerts(buildBudgetCommon(null, budgetGroup), currency);
         } catch (Exception e) {
-          log.error("Can't send alert for budget group : {}, Exception: ", budgetGroup.getUuid(), e);
+          log.error("Can't send alert for budget group : {}, accountId: {}, Exception: ", budgetGroup.getUuid(),
+              budgetGroup.getAccountId(), e);
         }
       });
     });
@@ -249,7 +251,8 @@ public class BudgetAlertsServiceImpl {
           costType = FORECASTED_COST_BUDGET;
           subjectCostType = SUBJECT_FORECASTED_COST_BUDGET;
         }
-        log.info("{} has been spent under the {} with id={} ", cost, budgetOrBudgetGroup, budgetCommon.getUuid());
+        log.info("{} has been spent under the {} with id={}, accountId={}", cost, budgetOrBudgetGroup,
+            budgetCommon.getUuid(), budgetCommon.getAccountId());
       } catch (Exception e) {
         log.error(e.getMessage());
         break;
@@ -258,9 +261,11 @@ public class BudgetAlertsServiceImpl {
       if (exceedsThreshold(cost, getThresholdAmount(budgetCommon, alertThreshold))) {
         try {
           sendBudgetAlertViaSlack(budgetCommon, alertThreshold, slackWebhooks);
-          log.info("slack {} alert sent!", budgetOrBudgetGroup);
+          log.info("slack {} alert sent! for accountId: {}, budgetId: {}", budgetOrBudgetGroup,
+              budgetCommon.getAccountId(), budgetCommon.getUuid());
         } catch (Exception e) {
-          log.error("Notification via slack not send : ", e);
+          log.error("Notification via slack not sent for accountId: {}, budgetId: {} : ", budgetCommon.getAccountId(),
+              budgetCommon.getUuid(), e);
         }
         sendBudgetAlertMail(budgetCommon.getAccountId(), emailAddresses, budgetCommon.getUuid(), budgetCommon.getName(),
             alertThreshold, cost, costType, budgetCommon.isNgBudget(), subjectCostType,
@@ -294,7 +299,8 @@ public class BudgetAlertsServiceImpl {
     Response<RestResponse<NotificationResult>> response =
         notificationResourceClient.sendNotification(budgetCommon.getAccountId(), slackChannelBuilder.build()).execute();
     if (!response.isSuccessful()) {
-      log.error("Failed to send slack notification: {}",
+      log.error("Failed to send slack notification for accountId: {}, budgetId: {} error: {}",
+          budgetCommon.getAccountId(), budgetCommon.getUuid(),
           (response.errorBody() != null) ? response.errorBody().string() : response.code());
     }
   }
@@ -363,10 +369,10 @@ public class BudgetAlertsServiceImpl {
           Response<RestResponse<NotificationResult>> response =
               notificationResourceClient.sendNotification(accountId, emailChannelBuilder.build()).execute();
           if (!response.isSuccessful()) {
-            log.error("Failed to send email notification: {}",
-                (response.errorBody() != null) ? response.errorBody().string() : response.code());
+            log.error("Failed to send email notification for accountId: {}, budgetId: {} error: {}", accountId,
+                budgetId, (response.errorBody() != null) ? response.errorBody().string() : response.code());
           } else {
-            log.info("email sent to {} successfully", emailAddress);
+            log.info("email sent successfully for accountId: {}, budgetId: {}", accountId, budgetId);
           }
         } catch (IOException e) {
           log.error(BUDGET_MAIL_ERROR, e);

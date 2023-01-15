@@ -24,19 +24,21 @@ import org.redisson.api.RedissonClient;
 @Slf4j
 public class DebeziumProducerFactory {
   private static final Map<String, Producer> producerMap = new ConcurrentHashMap<>();
-
   @Inject RedisProducerFactory redisProducerFactory;
-  @Inject EventsFrameworkConfiguration configuration;
 
-  public Producer get(String collection, int redisStreamSize) {
-    if (producerMap.containsKey(collection)) {
-      return producerMap.get(collection);
+  public Producer get(
+      String collection, int redisStreamSize, ConsumerMode mode, EventsFrameworkConfiguration configuration) {
+    if (producerMap.containsKey(collection + "-" + mode)) {
+      return producerMap.get(collection + "-" + mode);
     }
-
     RedissonClient redissonClient = RedissonClientFactory.getClient(configuration.getRedisConfig());
-    Producer producer = redisProducerFactory.createRedisProducer(DEBEZIUM_PREFIX + collection, redissonClient,
-        redisStreamSize, DEBEZIUM_SERVICE.getServiceId(), configuration.getRedisConfig().getEnvNamespace());
-    producerMap.put(collection, producer);
+    String topicName = DEBEZIUM_PREFIX + collection;
+    if (mode == ConsumerMode.SNAPSHOT) {
+      topicName = DEBEZIUM_PREFIX + "SNAPSHOT_" + collection;
+    }
+    Producer producer = redisProducerFactory.createRedisProducer(topicName, redissonClient, redisStreamSize,
+        DEBEZIUM_SERVICE.getServiceId(), configuration.getRedisConfig().getEnvNamespace());
+    producerMap.put(collection + "-" + mode, producer);
     return producer;
   }
 }

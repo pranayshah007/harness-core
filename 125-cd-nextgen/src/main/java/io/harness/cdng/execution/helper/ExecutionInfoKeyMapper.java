@@ -30,7 +30,8 @@ public class ExecutionInfoKeyMapper {
     String infrastructureKind = infrastructureOutcome.getKind();
     if (InfrastructureKind.PDC.equals(infrastructureKind)
         || InfrastructureKind.SSH_WINRM_AZURE.equals(infrastructureKind)
-        || InfrastructureKind.SSH_WINRM_AWS.equals(infrastructureKind)) {
+        || InfrastructureKind.SSH_WINRM_AWS.equals(infrastructureKind)
+        || InfrastructureKind.TAS.equals(infrastructureKind)) {
       // infra identifier could be null in service/env version v1
       String infraIdentifier = infrastructureOutcome.getInfraIdentifier();
       if (isBlank(infraIdentifier)) {

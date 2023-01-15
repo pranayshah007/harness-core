@@ -29,7 +29,6 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.steps.StepType;
-import io.harness.pms.sdk.core.steps.executables.SyncExecutable;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
@@ -48,6 +47,7 @@ import io.harness.steps.cf.SetFeatureFlagStateYaml.SetFeatureFlagStateYamlSpec;
 import io.harness.steps.cf.SetOffVariationYaml.SetOffVariationYamlSpec;
 import io.harness.steps.cf.SetOnVariationYaml.SetOnVariationYamlSpec;
 import io.harness.steps.cf.UpdateRuleYaml.UpdateRuleYamlSpec;
+import io.harness.steps.executables.PipelineSyncExecutable;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
@@ -61,7 +61,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CF)
 @Slf4j
-public class FlagConfigurationStep implements SyncExecutable<StepElementParameters> {
+public class FlagConfigurationStep extends PipelineSyncExecutable {
   public static final StepType STEP_TYPE = StepSpecTypeConstants.FLAG_CONFIGURATION_STEP_TYPE;
   public static final String STEP_NAME = "Flag Configuration";
   public static final String STEP_CATEGORY = "FeatureFlag";
@@ -84,7 +84,7 @@ public class FlagConfigurationStep implements SyncExecutable<StepElementParamete
   }
 
   @Override
-  public StepResponse executeSync(Ambiance ambiance, StepElementParameters stepParameters,
+  public StepResponse executeSyncAfterRbac(Ambiance ambiance, StepElementParameters stepParameters,
       StepInputPackage inputPackage, PassThroughData passThroughData) {
     log.info("Executing feature update step..");
     long startTime = System.currentTimeMillis();

@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.preflight.entity.PreFlightEntity;
 
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -19,4 +20,10 @@ public interface PreFlightRepositoryCustom {
   PreFlightEntity update(Criteria criteria, PreFlightEntity entity);
 
   PreFlightEntity update(Criteria criteria, Update update);
+
+  /**
+   * Deletes all matching preflight entity for given query
+   * @param query
+   */
+  void deleteAllPreflightForGivenParams(Query query);
 }

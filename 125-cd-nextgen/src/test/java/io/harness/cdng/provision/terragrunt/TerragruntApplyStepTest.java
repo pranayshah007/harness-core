@@ -21,14 +21,16 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
+import io.harness.cdng.manifest.yaml.GithubStore;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
+import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.InlineFileConfig;
 import io.harness.delegate.beans.storeconfig.InlineStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.delegate.beans.terragrunt.request.TerragruntApplyTaskParameters;
+import io.harness.delegate.beans.terragrunt.request.TerragruntRunConfiguration;
 import io.harness.delegate.beans.terragrunt.request.TerragruntTaskRunType;
 import io.harness.delegate.beans.terragrunt.response.TerragruntApplyTaskResponse;
 import io.harness.logging.UnitProgress;
@@ -42,9 +44,13 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
+import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
+
+import software.wings.beans.VaultConfig;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -74,7 +80,6 @@ public class TerragruntApplyStepTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
   @Mock private KryoSerializer kryoSerializer;
-  @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
   @Mock private TerragruntStepHelper terragruntStepHelper;
   @Mock private PipelineRbacHelper pipelineRbacHelper;
   @Mock private StepHelper stepHelper;
@@ -139,7 +144,7 @@ public class TerragruntApplyStepTest extends CategoryTest {
   @Test
   @Owner(developers = VLICA)
   @Category(UnitTests.class)
-  public void testObtainTaskAfterRbac() {
+  public void testObtainTaskAfterRbacInline() {
     TerragruntConfigFilesWrapper configFilesWrapper = TerragruntTestStepUtils.createConfigFilesWrapper();
     LinkedHashMap<String, TerragruntVarFile> varFilesMap = TerragruntTestStepUtils.createVarFilesInline();
     TerragruntBackendConfig backendConfig = TerragruntTestStepUtils.createInlineBackendConfig();
@@ -181,15 +186,23 @@ public class TerragruntApplyStepTest extends CategoryTest {
                 .build()));
     when(terragruntStepHelper.getBackendConfig(any(), any()))
         .thenReturn(InlineStoreDelegateConfig.builder().identifier("test-backend-id").build());
-    when(terragruntStepHelper.getEnvironmentVariablesMap(any())).thenReturn(new HashMap<>());
+    when(terragruntStepHelper.getEnvironmentVariablesMap(any())).thenReturn(new HashMap<>() {
+      { put("envKey", "envVal"); }
+    });
     when(terragruntStepHelper.getLatestFileId(any())).thenReturn(null);
+    when(terragruntStepHelper.getEncryptionDetails(any(), any(), any(), any()))
+        .thenReturn(List.of(EncryptedDataDetail.builder()
+                                .encryptionConfig(VaultConfig.builder().build())
+                                .encryptedData(EncryptedRecordData.builder().build())
+                                .build()));
     Mockito.mockStatic(StepUtils.class);
 
     terragruntApplyStep.obtainTaskAfterRbac(
         TerragruntTestStepUtils.getAmbiance(), stepElementParameters, StepInputPackage.builder().build());
 
     PowerMockito.verifyStatic(StepUtils.class, times(1));
-    StepUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any());
+    StepUtils.prepareCDTaskRequest(
+        any(), taskDataArgumentCaptor.capture(), any(), any(), eq("Terragrunt Apply Task"), any(), any());
     assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
     assertThat(taskDataArgumentCaptor.getValue().getParameters()).isNotNull();
     TerragruntApplyTaskParameters params =
@@ -199,6 +212,99 @@ public class TerragruntApplyStepTest extends CategoryTest {
     assertThat(params.getRunConfiguration().getRunType()).isEqualTo(TerragruntTaskRunType.RUN_MODULE);
     assertThat(params.getRunConfiguration().getPath()).isEqualTo("test-path");
     assertThat(params.getTargets().get(0)).isEqualTo("test-target");
+    assertThat(params.getEnvVars().get("envKey")).isEqualTo("envVal");
+    assertThat(params.getEncryptedDataDetailList()).isNotEmpty();
+    List<StoreDelegateConfig> inlineVar = params.getVarFiles();
+    assertThat(((InlineStoreDelegateConfig) inlineVar.get(0)).getIdentifier()).isEqualTo("test-var1-id");
+    assertThat(((InlineStoreDelegateConfig) params.getBackendFilesStore()).getIdentifier())
+        .isEqualTo("test-backend-id");
+    assertThat(((GitStoreDelegateConfig) params.getConfigFilesStore()).getConnectorName()).isEqualTo("terragrunt");
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testObtainTaskAfterRbacInheritFromPlan() {
+    TerragruntApplyStepParameters parameters =
+        TerragruntApplyStepParameters.infoBuilder()
+            .provisionerIdentifier(ParameterField.createValueField("test-provisionerId"))
+            .configuration(TerragruntStepConfigurationParameters.builder()
+                               .type(TerragruntStepConfigurationType.INHERIT_FROM_PLAN)
+                               .build())
+            .build();
+
+    when(terragruntStepHelper.getSavedInheritOutput(any(), any(), any()))
+        .thenReturn(TerragruntInheritOutput.builder()
+                        .workspace("test-workspace")
+                        .environmentVariables(new HashMap<>() {
+                          { put("envKey", "envVal"); }
+                        })
+                        .targets(new ArrayList<>() {
+                          { add("test-target"); }
+                        })
+                        .runConfiguration(TerragruntRunConfiguration.builder()
+                                              .runType(TerragruntTaskRunType.RUN_MODULE)
+                                              .path("test-path")
+                                              .build())
+                        .configFiles(GithubStore.builder()
+                                         .branch(ParameterField.createValueField("test-branch"))
+                                         .gitFetchType(FetchType.BRANCH)
+                                         .folderPath(ParameterField.createValueField("test-folder-path"))
+                                         .connectorRef(ParameterField.createValueField("test-connector"))
+                                         .build())
+                        .varFileConfigs(new ArrayList<>() {
+                          { add(TerragruntInlineVarFileConfig.builder().varFileContent("test-var1-content").build()); }
+                        })
+                        .backendConfigFile(TerragruntInlineBackendConfigFileConfig.builder()
+                                               .backendConfigFileContent("test-backend1-content")
+                                               .build())
+                        .encryptionConfig(VaultConfig.builder().build())
+                        .encryptedPlan(EncryptedRecordData.builder().build())
+                        .build());
+
+    StepElementParameters stepElementParameters = StepElementParameters.builder().spec(parameters).build();
+
+    ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
+
+    when(terragruntStepHelper.generateFullIdentifier(any(), any())).thenReturn("testEntityId");
+    when(terragruntStepHelper.getGitFetchFilesConfig(any(), any(), any()))
+        .thenReturn(TerragruntTestStepUtils.createGitStoreDelegateConfig());
+    when(terragruntStepHelper.toStoreDelegateVarFilesFromTgConfig(any(), any()))
+        .thenReturn(Collections.singletonList(
+            InlineStoreDelegateConfig.builder()
+                .identifier("test-var1-id")
+                .files(Collections.singletonList(InlineFileConfig.builder().content("test-var1-content").build()))
+                .build()));
+    when(terragruntStepHelper.getBackendConfigFromTgConfig(any(), any()))
+        .thenReturn(InlineStoreDelegateConfig.builder().identifier("test-backend-id").build());
+    when(terragruntStepHelper.getEnvironmentVariablesMap(any())).thenReturn(new HashMap<>() {
+      { put("envKey", "envVal"); }
+    });
+    when(terragruntStepHelper.getLatestFileId(any())).thenReturn(null);
+    when(terragruntStepHelper.getEncryptionDetailsFromTgInheritConfig(any(), any(), any(), any()))
+        .thenReturn(List.of(EncryptedDataDetail.builder()
+                                .encryptionConfig(VaultConfig.builder().build())
+                                .encryptedData(EncryptedRecordData.builder().build())
+                                .build()));
+    Mockito.mockStatic(StepUtils.class);
+
+    terragruntApplyStep.obtainTaskAfterRbac(
+        TerragruntTestStepUtils.getAmbiance(), stepElementParameters, StepInputPackage.builder().build());
+
+    PowerMockito.verifyStatic(StepUtils.class, times(1));
+    StepUtils.prepareCDTaskRequest(
+        any(), taskDataArgumentCaptor.capture(), any(), any(), eq("Terragrunt Apply Task"), any(), any());
+    assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
+    assertThat(taskDataArgumentCaptor.getValue().getParameters()).isNotNull();
+    TerragruntApplyTaskParameters params =
+        (TerragruntApplyTaskParameters) taskDataArgumentCaptor.getValue().getParameters()[0];
+    assertThat(params.getAccountId()).isEqualTo("test-account");
+    assertThat(params.getWorkspace()).isEqualTo("test-workspace");
+    assertThat(params.getRunConfiguration().getRunType()).isEqualTo(TerragruntTaskRunType.RUN_MODULE);
+    assertThat(params.getRunConfiguration().getPath()).isEqualTo("test-path");
+    assertThat(params.getTargets().get(0)).isEqualTo("test-target");
+    assertThat(params.getEnvVars().get("envKey")).isEqualTo("envVal");
+    assertThat(params.getEncryptedDataDetailList()).isNotEmpty();
     List<StoreDelegateConfig> inlineVar = params.getVarFiles();
     assertThat(((InlineStoreDelegateConfig) inlineVar.get(0)).getIdentifier()).isEqualTo("test-var1-id");
     assertThat(((InlineStoreDelegateConfig) params.getBackendFilesStore()).getIdentifier())
@@ -220,6 +326,11 @@ public class TerragruntApplyStepTest extends CategoryTest {
             .unitProgressData(UnitProgressData.builder().unitProgresses(unitProgresses).build())
             .outputs("test-output-1")
             .stateFileId("test-stateFileId")
+            .configFilesSourceReference("test-configFileSourceRef")
+            .backendFileSourceReference("test-backendFileSourceRef")
+            .varFilesSourceReference(new HashMap<>() {
+              { put("test-var-file-ref-key", "test-var-file-ref-value"); }
+            })
             .build();
 
     TerragruntApplyStepParameters parameters =
@@ -253,10 +364,13 @@ public class TerragruntApplyStepTest extends CategoryTest {
     assertThat(stepResponse.getStepOutcomes()).hasSize(1);
     StepResponse.StepOutcome stepOutcome = ((List<StepResponse.StepOutcome>) stepResponse.getStepOutcomes()).get(0);
     assertThat(stepOutcome.getOutcome()).isInstanceOf(TerragruntApplyOutcome.class);
-    verify(terragruntStepHelper, times(1)).saveRollbackDestroyConfigInline(any(), any(), any());
-    verify(terragruntStepHelper, times(1)).updateParentEntityIdAndVersion(any(), any());
+    assertThat(stepOutcome.getName()).isEqualTo("output");
+    TerragruntApplyOutcome terragruntApplyOutcome = (TerragruntApplyOutcome) stepOutcome.getOutcome();
+    assertThat(terragruntApplyOutcome.get("key-output")).isEqualTo("value-output");
+    verify(terragruntStepHelper, times(1)).saveRollbackDestroyConfigInline(eq(parameters), any(), any());
+    verify(terragruntStepHelper, times(1)).updateParentEntityIdAndVersion(any(), eq("test-stateFileId"));
     verify(terragruntStepHelper, times(1)).generateFullIdentifier(any(), any());
-    verify(terragruntStepHelper, times(1)).parseTerragruntOutputs(any());
+    verify(terragruntStepHelper, times(1)).parseTerragruntOutputs(eq("test-output-1"));
   }
 
   @Test
@@ -273,6 +387,11 @@ public class TerragruntApplyStepTest extends CategoryTest {
             .unitProgressData(UnitProgressData.builder().unitProgresses(unitProgresses).build())
             .outputs("test-output-1")
             .stateFileId("test-stateFileId")
+            .configFilesSourceReference("test-configFileSourceRef")
+            .backendFileSourceReference("test-backendFileSourceRef")
+            .varFilesSourceReference(new HashMap<>() {
+              { put("test-var-file-ref-key", "test-var-file-ref-value"); }
+            })
             .build();
 
     TerragruntApplyStepParameters parameters =
@@ -306,9 +425,12 @@ public class TerragruntApplyStepTest extends CategoryTest {
     assertThat(stepResponse.getStepOutcomes()).hasSize(1);
     StepResponse.StepOutcome stepOutcome = ((List<StepResponse.StepOutcome>) stepResponse.getStepOutcomes()).get(0);
     assertThat(stepOutcome.getOutcome()).isInstanceOf(TerragruntApplyOutcome.class);
-    verify(terragruntStepHelper, times(1)).saveRollbackDestroyConfigInherited(any(), any());
-    verify(terragruntStepHelper, times(1)).updateParentEntityIdAndVersion(any(), any());
+    assertThat(stepOutcome.getName()).isEqualTo("output");
+    TerragruntApplyOutcome terragruntApplyOutcome = (TerragruntApplyOutcome) stepOutcome.getOutcome();
+    assertThat(terragruntApplyOutcome.get("key-output")).isEqualTo("value-output");
+    verify(terragruntStepHelper, times(1)).saveRollbackDestroyConfigInherited(eq(parameters), any());
+    verify(terragruntStepHelper, times(1)).updateParentEntityIdAndVersion(any(), eq("test-stateFileId"));
     verify(terragruntStepHelper, times(1)).generateFullIdentifier(any(), any());
-    verify(terragruntStepHelper, times(1)).parseTerragruntOutputs(any());
+    verify(terragruntStepHelper, times(1)).parseTerragruntOutputs(eq("test-output-1"));
   }
 }

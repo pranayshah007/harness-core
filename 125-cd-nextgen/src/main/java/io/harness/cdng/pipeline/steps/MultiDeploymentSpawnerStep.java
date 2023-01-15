@@ -11,12 +11,18 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.steps.SdkCoreStepUtils.createStepResponseFromChildResponse;
 
+import static java.lang.String.format;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
+import io.harness.accesscontrol.acl.api.Principal;
+import io.harness.accesscontrol.acl.api.Resource;
+import io.harness.accesscontrol.acl.api.ResourceScope;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.beans.FeatureName;
+import io.harness.beans.IdentifierRef;
 import io.harness.cdng.creator.plan.environment.EnvironmentStepsUtils;
 import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
-import io.harness.cdng.environment.filters.FilterType;
 import io.harness.cdng.environment.filters.FilterYaml;
-import io.harness.cdng.environment.filters.TagsFilter;
 import io.harness.cdng.environment.helper.EnvironmentInfraFilterHelper;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.environment.yaml.EnvironmentsMetadata;
@@ -25,33 +31,38 @@ import io.harness.cdng.environment.yaml.ServiceOverrideInputsYaml;
 import io.harness.cdng.infra.yaml.InfraStructureDefinitionYaml;
 import io.harness.cdng.pipeline.beans.MultiDeploymentStepParameters;
 import io.harness.cdng.pipeline.steps.EnvironmentMapResponse.EnvironmentMapResponseBuilder;
+import io.harness.cdng.service.NGServiceEntityHelper;
 import io.harness.cdng.service.beans.ServiceYamlV2;
 import io.harness.cdng.service.beans.ServicesMetadata;
 import io.harness.cdng.service.beans.ServicesYaml;
+import io.harness.data.structure.CollectionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
+import io.harness.exception.UnresolvedExpressionsException;
 import io.harness.ng.core.common.beans.NGTag;
-import io.harness.ng.core.service.entity.ServiceEntity;
-import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
 import io.harness.pms.contracts.execution.MatrixMetadata;
 import io.harness.pms.contracts.execution.StrategyMetadata;
+import io.harness.pms.contracts.plan.ExecutionPrincipalInfo;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.rbac.NGResourceType;
+import io.harness.pms.rbac.PrincipalTypeProtoToPrincipalTypeMapper;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.rbac.CDNGRbacPermissions;
 import io.harness.steps.executable.ChildrenExecutableWithRollbackAndRbac;
 import io.harness.tasks.ResponseData;
+import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.NGFeatureFlagHelperService;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -63,7 +74,8 @@ import lombok.extern.slf4j.Slf4j;
 public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAndRbac<MultiDeploymentStepParameters> {
   @Inject private NGFeatureFlagHelperService featureFlagHelperService;
   @Inject private EnvironmentInfraFilterHelper environmentInfraFilterHelper;
-  @Inject private ServiceEntityService serviceEntityService;
+  @Inject private NGServiceEntityHelper serviceEntityHelper;
+  @Inject private AccessControlClient accessControlClient;
 
   public static final StepType STEP_TYPE =
       StepType.newBuilder().setType("multiDeployment").setStepCategory(StepCategory.STRATEGY).build();
@@ -82,7 +94,33 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
 
   @Override
   public void validateResources(Ambiance ambiance, MultiDeploymentStepParameters stepParameters) {
-    // Do Nothing
+    if (stepParameters.getEnvironmentGroup() != null && stepParameters.getEnvironmentGroup().getEnvGroupRef() != null) {
+      final ParameterField<String> envGroupRef = stepParameters.getEnvironmentGroup().getEnvGroupRef();
+      if (envGroupRef.isExpression()) {
+        throw new UnresolvedExpressionsException(List.of(envGroupRef.getExpressionValue()));
+      }
+      if (isNotBlank(envGroupRef.getValue())) {
+        IdentifierRef envGroupIdentifierRef =
+            IdentifierRefHelper.getIdentifierRef(envGroupRef.getValue(), AmbianceUtils.getAccountId(ambiance),
+                AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance));
+
+        final ExecutionPrincipalInfo executionPrincipalInfo = ambiance.getMetadata().getPrincipalInfo();
+        final String principal = executionPrincipalInfo.getPrincipal();
+        if (isEmpty(principal)) {
+          return;
+        }
+
+        io.harness.accesscontrol.principals.PrincipalType principalType =
+            PrincipalTypeProtoToPrincipalTypeMapper.convertToAccessControlPrincipalType(
+                executionPrincipalInfo.getPrincipalType());
+        accessControlClient.checkForAccessOrThrow(Principal.of(principalType, principal),
+            ResourceScope.of(envGroupIdentifierRef.getAccountIdentifier(), envGroupIdentifierRef.getOrgIdentifier(),
+                envGroupIdentifierRef.getProjectIdentifier()),
+            Resource.of(NGResourceType.ENVIRONMENT_GROUP, envGroupIdentifierRef.getIdentifier()),
+            CDNGRbacPermissions.ENVIRONMENT_GROUP_RUNTIME_PERMISSION,
+            format("Validation for runtime access to environmentGroup: [%s] failed", envGroupRef.getValue()));
+      }
+    }
   }
 
   @Override
@@ -242,8 +280,8 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
     Map<String, Map<String, String>> serviceToMatrixMetadataMap =
         getServiceToMatrixMetadataMap(stepParameters.getServices());
     // Find service tags
-    Map<String, List<NGTag>> serviceTagsMap =
-        getFetchServiceTags(accountIdentifier, orgIdentifier, projectIdentifier, stepParameters);
+    Map<String, List<NGTag>> serviceTagsMap = serviceEntityHelper.getServiceTags(accountIdentifier, orgIdentifier,
+        projectIdentifier, stepParameters.getServices(), stepParameters.getServiceYamlV2());
 
     // Parse the yaml and set the FilterYaml tag value
     Map<String, EnvironmentsYaml> serviceEnvYamlMap =
@@ -271,7 +309,7 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
 
     int maxConcurrency = 0;
     // If Both service and env are non-parallel
-    if (stepParameters.getServices().getServicesMetadata() != null
+    if (stepParameters.getServices() != null && stepParameters.getServices().getServicesMetadata() != null
         && stepParameters.getServices().getServicesMetadata().getParallel() != null
         && !stepParameters.getServices().getServicesMetadata().getParallel()
         && ((stepParameters.getEnvironments() != null
@@ -293,9 +331,10 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
     for (Map.Entry<String, List<EnvironmentMapResponse>> serviceEnv : serviceEnvMatrixMap.entrySet()) {
       String serviceRef = serviceEnv.getKey();
       for (EnvironmentMapResponse envMap : serviceEnv.getValue()) {
-        Map<String, String> serviceMatrixMetadata = serviceToMatrixMetadataMap.get(serviceRef);
+        Map<String, String> serviceMatrixMetadata =
+            CollectionUtils.emptyIfNull(serviceToMatrixMetadataMap.get(serviceRef));
         children.add(getChildForMultiServiceInfra(
-            childNodeId, currentIteration, totalIterations, serviceMatrixMetadata, envMap));
+            childNodeId, currentIteration++, totalIterations, serviceMatrixMetadata, envMap));
       }
     }
     return ChildrenExecutableResponse.newBuilder().addAllChildren(children).setMaxConcurrency(maxConcurrency).build();
@@ -335,12 +374,12 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
 
       if (ParameterField.isNotNull(envGroupPerService.getFilters())) {
         ParameterField<List<FilterYaml>> filters = envGroupPerService.getFilters();
-        resolveServiceTags(serviceTag, filters);
+        environmentInfraFilterHelper.resolveServiceTags(filters, serviceTag.getValue());
       }
 
       ParameterField<List<EnvironmentYamlV2>> environments = envGroupPerService.getEnvironments();
       if (ParameterField.isNotNull(environments) && isNotEmpty(environments.getValue())) {
-        resolveServiceTags(serviceTag, environments.getValue());
+        resolveServiceTags(environments.getValue(), serviceTag.getValue());
       }
       serviceEnvGroupMap.put(serviceTag.getKey(), envGroupPerService);
     }
@@ -360,12 +399,12 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
 
       if (ParameterField.isNotNull(environmentsYamlPerService.getFilters())) {
         ParameterField<List<FilterYaml>> filters = environmentsYamlPerService.getFilters();
-        resolveServiceTags(serviceTag, filters);
+        environmentInfraFilterHelper.resolveServiceTags(filters, serviceTag.getValue());
       }
 
       ParameterField<List<EnvironmentYamlV2>> values = environmentsYamlPerService.getValues();
       if (ParameterField.isNotNull(values) && isNotEmpty(values.getValue())) {
-        resolveServiceTags(serviceTag, values.getValue());
+        resolveServiceTags(values.getValue(), serviceTag.getValue());
       }
       serviceEnvMap.put(serviceTag.getKey(), environmentsYamlPerService);
     }
@@ -373,62 +412,14 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
     return serviceEnvMap;
   }
 
-  private void resolveServiceTags(
-      Map.Entry<String, List<NGTag>> serviceTag, List<EnvironmentYamlV2> environmentYamlV2s) {
+  private void resolveServiceTags(List<EnvironmentYamlV2> environmentYamlV2s, List<NGTag> serviceTags) {
     if (isEmpty(environmentYamlV2s)) {
       return;
     }
     for (EnvironmentYamlV2 environmentYamlV2 : environmentYamlV2s) {
       ParameterField<List<FilterYaml>> filters = environmentYamlV2.getFilters();
-      resolveServiceTags(serviceTag, filters);
+      environmentInfraFilterHelper.resolveServiceTags(filters, serviceTags);
     }
-  }
-
-  private void resolveServiceTags(Map.Entry<String, List<NGTag>> serviceTag, ParameterField<List<FilterYaml>> filters) {
-    if (ParameterField.isNotNull(filters) && isNotEmpty(filters.getValue())) {
-      for (FilterYaml filterYaml : filters.getValue()) {
-        if (filterYaml.getType().equals(FilterType.tags)) {
-          TagsFilter tagsFilter = (TagsFilter) filterYaml.getSpec();
-          if (tagsFilter.getTags().isExpression()
-              && tagsFilter.getTags().getExpressionValue().contains("<+service.tags>")) {
-            tagsFilter.setTags(ParameterField.createValueField(getTagsMap(serviceTag.getValue())));
-          }
-        }
-      }
-    }
-  }
-
-  public Map<String, String> getTagsMap(List<NGTag> ngTagList) {
-    Map<String, String> tags = new LinkedHashMap<>();
-    for (NGTag ngTag : ngTagList) {
-      tags.put(ngTag.getKey(), ngTag.getValue());
-    }
-    return tags;
-  }
-  private Map<String, List<NGTag>> getFetchServiceTags(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, MultiDeploymentStepParameters multiDeploymentStepParameters) {
-    ServicesYaml services = multiDeploymentStepParameters.getServices();
-    if (services == null || ParameterField.isNull(services.getValues())) {
-      throw new InvalidYamlException("Services cannot be null when filters are specified");
-    }
-
-    List<ServiceYamlV2> serviceYamlV2List = services.getValues().getValue();
-    List<String> serviceRefs =
-        serviceYamlV2List.stream().map(s -> s.getServiceRef().getValue()).collect(Collectors.toList());
-
-    if (isEmpty(serviceRefs)) {
-      serviceRefs =
-          Collections.singletonList(multiDeploymentStepParameters.getServiceYamlV2().getServiceRef().getValue());
-    }
-
-    List<ServiceEntity> serviceEntityList =
-        serviceEntityService.getServices(accountIdentifier, orgIdentifier, projectIdentifier, serviceRefs);
-
-    Map<String, List<NGTag>> serviceToTagsMap = new LinkedHashMap<>();
-    for (ServiceEntity serviceEntity : serviceEntityList) {
-      serviceToTagsMap.put(serviceEntity.getIdentifier(), serviceEntity.getTags());
-    }
-    return serviceToTagsMap;
   }
 
   private ChildrenExecutableResponse.Child getChild(

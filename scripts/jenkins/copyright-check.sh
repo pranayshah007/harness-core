@@ -7,11 +7,12 @@
 FILES_WITHOUT_STMTS=()
 
 HARNESS_INC="Copyright [0-9]{4} Harness Inc. All rights reserved."
-EXCLUSION_LIST='\.pem\|\.mod\|\.sum\|\.log\|\.toml\|\.yml\|\.yaml\|\.properties\|\.md\|\.json\|\.config\|\.env\|\.txt\|\.info\|\.jks\|\.mod\|\.env\|\.xml\|\.jfc\|\.MD\|\.factories\|project/bazelproject\|scripts/jenkins/bazelignore\|\.bazelignore\|\.datacollection\|^\.'
 
-MERGE_SUMMARY=$(git diff HEAD@{0} HEAD@{1} --name-only | grep -v ${EXCLUSION_LIST})
+EXCLUSION_LIST='\.pem\|\.mod\|\.sum\|\.log\|\.toml\|\.yml\|\.yaml\|\.properties\|\.md\|\.json\|\.config\|\.env\|\.txt\|\.info\|\.jks\|\.mod\|\.env\|\.xml\|\.jfc\|\.MD\|\.factories\|project/bazelproject\|scripts/jenkins/bazelignore\|resources/mockito-extensions\|\.bazelignore\|\.datacollection\|\.ftl\|^\.'
 
-echo "$MERGE_SUMMARY"
+MERGE_SUMMARY=($(git diff --name-only $COMMIT_SHA..$BASE_SHA | grep -v ${EXCLUSION_LIST}))
+
+echo "${MERGE_SUMMARY[@]}"
 
 for file in ${MERGE_SUMMARY[@]}
 do

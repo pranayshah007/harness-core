@@ -60,8 +60,8 @@ public class StrategyConfigPlanCreator extends ChildrenPlanCreator<StrategyConfi
       throw new InvalidRequestException("Invalid use of strategy field. Please check");
     }
     ParameterField<Integer> maxConcurrency = null;
-    if (config.getMatrixConfig() != null) {
-      MatrixConfig matrixConfig = (MatrixConfig) config.getMatrixConfig();
+    if (ParameterField.isNotNull(config.getMatrixConfig()) && config.getMatrixConfig().getValue() != null) {
+      MatrixConfig matrixConfig = (MatrixConfig) config.getMatrixConfig().getValue();
       maxConcurrency = matrixConfig.getMaxConcurrency();
     }
     if (config.getRepeat() != null) {

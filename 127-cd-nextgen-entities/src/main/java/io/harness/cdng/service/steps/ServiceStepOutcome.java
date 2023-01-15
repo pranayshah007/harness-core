@@ -7,6 +7,7 @@
 
 package io.harness.cdng.service.steps;
 
+import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 
 import io.harness.annotation.RecasterAlias;
@@ -14,8 +15,10 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.service.entity.ServiceEntity;
+import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.data.Outcome;
+import io.harness.utils.FullyQualifiedIdentifierHelper;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.Collections;
@@ -59,15 +62,29 @@ public class ServiceStepOutcome implements Outcome, ExecutionSweepingOutput {
         .build();
   }
 
-  public static ServiceStepOutcome fromServiceStepV2(String identifier, String name, String type, String description,
-      Map<String, String> tags, Boolean gitOpsEnabled) {
+  public static ServiceStepOutcome fromServiceStepV2(String scopedIdentifierRef, String name, String type,
+      String description, Map<String, String> tags, Boolean gitOpsEnabled) {
     return ServiceStepOutcome.builder()
-        .identifier(identifier)
+        .identifier(scopedIdentifierRef)
         .name(name)
         .description(description)
         .tags(tags)
         .type(type)
         .gitOpsEnabled(gitOpsEnabled == TRUE)
+        .build();
+  }
+
+  public static ServiceStepOutcome fromServiceStepV2(
+      ServiceEntity service, NGServiceV2InfoConfig ngServiceV2InfoConfig) {
+    return ServiceStepOutcome.builder()
+        .identifier(FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(service.getAccountId(),
+            service.getOrgIdentifier(), service.getProjectIdentifier(), service.getIdentifier()))
+        .name(ngServiceV2InfoConfig.getName())
+        .description(ngServiceV2InfoConfig.getDescription())
+        .type(ngServiceV2InfoConfig.getServiceDefinition().getType().getYamlName())
+        .tags(ngServiceV2InfoConfig.getTags())
+        .gitOpsEnabled(
+            ngServiceV2InfoConfig.getGitOpsEnabled() == null ? FALSE : ngServiceV2InfoConfig.getGitOpsEnabled())
         .build();
   }
 }

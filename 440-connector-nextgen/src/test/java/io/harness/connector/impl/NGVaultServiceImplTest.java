@@ -163,7 +163,7 @@ public class NGVaultServiceImplTest extends CategoryTest {
 
     when(ngConnectorSecretManagerService.getUsingIdentifier(any(), any(), any(), any(), anyBoolean()))
         .thenReturn(vaultConfigDTO);
-    when(delegateService.executeSyncTask(any()))
+    when(delegateService.executeSyncTaskV2(any()))
         .thenReturn(NGVaultFetchEngineTaskResponse.builder().secretEngineSummaryList(new ArrayList<>()).build());
     Call<RestResponse<Boolean>> request = mock(Call.class);
     doReturn(request).when(accountClient).isFeatureFlagEnabled(any(), any());
@@ -171,7 +171,7 @@ public class NGVaultServiceImplTest extends CategoryTest {
     doReturn(Response.success(mockResponse)).when(request).execute();
     SecretManagerMetadataDTO metadataDTO = ngVaultService.getListOfEngines(ACCOUNT_IDENTIFIER, requestDTO);
     ArgumentCaptor<DelegateTaskRequest> taskRequestArgumentCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
-    verify(delegateService, times(1)).executeSyncTask(taskRequestArgumentCaptor.capture());
+    verify(delegateService, times(1)).executeSyncTaskV2(taskRequestArgumentCaptor.capture());
     DelegateTaskRequest delegateTaskRequest = taskRequestArgumentCaptor.getValue();
     assertEquals(NG_VAULT_FETCHING_TASK.toString(), delegateTaskRequest.getTaskType());
     assertNotNull(delegateTaskRequest.getTaskParameters());
@@ -209,7 +209,7 @@ public class NGVaultServiceImplTest extends CategoryTest {
     ngVaultService.processTokenLookup(inputConnector, ACCOUNT_IDENTIFIER);
 
     // Assert.
-    verify(delegateService, times(0)).executeSyncTask(any());
+    verify(delegateService, times(0)).executeSyncTaskV2(any());
   }
 
   @Test
@@ -229,7 +229,7 @@ public class NGVaultServiceImplTest extends CategoryTest {
     ngVaultService.processTokenLookup(inputConnector, ACCOUNT_IDENTIFIER);
 
     // Assert.
-    verify(delegateService, times(0)).executeSyncTask(any());
+    verify(delegateService, times(0)).executeSyncTaskV2(any());
   }
 
   @Test
@@ -255,7 +255,7 @@ public class NGVaultServiceImplTest extends CategoryTest {
     ngVaultService.processTokenLookup(inputConnector, ACCOUNT_IDENTIFIER);
 
     // Assert.
-    verify(delegateService, times(0)).executeSyncTask(any());
+    verify(delegateService, times(0)).executeSyncTaskV2(any());
   }
 
   @Test
@@ -275,7 +275,7 @@ public class NGVaultServiceImplTest extends CategoryTest {
                                                          .build())
                                       .build();
     setUpCommonMocks();
-    when(delegateService.executeSyncTask(any()))
+    when(delegateService.executeSyncTaskV2(any()))
         .thenReturn(NGVaultTokenLookupTaskResponse.builder()
                         .vaultTokenLookupResult(VaultTokenLookupResult.builder()
                                                     .expiryTime(randomAlphabetic(10))
@@ -291,7 +291,7 @@ public class NGVaultServiceImplTest extends CategoryTest {
 
     // Assert.
     ArgumentCaptor<DelegateTaskRequest> argumentCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
-    verify(delegateService, times(1)).executeSyncTask(argumentCaptor.capture());
+    verify(delegateService, times(1)).executeSyncTaskV2(argumentCaptor.capture());
     DelegateTaskRequest delegateTaskRequest = argumentCaptor.getValue();
     assertEquals(NG_VAULT_TOKEN_LOOKUP.toString(), delegateTaskRequest.getTaskType());
   }
@@ -314,7 +314,7 @@ public class NGVaultServiceImplTest extends CategoryTest {
                                                          .build())
                                       .build();
     setUpCommonMocks();
-    when(delegateService.executeSyncTask(any()))
+    when(delegateService.executeSyncTaskV2(any()))
         .thenReturn(NGVaultTokenLookupTaskResponse.builder()
                         .vaultTokenLookupResult(VaultTokenLookupResult.builder()
                                                     .expiryTime(null)
@@ -332,7 +332,7 @@ public class NGVaultServiceImplTest extends CategoryTest {
     ngVaultService.processTokenLookup(inputConnector, ACCOUNT_IDENTIFIER);
 
     // Assert.
-    verify(delegateService, times(1)).executeSyncTask(any());
+    verify(delegateService, times(1)).executeSyncTaskV2(any());
   }
 
   @Test
@@ -354,7 +354,7 @@ public class NGVaultServiceImplTest extends CategoryTest {
                                                          .build())
                                       .build();
     setUpCommonMocks();
-    when(delegateService.executeSyncTask(any()))
+    when(delegateService.executeSyncTaskV2(any()))
         .thenReturn(NGVaultTokenLookupTaskResponse.builder()
                         .vaultTokenLookupResult(VaultTokenLookupResult.builder()
                                                     .expiryTime(randomAlphabetic(10))
@@ -371,7 +371,7 @@ public class NGVaultServiceImplTest extends CategoryTest {
     ngVaultService.processTokenLookup(inputConnector, ACCOUNT_IDENTIFIER);
 
     // Assert.
-    verify(delegateService, times(1)).executeSyncTask(any());
+    verify(delegateService, times(1)).executeSyncTaskV2(any());
   }
 
   @Test
@@ -392,7 +392,7 @@ public class NGVaultServiceImplTest extends CategoryTest {
     ngVaultService.processAppRole(inputConnector, null, ACCOUNT_IDENTIFIER, false);
 
     // Assert.
-    verify(delegateService, times(0)).executeSyncTask(any());
+    verify(delegateService, times(0)).executeSyncTaskV2(any());
   }
 
   @Test
@@ -418,7 +418,7 @@ public class NGVaultServiceImplTest extends CategoryTest {
     ngVaultService.processAppRole(inputConnector, null, ACCOUNT_IDENTIFIER, false);
 
     // Assert.
-    verify(delegateService, times(0)).executeSyncTask(any());
+    verify(delegateService, times(0)).executeSyncTaskV2(any());
   }
 
   @Test
@@ -439,7 +439,7 @@ public class NGVaultServiceImplTest extends CategoryTest {
                                       .build();
     setUpCommonMocks();
 
-    when(delegateService.executeSyncTask(any()))
+    when(delegateService.executeSyncTaskV2(any()))
         .thenReturn(NGVaultRenewalAppRoleTaskResponse.builder()
                         .vaultAppRoleLoginResult(VaultAppRoleLoginResult.builder().clientToken("clientToken").build())
                         .build());
@@ -449,7 +449,7 @@ public class NGVaultServiceImplTest extends CategoryTest {
 
     // Assert.
     ArgumentCaptor<DelegateTaskRequest> taskRequestArgumentCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
-    verify(delegateService, times(1)).executeSyncTask(taskRequestArgumentCaptor.capture());
+    verify(delegateService, times(1)).executeSyncTaskV2(taskRequestArgumentCaptor.capture());
     DelegateTaskRequest delegateTaskRequest = taskRequestArgumentCaptor.getValue();
 
     assertEquals(delegateTaskRequest.getTaskSetupAbstractions().get(NG_DELEGATE_OWNER_CONSTANT),
@@ -473,7 +473,7 @@ public class NGVaultServiceImplTest extends CategoryTest {
                                                          .build())
                                       .build();
     setUpCommonMocks();
-    when(delegateService.executeSyncTask(any()))
+    when(delegateService.executeSyncTaskV2(any()))
         .thenReturn(
             NGVaultRenewalAppRoleTaskResponse.builder()
                 .vaultAppRoleLoginResult(VaultAppRoleLoginResult.builder().clientToken(randomAlphabetic(10)).build())
@@ -504,7 +504,7 @@ public class NGVaultServiceImplTest extends CategoryTest {
                                                          .build())
                                       .build();
     setUpCommonMocks();
-    when(delegateService.executeSyncTask(any()))
+    when(delegateService.executeSyncTaskV2(any()))
         .thenReturn(
             NGVaultRenewalAppRoleTaskResponse.builder()
                 .vaultAppRoleLoginResult(VaultAppRoleLoginResult.builder().clientToken(randomAlphabetic(10)).build())
@@ -529,14 +529,14 @@ public class NGVaultServiceImplTest extends CategoryTest {
                                                          .build())
                                       .build();
     setUpCommonMocks();
-    when(delegateService.executeSyncTask(any()))
+    when(delegateService.executeSyncTaskV2(any()))
         .thenReturn(
             NGVaultRenewalAppRoleTaskResponse.builder()
                 .vaultAppRoleLoginResult(VaultAppRoleLoginResult.builder().clientToken(randomAlphabetic(10)).build())
                 .build());
     ngVaultService.processAppRole(inputConnector, null, ACCOUNT_IDENTIFIER, false);
     ArgumentCaptor<DelegateTaskRequest> taskRequestArgumentCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
-    verify(delegateService, times(1)).executeSyncTask(taskRequestArgumentCaptor.capture());
+    verify(delegateService, times(1)).executeSyncTaskV2(taskRequestArgumentCaptor.capture());
     BaseVaultConfig capturedConfig =
         ((NGVaultRenewalTaskParameters) taskRequestArgumentCaptor.getValue().getTaskParameters()).getEncryptionConfig();
     assertThat(capturedConfig.getNamespace()).isEqualTo(vaultConnectorDTO.getNamespace());
@@ -559,7 +559,7 @@ public class NGVaultServiceImplTest extends CategoryTest {
     when(request.execute()).thenReturn(Response.success(new RestResponse<>(false)));
     when(ngConnectorSecretManagerService.getUsingIdentifier(any(), any(), any(), any(), anyBoolean()))
         .thenReturn(vaultConfigDTO);
-    when(delegateService.executeSyncTask(any()))
+    when(delegateService.executeSyncTaskV2(any()))
         .thenReturn(
             NGVaultRenewalAppRoleTaskResponse.builder()
                 .vaultAppRoleLoginResult(VaultAppRoleLoginResult.builder().clientToken(randomAlphabetic(10)).build())
@@ -587,7 +587,7 @@ public class NGVaultServiceImplTest extends CategoryTest {
     when(request.execute()).thenReturn(Response.success(new RestResponse<>(false)));
     when(ngConnectorSecretManagerService.getUsingIdentifier(any(), any(), any(), any(), anyBoolean()))
         .thenReturn(vaultConfigDTO);
-    when(delegateService.executeSyncTask(any()))
+    when(delegateService.executeSyncTaskV2(any()))
         .thenReturn(NGVaultRenewalTaskResponse.builder()
                         .isSuccessful(true)
                         .delegateMetaInfo(DelegateMetaInfo.builder().hostName("hostName").id("id").build())

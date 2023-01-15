@@ -16,7 +16,7 @@ java_library(
         "//930-delegate-tasks/src/main/java/software/wings/beans/bash:module",
         "//950-delegate-tasks-beans:module",
         "//960-api-services/src/main/java/io/harness/delegate/configuration:module",
-        "//980-commons:module",
+        "//980-commons/src/main/java/io/harness/serializer:module",
         "@maven//:com_google_guava_guava",
         "@maven//:io_kubernetes_client_java",
         "@maven//:io_kubernetes_client_java_api",

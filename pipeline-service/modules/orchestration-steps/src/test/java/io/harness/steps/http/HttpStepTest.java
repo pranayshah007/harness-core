@@ -34,6 +34,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 
 import com.google.common.io.Resources;
 import com.google.inject.Inject;
@@ -57,7 +58,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({StepUtils.class})
+@PrepareForTest({StepUtils.class, TaskRequestsUtils.class})
 public class HttpStepTest extends CategoryTest {
   @Inject private StepElementParameters stepElementParameters;
   @Inject private Ambiance ambiance;
@@ -211,8 +212,8 @@ public class HttpStepTest extends CategoryTest {
   @Owner(developers = PRASHANTSHARMA)
   @Category(UnitTests.class)
   public void testObtainTask() {
-    MockedStatic<StepUtils> aStatic = Mockito.mockStatic(StepUtils.class);
-    aStatic.when(() -> StepUtils.prepareTaskRequestWithTaskSelector(any(), any(), any(), any()))
+    MockedStatic<TaskRequestsUtils> aStatic = Mockito.mockStatic(TaskRequestsUtils.class);
+    aStatic.when(() -> TaskRequestsUtils.prepareTaskRequestWithTaskSelector(any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
     ambiance = Ambiance.newBuilder().build();
     httpStepParameters = HttpStepParameters.infoBuilder()
@@ -249,6 +250,8 @@ public class HttpStepTest extends CategoryTest {
   public void testHandleTask() throws Exception {
     ambiance = Ambiance.newBuilder().build();
     PowerMockito.mockStatic(StepUtils.class);
+    PowerMockito.mockStatic(TaskRequestsUtils.class);
+
     when(logStreamingStepClientFactory.getLogStreamingStepClient(any())).thenReturn(iLogStreamingStepClient);
 
     httpStepParameters = HttpStepParameters.infoBuilder()

@@ -51,7 +51,7 @@ public class ServiceResourceApiUtils {
     ServiceResponse serviceResponse = new ServiceResponse();
     Service service = new Service();
     service.setAccount(serviceEntity.getAccountId());
-    service.setSlug(serviceEntity.getIdentifier());
+    service.setIdentifier(serviceEntity.getIdentifier());
     service.setOrg(serviceEntity.getOrgIdentifier());
     service.setProject(serviceEntity.getProjectIdentifier());
     service.setName(serviceEntity.getName());
@@ -73,7 +73,7 @@ public class ServiceResourceApiUtils {
     service.setAccount(serviceEntity.getAccountId());
     service.setOrg(serviceEntity.getOrgIdentifier());
     service.setProject(serviceEntity.getProjectIdentifier());
-    service.setSlug(serviceEntity.getIdentifier());
+    service.setIdentifier(serviceEntity.getIdentifier());
     service.setName(serviceEntity.getName());
     service.setDescription(serviceEntity.getDescription());
     service.setTags(convertToMap(serviceEntity.getTags()));
@@ -90,7 +90,7 @@ public class ServiceResourceApiUtils {
   public ServiceEntity mapToServiceEntity(
       ServiceRequest sharedRequestBody, String org, String project, String account) {
     ServiceEntity serviceEntity = ServiceEntity.builder()
-                                      .identifier(sharedRequestBody.getSlug())
+                                      .identifier(sharedRequestBody.getIdentifier())
                                       .accountId(account)
                                       .orgIdentifier(org)
                                       .projectIdentifier(project)
@@ -120,7 +120,7 @@ public class ServiceResourceApiUtils {
   public PermissionCheckDTO serviceResponseToPermissionCheckDTO(ServiceResponse serviceResponse) {
     return PermissionCheckDTO.builder()
         .permission(CDNGRbacPermissions.SERVICE_RUNTIME_PERMISSION)
-        .resourceIdentifier(serviceResponse.getService().getSlug())
+        .resourceIdentifier(serviceResponse.getService().getIdentifier())
         .resourceScope(ResourceScope.builder()
                            .accountIdentifier(serviceResponse.getService().getAccount())
                            .orgIdentifier(serviceResponse.getService().getOrg())
@@ -133,7 +133,7 @@ public class ServiceResourceApiUtils {
   public String mapSort(String sort, String order) {
     String property;
     switch (sort) {
-      case "slug":
+      case "identifier":
         property = ServiceEntityKeys.identifier;
         break;
       case "harness_account":
@@ -182,7 +182,7 @@ public class ServiceResourceApiUtils {
       AccessControlDTO accessControlDTO = accessControlList.get(i);
       ServiceResponse serviceResponse = serviceList.get(i);
       if (accessControlDTO.isPermitted()
-          && serviceResponse.getService().getSlug().equals(accessControlDTO.getResourceIdentifier())) {
+          && serviceResponse.getService().getIdentifier().equals(accessControlDTO.getResourceIdentifier())) {
         filteredAccessControlDtoList.add(serviceResponse);
       }
     }

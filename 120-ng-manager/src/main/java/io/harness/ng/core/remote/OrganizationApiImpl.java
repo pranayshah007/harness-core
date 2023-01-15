@@ -7,7 +7,7 @@
 
 package io.harness.ng.core.remote;
 
-import static io.harness.NGCommonEntityConstants.DIFFERENT_SLUG_IN_PAYLOAD_AND_PARAM;
+import static io.harness.NGCommonEntityConstants.DIFFERENT_IDENTIFIER_IN_PAYLOAD_AND_PARAM;
 import static io.harness.NGConstants.DEFAULT_ORG_IDENTIFIER;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.ng.accesscontrol.PlatformPermissions.CREATE_ORGANIZATION_PERMISSION;
@@ -50,8 +50,9 @@ public class OrganizationApiImpl implements OrganizationApi {
   @NGAccessControlCheck(resourceType = ORGANIZATION, permission = CREATE_ORGANIZATION_PERMISSION)
   @Override
   public Response createOrganization(CreateOrganizationRequest request, @AccountIdentifier String account) {
-    if (DEFAULT_ORG_IDENTIFIER.equals(request.getOrg().getSlug())) {
-      throw new InvalidRequestException(String.format("%s cannot be used as org slug", DEFAULT_ORG_IDENTIFIER), USER);
+    if (DEFAULT_ORG_IDENTIFIER.equals(request.getOrg().getIdentifier())) {
+      throw new InvalidRequestException(
+          String.format("%s cannot be used as org identifier", DEFAULT_ORG_IDENTIFIER), USER);
     }
     Organization createdOrganization =
         organizationService.create(account, organizationApiUtils.getOrganizationDto(request));
@@ -63,10 +64,10 @@ public class OrganizationApiImpl implements OrganizationApi {
 
   @NGAccessControlCheck(resourceType = ORGANIZATION, permission = VIEW_ORGANIZATION_PERMISSION)
   @Override
-  public Response getOrganization(@ResourceIdentifier String slug, @AccountIdentifier String account) {
-    Optional<Organization> organizationOptional = organizationService.get(account, slug);
+  public Response getOrganization(@ResourceIdentifier String identifier, @AccountIdentifier String account) {
+    Optional<Organization> organizationOptional = organizationService.get(account, identifier);
     if (!organizationOptional.isPresent()) {
-      throw new NotFoundException(String.format("Organization with slug [%s] not found", slug));
+      throw new NotFoundException(String.format("Organization with identifier [%s] not found", identifier));
     }
     return Response.ok()
         .entity(organizationApiUtils.getOrganizationResponse(organizationOptional.get()))
@@ -98,17 +99,18 @@ public class OrganizationApiImpl implements OrganizationApi {
   @NGAccessControlCheck(resourceType = ORGANIZATION, permission = EDIT_ORGANIZATION_PERMISSION)
   @Override
   public Response updateOrganization(
-      UpdateOrganizationRequest request, @ResourceIdentifier String slug, @AccountIdentifier String account) {
-    if (!Objects.equals(request.getOrg().getSlug(), slug)) {
-      throw new InvalidRequestException(DIFFERENT_SLUG_IN_PAYLOAD_AND_PARAM, USER);
+      UpdateOrganizationRequest request, @ResourceIdentifier String identifier, @AccountIdentifier String account) {
+    if (!Objects.equals(request.getOrg().getIdentifier(), identifier)) {
+      throw new InvalidRequestException(DIFFERENT_IDENTIFIER_IN_PAYLOAD_AND_PARAM, USER);
     }
-    if (DEFAULT_ORG_IDENTIFIER.equals(slug)) {
+    if (DEFAULT_ORG_IDENTIFIER.equals(identifier)) {
       throw new InvalidRequestException(
-          String.format("Update operation not supported for Default Organization (slug: [%s])", DEFAULT_ORG_IDENTIFIER),
+          String.format(
+              "Update operation not supported for Default Organization (identifier: [%s])", DEFAULT_ORG_IDENTIFIER),
           USER);
     }
     Organization updatedOrganization =
-        organizationService.update(account, slug, organizationApiUtils.getOrganizationDto(request));
+        organizationService.update(account, identifier, organizationApiUtils.getOrganizationDto(request));
     return Response.ok()
         .entity(organizationApiUtils.getOrganizationResponse(updatedOrganization))
         .tag(updatedOrganization.getVersion().toString())
@@ -117,21 +119,23 @@ public class OrganizationApiImpl implements OrganizationApi {
 
   @NGAccessControlCheck(resourceType = ORGANIZATION, permission = DELETE_ORGANIZATION_PERMISSION)
   @Override
-  public Response deleteOrganization(@ResourceIdentifier String slug, @AccountIdentifier String account) {
-    if (DEFAULT_ORG_IDENTIFIER.equals(slug)) {
+  public Response deleteOrganization(@ResourceIdentifier String identifier, @AccountIdentifier String account) {
+    if (DEFAULT_ORG_IDENTIFIER.equals(identifier)) {
       throw new InvalidRequestException(
-          String.format("Delete operation not supported for Default Organization (slug: [%s])", DEFAULT_ORG_IDENTIFIER),
+          String.format(
+              "Delete operation not supported for Default Organization (identifier: [%s])", DEFAULT_ORG_IDENTIFIER),
           USER);
     }
-    Optional<Organization> organizationOptional = organizationService.get(account, slug);
+    Optional<Organization> organizationOptional = organizationService.get(account, identifier);
     if (!organizationOptional.isPresent()) {
-      throw new NotFoundException(String.format("Organization with slug [%s] not found", slug));
+      throw new NotFoundException(String.format("Organization with identifier [%s] not found", identifier));
     }
 
-    boolean deleted = organizationService.delete(account, slug, null);
+    boolean deleted = organizationService.delete(account, identifier, null);
 
     if (!deleted) {
-      throw new InvalidRequestException(String.format("Organization with slug [%s] could not be deleted", slug));
+      throw new InvalidRequestException(
+          String.format("Organization with identifier [%s] could not be deleted", identifier));
     }
     return Response.ok()
         .entity(organizationApiUtils.getOrganizationResponse(organizationOptional.get()))

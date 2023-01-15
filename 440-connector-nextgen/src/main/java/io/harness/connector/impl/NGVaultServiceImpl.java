@@ -693,7 +693,7 @@ public class NGVaultServiceImpl implements NGVaultService {
                 .accountId(accountId)
                 .taskSetupAbstractions(ngManagerEncryptorHelper.buildAbstractions(azureVaultConfig))
                 .build();
-        DelegateResponseData delegateResponseData = delegateService.executeSyncTask(delegateTaskRequest);
+        DelegateResponseData delegateResponseData = delegateService.executeSyncTaskV2(delegateTaskRequest);
         DelegateTaskUtils.validateDelegateTaskResponse(delegateResponseData);
         if (!(delegateResponseData instanceof NGAzureKeyVaultFetchEngineResponse)) {
           throw new SecretManagementException(SECRET_MANAGEMENT_ERROR, UNKNOWN_RESPONSE, USER);
@@ -865,7 +865,7 @@ public class NGVaultServiceImpl implements NGVaultService {
             .accountId(accountIdentifier)
             .taskSetupAbstractions(ngManagerEncryptorHelper.buildAbstractions(parameters.getEncryptionConfig()))
             .build();
-    DelegateResponseData delegateResponseData = delegateService.executeSyncTask(delegateTaskRequest);
+    DelegateResponseData delegateResponseData = delegateService.executeSyncTaskV2(delegateTaskRequest);
     DelegateTaskUtils.validateDelegateTaskResponse(delegateResponseData);
     return delegateResponseData;
   }

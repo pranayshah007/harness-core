@@ -19,7 +19,7 @@ java_library(
         "//955-delegate-beans:module",
         "//960-api-services:module",
         "//970-api-services-beans:module",
-        "//980-commons:module",
+        "//980-commons/src/main/java/io/harness/delegate:module",
         "@maven//:com_google_guava_guava",
         "@maven//:io_kubernetes_client_java_api",
     ],

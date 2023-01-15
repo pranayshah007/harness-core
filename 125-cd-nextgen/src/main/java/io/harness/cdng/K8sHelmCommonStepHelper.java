@@ -734,19 +734,6 @@ public class K8sHelmCommonStepHelper {
     return retVal;
   }
 
-  public boolean shouldCloseFetchFilesStream(List<ManifestOutcome> manifestOutcomeList,
-      Set<String> manifestStoreTypesVisited, Set<String> manifestStoreTypeList, boolean isFetchFilesStreamClosed) {
-    boolean shouldCloseFetchFilesStream = true;
-    if (!isFetchFilesStreamClosed) {
-      manifestStoreTypesVisited.addAll(manifestStoreTypeList);
-      for (ManifestOutcome manifestOutcome : manifestOutcomeList) {
-        shouldCloseFetchFilesStream =
-            shouldCloseFetchFilesStream && manifestStoreTypesVisited.contains(manifestOutcome.getStore().getKind());
-      }
-    }
-    return shouldCloseFetchFilesStream;
-  }
-
   public List<String> getManifestOverridePaths(ManifestOutcome manifestOutcome) {
     if (ManifestType.K8Manifest.equals(manifestOutcome.getType())) {
       if (((K8sManifestOutcome) manifestOutcome).getValuesPaths().getValue() != null) {
@@ -1272,9 +1259,5 @@ public class K8sHelmCommonStepHelper {
     for (String scopedFilePath : scopedFilePathList) {
       logCallback.saveExecutionLog(color(format("- %s", scopedFilePath), LogColor.White));
     }
-  }
-
-  public static boolean shouldOpenFetchFilesStream(Boolean openFetchFilesStream) {
-    return openFetchFilesStream == null;
   }
 }

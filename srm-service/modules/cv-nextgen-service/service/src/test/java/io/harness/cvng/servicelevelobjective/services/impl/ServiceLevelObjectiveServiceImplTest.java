@@ -165,6 +165,8 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
   public void setup() throws IllegalAccessException, ParseException {
     MockitoAnnotations.initMocks(this);
     builderFactory = BuilderFactory.getDefault();
+    builderFactory.getContext().setProjectIdentifier("project");
+    builderFactory.getContext().setOrgIdentifier("orgIdentifier");
     accountId = builderFactory.getContext().getAccountId();
     orgIdentifier = builderFactory.getContext().getOrgIdentifier();
     projectIdentifier = builderFactory.getContext().getProjectIdentifier();

@@ -45,8 +45,10 @@ import software.wings.service.impl.aws.model.AwsEC2Instance;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -86,13 +88,63 @@ public class InstanceOutcomeHelperTest extends CategoryTest {
 
     assertThat(instanceOutcome.getName()).isEqualTo("host1");
     assertThat(instanceOutcome.getHostName()).isEqualTo("host1");
-    assertThat(instanceOutcome.getHost()).isEqualTo(HostOutcome.builder().hostName("host1").build());
+    assertThat(instanceOutcome.getHost())
+        .isEqualTo(HostOutcome.builder().properties(Collections.emptyMap()).hostName("host1").build());
 
     InstanceOutcome secondInstanceOutcome = instances.get(1);
 
     assertThat(secondInstanceOutcome.getName()).isEqualTo("host2");
     assertThat(secondInstanceOutcome.getHostName()).isEqualTo("host2");
-    assertThat(secondInstanceOutcome.getHost()).isEqualTo(HostOutcome.builder().hostName("host2").build());
+    assertThat(secondInstanceOutcome.getHost())
+        .isEqualTo(HostOutcome.builder().properties(Collections.emptyMap()).hostName("host2").build());
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testSaveAndGetInstancesOutcomePDCWithProperties() {
+    Map<String, Object> host1Attributes = new HashMap<>();
+    host1Attributes.put("hostname", "host1");
+    host1Attributes.put("subnetId", "subnetIdValue1");
+    host1Attributes.put("privateIp", "privateIpValue1");
+
+    Map<String, Object> host2Attributes = new HashMap<>();
+    host2Attributes.put("hostname", "host2");
+    host2Attributes.put("subnetId", "subnetIdValue2");
+    host2Attributes.put("privateIp", "privateIpValue2");
+
+    InfrastructureOutcome infraOutcome = PdcInfrastructureOutcome.builder()
+                                             .dynamicallyProvisioned(true)
+                                             .hostsAttributes(Arrays.asList(host1Attributes, host2Attributes))
+                                             .build();
+    Set<String> hostNames = new HashSet<>();
+    hostNames.add("host1");
+    hostNames.add("host2");
+    Ambiance ambiance = Ambiance.newBuilder().build();
+    doReturn("instances")
+        .when(executionSweepingOutputService)
+        .consume(eq(ambiance), eq(OutputExpressionConstants.INSTANCES), any(InstancesOutcome.class),
+            eq(StepCategory.STAGE.name()));
+
+    InstancesOutcome instancesOutcome =
+        instanceOutcomeHelper.saveAndGetInstancesOutcome(ambiance, infraOutcome, null, hostNames);
+
+    List<InstanceOutcome> instances = instancesOutcome.getInstances();
+    assertThat(instances.size()).isEqualTo(2);
+
+    InstanceOutcome instanceOutcome = instances.get(0);
+
+    assertThat(instanceOutcome.getName()).isEqualTo("host1");
+    assertThat(instanceOutcome.getHostName()).isEqualTo("host1");
+    assertThat(instanceOutcome.getHost())
+        .isEqualTo(HostOutcome.builder().properties(host1Attributes).hostName("host1").build());
+
+    InstanceOutcome secondInstanceOutcome = instances.get(1);
+
+    assertThat(secondInstanceOutcome.getName()).isEqualTo("host2");
+    assertThat(secondInstanceOutcome.getHostName()).isEqualTo("host2");
+    assertThat(secondInstanceOutcome.getHost())
+        .isEqualTo(HostOutcome.builder().properties(host2Attributes).hostName("host2").build());
   }
 
   @Test

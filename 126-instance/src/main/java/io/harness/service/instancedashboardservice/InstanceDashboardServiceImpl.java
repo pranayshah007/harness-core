@@ -17,8 +17,10 @@ import io.harness.mappers.InstanceDetailsMapper;
 import io.harness.mappers.InstanceMapper;
 import io.harness.models.ActiveServiceInstanceInfo;
 import io.harness.models.ActiveServiceInstanceInfoV2;
+import io.harness.models.ArtifactDeploymentDetailModel;
 import io.harness.models.BuildsByEnvironment;
 import io.harness.models.EnvBuildInstanceCount;
+import io.harness.models.EnvironmentInstanceCountModel;
 import io.harness.models.InstanceDTOsByBuildId;
 import io.harness.models.InstanceDetailsByBuildId;
 import io.harness.models.InstancesByBuildId;
@@ -197,6 +199,18 @@ public class InstanceDashboardServiceImpl implements InstanceDashboardService {
   }
 
   @Override
+  public List<EnvironmentInstanceCountModel> getInstanceCountForEnvironmentFilteredByService(String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, String serviceIdentifier, boolean isGitOps) {
+    AggregationResults<EnvironmentInstanceCountModel> environmentInstanceCountAggregationResults =
+        instanceService.getInstanceCountForEnvironmentFilteredByService(
+            accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, isGitOps);
+    List<EnvironmentInstanceCountModel> environmentInstanceCounts = new ArrayList<>();
+    environmentInstanceCountAggregationResults.forEach(
+        environmentInstanceCount -> { environmentInstanceCounts.add(environmentInstanceCount); });
+    return environmentInstanceCounts;
+  }
+
+  @Override
   public List<ActiveServiceInstanceInfo> getActiveServiceGitOpsInstanceInfo(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId) {
     AggregationResults<ActiveServiceInstanceInfo> activeServiceInstanceInfoAggregationResults =
@@ -257,6 +271,17 @@ public class InstanceDashboardServiceImpl implements InstanceDashboardService {
     return buildIdAndInstancesList;
   }
 
+  @Override
+  public List<ArtifactDeploymentDetailModel> getLastDeployedInstance(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String serviceIdentifier, boolean isEnvironmentCard, boolean isGitOps) {
+    AggregationResults<ArtifactDeploymentDetailModel> artifactDeploymentDetailsAggregationResults =
+        instanceService.getLastDeployedInstance(
+            accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, isEnvironmentCard, isGitOps);
+    List<ArtifactDeploymentDetailModel> artifactDeploymentDetailsList = new ArrayList<>();
+    artifactDeploymentDetailsAggregationResults.forEach(
+        artifactDeploymentDetails -> { artifactDeploymentDetailsList.add(artifactDeploymentDetails); });
+    return artifactDeploymentDetailsList;
+  }
   @Override
   public InstanceDetailsByBuildId getActiveInstanceDetails(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String serviceId, String envId, String infraId, String clusterIdentifier,

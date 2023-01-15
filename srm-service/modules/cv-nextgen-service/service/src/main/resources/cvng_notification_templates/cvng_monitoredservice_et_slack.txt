@@ -1,0 +1,38 @@
+{
+    "text" : "*<${MONITORED_SERVICE_URL}|${MONITORED_SERVICE_NAME}> has observed new error events.*\n",
+    "text" : "*Monitored Service <${MONITORED_SERVICE_URL}|${MONITORED_SERVICE_NAME}> has detected new ${NOTIFICATION_EVENT_TRIGGER_LIST} events for code errors.*\n",
+    "attachments" : [
+        {
+          "color" : "${COLOR}",
+          "blocks" : [
+            {
+              "type" : "section",
+              "text" : {
+                "type" : "mrkdwn",
+                "text": "Environment *${ENVIRONMENT_NAME}*\nProject Name *${PROJECT_NAME}*\nOrganization Name *${ORG_NAME}*\nAccount Name *${ACCOUNT_NAME}*\n\n"
+              }
+            },
+            {
+              "type": "divider"
+            },
+            {
+               "type" : "section",
+               "text" : {
+                "type" : "mrkdwn",
+                "text": "Events appeared on the deployment version(s)\n${SLACK_FORMATTED_VERSION_LIST}"
+                }
+            },
+            {
+                "type": "divider"
+            },
+            {
+              "type" : "section",
+              "text" : {
+                "type" : "mrkdwn",
+                "text": "Notification Name <${NOTIFICATION_URL}|${NOTIFICATION_NAME}> \nTrigger *When new events (${NOTIFICATION_EVENT_TRIGGER_LIST}) are observed for code errors*"
+              }
+            }
+          ]
+        }
+    ]
+}

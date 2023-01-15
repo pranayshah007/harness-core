@@ -19,9 +19,9 @@ import software.wings.beans.ApiKeyEntry.ApiKeyEntryKeys;
 import dev.morphia.AdvancedDatastore;
 import dev.morphia.FindAndModifyOptions;
 import dev.morphia.aggregation.AggregationPipeline;
-import dev.morphia.query.MorphiaIterator;
 import dev.morphia.query.Query;
 import dev.morphia.query.UpdateOperations;
+import dev.morphia.query.internal.MorphiaCursor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -37,9 +37,9 @@ public class ApiKeysNameUniqueInAccountMigration implements Migrator {
                 grouping("count", accumulator("$sum", 1)))
             .match(queryForMultipleItems);
 
-    try (HIterator<AggregateResult> invalidEntries =
-             new HIterator((MorphiaIterator) invalidEntryPipeline.out(AggregateResult.class))) {
-      for (AggregateResult invalidEntry : invalidEntries) {
+    try (MorphiaCursor<AggregateResult> cursor = (MorphiaCursor) invalidEntryPipeline.out(AggregateResult.class)) {
+      while (cursor.hasNext()) {
+        AggregateResult invalidEntry = cursor.next();
         Query<ApiKeyEntry> apiKeyToRenameQuery = datastore.createQuery(ApiKeyEntry.class)
                                                      .field(ApiKeyEntryKeys.accountId)
                                                      .equal(invalidEntry.get_id().getAccountId())

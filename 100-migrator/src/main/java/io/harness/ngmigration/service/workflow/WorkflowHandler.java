@@ -307,7 +307,7 @@ public abstract class WorkflowHandler {
       StepSkipStrategy strategy =
           cgSkipConditions.stream().filter(skip -> Scope.ALL_STEPS.equals(skip.getScope())).findFirst().get();
       when = StepWhenCondition.builder()
-                 .condition(ParameterField.createValueField(strategy.getAssertionExpression()))
+                 .condition(wrapNot(strategy.getAssertionExpression()))
                  .stageStatus(SUCCESS)
                  .build();
     }
@@ -376,12 +376,16 @@ public abstract class WorkflowHandler {
       return null;
     }
     if (StringUtils.isNotBlank(skipCondition)) {
-      stepNode.setWhen(StepWhenCondition.builder()
-                           .condition(ParameterField.createValueField(skipCondition))
-                           .stageStatus(SUCCESS)
-                           .build());
+      stepNode.setWhen(StepWhenCondition.builder().condition(wrapNot(skipCondition)).stageStatus(SUCCESS).build());
     }
     return JsonPipelineUtils.asTree(stepNode);
+  }
+
+  private ParameterField<String> wrapNot(String condition) {
+    if (StringUtils.isBlank(condition)) {
+      return ParameterField.ofNull();
+    }
+    return ParameterField.createValueField("!(" + condition + ")");
   }
 
   // We can infer the type based on the service, infra & sometimes based on the steps used.

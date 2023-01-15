@@ -45,6 +45,7 @@ import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.entitysetupusage.service.EntitySetupUsageService;
 import io.harness.ng.core.events.ServiceCreateEvent;
 import io.harness.ng.core.events.ServiceDeleteEvent;
+import io.harness.ng.core.events.ServiceForceDeleteEvent;
 import io.harness.ng.core.events.ServiceUpdateEvent;
 import io.harness.ng.core.events.ServiceUpsertEvent;
 import io.harness.ng.core.service.entity.ArtifactSourcesResponseDTO;
@@ -324,8 +325,8 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   }
 
   @Override
-  public boolean delete(
-      String accountId, String orgIdentifier, String projectIdentifier, String serviceRef, Long version) {
+  public boolean delete(String accountId, String orgIdentifier, String projectIdentifier, String serviceRef,
+      Long version, boolean forceDelete) {
     checkArgument(isNotEmpty(accountId), "accountId must be present");
     checkArgument(isNotEmpty(serviceRef), "serviceRef must be present");
 
@@ -336,7 +337,9 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
                                       .identifier(serviceRef)
                                       .version(version)
                                       .build();
-    checkThatServiceIsNotReferredByOthers(serviceEntity);
+    if (!forceDelete) {
+      checkThatServiceIsNotReferredByOthers(serviceEntity);
+    }
     Criteria criteria = getServiceEqualityCriteria(serviceEntity, false);
     Optional<ServiceEntity> serviceEntityOptional = get(accountId, orgIdentifier, projectIdentifier, serviceRef, false);
 
@@ -349,9 +352,13 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
               String.format("Service [%s] under Project[%s], Organization [%s] couldn't be deleted.",
                   serviceEntity.getIdentifier(), projectIdentifier, orgIdentifier));
         }
-
-        outboxService.save(new ServiceDeleteEvent(accountId, serviceEntityRetrieved.getOrgIdentifier(),
-            serviceEntityRetrieved.getProjectIdentifier(), serviceEntityRetrieved));
+        if (forceDelete) {
+          outboxService.save(new ServiceForceDeleteEvent(accountId, serviceEntityRetrieved.getOrgIdentifier(),
+              serviceEntityRetrieved.getProjectIdentifier(), serviceEntityRetrieved));
+        } else {
+          outboxService.save(new ServiceDeleteEvent(accountId, serviceEntityRetrieved.getOrgIdentifier(),
+              serviceEntityRetrieved.getProjectIdentifier(), serviceEntityRetrieved));
+        }
         return true;
       }));
       processQuietly(()

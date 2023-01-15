@@ -101,3 +101,92 @@ features:
         restrictionType: STATIC_LIMIT
         limit: 10000
         clientName: pipelineService
+  - name: MAX_PARALLEL_STEP_IN_A_PIPELINE
+    description: The restriction on number of parallel steps in a pipeline
+    restrictions:
+      FREE:
+        restrictionType: STATIC_LIMIT
+        limit: 10
+        clientName: pipelineService
+      TEAM:
+        restrictionType: STATIC_LIMIT
+        limit: 256
+        clientName: pipelineService
+      ENTERPRISE:
+        restrictionType: STATIC_LIMIT
+        limit: 256
+        clientName: pipelineService
+  - name: PIPELINE_EXECUTION_DATA_RETENTION_DAYS
+    description: The restriction on the data retention time for Pipeline execution in days
+    restrictions:
+      FREE:
+        restrictionType: STATIC_LIMIT
+        limit: 30
+        clientName: pipelineService
+      TEAM:
+        restrictionType: STATIC_LIMIT
+        limit: 365
+        clientName: pipelineService
+      ENTERPRISE:
+        restrictionType: STATIC_LIMIT
+        limit: 365
+        clientName: pipelineService
+  - name: MAX_PIPELINE_TIMEOUT_SECONDS
+    description: The restriction on the max pipeline timeout in seconds
+    restrictions:
+      FREE:
+        restrictionType: STATIC_LIMIT
+        # 2 hours
+        limit: 7200
+        clientName: pipelineService
+      TEAM:
+        restrictionType: STATIC_LIMIT
+        # 30 days.
+        limit: 2592000
+        clientName: pipelineService
+      ENTERPRISE:
+        restrictionType: STATIC_LIMIT
+        # 35 days
+        limit: 3024000
+        clientName: pipelineService
+  - name: MAX_STAGE_TIMEOUT_SECONDS
+    description: The restriction on the max stage timeout in seconds
+    restrictions:
+      FREE:
+        restrictionType: STATIC_LIMIT
+        # 1 hour
+        limit: 3600
+        clientName: pipelineService
+      TEAM:
+        restrictionType: STATIC_LIMIT
+        # 30 days
+        limit: 2592000
+        clientName: pipelineService
+      ENTERPRISE:
+        restrictionType: STATIC_LIMIT
+        # 35 days
+        limit: 3024000
+        clientName: pipelineService
+  - name: MAX_STEP_TIMEOUT_SECONDS
+    description: The restriction on the max step timeout in seconds
+    restrictions:
+      FREE:
+        restrictionType: STATIC_LIMIT
+        # 1 hour
+        limit: 3600
+        clientName: pipelineService
+  - name: MAX_CONCURRENT_ACTIVE_PIPELINE_EXECUTIONS
+    description: The restriction on max concurrent active pipeline executions
+    restrictions:
+      FREE:
+        restrictionType: STATIC_LIMIT
+        limit: 2
+        clientName: pipelineService
+      TEAM:
+        restrictionType: STATIC_LIMIT
+        limit: 500
+        clientName: pipelineService
+      ENTERPRISE:
+        restrictionType: STATIC_LIMIT
+        limit: 1000
+        clientName: pipelineService

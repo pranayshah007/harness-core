@@ -29,6 +29,7 @@ import io.harness.ng.core.template.refresh.YamlDiffResponseDTO;
 import io.harness.ng.core.template.refresh.YamlFullRefreshResponseDTO;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.template.beans.PermissionTypes;
+import io.harness.template.mappers.NGTemplateDtoMapper;
 import io.harness.template.services.TemplateRefreshService;
 
 import com.google.inject.Inject;
@@ -44,7 +45,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -107,11 +110,14 @@ public class NGTemplateRefreshResource {
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @Parameter(description = TEMPLATE_PARAM_MESSAGE) @QueryParam(
           "templateIdentifier") @NotNull String templateIdentifier,
-      @Parameter(description = "Template version") @NotNull @QueryParam(NGCommonEntityConstants.VERSION_LABEL_KEY)
-      String versionLabel, @BeanParam GitEntityUpdateInfoDTO gitEntityUpdateInfoDTO) {
+      @Parameter(description = "Template version") @NotNull @QueryParam(
+          NGCommonEntityConstants.VERSION_LABEL_KEY) String versionLabel,
+      String templateLabel, @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache,
+      @BeanParam GitEntityUpdateInfoDTO gitEntityUpdateInfoDTO) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
         Resource.of(TEMPLATE, templateIdentifier), PermissionTypes.TEMPLATE_EDIT_PERMISSION);
-    templateRefreshService.refreshAndUpdateTemplate(accountId, orgId, projectId, templateIdentifier, versionLabel);
+    templateRefreshService.refreshAndUpdateTemplate(accountId, orgId, projectId, templateIdentifier, versionLabel,
+        NGTemplateDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache));
     return ResponseDTO.newResponse(true);
   }
 
@@ -127,11 +133,13 @@ public class NGTemplateRefreshResource {
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
+      @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache,
       @Parameter(description = "YAML") @NotNull @Body RefreshRequestDTO refreshRequestDTO) {
-    return ResponseDTO.newResponse(RefreshResponseDTO.builder()
-                                       .refreshedYaml(templateRefreshService.refreshLinkedTemplateInputs(
-                                           accountId, orgId, projectId, refreshRequestDTO.getYaml()))
-                                       .build());
+    return ResponseDTO.newResponse(
+        RefreshResponseDTO.builder()
+            .refreshedYaml(templateRefreshService.refreshLinkedTemplateInputs(accountId, orgId, projectId,
+                refreshRequestDTO.getYaml(), NGTemplateDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache)))
+            .build());
   }
 
   @GET
@@ -148,9 +156,10 @@ public class NGTemplateRefreshResource {
       @Parameter(description = TEMPLATE_PARAM_MESSAGE) @QueryParam(
           "templateIdentifier") @NotNull String templateIdentifier,
       @Parameter(description = "Template version") @NotNull @QueryParam(NGCommonEntityConstants.VERSION_LABEL_KEY)
-      String versionLabel, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
-    return ResponseDTO.newResponse(templateRefreshService.validateTemplateInputsInTemplate(
-        accountId, orgId, projectId, templateIdentifier, versionLabel));
+      String versionLabel, @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache,
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
+    return ResponseDTO.newResponse(templateRefreshService.validateTemplateInputsInTemplate(accountId, orgId, projectId,
+        templateIdentifier, versionLabel, NGTemplateDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache)));
   }
 
   @POST
@@ -166,9 +175,10 @@ public class NGTemplateRefreshResource {
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
+      @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache,
       @Parameter(description = "YAML") @NotNull @Body RefreshRequestDTO refreshRequestDTO) {
-    return ResponseDTO.newResponse(
-        templateRefreshService.validateTemplateInputsForYaml(accountId, orgId, projectId, refreshRequestDTO.getYaml()));
+    return ResponseDTO.newResponse(templateRefreshService.validateTemplateInputsForYaml(accountId, orgId, projectId,
+        refreshRequestDTO.getYaml(), NGTemplateDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache)));
   }
 
   @GET
@@ -185,9 +195,10 @@ public class NGTemplateRefreshResource {
       @Parameter(description = TEMPLATE_PARAM_MESSAGE) @QueryParam(
           "templateIdentifier") @NotNull String templateIdentifier,
       @Parameter(description = "Template version") @NotNull @QueryParam(NGCommonEntityConstants.VERSION_LABEL_KEY)
-      String versionLabel, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
-    return ResponseDTO.newResponse(templateRefreshService.getYamlDiffOnRefreshingTemplate(
-        accountId, orgId, projectId, templateIdentifier, versionLabel));
+      String versionLabel, @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache,
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
+    return ResponseDTO.newResponse(templateRefreshService.getYamlDiffOnRefreshingTemplate(accountId, orgId, projectId,
+        templateIdentifier, versionLabel, NGTemplateDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache)));
   }
 
   @POST
@@ -204,8 +215,10 @@ public class NGTemplateRefreshResource {
       @Parameter(description = TEMPLATE_PARAM_MESSAGE) @QueryParam(
           "templateIdentifier") @NotNull String templateIdentifier,
       @Parameter(description = "Template version") @NotNull @QueryParam(NGCommonEntityConstants.VERSION_LABEL_KEY)
-      String versionLabel, @BeanParam GitEntityUpdateInfoDTO gitEntityUpdateInfoDTO) {
-    templateRefreshService.recursivelyRefreshTemplates(accountId, orgId, projectId, templateIdentifier, versionLabel);
+      String versionLabel, @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache,
+      @BeanParam GitEntityUpdateInfoDTO gitEntityUpdateInfoDTO) {
+    templateRefreshService.recursivelyRefreshTemplates(accountId, orgId, projectId, templateIdentifier, versionLabel,
+        NGTemplateDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache));
     return ResponseDTO.newResponse(true);
   }
 
@@ -222,8 +235,9 @@ public class NGTemplateRefreshResource {
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
+      @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache,
       @Parameter(description = "YAML") @NotNull @Body RefreshRequestDTO refreshRequestDTO) {
-    return ResponseDTO.newResponse(templateRefreshService.recursivelyRefreshTemplatesForYaml(
-        accountId, orgId, projectId, refreshRequestDTO.getYaml()));
+    return ResponseDTO.newResponse(templateRefreshService.recursivelyRefreshTemplatesForYaml(accountId, orgId,
+        projectId, refreshRequestDTO.getYaml(), NGTemplateDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache)));
   }
 }

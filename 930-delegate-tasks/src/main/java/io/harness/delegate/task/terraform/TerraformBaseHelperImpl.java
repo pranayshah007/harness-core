@@ -64,7 +64,6 @@ import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.storeconfig.ArtifactoryStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.task.artifactory.ArtifactoryRequestMapper;
-import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.TerraformCommandExecutionException;
@@ -660,50 +659,6 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
     return commitIdForConfigFilesMap;
   }
 
-  public void addVarFilesCommitIdsToMap(
-      String accountId, List<TerraformVarFileInfo> varFileInfo, Map<String, String> commitIdForConfigFilesMap) {
-    for (TerraformVarFileInfo varFile : varFileInfo) {
-      if (varFile instanceof RemoteTerraformFileInfo) {
-        addFileCommitIdsToMap(accountId, (RemoteTerraformFileInfo) varFile, commitIdForConfigFilesMap);
-      }
-    }
-  }
-
-  public void addBackendFileCommitIdsToMap(
-      String accountId, TerraformBackendConfigFileInfo configFileInfo, Map<String, String> commitIdForConfigFilesMap) {
-    if (configFileInfo instanceof RemoteTerraformFileInfo) {
-      addFileCommitIdsToMap(accountId, (RemoteTerraformFileInfo) configFileInfo, commitIdForConfigFilesMap);
-    }
-  }
-
-  private void addFileCommitIdsToMap(
-      String accountId, RemoteTerraformFileInfo fileInfo, Map<String, String> commitIdForConfigFilesMap) {
-    if (fileInfo.getGitFetchFilesConfig() != null) {
-      GitFetchFilesConfig gitFetchFilesConfig = ((RemoteTerraformFileInfo) fileInfo).getGitFetchFilesConfig();
-      GitStoreDelegateConfig gitStoreDelegateConfig = gitFetchFilesConfig.getGitStoreDelegateConfig();
-      GitConfigDTO gitConfigDTO = (GitConfigDTO) gitStoreDelegateConfig.getGitConfigDTO();
-
-      SshSessionConfig sshSessionConfig = null;
-      if (gitConfigDTO.getGitAuthType() == SSH) {
-        sshSessionConfig = getSshSessionConfig(gitStoreDelegateConfig);
-      }
-
-      GitBaseRequest gitBaseRequest =
-          GitBaseRequest.builder()
-              .branch(gitStoreDelegateConfig.getBranch())
-              .commitId(gitStoreDelegateConfig.getCommitId())
-              .repoUrl(gitConfigDTO.getUrl())
-              .connectorId(gitStoreDelegateConfig.getConnectorName())
-              .authRequest(ngGitService.getAuthRequest(
-                  (GitConfigDTO) gitStoreDelegateConfig.getGitConfigDTO(), sshSessionConfig))
-              .accountId(accountId)
-              .repoType(GitRepositoryType.TERRAFORM)
-              .build();
-      commitIdForConfigFilesMap.putIfAbsent(
-          gitFetchFilesConfig.getIdentifier(), getLatestCommitSHAFromLocalRepo(gitBaseRequest));
-    }
-  }
-
   public String getLatestCommitSHAFromLocalRepo(GitBaseRequest gitBaseRequest) {
     return getLatestCommitSHA(new File(gitClientHelper.getRepoDirectory(gitBaseRequest)));
   }
@@ -902,7 +857,8 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
   }
 
   public String checkoutRemoteBackendConfigFileAndConvertToFilePath(TerraformBackendConfigFileInfo configFileInfo,
-      String scriptDir, LogCallback logCallback, String accountId, String tfConfigDirectory) throws IOException {
+      String scriptDir, LogCallback logCallback, String accountId, String tfConfigDirectory,
+      Map<String, String> commitIdToFetchedFilesMap) throws IOException {
     if (configFileInfo instanceof InlineTerraformBackendConfigFileInfo
         && ((InlineTerraformBackendConfigFileInfo) configFileInfo).getBackendConfigFileContent() != null) {
       return TerraformHelperUtils.createFileFromStringContent(
@@ -912,22 +868,23 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
       List<String> tfBackendConfigFilePath = new ArrayList<>();
       Path tfConfigDirAbsPath = Paths.get(tfConfigDirectory).toAbsolutePath();
       checkoutRemoteTerraformFileAndConvertToFilePath((RemoteTerraformFileInfo) configFileInfo, logCallback, accountId,
-          tfConfigDirectory, tfBackendConfigFilePath, tfConfigDirAbsPath);
+          tfConfigDirectory, tfBackendConfigFilePath, tfConfigDirAbsPath, commitIdToFetchedFilesMap);
       return tfBackendConfigFilePath.get(0);
     }
     return null;
   }
 
   private void checkoutRemoteTerraformFileAndConvertToFilePath(RemoteTerraformFileInfo remoteFileInfo,
-      LogCallback logCallback, String accountId, String tfVarDirectory, List<String> filePaths, Path filesDirAbsPath)
-      throws IOException {
+      LogCallback logCallback, String accountId, String tfVarDirectory, List<String> filePaths, Path filesDirAbsPath,
+      Map<String, String> commitIdToFetchedFilesMap) throws IOException {
     if (remoteFileInfo.getGitFetchFilesConfig() != null) {
       GitStoreDelegateConfig gitStoreDelegateConfig =
           remoteFileInfo.getGitFetchFilesConfig().getGitStoreDelegateConfig();
       GitConfigDTO gitConfigDTO = (GitConfigDTO) gitStoreDelegateConfig.getGitConfigDTO();
       if (EmptyPredicate.isNotEmpty(gitStoreDelegateConfig.getPaths())) {
-        handleGitVarFiles(
+        String commitId = handleGitVarFiles(
             logCallback, accountId, tfVarDirectory, filesDirAbsPath, filePaths, gitStoreDelegateConfig, gitConfigDTO);
+        commitIdToFetchedFilesMap.putIfAbsent(remoteFileInfo.getGitFetchFilesConfig().getIdentifier(), commitId);
       }
     } else if (remoteFileInfo.getFilestoreFetchFilesConfig() != null) {
       ArtifactoryStoreDelegateConfig artifactoryStoreDelegateConfig =
@@ -937,7 +894,8 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
   }
 
   public List<String> checkoutRemoteVarFileAndConvertToVarFilePaths(List<TerraformVarFileInfo> varFileInfo,
-      String scriptDir, LogCallback logCallback, String accountId, String tfVarDirectory) throws IOException {
+      String scriptDir, LogCallback logCallback, String accountId, String tfVarDirectory,
+      Map<String, String> commitIdToFetchedFilesMap) throws IOException {
     Path tfVarDirAbsPath = Paths.get(tfVarDirectory).toAbsolutePath();
     if (EmptyPredicate.isNotEmpty(varFileInfo)) {
       List<String> varFilePaths = new ArrayList<>();
@@ -946,8 +904,8 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
           varFilePaths.add(TerraformHelperUtils.createFileFromStringContent(
               ((InlineTerraformVarFileInfo) varFile).getVarFileContent(), scriptDir, TERRAFORM_VARIABLES_FILE_NAME));
         } else if (varFile instanceof RemoteTerraformVarFileInfo) {
-          checkoutRemoteTerraformFileAndConvertToFilePath(
-              (RemoteTerraformFileInfo) varFile, logCallback, accountId, tfVarDirectory, varFilePaths, tfVarDirAbsPath);
+          checkoutRemoteTerraformFileAndConvertToFilePath((RemoteTerraformFileInfo) varFile, logCallback, accountId,
+              tfVarDirectory, varFilePaths, tfVarDirAbsPath, commitIdToFetchedFilesMap);
         }
       }
       logCallback.saveExecutionLog(
@@ -998,9 +956,9 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
     }
   }
 
-  private void handleGitVarFiles(LogCallback logCallback, String accountId, String tfVarDirectory, Path tfVarDirAbsPath,
-      List<String> varFilePaths, GitStoreDelegateConfig gitStoreDelegateConfig, GitConfigDTO gitConfigDTO)
-      throws IOException {
+  private String handleGitVarFiles(LogCallback logCallback, String accountId, String tfVarDirectory,
+      Path tfVarDirAbsPath, List<String> varFilePaths, GitStoreDelegateConfig gitStoreDelegateConfig,
+      GitConfigDTO gitConfigDTO) throws IOException {
     logCallback.saveExecutionLog(format("Fetching Var files from Git repository: [%s]", gitConfigDTO.getUrl()), INFO,
         CommandExecutionStatus.RUNNING);
 
@@ -1013,24 +971,26 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
       sshSessionConfig = getSshSessionConfig(gitStoreDelegateConfig);
     }
 
-    gitClient.downloadFiles(DownloadFilesRequest.builder()
-                                .branch(gitStoreDelegateConfig.getBranch())
-                                .commitId(gitStoreDelegateConfig.getCommitId())
-                                .filePaths(gitStoreDelegateConfig.getPaths())
-                                .connectorId(gitStoreDelegateConfig.getConnectorName())
-                                .repoUrl(gitConfigDTO.getUrl())
-                                .accountId(accountId)
-                                .recursive(true)
-                                .authRequest(ngGitService.getAuthRequest(gitConfigDTO, sshSessionConfig))
-                                .repoType(GitRepositoryType.TERRAFORM)
-                                .destinationDirectory(tfVarDirectory)
-                                .build());
+    String commitId =
+        gitClient.downloadFiles(DownloadFilesRequest.builder()
+                                    .branch(gitStoreDelegateConfig.getBranch())
+                                    .commitId(gitStoreDelegateConfig.getCommitId())
+                                    .filePaths(gitStoreDelegateConfig.getPaths())
+                                    .connectorId(gitStoreDelegateConfig.getConnectorName())
+                                    .repoUrl(gitConfigDTO.getUrl())
+                                    .accountId(accountId)
+                                    .recursive(true)
+                                    .authRequest(ngGitService.getAuthRequest(gitConfigDTO, sshSessionConfig))
+                                    .repoType(GitRepositoryType.TERRAFORM)
+                                    .destinationDirectory(tfVarDirectory)
+                                    .build());
 
     // One remote file can have multiple different var file paths provided
     // Combine them here and add to list.
     for (String paths : gitStoreDelegateConfig.getPaths()) {
       varFilePaths.add(tfVarDirAbsPath + "/" + paths);
     }
+    return commitId;
   }
 
   private SshSessionConfig getSshSessionConfig(GitStoreDelegateConfig gitStoreDelegateConfig) {
