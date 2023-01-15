@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.DEL;
 import static io.harness.serializer.DelegateServiceCacheRegistrar.DELEGATES_FROM_GROUP_CACHE;
 import static io.harness.serializer.DelegateServiceCacheRegistrar.DELEGATE_CACHE;
 import static io.harness.serializer.DelegateServiceCacheRegistrar.DELEGATE_GROUP_CACHE;
-import static io.harness.serializer.DelegateServiceCacheRegistrar.PTS_COUNT_ACCOUNT_CACHE;
+import static io.harness.serializer.DelegateServiceCacheRegistrar.PERPETUAL_TASK_COUNT_DELEGATE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.Delegate;
@@ -36,7 +36,7 @@ public class DelegateServiceCacheImpl implements DelegateServiceCache {
   @Inject @Named(DELEGATE_CACHE) RLocalCachedMap<String, Delegate> delegateCache;
   @Inject @Named(DELEGATE_GROUP_CACHE) RLocalCachedMap<String, DelegateGroup> delegateGroupCache;
   @Inject @Named(DELEGATES_FROM_GROUP_CACHE) RLocalCachedMap<String, List<Delegate>> delegatesFromGroupCache;
-  @Inject @Named(PTS_COUNT_ACCOUNT_CACHE) RLocalCachedMap<String, Integer> perpetualTaskCountAccountCache;
+  @Inject @Named(PERPETUAL_TASK_COUNT_DELEGATE) RLocalCachedMap<String, Integer> perpetualTaskCountAccountCache;
 
   @Inject DelegateRedissonCacheManager delegateRedissonCacheManager;
 

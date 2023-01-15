@@ -16,6 +16,7 @@ import io.harness.redis.intfc.DelegateRedissonCacheManager;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.LocalCachedMapOptions;
 import org.redisson.api.RLocalCachedMap;
@@ -42,37 +43,29 @@ public class DelegateRedissonCacheManagerImpl implements DelegateRedissonCacheMa
 
   @Override
   public Long redissonCounter(String cacheName, CounterOperation cacheCounterOperation) {
-    if (redissonClient.getAtomicLong(cacheName) == null) {
-      log.info("First time adding to redis {}", cacheName);
-      return redissonClient.getAtomicLong(cacheName).addAndGet(0);
+    if (redissonClient.getAtomicLong(cacheName) == null || !redissonClient.getAtomicLong(cacheName).isExists()) {
+      redissonClient.getAtomicLong(cacheName).expire(10, TimeUnit.MINUTES);
     }
-    long val = 0;
     switch (cacheCounterOperation) {
       case GET:
-        log.info(
-            "TaskCountCache: get Counter value : {} for {}", cacheName, redissonClient.getAtomicLong(cacheName).get());
         return redissonClient.getAtomicLong(cacheName).get();
       case INCREMENT:
-        val = redissonClient.getAtomicLong(cacheName).incrementAndGet();
-        log.info("TaskCountCache: After Increment counter value {}", val);
-        return val;
+        return redissonClient.getAtomicLong(cacheName).incrementAndGet();
       case DECREMENT:
         if (redissonClient.getAtomicLong(cacheName).get() < 0) {
-          redissonClient.getAtomicLong(cacheName).set(0);
-          log.info("TaskCountCache: Should not come here");
-          return val;
+          log.info("RedissonCounter: Should not come here");
+          return redissonClient.getAtomicLong(cacheName).addAndGet(0);
         }
-        val = redissonClient.getAtomicLong(cacheName).decrementAndGet();
-        log.info("TaskCountCache: After Decrement counter value {}", val);
-        return val;
+        return redissonClient.getAtomicLong(cacheName).decrementAndGet();
       default:
-        return null;
+        return 0L;
     }
   }
 
   @Override
   public <K, V> RLocalCachedMap<K, V> getCache(
       String cacheName, Class<K> keyType, Class<V> valueType, String keyPrefix) {
+    // TBD: Implement in future
     return null;
   }
 }

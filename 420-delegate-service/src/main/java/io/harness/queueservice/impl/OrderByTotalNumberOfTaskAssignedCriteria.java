@@ -52,15 +52,12 @@ public class OrderByTotalNumberOfTaskAssignedCriteria implements DelegateResourc
   private final Random random = new Random();
   final Comparator<Map.Entry<String, Integer>> valueComparator = Map.Entry.comparingByValue(Comparator.naturalOrder());
 
-  final Comparator<Delegate> delegateComparator = new Comparator<Delegate>() {
-    @Override
-    public int compare(Delegate d1, Delegate d2) {
-      int diff = d1.getNumberOfTaskAssigned() - d2.getNumberOfTaskAssigned();
-      if (diff == 0) {
-        return Math.max(random.nextInt(), 0);
-      }
-      return diff;
+  final Comparator<Delegate> delegateTaskCountComparator = (d1, d2) -> {
+    int diff = d1.getNumberOfTaskAssigned() - d2.getNumberOfTaskAssigned();
+    if (diff == 0) {
+      return Math.max(random.nextInt(), 0);
     }
+    return diff;
   };
 
   @Inject
@@ -72,20 +69,16 @@ public class OrderByTotalNumberOfTaskAssignedCriteria implements DelegateResourc
   @Override
   public List<Delegate> getFilteredEligibleDelegateList(
       List<Delegate> delegateList, TaskType taskType, String accountId) {
-    if (enableRedisForDelegateService && featureFlagService.isEnabled(DELEGATE_TASK_LOAD_DISTRIBUTION, accountId)) {
-      return listOfDelegatesSortedByNumberOfTaskAssignedFromRedis(delegateList, accountId);
+    if (enableRedisForDelegateService || featureFlagService.isEnabled(DELEGATE_TASK_LOAD_DISTRIBUTION, accountId)) {
+      return listOfDelegatesSortedByNumberOfTaskAssignedFromRedis(delegateList);
     }
     return listOfDelegatesSortedByNumberOfTaskAssigned(delegateList, accountId, taskType);
   }
-  private List<Delegate> listOfDelegatesSortedByNumberOfTaskAssignedFromRedis(
-      List<Delegate> delegateList, String accountId) {
+  private List<Delegate> listOfDelegatesSortedByNumberOfTaskAssignedFromRedis(List<Delegate> delegateList) {
     delegateList.forEach(delegate
         -> delegate.setNumberOfTaskAssigned(
             delegateServiceCache.delegateTaskCacheCounter(delegate.getUuid(), CounterOperation.GET)));
-    delegateList.sort(delegateComparator);
-    delegateList.forEach(delegate
-        -> log.info(
-            "delegate Id: {}, number of current task {}", delegate.getUuid(), delegate.getNumberOfTaskAssigned()));
+    delegateList.sort(delegateTaskCountComparator);
     return delegateList;
   }
 

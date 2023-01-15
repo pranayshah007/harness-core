@@ -13,7 +13,10 @@ import static io.harness.beans.DelegateTask.Status.ERROR;
 import static io.harness.beans.DelegateTask.Status.QUEUED;
 import static io.harness.beans.DelegateTask.Status.STARTED;
 import static io.harness.beans.DelegateTask.Status.runningStatuses;
-import static io.harness.beans.FeatureName.*;
+import static io.harness.beans.FeatureName.DELEGATE_TASK_LOAD_DISTRIBUTION;
+import static io.harness.beans.FeatureName.DEL_SECRET_EVALUATION_VERBOSE_LOGGING;
+import static io.harness.beans.FeatureName.GIT_HOST_CONNECTIVITY;
+import static io.harness.beans.FeatureName.QUEUE_CI_EXECUTIONS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.SizeFunction.size;
@@ -786,16 +789,9 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
 
   private String getMostResourceAvailableDelegateIdForFirstBroadcast(
       DelegateTask delegateTask, List<String> eligibleListOfDelegates) {
-    TaskType taskType = null;
-    if (delegateTask.getTaskDataV2() != null) {
-      taskType = TaskType.valueOf(delegateTask.getTaskDataV2().getTaskType());
-    } else {
-      taskType = TaskType.valueOf(delegateTask.getData().getTaskType());
-    }
-
     List<Delegate> delegateList = getDelegatesList(eligibleListOfDelegates, delegateTask.getAccountId());
     Optional<List<String>> filteredDelegateList =
-        delegateSelectionCheckForTask.perform(delegateList, taskType, delegateTask.getAccountId());
+        delegateSelectionCheckForTask.perform(delegateList, getTaskType(delegateTask), delegateTask.getAccountId());
     log.info("Filtered delegate list : {}", filteredDelegateList.get());
     if (filteredDelegateList.get().isEmpty()) {
       log.info("Filtered delegate list is empty");
@@ -805,8 +801,16 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
         filteredDelegateList.get().get(0));
     return filteredDelegateList.get().get(0);
   }
-  List<Delegate> getDelegatesList(List<String> eligibleDelegateId, String accountId) {
+
+  private List<Delegate> getDelegatesList(List<String> eligibleDelegateId, String accountId) {
     return eligibleDelegateId.stream().map(id -> delegateCache.get(accountId, id, false)).collect(Collectors.toList());
+  }
+
+  private TaskType getTaskType(DelegateTask delegateTask) {
+    if (delegateTask.getTaskDataV2() != null) {
+      return TaskType.valueOf(delegateTask.getTaskDataV2().getTaskType());
+    }
+    return TaskType.valueOf(delegateTask.getData().getTaskType());
   }
 
   private void handleTaskFailureResponse(DelegateTask task, Exception exception) {
@@ -1586,7 +1590,8 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     // If the task wasn't updated because delegateId already exists then query for the task with the delegateId in
     // case client is retrying the request
     copyTaskDataV2ToTaskData(task);
-    if (false) {
+    if (enableRedisForDelegateService
+        && featureFlagService.isEnabled(DELEGATE_TASK_LOAD_DISTRIBUTION, delegateTask.getAccountId())) {
       delegateServiceCache.delegateTaskCacheCounter(delegateId, CounterOperation.INCREMENT);
     }
     if (task != null) {
@@ -2038,10 +2043,6 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     } else {
       persistence.save(delegateTask);
     }
-  }
-
-  private boolean isRedisForDelegateServiceEnabled() {
-    return mainConfiguration.isEnableRedisForDelegateService();
   }
 
   @Override

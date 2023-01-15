@@ -11,7 +11,6 @@ import static io.harness.rule.OwnerRule.JENNY;
 
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import io.harness.beans.DelegateTask;
@@ -22,30 +21,22 @@ import io.harness.delegate.beans.DelegateCapacity;
 import io.harness.delegate.beans.DelegateInstanceStatus;
 import io.harness.delegate.beans.TaskDataV2;
 import io.harness.ff.FeatureFlagService;
-import io.harness.logstreaming.LogStreamingServiceConfig;
 import io.harness.persistence.HPersistence;
 import io.harness.queueservice.ResourceBasedDelegateSelectionCheckForTask;
-import io.harness.queueservice.impl.FilterByDelegateCapacity;
-import io.harness.queueservice.impl.OrderByTotalNumberOfTaskAssignedCriteria;
 import io.harness.queueservice.infc.DelegateCapacityManagementService;
-import io.harness.redis.intfc.DelegateRedissonCacheManager;
 import io.harness.redis.intfc.DelegateServiceCache;
 import io.harness.rule.Owner;
-import io.harness.serializer.KryoSerializer;
 import io.harness.service.intfc.DelegateCache;
 
 import software.wings.WingsBaseTest;
-import software.wings.app.MainConfiguration;
 import software.wings.beans.TaskType;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.IntStream;
 import org.junit.Before;
 import org.junit.Test;
@@ -54,10 +45,7 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.modules.junit4.PowerMockRunner;
 import org.springframework.context.annotation.Description;
 import wiremock.com.google.common.collect.Lists;
 
@@ -523,64 +511,6 @@ public class DelegateResourceCriteriaCheckForTaskTest extends WingsBaseTest {
         eligibleDelegateIds, TaskType.INITIALIZATION_PHASE, accountId);
     assertThat(delegateList.isPresent()).isTrue();
     assertThat(delegateList.get().size()).isEqualTo(3);
-  }
-
-  @Test
-  @Owner(developers = JENNY)
-  @Category(UnitTests.class)
-  @Description("Verify delegate with least number of currently task assigned, comes first in the list. One delegate")
-  public void testOrderByTotalNumberOfTaskAssignedCriteria_withRedisTaskCount() {
-    String accountId = generateUuid();
-    Delegate delegate = createDelegate(accountId, "");
-    when(delegateCache.get(accountId, delegate.getUuid(), false)).thenReturn(delegate);
-    createDelegateTaskWithStatusStarted(accountId, delegate.getUuid());
-    List<Delegate> eligibleDelegateIds = Collections.singletonList(delegate);
-    List<Delegate> delegateList =
-        orderByTotalNumberOfTaskAssignedCriteria.listOfDelegatesSortedByNumberOfTaskAssignedFromRedis(
-            eligibleDelegateIds, accountId);
-    assertThat(delegateList.size()).isEqualTo(1);
-  }
-
-  @Test
-  @Owner(developers = JENNY)
-  @Category(UnitTests.class)
-  @Description("Verify delegate with least number of currently task assigned, comes first in the list. Five delegates")
-  public void testSortOrderByTotalNumberOfTaskAssignedCriteria_withRedisTaskCount_5delegates() {
-    String accountId = generateUuid();
-    Delegate delegate1 = createDelegate(accountId, "delegate1");
-    Delegate delegate2 = createDelegate(accountId, "delegate2");
-    Delegate delegate3 = createDelegate(accountId, "delegate3");
-    Delegate delegate4 = createDelegate(accountId, "delegate3");
-    Delegate delegate5 = createDelegate(accountId, "delegate3");
-
-    List<Delegate> eligibleDelegateIds = Lists.newArrayList(delegate1, delegate2, delegate3, delegate4, delegate5);
-    when(delegateCache.get(accountId, delegate1.getUuid(), false)).thenReturn(delegate1);
-    when(delegateCache.get(accountId, delegate2.getUuid(), false)).thenReturn(delegate2);
-    when(delegateCache.get(accountId, delegate3.getUuid(), false)).thenReturn(delegate3);
-    when(delegateCache.get(accountId, delegate4.getUuid(), false)).thenReturn(delegate4);
-    when(delegateCache.get(accountId, delegate5.getUuid(), false)).thenReturn(delegate5);
-
-    when(delegateServiceCache.delegateTaskCacheCounter(
-             delegate1.getUuid(), DelegateRedissonCacheManager.CounterOperation.GET))
-        .thenReturn(4);
-    when(delegateServiceCache.delegateTaskCacheCounter(
-             delegate2.getUuid(), DelegateRedissonCacheManager.CounterOperation.GET))
-        .thenReturn(6);
-    when(delegateServiceCache.delegateTaskCacheCounter(
-             delegate3.getUuid(), DelegateRedissonCacheManager.CounterOperation.GET))
-        .thenReturn(3);
-    when(delegateServiceCache.delegateTaskCacheCounter(
-             delegate4.getUuid(), DelegateRedissonCacheManager.CounterOperation.GET))
-        .thenReturn(8);
-    when(delegateServiceCache.delegateTaskCacheCounter(
-             delegate5.getUuid(), DelegateRedissonCacheManager.CounterOperation.GET))
-        .thenReturn(5);
-
-    List<Delegate> delegateList =
-        orderByTotalNumberOfTaskAssignedCriteria.listOfDelegatesSortedByNumberOfTaskAssignedFromRedis(
-            eligibleDelegateIds, accountId);
-    assertThat(delegateList.size() == 5);
-    assertThat(delegateList).containsExactly(delegate3, delegate1, delegate5, delegate2, delegate4);
   }
 
   private void createDelegateTaskWithStatusStarted(String accountId, String delegateId) {

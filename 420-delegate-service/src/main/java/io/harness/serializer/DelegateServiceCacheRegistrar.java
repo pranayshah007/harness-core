@@ -32,7 +32,7 @@ public class DelegateServiceCacheRegistrar extends AbstractModule {
   public static final String DELEGATE_CACHE = "delegate";
   public static final String DELEGATE_GROUP_CACHE = "delegate_group";
   public static final String DELEGATES_FROM_GROUP_CACHE = "delegates_from_group";
-  public static final String PTS_COUNT_ACCOUNT_CACHE = "perpetual_task_count_account";
+  public static final String PERPETUAL_TASK_COUNT_DELEGATE = "perpetual_task_count_delegate";
   private static final Integer CACHE_SIZE = 10000;
 
   @Provides
@@ -57,10 +57,11 @@ public class DelegateServiceCacheRegistrar extends AbstractModule {
   }
 
   @Provides
-  @Named(PTS_COUNT_ACCOUNT_CACHE)
+  @Named(PERPETUAL_TASK_COUNT_DELEGATE)
   @Singleton
   public RLocalCachedMap<String, Integer> getPerpetualTasksCountInAccount(DelegateRedissonCacheManager cacheManager) {
-    return cacheManager.getCache(PTS_COUNT_ACCOUNT_CACHE, String.class, Integer.class, getLocalCachedMapOptions(30));
+    return cacheManager.getCache(
+        PERPETUAL_TASK_COUNT_DELEGATE, String.class, Integer.class, getLocalCachedMapOptions(30));
   }
 
   @Override
@@ -78,8 +79,9 @@ public class DelegateServiceCacheRegistrar extends AbstractModule {
     rmapBinder.addBinding(DELEGATES_FROM_GROUP_CACHE)
         .to(Key.get(
             new TypeLiteral<RLocalCachedMap<String, List<Delegate>>>() {}, Names.named(DELEGATES_FROM_GROUP_CACHE)));
-    rmapBinder.addBinding(PTS_COUNT_ACCOUNT_CACHE).to(Key.get(new TypeLiteral<RLocalCachedMap<String, Integer>>() {
-    }, Names.named(PTS_COUNT_ACCOUNT_CACHE)));
+    rmapBinder.addBinding(PERPETUAL_TASK_COUNT_DELEGATE)
+        .to(Key.get(
+            new TypeLiteral<RLocalCachedMap<String, Integer>>() {}, Names.named(PERPETUAL_TASK_COUNT_DELEGATE)));
   }
 
   public LocalCachedMapOptions getLocalCachedMapOptions(int timeToLiveInMinutes) {
