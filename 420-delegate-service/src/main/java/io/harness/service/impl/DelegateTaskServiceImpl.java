@@ -7,6 +7,7 @@
 
 package io.harness.service.impl;
 
+import static io.harness.beans.FeatureName.DELEGATE_TASK_LOAD_DISTRIBUTION;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.delegate.beans.DelegateTaskResponse.ResponseCode;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
@@ -24,6 +25,7 @@ import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.TaskDataV2;
 import io.harness.delegate.task.tasklogging.TaskLogContext;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.logging.AutoLogContext;
 import io.harness.logging.DelegateDriverLogContext;
 import io.harness.metrics.intfc.DelegateMetricsService;
@@ -70,7 +72,9 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
   @Inject private DelegateCallbackRegistry delegateCallbackRegistry;
   @Inject private KryoSerializer kryoSerializer;
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
+  @Inject private FeatureFlagService featureFlagService;
   @Inject private DelegateServiceCache delegateServiceCache;
+  @Inject @Named("enableRedisForDelegateService") private boolean enableRedisForDelegateService;
 
   @Getter private Subject<DelegateTaskRetryObserver> retryObserverSubject = new Subject<>();
   @Inject private RemoteObserverInformer remoteObserverInformer;
@@ -142,7 +146,8 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
           }
         }
         log.info("Response received for task: {} from Delegate: {}", taskId, delegateId);
-        if (true) {
+        if (enableRedisForDelegateService
+            && featureFlagService.isEnabled(DELEGATE_TASK_LOAD_DISTRIBUTION, delegateTask.getAccountId())) {
           delegateServiceCache.delegateTaskCacheCounter(delegateTask.getDelegateId(), CounterOperation.DECREMENT);
         }
         handleResponse(delegateTask, taskQuery, response);

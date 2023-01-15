@@ -65,7 +65,9 @@ import io.harness.queue.QueueListener;
 import io.harness.queue.QueueListenerController;
 import io.harness.queue.QueuePublisher;
 import io.harness.queueservice.config.DelegateQueueServiceConfig;
+import io.harness.redis.DelegateServiceCacheModule;
 import io.harness.redis.RedisConfig;
+import io.harness.redis.intfc.DelegateServiceCache;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.rule.Cache;
 import io.harness.rule.InjectorRuleMixin;
@@ -273,6 +275,7 @@ public class WingsRule implements MethodRule, InjectorRuleMixin, MongoRuleMixin 
     }
     CacheModule cacheModule = new CacheModule(cacheConfigBuilder.build());
     modules.add(0, cacheModule);
+    modules.add(new DelegateServiceCacheModule(RedisConfig.builder().redisUrl("dummyRedisUrl").build(), false));
     long start = currentTimeMillis();
     injector = Guice.createInjector(modules);
     long diff = currentTimeMillis() - start;
@@ -412,6 +415,8 @@ public class WingsRule implements MethodRule, InjectorRuleMixin, MongoRuleMixin 
                                            .build());
     configuration.setLdapSyncJobConfig(
         LdapSyncJobConfig.builder().defaultCronExpression("0 0 23 ? * SAT *").poolSize(3).syncInterval(15).build());
+
+    configuration.setDelegateServiceRedisConfig(RedisConfig.builder().redisUrl("rediss://").build());
     configuration.setTotpConfig(
         TotpConfig.builder()
             .secOpsEmail("secops.fake.email@mailnator.com")
@@ -455,6 +460,12 @@ public class WingsRule implements MethodRule, InjectorRuleMixin, MongoRuleMixin 
       @Override
       protected void configure() {
         bind(DelegateTokenAuthenticator.class).to(DelegateTokenAuthenticatorImpl.class).in(Singleton.class);
+      }
+    });
+    modules.add(new AbstractModule() {
+      @Override
+      protected void configure() {
+        bind(DelegateServiceCache.class).toInstance(mock(DelegateServiceCache.class));
       }
     });
 

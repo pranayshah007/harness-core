@@ -18,12 +18,31 @@ import org.redisson.api.RedissonClient;
 public class DelegateServiceCacheModule extends AbstractModule {
   private RedisConfig redisConfig;
   private RedissonClient redissonClient;
+  private boolean enableRedisForDelegateService;
+
+  public DelegateServiceCacheModule(RedisConfig redisConfig, boolean enableRedisForDelegateService) {
+    this.redisConfig = redisConfig;
+    this.enableRedisForDelegateService = enableRedisForDelegateService;
+  }
 
   @Provides
   @Singleton
-  public DelegateRedissonCacheManager getDelegateServiceCacheManager(
-      @Named("redissonClient") RedissonClient redissonClient, RedisConfig redisConfig) {
-    this.redissonClient = redissonClient;
+  @Named("enableRedisForDelegateService")
+  boolean isEnableRedisForDelegateService() {
+    return enableRedisForDelegateService;
+  }
+
+  @Provides
+  @Singleton
+  @Named("redissonClient")
+  RedissonClient redissonClient() {
+    return RedissonClientFactory.getClient(redisConfig);
+  }
+
+  @Provides
+  @Singleton
+  public DelegateRedissonCacheManager getDelegateServiceCacheManager(RedisConfig redisConfig) {
+    this.redissonClient = redissonClient();
     this.redisConfig = redisConfig;
     return new DelegateRedissonCacheManagerImpl(redissonClient, redisConfig);
   }

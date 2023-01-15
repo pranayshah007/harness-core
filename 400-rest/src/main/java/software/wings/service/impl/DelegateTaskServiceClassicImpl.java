@@ -13,9 +13,7 @@ import static io.harness.beans.DelegateTask.Status.ERROR;
 import static io.harness.beans.DelegateTask.Status.QUEUED;
 import static io.harness.beans.DelegateTask.Status.STARTED;
 import static io.harness.beans.DelegateTask.Status.runningStatuses;
-import static io.harness.beans.FeatureName.DEL_SECRET_EVALUATION_VERBOSE_LOGGING;
-import static io.harness.beans.FeatureName.GIT_HOST_CONNECTIVITY;
-import static io.harness.beans.FeatureName.QUEUE_CI_EXECUTIONS;
+import static io.harness.beans.FeatureName.*;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.SizeFunction.size;
@@ -284,6 +282,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   @Inject private DelegateTaskQueueService delegateTaskQueueService;
   @Inject private ResourceBasedDelegateSelectionCheckForTask delegateSelectionCheckForTask;
   @Inject private DelegateServiceCache delegateServiceCache;
+  @Inject @Named("enableRedisForDelegateService") private boolean enableRedisForDelegateService;
 
   private static final SecureRandom random = new SecureRandom();
   private HarnessCacheManager harnessCacheManager;
@@ -770,7 +769,8 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   }
 
   private String getDelegateIdForFirstBroadcast(DelegateTask delegateTask, List<String> eligibleListOfDelegates) {
-    if (true) {
+    if (enableRedisForDelegateService
+        && featureFlagService.isEnabled(DELEGATE_TASK_LOAD_DISTRIBUTION, delegateTask.getAccountId())) {
       return getMostResourceAvailableDelegateIdForFirstBroadcast(delegateTask, eligibleListOfDelegates);
     }
     for (String delegateId : eligibleListOfDelegates) {
@@ -1586,7 +1586,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     // If the task wasn't updated because delegateId already exists then query for the task with the delegateId in
     // case client is retrying the request
     copyTaskDataV2ToTaskData(task);
-    if (true) {
+    if (false) {
       delegateServiceCache.delegateTaskCacheCounter(delegateId, CounterOperation.INCREMENT);
     }
     if (task != null) {

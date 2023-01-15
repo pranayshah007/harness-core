@@ -7,6 +7,7 @@
 package io.harness.queueservice.impl;
 
 import static io.harness.beans.DelegateTask.Status.STARTED;
+import static io.harness.beans.FeatureName.DELEGATE_TASK_LOAD_DISTRIBUTION;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -15,6 +16,7 @@ import io.harness.beans.DelegateTask;
 import io.harness.beans.DelegateTask.DelegateTaskKeys;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.TaskGroup;
+import io.harness.ff.FeatureFlagService;
 import io.harness.persistence.HPersistence;
 import io.harness.queueservice.infc.DelegateResourceCriteria;
 import io.harness.redis.intfc.DelegateRedissonCacheManager.CounterOperation;
@@ -24,6 +26,7 @@ import io.harness.service.intfc.DelegateCache;
 import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -42,8 +45,11 @@ public class OrderByTotalNumberOfTaskAssignedCriteria implements DelegateResourc
   @Inject private HPersistence persistence;
   @Inject private DelegateCache delegateCache;
   @Inject private DelegateServiceCache delegateServiceCache;
-  private final Random random = new Random();
+  @Inject private FeatureFlagService featureFlagService;
 
+  @Inject @Named("enableRedisForDelegateService") private boolean enableRedisForDelegateService;
+
+  private final Random random = new Random();
   final Comparator<Map.Entry<String, Integer>> valueComparator = Map.Entry.comparingByValue(Comparator.naturalOrder());
 
   final Comparator<Delegate> delegateComparator = new Comparator<Delegate>() {
@@ -66,7 +72,10 @@ public class OrderByTotalNumberOfTaskAssignedCriteria implements DelegateResourc
   @Override
   public List<Delegate> getFilteredEligibleDelegateList(
       List<Delegate> delegateList, TaskType taskType, String accountId) {
-    return listOfDelegatesSortedByNumberOfTaskAssignedFromRedis(delegateList, accountId);
+    if (enableRedisForDelegateService && featureFlagService.isEnabled(DELEGATE_TASK_LOAD_DISTRIBUTION, accountId)) {
+      return listOfDelegatesSortedByNumberOfTaskAssignedFromRedis(delegateList, accountId);
+    }
+    return listOfDelegatesSortedByNumberOfTaskAssigned(delegateList, accountId, taskType);
   }
   private List<Delegate> listOfDelegatesSortedByNumberOfTaskAssignedFromRedis(
       List<Delegate> delegateList, String accountId) {

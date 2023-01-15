@@ -876,7 +876,8 @@ public class WingsApplication extends Application<MainConfiguration> {
 
     CacheModule cacheModule = new CacheModule(configuration.getCacheConfig());
     modules.add(cacheModule);
-    modules.add(new DelegateServiceCacheModule());
+    modules.add(new DelegateServiceCacheModule(
+        configuration.getDelegateServiceRedisConfig(), configuration.isEnableRedisForDelegateService()));
     modules.add(new ProviderModule() {
       @Provides
       @Singleton

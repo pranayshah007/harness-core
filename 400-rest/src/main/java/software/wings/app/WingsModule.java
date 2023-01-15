@@ -207,7 +207,6 @@ import io.harness.queueservice.config.DelegateQueueServiceConfig;
 import io.harness.queueservice.infc.DelegateServiceQueue;
 import io.harness.redis.CompatibleFieldSerializerCodec;
 import io.harness.redis.RedisConfig;
-import io.harness.redis.RedissonClientFactory;
 import io.harness.remote.client.ClientMode;
 import io.harness.scheduler.PersistentScheduler;
 import io.harness.scheduler.SchedulerConfig;
@@ -835,7 +834,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
-import org.redisson.api.RedissonClient;
 
 /**
  * Guice Module for initializing all beans.
@@ -1792,13 +1790,6 @@ public class WingsModule extends AbstractModule implements ServersModule {
             StandardCharsets.UTF_8);
 
     return new YamlUtils().read(featureRestrictions, FeatureRestrictions.class);
-  }
-
-  @Provides
-  @Singleton
-  @Named("redissonClient")
-  RedissonClient redissonClient() {
-    return RedissonClientFactory.getClient(configuration.getDelegateServiceRedisConfig());
   }
 
   @Override
