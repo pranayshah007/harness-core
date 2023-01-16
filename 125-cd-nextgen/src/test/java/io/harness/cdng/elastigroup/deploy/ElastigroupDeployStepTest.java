@@ -18,6 +18,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
@@ -25,6 +26,7 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.elastigroup.ElastigroupStepCommonHelper;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.task.spot.elastigroup.deploy.ElastigroupDeployTaskResponse;
 import io.harness.exception.InvalidArgumentsException;
@@ -53,6 +55,7 @@ public class ElastigroupDeployStepTest extends CategoryTest {
           .build();
 
   @Mock ElastigroupDeployStepHelper stepHelper;
+  @Mock ElastigroupStepCommonHelper elastigroupStepCommonHelper;
 
   @InjectMocks ElastigroupDeployStep step;
 
@@ -74,6 +77,10 @@ public class ElastigroupDeployStepTest extends CategoryTest {
   public void testShouldPrepareTasks() {
     // Given
     Ambiance ambiance = mock(Ambiance.class);
+    doReturn(Arrays.asList(UP_SCALE_COMMAND_UNIT, UP_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT, DOWN_SCALE_COMMAND_UNIT,
+                 DOWN_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT))
+        .when(stepHelper)
+        .getExecutionUnits();
 
     // When
     step.obtainTaskAfterRbac(ambiance, stepParameters, null);
