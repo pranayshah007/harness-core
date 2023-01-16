@@ -58,6 +58,7 @@ import io.harness.delegate.task.elastigroup.response.ElastigroupPreFetchResponse
 import io.harness.delegate.task.elastigroup.response.ElastigroupStartupScriptFetchResponse;
 import io.harness.delegate.task.elastigroup.response.SpotInstConfig;
 import io.harness.delegate.task.git.TaskStatus;
+import io.harness.exception.InvalidRequestException;
 import io.harness.filestore.dto.node.FileNodeDTO;
 import io.harness.filestore.service.FileStoreService;
 import io.harness.logging.CommandExecutionStatus;
