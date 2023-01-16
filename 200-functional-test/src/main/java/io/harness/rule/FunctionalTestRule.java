@@ -54,6 +54,7 @@ import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.QueryFactory;
 import io.harness.persistence.UserProvider;
 import io.harness.queueservice.config.DelegateQueueServiceConfig;
+import io.harness.redis.DelegateServiceCacheModule;
 import io.harness.redis.RedisConfig;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.rest.RestResponse;
@@ -306,6 +307,7 @@ public class FunctionalTestRule implements MethodRule, InjectorRuleMixin, MongoR
                                                   .cacheNamespace("harness-cache")
                                                   .build());
     modules.add(0, cacheModule);
+    modules.add(new DelegateServiceCacheModule(RedisConfig.builder().redisUrl("dummyRedisUrl").build(), false));
 
     modules.add(new AbstractModule() {
       @Override

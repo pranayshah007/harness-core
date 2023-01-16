@@ -44,6 +44,7 @@ import io.harness.observer.RemoteObserver;
 import io.harness.observer.RemoteObserverInformer;
 import io.harness.observer.consumer.AbstractRemoteObserverModule;
 import io.harness.queueservice.config.DelegateQueueServiceConfig;
+import io.harness.redis.DelegateServiceCacheModule;
 import io.harness.redis.RedisConfig;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.security.DelegateTokenAuthenticator;
@@ -294,6 +295,7 @@ public class GraphQLRule implements MethodRule, InjectorRuleMixin, MongoRuleMixi
     }
     CacheModule cacheModule = new CacheModule(cacheConfigBuilder.build());
     modules.add(0, cacheModule);
+    modules.add(new DelegateServiceCacheModule(RedisConfig.builder().redisUrl("dummyRedisUrl").build(), false));
 
     modules.add(new AbstractModule() {
       @Override
