@@ -18,6 +18,8 @@ import lombok.NoArgsConstructor;
 public class CustomChangeSourceSpec extends ChangeSourceSpec {
   String name;
   ChangeCategory type;
+  String webhookUrl;
+  String webhookCurlCommand;
 
   @Override
   public ChangeSourceType getType() {
