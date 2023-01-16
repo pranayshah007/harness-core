@@ -835,7 +835,7 @@ public class UserResource {
   @Timed
   @ExceptionMetered
   public RestResponse<User> redirectlogin(SsoRedirectRequest request) {
-    log.info("SSO login {}", request);
+    log.info("SSO login");
     return new RestResponse<>(authenticationManager.ssoRedirectLogin(request.getJwtToken()));
   }
 
