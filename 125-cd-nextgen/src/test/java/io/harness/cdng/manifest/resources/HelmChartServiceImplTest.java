@@ -129,7 +129,7 @@ public class HelmChartServiceImplTest extends CategoryTest {
         .when(helmChartServiceImpl)
         .getStoreDelegateConfig(any(), eq(accountId), eq(orgId), eq(projId), eq(""), eq(""), eq(""), eq(""));
     doReturn(new HashSet<>()).when(helmChartServiceImpl).getDelegateSelectors(any());
-    doReturn(helmFetchChartVersionResponse).when(delegateGrpcClientWrapper).executeSyncTask(any());
+    doReturn(helmFetchChartVersionResponse).when(delegateGrpcClientWrapper).executeSyncTaskV2(any());
     doReturn(true).when(cdFeatureFlagHelper).isEnabled(eq(accountId), any());
 
     HelmChartResponseDTO helmChartResponseDTO = helmChartServiceImpl.getHelmChartVersionDetails(

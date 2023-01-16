@@ -33,4 +33,6 @@ public interface SignupService {
   VerifyTokenResponseDTO verifyToken(String token);
 
   void resendVerificationEmail(String email);
+
+  void deleteByAccount(String accountId);
 }

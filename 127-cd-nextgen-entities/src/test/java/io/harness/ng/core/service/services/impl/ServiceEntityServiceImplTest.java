@@ -14,6 +14,7 @@ import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.rule.OwnerRule.MOHIT_GARG;
 import static io.harness.rule.OwnerRule.PRABU;
 import static io.harness.rule.OwnerRule.YOGESH;
+import static io.harness.rule.OwnerRule.vivekveman;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -43,11 +44,14 @@ import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceInputsMergedResponseDto;
 import io.harness.ng.core.service.mappers.ServiceElementMapper;
 import io.harness.ng.core.service.mappers.ServiceFilterHelper;
+import io.harness.ng.core.service.services.validators.NoOpServiceEntityValidator;
+import io.harness.ng.core.service.services.validators.ServiceEntityValidatorFactory;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.outbox.api.OutboxService;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.repositories.UpsertOptions;
+import io.harness.repositories.service.spring.ServiceRepository;
 import io.harness.rule.Owner;
 import io.harness.utils.PageUtils;
 
@@ -82,6 +86,10 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
   @Mock private EntitySetupUsageServiceImpl entitySetupUsageService;
   @Mock private ServiceOverrideService serviceOverrideService;
   @Mock private ServiceEntitySetupUsageHelper entitySetupUsageHelper;
+  @Mock private ServiceEntityValidatorFactory serviceEntityValidatorFactory;
+  @Mock private NoOpServiceEntityValidator noOpServiceEntityValidator;
+  @Mock private ServiceRepository serviceRepository;
+
   @Inject @InjectMocks private ServiceEntityServiceImpl serviceEntityService;
   private static final String ACCOUNT_ID = "ACCOUNT_ID";
   private static final String ORG_ID = "ORG_ID";
@@ -108,6 +116,8 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     Reflect.on(serviceEntityService).set("outboxService", outboxService);
     Reflect.on(serviceEntityService).set("serviceOverrideService", serviceOverrideService);
     Reflect.on(serviceEntityService).set("entitySetupUsageHelper", entitySetupUsageHelper);
+    Reflect.on(serviceEntityService).set("serviceEntityValidatorFactory", serviceEntityValidatorFactory);
+    when(serviceEntityValidatorFactory.getServiceEntityValidator(any())).thenReturn(noOpServiceEntityValidator);
   }
   @Parameterized.Parameters
   public static Collection<Object[]> data() {
@@ -288,7 +298,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     // Delete operations
     when(entitySetupUsageService.listAllEntityUsage(anyInt(), anyInt(), anyString(), anyString(), any(), anyString()))
         .thenReturn(Page.empty());
-    boolean delete = serviceEntityService.delete("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", "IDENTIFIER", 1L);
+    boolean delete = serviceEntityService.delete("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", "IDENTIFIER", 1L, false);
     assertThat(delete).isTrue();
     verify(serviceOverrideService).deleteAllInProjectForAService("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", "IDENTIFIER");
 
@@ -436,7 +446,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     List<EntitySetupUsageDTO> referencedByEntities = Arrays.asList(getEntitySetupUsageDTO());
     when(entitySetupUsageService.listAllEntityUsage(anyInt(), anyInt(), anyString(), anyString(), any(), anyString()))
         .thenReturn(new PageImpl<>(referencedByEntities));
-    assertThatThrownBy(() -> serviceEntityService.delete(ACCOUNT_ID, ORG_ID, PROJECT_ID, "SERVICE", 0L))
+    assertThatThrownBy(() -> serviceEntityService.delete(ACCOUNT_ID, ORG_ID, PROJECT_ID, "SERVICE", 0L, false))
         .isInstanceOf(ReferencedEntityException.class)
         .hasMessage(
             "The service SERVICE cannot be deleted because it is being referenced in 1 entity. To delete your service, please remove the reference service from these entities.");
@@ -444,7 +454,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     referencedByEntities = Arrays.asList(getEntitySetupUsageDTO(), getEntitySetupUsageDTO());
     when(entitySetupUsageService.listAllEntityUsage(anyInt(), anyInt(), anyString(), anyString(), any(), anyString()))
         .thenReturn(new PageImpl<>(referencedByEntities));
-    assertThatThrownBy(() -> serviceEntityService.delete(ACCOUNT_ID, ORG_ID, PROJECT_ID, "SERVICE", 0L))
+    assertThatThrownBy(() -> serviceEntityService.delete(ACCOUNT_ID, ORG_ID, PROJECT_ID, "SERVICE", 0L, false))
         .isInstanceOf(ReferencedEntityException.class)
         .hasMessage(
             "The service SERVICE cannot be deleted because it is being referenced in 2 entities. To delete your service, please remove the reference service from these entities.");
@@ -502,7 +512,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     serviceEntityService.create(serviceEntity);
     when(entitySetupUsageService.listAllEntityUsage(anyInt(), anyInt(), anyString(), anyString(), any(), anyString()))
         .thenReturn(Page.empty());
-    boolean delete = serviceEntityService.delete("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", id, 0L);
+    boolean delete = serviceEntityService.delete("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", id, 0L, false);
     assertThat(delete).isTrue();
 
     // list both deleted true/false services
@@ -856,7 +866,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     assertThat(list.getContent()).isNotNull();
     assertThat(list.getContent().size()).isEqualTo(2);
 
-    boolean delete = serviceEntityService.delete("ACCOUNT_ID", null, null, "IDENTIFIER", 1L);
+    boolean delete = serviceEntityService.delete("ACCOUNT_ID", null, null, "IDENTIFIER", 1L, false);
     assertThat(delete).isTrue();
     verify(serviceOverrideService).deleteAllInProjectForAService("ACCOUNT_ID", null, null, "IDENTIFIER");
 
@@ -864,7 +874,57 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
         serviceEntityService.get("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", "account.NEW_IDENTIFIER", false);
     assertThat(deletedService.isPresent()).isTrue();
   }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testForceDeleteAllServicesInProject() {
+    ServiceEntity serviceEntity1 = ServiceEntity.builder()
+                                       .accountId("ACCOUNT_ID")
+                                       .identifier("IDENTIFIER_1")
+                                       .orgIdentifier("ORG_ID")
+                                       .projectIdentifier("PROJECT_ID")
+                                       .name("Service")
+                                       .build();
 
+    ServiceEntity serviceEntity2 = ServiceEntity.builder()
+                                       .accountId("ACCOUNT_ID")
+                                       .identifier("IDENTIFIER_2")
+                                       .orgIdentifier("ORG_ID")
+                                       .projectIdentifier("PROJECT_ID")
+                                       .name("Service")
+                                       .build();
+
+    // Create operations
+    serviceEntityService.create(serviceEntity1);
+    serviceEntityService.create(serviceEntity2);
+
+    boolean delete = serviceEntityService.forceDeleteAllInProject("ACCOUNT_ID", "ORG_ID", "PROJECT_ID");
+    assertThat(delete).isTrue();
+    verify(entitySetupUsageHelper, times(1))
+        .deleteSetupUsagesWithOnlyIdentifierInfo("IDENTIFIER_1", "ACCOUNT_ID", "ORG_ID", "PROJECT_ID");
+    verify(entitySetupUsageHelper, times(1))
+        .deleteSetupUsagesWithOnlyIdentifierInfo("IDENTIFIER_2", "ACCOUNT_ID", "ORG_ID", "PROJECT_ID");
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testForceDeleteService() {
+    final String id = UUIDGenerator.generateUuid();
+    ServiceEntity serviceEntity = ServiceEntity.builder()
+                                      .accountId("ACCOUNT_ID")
+                                      .identifier(id)
+                                      .orgIdentifier("ORG_ID")
+                                      .projectIdentifier("PROJECT_ID")
+                                      .name("Service")
+                                      .build();
+
+    serviceEntityService.create(serviceEntity);
+    when(entitySetupUsageService.listAllEntityUsage(anyInt(), anyInt(), anyString(), anyString(), any(), anyString()))
+        .thenReturn(Page.empty());
+    boolean delete = serviceEntityService.delete("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", id, 0L, true);
+    verify(entitySetupUsageService, times(0))
+        .listAllEntityUsage(anyInt(), anyInt(), anyString(), anyString(), any(), anyString());
+  }
   private String readFile(String filename) {
     ClassLoader classLoader = getClass().getClassLoader();
     try {

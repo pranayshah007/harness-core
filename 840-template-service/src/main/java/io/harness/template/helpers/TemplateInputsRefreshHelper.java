@@ -52,7 +52,7 @@ public class TemplateInputsRefreshHelper {
   @Inject private NgManagerReconcileClient ngManagerReconcileClient;
 
   // Returns the refreshed YAML when a YAML String is passed.
-  public String refreshTemplates(String accountId, String orgId, String projectId, String yaml) {
+  public String refreshTemplates(String accountId, String orgId, String projectId, String yaml, boolean loadFromCache) {
     // Case -> empty YAML, cannot refresh
     if (isEmpty(yaml)) {
       throw new NGTemplateException("Yaml to be refreshed cannot be empty.");
@@ -72,14 +72,14 @@ public class TemplateInputsRefreshHelper {
 
     // refreshedTemplateInputsMap -> Key,Value pairs of the YAML with Refreshed Template Inputs
     Map<String, Object> refreshedTemplateInputsMap =
-        getRefreshedTemplateInputsMap(accountId, orgId, projectId, yamlNode, templateCacheMap);
+        getRefreshedTemplateInputsMap(accountId, orgId, projectId, yamlNode, templateCacheMap, loadFromCache);
 
     // Returning the Refreshed YAML corresponding to the ResMap
     String inputsRefreshYaml = YamlPipelineUtils.writeYamlString(refreshedTemplateInputsMap);
     String resolvedTemplatesYaml = inputsRefreshYaml;
     if (TemplateRefHelper.hasTemplateRef(yaml)) {
       Map<String, Object> resolvedTemplatesMap = templateMergeServiceHelper.mergeTemplateInputsInObject(
-          accountId, orgId, projectId, yamlNode, templateCacheMap, 0, false);
+          accountId, orgId, projectId, yamlNode, templateCacheMap, 0, loadFromCache);
       resolvedTemplatesYaml = YamlPipelineUtils.writeYamlString(resolvedTemplatesMap);
     }
     RefreshResponseDTO ngManagerRefreshResponseDto =
@@ -94,7 +94,7 @@ public class TemplateInputsRefreshHelper {
 
   // Gets the Updated ResMap -> Key,Value pairs of the YAML with Refreshed Template Inputs
   private Map<String, Object> getRefreshedTemplateInputsMap(String accountId, String orgId, String projectId,
-      YamlNode yamlNode, Map<String, TemplateEntity> templateCacheMap) {
+      YamlNode yamlNode, Map<String, TemplateEntity> templateCacheMap, boolean loadFromCache) {
     Map<String, Object> resMap = new LinkedHashMap<>();
 
     // Iterating over the YAML fields to go to all the Templates Present
@@ -105,7 +105,7 @@ public class TemplateInputsRefreshHelper {
       // If Template is present, Refresh the Template Inputs
       if (templateMergeServiceHelper.isTemplatePresent(fieldName, value)) {
         // Updated JsonNode with Refreshed TemplateInputs
-        value = getUpdatedTemplateValue(accountId, orgId, projectId, value, templateCacheMap);
+        value = getUpdatedTemplateValue(accountId, orgId, projectId, value, templateCacheMap, loadFromCache);
       }
 
       if (value.isValueNode() || YamlUtils.checkIfNodeIsArrayWithPrimitiveTypes(value)) {
@@ -114,11 +114,13 @@ public class TemplateInputsRefreshHelper {
       } else if (value.isArray()) {
         // Value -> Array
         resMap.put(fieldName,
-            getRefreshedTemplateInputsInArray(accountId, orgId, projectId, childYamlField.getNode(), templateCacheMap));
+            getRefreshedTemplateInputsInArray(
+                accountId, orgId, projectId, childYamlField.getNode(), templateCacheMap, loadFromCache));
       } else {
         // Value -> Object
         resMap.put(fieldName,
-            getRefreshedTemplateInputsMap(accountId, orgId, projectId, childYamlField.getNode(), templateCacheMap));
+            getRefreshedTemplateInputsMap(
+                accountId, orgId, projectId, childYamlField.getNode(), templateCacheMap, loadFromCache));
       }
     }
     return resMap;
@@ -126,7 +128,7 @@ public class TemplateInputsRefreshHelper {
 
   // Gets the ResMap if the yamlNode is of the type Array
   private List<Object> getRefreshedTemplateInputsInArray(String accountId, String orgId, String projectId,
-      YamlNode yamlNode, Map<String, TemplateEntity> templateCacheMap) {
+      YamlNode yamlNode, Map<String, TemplateEntity> templateCacheMap, boolean loadFromCache) {
     List<Object> arrayList = new ArrayList<>();
 
     // Iterate over the array
@@ -136,10 +138,12 @@ public class TemplateInputsRefreshHelper {
         arrayList.add(arrayElement);
       } else if (arrayElement.isArray()) {
         // Value -> Array
-        arrayList.add(getRefreshedTemplateInputsInArray(accountId, orgId, projectId, arrayElement, templateCacheMap));
+        arrayList.add(getRefreshedTemplateInputsInArray(
+            accountId, orgId, projectId, arrayElement, templateCacheMap, loadFromCache));
       } else {
         // Value -> Object
-        arrayList.add(getRefreshedTemplateInputsMap(accountId, orgId, projectId, arrayElement, templateCacheMap));
+        arrayList.add(
+            getRefreshedTemplateInputsMap(accountId, orgId, projectId, arrayElement, templateCacheMap, loadFromCache));
       }
     }
     return arrayList;
@@ -147,13 +151,13 @@ public class TemplateInputsRefreshHelper {
 
   // Gets the Updated Template Input values
   private JsonNode getUpdatedTemplateValue(String accountId, String orgId, String projectId, JsonNode TemplateNodeValue,
-      Map<String, TemplateEntity> templateCacheMap) {
+      Map<String, TemplateEntity> templateCacheMap, boolean loadFromCache) {
     // Template Inputs linked to the YAML
     JsonNode templateInputs = TemplateNodeValue.get(TEMPLATE_INPUTS);
 
     // Template YAML corresponding to the TemplateRef and Version Label
     TemplateEntityGetResponse templateEntityGetResponse = templateMergeServiceHelper.getLinkedTemplateEntity(
-        accountId, orgId, projectId, TemplateNodeValue, templateCacheMap, false);
+        accountId, orgId, projectId, TemplateNodeValue, templateCacheMap, loadFromCache);
     TemplateEntity templateEntity = templateEntityGetResponse.getTemplateEntity();
     String templateYaml = templateEntity.getYaml();
 

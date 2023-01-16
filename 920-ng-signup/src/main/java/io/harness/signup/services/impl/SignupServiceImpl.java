@@ -13,6 +13,7 @@ import static io.harness.configuration.DeployMode.DEPLOY_MODE;
 import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.remote.client.CGRestUtils.getResponse;
+import static io.harness.remote.client.CGRestUtils.getRetryPolicy;
 import static io.harness.signup.services.SignupType.COMMUNITY_PROVISION;
 import static io.harness.utils.CryptoUtils.secureRandAlphaNumString;
 
@@ -54,6 +55,7 @@ import io.harness.signup.dto.SignupDTO;
 import io.harness.signup.dto.SignupInviteDTO;
 import io.harness.signup.dto.VerifyTokenResponseDTO;
 import io.harness.signup.entities.SignupVerificationToken;
+import io.harness.signup.entities.SignupVerificationToken.signupVerificationTokensKeys;
 import io.harness.signup.notification.EmailType;
 import io.harness.signup.notification.SignupNotificationHelper;
 import io.harness.signup.services.SignupService;
@@ -93,6 +95,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.client.utils.URIBuilder;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.security.crypto.bcrypt.BCrypt;
 
 @Slf4j
@@ -102,6 +105,9 @@ public class SignupServiceImpl implements SignupService {
   public static final String INTENT = "module";
   public static final String SIGNUP_ACTION = "license_type";
   public static final String EDITION = "plan";
+  private static final long INITIAL_DELAY = 5L;
+  private static final long MAX_DELAY = 10L;
+
   private AccountService accountService;
   private UserClient userClient;
   private SignupValidator signupValidator;
@@ -210,7 +216,8 @@ public class SignupServiceImpl implements SignupService {
 
     UserInfo userInfo = null;
     try {
-      userInfo = getResponse(userClient.createCommunityUserAndCompleteSignup(signupRequest));
+      userInfo = getResponse(userClient.createCommunityUserAndCompleteSignup(signupRequest),
+          getRetryPolicy("SignupServiceImpl-Request failed", INITIAL_DELAY, MAX_DELAY, ChronoUnit.SECONDS));
     } catch (InvalidRequestException e) {
       if (e.getMessage().contains("User with this email is already registered")) {
         throw new InvalidRequestException("Email is already signed up", ErrorCode.USER_ALREADY_REGISTERED, USER);
@@ -565,6 +572,13 @@ public class SignupServiceImpl implements SignupService {
       throw new InvalidRequestException(VERIFY_URL_GENERATION_FAILED, e);
     }
     log.info("Resend verification email for {}", email);
+  }
+
+  @Override
+  public void deleteByAccount(String accountId) {
+    Criteria criteria = new Criteria();
+    criteria.and(signupVerificationTokensKeys.accountIdentifier).is(accountId);
+    verificationTokenRepository.deleteAll(verificationTokenRepository.findAllByAccountIdentifier(accountId));
   }
 
   private UserInfo createUser(SignupDTO signupDTO, AccountDTO account) {

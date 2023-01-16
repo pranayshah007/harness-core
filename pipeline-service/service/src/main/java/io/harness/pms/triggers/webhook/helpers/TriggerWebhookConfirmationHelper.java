@@ -102,7 +102,7 @@ public class TriggerWebhookConfirmationHelper {
       }
     }
 
-    ResponseData responseData = delegateServiceGrpcClient.executeSyncTaskReturningResponseData(
+    ResponseData responseData = delegateServiceGrpcClient.executeSyncTaskReturningResponseDataV2(
         DelegateTaskRequest.builder()
             .accountId(event.getAccountId())
             .executionTimeout(Duration.ofSeconds(30))

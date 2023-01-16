@@ -7,14 +7,18 @@
 
 package io.harness.ng;
 
-import io.harness.ngsettings.SettingIdentifiers;
+import static java.util.Objects.isNull;
+
+import io.harness.enforcement.constants.FeatureRestrictionName;
+import io.harness.ngsettings.SettingsValidatorFactory;
+import io.harness.ngsettings.services.SettingEnforcementValidator;
 import io.harness.ngsettings.services.SettingValidator;
 import io.harness.ngsettings.services.SettingsService;
 import io.harness.ngsettings.services.impl.SettingsServiceImpl;
-import io.harness.ngsettings.services.impl.validators.DisableBuiltInHarnessSMValidator;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.multibindings.MapBinder;
+import java.util.List;
 
 public class NGSettingModule extends AbstractModule {
   NextGenConfiguration appConfig;
@@ -29,10 +33,34 @@ public class NGSettingModule extends AbstractModule {
     bind(SettingsService.class).to(SettingsServiceImpl.class);
     registerSettingValidators();
   }
+
   public void registerSettingValidators() {
     MapBinder<String, SettingValidator> settingValidatorMapBinder =
         MapBinder.newMapBinder(binder(), String.class, SettingValidator.class);
-    settingValidatorMapBinder.addBinding(SettingIdentifiers.DISABLE_HARNESS_BUILT_IN_SECRET_MANAGER)
-        .to(DisableBuiltInHarnessSMValidator.class);
+
+    MapBinder<String, SettingEnforcementValidator> settingEnforcementValidatorMapBinder =
+        MapBinder.newMapBinder(binder(), String.class, SettingEnforcementValidator.class);
+
+    List<String> settingIdentifiers = SettingsValidatorFactory.getSettingIdentifiersWithValidators();
+
+    settingIdentifiers.forEach(settingIdentifier -> {
+      // Add custom validators to MapBinder
+      Class<? extends SettingValidator> settingCustomValidator =
+          SettingsValidatorFactory.getCustomValidator(settingIdentifier);
+      if (!isNull(settingCustomValidator)) {
+        settingValidatorMapBinder.addBinding(settingIdentifier).to(settingCustomValidator);
+      }
+
+      // Add enforcement validators to MapBinder
+      FeatureRestrictionName featureRestrictionName =
+          SettingsValidatorFactory.getFeatureRestrictionName(settingIdentifier);
+      if (!isNull(featureRestrictionName)) {
+        Class<? extends SettingEnforcementValidator> settingEnforcementValidator =
+            SettingsValidatorFactory.getEnforcementValidator(settingIdentifier);
+        if (!isNull(settingEnforcementValidator)) {
+          settingEnforcementValidatorMapBinder.addBinding(settingIdentifier).to(settingEnforcementValidator);
+        }
+      }
+    });
   }
 }

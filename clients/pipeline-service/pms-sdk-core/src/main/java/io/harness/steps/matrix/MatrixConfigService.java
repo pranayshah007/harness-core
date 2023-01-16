@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
 @Singleton
 public class MatrixConfigService implements StrategyConfigService {
   public List<ChildrenExecutableResponse.Child> fetchChildren(StrategyConfig strategyConfig, String childNodeId) {
-    MatrixConfig matrixConfig = (MatrixConfig) strategyConfig.getMatrixConfig();
+    MatrixConfig matrixConfig = (MatrixConfig) strategyConfig.getMatrixConfig().getValue();
     List<Map<String, String>> combinations = new ArrayList<>();
     List<List<Integer>> matrixMetadata = new ArrayList<>();
     List<String> keys = getKeys(matrixConfig);
@@ -72,7 +72,7 @@ public class MatrixConfigService implements StrategyConfigService {
 
   public StrategyInfo expandJsonNode(
       StrategyConfig strategyConfig, JsonNode jsonNode, Optional<Integer> maxExpansionLimit) {
-    MatrixConfig matrixConfig = (MatrixConfig) strategyConfig.getMatrixConfig();
+    MatrixConfig matrixConfig = (MatrixConfig) strategyConfig.getMatrixConfig().getValue();
     List<Map<String, String>> combinations = new ArrayList<>();
     List<List<Integer>> matrixMetadata = new ArrayList<>();
     List<String> keys = getKeys(matrixConfig);

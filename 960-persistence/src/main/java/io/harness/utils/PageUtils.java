@@ -164,7 +164,7 @@ public class PageUtils {
   }
 
   public enum SortFields {
-    SLUG("slug"),
+    IDENTIFIER("identifier"),
     NAME("name"),
     CREATED("created"),
     UPDATED("updated"),

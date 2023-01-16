@@ -159,7 +159,7 @@ public class AccountRolesApiImpl implements AccountRolesApi {
     accessControlClient.checkForAccessOrThrow(
         ResourceScope.of(account, null, null), Resource.of(ROLE, role), EDIT_ROLE_PERMISSION);
     HarnessScopeParams harnessScopeParams = HarnessScopeParams.builder().accountIdentifier(account).build();
-    if (!role.equals(body.getSlug())) {
+    if (!role.equals(body.getIdentifier())) {
       throw new InvalidRequestException("Role identifier in the request body and the URL do not match.");
     }
     String scopeIdentifier = ScopeMapper.fromParams(harnessScopeParams).toString();

@@ -10,7 +10,7 @@ package io.harness.mongo.queue;
 import static io.harness.manage.GlobalContextManager.obtainGlobalContext;
 
 import io.harness.logging.AutoLogRemoveContext;
-import io.harness.mongo.MessageLogContext;
+import io.harness.queue.MessageLogContext;
 import io.harness.queue.Queuable;
 import io.harness.queue.QueuePublisher;
 import io.harness.queue.TopicUtils;

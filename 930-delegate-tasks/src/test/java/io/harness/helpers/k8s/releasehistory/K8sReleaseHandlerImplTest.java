@@ -27,8 +27,8 @@ import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.releasehistory.K8sRelease;
-import io.harness.k8s.releasehistory.K8sReleaseCleanupDTO;
 import io.harness.k8s.releasehistory.K8sReleaseHistory;
+import io.harness.k8s.releasehistory.K8sReleaseHistoryCleanupDTO;
 import io.harness.k8s.releasehistory.K8sReleasePersistDTO;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
@@ -74,7 +74,7 @@ public class K8sReleaseHandlerImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCreateRelease() {
     K8sRelease release = (K8sRelease) releaseHandler.createRelease("name", 1);
-    assertThat(release.getReleaseSecret().getMetadata().getName()).isEqualTo("release.name.1");
+    assertThat(release.getReleaseSecret().getMetadata().getName()).isEqualTo("harness.release.name.1");
   }
 
   @Test
@@ -108,11 +108,11 @@ public class K8sReleaseHandlerImplTest extends CategoryTest {
     LogCallback logCallback = new NGDelegateLogCallback(null, null, false, null);
 
     K8sReleaseHistory releaseHistory = K8sReleaseHistory.builder().releaseHistory(releases).build();
-    K8sReleaseCleanupDTO releaseCleanupDTO = K8sReleaseCleanupDTO.builder()
-                                                 .releaseName(RELEASE_NAME)
-                                                 .releaseHistory(releaseHistory)
-                                                 .logCallback(logCallback)
-                                                 .build();
+    K8sReleaseHistoryCleanupDTO releaseCleanupDTO = K8sReleaseHistoryCleanupDTO.builder()
+                                                        .releaseName(RELEASE_NAME)
+                                                        .releaseHistory(releaseHistory)
+                                                        .logCallback(logCallback)
+                                                        .build();
 
     releaseHandler.cleanReleaseHistory(releaseCleanupDTO);
     verify(kubernetesContainerService)

@@ -10,6 +10,7 @@ package software.wings.sm.states.k8s;
 import static io.harness.annotations.dev.HarnessModule._870_CG_ORCHESTRATION;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.FeatureName.BIND_CUSTOM_VALUE_AND_MANIFEST_FETCH_TASK;
+import static io.harness.beans.FeatureName.CDP_SKIP_DEFAULT_VALUES_YAML_CG;
 import static io.harness.beans.FeatureName.KUSTOMIZE_PATCHES_CG;
 import static io.harness.beans.FeatureName.OPTIMIZED_GIT_FETCH_FILES;
 import static io.harness.beans.FeatureName.OVERRIDE_VALUES_YAML_FROM_HELM_CHART;
@@ -275,6 +276,8 @@ public abstract class AbstractK8sState extends State implements K8sStateExecutor
       case Remote:
       case HelmSourceRepo:
         prepareRemoteDelegateManifestConfig(context, appManifest, manifestConfigBuilder);
+        manifestConfigBuilder.skipApplyHelmDefaultValues(
+            featureFlagService.isEnabled(CDP_SKIP_DEFAULT_VALUES_YAML_CG, context.getAccountId()));
         break;
 
       case HelmChartRepo:
@@ -284,6 +287,8 @@ public abstract class AbstractK8sState extends State implements K8sStateExecutor
             appManifestWithChartRepoOverrideApplied == null ? appManifest : appManifestWithChartRepoOverrideApplied;
         manifestConfigBuilder.helmChartConfigParams(
             helmChartConfigHelperService.getHelmChartConfigTaskParams(context, appManifest));
+        manifestConfigBuilder.skipApplyHelmDefaultValues(
+            featureFlagService.isEnabled(CDP_SKIP_DEFAULT_VALUES_YAML_CG, context.getAccountId()));
         break;
 
       case CUSTOM:

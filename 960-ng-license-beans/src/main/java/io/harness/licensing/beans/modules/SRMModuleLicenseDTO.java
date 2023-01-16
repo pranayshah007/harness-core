@@ -30,7 +30,7 @@ import lombok.experimental.SuperBuilder;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(NON_NULL)
-@Schema(name = "CVModuleLicense", description = "This contains details of the Test Intelligence License in Harness")
+@Schema(name = "SRMModuleLicense", description = "This contains details of the SRM License in Harness")
 public class SRMModuleLicenseDTO extends ModuleLicenseDTO {
   Integer numberOfServices;
 }

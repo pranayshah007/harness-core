@@ -23,13 +23,9 @@ import io.harness.validation.Update;
 
 import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.common.collect.ImmutableList;
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBObject;
 import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Id;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
@@ -87,19 +83,4 @@ public class ResourceLookup implements PersistentEntity, UuidAware, CreatedAtAwa
   private List<NameValuePair> tags;
   @FdIndex private long createdAt;
   private long lastUpdatedAt;
-
-  public static DBObject getHint(String indexName) {
-    Map<String, Object> map = new LinkedHashMap<>();
-
-    switch (indexName) {
-      case "resourceIdResourceLookupIndex":
-        map.put(ResourceLookupKeys.accountId, 1);
-        map.put(ResourceLookupKeys.resourceId, 1);
-        break;
-      default:
-        break;
-    }
-
-    return new BasicDBObject(map);
-  }
 }

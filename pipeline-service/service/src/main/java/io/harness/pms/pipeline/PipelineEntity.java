@@ -24,9 +24,7 @@ import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.persistence.AccountAccess;
-import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
-import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UuidAware;
 import io.harness.persistence.gitaware.GitAware;
 import io.harness.pms.yaml.PipelineVersion;
@@ -74,8 +72,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @ChangeDataCapture(table = "tags_info", dataStore = "pms-harness", fields = {}, handler = "TagsInfoCD")
 @ChangeDataCapture(table = "tags_info_ng", dataStore = "pms-harness", fields = {}, handler = "TagsInfoNGCD")
 @ChangeDataCapture(table = "pipelines", dataStore = "ng-harness", fields = {}, handler = "Pipelines")
-public class PipelineEntity
-    implements GitAware, GitSyncableEntity, PersistentEntity, AccountAccess, UuidAware, CreatedAtAware, UpdatedAtAware {
+public class PipelineEntity implements GitAware, GitSyncableEntity, PersistentEntity, AccountAccess, UuidAware {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList
         .<MongoIndex>builder()
@@ -151,8 +148,8 @@ public class PipelineEntity
   @Wither @NotEmpty @NonFinal @Setter String yaml;
 
   // Used by PipelineTelemetryPublisher
-  @Setter @NonFinal @SchemaIgnore @CreatedDate long createdAt;
-  @Wither @Setter @NonFinal @SchemaIgnore @NotNull @LastModifiedDate long lastUpdatedAt;
+  @Setter @NonFinal @SchemaIgnore @CreatedDate Long createdAt;
+  @Wither @Setter @NonFinal @SchemaIgnore @NotNull @LastModifiedDate Long lastUpdatedAt;
   @Wither @Default Boolean deleted = Boolean.FALSE;
 
   @Wither @EntityName String name;
@@ -168,9 +165,9 @@ public class PipelineEntity
    * lastExecutionTs move out from this dto to first class in pipelineEntity for sort filter
    */
   @Deprecated ExecutionSummaryInfo executionSummaryInfo;
-  int runSequence;
+  Integer runSequence;
 
-  @Wither int stageCount;
+  @Wither Integer stageCount;
   @Wither @Singular List<String> stageNames;
 
   @Wither Boolean allowStageExecutions;

@@ -300,7 +300,7 @@ public class TemplateInputsValidatorTest extends TemplateServiceTestBase {
         .thenReturn(Optional.of(stageTemplateWithCorrectInputs));
 
     ValidateTemplateInputsResponseDTO response = templateInputsValidator.validateNestedTemplateInputsForGivenYaml(
-        ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineWithIncorrectInputsYaml);
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineWithIncorrectInputsYaml, false);
     assertThat(response).isNotNull();
     assertThat(response.isValidYaml()).isFalse();
     assertThat(response.getErrorNodeSummary()).isNotNull();

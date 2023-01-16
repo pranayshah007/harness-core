@@ -12,7 +12,6 @@ import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.exception.ExceptionUtils;
 import io.harness.health.HealthMonitor;
-import io.harness.mongo.QueryFactory;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.HQuery.QueryChecks;
 import io.harness.persistence.store.Store;

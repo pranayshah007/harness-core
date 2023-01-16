@@ -59,7 +59,7 @@ public class DebeziumController<T extends MongoCollectionChangeConsumer> impleme
           continue;
         }
         RLock rLock = (RLock) aggregatorLock.getLock();
-        debeziumEngine = debeziumService.getEngine(props, changeConsumer, changeConsumer.getCollection());
+        debeziumEngine = debeziumService.getEngine(props, changeConsumer, changeConsumer.getCollection(), this);
         Future<?> future = executorService.submit(debeziumEngine);
         log.info("Starting Debezium Engine for Collection {} at {}", changeConsumer.getCollection(),
             System.currentTimeMillis());
@@ -104,5 +104,9 @@ public class DebeziumController<T extends MongoCollectionChangeConsumer> impleme
   String getLockName() {
     return DEBEZIUM_LOCK_PREFIX + props.get(DebeziumConfiguration.CONNECTOR_NAME) + "-"
         + changeConsumer.getCollection();
+  }
+
+  public void stopDebeziumController() {
+    shouldStop.set(true);
   }
 }

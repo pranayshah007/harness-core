@@ -13,7 +13,7 @@ import static io.harness.beans.ExecutionStatus.REJECTED;
 import static io.harness.beans.ExecutionStatus.SKIPPED;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
 import static io.harness.beans.FeatureName.RESOLVE_DEPLOYMENT_TAGS_BEFORE_EXECUTION;
-import static io.harness.beans.FeatureName.SPG_ALLOW_USE_WORKFLOW_VARIABLES_TO_CONDITION_OF_SKIP_PIPELINE_STAGE;
+import static io.harness.beans.FeatureName.SPG_ALLOW_WFLOW_VARIABLES_TO_CONDITION_SKIP_PIPELINE_STAGE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.ExecutionContext.MANAGER;
@@ -130,8 +130,6 @@ import org.slf4j.Logger;
 @FieldNameConstants(innerTypeName = "EnvStateKeys")
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)
 public class EnvState extends State implements WorkflowState {
-  public static final Integer ENV_STATE_TIMEOUT_MILLIS = 7 * 24 * 60 * 60 * 1000;
-
   private static final Pattern secretNamePattern = Pattern.compile("\\$\\{secrets.getValue\\([^{}]+\\)}");
   private static final Pattern secretManagerObtainPattern = Pattern.compile("\\$\\{secretManager.obtain\\([^{}]+\\)}");
 
@@ -619,7 +617,7 @@ public class EnvState extends State implements WorkflowState {
   @Override
   public Integer getTimeoutMillis() {
     if (super.getTimeoutMillis() == null) {
-      return ENV_STATE_TIMEOUT_MILLIS;
+      return INFINITE_TIMEOUT;
     }
     return super.getTimeoutMillis();
   }
@@ -718,7 +716,7 @@ public class EnvState extends State implements WorkflowState {
             stdParams.getWorkflowElement().setDescription(workflow.getDescription());
 
             if (featureFlagService.isEnabled(
-                    SPG_ALLOW_USE_WORKFLOW_VARIABLES_TO_CONDITION_OF_SKIP_PIPELINE_STAGE, context.getAccountId())) {
+                    SPG_ALLOW_WFLOW_VARIABLES_TO_CONDITION_SKIP_PIPELINE_STAGE, context.getAccountId())) {
               stdParams.getWorkflowElement().setVariables(new HashMap<>(this.getWorkflowVariables()));
               stdParams.setWorkflowVariables(this.getWorkflowVariables());
             }

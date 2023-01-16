@@ -125,7 +125,7 @@ public class K8sManifestRemoteStoreService implements NgManifestService {
         GitStore.builder()
             .connectorRef(ParameterField.createValueField(MigratorUtility.getIdentifierWithScope(connector)))
             .gitFetchType(gitFileConfig.isUseBranch() ? FetchType.BRANCH : FetchType.COMMIT)
-            .paths(ParameterField.createValueField(Collections.singletonList(path)))
+            .paths(MigratorUtility.splitWithComma(path))
             .build();
 
     if (StringUtils.isNotBlank(gitFileConfig.getCommitId())) {

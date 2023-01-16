@@ -8,6 +8,7 @@
 package io.harness.delegate.k8s;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.delegate.task.k8s.K8sTaskHelperBase.getTimeoutMillisFromMinutes;
 import static io.harness.k8s.K8sCommandUnitConstants.Apply;
 import static io.harness.k8s.K8sCommandUnitConstants.FetchFiles;
@@ -24,6 +25,9 @@ import static io.harness.k8s.manifest.ManifestHelper.getServices;
 import static io.harness.k8s.manifest.ManifestHelper.getStageService;
 import static io.harness.k8s.manifest.ManifestHelper.getWorkloadsForCanaryAndBG;
 import static io.harness.k8s.manifest.VersionUtils.markVersionedResources;
+import static io.harness.k8s.releasehistory.IK8sRelease.Status.Failed;
+import static io.harness.k8s.releasehistory.IK8sRelease.Status.Succeeded;
+import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_SECRET_RELEASE_COLOR_KEY;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
@@ -34,7 +38,6 @@ import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
 
 import static java.lang.String.format;
-import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FileData;
@@ -51,6 +54,7 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.KubernetesTaskException;
 import io.harness.exception.KubernetesYamlException;
 import io.harness.exception.NestedExceptionUtils;
+import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
 import io.harness.k8s.K8sCliCommandType;
 import io.harness.k8s.K8sCommandFlagsUtils;
 import io.harness.k8s.KubernetesContainerService;
@@ -68,8 +72,12 @@ import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
 import io.harness.k8s.releasehistory.IK8sRelease;
+import io.harness.k8s.releasehistory.IK8sRelease.Status;
+import io.harness.k8s.releasehistory.IK8sReleaseHistory;
+import io.harness.k8s.releasehistory.K8SLegacyReleaseHistory;
 import io.harness.k8s.releasehistory.K8sLegacyRelease;
-import io.harness.k8s.releasehistory.ReleaseHistory;
+import io.harness.k8s.releasehistory.K8sRelease;
+import io.harness.k8s.releasehistory.K8sReleaseSecretHelper;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 
@@ -87,7 +95,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
 @OwnedBy(CDP)
@@ -101,8 +108,8 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
 
   private KubernetesConfig kubernetesConfig;
   private Kubectl client;
-  private ReleaseHistory releaseHistory;
-  private K8sLegacyRelease currentRelease;
+  private IK8sReleaseHistory releaseHistory;
+  private IK8sRelease release;
   private KubernetesResource managedWorkload;
   private List<KubernetesResource> resources;
   private KubernetesResource primaryService;
@@ -114,6 +121,9 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
   private PrePruningInfo prePruningInfo;
 
   private boolean shouldSaveReleaseHistory;
+  private boolean useDeclarativeRollback;
+  private int currentReleaseNumber;
+  private K8sReleaseHandler releaseHandler;
 
   @Override
   protected K8sDeployResponse executeTaskInternal(K8sDeployRequest k8sDeployRequest,
@@ -126,6 +136,8 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
     K8sBGDeployRequest k8sBGDeployRequest = (K8sBGDeployRequest) k8sDeployRequest;
 
     releaseName = k8sBGDeployRequest.getReleaseName();
+    useDeclarativeRollback = k8sBGDeployRequest.isUseDeclarativeRollback();
+    releaseHandler = k8sTaskHelperBase.getReleaseHandler(useDeclarativeRollback);
     manifestFilesDirectory = Paths.get(k8sDelegateTaskParams.getWorkingDirectory(), MANIFEST_FILES_DIR).toString();
     final long timeoutInMillis = getTimeoutMillisFromMinutes(k8sBGDeployRequest.getTimeoutIntervalInMin());
 
@@ -144,7 +156,9 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Prepare, true, commandUnitsProgress),
         k8sBGDeployRequest.isSkipResourceVersioning(), k8sBGDeployRequest.isPruningEnabled());
 
-    currentRelease.setManagedWorkload(managedWorkload.getResourceId().cloneInternal());
+    if (!useDeclarativeRollback) {
+      ((K8sLegacyRelease) release).setManagedWorkload(managedWorkload.getResourceId().cloneInternal());
+    }
 
     shouldSaveReleaseHistory = true;
     // Apply Command Flag
@@ -155,11 +169,14 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Apply, true, commandUnitsProgress), true, true,
         commandFlags);
 
-    k8sTaskHelperBase.saveReleaseHistoryInConfigMap(
-        kubernetesConfig, k8sBGDeployRequest.getReleaseName(), releaseHistory.getAsYaml());
+    k8sTaskHelperBase.saveRelease(
+        useDeclarativeRollback, false, kubernetesConfig, release, releaseHistory, releaseName);
 
-    currentRelease.setManagedWorkloadRevision(
-        k8sTaskHelperBase.getLatestRevision(client, managedWorkload.getResourceId(), k8sDelegateTaskParams));
+    if (!useDeclarativeRollback) {
+      ((K8sLegacyRelease) release)
+          .setManagedWorkloadRevision(
+              k8sTaskHelperBase.getLatestRevision(client, managedWorkload.getResourceId(), k8sDelegateTaskParams));
+    }
 
     K8sSteadyStateDTO k8sSteadyStateDTO =
         K8sSteadyStateDTO.builder()
@@ -183,29 +200,29 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
     final List<K8sPod> podList = k8sBGBaseHandler.getAllPods(
         timeoutInMillis, kubernetesConfig, managedWorkload, primaryColor, stageColor, releaseName);
 
-    currentRelease.setManagedWorkloadRevision(
-        k8sTaskHelperBase.getLatestRevision(client, managedWorkload.getResourceId(), k8sDelegateTaskParams));
-    releaseHistory.setReleaseStatus(IK8sRelease.Status.Succeeded);
-    k8sTaskHelperBase.saveReleaseHistoryInConfigMap(
-        kubernetesConfig, k8sBGDeployRequest.getReleaseName(), releaseHistory.getAsYaml());
+    if (!useDeclarativeRollback) {
+      ((K8sLegacyRelease) release)
+          .setManagedWorkloadRevision(
+              k8sTaskHelperBase.getLatestRevision(client, managedWorkload.getResourceId(), k8sDelegateTaskParams));
+    }
+    saveRelease(Succeeded);
 
     K8sBGDeployResponse k8sBGDeployResponse = K8sBGDeployResponse.builder()
-                                                  .releaseNumber(currentRelease.getNumber())
+                                                  .releaseNumber(release.getReleaseNumber())
                                                   .k8sPodList(podList)
                                                   .primaryServiceName(primaryService.getResourceId().getName())
                                                   .stageServiceName(stageService.getResourceId().getName())
                                                   .stageColor(stageColor)
                                                   .primaryColor(primaryColor)
                                                   .build();
+    wrapUpLogCallback.saveExecutionLog("\nDone.", INFO, CommandExecutionStatus.SUCCESS);
 
     if (k8sBGDeployRequest.isPruningEnabled()) {
       LogCallback pruneExecutionLogCallback =
           k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Prune, true, commandUnitsProgress);
-      k8sBGBaseHandler.pruneForBg(k8sDelegateTaskParams, pruneExecutionLogCallback, primaryColor, stageColor,
-          prePruningInfo, currentRelease, client);
+      k8sBGBaseHandler.pruneForBg(
+          k8sDelegateTaskParams, pruneExecutionLogCallback, primaryColor, stageColor, prePruningInfo, release, client);
     }
-
-    wrapUpLogCallback.saveExecutionLog("\nDone.", INFO, CommandExecutionStatus.SUCCESS);
     return K8sDeployResponse.builder()
         .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
         .k8sNGTaskResponse(k8sBGDeployResponse)
@@ -220,11 +237,14 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
   @Override
   protected void handleTaskFailure(K8sDeployRequest request, Exception exception) throws Exception {
     if (shouldSaveReleaseHistory) {
-      K8sBGDeployRequest k8sBGDeployRequest = (K8sBGDeployRequest) request;
-      releaseHistory.setReleaseStatus(IK8sRelease.Status.Failed);
-      k8sTaskHelperBase.saveReleaseHistoryInConfigMap(
-          kubernetesConfig, k8sBGDeployRequest.getReleaseName(), releaseHistory.getAsYaml());
+      saveRelease(Failed);
     }
+  }
+
+  private void saveRelease(Status status) throws Exception {
+    release.updateReleaseStatus(status);
+    k8sTaskHelperBase.saveRelease(
+        useDeclarativeRollback, false, kubernetesConfig, release, releaseHistory, releaseName);
   }
 
   @VisibleForTesting
@@ -237,10 +257,12 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
         containerDeploymentDelegateBaseHelper.createKubernetesConfig(request.getK8sInfraDelegateConfig());
 
     client = Kubectl.client(k8sDelegateTaskParams.getKubectlPath(), k8sDelegateTaskParams.getKubeconfigPath());
-    String releaseHistoryData =
-        k8sTaskHelperBase.getReleaseHistoryDataFromConfigMap(kubernetesConfig, request.getReleaseName());
-    releaseHistory = (StringUtils.isEmpty(releaseHistoryData)) ? ReleaseHistory.createNew()
-                                                               : ReleaseHistory.createFromData(releaseHistoryData);
+    releaseHistory = releaseHandler.getReleaseHistory(kubernetesConfig, request.getReleaseName());
+    currentReleaseNumber = releaseHistory.getAndIncrementLastReleaseNumber();
+    if (useDeclarativeRollback && isEmpty(releaseHistory)) {
+      currentReleaseNumber =
+          k8sTaskHelperBase.getNextReleaseNumberFromOldReleaseHistory(kubernetesConfig, request.getReleaseName());
+    }
 
     k8sTaskHelperBase.deleteSkippedManifestFiles(manifestFilesDirectory, executionLogCallback);
 
@@ -270,7 +292,7 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
   @VisibleForTesting
   void prepareForBlueGreen(K8sDelegateTaskParams k8sDelegateTaskParams, LogCallback executionLogCallback,
       boolean skipResourceVersioning, boolean isPruningEnabled) throws Exception {
-    if (!skipResourceVersioning) {
+    if (!skipResourceVersioning && !useDeclarativeRollback) {
       markVersionedResources(resources);
     }
 
@@ -361,22 +383,16 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
 
     stageColor = k8sBGBaseHandler.getInverseColor(primaryColor);
 
-    if (isPruningEnabled) {
-      currentRelease = releaseHistory.createNewReleaseWithResourceMap(
-          resources.stream().filter(resource -> !resource.isSkipPruning()).collect(toList()));
-    } else {
-      currentRelease = releaseHistory.createNewRelease(
-          resources.stream().map(KubernetesResource::getResourceId).collect(Collectors.toList()));
-    }
+    release = releaseHandler.createRelease(releaseName, currentReleaseNumber);
 
-    prePruningInfo = k8sBGBaseHandler.cleanupForBlueGreen(
-        k8sDelegateTaskParams, releaseHistory, executionLogCallback, primaryColor, stageColor, currentRelease, client);
+    prePruningInfo = k8sBGBaseHandler.cleanupForBlueGreen(k8sDelegateTaskParams, releaseHistory, executionLogCallback,
+        primaryColor, stageColor, currentReleaseNumber, client, kubernetesConfig, releaseName, useDeclarativeRollback);
 
-    executionLogCallback.saveExecutionLog("\nCurrent release number is: " + currentRelease.getNumber());
+    executionLogCallback.saveExecutionLog("\nCurrent release number is: " + currentReleaseNumber);
 
-    if (!skipResourceVersioning) {
+    if (!skipResourceVersioning && !useDeclarativeRollback) {
       executionLogCallback.saveExecutionLog("\nVersioning resources.");
-      k8sTaskHelperBase.addRevisionNumber(resources, currentRelease.getNumber());
+      k8sTaskHelperBase.addRevisionNumber(resources, currentReleaseNumber);
     }
     managedWorkload = getManagedWorkload(resources);
     managedWorkload.appendSuffixInName('-' + stageColor);
@@ -389,6 +405,18 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
 
     executionLogCallback.saveExecutionLog("\nWorkload to deploy is: "
         + color(managedWorkload.getResourceId().kindNameRef(), k8sBGBaseHandler.getLogColor(stageColor), Bold));
+
+    release.setReleaseData(resources, isPruningEnabled);
+    if (useDeclarativeRollback) {
+      // store color in new release secret's labels
+      K8sReleaseSecretHelper.putLabelsItem((K8sRelease) release, RELEASE_SECRET_RELEASE_COLOR_KEY, stageColor);
+    }
+
+    if (!useDeclarativeRollback) {
+      ((K8SLegacyReleaseHistory) releaseHistory)
+          .getReleaseHistory()
+          .addReleaseToReleaseHistory((K8sLegacyRelease) release);
+    }
 
     executionLogCallback.saveExecutionLog("\nDone.", INFO, CommandExecutionStatus.SUCCESS);
   }

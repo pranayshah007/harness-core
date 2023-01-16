@@ -39,18 +39,25 @@ public class DebeziumControllerTest extends CategoryTest {
   @Mock ExecutorService executorService;
   @Mock DebeziumService debeziumService;
   Properties props = new Properties();
-  EventsFrameworkChangeConsumer eventsFrameworkChangeConsumer =
-      new EventsFrameworkChangeConsumer(60, "coll1", null, 1000, 1000, null);
+  EventsFrameworkChangeConsumerStreaming eventsFrameworkChangeConsumerStreaming =
+      new EventsFrameworkChangeConsumerStreaming(ChangeConsumerConfig.builder()
+                                                     .sleepInterval(10)
+                                                     .producingCountPerBatch(10)
+                                                     .redisStreamSize(10)
+                                                     .consumerType(ConsumerType.EVENTS_FRAMEWORK)
+                                                     .eventsFrameworkConfiguration(null)
+                                                     .build(),
+          null, "coll", null);
   @Test
   @Owner(developers = SHALINI)
   @Category(UnitTests.class)
   public void testGetLockName() {
     props.setProperty(DebeziumConfiguration.CONNECTOR_NAME, "conn1");
     DebeziumController debeziumController = new DebeziumController(
-        props, eventsFrameworkChangeConsumer, persistentLocker, executorService, debeziumService);
+        props, eventsFrameworkChangeConsumerStreaming, persistentLocker, executorService, debeziumService);
     assertEquals(debeziumController.getLockName(),
         DEBEZIUM_LOCK_PREFIX + props.get(DebeziumConfiguration.CONNECTOR_NAME) + "-"
-            + "coll1");
+            + "coll");
   }
 
   @Test
@@ -58,7 +65,7 @@ public class DebeziumControllerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testAcquireLock() throws InterruptedException {
     DebeziumController debeziumController = new DebeziumController(
-        props, eventsFrameworkChangeConsumer, persistentLocker, executorService, debeziumService);
+        props, eventsFrameworkChangeConsumerStreaming, persistentLocker, executorService, debeziumService);
     doReturn(acquiredLock).when(persistentLocker).tryToAcquireInfiniteLockWithPeriodicRefresh(any(), any());
     assertThat(debeziumController.acquireLock(false)).isInstanceOf(AcquiredLock.class);
   }

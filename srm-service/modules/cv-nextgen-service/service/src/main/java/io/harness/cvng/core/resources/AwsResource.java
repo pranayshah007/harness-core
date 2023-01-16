@@ -12,7 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CV;
 import io.harness.annotations.ExposeInternalException;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.core.beans.aws.AwsPrometheusWorkspaceDTO;
-import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.core.beans.params.ProjectScopedProjectParams;
 import io.harness.cvng.core.services.api.AwsService;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
@@ -64,11 +64,11 @@ public class AwsResource {
   @ExceptionMetered
   @ApiOperation(value = "get Prometheus Workspaces", nickname = "getPrometheusWorkspaces")
   public ResponseDTO<List<AwsPrometheusWorkspaceDTO>> getPrometheusWorkspaces(
-      @NotNull @BeanParam ProjectParams projectParams,
+      @NotNull @BeanParam ProjectScopedProjectParams projectParams,
       @QueryParam("connectorIdentifier") @NotNull @NotBlank String connectorIdentifier,
       @QueryParam("region") @NotNull @NotBlank String region,
       @QueryParam("tracingId") @NotNull @NotBlank String tracingId) {
     return ResponseDTO.newResponse(
-        awsService.fetchAllWorkspaces(projectParams, connectorIdentifier, region, tracingId));
+        awsService.fetchAllWorkspaces(projectParams.getProjectParams(), connectorIdentifier, region, tracingId));
   }
 }

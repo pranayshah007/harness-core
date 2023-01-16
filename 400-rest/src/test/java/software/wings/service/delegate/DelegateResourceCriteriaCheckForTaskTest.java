@@ -105,6 +105,22 @@ public class DelegateResourceCriteriaCheckForTaskTest extends WingsBaseTest {
   @Test
   @Owner(developers = JENNY)
   @Category(UnitTests.class)
+  @Description("Verify delegate with least number of currently task assigned, comes first in the list. Three delegates")
+  public void testOrderByTotalNumberOfTaskAssignedCriteria_3Delegates_NoTaskCurrentlyAssigned() {
+    String accountId = generateUuid();
+    Delegate delegate1 = createDelegate(accountId, "delegate1");
+
+    List<Delegate> eligibleDelegateIds = Lists.newArrayList(delegate1);
+    when(delegateCache.get(accountId, delegate1.getUuid(), false)).thenReturn(delegate1);
+    List<Delegate> delegateList = orderByTotalNumberOfTaskAssignedCriteria.getFilteredEligibleDelegateList(
+        eligibleDelegateIds, TaskType.INITIALIZATION_PHASE, accountId);
+    assertThat(delegateList.size()).isEqualTo(1);
+    assertThat(delegateList.get(0).getUuid()).isEqualTo(delegate1.getUuid());
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
   @Description("Verify delegate with least number of currently task assigned, comes first in the list. Five delegates")
   public void testOrderByTotalNumberOfTaskAssignedCriteria_fiveDelegates() {
     String accountId = generateUuid();
@@ -207,9 +223,9 @@ public class DelegateResourceCriteriaCheckForTaskTest extends WingsBaseTest {
 
     List<Delegate> delegateList = orderByTotalNumberOfTaskAssignedCriteria.getFilteredEligibleDelegateList(
         eligibleDelegateIds, TaskType.INITIALIZATION_PHASE, accountId);
-    assertThat(delegateList).hasSize(4);
+    assertThat(delegateList).hasSize(5);
     assertThat(delegateList.get(0).getNumberOfTaskAssigned()).isEqualTo(1);
-    assertThat(delegateList.get(3).getNumberOfTaskAssigned()).isEqualTo(2);
+    assertThat(delegateList.get(4).getNumberOfTaskAssigned()).isEqualTo(2);
   }
 
   @Test
@@ -366,8 +382,8 @@ public class DelegateResourceCriteriaCheckForTaskTest extends WingsBaseTest {
     Delegate delegate3 = createDelegate(accountId, "delegate3");
     delegate3.setDelegateCapacity(DelegateCapacity.builder().maximumNumberOfBuilds(10).build());
     persistence.save(delegate3);
-    Delegate delegate4 = createDelegate(accountId, "delegate3");
-    Delegate delegate5 = createDelegate(accountId, "delegate3");
+    Delegate delegate4 = createDelegate(accountId, "delegate4");
+    Delegate delegate5 = createDelegate(accountId, "delegate5");
     delegate5.setDelegateCapacity(DelegateCapacity.builder().maximumNumberOfBuilds(1).build());
     persistence.save(delegate5);
 
@@ -396,10 +412,10 @@ public class DelegateResourceCriteriaCheckForTaskTest extends WingsBaseTest {
 
     List<Delegate> delegateList = orderByTotalNumberOfTaskAssignedCriteria.getFilteredEligibleDelegateList(
         eligibleDelegateIds, TaskType.INITIALIZATION_PHASE, accountId);
-    assertThat(delegateList.size()).isEqualTo(4);
+    assertThat(delegateList.size()).isEqualTo(5);
     List<Delegate> delegateWithCapacityList = filterByDelegateCapacity.getFilteredEligibleDelegateList(
         delegateList, TaskType.INITIALIZATION_PHASE, accountId);
-    assertThat(delegateWithCapacityList.size()).isEqualTo(3);
+    assertThat(delegateWithCapacityList.size()).isEqualTo(4);
   }
 
   @Test

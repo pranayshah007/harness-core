@@ -159,20 +159,20 @@ public abstract class Connector implements PersistentEntity, NGAccountAccess, Gi
                  .unique(true)
                  .build())
         .add(CompoundMongoIndex.builder()
-                 .name("accountId_project_org_identifier_isDefault_Index")
-                 .fields(Arrays.asList(ConnectorKeys.accountIdentifier, ConnectorKeys.projectIdentifier,
-                     ConnectorKeys.orgIdentifier, ConnectorKeys.identifier, ConnectorKeys.isFromDefaultBranch))
+                 .name("accountId_org_proj_identifier_isDefault_Index")
+                 .fields(Arrays.asList(ConnectorKeys.accountIdentifier, ConnectorKeys.orgIdentifier,
+                     ConnectorKeys.projectIdentifier, ConnectorKeys.identifier, ConnectorKeys.isFromDefaultBranch))
                  .build())
         .add(SortCompoundMongoIndex.builder()
-                 .name("accountId_project_org_repo_branch_Index")
-                 .fields(Arrays.asList(ConnectorKeys.accountIdentifier, ConnectorKeys.projectIdentifier,
-                     ConnectorKeys.orgIdentifier, ConnectorKeys.yamlGitConfigRef, ConnectorKeys.branch))
+                 .name("accountId_org_project_repo_branch_Index")
+                 .fields(Arrays.asList(ConnectorKeys.accountIdentifier, ConnectorKeys.orgIdentifier,
+                     ConnectorKeys.projectIdentifier, ConnectorKeys.yamlGitConfigRef, ConnectorKeys.branch))
                  .descSortField(ConnectorKeys.createdAt)
                  .build())
         .add(SortCompoundMongoIndex.builder()
-                 .name("accountId_project_org_isDefault_Index")
-                 .fields(Arrays.asList(ConnectorKeys.accountIdentifier, ConnectorKeys.projectIdentifier,
-                     ConnectorKeys.orgIdentifier, ConnectorKeys.isFromDefaultBranch))
+                 .name("accountId_org_project_isDefault_Index")
+                 .fields(Arrays.asList(ConnectorKeys.accountIdentifier, ConnectorKeys.orgIdentifier,
+                     ConnectorKeys.projectIdentifier, ConnectorKeys.isFromDefaultBranch))
                  .descSortField(ConnectorKeys.createdAt)
                  .build())
         .add(CompoundMongoIndex.builder()

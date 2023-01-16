@@ -22,7 +22,7 @@ public interface BudgetGroupService {
   BudgetGroup get(String uuid, String accountId);
   List<BudgetGroup> list(String accountId);
   boolean delete(String uuid, String accountId);
-  void updateProportionsOnDeletion(BudgetGroupChildEntityDTO deletedChildEntity, BudgetGroup parentBudgetGroup);
+  BudgetGroup updateProportionsOnDeletion(BudgetGroupChildEntityDTO deletedChildEntity, BudgetGroup parentBudgetGroup);
   List<ValueDataPoint> getAggregatedAmount(
       String accountId, boolean areChildEntitiesBudgets, List<String> childEntityIds);
   List<BudgetSummary> listAllEntities(String accountId);
@@ -30,4 +30,5 @@ public interface BudgetGroupService {
   BudgetData getBudgetGroupTimeSeriesStats(BudgetGroup budgetGroup, BudgetBreakdown breakdown);
   void cascadeBudgetGroupAmount(BudgetGroup budgetGroup);
   void updateBudgetGroupCosts(BudgetGroup budgetGroup);
+  void updateCostsOfParentBudgetGroupsOnEntityDeletion(BudgetGroup immediateParent);
 }

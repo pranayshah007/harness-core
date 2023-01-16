@@ -11,6 +11,6 @@ import io.harness.migration.timescale.NGAbstractTimeScaleMigration;
 
 public class CreateSLOHealthIndicator extends NGAbstractTimeScaleMigration {
   public String getFileName() {
-    return "timescale/create_slo_health_indicator_table.sql";
+    return "timescaledb/create_slo_health_indicator_table.sql";
   }
 }

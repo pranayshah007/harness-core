@@ -37,7 +37,7 @@ public class RolesApiUtils {
 
   public RoleDTO getRoleAccDTO(CreateRoleRequest roleRequest) {
     RoleDTO roleDTO = RoleDTO.builder()
-                          .identifier(roleRequest.getSlug())
+                          .identifier(roleRequest.getIdentifier())
                           .name(roleRequest.getName())
                           .permissions(new HashSet<>(roleRequest.getPermissions()))
                           .allowedScopeLevels(Collections.singleton("account"))
@@ -50,7 +50,7 @@ public class RolesApiUtils {
 
   public RoleDTO getRoleOrgDTO(CreateRoleRequest roleRequest) {
     RoleDTO roleDTO = RoleDTO.builder()
-                          .identifier(roleRequest.getSlug())
+                          .identifier(roleRequest.getIdentifier())
                           .name(roleRequest.getName())
                           .permissions(new HashSet<>(roleRequest.getPermissions()))
                           .allowedScopeLevels(Collections.singleton("organization"))
@@ -63,7 +63,7 @@ public class RolesApiUtils {
 
   public RoleDTO getRoleProjectDTO(CreateRoleRequest roleRequest) {
     RoleDTO roleDTO = RoleDTO.builder()
-                          .identifier(roleRequest.getSlug())
+                          .identifier(roleRequest.getIdentifier())
                           .name(roleRequest.getName())
                           .permissions(new HashSet<>(roleRequest.getPermissions()))
                           .allowedScopeLevels(Collections.singleton("project"))
@@ -86,7 +86,7 @@ public class RolesApiUtils {
       return null;
     }
     RolesResponse rolesResponse = new RolesResponse();
-    rolesResponse.setSlug(responseDTO.getRole().getIdentifier());
+    rolesResponse.setIdentifier(responseDTO.getRole().getIdentifier());
     rolesResponse.setName(responseDTO.getRole().getName());
     Set<String> permissions = responseDTO.getRole().getPermissions();
     if (permissions != null) {

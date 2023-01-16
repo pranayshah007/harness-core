@@ -190,6 +190,7 @@ import software.wings.beans.dto.EcsServiceSpecification;
 import software.wings.beans.dto.HelmChartSpecification;
 import software.wings.beans.dto.KubernetesContainerTask;
 import software.wings.beans.dto.LdapSettings;
+import software.wings.beans.dto.Log;
 import software.wings.beans.dto.ManifestFile;
 import software.wings.beans.jira.JiraTaskParameters;
 import software.wings.beans.servicenow.ServiceNowFieldType;
@@ -956,6 +957,7 @@ public class DelegateTasksKryoRegistrar implements KryoRegistrar {
     kryo.register(BasicValidationInfo.class, 7325);
     kryo.register(HostValidationTaskParameters.class, 7341);
     kryo.register(ShellConnectionCapability.class, 7390);
+    kryo.register(Log.class, 71102);
     kryo.register(GcpSecretsManagerConfig.class, 72100);
     kryo.register(PodStatus.class, 8090);
     kryo.register(PodStatus.Status.class, 8091);

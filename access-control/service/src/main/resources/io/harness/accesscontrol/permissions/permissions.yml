@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: permissionsConfiguration
-version: 43
+version: 44
 permissions:
   - identifier: core_project_delete
     name: Delete Project
@@ -721,14 +721,6 @@ permissions:
       - account
       - organization
       - project
-  - identifier: srm_admin
-      name: Give admin access to user
-      status: ACTIVE
-      includeInAllRoles: false
-      allowedScopeLevels:
-        - account
-        - organization
-        - project
   - identifier: chi_slo_view
     name: View SLO
     status: ACTIVE
@@ -956,6 +948,30 @@ permissions:
   - identifier: sto_scan_view
     name: View security scan
     status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: sto_ticket_view
+    name: View External Ticket
+    status: EXPERIMENTAL
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: sto_ticket_edit
+    name: Edit External Ticket
+    status: EXPERIMENTAL
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: sto_ticket_delete
+    name: Delete External Ticket
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account
@@ -1334,3 +1350,24 @@ permissions:
     includedInAllRoles: false
     allowedScopeLevels:
       - account
+  - identifier: iac_stack_view
+    name: View IAC Stack
+    status: STAGING
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: iac_stack_edit
+    name: Create or Edit IAC Stack
+    status: STAGING
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: iac_stack_delete
+    name: Delete IAC Stack
+    status: STAGING
+    allowedScopeLevels:
+      - account
+      - organization
+      - project

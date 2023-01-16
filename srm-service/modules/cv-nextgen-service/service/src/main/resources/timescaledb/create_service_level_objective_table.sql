@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS SERVICE_LEVEL_OBJECTIVE (
                                                        SLOID TEXT,
                                                        SLONAME TEXT,
                                                        SLITYPE TEXT,
-                                                       PERIODTYPE TEXT
+                                                       PERIODTYPE TEXT,
                                                        UPDATEDAT TIMESTAMPTZ DEFAULT (NOW()),
 
     CONSTRAINT SERVICE_LEVEL_OBJECTIVE_UNIQUE_RECORD_INDEX UNIQUE(ACCOUNTID,ORGID,PROJECTID,SLOID)

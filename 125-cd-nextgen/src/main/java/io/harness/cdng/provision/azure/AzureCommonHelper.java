@@ -12,7 +12,6 @@ import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig.GitStoreDelegateConfigBuilder;
-import static io.harness.steps.StepUtils.prepareCDTaskRequest;
 
 import static java.util.Collections.emptyList;
 
@@ -57,6 +56,7 @@ import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
+import io.harness.steps.TaskRequestsUtils;
 
 import software.wings.beans.TaskType;
 
@@ -91,7 +91,7 @@ public class AzureCommonHelper {
   public static final String BP_TEMPLATE_TYPE = "Azure BluePrint Folder";
 
   @Named("PRIVILEGED") @Inject private SecretManagerClientService secretManagerClientService;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private StepHelper stepHelper;
 
   public GitStoreDelegateConfig getGitStoreDelegateConfig(StoreConfig store, Ambiance ambiance, List<String> paths) {
@@ -173,9 +173,9 @@ public class AzureCommonHelper {
                                   .parameters(new Object[] {gitFetchRequest})
                                   .build();
 
-    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer, commandUnits,
-        TaskType.GIT_FETCH_NEXT_GEN_TASK.getDisplayName(), TaskSelectorYaml.toTaskSelector(delegateSelector),
-        stepHelper.getEnvironmentType(ambiance));
+    final TaskRequest taskRequest = TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData,
+        referenceFalseKryoSerializer, commandUnits, TaskType.GIT_FETCH_NEXT_GEN_TASK.getDisplayName(),
+        TaskSelectorYaml.toTaskSelector(delegateSelector), stepHelper.getEnvironmentType(ambiance));
 
     return TaskChainResponse.builder()
         .chainEnd(false)

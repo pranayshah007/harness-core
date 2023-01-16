@@ -1554,6 +1554,9 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
 
     applyStateSpy.handleAsyncResponse(executionContext, response);
     verify(fileService, times(1)).deleteFile("tfPlanJsonFileId", FileBucket.TERRAFORM_PLAN_JSON);
+    verify(terraformPlanHelper, times(1))
+        .removeTfPlanJsonFileIdFromSweepingOutput(
+            executionContext, "terraformApply", SweepingOutputInstance.Scope.PIPELINE);
   }
 
   private void assertParametersVariables(TerraformProvisionParameters parameters) {

@@ -19,6 +19,7 @@ import io.harness.beans.FeatureName;
 import io.harness.beans.SweepingOutputInstance;
 import io.harness.context.ContextElementType;
 import io.harness.ff.FeatureFlagService;
+import io.harness.mongo.index.BasicDBUtils;
 import io.harness.persistence.HIterator;
 
 import software.wings.dl.WingsPersistence;
@@ -155,7 +156,8 @@ public class ResumeStateUtils {
     try (
         HIterator<SweepingOutputInstance> instancesHIterator = new HIterator<>(
             sweepingOutputService.prepareApprovalStateOutputsQuery(appId, fromPipelineExecutionId, fromStateExecutionId)
-                .fetch(new FindOptions().hint(SweepingOutputInstance.getHint("pipelineStateExecution"))))) {
+                .fetch(new FindOptions().hint(
+                    BasicDBUtils.getIndexObject(SweepingOutputInstance.mongoIndexes(), "pipelineStateExecution"))))) {
       for (SweepingOutputInstance instance : instancesHIterator) {
         instances.add(instance);
       }

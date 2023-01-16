@@ -23,6 +23,7 @@ import io.harness.cvng.core.utils.analysisinfo.AnalysisInfoUtility;
 import io.harness.cvng.core.utils.analysisinfo.DevelopmentVerificationTransformer;
 import io.harness.cvng.core.utils.analysisinfo.LiveMonitoringTransformer;
 import io.harness.cvng.core.utils.analysisinfo.SLIMetricTransformer;
+import io.harness.data.structure.UUIDGenerator;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.google.common.base.Preconditions;
@@ -174,6 +175,7 @@ public class NextGenMetricCVConfig extends MetricCVConfig<NextGenMetricInfo> {
           metric.getThresholds() != null ? metric.getThresholds() : new ArrayList<>();
       TimeSeriesThreshold timeSeriesThreshold =
           TimeSeriesThreshold.builder()
+              .uuid(UUIDGenerator.generateUuid())
               .accountId(getAccountId())
               .projectIdentifier(getProjectIdentifier())
               .dataSourceType(getType())

@@ -39,6 +39,7 @@ import software.wings.service.impl.aws.model.AwsEC2Instance;
 import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -151,14 +152,20 @@ public class InstanceOutcomeHelper {
                              })
                              .collect(Collectors.toList());
     } else if (infrastructureOutcome instanceof PdcInfrastructureOutcome) {
-      instanceOutcomes = hostNames.stream()
-                             .map(hostName
-                                 -> InstanceOutcome.builder()
-                                        .name(hostName)
-                                        .hostName(hostName)
-                                        .host(HostOutcome.builder().hostName(hostName).build())
-                                        .build())
-                             .collect(Collectors.toList());
+      instanceOutcomes =
+          hostNames.stream()
+              .map(hostName
+                  -> InstanceOutcome.builder()
+                         .name(hostName)
+                         .hostName(hostName)
+                         .host(
+                             HostOutcome.builder()
+                                 .hostName(hostName)
+                                 .properties(getHostProperties(
+                                     ((PdcInfrastructureOutcome) infrastructureOutcome).getHostsAttributes(), hostName))
+                                 .build())
+                         .build())
+              .collect(Collectors.toList());
     } else if (infrastructureOutcome instanceof CustomDeploymentInfrastructureOutcome) {
       instanceOutcomes = Collections.emptyList();
     } else {
@@ -197,5 +204,16 @@ public class InstanceOutcomeHelper {
             -> hostName.equals(mapToHostNameBasedOnHostConnectionTypeAzure(infrastructureOutcome, azureHostResponse)))
         .findFirst()
         .orElseThrow(() -> new InvalidRequestException(format("Not found Azure instance for hostName: %s", hostName)));
+  }
+
+  private Map<String, Object> getHostProperties(List<Map<String, Object>> hostsAttributes, final String hostName) {
+    if (isEmpty(hostsAttributes) || isEmpty(hostName)) {
+      return Collections.emptyMap();
+    }
+
+    return hostsAttributes.stream()
+        .filter(hostAttributes -> hostAttributes.containsValue(hostName))
+        .findFirst()
+        .orElse(Collections.emptyMap());
   }
 }

@@ -11,6 +11,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.pms.contracts.advisers.AdviseEvent;
 import io.harness.pms.contracts.advisers.AdviseType;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
@@ -96,8 +97,13 @@ public class NodeAdviseEventHandler extends PmsBaseEventHandler<AdviseEvent> {
       }
     } catch (Exception ex) {
       log.error("Error while advising execution", ex);
-      sdkNodeExecutionService.handleEventError(NodeExecutionEventType.ADVISE, event.getAmbiance(), event.getNotifyId(),
-          NodeExecutionUtils.constructFailureInfo(ex));
+      if (EmptyPredicate.isEmpty(event.getNotifyId())) {
+        log.info("NotifyId is empty for nodeExecutionId {} and planExecutionId {}. Nothing will happen.",
+            AmbianceUtils.obtainCurrentRuntimeId(event.getAmbiance()), event.getAmbiance().getPlanExecutionId());
+      } else {
+        sdkNodeExecutionService.handleEventError(NodeExecutionEventType.ADVISE, event.getAmbiance(),
+            event.getNotifyId(), NodeExecutionUtils.constructFailureInfo(ex));
+      }
     }
   }
 }

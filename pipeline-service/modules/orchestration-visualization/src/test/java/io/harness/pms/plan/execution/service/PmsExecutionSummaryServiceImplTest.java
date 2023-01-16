@@ -7,6 +7,7 @@
 
 package io.harness.pms.plan.execution.service;
 
+import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.SHALINI;
 
@@ -41,8 +42,11 @@ import io.harness.pms.plan.execution.beans.dto.EdgeLayoutListDTO;
 import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO;
 import io.harness.repositories.executions.PmsExecutionSummaryRepository;
 import io.harness.rule.Owner;
+import io.harness.utils.OrchestrationVisualisationTestHelper;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -52,6 +56,8 @@ import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -95,23 +101,55 @@ public class PmsExecutionSummaryServiceImplTest extends OrchestrationVisualizati
     Update update = new Update();
     NodeExecutionsInfo nodeExecutionsInfo =
         NodeExecutionsInfo.builder().concurrentChildInstance(ConcurrentChildInstance.builder().build()).build();
-    NodeExecution nodeExecution = NodeExecution.builder()
-                                      .executableResponse(ExecutableResponse.newBuilder().build())
-                                      .ambiance(Ambiance.newBuilder().addLevels(Level.newBuilder().build()).build())
-                                      .stepType(StepType.newBuilder().setStepCategory(StepCategory.STEP).build())
-                                      .build();
-    pmsExecutionSummaryService.updateStrategyNode("planExecution", nodeExecution, update);
+    NodeExecution nodeExecution =
+        NodeExecution.builder()
+            .executableResponse(ExecutableResponse.newBuilder().build())
+            .ambiance(Ambiance.newBuilder()
+                          .addLevels(Level.newBuilder().setNodeType(NodeType.PLAN_NODE.name()).build())
+                          .build())
+            .stepType(StepType.newBuilder().setStepCategory(StepCategory.STEP).build())
+            .build();
+    pmsExecutionSummaryService.updateStrategyPlanNode("planExecution", nodeExecution, update);
     verify(pmsGraphStepDetailsService, times(0)).fetchConcurrentChildInstance(nodeExecution.getUuid());
-    nodeExecution = NodeExecution.builder()
-                        .ambiance(Ambiance.newBuilder()
-                                      .addLevels(Level.newBuilder().setGroup("STAGES").build())
-                                      .addLevels(Level.newBuilder().build())
-                                      .build())
-                        .stepType(StepType.newBuilder().setStepCategory(StepCategory.STRATEGY).build())
-                        .planNode(PlanNode.builder().build())
-                        .build();
-    pmsExecutionSummaryService.updateStrategyNode("planExecution", nodeExecution, update);
+    nodeExecution =
+        NodeExecution.builder()
+            .ambiance(
+                Ambiance.newBuilder()
+                    .addLevels(Level.newBuilder().setGroup("STAGES").setNodeType(NodeType.PLAN_NODE.name()).build())
+                    .addLevels(Level.newBuilder().setNodeType(NodeType.PLAN_NODE.name()).build())
+                    .build())
+            .stepType(StepType.newBuilder().setStepCategory(StepCategory.STRATEGY).build())
+            .planNode(PlanNode.builder().build())
+            .build();
+    pmsExecutionSummaryService.updateStrategyPlanNode("planExecution", nodeExecution, update);
     verify(pmsGraphStepDetailsService, times(1)).fetchConcurrentChildInstance(nodeExecution.getUuid());
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void testFetchPlanExecutionIdsFromAnalytics() {
+    String projectId = "projectId";
+    String pipelineId = "pipelineId";
+    String accountId = "accountId";
+    String orgId = "orgId";
+
+    doReturn(OrchestrationVisualisationTestHelper.createCloseableIterator(Collections.emptyListIterator()))
+        .when(pmsExecutionSummaryRepository)
+        .fetchExecutionSummaryEntityFromAnalytics(any());
+    List<PipelineExecutionSummaryEntity> executionSummaryEntities = new LinkedList<>();
+    pmsExecutionSummaryService.fetchPlanExecutionIdsFromAnalytics(accountId, orgId, projectId, pipelineId);
+    Criteria criteria = Criteria.where(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.accountId)
+                            .is(accountId)
+                            .and(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.orgIdentifier)
+                            .is(orgId)
+                            .and(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.projectIdentifier)
+                            .is(projectId)
+                            .and(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.pipelineIdentifier)
+                            .is(pipelineId);
+    Query query = new Query(criteria);
+    query.fields().include(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.planExecutionId);
+    verify(pmsExecutionSummaryRepository, times(1)).fetchExecutionSummaryEntityFromAnalytics(query);
   }
 
   @Test
@@ -236,11 +274,11 @@ public class PmsExecutionSummaryServiceImplTest extends OrchestrationVisualizati
                              ))
                      .build()))
         .when(pmsExecutionSummaryRepository)
-        .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndPlanExecutionId(any(), any(), any(), any());
+        .findByPlanExecutionId(any());
 
     Update update = new Update();
-    pmsExecutionSummaryService.updateStageOfIdentityType(planExecutionId, update);
+    pmsExecutionSummaryService.updateIdentityStageOrStrategyNodes(planExecutionId, update);
     assertEquals(update.toString(),
-        "{ \"$set\" : { \"layoutNodeMap.setupId.status\" : { \"$java\" : SUCCESS }, \"layoutNodeMap.setupId.endTs\" : { \"$numberLong\" : \"1000\"}, \"layoutNodeMap.nodeExecutionId3.status\" : { \"$java\" : SUCCESS }, \"layoutNodeMap.nodeExecutionId3.endTs\" : { \"$numberLong\" : \"1000\"}, \"layoutNodeMap.stageSetupId.hidden\" : true }, \"$pull\" : { \"layoutNodeMap.strategyNodeId.edgeLayoutList.currentNodeChildren\" : \"stageSetupId\"} }");
+        "{ \"$set\" : { \"layoutNodeMap.setupId.status\" : { \"$java\" : SUCCESS }, \"layoutNodeMap.setupId.endTs\" : { \"$numberLong\" : \"1000\"}, \"layoutNodeMap.stageSetupId.status\" : { \"$java\" : SUCCESS }, \"layoutNodeMap.stageSetupId.moduleInfo.stepParameters\" : null, \"layoutNodeMap.nodeExecutionId3.status\" : { \"$java\" : SUCCESS }, \"layoutNodeMap.nodeExecutionId3.endTs\" : { \"$numberLong\" : \"1000\"}, \"layoutNodeMap.strategyNodeId.status\" : { \"$java\" : SUCCESS }, \"layoutNodeMap.strategyNodeId.moduleInfo.stepParameters\" : null, \"layoutNodeMap.nodeExecutionId2.nodeType\" : \"STAGE\", \"layoutNodeMap.nodeExecutionId2.nodeGroup\" : \"stage\", \"layoutNodeMap.nodeExecutionId2.edgeLayoutList\" : { \"$java\" : EdgeLayoutListDTO(currentNodeChildren=[], nextIds=null) }, \"layoutNodeMap.nodeExecutionId2.skipInfo\" : { \"$java\" :  }, \"layoutNodeMap.nodeExecutionId2.nodeUuid\" : \"stageSetupId\", \"layoutNodeMap.nodeExecutionId2.executionInputConfigured\" : null, \"layoutNodeMap.nodeExecutionId3.nodeType\" : \"STAGE\", \"layoutNodeMap.nodeExecutionId3.nodeGroup\" : \"stage\", \"layoutNodeMap.nodeExecutionId3.edgeLayoutList\" : { \"$java\" : EdgeLayoutListDTO(currentNodeChildren=[], nextIds=null) }, \"layoutNodeMap.nodeExecutionId3.skipInfo\" : { \"$java\" :  }, \"layoutNodeMap.nodeExecutionId3.nodeUuid\" : \"stageSetupId\", \"layoutNodeMap.nodeExecutionId3.executionInputConfigured\" : null }, \"$addToSet\" : { \"layoutNodeMap.strategyNodeId.edgeLayoutList.currentNodeChildren\" : { \"$java\" : { \"$each\" : [ \"nodeExecutionId2\", \"nodeExecutionId3\" ] } } } }");
   }
 }

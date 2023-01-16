@@ -74,6 +74,12 @@ public class StageExecutionInfoRepositoryCustomImpl implements StageExecutionInf
     return mongoTemplate.find(query, StageExecutionInfo.class);
   }
 
+  @Override
+  public List<StageExecutionInfo> deleteAll(Criteria criteria) {
+    Query query = new Query(criteria);
+    return mongoTemplate.findAllAndRemove(query, StageExecutionInfo.class);
+  }
+
   public Criteria createScopeCriteria(Scope scope) {
     Criteria criteria = new Criteria();
     criteria.and(StageExecutionInfoKeys.accountIdentifier).is(scope.getAccountIdentifier());

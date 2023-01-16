@@ -195,6 +195,8 @@ public class HelmDeployServiceImpl implements HelmDeployService {
       fetchValuesYamlFromGitRepo(commandRequest, executionLogCallback);
       prepareRepoAndCharts(commandRequest, commandRequest.getTimeoutInMillis(), executionLogCallback);
 
+      skipApplyDefaultValuesYaml(commandRequest);
+
       printHelmChartKubernetesResources(commandRequest);
 
       executionLogCallback =
@@ -348,6 +350,21 @@ public class HelmDeployServiceImpl implements HelmDeployService {
         resources, commandRequest.getContainerServiceParams().getNamespace());
 
     return filterWorkloads(resources).stream().map(KubernetesResource::getResourceId).collect(Collectors.toList());
+  }
+
+  private void skipApplyDefaultValuesYaml(HelmInstallCommandRequest commandRequest) {
+    K8sDelegateManifestConfig manifestDelegateConfig = commandRequest.getRepoConfig();
+    if (manifestDelegateConfig == null) {
+      return;
+    }
+    int index = helmTaskHelperBase.skipDefaultHelmValuesYaml(commandRequest.getWorkingDir(),
+        commandRequest.getVariableOverridesYamlFiles(), manifestDelegateConfig.isSkipApplyHelmDefaultValues(),
+        commandRequest.getHelmVersion());
+    if (index != -1) {
+      List<String> valuesYamlList = commandRequest.getVariableOverridesYamlFiles();
+      valuesYamlList.remove(index);
+      commandRequest.setVariableOverridesYamlFiles(valuesYamlList);
+    }
   }
 
   private void prepareRepoAndCharts(

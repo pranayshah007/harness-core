@@ -25,7 +25,6 @@ public class AuditFilterModule extends AbstractModule {
   protected void configure() {
     registerRequiredBindings();
     install(FiltersModule.getInstance());
-
     MapBinder<String, FilterPropertiesMapper> filterPropertiesMapper =
         MapBinder.newMapBinder(binder(), String.class, FilterPropertiesMapper.class);
     filterPropertiesMapper.addBinding(FilterType.AUDIT.toString()).to(AuditFilterPropertiesMapper.class);

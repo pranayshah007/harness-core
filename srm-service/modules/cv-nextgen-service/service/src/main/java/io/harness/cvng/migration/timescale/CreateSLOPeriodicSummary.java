@@ -11,6 +11,6 @@ import io.harness.migration.timescale.NGAbstractTimeScaleMigration;
 
 public class CreateSLOPeriodicSummary extends NGAbstractTimeScaleMigration {
   public String getFileName() {
-    return "timescale/create_service_level_objective_table.sql";
+    return "timescaledb/create_service_level_objective_table.sql";
   }
 }

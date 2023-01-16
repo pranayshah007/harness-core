@@ -998,6 +998,22 @@ public class MonitoredServiceResourceTest extends CvNextGenTestBase {
   }
 
   @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testGetMonitoredService_WithProjectParamsIncorrect() {
+    monitoredServiceService.createDefault(builderFactory.getProjectParams(), "service1", "env1");
+
+    Response response = RESOURCES.client()
+                            .target("http://localhost:9998/monitored-service/service1_env1")
+                            .queryParam("accountId", builderFactory.getContext().getAccountId())
+                            .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
+                            .request(MediaType.APPLICATION_JSON_TYPE)
+                            .get();
+    assertThat(response.getStatus()).isEqualTo(400);
+    assertThat(response.readEntity(String.class))
+        .contains("\"field\":\"projectIdentifier\",\"message\":\"must not be null\"");
+  }
+  @Test
   @Owner(developers = KAPIL)
   @Category(UnitTests.class)
   public void testGetMonitoredServiceLogs() {

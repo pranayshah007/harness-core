@@ -8,6 +8,7 @@
 package io.harness.ngtriggers.helpers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.ngtriggers.Constants.ARTIFACT_BUILD_EXPR;
 import static io.harness.ngtriggers.Constants.ARTIFACT_EXPR;
 import static io.harness.ngtriggers.Constants.ARTIFACT_TYPE;
@@ -64,8 +65,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.experimental.UtilityClass;
+import lombok.extern.slf4j.Slf4j;
 
 @UtilityClass
+@Slf4j
 @OwnedBy(PIPELINE)
 public class TriggerHelper {
   public Map<String, Object> buildJsonObjectFromAmbiance(TriggerPayload triggerPayload) {
@@ -200,6 +203,10 @@ public class TriggerHelper {
 
   public static void stampWebhookIdInfo(NGTriggerEntity ngTriggerEntity, String webhookId) {
     if (ngTriggerEntity.getTriggerStatus().getWebhookInfo() == null) {
+      if (isEmpty(webhookId)) {
+        webhookId = ngTriggerEntity.getWebhookId();
+        log.info("WebhookId manually added by the user : {}", webhookId);
+      }
       ngTriggerEntity.getTriggerStatus().setWebhookInfo(WebhookInfo.builder().webhookId(webhookId).build());
     }
   }

@@ -15,6 +15,7 @@ import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.task.aws.asg.AsgCanaryDeployRequest;
@@ -39,6 +40,9 @@ import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 
 import com.google.inject.Inject;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
@@ -68,13 +72,18 @@ public class AsgCanaryDeployStep extends TaskChainExecutableWithRollbackAndRbac 
   }
 
   @Override
-  public TaskChainResponse executeNextLinkWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      StepInputPackage inputPackage, PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseSupplier)
-      throws Exception {
-    log.info("Calling executeNextLink");
+  public TaskChainResponse executeNextLinkWithSecurityContext(Ambiance ambiance,
+      StepElementParameters stepElementParameters, StepInputPackage inputPackage, PassThroughData passThroughData,
+      ThrowingSupplier<ResponseData> responseSupplier) throws Exception {
+    DelegateResponseData delegateResponseData = (DelegateResponseData) responseSupplier.get();
+    AsgExecutionPassThroughData executionPassThroughData = (AsgExecutionPassThroughData) passThroughData;
 
-    // TODO
-    return null;
+    Supplier<TaskChainResponse> executeAsgTaskSupplier = ()
+        -> executeAsgTask(ambiance, stepElementParameters, executionPassThroughData,
+            executionPassThroughData.getLastActiveUnitProgressData(), null);
+
+    return asgStepCommonHelper.chainFetchGitTaskUntilAllGitManifestsFetched(
+        executionPassThroughData, delegateResponseData, ambiance, stepElementParameters, executeAsgTaskSupplier);
   }
 
   @Override
@@ -83,6 +92,9 @@ public class AsgCanaryDeployStep extends TaskChainExecutableWithRollbackAndRbac 
       AsgStepExecutorParams asgStepExecutorParams) {
     InfrastructureOutcome infrastructureOutcome = executionPassThroughData.getInfrastructure();
     final String accountId = AmbianceUtils.getAccountId(ambiance);
+
+    Map<String, List<String>> asgStoreManifestsContent =
+        asgStepCommonHelper.buildManifestContentMap(executionPassThroughData.getAsgManifestFetchData(), ambiance);
 
     AsgCanaryDeployStepParameters asgSpecParameters = (AsgCanaryDeployStepParameters) stepElementParameters.getSpec();
 
@@ -93,7 +105,7 @@ public class AsgCanaryDeployStep extends TaskChainExecutableWithRollbackAndRbac 
             .asgInfraConfig(asgStepCommonHelper.getAsgInfraConfig(infrastructureOutcome, ambiance))
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
-            .asgStoreManifestsContent(asgStepExecutorParams.getAsgStoreManifestsContent())
+            .asgStoreManifestsContent(asgStoreManifestsContent)
             .serviceNameSuffix(CANARY_SUFFIX)
             .unitValue(asgSpecParameters.getInstanceSelection().getSpec().getInstances())
             .unitType(asgSpecParameters.getInstanceSelection().getSpec().getType())

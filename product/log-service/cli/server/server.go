@@ -23,6 +23,7 @@ import (
 	"github.com/harness/harness-core/product/log-service/stream"
 	"github.com/harness/harness-core/product/log-service/stream/memory"
 	"github.com/harness/harness-core/product/log-service/stream/redis"
+	"github.com/harness/harness-core/product/platform/client"
 
 	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
@@ -101,12 +102,13 @@ func (c *serverCommand) run(*kingpin.ParseContext) error {
 		stream = memory.New()
 		logrus.Infoln("configuring log stream to use in-memory stream")
 	}
+	ngClient := client.NewHTTPClient(config.Platform.BaseURL, false, "")
 
 	// create the http server.
 	server := server.Server{
 		Acme:    config.Server.Acme,
 		Addr:    config.Server.Bind,
-		Handler: handler.Handler(stream, store, config),
+		Handler: handler.Handler(stream, store, config, ngClient),
 	}
 
 	// trap the os signal to gracefully shutdown the

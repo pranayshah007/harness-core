@@ -412,7 +412,7 @@ public class BudgetCostServiceImpl implements BudgetCostService {
                 .time(startTimeData)
                 .endTime(endTimeData)
                 .build();
-        budgetHistory.put(startTime, budgetCostData);
+        budgetHistory.put(startTimeData, budgetCostData);
       }
     } catch (Exception e) {
       log.error("Error in generating data for budget having perspective Id: {}", perspectiveId);
