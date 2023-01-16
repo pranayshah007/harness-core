@@ -7,6 +7,10 @@
 
 package io.harness.cvng.core.beans.healthsource;
 
+import io.harness.cvng.core.entities.QueryParams;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.util.Optional;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
@@ -16,4 +20,17 @@ import lombok.experimental.FieldNameConstants;
 @FieldNameConstants(innerTypeName = "QueryParamKeys")
 public class QueryParamsDTO {
   String serviceInstanceField;
+
+  @JsonIgnore
+  public static QueryParamsDTO getQueryParamsDTO(QueryParams queryParams) {
+    return QueryParamsDTO.builder()
+        .serviceInstanceField(
+            Optional.ofNullable(queryParams).orElse(QueryParams.builder().build()).getServiceInstanceField())
+        .build();
+  }
+
+  @JsonIgnore
+  public QueryParams getQueryParamsEntity() {
+    return QueryParams.builder().serviceInstanceField(serviceInstanceField).build();
+  }
 }

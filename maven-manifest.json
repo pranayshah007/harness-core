@@ -1,5 +1,5 @@
 {
-    "integrity": "9a24cd4c91493501e7225e54f4c1c67450f3a8da2348c5da982c54c8ffa54841",
+    "integrity": "bb728ce8da0378032569f89ba854cf577aa3f2b2fea675d2c68710f22c902367",
     "manifest": {
         "artifacts_mapping": {
             "allbegray.slack": [
@@ -2302,6 +2302,9 @@
             ],
             "com.eclipsesource.v8.utils.typedarrays": [
                 "@maven//:com_eclipsesource_j2v8_j2v8_macosx_x86_64"
+            ],
+            "com.esotericsoftware.asm": [
+                "@maven//:com_esotericsoftware_reflectasm"
             ],
             "com.esotericsoftware.kryo": [
                 "@maven//:com_esotericsoftware_kryo"
@@ -6215,7 +6218,8 @@
             "com.mongodb": [
                 "@maven//:org_mongodb_mongo_java_driver",
                 "@maven//:org_mongodb_mongodb_driver",
-                "@maven//:org_mongodb_mongodb_driver_core"
+                "@maven//:org_mongodb_mongodb_driver_core",
+                "@maven//:org_mongodb_mongodb_driver_legacy"
             ],
             "com.mongodb.annotations": [
                 "@maven//:org_mongodb_mongo_java_driver",
@@ -6226,10 +6230,12 @@
                 "@maven//:org_mongodb_mongodb_driver_core"
             ],
             "com.mongodb.async": [
-                "@maven//:org_mongodb_mongo_java_driver"
+                "@maven//:org_mongodb_mongo_java_driver",
+                "@maven//:org_mongodb_mongodb_driver_core"
             ],
             "com.mongodb.binding": [
-                "@maven//:org_mongodb_mongo_java_driver"
+                "@maven//:org_mongodb_mongo_java_driver",
+                "@maven//:org_mongodb_mongodb_driver_core"
             ],
             "com.mongodb.bulk": [
                 "@maven//:org_mongodb_mongo_java_driver",
@@ -6260,12 +6266,14 @@
             ],
             "com.mongodb.client.jndi": [
                 "@maven//:org_mongodb_mongo_java_driver",
-                "@maven//:org_mongodb_mongodb_driver"
+                "@maven//:org_mongodb_mongodb_driver",
+                "@maven//:org_mongodb_mongodb_driver_legacy"
             ],
             "com.mongodb.client.model": [
                 "@maven//:org_mongodb_mongo_java_driver",
                 "@maven//:org_mongodb_mongodb_driver",
-                "@maven//:org_mongodb_mongodb_driver_core"
+                "@maven//:org_mongodb_mongodb_driver_core",
+                "@maven//:org_mongodb_mongodb_driver_legacy"
             ],
             "com.mongodb.client.model.changestream": [
                 "@maven//:org_mongodb_mongo_java_driver",
@@ -6309,7 +6317,8 @@
             ],
             "com.mongodb.gridfs": [
                 "@maven//:org_mongodb_mongo_java_driver",
-                "@maven//:org_mongodb_mongodb_driver"
+                "@maven//:org_mongodb_mongodb_driver",
+                "@maven//:org_mongodb_mongodb_driver_legacy"
             ],
             "com.mongodb.internal": [
                 "@maven//:org_mongodb_mongo_java_driver",
@@ -6317,9 +6326,6 @@
             ],
             "com.mongodb.internal.async": [
                 "@maven//:org_mongodb_mongo_java_driver",
-                "@maven//:org_mongodb_mongodb_driver_core"
-            ],
-            "com.mongodb.internal.async.client": [
                 "@maven//:org_mongodb_mongodb_driver_core"
             ],
             "com.mongodb.internal.authentication": [
@@ -6334,18 +6340,12 @@
                 "@maven//:org_mongodb_mongo_java_driver",
                 "@maven//:org_mongodb_mongodb_driver_core"
             ],
-            "com.mongodb.internal.bulk": [
-                "@maven//:org_mongodb_mongodb_driver_core"
-            ],
             "com.mongodb.internal.capi": [
                 "@maven//:org_mongodb_mongo_java_driver",
                 "@maven//:org_mongodb_mongodb_driver_core"
             ],
             "com.mongodb.internal.client.model": [
                 "@maven//:org_mongodb_mongo_java_driver",
-                "@maven//:org_mongodb_mongodb_driver_core"
-            ],
-            "com.mongodb.internal.client.model.changestream": [
                 "@maven//:org_mongodb_mongodb_driver_core"
             ],
             "com.mongodb.internal.connection": [
@@ -6377,13 +6377,11 @@
                 "@maven//:org_mongodb_mongodb_driver_core"
             ],
             "com.mongodb.internal.management.jmx": [
-                "@maven//:org_mongodb_mongo_java_driver"
-            ],
-            "com.mongodb.internal.operation": [
                 "@maven//:org_mongodb_mongo_java_driver",
                 "@maven//:org_mongodb_mongodb_driver_core"
             ],
-            "com.mongodb.internal.selector": [
+            "com.mongodb.internal.operation": [
+                "@maven//:org_mongodb_mongo_java_driver",
                 "@maven//:org_mongodb_mongodb_driver_core"
             ],
             "com.mongodb.internal.session": [
@@ -6407,7 +6405,8 @@
                 "@maven//:org_mongodb_mongodb_driver_core"
             ],
             "com.mongodb.operation": [
-                "@maven//:org_mongodb_mongo_java_driver"
+                "@maven//:org_mongodb_mongo_java_driver",
+                "@maven//:org_mongodb_mongodb_driver_core"
             ],
             "com.mongodb.selector": [
                 "@maven//:org_mongodb_mongo_java_driver",
@@ -6419,7 +6418,8 @@
             ],
             "com.mongodb.util": [
                 "@maven//:org_mongodb_mongo_java_driver",
-                "@maven//:org_mongodb_mongodb_driver"
+                "@maven//:org_mongodb_mongodb_driver",
+                "@maven//:org_mongodb_mongodb_driver_legacy"
             ],
             "com.networknt.schema": [
                 "@maven//:com_networknt_json_schema_validator"
@@ -8579,6 +8579,72 @@
             ],
             "de.skuzzle.semantic": [
                 "@maven//:de_skuzzle_semantic_version"
+            ],
+            "dev.morphia": [
+                "@maven//:dev_morphia_morphia_core"
+            ],
+            "dev.morphia.aggregation": [
+                "@maven//:dev_morphia_morphia_core"
+            ],
+            "dev.morphia.annotations": [
+                "@maven//:dev_morphia_morphia_core"
+            ],
+            "dev.morphia.converters": [
+                "@maven//:dev_morphia_morphia_core"
+            ],
+            "dev.morphia.converters.experimental": [
+                "@maven//:dev_morphia_morphia_core"
+            ],
+            "dev.morphia.dao": [
+                "@maven//:dev_morphia_morphia_core"
+            ],
+            "dev.morphia.geo": [
+                "@maven//:dev_morphia_morphia_core"
+            ],
+            "dev.morphia.internal": [
+                "@maven//:dev_morphia_morphia_core"
+            ],
+            "dev.morphia.logging": [
+                "@maven//:dev_morphia_morphia_core"
+            ],
+            "dev.morphia.logging.jdk": [
+                "@maven//:dev_morphia_morphia_core"
+            ],
+            "dev.morphia.mapping": [
+                "@maven//:dev_morphia_morphia_core"
+            ],
+            "dev.morphia.mapping.cache": [
+                "@maven//:dev_morphia_morphia_core"
+            ],
+            "dev.morphia.mapping.experimental": [
+                "@maven//:dev_morphia_morphia_core"
+            ],
+            "dev.morphia.mapping.lazy": [
+                "@maven//:dev_morphia_morphia_core"
+            ],
+            "dev.morphia.mapping.lazy.proxy": [
+                "@maven//:dev_morphia_morphia_core"
+            ],
+            "dev.morphia.mapping.validation": [
+                "@maven//:dev_morphia_morphia_core"
+            ],
+            "dev.morphia.mapping.validation.classrules": [
+                "@maven//:dev_morphia_morphia_core"
+            ],
+            "dev.morphia.mapping.validation.fieldrules": [
+                "@maven//:dev_morphia_morphia_core"
+            ],
+            "dev.morphia.query": [
+                "@maven//:dev_morphia_morphia_core"
+            ],
+            "dev.morphia.query.internal": [
+                "@maven//:dev_morphia_morphia_core"
+            ],
+            "dev.morphia.query.validation": [
+                "@maven//:dev_morphia_morphia_core"
+            ],
+            "dev.morphia.utils": [
+                "@maven//:dev_morphia_morphia_core"
             ],
             "dig": [
                 "@maven//:dnsjava_dnsjava"
@@ -10851,34 +10917,19 @@
             "io.harness.cf.auth": [
                 "@maven//:io_harness_ff_java_server_sdk"
             ],
-            "io.harness.cf.client": [
-                "@maven//:io_harness_ff_java_server_sdk"
-            ],
             "io.harness.cf.client.api": [
-                "@maven//:io_harness_ff_java_server_sdk"
-            ],
-            "io.harness.cf.client.api.analytics": [
-                "@maven//:io_harness_ff_java_server_sdk"
-            ],
-            "io.harness.cf.client.api.rules": [
                 "@maven//:io_harness_ff_java_server_sdk"
             ],
             "io.harness.cf.client.common": [
                 "@maven//:io_harness_ff_java_server_sdk"
             ],
+            "io.harness.cf.client.connector": [
+                "@maven//:io_harness_ff_java_server_sdk"
+            ],
             "io.harness.cf.client.dto": [
                 "@maven//:io_harness_ff_java_server_sdk"
             ],
-            "io.harness.cf.metrics": [
-                "@maven//:io_harness_ff_java_server_sdk"
-            ],
-            "io.harness.cf.metrics.api": [
-                "@maven//:io_harness_ff_java_server_sdk"
-            ],
-            "io.harness.cf.metrics.auth": [
-                "@maven//:io_harness_ff_java_server_sdk"
-            ],
-            "io.harness.cf.metrics.model": [
+            "io.harness.cf.client.logger": [
                 "@maven//:io_harness_ff_java_server_sdk"
             ],
             "io.harness.cf.model": [
@@ -11273,39 +11324,6 @@
             ],
             "io.harness.smp.license.v1": [
                 "@maven//:io_harness_smp_license"
-            ],
-            "io.harness.spec.server.accesscontrol": [
-                "@maven//:io_harness_access_control_server_spec"
-            ],
-            "io.harness.spec.server.accesscontrol.model": [
-                "@maven//:io_harness_access_control_server_spec"
-            ],
-            "io.harness.spec.server.commons.model": [
-                "@maven//:io_harness_common_models"
-            ],
-            "io.harness.spec.server.ng": [
-                "@maven//:io_harness_ng_manager_server_spec"
-            ],
-            "io.harness.spec.server.ng.model": [
-                "@maven//:io_harness_ng_manager_server_spec"
-            ],
-            "io.harness.spec.server.pipeline": [
-                "@maven//:io_harness_pipeline_server_spec"
-            ],
-            "io.harness.spec.server.pipeline.model": [
-                "@maven//:io_harness_pipeline_server_spec"
-            ],
-            "io.harness.spec.server.platform": [
-                "@maven//:io_harness_platform_server_spec"
-            ],
-            "io.harness.spec.server.platform.model": [
-                "@maven//:io_harness_platform_server_spec"
-            ],
-            "io.harness.spec.server.template": [
-                "@maven//:io_harness_template_server_spec"
-            ],
-            "io.harness.spec.server.template.model": [
-                "@maven//:io_harness_template_server_spec"
             ],
             "io.harness.state": [
                 "@maven//:io_harness_ng_license_beans"
@@ -11936,7 +11954,8 @@
                 "@maven//:io_netty_netty_handler"
             ],
             "io.netty.handler.ssl.ocsp": [
-                "@maven//:io_netty_netty_handler"
+                "@maven//:io_netty_netty_handler",
+                "@maven//:io_netty_netty_handler_ssl_ocsp"
             ],
             "io.netty.handler.ssl.util": [
                 "@maven//:io_netty_netty_handler"
@@ -14108,6 +14127,9 @@
             "kotlin.io": [
                 "@maven//:org_jetbrains_kotlin_kotlin_stdlib"
             ],
+            "kotlin.io.path": [
+                "@maven//:org_jetbrains_kotlin_kotlin_stdlib_jdk7"
+            ],
             "kotlin.jdk7": [
                 "@maven//:org_jetbrains_kotlin_kotlin_stdlib_jdk7"
             ],
@@ -14128,6 +14150,12 @@
             ],
             "kotlin.jvm.internal.unsafe": [
                 "@maven//:org_jetbrains_kotlin_kotlin_stdlib"
+            ],
+            "kotlin.jvm.jdk8": [
+                "@maven//:org_jetbrains_kotlin_kotlin_stdlib_jdk8"
+            ],
+            "kotlin.jvm.optionals": [
+                "@maven//:org_jetbrains_kotlin_kotlin_stdlib_jdk8"
             ],
             "kotlin.math": [
                 "@maven//:org_jetbrains_kotlin_kotlin_stdlib"
@@ -14157,6 +14185,9 @@
                 "@maven//:org_jetbrains_kotlin_kotlin_stdlib"
             ],
             "kotlin.text": [
+                "@maven//:org_jetbrains_kotlin_kotlin_stdlib"
+            ],
+            "kotlin.text._OneToManyTitlecaseMappingsKt": [
                 "@maven//:org_jetbrains_kotlin_kotlin_stdlib"
             ],
             "kotlin.text.jdk8": [
@@ -14486,12 +14517,15 @@
                 "@maven//:net_jodah_failsafe"
             ],
             "net.jpountz.lz4": [
+                "@maven//:net_jpountz_lz4_lz4",
                 "@maven//:org_lz4_lz4_java"
             ],
             "net.jpountz.util": [
+                "@maven//:net_jpountz_lz4_lz4",
                 "@maven//:org_lz4_lz4_java"
             ],
             "net.jpountz.xxhash": [
+                "@maven//:net_jpountz_lz4_lz4",
                 "@maven//:org_lz4_lz4_java"
             ],
             "net.minidev.asm": [
@@ -25467,6 +25501,525 @@
             "org.eclipse.aether.version": [
                 "@maven//:org_apache_maven_resolver_maven_resolver_api"
             ],
+            "org.eclipse.collections.api": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.annotation": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.bag": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.bag.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.bag.sorted": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.bimap": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.block": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.block.comparator": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.block.comparator.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.block.factory": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.block.function": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.block.function.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.block.predicate": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.block.predicate.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.block.procedure": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.block.procedure.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.collection": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.collection.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.factory": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.factory.bag": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.factory.bag.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.factory.bag.sorted": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.factory.bag.strategy": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.factory.bimap": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.factory.list": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.factory.list.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.factory.map": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.factory.map.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.factory.map.sorted": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.factory.map.strategy": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.factory.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.factory.set": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.factory.set.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.factory.set.sorted": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.factory.set.strategy": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.factory.stack": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.factory.stack.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.iterator": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.list": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.list.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.map": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.map.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.map.sorted": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.multimap": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.multimap.bag": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.multimap.list": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.multimap.ordered": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.multimap.set": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.multimap.sortedbag": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.multimap.sortedset": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.ordered": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.ordered.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.partition": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.partition.bag": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.partition.bag.sorted": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.partition.list": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.partition.ordered": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.partition.set": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.partition.set.sorted": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.partition.stack": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.set": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.set.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.set.sorted": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.stack": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.stack.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.tuple": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.api.tuple.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections_api"
+            ],
+            "org.eclipse.collections.impl": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.bag": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.bag.immutable": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.bag.immutable.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.bag.mutable": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.bag.mutable.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.bag.sorted.immutable": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.bag.sorted.mutable": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.bag.strategy.mutable": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.bimap": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.bimap.immutable": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.bimap.mutable": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.block.comparator": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.block.comparator.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.block.factory": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.block.factory.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.block.function": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.block.function.checked": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.block.function.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.block.predicate": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.block.predicate.checked": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.block.predicate.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.block.procedure": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.block.procedure.checked": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.block.procedure.checked.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.block.procedure.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.collection": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.collection.immutable": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.collection.mutable": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.collection.mutable.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.collector": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.factory": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.factory.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.forkjoin": [
+                "@maven//:org_eclipse_collections_eclipse_collections_forkjoin"
+            ],
+            "org.eclipse.collections.impl.iterator": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.lazy": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.lazy.iterator": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.lazy.parallel": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.lazy.parallel.bag": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.lazy.parallel.list": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.lazy.parallel.set": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.lazy.parallel.set.sorted": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.lazy.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.list": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.list.fixed": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.list.immutable": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.list.immutable.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.list.mutable": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.list.mutable.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.list.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.map": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.map.fixed": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.map.immutable": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.map.immutable.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.map.mutable": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.map.mutable.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.map.ordered.mutable": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.map.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.map.sorted.immutable": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.map.sorted.mutable": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.map.strategy.immutable": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.map.strategy.mutable": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.multimap": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.multimap.bag": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.multimap.bag.sorted": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.multimap.bag.sorted.immutable": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.multimap.bag.sorted.mutable": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.multimap.bag.strategy": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.multimap.list": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.multimap.set": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.multimap.set.sorted": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.multimap.set.strategy": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.parallel": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.partition.bag": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.partition.bag.sorted": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.partition.list": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.partition.set": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.partition.set.sorted": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.partition.set.strategy": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.partition.stack": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.set": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.set.fixed": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.set.immutable": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.set.immutable.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.set.mutable": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.set.mutable.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.set.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.set.sorted.immutable": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.set.sorted.mutable": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.set.strategy.immutable": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.set.strategy.mutable": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.stack.immutable": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.stack.immutable.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.stack.mutable": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.stack.mutable.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.stack.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.stream": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.stream.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.string.immutable": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.tuple": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.tuple.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.utility": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.utility.internal": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.utility.internal.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
+            "org.eclipse.collections.impl.utility.primitive": [
+                "@maven//:org_eclipse_collections_eclipse_collections"
+            ],
             "org.eclipse.jetty.alpn": [
                 "@maven//:org_mortbay_jetty_alpn_alpn_boot"
             ],
@@ -28775,6 +29328,18 @@
             "org.locationtech.spatial4j.shape.jts": [
                 "@maven//:org_locationtech_spatial4j_spatial4j"
             ],
+            "org.mapdb": [
+                "@maven//:org_mapdb_mapdb"
+            ],
+            "org.mapdb.elsa": [
+                "@maven//:org_mapdb_elsa"
+            ],
+            "org.mapdb.serializer": [
+                "@maven//:org_mapdb_mapdb"
+            ],
+            "org.mapdb.volume": [
+                "@maven//:org_mapdb_mapdb"
+            ],
             "org.mindrot.jbcrypt": [
                 "@maven//:org_mindrot_jbcrypt"
             ],
@@ -29074,9 +29639,6 @@
             ],
             "org.mongodb.morphia.logging.jdk": [
                 "@maven//:org_mongodb_morphia_morphia"
-            ],
-            "org.mongodb.morphia.logging.slf4j": [
-                "@maven//:org_mongodb_morphia_morphia_logging_slf4j"
             ],
             "org.mongodb.morphia.mapping": [
                 "@maven//:org_mongodb_morphia_morphia"
@@ -30572,8 +31134,7 @@
                 "@maven//:org_slf4j_slf4j_api"
             ],
             "org.slf4j.impl": [
-                "@maven//:ch_qos_logback_logback_classic",
-                "@maven//:org_slf4j_slf4j_simple"
+                "@maven//:ch_qos_logback_logback_classic"
             ],
             "org.slf4j.spi": [
                 "@maven//:com_github_tomakehurst_wiremock_jre8_standalone",
@@ -32946,6 +33507,7 @@
                 "@maven//:io_projectreactor_reactor_core"
             ],
             "relocated.morphia.org.apache.commons.collections": [
+                "@maven//:dev_morphia_morphia_core",
                 "@maven//:org_mongodb_morphia_morphia"
             ],
             "retrofit": [

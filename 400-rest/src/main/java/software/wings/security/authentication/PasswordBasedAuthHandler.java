@@ -8,6 +8,7 @@
 package software.wings.security.authentication;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.eraro.ErrorCode.EMAIL_NOT_VERIFIED;
 import static io.harness.eraro.ErrorCode.INVALID_ARGUMENT;
 import static io.harness.eraro.ErrorCode.INVALID_CREDENTIAL;
@@ -17,7 +18,7 @@ import static io.harness.eraro.ErrorCode.USER_LOCKED;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
-import static org.mindrot.jbcrypt.BCrypt.checkpw;
+import static org.springframework.security.crypto.bcrypt.BCrypt.checkpw;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
@@ -73,8 +74,8 @@ public class PasswordBasedAuthHandler implements AuthHandler {
     if (user == null) {
       throw new WingsException(USER_DOES_NOT_EXIST, USER);
     }
-    String accountId = user == null ? null : user.getDefaultAccountId();
-    String uuid = user == null ? null : user.getUuid();
+    String accountId = user.getDefaultAccountId();
+    String uuid = user.getUuid();
 
     try (AutoLogContext ignore = new UserLogContext(accountId, uuid, OVERRIDE_ERROR)) {
       log.info("Authenticating via Username Password");
@@ -85,6 +86,11 @@ public class PasswordBasedAuthHandler implements AuthHandler {
 
       if (!domainWhitelistCheckerService.isDomainWhitelisted(user)) {
         domainWhitelistCheckerService.throwDomainWhitelistFilterException();
+      }
+
+      if (isEmpty(user.getPasswordHash())) {
+        log.error("No password set for User: {}, for signin attempt on the account: {}", uuid, accountId);
+        throw new WingsException(INVALID_CREDENTIAL, USER);
       }
 
       if (isPasswordHash) {

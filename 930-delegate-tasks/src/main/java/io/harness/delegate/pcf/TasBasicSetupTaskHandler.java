@@ -417,6 +417,7 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
         logCallback.saveExecutionLog(
             "# Deleting previous deployment interim app: " + encodeColor(applicationSummary.getName()));
         deleteApplication(applicationSummary, cfRequestConfig, logCallback);
+        previousReleases.remove(applicationSummary);
         continue;
       }
 
@@ -432,6 +433,7 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
       } else {
         logCallback.saveExecutionLog("# Older application being deleted: " + encodeColor(applicationSummary.getName()));
         deleteApplication(applicationSummary, cfRequestConfig, logCallback);
+        previousReleases.remove(applicationSummary);
       }
     }
   }
@@ -474,6 +476,7 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
       ApplicationDetail applicationDetail = cfDeploymentManager.getApplicationByName(cfRequestConfig);
       // Unmap routes from application having 0 instances
       if (isNotEmpty(applicationDetail.getUrls())) {
+        cfRequestConfig.setLoggedin(false);
         RetryPolicy retryPolicy =
             RetryPolicy.builder()
                 .userMessageOnFailure(String.format(

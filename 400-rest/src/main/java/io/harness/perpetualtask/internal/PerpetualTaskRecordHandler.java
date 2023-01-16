@@ -43,7 +43,7 @@ import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.filter.MorphiaFilterExpander;
-import io.harness.mongo.iterator.provider.MorphiaPersistenceProvider;
+import io.harness.mongo.iterator.provider.MorphiaPersistenceRequiredProvider;
 import io.harness.perpetualtask.PerpetualTaskExecutionBundle;
 import io.harness.perpetualtask.PerpetualTaskService;
 import io.harness.perpetualtask.PerpetualTaskServiceClient;
@@ -54,7 +54,6 @@ import io.harness.perpetualtask.internal.PerpetualTaskRecord.PerpetualTaskRecord
 import io.harness.serializer.KryoSerializer;
 import io.harness.workers.background.CrossEnvironmentAccountStatusBasedEntityProcessController;
 
-import software.wings.beans.Account;
 import software.wings.beans.TaskType;
 import software.wings.service.InstanceSyncConstants;
 import software.wings.service.impl.PerpetualTaskCapabilityCheckResponse;
@@ -78,8 +77,7 @@ public class PerpetualTaskRecordHandler extends IteratorPumpModeHandler implemen
   @Inject private DelegateService delegateService;
   @Inject private PerpetualTaskService perpetualTaskService;
   @Inject private PerpetualTaskServiceClientRegistry clientRegistry;
-  @Inject private MorphiaPersistenceProvider<PerpetualTaskRecord> persistenceProvider;
-  @Inject private MorphiaPersistenceProvider<Account> persistenceProviderAccount;
+  @Inject private MorphiaPersistenceRequiredProvider<PerpetualTaskRecord> persistenceProvider;
   @Inject private AccountService accountService;
   @Inject private KryoSerializer kryoSerializer;
   @Inject private PerpetualTaskRecordDao perpetualTaskRecordDao;

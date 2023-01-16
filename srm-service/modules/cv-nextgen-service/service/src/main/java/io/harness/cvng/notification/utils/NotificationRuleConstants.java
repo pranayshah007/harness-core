@@ -13,7 +13,6 @@ public class NotificationRuleConstants {
   public static final Duration COOL_OFF_DURATION = Duration.ofHours(1);
   public static final String CURRENT_HEALTH_SCORE = "CURRENT_HEALTH_SCORE";
   public static final String CHANGE_EVENT_TYPE = "CHANGE_EVENT_TYPE";
-  public static final String ERROR_TRACKING_TYPE = "ERROR_TRACKING_TYPE";
   public static final String REMAINING_PERCENTAGE = "REMAINING_PERCENTAGE";
   public static final String REMAINING_MINUTES = "REMAINING_MINUTES";
   public static final String BURN_RATE = "BURN_RATE";

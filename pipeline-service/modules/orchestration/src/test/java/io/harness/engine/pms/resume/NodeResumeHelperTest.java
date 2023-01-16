@@ -28,13 +28,13 @@ import io.harness.pms.contracts.execution.ChildChainExecutableResponse;
 import io.harness.pms.contracts.execution.ChildExecutableResponse;
 import io.harness.pms.contracts.execution.ExecutableResponse;
 import io.harness.pms.contracts.execution.ExecutionMode;
+import io.harness.pms.contracts.resume.ResponseDataProto;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
-import com.google.protobuf.ByteString;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -101,7 +101,7 @@ public class NodeResumeHelperTest extends OrchestrationTestBase {
              nodeExecutionId, NodeProjectionUtils.fieldsForResponseNotifyData))
         .thenReturn(iterator);
     when(pmsOutcomeService.fetchOutcomeRefs(eq(nodeExecutionId))).thenReturn(Collections.emptyList());
-    Map<String, ByteString> responseMap = resumeHelper.buildResponseMap(metadata, new HashMap<>());
+    Map<String, ResponseDataProto> responseMap = resumeHelper.buildResponseMap(metadata, new HashMap<>());
     assertThat(responseMap).containsKey(childId);
   }
 

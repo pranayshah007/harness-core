@@ -47,6 +47,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 @Api("delegate-token-ng")
 @Path("/delegate-token-ng")
@@ -138,8 +139,10 @@ public class DelegateTokenNgResource {
         ApiResponse(responseCode = "default", description = "A list of Delegate Tokens")
       })
   public RestResponse<List<DelegateTokenDetails>>
-  getDelegateTokens(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
-                        NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,
+  getDelegateTokens(@Parameter(description = "Name of Delegate Token (ACTIVE or REVOKED).") @QueryParam(
+                        "name") String delegateTokenName,
+      @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,
       @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
@@ -147,10 +150,17 @@ public class DelegateTokenNgResource {
       @Parameter(description = "Status of Delegate Token (ACTIVE or REVOKED). "
               + "If left empty both active and revoked tokens will be retrieved") @QueryParam("status")
       DelegateTokenStatus status) {
-    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
-        Resource.of(DELEGATE_RESOURCE_TYPE, null), DELEGATE_VIEW_PERMISSION);
+    if (StringUtils.isBlank(delegateTokenName)) {
+      accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+          Resource.of(DELEGATE_RESOURCE_TYPE, null), DELEGATE_VIEW_PERMISSION);
+    } else {
+      // When delegate token name is requested, token value will be included in response. Only roles with creating
+      // a delegate can access.
+      accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+          Resource.of(DELEGATE_RESOURCE_TYPE, null), DELEGATE_EDIT_PERMISSION);
+    }
     return new RestResponse<>(CGRestUtils.getResponse(
-        delegateTokenClient.getTokens(accountIdentifier, orgIdentifier, projectIdentifier, status)));
+        delegateTokenClient.getTokens(delegateTokenName, accountIdentifier, orgIdentifier, projectIdentifier, status)));
   }
 
   @GET

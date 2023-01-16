@@ -20,6 +20,7 @@ import io.harness.yaml.BaseYaml;
 
 import software.wings.beans.PhaseStep;
 
+import dev.morphia.annotations.Transient;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -31,7 +32,6 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import org.codehaus.jackson.annotate.JsonIgnore;
-import org.mongodb.morphia.annotations.Transient;
 
 @OwnedBy(CDC)
 @Data

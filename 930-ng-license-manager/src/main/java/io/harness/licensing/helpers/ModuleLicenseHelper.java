@@ -18,9 +18,9 @@ import io.harness.licensing.entities.modules.CDModuleLicense;
 import io.harness.licensing.entities.modules.CEModuleLicense;
 import io.harness.licensing.entities.modules.CFModuleLicense;
 import io.harness.licensing.entities.modules.CIModuleLicense;
-import io.harness.licensing.entities.modules.CVModuleLicense;
 import io.harness.licensing.entities.modules.ChaosModuleLicense;
 import io.harness.licensing.entities.modules.ModuleLicense;
+import io.harness.licensing.entities.modules.SRMModuleLicense;
 import io.harness.licensing.entities.modules.STOModuleLicense;
 
 import com.google.inject.Singleton;
@@ -242,8 +242,9 @@ public class ModuleLicenseHelper {
         }
         break;
       case CV:
-        CVModuleLicense cvLicense = (CVModuleLicense) update;
-        CVModuleLicense currentCVLicense = (CVModuleLicense) current;
+      case SRM:
+        SRMModuleLicense cvLicense = (SRMModuleLicense) update;
+        SRMModuleLicense currentCVLicense = (SRMModuleLicense) current;
         if (cvLicense.getNumberOfServices() != null
             && !cvLicense.getNumberOfServices().equals(currentCVLicense.getNumberOfServices())) {
           currentCVLicense.setNumberOfServices(cvLicense.getNumberOfServices());

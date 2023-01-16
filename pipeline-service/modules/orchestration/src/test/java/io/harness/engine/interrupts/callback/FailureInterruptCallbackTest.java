@@ -34,7 +34,6 @@ import io.harness.pms.contracts.interrupts.InterruptConfig;
 import io.harness.pms.contracts.interrupts.InterruptType;
 import io.harness.pms.contracts.interrupts.IssuedBy;
 import io.harness.pms.contracts.interrupts.ManualIssuer;
-import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.rule.Owner;
 import io.harness.waiter.StringNotifyResponseData;
 
@@ -70,7 +69,7 @@ public class FailureInterruptCallbackTest extends OrchestrationTestBase {
                            .ambiance(ambiance)
                            .version(1L)
                            .build();
-    when(nodeExecutionService.update(eq(nodeExecutionId), any())).thenReturn(ne);
+    when(nodeExecutionService.update(eq(nodeExecutionId), any(), any())).thenReturn(ne);
     FailureInterruptCallback failureInterruptCallback =
         FailureInterruptCallback.builder()
             .interruptId(interruptId)
@@ -93,7 +92,7 @@ public class FailureInterruptCallbackTest extends OrchestrationTestBase {
         ImmutableMap.of(generateUuid(), StringNotifyResponseData.builder().data("SOMEDATA").build()));
 
     ArgumentCaptor<Ambiance> ambianceArgumentCaptor = ArgumentCaptor.forClass(Ambiance.class);
-    verify(nodeExecutionService).update(eq(nodeExecutionId), any());
+    verify(nodeExecutionService).update(eq(nodeExecutionId), any(), any());
     verify(orchestrationEngine)
         .concludeNodeExecution(ambianceArgumentCaptor.capture(), eq(Status.FAILED), eq(Status.INTERVENTION_WAITING),
             eq(EnumSet.noneOf(Status.class)));
@@ -120,7 +119,7 @@ public class FailureInterruptCallbackTest extends OrchestrationTestBase {
                            .ambiance(ambiance)
                            .version(1L)
                            .build();
-    when(nodeExecutionService.update(eq(nodeExecutionId), any())).thenReturn(ne);
+    when(nodeExecutionService.update(eq(nodeExecutionId), any(), any())).thenReturn(ne);
 
     // Setting original status as null
     FailureInterruptCallback failureInterruptCallback =
@@ -141,14 +140,11 @@ public class FailureInterruptCallbackTest extends OrchestrationTestBase {
     Reflect.on(failureInterruptCallback).set("nodeExecutionService", nodeExecutionService);
     Reflect.on(failureInterruptCallback).set("orchestrationEngine", orchestrationEngine);
 
-    when(nodeExecutionService.getWithFieldsIncluded(nodeExecutionId, NodeProjectionUtils.withStatusAndMode))
-        .thenReturn(ne);
-
     failureInterruptCallback.notify(
         ImmutableMap.of(generateUuid(), StringNotifyResponseData.builder().data("SOMEDATA").build()));
 
     ArgumentCaptor<Ambiance> ambianceArgumentCaptor = ArgumentCaptor.forClass(Ambiance.class);
-    verify(nodeExecutionService).update(eq(nodeExecutionId), any());
+    verify(nodeExecutionService).update(eq(nodeExecutionId), any(), any());
     verify(orchestrationEngine)
         .concludeNodeExecution(
             ambianceArgumentCaptor.capture(), eq(Status.FAILED), eq(Status.FAILED), eq(EnumSet.noneOf(Status.class)));

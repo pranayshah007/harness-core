@@ -7,6 +7,8 @@
 
 package io.harness.delegate.ecs;
 
+import static software.wings.beans.LogHelper.color;
+
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -15,6 +17,7 @@ import io.harness.delegate.beans.ecs.EcsMapper;
 import io.harness.delegate.beans.ecs.EcsPrepareRollbackDataResult;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
+import io.harness.delegate.exception.EcsNGException;
 import io.harness.delegate.task.ecs.EcsCommandTaskNGHelper;
 import io.harness.delegate.task.ecs.EcsInfraConfig;
 import io.harness.delegate.task.ecs.EcsTaskHelperBase;
@@ -29,6 +32,9 @@ import io.harness.exception.NestedExceptionUtils;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
+
+import software.wings.beans.LogColor;
+import software.wings.beans.LogWeight;
 
 import com.google.inject.Inject;
 import java.util.List;
@@ -66,84 +72,93 @@ public class EcsPrepareRollbackCommandTaskHandler extends EcsCommandTaskNGHandle
     LogCallback prepareRollbackDataLogCallback = ecsTaskHelperBase.getLogCallback(
         iLogStreamingTaskClient, EcsCommandUnitConstants.prepareRollbackData.toString(), true, commandUnitsProgress);
 
-    // Get Ecs Service Name
-    String ecsServiceDefinitionManifestContent = ecsPrepareRollbackRequest.getEcsServiceDefinitionManifestContent();
-    CreateServiceRequest.Builder createServiceRequestBuilder = ecsCommandTaskHelper.parseYamlAsObject(
-        ecsServiceDefinitionManifestContent, CreateServiceRequest.serializableBuilderClass());
-    CreateServiceRequest createServiceRequest = createServiceRequestBuilder.build();
+    try {
+      prepareRollbackDataLogCallback.saveExecutionLog(format("Preparing Rollback Data..%n%n"), LogLevel.INFO);
+      // Get Ecs Service Name
+      String ecsServiceDefinitionManifestContent = ecsPrepareRollbackRequest.getEcsServiceDefinitionManifestContent();
+      CreateServiceRequest.Builder createServiceRequestBuilder = ecsCommandTaskHelper.parseYamlAsObject(
+          ecsServiceDefinitionManifestContent, CreateServiceRequest.serializableBuilderClass());
+      CreateServiceRequest createServiceRequest = createServiceRequestBuilder.build();
 
-    if (StringUtils.isEmpty(createServiceRequest.serviceName())) {
-      throw NestedExceptionUtils.hintWithExplanationException(
-          format(
-              "Please check if ECS service name is configured properly in ECS Service Definition Manifest in Harness Service."),
-          format("ECS service name is not configured properly in ECS Service Definition. It is found to be empty."),
-          new InvalidRequestException("ECS service name is empty."));
-    }
-
-    String serviceName = createServiceRequest.serviceName();
-
-    prepareRollbackDataLogCallback.saveExecutionLog(
-        format("Fetching Service Definition Details for Service %s..", serviceName), LogLevel.INFO);
-    // Describe ecs service and get service details
-    Optional<Service> optionalService = ecsCommandTaskHelper.describeService(
-        ecsInfraConfig.getCluster(), serviceName, ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
-
-    if (optionalService.isPresent()
-        && ecsCommandTaskHelper.isServiceActive(optionalService.get())) { // If service exists
-      Service service = optionalService.get();
-
-      Integer maxDesiredCount = service.desiredCount();
-      // compare max desired count with current desired count
-      if (createServiceRequest.desiredCount() != null) {
-        maxDesiredCount = Math.max(maxDesiredCount, createServiceRequest.desiredCount());
+      if (StringUtils.isEmpty(createServiceRequest.serviceName())) {
+        throw NestedExceptionUtils.hintWithExplanationException(
+            format(
+                "Please check if ECS service name is configured properly in ECS Service Definition Manifest in Harness Service."),
+            format("ECS service name is not configured properly in ECS Service Definition. It is found to be empty."),
+            new InvalidRequestException("ECS service name is empty."));
       }
-      Service updatedService = service.toBuilder().desiredCount(maxDesiredCount).build();
 
-      // Get createServiceRequestBuilderString from service
-      String createServiceRequestBuilderString = EcsMapper.createCreateServiceRequestFromService(updatedService);
-      prepareRollbackDataLogCallback.saveExecutionLog(
-          format("Fetched Service Definition Details for Service %s", serviceName), LogLevel.INFO);
-
-      // Get registerScalableTargetRequestBuilderStrings if present
-      List<String> registerScalableTargetRequestBuilderStrings = ecsCommandTaskHelper.getScalableTargetsAsString(
-          prepareRollbackDataLogCallback, serviceName, service, ecsInfraConfig);
-
-      // Get putScalingPolicyRequestBuilderStrings if present
-      List<String> registerScalingPolicyRequestBuilderStrings = ecsCommandTaskHelper.getScalingPoliciesAsString(
-          prepareRollbackDataLogCallback, serviceName, service, ecsInfraConfig);
-
-      EcsPrepareRollbackDataResult ecsPrepareRollbackDataResult =
-          EcsPrepareRollbackDataResult.builder()
-              .isFirstDeployment(false)
-              .serviceName(serviceName)
-              .createServiceRequestBuilderString(createServiceRequestBuilderString)
-              .registerScalableTargetRequestBuilderStrings(registerScalableTargetRequestBuilderStrings)
-              .registerScalingPolicyRequestBuilderStrings(registerScalingPolicyRequestBuilderStrings)
-              .build();
-
-      EcsPrepareRollbackDataResponse ecsPrepareRollbackDataResponse =
-          EcsPrepareRollbackDataResponse.builder()
-              .ecsPrepareRollbackDataResult(ecsPrepareRollbackDataResult)
-              .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
-              .build();
+      String serviceName = createServiceRequest.serviceName();
 
       prepareRollbackDataLogCallback.saveExecutionLog(
-          format("Preparing Rollback Data complete"), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
-      return ecsPrepareRollbackDataResponse;
+          format("Fetching Service Definition Details for Service %s..", serviceName), LogLevel.INFO);
+      // Describe ecs service and get service details
+      Optional<Service> optionalService = ecsCommandTaskHelper.describeService(
+          ecsInfraConfig.getCluster(), serviceName, ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
 
-    } else { // If service doesn't exist
+      if (optionalService.isPresent()
+          && ecsCommandTaskHelper.isServiceActive(optionalService.get())) { // If service exists
+        Service service = optionalService.get();
+
+        Integer maxDesiredCount = service.desiredCount();
+        // compare max desired count with current desired count
+        if (createServiceRequest.desiredCount() != null) {
+          maxDesiredCount = Math.max(maxDesiredCount, createServiceRequest.desiredCount());
+        }
+        Service updatedService = service.toBuilder().desiredCount(maxDesiredCount).build();
+
+        // Get createServiceRequestBuilderString from service
+        String createServiceRequestBuilderString =
+            ecsCommandTaskHelper.toYaml(EcsMapper.createCreateServiceRequestBuilderFromService(updatedService));
+        prepareRollbackDataLogCallback.saveExecutionLog(
+            format("Fetched Service Definition Details for Service %s", serviceName), LogLevel.INFO);
+
+        // Get registerScalableTargetRequestBuilderStrings if present
+        List<String> registerScalableTargetRequestBuilderStrings = ecsCommandTaskHelper.getScalableTargetsAsString(
+            prepareRollbackDataLogCallback, serviceName, service, ecsInfraConfig);
+
+        // Get putScalingPolicyRequestBuilderStrings if present
+        List<String> registerScalingPolicyRequestBuilderStrings = ecsCommandTaskHelper.getScalingPoliciesAsString(
+            prepareRollbackDataLogCallback, serviceName, service, ecsInfraConfig);
+
+        EcsPrepareRollbackDataResult ecsPrepareRollbackDataResult =
+            EcsPrepareRollbackDataResult.builder()
+                .isFirstDeployment(false)
+                .serviceName(serviceName)
+                .createServiceRequestBuilderString(createServiceRequestBuilderString)
+                .registerScalableTargetRequestBuilderStrings(registerScalableTargetRequestBuilderStrings)
+                .registerScalingPolicyRequestBuilderStrings(registerScalingPolicyRequestBuilderStrings)
+                .build();
+
+        EcsPrepareRollbackDataResponse ecsPrepareRollbackDataResponse =
+            EcsPrepareRollbackDataResponse.builder()
+                .ecsPrepareRollbackDataResult(ecsPrepareRollbackDataResult)
+                .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                .build();
+
+        prepareRollbackDataLogCallback.saveExecutionLog(
+            format("Preparing Rollback Data complete"), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+        return ecsPrepareRollbackDataResponse;
+
+      } else { // If service doesn't exist
+        prepareRollbackDataLogCallback.saveExecutionLog(
+            format("Service %s doesn't exist. Skipping Prepare Rollback Data..", serviceName), LogLevel.INFO,
+            CommandExecutionStatus.SUCCESS);
+
+        // Send EcsPrepareRollbackDataResult with isFirstDeployment as true
+        EcsPrepareRollbackDataResult ecsPrepareRollbackDataResult =
+            EcsPrepareRollbackDataResult.builder().isFirstDeployment(true).serviceName(serviceName).build();
+
+        return EcsPrepareRollbackDataResponse.builder()
+            .ecsPrepareRollbackDataResult(ecsPrepareRollbackDataResult)
+            .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+            .build();
+      }
+    } catch (Exception ex) {
       prepareRollbackDataLogCallback.saveExecutionLog(
-          format("Service %s doesn't exist. Skipping Prepare Rollback Data..", serviceName), LogLevel.INFO,
-          CommandExecutionStatus.SUCCESS);
-
-      // Send EcsPrepareRollbackDataResult with isFirstDeployment as true
-      EcsPrepareRollbackDataResult ecsPrepareRollbackDataResult =
-          EcsPrepareRollbackDataResult.builder().isFirstDeployment(true).serviceName(serviceName).build();
-
-      return EcsPrepareRollbackDataResponse.builder()
-          .ecsPrepareRollbackDataResult(ecsPrepareRollbackDataResult)
-          .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
-          .build();
+          color(format("%n PrepareRollback Failed."), LogColor.Red, LogWeight.Bold), LogLevel.ERROR,
+          CommandExecutionStatus.FAILURE);
+      throw new EcsNGException(ex);
     }
   }
 }

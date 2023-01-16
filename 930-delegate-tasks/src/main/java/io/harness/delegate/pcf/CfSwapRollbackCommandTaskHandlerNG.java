@@ -148,6 +148,7 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
               .isMapRoutesOperation(false)
               .build();
 
+      List<CfInternalInstanceElement> cfInstanceElements = new ArrayList<>();
       if (cfRollbackCommandRequestNG.isSwapRouteOccurred()) {
         // If rollback and active & in-active app was downsized or renamed, then restore it
         updateValues = restoreAppsDuringRollback(executionLogCallback, cfRollbackCommandRequestNG, cfRequestConfig,
@@ -183,7 +184,6 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
               .filter(cfServiceData -> cfServiceData.getDesiredCount() < cfServiceData.getPreviousCount())
               .collect(toList());
 
-      List<CfInternalInstanceElement> cfInstanceElements = new ArrayList<>();
       // During rollback, always upsize old ones
       cfCommandTaskHelperNG.upsizeListOfInstances(executionLogCallback, cfDeploymentManager, cfServiceDataUpdated,
           cfRequestConfig, upsizeList, cfInstanceElements);
@@ -223,7 +223,10 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
       } else {
         cfRollbackCommandResult.setCfInstanceElements(cfInstanceElements);
       }
-
+      List<CfInternalInstanceElement> newAppInstances = getCurrentProdAppInstance(cfRequestConfig,
+          cfRollbackCommandRequestNG.getCfAppNamePrefix(), cfRollbackCommandRequestNG.isSwapRouteOccurred(),
+          cfRollbackCommandRequestNG.getActiveApplicationDetails());
+      cfRollbackCommandResult.setNewAppInstances(newAppInstances);
     } catch (Exception e) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
       log.error("Exception in processing PCF Route Update task", sanitizedException);
@@ -250,6 +253,26 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
     }
     cfRollbackCommandResponseNG.setCfRollbackCommandResult(cfRollbackCommandResult);
     return cfRollbackCommandResponseNG;
+  }
+
+  private List<CfInternalInstanceElement> getCurrentProdAppInstance(CfRequestConfig cfRequestConfig,
+      String cfAppNamePrefix, boolean swapRouteOccurred, TasApplicationInfo activeAppInfo)
+      throws PivotalClientApiException {
+    if (!swapRouteOccurred || isNull(activeAppInfo)) {
+      // in both cases we will not update anything
+      return Collections.emptyList();
+    }
+    cfRequestConfig.setApplicationName(cfAppNamePrefix);
+    List<CfInternalInstanceElement> instances = new ArrayList<>();
+    ApplicationDetail applicationDetail = cfDeploymentManager.getApplicationByName(cfRequestConfig);
+    applicationDetail.getInstanceDetails().forEach(instance
+        -> instances.add(CfInternalInstanceElement.builder()
+                             .applicationId(applicationDetail.getId())
+                             .displayName(applicationDetail.getName())
+                             .instanceIndex(instance.getIndex())
+                             .isUpsize(false)
+                             .build()));
+    return instances;
   }
 
   private List<String> getExistingApplicationNames(CfSwapRollbackCommandRequestNG cfRollbackCommandRequestNG) {
@@ -545,7 +568,8 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
   private void updateEnvVariableForApplication(CfRequestConfig cfRequestConfig, LogCallback executionLogCallback,
       String appName, boolean isActiveApplication) throws PivotalClientApiException {
     cfRequestConfig.setApplicationName(appName);
-    cfDeploymentManager.setEnvironmentVariableForAppStatus(cfRequestConfig, isActiveApplication, executionLogCallback);
+    cfDeploymentManager.setEnvironmentVariableForAppStatusNG(
+        cfRequestConfig, isActiveApplication, executionLogCallback);
   }
 
   private CfInBuiltVariablesUpdateValues performAppRenaming(NamingTransition transition,

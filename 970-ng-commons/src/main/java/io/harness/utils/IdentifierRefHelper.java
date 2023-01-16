@@ -53,7 +53,7 @@ public class IdentifierRefHelper {
    * Project Scope -> Identifer
    * Invalid Scope -> xyz.Identifer
    */
-  private void validateEntityScopes(
+  public void validateEntityScopes(
       String accountId, String orgIdentifier, String projectIdentifier, String entityIdentifierRef, String fieldName) {
     int parentEntityScope;
     int childEntityScope;
@@ -142,6 +142,7 @@ public class IdentifierRefHelper {
     if (isEmpty(scopedIdentifierConfig)) {
       throw new InvalidIdentifierRefException("Empty identifier values are not supported");
     }
+
     String[] identifierConfigStringSplit = scopedIdentifierConfig.split(IDENTIFIER_REF_DELIMITER);
 
     if (identifierConfigStringSplit.length == 1) {

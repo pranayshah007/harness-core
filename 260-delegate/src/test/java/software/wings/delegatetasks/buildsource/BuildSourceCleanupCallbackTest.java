@@ -66,6 +66,8 @@ import software.wings.service.intfc.ArtifactService;
 import software.wings.service.intfc.ArtifactStreamService;
 
 import com.google.inject.Inject;
+import dev.morphia.query.MorphiaIterator;
+import dev.morphia.query.Query;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -78,8 +80,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mongodb.morphia.query.MorphiaIterator;
-import org.mongodb.morphia.query.Query;
 
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 public class BuildSourceCleanupCallbackTest extends WingsBaseTest {

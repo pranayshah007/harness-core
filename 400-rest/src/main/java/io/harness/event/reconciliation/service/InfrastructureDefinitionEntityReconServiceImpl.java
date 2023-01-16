@@ -20,10 +20,10 @@ import software.wings.infra.InfrastructureDefinition.InfrastructureDefinitionKey
 import software.wings.search.framework.TimeScaleEntity;
 
 import com.google.inject.Inject;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.MorphiaKeyIterator;
 import java.util.HashSet;
 import java.util.Set;
-import org.mongodb.morphia.query.FindOptions;
-import org.mongodb.morphia.query.MorphiaKeyIterator;
 
 public class InfrastructureDefinitionEntityReconServiceImpl implements LookerEntityReconService {
   @Inject TimeScaleDBService timeScaleDBService;

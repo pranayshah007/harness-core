@@ -8,6 +8,7 @@
 package io.harness.beans.steps.stepinfo.security.shared;
 
 import static io.harness.annotations.dev.HarnessTeam.STO;
+import static io.harness.beans.SwaggerConstants.BOOLEAN_CLASSPATH;
 import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
@@ -46,4 +47,8 @@ public class STOYamlAuth {
   @YamlSchemaTypes(value = {runtime})
   @ApiModelProperty(dataType = "io.harness.yaml.sto.variables.STOYamlAuthType")
   protected STOYamlAuthType type;
+
+  @YamlSchemaTypes(value = {runtime})
+  @ApiModelProperty(dataType = BOOLEAN_CLASSPATH)
+  protected ParameterField<Boolean> ssl;
 }

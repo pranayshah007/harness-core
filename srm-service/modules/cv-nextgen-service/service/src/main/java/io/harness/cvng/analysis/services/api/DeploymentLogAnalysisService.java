@@ -16,6 +16,7 @@ import io.harness.cvng.analysis.beans.LogAnalysisRadarChartClusterDTO;
 import io.harness.cvng.analysis.beans.LogAnalysisRadarChartListWithCountDTO;
 import io.harness.cvng.analysis.beans.Risk;
 import io.harness.cvng.analysis.entities.DeploymentLogAnalysis;
+import io.harness.cvng.cdng.beans.v2.ClusterAnalysisOverview;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.filterParams.DeploymentLogAnalysisFilter;
 import io.harness.cvng.core.entities.CVConfig;
@@ -63,4 +64,8 @@ public interface DeploymentLogAnalysisService {
       VerificationJobInstance verificationJobInstance, String demoTemplatePath);
 
   Set<String> getNodeNames(String accountId, String verificationJobInstanceId);
+
+  ClusterAnalysisOverview getLogsAnalysisOverview(String accountId, String verifyStepExecutionId);
+
+  ClusterAnalysisOverview getErrorsAnalysisOverview(String accountId, String verifyStepExecutionId);
 }

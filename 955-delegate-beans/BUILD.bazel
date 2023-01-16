@@ -15,7 +15,11 @@ java_library(
         "//:lombok",
         "//955-delegate-beans/src/main/proto:955_delegate_beans_java_proto",
         "//970-api-services-beans:module",
-        "//980-commons:module",
+        "//980-commons/src/main/java/io/harness/logging:module",
+        "//980-commons/src/main/java/io/harness/serializer:module",
+        "//980-commons/src/main/java/io/harness/yaml:module",
+        "//980-commons/src/main/java/software/wings/beans:module",
+        "//980-commons/src/main/java/software/wings/stencils:module",
     ],
 )
 

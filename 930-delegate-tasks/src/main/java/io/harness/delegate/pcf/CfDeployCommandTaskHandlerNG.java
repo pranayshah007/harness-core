@@ -83,6 +83,7 @@ public class CfDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler {
     List<CfServiceData> cfServiceDataUpdated = new ArrayList<>();
     CfDeployCommandResponseNG cfDeployCommandResponseNG = CfDeployCommandResponseNG.builder().build();
     CfDeployCommandResult cfDeployCommandResult = CfDeployCommandResult.builder().build();
+    cfDeployCommandResult.setStandardBG(cfDeployCommandRequestNG.isStandardBlueGreen());
 
     File workingDirectory = null;
     boolean noExceptionOccured = true;

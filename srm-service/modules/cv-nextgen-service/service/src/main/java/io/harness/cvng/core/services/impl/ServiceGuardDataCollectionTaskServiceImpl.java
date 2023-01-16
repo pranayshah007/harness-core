@@ -53,13 +53,16 @@ public class ServiceGuardDataCollectionTaskServiceImpl implements DataCollection
       enqueueFirstTask(cvConfig);
     } else {
       if (Instant.ofEpochMilli(dataCollectionTask.getLastUpdatedAt())
-              .isBefore(clock.instant().minus(Duration.ofMinutes(2)))
-          && dataCollectionTask.getStatus().equals(DataCollectionExecutionStatus.SUCCESS)) {
-        createNextTask(dataCollectionTask);
-        log.warn(
-            "Recovered from next task creation issue. DataCollectionTask uuid: {}, account: {}, projectIdentifier: {}, orgIdentifier: {}, ",
-            dataCollectionTask.getUuid(), cvConfig.getAccountId(), cvConfig.getProjectIdentifier(),
-            cvConfig.getOrgIdentifier());
+              .isBefore(clock.instant().minus(Duration.ofMinutes(2)))) {
+        if (dataCollectionTask.getStatus().equals(DataCollectionExecutionStatus.SUCCESS)) {
+          createNextTask(dataCollectionTask);
+          log.warn(
+              "Recovered from next task creation issue. DataCollectionTask uuid: {}, account: {}, projectIdentifier: {}, orgIdentifier: {}, ",
+              dataCollectionTask.getUuid(), cvConfig.getAccountId(), cvConfig.getProjectIdentifier(),
+              cvConfig.getOrgIdentifier());
+        } else if (!DataCollectionExecutionStatus.getNonFinalStatuses().contains(dataCollectionTask.getStatus())) {
+          enqueueFirstTask(cvConfig);
+        }
       }
     }
   }

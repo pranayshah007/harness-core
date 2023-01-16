@@ -16,6 +16,7 @@ import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependency;
+import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.contracts.plan.GraphLayoutNode;
 import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -81,7 +82,7 @@ public class PipelineStagePlanCreator implements PartialPlanCreator<PipelineStag
   }
 
   public PipelineStageStepParameters getStepParameter(
-      PipelineStageConfig config, YamlField pipelineInputs, String stageNodeId) {
+      PipelineStageConfig config, YamlField pipelineInputs, String stageNodeId, String childPipelineVersion) {
     return PipelineStageStepParameters.builder()
         .pipeline(config.getPipeline())
         .org(config.getOrg())
@@ -89,7 +90,7 @@ public class PipelineStagePlanCreator implements PartialPlanCreator<PipelineStag
         .stageNodeId(stageNodeId)
         .inputSetReferences(config.getInputSetReferences())
         .outputs(ParameterField.createValueField(PipelineStageOutputs.getMapOfString(config.getOutputs())))
-        .pipelineInputs(pipelineStageHelper.getInputSetYaml(pipelineInputs))
+        .pipelineInputs(pipelineStageHelper.getInputSetYaml(pipelineInputs, childPipelineVersion))
         .build();
   }
 
@@ -141,13 +142,16 @@ public class PipelineStagePlanCreator implements PartialPlanCreator<PipelineStag
             .identifier(stageNode.getIdentifier())
             .group(StepCategory.STAGE.name())
             .stepType(PipelineStageStep.STEP_TYPE)
+            .expressionMode(
+                ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED) // Do not want null if expression is
+                                                                         // unresolved. Used in envV2 implementation
             .stepParameters(getStepParameter(config,
                 ctx.getCurrentField()
                     .getNode()
                     .getField(YAMLFieldNameConstants.SPEC)
                     .getNode()
                     .getField(YAMLFieldNameConstants.INPUTS),
-                planNodeId))
+                planNodeId, childPipelineEntity.get().getHarnessVersion()))
             .skipCondition(SkipInfoUtils.getSkipCondition(stageNode.getSkipCondition()))
             .whenCondition(RunInfoUtils.getRunCondition(stageNode.getWhen()))
             .facilitatorObtainment(

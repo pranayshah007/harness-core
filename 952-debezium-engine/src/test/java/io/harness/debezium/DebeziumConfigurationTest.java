@@ -33,7 +33,7 @@ public class DebeziumConfigurationTest extends CategoryTest {
   public void testGetDebeziumProperties() {
     DebeziumConfig debeziumConfig = new DebeziumConfig(false, "testConnector", "offset_file", "offsets", "false",
         "false", "6000", "1000", "10000", 60, "3", "MongoDbConnectorClass", 1000, "shop", "false", "products", "",
-        "2000", 1000, "initial", "document", "4", "1", 1000, "1000", "100", "", "uri");
+        "2000", 1000, "initial", "document", "4", "1", 1000, "1000", "100", "", "uri", null);
     RedisConfig redisConfig = new RedisConfig();
     Properties expectedProps = new Properties();
     expectedProps.setProperty(DebeziumConfiguration.TRANSFORMS_UNWRAP_ARRAY_ENCODING, "document");
@@ -78,6 +78,7 @@ public class DebeziumConfigurationTest extends CategoryTest {
     expectedProps.setProperty(DebeziumConfiguration.MAX_QUEUE_SIZE_IN_BYTES, "1000");
     expectedProps.setProperty(DebeziumConfiguration.MAX_QUEUE_SIZE, "4");
     expectedProps.setProperty(DebeziumConfiguration.MAX_BATCH_SIZE, "1");
+    expectedProps.setProperty("errors.max.retries", "-2");
     assertEquals(expectedProps, DebeziumConfiguration.getDebeziumProperties(debeziumConfig, redisConfig));
     expectedProps.setProperty(DebeziumConfiguration.OFFSET_STORAGE_KEY,
         DebeziumConstants.DEBEZIUM_OFFSET_PREFIX + debeziumConfig.getConnectorName() + "-"

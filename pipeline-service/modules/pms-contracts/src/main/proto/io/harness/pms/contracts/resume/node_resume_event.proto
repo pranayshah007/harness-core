@@ -21,8 +21,13 @@ message NodeResumeEvent {
   bool asyncError = 5;
   map<string, bytes> response = 6;
   ChainDetails chainDetails = 7;
+  map<string, ResponseDataProto> responseData = 8;
 }
 
+message ResponseDataProto {
+  bytes response = 1;
+  bool usingKryoWithoutReference = 2;
+}
 message ChainDetails {
   bool isEnd = 1;
   bytes passThroughData = 2;

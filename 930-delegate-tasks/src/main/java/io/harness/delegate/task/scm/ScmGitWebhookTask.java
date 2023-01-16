@@ -18,8 +18,10 @@ import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
+import io.harness.exception.ExplanationException;
 import io.harness.exception.UnknownEnumTypeException;
 import io.harness.impl.ScmResponseStatusUtils;
+import io.harness.ngtriggers.WebhookSecretData;
 import io.harness.product.ci.scm.proto.CreateWebhookResponse;
 import io.harness.product.ci.scm.proto.SCMGrpc;
 import io.harness.security.encryption.SecretDecryptionService;
@@ -28,8 +30,10 @@ import io.harness.service.ScmServiceClient;
 import com.google.inject.Inject;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.NotImplementedException;
 
+@Slf4j
 @OwnedBy(HarnessTeam.DX)
 public class ScmGitWebhookTask extends AbstractDelegateRunnableTask {
   @Inject SecretDecryptionService secretDecryptionService;
@@ -52,6 +56,21 @@ public class ScmGitWebhookTask extends AbstractDelegateRunnableTask {
     final DecryptableEntity apiAccessDecryptableEntity =
         GitApiAccessDecryptionHelper.getAPIAccessDecryptableEntity(scmGitWebhookTaskParams.getScmConnector());
     secretDecryptionService.decrypt(apiAccessDecryptableEntity, scmGitWebhookTaskParams.getEncryptedDataDetails());
+    WebhookSecretData webhookSecretData = scmGitWebhookTaskParams.getWebhookSecretData();
+    if (webhookSecretData != null) {
+      try {
+        secretDecryptionService.decrypt(
+            webhookSecretData.getWebhookEncryptedSecretDTO(), webhookSecretData.getEncryptedDataDetails());
+        String webhookSecret =
+            String.valueOf(webhookSecretData.getWebhookEncryptedSecretDTO().getSecretRef().getDecryptedValue());
+        scmGitWebhookTaskParams.gitWebhookDetails.setSecret(webhookSecret);
+      } catch (Exception ex) {
+        throw new ExplanationException(
+            String.format("Error finding webhook secret key in secret manager: %s",
+                webhookSecretData.getWebhookEncryptedSecretDTO().getSecretRef().getIdentifier()),
+            ex);
+      }
+    }
     switch (scmGitWebhookTaskParams.getGitWebhookTaskType()) {
       case UPSERT:
         final CreateWebhookResponse upsertWebhookResponse = scmDelegateClient.processScmRequest(c

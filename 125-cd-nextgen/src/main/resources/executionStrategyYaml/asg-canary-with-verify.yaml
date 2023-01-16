@@ -1,0 +1,59 @@
+failureStrategies:
+  - onFailure:
+      errors:
+        - AllErrors
+      action:
+        type: StageRollback
+spec:
+  execution:
+    steps:
+      - stepGroup:
+          name: Canary Deployment
+          identifier: canaryDepoyment
+          steps:
+            - step:
+                name: "Asg Canary Deploy"
+                identifier: AsgCanaryDeploy
+                type: AsgCanaryDeploy
+                timeout: 10m
+                spec:
+                  instanceSelection:
+                    type: Count
+                    spec:
+                      count: 1
+            - step:
+                type: Verify
+                name: Verify
+                identifier: Verify
+                timeout: 2h
+                spec: {}
+            - step:
+                name: "Asg Canary Delete"
+                identifier: AsgCanaryDelete
+                type: AsgCanaryDelete
+                timeout: 10m
+                spec: {}
+      - stepGroup:
+          name: Primary Deployment
+          identifier: primaryDepoyment
+          steps:
+            - step:
+                name: "Asg Rolling Deploy"
+                identifier: AsgRollingDeploy
+                type: AsgRollingDeploy
+                timeout: 10m
+                spec:
+                  useAlreadyRunningInstances: false
+    rollbackSteps:
+      - step:
+          name: "Asg Canary Delete"
+          identifier: AsgRollbackCanaryDelete
+          type: AsgCanaryDelete
+          timeout: 10m
+          spec: {}
+      - step:
+          name: "Asg Rolling Rollback"
+          identifier: AsgRollingRollback
+          type: AsgRollingRollback
+          timeout: 10m
+          spec: {}

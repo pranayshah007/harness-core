@@ -22,6 +22,7 @@ import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.artifacts.comparator.BuildDetailsInternalComparatorAscending;
 import io.harness.artifacts.comparator.BuildDetailsInternalComparatorDescending;
 import io.harness.artifacts.docker.beans.DockerImageManifestResponse;
+import io.harness.artifacts.gcr.GcrImageTagResponse;
 import io.harness.artifacts.gcr.GcrRestClient;
 import io.harness.artifacts.gcr.beans.GcrInternalConfig;
 import io.harness.context.MdcGlobalContextData;
@@ -96,9 +97,8 @@ public class GcrApiServiceImpl implements GcrApiService {
   @Override
   public List<BuildDetailsInternal> getBuilds(GcrInternalConfig gcpConfig, String imageName, int maxNumberOfBuilds) {
     try {
-      Response<GcrImageTagResponse> response = getGcrRestClient(gcpConfig.getRegistryHostname())
-                                                   .listImageTags(gcpConfig.getBasicAuthHeader(), imageName)
-                                                   .execute();
+      Response<GcrImageTagResponse> response =
+          listImageTag(getGcrRestClient(gcpConfig.getRegistryHostname()), gcpConfig.getBasicAuthHeader(), imageName);
       checkValidImage(imageName, response);
       return processBuildResponse(gcpConfig.getRegistryHostname(), imageName, response.body());
     } catch (GcrImageNotFoundRuntimeException ex) {
@@ -111,7 +111,9 @@ public class GcrApiServiceImpl implements GcrApiService {
     } catch (IOException e) {
       throw handleIOException(gcpConfig, e);
     } catch (InvalidRequestException e) {
-      throw new HintException(e.getMessage());
+      throw new HintException(ExceptionUtils.getMessage(e));
+    } catch (Exception e) {
+      throw new HintException(ExceptionUtils.getMessage(e));
     }
   }
 
@@ -125,7 +127,7 @@ public class GcrApiServiceImpl implements GcrApiService {
               "Image name [" + imageName + "] does not exist in Google Container Registry.");
         }
         if (globalContextData != null && globalContextData.isSupportedErrorFramework()
-            && response.body().tags.size() == 0) {
+            && response.body().getTags().size() == 0) {
           throw new GcrImageNotFoundRuntimeException(
               "Image name [" + imageName + "] does not exist in Google Container Registry.");
         }
@@ -187,9 +189,11 @@ public class GcrApiServiceImpl implements GcrApiService {
   public boolean validateCredentials(GcrInternalConfig gcpConfig, String imageName) {
     try {
       GcrRestClient registryRestClient = getGcrRestClient(gcpConfig.getRegistryHostname());
-      Response response = registryRestClient.listImageTags(gcpConfig.getBasicAuthHeader(), imageName).execute();
-      return isSuccessful(response);
+      return isSuccessful(listImageTag(registryRestClient, gcpConfig.getBasicAuthHeader(), imageName));
     } catch (IOException e) {
+      throw NestedExceptionUtils.hintWithExplanationException(
+          ERROR_MESSAGE, CONNECTION_ERROR_MESSAGE, new ArtifactServerException(ExceptionUtils.getMessage(e), e, USER));
+    } catch (Exception e) {
       throw NestedExceptionUtils.hintWithExplanationException(
           ERROR_MESSAGE, CONNECTION_ERROR_MESSAGE, new ArtifactServerException(ExceptionUtils.getMessage(e), e, USER));
     }
@@ -238,6 +242,13 @@ public class GcrApiServiceImpl implements GcrApiService {
         .call();
   }
 
+  @VisibleForTesting
+  public Response<GcrImageTagResponse> listImageTag(
+      GcrRestClient gcrRestClient, String basicAuthHeader, String imageName) throws Exception {
+    return Retry.decorateCallable(retry, () -> gcrRestClient.listImageTags(basicAuthHeader, imageName).execute())
+        .call();
+  }
+
   private WingsException handleIOException(GcrInternalConfig gcrInternalConfig, IOException e) {
     ErrorHandlingGlobalContextData globalContextData =
         GlobalContextManager.get(ErrorHandlingGlobalContextData.IS_SUPPORTED_ERROR_FRAMEWORK);
@@ -271,67 +282,5 @@ public class GcrApiServiceImpl implements GcrApiService {
         unhandled(code);
     }
     return true;
-  }
-
-  /**
-   * The type GCR image tag response.
-   */
-  public static class GcrImageTagResponse {
-    private List<String> child;
-    private String name;
-    private List<String> tags;
-    private Map manifest;
-
-    public Map getManifest() {
-      return manifest;
-    }
-
-    public void setManifest(Map manifest) {
-      this.manifest = manifest;
-    }
-
-    public List<String> getChild() {
-      return child;
-    }
-
-    public void setChild(List<String> child) {
-      this.child = child;
-    }
-
-    /**
-     * Gets name.
-     *
-     * @return the name
-     */
-    public String getName() {
-      return name;
-    }
-
-    /**
-     * Sets name.
-     *
-     * @param name the name
-     */
-    public void setName(String name) {
-      this.name = name;
-    }
-
-    /**
-     * Gets tags.
-     *
-     * @return the tags
-     */
-    public List<String> getTags() {
-      return tags;
-    }
-
-    /**
-     * Sets tags.
-     *
-     * @param tags the tags
-     */
-    public void setTags(List<String> tags) {
-      this.tags = tags;
-    }
   }
 }

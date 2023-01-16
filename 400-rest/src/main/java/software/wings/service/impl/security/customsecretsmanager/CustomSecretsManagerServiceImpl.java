@@ -40,11 +40,11 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.mongodb.DuplicateKeyException;
+import dev.morphia.query.Query;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import lombok.NonNull;
-import org.mongodb.morphia.query.Query;
 
 @OwnedBy(PL)
 @Singleton

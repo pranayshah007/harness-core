@@ -18,6 +18,7 @@ import io.harness.security.encryption.EncryptedRecordData;
 
 import software.wings.beans.GitFileConfig;
 import software.wings.beans.NameValuePair;
+import software.wings.beans.S3FileConfig;
 import software.wings.sm.ContextElement;
 
 import java.util.List;
@@ -48,6 +49,7 @@ public class TerraformProvisionInheritPlanElement implements ContextElement {
   private EncryptedRecordData encryptedTfPlan;
   private String tfPlanJsonFileId;
   private String tfHumanReadablePlaneFileId;
+  private S3FileConfig remoteBackendS3Config;
 
   @Override
   public ContextElementType getElementType() {

@@ -40,7 +40,7 @@ public class EngineResumeCallbackTest extends OrchestrationTestBase {
     Reflect.on(callback).set("orchestrationEngine", engine);
     Reflect.on(callback).set("responseDataMapper", mapper);
     callback.notify(new HashMap<>());
-    verify(mapper).toResponseDataProto(any());
+    verify(mapper).toResponseDataProtoV2(any());
     verify(engine).resumeNodeExecution(eq(ambiance), any(), eq(false));
   }
 
@@ -53,7 +53,7 @@ public class EngineResumeCallbackTest extends OrchestrationTestBase {
     Reflect.on(callback).set("orchestrationEngine", engine);
     Reflect.on(callback).set("responseDataMapper", mapper);
     callback.notifyError(new HashMap<>());
-    verify(mapper).toResponseDataProto(any());
+    verify(mapper).toResponseDataProtoV2(any());
     verify(engine).resumeNodeExecution(eq(ambiance), any(), eq(true));
   }
 }

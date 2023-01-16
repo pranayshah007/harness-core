@@ -78,8 +78,8 @@ public class InputsValidator {
   }
 
   public ValidateInputsResponseDTO validateInputsForYaml(
-      String accountId, String orgId, String projectId, String yaml) {
-    return validateInputsForYamlInternal(accountId, orgId, projectId, yaml, new HashMap<>(), false);
+      String accountId, String orgId, String projectId, String yaml, boolean loadFromCache) {
+    return validateInputsForYamlInternal(accountId, orgId, projectId, yaml, new HashMap<>(), loadFromCache);
   }
 
   public ValidateInputsResponseDTO validateInputsForYaml(String accountId, String orgId, String projectId, String yaml,

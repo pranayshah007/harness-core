@@ -61,13 +61,13 @@ import software.wings.service.intfc.security.NGSecretManagerService;
 import software.wings.service.intfc.security.VaultService;
 
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
 
 @OwnedBy(PL)
 @TargetModule(_890_SM_CORE)

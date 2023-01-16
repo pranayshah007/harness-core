@@ -28,7 +28,7 @@ import io.harness.cdng.customdeploymentng.CustomDeploymentInfrastructureHelper;
 import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.execution.helper.ExecutionInfoKeyMapper;
 import io.harness.cdng.execution.helper.StageExecutionHelper;
-import io.harness.cdng.infra.InfrastructureMapper;
+import io.harness.cdng.infra.InfrastructureOutcomeProvider;
 import io.harness.cdng.infra.InfrastructureValidator;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.yaml.AsgInfrastructure;
@@ -110,12 +110,14 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.steps.environment.EnvironmentOutcome;
 
 import software.wings.beans.TaskType;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -136,13 +138,13 @@ abstract class AbstractInfrastructureTaskExecutableStep {
   @Inject protected OutcomeService outcomeService;
   @Inject protected CDStepHelper cdStepHelper;
   @Inject protected ExecutionSweepingOutputService executionSweepingOutputService;
-  @Inject protected KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") protected KryoSerializer referenceFalseKryoSerializer;
   @Inject protected StepHelper stepHelper;
   @Inject protected StageExecutionHelper stageExecutionHelper;
-  @Inject protected InfrastructureMapper infrastructureMapper;
   @Inject CustomDeploymentInfrastructureHelper customDeploymentInfrastructureHelper;
   @Inject private InfrastructureValidator infrastructureValidator;
   @Inject protected InstanceOutcomeHelper instanceOutcomeHelper;
+  @Inject protected InfrastructureOutcomeProvider infrastructureOutcomeProvider;
 
   @Data
   @AllArgsConstructor
@@ -182,7 +184,7 @@ abstract class AbstractInfrastructureTaskExecutableStep {
     infrastructureValidator.validate(infrastructure);
 
     final InfrastructureOutcome infrastructureOutcome =
-        infrastructureMapper.toOutcome(infrastructure, environmentOutcome, serviceOutcome,
+        infrastructureOutcomeProvider.getOutcome(infrastructure, environmentOutcome, serviceOutcome,
             ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
 
     executionSweepingOutputService.consume(ambiance, INFRA_TASK_EXECUTABLE_STEP_OUTPUT,
@@ -492,7 +494,7 @@ abstract class AbstractInfrastructureTaskExecutableStep {
             .map(TaskSelectorYaml::new)
             .collect(Collectors.toList());
 
-    TaskRequest taskRequest = StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+    TaskRequest taskRequest = TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
         Collections.singletonList("Execute"), taskData.getTaskType(),
         TaskSelectorYaml.toTaskSelector(emptyIfNull(taskSelectorYamlList)), stepHelper.getEnvironmentType(ambiance));
     return new TaskRequestData(taskRequest, taskData, taskSelectorYamlList);
@@ -537,7 +539,7 @@ abstract class AbstractInfrastructureTaskExecutableStep {
                                                       .map(delegateSelector -> new TaskSelectorYaml(delegateSelector))
                                                       .collect(Collectors.toList());
 
-    TaskRequest taskRequest = StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+    TaskRequest taskRequest = TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
         Collections.singletonList("Execute"), taskData.getTaskType(),
         TaskSelectorYaml.toTaskSelector(emptyIfNull(taskSelectorYamlList)), stepHelper.getEnvironmentType(ambiance));
 

@@ -47,6 +47,8 @@ public class PipelineExecutionSummaryDtoMapper {
     }
     return PipelineExecutionSummaryDTO.builder()
         .name(pipelineExecutionSummaryEntity.getName())
+        .orgIdentifier(pipelineExecutionSummaryEntity.getOrgIdentifier())
+        .projectIdentifier(pipelineExecutionSummaryEntity.getProjectIdentifier())
         .createdAt(pipelineExecutionSummaryEntity.getCreatedAt())
         .layoutNodeMap(layoutNodeDTOMap)
         .moduleInfo(ModuleInfoMapper.getModuleInfo(pipelineExecutionSummaryEntity.getModuleInfo()))

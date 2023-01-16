@@ -22,6 +22,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.ecs.EcsCommandTaskNGHelper;
+import io.harness.delegate.task.ecs.EcsCommandTypeNG;
 import io.harness.delegate.task.ecs.EcsInfraConfig;
 import io.harness.delegate.task.ecs.EcsRollingRollbackConfig;
 import io.harness.delegate.task.ecs.EcsTaskHelperBase;
@@ -83,6 +84,7 @@ public class EcsRollingRollbackCommandTaskHandlerTest extends CategoryTest {
             .ecsInfraConfig(ecsInfraConfig)
             .commandName("command")
             .ecsRollingRollbackConfig(ecsRollingRollbackConfig)
+            .ecsCommandType(EcsCommandTypeNG.ECS_ROLLING_ROLLBACK)
             .timeoutIntervalInMin(10)
             .build();
     doReturn(rollbackLogCallback)
@@ -126,6 +128,7 @@ public class EcsRollingRollbackCommandTaskHandlerTest extends CategoryTest {
             .commandName("command")
             .ecsRollingRollbackConfig(ecsRollingRollbackConfig)
             .timeoutIntervalInMin(10)
+            .ecsCommandType(EcsCommandTypeNG.ECS_ROLLING_ROLLBACK)
             .build();
     doReturn(rollbackLogCallback)
         .when(ecsTaskHelperBase)
@@ -171,6 +174,7 @@ public class EcsRollingRollbackCommandTaskHandlerTest extends CategoryTest {
                                                               .ecsInfraConfig(EcsInfraConfig.builder().build())
                                                               .ecsRollingRollbackConfig(ecsRollingRollbackConfig)
                                                               .timeoutIntervalInMin(10)
+                                                              .ecsCommandType(EcsCommandTypeNG.ECS_ROLLING_ROLLBACK)
                                                               .build();
     CreateServiceRequest.Builder createServiceRequestBuilder = CreateServiceRequest.builder().desiredCount(8);
     Optional<Service> optionalService = Optional.of(Service.builder().desiredCount(10).build());

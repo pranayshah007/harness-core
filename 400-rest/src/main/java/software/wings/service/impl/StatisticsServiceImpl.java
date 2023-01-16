@@ -26,6 +26,7 @@ import io.harness.beans.EnvironmentType;
 import io.harness.beans.ExecutionStatus;
 import io.harness.beans.FeatureName;
 import io.harness.ff.FeatureFlagService;
+import io.harness.mongo.index.BasicDBUtils;
 import io.harness.time.EpochUtils;
 
 import software.wings.beans.ElementExecutionSummary;
@@ -42,6 +43,8 @@ import software.wings.service.intfc.WorkflowExecutionService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.Query;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -49,7 +52,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
 
 @Singleton
 @Slf4j
@@ -176,20 +178,24 @@ public class StatisticsServiceImpl implements StatisticsService {
             .field(WorkflowExecutionKeys.status)
             .in(ExecutionStatus.finalStatuses())
             .project("pipelineExecution.pipelineStageExecutions.workflowExecutions.serviceExecutionSummaries", true)
-            .project("serviceExecutionSummaries", true)
-            .project("accountId", true)
-            .project("appId", true)
-            .project("appName", true)
-            .project("createdAt", true)
-            .project("envType", true)
-            .project("workflowType", true)
+            .project(WorkflowExecutionKeys.serviceExecutionSummaries, true)
+            .project(WorkflowExecutionKeys.accountId, true)
+            .project(WorkflowExecutionKeys.appId, true)
+            .project(WorkflowExecutionKeys.appName, true)
+            .project(WorkflowExecutionKeys.createdAt, true)
+            .project(WorkflowExecutionKeys.envType, true)
+            .project(WorkflowExecutionKeys.workflowType, true)
             .project(WorkflowExecutionKeys.status, true);
 
     if (isNotEmpty(appIds)) {
       query.field(WorkflowExecutionKeys.appId).in(appIds);
     }
 
-    List<WorkflowExecution> workflowExecutions = query.asList();
+    FindOptions findOptions = new FindOptions();
+    findOptions.hint(
+        BasicDBUtils.getIndexObject(WorkflowExecution.mongoIndexes(), "accountId_pipExecutionId_createdAt"));
+
+    List<WorkflowExecution> workflowExecutions = query.asList(findOptions);
 
     if (isEmpty(workflowExecutions)) {
       return instanceStats;

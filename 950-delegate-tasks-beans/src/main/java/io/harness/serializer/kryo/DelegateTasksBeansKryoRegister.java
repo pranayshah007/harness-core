@@ -331,6 +331,7 @@ import io.harness.delegate.beans.pcf.CfInternalInstanceElement;
 import io.harness.delegate.beans.pcf.CfRollbackCommandResult;
 import io.harness.delegate.beans.pcf.CfRouteUpdateRequestConfigData;
 import io.harness.delegate.beans.pcf.CfServiceData;
+import io.harness.delegate.beans.pcf.CfSwapRouteCommandResult;
 import io.harness.delegate.beans.pcf.ResizeStrategy;
 import io.harness.delegate.beans.pcf.TasApplicationInfo;
 import io.harness.delegate.beans.pcf.TasConstants;
@@ -687,6 +688,8 @@ import io.harness.delegate.task.k8s.K8sCanaryDeployResponse;
 import io.harness.delegate.task.k8s.K8sDeleteRequest;
 import io.harness.delegate.task.k8s.K8sDeployRequest;
 import io.harness.delegate.task.k8s.K8sDeployResponse;
+import io.harness.delegate.task.k8s.K8sDryRunManifestRequest;
+import io.harness.delegate.task.k8s.K8sDryRunManifestResponse;
 import io.harness.delegate.task.k8s.K8sManifestDelegateConfig;
 import io.harness.delegate.task.k8s.K8sRollingDeployRequest;
 import io.harness.delegate.task.k8s.K8sRollingDeployResponse;
@@ -731,6 +734,8 @@ import io.harness.delegate.task.pcf.request.CfInfraMappingDataRequest;
 import io.harness.delegate.task.pcf.request.CfInfraMappingDataRequestNG;
 import io.harness.delegate.task.pcf.request.CfInstanceSyncRequest;
 import io.harness.delegate.task.pcf.request.CfRollbackCommandRequestNG;
+import io.harness.delegate.task.pcf.request.CfRollingDeployRequestNG;
+import io.harness.delegate.task.pcf.request.CfRollingRollbackRequestNG;
 import io.harness.delegate.task.pcf.request.CfRunPluginCommandRequest;
 import io.harness.delegate.task.pcf.request.CfRunPluginCommandRequestNG;
 import io.harness.delegate.task.pcf.request.CfSwapRollbackCommandRequestNG;
@@ -746,6 +751,8 @@ import io.harness.delegate.task.pcf.response.CfInfraMappingDataResponse;
 import io.harness.delegate.task.pcf.response.CfInfraMappingDataResponseNG;
 import io.harness.delegate.task.pcf.response.CfInstanceSyncResponse;
 import io.harness.delegate.task.pcf.response.CfRollbackCommandResponseNG;
+import io.harness.delegate.task.pcf.response.CfRollingDeployResponseNG;
+import io.harness.delegate.task.pcf.response.CfRollingRollbackResponseNG;
 import io.harness.delegate.task.pcf.response.CfRouteUpdateCommandResponse;
 import io.harness.delegate.task.pcf.response.CfSetupCommandResponse;
 import io.harness.delegate.task.pcf.response.CfSwapRouteCommandResponseNG;
@@ -909,6 +916,7 @@ import io.harness.serializer.KryoRegistrar;
 
 import software.wings.api.LoadBalancerConfig;
 import software.wings.api.terraform.TfVarGitSource;
+import software.wings.api.terraform.TfVarS3Source;
 import software.wings.beans.APMValidateCollectorConfig;
 import software.wings.beans.AwsConfig;
 import software.wings.beans.AwsElbConfig;
@@ -1483,6 +1491,11 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(TasResizeStrategyType.class, 10000258);
     kryo.register(TasConstants.class, 10000259);
     kryo.register(TasManifestsPackage.class, 10000260);
+    kryo.register(CfSwapRouteCommandResult.class, 10000261);
+    kryo.register(CfRollingDeployRequestNG.class, 10000263);
+    kryo.register(CfRollingDeployResponseNG.class, 10000264);
+    kryo.register(CfRollingRollbackRequestNG.class, 10000265);
+    kryo.register(CfRollingRollbackResponseNG.class, 10000266);
 
     kryo.register(SecretType.class, 543214);
     kryo.register(ValueType.class, 543215);
@@ -2162,7 +2175,6 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AbstractTerragruntTaskResponse.class, 573556);
     kryo.register(TerragruntPlanTaskResponse.class, 573557);
 
-    kryo.register(TerragruntApplyTaskResponse.class, 573558);
     kryo.register(TerragruntDestroyTaskResponse.class, 573559);
     kryo.register(TerragruntRollbackTaskResponse.class, 573560);
 
@@ -2174,10 +2186,15 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(EcsS3FetchFileConfig.class, 573565);
     kryo.register(EcsS3FetchRunTaskRequest.class, 573566);
     kryo.register(EcsS3FetchRunTaskResponse.class, 573567);
+    kryo.register(TerragruntApplyTaskResponse.class, 573558);
     kryo.register(TerragruntCommandType.class, 573568);
     kryo.register(TerragruntApplyTaskParameters.class, 573569);
     kryo.register(TerragruntDestroyTaskParameters.class, 573570);
     kryo.register(EcsRunTaskArnRequest.class, 573583);
+    kryo.register(TfVarS3Source.class, 573593);
     kryo.register(ConcurrentHashMap.class, 673567);
+
+    kryo.register(K8sDryRunManifestRequest.class, 573594);
+    kryo.register(K8sDryRunManifestResponse.class, 573595);
   }
 }

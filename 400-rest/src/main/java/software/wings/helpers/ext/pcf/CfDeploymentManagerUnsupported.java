@@ -166,7 +166,18 @@ public class CfDeploymentManagerUnsupported implements CfDeploymentManager {
   }
 
   @Override
+  public boolean isInActiveApplicationNG(CfRequestConfig cfRequestConfig) throws PivotalClientApiException {
+    throw new PivotalClientApiException("PCF operations not supported by this API.");
+  }
+
+  @Override
   public void setEnvironmentVariableForAppStatus(CfRequestConfig cfRequestConfig, boolean activeStatus,
+      LogCallback executionLogCallback) throws PivotalClientApiException {
+    throw new PivotalClientApiException("PCF operations not supported by this API.");
+  }
+
+  @Override
+  public void setEnvironmentVariableForAppStatusNG(CfRequestConfig cfRequestConfig, boolean activeStatus,
       LogCallback executionLogCallback) throws PivotalClientApiException {
     throw new PivotalClientApiException("PCF operations not supported by this API.");
   }
@@ -179,6 +190,18 @@ public class CfDeploymentManagerUnsupported implements CfDeploymentManager {
 
   @Override
   public void runPcfPluginScript(CfRunPluginScriptRequestData requestData, LogCallback logCallback)
+      throws PivotalClientApiException {
+    throw new PivotalClientApiException("PCF operations not supported by this API.");
+  }
+
+  @Override
+  public ApplicationDetail createRollingApplicationWithSteadyStateCheck(CfCreateApplicationRequestData requestData,
+      LogCallback executionLogCallback) throws PivotalClientApiException, InterruptedException {
+    throw new PivotalClientApiException("TAS operations not supported by this API.");
+  }
+
+  @Override
+  public List<ApplicationSummary> getPreviousReleasesForRolling(CfRequestConfig cfRequestConfig, String prefix)
       throws PivotalClientApiException {
     throw new PivotalClientApiException("PCF operations not supported by this API.");
   }

@@ -16,11 +16,11 @@ import software.wings.dl.WingsPersistence;
 import software.wings.search.framework.PerpetualSearchLocker.LockTimeoutCallback;
 import software.wings.search.framework.SearchDistributedLock.SearchDistributedLockKeys;
 
+import dev.morphia.query.Query;
 import java.time.Instant;
 import java.util.Date;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
 
 /**
  * Update search lock heartbeat task

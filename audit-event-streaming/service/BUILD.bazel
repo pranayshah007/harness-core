@@ -10,13 +10,9 @@ load("//:tools/bazel/macros.bzl", "run_analysis")
 HarnessTeam = "PL"
 
 shared_dependencies = [
-    "@batch//:com_fasterxml_jackson_core_jackson_databind",
-    "@batch//:com_azure_azure_core",
-    "@batch//:com_azure_azure_storage_blob",
-    "@batch//:com_azure_azure_storage_common",
-] + [
     "//:lombok",
     "//platform-service/modules/audit-service:module",
+    "//platform-service/modules/audit-service/contracts:module",
     "@maven//:org_codehaus_janino_janino",
     "@maven//:io_opencensus_opencensus_api",
     "@maven//:io_opencensus_opencensus_impl",
@@ -62,8 +58,9 @@ java_library(
         "//:resource",
     ],
     visibility = ["//visibility:public"],
-    runtime_deps = shared_dependencies + [
+    deps = shared_dependencies + [
         ":module",
+        "//990-commons-test:module",
         "@maven//:junit_junit",
         "@maven//:org_assertj_assertj_core",
         "@maven//:org_mockito_mockito_core",
@@ -72,6 +69,6 @@ java_library(
     ],
 )
 
-#run_tests()
+run_tests()
 
 run_analysis()

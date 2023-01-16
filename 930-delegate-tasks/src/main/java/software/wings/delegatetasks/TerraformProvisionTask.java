@@ -17,8 +17,10 @@ import static io.harness.filesystem.FileIo.deleteDirectoryAndItsContentIfExists;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
 import static io.harness.logging.LogLevel.WARN;
+import static io.harness.provision.TerraformConstants.BACKEND_CONFIG_KEY;
 import static io.harness.provision.TerraformConstants.REMOTE_STORE_TYPE;
 import static io.harness.provision.TerraformConstants.RESOURCE_READY_WAIT_TIME_SECONDS;
+import static io.harness.provision.TerraformConstants.S3_STORE_TYPE;
 import static io.harness.provision.TerraformConstants.TERRAFORM_APPLY_PLAN_FILE_VAR_NAME;
 import static io.harness.provision.TerraformConstants.TERRAFORM_BACKEND_CONFIGS_FILE_NAME;
 import static io.harness.provision.TerraformConstants.TERRAFORM_DESTROY_HUMAN_READABLE_PLAN_FILE_VAR_NAME;
@@ -35,6 +37,7 @@ import static io.harness.provision.TerraformConstants.TF_PLAN_RESOURCES_CHANGE;
 import static io.harness.provision.TerraformConstants.TF_PLAN_RESOURCES_DESTROY;
 import static io.harness.provision.TerraformConstants.TF_SCRIPT_DIR;
 import static io.harness.provision.TerraformConstants.TF_VAR_FILES_DIR;
+import static io.harness.provision.TerraformConstants.TF_VAR_FILES_KEY;
 import static io.harness.provision.TerraformConstants.USER_DIR_KEY;
 import static io.harness.provision.TerraformConstants.WORKSPACE_DIR_BASE;
 import static io.harness.provision.TfVarSource.TfVarSourceType;
@@ -92,6 +95,7 @@ import io.harness.terraform.request.TerraformExecuteStepRequest;
 import software.wings.api.TerraformExecutionData;
 import software.wings.api.TerraformExecutionData.TerraformExecutionDataBuilder;
 import software.wings.api.terraform.TfVarGitSource;
+import software.wings.api.terraform.TfVarS3Source;
 import software.wings.beans.GitConfig;
 import software.wings.beans.GitOperationContext;
 import software.wings.beans.LogColor;
@@ -99,11 +103,13 @@ import software.wings.beans.LogHelper;
 import software.wings.beans.LogWeight;
 import software.wings.beans.NameValuePair;
 import software.wings.beans.ServiceVariableType;
+import software.wings.beans.TerraformSourceType;
 import software.wings.beans.command.ExecutionLogCallback;
 import software.wings.beans.delegation.TerraformProvisionParameters;
 import software.wings.beans.yaml.GitFetchFilesRequest;
 import software.wings.delegatetasks.validation.terraform.TerraformTaskUtils;
 import software.wings.service.impl.AwsHelperService;
+import software.wings.service.impl.aws.delegate.AwsS3HelperServiceDelegateImpl;
 import software.wings.service.impl.yaml.GitClientHelper;
 import software.wings.service.intfc.security.EncryptionService;
 import software.wings.service.intfc.yaml.GitClient;
@@ -111,6 +117,7 @@ import software.wings.service.intfc.yaml.GitClient;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.AWSSessionCredentials;
+import com.amazonaws.services.s3.AmazonS3URI;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClient;
 import com.amazonaws.services.securitytoken.model.AssumeRoleRequest;
 import com.amazonaws.services.securitytoken.model.AssumeRoleResult;
@@ -128,6 +135,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -165,6 +173,8 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
   @Inject private TerraformBaseHelper terraformBaseHelper;
   @Inject private AwsHelperService awsHelperService;
   @Inject private TerraformClient terraformClient;
+
+  @Inject AwsS3HelperServiceDelegateImpl awsS3HelperServiceDelegate;
 
   private static final String AWS_ACCESS_KEY_ID = "AWS_ACCESS_KEY_ID";
   private static final String AWS_SECRET_ACCESS_KEY = "AWS_SECRET_ACCESS_KEY";
@@ -208,25 +218,9 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
   }
 
   private TerraformExecutionData run(TerraformProvisionParameters parameters) {
-    GitConfig gitConfig = parameters.getSourceRepo();
-    String sourceRepoSettingId = parameters.getSourceRepoSettingId();
     LogCallback logCallback = getLogCallback(parameters);
     String accountId = parameters.getAccountId();
 
-    GitOperationContext gitOperationContext =
-        GitOperationContext.builder().gitConfig(gitConfig).gitConnectorId(sourceRepoSettingId).build();
-
-    if (isNotEmpty(gitConfig.getBranch())) {
-      saveExecutionLog("Branch: " + gitConfig.getBranch(), CommandExecutionStatus.RUNNING, INFO, logCallback);
-    }
-    saveExecutionLog(
-        "\nNormalized Path: " + parameters.getScriptPath(), CommandExecutionStatus.RUNNING, INFO, logCallback);
-    gitConfig.setGitRepoType(GitRepositoryType.TERRAFORM);
-
-    if (isNotEmpty(gitConfig.getReference())) {
-      saveExecutionLog(format("%nInheriting git state at commit id: [%s]", gitConfig.getReference()),
-          CommandExecutionStatus.RUNNING, INFO, logCallback);
-    }
     EncryptedRecordData encryptedTfPlan = parameters.getEncryptedTfPlan();
 
     String baseDir = parameters.isUseActivityIdBasedTfBaseDir()
@@ -237,43 +231,97 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
     String tfVarDirectory = Paths.get(baseDir, TF_VAR_FILES_DIR).toString();
     String workingDir = Paths.get(baseDir, TF_SCRIPT_DIR).toString();
     String backendConfigsDir = Paths.get(baseDir, TF_BACKEND_CONFIG_DIR).toString();
+    String sourceRepoReference = null;
 
-    if (null != parameters.getTfVarSource()
-        && parameters.getTfVarSource().getTfVarSourceType() == TfVarSourceType.GIT) {
-      fetchTfVarGitSource(parameters, tfVarDirectory, logCallback);
+    if (parameters.getSourceType() != null && parameters.getSourceType().equals(TerraformSourceType.S3)) {
+      try {
+        AmazonS3URI amazonS3URI = new AmazonS3URI(parameters.getConfigFilesS3URI());
+        saveExecutionLog(format("Fetching Terraform files at [%s] from S3 Bucket [%s] ", amazonS3URI.getKey(),
+                             amazonS3URI.getBucket()),
+            CommandExecutionStatus.RUNNING, INFO, logCallback);
+        encryptionService.decrypt(
+            parameters.getConfigFilesAwsSourceConfig(), parameters.getConfigFileAWSEncryptionDetails(), false);
+        awsS3HelperServiceDelegate.downloadS3Directory(
+            parameters.getConfigFilesAwsSourceConfig(), parameters.getConfigFilesS3URI(), new File(workingDir));
+        saveExecutionLog("\nNormalized Path: " + workingDir, CommandExecutionStatus.RUNNING, INFO, logCallback);
+      } catch (Exception e) {
+        Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
+        log.error("Exception in downloading and copying files to provisioner specific directory", sanitizedException);
+        FileUtils.deleteQuietly(new File(baseDir));
+        return TerraformExecutionData.builder()
+            .executionStatus(ExecutionStatus.FAILED)
+            .errorMessage(ExceptionUtils.getMessage(sanitizedException))
+            .build();
+      }
+    } else {
+      String sourceRepoSettingId = parameters.getSourceRepoSettingId();
+      GitConfig gitConfig = parameters.getSourceRepo();
+      GitOperationContext gitOperationContext =
+          GitOperationContext.builder().gitConfig(gitConfig).gitConnectorId(sourceRepoSettingId).build();
+
+      if (isNotEmpty(gitConfig.getBranch())) {
+        saveExecutionLog("Branch: " + gitConfig.getBranch(), CommandExecutionStatus.RUNNING, INFO, logCallback);
+      }
+      saveExecutionLog(
+          "\nNormalized Path: " + parameters.getScriptPath(), CommandExecutionStatus.RUNNING, INFO, logCallback);
+      gitConfig.setGitRepoType(GitRepositoryType.TERRAFORM);
+
+      if (isNotEmpty(gitConfig.getReference())) {
+        saveExecutionLog(format("%nInheriting git state at commit id: [%s]", gitConfig.getReference()),
+            CommandExecutionStatus.RUNNING, INFO, logCallback);
+      }
+
+      try {
+        encryptionService.decrypt(gitConfig, parameters.getSourceRepoEncryptionDetails(), false);
+        ExceptionMessageSanitizer.storeAllSecretsForSanitizing(gitConfig, parameters.getSourceRepoEncryptionDetails());
+        if (parameters.isSyncGitCloneAndCopyToDestDir()) {
+          gitClient.cloneRepoAndCopyToDestDir(gitOperationContext, workingDir, logCallback);
+        } else {
+          gitClient.ensureRepoLocallyClonedAndUpdated(gitOperationContext);
+          copyFilesToWorkingDirectory(gitClientHelper.getRepoDirectory(gitOperationContext), workingDir);
+        }
+
+      } catch (Exception ex) {
+        Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
+        log.error("Exception in cloning and copying files to provisioner specific directory", sanitizedException);
+        FileUtils.deleteQuietly(new File(baseDir));
+        return TerraformExecutionData.builder()
+            .executionStatus(ExecutionStatus.FAILED)
+            .errorMessage(ExceptionUtils.getMessage(sanitizedException))
+            .build();
+      }
+
+      sourceRepoReference = parameters.getCommitId() != null ? parameters.getCommitId()
+                                                             : getLatestCommitSHAFromLocalRepo(gitOperationContext);
+    }
+
+    if (null != parameters.getTfVarSource()) {
+      if (parameters.getTfVarSource().getTfVarSourceType() == TfVarSourceType.GIT) {
+        fetchTfVarGitSource(parameters, tfVarDirectory, logCallback);
+      } else if (parameters.getTfVarSource().getTfVarSourceType() == TfVarSourceType.S3) {
+        fetchS3Files(parameters, tfVarDirectory, logCallback, TF_VAR_FILES_KEY);
+      }
     }
 
     if (REMOTE_STORE_TYPE.equals(parameters.getBackendConfigStoreType()) && parameters.getRemoteBackendConfig() != null
         && parameters.getRemoteBackendConfig().getGitFileConfig() != null) {
       fetchBackendConfigGitFiles(parameters, backendConfigsDir, logCallback);
+    } else if (S3_STORE_TYPE.equals(parameters.getBackendConfigStoreType())
+        && parameters.getRemoteS3BackendConfig() != null) {
+      fetchS3Files(parameters, backendConfigsDir, logCallback, BACKEND_CONFIG_KEY);
     }
 
-    try {
-      encryptionService.decrypt(gitConfig, parameters.getSourceRepoEncryptionDetails(), false);
-      ExceptionMessageSanitizer.storeAllSecretsForSanitizing(gitConfig, parameters.getSourceRepoEncryptionDetails());
-      if (parameters.isSyncGitCloneAndCopyToDestDir()) {
-        gitClient.cloneRepoAndCopyToDestDir(gitOperationContext, workingDir, logCallback);
-      } else {
-        gitClient.ensureRepoLocallyClonedAndUpdated(gitOperationContext);
-        copyFilesToWorkingDirectory(gitClientHelper.getRepoDirectory(gitOperationContext), workingDir);
-      }
-    } catch (Exception ex) {
-      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
-      log.error("Exception in cloning and copying files to provisioner specific directory", sanitizedException);
-      FileUtils.deleteQuietly(new File(baseDir));
-      return TerraformExecutionData.builder()
-          .executionStatus(ExecutionStatus.FAILED)
-          .errorMessage(ExceptionUtils.getMessage(sanitizedException))
-          .build();
+    if (parameters.getSourceType() != null && parameters.getSourceType().equals(TerraformSourceType.S3)) {
+      workingDir = workingDir + "/" + new AmazonS3URI(parameters.getConfigFilesS3URI()).getKey();
     }
     String scriptDirectory = terraformBaseHelper.resolveScriptDirectory(workingDir, parameters.getScriptPath());
     log.info("Script Directory: " + scriptDirectory);
     saveExecutionLog(
         format("Script Directory: [%s]", scriptDirectory), CommandExecutionStatus.RUNNING, INFO, logCallback);
 
-    File tfVariablesFile = null, tfBackendConfigsFile = null;
+    File tfVariablesFile, tfBackendConfigsFile;
     String tfPlanJsonFilePath = null;
-    String tfHumanReadableFilePath = null;
+    String tfHumanReadableFilePath;
     TerraformPlanSummary terraformPlanSummary = null;
 
     try (ActivityLogOutputStream activityLogOutputStream =
@@ -284,9 +332,6 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
          PlanHumanReadableOutputStream planHumanReadableOutputStream = new PlanHumanReadableOutputStream();
          PlanLogOutputStream planLogOutputStream = new PlanLogOutputStream()) {
       ensureLocalCleanup(scriptDirectory);
-      String sourceRepoReference = parameters.getCommitId() != null
-          ? parameters.getCommitId()
-          : getLatestCommitSHAFromLocalRepo(gitOperationContext);
 
       Map<String, String> awsAuthEnvVariables = null;
       if (parameters.getAwsConfig() != null && parameters.getAwsConfigEncryptionDetails() != null) {
@@ -325,6 +370,15 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
         if (!isEmpty(filePath)) {
           tfBackendConfigFilePath = Paths.get(System.getProperty(USER_DIR_KEY), backendConfigsDir, filePath).toString();
         }
+      } else if (S3_STORE_TYPE.equals(parameters.getBackendConfigStoreType())
+          && parameters.getRemoteS3BackendConfig() != null
+          && parameters.getRemoteS3BackendConfig().getS3FileConfig() != null) {
+        AmazonS3URI amazonS3URI = new AmazonS3URI(parameters.getRemoteS3BackendConfig().getS3FileConfig().getS3URI());
+        String filePath = amazonS3URI.getKey();
+        if (!isEmpty(filePath)) {
+          tfBackendConfigFilePath = Paths.get(System.getProperty(USER_DIR_KEY), backendConfigsDir, filePath).toString();
+        }
+
       } else if (isNotEmpty(parameters.getBackendConfigs()) || isNotEmpty(parameters.getEncryptedBackendConfigs())) {
         try (BufferedWriter writer =
                  new BufferedWriter(new OutputStreamWriter(new FileOutputStream(tfBackendConfigsFile), "UTF-8"))) {
@@ -669,6 +723,7 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
               .backendConfigs(backendConfigs)
               .backendConfigStoreType(parameters.getBackendConfigStoreType())
               .remoteBackendConfig(parameters.getRemoteBackendConfig())
+              .remoteS3BackendConfig(parameters.getRemoteS3BackendConfig())
               .environmentVariables(environmentVars)
               .targets(parameters.getTargets())
               .tfVarFiles(parameters.getTfVarFiles())
@@ -901,6 +956,58 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
 
       saveExecutionLog(
           format("TfVar Git directory: [%s]", tfVarDirectory), CommandExecutionStatus.RUNNING, INFO, logCallback);
+    }
+  }
+
+  @VisibleForTesting
+  public void fetchS3Files(
+      TerraformProvisionParameters parameters, String directory, LogCallback logCallback, String type) {
+    TfVarS3Source s3Source = null;
+    String fileType = "";
+    String logLine = "";
+    if (type.equals(BACKEND_CONFIG_KEY)) {
+      s3Source = parameters.getRemoteS3BackendConfig();
+      fileType = "Backend Config";
+      logLine = format(
+          "Fetching Backend Config file(s) from S3 bucket using S3_URI: [%s]", s3Source.getS3FileConfig().getS3URI());
+    } else if (type.equals(TF_VAR_FILES_KEY)) {
+      s3Source = (TfVarS3Source) parameters.getTfVarSource();
+      fileType = "TfVars";
+      logLine =
+          format("Fetching TfVars file(s) from S3 bucket using S3_URI: [%s]", s3Source.getS3FileConfig().getS3URI());
+    }
+    saveExecutionLog(logLine, CommandExecutionStatus.RUNNING, INFO, logCallback);
+    encryptionService.decrypt(s3Source.getAwsConfig(), s3Source.getEncryptedDataDetails(), false);
+
+    try {
+      FileIo.createDirectoryIfDoesNotExist(Path.of(directory));
+    } catch (Exception e) {
+      throw new InvalidRequestException(ExceptionMessageSanitizer.sanitizeException(e).getMessage());
+    }
+
+    FileIo.waitForDirectoryToBeAccessibleOutOfProcess(directory, 10);
+
+    for (String key : s3Source.getS3FileConfig().getS3URIList()) {
+      // #1 - We log it
+      AmazonS3URI amazonS3URI = new AmazonS3URI(key);
+      saveExecutionLog(
+          format("[S3] Fetching Remote file %s from bucket: %s", amazonS3URI.getKey(), amazonS3URI.getBucket()),
+          CommandExecutionStatus.RUNNING, INFO, logCallback);
+
+      String fullyQualifiedFileName = directory + "/" + amazonS3URI.getKey();
+      File destinationFile = new File(fullyQualifiedFileName);
+      // #2 - We fetch them
+      try {
+        awsS3HelperServiceDelegate.downloadObjectFromS3(s3Source.getAwsConfig(), s3Source.getEncryptedDataDetails(),
+            amazonS3URI.getBucket(), amazonS3URI.getKey(), destinationFile);
+
+        saveExecutionLog(format("Tf S3 [%s] directory: [%s]", fileType, directory), CommandExecutionStatus.RUNNING,
+            INFO, logCallback);
+      } catch (Exception e) {
+        saveExecutionLog(
+            format("Failed to download [%s] from S3 bucket [%s]", amazonS3URI.getKey(), amazonS3URI.getBucket()),
+            CommandExecutionStatus.RUNNING, INFO, logCallback);
+      }
     }
   }
 
@@ -1205,7 +1312,8 @@ and provisioner
 
   private String getTfBackendConfigContentLog(String tfBackendConfigFilePath, TerraformProvisionParameters parameters) {
     StringBuilder backendLogBuilder = new StringBuilder("Initialize backend configuration with:\n");
-    if (REMOTE_STORE_TYPE.equals(parameters.getBackendConfigStoreType())) {
+    if (REMOTE_STORE_TYPE.equals(parameters.getBackendConfigStoreType())
+        || S3_STORE_TYPE.equals(parameters.getBackendConfigStoreType())) {
       try {
         backendLogBuilder.append(FileUtils.readFileToString(FileUtils.getFile(tfBackendConfigFilePath), UTF_8));
       } catch (IOException e) {

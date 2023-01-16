@@ -19,10 +19,10 @@ import software.wings.dl.WingsPersistence;
 import software.wings.service.intfc.AccountService;
 
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import java.util.HashSet;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
 
 /**
  * Migration script to add dummy tech stack to all existing accounts. This will allow UI to show new trial experience

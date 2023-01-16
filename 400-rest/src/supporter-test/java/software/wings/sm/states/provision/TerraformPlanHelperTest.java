@@ -8,6 +8,7 @@
 package software.wings.sm.states.provision;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.rule.OwnerRule.BUHA;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 
 import static software.wings.utils.WingsTestConstants.APP_ID;
@@ -129,5 +130,31 @@ public class TerraformPlanHelperTest extends WingsBaseTest {
     doReturn(null).when(sweepingOutputService).find(any());
     terraformPlanHelper.deleteEncryptedTfPlanFromSweepingOutput(context, planName);
     verify(sweepingOutputService, never()).deleteById(APP_ID, "1");
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testRemoveTfPlanJsonFileIdFromSweepingOutput() {
+    sweepingOutput = SweepingOutputInstance.builder()
+                         .uuid("1")
+                         .value(TerraformPlanParam.builder()
+                                    .tfplanHumanReadable("HumanReadablePlan")
+                                    .tfplanHumanReadableFileId("HumanReadablePlanId")
+                                    .tfPlanJsonFileId("tfJsonFileId")
+                                    .build())
+                         .build();
+    doReturn(sweepingOutput).when(sweepingOutputService).find(any());
+
+    ArgumentCaptor<SweepingOutputInstance> captor = ArgumentCaptor.forClass(SweepingOutputInstance.class);
+    terraformPlanHelper.removeTfPlanJsonFileIdFromSweepingOutput(
+        context, "terraformApply", SweepingOutputInstance.Scope.PIPELINE);
+    verify(sweepingOutputService, times(1)).deleteById(APP_ID, "1");
+    verify(sweepingOutputService, times(1)).save(captor.capture());
+    SweepingOutputInstance sweepingOutput = captor.getValue();
+    TerraformPlanParam terraformPlanParam = (TerraformPlanParam) sweepingOutput.getValue();
+    assertThat(terraformPlanParam.getTfplanHumanReadableFileId()).isEqualTo("HumanReadablePlanId");
+    assertThat(terraformPlanParam.getTfplanHumanReadable()).isEqualTo("HumanReadablePlan");
+    assertThat(terraformPlanParam.getTfPlanJsonFileId()).isEqualTo(null);
   }
 }

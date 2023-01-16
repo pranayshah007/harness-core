@@ -11,13 +11,13 @@ import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
 import io.harness.ng.DbAliases;
 
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Reference;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Reference;
 
 /**
  * Created by anubhaw on 4/13/17.

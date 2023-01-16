@@ -101,4 +101,11 @@ public class DebeziumConfig {
    the server chooses an appropriate fetch size.
    */
   @JsonProperty("snapshot.fetch.size") private String snapshotFetchSize;
+
+  /**
+   *
+   * Positive integer value that specifies the maximum size of each batch of events
+   * that should be processed during each iteration of this connector.
+   */
+  @JsonProperty("max.batch.size") private String maxStreamBatchSize;
 }

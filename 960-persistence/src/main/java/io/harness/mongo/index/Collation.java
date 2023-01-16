@@ -7,8 +7,8 @@
 
 package io.harness.mongo.index;
 
-import io.harness.mongo.CollationLocale;
-import io.harness.mongo.CollationStrength;
+import io.harness.mongo.collation.CollationLocale;
+import io.harness.mongo.collation.CollationStrength;
 
 import lombok.Builder;
 import lombok.Value;

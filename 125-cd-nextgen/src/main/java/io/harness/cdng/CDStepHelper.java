@@ -51,6 +51,7 @@ import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.mappers.ManifestOutcomeValidator;
 import io.harness.cdng.manifest.steps.ManifestsOutcome;
+import io.harness.cdng.manifest.yaml.AzureRepoStore;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.S3StoreConfig;
@@ -166,7 +167,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.EntityReferenceExtractorUtils;
 import io.harness.steps.StepHelper;
-import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.validation.Validator;
 
 import software.wings.beans.LogColor;
@@ -206,7 +207,7 @@ public class CDStepHelper {
   @Inject private PipelineRbacHelper pipelineRbacHelper;
   @Inject private FileStoreService fileStoreService;
   @Inject protected OutcomeService outcomeService;
-  @Inject protected KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject protected StepHelper stepHelper;
   @Inject private ExecutionSweepingOutputService sweepingOutputService;
 
@@ -214,6 +215,7 @@ public class CDStepHelper {
       "[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*";
 
   public static final Pattern releaseNamePattern = Pattern.compile(RELEASE_NAME_VALIDATION_REGEX);
+  public static final String GIT = "/_git/";
 
   // Optimised (SCM based) file fetch methods:
   public boolean isGitlabTokenAuth(ScmConnector scmConnector) {
@@ -357,12 +359,32 @@ public class CDStepHelper {
     return purgedRepoUrl + "/" + purgedRepoName;
   }
 
+  public String getGitRepoUrlForAzureProject(ScmConnector scmConnector, String repoName) {
+    repoName = trimToEmpty(repoName);
+    notEmptyCheck("Repo name cannot be empty for Account level git connector", repoName);
+    String purgedRepoUrl = scmConnector.getUrl().replaceAll("/*$", "");
+    String purgedRepoName = repoName.replaceAll("^/*", "");
+    return purgedRepoUrl + GIT + purgedRepoName;
+  }
+
+  public String convertGitAccountProjectUrlToRepoUrl(
+      GitConfigDTO gitConfigDTO, GitStoreConfig gitStoreConfig, String repoName) {
+    if (gitConfigDTO.getGitConnectionType() == GitConnectionType.ACCOUNT) {
+      return getGitRepoUrl(gitConfigDTO, repoName);
+    } else if (gitStoreConfig instanceof AzureRepoStore
+        && gitConfigDTO.getGitConnectionType() == GitConnectionType.PROJECT) {
+      return getGitRepoUrlForAzureProject(gitConfigDTO, repoName);
+    } else {
+      return "";
+    }
+  }
+
   public void convertToRepoGitConfig(GitStoreConfig gitstoreConfig, ScmConnector scmConnector) {
     String repoName = gitstoreConfig.getRepoName() != null ? gitstoreConfig.getRepoName().getValue() : null;
     if (scmConnector instanceof GitConfigDTO) {
       GitConfigDTO gitConfigDTO = (GitConfigDTO) scmConnector;
-      if (gitConfigDTO.getGitConnectionType() == GitConnectionType.ACCOUNT) {
-        String repoUrl = getGitRepoUrl(gitConfigDTO, repoName);
+      String repoUrl = convertGitAccountProjectUrlToRepoUrl(gitConfigDTO, gitstoreConfig, repoName);
+      if (isNotEmpty(repoUrl)) {
         gitConfigDTO.setUrl(repoUrl);
         gitConfigDTO.setGitConnectionType(GitConnectionType.REPO);
       }
@@ -390,7 +412,7 @@ public class CDStepHelper {
     } else if (scmConnector instanceof AzureRepoConnectorDTO) {
       AzureRepoConnectorDTO azureRepoConnectorDTO = (AzureRepoConnectorDTO) scmConnector;
       if (azureRepoConnectorDTO.getConnectionType() == AzureRepoConnectionTypeDTO.PROJECT) {
-        String repoUrl = getGitRepoUrl(azureRepoConnectorDTO, repoName);
+        String repoUrl = getGitRepoUrlForAzureProject(azureRepoConnectorDTO, repoName);
         azureRepoConnectorDTO.setUrl(repoUrl);
         azureRepoConnectorDTO.setConnectionType(AzureRepoConnectionTypeDTO.REPO);
       }
@@ -437,6 +459,7 @@ public class CDStepHelper {
         .branch(trim(getParameterFieldValue(gitstoreConfig.getBranch())))
         .commitId(trim(getParameterFieldValue(gitstoreConfig.getCommitId())))
         .paths(trimStrings(paths))
+        .connectorId(connectorDTO.getIdentifier())
         .connectorName(connectorDTO.getName())
         .manifestType(manifestType)
         .manifestId(manifestIdentifier)
@@ -677,6 +700,10 @@ public class CDStepHelper {
     return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.SKIP_ADDING_TRACK_LABEL_SELECTOR_IN_ROLLING);
   }
 
+  public boolean useDeclarativeRollback(String accountId) {
+    return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDP_USE_K8S_DECLARATIVE_ROLLBACK_NG);
+  }
+
   public LogCallback getLogCallback(String commandUnitName, Ambiance ambiance, boolean shouldOpenStream) {
     return new NGLogCallback(logStreamingStepClientFactory, ambiance, commandUnitName, shouldOpenStream);
   }
@@ -796,8 +823,8 @@ public class CDStepHelper {
 
   public TaskRequest prepareTaskRequest(
       Ambiance ambiance, TaskData taskData, List<String> units, String taskName, List<TaskSelector> selectors) {
-    return StepUtils.prepareCDTaskRequest(
-        ambiance, taskData, kryoSerializer, units, taskName, selectors, stepHelper.getEnvironmentType(ambiance));
+    return TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer, units, taskName,
+        selectors, stepHelper.getEnvironmentType(ambiance));
   }
 
   @Nonnull

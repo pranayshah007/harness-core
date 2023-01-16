@@ -21,6 +21,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.ecs.EcsCommandTaskNGHelper;
+import io.harness.delegate.task.ecs.EcsCommandTypeNG;
 import io.harness.delegate.task.ecs.EcsInfraConfig;
 import io.harness.delegate.task.ecs.EcsInfraType;
 import io.harness.delegate.task.ecs.EcsTaskHelperBase;
@@ -77,6 +78,7 @@ public class EcsCanaryDeployCommandTaskHandlerTest extends CategoryTest {
                                                         .ecsServiceDefinitionManifestContent("serviceDef")
                                                         .desiredCountOverride(1L)
                                                         .ecsServiceNameSuffix("canary")
+                                                        .ecsCommandType(EcsCommandTypeNG.ECS_CANARY_DEPLOY)
                                                         .build();
 
     RegisterTaskDefinitionRequest.Builder registerTaskDefinitionRequestBuilder =

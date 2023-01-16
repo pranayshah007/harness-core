@@ -7,7 +7,7 @@
 
 package io.harness.ngmigration.service.step;
 
-import software.wings.yaml.workflow.StepYaml;
+import software.wings.beans.GraphNode;
 
 import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +30,8 @@ public class StepMapperFactory {
   @Inject K8sSwapServiceSelectorsStepMapperImpl k8sSwapServiceSelectorsStepMapper;
   @Inject K8sBlueGreenDeployStepMapperImpl k8sBlueGreenDeployStepMapper;
   @Inject JiraCreateUpdateStepMapperImpl jiraCreateUpdateStepMapper;
+  @Inject CommandStepMapperImpl commandStepMapper;
+
   @Inject UnsupportedStepMapperImpl unsupportedStepMapper;
 
   public StepMapper getStepMapper(String stepType) {
@@ -64,6 +66,9 @@ public class StepMapperFactory {
         return k8sBlueGreenDeployStepMapper;
       case "JIRA_CREATE_UPDATE":
         return jiraCreateUpdateStepMapper;
+      case "COMMAND":
+        return commandStepMapper;
+      case "DC_NODE_SELECT":
       case "ARTIFACT_COLLECTION":
       case "ARTIFACT_CHECK":
         return emptyStepMapper;
@@ -72,7 +77,7 @@ public class StepMapperFactory {
     }
   }
 
-  public boolean areSimilar(StepYaml stepYaml1, StepYaml stepYaml2) {
+  public boolean areSimilar(GraphNode stepYaml1, GraphNode stepYaml2) {
     if (!stepYaml1.getType().equals(stepYaml2.getType())) {
       return false;
     }

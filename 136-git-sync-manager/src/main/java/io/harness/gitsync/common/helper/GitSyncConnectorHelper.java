@@ -14,9 +14,11 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
+import io.harness.beans.Scope;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.ConnectorValidationResult;
+import io.harness.connector.ManagerExecutable;
 import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
@@ -299,6 +301,22 @@ public class GitSyncConnectorHelper {
     scmConnector.setGitConnectionUrl(
         scmConnector.getGitConnectionUrl(GitRepositoryDTO.builder().name(repoName).build()));
     return scmConnector;
+  }
+
+  public ScmConnector getScmConnectorForGivenRepo(Scope scope, String connectorRef, String repoName) {
+    ScmConnector scmConnector = getScmConnector(
+        scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), connectorRef);
+    scmConnector.setGitConnectionUrl(
+        scmConnector.getGitConnectionUrl(GitRepositoryDTO.builder().name(repoName).build()));
+    return scmConnector;
+  }
+
+  public boolean isScmConnectorManagerExecutable(ScmConnector scmConnector) {
+    if (scmConnector instanceof ManagerExecutable) {
+      final Boolean executeOnDelegate = ((ManagerExecutable) scmConnector).getExecuteOnDelegate();
+      return executeOnDelegate == Boolean.FALSE;
+    }
+    return false;
   }
 
   public ScmConnector getDecryptedConnectorForGivenRepo(

@@ -19,6 +19,8 @@ import static io.harness.metrics.impl.DelegateMetricsServiceImpl.PERPETUAL_TASK_
 import static io.harness.perpetualtask.PerpetualTaskState.TASK_NON_ASSIGNABLE;
 import static io.harness.perpetualtask.PerpetualTaskState.TASK_UNASSIGNED;
 
+import static java.lang.System.currentTimeMillis;
+
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.Delegate;
@@ -155,6 +157,7 @@ public class PerpetualTaskServiceImpl implements PerpetualTaskService, DelegateO
                                        .intervalSeconds(getTaskTimeInterval(schedule, accountId, perpetualTaskType))
                                        .delegateId("")
                                        .state(PerpetualTaskState.TASK_UNASSIGNED)
+                                       .assignIteration(currentTimeMillis())
                                        .taskDescription(taskDescription)
                                        .build();
 

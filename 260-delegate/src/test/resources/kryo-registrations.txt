@@ -958,6 +958,8 @@
 7467:software.wings.sm.states.azure.AzureVMSSSetupContextElement
 7470:software.wings.service.impl.analysis.SetupTestNodeData.Instance
 7473:io.harness.exception.ShellExecutionException
+7474:software.wings.beans.TerraformSourceType
+7475:software.wings.beans.S3FileConfig
 7490:io.harness.k8s.model.response.CEK8sDelegatePrerequisite
 7491:io.harness.k8s.model.response.CEK8sDelegatePrerequisite.MetricsServerCheck
 7492:io.harness.k8s.model.response.CEK8sDelegatePrerequisite.Rule
@@ -1833,7 +1835,7 @@
 60019:io.harness.delegate.task.serverless.response.ServerlessS3FetchResponse
 71100:software.wings.service.impl.ThirdPartyApiCallLog.ThirdPartyApiCallField
 71101:software.wings.service.impl.ThirdPartyApiCallLog.FieldType
-71102:software.wings.beans.Log
+71102:software.wings.beans.dto.Log
 71103:io.harness.logging.LogLevel
 71104:software.wings.delegatetasks.manifest.ManifestCollectionExecutionResponse
 71105:software.wings.delegatetasks.manifest.ManifestCollectionResponse
@@ -2385,6 +2387,9 @@
 573590:io.harness.delegate.task.aws.asg.AsgRollingRollbackRequest
 573591:io.harness.delegate.task.aws.asg.AsgRollingRollbackResponse
 573592:io.harness.delegate.task.aws.asg.AsgRollingRollbackResult
+573593:software.wings.api.terraform.TfVarS3Source
+573594:io.harness.delegate.task.k8s.K8sDryRunManifestRequest
+573595:io.harness.delegate.task.k8s.K8sDryRunManifestResponse
 573600:io.harness.delegate.exception.ElastigroupNGException
 573601:io.harness.delegate.task.elastigroup.response.SpotInstConfig
 573602:io.harness.delegate.task.elastigroup.response.ElastigroupParametersFetchResponse
@@ -2432,7 +2437,7 @@
 930002:io.harness.licensing.beans.modules.CEModuleLicenseDTO
 930003:io.harness.licensing.beans.modules.CFModuleLicenseDTO
 930004:io.harness.licensing.beans.modules.CIModuleLicenseDTO
-930005:io.harness.licensing.beans.modules.CVModuleLicenseDTO
+930005:io.harness.licensing.beans.modules.SRMModuleLicenseDTO
 930006:io.harness.licensing.beans.modules.ModuleLicenseDTO
 930007:io.harness.licensing.Edition
 930008:io.harness.licensing.LicenseType
@@ -2531,6 +2536,9 @@
 10000113:io.harness.delegate.beans.connector.servicenow.ServiceNowAuthType
 10000114:io.harness.delegate.beans.connector.servicenow.ServiceNowAuthCredentialsDTO
 10000115:io.harness.delegate.beans.connector.servicenow.ServiceNowUserNamePasswordDTO
+10000116:io.harness.delegate.beans.connector.servicenow.ServiceNowADFSDTO
+10000120:io.harness.exception.AdfsAuthException
+10000121:io.harness.adfs.AdfsAccessTokenResponse
 10000201:io.harness.delegate.beans.connector.tasconnector.TasConnectorDTO
 10000202:io.harness.delegate.beans.connector.tasconnector.TasCredentialDTO
 10000203:io.harness.delegate.beans.connector.tasconnector.TasCredentialSpecDTO
@@ -2579,3 +2587,9 @@
 10000258:io.harness.delegate.beans.pcf.TasResizeStrategyType
 10000259:io.harness.delegate.beans.pcf.TasConstants
 10000260:io.harness.delegate.task.pcf.request.TasManifestsPackage
+10000261:io.harness.delegate.beans.pcf.CfSwapRouteCommandResult
+10000262:io.harness.exception.TerragruntCommandExecutionException
+10000263:io.harness.delegate.task.pcf.request.CfRollingDeployRequestNG
+10000264:io.harness.delegate.task.pcf.response.CfRollingDeployResponseNG
+10000265:io.harness.delegate.task.pcf.request.CfRollingRollbackRequestNG
+10000266:io.harness.delegate.task.pcf.response.CfRollingRollbackResponseNG

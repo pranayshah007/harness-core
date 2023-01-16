@@ -137,19 +137,24 @@ public class ACLServiceImpl implements ACLService {
   }
 
   @Override
-  public List<PermissionCheckResult> checkAccessUsingRoleAssignments(Principal principal,
+  public List<PermissionCheckResult> checkAccessUsingRoleAssignments(String accountIdentifier, Principal principal,
       List<PermissionCheck> permissionChecks, ResourceAttributeProvider resourceAttributeProvider) {
     Criteria principalCriteria = new Criteria();
     List<String> acls = new ArrayList<>();
+    String accountScope = "/ACCOUNT/" + accountIdentifier;
     if (PrincipalType.USER.equals(principal.getPrincipalType())) {
       List<Criteria> principals = new ArrayList<>();
       Criteria userCriteria = Criteria.where(RoleAssignmentDBOKeys.principalIdentifier)
                                   .is(principal.getPrincipalIdentifier())
                                   .and(RoleAssignmentDBOKeys.principalType)
-                                  .is(PrincipalType.USER);
+                                  .is(PrincipalType.USER)
+                                  .and(RoleAssignmentDBOKeys.scopeIdentifier)
+                                  .regex(accountScope);
       principals.add(userCriteria);
-      Aggregation aggregation = newAggregation(
-          Aggregation.match(Criteria.where(UserGroupDBOKeys.users).in(principal.getPrincipalIdentifier())),
+      Aggregation aggregation = newAggregation(Aggregation.match(Criteria.where(UserGroupDBOKeys.users)
+                                                                     .in(principal.getPrincipalIdentifier())
+                                                                     .and(UserGroupDBOKeys.scopeIdentifier)
+                                                                     .regex(accountScope)),
           Aggregation.project("identifier", "scopeIdentifier"));
       AggregationResults<UserGroupDBO> results =
           mongoTemplate.aggregate(aggregation, UserGroupDBO.class, UserGroupDBO.class);
@@ -167,7 +172,9 @@ public class ACLServiceImpl implements ACLService {
           Criteria.where(RoleAssignmentDBOKeys.principalIdentifier)
               .is(principal.getPrincipalIdentifier())
               .and(RoleAssignmentDBOKeys.principalType)
-              .is(PrincipalType.SERVICE_ACCOUNT),
+              .is(PrincipalType.SERVICE_ACCOUNT)
+              .and(RoleAssignmentDBOKeys.scopeIdentifier)
+              .regex(accountScope),
           permissionChecks);
     }
 

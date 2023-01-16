@@ -23,6 +23,7 @@ go_library(
         "//product/log-service/logger",
         "//product/log-service/store",
         "//product/log-service/stream",
+        "//product/platform/client",
         "@com_github_dchest_authcookie//:authcookie",
         "@com_github_go_chi_chi//:chi",
         "@org_golang_x_sync//errgroup",

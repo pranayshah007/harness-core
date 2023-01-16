@@ -31,10 +31,10 @@ import software.wings.sm.states.WorkflowState;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
+import dev.morphia.query.UpdateOperations;
 import java.util.Map;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.mongodb.morphia.query.UpdateOperations;
 
 /**
  * Callback method for handling notify callback from wait notify engine.

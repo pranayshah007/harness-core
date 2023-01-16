@@ -38,6 +38,15 @@ public final class TerraformConstants {
   public static final String REMOTE_BE_CONFIG_GIT_REPO_NAME_KEY = "remote_be_config_git_repo_name";
   public static final String REMOTE_BE_CONFIG_GIT_USE_BRANCH_KEY = "remote_be_config_git_use_branch";
 
+  public static final String REMOTE_BE_CONFIG_S3_CONFIG_ID_KEY = "remote_be_config_s3_config_id";
+
+  public static final String REMOTE_BE_CONFIG_S3_URI_LIST_KEY = "remote_be_config_s3_uri_list";
+  public static final String REMOTE_BE_CONFIG_S3_URI_KEY = "remote_be_config_s3_uri";
+  public static final String TF_VAR_FILES_S3_CONFIG_ID_KEY = "remote_tf_var_files_s3_config_id";
+  public static final String TF_VAR_FILES_S3_URI_KEY = "remote_tf_var_files_s3_uri";
+
+  public static final String TF_VAR_FILES_S3_URI_LIST_KEY = "remote_tf_var_files_s3_uri_list";
+
   public static final String WORKSPACE_KEY = "tf_workspace";
   public static final String ENCRYPTED_VARIABLES_KEY = "encrypted_variables";
   public static final String ENCRYPTED_BACKEND_CONFIGS_KEY = "encrypted_backend_configs";
@@ -90,7 +99,12 @@ public final class TerraformConstants {
   public static final String LOCAL_STORE_TYPE = "Local";
   public static final String REMOTE_STORE_TYPE = "Remote";
 
+  public static final String S3_STORE_TYPE = "S3";
+
   public static final String TF_PLAN_RESOURCES_ADD = "TF_PLAN_RESOURCES_ADD";
   public static final String TF_PLAN_RESOURCES_CHANGE = "TF_PLAN_RESOURCES_CHANGE";
   public static final String TF_PLAN_RESOURCES_DESTROY = "TF_PLAN_RESOURCES_DESTROY";
+
+  public static final String TF_S3_FILE_DIR_FOR_VARIABLES_AND_TARGETS =
+      "./s3_bucket/${REPO_TYPE}/${ACCOUNT_ID}/${BUCKET_NAME}";
 }

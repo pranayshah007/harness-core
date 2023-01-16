@@ -24,6 +24,7 @@ import com.google.api.client.util.Charsets;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import org.junit.Test;
@@ -334,5 +335,6 @@ public class YamlUtilsTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCoercionConfig() throws IOException {
     assertThat(YamlUtils.read("\"\"", LinkedHashMap.class)).isNull();
+    assertThat(YamlUtils.read("\"\"", ArrayList.class)).isEmpty();
   }
 }

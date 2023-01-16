@@ -68,6 +68,7 @@ public class YamlUtils {
 
     // map empty string to null instead of failing with Mapping Exception
     mapper.coercionConfigFor(LinkedHashMap.class).setCoercion(CoercionInputShape.EmptyString, CoercionAction.AsNull);
+    mapper.coercionConfigFor(ArrayList.class).setCoercion(CoercionInputShape.EmptyString, CoercionAction.AsEmpty);
   }
 
   public <T> T read(String yaml, Class<T> cls) throws IOException {
@@ -328,7 +329,7 @@ public class YamlUtils {
     return response.toString();
   }
 
-  private List<String> getQualifiedNameList(
+  public List<String> getQualifiedNameList(
       YamlNode yamlNode, String fieldName, boolean shouldAppendStrategyExpression) {
     if (yamlNode.getParentNode() == null) {
       List<String> qualifiedNameList = new ArrayList<>();

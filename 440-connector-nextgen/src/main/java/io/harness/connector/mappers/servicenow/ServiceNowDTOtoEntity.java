@@ -9,10 +9,12 @@ package io.harness.connector.mappers.servicenow;
 
 import static java.util.Objects.isNull;
 
+import io.harness.connector.entities.embedded.servicenow.ServiceNowADFSAuthentication;
 import io.harness.connector.entities.embedded.servicenow.ServiceNowConnector;
 import io.harness.connector.entities.embedded.servicenow.ServiceNowConnector.ServiceNowConnectorBuilder;
 import io.harness.connector.entities.embedded.servicenow.ServiceNowUserNamePasswordAuthentication;
 import io.harness.connector.mappers.ConnectorDTOToEntityMapper;
+import io.harness.delegate.beans.connector.servicenow.ServiceNowADFSDTO;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthType;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowConnectorDTO;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowUserNamePasswordDTO;
@@ -42,6 +44,10 @@ public class ServiceNowDTOtoEntity implements ConnectorDTOToEntityMapper<Service
             .passwordRef(SecretRefHelper.getSecretConfigString(serviceNowUserNamePasswordDTO.getPasswordRef()))
             .serviceNowAuthentication(ServiceNowUserNamePasswordAuthentication.fromServiceNowAuthCredentialsDTO(
                 serviceNowUserNamePasswordDTO));
+      } else if (ServiceNowAuthType.ADFS.equals(configDTO.getAuth().getAuthType())) {
+        ServiceNowADFSDTO serviceNowADFSDTO = (ServiceNowADFSDTO) configDTO.getAuth().getCredentials();
+        serviceNowConnectorBuilder.serviceNowAuthentication(
+            ServiceNowADFSAuthentication.fromServiceNowAuthCredentialsDTO(serviceNowADFSDTO));
       } else {
         throw new InvalidRequestException(
             String.format("Unsupported servicenow auth type provided : %s", configDTO.getAuth().getAuthType()));

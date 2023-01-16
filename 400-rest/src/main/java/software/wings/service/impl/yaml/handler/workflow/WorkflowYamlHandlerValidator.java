@@ -18,7 +18,6 @@ import io.harness.exception.InvalidArgumentsException;
 
 import software.wings.beans.WorkflowPhase;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import lombok.experimental.UtilityClass;
@@ -35,7 +34,10 @@ public class WorkflowYamlHandlerValidator {
       return;
     }
 
-    final List<String> phaseNames = new ArrayList<>(workflowPhaseMap.keySet());
+    final List<String> phaseNames = workflowPhaseMap.keySet()
+                                        .stream()
+                                        .filter(p -> workflowPhaseMap.get(p).getDeploymentType() != null)
+                                        .collect(toList());
     final List<String> rollbackNames =
         rollbackPhaseMap.values().stream().map(WorkflowPhase::getPhaseNameForRollback).collect(toList());
 

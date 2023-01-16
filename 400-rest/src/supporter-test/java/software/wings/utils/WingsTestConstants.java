@@ -27,6 +27,8 @@ public interface WingsTestConstants {
 
   String REPO_NAME = "REPO_NAME";
 
+  String S3_URI = "s3://cdng-terraform-state/env/";
+
   String REPOSITORY_FORMAT = "REPOSITORY_FORMAT";
 
   String REPOSITORY_NAME = "REPOSITORY_NAME";

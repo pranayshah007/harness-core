@@ -56,9 +56,6 @@ public class DelegateDecryptionModule extends AbstractModule {
     bind(EncryptionService.class).to(EncryptionServiceImpl.class);
     bind(SecretsDelegateCacheService.class).to(SecretsDelegateCacheServiceImpl.class);
     bind(SecretsDelegateCacheHelperService.class).to(NoopSecretsDelegateCacheHelperService.class);
-    // Needed for configurable secret cache expiery
-    //    bind(DelegateConfigurationServiceProvider.class).to(DelegateConfigurationServiceProviderImpl.class);
-    //    bind(DelegatePropertiesServiceProvider.class).to(DelegatePropertiesServiceProviderImpl.class);
 
     bind(TimeLimiter.class).toInstance(HTimeLimiter.create());
 

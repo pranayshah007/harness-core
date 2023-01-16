@@ -35,8 +35,10 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.utils.YamlPipelineUtils;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -48,6 +50,7 @@ import javax.validation.Validator;
 import javax.validation.ValidatorFactory;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.math3.util.Pair;
 import org.jetbrains.annotations.NotNull;
 
 @OwnedBy(PIPELINE)
@@ -280,24 +283,46 @@ public class EnvironmentMapper {
     return duplicateIds;
   }
 
-  private void validateYamlOrThrow(NGEnvironmentConfig config, EnvironmentRequestDTO dto) {
-    if (StringUtils.compare(config.getNgEnvironmentInfoConfig().getOrgIdentifier(), dto.getOrgIdentifier()) != 0) {
-      throw new InvalidRequestException(
-          String.format("Org Identifier %s passed in yaml is not same as passed in query params %s",
-              config.getNgEnvironmentInfoConfig().getOrgIdentifier(), dto.getOrgIdentifier()));
-    }
-
-    if (StringUtils.compare(config.getNgEnvironmentInfoConfig().getProjectIdentifier(), dto.getProjectIdentifier())
+  private void validateYamlOrThrow(NGEnvironmentConfig fromYaml, EnvironmentRequestDTO environmentRequest) {
+    Map<String, Pair<String, String>> mismatchedEntries = new HashMap<>();
+    if (StringUtils.compare(
+            fromYaml.getNgEnvironmentInfoConfig().getOrgIdentifier(), environmentRequest.getOrgIdentifier())
         != 0) {
-      throw new InvalidRequestException(
-          String.format("Project Identifier %s passed in yaml is not same as passed in query params %s",
-              config.getNgEnvironmentInfoConfig().getProjectIdentifier(), dto.getProjectIdentifier()));
+      mismatchedEntries.put("Org Identifier",
+          new Pair<>(fromYaml.getNgEnvironmentInfoConfig().getOrgIdentifier(), environmentRequest.getOrgIdentifier()));
     }
 
-    if (StringUtils.compare(config.getNgEnvironmentInfoConfig().getIdentifier(), dto.getIdentifier()) != 0) {
+    if (StringUtils.compare(
+            fromYaml.getNgEnvironmentInfoConfig().getProjectIdentifier(), environmentRequest.getProjectIdentifier())
+        != 0) {
+      mismatchedEntries.put("Project Identifier ",
+          new Pair<>(
+              fromYaml.getNgEnvironmentInfoConfig().getProjectIdentifier(), environmentRequest.getProjectIdentifier()));
+    }
+
+    if (StringUtils.compare(fromYaml.getNgEnvironmentInfoConfig().getIdentifier(), environmentRequest.getIdentifier())
+        != 0) {
+      mismatchedEntries.put("Environment Identifier",
+          new Pair<>(fromYaml.getNgEnvironmentInfoConfig().getIdentifier(), environmentRequest.getIdentifier()));
+    }
+
+    // not using StringUtils.compare() here as we replace environment name with identifier when name field is empty
+    if (isNotEmpty(environmentRequest.getName()) && isNotEmpty(fromYaml.getNgEnvironmentInfoConfig().getName())
+        && !environmentRequest.getName().equals(fromYaml.getNgEnvironmentInfoConfig().getName())) {
+      mismatchedEntries.put("Environment name",
+          new Pair<>(fromYaml.getNgEnvironmentInfoConfig().getName(), environmentRequest.getName()));
+    }
+
+    if (StringUtils.compare(
+            fromYaml.getNgEnvironmentInfoConfig().getType().toString(), environmentRequest.getType().toString())
+        != 0) {
+      mismatchedEntries.put("Environment type",
+          new Pair<>(
+              fromYaml.getNgEnvironmentInfoConfig().getType().toString(), environmentRequest.getType().toString()));
+    }
+    if (isNotEmpty(mismatchedEntries)) {
       throw new InvalidRequestException(
-          String.format("Environment Identifier %s passed in yaml is not same as passed in query params %s",
-              config.getNgEnvironmentInfoConfig().getIdentifier(), dto.getIdentifier()));
+          "Found mismatch in following fields between yaml and requested value respectively: " + mismatchedEntries);
     }
   }
 }

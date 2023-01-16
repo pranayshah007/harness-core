@@ -10,6 +10,7 @@ package io.harness.cdng.k8s;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACASIAN;
+import static io.harness.rule.OwnerRule.PRATYUSH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -98,6 +99,14 @@ public class K8sStepParametersCommandUnitsTest extends CategoryTest {
   public void testK8sScaleParameters() {
     assertCommandUnitsName(new K8sScaleStepParameter(), K8sCommandUnitConstants.Init, K8sCommandUnitConstants.Scale,
         K8sCommandUnitConstants.WaitForSteadyState, K8sCommandUnitConstants.WrapUp);
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testK8sDryRunManifestStepParameters() {
+    assertCommandUnitsName(
+        new K8sDryRunManifestStepParameters(), K8sCommandUnitConstants.FetchFiles, K8sCommandUnitConstants.K8sDryRun);
   }
 
   private void assertCommandUnitsName(K8sSpecParameters stepParameters, String... expectedCommandUnits) {

@@ -90,5 +90,7 @@ public interface DelegateTaskServiceClassic extends OwnedByAccount {
 
   List<SelectorCapability> fetchTaskSelectorCapabilities(List<ExecutionCapability> executionCapabilities);
 
-  boolean saveAndBroadcastDelegateTaskV2(DelegateTask task);
+  String saveAndBroadcastDelegateTaskV2(DelegateTask task);
+
+  String saveAndBroadcastDelegateTask(DelegateTask task);
 }

@@ -20,6 +20,7 @@ import io.harness.exception.ScmBadRequestException;
 import io.harness.exception.ScmException;
 import io.harness.exception.WingsException;
 import io.harness.exception.ngexception.ErrorMetadataDTO;
+import io.harness.gitsync.common.beans.ScmErrorDetails;
 import io.harness.gitsync.common.dtos.GitErrorMetadata;
 
 import java.util.List;
@@ -38,7 +39,7 @@ public class ScmExceptionUtils {
     return null;
   }
 
-  public String getHintMessage(WingsException ex) {
+  public String getHintMessage(Exception ex) {
     WingsException hintException = ExceptionUtils.cause(ErrorCode.HINT, ex);
     if (hintException == null) {
       return "";
@@ -47,7 +48,7 @@ public class ScmExceptionUtils {
     }
   }
 
-  public String getExplanationMessage(WingsException ex) {
+  public String getExplanationMessage(Exception ex) {
     WingsException explanationException = ExceptionUtils.cause(ErrorCode.EXPLANATION, ex);
     if (explanationException == null) {
       return "";
@@ -74,5 +75,13 @@ public class ScmExceptionUtils {
 
   public static boolean isNestedScmBadRequestException(WingsException ex) {
     return ExceptionUtils.cause(ScmBadRequestException.class, ex) != null;
+  }
+
+  public static ScmErrorDetails getScmErrorDetails(Exception exception) {
+    return ScmErrorDetails.builder()
+        .error(exception.getMessage())
+        .explanation(ScmExceptionUtils.getExplanationMessage(exception))
+        .hint(ScmExceptionUtils.getHintMessage(exception))
+        .build();
   }
 }

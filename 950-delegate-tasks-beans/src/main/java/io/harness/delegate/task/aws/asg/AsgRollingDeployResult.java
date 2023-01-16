@@ -10,6 +10,8 @@ package io.harness.delegate.task.aws.asg;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
+import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 
@@ -17,5 +19,6 @@ import lombok.Data;
 @Builder
 @OwnedBy(HarnessTeam.CDP)
 public class AsgRollingDeployResult {
+  Map<String, List<String>> asgStoreManifestsContent;
   private AutoScalingGroupContainer autoScalingGroupContainer;
 }

@@ -107,9 +107,9 @@ public class NodeExecutionsCache {
 
   // Should not change the fields to be included as its only used by NodeExecutionMap, if you change it may not use
   // index of NodeExecution collection
-  public List<Status> findAllTerminalChildrenStatusOnly(String parentId) {
+  public List<Status> findAllTerminalChildrenStatusOnly(String parentId, boolean includeChildrenOfStrategy) {
     List<NodeExecution> nodeExecutions = nodeExecutionService.findAllChildrenWithStatusInAndWithoutOldRetries(
-        ambiance.getPlanExecutionId(), parentId, null, false, Collections.emptySet());
+        ambiance.getPlanExecutionId(), parentId, null, false, Collections.emptySet(), includeChildrenOfStrategy);
     return nodeExecutions.stream()
         .map(NodeExecution::getStatus)
         .filter(status -> StatusUtils.finalStatuses().contains(status))

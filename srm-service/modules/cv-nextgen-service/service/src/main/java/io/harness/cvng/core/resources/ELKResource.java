@@ -8,7 +8,7 @@
 package io.harness.cvng.core.resources;
 
 import io.harness.cvng.core.beans.LogSampleRequestDTO;
-import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.core.beans.params.ProjectScopedProjectParams;
 import io.harness.cvng.core.services.api.ELKService;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.security.annotations.NextGenManagerAuth;
@@ -41,10 +41,11 @@ public class ELKResource {
   @Timed
   @ExceptionMetered
   @ApiOperation(value = "gets indices in ELK", nickname = "getELKIndices")
-  public ResponseDTO<List<String>> getIndices(@NotNull @BeanParam ProjectParams projectParams,
+  public ResponseDTO<List<String>> getIndices(@NotNull @BeanParam ProjectScopedProjectParams projectParams,
       @QueryParam("connectorIdentifier") String connectorIdentifier,
       @QueryParam("tracingId") @NotNull String tracingId) {
-    return ResponseDTO.newResponse(elkService.getLogIndexes(projectParams, connectorIdentifier, tracingId));
+    return ResponseDTO.newResponse(
+        elkService.getLogIndexes(projectParams.getProjectParams(), connectorIdentifier, tracingId));
   }
 
   @POST
@@ -52,11 +53,11 @@ public class ELKResource {
   @Timed
   @ExceptionMetered
   @ApiOperation(value = "get sample data for a query", nickname = "getELKLogSampleData")
-  public ResponseDTO<List<LinkedHashMap>> getSampleData(@BeanParam ProjectParams projectParams,
+  public ResponseDTO<List<LinkedHashMap>> getSampleData(@BeanParam ProjectScopedProjectParams projectParams,
       @NotNull @QueryParam("connectorIdentifier") final String connectorIdentifier,
       @NotNull @QueryParam("tracingId") String tracingId, @NotNull @QueryParam("index") String index,
       @Body LogSampleRequestDTO logSampleRequestDTO) {
-    return ResponseDTO.newResponse(
-        elkService.getSampleData(projectParams, connectorIdentifier, logSampleRequestDTO.getQuery(), index, tracingId));
+    return ResponseDTO.newResponse(elkService.getSampleData(
+        projectParams.getProjectParams(), connectorIdentifier, logSampleRequestDTO.getQuery(), index, tracingId));
   }
 }

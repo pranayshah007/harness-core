@@ -1,6 +1,6 @@
 {
   "org": {
-    "slug": "example_organization",
+    "identifier": "example_organization",
     "name": "Example Organization",
     "description": "This is an Example organization",
     "tags": {

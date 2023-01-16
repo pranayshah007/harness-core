@@ -31,6 +31,9 @@ public class DeploymentExecutionEntity implements ExecutionEntity<WorkflowExecut
   private static final String RUNNING_EXECUTIONS =
       "SELECT EXECUTIONID,STATUS FROM DEPLOYMENT WHERE ACCOUNTID=? AND STATUS IN ('RUNNING','PAUSED')";
 
+  private static final String COMPLETED_EXECUTIONS =
+      "SELECT COUNT(EXECUTIONID) FROM DEPLOYMENT WHERE ACCOUNTID=? AND (ENDTIME>=? AND ENDTIME<=?) AND STATUS IN ('ABORTED', 'ERROR', 'FAILED', 'SUCCESS', 'REJECTED', 'EXPIRED', 'SKIPPED')";
+
   @Override
   public DeploymentReconService getReconService() {
     return deploymentReconService;
@@ -39,6 +42,11 @@ public class DeploymentExecutionEntity implements ExecutionEntity<WorkflowExecut
   @Override
   public String getRunningExecutionQuery() {
     return RUNNING_EXECUTIONS;
+  }
+
+  @Override
+  public String getCompletedExecutionsQuery() {
+    return COMPLETED_EXECUTIONS;
   }
 
   @Override

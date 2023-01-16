@@ -17,6 +17,7 @@ import io.harness.execution.NodeExecution;
 import io.harness.pms.contracts.data.StepOutcomeRef;
 import io.harness.pms.contracts.execution.ChildChainExecutableResponse;
 import io.harness.pms.contracts.execution.ExecutionMode;
+import io.harness.pms.contracts.resume.ResponseDataProto;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.sdk.core.steps.io.StepResponseNotifyData;
 import io.harness.serializer.KryoSerializer;
@@ -40,14 +41,15 @@ public class NodeResumeHelper {
   @Inject private KryoSerializer kryoSerializer;
   @Inject private NodeResumeEventPublisher nodeResumeEventPublisher;
 
-  public void resume(NodeExecution nodeExecution, Map<String, ByteString> responseMap, boolean isError) {
+  public void resume(NodeExecution nodeExecution, Map<String, ResponseDataProto> responseMap, boolean isError) {
     ResumeMetadata resumeMetadata = ResumeMetadata.fromNodeExecution(nodeExecution);
     nodeResumeEventPublisher.publishEvent(resumeMetadata, buildResponseMap(resumeMetadata, responseMap), isError);
   }
 
   @VisibleForTesting
-  Map<String, ByteString> buildResponseMap(ResumeMetadata resumeMetadata, Map<String, ByteString> response) {
-    Map<String, ByteString> byteResponseMap = new HashMap<>();
+  Map<String, ResponseDataProto> buildResponseMap(
+      ResumeMetadata resumeMetadata, Map<String, ResponseDataProto> response) {
+    Map<String, ResponseDataProto> byteResponseMap = new HashMap<>();
     if (accumulationRequired(resumeMetadata)) {
       List<NodeExecution> childExecutions = new LinkedList<>();
       try (CloseableIterator<NodeExecution> iterator = nodeExecutionService.fetchChildrenNodeExecutionsIterator(
@@ -74,7 +76,11 @@ public class NodeResumeHelper {
                                                 .stepOutcomeRefs(refMap.get(ce.getUuid()))
                                                 .adviserResponse(ce.getAdviserResponse())
                                                 .build();
-        byteResponseMap.put(ce.getUuid(), ByteString.copyFrom(kryoSerializer.asDeflatedBytes(notifyData)));
+        byteResponseMap.put(ce.getUuid(),
+            ResponseDataProto.newBuilder()
+                .setResponse(ByteString.copyFrom(kryoSerializer.asDeflatedBytes(notifyData)))
+                .setUsingKryoWithoutReference(false)
+                .build());
       }
       return byteResponseMap;
     }

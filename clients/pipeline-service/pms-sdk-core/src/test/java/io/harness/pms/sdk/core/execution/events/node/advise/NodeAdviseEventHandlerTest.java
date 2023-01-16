@@ -7,9 +7,14 @@
 
 package io.harness.pms.sdk.core.execution.events.node.advise;
 
+import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.SAHIL;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -104,8 +109,20 @@ public class NodeAdviseEventHandlerTest extends PmsSdkCoreTestBase {
   @Category(UnitTests.class)
   public void testHandleEventWithContextWithNullResponse() {
     nodeAdviseEventHandler.handleEventWithContext(adviseEvent);
-    Mockito.verify(sdkNodeExecutionService)
+    verify(sdkNodeExecutionService)
         .handleAdviserResponse(ambiance, NOTIFY_ID, AdviserResponse.newBuilder().setType(AdviseType.UNKNOWN).build());
+  }
+
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testHandleEventWithContextForHandleError() {
+    AdviseEvent event = AdviseEvent.newBuilder().build();
+    nodeAdviseEventHandler.handleEventWithContext(event);
+    verify(sdkNodeExecutionService, times(0)).handleEventError(any(), any(), any(), any());
+    event = AdviseEvent.newBuilder().setNotifyId("notifyId").build();
+    nodeAdviseEventHandler.handleEventWithContext(event);
+    verify(sdkNodeExecutionService, times(1)).handleEventError(any(), any(), eq("notifyId"), any());
   }
 
   private class Type1Adviser implements Adviser {

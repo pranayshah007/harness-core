@@ -9,6 +9,7 @@ package io.harness.serializer.kryo;
 
 import static io.harness.annotations.dev.HarnessTeam.DEL;
 
+import io.harness.adfs.AdfsAccessTokenResponse;
 import io.harness.ami.AMITagsResponse;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifactory.ArtifactoryConfigRequest;
@@ -458,6 +459,7 @@ public class ApiServiceBeansKryoRegister implements KryoRegistrar {
     kryo.register(ServiceNowImportSetResponseNG.class, 97116);
     kryo.register(ServiceNowImportSetTransformMapResult.class, 97117);
     kryo.register(ServiceNowStagingTable.class, 97118);
+    kryo.register(AdfsAccessTokenResponse.class, 10000121);
     kryo.register(GitPollingWebhookData.class, 73001);
     kryo.register(MultivaluedHashMap.class, 73002);
     kryo.register(AzureArtifactsFeed.class, 7286);
