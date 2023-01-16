@@ -7,7 +7,7 @@
 
 package io.harness.cvng.core.resources;
 
-import io.harness.cvng.core.beans.CustomChangeWebhookEvent;
+import io.harness.cvng.core.beans.CustomChangeWebhookPayload;
 import io.harness.cvng.core.beans.PagerDutyWebhookEvent;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.services.api.WebhookService;
@@ -57,10 +57,10 @@ public class WebhookResource {
   public void handleCustomChangeWebhookRequest(@NotNull @BeanParam ProjectParams projectParams,
       @NotNull @QueryParam("monitoredServiceIdentifier") String monitoredServiceIdentifier,
       @NotNull @QueryParam("changeSourceIdentifier") String changeSourceIdentifier,
-      @Body @Valid CustomChangeWebhookEvent customChangeWebhookEvent, @Context HttpHeaders httpHeaders) {
-    webhookService.checkAuthorization(projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
-        projectParams.getProjectIdentifier(), httpHeaders);
+      @Body @Valid CustomChangeWebhookPayload customChangeWebhookPayload, @Context HttpHeaders httpHeaders) {
+    /*webhookService.checkAuthorization(projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
+        projectParams.getProjectIdentifier(), httpHeaders);*/
     webhookService.handleCustomChangeWebhook(
-        projectParams, monitoredServiceIdentifier, changeSourceIdentifier, customChangeWebhookEvent);
+        projectParams, monitoredServiceIdentifier, changeSourceIdentifier, customChangeWebhookPayload);
   }
 }

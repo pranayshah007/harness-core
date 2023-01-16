@@ -9,7 +9,7 @@ package io.harness.cvng.core.jobs;
 
 import static io.harness.eventsframework.EventsFrameworkConstants.CUSTOM_CHANGE_EVENT;
 
-import io.harness.cvng.core.beans.CustomChangeWebhookEvent;
+import io.harness.cvng.core.beans.CustomChangeWebhookPayload;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.producer.Message;
@@ -24,7 +24,7 @@ public class CustomChangeEventPublisherServiceImpl implements CustomChangeEventP
 
   @Override
   public void registerCustomChangeEvent(ProjectParams projectParams, String monitoredServiceIdentifier,
-      String changeSourceIdentifier, CustomChangeWebhookEvent customChangeWebhookEvent) {
+      String changeSourceIdentifier, CustomChangeWebhookPayload customChangeWebhookPayload) {
     CustomChangeEventDTO customChangeEventDTO =
         CustomChangeEventDTO.newBuilder()
             .setAccountId(projectParams.getAccountIdentifier())
@@ -32,14 +32,15 @@ public class CustomChangeEventPublisherServiceImpl implements CustomChangeEventP
             .setProjectIdentifier(projectParams.getProjectIdentifier())
             .setMonitoredServiceIdentifier(monitoredServiceIdentifier)
             .setChangeSourceIdentifier(changeSourceIdentifier)
-            .setEventDetails(CustomChangeEventDetails.newBuilder()
-                                 .setChangeEventDetailsLink(customChangeWebhookEvent.getChangeEventDetailsLink())
-                                 .setInternalLinkToEntity(customChangeWebhookEvent.getInternalLinkToEntity())
-                                 .setDescription(customChangeWebhookEvent.getDescription())
-                                 .build())
-            .setStartTime(customChangeWebhookEvent.getStartTime())
-            .setEndTime(customChangeWebhookEvent.getEndTime())
-            .setUser(customChangeWebhookEvent.getUser())
+            .setEventDetails(
+                CustomChangeEventDetails.newBuilder()
+                    .setChangeEventDetailsLink(customChangeWebhookPayload.getEventDetail().getChangeEventDetailsLink())
+                    .setInternalLinkToEntity(customChangeWebhookPayload.getEventDetail().getInternalLinkToEntity())
+                    .setDescription(customChangeWebhookPayload.getEventDetail().getDescription())
+                    .build())
+            .setStartTime(customChangeWebhookPayload.getStartTime())
+            .setEndTime(customChangeWebhookPayload.getEndTime())
+            .setUser(customChangeWebhookPayload.getUser())
             .build();
 
     Message message = Message.newBuilder().setData(customChangeEventDTO.toByteString()).build();

@@ -10,14 +10,13 @@ package io.harness.cvng.core.services.impl;
 import static io.harness.NGConstants.X_API_KEY;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
-import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.beans.HeaderConfig;
 import io.harness.cvng.beans.change.ChangeEventDTO;
 import io.harness.cvng.beans.change.ChangeSourceType;
 import io.harness.cvng.beans.change.PagerDutyEventMetaData;
-import io.harness.cvng.core.beans.CustomChangeWebhookEvent;
+import io.harness.cvng.core.beans.CustomChangeWebhookPayload;
 import io.harness.cvng.core.beans.PagerDutyWebhookEvent;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
@@ -30,7 +29,6 @@ import io.harness.cvng.core.services.api.ChangeEventService;
 import io.harness.cvng.core.services.api.WebhookService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.persistence.HPersistence;
-import io.harness.pms.rbac.PipelineRbacPermissions;
 
 import com.google.inject.Inject;
 import groovy.util.logging.Slf4j;
@@ -119,9 +117,9 @@ public class WebhookServiceImpl implements WebhookService {
 
   @Override
   public void handleCustomChangeWebhook(ProjectParams projectParams, String monitoredServiceIdentifier,
-      String changeSourceIdentifier, CustomChangeWebhookEvent customChangeWebhookEvent) {
+      String changeSourceIdentifier, CustomChangeWebhookPayload customChangeWebhookPayload) {
     customChangeEventPublisherService.registerCustomChangeEvent(
-        projectParams, monitoredServiceIdentifier, changeSourceIdentifier, customChangeWebhookEvent);
+        projectParams, monitoredServiceIdentifier, changeSourceIdentifier, customChangeWebhookPayload);
   }
 
   @Override

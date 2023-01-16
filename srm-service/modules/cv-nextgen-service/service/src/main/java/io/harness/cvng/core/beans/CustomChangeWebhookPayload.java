@@ -12,16 +12,23 @@ import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Value;
+import org.apache.cxf.annotations.EvaluateAllEndpoints;
 
 @Value
 @Builder
 @AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class CustomChangeWebhookEvent {
-  @NotNull String description;
-  String changeEventDetailsLink;
-  String internalLinkToEntity;
+public class CustomChangeWebhookPayload {
   @NotNull long startTime;
   @NotNull long endTime;
   @NotNull String user;
+  @NotNull CustomChangeWebhookEventDetail eventDetail;
+
+  @Value
+  @Builder
+  public static class CustomChangeWebhookEventDetail {
+    @NotNull String description;
+    String changeEventDetailsLink;
+    String internalLinkToEntity;
+  }
 }
