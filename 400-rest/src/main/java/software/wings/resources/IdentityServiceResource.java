@@ -160,7 +160,7 @@ public class IdentityServiceResource {
     if (user == null) {
       throw new WingsException(USER_DOES_NOT_EXIST, USER);
     } else {
-      log.info("Trying to get user {} details", user);
+      log.info("Trying to get user {} details", user.getEmail());
       if (userService.isFFToAvoidLoadingSupportAccountsUnncessarilyDisabled()) {
         return new RestResponse<>(user.getPublicUser(true));
       }

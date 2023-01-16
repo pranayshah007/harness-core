@@ -299,7 +299,7 @@ public class AuthenticationManager {
         userService.update(user);
       }
     }
-    log.info("Login successful for user {}", user);
+    log.info("Login successful for user {}", user.getEmail());
     if (user != null && isEmpty(user.getSupportAccounts())) {
       userService.loadSupportAccounts(user, newHashSet(AccountKeys.uuid));
     }

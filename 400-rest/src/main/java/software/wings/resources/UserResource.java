@@ -543,7 +543,7 @@ public class UserResource {
     }
     logContext.put("contextKey", String.valueOf(UUID.randomUUID()));
     try (AutoLogContext ignore1 = new AutoLogContext(logContext, OVERRIDE_ERROR)) {
-      log.info("Loading support accounts for users/user endpoint for user {}", user);
+      log.info("Loading support accounts for users/user endpoint for user");
       if (isEmpty(user.getSupportAccounts())) {
         userService.loadSupportAccounts(user);
       }
@@ -748,7 +748,7 @@ public class UserResource {
     String basicAuthToken = authenticationManager.extractToken(loginBody.getAuthorization(), BASIC);
 
     validateCaptchaToken(captchaToken);
-    log.info("Trying to login to account {} having request {}", accountId, loginBody);
+    log.info("Trying to login to account {}", accountId);
     // accountId field is optional, it could be null.
     return new RestResponse<>(authenticationManager.defaultLoginAccount(basicAuthToken, accountId));
   }
