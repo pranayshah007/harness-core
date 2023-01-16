@@ -33,10 +33,10 @@ public enum ChangeSourceType {
   @JsonProperty("CustomDeploy")
   CUSTOM_DEPLOY("CustomDeploy", ChangeCategory.DEPLOYMENT, ActivityType.CUSTOM_DEPLOY, false),
   @JsonProperty("CustomIncident")
-  CUSTOM_INCIDENT("CustomIncident", ChangeCategory.DEPLOYMENT, ActivityType.CUSTOM_INCIDENT, false),
+  CUSTOM_INCIDENT("CustomIncident", ChangeCategory.ALERTS, ActivityType.CUSTOM_INCIDENT, false),
   @JsonProperty("CustomInfrastructure")
-  CUSTOM_INFRA("CustomInfrastructure", ChangeCategory.DEPLOYMENT, ActivityType.CUSTOM_INFRA, false),
-  @JsonProperty("CustomFF") CUSTOM_FF("CustomFF", ChangeCategory.DEPLOYMENT, ActivityType.CUSTOM_FF, false);
+  CUSTOM_INFRA("CustomInfrastructure", ChangeCategory.INFRASTRUCTURE, ActivityType.CUSTOM_INFRA, false),
+  @JsonProperty("CustomFF") CUSTOM_FF("CustomFF", ChangeCategory.FEATURE_FLAG, ActivityType.CUSTOM_FF, false);
 
   private static Map<ActivityType, ChangeSourceType> ACTIVITY_TO_CHANGE_SOURCE_TYPE_MAP;
   private static Map<String, ChangeSourceType> STRING_TO_CHANGE_SOURCE_TYPE_MAP;
