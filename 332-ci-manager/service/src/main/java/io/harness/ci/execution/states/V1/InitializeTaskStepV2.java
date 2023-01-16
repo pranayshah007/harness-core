@@ -83,6 +83,7 @@ import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.helper.SerializedResponseDataHelper;
 import io.harness.hsqs.client.HsqsServiceClient;
 import io.harness.hsqs.client.model.EnqueueRequest;
+import io.harness.hsqs.client.model.EnqueueResponse;
 import io.harness.licensing.Edition;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
 import io.harness.logging.CommandExecutionStatus;
@@ -139,6 +140,7 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import retrofit2.Response;
 
 @Slf4j
 @OwnedBy(CI)
@@ -199,8 +201,10 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
                                           .payload(payload)
                                           .build();
       try {
-        hsqsServiceClient.enqueue(enqueueRequest, ciExecutionServiceConfig.getQueueServiceClient().getAuthToken())
-            .execute();
+        Response<EnqueueResponse> execute =
+            hsqsServiceClient.enqueue(enqueueRequest, ciExecutionServiceConfig.getQueueServiceClient().getAuthToken())
+                .execute();
+        log.info("build queued. response code {}", execute.code());
       } catch (IOException e) {
         throw new RuntimeException(e);
       }
