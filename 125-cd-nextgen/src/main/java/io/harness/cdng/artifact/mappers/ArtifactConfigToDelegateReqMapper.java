@@ -101,8 +101,11 @@ public class ArtifactConfigToDelegateReqMapper {
     if (isEmpty(tag) && isEmpty(tagRegex)) {
       tagRegex = ACCEPT_ALL_REGEX;
     }
+    boolean shouldFetchDockerV2DigestSHA256 =
+        artifactConfig.getDigest() != null && isNotEmpty(artifactConfig.getDigest().getValue());
     return ArtifactDelegateRequestUtils.getDockerDelegateRequest(artifactConfig.getImagePath().getValue(), tag,
-        tagRegex, null, connectorRef, connectorDTO, encryptedDataDetails, ArtifactSourceType.DOCKER_REGISTRY);
+        tagRegex, null, connectorRef, connectorDTO, encryptedDataDetails, ArtifactSourceType.DOCKER_REGISTRY,
+        shouldFetchDockerV2DigestSHA256);
   }
 
   public S3ArtifactDelegateRequest getAmazonS3DelegateRequest(AmazonS3ArtifactConfig artifactConfig,

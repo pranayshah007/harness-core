@@ -15,11 +15,13 @@ import static io.harness.utils.DelegateOwner.getNGTaskSetupAbstractionsWithOwner
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
+import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.resources.docker.dtos.DockerBuildDetailsDTO;
 import io.harness.cdng.artifact.resources.docker.dtos.DockerRequestDTO;
 import io.harness.cdng.artifact.resources.docker.dtos.DockerResponseDTO;
 import io.harness.cdng.artifact.resources.docker.mappers.DockerResourceMapper;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.common.NGTaskType;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
@@ -71,6 +73,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
 public class DockerResourceServiceImpl implements DockerResourceService {
+  private final CDFeatureFlagHelper cdFeatureFlagHelper;
   private final ConnectorService connectorService;
   private final SecretManagerClientService secretManagerClientService;
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
@@ -79,9 +82,10 @@ public class DockerResourceServiceImpl implements DockerResourceService {
 
   @Inject
   public DockerResourceServiceImpl(@Named(DEFAULT_CONNECTOR_SERVICE) ConnectorService connectorService,
-      SecretManagerClientService secretManagerClientService) {
+      SecretManagerClientService secretManagerClientService, CDFeatureFlagHelper cdFeatureFlagHelper) {
     this.connectorService = connectorService;
     this.secretManagerClientService = secretManagerClientService;
+    this.cdFeatureFlagHelper = cdFeatureFlagHelper;
   }
 
   @Override
@@ -92,7 +96,7 @@ public class DockerResourceServiceImpl implements DockerResourceService {
         getBaseNGAccess(dockerConnectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
     List<EncryptedDataDetail> encryptionDetails = getEncryptionDetails(connector, baseNGAccess);
     DockerArtifactDelegateRequest dockerRequest = ArtifactDelegateRequestUtils.getDockerDelegateRequest(
-        imagePath, null, null, null, null, connector, encryptionDetails, ArtifactSourceType.DOCKER_REGISTRY);
+        imagePath, null, null, null, null, connector, encryptionDetails, ArtifactSourceType.DOCKER_REGISTRY, false);
     try {
       ArtifactTaskExecutionResponse artifactTaskExecutionResponse = executeSyncTask(
           dockerRequest, ArtifactTaskType.GET_BUILDS, baseNGAccess, "Docker Get Builds task failure due to error");
@@ -116,7 +120,7 @@ public class DockerResourceServiceImpl implements DockerResourceService {
     List<EncryptedDataDetail> encryptionDetails = getEncryptionDetails(connector, baseNGAccess);
     DockerArtifactDelegateRequest dockerRequest = ArtifactDelegateRequestUtils.getDockerDelegateRequest(imagePath,
         dockerRequestDTO.getTag(), dockerRequestDTO.getTagRegex(), dockerRequestDTO.getTagsList(), null, connector,
-        encryptionDetails, ArtifactSourceType.DOCKER_REGISTRY);
+        encryptionDetails, ArtifactSourceType.DOCKER_REGISTRY, false);
     ArtifactTaskExecutionResponse artifactTaskExecutionResponse = executeSyncTask(
         dockerRequest, ArtifactTaskType.GET_LABELS, baseNGAccess, "Docker Get labels task failure due to error");
     return getDockerResponseDTO(artifactTaskExecutionResponse);
@@ -129,9 +133,11 @@ public class DockerResourceServiceImpl implements DockerResourceService {
     BaseNGAccess baseNGAccess =
         getBaseNGAccess(dockerConnectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
     List<EncryptedDataDetail> encryptionDetails = getEncryptionDetails(connector, baseNGAccess);
+    boolean shouldFetchDockerV2DigestSHA256 = cdFeatureFlagHelper.isEnabled(
+        dockerConnectorRef.getAccountIdentifier(), FeatureName.CD_NG_DOCKER_ARTIFACT_DIGEST);
     DockerArtifactDelegateRequest dockerRequest = ArtifactDelegateRequestUtils.getDockerDelegateRequest(imagePath,
         dockerRequestDTO.getTag(), dockerRequestDTO.getTagRegex(), dockerRequestDTO.getTagsList(), null, connector,
-        encryptionDetails, ArtifactSourceType.DOCKER_REGISTRY);
+        encryptionDetails, ArtifactSourceType.DOCKER_REGISTRY, shouldFetchDockerV2DigestSHA256);
     ArtifactTaskExecutionResponse artifactTaskExecutionResponse =
         executeSyncTask(dockerRequest, ArtifactTaskType.GET_LAST_SUCCESSFUL_BUILD, baseNGAccess,
             "Docker Get last successful build task failure due to error");
@@ -150,7 +156,7 @@ public class DockerResourceServiceImpl implements DockerResourceService {
         getBaseNGAccess(dockerConnectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
     List<EncryptedDataDetail> encryptionDetails = getEncryptionDetails(connector, baseNGAccess);
     DockerArtifactDelegateRequest dockerRequest = ArtifactDelegateRequestUtils.getDockerDelegateRequest(
-        null, null, null, null, null, connector, encryptionDetails, ArtifactSourceType.DOCKER_REGISTRY);
+        null, null, null, null, null, connector, encryptionDetails, ArtifactSourceType.DOCKER_REGISTRY, false);
     ArtifactTaskExecutionResponse artifactTaskExecutionResponse =
         executeSyncTask(dockerRequest, ArtifactTaskType.VALIDATE_ARTIFACT_SERVER, baseNGAccess,
             "Docker validate artifact server task failure due to error");
@@ -165,7 +171,7 @@ public class DockerResourceServiceImpl implements DockerResourceService {
         getBaseNGAccess(dockerConnectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
     List<EncryptedDataDetail> encryptionDetails = getEncryptionDetails(connector, baseNGAccess);
     DockerArtifactDelegateRequest dockerRequest = ArtifactDelegateRequestUtils.getDockerDelegateRequest(
-        imagePath, null, null, null, null, connector, encryptionDetails, ArtifactSourceType.DOCKER_REGISTRY);
+        imagePath, null, null, null, null, connector, encryptionDetails, ArtifactSourceType.DOCKER_REGISTRY, false);
     ArtifactTaskExecutionResponse artifactTaskExecutionResponse =
         executeSyncTask(dockerRequest, ArtifactTaskType.VALIDATE_ARTIFACT_SOURCE, baseNGAccess,
             "Docker validate artifact source task failure due to error");

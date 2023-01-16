@@ -143,6 +143,43 @@ public class DockerArtifactResource {
     return ResponseDTO.newResponse(buildDetails);
   }
 
+  @POST
+  @Path("getLastSuccessfulBuildV2")
+  @ApiOperation(value = "Gets docker last successful build with yaml input for expression resolution",
+      nickname = "getLastSuccessfulBuildForDockerWithYaml")
+  public ResponseDTO<DockerBuildDetailsDTO>
+  getLastSuccessfulBuildV2(@QueryParam("imagePath") String imagePath,
+      @QueryParam("connectorRef") String dockerConnectorIdentifier, @QueryParam("tag") String tag,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
+      @NotNull @QueryParam("fqnPath") String fqnPath, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
+      @NotNull DockerRequestDTO requestDTO, @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef) {
+    if (isNotEmpty(serviceRef)) {
+      final ArtifactConfig artifactSpecFromService = artifactResourceUtils.locateArtifactInService(
+          accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
+      DockerHubArtifactConfig dockerHubArtifactConfig = (DockerHubArtifactConfig) artifactSpecFromService;
+      if (isEmpty(imagePath)) {
+        imagePath = (String) dockerHubArtifactConfig.getImagePath().fetchFinalValue();
+      }
+      if (isEmpty(dockerConnectorIdentifier)) {
+        dockerConnectorIdentifier = dockerHubArtifactConfig.getConnectorRef().getValue();
+      }
+      if (isEmpty(requestDTO.getTag())) {
+        requestDTO.setTag((String) dockerHubArtifactConfig.getTag().fetchFinalValue());
+      }
+      if (isEmpty(requestDTO.getTagRegex())) {
+        requestDTO.setTagRegex((String) dockerHubArtifactConfig.getTagRegex().fetchFinalValue());
+      }
+    }
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(dockerConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+    DockerBuildDetailsDTO buildDetails =
+        dockerResourceService.getSuccessfulBuild(connectorRef, imagePath, requestDTO, orgIdentifier, projectIdentifier);
+    return ResponseDTO.newResponse(buildDetails);
+  }
+
   @GET
   @Path("validateArtifactServer")
   @ApiOperation(value = "Validate docker artifact server", nickname = "validateArtifactServerForDocker")
