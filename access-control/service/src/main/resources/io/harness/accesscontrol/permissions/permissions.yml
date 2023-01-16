@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: permissionsConfiguration
-version: 43
+version: 44
 permissions:
   - identifier: core_project_delete
     name: Delete Project
@@ -948,6 +948,30 @@ permissions:
   - identifier: sto_scan_view
     name: View security scan
     status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: sto_ticket_view
+    name: View External Ticket
+    status: EXPERIMENTAL
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: sto_ticket_edit
+    name: Edit External Ticket
+    status: EXPERIMENTAL
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: sto_ticket_delete
+    name: Delete External Ticket
+    status: EXPERIMENTAL
     includeInAllRoles: false
     allowedScopeLevels:
       - account

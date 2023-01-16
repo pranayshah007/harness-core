@@ -49,6 +49,7 @@ import io.harness.cdng.k8s.K8sBlueGreenStepNode;
 import io.harness.cdng.k8s.K8sCanaryDeleteStepNode;
 import io.harness.cdng.k8s.K8sCanaryStepNode;
 import io.harness.cdng.k8s.K8sDeleteStepNode;
+import io.harness.cdng.k8s.K8sDryRunManifestStepNode;
 import io.harness.cdng.k8s.K8sRollingRollbackStepNode;
 import io.harness.cdng.k8s.K8sRollingStepNode;
 import io.harness.cdng.k8s.K8sScaleStepNode;
@@ -77,6 +78,8 @@ import io.harness.cdng.tas.TasBasicAppSetupStepNode;
 import io.harness.cdng.tas.TasCanaryAppSetupStepNode;
 import io.harness.cdng.tas.TasCommandStepNode;
 import io.harness.cdng.tas.TasRollbackStepNode;
+import io.harness.cdng.tas.TasRollingDeployStepNode;
+import io.harness.cdng.tas.TasRollingRollbackStepNode;
 import io.harness.cdng.tas.TasSwapRollbackStepNode;
 import io.harness.cdng.tas.TasSwapRoutesStepNode;
 import io.harness.morphia.MorphiaRegistrar;
@@ -731,6 +734,18 @@ public class CDNGRegistrars {
                                            .build())
                    .build())
           .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.K8S_DRY_RUN_MANIFEST_STEP)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(K8sDryRunManifestStepNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.CD)
+                                           .modulesSupported(Collections.singletonList(ModuleType.CD))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .build())
+          .add(YamlSchemaRootClass.builder()
                    .entityType(EntityType.TERRAGRUNT_PLAN_STEP)
                    .availableAtProjectLevel(true)
                    .availableAtOrgLevel(false)
@@ -943,6 +958,30 @@ public class CDNGRegistrars {
                    .yamlSchemaMetadata(YamlSchemaMetadata.builder()
                                            .namespace(SchemaNamespaceConstants.CD)
                                            .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.TAS_ROLLING_DEPLOY)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(TasRollingDeployStepNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.CD)
+                                           .modulesSupported(Collections.singletonList(ModuleType.CD))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.TAS_ROLLING_ROLLBACK)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(TasRollingRollbackStepNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.CD)
+                                           .modulesSupported(Collections.singletonList(ModuleType.CD))
                                            .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
                                            .build())
                    .build())

@@ -334,7 +334,7 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
         Map<String, String> serviceMatrixMetadata =
             CollectionUtils.emptyIfNull(serviceToMatrixMetadataMap.get(serviceRef));
         children.add(getChildForMultiServiceInfra(
-            childNodeId, currentIteration, totalIterations, serviceMatrixMetadata, envMap));
+            childNodeId, currentIteration++, totalIterations, serviceMatrixMetadata, envMap));
       }
     }
     return ChildrenExecutableResponse.newBuilder().addAllChildren(children).setMaxConcurrency(maxConcurrency).build();

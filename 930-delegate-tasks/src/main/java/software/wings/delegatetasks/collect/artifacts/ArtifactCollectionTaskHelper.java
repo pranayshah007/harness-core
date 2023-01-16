@@ -12,7 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.RUNNING;
 
-import static software.wings.beans.Log.Builder.aLog;
+import static software.wings.beans.dto.Log.Builder.aLog;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 

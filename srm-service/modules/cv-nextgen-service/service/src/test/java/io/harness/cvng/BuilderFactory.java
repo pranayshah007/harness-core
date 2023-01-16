@@ -29,6 +29,7 @@ import io.harness.cvng.analysis.entities.CanaryLogAnalysisLearningEngineTask.Can
 import io.harness.cvng.analysis.entities.LearningEngineTask.LearningEngineTaskType;
 import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
+import io.harness.cvng.beans.DeviationType;
 import io.harness.cvng.beans.MonitoredServiceDataSourceType;
 import io.harness.cvng.beans.MonitoredServiceType;
 import io.harness.cvng.beans.ThresholdConfigType;
@@ -434,15 +435,28 @@ public class BuilderFactory {
         .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
         .identifier(context.getMonitoredServiceIdentifier() + "/" + generateUuid())
         .monitoringSourceName(generateUuid())
-        .metricPack(MetricPack.builder()
-                        .identifier(CVNextGenConstants.CUSTOM_PACK_IDENTIFIER)
-                        .metrics(Collections.singleton(MetricPack.MetricDefinition.builder()
-                                                           .identifier("identifier")
-                                                           .type(TimeSeriesMetricType.OTHER)
-                                                           .name("name")
-                                                           .build()))
-                        .dataCollectionDsl("dsl")
-                        .build())
+        .metricPack(
+            MetricPack.builder()
+                .identifier(CVNextGenConstants.CUSTOM_PACK_IDENTIFIER)
+                .metrics(Collections.singleton(
+                    MetricPack.MetricDefinition.builder()
+                        .identifier("identifier")
+                        .type(TimeSeriesMetricType.OTHER)
+                        .name("name")
+                        .thresholds(Arrays.asList(TimeSeriesThreshold.builder()
+                                                      .uuid("thresholdId")
+                                                      .metricPackIdentifier(CVNextGenConstants.CUSTOM_PACK_IDENTIFIER)
+                                                      .metricType(TimeSeriesMetricType.OTHER)
+                                                      .metricGroupName("*")
+                                                      .metricType(TimeSeriesMetricType.OTHER)
+                                                      .metricIdentifier("identifier")
+                                                      .deviationType(DeviationType.HIGHER_IS_RISKY)
+                                                      .criteria(TimeSeriesThresholdCriteria.builder().build())
+                                                      .action(IGNORE)
+                                                      .build()))
+                        .build()))
+                .dataCollectionDsl("dsl")
+                .build())
         .metricInfos(
             Arrays.asList(AppDynamicsCVConfig.MetricInfo.builder().identifier("identifier").metricName("name").build()))
         .applicationName(generateUuid())

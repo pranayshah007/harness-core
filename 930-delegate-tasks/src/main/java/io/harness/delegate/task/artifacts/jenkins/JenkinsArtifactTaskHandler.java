@@ -13,7 +13,7 @@ import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.CommandExecutionStatus.RUNNING;
 import static io.harness.threading.Morpheus.sleep;
 
-import static software.wings.beans.Log.Builder.aLog;
+import static software.wings.beans.dto.Log.Builder.aLog;
 
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;

@@ -32,6 +32,7 @@ import io.harness.beans.sweepingoutputs.StageExecutionSweepingOutput;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
+import io.harness.ci.license.CILicenseService;
 import io.harness.ci.pipeline.executions.beans.CIBuildAuthor;
 import io.harness.ci.pipeline.executions.beans.CIBuildBranchHook;
 import io.harness.ci.pipeline.executions.beans.CIBuildCommit;
@@ -49,6 +50,7 @@ import io.harness.ci.states.IntegrationStageStepPMS;
 import io.harness.ci.utils.WebhookTriggerProcessorUtils;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.exception.ngexception.CIStageExecutionException;
+import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.plancreator.steps.common.StageElementParameters;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -92,6 +94,8 @@ import lombok.extern.slf4j.Slf4j;
 public class CIModuleInfoProvider implements ExecutionSummaryModuleInfoProvider {
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private ConnectorUtils connectorUtils;
+  @Inject private CILicenseService ciLicenseService;
+
   String NULL_STR = "null";
   @Override
   public boolean shouldRun(OrchestrationEvent event) {
@@ -110,6 +114,8 @@ public class CIModuleInfoProvider implements ExecutionSummaryModuleInfoProvider 
       String buildType = null;
       String triggerRepoName = null;
       String url = null;
+      String licenseType = null;
+      String editionType = null;
 
       List<CIScmDetails> scmDetailsList = new ArrayList<>();
       List<CIInfraDetails> infraDetailsList = new ArrayList<>();
@@ -193,6 +199,20 @@ public class CIModuleInfoProvider implements ExecutionSummaryModuleInfoProvider 
         log.error("Failed to retrieve branch and tag for filtering", ex);
       }
 
+      try {
+        LicensesWithSummaryDTO licensesWithSummaryDTO =
+            ciLicenseService.getLicenseSummary(baseNGAccess.getAccountIdentifier());
+        if (licensesWithSummaryDTO != null && licensesWithSummaryDTO.getLicenseType() != null) {
+          licenseType = licensesWithSummaryDTO.getLicenseType() != null
+              ? licensesWithSummaryDTO.getLicenseType().toString()
+              : null;
+          editionType =
+              licensesWithSummaryDTO.getEdition() != null ? licensesWithSummaryDTO.getEdition().toString() : null;
+        }
+      } catch (Exception e) {
+        log.error("Failed to retrieve licensing information", e);
+      }
+
       if (executionSource != null && executionTriggerInfo.getTriggerType() == TriggerType.WEBHOOK) {
         WebhookExecutionSource webhookExecutionSource = (WebhookExecutionSource) executionSource;
         CIWebhookInfoDTO ciWebhookInfoDTO = CIModuleInfoMapper.getCIBuildResponseDTO(executionSource);
@@ -227,6 +247,8 @@ public class CIModuleInfoProvider implements ExecutionSummaryModuleInfoProvider 
               .infraDetailsList(infraDetailsList)
               .imageDetailsList(imageDetailsList)
               .tiBuildDetailsList(tiBuildDetailsList)
+              .ciLicenseType(licenseType)
+              .ciEditionType(editionType)
               .build();
         }
       }
@@ -271,6 +293,8 @@ public class CIModuleInfoProvider implements ExecutionSummaryModuleInfoProvider 
           .infraDetailsList(infraDetailsList)
           .imageDetailsList(imageDetailsList)
           .tiBuildDetailsList(tiBuildDetailsList)
+          .ciLicenseType(licenseType)
+          .ciEditionType(editionType)
           .build();
     } else if (currentStepType != null
         && Objects.equals(currentStepType.getType(), IntegrationStageStepPMS.STEP_TYPE.getType())) {

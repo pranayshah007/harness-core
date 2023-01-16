@@ -14,7 +14,7 @@ import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.RUNNING;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 
-import static software.wings.beans.Log.Builder.aLog;
+import static software.wings.beans.dto.Log.Builder.aLog;
 
 import static com.google.common.collect.Iterables.getLast;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -31,7 +31,7 @@ import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.serializer.KryoSerializer;
 
-import software.wings.beans.Log;
+import software.wings.beans.dto.Log;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -51,8 +51,12 @@ public enum PredefinedTemplate {
   CVNG_SLO_MSTEAMS("cvng_notification_templates/cvng_slo_msteams.txt", "cvng_slo_msteams"),
   CVNG_MONITOREDSERVICE_SLACK(
       "cvng_notification_templates/cvng_monitoredservice_slack.txt", "cvng_monitoredservice_slack"),
+  CVNG_MONITOREDSERVICE_ET_SLACK(
+      "cvng_notification_templates/cvng_monitoredservice_et_slack.txt", "cvng_monitoredservice_et_slack"),
   CVNG_MONITOREDSERVICE_EMAIL(
       "cvng_notification_templates/cvng_monitoredservice_email.txt", "cvng_monitoredservice_email"),
+  CVNG_MONITOREDSERVICE_ET_EMAIL(
+      "cvng_notification_templates/cvng_monitoredservice_et_email.txt", "cvng_monitoredservice_et_email"),
   CVNG_MONITOREDSERVICE_PAGERDUTY(
       "cvng_notification_templates/cvng_monitoredservice_pagerduty.txt", "cvng_monitoredservice_pagerduty"),
   CVNG_MONITOREDSERVICE_MSTEAMS(

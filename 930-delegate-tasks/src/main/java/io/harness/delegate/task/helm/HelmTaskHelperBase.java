@@ -38,7 +38,6 @@ import static io.harness.helm.HelmConstants.V3Commands.HELM_CACHE_HOME_PATH;
 import static io.harness.helm.HelmConstants.V3Commands.HELM_REPO_ADD_FORCE_UPDATE;
 import static io.harness.helm.HelmConstants.V3Commands.HELM_REPO_FLAGS;
 import static io.harness.k8s.kubectl.Utils.encloseWithQuotesIfNeeded;
-import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.WARN;
 
 import static software.wings.beans.LogColor.White;
@@ -83,7 +82,6 @@ import io.harness.helm.HelmSubCommandType;
 import io.harness.k8s.K8sGlobalConfigService;
 import io.harness.k8s.manifest.ObjectYamlUtils;
 import io.harness.k8s.model.HelmVersion;
-import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.utils.FieldWithPlainTextOrSecretValueHelper;
@@ -1083,7 +1081,7 @@ public class HelmTaskHelperBase {
       } else {
         String msg = "Exception in processing HelmValuesFetchTask. " + exceptionMsg;
         log.error(msg, ex);
-        logCallback.saveExecutionLog(msg, ERROR, CommandExecutionStatus.FAILURE);
+        logCallback.saveExecutionLog(msg, WARN);
         throw ex;
       }
     }

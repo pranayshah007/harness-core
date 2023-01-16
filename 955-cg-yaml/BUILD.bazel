@@ -17,7 +17,7 @@ java_library(
     deps = [
         "//:lombok",
         "//957-cg-beans:module",
-        "//980-commons:module",
+        "//980-commons/src/main/java/io/harness/yaml:module",
         "//999-annotations:module",
         "@maven//:com_google_code_findbugs_annotations",
     ],

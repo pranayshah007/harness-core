@@ -16,7 +16,8 @@ import com.fasterxml.jackson.annotation.JsonValue;
 
 @OwnedBy(CDC)
 public enum ServiceNowAuthType {
-  @JsonProperty(ServiceNowConstants.USERNAME_PASSWORD) USER_PASSWORD(ServiceNowConstants.USERNAME_PASSWORD);
+  @JsonProperty(ServiceNowConstants.USERNAME_PASSWORD) USER_PASSWORD(ServiceNowConstants.USERNAME_PASSWORD),
+  @JsonProperty(ServiceNowConstants.ADFS) ADFS(ServiceNowConstants.ADFS);
 
   private final String displayName;
 

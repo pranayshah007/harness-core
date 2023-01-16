@@ -18,7 +18,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.executables.CdTaskExecutable;
-import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.delegate.beans.TaskData;
@@ -66,7 +65,6 @@ public class TerragruntApplyStep extends CdTaskExecutable<TerragruntApplyTaskRes
   @Inject private TerragruntStepHelper helper;
 
   @Inject private KryoSerializer kryoSerializer;
-  @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
   @Inject private PipelineRbacHelper pipelineRbacHelper;
   @Inject private StepHelper stepHelper;
 

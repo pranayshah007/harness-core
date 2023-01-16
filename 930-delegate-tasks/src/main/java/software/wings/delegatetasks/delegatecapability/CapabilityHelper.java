@@ -123,6 +123,52 @@ public class CapabilityHelper {
     return encryptionConfigsMap;
   }
 
+  public static Map<String, EncryptionConfig> fetchEncryptionDetailsListFromParametersV2(TaskDataV2 taskData) {
+    Map<String, EncryptionConfig> encryptionConfigsMap = new HashMap<>();
+    // TODO: Remove this when jenkins/bambooConfig etc are integrated with new framework
+    try {
+      Object argument = Arrays.stream(taskData.getParameters())
+                            .filter(CapabilityHelper::isEncryptionDetailsList)
+                            .findFirst()
+                            .orElse(null);
+
+      if (argument != null) {
+        List<EncryptedDataDetail> encryptedDataDetails = (List<EncryptedDataDetail>) argument;
+        return EncryptedDataDetailsCapabilityHelper.fetchEncryptionConfigsMapFromEncryptedDataDetails(
+            encryptedDataDetails);
+      }
+      // TODO: For Task "SECRET_DECRYPT_REF", is argument is only EncryptedDataDetail.
+      // Actually it should be later changed to List to match all other apis
+      // can be done later
+      argument = Arrays.stream(taskData.getParameters())
+                     .filter(parameter -> parameter instanceof EncryptedDataDetail)
+                     .findFirst()
+                     .orElse(null);
+
+      if (argument != null) {
+        EncryptedDataDetail encryptedDataDetail = (EncryptedDataDetail) argument;
+        return EncryptedDataDetailsCapabilityHelper.fetchEncryptionConfigsMapFromEncryptedDataDetails(
+            Collections.singletonList(encryptedDataDetail));
+      }
+
+      // BATCH_SECRET_DECRYPT
+      argument = Arrays.stream(taskData.getParameters())
+                     .filter(CapabilityHelper::isEncryptableSettingWithEncryptionDetailsList)
+                     .findFirst()
+                     .orElse(null);
+
+      if (argument != null) {
+        List<EncryptableSettingWithEncryptionDetails> encryptableSettingWithEncryptionDetails =
+            (List<EncryptableSettingWithEncryptionDetails>) argument;
+        return fetchEncryptionConfigsMapFromEncryptableSettings(encryptableSettingWithEncryptionDetails);
+      }
+
+    } catch (Exception e) {
+      log.warn("Failed while generating Encryption Configs from EncryptionDataDetails: " + e);
+    }
+    return encryptionConfigsMap;
+  }
+
   private static Map<String, EncryptionConfig> fetchEncryptionConfigsMapFromEncryptableSettings(
       List<EncryptableSettingWithEncryptionDetails> encryptableSettingWithEncryptionDetails) {
     Map<String, EncryptionConfig> encryptionConfigsMap = new HashMap<>();

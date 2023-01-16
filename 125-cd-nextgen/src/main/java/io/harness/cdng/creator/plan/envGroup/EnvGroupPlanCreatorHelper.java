@@ -21,12 +21,10 @@ import io.harness.cdng.envGroup.services.EnvironmentGroupService;
 import io.harness.cdng.envGroup.yaml.EnvGroupPlanCreatorConfig;
 import io.harness.cdng.envGroup.yaml.EnvGroupPlanCreatorConfig.EnvGroupPlanCreatorConfigBuilder;
 import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
-import io.harness.cdng.environment.filters.FilterYaml;
 import io.harness.cdng.environment.helper.EnvironmentInfraFilterHelper;
 import io.harness.cdng.environment.helper.EnvironmentPlanCreatorConfigMapper;
 import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
-import io.harness.cdng.gitops.entity.Cluster;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.environment.beans.Environment;
@@ -40,12 +38,9 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import graphql.VisibleForTesting;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -57,7 +52,6 @@ public class EnvGroupPlanCreatorHelper {
   public static final int PAGE_SIZE = 1000;
   @Inject private EnvironmentGroupService environmentGroupService;
   @Inject private EnvironmentService environmentService;
-  @Inject private EnvironmentInfraFilterHelper environmentInfraFilterHelper;
 
   public EnvGroupPlanCreatorConfig createEnvGroupPlanCreatorConfig(
       PlanCreationContext ctx, EnvironmentGroupYaml envGroupYaml) {
@@ -125,33 +119,6 @@ public class EnvGroupPlanCreatorHelper {
       envGroupPlanCreatorConfigBuilder.environmentGroupYaml(envGroupYaml);
     }
     return envGroupPlanCreatorConfigBuilder.build();
-  }
-
-  private void processFiltersForEachEnvironment(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, EnvironmentYamlV2 envYamlV2, List<EnvironmentPlanCreatorConfig> envconfig,
-      Environment environment) {
-    List<FilterYaml> filterYamls = envYamlV2.getFilters().getValue();
-
-    Map<String, io.harness.cdng.gitops.entity.Cluster> clsToCluster =
-        environmentInfraFilterHelper.getClusterRefToNGGitOpsClusterMap(accountIdentifier, orgIdentifier,
-            projectIdentifier, Arrays.asList(envYamlV2.getEnvironmentRef().getValue()));
-
-    Set<String> clsRefs = clsToCluster.values().stream().map(e -> e.getClusterRef()).collect(Collectors.toSet());
-
-    if (isEmpty(clsRefs)) {
-      log.info("No clusters were qualified after applying filters");
-    } else {
-      List<io.harness.gitops.models.Cluster> clusterList = environmentInfraFilterHelper.fetchClustersFromGitOps(
-          accountIdentifier, orgIdentifier, projectIdentifier, clsRefs);
-
-      Set<io.harness.cdng.gitops.entity.Cluster> filteredClusters =
-          environmentInfraFilterHelper.applyFilteringOnClusters(filterYamls, clsToCluster, new HashSet<>(clusterList));
-
-      List<String> filteredClusterRefs =
-          filteredClusters.stream().map(Cluster::getClusterRef).collect(Collectors.toList());
-
-      createEnvConfigsForFiltersFlow(envconfig, environment, filteredClusterRefs);
-    }
   }
 
   @VisibleForTesting

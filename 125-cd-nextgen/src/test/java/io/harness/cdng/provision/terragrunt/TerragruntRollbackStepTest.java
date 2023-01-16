@@ -11,6 +11,7 @@ import static io.harness.rule.OwnerRule.VLICA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -24,7 +25,6 @@ import io.harness.account.services.AccountService;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.manifest.yaml.GitStoreDTO;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
@@ -50,10 +50,13 @@ import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.rule.Owner;
+import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
-import io.harness.telemetry.TelemetryReporter;
+
+import software.wings.beans.VaultConfig;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -79,13 +82,11 @@ public class TerragruntRollbackStepTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
   @Mock private KryoSerializer kryoSerializer;
-  @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
   @Mock private TerragruntStepHelper terragruntStepHelper;
   @Mock private PipelineRbacHelper pipelineRbacHelper;
   @Mock private StepHelper stepHelper;
   @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
   @Mock private AccountService accountService;
-  @Mock private TelemetryReporter telemetryReporter;
   @Mock private TerragruntConfigDAL terragruntConfigDAL;
   @InjectMocks private TerragruntRollbackStep terragruntRollbackStep = new TerragruntRollbackStep();
 
@@ -118,6 +119,9 @@ public class TerragruntRollbackStepTest extends CategoryTest {
                                                                   .runType(TerragruntTaskRunType.RUN_MODULE)
                                                                   .path("test-path")
                                                                   .build())
+                                            .environmentVariables(new HashMap<>() {
+                                              { put("envKey", "envVal"); }
+                                            })
                                             .build();
     doReturn(terragruntConfig).when(iterator).next();
 
@@ -133,8 +137,12 @@ public class TerragruntRollbackStepTest extends CategoryTest {
         .thenReturn(TerragruntTestStepUtils.createGitStoreDelegateConfig());
     when(terragruntStepHelper.getBackendConfigFromTgConfig(any(), any()))
         .thenReturn(InlineStoreDelegateConfig.builder().identifier("test-backend-id").build());
-    when(terragruntStepHelper.getEnvironmentVariablesMap(any())).thenReturn(new HashMap<>());
     when(terragruntStepHelper.getLatestFileId(any())).thenReturn(null);
+    when(terragruntStepHelper.getEncryptionDetailsFromTgInheritConfig(any(), any(), any(), any()))
+        .thenReturn(List.of(EncryptedDataDetail.builder()
+                                .encryptionConfig(VaultConfig.builder().build())
+                                .encryptedData(EncryptedRecordData.builder().build())
+                                .build()));
     Mockito.mockStatic(StepUtils.class);
     when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
@@ -143,7 +151,8 @@ public class TerragruntRollbackStepTest extends CategoryTest {
     TaskRequest taskRequest = terragruntRollbackStep.obtainTask(ambiance, stepElementParameters, null);
     assertThat(taskRequest).isNotNull();
     verifyStatic(StepUtils.class, times(1));
-    StepUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any());
+    StepUtils.prepareCDTaskRequest(
+        any(), taskDataArgumentCaptor.capture(), any(), any(), eq("Terragrunt Destroy Task"), any(), any());
     assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
     assertThat(taskDataArgumentCaptor.getValue().getParameters()).isNotNull();
 
@@ -154,6 +163,8 @@ public class TerragruntRollbackStepTest extends CategoryTest {
     assertThat(params.getRunConfiguration().getRunType()).isEqualTo(TerragruntTaskRunType.RUN_MODULE);
     assertThat(params.getRunConfiguration().getPath()).isEqualTo("test-path");
     assertThat(params.getTargets().get(0)).isEqualTo("test-target");
+    assertThat(params.getEnvVars().get("envKey")).isEqualTo("envVal");
+    assertThat(params.getEncryptedDataDetailList()).isNotEmpty();
     List<StoreDelegateConfig> inlineVar = params.getVarFiles();
     assertThat(((InlineStoreDelegateConfig) inlineVar.get(0)).getIdentifier()).isEqualTo("test-var1-id");
     assertThat(((InlineStoreDelegateConfig) params.getBackendFilesStore()).getIdentifier())
@@ -190,6 +201,9 @@ public class TerragruntRollbackStepTest extends CategoryTest {
                                                                   .runType(TerragruntTaskRunType.RUN_MODULE)
                                                                   .path("test-path")
                                                                   .build())
+                                            .environmentVariables(new HashMap<>() {
+                                              { put("envKey", "envVal"); }
+                                            })
                                             .build();
     doReturn(terragruntConfig).when(iterator).next();
 
@@ -205,8 +219,12 @@ public class TerragruntRollbackStepTest extends CategoryTest {
         .thenReturn(TerragruntTestStepUtils.createGitStoreDelegateConfig());
     when(terragruntStepHelper.getBackendConfigFromTgConfig(any(), any()))
         .thenReturn(InlineStoreDelegateConfig.builder().identifier("test-backend-id").build());
-    when(terragruntStepHelper.getEnvironmentVariablesMap(any())).thenReturn(new HashMap<>());
     when(terragruntStepHelper.getLatestFileId(any())).thenReturn(null);
+    when(terragruntStepHelper.getEncryptionDetailsFromTgInheritConfig(any(), any(), any(), any()))
+        .thenReturn(List.of(EncryptedDataDetail.builder()
+                                .encryptionConfig(VaultConfig.builder().build())
+                                .encryptedData(EncryptedRecordData.builder().build())
+                                .build()));
     Mockito.mockStatic(StepUtils.class);
     when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
@@ -215,7 +233,8 @@ public class TerragruntRollbackStepTest extends CategoryTest {
     TaskRequest taskRequest = terragruntRollbackStep.obtainTask(ambiance, stepElementParameters, null);
     assertThat(taskRequest).isNotNull();
     verifyStatic(StepUtils.class, times(1));
-    StepUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any());
+    StepUtils.prepareCDTaskRequest(
+        any(), taskDataArgumentCaptor.capture(), any(), any(), eq("Terragrunt Apply Task"), any(), any());
     assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
     assertThat(taskDataArgumentCaptor.getValue().getParameters()).isNotNull();
 
@@ -226,6 +245,8 @@ public class TerragruntRollbackStepTest extends CategoryTest {
     assertThat(params.getRunConfiguration().getRunType()).isEqualTo(TerragruntTaskRunType.RUN_MODULE);
     assertThat(params.getRunConfiguration().getPath()).isEqualTo("test-path");
     assertThat(params.getTargets().get(0)).isEqualTo("test-target");
+    assertThat(params.getEnvVars().get("envKey")).isEqualTo("envVal");
+    assertThat(params.getEncryptedDataDetailList()).isNotEmpty();
     List<StoreDelegateConfig> inlineVar = params.getVarFiles();
     assertThat(((InlineStoreDelegateConfig) inlineVar.get(0)).getIdentifier()).isEqualTo("test-var1-id");
     assertThat(((InlineStoreDelegateConfig) params.getBackendFilesStore()).getIdentifier())
@@ -248,7 +269,7 @@ public class TerragruntRollbackStepTest extends CategoryTest {
     TerragruntApplyTaskResponse applyTaskResponse =
         TerragruntApplyTaskResponse.builder().unitProgressData(unitProgressData).stateFileId("test-stateId").build();
 
-    TerragruntConfig terragruntConfig = TerragruntConfig.builder().build();
+    TerragruntConfig terragruntConfig = TerragruntConfig.builder().entityId("test-entity-id").build();
     TerragruntConfigSweepingOutput terragruntConfigSweepingOutput =
         TerragruntConfigSweepingOutput.builder()
             .terragruntConfig(terragruntConfig)
@@ -268,7 +289,7 @@ public class TerragruntRollbackStepTest extends CategoryTest {
     assertThat(applyTaskResponse).isNotNull();
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
     assertThat(stepResponse.getUnitProgressList()).isEqualTo(unitProgresses);
-    verify(terragruntStepHelper, times(1)).updateParentEntityIdAndVersion(any(), any());
+    verify(terragruntStepHelper, times(1)).updateParentEntityIdAndVersion(eq("test-entity-id"), eq("test-stateId"));
     verify(terragruntStepHelper, times(1)).saveTerragruntConfig(terragruntConfig, ambiance);
     verify(stepHelper, times(1)).sendRollbackTelemetryEvent(any(), any(), any());
   }
@@ -288,7 +309,7 @@ public class TerragruntRollbackStepTest extends CategoryTest {
     TerragruntDestroyTaskResponse applyTaskResponse =
         TerragruntDestroyTaskResponse.builder().unitProgressData(unitProgressData).stateFileId("test-stateId").build();
 
-    TerragruntConfig terragruntConfig = TerragruntConfig.builder().build();
+    TerragruntConfig terragruntConfig = TerragruntConfig.builder().entityId("test-entity-id").build();
     TerragruntConfigSweepingOutput terragruntConfigSweepingOutput =
         TerragruntConfigSweepingOutput.builder()
             .terragruntConfig(terragruntConfig)
@@ -308,8 +329,8 @@ public class TerragruntRollbackStepTest extends CategoryTest {
     assertThat(applyTaskResponse).isNotNull();
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
     assertThat(stepResponse.getUnitProgressList()).isEqualTo(unitProgresses);
-    verify(terragruntStepHelper, times(1)).updateParentEntityIdAndVersion(any(), any());
-    verify(terragruntConfigDAL, times(1)).clearTerragruntConfig(any(), any());
-    verify(stepHelper, times(1)).sendRollbackTelemetryEvent(any(), any(), any());
+    verify(terragruntStepHelper, times(1)).updateParentEntityIdAndVersion(eq("test-entity-id"), eq("test-stateId"));
+    verify(terragruntConfigDAL, times(1)).clearTerragruntConfig(any(), eq("test-entity-id"));
+    verify(stepHelper, times(1)).sendRollbackTelemetryEvent(eq(ambiance), any(), any());
   }
 }

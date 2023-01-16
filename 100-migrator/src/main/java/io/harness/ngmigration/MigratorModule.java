@@ -11,8 +11,10 @@ import static io.harness.authorization.AuthorizationServiceHeader.MIGRATOR;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.pipeline.remote.PipelineRemoteClientModule;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.service.ServiceResourceClientModule;
+import io.harness.template.TemplateResourceClientModule;
 import io.harness.token.TokenClientModule;
 
 import com.google.inject.AbstractModule;
@@ -54,6 +56,10 @@ public class MigratorModule extends AbstractModule {
   @Override
   public void configure() {
     try {
+      install(new PipelineRemoteClientModule(migratorConfig.getPipelineServiceClientConfig(),
+          migratorConfig.getCg().getPortal().getJwtNextGenManagerSecret(), MIGRATOR.toString()));
+      install(new TemplateResourceClientModule(migratorConfig.getTemplateServiceClientConfig(),
+          migratorConfig.getCg().getPortal().getJwtNextGenManagerSecret(), MIGRATOR.getServiceId()));
       install(new ServiceResourceClientModule(migratorConfig.getNgClientConfig(),
           migratorConfig.getCg().getPortal().getJwtNextGenManagerSecret(), MIGRATOR.getServiceId()));
       install(new TokenClientModule(migratorConfig.getNgClientConfig(),

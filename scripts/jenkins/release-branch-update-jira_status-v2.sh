@@ -12,6 +12,36 @@ PROJECTS=$(<$SHDIR/jira-projects.txt)
 #      grep -o -iE '('$PROJECTS')-[0-9]+' | sort | uniq)
 KEYS=$(git log --pretty=oneline --format="%s" --abbrev-commit ${PREVIOUS_RELEASE_BRANCH}..${CURRENT_RELEASE_BRANCH} | grep -o -iE '('$PROJECTS')-[0-9]+' | sort | uniq)
 
+EXCLUSION_KEYS=$(git log --pretty=oneline --format="%s" --abbrev-commit ${PREVIOUS_RELEASE_BRANCH}..${CURRENT_RELEASE_BRANCH} | grep -o -iE 'HotfixPreQA: [('$PROJECTS')-[0-9]+]' | grep -o -iE '('$PROJECTS')-[0-9]+' | sort | uniq)
+
+EXCLUDED_KEYS_LIST=""
+
+#checking if Pre QA hotfix already contains RELEASE_BE_SAAS or not
+for KEY in ${EXCLUSION_KEYS}
+do
+    EXCLUDE_PROJECTS=",PIE,"
+    echo "Excluded Key - $KEY"
+    IFS="-" read -ra PROJNUM <<< "$KEY"
+    PROJ="${PROJNUM[0]}"
+    # If it is in the exclude projects list, then do not attempt to set the version
+    if [[ $EXCLUDE_PROJECTS == *",$PROJ,"* ]]; then
+      echo "Skipping $KEY - project is archived or not relevant to versions."
+    else
+      RELEASE_BE_SAAS=`curl -X GET -H "Content-Type: application/json" https://harness.atlassian.net/rest/api/2/issue/${KEY} --user $JIRA_USERNAME:$JIRA_PASSWORD | jq ".fields.customfield_10644" | tr -d '"'`
+       if [[ -z ${RELEASE_BE_SAAS} ]]; then
+         echo "RELEASE_BE_SAAS is null"
+       else
+        EXCLUDED_KEYS_LIST="${EXCLUDED_KEYS_LIST} ${KEY}"
+       fi
+    fi
+done
+
+
+#Removing EXCLUDED_KEYS_LIST from the original KEYS List in order to avoid tagging them.
+for EXCLUDE_KEY in ${EXCLUDED_KEYS_LIST}; do
+KEYS=( "${KEYS[@]/$EXCLUDE_KEY}" )
+done
+
 # QA-Test status ID is 201, Dev Complete status id is 151.
 STATUS_ID=201
 

@@ -73,6 +73,8 @@ public interface StepSpecTypeConstants {
   String TAS_BASIC_APP_SETUP = "BasicAppSetup";
   String SWAP_ROLLBACK = "SwapRollback";
   String TANZU_COMMAND = "TanzuCommand";
+  String TAS_ROLLING_DEPLOY = "TasRollingDeploy";
+  String TAS_ROLLING_ROLLBACK = "TasRollingRollback";
 
   String ECS_ROLLING_DEPLOY = "EcsRollingDeploy";
   String ECS_ROLLING_ROLLBACK = "EcsRollingRollback";
@@ -97,4 +99,6 @@ public interface StepSpecTypeConstants {
   String ASG_CANARY_DELETE = "AsgCanaryDelete";
   String ASG_ROLLING_DEPLOY = "AsgRollingDeploy";
   String ASG_ROLLING_ROLLBACK = "AsgRollingRollback";
+
+  String K8S_DRY_RUN_MANIFEST = "K8sDryRun";
 }

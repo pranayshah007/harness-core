@@ -324,8 +324,8 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
 
     // delete template stable template
     assertThatThrownBy(()
-                           -> templateService.delete(
-                               ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, "version2", 1L, ""))
+                           -> templateService.delete(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER,
+                               "version2", 1L, "", false))
         .isInstanceOf(InvalidRequestException.class);
 
     boolean markEntityInvalid = templateService.markEntityInvalid(
@@ -337,7 +337,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
         .isInstanceOf(NGTemplateException.class);
 
     boolean delete = templateService.delete(
-        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, null, "");
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, null, "", false);
     assertThat(delete).isTrue();
   }
 
@@ -402,7 +402,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     when(entitySetupUsageClient.isEntityReferenced(any(), any(), any())).thenReturn(request);
     try {
       templateService.deleteSingleTemplateHelper(
-          ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, entity, (long) 1.0, true, "");
+          ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, entity, (long) 1.0, true, "", false);
     } catch (ReferencedEntityException e) {
       assertThat(e.getMessage())
           .isEqualTo("Could not delete the template template1 as it is referenced by other entities");
@@ -441,8 +441,8 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     when(entitySetupUsageClient.isEntityReferenced(any(), any(), any())).thenReturn(request);
 
     // Deleting a last updated version for a particular templateIdentifier.
-    boolean delete =
-        templateService.delete(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, "version3", null, "");
+    boolean delete = templateService.delete(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, "version3", null, "", false);
     assertThat(delete).isTrue();
 
     Criteria criteria =
@@ -455,15 +455,16 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     assertThat(templateEntities.getContent().size()).isEqualTo(2);
 
     // Deleting a non last update template version
-    delete = templateService.delete(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "template2", "version2", null, "");
+    delete =
+        templateService.delete(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "template2", "version2", null, "", false);
     assertThat(delete).isTrue();
     templateEntities = templateService.list(criteria, pageRequest, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, false);
     assertThat(templateEntities.getContent()).isNotNull();
     assertThat(templateEntities.getContent().size()).isEqualTo(2);
 
     // Deleting complete templateIdentifier
-    delete = templateService.deleteTemplates(
-        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, Sets.newHashSet("version1", "version2"), "");
+    delete = templateService.deleteTemplates(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER,
+        Sets.newHashSet("version1", "version2"), "", false);
     assertThat(delete).isTrue();
     templateEntities = templateService.list(criteria, pageRequest, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, false);
     assertThat(templateEntities.getContent()).isNotNull();
@@ -505,8 +506,8 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     when(entitySetupUsageClient.isEntityReferenced(any(), any(), any())).thenReturn(request);
 
     // Deleting a last updated version for a particular templateIdentifier.
-    boolean delete =
-        templateService.delete(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, "version1", null, "");
+    boolean delete = templateService.delete(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, "version1", null, "", false);
     assertThat(delete).isTrue();
 
     Criteria criteria =
@@ -730,11 +731,11 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
 
     // delete template stable template
     assertThatThrownBy(
-        () -> templateService.delete(ACCOUNT_ID, ORG_IDENTIFIER, null, TEMPLATE_IDENTIFIER, "version2", 1L, ""))
+        () -> templateService.delete(ACCOUNT_ID, ORG_IDENTIFIER, null, TEMPLATE_IDENTIFIER, "version2", 1L, "", false))
         .isInstanceOf(InvalidRequestException.class);
 
-    boolean delete =
-        templateService.delete(ACCOUNT_ID, ORG_IDENTIFIER, null, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, null, "");
+    boolean delete = templateService.delete(
+        ACCOUNT_ID, ORG_IDENTIFIER, null, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, null, "", false);
     assertThat(delete).isTrue();
   }
 
@@ -880,7 +881,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     // Test multiple template delete
 
     boolean deleteTemplates = templateService.deleteTemplates(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
-        TEMPLATE_IDENTIFIER, new HashSet<>(Arrays.asList(TEMPLATE_VERSION_LABEL, "version2", "version3")), "");
+        TEMPLATE_IDENTIFIER, new HashSet<>(Arrays.asList(TEMPLATE_VERSION_LABEL, "version2", "version3")), "", false);
     assertThat(deleteTemplates).isTrue();
 
     criteria =

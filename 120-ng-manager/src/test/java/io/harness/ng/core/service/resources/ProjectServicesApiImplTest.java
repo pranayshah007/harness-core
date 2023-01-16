@@ -251,9 +251,10 @@ public class ProjectServicesApiImplTest extends CategoryTest {
     when(orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(org, project, account))
         .thenReturn(true);
     when(serviceEntityService.get(any(), any(), any(), any(), eq(false))).thenReturn(Optional.of(entity));
-    when(serviceEntityManagementService.deleteService(any(), any(), any(), any(), any())).thenReturn(true);
+    when(serviceEntityManagementService.deleteService(account, org, project, identifier, "ifMatch", false))
+        .thenReturn(true);
 
-    Response response = projectServicesApiImpl.deleteServiceEntity(org, project, identifier, account);
+    Response response = projectServicesApiImpl.deleteServiceEntity(org, project, identifier, account, false);
 
     ServiceResponse serviceResponseFinal = (ServiceResponse) response.getEntity();
 
@@ -266,9 +267,11 @@ public class ProjectServicesApiImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testDeleteServiceFail() {
     when(serviceEntityService.get(any(), any(), any(), any(), eq(false))).thenReturn(Optional.of(entity));
-    doReturn(false).when(serviceEntityManagementService).deleteService(account, org, project, identifier, "ifMatch");
+    doReturn(false)
+        .when(serviceEntityManagementService)
+        .deleteService(account, org, project, identifier, "ifMatch", false);
     try {
-      projectServicesApiImpl.deleteServiceEntity(org, project, identifier, account);
+      projectServicesApiImpl.deleteServiceEntity(org, project, identifier, account, false);
     } catch (InvalidRequestException e) {
       assertEquals(e.getMessage(), String.format("Service with identifier [%s] could not be deleted", identifier));
     }

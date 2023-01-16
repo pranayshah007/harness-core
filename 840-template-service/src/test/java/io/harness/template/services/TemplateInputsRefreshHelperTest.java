@@ -120,7 +120,7 @@ public class TemplateInputsRefreshHelperTest extends TemplateServiceTestBase {
     String expectedPipelineYamlFile = "pipeline-with-two-runtime-inputs.yaml";
     String expectedPipelineYaml = readFile(expectedPipelineYamlFile);
 
-    String refreshedYaml = templateInputsRefreshHelper.refreshTemplates(accountId, orgId, projId, pipelineYaml);
+    String refreshedYaml = templateInputsRefreshHelper.refreshTemplates(accountId, orgId, projId, pipelineYaml, false);
 
     YamlNode yamlNode = null, expectedYamlNode = null;
     try {
@@ -161,7 +161,7 @@ public class TemplateInputsRefreshHelperTest extends TemplateServiceTestBase {
     String expectedPipelineYamlFile = "pipeline-with-one-runtime-input.yaml";
     String expectedPipelineYaml = readFile(expectedPipelineYamlFile);
 
-    String refreshedYaml = templateInputsRefreshHelper.refreshTemplates(accountId, orgId, projId, pipelineYaml);
+    String refreshedYaml = templateInputsRefreshHelper.refreshTemplates(accountId, orgId, projId, pipelineYaml, false);
 
     YamlNode yamlNode = null, expectedYamlNode = null;
     try {
@@ -202,7 +202,7 @@ public class TemplateInputsRefreshHelperTest extends TemplateServiceTestBase {
     String expectedPipelineYamlFile = "pipeline-with-zero-runtime-inputs.yaml";
     String expectedPipelineYaml = readFile(expectedPipelineYamlFile);
 
-    String refreshedYaml = templateInputsRefreshHelper.refreshTemplates(accountId, orgId, projId, pipelineYaml);
+    String refreshedYaml = templateInputsRefreshHelper.refreshTemplates(accountId, orgId, projId, pipelineYaml, false);
 
     YamlNode yamlNode = null, expectedYamlNode = null;
     try {
@@ -243,7 +243,7 @@ public class TemplateInputsRefreshHelperTest extends TemplateServiceTestBase {
     String expectedPipelineYamlFile = "pipeline-with-two-runtime-inputs.yaml";
     String expectedPipelineYaml = readFile(expectedPipelineYamlFile);
 
-    String refreshedYaml = templateInputsRefreshHelper.refreshTemplates(accountId, orgId, projId, pipelineYaml);
+    String refreshedYaml = templateInputsRefreshHelper.refreshTemplates(accountId, orgId, projId, pipelineYaml, false);
 
     YamlNode yamlNode = null, expectedYamlNode = null;
     try {
@@ -284,7 +284,7 @@ public class TemplateInputsRefreshHelperTest extends TemplateServiceTestBase {
     String expectedPipelineYamlFile = "pipeline-with-zero-runtime-inputs.yaml";
     String expectedPipelineYaml = readFile(expectedPipelineYamlFile);
 
-    String refreshedYaml = templateInputsRefreshHelper.refreshTemplates(accountId, orgId, projId, pipelineYaml);
+    String refreshedYaml = templateInputsRefreshHelper.refreshTemplates(accountId, orgId, projId, pipelineYaml, false);
 
     YamlNode yamlNode = null, expectedYamlNode = null;
     try {
@@ -327,7 +327,7 @@ public class TemplateInputsRefreshHelperTest extends TemplateServiceTestBase {
 
     mockNGManagerReconcileResponse(expectedPipelineYaml);
 
-    String refreshedYaml = templateInputsRefreshHelper.refreshTemplates(accountId, orgId, projId, pipelineYaml);
+    String refreshedYaml = templateInputsRefreshHelper.refreshTemplates(accountId, orgId, projId, pipelineYaml, false);
 
     assertThat(refreshedYaml).isEqualTo(expectedPipelineYaml);
   }

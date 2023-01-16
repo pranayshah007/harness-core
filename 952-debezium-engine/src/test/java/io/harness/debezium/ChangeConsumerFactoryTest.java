@@ -22,22 +22,42 @@ import io.harness.rule.Owner;
 
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
 
 @OwnedBy(HarnessTeam.PIPELINE)
-
+@RunWith(MockitoJUnitRunner.class)
 public class ChangeConsumerFactoryTest extends CategoryTest {
-  ChangeConsumerFactory changeConsumerFactory = new ChangeConsumerFactory();
+  @Mock DebeziumProducerFactory debeziumProducerFactory;
+  @InjectMocks ChangeConsumerFactory changeConsumerFactory;
+
   @Test
   @Owner(developers = SHALINI)
   @Category(UnitTests.class)
   public void testGetConsumer() {
     String collectionName = "coll";
-    EventsFrameworkChangeConsumer eventsFrameworkChangeConsumer = changeConsumerFactory.get(
-        60, collectionName, new ChangeConsumerConfig(ConsumerType.EVENTS_FRAMEWORK, null), 1000, 1000, null);
-    assertNotNull(eventsFrameworkChangeConsumer);
-    assertThat(eventsFrameworkChangeConsumer).isInstanceOf(EventsFrameworkChangeConsumer.class);
-    assertThatThrownBy(
-        () -> changeConsumerFactory.get(60, collectionName, new ChangeConsumerConfig(null, null), 1000, 1000, null))
+    EventsFrameworkChangeConsumerStreaming eventsFrameworkChangeConsumerStreaming =
+        changeConsumerFactory.get(ChangeConsumerConfig.builder()
+                                      .sleepInterval(10)
+                                      .producingCountPerBatch(10)
+                                      .redisStreamSize(10)
+                                      .consumerType(ConsumerType.EVENTS_FRAMEWORK)
+                                      .eventsFrameworkConfiguration(null)
+                                      .build(),
+            null, "coll");
+    assertNotNull(eventsFrameworkChangeConsumerStreaming);
+    assertThat(eventsFrameworkChangeConsumerStreaming).isInstanceOf(EventsFrameworkChangeConsumerStreaming.class);
+    assertThatThrownBy(()
+                           -> changeConsumerFactory.get(ChangeConsumerConfig.builder()
+                                                            .sleepInterval(10)
+                                                            .producingCountPerBatch(10)
+                                                            .redisStreamSize(10)
+                                                            .consumerType(null)
+                                                            .eventsFrameworkConfiguration(null)
+                                                            .build(),
+                               null, "coll"))
         .isInstanceOf(InvalidRequestException.class);
   }
 }

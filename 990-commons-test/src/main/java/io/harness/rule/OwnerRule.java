@@ -310,6 +310,7 @@ public class OwnerRule implements TestRule {
   public static final String ANMOL = "anmol.maheshwari";
   public static final String MEENA = "meena.ravichandran";
   public static final String FJUNIOR = "francisco.junior";
+  public static final String RAJENDRA_BAVISKAR = "rajendra.baviskar";
   @Deprecated public static final String UNKNOWN = "unknown";
 
   private static UserInfoBuilder defaultUserInfo(String user) {
@@ -549,6 +550,7 @@ public class OwnerRule implements TestRule {
           .put(ANMOL, defaultUserInfo(ANMOL).slack("U03A6KZB9F0").team(CE).build())
           .put(MEENA, defaultUserInfo(MEENA).slack("U03UJM1PY5T").team(CDP).build())
           .put(FJUNIOR, defaultUserInfo(FJUNIOR).slack("U01UH89MKA9").team(SPG).build())
+          .put(RAJENDRA_BAVISKAR, defaultUserInfo(RAJENDRA_BAVISKAR).slack("U03V43NCYTF").team(SPG).build())
           .build();
 
   private static String prDeveloperId = findDeveloperId(System.getenv(GHPRB_PULL_AUTHOR_EMAIL));

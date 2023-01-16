@@ -12,8 +12,8 @@ import io.debezium.engine.DebeziumEngine;
 import java.util.Properties;
 
 public interface DebeziumService {
-  DebeziumEngine<ChangeEvent<String, String>> getEngine(
-      Properties props, MongoCollectionChangeConsumer changeConsumer, String collection);
+  DebeziumEngine<ChangeEvent<String, String>> getEngine(Properties props, MongoCollectionChangeConsumer changeConsumer,
+      String collection, DebeziumController debeziumController);
 
   void closeEngine(DebeziumEngine debeziumEngine, String collection) throws Exception;
 }

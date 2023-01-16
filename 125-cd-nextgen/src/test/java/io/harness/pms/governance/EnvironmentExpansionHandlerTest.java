@@ -99,6 +99,7 @@ public class EnvironmentExpansionHandlerTest extends CategoryTest {
     InfrastructureConfig config1 = InfrastructureConfig.builder()
                                        .infrastructureDefinitionConfig(
                                            InfrastructureDefinitionConfig.builder()
+                                               .identifier("my_infra")
                                                .type(InfrastructureType.ECS)
                                                .spec(EcsInfrastructure.builder()
                                                          .cluster(ParameterField.createValueField("us-east-1-cluster"))
@@ -119,6 +120,7 @@ public class EnvironmentExpansionHandlerTest extends CategoryTest {
         InfrastructureConfig.builder()
             .infrastructureDefinitionConfig(
                 InfrastructureDefinitionConfig.builder()
+                    .identifier("my_infra_with_ns_runtime")
                     .type(InfrastructureType.KUBERNETES_DIRECT)
                     .spec(K8SDirectInfrastructure.builder()
                               .connectorRef(ParameterField.createValueField("k8s_connector"))
@@ -141,6 +143,7 @@ public class EnvironmentExpansionHandlerTest extends CategoryTest {
         InfrastructureConfig.builder()
             .infrastructureDefinitionConfig(
                 InfrastructureDefinitionConfig.builder()
+                    .identifier("infra_without_connectorRef")
                     .type(InfrastructureType.KUBERNETES_DIRECT)
                     .spec(K8SDirectInfrastructure.builder()
                               .connectorRef(ParameterField.createValueField(null))

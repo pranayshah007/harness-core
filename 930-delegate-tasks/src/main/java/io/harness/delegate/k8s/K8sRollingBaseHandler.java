@@ -14,12 +14,19 @@ import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
 
+import static software.wings.beans.LogColor.White;
+import static software.wings.beans.LogHelper.color;
+import static software.wings.beans.LogWeight.Bold;
+
 import static java.util.Arrays.asList;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FileData;
+import io.harness.delegate.task.k8s.K8sDeployRequest;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
 import io.harness.k8s.kubectl.Kubectl;
+import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.HarnessLabelValues;
 import io.harness.k8s.model.HarnessLabels;
 import io.harness.k8s.model.K8sDelegateTaskParams;
@@ -222,5 +229,30 @@ public class K8sRollingBaseHandler {
       return lastSuccessfulLegacyReleaseOptional.orElse(null);
     }
     return lastSuccessfulRelease;
+  }
+
+  public List<KubernetesResource> prepareResourcesAndRenderTemplate(K8sDeployRequest request,
+      K8sDelegateTaskParams k8sDelegateTaskParams, List<String> manifestOverrideFiles,
+      KubernetesConfig kubernetesConfig, String manifestFilesDirectory, String releaseName,
+      boolean isLocalOverrideFeatureFlag, boolean isErrorFrameworkSupported, boolean isInCanaryWorkflow,
+      LogCallback executionLogCallback) throws Exception {
+    k8sTaskHelperBase.deleteSkippedManifestFiles(manifestFilesDirectory, executionLogCallback);
+
+    List<FileData> manifestFiles = k8sTaskHelperBase.renderTemplate(k8sDelegateTaskParams,
+        request.getManifestDelegateConfig(), manifestFilesDirectory, manifestOverrideFiles, releaseName,
+        kubernetesConfig.getNamespace(), executionLogCallback, request.getTimeoutIntervalInMin());
+
+    List<KubernetesResource> resources = k8sTaskHelperBase.readManifestAndOverrideLocalSecrets(
+        manifestFiles, executionLogCallback, isLocalOverrideFeatureFlag, isErrorFrameworkSupported);
+    k8sTaskHelperBase.setNamespaceToKubernetesResourcesIfRequired(resources, kubernetesConfig.getNamespace());
+
+    if (isInCanaryWorkflow) {
+      updateDestinationRuleWithSubsets(executionLogCallback, resources, kubernetesConfig);
+      updateVirtualServiceWithRoutes(executionLogCallback, resources, kubernetesConfig);
+    }
+
+    executionLogCallback.saveExecutionLog(color("\nManifests [Post template rendering] :\n", White, Bold));
+    executionLogCallback.saveExecutionLog(ManifestHelper.toYamlForLogs(resources));
+    return resources;
   }
 }

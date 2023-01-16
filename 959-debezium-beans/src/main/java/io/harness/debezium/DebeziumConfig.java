@@ -8,6 +8,7 @@
 package io.harness.debezium;
 
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.eventsframework.EventsFrameworkConfiguration;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.ArrayList;
@@ -104,10 +105,8 @@ public class DebeziumConfig {
    */
   @JsonProperty("redisStreamSize") private int redisStreamSize;
   /**
-   * Specifies the criteria for running a snapshot upon startup of the connector. The default is initial, and specifies
-   * that the connector reads a snapshot when either no offset is found or if the oplog/change stream no longer contains
-   * the previous offset. The never option specifies that the connector should never use snapshots, instead the
-   * connector should proceed to tail the log.
+   * Specifies the criteria for running a snapshot upon startup of the connector. The value can be one of these: ("all"
+   * - both snapshot and streaming, "initial" - only snapshot, "never" - only streaming)
    */
   @JsonProperty("snapshot.mode") private String snapshotMode;
   /**
@@ -154,6 +153,7 @@ public class DebeziumConfig {
    */
   @JsonProperty("field.exclude.list") private String fieldExcludeList;
   @JsonProperty("mongodb.connection.string") private String mongodbConnectionString;
+  @JsonProperty("eventsFramework") private EventsFrameworkConfiguration eventsFrameworkConfiguration;
   public List<String> getMonitoredCollections() {
     if (EmptyPredicate.isEmpty(collectionIncludeList)) {
       return new ArrayList<>();

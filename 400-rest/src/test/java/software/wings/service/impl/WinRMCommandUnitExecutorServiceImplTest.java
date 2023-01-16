@@ -18,12 +18,12 @@ import static io.harness.rule.OwnerRule.SAHIL;
 import static io.harness.shell.AccessType.USER_PASSWORD;
 
 import static software.wings.beans.HostConnectionAttributes.Builder.aHostConnectionAttributes;
-import static software.wings.beans.Log.Builder.aLog;
 import static software.wings.beans.SSHExecutionCredential.Builder.aSSHExecutionCredential;
 import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
 import static software.wings.beans.artifact.ArtifactFile.Builder.anArtifactFile;
 import static software.wings.beans.command.CommandExecutionContext.Builder.aCommandExecutionContext;
 import static software.wings.beans.command.ExecCommandUnit.Builder.anExecCommandUnit;
+import static software.wings.beans.dto.Log.Builder.aLog;
 import static software.wings.beans.infrastructure.Host.Builder.aHost;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.ACTIVITY_ID;
