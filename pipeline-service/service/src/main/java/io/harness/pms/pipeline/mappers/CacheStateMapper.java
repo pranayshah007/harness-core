@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitsync.sdk.CacheState;
-import io.harness.spec.server.pipeline.v1.model.CacheResponseMetadataDTO;
+import io.harness.spec.server.pipeline.v1.w1.model.CacheResponseMetadataDTO;
 
 import lombok.experimental.UtilityClass;
 
