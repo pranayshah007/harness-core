@@ -3294,7 +3294,10 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
             FeatureName.ON_DEMAND_ROLLBACK_WITH_DIFFERENT_ARTIFACT, workflowExecution.getAccountId())) {
       FindOptions findOptions = new FindOptions();
 
-      findOptions.hint(BasicDBUtils.getIndexObject(WorkflowExecution.mongoIndexes(), "lastInfraMappingSearch2"));
+      if (featureFlagService.isEnabled(
+              FeatureName.SPG_ROLLOUT_LASTINFRAMAPPINGSEARCH_INDEX, workflowExecution.getAccountId())) {
+        findOptions.hint(BasicDBUtils.getIndexObject(WorkflowExecution.mongoIndexes(), "lastInfraMappingSearch2"));
+      }
       Query<WorkflowExecution> deploymentQuery = query.cloneQuery();
       deploymentQuery.filter(WorkflowExecutionKeys.deployment, true);
       WorkflowExecution existingWorkflow = deploymentQuery.get(findOptions);
@@ -5779,7 +5782,10 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
 
     if (isNotEmpty(infraMappingList)) {
       if (isInfraBasedArtifact) {
-        findOptions.hint(BasicDBUtils.getIndexObject(WorkflowExecution.mongoIndexes(), "lastInfraMappingSearch2"));
+        if (featureFlagService.isEnabled(
+                FeatureName.SPG_ROLLOUT_LASTINFRAMAPPINGSEARCH_INDEX, workflowExecution.getAccountId())) {
+          findOptions.hint(BasicDBUtils.getIndexObject(WorkflowExecution.mongoIndexes(), "lastInfraMappingSearch2"));
+        }
 
         Query<WorkflowExecution> deploymentQuery = workflowExecutionQuery.cloneQuery();
         deploymentQuery.filter(WorkflowExecutionKeys.deployment, true);

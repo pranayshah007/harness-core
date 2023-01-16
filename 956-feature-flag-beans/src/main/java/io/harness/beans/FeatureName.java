@@ -376,6 +376,8 @@ public enum FeatureName {
       "Enable projection on deployments page and graphql executions", HarnessTeam.SPG),
   CUSTOM_SECRET_MANAGER_NG("Enable Custom Secret Manager in NG", HarnessTeam.PL),
   CV_AWS_PROMETHEUS("Enable AWS Prometheus for CV State", HarnessTeam.CV),
+  SPG_ROLLOUT_LASTINFRAMAPPINGSEARCH_INDEX(
+      "This FF is used for rollout the index usage without regressions, no behaviour change", HarnessTeam.SPG),
   CD_GIT_WEBHOOK_POLLING("Used to poll git webhook recent delivery events", HarnessTeam.CDP),
   MULTI_SERVICE_INFRA("Enable multiple service/environment support in NG", HarnessTeam.CDP),
   CD_TRIGGERS_REFACTOR("Enable NG Triggers UI refactoring", HarnessTeam.CDP),
