@@ -57,7 +57,7 @@ public class BudgetUtils {
   public static final String INVALID_ENTITY_ID_EXCEPTION =
       "Error in create/update budget operation. Some of the appliesTo ids are invalid.";
   public static final String INVALID_START_TIME_EXCEPTION =
-      "Error in create budget operation. Start time of budget is invalid.";
+      "Budget Period and Period Start date cannot add up to be in the past.";
   public static final String INVALID_PERSPECTIVE_ID_EXCEPTION = "Invalid perspective id";
   public static final String INVALID_BUDGET_ID_EXCEPTION = "Invalid budget id";
   public static final String MISSING_BUDGET_DATA_EXCEPTION = "Missing Budget data exception";

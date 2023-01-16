@@ -171,7 +171,7 @@ public class ServiceResourceTest extends CategoryTest {
     doReturn(true)
         .when(serviceEntityManagementService)
         .deleteService("ACCOUNT_ID", serviceRequestDTO.getOrgIdentifier(), serviceRequestDTO.getProjectIdentifier(),
-            serviceRequestDTO.getIdentifier(), null);
+            serviceRequestDTO.getIdentifier(), null, false);
 
     Boolean data = serviceResource.delete(null, "IDENTIFIER", "ACCOUNT_ID", "ORG_ID", "PROJECT_ID").getData();
     assertThat(data).isTrue();

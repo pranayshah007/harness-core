@@ -38,6 +38,7 @@ import io.harness.shell.ExecuteCommandResponse;
 import io.harness.shell.ShellExecutionData;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.utils.YamlPipelineUtils;
 
 import java.io.IOException;
@@ -60,7 +61,7 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({StepUtils.class})
+@PrepareForTest({StepUtils.class, TaskRequestsUtils.class})
 @OwnedBy(HarnessTeam.PIPELINE)
 public class ShellScriptStepTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
@@ -98,8 +99,8 @@ public class ShellScriptStepTest extends CategoryTest {
     doReturn(taskParametersNG)
         .when(shellScriptHelperService)
         .buildShellScriptTaskParametersNG(ambiance, stepParameters);
-    MockedStatic<StepUtils> aStatic = Mockito.mockStatic(StepUtils.class);
-    aStatic.when(() -> StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any(), any()))
+    MockedStatic<TaskRequestsUtils> aStatic = Mockito.mockStatic(TaskRequestsUtils.class);
+    aStatic.when(() -> TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
 
     TaskRequest taskRequest = shellScriptStep.obtainTask(ambiance, stepElementParameters, null);
@@ -118,8 +119,8 @@ public class ShellScriptStepTest extends CategoryTest {
     doReturn(taskParametersNG)
         .when(shellScriptHelperService)
         .buildShellScriptTaskParametersNG(ambiance, stepParameters);
-    MockedStatic<StepUtils> aStatic = Mockito.mockStatic(StepUtils.class);
-    aStatic.when(() -> StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+    MockedStatic<TaskRequestsUtils> aStatic = Mockito.mockStatic(TaskRequestsUtils.class);
+    aStatic.when(() -> TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
 
     TaskRequest taskRequest = shellScriptStep.obtainTask(ambiance, stepElementParameters, null);

@@ -8,6 +8,8 @@
 package io.harness.template.services;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.beans.FeatureName.CDS_FORCE_DELETE_ENTITIES;
+import static io.harness.beans.FeatureName.NG_SETTINGS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
@@ -15,6 +17,7 @@ import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.remote.client.NGRestUtils.getResponse;
 import static io.harness.template.beans.NGTemplateConstants.STABLE_VERSION;
 
+import static java.lang.Boolean.parseBoolean;
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
@@ -22,6 +25,7 @@ import io.harness.EntityType;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.data.structure.EmptyPredicate;
@@ -56,10 +60,13 @@ import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.ng.core.template.TemplateWithInputsResponseDTO;
 import io.harness.ng.core.template.exception.NGTemplateResolveExceptionV2;
 import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
+import io.harness.ngsettings.SettingIdentifiers;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.organization.remote.OrganizationClient;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.project.remote.ProjectClient;
+import io.harness.remote.client.CGRestUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.NGTemplateRepository;
 import io.harness.springdata.TransactionHelper;
@@ -126,7 +133,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   @Inject private TemplateMergeServiceHelper templateMergeServiceHelper;
 
   @Inject private TemplateGitXService templateGitXService;
-
+  @Inject private AccountClient accountClient;
+  @Inject NGSettingsClient settingsClient;
   private static final String DUP_KEY_EXP_FORMAT_STRING =
       "Template [%s] of versionLabel [%s] under Project[%s], Organization [%s] already exists";
 
@@ -456,14 +464,18 @@ public class NGTemplateServiceImpl implements NGTemplateService {
 
   @Override
   public boolean delete(String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier,
-      String deleteVersionLabel, Long version, String comments) {
+      String deleteVersionLabel, Long version, String comments, boolean forceDelete) {
     enforcementClientService.checkAvailability(FeatureRestrictionName.TEMPLATE_SERVICE, accountId);
     List<TemplateEntity> templateEntities =
         getAllTemplatesForGivenIdentifier(accountId, orgIdentifier, projectIdentifier, templateIdentifier, false);
 
     TemplateEntity templateToDelete = null;
     TemplateEntity stableTemplate = null;
-
+    if (forceDelete && !isForceDeleteEnabled(accountId)) {
+      throw new InvalidRequestException(
+          format("Parameter forcedDelete cannot be true. Force Delete is not enabled for account [%s]", accountId),
+          USER);
+    }
     for (TemplateEntity templateEntity : templateEntities) {
       if (deleteVersionLabel.equals(templateEntity.getVersionLabel())) {
         templateToDelete = templateEntity;
@@ -481,13 +493,15 @@ public class NGTemplateServiceImpl implements NGTemplateService {
       throw new InvalidRequestException(
           "You cannot delete the stable version of the template. Please update another version as the stable version before deleting this version");
     }
+
     return deleteMultipleTemplatesHelper(accountId, orgIdentifier, projectIdentifier,
-        Collections.singletonList(templateToDelete), version, comments, templateEntities.size() == 1, stableTemplate);
+        Collections.singletonList(templateToDelete), version, comments, templateEntities.size() == 1, stableTemplate,
+        forceDelete);
   }
 
   @Override
   public boolean deleteTemplates(String accountId, String orgIdentifier, String projectIdentifier,
-      String templateIdentifier, Set<String> deleteTemplateVersions, String comments) {
+      String templateIdentifier, Set<String> deleteTemplateVersions, String comments, boolean forceDelete) {
     enforcementClientService.checkAvailability(FeatureRestrictionName.TEMPLATE_SERVICE, accountId);
     List<TemplateEntity> templateEntities =
         getAllTemplatesForGivenIdentifier(accountId, orgIdentifier, projectIdentifier, templateIdentifier, false);
@@ -508,7 +522,31 @@ public class NGTemplateServiceImpl implements NGTemplateService {
           "You cannot delete the stable version of the template. Please update another version as the stable version before deleting this version");
     }
     return deleteMultipleTemplatesHelper(accountId, orgIdentifier, projectIdentifier, templateToDeleteList, null,
-        comments, canDeleteStableTemplate, stableTemplate);
+        comments, canDeleteStableTemplate, stableTemplate, forceDelete);
+  }
+  private boolean isForceDeleteEnabled(String accountIdentifier) {
+    boolean isForceDeleteFFEnabled = isForceDeleteFFEnabled(accountIdentifier);
+    boolean isForceDeleteEnabledBySettings =
+        isNgSettingsFFEnabled(accountIdentifier) && isForceDeleteFFEnabledViaSettings(accountIdentifier);
+    return isForceDeleteFFEnabled && isForceDeleteEnabledBySettings;
+  }
+  @VisibleForTesting
+  protected boolean isForceDeleteFFEnabledViaSettings(String accountIdentifier) {
+    return parseBoolean(NGRestUtils
+                            .getResponse(settingsClient.getSetting(
+                                SettingIdentifiers.ENABLE_FORCE_DELETE, accountIdentifier, null, null))
+                            .getValue());
+  }
+
+  @VisibleForTesting
+  protected boolean isForceDeleteFFEnabled(String accountIdentifier) {
+    return CGRestUtils.getResponse(
+        accountClient.isFeatureFlagEnabled(CDS_FORCE_DELETE_ENTITIES.name(), accountIdentifier));
+  }
+
+  @VisibleForTesting
+  protected boolean isNgSettingsFFEnabled(String accountIdentifier) {
+    return CGRestUtils.getResponse(accountClient.isFeatureFlagEnabled(NG_SETTINGS.name(), accountIdentifier));
   }
 
   private String getMessageHelper(String accountId, String orgIdentifier, String projectIdentifier) {
@@ -525,7 +563,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
 
   private boolean deleteMultipleTemplatesHelper(String accountId, String orgIdentifier, String projectIdentifier,
       List<TemplateEntity> templateToDeleteList, Long version, String comments, boolean canDeleteStableTemplate,
-      TemplateEntity stableTemplate) {
+      TemplateEntity stableTemplate, boolean forceDelete) {
     boolean lastUpdatedTemplateDeleted = false;
     for (TemplateEntity templateEntity : templateToDeleteList) {
       try (TemplateGitSyncBranchContextGuard ignored = templateServiceHelper.getTemplateGitContextForGivenTemplate(
@@ -536,7 +574,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
           lastUpdatedTemplateDeleted = true;
         }
         deleteSingleTemplateHelper(accountId, orgIdentifier, projectIdentifier, templateEntity.getIdentifier(),
-            templateEntity, version, canDeleteStableTemplate, comments);
+            templateEntity, version, canDeleteStableTemplate, comments, forceDelete);
       }
     }
 
@@ -548,7 +586,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
 
   protected boolean deleteSingleTemplateHelper(String accountId, String orgIdentifier, String projectIdentifier,
       String templateIdentifier, TemplateEntity templateToDelete, Long version, boolean canDeleteStableTemplate,
-      String comments) {
+      String comments, boolean forceDelete) {
     String versionLabel = templateToDelete.getVersionLabel();
     comments = getActualComments(accountId, orgIdentifier, projectIdentifier, comments);
     // find the given template version in the list
@@ -566,10 +604,13 @@ public class NGTemplateServiceImpl implements NGTemplateService {
           "Template with identifier [%s] and versionLabel [%s], under Project[%s], Organization [%s] is a stable template, thus cannot delete it.",
           templateIdentifier, versionLabel, projectIdentifier, orgIdentifier));
     }
-    checkThatTheTemplateIsNotUsedByOthers(templateToDelete);
+    if (!forceDelete) {
+      checkThatTheTemplateIsNotUsedByOthers(templateToDelete);
+    }
+
     try {
-      return templateServiceHelper.deleteTemplate(
-          accountId, orgIdentifier, projectIdentifier, templateIdentifier, templateToDelete, versionLabel, comments);
+      return templateServiceHelper.deleteTemplate(accountId, orgIdentifier, projectIdentifier, templateIdentifier,
+          templateToDelete, versionLabel, comments, forceDelete);
     } catch (Exception e) {
       log.error(String.format("Error while deleting template with identifier [%s] and versionLabel [%s]",
                     templateIdentifier, versionLabel),
@@ -820,7 +861,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
                  templateEntity, GitContextHelper.getGitEntityInfo(),
                  format("Template with identifier [%s] and versionLabel [%s] marking stable template as false.",
                      templateEntity.getIdentifier(), templateEntity.getVersionLabel()))) {
-          templateRepository.hardDeleteTemplateForOldGitSync(templateEntity, "");
+          templateRepository.hardDeleteTemplateForOldGitSync(templateEntity, "", false);
         }
       }
       return true;

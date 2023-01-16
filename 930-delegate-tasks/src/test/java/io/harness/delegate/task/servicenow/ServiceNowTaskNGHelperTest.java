@@ -30,7 +30,10 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthType;
+import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthenticationDTO;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowConnectorDTO;
+import io.harness.delegate.beans.connector.servicenow.ServiceNowUserNamePasswordDTO;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
 import io.harness.encryption.SecretRefData;
@@ -152,8 +155,15 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
   private ServiceNowConnectorDTO getServiceNowConnector() {
     return ServiceNowConnectorDTO.builder()
         .serviceNowUrl("https://harness.service-now.com/")
-        .username("username")
-        .passwordRef(SecretRefData.builder().decryptedValue(new char[] {'3', '4', 'f', '5', '1'}).build())
+        .auth(ServiceNowAuthenticationDTO.builder()
+                  .authType(ServiceNowAuthType.USER_PASSWORD)
+                  .credentials(
+                      ServiceNowUserNamePasswordDTO.builder()
+                          .username("username")
+                          .passwordRef(
+                              SecretRefData.builder().decryptedValue(new char[] {'3', '4', 'f', '5', '1'}).build())
+                          .build())
+                  .build())
         .build();
   }
 

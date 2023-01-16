@@ -52,6 +52,7 @@ import io.harness.cdng.service.beans.ServiceUseFromStage;
 import io.harness.cdng.service.beans.StageOverridesConfig;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrarHelperPut;
+import io.harness.ng.core.ScopeAware;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.service.entity.ServiceEntity;
@@ -82,6 +83,7 @@ public class NGEntitiesMorphiaRegistrar implements MorphiaRegistrar {
     set.add(SshWinRmAzureInfraMapping.class);
     set.add(TanzuApplicationServiceInfraMapping.class);
     set.add(ModuleVersionInfo.class);
+    set.add(ScopeAware.class);
   }
 
   @Override

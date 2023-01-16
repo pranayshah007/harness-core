@@ -8,6 +8,8 @@
 package io.harness.pms.pipeline.metadata;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.pms.pipeline.metadata.RecentExecutionsInfoHelper.NUM_RECENT_EXECUTIONS;
+import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.NAMAN;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -106,7 +108,8 @@ public class RecentExecutionsInfoHelperTest extends CategoryTest {
     doReturn(Optional.of(pipelineMetadata))
         .when(pipelineMetadataService)
         .getMetadata(accountIdentifier, orgIdentifier, projectIdentifier, pipelineId);
-    recentExecutionsInfoHelper.updateMetadata(accountIdentifier, orgIdentifier, projectIdentifier, pipelineId, subject);
+    recentExecutionsInfoHelper.updateMetadata(
+        accountIdentifier, orgIdentifier, projectIdentifier, pipelineId, subject, PlanExecution.builder().build());
 
     // the list will contain this element only if the subject was called
     assertThat(testList).containsExactly("testString");
@@ -122,7 +125,8 @@ public class RecentExecutionsInfoHelperTest extends CategoryTest {
     doReturn(null)
         .when(persistentLocker)
         .waitToAcquireLock(expectedLockName, Duration.ofSeconds(1), Duration.ofSeconds(2));
-    recentExecutionsInfoHelper.updateMetadata(accountIdentifier, orgIdentifier, projectIdentifier, pipelineId, subject);
+    recentExecutionsInfoHelper.updateMetadata(
+        accountIdentifier, orgIdentifier, projectIdentifier, pipelineId, subject, PlanExecution.builder().build());
     verify(pipelineMetadataService, times(0)).getMetadata(any(), any(), any(), any());
   }
 
@@ -140,7 +144,41 @@ public class RecentExecutionsInfoHelperTest extends CategoryTest {
         .when(pipelineMetadataService)
         .getMetadata(accountIdentifier, orgIdentifier, projectIdentifier, pipelineId);
     // if this calls the subject then the exception inside will be thrown that'll fail the test
-    recentExecutionsInfoHelper.updateMetadata(accountIdentifier, orgIdentifier, projectIdentifier, pipelineId, subject);
+    recentExecutionsInfoHelper.updateMetadata(
+        accountIdentifier, orgIdentifier, projectIdentifier, pipelineId, subject, PlanExecution.builder().build());
+  }
+
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testUpdateMetadataWithNotRecentPlanExecutionUpdate() {
+    Informant0<List<RecentExecutionInfo>> subject = (List<RecentExecutionInfo> recentExecutionInfoList) -> {
+      throw new InvalidRequestException("This subject was not supposed to be called");
+    };
+    doReturn(AcquiredNoopLock.builder().build())
+        .when(persistentLocker)
+        .waitToAcquireLock(expectedLockName, Duration.ofSeconds(1), Duration.ofSeconds(2));
+    List<RecentExecutionInfo> recentExecutionInfoList = new ArrayList<>();
+    // Adding recentExecutions.
+    for (int i = 0; i < NUM_RECENT_EXECUTIONS; i++) {
+      recentExecutionInfoList.add(RecentExecutionInfo.builder().startTs(100L + i).build());
+    }
+    doReturn(Optional.of(PipelineMetadataV2.builder().recentExecutionInfoList(recentExecutionInfoList).build()))
+        .when(pipelineMetadataService)
+        .getMetadata(accountIdentifier, orgIdentifier, projectIdentifier, pipelineId);
+    // if this calls the subject then the exception inside will be thrown that'll fail the test.
+    // Since PlanExecution.startTs is < earliest recentExecution.startTs. Subject should not be called.
+    recentExecutionsInfoHelper.updateMetadata(accountIdentifier, orgIdentifier, projectIdentifier, pipelineId, subject,
+        PlanExecution.builder().startTs(50L).build());
+
+    List<String> testList = new ArrayList<>();
+    subject = (List<RecentExecutionInfo> recentExecutionInfoListV1) -> testList.add("testString");
+
+    // Since PlanExecution.startTs is > earliest recentExecution.startTs. Subject should be invoked.
+    recentExecutionsInfoHelper.updateMetadata(accountIdentifier, orgIdentifier, projectIdentifier, pipelineId, subject,
+        PlanExecution.builder().startTs(1000L).build());
+    // Since subject will be invoked. testList should have 1 item.
+    assertThat(testList.contains("testString")).isTrue();
   }
 
   @Test

@@ -37,7 +37,6 @@ import software.wings.beans.ErrorStrategy;
 import software.wings.beans.ExecutionStrategy;
 import software.wings.beans.GitFileConfig;
 import software.wings.beans.LicenseInfo;
-import software.wings.beans.Log;
 import software.wings.beans.PhaseStepType;
 import software.wings.beans.S3FileConfig;
 import software.wings.beans.ServiceVariableType;
@@ -94,7 +93,6 @@ public class CgOrchestrationBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(ArtifactStreamSummary.class, 7202);
     kryo.register(ArtifactStreamMetadata.class, 8126);
     kryo.register(ArtifactSummary.class, 8127);
-    kryo.register(Log.class, 71102);
     kryo.register(ThirdPartyApiCallLog.ThirdPartyApiCallField.class, 71100);
     kryo.register(ThirdPartyApiCallLog.FieldType.class, 71101);
 

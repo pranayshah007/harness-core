@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeoutException;
 import lombok.extern.slf4j.Slf4j;
 import org.zeroturnaround.exec.ProcessExecutor;
 
@@ -111,19 +112,26 @@ public class GovernanceRuleServiceImpl implements GovernanceRuleService {
 
       final ArrayList<String> Validatecmd = Lists.newArrayList("custodian", "validate", fileName);
       String processResult = getProcessExecutor().command(Validatecmd).readOutput(true).execute().outputString();
-      log.info("Validatecmd {}", Validatecmd);
       log.info("{}", processResult);
 
       File file = new File(fileName);
       file.delete();
 
-      if (!processResult.contains("Configuration valid")) {
-        int index = processResult.indexOf("ERROR policy");
-        throw new InvalidRequestException(processResult.substring(index));
+      if (processResult.contains("Configuration invalid")) {
+        processResult =
+            processResult.substring(processResult.indexOf("Configuration invalid"), processResult.lastIndexOf('\n'));
+        if (processResult.indexOf("custodian.commands:ERROR")
+            != processResult.lastIndexOf("custodian.commands:ERROR")) {
+          throw new InvalidRequestException(processResult.substring(
+              processResult.indexOf("custodian.commands:ERROR") + 24, processResult.lastIndexOf('\n')));
+        } else {
+          throw new InvalidRequestException(
+              processResult.substring(processResult.indexOf("custodian.commands:ERROR") + 24));
+        }
       }
 
-    } catch (Exception e) {
-      throw new InvalidRequestException("{}", e);
+    } catch (IOException | InterruptedException | TimeoutException e) {
+      throw new InvalidRequestException("Policy YAML is malformed");
     }
   }
 

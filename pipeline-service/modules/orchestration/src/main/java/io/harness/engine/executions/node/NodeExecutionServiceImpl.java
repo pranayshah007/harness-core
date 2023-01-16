@@ -62,7 +62,6 @@ import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -293,8 +292,8 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   }
 
   @Override
-  public List<NodeExecution> extractChildExecutions(
-      String parentId, boolean includeParent, List<NodeExecution> finalList, List<NodeExecution> allExecutions) {
+  public List<NodeExecution> extractChildExecutions(String parentId, boolean includeParent,
+      List<NodeExecution> finalList, List<NodeExecution> allExecutions, boolean includeChildrenOfStrategy) {
     Map<String, List<NodeExecution>> parentChildrenMap = new HashMap<>();
     for (NodeExecution execution : allExecutions) {
       if (execution.getParentId() == null) {
@@ -307,7 +306,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
         parentChildrenMap.put(execution.getParentId(), cList);
       }
     }
-    extractChildList(parentChildrenMap, parentId, finalList);
+    extractChildList(parentChildrenMap, parentId, finalList, includeChildrenOfStrategy);
     if (includeParent) {
       finalList.add(allExecutions.stream()
                         .filter(ne -> ne.getUuid().equals(parentId))
@@ -318,8 +317,8 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   }
 
   // Extracts child list recursively from parentChildrenMap into finalList
-  private void extractChildList(
-      Map<String, List<NodeExecution>> parentChildrenMap, String parentId, List<NodeExecution> finalList) {
+  private void extractChildList(Map<String, List<NodeExecution>> parentChildrenMap, String parentId,
+      List<NodeExecution> finalList, boolean includeChildrenOfStrategy) {
     List<NodeExecution> children = parentChildrenMap.get(parentId);
     if (isEmpty(children)) {
       return;
@@ -328,15 +327,16 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     children.forEach(child -> {
       // NOTE: We are ignoring the status of steps inside strategy because of max concurrency defined.
       // We need to run all the steps inside strategy once
-      if (child.getStepType().getStepCategory() != StepCategory.STRATEGY) {
-        extractChildList(parentChildrenMap, child.getUuid(), finalList);
+      if (includeChildrenOfStrategy || child.getStepType().getStepCategory() != StepCategory.STRATEGY) {
+        extractChildList(parentChildrenMap, child.getUuid(), finalList, true);
       }
     });
   }
 
   @Override
   public List<NodeExecution> findAllChildrenWithStatusInAndWithoutOldRetries(String planExecutionId, String parentId,
-      EnumSet<Status> flowingStatuses, boolean includeParent, Set<String> fieldsToBeIncluded) {
+      EnumSet<Status> flowingStatuses, boolean includeParent, Set<String> fieldsToBeIncluded,
+      boolean includeChildrenOfStrategy) {
     List<NodeExecution> finalList = new ArrayList<>();
     Set<String> finalFieldsToBeIncluded = new HashSet<>(NodeProjectionUtils.fieldsForAllChildrenExtractor);
     if (EmptyPredicate.isNotEmpty(fieldsToBeIncluded)) {
@@ -350,7 +350,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
         allExecutions.add(iterator.next());
       }
     }
-    return extractChildExecutions(parentId, includeParent, finalList, allExecutions);
+    return extractChildExecutions(parentId, includeParent, finalList, allExecutions, includeChildrenOfStrategy);
   }
 
   @Override
@@ -632,7 +632,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
           && nodeExecution.getStatus() == ABORTED) {
         List<NodeExecution> allChildrenWithStatusInAborted = findAllChildrenWithStatusInAndWithoutOldRetries(
             nodeExecution.getAmbiance().getPlanExecutionId(), nodeExecution.getUuid(), EnumSet.of(ABORTED), false,
-            Sets.newHashSet(NodeExecutionKeys.interruptHistories));
+            Sets.newHashSet(NodeExecutionKeys.interruptHistories), false);
         if (isEmpty(allChildrenWithStatusInAborted)) {
           return;
         }

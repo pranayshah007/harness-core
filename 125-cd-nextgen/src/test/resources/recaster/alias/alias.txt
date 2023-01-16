@@ -695,3 +695,14 @@ io.harness.cdng.manifest.yaml.GoogleCloudFunctionDefinitionManifestOutcome
 io.harness.steps.policy.step.outcome.PolicyStepOutcome
 io.harness.steps.policy.step.outcome.PolicySetOutcome
 io.harness.steps.policy.step.outcome.PolicyOutcome
+io.harness.cdng.tas.TasRollingRollbackStepInfo
+io.harness.cdng.tas.TasRollingDeployStepParameters
+io.harness.cdng.tas.TasRollingRollbackStepNode
+io.harness.cdng.tas.TasRollingDeployStepInfo
+io.harness.cdng.tas.TasRollingDeployStepNode
+io.harness.cdng.tas.outcome.TasRollingDeployOutcome
+io.harness.cdng.tas.TasRollingRollbackStepParameters
+io.harness.cdng.k8s.K8sDryRunManifestOutcome
+io.harness.cdng.k8s.K8sDryRunManifestStepInfo
+io.harness.cdng.k8s.K8sDryRunManifestStepNode
+io.harness.cdng.k8s.K8sDryRunManifestStepParameters

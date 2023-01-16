@@ -72,6 +72,7 @@ paths:
           $ref: '#/components/responses/ServiceResponse'
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/ForceDelete'
       description: Deletes the requested service
       security:
         - x-api-key: []
@@ -177,6 +178,7 @@ paths:
           $ref: '#/components/responses/ServiceResponse'
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/ForceDelete'
       description: Deletes the requested service
       security:
         - x-api-key: [ ]
@@ -280,6 +282,7 @@ paths:
           $ref: '#/components/responses/ServiceResponse'
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/ForceDelete'
       description: Deletes the requested service
       security:
         - x-api-key: [ ]
@@ -2624,6 +2627,13 @@ components:
       schema:
         type: string
       description: 'Identifier field of the account the resource is scoped to. This is required for Authorization methods other than the x-api-key header. If you are using the x-api-key header, this can be skipped.'
+    ForceDelete:
+      name: forceDelete
+      in: query
+      schema:
+        type: boolean
+        default: false
+      description: Enable this field to force delete a template
     OrgsQueryParam:
       name: org
       in: query

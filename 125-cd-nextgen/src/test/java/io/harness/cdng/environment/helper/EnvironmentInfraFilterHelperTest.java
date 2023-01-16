@@ -52,7 +52,7 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
 
     final FilterYaml filterYaml = getTagFilterYamlMatchTypeAll();
     Set<Environment> filteredEnv =
-        getEnvironmentInfraFilterHelper().processTagsFilterYamlForEnvironments(filterYaml, listOfEnvironment);
+        getEnvironmentInfraFilterHelper().processFilterYamlForEnvironments(filterYaml, listOfEnvironment);
     assertThat(filteredEnv.size()).isEqualTo(1);
   }
 
@@ -64,7 +64,7 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
     final FilterYaml filterYaml = getTagFilterYamlMatchTypeAny();
 
     Set<Environment> filteredEnv =
-        getEnvironmentInfraFilterHelper().processTagsFilterYamlForEnvironments(filterYaml, listOfEnvironment);
+        getEnvironmentInfraFilterHelper().processFilterYamlForEnvironments(filterYaml, listOfEnvironment);
     assertThat(listOfEnvironment.size()).isEqualTo(filteredEnv.size());
   }
 
@@ -76,7 +76,7 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
     final FilterYaml filterYaml = getAllFilterYaml();
 
     Set<Environment> filteredEnv =
-        getEnvironmentInfraFilterHelper().processTagsFilterYamlForEnvironments(filterYaml, listOfEnvironment);
+        getEnvironmentInfraFilterHelper().processFilterYamlForEnvironments(filterYaml, listOfEnvironment);
     assertThat(listOfEnvironment.size()).isEqualTo(filteredEnv.size());
   }
 
@@ -88,7 +88,7 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
         Arrays.asList(Cluster.builder().clusterRef("cl1").build(), Cluster.builder().clusterRef("cl2").build());
     final FilterYaml filterYaml = getAllFilterYaml();
 
-    List<Cluster> filteredCls = getEnvironmentInfraFilterHelper().processTagsFilterYamlForGitOpsClusters(
+    List<Cluster> filteredCls = getEnvironmentInfraFilterHelper().processFilterYamlForGitOpsClusters(
         filterYaml, Collections.emptySet(), listOfClusters);
     assertThat(listOfClusters.size()).isEqualTo(filteredCls.size());
   }
@@ -101,7 +101,7 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
         Arrays.asList(Cluster.builder().clusterRef("cl1").build(), Cluster.builder().clusterRef("cl2").build());
     final FilterYaml filterYaml = getTagFilterYamlMatchTypeAll();
 
-    List<Cluster> filteredCls = getEnvironmentInfraFilterHelper().processTagsFilterYamlForGitOpsClusters(
+    List<Cluster> filteredCls = getEnvironmentInfraFilterHelper().processFilterYamlForGitOpsClusters(
         filterYaml, getClusterListForAllTagMatch(), listOfClusters);
     assertThat(filteredCls.size()).isEqualTo(1);
   }
@@ -114,7 +114,7 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
         Arrays.asList(Cluster.builder().clusterRef("cl1").build(), Cluster.builder().clusterRef("cl2").build());
     final FilterYaml filterYaml = getTagFilterYamlMatchTypeAny();
 
-    List<Cluster> filteredCls = getEnvironmentInfraFilterHelper().processTagsFilterYamlForGitOpsClusters(
+    List<Cluster> filteredCls = getEnvironmentInfraFilterHelper().processFilterYamlForGitOpsClusters(
         filterYaml, getClusterListForAnyTagMatch(), listOfClusters);
     assertThat(listOfClusters.size()).isEqualTo(filteredCls.size());
   }
@@ -184,7 +184,7 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
 
     Set<Cluster> filteredClusters =
         getEnvironmentInfraFilterHelper().applyFilteringOnClusters(emptyList(), clsToCluster, listOfClusters);
-    assertThat(filteredClusters.size()).isEqualTo(2);
+    assertThat(filteredClusters.size()).isEqualTo(0);
   }
 
   @Test
@@ -195,7 +195,7 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
     final FilterYaml filterYaml = getTagFilterYamlMatchTypeAny();
 
     Set<InfrastructureEntity> filteredEnv =
-        getEnvironmentInfraFilterHelper().processTagsFilterYamlForInfraStructures(filterYaml, listOfInfra);
+        getEnvironmentInfraFilterHelper().processFilterYamlForInfraStructures(filterYaml, listOfInfra);
     assertThat(listOfInfra.size()).isEqualTo(filteredEnv.size());
   }
 
@@ -207,7 +207,7 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
 
     final FilterYaml filterYaml = getTagFilterYamlMatchTypeAll();
     Set<InfrastructureEntity> filteredEnv =
-        getEnvironmentInfraFilterHelper().processTagsFilterYamlForInfraStructures(filterYaml, listOfInfra);
+        getEnvironmentInfraFilterHelper().processFilterYamlForInfraStructures(filterYaml, listOfInfra);
     assertThat(filteredEnv.size()).isEqualTo(2);
   }
 

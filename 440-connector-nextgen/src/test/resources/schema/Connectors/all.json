@@ -5344,6 +5344,41 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ServiceNowADFSDTO": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ServiceNowAuthCredentialsDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "adfsUrl",
+            "certificateRef",
+            "clientIdRef",
+            "privateKeyRef",
+            "resourceIdRef"
+          ],
+          "properties": {
+            "adfsUrl": {
+              "type": "string"
+            },
+            "certificateRef": {
+              "type": "string"
+            },
+            "clientIdRef": {
+              "type": "string"
+            },
+            "privateKeyRef": {
+              "type": "string"
+            },
+            "resourceIdRef": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "ServiceNowAuthCredentialsDTO": {
       "type": "object",
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -5358,12 +5393,29 @@
         "type": {
           "type": "string",
           "enum": [
-            "UsernamePassword"
+            "UsernamePassword",
+            "AdfsClientCredentialsWithCertificate"
           ]
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#",
       "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AdfsClientCredentialsWithCertificate"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ServiceNowADFSDTO"
+              }
+            }
+          }
+        },
         {
           "if": {
             "properties": {

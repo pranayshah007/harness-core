@@ -17,8 +17,8 @@ import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.WARN;
 
-import static software.wings.beans.Log.Builder.aLog;
 import static software.wings.beans.command.ScpCommandUnit.ScpFileCategory.ARTIFACTS;
+import static software.wings.beans.dto.Log.Builder.aLog;
 
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toMap;

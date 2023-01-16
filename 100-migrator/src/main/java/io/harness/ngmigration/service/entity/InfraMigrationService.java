@@ -198,6 +198,7 @@ public class InfraMigrationService extends NgMigrationService {
         migratedEntities.get(CgEntityId.builder().id(infra.getEnvId()).type(ENVIRONMENT).build());
     Infrastructure infraSpec = infraDefMapper.getSpec(infra, migratedEntities);
     if (infraSpec == null) {
+      log.error(String.format("We could not migrate the infra %s", infra.getUuid()));
       return Collections.emptyList();
     }
     InfrastructureConfig infrastructureConfig =

@@ -18,4 +18,6 @@ public class TasConstants {
   public static final String COUNT = "Count";
   public static final String UPSCALE_NEW_FIRST = "UpScaleNewFirst";
   public static final String DOWNSCALE_OLD_FIRST = "DownScaleOldFirst";
+  public static final String MAP = "Map";
+  public static final String UNMAP = "UnMap";
 }

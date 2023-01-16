@@ -37,6 +37,7 @@ import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
 import io.harness.template.events.TemplateCreateEvent;
 import io.harness.template.events.TemplateDeleteEvent;
+import io.harness.template.events.TemplateForceDeleteEvent;
 import io.harness.template.events.TemplateUpdateEvent;
 import io.harness.template.events.TemplateUpdateEventType;
 import io.harness.template.services.TemplateGitXService;
@@ -351,25 +352,36 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
   }
 
   @Override
-  public void hardDeleteTemplateForOldGitSync(TemplateEntity templateToDelete, String comments) {
+  public void hardDeleteTemplateForOldGitSync(TemplateEntity templateToDelete, String comments, boolean forceDelete) {
     String accountId = templateToDelete.getAccountId();
     String orgIdentifier = templateToDelete.getOrgIdentifier();
     String projectIdentifier = templateToDelete.getProjectIdentifier();
     gitAwarePersistence.delete(templateToDelete, ChangeType.DELETE, TemplateEntity.class);
-    outboxService.save(
-        new TemplateDeleteEvent(accountId, orgIdentifier, projectIdentifier, templateToDelete, comments));
+    if (!forceDelete) {
+      outboxService.save(
+          new TemplateDeleteEvent(accountId, orgIdentifier, projectIdentifier, templateToDelete, comments));
+    } else {
+      outboxService.save(
+          new TemplateForceDeleteEvent(accountId, orgIdentifier, projectIdentifier, templateToDelete, comments));
+    }
   }
 
   @Override
-  public void deleteTemplate(TemplateEntity templateToDelete, String comments) {
+  public void deleteTemplate(TemplateEntity templateToDelete, String comments, boolean forceDelete) {
     Criteria criteria = buildCriteriaForDelete(templateToDelete);
     Query query = new Query(criteria);
     TemplateEntity deletedTemplateEntity = mongoTemplate.findAndRemove(query, TemplateEntity.class);
     if (shouldLogAudits(templateToDelete.getAccountId(), templateToDelete.getOrgIdentifier(),
             templateToDelete.getProjectIdentifier())) {
-      outboxService.save(
-          new TemplateDeleteEvent(templateToDelete.getAccountIdentifier(), templateToDelete.getOrgIdentifier(),
-              templateToDelete.getProjectIdentifier(), deletedTemplateEntity, comments));
+      if (forceDelete) {
+        outboxService.save(
+            new TemplateForceDeleteEvent(templateToDelete.getAccountIdentifier(), templateToDelete.getOrgIdentifier(),
+                templateToDelete.getProjectIdentifier(), deletedTemplateEntity, comments));
+      } else {
+        outboxService.save(
+            new TemplateDeleteEvent(templateToDelete.getAccountIdentifier(), templateToDelete.getOrgIdentifier(),
+                templateToDelete.getProjectIdentifier(), deletedTemplateEntity, comments));
+      }
     }
   }
 

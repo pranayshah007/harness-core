@@ -228,7 +228,8 @@ public class TemplateMergeServiceHelper {
         resMap.put(fieldName, value);
       } else if (value.isArray()) {
         resMap.put(fieldName,
-            mergeTemplateInputsInArray(accountId, orgId, projectId, childYamlField.getNode(), templateCacheMap, depth));
+            mergeTemplateInputsInArray(
+                accountId, orgId, projectId, childYamlField.getNode(), templateCacheMap, depth, loadFromCache));
       } else {
         // If it was template key in yaml, we have replace it with the fields in template.spec in template yaml.
         // Hence, we directly put all the keys returned in map, after iterating over them.
@@ -253,16 +254,17 @@ public class TemplateMergeServiceHelper {
   }
 
   private List<Object> mergeTemplateInputsInArray(String accountId, String orgId, String projectId, YamlNode yamlNode,
-      Map<String, TemplateEntity> templateCacheMap, int depth) {
+      Map<String, TemplateEntity> templateCacheMap, int depth, boolean loadFromCache) {
     List<Object> arrayList = new ArrayList<>();
     for (YamlNode arrayElement : yamlNode.asArray()) {
       if (yamlNode.getCurrJsonNode().isValueNode()) {
         arrayList.add(arrayElement);
       } else if (arrayElement.isArray()) {
-        arrayList.add(mergeTemplateInputsInArray(accountId, orgId, projectId, arrayElement, templateCacheMap, depth));
+        arrayList.add(mergeTemplateInputsInArray(
+            accountId, orgId, projectId, arrayElement, templateCacheMap, depth, loadFromCache));
       } else {
-        arrayList.add(
-            mergeTemplateInputsInObject(accountId, orgId, projectId, arrayElement, templateCacheMap, depth, false));
+        arrayList.add(mergeTemplateInputsInObject(
+            accountId, orgId, projectId, arrayElement, templateCacheMap, depth, loadFromCache));
       }
     }
     return arrayList;

@@ -378,16 +378,13 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
           && !requestedHealthSources.contains(healthSourceIdentifier)) {
         continue;
       }
-      List<? extends AnalysisInfo> metricInfos = cvConfig.getMetricInfos();
-      Map<String, ? extends AnalysisInfo> metricInfoMap = metricInfos.stream().collect(
-          Collectors.toMap(AnalysisInfo::getMetricName, metricInfo -> metricInfo, (u, v) -> v));
       Set<MetricDefinition> metricDefinitions = cvConfig.getMetricPack().getMetrics();
       Map<String, MetricDefinition> metricDefinitionMap = metricDefinitions.stream().collect(
-          Collectors.toMap(MetricDefinition::getName, metricDefinition -> metricDefinition, (u, v) -> v));
+          Collectors.toMap(MetricDefinition::getIdentifier, metricDefinition -> metricDefinition, (u, v) -> v));
       for (TransactionMetricHostData transactionMetricHostData : timeSeriesAnalysis.getTransactionMetricSummaries()) {
-        String metricName = transactionMetricHostData.getMetricName();
-        MetricDefinition metricDefinition = metricDefinitionMap.get(metricName);
-        AnalysisInfo analysisInfo = metricInfoMap.get(metricName);
+        // LE metricName is BE metricIdentifier
+        String metricIdentifier = transactionMetricHostData.getMetricName();
+        MetricDefinition metricDefinition = metricDefinitionMap.get(metricIdentifier);
         AnalysisResult analysisResult = AnalysisResult.fromRisk(transactionMetricHostData.getRisk());
         String transactionGroup = transactionMetricHostData.getTransactionName();
         if (isAnalysisResultExcluded(deploymentTimeSeriesAnalysisFilter, analysisResult)
@@ -397,8 +394,8 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
         }
         MetricsAnalysis metricsAnalysis =
             MetricsAnalysis.builder()
-                .metricName(metricName)
-                .metricIdentifier(analysisInfo.getIdentifier())
+                .metricName(metricDefinition.getName())
+                .metricIdentifier(metricDefinition.getIdentifier())
                 .healthSourceIdentifier(healthSourceIdentifier)
                 .metricType(getMetricTypeFromCvConfigAndMetricDefinition(cvConfig, metricDefinition))
                 .transactionGroup(transactionGroup)

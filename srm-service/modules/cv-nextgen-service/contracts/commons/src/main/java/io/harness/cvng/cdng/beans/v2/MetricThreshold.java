@@ -23,7 +23,7 @@ import lombok.experimental.SuperBuilder;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @ApiModel("MetricThresholdV2")
 public class MetricThreshold {
-  String thresholdIdentifier;
+  String id;
   MetricThresholdActionType thresholdType;
   Boolean isUserDefined;
   MetricCustomThresholdActions action;

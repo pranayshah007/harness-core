@@ -10,19 +10,14 @@ package software.wings.service.impl;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.eraro.ErrorCode.INIT_TIMEOUT;
 import static io.harness.eraro.ErrorCode.INVALID_CLOUD_PROVIDER;
 import static io.harness.exception.WingsException.USER;
-import static io.harness.threading.Morpheus.sleep;
 
 import static software.wings.service.impl.aws.model.AwsConstants.AWS_DEFAULT_REGION;
 
 import static java.lang.String.format;
-import static java.time.Duration.ofSeconds;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
-import static java.util.stream.Collectors.counting;
-import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -31,7 +26,6 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.aws.util.AwsCallTracker;
-import io.harness.concurrent.HTimeLimiter;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
@@ -57,7 +51,6 @@ import software.wings.helpers.ext.amazons3.AWSTemporaryCredentialsRestClient;
 import software.wings.service.impl.aws.client.CloseableAmazonWebServiceClient;
 import software.wings.service.intfc.security.EncryptionService;
 import software.wings.service.mappers.artifact.AwsConfigToInternalMapper;
-import software.wings.sm.states.ManagerExecutionLogCallback;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
@@ -75,7 +68,6 @@ import com.amazonaws.services.autoscaling.model.DescribeAutoScalingGroupsRequest
 import com.amazonaws.services.autoscaling.model.DescribeAutoScalingGroupsResult;
 import com.amazonaws.services.autoscaling.model.DescribeScalingActivitiesRequest;
 import com.amazonaws.services.autoscaling.model.DescribeScalingActivitiesResult;
-import com.amazonaws.services.autoscaling.model.SetDesiredCapacityRequest;
 import com.amazonaws.services.cloudwatch.AmazonCloudWatchClient;
 import com.amazonaws.services.cloudwatch.AmazonCloudWatchClientBuilder;
 import com.amazonaws.services.cloudwatch.model.ListMetricsRequest;
@@ -175,13 +167,10 @@ import com.amazonaws.waiters.PollingStrategy;
 import com.amazonaws.waiters.WaiterParameters;
 import com.amazonaws.waiters.WaiterTimedOutException;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Joiner;
 import com.google.common.util.concurrent.TimeLimiter;
-import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -208,7 +197,7 @@ public class AwsHelperService {
   @Inject private AwsCallTracker tracker;
   @Inject private AwsApiHelperService awsApiHelperService;
 
-  private static final long AUTOSCALING_REQUEST_STATUS_CHECK_INTERVAL = TimeUnit.SECONDS.toSeconds(15);
+  public static final long AUTOSCALING_REQUEST_STATUS_CHECK_INTERVAL = TimeUnit.SECONDS.toSeconds(15);
   public AmazonECRClient getAmazonEcrClient(AwsConfig awsConfig, String region) {
     return awsApiHelperService.getAmazonEcrClient(AwsConfigToInternalMapper.toAwsInternalConfig(awsConfig), region);
   }
@@ -340,8 +329,7 @@ public class AwsHelperService {
     return (AmazonCodeDeployClient) builder.build();
   }
 
-  @VisibleForTesting
-  AmazonAutoScalingClient getAmazonAutoScalingClient(Regions region, AwsConfig awsConfig) {
+  public AmazonAutoScalingClient getAmazonAutoScalingClient(Regions region, AwsConfig awsConfig) {
     AmazonAutoScalingClientBuilder builder = AmazonAutoScalingClientBuilder.standard().withRegion(region);
     awsApiHelperService.attachCredentialsAndBackoffPolicy(
         builder, AwsConfigToInternalMapper.toAwsInternalConfig(awsConfig));
@@ -1159,44 +1147,6 @@ public class AwsHelperService {
     return null;
   }
 
-  public void setAutoScalingGroupCapacityAndWaitForInstancesReadyState(AwsConfig awsConfig,
-      List<EncryptedDataDetail> encryptionDetails, String region, String autoScalingGroupName, Integer desiredCapacity,
-      ManagerExecutionLogCallback executionLogCallback, Integer autoScalingSteadyStateTimeout) {
-    encryptionService.decrypt(awsConfig, encryptionDetails, false);
-    ExceptionMessageSanitizer.storeAllSecretsForSanitizing(awsConfig, encryptionDetails);
-    AmazonAutoScalingClient amazonAutoScalingClient = null;
-    try (CloseableAmazonWebServiceClient<AmazonAutoScalingClient> closeableAmazonAutoScalingClient =
-             new CloseableAmazonWebServiceClient(getAmazonAutoScalingClient(Regions.fromName(region), awsConfig))) {
-      amazonAutoScalingClient = closeableAmazonAutoScalingClient.getClient();
-      executionLogCallback.saveExecutionLog(
-          format("Set AutoScaling Group: [%s] desired capacity to [%s]", autoScalingGroupName, desiredCapacity));
-      tracker.trackASGCall("Set ASG Desired Capacity");
-      amazonAutoScalingClient.setDesiredCapacity(new SetDesiredCapacityRequest()
-                                                     .withAutoScalingGroupName(autoScalingGroupName)
-                                                     .withDesiredCapacity(desiredCapacity));
-      executionLogCallback.saveExecutionLog("Successfully set desired capacity");
-      waitForAllInstancesToBeReady(awsConfig, encryptionDetails, region, autoScalingGroupName, desiredCapacity,
-          executionLogCallback, autoScalingSteadyStateTimeout);
-    } catch (AmazonServiceException amazonServiceException) {
-      describeAutoScalingGroupActivities(
-          amazonAutoScalingClient, autoScalingGroupName, new HashSet<>(), executionLogCallback, true);
-      awsApiHelperService.handleAmazonServiceException(amazonServiceException);
-    } catch (AmazonClientException amazonClientException) {
-      awsApiHelperService.handleAmazonClientException(amazonClientException);
-    } catch (Exception e) {
-      Exception sanitizeException = ExceptionMessageSanitizer.sanitizeException(e);
-      log.error("Exception setAutoScalingGroupCapacityAndWaitForInstancesReadyState", sanitizeException);
-      throw new InvalidRequestException(ExceptionUtils.getMessage(sanitizeException), sanitizeException);
-    }
-  }
-
-  public void setAutoScalingGroupCapacityAndWaitForInstancesReadyState(AwsConfig awsConfig,
-      List<EncryptedDataDetail> encryptionDetails, String region, String autoScalingGroupName, Integer desiredCapacity,
-      ManagerExecutionLogCallback executionLogCallback) {
-    setAutoScalingGroupCapacityAndWaitForInstancesReadyState(
-        awsConfig, encryptionDetails, region, autoScalingGroupName, desiredCapacity, executionLogCallback, 10);
-  }
-
   public AutoScalingGroup getAutoScalingGroup(
       AwsConfig awsConfig, List<EncryptedDataDetail> encryptionDetails, String region, String autoScalingGroupName) {
     try {
@@ -1212,61 +1162,6 @@ public class AwsHelperService {
       awsApiHelperService.handleAmazonClientException(amazonClientException);
     }
     return null;
-  }
-
-  private void waitForAllInstancesToBeReady(AwsConfig awsConfig, List<EncryptedDataDetail> encryptionDetails,
-      String region, String autoScalingGroupName, Integer desiredCount,
-      ManagerExecutionLogCallback executionLogCallback, Integer autoScalingSteadyStateTimeout) {
-    try (CloseableAmazonWebServiceClient<AmazonAutoScalingClient> closeableAmazonAutoScalingClient =
-             new CloseableAmazonWebServiceClient(getAmazonAutoScalingClient(Regions.fromName(region), awsConfig))) {
-      HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofMinutes(autoScalingSteadyStateTimeout), () -> {
-        Set<String> completedActivities = new HashSet<>();
-        while (true) {
-          List<String> instanceIds =
-              listInstanceIdsFromAutoScalingGroup(awsConfig, encryptionDetails, region, autoScalingGroupName);
-          describeAutoScalingGroupActivities(closeableAmazonAutoScalingClient.getClient(), autoScalingGroupName,
-              completedActivities, executionLogCallback, false);
-
-          if (instanceIds.size() == desiredCount
-              && allInstanceInReadyState(awsConfig, encryptionDetails, region, instanceIds, executionLogCallback)) {
-            return true;
-          }
-          sleep(ofSeconds(AUTOSCALING_REQUEST_STATUS_CHECK_INTERVAL));
-        }
-      });
-    } catch (UncheckedTimeoutException e) {
-      executionLogCallback.saveExecutionLog(
-          "Request timeout. AutoScaling group couldn't reach steady state", CommandExecutionStatus.FAILURE);
-      throw new WingsException(INIT_TIMEOUT)
-          .addParam("message", "Timed out waiting for all instances to be in running state");
-    } catch (WingsException e) {
-      throw(WingsException) ExceptionMessageSanitizer.sanitizeException(e);
-    } catch (Exception e) {
-      throw new InvalidRequestException("Error while waiting for all instances to be in running state",
-          ExceptionMessageSanitizer.sanitizeException(e));
-    }
-    executionLogCallback.saveExecutionLog("AutoScaling group reached steady state");
-  }
-
-  private boolean allInstanceInReadyState(AwsConfig awsConfig, List<EncryptedDataDetail> encryptionDetails,
-      String region, List<String> instanceIds, ManagerExecutionLogCallback executionLogCallback) {
-    DescribeInstancesResult describeInstancesResult = describeEc2Instances(
-        awsConfig, encryptionDetails, region, new DescribeInstancesRequest().withInstanceIds(instanceIds));
-    boolean allRunning = instanceIds.isEmpty()
-        || describeInstancesResult.getReservations()
-               .stream()
-               .flatMap(reservation -> reservation.getInstances().stream())
-               .allMatch(instance -> instance.getState().getName().equals("running"));
-    if (!allRunning) {
-      Map<String, Long> instanceStateCountMap =
-          describeInstancesResult.getReservations()
-              .stream()
-              .flatMap(reservation -> reservation.getInstances().stream())
-              .collect(groupingBy(instance -> instance.getState().getName(), counting()));
-      executionLogCallback.saveExecutionLog("Waiting for instances to be in running state. "
-          + Joiner.on(",").withKeyValueSeparator("=").join(instanceStateCountMap));
-    }
-    return allRunning;
   }
 
   public List<String> listInstanceIdsFromAutoScalingGroup(
@@ -1344,7 +1239,7 @@ public class AwsHelperService {
     return new DescribeAutoScalingGroupsResult();
   }
 
-  protected void describeAutoScalingGroupActivities(AmazonAutoScalingClient amazonAutoScalingClient,
+  public void describeAutoScalingGroupActivities(AmazonAutoScalingClient amazonAutoScalingClient,
       String autoScalingGroupName, Set<String> completedActivities, LogCallback callback, boolean withCause) {
     if (callback == null) {
       log.info("Not describing autoScalingGroupActivities for {} since logCallback is null", completedActivities);

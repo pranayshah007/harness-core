@@ -30,6 +30,8 @@ public enum FeatureName {
   SPG_NG_GITHUB_WEBHOOK_AUTHENTICATION("Enables authentication for GitHub webhook triggers in NG", HarnessTeam.SPG),
   SPG_ALLOW_DISABLE_TRIGGERS("Allow disabling triggers at application level for CG", HarnessTeam.SPG),
   SPG_ALLOW_UI_JIRA_CUSTOM_DATETIME_FIELD("Enables backend parse custom field time of jira as the UI", HarnessTeam.SPG),
+  SPG_ALLOW_TEMPLATE_ON_NEXUS_ARTIFACT(
+      "Enables UI to use artifactID and groupID as template or static value", HarnessTeam.SPG),
   SPG_ALLOW_DISABLE_USER_GITCONFIG(
       "Allow disabling local delegate user's .gitconfig when running git commands", HarnessTeam.SPG),
   SPG_NEW_DEPLOYMENT_FREEZE_EXCLUSIONS(
@@ -564,7 +566,19 @@ public enum FeatureName {
       "Publish instance stats at environment granularity in NG. PM Rohan", HarnessTeam.CDP),
   DEPLOYMENT_RECONCILIATION_LOGIC_QUERY_OPTIMIZATIONS(
       "Used to modify logic for reconciliation queries", HarnessTeam.CDC),
-  SPG_MODULE_VERSION_INFO("Enable version information on module level", HarnessTeam.SPG);
+  SPG_MODULE_VERSION_INFO("Enable version information on module level", HarnessTeam.SPG),
+  CIE_HOSTED_VMS_WINDOWS("FF for enabling hosted builds for windows amd64", HarnessTeam.CI),
+  CD_TRIGGER_CATALOG_API_ENABLED("Enable support for pipeline/api/triggers/catalog API in UI", HarnessTeam.CDC),
+  K8S_DRY_RUN_NG("Enable K8s Dry Run Step in NG", HarnessTeam.CDP),
+  CDS_SERVICENOW_ADFS_AUTH("ADFS auth support for servicenow connector", HarnessTeam.CDC),
+  CDP_SKIP_DEFAULT_VALUES_YAML_NG(
+      "Skip adding the default values file as an override if it doesn't contain any expressions in case of helm chart manifest for NG",
+      HarnessTeam.CDP),
+  CDP_SKIP_DEFAULT_VALUES_YAML_CG(
+      "Skip adding the default values file as an override if it doesn't contain any expressions in case of helm chart manifest for CG",
+      HarnessTeam.CDP),
+  PIE_PIPELINE_SETTINGS_ENFORCEMENT_LIMIT(
+      "To enable pipeline-settings and limits in Project Default Settings in UI", HarnessTeam.PIPELINE);
 
   @Deprecated
   FeatureName() {

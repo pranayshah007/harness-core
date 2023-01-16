@@ -146,6 +146,8 @@ public class StepUtils {
         stageId);
   }
 
+  // Please use io.harness.steps.TaskRequestsUtils::prepareTaskRequestWithTaskSelector
+  @Deprecated
   public static TaskRequest prepareTaskRequestWithTaskSelector(
       Ambiance ambiance, TaskData taskData, KryoSerializer kryoSerializer, List<TaskSelector> selectors) {
     return prepareTaskRequest(ambiance, taskData, kryoSerializer, TaskCategory.DELEGATE_TASK_V2,
@@ -153,6 +155,8 @@ public class StepUtils {
         Collections.emptyList(), false, null, new MaskingExpressionEvaluator());
   }
 
+  // Please use io.harness.steps.TaskRequestsUtils::prepareTaskRequestWithTaskSelector
+  @Deprecated
   public static TaskRequest prepareTaskRequestWithTaskSelector(Ambiance ambiance, TaskData taskData,
       KryoSerializer kryoSerializer, String taskName, List<TaskSelector> selectors) {
     return prepareTaskRequest(ambiance, taskData, kryoSerializer, TaskCategory.DELEGATE_TASK_V2,
@@ -160,18 +164,16 @@ public class StepUtils {
         Collections.emptyList(), false, null);
   }
 
-  public static TaskRequest prepareTaskRequestWithTaskSelector(Ambiance ambiance, TaskData taskData,
-      KryoSerializer kryoSerializer, List<String> units, String taskName, List<TaskSelector> selectors) {
-    return prepareTaskRequest(ambiance, taskData, kryoSerializer, TaskCategory.DELEGATE_TASK_V2, units, true, taskName,
-        selectors, Scope.PROJECT, EnvironmentType.ALL, false, Collections.emptyList(), false, null);
-  }
-
+  // Please use io.harness.steps.TaskRequestsUtils.prepareCDTaskRequest
+  @Deprecated
   public static TaskRequest prepareCDTaskRequest(Ambiance ambiance, TaskData taskData, KryoSerializer kryoSerializer,
       List<String> units, String taskName, List<TaskSelector> selectors, EnvironmentType environmentType) {
     return prepareTaskRequest(ambiance, taskData, kryoSerializer, TaskCategory.DELEGATE_TASK_V2, units, true, taskName,
         selectors, Scope.PROJECT, environmentType, false, Collections.emptyList(), false, null);
   }
 
+  // Please use io.harness.steps.TaskRequestsUtils.prepareCDTaskRequest::prepareCDTaskRequest
+  @Deprecated
   public static TaskRequest prepareCDTaskRequest(Ambiance ambiance, TaskData taskData, KryoSerializer kryoSerializer,
       List<String> keys, List<String> units, String taskName, List<TaskSelector> selectors,
       EnvironmentType environmentType) {
@@ -191,6 +193,8 @@ public class StepUtils {
         false, Collections.emptyList(), false, null);
   }
 
+  // Please use io.harness.steps.TaskRequestsUtils.prepareCDTaskRequest::prepareTaskRequestWithTaskSelector
+  @Deprecated
   public static TaskRequest prepareTaskRequestWithTaskSelector(Ambiance ambiance, TaskData taskData,
       KryoSerializer kryoSerializer, TaskCategory taskCategory, List<String> units, boolean withLogs, String taskName,
       List<TaskSelector> selectors) {

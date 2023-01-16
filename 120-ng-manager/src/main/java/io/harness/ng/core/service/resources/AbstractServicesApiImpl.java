@@ -81,12 +81,13 @@ public abstract class AbstractServicesApiImpl {
     return Response.status(Response.Status.CREATED).entity(serviceResponse).build();
   }
 
-  public Response deleteServiceEntity(String org, String project, String service, String account) {
+  public Response deleteServiceEntity(String org, String project, String service, String account, boolean forceDelete) {
     Optional<ServiceEntity> serviceEntityOptional = serviceEntityService.get(account, org, project, service, false);
     if (serviceEntityOptional.isEmpty()) {
       throw new NotFoundException(String.format("Service with identifier [%s] not found", service));
     }
-    boolean deleted = serviceEntityManagementService.deleteService(account, org, project, service, "ifMatch");
+    boolean deleted =
+        serviceEntityManagementService.deleteService(account, org, project, service, "ifMatch", forceDelete);
     if (!deleted) {
       throw new InvalidRequestException(String.format("Service with identifier [%s] could not be deleted", service));
     }

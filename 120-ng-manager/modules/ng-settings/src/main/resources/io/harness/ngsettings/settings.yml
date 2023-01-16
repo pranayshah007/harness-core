@@ -1,6 +1,6 @@
 #Any edit in this file should accompany an increment in version.
 name : settingsConfiguration
-version : 10
+version : 11
 settings :
   - identifier: mandate_webhook_secrets_for_github_triggers
     name: Mandate Webhook Secrets for Github Triggers
@@ -76,3 +76,78 @@ settings :
     valueType: BOOLEAN
     allowedScopes:
       - ACCOUNT
+  - identifier: pipeline_timeout
+    name: Pipeline Timeout
+    category: PMS
+    defaultValue: 1h
+    valueType: STRING
+    allowedScopes:
+      - ACCOUNT
+      - ORGANIZATION
+      - PROJECT
+    allowedPlans:
+      FREE:
+        defaultValue: 1h
+        editable: true
+      TEAM:
+        defaultValue: 24h
+        editable: true
+      ENTERPRISE:
+        defaultValue: 24h
+        editable: true
+  - identifier: stage_timeout
+    name: Stage Timeout
+    category: PMS
+    defaultValue: 30m
+    valueType: STRING
+    allowedScopes:
+      - ACCOUNT
+      - ORGANIZATION
+      - PROJECT
+    allowedPlans:
+      FREE:
+        defaultValue: 30m
+        editable: true
+      TEAM:
+        defaultValue: 24h
+        editable: true
+      ENTERPRISE:
+        defaultValue: 24h
+        editable: true
+  - identifier: step_timeout
+    name: Step Timeout
+    category: PMS
+    defaultValue: 30m
+    valueType: STRING
+    allowedScopes:
+      - ACCOUNT
+      - ORGANIZATION
+      - PROJECT
+    allowedPlans:
+      FREE:
+        defaultValue: 30m
+        editable: true
+      TEAM:
+        defaultValue: 10h
+        editable: true
+      ENTERPRISE:
+        defaultValue: NO_LIMIT
+        editable: true
+  - identifier: concurrent_active_pipeline_executions
+    name: Concurrent Active Pipeline Executions
+    category: PMS
+    defaultValue: 2
+    valueType: NUMBER
+    allowedScopes:
+      - ACCOUNT
+    allowedPlans:
+      FREE:
+        defaultValue: 2
+        editable: false
+      TEAM:
+        # 500 for now. Will make it 200 once the previous execution entries are cleared.
+        defaultValue: 500
+        editable: false
+      ENTERPRISE:
+        defaultValue: 500
+        editable: true

@@ -167,7 +167,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.EntityReferenceExtractorUtils;
 import io.harness.steps.StepHelper;
-import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.validation.Validator;
 
 import software.wings.beans.LogColor;
@@ -207,7 +207,7 @@ public class CDStepHelper {
   @Inject private PipelineRbacHelper pipelineRbacHelper;
   @Inject private FileStoreService fileStoreService;
   @Inject protected OutcomeService outcomeService;
-  @Inject protected KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject protected StepHelper stepHelper;
   @Inject private ExecutionSweepingOutputService sweepingOutputService;
 
@@ -823,8 +823,8 @@ public class CDStepHelper {
 
   public TaskRequest prepareTaskRequest(
       Ambiance ambiance, TaskData taskData, List<String> units, String taskName, List<TaskSelector> selectors) {
-    return StepUtils.prepareCDTaskRequest(
-        ambiance, taskData, kryoSerializer, units, taskName, selectors, stepHelper.getEnvironmentType(ambiance));
+    return TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer, units, taskName,
+        selectors, stepHelper.getEnvironmentType(ambiance));
   }
 
   @Nonnull

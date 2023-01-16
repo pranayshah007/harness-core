@@ -82,6 +82,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 import io.harness.utils.IdentifierRefHelper;
@@ -89,6 +90,7 @@ import io.harness.utils.IdentifierRefHelper;
 import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -106,7 +108,7 @@ public class AzureCreateARMResourceStep extends TaskChainExecutableWithRollbackA
                                                .build();
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
   @Inject private PipelineRbacHelper pipelineRbacHelper;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private CDExpressionResolver cdExpressionResolver;
   @Inject private AzureWebAppStepHelper azureWebAppStepHelper;
   @Inject private StepHelper stepHelper;
@@ -332,8 +334,8 @@ public class AzureCreateARMResourceStep extends TaskChainExecutableWithRollbackA
                             .timeout(StepUtils.getTimeoutMillis(stepParameters.getTimeout(), DEFAULT_TIMEOUT))
                             .parameters(new Object[] {parameters})
                             .build();
-    final TaskRequest taskRequest = StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
-        getCommandUnits(false), TaskType.AZURE_NG_ARM.getDisplayName(),
+    final TaskRequest taskRequest = TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData,
+        referenceFalseKryoSerializer, getCommandUnits(false), TaskType.AZURE_NG_ARM.getDisplayName(),
         TaskSelectorYaml.toTaskSelector(
             ((AzureCreateARMResourceStepParameters) stepParameters.getSpec()).getDelegateSelectors()),
         stepHelper.getEnvironmentType(ambiance));
@@ -370,11 +372,11 @@ public class AzureCreateARMResourceStep extends TaskChainExecutableWithRollbackA
     commandUnits.add(FETCH_RESOURCE_GROUP_TEMPLATE);
     commandUnits.addAll(getCommandUnits(passThroughData.hasGitFiles()));
 
-    final TaskRequest taskRequest =
-        StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer, commandUnits, FETCH_RESOURCE_GROUP_TEMPLATE,
-            TaskSelectorYaml.toTaskSelector(
-                ((AzureCreateARMResourceStepParameters) stepParameters.getSpec()).getDelegateSelectors()),
-            stepHelper.getEnvironmentType(ambiance));
+    final TaskRequest taskRequest = TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData,
+        referenceFalseKryoSerializer, commandUnits, FETCH_RESOURCE_GROUP_TEMPLATE,
+        TaskSelectorYaml.toTaskSelector(
+            ((AzureCreateARMResourceStepParameters) stepParameters.getSpec()).getDelegateSelectors()),
+        stepHelper.getEnvironmentType(ambiance));
 
     return TaskChainResponse.builder()
         .taskRequest(taskRequest)

@@ -56,11 +56,13 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.shell.ShellExecutionData;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
 
 import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -74,7 +76,7 @@ public class CommandStep extends CdTaskExecutable<CommandTaskResponse> {
   public static final StepType STEP_TYPE =
       StepType.newBuilder().setType(ExecutionNodeType.COMMAND.getYamlType()).setStepCategory(StepCategory.STEP).build();
 
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private StepHelper stepHelper;
   @Inject private CDStepHelper cdStepHelper;
   @Inject private SshCommandStepHelper sshCommandStepHelper;
@@ -113,7 +115,8 @@ public class CommandStep extends CdTaskExecutable<CommandTaskResponse> {
           taskParameters.getCommandUnits().stream().map(cu -> cu.getName()).collect(Collectors.toList());
       String taskName = TaskType.COMMAND_TASK_NG.getDisplayName();
 
-      return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer, commandExecutionUnits, taskName,
+      return TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
+          commandExecutionUnits, taskName,
           TaskSelectorYaml.toTaskSelector(
               emptyIfNull(getParameterFieldValue(executeCommandStepParameters.getDelegateSelectors()))),
           stepHelper.getEnvironmentType(ambiance));

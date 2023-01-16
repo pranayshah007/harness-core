@@ -9,7 +9,6 @@ package io.harness.cdng.tas;
 
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.steps.StepUtils.prepareCDTaskRequest;
 
 import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.toList;
@@ -64,12 +63,14 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 
 import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.math.BigDecimal;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -83,7 +84,7 @@ public class TasBGAppSetupStep extends TaskChainExecutableWithRollbackAndRbac im
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
   @Inject private TasStepHelper tasStepHelper;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private InstanceInfoService instanceInfoService;
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
@@ -250,10 +251,11 @@ public class TasBGAppSetupStep extends TaskChainExecutableWithRollbackAndRbac im
                             .async(true)
                             .build();
 
-    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
-        executionPassThroughData.getCommandUnits(), TaskType.TAS_BG_SETUP.getDisplayName(),
-        TaskSelectorYaml.toTaskSelector(tasBGAppSetupStepParameters.getDelegateSelectors()),
-        stepHelper.getEnvironmentType(ambiance));
+    final TaskRequest taskRequest =
+        TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
+            executionPassThroughData.getCommandUnits(), TaskType.TAS_BG_SETUP.getDisplayName(),
+            TaskSelectorYaml.toTaskSelector(tasBGAppSetupStepParameters.getDelegateSelectors()),
+            stepHelper.getEnvironmentType(ambiance));
     return TaskChainResponse.builder()
         .taskRequest(taskRequest)
         .chainEnd(true)

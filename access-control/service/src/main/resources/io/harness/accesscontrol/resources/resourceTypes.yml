@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: resourceTypeConfiguration
-version: 23
+version: 24
 resourceTypes:
   - identifier: ACCOUNT
     permissionKey: account
@@ -78,6 +78,8 @@ resourceTypes:
     permissionKey: issue
   - identifier: STO_SCAN
     permissionKey: scan
+  - identifier: TICKET
+    permissionKey: ticket
   - identifier: FILE
     permissionKey: file
   - identifier: VARIABLE

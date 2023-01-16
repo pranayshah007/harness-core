@@ -76,7 +76,7 @@ public class CEKubernetesConnectionValidatorTest extends CategoryTest {
                                        .build();
 
     when(encryptionHelper.getEncryptionDetail(any(), any(), any(), any())).thenReturn(null);
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(KubernetesConnectionTaskResponse.builder()
                         .connectorValidationResult(ConnectorValidationResult.builder()
                                                        .status(ConnectivityStatus.SUCCESS)
@@ -94,7 +94,7 @@ public class CEKubernetesConnectionValidatorTest extends CategoryTest {
     final ConnectorValidationResult connectorValidationResult =
         ceKubernetesConnectionValidator.validate(ceKubernetesClusterConfigDTO, ACCOUNT_ID, null, null, null);
 
-    verify(delegateGrpcClientWrapper, times(1)).executeSyncTask(delegateTaskRequestArgumentCaptor.capture());
+    verify(delegateGrpcClientWrapper, times(1)).executeSyncTaskV2(delegateTaskRequestArgumentCaptor.capture());
 
     final DelegateTaskRequest delegateTaskRequest = delegateTaskRequestArgumentCaptor.getValue();
     assertDelegateTaskRequest(delegateTaskRequest);
@@ -118,7 +118,7 @@ public class CEKubernetesConnectionValidatorTest extends CategoryTest {
   @Owner(developers = UTSAV)
   @Category(UnitTests.class)
   public void testGenericValidationFailure() {
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(KubernetesConnectionTaskResponse.builder()
                         .connectorValidationResult(ConnectorValidationResult.builder()
                                                        .status(ConnectivityStatus.FAILURE)
@@ -131,7 +131,7 @@ public class CEKubernetesConnectionValidatorTest extends CategoryTest {
         ceKubernetesConnectionValidator.validate(ceKubernetesClusterConfigDTO, ACCOUNT_ID, null, null, null);
 
     verify(connectorService, times(1)).get(any(), any(), any(), eq(CONNECTOR_IDENTIFIER));
-    verify(delegateGrpcClientWrapper, times(1)).executeSyncTask(delegateTaskRequestArgumentCaptor.capture());
+    verify(delegateGrpcClientWrapper, times(1)).executeSyncTaskV2(delegateTaskRequestArgumentCaptor.capture());
 
     final DelegateTaskRequest delegateTaskRequest = delegateTaskRequestArgumentCaptor.getValue();
     assertDelegateTaskRequest(delegateTaskRequest);

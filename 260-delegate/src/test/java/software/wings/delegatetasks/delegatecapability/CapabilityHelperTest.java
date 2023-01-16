@@ -8,6 +8,7 @@
 package software.wings.delegatetasks.delegatecapability;
 
 import static io.harness.rule.OwnerRule.ADWAIT;
+import static io.harness.rule.OwnerRule.ASHISHSANODIA;
 import static io.harness.rule.OwnerRule.MOHIT;
 import static io.harness.rule.OwnerRule.TMACARI;
 
@@ -17,6 +18,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.TaskData;
+import io.harness.delegate.beans.TaskDataV2;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.HttpConnectionExecutionCapability;
 import io.harness.delegate.beans.executioncapability.SocketConnectivityExecutionCapability;
@@ -67,6 +69,24 @@ public class CapabilityHelperTest extends WingsBaseTest {
   }
 
   @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testFetchEncryptionDetailsListFromParametersV2() {
+    List<EncryptedDataDetail> encryptedDataDetails = new ArrayList<>();
+    encryptedDataDetails.add(
+        EncryptedDataDetail.builder()
+            .encryptedData(EncryptedRecordData.builder().encryptionType(EncryptionType.LOCAL).build())
+            .build());
+
+    TaskDataV2 taskDataV2 =
+        TaskDataV2.builder().parameters(new Object[] {JenkinsConfig.builder().build(), encryptedDataDetails}).build();
+
+    Map encryptionMap = CapabilityHelper.fetchEncryptionDetailsListFromParametersV2(taskDataV2);
+    assertThat(encryptionMap).isNotNull();
+    assertThat(encryptionMap).isEmpty();
+  }
+
+  @Test
   @Owner(developers = ADWAIT)
   @Category(UnitTests.class)
   public void testFetchEncryptionDetailsListFromParameters_VaultConfig() throws Exception {
@@ -91,6 +111,30 @@ public class CapabilityHelperTest extends WingsBaseTest {
   }
 
   @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testFetchEncryptionDetailsListFromParametersV2_VaultConfig() throws Exception {
+    List<EncryptedDataDetail> encryptedDataDetails = new ArrayList<>();
+    encryptedDataDetails.add(
+        EncryptedDataDetail.builder()
+            .encryptedData(EncryptedRecordData.builder().encryptionType(EncryptionType.VAULT).build())
+            .encryptionConfig(VaultConfig.builder().vaultUrl(HTTP_VAUTL_URL).build())
+            .build());
+
+    TaskDataV2 taskDataV2 =
+        TaskDataV2.builder().parameters(new Object[] {JenkinsConfig.builder().build(), encryptedDataDetails}).build();
+
+    Map encryptionMap = CapabilityHelper.fetchEncryptionDetailsListFromParametersV2(taskDataV2);
+    assertThat(encryptionMap).isNotNull();
+    assertThat(encryptionMap).hasSize(1);
+    EncryptionConfig encryptionConfig = (EncryptionConfig) encryptionMap.values().iterator().next();
+
+    assertThat(encryptionConfig.getEncryptionType()).isEqualTo(EncryptionType.VAULT);
+    assertThat(encryptionConfig instanceof VaultConfig).isTrue();
+    assertThat(((VaultConfig) encryptionConfig).getVaultUrl()).isEqualTo(HTTP_VAUTL_URL);
+  }
+
+  @Test
   @Owner(developers = ADWAIT)
   @Category(UnitTests.class)
   public void testFetchEncryptionDetailsListFromParameters_KmsConfig() throws Exception {
@@ -105,6 +149,29 @@ public class CapabilityHelperTest extends WingsBaseTest {
         TaskData.builder().parameters(new Object[] {JenkinsConfig.builder().build(), encryptedDataDetails}).build();
 
     Map encryptionMap = CapabilityHelper.fetchEncryptionDetailsListFromParameters(taskData);
+    assertThat(encryptionMap).isNotNull();
+    assertThat(encryptionMap).hasSize(1);
+    EncryptionConfig encryptionConfig = (EncryptionConfig) encryptionMap.values().iterator().next();
+    assertThat(encryptionConfig.getEncryptionType()).isEqualTo(EncryptionType.KMS);
+    assertThat(encryptionConfig instanceof KmsConfig).isTrue();
+    assertThat(((KmsConfig) encryptionConfig).getRegion()).isEqualTo(US_EAST_2);
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testFetchEncryptionDetailsListFromParametersV2_KmsConfig() throws Exception {
+    List<EncryptedDataDetail> encryptedDataDetails = new ArrayList<>();
+    encryptedDataDetails.add(
+        EncryptedDataDetail.builder()
+            .encryptedData(EncryptedRecordData.builder().encryptionType(EncryptionType.KMS).build())
+            .encryptionConfig(KmsConfig.builder().region(US_EAST_2).build())
+            .build());
+
+    TaskDataV2 taskDataV2 =
+        TaskDataV2.builder().parameters(new Object[] {JenkinsConfig.builder().build(), encryptedDataDetails}).build();
+
+    Map encryptionMap = CapabilityHelper.fetchEncryptionDetailsListFromParametersV2(taskDataV2);
     assertThat(encryptionMap).isNotNull();
     assertThat(encryptionMap).hasSize(1);
     EncryptionConfig encryptionConfig = (EncryptionConfig) encryptionMap.values().iterator().next();
@@ -152,6 +219,34 @@ public class CapabilityHelperTest extends WingsBaseTest {
             .build();
 
     Map encryptionMap = CapabilityHelper.fetchEncryptionDetailsListFromParameters(taskData);
+    assertThat(encryptionMap).isNotNull();
+    assertThat(encryptionMap).hasSize(1);
+    EncryptionConfig encryptionConfig = (EncryptionConfig) encryptionMap.values().iterator().next();
+
+    assertThat(encryptionConfig.getEncryptionType()).isEqualTo(EncryptionType.VAULT);
+    assertThat(encryptionConfig instanceof VaultConfig).isTrue();
+    assertThat(((VaultConfig) encryptionConfig).getVaultUrl()).isEqualTo(HTTP_VAUTL_URL);
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testFetchEncryptionDetailsListV2_BATCH_SECRET_DECRYPT() throws Exception {
+    List<EncryptedDataDetail> encryptedDataDetails = new ArrayList<>();
+    encryptedDataDetails.add(
+        EncryptedDataDetail.builder()
+            .encryptedData(EncryptedRecordData.builder().encryptionType(EncryptionType.VAULT).build())
+            .encryptionConfig(VaultConfig.builder().vaultUrl(HTTP_VAUTL_URL).build())
+            .build());
+    List<EncryptableSettingWithEncryptionDetails> encryptableSettingWithEncryptionDetails = new ArrayList<>();
+    encryptableSettingWithEncryptionDetails.add(
+        EncryptableSettingWithEncryptionDetails.builder().encryptedDataDetails(encryptedDataDetails).build());
+    TaskDataV2 taskDataV2 =
+        TaskDataV2.builder()
+            .parameters(new Object[] {JenkinsConfig.builder().build(), encryptableSettingWithEncryptionDetails})
+            .build();
+
+    Map encryptionMap = CapabilityHelper.fetchEncryptionDetailsListFromParametersV2(taskDataV2);
     assertThat(encryptionMap).isNotNull();
     assertThat(encryptionMap).hasSize(1);
     EncryptionConfig encryptionConfig = (EncryptionConfig) encryptionMap.values().iterator().next();

@@ -13,7 +13,6 @@ import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.task.cloudformation.CloudformationTaskType.CREATE_STACK;
-import static io.harness.steps.StepUtils.prepareCDTaskRequest;
 
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
@@ -88,6 +87,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 import io.harness.utils.IdentifierRefHelper;
@@ -129,7 +129,7 @@ public class CloudformationStepHelper {
   @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
   @Inject private CDStepHelper cdStepHelper;
   @Inject private GitConfigAuthenticationInfoHelper gitConfigAuthenticationInfoHelper;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private StepHelper stepHelper;
   @Inject private S3UriParser s3UriParser;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
@@ -702,11 +702,12 @@ public class CloudformationStepHelper {
                                   .parameters(new Object[] {gitFetchRequest})
                                   .build();
 
-    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
-        Arrays.asList(K8sCommandUnitConstants.FetchFiles, CloudformationCommandUnit.CreateStack.name()),
-        TaskType.GIT_FETCH_NEXT_GEN_TASK.getDisplayName(),
-        StepUtils.getTaskSelectors(stepElementParameters.getDelegateSelectors()),
-        stepHelper.getEnvironmentType(ambiance));
+    final TaskRequest taskRequest =
+        TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
+            Arrays.asList(K8sCommandUnitConstants.FetchFiles, CloudformationCommandUnit.CreateStack.name()),
+            TaskType.GIT_FETCH_NEXT_GEN_TASK.getDisplayName(),
+            StepUtils.getTaskSelectors(stepElementParameters.getDelegateSelectors()),
+            stepHelper.getEnvironmentType(ambiance));
 
     return TaskChainResponse.builder()
         .chainEnd(false)
@@ -732,11 +733,12 @@ public class CloudformationStepHelper {
                                   .parameters(new Object[] {awsS3FetchFilesTaskParams})
                                   .build();
 
-    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
-        Arrays.asList(K8sCommandUnitConstants.FetchFiles, CloudformationCommandUnit.CreateStack.name()),
-        TaskType.FETCH_S3_FILE_TASK_NG.getDisplayName(),
-        StepUtils.getTaskSelectors(stepElementParameters.getDelegateSelectors()),
-        stepHelper.getEnvironmentType(ambiance));
+    final TaskRequest taskRequest =
+        TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
+            Arrays.asList(K8sCommandUnitConstants.FetchFiles, CloudformationCommandUnit.CreateStack.name()),
+            TaskType.FETCH_S3_FILE_TASK_NG.getDisplayName(),
+            StepUtils.getTaskSelectors(stepElementParameters.getDelegateSelectors()),
+            stepHelper.getEnvironmentType(ambiance));
 
     return TaskChainResponse.builder()
         .chainEnd(false)

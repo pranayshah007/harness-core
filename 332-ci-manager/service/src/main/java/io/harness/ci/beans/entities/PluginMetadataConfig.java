@@ -44,12 +44,16 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class PluginMetadataConfig implements UuidAware, PersistentEntity {
   @Id @dev.morphia.annotations.Id String uuid;
   int version;
+  int priority;
   PluginMetadata metadata;
 
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
-        .add(CompoundMongoIndex.builder().name("version").field(PluginMetadataConfigKeys.version).build())
-        .add(CompoundMongoIndex.builder().name("name").field(PluginMetadataConfigKeys.metadata + ".name").build())
+        .add(CompoundMongoIndex.builder()
+                 .name("pluginMetadataConfigIdx")
+                 .field(PluginMetadataConfigKeys.version)
+                 .field(PluginMetadataConfigKeys.metadata + ".name")
+                 .build())
         .build();
   }
 }
