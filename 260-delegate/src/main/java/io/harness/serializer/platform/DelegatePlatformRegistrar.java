@@ -38,7 +38,7 @@ public class DelegatePlatformRegistrar implements KryoRegistrar {
     // DelegateTaskPackage
     kryo.register(DelegateTaskPackage.class, 7150);
     kryo.register(TaskData.class, 19002);
-    kryo.register(ShellScriptParameters.class, 5186);
+    kryo.register(ShellScriptParameters.class, 19463); // This tries to hijack ShellScriptTaskParametersNG
     kryo.register(SerializationFormat.class, 55402);
     kryo.register(ExecutionCapability.class, 19343);
     kryo.register(SecretDetail.class, 19001);

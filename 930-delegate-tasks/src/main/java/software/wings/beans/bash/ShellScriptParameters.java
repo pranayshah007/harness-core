@@ -19,7 +19,6 @@ import io.harness.expression.ExpressionEvaluator;
 import io.harness.shell.ScriptType;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.Getter;
@@ -31,33 +30,18 @@ public class ShellScriptParameters implements TaskParameters, ActivityAccess, Ex
   private final String commandUnit = "Execute";
   private final ScriptType scriptType = BASH;
   private final String activityId;
-  private final String outputVars;
-  private final String secretOutputVars;
+  private final String executionId;
+  private final List<String> outputVars;
+  private final List<String> secretOutputVars;
   @Expression(ALLOW_SECRETS) private final String script;
   private final long sshTimeOut;
   private final String accountId;
   private final String appId;
   private final String workingDirectory;
-  private final Map<String, String> serviceVariables;
-  private final Map<String, String> safeDisplayServiceVariables;
-  private final Map<String, String> environment;
+  @Expression(ALLOW_SECRETS) private final Map<String, String> environmentVariables;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(final ExpressionEvaluator maskingEvaluator) {
     return new ArrayList<>();
-  }
-
-  public Map<String, String> getResolvedEnvironmentVariables() {
-    final Map<String, String> resolvedEnvironment = new HashMap<>();
-
-    if (environment != null) {
-      resolvedEnvironment.putAll(environment);
-    }
-
-    if (serviceVariables != null) {
-      resolvedEnvironment.putAll(serviceVariables);
-    }
-
-    return resolvedEnvironment;
   }
 }
