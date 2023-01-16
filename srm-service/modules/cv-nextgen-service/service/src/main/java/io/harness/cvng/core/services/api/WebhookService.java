@@ -16,6 +16,7 @@ import io.harness.cvng.core.entities.PagerDutyWebhook;
 import io.harness.cvng.core.entities.Webhook;
 
 import java.util.List;
+import javax.ws.rs.core.HttpHeaders;
 
 public interface WebhookService {
   void createPagerdutyWebhook(
@@ -31,5 +32,5 @@ public interface WebhookService {
       String changeSourceIdentifier, CustomChangeWebhookEvent customChangeWebhookEvent);
 
   void checkAuthorization(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, List<HeaderConfig> headerConfigs);
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, HttpHeaders httpHeaders);
 }

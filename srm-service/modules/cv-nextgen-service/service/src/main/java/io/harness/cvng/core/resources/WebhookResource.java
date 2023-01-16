@@ -27,6 +27,8 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
 import retrofit2.http.Body;
 
 @Api("webhook")
@@ -55,8 +57,9 @@ public class WebhookResource {
   public void handleCustomChangeWebhookRequest(@NotNull @BeanParam ProjectParams projectParams,
       @NotNull @QueryParam("monitoredServiceIdentifier") String monitoredServiceIdentifier,
       @NotNull @QueryParam("changeSourceIdentifier") String changeSourceIdentifier,
-      @Body @Valid CustomChangeWebhookEvent customChangeWebhookEvent) {
-    webhookService.checkAuthorization(projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(), );
+      @Body @Valid CustomChangeWebhookEvent customChangeWebhookEvent, @Context HttpHeaders httpHeaders) {
+    webhookService.checkAuthorization(projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
+        projectParams.getProjectIdentifier(), httpHeaders);
     webhookService.handleCustomChangeWebhook(
         projectParams, monitoredServiceIdentifier, changeSourceIdentifier, customChangeWebhookEvent);
   }

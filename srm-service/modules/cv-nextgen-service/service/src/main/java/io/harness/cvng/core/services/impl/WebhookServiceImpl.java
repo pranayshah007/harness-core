@@ -34,7 +34,9 @@ import io.harness.pms.rbac.PipelineRbacPermissions;
 
 import com.google.inject.Inject;
 import groovy.util.logging.Slf4j;
+import java.util.ArrayList;
 import java.util.List;
+import javax.ws.rs.core.HttpHeaders;
 
 @Slf4j
 public class WebhookServiceImpl implements WebhookService {
@@ -124,7 +126,11 @@ public class WebhookServiceImpl implements WebhookService {
 
   @Override
   public void checkAuthorization(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, List<HeaderConfig> headerConfigs) {
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, HttpHeaders httpHeaders) {
+    List<HeaderConfig> headerConfigs = new ArrayList<>();
+    httpHeaders.getRequestHeaders().forEach(
+        (k, v) -> headerConfigs.add(HeaderConfig.builder().key(k).values(v).build()));
+
     boolean hasApiKey = false;
     for (HeaderConfig headerConfig : headerConfigs) {
       if (headerConfig.getKey().equalsIgnoreCase(X_API_KEY)) {
