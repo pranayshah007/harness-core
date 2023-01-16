@@ -52,7 +52,7 @@ public class ArtifactBuildDetailsMapper {
         .build();
   }
 
-  public ArtifactBuildDetailsNG toBuildDetailsNG(BuildDetailsInternal buildDetailsInternal, String sha) {
+  public ArtifactBuildDetailsNG toBuildDetailsNG(BuildDetailsInternal buildDetailsInternal, String sha, String shaV2) {
     Map<String, String> metadata = new HashMap<>();
     if (EmptyPredicate.isNotEmpty(buildDetailsInternal.getMetadata())) {
       metadata = buildDetailsInternal.getMetadata();
@@ -61,6 +61,7 @@ public class ArtifactBuildDetailsMapper {
     metadata.put(ArtifactMetadataKeys.artifactName, buildDetailsInternal.getBuildFullDisplayName());
     metadata.put(ArtifactMetadataKeys.artifactPath, buildDetailsInternal.getArtifactPath());
     metadata.put(ArtifactMetadataKeys.SHA, sha);
+    metadata.put(ArtifactMetadataKeys.SHAV2, shaV2);
     if (buildDetailsInternal.getArtifactFileMetadataList() != null
         && EmptyPredicate.isNotEmpty(buildDetailsInternal.getArtifactFileMetadataList())
         && buildDetailsInternal.getArtifactFileMetadataList().get(0) != null) {

@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -20,11 +21,13 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
+import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.artifact.resources.docker.dtos.DockerBuildDetailsDTO;
 import io.harness.cdng.artifact.resources.docker.dtos.DockerRequestDTO;
 import io.harness.cdng.artifact.resources.docker.dtos.DockerResponseDTO;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
@@ -79,6 +82,7 @@ public class DockerResourceServiceImplTest extends CategoryTest {
   @Mock SecretManagerClientService secretManagerClientService;
   @Mock DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   @Mock ExceptionManager exceptionManager;
+  @Mock CDFeatureFlagHelper cdFeatureFlagHelper;
 
   @Spy @InjectMocks DockerResourceServiceImpl dockerResourceService;
 
@@ -201,6 +205,7 @@ public class DockerResourceServiceImplTest extends CategoryTest {
                                                            .build()))
                                                    .build())
                 .build());
+    when(cdFeatureFlagHelper.isEnabled(any(), eq(FeatureName.CD_NG_DOCKER_ARTIFACT_DIGEST))).thenReturn(false);
 
     DockerBuildDetailsDTO dockerBuildDetailsDTO = dockerResourceService.getSuccessfulBuild(
         identifierRef, IMAGE_PATH, dockerRequestDTO, ORG_IDENTIFIER, PROJECT_IDENTIFIER);

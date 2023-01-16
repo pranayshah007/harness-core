@@ -11,6 +11,7 @@ import static io.harness.artifacts.docker.beans.DockerImageManifestResponse.Dock
 import static io.harness.rule.OwnerRule.AADITI;
 import static io.harness.rule.OwnerRule.DEEPAK_PUTHRAYA;
 import static io.harness.rule.OwnerRule.HARSH;
+import static io.harness.rule.OwnerRule.VINICIUS;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -24,6 +25,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifacts.docker.DockerRegistryRestClient;
 import io.harness.artifacts.docker.beans.DockerImageManifestResponse;
 import io.harness.artifacts.docker.beans.DockerInternalConfig;
+import io.harness.beans.ArtifactMetaInfo;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 
@@ -32,6 +34,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import okhttp3.Protocol;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -114,6 +117,44 @@ public class DockerRegistryUtilsTest extends CategoryTest {
                        .put("please", "work")
                        .put("maintainer", "docker-maint@nginx.com")
                        .build());
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void shouldGetArtifactMetaInfoWithSHA256Digests() throws IOException {
+    Call<DockerImageManifestResponse> requestCallV1 = mock(Call.class);
+    when(requestCallV1.execute())
+        .thenReturn(Response.success(
+            getDockerImageManifestResponse(
+                "{\"architecture\":\"amd64\",\"config\":{\"Labels\":{\"maintainer\":\"NGINX Docker Maintainers <docker-maint@nginx.com>\",\"please\":\"work\"}}}"),
+            (new okhttp3.Response.Builder())
+                .code(200)
+                .message("OK")
+                .addHeader("docker-content-digest", "DIGEST_V1")
+                .protocol(Protocol.HTTP_1_1)
+                .request((new okhttp3.Request.Builder()).url("http://localhost/").build())
+                .build()));
+    when(dockerRegistryRestClient.getImageManifest(any(), any(), any())).thenReturn(requestCallV1);
+    Call<DockerImageManifestResponse> requestCallV2 = mock(Call.class);
+    when(requestCallV2.execute())
+        .thenReturn(Response.success(
+            getDockerImageManifestResponse(
+                "{\"architecture\":\"amd64\",\"config\":{\"Labels\":{\"maintainer\":\"NGINX Docker Maintainers <docker-maint@nginx.com>\",\"please\":\"work\"}}}"),
+            (new okhttp3.Response.Builder())
+                .code(200)
+                .message("OK")
+                .addHeader("docker-content-digest", "DIGEST_V2")
+                .protocol(Protocol.HTTP_1_1)
+                .request((new okhttp3.Request.Builder()).url("http://localhost/").build())
+                .build()));
+    when(dockerRegistryRestClient.getImageManifestV2(any(), any(), any())).thenReturn(requestCallV2);
+
+    ArtifactMetaInfo artifactMetaInfo = dockerRegistryUtils.getArtifactMetaInfo(
+        dockerConfig, dockerRegistryRestClient, null, AUTH_HEADER, IMAGE_NAME, "tag", true);
+    assertThat(artifactMetaInfo).isInstanceOf(ArtifactMetaInfo.class);
+    assertThat(artifactMetaInfo.getSha()).isEqualTo("DIGEST_V1");
+    assertThat(artifactMetaInfo.getShaV2()).isEqualTo("DIGEST_V2");
   }
 
   private DockerImageManifestResponse getDockerImageManifestResponse(String v1Compatibility) {

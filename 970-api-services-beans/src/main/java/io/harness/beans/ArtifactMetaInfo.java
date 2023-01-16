@@ -23,5 +23,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ArtifactMetaInfo {
   private String sha;
+  private String shaV2;
   private Map<String, String> labels;
 }
