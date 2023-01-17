@@ -14,6 +14,7 @@ import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 
 import com.mongodb.client.result.UpdateResult;
 import java.util.List;
+import java.util.Set;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -26,14 +27,15 @@ public interface PmsExecutionSummaryRepositoryCustom {
   PipelineExecutionSummaryEntity update(Query query, Update update);
   UpdateResult deleteAllExecutionsWhenPipelineDeleted(Query query, Update update);
   Page<PipelineExecutionSummaryEntity> findAll(Criteria criteria, Pageable pageable);
-  List<PipelineExecutionSummaryEntity> findAllWithRequiredProjection(
+
+  CloseableIterator<PipelineExecutionSummaryEntity> findAllWithRequiredProjectionUsingAnalyticsNode(
       Criteria criteria, Pageable pageable, List<String> projections);
 
   long getCountOfExecutionSummary(Criteria criteria);
   String fetchRootRetryExecutionId(String planExecutionId);
-  List<PipelineExecutionSummaryEntity> fetchPipelineSummaryEntityFromRootParentId(String rootParentId);
 
   List<String> findListOfUniqueBranches(Criteria criteria);
+
   List<String> findListOfUniqueRepositories(Criteria criteria);
 
   /**
@@ -43,4 +45,25 @@ public interface PmsExecutionSummaryRepositoryCustom {
    * @return
    */
   CloseableIterator<PipelineExecutionSummaryEntity> fetchExecutionSummaryEntityFromAnalytics(Query query);
+
+  /**
+   * Fetches PipelineExecutionSummaryEntity from DB using projections.
+   * Only fields specified in fieldsToInclude are added.
+   * @param criteria
+   * @param fieldsToInclude
+   * @return
+   */
+  PipelineExecutionSummaryEntity getPipelineExecutionSummaryWithProjections(
+      Criteria criteria, Set<String> fieldsToInclude);
+
+  /**
+   * Fetches pipeline execution summary entity from rootParentId. Used to calculate the last retried pipeline
+   *
+   * Uses: rootExecution_createdAt_id idx
+   *
+   * @param rootParentId
+   * @return
+   */
+  CloseableIterator<PipelineExecutionSummaryEntity> fetchPipelineSummaryEntityFromRootParentIdUsingSecondaryMongo(
+      String rootParentId);
 }

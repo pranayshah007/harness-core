@@ -225,8 +225,8 @@ public class TerragruntApplyTaskNGTest extends CategoryTest {
              eq("echo \"y\" | terragrunt run-all init -backend-config=backendFileDirectory/test-backendFile.tfvars"),
              anyLong(), eq(applyParameters.getEnvVars()), any(), any(), any(), any(), any()))
         .thenReturn(CliResponse.builder().exitCode(0).build());
-    when(cliHelper.executeCliCommand(eq("terragrunt workspace list"), anyLong(), eq(applyParameters.getEnvVars()),
-             any(), any(), any(), any(), any()))
+    when(cliHelper.executeCliCommand(eq("echo \"y\" | terragrunt run-all workspace list"), anyLong(),
+             eq(applyParameters.getEnvVars()), any(), any(), any(), any(), any()))
         .thenReturn(CliResponse.builder()
                         .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                         .exitCode(0)

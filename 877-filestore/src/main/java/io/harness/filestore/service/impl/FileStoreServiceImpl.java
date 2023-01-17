@@ -20,6 +20,8 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.FileBucket.FILE_STORE;
+import static io.harness.filestore.utils.FileStoreUtils.getSubPaths;
+import static io.harness.filestore.utils.FileStoreUtils.isPathValid;
 import static io.harness.filestore.utils.FileStoreUtils.nameChanged;
 import static io.harness.filestore.utils.FileStoreUtils.parentChanged;
 import static io.harness.filter.FilterType.FILESTORE;
@@ -277,6 +279,31 @@ public class FileStoreServiceImpl implements FileStoreService {
   }
 
   @Override
+  public FolderNodeDTO listFileStoreNodesOnPath(@NotNull String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, @NotNull String path, @Nullable FileStoreNodesFilterQueryPropertiesDTO filterParams) {
+    if (!isPathValid(path)) {
+      throw new InvalidArgumentsException(format("Invalid file path, path: %s", path));
+    }
+    findByPath(accountIdentifier, orgIdentifier, projectIdentifier, path)
+        .orElseThrow(
+            ()
+                -> new InvalidArgumentsException(format(
+                    "Not found file/folder on path [%s], accountIdentifier [%s], orgIdentifier [%s] and projectIdentifier [%s]",
+                    path, accountIdentifier, orgIdentifier, projectIdentifier)));
+
+    List<String> subPaths = getSubPaths(path).orElseThrow(
+        () -> new InvalidArgumentsException(format("Unable to extract sub-parts of path, path: %s", path)));
+    FolderNodeDTO root = FolderNodeDTO.builder()
+                             .path(ROOT_FOLDER_PATH)
+                             .parentIdentifier(ROOT_FOLDER_PARENT_IDENTIFIER)
+                             .identifier(ROOT_FOLDER_IDENTIFIER)
+                             .name(ROOT_FOLDER_NAME)
+                             .build();
+    return populateFolderNodeIncludingSubNodesOnPath(
+        Scope.of(accountIdentifier, orgIdentifier, projectIdentifier), root, subPaths, filterParams);
+  }
+
+  @Override
   public Page<EntitySetupUsageDTO> listReferencedBy(SearchPageParams pageParams, @NotNull String accountIdentifier,
       String orgIdentifier, String projectIdentifier, @NotNull String identifier, EntityType entityType) {
     if (isEmpty(identifier)) {
@@ -458,6 +485,36 @@ public class FileStoreServiceImpl implements FileStoreService {
         .map(ngFile
             -> ngFile.isFolder() ? FileStoreNodeDTOMapper.getFolderNodeDTO(ngFile)
                                  : FileStoreNodeDTOMapper.getFileNodeDTO(ngFile, null))
+        .collect(Collectors.toList());
+  }
+
+  private FolderNodeDTO populateFolderNodeIncludingSubNodesOnPath(Scope scope, FolderNodeDTO folderNode,
+      final List<String> subNodePaths, FileStoreNodesFilterQueryPropertiesDTO filterParams) {
+    List<FileStoreNodeDTO> fileStoreNodes =
+        listFolderChildrenIncludingSubNodesOnPath(scope, folderNode.getIdentifier(), subNodePaths, filterParams);
+    for (FileStoreNodeDTO node : fileStoreNodes) {
+      folderNode.addChild(node);
+    }
+    return folderNode;
+  }
+
+  private List<FileStoreNodeDTO> listFolderChildrenIncludingSubNodesOnPath(Scope scope, String folderIdentifier,
+      @NotNull final List<String> subNodePaths, FileStoreNodesFilterQueryPropertiesDTO filterParams) {
+    return listAllByParentIdentifierFilteredByParamsAndSortedByLastModifiedAt(scope, folderIdentifier, filterParams)
+        .stream()
+        .filter(Objects::nonNull)
+        .map(ngFile -> {
+          if (ngFile.isFolder()) {
+            FolderNodeDTO folderNode = FileStoreNodeDTOMapper.getFolderNodeDTO(ngFile);
+            if (subNodePaths.contains(ngFile.getPath())) {
+              subNodePaths.remove(ngFile.getPath());
+              populateFolderNodeIncludingSubNodesOnPath(scope, folderNode, subNodePaths, filterParams);
+            }
+            return folderNode;
+          } else {
+            return FileStoreNodeDTOMapper.getFileNodeDTO(ngFile, null);
+          }
+        })
         .collect(Collectors.toList());
   }
 

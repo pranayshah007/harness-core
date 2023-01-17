@@ -11,6 +11,7 @@ import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 import static io.harness.rule.OwnerRule.SHIVAM;
+import static io.harness.rule.OwnerRule.VINICIUS;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -89,6 +90,32 @@ public class ArtifactConfigToDelegateReqMapperTest extends CategoryTest {
     assertThat(dockerDelegateRequest.getTag()).isEqualTo("");
     assertThat(dockerDelegateRequest.getConnectorRef()).isEqualTo("");
     assertThat(dockerDelegateRequest.getTagRegex()).isEqualTo("\\*");
+    assertThat(dockerDelegateRequest.getShouldFetchDockerV2DigestSHA256()).isEqualTo(false);
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testGetDockerDelegateRequestWithV2SHA256Digest() {
+    DockerHubArtifactConfig dockerHubArtifactConfig = DockerHubArtifactConfig.builder()
+                                                          .imagePath(ParameterField.createValueField("IMAGE"))
+                                                          .digest(ParameterField.createValueField("DIGEST"))
+                                                          .build();
+    DockerConnectorDTO connectorDTO = DockerConnectorDTO.builder().build();
+    List<EncryptedDataDetail> encryptedDataDetailList = Collections.emptyList();
+
+    DockerArtifactDelegateRequest dockerDelegateRequest = ArtifactConfigToDelegateReqMapper.getDockerDelegateRequest(
+        dockerHubArtifactConfig, connectorDTO, encryptedDataDetailList, "");
+
+    assertThat(dockerDelegateRequest.getDockerConnectorDTO()).isEqualTo(connectorDTO);
+    assertThat(dockerDelegateRequest.getEncryptedDataDetails()).isEqualTo(encryptedDataDetailList);
+    assertThat(dockerDelegateRequest.getImagePath()).isEqualTo(dockerHubArtifactConfig.getImagePath().getValue());
+    assertThat(dockerDelegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.DOCKER_REGISTRY);
+    assertThat(dockerDelegateRequest.getTagsList()).isNull();
+    assertThat(dockerDelegateRequest.getTag()).isEqualTo("");
+    assertThat(dockerDelegateRequest.getConnectorRef()).isEqualTo("");
+    assertThat(dockerDelegateRequest.getTagRegex()).isEqualTo("\\*");
+    assertThat(dockerDelegateRequest.getShouldFetchDockerV2DigestSHA256()).isEqualTo(true);
   }
 
   @Test

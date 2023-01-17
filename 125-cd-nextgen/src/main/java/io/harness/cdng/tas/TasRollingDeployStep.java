@@ -8,7 +8,6 @@
 package io.harness.cdng.tas;
 
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
-import static io.harness.steps.StepUtils.prepareCDTaskRequest;
 
 import static java.util.Objects.isNull;
 
@@ -64,6 +63,7 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 
@@ -251,7 +251,7 @@ public class TasRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
                             .timeout(CDStepHelper.getTimeoutInMillis(stepParameters))
                             .async(true)
                             .build();
-    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+    final TaskRequest taskRequest = TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
         executionPassThroughData.getCommandUnits(), TaskType.TAS_ROLLING_DEPLOY.getDisplayName(),
         TaskSelectorYaml.toTaskSelector(tasRollingDeployStepParameters.getDelegateSelectors()),
         stepHelper.getEnvironmentType(ambiance));

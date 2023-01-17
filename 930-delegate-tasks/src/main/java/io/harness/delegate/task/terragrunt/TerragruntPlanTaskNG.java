@@ -115,9 +115,11 @@ public class TerragruntPlanTaskNG extends AbstractDelegateRunnableTask {
 
       TerragruntClient client = terragruntContext.getClient();
 
-      executeWithErrorHandling(client::init,
-          createCliRequest(TerragruntCliRequest.builder(), terragruntContext, planTaskParameters).build(),
-          planLogCallback);
+      if (TerragruntTaskRunType.RUN_MODULE == planTaskParameters.getRunConfiguration().getRunType()) {
+        executeWithErrorHandling(client::init,
+            createCliRequest(TerragruntCliRequest.builder(), terragruntContext, planTaskParameters).build(),
+            planLogCallback);
+      }
 
       if (isNotEmpty(planTaskParameters.getWorkspace())) {
         log.info("Create or select workspace {}", planTaskParameters.getWorkspace());

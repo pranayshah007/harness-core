@@ -188,7 +188,7 @@ public class WorkflowMigrationService extends NgMigrationService {
 
     WorkflowHandler workflowHandler = workflowHandlerFactory.getWorkflowHandler(workflow);
 
-    JsonNode templateSpec = workflowHandler.getTemplateSpec(migratedEntities, workflow);
+    JsonNode templateSpec = workflowHandler.getTemplateSpec(entities, migratedEntities, workflow);
     if (templateSpec == null) {
       return Collections.emptyList();
     }

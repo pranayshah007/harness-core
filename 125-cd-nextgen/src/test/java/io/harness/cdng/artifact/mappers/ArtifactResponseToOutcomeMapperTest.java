@@ -13,11 +13,14 @@ import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 import static io.harness.rule.OwnerRule.SAHIL;
 import static io.harness.rule.OwnerRule.SHIVAM;
+import static io.harness.rule.OwnerRule.VINICIUS;
 import static io.harness.rule.OwnerRule.VITALIE;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.harness.CategoryTest;
+import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
@@ -47,12 +50,15 @@ import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactBuildDetailsNG;
 import io.harness.delegate.task.artifacts.response.ArtifactDelegateResponse;
+import io.harness.exception.ArtifactServerException;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
 import software.wings.utils.RepositoryFormat;
 
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -72,6 +78,77 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
 
     assertThat(artifactOutcome).isNotNull();
     assertThat(artifactOutcome).isInstanceOf(DockerArtifactOutcome.class);
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testToDockerArtifactOutcomeWithMatchingV1Digest() {
+    ArtifactConfig artifactConfig = DockerHubArtifactConfig.builder()
+                                        .connectorRef(ParameterField.createValueField("connector"))
+                                        .imagePath(ParameterField.createValueField("IMAGE"))
+                                        .digest(ParameterField.createValueField("V1_DIGEST"))
+                                        .build();
+    Map<String, String> metadata = new HashMap<>();
+    metadata.put(ArtifactMetadataKeys.SHA, "V1_DIGEST");
+    metadata.put(ArtifactMetadataKeys.SHAV2, "V2_DIGEST");
+    ArtifactBuildDetailsNG buildDetails = ArtifactBuildDetailsNG.builder().metadata(metadata).build();
+    ArtifactDelegateResponse artifactDelegateResponse =
+        DockerArtifactDelegateResponse.builder().buildDetails(buildDetails).build();
+
+    ArtifactOutcome artifactOutcome =
+        ArtifactResponseToOutcomeMapper.toArtifactOutcome(artifactConfig, artifactDelegateResponse, true);
+
+    assertThat(artifactOutcome).isNotNull();
+    assertThat(artifactOutcome).isInstanceOf(DockerArtifactOutcome.class);
+    assertThat(((DockerArtifactOutcome) artifactOutcome).getDigest()).isEqualTo("V1_DIGEST");
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testToDockerArtifactOutcomeWithMatchingV2Digest() {
+    ArtifactConfig artifactConfig = DockerHubArtifactConfig.builder()
+                                        .connectorRef(ParameterField.createValueField("connector"))
+                                        .imagePath(ParameterField.createValueField("IMAGE"))
+                                        .digest(ParameterField.createValueField("V2_DIGEST"))
+                                        .build();
+    Map<String, String> metadata = new HashMap<>();
+    metadata.put(ArtifactMetadataKeys.SHA, "V1_DIGEST");
+    metadata.put(ArtifactMetadataKeys.SHAV2, "V2_DIGEST");
+    ArtifactBuildDetailsNG buildDetails = ArtifactBuildDetailsNG.builder().metadata(metadata).build();
+    ArtifactDelegateResponse artifactDelegateResponse =
+        DockerArtifactDelegateResponse.builder().buildDetails(buildDetails).build();
+
+    ArtifactOutcome artifactOutcome =
+        ArtifactResponseToOutcomeMapper.toArtifactOutcome(artifactConfig, artifactDelegateResponse, true);
+
+    assertThat(artifactOutcome).isNotNull();
+    assertThat(artifactOutcome).isInstanceOf(DockerArtifactOutcome.class);
+    assertThat(((DockerArtifactOutcome) artifactOutcome).getDigest()).isEqualTo("V2_DIGEST");
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testToDockerArtifactOutcomeWithUnmatchedDigest() {
+    ArtifactConfig artifactConfig = DockerHubArtifactConfig.builder()
+                                        .connectorRef(ParameterField.createValueField("connector"))
+                                        .imagePath(ParameterField.createValueField("IMAGE"))
+                                        .digest(ParameterField.createValueField("WRONG_DIGEST"))
+                                        .build();
+    Map<String, String> metadata = new HashMap<>();
+    metadata.put(ArtifactMetadataKeys.SHA, "V1_DIGEST");
+    metadata.put(ArtifactMetadataKeys.SHAV2, "V2_DIGEST");
+    ArtifactBuildDetailsNG buildDetails = ArtifactBuildDetailsNG.builder().metadata(metadata).build();
+    ArtifactDelegateResponse artifactDelegateResponse =
+        DockerArtifactDelegateResponse.builder().buildDetails(buildDetails).build();
+
+    assertThatThrownBy(
+        () -> ArtifactResponseToOutcomeMapper.toArtifactOutcome(artifactConfig, artifactDelegateResponse, true))
+        .isInstanceOf(ArtifactServerException.class)
+        .hasMessage(
+            "Artifact image SHA256 validation failed: image sha256 digest mismatch.\n Requested digest: WRONG_DIGEST\nAvailable digests:\nV1_DIGEST (V1)\nV2_DIGEST (V2)");
   }
 
   @Test

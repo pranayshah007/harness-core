@@ -1,0 +1,16 @@
+infrastructureDefinition:
+  name: aa
+  identifier: aa
+  description: ""
+  tags: {}
+  orgIdentifier: default
+  projectIdentifier: s
+  environmentRef: envvvv
+  deploymentType: IncorrectDeploymentType
+  type: KubernetesGcp
+  spec:
+    connectorRef: sssss
+    cluster: ss
+    namespace: ss
+    releaseName: release-<+INFRA_KEY>
+  allowSimultaneousDeployments: false

@@ -29,6 +29,7 @@ import io.harness.models.InstancesByBuildId;
 import io.harness.models.constants.InstanceSyncConstants;
 import io.harness.mongo.helper.AnalyticsMongoTemplateHolder;
 import io.harness.mongo.helper.SecondaryMongoTemplateHolder;
+import io.harness.utils.FullyQualifiedIdentifierHelper;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -82,17 +83,20 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
   @Override
   public List<Instance> getActiveInstancesByAccountOrgProjectAndService(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String serviceIdentifier, long timestamp) {
+    String serviceRef = FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(
+        accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier);
+
     if (timestamp <= 0) {
-      Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier)
-                              .is(accountIdentifier)
-                              .and(InstanceKeys.orgIdentifier)
-                              .is(orgIdentifier)
-                              .and(InstanceKeys.projectIdentifier)
-                              .is(projectIdentifier)
-                              .and(InstanceKeys.serviceIdentifier)
-                              .is(serviceIdentifier)
-                              .and(InstanceKeys.isDeleted)
-                              .is(false);
+      Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier).is(accountIdentifier);
+
+      if (EmptyPredicate.isNotEmpty(orgIdentifier)) {
+        criteria.and(InstanceKeys.orgIdentifier).is(orgIdentifier);
+      }
+      if (EmptyPredicate.isNotEmpty(projectIdentifier)) {
+        criteria.and(InstanceKeys.projectIdentifier).is(projectIdentifier);
+      }
+
+      criteria.and(InstanceKeys.serviceIdentifier).is(serviceRef).and(InstanceKeys.isDeleted).is(false);
       Query query = new Query().addCriteria(criteria);
       return analyticsMongoTemplate.find(query, Instance.class);
     }
@@ -201,16 +205,20 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
   @Override
   public List<Instance> getActiveInstancesByInfrastructureMappingId(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String infrastructureMappingId) {
-    Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier)
-                            .is(accountIdentifier)
-                            .and(InstanceKeys.orgIdentifier)
-                            .is(orgIdentifier)
-                            .and(InstanceKeys.projectIdentifier)
-                            .is(projectIdentifier)
-                            .and(InstanceKeys.infrastructureMappingId)
-                            .is(infrastructureMappingId)
-                            .and(InstanceKeys.isDeleted)
-                            .is(false);
+    Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier).is(accountIdentifier);
+
+    if (EmptyPredicate.isNotEmpty(orgIdentifier)) {
+      criteria.and(InstanceKeys.orgIdentifier).is(orgIdentifier);
+    }
+    if (EmptyPredicate.isNotEmpty(projectIdentifier)) {
+      criteria.and(InstanceKeys.projectIdentifier).is(projectIdentifier);
+    }
+
+    criteria.and(InstanceKeys.infrastructureMappingId)
+        .is(infrastructureMappingId)
+        .and(InstanceKeys.isDeleted)
+        .is(false);
+
     Query query = new Query().addCriteria(criteria);
     return secondaryMongoTemplate.find(query, Instance.class);
   }
@@ -488,43 +496,42 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
   */
   private Criteria getCriteriaForActiveInstances(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, long timestampInMs) {
-    Criteria filterNotDeleted = Criteria.where(InstanceKeys.accountIdentifier)
-                                    .is(accountIdentifier)
-                                    .and(InstanceKeys.orgIdentifier)
-                                    .is(orgIdentifier)
-                                    .and(InstanceKeys.projectIdentifier)
-                                    .is(projectIdentifier)
-                                    .and(InstanceKeys.isDeleted)
-                                    .is(false)
-                                    .and(InstanceKeys.createdAt)
-                                    .lte(timestampInMs);
-
-    Criteria filterDeletedAfter = Criteria.where(InstanceKeys.accountIdentifier)
-                                      .is(accountIdentifier)
-                                      .and(InstanceKeys.orgIdentifier)
-                                      .is(orgIdentifier)
-                                      .and(InstanceKeys.projectIdentifier)
-                                      .is(projectIdentifier)
-                                      .and(InstanceKeys.isDeleted)
-                                      .is(true)
-                                      .and(InstanceKeys.createdAt)
-                                      .lte(timestampInMs)
-                                      .and(InstanceKeys.deletedAt)
-                                      .gte(timestampInMs);
-
+    Criteria filterNotDeleted =
+        getCriteriaForActiveInstancesV2(accountIdentifier, orgIdentifier, projectIdentifier, null);
+    filterNotDeleted.and(InstanceKeys.createdAt).lte(timestampInMs);
+    Criteria filterDeletedAfter = getCriteriaForDeletedInstances(accountIdentifier, orgIdentifier, projectIdentifier);
+    filterDeletedAfter.and(InstanceKeys.createdAt).lte(timestampInMs).and(InstanceKeys.deletedAt).gte(timestampInMs);
     return new Criteria().orOperator(filterNotDeleted, filterDeletedAfter);
+  }
+
+  private Criteria getCriteriaForDeletedInstances(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier).is(accountIdentifier);
+    if (EmptyPredicate.isNotEmpty(orgIdentifier)) {
+      criteria.and(InstanceKeys.orgIdentifier).is(orgIdentifier);
+    }
+    if (EmptyPredicate.isNotEmpty(projectIdentifier)) {
+      criteria.and(InstanceKeys.projectIdentifier).is(projectIdentifier);
+    }
+    criteria.and(InstanceKeys.isDeleted).is(true);
+
+    return criteria;
   }
 
   private Criteria getCriteriaForActiveInstances(
       String accountIdentifier, String orgIdentifier, String projectIdentifier) {
-    return Criteria.where(InstanceKeys.accountIdentifier)
-        .is(accountIdentifier)
-        .and(InstanceKeys.orgIdentifier)
-        .is(orgIdentifier)
-        .and(InstanceKeys.projectIdentifier)
-        .is(projectIdentifier)
-        .and(InstanceKeys.isDeleted)
-        .is(false);
+    Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier).is(accountIdentifier);
+
+    if (orgIdentifier != null) {
+      criteria.and(InstanceKeys.orgIdentifier).is(orgIdentifier);
+    }
+    if (projectIdentifier != null) {
+      criteria.and(InstanceKeys.projectIdentifier).is(projectIdentifier);
+    }
+
+    criteria.and(InstanceKeys.isDeleted).is(false);
+
+    return criteria;
   }
 
   private Criteria getCriteriaForActiveInstancesV2(
@@ -544,14 +551,18 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
     }
 
     if (serviceId != null) {
-      criteria.and(InstanceKeys.serviceIdentifier).is(serviceId);
+      criteria.and(InstanceKeys.serviceIdentifier)
+          .is(FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(
+              accountIdentifier, orgIdentifier, projectIdentifier, serviceId));
     }
     if (buildId != null) {
       criteria.and(InstanceSyncConstants.PRIMARY_ARTIFACT_TAG).is(buildId);
     }
 
     if (envId != null) {
-      criteria.and(InstanceKeys.envIdentifier).is(envId);
+      criteria.and(InstanceKeys.envIdentifier)
+          .is(FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(
+              accountIdentifier, orgIdentifier, projectIdentifier, envId));
     }
 
     criteria.and(InstanceKeys.isDeleted).is(false);

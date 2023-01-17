@@ -165,7 +165,7 @@ public class DelegateAsyncServiceImpl implements DelegateAsyncService {
   }
 
   @Getter(lazy = true)
-  private final byte[] timeoutMessage = kryoSerializer.asDeflatedBytes(
+  private final byte[] timeoutMessage = referenceFalseKryoSerializer.asDeflatedBytes(
       ErrorNotifyResponseData.builder()
           .errorMessage("Delegate service did not provide response and the task time-outed")
           .build());
@@ -178,7 +178,7 @@ public class DelegateAsyncServiceImpl implements DelegateAsyncService {
             .setOnInsert(DelegateAsyncTaskResponseKeys.responseData, getTimeoutMessage())
             .setOnInsert(DelegateAsyncTaskResponseKeys.processAfter, expiry)
             .setOnInsert(DelegateAsyncTaskResponseKeys.validUntil, Date.from(validUntilInstant))
-            .setOnInsert(DelegateAsyncTaskResponseKeys.usingKryoWithoutReference, false)
+            .setOnInsert(DelegateAsyncTaskResponseKeys.usingKryoWithoutReference, true)
             .set(DelegateAsyncTaskResponseKeys.holdUntil, holdUntil);
 
     Query<DelegateAsyncTaskResponse> upsertQuery =

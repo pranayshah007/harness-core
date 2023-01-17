@@ -39,9 +39,7 @@ public class GitOpsStepHelper {
             .collect(Collectors.toList());
 
     if (isEmpty(releaseRepoManifests)) {
-      throw new InvalidRequestException("Release Repo Manifests are mandatory for Create PR step. Select one from "
-              + String.join(", ", ManifestType.ReleaseRepo),
-          USER);
+      throw new InvalidRequestException("Release Repo Manifest is mandatory", USER);
     }
 
     if (releaseRepoManifests.size() > 1) {

@@ -29,29 +29,17 @@ public class STOYamlImage {
   @ApiModelProperty(dataType = "io.harness.yaml.sto.variables.STOYamlImageType")
   protected STOYamlImageType type;
 
-  @YamlSchemaTypes(value = {runtime})
-  @ApiModelProperty(dataType = STRING_CLASSPATH)
-  protected ParameterField<String> domain;
+  @ApiModelProperty(dataType = STRING_CLASSPATH) protected ParameterField<String> domain;
 
-  @YamlSchemaTypes(value = {runtime})
-  @ApiModelProperty(dataType = STRING_CLASSPATH)
-  @JsonProperty("access_id")
-  protected ParameterField<String> accessId;
+  @ApiModelProperty(dataType = STRING_CLASSPATH) @JsonProperty("access_id") protected ParameterField<String> accessId;
 
-  @YamlSchemaTypes(value = {runtime})
   @ApiModelProperty(dataType = STRING_CLASSPATH)
   @JsonProperty("access_token")
   protected ParameterField<String> accessToken;
 
-  @YamlSchemaTypes(value = {runtime})
-  @ApiModelProperty(dataType = STRING_CLASSPATH)
-  protected ParameterField<String> region;
+  @ApiModelProperty(dataType = STRING_CLASSPATH) protected ParameterField<String> region;
 
-  @YamlSchemaTypes(value = {runtime})
-  @ApiModelProperty(dataType = STRING_CLASSPATH)
-  protected ParameterField<String> name;
+  @ApiModelProperty(dataType = STRING_CLASSPATH) protected ParameterField<String> name;
 
-  @YamlSchemaTypes(value = {runtime})
-  @ApiModelProperty(dataType = STRING_CLASSPATH)
-  protected ParameterField<String> tag;
+  @ApiModelProperty(dataType = STRING_CLASSPATH) protected ParameterField<String> tag;
 }

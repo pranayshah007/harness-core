@@ -77,7 +77,7 @@ public class PipelineAsyncValidationServiceImpl implements PipelineAsyncValidati
 
   @Override
   public Optional<PipelineValidationEvent> getLatestEventByFQNAndAction(String fqn, Action action) {
-    return pipelineValidationEventRepository.findByFqnAndAction(fqn, action);
+    return pipelineValidationEventRepository.findLatestValidEvent(fqn, action);
   }
 
   @Override

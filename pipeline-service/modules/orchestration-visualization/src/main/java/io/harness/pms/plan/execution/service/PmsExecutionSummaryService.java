@@ -13,7 +13,7 @@ import io.harness.execution.NodeExecution;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.Set;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.util.CloseableIterator;
 
@@ -22,10 +22,17 @@ public interface PmsExecutionSummaryService {
   void regenerateStageLayoutGraph(String planExecutionId, List<NodeExecution> nodeExecutions);
   void update(String planExecutionId, Update update);
 
-  // Todo(Sahil): Create a new function which uses projections for fetch execution summary entities.
-  // All usages of this function should be removed.
-  Optional<PipelineExecutionSummaryEntity> getPipelineExecutionSummary(
-      String accountId, String orgId, String projectId, String planExecutionId);
+  /**
+   * This method is used to query pipelineExecutionSummaryEntity using planExecutionId and the fields that should be set
+   * in the response
+   *
+   * Uses- planExecutionId index
+   *
+   * @param planExecutionId
+   * @param fields
+   * @return
+   */
+  PipelineExecutionSummaryEntity getPipelineExecutionSummaryWithProjections(String planExecutionId, Set<String> fields);
 
   /**
    * updates the top graph based on the type of nodeExecution

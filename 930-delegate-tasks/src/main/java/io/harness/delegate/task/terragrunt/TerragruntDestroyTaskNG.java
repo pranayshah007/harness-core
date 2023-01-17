@@ -116,9 +116,11 @@ public class TerragruntDestroyTaskNG extends AbstractDelegateRunnableTask {
 
       TerragruntClient client = terragruntContext.getClient();
 
-      executeWithErrorHandling(client::init,
-          createCliRequest(TerragruntCliRequest.builder(), terragruntContext, destroyTaskParameters).build(),
-          destroyLogCallback);
+      if (TerragruntTaskRunType.RUN_MODULE == destroyTaskParameters.getRunConfiguration().getRunType()) {
+        executeWithErrorHandling(client::init,
+            createCliRequest(TerragruntCliRequest.builder(), terragruntContext, destroyTaskParameters).build(),
+            destroyLogCallback);
+      }
 
       if (isNotEmpty(destroyTaskParameters.getWorkspace())) {
         log.info("Create or select workspace {}", destroyTaskParameters.getWorkspace());

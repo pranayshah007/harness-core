@@ -28,10 +28,12 @@ import io.harness.cdng.common.beans.SetupAbstractionKeys;
 import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
 import io.harness.cdng.environment.helper.EnvironmentInfraFilterHelper;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
+import io.harness.cdng.environment.yaml.EnvironmentsMetadata;
 import io.harness.cdng.environment.yaml.EnvironmentsYaml;
 import io.harness.cdng.infra.yaml.InfraStructureDefinitionYaml;
 import io.harness.cdng.pipeline.beans.MultiDeploymentStepParameters;
 import io.harness.cdng.service.beans.ServiceYamlV2;
+import io.harness.cdng.service.beans.ServicesMetadata;
 import io.harness.cdng.service.beans.ServicesYaml;
 import io.harness.exception.InvalidYamlException;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -48,6 +50,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.utils.NGFeatureFlagHelperService;
 
+import io.fabric8.utils.Lists;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -198,6 +201,215 @@ public class MultiDeploymentSpawnerStepTest extends CategoryTest {
                                                 .build())
                                         .build())
                        .build());
+  }
+
+  @Test
+  @Owner(developers = SAHIL)
+  @Category(UnitTests.class)
+  public void testObtainChildrenAfterRbacWithServicesAndEnvironments() {
+    ServiceYamlV2 serviceYamlV2 = ServiceYamlV2.builder().serviceRef(ParameterField.createValueField("svc1")).build();
+    ServiceYamlV2 serviceYamlV22 = ServiceYamlV2.builder().serviceRef(ParameterField.createValueField("svc2")).build();
+
+    List<ServiceYamlV2> serviceYamlV2s = new ArrayList<>();
+    serviceYamlV2s.add(serviceYamlV2);
+    serviceYamlV2s.add(serviceYamlV22);
+    EnvironmentYamlV2 environmentYamlV2 = EnvironmentYamlV2.builder()
+                                              .environmentRef(ParameterField.createValueField("env1"))
+                                              .infrastructureDefinition(ParameterField.createValueField(
+                                                  InfraStructureDefinitionYaml.builder()
+                                                      .identifier(ParameterField.createValueField("identifier"))
+                                                      .build()))
+                                              .build();
+
+    List<EnvironmentYamlV2> environmentYamlV2s = new ArrayList<>();
+
+    environmentYamlV2s.add(environmentYamlV2);
+    MultiDeploymentStepParameters multiDeploymentStepParameters =
+        MultiDeploymentStepParameters.builder()
+            .childNodeId("test")
+            .environments(EnvironmentsYaml.builder()
+                              .environmentsMetadata(EnvironmentsMetadata.builder().parallel(true).build())
+                              .values(ParameterField.createValueField(environmentYamlV2s))
+                              .build())
+            .services(ServicesYaml.builder()
+                          .servicesMetadata(ServicesMetadata.builder().parallel(true).build())
+                          .values(ParameterField.createValueField(serviceYamlV2s))
+                          .build())
+            .build();
+    Map<String, String> map = new HashMap<>();
+    map.put("environmentRef", "env1");
+    map.put("identifier", "identifier");
+    map.put("serviceRef", "svc1");
+
+    Map<String, String> map2 = new HashMap<>();
+    map2.put("environmentRef", "env1");
+    map2.put("identifier", "identifier");
+    map2.put("serviceRef", "svc2");
+
+    assertThat(
+        multiDeploymentSpawnerStep.obtainChildrenAfterRbac(prepareAmbience(), multiDeploymentStepParameters, null))
+        .isEqualTo(
+            ChildrenExecutableResponse.newBuilder()
+                .addChildren(ChildrenExecutableResponse.Child.newBuilder().setChildNodeId("test").setStrategyMetadata(
+                    StrategyMetadata.newBuilder()
+                        .setTotalIterations(2)
+                        .setCurrentIteration(0)
+                        .setMatrixMetadata(MatrixMetadata.newBuilder()
+                                               .setSubType(MultiDeploymentSpawnerUtils.MULTI_SERVICE_ENV_DEPLOYMENT)
+                                               .putAllMatrixValues(map)
+                                               .build())
+                        .build()))
+                .addChildren(ChildrenExecutableResponse.Child.newBuilder().setChildNodeId("test").setStrategyMetadata(
+                    StrategyMetadata.newBuilder()
+                        .setTotalIterations(2)
+                        .setCurrentIteration(1)
+                        .setMatrixMetadata(MatrixMetadata.newBuilder()
+                                               .setSubType(MultiDeploymentSpawnerUtils.MULTI_SERVICE_ENV_DEPLOYMENT)
+                                               .putAllMatrixValues(map2)
+                                               .build())
+                        .build()))
+                .setMaxConcurrency(2)
+                .build());
+  }
+
+  @Test
+  @Owner(developers = SAHIL)
+  @Category(UnitTests.class)
+  public void testObtainChildrenAfterRbacWithServicesAndEnvironmentsWithParallelismFalse() {
+    ServiceYamlV2 serviceYamlV2 = ServiceYamlV2.builder().serviceRef(ParameterField.createValueField("svc1")).build();
+    ServiceYamlV2 serviceYamlV22 = ServiceYamlV2.builder().serviceRef(ParameterField.createValueField("svc2")).build();
+
+    List<ServiceYamlV2> serviceYamlV2s = new ArrayList<>();
+    serviceYamlV2s.add(serviceYamlV2);
+    serviceYamlV2s.add(serviceYamlV22);
+    EnvironmentYamlV2 environmentYamlV2 = EnvironmentYamlV2.builder()
+                                              .environmentRef(ParameterField.createValueField("env1"))
+                                              .infrastructureDefinition(ParameterField.createValueField(
+                                                  InfraStructureDefinitionYaml.builder()
+                                                      .identifier(ParameterField.createValueField("identifier"))
+                                                      .build()))
+                                              .build();
+
+    List<EnvironmentYamlV2> environmentYamlV2s = new ArrayList<>();
+
+    environmentYamlV2s.add(environmentYamlV2);
+    MultiDeploymentStepParameters multiDeploymentStepParameters =
+        MultiDeploymentStepParameters.builder()
+            .childNodeId("test")
+            .environments(EnvironmentsYaml.builder()
+                              .environmentsMetadata(EnvironmentsMetadata.builder().parallel(false).build())
+                              .values(ParameterField.createValueField(environmentYamlV2s))
+                              .build())
+            .services(ServicesYaml.builder()
+                          .servicesMetadata(ServicesMetadata.builder().parallel(false).build())
+                          .values(ParameterField.createValueField(serviceYamlV2s))
+                          .build())
+            .build();
+    Map<String, String> map = new HashMap<>();
+    map.put("environmentRef", "env1");
+    map.put("identifier", "identifier");
+    map.put("serviceRef", "svc1");
+
+    Map<String, String> map2 = new HashMap<>();
+    map2.put("environmentRef", "env1");
+    map2.put("identifier", "identifier");
+    map2.put("serviceRef", "svc2");
+
+    assertThat(
+        multiDeploymentSpawnerStep.obtainChildrenAfterRbac(prepareAmbience(), multiDeploymentStepParameters, null))
+        .isEqualTo(
+            ChildrenExecutableResponse.newBuilder()
+                .addChildren(ChildrenExecutableResponse.Child.newBuilder().setChildNodeId("test").setStrategyMetadata(
+                    StrategyMetadata.newBuilder()
+                        .setTotalIterations(2)
+                        .setCurrentIteration(0)
+                        .setMatrixMetadata(MatrixMetadata.newBuilder()
+                                               .setSubType(MultiDeploymentSpawnerUtils.MULTI_SERVICE_ENV_DEPLOYMENT)
+                                               .putAllMatrixValues(map)
+                                               .build())
+                        .build()))
+                .addChildren(ChildrenExecutableResponse.Child.newBuilder().setChildNodeId("test").setStrategyMetadata(
+                    StrategyMetadata.newBuilder()
+                        .setTotalIterations(2)
+                        .setCurrentIteration(1)
+                        .setMatrixMetadata(MatrixMetadata.newBuilder()
+                                               .setSubType(MultiDeploymentSpawnerUtils.MULTI_SERVICE_ENV_DEPLOYMENT)
+                                               .putAllMatrixValues(map2)
+                                               .build())
+                        .build()))
+                .setMaxConcurrency(1)
+                .build());
+  }
+
+  @Test
+  @Owner(developers = SAHIL)
+  @Category(UnitTests.class)
+  public void testForMultiInfras() {
+    ServiceYamlV2 serviceYamlV2 = ServiceYamlV2.builder().serviceRef(ParameterField.createValueField("svc1")).build();
+
+    List<ServiceYamlV2> serviceYamlV2s = new ArrayList<>();
+    serviceYamlV2s.add(serviceYamlV2);
+    EnvironmentYamlV2 environmentYamlV2 =
+        EnvironmentYamlV2.builder()
+            .environmentRef(ParameterField.createValueField("env1"))
+            .infrastructureDefinitions(ParameterField.createValueField(
+                Lists.newArrayList(InfraStructureDefinitionYaml.builder()
+                                       .identifier(ParameterField.createValueField("identifier1"))
+                                       .build(),
+                    InfraStructureDefinitionYaml.builder()
+                        .identifier(ParameterField.createValueField("identifier2"))
+                        .build())))
+            .build();
+
+    List<EnvironmentYamlV2> environmentYamlV2s = new ArrayList<>();
+
+    environmentYamlV2s.add(environmentYamlV2);
+    MultiDeploymentStepParameters multiDeploymentStepParameters =
+        MultiDeploymentStepParameters.builder()
+            .childNodeId("test")
+            .environments(EnvironmentsYaml.builder()
+                              .environmentsMetadata(EnvironmentsMetadata.builder().parallel(false).build())
+                              .values(ParameterField.createValueField(environmentYamlV2s))
+                              .build())
+            .services(ServicesYaml.builder()
+                          .servicesMetadata(ServicesMetadata.builder().parallel(false).build())
+                          .values(ParameterField.createValueField(serviceYamlV2s))
+                          .build())
+            .build();
+    Map<String, String> map = new HashMap<>();
+    map.put("environmentRef", "env1");
+    map.put("identifier", "identifier1");
+    map.put("serviceRef", "svc1");
+
+    Map<String, String> map2 = new HashMap<>();
+    map2.put("environmentRef", "env1");
+    map2.put("identifier", "identifier2");
+    map2.put("serviceRef", "svc1");
+
+    assertThat(
+        multiDeploymentSpawnerStep.obtainChildrenAfterRbac(prepareAmbience(), multiDeploymentStepParameters, null))
+        .isEqualTo(
+            ChildrenExecutableResponse.newBuilder()
+                .addChildren(ChildrenExecutableResponse.Child.newBuilder().setChildNodeId("test").setStrategyMetadata(
+                    StrategyMetadata.newBuilder()
+                        .setTotalIterations(2)
+                        .setCurrentIteration(0)
+                        .setMatrixMetadata(MatrixMetadata.newBuilder()
+                                               .setSubType(MultiDeploymentSpawnerUtils.MULTI_SERVICE_ENV_DEPLOYMENT)
+                                               .putAllMatrixValues(map)
+                                               .build())
+                        .build()))
+                .addChildren(ChildrenExecutableResponse.Child.newBuilder().setChildNodeId("test").setStrategyMetadata(
+                    StrategyMetadata.newBuilder()
+                        .setTotalIterations(2)
+                        .setCurrentIteration(1)
+                        .setMatrixMetadata(MatrixMetadata.newBuilder()
+                                               .setSubType(MultiDeploymentSpawnerUtils.MULTI_SERVICE_ENV_DEPLOYMENT)
+                                               .putAllMatrixValues(map2)
+                                               .build())
+                        .build()))
+                .setMaxConcurrency(1)
+                .build());
   }
 
   @Test

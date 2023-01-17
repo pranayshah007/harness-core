@@ -131,6 +131,12 @@ public interface DelegateNgManagerCgManagerClient {
       @Query(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @Body @NotNull DelegateSetupDetails delegateSetupDetails);
 
+  @GET(DELEGATE_SETUP_NG_API + "/delegate-terraform-module-file")
+  Call<RestResponse<String>> getTerraformModuleFile(
+      @Query(NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,
+      @Query(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Query(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier);
+
   @DELETE(DELEGATE_SETUP_NG_API + "/delegate")
   Call<RestResponse<DelegateGroupDeleteResponse>> deleteDelegateGroup(
       @Query(NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,

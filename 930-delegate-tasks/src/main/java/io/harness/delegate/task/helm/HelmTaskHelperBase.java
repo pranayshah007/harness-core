@@ -99,6 +99,7 @@ import com.google.inject.Singleton;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
@@ -1492,5 +1493,32 @@ public class HelmTaskHelperBase {
     } catch (Exception e) {
       log.error("Unable to revoke the readable permissions for KubeConfig file ", e);
     }
+  }
+
+  public int skipDefaultHelmValuesYaml(
+      String chartDir, List<String> valuesYamlList, boolean skipDefaultValuesYaml, HelmVersion helmVersion) {
+    if (HelmVersion.V2.equals(helmVersion) || !skipDefaultValuesYaml || isEmpty(valuesYamlList)) {
+      return -1;
+    }
+    try {
+      String defaultValuesYaml = new String(Files.readAllBytes(Paths.get(chartDir, "values.yaml")));
+      if (isEmpty(defaultValuesYaml)) {
+        return -1;
+      }
+      String valuesYaml;
+      for (int i = 0; i < valuesYamlList.size(); i++) {
+        valuesYaml = valuesYamlList.get(i);
+        if (isNotEmpty(valuesYaml) && valuesYaml.equals(defaultValuesYaml)) {
+          return i;
+        }
+      }
+    } catch (FileNotFoundException e) {
+      log.error("Unable to find default values.yaml " + e.getMessage());
+      return -1;
+    } catch (IOException e) {
+      log.error("Unable to read default values.yaml " + e.getMessage());
+      return -1;
+    }
+    return -1;
   }
 }

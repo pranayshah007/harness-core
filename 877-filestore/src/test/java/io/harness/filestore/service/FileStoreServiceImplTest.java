@@ -775,6 +775,77 @@ public class FileStoreServiceImplTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testListFolderNodesOnPath() {
+    String path = "/folder1/fileName";
+    when(fileStoreRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndPath(
+             ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, path))
+        .thenReturn(Optional.of(getNgFile()));
+    when(fileStoreRepository.findAllAndSort(
+             createCriteriaByScopeAndParentIdentifier(
+                 Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER), ROOT_FOLDER_IDENTIFIER),
+             createSortByLastModifiedAtDesc()))
+        .thenReturn(getRootNgFiles());
+    when(fileStoreRepository.findAllAndSort(
+             createCriteriaByScopeAndParentIdentifier(
+                 Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER), "folder1"),
+             createSortByLastModifiedAtDesc()))
+        .thenReturn(getFolder1NgFiles());
+
+    FolderNodeDTO populatedFolderNodeDTO =
+        fileStoreService.listFileStoreNodesOnPath(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, path, null);
+
+    assertThat(populatedFolderNodeDTO.getIdentifier()).isEqualTo(ROOT_FOLDER_IDENTIFIER);
+    assertThat(populatedFolderNodeDTO.getChildren().size()).isEqualTo(1);
+    List<FileStoreNodeDTO> children = populatedFolderNodeDTO.getChildren();
+    FolderNodeDTO folder1 = (FolderNodeDTO) children.get(0);
+    assertThat(folder1.getIdentifier()).isEqualTo("folder1");
+    assertThat(folder1.getPath()).isEqualTo("/folder1");
+
+    List<FileStoreNodeDTO> folder1Children = folder1.getChildren();
+    assertThat(folder1Children.size()).isEqualTo(2);
+
+    FolderNodeDTO folder2 = (FolderNodeDTO) folder1Children.get(0);
+    assertThat(folder2.getIdentifier()).isEqualTo("folder2");
+    assertThat(folder2.getPath()).isEqualTo("/folder1/folder2");
+
+    FileNodeDTO file = (FileNodeDTO) folder1Children.get(1);
+    assertThat(file.getIdentifier()).isEqualTo("fileIdentifier");
+    assertThat(file.getName()).isEqualTo("fileName");
+    assertThat(file.getPath()).isEqualTo("/folder1/fileName");
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testListFolderNodesOnPathWithNotValidPath() {
+    String path = "folder1/fileName";
+
+    assertThatThrownBy(()
+                           -> fileStoreService.listFileStoreNodesOnPath(
+                               ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, path, null))
+        .isInstanceOf(InvalidArgumentsException.class)
+        .hasMessage("Invalid file path, path: folder1/fileName");
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testListFolderNodesOnPathWithNotFoundFile() {
+    String path = "/folder1/fileName";
+    when(fileStoreRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndPath(
+             ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, path))
+        .thenThrow(new InvalidArgumentsException(format("Not found file, path: %s", path)));
+
+    assertThatThrownBy(()
+                           -> fileStoreService.listFileStoreNodesOnPath(
+                               ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, path, null))
+        .isInstanceOf(InvalidArgumentsException.class)
+        .hasMessage(format("Not found file, path: %s", path));
+  }
+
+  @Test
   @Owner(developers = FILIP)
   @Category(UnitTests.class)
   public void testListRootFolderNodes() {
@@ -1337,6 +1408,47 @@ public class FileStoreServiceImplTest extends CategoryTest {
             .createdBy(EmbeddedUser.builder().name("testuser2").email("testuser2@test.com").build())
             .path("/asd/dummy")
             .build());
+  }
+
+  private List<NGFile> getRootNgFiles() {
+    return Arrays.asList(builder()
+                             .type(NGFileType.FOLDER)
+                             .name("folder1")
+                             .identifier("folder1")
+                             .parentIdentifier(ROOT_FOLDER_IDENTIFIER)
+                             .createdBy(EmbeddedUser.builder().name("testuser1").email("testuser1@test.com").build())
+                             .path("/folder1")
+                             .build());
+  }
+
+  private List<NGFile> getFolder1NgFiles() {
+    return Arrays.asList(builder()
+                             .type(NGFileType.FOLDER)
+                             .name("folder2")
+                             .identifier("folder2")
+                             .parentIdentifier("folder1")
+                             .createdBy(EmbeddedUser.builder().name("testuser1").email("testuser1@test.com").build())
+                             .path("/folder1/folder2")
+                             .build(),
+        builder()
+            .type(NGFileType.FILE)
+            .name("fileName")
+            .identifier("fileIdentifier")
+            .parentIdentifier("folder1")
+            .createdBy(EmbeddedUser.builder().name("testuser2").email("testuser2@test.com").build())
+            .path("/folder1/fileName")
+            .build());
+  }
+
+  private NGFile getNgFile() {
+    return builder()
+        .type(NGFileType.FILE)
+        .name("fileName")
+        .identifier("fileIdentifier")
+        .parentIdentifier("folder1")
+        .createdBy(EmbeddedUser.builder().name("testuser2").email("testuser2@test.com").build())
+        .path("/folder1/fileName")
+        .build();
   }
 
   private void givenThatFileNotExistInDB() {

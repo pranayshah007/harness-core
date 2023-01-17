@@ -161,6 +161,7 @@ import io.harness.steps.barriers.BarrierInitializer;
 import io.harness.steps.barriers.event.BarrierDropper;
 import io.harness.steps.barriers.event.BarrierPositionHelperEventHandler;
 import io.harness.steps.barriers.service.BarrierServiceImpl;
+import io.harness.steps.common.NodeExecutionMetadataDeleteObserver;
 import io.harness.steps.resourcerestraint.ResourceRestraintInitializer;
 import io.harness.steps.resourcerestraint.ResourceRestraintObserver;
 import io.harness.steps.resourcerestraint.service.ResourceRestraintPersistenceMonitor;
@@ -477,6 +478,10 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
 
     nodeExecutionService.getNodeStatusUpdateSubject().register(
         injector.getInstance(Key.get(TimeoutInstanceRemover.class)));
+
+    // NodeExecutionDeleteObserver
+    nodeExecutionService.getNodeDeleteObserverSubject().register(
+        injector.getInstance(NodeExecutionMetadataDeleteObserver.class));
 
     // NodeExecutionStartObserver
     nodeStartHelper.getNodeExecutionStartSubject().register(

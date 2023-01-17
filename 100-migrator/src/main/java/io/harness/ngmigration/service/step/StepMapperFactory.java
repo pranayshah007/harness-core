@@ -7,6 +7,19 @@
 
 package io.harness.ngmigration.service.step;
 
+import io.harness.ngmigration.service.step.k8s.K8sApplyStepMapperImpl;
+import io.harness.ngmigration.service.step.k8s.K8sBlueGreenDeployStepMapperImpl;
+import io.harness.ngmigration.service.step.k8s.K8sCanaryDeployStepMapperImpl;
+import io.harness.ngmigration.service.step.k8s.K8sDeleteStepMapperImpl;
+import io.harness.ngmigration.service.step.k8s.K8sRollingRollbackStepMapperImpl;
+import io.harness.ngmigration.service.step.k8s.K8sRollingStepMapperImpl;
+import io.harness.ngmigration.service.step.k8s.K8sScaleStepMapperImpl;
+import io.harness.ngmigration.service.step.k8s.K8sSwapServiceSelectorsStepMapperImpl;
+import io.harness.ngmigration.service.step.terraform.TerraformApplyStepMapperImpl;
+import io.harness.ngmigration.service.step.terraform.TerraformDestroyStepMapperImpl;
+import io.harness.ngmigration.service.step.terraform.TerraformProvisionStepMapperImpl;
+import io.harness.ngmigration.service.step.terraform.TerraformRollbackStepMapperImpl;
+
 import software.wings.beans.GraphNode;
 
 import com.google.inject.Inject;
@@ -31,6 +44,10 @@ public class StepMapperFactory {
   @Inject K8sBlueGreenDeployStepMapperImpl k8sBlueGreenDeployStepMapper;
   @Inject JiraCreateUpdateStepMapperImpl jiraCreateUpdateStepMapper;
   @Inject CommandStepMapperImpl commandStepMapper;
+  @Inject TerraformApplyStepMapperImpl terraformApplyStepMapper;
+  @Inject TerraformProvisionStepMapperImpl terraformProvisionStepMapper;
+  @Inject TerraformDestroyStepMapperImpl terraformDestroyStepMapper;
+  @Inject TerraformRollbackStepMapperImpl terraformRollbackStepMapper;
 
   @Inject UnsupportedStepMapperImpl unsupportedStepMapper;
 
@@ -68,6 +85,17 @@ public class StepMapperFactory {
         return jiraCreateUpdateStepMapper;
       case "COMMAND":
         return commandStepMapper;
+      case "TERRAFORM_PROVISION":
+        return terraformProvisionStepMapper;
+      case "TERRAFORM_APPLY":
+        return terraformApplyStepMapper;
+      case "TERRAFORM_DESTROY":
+        return terraformDestroyStepMapper;
+      case "TERRAFORM_ROLLBACK":
+        return terraformRollbackStepMapper;
+      case "ROLLING_NODE_SELECT":
+      case "AWS_NODE_SELECT":
+      case "AZURE_NODE_SELECT":
       case "DC_NODE_SELECT":
       case "ARTIFACT_COLLECTION":
       case "ARTIFACT_CHECK":

@@ -41,12 +41,13 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
-import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -62,7 +63,7 @@ public class ShellScriptProvisionStep extends CdTaskExecutable<ShellScriptProvis
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
 
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
   @Inject private StepHelper stepHelper;
   @Inject private SshCommandStepHelper sshCommandStepHelper;
@@ -103,7 +104,7 @@ public class ShellScriptProvisionStep extends CdTaskExecutable<ShellScriptProvis
                             .parameters(new Object[] {taskParameters})
                             .timeout(CDStepHelper.getTimeoutInMillis(stepElementParameters))
                             .build();
-    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+    return TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
         Collections.singletonList(ShellScriptProvisionTaskNG.COMMAND_UNIT), SHELL_SCRIPT_PROVISION.getDisplayName(),
         TaskSelectorYaml.toTaskSelector(
             ParameterFieldHelper.getParameterFieldValue(stepParameters.getDelegateSelectors())),

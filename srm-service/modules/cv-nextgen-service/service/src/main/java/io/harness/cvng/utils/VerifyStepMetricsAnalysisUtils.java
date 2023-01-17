@@ -9,6 +9,7 @@ package io.harness.cvng.utils;
 
 import io.harness.cvng.analysis.beans.DeploymentTimeSeriesAnalysisDTO;
 import io.harness.cvng.analysis.beans.Risk;
+import io.harness.cvng.analysis.beans.TimeSeriesRecordDTO;
 import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.ThresholdConfigType;
 import io.harness.cvng.beans.TimeSeriesCustomThresholdActions;
@@ -31,6 +32,7 @@ import io.harness.cvng.core.entities.MetricCVConfig;
 import io.harness.cvng.core.entities.MetricPack.MetricDefinition;
 import io.harness.cvng.core.entities.TimeSeriesThreshold;
 
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -119,8 +121,8 @@ public class VerifyStepMetricsAnalysisUtils {
         .analysisReason(getAnalysisReason(hostData))
         .controlDataType(controlDataType)
         .controlNodeIdentifier(hostData.getNearestControlHost())
-        .controlData(getMetricValuesFromRawValues(hostData.getControlData()))
-        .testData(getMetricValuesFromRawValues(hostData.getTestData()))
+        .normalisedControlData(getMetricValuesFromRawValues(hostData.getControlData()))
+        .normalisedTestData(getMetricValuesFromRawValues(hostData.getTestData()))
         .appliedThresholds(hostData.getAppliedThresholdIds())
         .build();
   }
@@ -170,6 +172,22 @@ public class VerifyStepMetricsAnalysisUtils {
       default:
         throw new IllegalArgumentException("Urecognised CVMonitoringCategory " + cvMonitoringCategory);
     }
+  }
+
+  public static List<MetricValue> getMetricValuesFromTimeSeriesRecordDtos(
+      List<TimeSeriesRecordDTO> timeSeriesRecordDtos) {
+    return CollectionUtils.emptyIfNull(timeSeriesRecordDtos)
+        .stream()
+        .map(timeSeriesRecordDto
+            -> MetricValue.builder()
+                   .value(timeSeriesRecordDto.getMetricValue())
+                   .timestamp(timeSeriesRecordDto.getEpochMinute())
+                   .build())
+        .collect(Collectors.toList());
+  }
+
+  public static Instant getAdjustedAnalysisEndTime(Instant analysisEndTime) {
+    return analysisEndTime.plusSeconds(1L);
   }
 
   private VerifyStepMetricsAnalysisUtils() {}

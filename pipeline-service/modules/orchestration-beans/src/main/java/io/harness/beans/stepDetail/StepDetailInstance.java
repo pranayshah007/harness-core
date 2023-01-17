@@ -63,15 +63,4 @@ public class StepDetailInstance {
                  .build())
         .build();
   }
-
-  public static StepDetailInstance cloneForRetry(
-      StepDetailInstance stepDetailInstance, String newPlanExecutionId, String newNodeExecutionId) {
-    return StepDetailInstance.builder()
-        .name(stepDetailInstance.getName())
-        .stepDetails(stepDetailInstance.getStepDetails())
-        .nodeExecutionId(newNodeExecutionId)
-        .resolvedInputs(stepDetailInstance.getResolvedInputs())
-        .planExecutionId(newPlanExecutionId)
-        .build();
-  }
 }

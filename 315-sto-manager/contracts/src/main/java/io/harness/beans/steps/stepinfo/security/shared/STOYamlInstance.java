@@ -23,29 +23,19 @@ import org.codehaus.jackson.annotate.JsonProperty;
 @Data
 @OwnedBy(STO)
 public class STOYamlInstance {
-  @YamlSchemaTypes(value = {runtime})
-  @ApiModelProperty(dataType = STRING_CLASSPATH)
-  @JsonProperty("access_id")
-  protected ParameterField<String> accessId;
+  @ApiModelProperty(dataType = STRING_CLASSPATH) @JsonProperty("access_id") protected ParameterField<String> accessId;
 
-  @YamlSchemaTypes(value = {runtime})
   @ApiModelProperty(dataType = STRING_CLASSPATH)
   @JsonProperty("access_token")
   protected ParameterField<String> accessToken;
 
-  @YamlSchemaTypes(value = {runtime})
-  @ApiModelProperty(dataType = STRING_CLASSPATH)
-  protected ParameterField<String> domain;
+  @ApiModelProperty(dataType = STRING_CLASSPATH) protected ParameterField<String> domain;
 
-  @YamlSchemaTypes(value = {runtime})
-  @ApiModelProperty(dataType = STRING_CLASSPATH)
-  protected ParameterField<String> protocol;
+  @ApiModelProperty(dataType = STRING_CLASSPATH) protected ParameterField<String> protocol;
 
   @YamlSchemaTypes(value = {runtime})
   @ApiModelProperty(dataType = INTEGER_CLASSPATH)
   protected ParameterField<Integer> port;
 
-  @YamlSchemaTypes(value = {runtime})
-  @ApiModelProperty(dataType = STRING_CLASSPATH)
-  protected ParameterField<String> path;
+  @ApiModelProperty(dataType = STRING_CLASSPATH) protected ParameterField<String> path;
 }

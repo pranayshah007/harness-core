@@ -5,7 +5,7 @@
 server:
   applicationConnectors:
     - type: https
-      port: 7171
+      port: ${SERVER_APP_HTTPS_PORT:-7171}
       keyStorePath: keystore.jks
       keyStorePassword: password
       trustStorePath: ${JAVA_HOME}/lib/security/cacerts
@@ -13,11 +13,11 @@ server:
       validateCerts: false
       maxRequestHeaderSize: 100KiB
     - type: http
-      port: 4457
+      port: ${SERVER_APP_HTTP_PORT:-4457}
       maxRequestHeaderSize: 100KiB
   adminConnectors:
     - type: https
-      port: 7071
+      port: ${SERVER_ADMIN_HTTPS_PORT:-7071}
       keyStorePath: keystore.jks
       keyStorePassword: password
       trustStorePath: ${JAVA_HOME}/lib/security/cacerts
@@ -176,6 +176,33 @@ ciExecutionServiceConfig:
     splitLinuxAmd64Pool: false
     splitLinuxArm64Pool: false
     splitWindowsAmd64Pool: false
+  stoStepConfig:
+    defaultTag: ${STO_STEP_CONFIG_DEFAULT_TAG:-latest}
+    defaultEntrypoint:
+      - /bin/start.sh
+      - "--run-strategy"
+      - single-container
+    images:
+      - product: bandit_default
+        image: harness/bandit-job-runner
+      - product: blackduck_default
+        image: harness/blackduckhub-job-runner
+      - product: snyk_default
+        image: harness/snyk-job-runner
+      - product: veracode_default
+        image: harness/veracode-agent-job-runner
+      - product: sonarqube_default
+        image: harness/sonarqube-agent-job-runner
+      - product: prismacloud_default
+        image: harness/twistlock-job-runner
+      - product: burp_default
+        image: harness/burp-job-runner
+      - product: checkmarx_default
+        image: harness/checkmarx-job-runner
+      - product: zap_default
+        image: harness/zap-job-runner
+      - product: fortifyondemand_default
+        image: harness/fortifyondemand-job-runner
   stepConfig:
     # The below config is for K8 steps
     gitCloneConfig:

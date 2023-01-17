@@ -12,6 +12,7 @@ java_library(
     visibility = ["//visibility:public"],
     exports = [
         "//:lombok",
+        "//960-api-services/src/main/java/io/harness/adfs:module",
         "//960-api-services/src/main/java/io/harness/artifactory:module",
         "//960-api-services/src/main/java/io/harness/artifactory/service:module",
         "//960-api-services/src/main/java/io/harness/artifacts/ami/beans:module",
