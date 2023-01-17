@@ -129,8 +129,7 @@ public class GoogleFunctionCommandTaskHelper {
         OperationFuture<Function, OperationMetadata> futureResponse = googleCloudFunctionClient.updateFunction(
                 updateFunctionRequest, getGcpInternalConfig(gcpConnectorDTO, region,
                 project));
-        OperationSnapshot operationSnapshot = futureResponse.getInitialFuture().get();
-        return null;
+        return futureResponse.get();
     }
 
     public Optional<Function> getFunction(String functionName, GcpConnectorDTO gcpConnectorDTO,
