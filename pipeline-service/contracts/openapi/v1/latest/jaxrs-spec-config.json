@@ -8,7 +8,7 @@
   "hideGenerationTimestamp": true,
   "oas3": true,
   "apiPackage": "io.harness.spec.server.pipeline.v1.latest",
-  "modelPackage": "io.harness.spec.server.pipeline.v1.model.latest",
+  "modelPackage": "io.harness.spec.server.pipeline.v1.latest.model",
   "groupId": "io.harness",
   "artifactId": "pipeline-server-spec",
   "artifactVersion": "1.0.16",
