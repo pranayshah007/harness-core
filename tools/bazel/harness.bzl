@@ -17,6 +17,7 @@ _SCRIPT = "cat {srcs} >> {out}"
 def _java_library_rule_impl(ctx):
     sizes = []
     for dep in ctx.attr.deps:
+        print("For dep %s adding sizes %s" % (dep, dep[OutputGroupInfo].size.to_list()))
         sizes.extend(dep[OutputGroupInfo].size.to_list())
 
     #        for info in ctx.attr.deps[OutputGroupInfo].size.to_list():

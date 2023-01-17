@@ -43,6 +43,7 @@ def _brannock_aspect_impl(target, ctx):
     #    [print("Target base: " + tar.root.path + " path " + tar.path) for tar in target.files.to_list()]
     out_files = []
     for tar in target.files.to_list():
+        print("Processing target: %s" % tar)
         out_files.append(_get_size(file = tar, ctx = ctx))
 
     #    [_get_size(file = tar, ctx = ctx) for tar in target.files.to_list()]
