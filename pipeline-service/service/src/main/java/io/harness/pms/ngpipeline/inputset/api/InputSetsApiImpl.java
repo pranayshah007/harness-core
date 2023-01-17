@@ -29,10 +29,10 @@ import io.harness.pms.ngpipeline.inputset.mappers.PMSInputSetFilterHelper;
 import io.harness.pms.ngpipeline.inputset.service.PMSInputSetService;
 import io.harness.pms.pipeline.api.PipelinesApiUtils;
 import io.harness.pms.rbac.PipelineRbacPermissions;
-import io.harness.spec.server.pipeline.v1.InputSetsApi;
-import io.harness.spec.server.pipeline.v1.model.InputSetCreateRequestBody;
-import io.harness.spec.server.pipeline.v1.model.InputSetResponseBody;
-import io.harness.spec.server.pipeline.v1.model.InputSetUpdateRequestBody;
+import io.harness.spec.server.pipeline.v1.latest.InputSetsApi;
+import io.harness.spec.server.pipeline.v1.latest.model.InputSetCreateRequestBody;
+import io.harness.spec.server.pipeline.v1.latest.model.InputSetResponseBody;
+import io.harness.spec.server.pipeline.v1.latest.model.InputSetUpdateRequestBody;
 import io.harness.utils.ApiUtils;
 import io.harness.utils.PageUtils;
 

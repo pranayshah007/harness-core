@@ -29,9 +29,9 @@ import io.harness.pms.ngpipeline.inputset.service.PMSInputSetService;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.rule.Owner;
-import io.harness.spec.server.pipeline.v1.model.InputSetCreateRequestBody;
-import io.harness.spec.server.pipeline.v1.model.InputSetResponseBody;
-import io.harness.spec.server.pipeline.v1.model.InputSetUpdateRequestBody;
+import io.harness.spec.server.pipeline.v1.latest.model.InputSetCreateRequestBody;
+import io.harness.spec.server.pipeline.v1.latest.model.InputSetResponseBody;
+import io.harness.spec.server.pipeline.v1.latest.model.InputSetUpdateRequestBody;
 
 import com.google.common.io.Resources;
 import java.io.IOException;

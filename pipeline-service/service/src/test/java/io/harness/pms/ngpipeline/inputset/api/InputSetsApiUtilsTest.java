@@ -23,8 +23,8 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.rule.Owner;
-import io.harness.spec.server.pipeline.v1.model.GitDetails;
-import io.harness.spec.server.pipeline.v1.model.InputSetResponseBody;
+import io.harness.spec.server.pipeline.v1.latest.model.GitDetails;
+import io.harness.spec.server.pipeline.v1.latest.model.InputSetResponseBody;
 import io.harness.utils.PmsFeatureFlagHelper;
 
 import com.google.common.io.Resources;

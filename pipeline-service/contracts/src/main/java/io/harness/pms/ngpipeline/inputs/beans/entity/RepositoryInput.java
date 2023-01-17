@@ -10,8 +10,8 @@ package io.harness.pms.ngpipeline.inputs.beans.entity;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.spec.server.pipeline.v1.model.InputsResponseBodyRepository;
-import io.harness.spec.server.pipeline.v1.model.InputsResponseBodyRepositoryReference;
+import io.harness.spec.server.pipeline.v1.latest.model.InputsResponseBodyRepository;
+import io.harness.spec.server.pipeline.v1.latest.model.InputsResponseBodyRepositoryReference;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;

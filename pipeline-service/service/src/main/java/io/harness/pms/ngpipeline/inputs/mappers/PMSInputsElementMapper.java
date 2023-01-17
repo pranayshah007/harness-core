@@ -12,7 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.ngpipeline.inputs.beans.entity.InputEntity;
 import io.harness.pms.ngpipeline.inputs.beans.entity.RepositoryInput;
-import io.harness.spec.server.pipeline.v1.model.InputsResponseBody;
+import io.harness.spec.server.pipeline.v1.latest.model.InputsResponseBody;
 
 import java.util.Map;
 import lombok.experimental.UtilityClass;
