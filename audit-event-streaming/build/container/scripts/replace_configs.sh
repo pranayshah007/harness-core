@@ -53,3 +53,11 @@ fi
 if [[ "" != "$BATCH_MAX_RETRIES" ]]; then
   export BATCH_MAX_RETRIES; yq -i '.jobCommonConfig.batchConfig.maxRetries=env(BATCH_MAX_RETRIES)' $CONFIG_FILE
 fi
+
+if [[ "" != "$AUDIT_CLIENT_BASEURL" ]]; then
+  export AUDIT_CLIENT_BASEURL; yq -i '.auditClientConfig.baseUrl=env(AUDIT_CLIENT_BASEURL)' $CONFIG_FILE
+fi
+
+if [[ "" != "$NEXT_GEN_MANAGER_SECRET" ]]; then
+  export NEXT_GEN_MANAGER_SECRET; yq -i '.serviceSecrets.ngManagerServiceSecret=env(NEXT_GEN_MANAGER_SECRET)' $CONFIG_FILE
+fi
