@@ -26,8 +26,8 @@ import io.harness.pms.ngpipeline.inputs.service.PMSInputsService;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.rbac.PipelineRbacPermissions;
-import io.harness.spec.server.pipeline.v1.InputsApi;
-import io.harness.spec.server.pipeline.v1.model.InputsResponseBody;
+import io.harness.spec.server.pipeline.v1.latest.InputsApi;
+import io.harness.spec.server.pipeline.v1.latest.model.InputsResponseBody;
 
 import com.google.inject.Inject;
 import java.util.Map;
