@@ -78,6 +78,8 @@ public class AuditEventStreamingServiceImplTest extends CategoryTest {
 
   ArgumentCaptor<Criteria> criteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
   ArgumentCaptor<StreamingBatch> streamingBatchArgumentCaptor = ArgumentCaptor.forClass(StreamingBatch.class);
+  ArgumentCaptor<StreamingDestination> streamingDestinationArgumentCaptor =
+      ArgumentCaptor.forClass(StreamingDestination.class);
 
   private static final String ACCOUNT_IDENTIFIER = randomAlphabetic(RANDOM_STRING_LENGTH);
 
@@ -130,6 +132,9 @@ public class AuditEventStreamingServiceImplTest extends CategoryTest {
 
     verify(streamingBatchService, times(1))
         .getLastStreamingBatch(streamingDestination, jobParameters.getLong(JOB_START_TIME_PARAMETER_KEY));
+    verify(streamingDestinationService, times(1))
+        .disableStreamingDestination(streamingDestinationArgumentCaptor.capture());
+    assertThat(streamingDestinationArgumentCaptor.getValue()).isEqualTo(streamingDestination);
     verify(auditEventRepository, times(0)).loadAuditEvents(any(), any());
     verify(streamingBatchService, times(0)).update(ACCOUNT_IDENTIFIER, streamingBatch);
     verify(batchProcessorService, times(0)).processAuditEvent(any());
