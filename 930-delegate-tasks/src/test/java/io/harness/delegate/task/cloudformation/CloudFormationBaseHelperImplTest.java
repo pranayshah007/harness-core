@@ -40,7 +40,7 @@ import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
 
-import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 import software.wings.helpers.ext.cloudformation.response.ExistingStackInfo;
 import software.wings.service.intfc.aws.delegate.AwsCFHelperServiceDelegate;
 

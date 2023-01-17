@@ -32,7 +32,7 @@ import io.harness.shell.ShellExecutionData;
 import io.harness.shell.ShellExecutorConfig;
 
 import software.wings.WingsBaseTest;
-import software.wings.delegatetasks.DelegateFileManager;
+import software.wings.delegatetasks.services.DelegateFileManager;
 
 import com.google.common.io.CharStreams;
 import java.io.File;

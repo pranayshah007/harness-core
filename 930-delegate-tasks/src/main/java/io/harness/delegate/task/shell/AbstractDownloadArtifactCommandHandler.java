@@ -35,7 +35,7 @@ import io.harness.delegate.task.ssh.artifact.NexusArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.SkipCopyArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactType;
-import io.harness.delegate.task.winrm.ArtifactDownloadHandler;
+import io.harness.delegate.task.winrm.handlers.ArtifactDownloadHandler;
 import io.harness.delegate.utils.ArtifactoryUtils;
 import io.harness.delegate.utils.NexusVersion;
 import io.harness.exception.InvalidRequestException;

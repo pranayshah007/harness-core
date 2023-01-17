@@ -38,7 +38,7 @@ import io.harness.filesystem.LazyAutoCloseableWorkingDirectory;
 import io.harness.k8s.apiclient.ApiClientFactory;
 import io.harness.threading.Sleeper;
 
-import software.wings.delegatetasks.azure.AzureAsyncTaskHelper;
+import software.wings.delegatetasks.azure.helpers.taskhelper.AzureAsyncTaskHelper;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Charsets;

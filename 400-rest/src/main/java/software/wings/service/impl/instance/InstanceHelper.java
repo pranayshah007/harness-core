@@ -76,7 +76,7 @@ import software.wings.beans.infrastructure.instance.key.HostInstanceKey;
 import software.wings.instancesyncv2.model.InstanceSyncTaskDetails;
 import software.wings.instancesyncv2.service.CgInstanceSyncTaskDetailsService;
 import software.wings.persistence.artifact.Artifact;
-import software.wings.service.impl.AwsHelperService;
+import software.wings.service.impl.realization.AwsHelperService;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.HostService;
 import software.wings.service.intfc.InfrastructureMappingService;

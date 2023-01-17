@@ -38,6 +38,7 @@ import software.wings.beans.KubernetesClusterConfig;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.infrastructure.instance.info.ContainerInfo;
 import software.wings.beans.infrastructure.instance.info.KubernetesContainerInfo;
+import software.wings.service.impl.realization.ContainerServiceImpl;
 import software.wings.service.intfc.security.EncryptionService;
 import software.wings.settings.SettingValue;
 

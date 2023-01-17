@@ -22,7 +22,7 @@ import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.beans.AwsConfig;
-import software.wings.service.impl.AwsUtils;
+import software.wings.service.impl.realization.AwsUtils;
 import software.wings.service.impl.aws.client.CloseableAmazonWebServiceClient;
 import software.wings.service.impl.aws.model.AwsCodeDeployS3LocationData;
 import software.wings.service.intfc.aws.delegate.AwsCodeDeployHelperServiceDelegate;

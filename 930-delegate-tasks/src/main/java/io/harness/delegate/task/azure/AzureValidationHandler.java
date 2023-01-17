@@ -19,7 +19,7 @@ import io.harness.delegate.beans.connector.ConnectorValidationParams;
 import io.harness.delegate.beans.connector.azureconnector.AzureValidationParams;
 import io.harness.filesystem.LazyAutoCloseableWorkingDirectory;
 
-import software.wings.delegatetasks.azure.AzureAsyncTaskHelper;
+import software.wings.delegatetasks.azure.helpers.taskhelper.AzureAsyncTaskHelper;
 
 import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;

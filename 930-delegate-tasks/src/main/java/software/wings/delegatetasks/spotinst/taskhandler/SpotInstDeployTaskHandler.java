@@ -31,7 +31,7 @@ import io.harness.spotinst.model.ElastiGroup;
 
 import software.wings.beans.AwsConfig;
 import software.wings.beans.SpotInstConfig;
-import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 
 import com.amazonaws.services.ec2.model.Instance;
 import com.google.common.annotations.VisibleForTesting;

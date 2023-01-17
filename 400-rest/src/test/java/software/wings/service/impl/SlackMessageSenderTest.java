@@ -28,7 +28,8 @@ import io.harness.rule.Owner;
 import software.wings.WingsBaseTest;
 import software.wings.beans.SlackMessage;
 import software.wings.beans.SlackMessageJSON;
-import software.wings.service.impl.SlackMessageSenderImpl.SlackHttpClient;
+import software.wings.service.impl.realization.SlackMessageSenderImpl;
+import software.wings.service.impl.realization.SlackMessageSenderImpl.SlackHttpClient;
 
 import allbegray.slack.type.Payload;
 import allbegray.slack.webhook.SlackWebhookClient;

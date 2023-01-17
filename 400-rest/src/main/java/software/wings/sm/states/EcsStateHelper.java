@@ -118,7 +118,7 @@ import software.wings.beans.container.ContainerTaskMapper;
 import software.wings.beans.container.EcsContainerTask;
 import software.wings.beans.container.EcsServiceSpecification;
 import software.wings.beans.container.EcsServiceSpecificationMapper;
-import software.wings.beans.dto.Log;
+import software.wings.beans.dto.log.Log;
 import software.wings.helpers.ext.container.ContainerDeploymentManagerHelper;
 import software.wings.helpers.ext.ecs.request.EcsBGListenerUpdateRequest;
 import software.wings.helpers.ext.ecs.request.EcsCommandRequest;

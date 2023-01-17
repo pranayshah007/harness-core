@@ -28,7 +28,7 @@ import software.wings.beans.GitOperationContext;
 import software.wings.service.impl.aws.client.CloseableAmazonWebServiceClient;
 import software.wings.service.impl.aws.model.AwsCFTemplateParamsData;
 import software.wings.service.intfc.aws.delegate.AwsCFHelperServiceDelegate;
-import software.wings.utils.GitUtilsDelegate;
+import software.wings.utils.nonkryos.GitUtilsDelegate;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;

@@ -35,7 +35,7 @@ import software.wings.service.impl.artifact.ArtifactCollectionUtils;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.ArtifactCleanupService;
 import software.wings.service.intfc.SettingsService;
-import software.wings.utils.DelegateArtifactCollectionUtils;
+import software.wings.utils.nonkryos.DelegateArtifactCollectionUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;

@@ -31,7 +31,7 @@ import io.harness.serializer.JsonUtils;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.NewRelicConfig;
-import software.wings.delegatetasks.DelegateCVActivityLogService.Logger;
+import software.wings.delegatetasks.cv.DelegateCVActivityLogService.Logger;
 import software.wings.helpers.ext.newrelic.NewRelicRestClient;
 import software.wings.service.impl.ThirdPartyApiCallLog;
 import software.wings.service.impl.analysis.MetricElement;

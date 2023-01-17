@@ -49,7 +49,7 @@ import io.harness.terragrunt.v2.TerragruntClientFactory;
 import io.harness.terragrunt.v2.TerragruntClientImpl;
 
 import software.wings.beans.VaultConfig;
-import software.wings.delegatetasks.DelegateFileManager;
+import software.wings.delegatetasks.services.DelegateFileManager;
 
 import java.io.IOException;
 import java.io.InputStream;

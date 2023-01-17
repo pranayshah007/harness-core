@@ -30,9 +30,9 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.JsonUtils;
 
 import software.wings.beans.GcpConfig;
-import software.wings.delegatetasks.CustomDataCollectionUtils;
-import software.wings.delegatetasks.DelegateCVActivityLogService;
-import software.wings.delegatetasks.DelegateLogService;
+import software.wings.delegatetasks.utils.CustomDataCollectionUtils;
+import software.wings.delegatetasks.cv.DelegateCVActivityLogService;
+import software.wings.delegatetasks.logservice.DelegateLogService;
 import software.wings.delegatetasks.cv.DataCollectionException;
 import software.wings.helpers.ext.gcb.GcbService;
 import software.wings.service.impl.ThirdPartyApiCallLog;

@@ -178,6 +178,7 @@ import software.wings.prune.PruneEntityListener;
 import software.wings.prune.PruneEvent;
 import software.wings.service.ServiceHelper;
 import software.wings.service.impl.command.CommandHelper;
+import software.wings.service.impl.realization.ServiceClassLocator;
 import software.wings.service.impl.template.SshCommandTemplateProcessor;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.ApplicationManifestService;

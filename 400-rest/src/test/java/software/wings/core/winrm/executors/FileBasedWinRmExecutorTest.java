@@ -17,15 +17,15 @@ import static org.mockito.Mockito.doReturn;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.delegate.task.shell.ConfigFileMetaData;
-import io.harness.delegate.task.winrm.WinRmSessionConfig;
+import io.harness.delegate.task.shell.config.ConfigFileMetaData;
+import io.harness.delegate.task.winrm.session.WinRmSessionConfig;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 
 import software.wings.beans.ConfigFile;
 import software.wings.core.ssh.executors.FileBasedWinRmExecutor;
-import software.wings.delegatetasks.DelegateFileManager;
+import software.wings.delegatetasks.services.DelegateFileManager;
 
 import java.util.ArrayList;
 import org.apache.commons.lang3.NotImplementedException;

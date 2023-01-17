@@ -126,7 +126,7 @@ import software.wings.infra.InfrastructureDefinition;
 import software.wings.persistence.artifact.Artifact;
 import software.wings.service.impl.AppLogContext;
 import software.wings.service.impl.PipelineWorkflowExecutionLogContext;
-import software.wings.service.impl.StateExecutionInstanceLogContext;
+import software.wings.service.impl.realization.StateExecutionInstanceLogContext;
 import software.wings.service.impl.SweepingOutputServiceImpl;
 import software.wings.service.impl.WorkflowExecutionLogContext;
 import software.wings.service.impl.WorkflowLogContext;

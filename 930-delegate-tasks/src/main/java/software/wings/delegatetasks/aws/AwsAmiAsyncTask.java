@@ -23,8 +23,8 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 
-import software.wings.beans.command.ExecutionLogCallback;
-import software.wings.delegatetasks.DelegateLogService;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
+import software.wings.delegatetasks.logservice.DelegateLogService;
 import software.wings.service.impl.aws.model.AwsAmiRequest;
 import software.wings.service.impl.aws.model.AwsAmiRequest.AwsAmiRequestType;
 import software.wings.service.impl.aws.model.AwsAmiServiceDeployRequest;

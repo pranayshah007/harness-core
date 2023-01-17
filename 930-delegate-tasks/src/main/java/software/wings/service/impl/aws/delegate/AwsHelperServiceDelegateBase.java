@@ -16,7 +16,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.aws.util.AwsCallTracker;
 
 import software.wings.beans.AwsConfig;
-import software.wings.cloudprovider.aws.AwsClusterService;
+import software.wings.cloudprovider.aws.ifc.AwsClusterService;
 import software.wings.service.impl.delegate.AwsEcrApiHelperServiceDelegateBase;
 import software.wings.service.intfc.security.EncryptionService;
 import software.wings.service.mappers.artifact.AwsConfigToInternalMapper;

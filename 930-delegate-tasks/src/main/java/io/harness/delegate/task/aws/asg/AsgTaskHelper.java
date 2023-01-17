@@ -22,7 +22,7 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.logging.LogCallback;
 
-import software.wings.service.impl.AwsUtils;
+import software.wings.service.impl.realization.AwsUtils;
 
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.autoscaling.AmazonAutoScalingClient;

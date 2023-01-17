@@ -32,9 +32,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.clienttools.InstallUtils;
-import io.harness.delegate.task.shell.ConfigFileMetaData;
-import io.harness.delegate.task.winrm.WinRmSession;
-import io.harness.delegate.task.winrm.WinRmSessionConfig;
+import io.harness.delegate.task.shell.config.ConfigFileMetaData;
+import io.harness.delegate.task.winrm.session.WinRmSession;
+import io.harness.delegate.task.winrm.session.WinRmSessionConfig;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
@@ -42,7 +42,7 @@ import io.harness.rule.OwnerRule;
 import io.harness.ssh.SshHelperUtils;
 
 import software.wings.beans.ConfigFile;
-import software.wings.delegatetasks.DelegateFileManager;
+import software.wings.delegatetasks.services.DelegateFileManager;
 import software.wings.utils.ExecutionLogWriter;
 
 import java.io.ByteArrayInputStream;

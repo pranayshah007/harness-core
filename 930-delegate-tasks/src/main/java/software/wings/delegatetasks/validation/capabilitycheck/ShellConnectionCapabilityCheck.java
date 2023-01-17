@@ -16,8 +16,8 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.executioncapability.CapabilityResponse;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.task.executioncapability.CapabilityCheck;
-import io.harness.delegate.task.winrm.WinRmSession;
-import io.harness.delegate.task.winrm.WinRmSessionConfig;
+import io.harness.delegate.task.winrm.session.WinRmSession;
+import io.harness.delegate.task.winrm.session.WinRmSessionConfig;
 import io.harness.logging.NoopExecutionCallback;
 import io.harness.shell.SshSessionConfig;
 

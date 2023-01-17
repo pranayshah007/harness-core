@@ -45,7 +45,7 @@ import io.harness.beans.FileData;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.k8s.K8sApplyBaseHandler;
 import io.harness.delegate.k8s.beans.K8sApplyHandlerConfig;
-import io.harness.delegate.task.k8s.K8sTaskHelperBase;
+import io.harness.delegate.task.k8s.helpers.k8sbase.K8sTaskHelperBase;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.KubernetesYamlException;
 import io.harness.k8s.kubectl.Kubectl;
@@ -58,7 +58,7 @@ import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.appmanifest.ManifestFile;
-import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 import software.wings.delegatetasks.k8s.K8sTaskHelper;
 import software.wings.delegatetasks.k8s.K8sTestHelper;
 import software.wings.helpers.ext.container.ContainerDeploymentDelegateHelper;

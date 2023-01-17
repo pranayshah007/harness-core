@@ -62,14 +62,14 @@ import software.wings.beans.AwsConfig;
 import software.wings.beans.command.ContainerSetupCommandUnitExecutionData;
 import software.wings.beans.command.ContainerSetupCommandUnitExecutionData.ContainerSetupCommandUnitExecutionDataBuilder;
 import software.wings.beans.command.EcsSetupParams;
-import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 import software.wings.beans.container.AwsAutoScalarConfig;
 import software.wings.beans.dto.EcsContainerTask;
 import software.wings.beans.dto.EcsServiceSpecification;
 import software.wings.beans.dto.SettingAttribute;
-import software.wings.cloudprovider.aws.AwsClusterService;
-import software.wings.cloudprovider.aws.EcsContainerService;
-import software.wings.service.impl.AwsHelperService;
+import software.wings.cloudprovider.aws.ifc.AwsClusterService;
+import software.wings.cloudprovider.aws.ifc.EcsContainerService;
+import software.wings.service.impl.realization.AwsHelperService;
 import software.wings.service.intfc.aws.delegate.AwsAppAutoScalingHelperServiceDelegate;
 import software.wings.service.intfc.aws.delegate.AwsEcsHelperServiceDelegate;
 

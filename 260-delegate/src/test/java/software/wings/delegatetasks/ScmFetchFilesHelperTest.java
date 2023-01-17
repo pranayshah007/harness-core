@@ -43,7 +43,7 @@ import software.wings.WingsBaseTest;
 import software.wings.beans.GitConfig;
 import software.wings.beans.GitConfig.ProviderType;
 import software.wings.beans.GitFileConfig;
-import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 import software.wings.beans.dto.SettingAttribute;
 import software.wings.beans.yaml.GitFetchFilesResult;
 
@@ -60,6 +60,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import software.wings.delegatetasks.tasks.ScmFetchFilesHelper;
 
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 @OwnedBy(CDP)

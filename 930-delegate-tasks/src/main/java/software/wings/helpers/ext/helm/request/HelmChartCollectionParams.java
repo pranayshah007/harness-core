@@ -9,7 +9,7 @@ package software.wings.helpers.ext.helm.request;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
-import static software.wings.delegatetasks.helm.ArtifactoryHelmTaskHelper.shouldFetchHelmChartsFromArtifactory;
+import static software.wings.helpers.ext.helm.request.ArtifactoryHelmTaskHelper.shouldFetchHelmChartsFromArtifactory;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;

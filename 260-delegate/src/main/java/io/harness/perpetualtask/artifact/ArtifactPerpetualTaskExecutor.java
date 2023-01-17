@@ -27,7 +27,7 @@ import software.wings.delegatetasks.buildsource.BuildSourceExecutionResponse;
 import software.wings.delegatetasks.buildsource.BuildSourceParameters;
 import software.wings.delegatetasks.buildsource.BuildSourceResponse;
 import software.wings.helpers.ext.jenkins.BuildDetails;
-import software.wings.utils.DelegateArtifactCollectionUtils;
+import software.wings.utils.nonkryos.DelegateArtifactCollectionUtils;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;

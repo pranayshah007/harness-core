@@ -29,7 +29,7 @@ import software.wings.helpers.ext.azure.devops.AzureDevopsProject;
 import software.wings.helpers.ext.jenkins.BuildDetails;
 import software.wings.helpers.ext.jenkins.JobDetails;
 import software.wings.utils.ArtifactType;
-import software.wings.utils.DelegateArtifactCollectionUtils;
+import software.wings.utils.nonkryos.DelegateArtifactCollectionUtils;
 import software.wings.utils.RepositoryFormat;
 import software.wings.utils.RepositoryType;
 

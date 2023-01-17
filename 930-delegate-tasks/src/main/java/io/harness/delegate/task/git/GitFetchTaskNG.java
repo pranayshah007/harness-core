@@ -35,6 +35,7 @@ import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
+import io.harness.delegate.task.git.scm.ScmFetchFilesHelperNG;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.git.model.FetchFilesResult;
 import io.harness.k8s.K8sCommandUnitConstants;

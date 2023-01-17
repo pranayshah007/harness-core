@@ -32,8 +32,8 @@ import io.harness.delegate.task.azure.request.AzureVMSSSetupTaskParameters;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
-import software.wings.beans.command.ExecutionLogCallback;
-import software.wings.delegatetasks.DelegateLogService;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
+import software.wings.delegatetasks.logservice.DelegateLogService;
 
 import com.azure.resourcemanager.compute.models.VirtualMachineScaleSet;
 import com.azure.resourcemanager.monitor.models.AutoscaleProfile;

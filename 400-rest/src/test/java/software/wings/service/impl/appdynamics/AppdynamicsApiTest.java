@@ -41,7 +41,7 @@ import software.wings.beans.AppDynamicsConfig;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.SettingAttribute.SettingCategory;
 import software.wings.beans.SyncTaskContext;
-import software.wings.delegatetasks.DelegateLogService;
+import software.wings.delegatetasks.logservice.DelegateLogService;
 import software.wings.delegatetasks.DelegateProxyFactory;
 import software.wings.delegatetasks.cv.RequestExecutor;
 import software.wings.helpers.ext.appdynamics.AppdynamicsRestClient;

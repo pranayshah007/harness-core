@@ -21,12 +21,11 @@ import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 
-import software.wings.delegatetasks.DelegateCVActivityLogService;
-import software.wings.delegatetasks.DelegateCVActivityLogService.Logger;
-import software.wings.delegatetasks.DelegateCVTaskService;
-import software.wings.delegatetasks.DelegateLogService;
+import software.wings.delegatetasks.cv.DelegateCVActivityLogService.Logger;
+import software.wings.delegatetasks.services.DelegateCVTaskService;
+import software.wings.delegatetasks.logservice.DelegateLogService;
 import software.wings.service.impl.ThirdPartyApiCallLog;
-import software.wings.service.impl.VerificationLogContext;
+import software.wings.service.impl.realization.VerificationLogContext;
 import software.wings.service.impl.analysis.DataCollectionInfoV2;
 import software.wings.service.impl.analysis.DataCollectionTaskResult;
 import software.wings.service.impl.analysis.DataCollectionTaskResult.DataCollectionTaskStatus;

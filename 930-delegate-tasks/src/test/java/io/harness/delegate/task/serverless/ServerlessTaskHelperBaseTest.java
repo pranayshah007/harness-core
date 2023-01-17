@@ -55,7 +55,7 @@ import io.harness.delegate.beans.storeconfig.S3StoreDelegateConfig;
 import io.harness.delegate.task.artifactory.ArtifactoryRequestMapper;
 import io.harness.delegate.task.aws.AwsNgConfigMapper;
 import io.harness.delegate.task.git.GitFetchTaskHelper;
-import io.harness.delegate.task.git.ScmFetchFilesHelperNG;
+import io.harness.delegate.task.git.scm.ScmFetchFilesHelperNG;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.HintException;

@@ -63,7 +63,7 @@ import software.wings.beans.command.Command;
 import software.wings.beans.command.CommandExecutionContext;
 import software.wings.beans.command.CommandMapper;
 import software.wings.delegatetasks.aws.AwsCommandHelper;
-import software.wings.service.impl.AwsHelperService;
+import software.wings.service.impl.realization.AwsHelperService;
 import software.wings.service.impl.aws.model.AwsCodeDeployS3LocationData;
 import software.wings.service.intfc.ActivityService;
 import software.wings.service.intfc.DelegateService;

@@ -39,6 +39,7 @@ import software.wings.beans.command.CommandUnitDetails;
 import software.wings.dl.WingsPersistence;
 import software.wings.prune.PruneEntityListener;
 import software.wings.prune.PruneEvent;
+import software.wings.service.impl.realization.ServiceClassLocator;
 import software.wings.service.intfc.ActivityService;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.LogService;

@@ -25,7 +25,7 @@ import io.harness.delegate.task.shell.ShellExecutorFactoryNG;
 import io.harness.delegate.task.shell.WinrmTaskParameters;
 import io.harness.delegate.task.ssh.ScriptCommandUnit;
 import io.harness.delegate.task.ssh.WinRmInfraDelegateConfig;
-import io.harness.delegate.task.winrm.WinRmExecutorFactoryNG;
+import io.harness.delegate.task.winrm.executors.WinRmExecutorFactoryNG;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;

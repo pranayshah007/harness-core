@@ -84,7 +84,7 @@ import software.wings.sm.ExecutionContextImpl;
 import software.wings.sm.WorkflowStandardParams;
 import software.wings.sm.WorkflowStandardParamsExtensionService;
 import software.wings.sm.states.AwsStateHelper;
-import software.wings.utils.ServiceVersionConvention;
+import software.wings.utils.nonkryos.ServiceVersionConvention;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Charsets;

@@ -14,7 +14,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.managerclient.VerificationServiceClient;
 
 import software.wings.delegatetasks.DelegateStateType;
-import software.wings.delegatetasks.LogAnalysisStoreService;
+import software.wings.delegatetasks.services.LogAnalysisStoreService;
 import software.wings.service.impl.analysis.LogElement;
 import software.wings.service.intfc.analysis.ClusterLevel;
 

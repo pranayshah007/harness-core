@@ -14,7 +14,7 @@ import io.harness.k8s.model.response.CEK8sDelegatePrerequisite;
 
 import software.wings.beans.TaskType;
 import software.wings.beans.infrastructure.instance.info.ContainerInfo;
-import software.wings.delegatetasks.DelegateTaskType;
+import software.wings.delegatetasks.tasktype.DelegateTaskType;
 import software.wings.service.impl.ContainerServiceParams;
 import software.wings.service.impl.MasterUrlFetchTaskParameter;
 

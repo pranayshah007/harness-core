@@ -44,6 +44,7 @@ import software.wings.beans.InstanceUnitType;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.command.ContainerResizeCommandUnit.ContextData;
 import software.wings.beans.command.KubernetesResizeParams.KubernetesResizeParamsBuilder;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 import software.wings.cloudprovider.gke.GkeClusterService;
 import software.wings.service.intfc.WorkflowService;
 

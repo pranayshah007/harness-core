@@ -30,8 +30,8 @@ import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.GcpConfig;
-import software.wings.delegatetasks.DelegateCVActivityLogService;
-import software.wings.delegatetasks.DelegateLogService;
+import software.wings.delegatetasks.cv.DelegateCVActivityLogService;
+import software.wings.delegatetasks.logservice.DelegateLogService;
 import software.wings.delegatetasks.cv.DataCollectionException;
 import software.wings.helpers.ext.gcb.GcbService;
 import software.wings.service.impl.ThirdPartyApiCallLog;

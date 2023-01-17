@@ -44,7 +44,7 @@ import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.serializer.KryoSerializer;
 import io.harness.verificationclient.CVNextGenServiceClient;
 
-import software.wings.delegatetasks.DelegateLogService;
+import software.wings.delegatetasks.logservice.DelegateLogService;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;

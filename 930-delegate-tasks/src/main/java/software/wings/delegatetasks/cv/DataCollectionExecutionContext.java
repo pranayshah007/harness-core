@@ -10,7 +10,7 @@ package software.wings.delegatetasks.cv;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 
-import software.wings.delegatetasks.DelegateCVActivityLogService.Logger;
+import software.wings.delegatetasks.cv.DelegateCVActivityLogService.Logger;
 import software.wings.service.impl.ThirdPartyApiCallLog;
 
 import java.util.Map;

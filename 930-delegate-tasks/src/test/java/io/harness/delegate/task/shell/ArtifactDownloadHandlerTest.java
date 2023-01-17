@@ -44,9 +44,9 @@ import io.harness.delegate.task.artifactory.ArtifactoryRequestMapper;
 import io.harness.delegate.task.ssh.artifact.ArtifactoryArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.AwsS3ArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.JenkinsArtifactDelegateConfig;
-import io.harness.delegate.task.winrm.ArtifactoryArtifactDownloadHandler;
-import io.harness.delegate.task.winrm.AwsS3ArtifactDownloadHandler;
-import io.harness.delegate.task.winrm.JenkinsArtifactDownloadHandler;
+import io.harness.delegate.task.winrm.handlers.ArtifactoryArtifactDownloadHandler;
+import io.harness.delegate.task.winrm.handlers.AwsS3ArtifactDownloadHandler;
+import io.harness.delegate.task.winrm.handlers.JenkinsArtifactDownloadHandler;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidRequestException;
 import io.harness.rule.Owner;
@@ -55,7 +55,7 @@ import io.harness.shell.ScriptType;
 
 import software.wings.beans.AWSTemporaryCredentials;
 import software.wings.beans.AwsConfig;
-import software.wings.service.impl.AwsHelperService;
+import software.wings.service.impl.realization.AwsHelperService;
 import software.wings.service.intfc.security.EncryptionService;
 
 import java.util.Collections;

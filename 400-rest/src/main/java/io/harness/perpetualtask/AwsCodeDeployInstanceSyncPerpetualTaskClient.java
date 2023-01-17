@@ -32,7 +32,7 @@ import software.wings.beans.AwsInfrastructureMapping;
 import software.wings.beans.CodeDeployInfrastructureMapping;
 import software.wings.beans.SettingAttribute;
 import software.wings.service.InstanceSyncConstants;
-import software.wings.service.impl.AwsUtils;
+import software.wings.service.impl.realization.AwsUtils;
 import software.wings.service.impl.aws.model.AwsEc2ListInstancesRequest;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.EnvironmentService;

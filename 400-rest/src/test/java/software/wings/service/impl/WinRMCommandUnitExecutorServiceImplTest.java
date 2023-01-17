@@ -23,7 +23,7 @@ import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
 import static software.wings.beans.artifact.ArtifactFile.Builder.anArtifactFile;
 import static software.wings.beans.command.CommandExecutionContext.Builder.aCommandExecutionContext;
 import static software.wings.beans.command.ExecCommandUnit.Builder.anExecCommandUnit;
-import static software.wings.beans.dto.Log.Builder.aLog;
+import static software.wings.beans.dto.log.Log.Builder.aLog;
 import static software.wings.beans.infrastructure.Host.Builder.aHost;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.ACTIVITY_ID;
@@ -47,7 +47,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.delegate.task.winrm.WinRmSessionConfig;
+import io.harness.delegate.task.winrm.session.WinRmSessionConfig;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.ShellExecutionException;
 import io.harness.exception.TimeoutException;
@@ -64,7 +64,7 @@ import software.wings.beans.command.SetupEnvCommandUnit;
 import software.wings.beans.infrastructure.Host;
 import software.wings.core.winrm.executors.WinRmExecutor;
 import software.wings.core.winrm.executors.WinRmExecutorFactory;
-import software.wings.delegatetasks.DelegateLogService;
+import software.wings.delegatetasks.logservice.DelegateLogService;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
@@ -82,6 +82,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import software.wings.service.impl.realization.WinRMCommandUnitExecutorServiceImpl;
 
 @OwnedBy(CDP)
 public class WinRMCommandUnitExecutorServiceImplTest extends WingsBaseTest {

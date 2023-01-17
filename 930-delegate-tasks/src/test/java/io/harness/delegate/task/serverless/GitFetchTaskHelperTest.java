@@ -32,7 +32,7 @@ import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.task.git.GitFetchFilesTaskHelper;
 import io.harness.delegate.task.git.GitFetchTaskHelper;
-import io.harness.delegate.task.git.ScmFetchFilesHelperNG;
+import io.harness.delegate.task.git.scm.ScmFetchFilesHelperNG;
 import io.harness.git.GitClientV2;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;

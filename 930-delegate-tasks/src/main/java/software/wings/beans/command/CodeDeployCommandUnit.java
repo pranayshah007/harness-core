@@ -20,10 +20,11 @@ import io.harness.logging.LogLevel;
 import io.harness.logging.Misc;
 
 import software.wings.api.DeploymentType;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 import software.wings.beans.dto.SettingAttribute;
 import software.wings.cloudprovider.CodeDeployDeploymentInfo;
-import software.wings.cloudprovider.aws.AwsCodeDeployService;
-import software.wings.delegatetasks.DelegateLogService;
+import software.wings.cloudprovider.aws.ifc.AwsCodeDeployService;
+import software.wings.delegatetasks.logservice.DelegateLogService;
 
 import com.amazonaws.services.codedeploy.model.AutoRollbackConfiguration;
 import com.amazonaws.services.codedeploy.model.CreateDeploymentRequest;

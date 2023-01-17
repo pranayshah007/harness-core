@@ -19,7 +19,7 @@ import io.harness.serializer.JsonUtils;
 
 import software.wings.beans.APMValidateCollectorConfig;
 import software.wings.beans.apm.Method;
-import software.wings.delegatetasks.DelegateLogService;
+import software.wings.delegatetasks.logservice.DelegateLogService;
 import software.wings.delegatetasks.cv.DataCollectionException;
 import software.wings.delegatetasks.cv.RequestExecutor;
 import software.wings.helpers.ext.apm.APMRestClient;

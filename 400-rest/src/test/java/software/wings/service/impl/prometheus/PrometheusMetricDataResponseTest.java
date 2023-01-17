@@ -19,7 +19,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 import io.harness.time.Timestamp;
 
-import software.wings.delegatetasks.DelegateCVActivityLogService;
+import software.wings.delegatetasks.cv.DelegateCVActivityLogService;
 import software.wings.service.impl.newrelic.NewRelicMetricDataRecord;
 
 import com.google.common.collect.TreeBasedTable;

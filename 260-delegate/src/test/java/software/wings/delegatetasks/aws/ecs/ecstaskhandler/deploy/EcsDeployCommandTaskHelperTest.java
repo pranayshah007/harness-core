@@ -38,13 +38,13 @@ import software.wings.api.ContainerServiceData;
 import software.wings.beans.AwsConfig;
 import software.wings.beans.InstanceUnitType;
 import software.wings.beans.command.EcsResizeParams;
-import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 import software.wings.beans.container.AwsAutoScalarConfig;
-import software.wings.cloudprovider.aws.AwsClusterService;
-import software.wings.cloudprovider.aws.EcsContainerService;
+import software.wings.cloudprovider.aws.ifc.AwsClusterService;
+import software.wings.cloudprovider.aws.ifc.EcsContainerService;
 import software.wings.delegatetasks.aws.ecs.ecstaskhandler.EcsCommandTaskHelper;
 import software.wings.helpers.ext.ecs.response.EcsDeployRollbackDataFetchResponse;
-import software.wings.service.impl.AwsHelperService;
+import software.wings.service.impl.realization.AwsHelperService;
 import software.wings.service.intfc.aws.delegate.AwsAppAutoScalingHelperServiceDelegate;
 import software.wings.service.intfc.aws.delegate.AwsEcsHelperServiceDelegate;
 

@@ -29,14 +29,14 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import software.wings.beans.AwsConfig;
 import software.wings.beans.LogColor;
 import software.wings.beans.LogWeight;
-import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 import software.wings.beans.s3.FetchS3FilesCommandParams;
 import software.wings.beans.s3.FetchS3FilesExecutionResponse;
 import software.wings.beans.s3.S3Bucket;
 import software.wings.beans.s3.S3FetchFileResult;
 import software.wings.beans.s3.S3File;
 import software.wings.beans.s3.S3FileRequest;
-import software.wings.delegatetasks.DelegateLogService;
+import software.wings.delegatetasks.logservice.DelegateLogService;
 import software.wings.service.intfc.aws.delegate.AwsS3HelperServiceDelegate;
 import software.wings.service.intfc.security.EncryptionService;
 

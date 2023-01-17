@@ -25,7 +25,7 @@ import io.harness.DelegateTestBase;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.DelegateResponseData;
-import io.harness.delegate.task.k8s.K8sTaskHelperBase;
+import io.harness.delegate.task.k8s.helpers.k8sbase.K8sTaskHelperBase;
 import io.harness.k8s.model.K8sPod;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.logging.CommandExecutionStatus;

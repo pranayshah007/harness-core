@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.chartmuseum.ChartMuseumConstants.CHART_MUSEUM_SERVER_URL;
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.GCS_HELM;
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.HTTP_HELM;
-import static io.harness.delegate.task.helm.HelmTaskHelperBase.RESOURCE_DIR_BASE;
+import static io.harness.delegate.task.helm.helper.HelmTaskHelperBase.RESOURCE_DIR_BASE;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.filesystem.FileIo.createDirectoryIfDoesNotExist;
 import static io.harness.filesystem.FileIo.deleteDirectoryAndItsContentIfExists;
@@ -66,6 +66,7 @@ import io.harness.delegate.beans.storeconfig.S3HelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfigType;
 import io.harness.delegate.chartmuseum.NgChartmuseumClientFactory;
+import io.harness.delegate.task.helm.helper.HelmTaskHelperBase;
 import io.harness.delegate.task.k8s.HelmChartManifestDelegateConfig;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.HelmClientException;
@@ -118,7 +119,8 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
   @Mock NgChartmuseumClientFactory ngChartmuseumClientFactory;
   @Mock ChartmuseumClient chartmuseumClient;
 
-  @InjectMocks @Spy HelmTaskHelperBase helmTaskHelperBase;
+  @InjectMocks @Spy
+  HelmTaskHelperBase helmTaskHelperBase;
 
   @Mock ProcessExecutor processExecutor;
   @Mock LogCallback logCallback;

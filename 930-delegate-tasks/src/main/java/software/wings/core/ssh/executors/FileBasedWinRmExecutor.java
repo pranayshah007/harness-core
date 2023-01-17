@@ -13,14 +13,14 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.FileBucket;
-import io.harness.delegate.task.shell.ConfigFileMetaData;
-import io.harness.delegate.task.winrm.FileBasedAbstractWinRmExecutor;
-import io.harness.delegate.task.winrm.WinRmSessionConfig;
+import io.harness.delegate.task.shell.config.ConfigFileMetaData;
+import io.harness.delegate.task.winrm.executors.FileBasedAbstractWinRmExecutor;
+import io.harness.delegate.task.winrm.session.WinRmSessionConfig;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 
 import software.wings.beans.artifact.ArtifactStreamAttributes;
-import software.wings.delegatetasks.DelegateFileManager;
+import software.wings.delegatetasks.services.DelegateFileManager;
 
 import java.io.IOException;
 import java.io.InputStream;

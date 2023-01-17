@@ -21,7 +21,7 @@ import static software.wings.beans.ARMSourceType.GIT;
 import static software.wings.beans.TaskType.AZURE_ARM_TASK;
 import static software.wings.beans.TaskType.GIT_FETCH_FILES_TASK;
 import static software.wings.beans.appmanifest.AppManifestKind.K8S_MANIFEST;
-import static software.wings.delegatetasks.GitFetchFilesTask.GIT_FETCH_FILES_TASK_ASYNC_TIMEOUT;
+import static software.wings.delegatetasks.tasks.GitFetchFilesTask.GIT_FETCH_FILES_TASK_ASYNC_TIMEOUT;
 
 import static java.lang.String.format;
 import static java.util.Collections.singletonList;

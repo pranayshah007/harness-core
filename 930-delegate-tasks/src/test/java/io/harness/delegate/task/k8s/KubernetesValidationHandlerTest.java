@@ -20,6 +20,8 @@ import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.delegate.beans.connector.k8Connector.K8sValidationParams;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDTO;
+import io.harness.delegate.task.k8s.helpers.k8sbase.K8sTaskHelperBase;
+import io.harness.delegate.task.k8s.k8stestconnectiontask.KubernetesValidationHandler;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
 
@@ -37,9 +39,11 @@ import org.mockito.MockitoAnnotations;
 @OwnedBy(CDP)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class KubernetesValidationHandlerTest extends CategoryTest {
-  @Mock K8sTaskHelperBase taskHelperBase;
+  @Mock
+  K8sTaskHelperBase taskHelperBase;
 
-  @InjectMocks KubernetesValidationHandler kubernetesValidationHandler;
+  @InjectMocks
+  KubernetesValidationHandler kubernetesValidationHandler;
 
   @Before
   public void setup() {

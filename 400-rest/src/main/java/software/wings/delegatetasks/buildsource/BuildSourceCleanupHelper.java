@@ -36,7 +36,7 @@ import software.wings.helpers.ext.jenkins.BuildDetails;
 import software.wings.persistence.artifact.Artifact;
 import software.wings.service.impl.artifact.ArtifactCollectionUtils;
 import software.wings.service.intfc.ArtifactService;
-import software.wings.utils.DelegateArtifactCollectionUtils;
+import software.wings.utils.nonkryos.DelegateArtifactCollectionUtils;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;

@@ -46,10 +46,11 @@ import io.harness.logging.LogLevel;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.beans.AwsConfig;
-import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 import software.wings.beans.dto.SettingAttribute;
 import software.wings.cloudprovider.UpdateServiceCountRequestData;
-import software.wings.service.impl.AwsHelperService;
+import software.wings.cloudprovider.aws.ifc.EcsContainerService;
+import software.wings.service.impl.realization.AwsHelperService;
 
 import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.amazonaws.services.autoscaling.model.CreateAutoScalingGroupRequest;

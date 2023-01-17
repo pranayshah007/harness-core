@@ -29,9 +29,9 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogLevel;
 import io.harness.security.encryption.EncryptedDataDetail;
 
-import software.wings.beans.command.ExecutionLogCallback;
-import software.wings.delegatetasks.DelegateFileManager;
-import software.wings.delegatetasks.DelegateLogService;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
+import software.wings.delegatetasks.services.DelegateFileManager;
+import software.wings.delegatetasks.logservice.DelegateLogService;
 import software.wings.helpers.ext.cloudformation.request.CloudFormationCommandRequest;
 import software.wings.helpers.ext.cloudformation.response.CloudFormationCommandExecutionResponse;
 import software.wings.helpers.ext.cloudformation.response.CloudFormationCommandExecutionResponse.CloudFormationCommandExecutionResponseBuilder;

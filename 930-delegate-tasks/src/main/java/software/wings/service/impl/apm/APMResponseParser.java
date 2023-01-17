@@ -12,7 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import io.harness.exception.WingsException;
 import io.harness.time.Timestamp;
 
-import software.wings.delegatetasks.CustomDataCollectionUtils;
+import software.wings.delegatetasks.utils.CustomDataCollectionUtils;
 import software.wings.delegatetasks.cv.DataCollectionException;
 import software.wings.service.impl.newrelic.NewRelicMetricDataRecord;
 

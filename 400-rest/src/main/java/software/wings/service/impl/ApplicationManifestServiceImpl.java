@@ -27,7 +27,7 @@ import static software.wings.beans.appmanifest.StoreType.KustomizeSourceRepo;
 import static software.wings.beans.appmanifest.StoreType.Remote;
 import static software.wings.beans.appmanifest.StoreType.VALUES_YAML_FROM_HELM_REPO;
 import static software.wings.beans.yaml.YamlConstants.MANIFEST_FILE_FOLDER;
-import static software.wings.delegatetasks.GitFetchFilesTask.GIT_FETCH_FILES_TASK_ASYNC_TIMEOUT;
+import static software.wings.delegatetasks.tasks.GitFetchFilesTask.GIT_FETCH_FILES_TASK_ASYNC_TIMEOUT;
 import static software.wings.helpers.ext.k8s.K8sManagerHelper.manifestFilesFromGitFetchFilesResult;
 import static software.wings.settings.SettingVariableTypes.OCI_HELM_REPO;
 
@@ -100,6 +100,7 @@ import software.wings.helpers.ext.helm.request.HelmChartConfigParams;
 import software.wings.helpers.ext.k8s.request.K8sValuesLocation;
 import software.wings.prune.PruneEntityListener;
 import software.wings.prune.PruneEvent;
+import software.wings.service.impl.realization.ServiceClassLocator;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.ApplicationManifestService;
 import software.wings.service.intfc.DelegateService;

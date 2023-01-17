@@ -25,7 +25,7 @@ import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.beans.artifact.CustomArtifactStream;
 import software.wings.delegatetasks.DelegateProxyFactory;
 import software.wings.helpers.ext.jenkins.BuildDetails;
-import software.wings.service.impl.ServiceClassLocator;
+import software.wings.service.impl.realization.ServiceClassLocator;
 import software.wings.service.intfc.ArtifactStreamService;
 import software.wings.service.intfc.BuildService;
 import software.wings.service.intfc.artifact.CustomBuildSourceService;

@@ -239,7 +239,7 @@ import software.wings.prune.PruneEntityListener;
 import software.wings.prune.PruneEvent;
 import software.wings.service.impl.ArtifactStreamServiceImpl;
 import software.wings.service.impl.AuditServiceHelper;
-import software.wings.service.impl.ServiceClassLocator;
+import software.wings.service.impl.realization.ServiceClassLocator;
 import software.wings.service.impl.workflow.creation.WorkflowCreator;
 import software.wings.service.impl.workflow.creation.abstractfactories.AbstractWorkflowFactory;
 import software.wings.service.impl.workflow.creation.abstractfactories.AbstractWorkflowFactory.Category;

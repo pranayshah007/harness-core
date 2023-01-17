@@ -29,9 +29,9 @@ import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.AwsConfig;
-import software.wings.beans.command.ExecutionLogCallback;
-import software.wings.delegatetasks.DelegateFileManager;
-import software.wings.delegatetasks.DelegateLogService;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
+import software.wings.delegatetasks.services.DelegateFileManager;
+import software.wings.delegatetasks.logservice.DelegateLogService;
 import software.wings.helpers.ext.ecs.request.EcsBGRoute53ServiceSetupRequest;
 import software.wings.helpers.ext.ecs.request.EcsServiceSetupRequest;
 import software.wings.helpers.ext.ecs.response.EcsCommandExecutionResponse;

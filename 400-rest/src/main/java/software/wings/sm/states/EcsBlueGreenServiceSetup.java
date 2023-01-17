@@ -20,7 +20,7 @@ import static io.harness.exception.WingsException.USER;
 import static io.harness.validation.Validator.notNullCheck;
 
 import static software.wings.beans.TaskType.GIT_FETCH_FILES_TASK;
-import static software.wings.delegatetasks.GitFetchFilesTask.GIT_FETCH_FILES_TASK_ASYNC_TIMEOUT;
+import static software.wings.delegatetasks.tasks.GitFetchFilesTask.GIT_FETCH_FILES_TASK_ASYNC_TIMEOUT;
 import static software.wings.service.impl.aws.model.AwsConstants.ECS_SERVICE_SETUP_SWEEPING_OUTPUT_NAME;
 import static software.wings.service.impl.aws.model.AwsConstants.PROD_LISTENER;
 import static software.wings.service.impl.aws.model.AwsConstants.STAGE_LISTENER;

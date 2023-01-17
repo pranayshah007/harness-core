@@ -86,7 +86,7 @@ import software.wings.service.intfc.ArtifactStreamServiceBindingService;
 import software.wings.service.intfc.FileService;
 import software.wings.service.intfc.SettingsService;
 import software.wings.utils.ArtifactType;
-import software.wings.utils.DelegateArtifactCollectionUtils;
+import software.wings.utils.nonkryos.DelegateArtifactCollectionUtils;
 import software.wings.utils.RepositoryFormat;
 import software.wings.utils.RepositoryType;
 

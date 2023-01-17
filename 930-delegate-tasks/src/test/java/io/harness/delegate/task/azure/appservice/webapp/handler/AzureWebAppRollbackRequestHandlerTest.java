@@ -50,7 +50,7 @@ import io.harness.delegate.task.azure.common.AzureLogCallbackProvider;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 
-import software.wings.delegatetasks.azure.AzureSecretHelper;
+import software.wings.delegatetasks.azure.helpers.AzureSecretHelper;
 
 import java.io.File;
 import java.util.List;

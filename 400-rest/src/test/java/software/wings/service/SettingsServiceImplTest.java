@@ -144,7 +144,7 @@ import software.wings.security.UserRequestContext;
 import software.wings.security.UserThreadLocal;
 import software.wings.security.WorkflowFilter;
 import software.wings.service.impl.AuditServiceHelper;
-import software.wings.service.impl.AwsHelperService;
+import software.wings.service.impl.realization.AwsHelperService;
 import software.wings.service.impl.GitConfigHelperService;
 import software.wings.service.impl.SettingServiceHelper;
 import software.wings.service.impl.SettingValidationService;

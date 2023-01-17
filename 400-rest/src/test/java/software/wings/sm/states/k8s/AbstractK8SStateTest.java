@@ -41,7 +41,7 @@ import static software.wings.beans.appmanifest.StoreType.HelmSourceRepo;
 import static software.wings.beans.appmanifest.StoreType.KustomizeSourceRepo;
 import static software.wings.beans.appmanifest.StoreType.Local;
 import static software.wings.beans.appmanifest.StoreType.Remote;
-import static software.wings.delegatetasks.GitFetchFilesTask.GIT_FETCH_FILES_TASK_ASYNC_TIMEOUT;
+import static software.wings.delegatetasks.tasks.GitFetchFilesTask.GIT_FETCH_FILES_TASK_ASYNC_TIMEOUT;
 import static software.wings.settings.SettingVariableTypes.GCP;
 import static software.wings.sm.ExecutionContextImpl.PHASE_PARAM;
 import static software.wings.sm.StateExecutionInstance.Builder.aStateExecutionInstance;

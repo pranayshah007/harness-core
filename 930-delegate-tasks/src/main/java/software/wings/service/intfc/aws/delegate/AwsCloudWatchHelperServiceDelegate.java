@@ -11,7 +11,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 
 import software.wings.beans.TaskType;
-import software.wings.delegatetasks.DelegateTaskType;
+import software.wings.delegatetasks.tasktype.DelegateTaskType;
 import software.wings.service.impl.aws.model.request.AwsCloudWatchMetricDataRequest;
 import software.wings.service.impl.aws.model.request.AwsCloudWatchStatisticsRequest;
 import software.wings.service.impl.aws.model.response.AwsCloudWatchMetricDataResponse;

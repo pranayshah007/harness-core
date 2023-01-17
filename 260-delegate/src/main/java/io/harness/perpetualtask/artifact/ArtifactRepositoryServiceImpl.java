@@ -26,7 +26,7 @@ import software.wings.delegatetasks.buildsource.BuildSourceParameters;
 import software.wings.delegatetasks.buildsource.BuildSourceParameters.BuildSourceRequestType;
 import software.wings.delegatetasks.buildsource.BuildSourceResponse;
 import software.wings.helpers.ext.jenkins.BuildDetails;
-import software.wings.service.impl.ServiceClassLocator;
+import software.wings.service.impl.realization.ServiceClassLocator;
 import software.wings.service.intfc.BuildService;
 import software.wings.service.intfc.security.EncryptionService;
 import software.wings.settings.SettingValue;

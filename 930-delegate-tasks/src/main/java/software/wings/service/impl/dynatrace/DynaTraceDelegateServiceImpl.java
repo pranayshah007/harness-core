@@ -7,13 +7,13 @@
 
 package software.wings.service.impl.dynatrace;
 
-import static software.wings.delegatetasks.AbstractDelegateDataCollectionTask.getUnsafeHttpClient;
+import static software.wings.delegatetasks.tasks.AbstractDelegateDataCollectionTask.getUnsafeHttpClient;
 
 import io.harness.delegate.task.common.DataCollectionExecutorService;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.beans.DynaTraceConfig;
-import software.wings.delegatetasks.DelegateLogService;
+import software.wings.delegatetasks.logservice.DelegateLogService;
 import software.wings.delegatetasks.cv.CVConstants;
 import software.wings.delegatetasks.cv.RequestExecutor;
 import software.wings.helpers.ext.dynatrace.DynaTraceRestClient;

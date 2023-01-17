@@ -8,8 +8,8 @@
 package io.harness.delegate.task.manifests;
 
 import static io.harness.delegate.beans.DelegateFile.Builder.aDelegateFile;
-import static io.harness.delegate.task.helm.CustomManifestFetchTaskHelper.cleanup;
-import static io.harness.delegate.task.helm.CustomManifestFetchTaskHelper.zipManifestDirectory;
+import static io.harness.delegate.task.helm.helper.CustomManifestFetchTaskHelper.cleanup;
+import static io.harness.delegate.task.helm.helper.CustomManifestFetchTaskHelper.zipManifestDirectory;
 import static io.harness.exception.ExceptionUtils.getMessage;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
@@ -38,8 +38,8 @@ import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
-import io.harness.delegate.task.helm.CustomManifestFetchTaskHelper;
-import io.harness.delegate.task.k8s.K8sTaskHelperBase;
+import io.harness.delegate.task.helm.helper.CustomManifestFetchTaskHelper;
+import io.harness.delegate.task.k8s.helpers.k8sbase.K8sTaskHelperBase;
 import io.harness.delegate.task.manifests.request.CustomManifestValuesFetchParams;
 import io.harness.delegate.task.manifests.response.CustomManifestValuesFetchResponse;
 import io.harness.exception.InvalidRequestException;

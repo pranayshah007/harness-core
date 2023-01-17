@@ -26,6 +26,7 @@ import io.harness.delegate.task.executioncapability.ProtoCapabilityCheck;
 import io.harness.delegate.task.executioncapability.ProtoCapabilityCheckFactory;
 import io.harness.delegate.task.validation.DelegateConnectionResultDetail;
 
+import software.wings.delegatetasks.delegatecapability.capabilitycheck.CapabilityCheckFactory;
 import software.wings.delegatetasks.validation.core.AbstractDelegateValidateTask;
 
 import com.google.inject.Inject;
@@ -38,7 +39,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 public class CapabilityCheckController extends AbstractDelegateValidateTask {
-  @Inject CapabilityCheckFactory capabilityCheckFactory;
+  @Inject
+  CapabilityCheckFactory capabilityCheckFactory;
   @Inject ProtoCapabilityCheckFactory protoCapabilityCheckFactory;
 
   public CapabilityCheckController(String delegateId, DelegateTaskPackage delegateTaskPackage,

@@ -42,6 +42,7 @@ import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
+import io.harness.delegate.task.git.scm.ScmFetchFilesHelperNG;
 import io.harness.delegate.task.gitapi.client.impl.AzureRepoApiClient;
 import io.harness.delegate.task.gitapi.client.impl.GithubApiClient;
 import io.harness.delegate.task.gitapi.client.impl.GitlabApiClient;

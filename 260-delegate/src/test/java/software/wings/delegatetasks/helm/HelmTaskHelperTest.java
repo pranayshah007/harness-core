@@ -9,7 +9,7 @@ package software.wings.delegatetasks.helm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.delegate.task.helm.HelmTaskHelperBase.RESOURCE_DIR_BASE;
+import static io.harness.delegate.task.helm.helper.HelmTaskHelperBase.RESOURCE_DIR_BASE;
 import static io.harness.filesystem.FileIo.deleteDirectoryAndItsContentIfExists;
 import static io.harness.k8s.model.HelmVersion.V2;
 import static io.harness.k8s.model.HelmVersion.V3;
@@ -55,6 +55,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static software.wings.delegatetasks.helm.constants.CopyManifestFilesHelper.copyManifestFilesToWorkingDir;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
@@ -67,7 +68,7 @@ import io.harness.delegate.beans.DelegateFileManagerBase;
 import io.harness.delegate.chartmuseum.CgChartmuseumClientFactory;
 import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.helm.HelmCommandFlag;
-import io.harness.delegate.task.helm.HelmTaskHelperBase;
+import io.harness.delegate.task.helm.helper.HelmTaskHelperBase;
 import io.harness.exception.HelmClientException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
@@ -81,7 +82,7 @@ import software.wings.WingsBaseTest;
 import software.wings.beans.AwsConfig;
 import software.wings.beans.GcpConfig;
 import software.wings.beans.appmanifest.HelmChart;
-import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 import software.wings.beans.dto.HelmChartSpecification;
 import software.wings.beans.settings.helm.AmazonS3HelmRepoConfig;
 import software.wings.beans.settings.helm.GCSHelmRepoConfig;
@@ -1378,7 +1379,7 @@ public class HelmTaskHelperTest extends WingsBaseTest {
     Path destPath = Files.createTempDirectory("manifest-files");
     File file = File.createTempFile("manifest", ".yaml", srcPath.toFile());
 
-    HelmTaskHelper.copyManifestFilesToWorkingDir(srcPath.toFile(), destPath.toFile());
+    copyManifestFilesToWorkingDir(srcPath.toFile(), destPath.toFile());
 
     String fileName = file.getPath().split("/")[file.getPath().split("/").length - 1];
     assertThat(Files.exists(Paths.get(destPath.toString(), fileName))).isTrue();
@@ -1396,7 +1397,7 @@ public class HelmTaskHelperTest extends WingsBaseTest {
     Path destPath = Files.createTempDirectory("manifest-files");
     File file = File.createTempFile("manifest", ".yaml", srcPath.toFile());
 
-    HelmTaskHelper.copyManifestFilesToWorkingDir(file, destPath.toFile());
+    copyManifestFilesToWorkingDir(file, destPath.toFile());
 
     String fileName = file.getPath().split("/")[file.getPath().split("/").length - 1];
     assertThat(Files.exists(Paths.get(destPath.toString(), fileName))).isTrue();

@@ -19,6 +19,8 @@ import io.harness.eraro.ErrorCode;
 import io.harness.exception.WingsException;
 
 import software.wings.beans.dto.HelmChartSpecification;
+import software.wings.delegatetasks.helm.deployconfig.HarnessHelmDeployConfig;
+import software.wings.delegatetasks.helm.deployconfig.HelmDeployChartSpec;
 import software.wings.helpers.ext.helm.request.HelmCommandRequest;
 
 import com.esotericsoftware.yamlbeans.YamlReader;

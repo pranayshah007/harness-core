@@ -40,7 +40,7 @@ import software.wings.beans.sso.SSOSettings;
 import software.wings.scheduler.events.segment.SegmentGroupEventJobContext;
 import software.wings.scheduler.events.segment.SegmentGroupEventJobContext.SegmentGroupEventJobContextKeys;
 import software.wings.service.impl.SSOSettingServiceImpl;
-import software.wings.service.impl.ServiceClassLocator;
+import software.wings.service.impl.realization.ServiceClassLocator;
 import software.wings.service.intfc.DelegateService;
 import software.wings.service.intfc.UserService;
 import software.wings.service.intfc.ownership.OwnedByAccount;

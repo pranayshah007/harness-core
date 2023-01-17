@@ -27,6 +27,7 @@ import io.harness.delegate.clienttools.InstallUtils;
 import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
+import io.harness.delegate.task.helm.helper.HelmTaskHelperBase;
 import io.harness.delegate.task.k8s.HelmChartManifestDelegateConfig;
 import io.harness.exception.ExceptionUtils;
 import io.harness.k8s.K8sCommandUnitConstants;

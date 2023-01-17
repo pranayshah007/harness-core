@@ -43,7 +43,7 @@ import io.harness.spotinst.model.ElastiGroupLoadBalancerConfig;
 
 import software.wings.beans.AwsConfig;
 import software.wings.beans.SpotInstConfig;
-import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 
 import com.google.gson.Gson;
 import com.google.inject.Singleton;

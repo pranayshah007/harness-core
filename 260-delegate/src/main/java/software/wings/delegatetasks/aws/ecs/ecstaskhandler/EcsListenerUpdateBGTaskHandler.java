@@ -24,13 +24,13 @@ import io.harness.exception.TimeoutException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.security.encryption.EncryptedDataDetail;
 
-import software.wings.beans.command.ExecutionLogCallback;
-import software.wings.cloudprovider.aws.EcsContainerService;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
+import software.wings.cloudprovider.aws.ifc.EcsContainerService;
 import software.wings.helpers.ext.ecs.request.EcsBGListenerUpdateRequest;
 import software.wings.helpers.ext.ecs.request.EcsCommandRequest;
 import software.wings.helpers.ext.ecs.response.EcsCommandExecutionResponse;
 import software.wings.helpers.ext.ecs.response.EcsListenerUpdateCommandResponse;
-import software.wings.service.impl.AwsHelperService;
+import software.wings.service.impl.realization.AwsHelperService;
 import software.wings.service.intfc.aws.delegate.AwsElbHelperServiceDelegate;
 
 import com.amazonaws.services.elasticloadbalancingv2.model.Action;

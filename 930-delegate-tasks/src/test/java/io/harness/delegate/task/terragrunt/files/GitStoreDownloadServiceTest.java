@@ -27,7 +27,7 @@ import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
-import io.harness.delegate.task.git.ScmFetchFilesHelperNG;
+import io.harness.delegate.task.git.scm.ScmFetchFilesHelperNG;
 import io.harness.git.GitClientV2;
 import io.harness.git.model.DownloadFilesRequest;
 import io.harness.logging.LogCallback;

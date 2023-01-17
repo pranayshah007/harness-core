@@ -33,7 +33,7 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
-import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 import software.wings.helpers.ext.ecs.request.EcsBGListenerUpdateRequest;
 import software.wings.helpers.ext.ecs.request.EcsServiceDeployRequest;
 import software.wings.helpers.ext.ecs.response.EcsCommandExecutionResponse;

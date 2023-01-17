@@ -22,7 +22,7 @@ import io.harness.serializer.KryoSerializer;
 import software.wings.beans.HostReachabilityInfo;
 import software.wings.beans.dto.SettingAttribute;
 import software.wings.service.impl.aws.model.response.HostReachabilityResponse;
-import software.wings.utils.HostValidationService;
+import software.wings.utils.nonkryos.HostValidationService;
 
 import com.google.inject.Inject;
 import java.time.Instant;

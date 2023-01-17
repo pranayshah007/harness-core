@@ -29,6 +29,7 @@ import io.harness.delegate.beans.connector.helm.HttpHelmConnectorDTO;
 import io.harness.delegate.beans.connector.helm.HttpHelmUsernamePasswordDTO;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.storeconfig.HttpHelmStoreDelegateConfig;
+import io.harness.delegate.task.helm.helper.HelmTaskHelperBase;
 import io.harness.delegate.task.k8s.HelmChartManifestDelegateConfig;
 import io.harness.encryption.SecretRefData;
 import io.harness.k8s.model.HelmVersion;

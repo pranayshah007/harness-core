@@ -39,6 +39,7 @@ import software.wings.WingsBaseTest;
 import software.wings.beans.command.CommandExecutionContext;
 import software.wings.beans.dto.Command;
 import software.wings.beans.infrastructure.Host;
+import software.wings.delegatetasks.tasks.CommandTask;
 import software.wings.service.intfc.ServiceCommandExecutorService;
 import software.wings.service.intfc.security.SSHVaultService;
 

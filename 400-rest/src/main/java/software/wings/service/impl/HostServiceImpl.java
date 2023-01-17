@@ -29,6 +29,7 @@ import software.wings.beans.infrastructure.Host.HostKeys;
 import software.wings.dl.WingsPersistence;
 import software.wings.prune.PruneEntityListener;
 import software.wings.prune.PruneEvent;
+import software.wings.service.impl.realization.ServiceClassLocator;
 import software.wings.service.intfc.ConfigService;
 import software.wings.service.intfc.EnvironmentService;
 import software.wings.service.intfc.HostService;

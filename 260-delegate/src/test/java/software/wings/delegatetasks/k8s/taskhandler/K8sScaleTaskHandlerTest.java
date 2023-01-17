@@ -38,7 +38,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.category.element.UnitTests;
-import io.harness.delegate.task.k8s.K8sTaskHelperBase;
+import io.harness.delegate.task.k8s.helpers.k8sbase.K8sTaskHelperBase;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.model.K8sDelegateTaskParams;
@@ -50,7 +50,7 @@ import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.InstanceUnitType;
-import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 import software.wings.delegatetasks.k8s.K8sTaskHelper;
 import software.wings.helpers.ext.container.ContainerDeploymentDelegateHelper;
 import software.wings.helpers.ext.k8s.request.K8sClusterConfig;

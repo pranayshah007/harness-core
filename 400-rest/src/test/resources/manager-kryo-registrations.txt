@@ -313,7 +313,7 @@
 5041:software.wings.beans.command.DockerStartCommandUnit
 5042:software.wings.beans.command.DockerStopCommandUnit
 5043:software.wings.beans.command.ExecCommandUnit
-5044:software.wings.beans.command.ExecutionLogCallback
+5044:software.wings.beans.command.logcallback.ExecutionLogCallback
 5045:software.wings.beans.command.InitSshCommandUnit
 5046:software.wings.beans.command.KubernetesResizeCommandUnit
 5047:software.wings.beans.command.OverridingCommandUnitDescriptor
@@ -614,7 +614,7 @@
 5371:software.wings.beans.container.EcsSteadyStateCheckResponse
 5372:io.harness.delegate.beans.DelegateMetaInfo
 5373:io.harness.delegate.beans.DelegateTaskNotifyResponseData
-5374:software.wings.delegatetasks.BambooTask.BambooExecutionResponse
+5374:software.wings.delegatetasks.tasks.BambooTask.BambooExecutionResponse
 5375:software.wings.beans.HttpStateExecutionResponse
 5376:software.wings.service.impl.elk.ElkLogFetchRequest
 5377:software.wings.service.impl.ThirdPartyApiCallLog
@@ -897,9 +897,9 @@
 7154:software.wings.beans.servicenow.ServiceNowTaskParameters
 7155:software.wings.beans.ServiceNowConfig
 7156:software.wings.delegatetasks.servicenow.ServiceNowAction
-7158:software.wings.beans.settings.helm.HelmRepoConfigValidationTaskParams
+7158:software.wings.beans.settings.helm.repoconfigvalidation.HelmRepoConfigValidationTaskParams
 7159:software.wings.beans.settings.helm.HttpHelmRepoConfig
-7160:software.wings.beans.settings.helm.HelmRepoConfigValidationResponse
+7160:software.wings.beans.settings.helm.repoconfigvalidation.HelmRepoConfigValidationResponse
 7161:software.wings.beans.template.TemplateReference
 7162:software.wings.beans.settings.helm.AmazonS3HelmRepoConfig
 7163:software.wings.beans.servicenow.ServiceNowTicketType
@@ -997,7 +997,7 @@
 7259:software.wings.api.jira.JiraExecutionData.JiraIssueData
 7260:software.wings.api.k8s.K8sSwapServiceElement
 7261:software.wings.beans.SlackMessage
-7262:software.wings.service.impl.SlackMessageSenderImpl
+7262:software.wings.service.impl.realization.SlackMessageSenderImpl
 7263:software.wings.beans.SlackMessageJSON
 7264:software.wings.api.pcf.PcfPluginExecutionSummary
 7265:software.wings.api.pcf.PcfPluginStateExecutionData
@@ -1180,7 +1180,7 @@
 8058:software.wings.helpers.ext.helm.request.HelmChartCollectionParams
 8059:software.wings.api.AwsAmiInfoVariables
 8060:software.wings.sm.states.azure.AzureVMSSDeployExecutionSummary
-8061:software.wings.service.impl.PerpetualTaskCapabilityCheckResponse
+8061:software.wings.service.impl.realization.PerpetualTaskCapabilityCheckResponse
 8062:software.wings.helpers.ext.k8s.response.CiK8sTaskResponse
 8063:software.wings.api.terraform.TerraformOutputVariables
 8064:software.wings.beans.s3.S3Bucket
@@ -2170,7 +2170,7 @@
 70004:io.harness.accesscontrol.NGAccessDeniedException
 71100:software.wings.service.impl.ThirdPartyApiCallLog.ThirdPartyApiCallField
 71101:software.wings.service.impl.ThirdPartyApiCallLog.FieldType
-71102:software.wings.beans.dto.Log
+71102:software.wings.beans.dto.log.Log
 71103:io.harness.logging.LogLevel
 71104:software.wings.delegatetasks.manifest.ManifestCollectionExecutionResponse
 71105:software.wings.delegatetasks.manifest.ManifestCollectionResponse

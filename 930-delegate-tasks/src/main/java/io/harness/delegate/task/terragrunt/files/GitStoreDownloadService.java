@@ -22,7 +22,7 @@ import io.harness.connector.task.shell.SshSessionConfigMapper;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
-import io.harness.delegate.task.git.ScmFetchFilesHelperNG;
+import io.harness.delegate.task.git.scm.ScmFetchFilesHelperNG;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.GitClientV2;

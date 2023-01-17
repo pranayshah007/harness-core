@@ -32,7 +32,7 @@ import io.harness.time.Timestamp;
 
 import software.wings.WingsBaseTest;
 import software.wings.delegatetasks.DelegateStateType;
-import software.wings.delegatetasks.MetricDataStoreService;
+import software.wings.delegatetasks.services.MetricDataStoreService;
 import software.wings.service.impl.analysis.MetricElement;
 import software.wings.service.impl.analysis.MetricsDataCollectionInfo;
 import software.wings.service.impl.newrelic.NewRelicMetricDataRecord;

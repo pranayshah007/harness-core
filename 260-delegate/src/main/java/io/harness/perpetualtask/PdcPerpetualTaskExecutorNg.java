@@ -28,7 +28,7 @@ import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.perpetualtask.instancesync.PdcPerpetualTaskParamsNg;
 
 import software.wings.beans.HostReachabilityInfo;
-import software.wings.utils.HostValidationService;
+import software.wings.utils.nonkryos.HostValidationService;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;

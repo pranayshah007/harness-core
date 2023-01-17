@@ -17,8 +17,8 @@ import static io.harness.logging.LogLevel.INFO;
 import static java.util.Arrays.asList;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
+import io.harness.delegate.task.k8s.helpers.k8sbase.K8sTaskHelperBase;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.model.HarnessLabelValues;
 import io.harness.k8s.model.HarnessLabels;

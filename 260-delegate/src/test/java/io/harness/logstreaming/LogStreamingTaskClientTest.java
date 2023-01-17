@@ -27,8 +27,8 @@ import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
 import io.harness.rule.Owner;
 
-import software.wings.beans.command.ExecutionLogCallback;
-import software.wings.delegatetasks.DelegateLogService;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
+import software.wings.delegatetasks.logservice.DelegateLogService;
 
 import java.util.List;
 import org.junit.Test;

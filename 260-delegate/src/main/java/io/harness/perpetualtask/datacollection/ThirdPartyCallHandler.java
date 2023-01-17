@@ -17,7 +17,7 @@ import io.harness.cvng.beans.cvnglog.ApiCallLogDTO.ApiCallLogDTOField;
 import io.harness.cvng.beans.cvnglog.TraceableType;
 import io.harness.datacollection.entity.CallDetails;
 
-import software.wings.delegatetasks.DelegateLogService;
+import software.wings.delegatetasks.logservice.DelegateLogService;
 
 import com.google.common.base.Preconditions;
 import java.time.Instant;

@@ -18,8 +18,8 @@ import io.harness.delegate.task.shell.CommandTaskParameters;
 import io.harness.delegate.task.shell.WinrmTaskParameters;
 import io.harness.delegate.task.shell.ssh.CommandHandler;
 import io.harness.delegate.task.ssh.NgCommandUnit;
-import io.harness.delegate.task.winrm.WinRmExecutorFactoryNG;
-import io.harness.delegate.task.winrm.WinRmSessionConfig;
+import io.harness.delegate.task.winrm.executors.WinRmExecutorFactoryNG;
+import io.harness.delegate.task.winrm.session.WinRmSessionConfig;
 import io.harness.shell.BaseScriptExecutor;
 import io.harness.shell.ScriptType;
 

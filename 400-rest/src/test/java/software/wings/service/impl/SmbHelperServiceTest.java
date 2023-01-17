@@ -36,12 +36,14 @@ import java.util.List;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.Mock;
+import software.wings.service.impl.realization.SmbHelperService;
 
 @OwnedBy(HarnessTeam.CDC)
 public class SmbHelperServiceTest extends WingsBaseTest {
   public static final String ACCOUNT_ID = "ACCOUNT_ID";
 
-  @Inject SmbHelperService smbHelperService;
+  @Inject
+  SmbHelperService smbHelperService;
   @Mock SMBClient smbClient;
   @Mock Connection connection;
   @Mock Session session;

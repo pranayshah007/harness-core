@@ -22,7 +22,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.api.ContainerServiceData;
 import software.wings.beans.command.EcsResizeParams;
-import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 import software.wings.beans.command.ResizeCommandUnitExecutionData;
 import software.wings.beans.command.ResizeCommandUnitExecutionData.ResizeCommandUnitExecutionDataBuilder;
 import software.wings.delegatetasks.aws.ecs.ecstaskhandler.EcsCommandTaskHandler;

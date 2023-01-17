@@ -8,8 +8,8 @@
 package io.harness.delegate.task.shell.winrm;
 
 import io.harness.delegate.task.winrm.AuthenticationScheme;
-import io.harness.delegate.task.winrm.WinRmSessionConfig;
-import io.harness.delegate.task.winrm.WinRmSessionConfig.WinRmSessionConfigBuilder;
+import io.harness.delegate.task.winrm.session.WinRmSessionConfig;
+import io.harness.delegate.task.winrm.session.WinRmSessionConfig.WinRmSessionConfigBuilder;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.secrets.KerberosWinRmConfigDTO;
 import io.harness.ng.core.dto.secrets.NTLMConfigDTO;

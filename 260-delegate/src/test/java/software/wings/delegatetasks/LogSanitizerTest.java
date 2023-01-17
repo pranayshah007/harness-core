@@ -26,6 +26,9 @@ import java.util.HashMap;
 import java.util.Set;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import software.wings.delegatetasks.logservice.ActivityBasedLogSanitizer;
+import software.wings.delegatetasks.logservice.GenericLogSanitizer;
+import software.wings.delegatetasks.logservice.LogSanitizer;
 
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 public class LogSanitizerTest extends CategoryTest {

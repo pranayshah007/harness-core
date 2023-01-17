@@ -12,7 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.RUNNING;
 
-import static software.wings.beans.dto.Log.Builder.aLog;
+import static software.wings.beans.dto.log.Log.Builder.aLog;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
@@ -35,7 +35,7 @@ import software.wings.beans.artifact.ArtifactStreamType;
 import software.wings.beans.config.ArtifactoryConfig;
 import software.wings.beans.config.NexusConfig;
 import software.wings.beans.settings.azureartifacts.AzureArtifactsConfig;
-import software.wings.delegatetasks.DelegateLogService;
+import software.wings.delegatetasks.logservice.DelegateLogService;
 import software.wings.helpers.ext.amazons3.AmazonS3Service;
 import software.wings.helpers.ext.artifactory.ArtifactoryService;
 import software.wings.helpers.ext.azure.devops.AzureArtifactsPackageFileInfo;

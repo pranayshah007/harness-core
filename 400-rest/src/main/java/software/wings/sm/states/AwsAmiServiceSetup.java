@@ -15,7 +15,7 @@ import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.Misc.normalizeExpression;
 import static io.harness.validation.Validator.notNullCheck;
 
-import static software.wings.beans.dto.Log.Builder.aLog;
+import static software.wings.beans.dto.log.Log.Builder.aLog;
 import static software.wings.service.impl.aws.model.AwsConstants.AMI_SERVICE_SETUP_SWEEPING_OUTPUT_NAME;
 import static software.wings.service.impl.aws.model.AwsConstants.AMI_SETUP_COMMAND_NAME;
 import static software.wings.service.impl.aws.model.AwsConstants.DEFAULT_AMI_ASG_DESIRED_INSTANCES;
@@ -63,7 +63,7 @@ import software.wings.beans.SettingAttribute;
 import software.wings.beans.TaskType;
 import software.wings.beans.command.Command;
 import software.wings.beans.command.CommandUnit;
-import software.wings.beans.dto.Log.Builder;
+import software.wings.beans.dto.log.Log.Builder;
 import software.wings.persistence.artifact.Artifact;
 import software.wings.service.impl.aws.model.AwsAmiServiceSetupRequest;
 import software.wings.service.impl.aws.model.AwsAmiServiceSetupRequest.AwsAmiServiceSetupRequestBuilder;
@@ -83,7 +83,7 @@ import software.wings.sm.StateType;
 import software.wings.sm.WorkflowStandardParams;
 import software.wings.sm.WorkflowStandardParamsExtensionService;
 import software.wings.sm.states.spotinst.SpotInstStateHelper;
-import software.wings.utils.AsgConvention;
+import software.wings.utils.nonkryos.AsgConvention;
 
 import com.google.inject.Inject;
 import java.util.List;

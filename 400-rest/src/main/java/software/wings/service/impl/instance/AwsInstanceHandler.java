@@ -44,7 +44,7 @@ import software.wings.beans.infrastructure.instance.key.deployment.DeploymentKey
 import software.wings.persistence.artifact.Artifact;
 import software.wings.service.AwsSshInstanceSyncPerpetualTaskCreator;
 import software.wings.service.InstanceSyncPerpetualTaskCreator;
-import software.wings.service.impl.AwsHelperService;
+import software.wings.service.impl.realization.AwsHelperService;
 import software.wings.service.impl.AwsInfrastructureProvider;
 import software.wings.service.impl.aws.model.AwsEc2ListInstancesResponse;
 import software.wings.service.intfc.aws.manager.AwsAsgHelperServiceManager;

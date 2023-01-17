@@ -14,7 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import software.wings.beans.SlackMessage;
 import software.wings.beans.SlackMessageJSON;
 import software.wings.beans.TaskType;
-import software.wings.delegatetasks.DelegateTaskType;
+import software.wings.delegatetasks.tasktype.DelegateTaskType;
 
 @OwnedBy(CDC)
 public interface SlackMessageSender {

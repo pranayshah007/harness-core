@@ -13,7 +13,7 @@ import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 
 import software.wings.beans.appmanifest.HelmChart;
 import software.wings.beans.settings.helm.HttpHelmRepoConfig;
-import software.wings.delegatetasks.helm.ArtifactoryHelmTaskHelper;
+import software.wings.helpers.ext.helm.request.ArtifactoryHelmTaskHelper;
 import software.wings.helpers.ext.artifactory.ArtifactoryService;
 import software.wings.helpers.ext.helm.request.HelmChartCollectionParams;
 import software.wings.service.intfc.security.EncryptionService;

@@ -21,7 +21,7 @@ import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateTaskNotifyResponseData;
-import io.harness.delegate.task.k8s.K8sTaskHelperBase;
+import io.harness.delegate.task.k8s.helpers.k8sbase.K8sTaskHelperBase;
 import io.harness.exception.InvalidRequestException;
 import io.harness.grpc.utils.AnyUtils;
 import io.harness.helm.HelmConstants;

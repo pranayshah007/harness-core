@@ -23,7 +23,8 @@ import static org.mockito.Mockito.verify;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.delegate.task.k8s.K8sTaskHelperBase;
+import io.harness.delegate.task.k8s.helpers.k8sbase.K8sLegacyReleaseHandlerImpl;
+import io.harness.delegate.task.k8s.helpers.k8sbase.K8sTaskHelperBase;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.releasehistory.K8SLegacyReleaseHistory;
 import io.harness.k8s.releasehistory.K8sReleasePersistDTO;
@@ -40,7 +41,8 @@ import org.mockito.MockitoAnnotations;
 @OwnedBy(CDP)
 public class K8sLegacyReleaseHandlerImplTest extends CategoryTest {
   @Mock K8sTaskHelperBase taskHelperBase;
-  @InjectMocks K8sLegacyReleaseHandlerImpl releaseHandler;
+  @InjectMocks
+  K8sLegacyReleaseHandlerImpl releaseHandler;
 
   private static final String EMPTY_RELEASE = "emptyRelease";
   private static final String SOME_RELEASE = "someRelease";

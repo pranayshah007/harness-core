@@ -30,7 +30,7 @@ import static software.wings.api.InstanceElement.Builder.anInstanceElement;
 import static software.wings.beans.appmanifest.ManifestFile.VALUES_YAML_KEY;
 import static software.wings.beans.appmanifest.StoreType.HelmChartRepo;
 import static software.wings.beans.appmanifest.StoreType.Remote;
-import static software.wings.delegatetasks.GitFetchFilesTask.GIT_FETCH_FILES_TASK_ASYNC_TIMEOUT;
+import static software.wings.delegatetasks.tasks.GitFetchFilesTask.GIT_FETCH_FILES_TASK_ASYNC_TIMEOUT;
 import static software.wings.sm.ExecutionContextImpl.PHASE_PARAM;
 import static software.wings.sm.InstanceStatusSummary.InstanceStatusSummaryBuilder.anInstanceStatusSummary;
 

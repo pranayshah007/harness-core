@@ -58,6 +58,7 @@ import software.wings.beans.AWSTemporaryCredentials;
 import software.wings.beans.AwsConfig;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.service.impl.aws.manager.AwsHelperServiceManager;
+import software.wings.service.impl.realization.AwsHelperService;
 import software.wings.service.intfc.security.EncryptionService;
 import software.wings.sm.states.ManagerExecutionLogCallback;
 

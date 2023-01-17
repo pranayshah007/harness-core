@@ -68,7 +68,7 @@ import io.harness.terragrunt.v2.request.TerragruntRunType;
 
 import software.wings.beans.LogColor;
 import software.wings.beans.LogWeight;
-import software.wings.delegatetasks.DelegateFileManager;
+import software.wings.delegatetasks.services.DelegateFileManager;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;

@@ -26,7 +26,7 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.security.encryption.EncryptedDataDetail;
 
-import software.wings.service.impl.AwsUtils;
+import software.wings.service.impl.realization.AwsUtils;
 import software.wings.service.impl.aws.client.CloseableAmazonWebServiceClient;
 import software.wings.service.impl.aws.model.AwsEC2Instance;
 

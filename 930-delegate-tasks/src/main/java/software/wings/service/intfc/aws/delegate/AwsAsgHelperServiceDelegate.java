@@ -16,7 +16,7 @@ import io.harness.logging.LogCallback;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.beans.AwsConfig;
-import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 import software.wings.service.impl.aws.model.AwsAsgGetRunningCountData;
 
 import com.amazonaws.services.autoscaling.model.AutoScalingGroup;

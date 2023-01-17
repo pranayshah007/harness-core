@@ -40,7 +40,7 @@ import software.wings.beans.SettingAttribute;
 import software.wings.beans.SumoConfig;
 import software.wings.delegatetasks.DelegateStateType;
 import software.wings.metrics.RiskLevel;
-import software.wings.service.impl.VerificationLogContext;
+import software.wings.service.impl.realization.VerificationLogContext;
 import software.wings.service.impl.analysis.AnalysisContext;
 import software.wings.service.impl.analysis.AnalysisContext.AnalysisContextKeys;
 import software.wings.service.impl.analysis.AnalysisTolerance;

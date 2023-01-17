@@ -55,7 +55,7 @@ import software.wings.beans.ServiceTemplate;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.infrastructure.Host;
 import software.wings.service.impl.AwsInfrastructureProvider;
-import software.wings.service.impl.AwsUtils;
+import software.wings.service.impl.realization.AwsUtils;
 import software.wings.service.impl.aws.manager.AwsHelperServiceManager;
 import software.wings.service.intfc.HostService;
 import software.wings.service.intfc.ServiceResourceService;

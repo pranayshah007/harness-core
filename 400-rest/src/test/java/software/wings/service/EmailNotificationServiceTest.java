@@ -46,7 +46,7 @@ import software.wings.service.intfc.SettingsService;
 import software.wings.service.intfc.security.SecretManager;
 import software.wings.settings.SettingVariableTypes;
 import software.wings.utils.EmailHelperUtils;
-import software.wings.utils.EmailUtils;
+import software.wings.utils.nonkryos.EmailUtils;
 
 import com.google.inject.Inject;
 import java.util.Collections;

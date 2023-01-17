@@ -87,8 +87,8 @@ import software.wings.beans.infrastructure.Host.Builder;
 import software.wings.core.local.executors.ShellExecutorFactory;
 import software.wings.core.ssh.executors.FileBasedSshScriptExecutor;
 import software.wings.core.ssh.executors.SshExecutorFactory;
-import software.wings.delegatetasks.DelegateLogService;
-import software.wings.service.impl.SshCommandUnitExecutorServiceImpl;
+import software.wings.delegatetasks.logservice.DelegateLogService;
+import software.wings.service.impl.realization.SshCommandUnitExecutorServiceImpl;
 import software.wings.service.intfc.CommandUnitExecutorService;
 import software.wings.utils.WingsTestConstants;
 

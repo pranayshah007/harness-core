@@ -61,7 +61,7 @@ import io.harness.delegate.task.azure.response.AzureVMSSTaskExecutionResponse;
 import io.harness.exception.AzureServerException;
 import io.harness.exception.InvalidRequestException;
 
-import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 
 import com.azure.core.management.polling.PollResult;
 import com.azure.core.util.polling.LongRunningOperationStatus;

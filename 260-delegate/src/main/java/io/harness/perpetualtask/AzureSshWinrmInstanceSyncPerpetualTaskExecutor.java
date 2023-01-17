@@ -40,7 +40,7 @@ import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.perpetualtask.instancesync.AzureSshInstanceSyncPerpetualTaskParamsNg;
 import io.harness.serializer.KryoSerializer;
 
-import software.wings.delegatetasks.azure.AzureAsyncTaskHelper;
+import software.wings.delegatetasks.azure.helpers.taskhelper.AzureAsyncTaskHelper;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;

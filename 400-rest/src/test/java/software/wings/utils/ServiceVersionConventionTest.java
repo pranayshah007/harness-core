@@ -17,6 +17,7 @@ import io.harness.rule.Owner;
 
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import software.wings.utils.nonkryos.ServiceVersionConvention;
 
 public class ServiceVersionConventionTest extends CategoryTest {
   public static final int LEN = 10;

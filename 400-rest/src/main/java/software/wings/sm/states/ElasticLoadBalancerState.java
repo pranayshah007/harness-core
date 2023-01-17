@@ -20,7 +20,7 @@ import software.wings.beans.ElasticLoadBalancerConfig;
 import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.PhysicalInfrastructureMappingBase;
 import software.wings.beans.SettingAttribute;
-import software.wings.service.impl.AwsHelperService;
+import software.wings.service.impl.realization.AwsHelperService;
 import software.wings.service.intfc.InfrastructureMappingService;
 import software.wings.service.intfc.SettingsService;
 import software.wings.service.intfc.security.ManagerDecryptionService;

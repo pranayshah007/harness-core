@@ -25,7 +25,7 @@ import io.harness.cvng.beans.cvnglog.ApiCallLogDTO;
 import io.harness.datacollection.entity.CallDetails;
 import io.harness.rule.Owner;
 
-import software.wings.delegatetasks.DelegateLogService;
+import software.wings.delegatetasks.logservice.DelegateLogService;
 
 import java.time.Instant;
 import java.time.OffsetDateTime;

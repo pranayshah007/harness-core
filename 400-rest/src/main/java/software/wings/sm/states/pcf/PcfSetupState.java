@@ -116,7 +116,7 @@ import software.wings.sm.WorkflowStandardParams;
 import software.wings.sm.WorkflowStandardParamsExtensionService;
 import software.wings.stencils.DefaultValue;
 import software.wings.utils.ApplicationManifestUtils;
-import software.wings.utils.ServiceVersionConvention;
+import software.wings.utils.nonkryos.ServiceVersionConvention;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.github.reinert.jjschema.Attributes;

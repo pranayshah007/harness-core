@@ -13,7 +13,7 @@ import static io.harness.git.model.GitRepositoryType.TERRAGRUNT;
 import static io.harness.provision.TerraformConstants.WORKSPACE_STATE_FILE_PATH_FORMAT;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 
-import static software.wings.delegatetasks.TerragruntProvisionTaskHelper.copyFilesToWorkingDirectory;
+import static software.wings.delegatetasks.tasks.TerragruntProvisionTaskHelper.copyFilesToWorkingDirectory;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 
 import static java.lang.String.format;
@@ -55,6 +55,8 @@ import software.wings.beans.GitFileConfig;
 import software.wings.beans.NameValuePair;
 import software.wings.beans.delegation.TerragruntProvisionParameters;
 import software.wings.beans.yaml.GitFetchFilesRequest;
+import software.wings.delegatetasks.services.DelegateFileManager;
+import software.wings.delegatetasks.tasks.TerragruntProvisionTaskHelper;
 import software.wings.service.impl.yaml.GitClientHelper;
 import software.wings.service.intfc.security.EncryptionService;
 import software.wings.service.intfc.yaml.GitClient;
@@ -93,7 +95,8 @@ public class TerragruntProvisionTaskHelperTest extends CategoryTest {
   @Mock private BufferedWriter bufferedWriter;
   @Mock private TerraformClient terraformClient;
 
-  @InjectMocks @Inject TerragruntProvisionTaskHelper terragruntProvisionTaskHelper;
+  @InjectMocks @Inject
+  TerragruntProvisionTaskHelper terragruntProvisionTaskHelper;
 
   private TerragruntProvisionParameters terragruntProvisionParameters = TerragruntProvisionParameters.builder().build();
   private static final String GIT_BRANCH = "master";

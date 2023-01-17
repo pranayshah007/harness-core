@@ -24,7 +24,7 @@ import io.harness.shell.AbstractScriptExecutor;
 import io.harness.shell.ScriptProcessExecutor;
 import io.harness.shell.ShellExecutorConfig;
 
-import software.wings.delegatetasks.DelegateFileManager;
+import software.wings.delegatetasks.services.DelegateFileManager;
 
 import com.google.common.io.CharStreams;
 import java.io.File;

@@ -56,7 +56,7 @@ import io.harness.workers.background.CrossEnvironmentAccountStatusBasedEntityPro
 
 import software.wings.beans.TaskType;
 import software.wings.service.InstanceSyncConstants;
-import software.wings.service.impl.PerpetualTaskCapabilityCheckResponse;
+import software.wings.service.impl.realization.PerpetualTaskCapabilityCheckResponse;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.DelegateService;
 import software.wings.service.intfc.perpetualtask.PerpetualTaskCrudObserver;

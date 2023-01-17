@@ -8,7 +8,7 @@
 package io.harness.delegate.k8s;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.delegate.task.k8s.K8sTaskHelperBase.getTimeoutMillisFromMinutes;
+import static io.harness.delegate.task.k8s.helpers.k8sbase.K8sTaskHelperBase.getTimeoutMillisFromMinutes;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.govern.Switch.unhandled;
 import static io.harness.k8s.K8sCommandUnitConstants.Init;
@@ -33,12 +33,12 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.NGInstanceUnitType;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
-import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
+import io.harness.delegate.task.k8s.helpers.containerdeployment.ContainerDeploymentDelegateBaseHelper;
 import io.harness.delegate.task.k8s.K8sDeployRequest;
 import io.harness.delegate.task.k8s.K8sDeployResponse;
 import io.harness.delegate.task.k8s.K8sScaleRequest;
 import io.harness.delegate.task.k8s.K8sScaleResponse;
-import io.harness.delegate.task.k8s.K8sTaskHelperBase;
+import io.harness.delegate.task.k8s.helpers.k8sbase.K8sTaskHelperBase;
 import io.harness.delegate.task.k8s.client.K8sClient;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArgumentsException;

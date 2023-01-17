@@ -156,6 +156,7 @@ import software.wings.service.impl.aws.model.AwsSecurityGroup;
 import software.wings.service.impl.aws.model.AwsSubnet;
 import software.wings.service.impl.aws.model.AwsVPC;
 import software.wings.service.impl.instance.InstanceSyncPerpetualTaskService;
+import software.wings.service.impl.realization.ServiceClassLocator;
 import software.wings.service.impl.servicetemplates.ServiceTemplateHelper;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.ContainerService;
@@ -188,7 +189,7 @@ import software.wings.stencils.Stencil;
 import software.wings.stencils.StencilPostProcessor;
 import software.wings.utils.ArtifactType;
 import software.wings.utils.EcsConvention;
-import software.wings.utils.HostValidationService;
+import software.wings.utils.nonkryos.HostValidationService;
 import software.wings.utils.Utils;
 
 import com.amazonaws.regions.Regions;

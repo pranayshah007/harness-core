@@ -7,7 +7,7 @@
 
 package software.wings.delegatetasks.cv;
 
-import static software.wings.delegatetasks.AbstractDelegateDataCollectionTask.HARNESS_HEARTBEAT_METRIC_NAME;
+import static software.wings.delegatetasks.tasks.AbstractDelegateDataCollectionTask.HARNESS_HEARTBEAT_METRIC_NAME;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
@@ -15,7 +15,7 @@ import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 
-import software.wings.delegatetasks.MetricDataStoreService;
+import software.wings.delegatetasks.services.MetricDataStoreService;
 import software.wings.service.impl.analysis.DataCollectionInfoV2;
 import software.wings.service.impl.analysis.MetricElement;
 import software.wings.service.impl.analysis.MetricsDataCollectionInfo;

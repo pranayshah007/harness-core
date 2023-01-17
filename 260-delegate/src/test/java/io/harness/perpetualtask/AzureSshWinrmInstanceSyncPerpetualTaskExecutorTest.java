@@ -31,7 +31,7 @@ import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
 
-import software.wings.delegatetasks.azure.AzureAsyncTaskHelper;
+import software.wings.delegatetasks.azure.helpers.taskhelper.AzureAsyncTaskHelper;
 
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;

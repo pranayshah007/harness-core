@@ -15,8 +15,8 @@ import io.harness.network.Http;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.beans.BugsnagConfig;
-import software.wings.delegatetasks.CustomDataCollectionUtils;
-import software.wings.delegatetasks.DelegateLogService;
+import software.wings.delegatetasks.utils.CustomDataCollectionUtils;
+import software.wings.delegatetasks.logservice.DelegateLogService;
 import software.wings.helpers.ext.apm.APMRestClient;
 import software.wings.service.impl.ThirdPartyApiCallLog;
 import software.wings.service.impl.ThirdPartyApiCallLog.FieldType;

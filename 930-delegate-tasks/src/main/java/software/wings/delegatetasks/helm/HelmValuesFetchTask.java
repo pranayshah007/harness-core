@@ -39,8 +39,8 @@ import io.harness.secret.SecretSanitizerThreadLocal;
 
 import software.wings.beans.LogColor;
 import software.wings.beans.LogWeight;
-import software.wings.beans.command.ExecutionLogCallback;
-import software.wings.delegatetasks.DelegateLogService;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
+import software.wings.delegatetasks.logservice.DelegateLogService;
 import software.wings.helpers.ext.helm.request.HelmChartConfigParams;
 import software.wings.helpers.ext.helm.request.HelmValuesFetchTaskParameters;
 import software.wings.helpers.ext.helm.response.HelmValuesFetchTaskResponse;

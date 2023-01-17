@@ -15,7 +15,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
-import software.wings.utils.GitUtilsDelegate;
+import software.wings.utils.nonkryos.GitUtilsDelegate;
 
 import com.google.inject.Inject;
 import org.junit.Test;

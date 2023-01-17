@@ -21,7 +21,7 @@ import software.wings.WingsBaseTest;
 import software.wings.beans.EcrConfig;
 import software.wings.helpers.ext.jenkins.BuildDetails;
 import software.wings.helpers.ext.jenkins.BuildDetails.BuildDetailsMetadataKeys;
-import software.wings.service.impl.AwsHelperService;
+import software.wings.service.impl.realization.AwsHelperService;
 import software.wings.service.intfc.aws.delegate.AwsEcrHelperServiceDelegate;
 import software.wings.service.intfc.security.EncryptionService;
 

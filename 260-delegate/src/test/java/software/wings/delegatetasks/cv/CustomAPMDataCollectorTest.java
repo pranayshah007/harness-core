@@ -31,7 +31,6 @@ import software.wings.beans.ApmMetricCollectionInfo;
 import software.wings.beans.ApmResponseMapping;
 import software.wings.beans.apm.Method;
 import software.wings.beans.apm.ResponseType;
-import software.wings.delegatetasks.DelegateCVActivityLogService;
 import software.wings.metrics.MetricType;
 import software.wings.service.impl.ThirdPartyApiCallLog;
 import software.wings.service.impl.analysis.AnalysisTolerance;

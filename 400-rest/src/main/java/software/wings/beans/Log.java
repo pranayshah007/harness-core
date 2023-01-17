@@ -418,7 +418,7 @@ public class Log implements GoogleDataStoreAware, PersistentEntity, AccountDataR
     public static final String compressedLogLine = "compressedLogLine";
   }
 
-  public static Log fromDTO(software.wings.beans.dto.Log log) {
+  public static Log fromDTO(software.wings.beans.dto.log.Log log) {
     return aLog()
         .uuid(log.getUuid())
         .appId(log.getAppId())

@@ -71,7 +71,7 @@ import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.delegatetasks.pcf.PcfCommandTaskHelper;
 import software.wings.helpers.ext.pcf.request.CfCommandSetupRequest;
 import software.wings.settings.SettingValue;
-import software.wings.utils.ServiceVersionConvention;
+import software.wings.utils.nonkryos.ServiceVersionConvention;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;

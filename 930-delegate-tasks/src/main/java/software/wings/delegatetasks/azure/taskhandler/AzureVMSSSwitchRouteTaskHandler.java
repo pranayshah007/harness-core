@@ -46,7 +46,7 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 
-import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 
 import com.azure.resourcemanager.compute.models.VirtualMachineScaleSet;
 import com.azure.resourcemanager.compute.models.VirtualMachineScaleSetVM;

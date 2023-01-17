@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import software.wings.delegatetasks.utils.CustomDataCollectionUtils;
 
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 public class CustomDataCollectionUtilsTest extends WingsBaseTest {

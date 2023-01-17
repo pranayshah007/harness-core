@@ -36,7 +36,7 @@ import software.wings.beans.SettingAttribute;
 import software.wings.beans.TaskType;
 import software.wings.metrics.MetricType;
 import software.wings.metrics.TimeSeriesMetricDefinition;
-import software.wings.service.impl.AwsHelperService;
+import software.wings.service.impl.realization.AwsHelperService;
 import software.wings.service.impl.analysis.AnalysisComparisonStrategy;
 import software.wings.service.impl.analysis.AnalysisContext;
 import software.wings.service.impl.analysis.DataCollectionCallback;

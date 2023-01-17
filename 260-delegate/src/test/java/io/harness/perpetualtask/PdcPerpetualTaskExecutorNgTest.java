@@ -27,7 +27,7 @@ import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 
 import software.wings.beans.HostReachabilityInfo;
-import software.wings.utils.HostValidationService;
+import software.wings.utils.nonkryos.HostValidationService;
 
 import com.google.protobuf.Any;
 import java.io.IOException;

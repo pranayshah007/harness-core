@@ -36,7 +36,7 @@ import io.harness.spotinst.model.ElastiGroup;
 import software.wings.WingsBaseTest;
 import software.wings.beans.AwsConfig;
 import software.wings.beans.SpotInstConfig;
-import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 import software.wings.service.intfc.aws.delegate.AwsElbHelperServiceDelegate;
 
 import java.util.Optional;

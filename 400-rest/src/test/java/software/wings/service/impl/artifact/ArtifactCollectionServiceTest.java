@@ -100,7 +100,7 @@ import software.wings.service.intfc.aws.manager.AwsEcrHelperServiceManager;
 import software.wings.service.intfc.security.ManagerDecryptionService;
 import software.wings.service.intfc.security.SecretManager;
 import software.wings.utils.ArtifactType;
-import software.wings.utils.DelegateArtifactCollectionUtils;
+import software.wings.utils.nonkryos.DelegateArtifactCollectionUtils;
 import software.wings.utils.WingsTestConstants;
 
 import com.google.inject.Inject;

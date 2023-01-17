@@ -32,10 +32,11 @@ import io.harness.rule.Owner;
 import software.wings.WingsBaseTest;
 import software.wings.beans.HostValidationTaskParameters;
 import software.wings.beans.dto.SettingAttribute;
+import software.wings.delegatetasks.tasks.HostValidationTask;
 import software.wings.service.impl.aws.model.response.HostReachabilityResponse;
 import software.wings.service.intfc.security.SSHVaultService;
 import software.wings.settings.validation.SshConnectionConnectivityValidationAttributes;
-import software.wings.utils.HostValidationService;
+import software.wings.utils.nonkryos.HostValidationService;
 
 import java.util.Arrays;
 import java.util.Collections;

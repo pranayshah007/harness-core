@@ -41,7 +41,7 @@ import software.wings.api.jira.JiraExecutionData;
 import software.wings.api.jira.JiraExecutionData.JiraIssueData;
 import software.wings.beans.JiraConfig;
 import software.wings.beans.jira.JiraTaskParameters;
-import software.wings.delegatetasks.DelegateLogService;
+import software.wings.delegatetasks.logservice.DelegateLogService;
 import software.wings.service.intfc.security.EncryptionService;
 
 import com.google.common.annotations.VisibleForTesting;

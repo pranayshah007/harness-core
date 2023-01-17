@@ -27,12 +27,12 @@ import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.delegatetasks.buildsource.BuildSourceExecutionResponse;
 import software.wings.delegatetasks.buildsource.BuildSourceParameters;
 import software.wings.helpers.ext.jenkins.BuildDetails;
-import software.wings.service.impl.ServiceClassLocator;
+import software.wings.service.impl.realization.ServiceClassLocator;
 import software.wings.service.intfc.CustomBuildService;
 import software.wings.service.intfc.DockerBuildService;
 import software.wings.service.intfc.JenkinsBuildService;
 import software.wings.service.intfc.security.EncryptionService;
-import software.wings.utils.DelegateArtifactCollectionUtils;
+import software.wings.utils.nonkryos.DelegateArtifactCollectionUtils;
 
 import com.google.inject.Injector;
 import com.google.inject.Key;

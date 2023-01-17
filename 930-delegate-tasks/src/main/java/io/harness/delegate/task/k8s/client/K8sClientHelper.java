@@ -9,7 +9,7 @@ package io.harness.delegate.task.k8s.client;
 
 import static java.util.stream.Collectors.toSet;
 
-import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
+import io.harness.delegate.task.k8s.helpers.containerdeployment.ContainerDeploymentDelegateBaseHelper;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
 import io.harness.k8s.KubernetesHelperService;
 import io.harness.k8s.kubectl.Kubectl;

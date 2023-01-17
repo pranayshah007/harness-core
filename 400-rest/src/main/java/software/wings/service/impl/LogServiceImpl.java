@@ -127,7 +127,7 @@ public class LogServiceImpl implements LogService {
 
   @Override
   public boolean batchedSaveCommandUnitLogs(
-      String activityId, String unitName, software.wings.beans.dto.Log logObject) {
+      String activityId, String unitName, software.wings.beans.dto.log.Log logObject) {
     dataStoreService.save(Log.class, Lists.newArrayList(Log.fromDTO(logObject)), false);
     activityService.updateCommandUnitStatus(
         logObject.getAppId(), activityId, unitName, logObject.getCommandExecutionStatus());

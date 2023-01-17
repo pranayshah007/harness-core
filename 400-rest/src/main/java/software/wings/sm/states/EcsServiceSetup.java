@@ -18,7 +18,7 @@ import static io.harness.exception.WingsException.USER;
 import static io.harness.validation.Validator.notNullCheck;
 
 import static software.wings.beans.TaskType.GIT_FETCH_FILES_TASK;
-import static software.wings.delegatetasks.GitFetchFilesTask.GIT_FETCH_FILES_TASK_ASYNC_TIMEOUT;
+import static software.wings.delegatetasks.tasks.GitFetchFilesTask.GIT_FETCH_FILES_TASK_ASYNC_TIMEOUT;
 import static software.wings.service.impl.aws.model.AwsConstants.DEFAULT_AMI_ASG_TIMEOUT_MIN;
 import static software.wings.service.impl.aws.model.AwsConstants.DEFAULT_STATE_TIMEOUT_BUFFER_MIN;
 import static software.wings.service.impl.aws.model.AwsConstants.ECS_SERVICE_SETUP_SWEEPING_OUTPUT_NAME;

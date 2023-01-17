@@ -33,13 +33,14 @@ import io.harness.rule.Owner;
 import software.wings.WingsBaseTest;
 import software.wings.beans.WinRmConnectionAttributes;
 import software.wings.beans.dto.SettingAttribute;
+import software.wings.delegatetasks.tasks.ConnectivityValidationTask;
 import software.wings.helpers.ext.mail.Mailer;
 import software.wings.helpers.ext.mail.SmtpConfig;
 import software.wings.settings.validation.ConnectivityValidationDelegateRequest;
 import software.wings.settings.validation.SmtpConnectivityValidationAttributes;
 import software.wings.settings.validation.SshConnectionConnectivityValidationAttributes;
 import software.wings.settings.validation.WinRmConnectivityValidationAttributes;
-import software.wings.utils.HostValidationService;
+import software.wings.utils.nonkryos.HostValidationService;
 
 import org.junit.Before;
 import org.junit.Test;

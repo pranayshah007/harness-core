@@ -27,6 +27,7 @@ import io.harness.connector.service.scm.ScmDelegateClient;
 import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
+import io.harness.delegate.task.git.scm.ScmFetchFilesHelperNG;
 import io.harness.exception.GitClientException;
 import io.harness.git.model.FetchFilesResult;
 import io.harness.logging.LogCallback;
@@ -55,7 +56,8 @@ import org.mockito.MockitoAnnotations;
 public class ScmFetchFilesHelperNGTest extends CategoryTest {
   @Mock private ScmDelegateClient scmDelegateClient;
   @Mock private ScmServiceClient scmServiceClient;
-  @InjectMocks ScmFetchFilesHelperNG scmFetchFilesHelperNG;
+  @InjectMocks
+  ScmFetchFilesHelperNG scmFetchFilesHelperNG;
 
   @Before
   public void setUp() throws Exception {

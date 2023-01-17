@@ -76,7 +76,7 @@ import software.wings.beans.command.Command;
 import software.wings.beans.command.CommandUnit;
 import software.wings.persistence.artifact.Artifact;
 import software.wings.persistence.artifact.ArtifactFile;
-import software.wings.service.impl.AwsHelperService;
+import software.wings.service.impl.realization.AwsHelperService;
 import software.wings.service.impl.aws.model.AwsLambdaExecuteWfRequest;
 import software.wings.service.impl.aws.model.AwsLambdaExecuteWfRequest.AwsLambdaExecuteWfRequestBuilder;
 import software.wings.service.impl.aws.model.AwsLambdaExecuteWfResponse;

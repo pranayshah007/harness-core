@@ -40,7 +40,7 @@ import io.harness.spotinst.model.ElastiGroupRenameRequest;
 
 import software.wings.beans.AwsConfig;
 import software.wings.beans.SpotInstConfig;
-import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.elasticloadbalancingv2.AmazonElasticLoadBalancing;

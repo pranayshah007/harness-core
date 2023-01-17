@@ -61,7 +61,7 @@ import io.harness.delegate.clienttools.ClientTool;
 import io.harness.delegate.clienttools.InstallUtils;
 import io.harness.delegate.k8s.K8sRollingRollbackBaseHandler.ResourceRecreationStatus;
 import io.harness.delegate.k8s.beans.K8sRollingRollbackHandlerConfig;
-import io.harness.delegate.task.k8s.K8sTaskHelperBase;
+import io.harness.delegate.task.k8s.helpers.k8sbase.K8sTaskHelperBase;
 import io.harness.exception.InvalidRequestException;
 import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
 import io.harness.k8s.kubectl.Kubectl;

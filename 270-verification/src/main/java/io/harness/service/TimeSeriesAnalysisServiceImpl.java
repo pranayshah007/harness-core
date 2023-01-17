@@ -17,7 +17,7 @@ import static io.harness.logging.Misc.replaceUnicodeWithDot;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
 import static software.wings.common.VerificationConstants.CRON_POLL_INTERVAL_IN_MINUTES;
-import static software.wings.delegatetasks.AbstractDelegateDataCollectionTask.HARNESS_HEARTBEAT_METRIC_NAME;
+import static software.wings.delegatetasks.tasks.AbstractDelegateDataCollectionTask.HARNESS_HEARTBEAT_METRIC_NAME;
 import static software.wings.metrics.TimeSeriesDataRecord.shouldLogDetailedInfoForDebugging;
 import static software.wings.service.impl.newrelic.NewRelicMetricDataRecord.DEFAULT_GROUP_NAME;
 

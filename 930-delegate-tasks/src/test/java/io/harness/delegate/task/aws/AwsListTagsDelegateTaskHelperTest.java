@@ -34,7 +34,7 @@ import io.harness.encryption.SecretRefData;
 import io.harness.exception.AwsTagException;
 import io.harness.rule.Owner;
 
-import software.wings.service.impl.AwsUtils;
+import software.wings.service.impl.realization.AwsUtils;
 
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.DescribeTagsResult;

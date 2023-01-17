@@ -8,14 +8,14 @@
 package software.wings.delegatetasks.k8s.taskhandler;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.delegate.task.k8s.K8sTaskHelperBase.getTimeoutMillisFromMinutes;
+import static io.harness.delegate.task.k8s.helpers.k8sbase.K8sTaskHelperBase.getTimeoutMillisFromMinutes;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
-import io.harness.delegate.task.k8s.K8sTaskHelperBase;
+import io.harness.delegate.task.k8s.helpers.k8sbase.K8sTaskHelperBase;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.K8sPod;

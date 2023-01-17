@@ -30,7 +30,7 @@ import static software.wings.beans.artifact.ArtifactStreamType.SFTP;
 import static software.wings.beans.artifact.ArtifactStreamType.SMB;
 import static software.wings.helpers.ext.jenkins.BuildDetails.Builder.aBuildDetails;
 import static software.wings.persistence.artifact.Artifact.Builder.anArtifact;
-import static software.wings.service.impl.ArtifactoryBuildServiceImpl.MANUAL_PULL_ARTIFACTORY_LIMIT;
+import static software.wings.service.impl.realization.ArtifactoryBuildServiceImpl.MANUAL_PULL_ARTIFACTORY_LIMIT;
 import static software.wings.service.intfc.BuildService.ARTIFACT_RETENTION_SIZE;
 import static software.wings.utils.ArtifactType.JAR;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
@@ -84,7 +84,7 @@ import software.wings.service.intfc.ArtifactService;
 import software.wings.service.intfc.ArtifactStreamService;
 import software.wings.service.intfc.ArtifactStreamServiceBindingService;
 import software.wings.service.intfc.SettingsService;
-import software.wings.utils.DelegateArtifactCollectionUtils;
+import software.wings.utils.nonkryos.DelegateArtifactCollectionUtils;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;

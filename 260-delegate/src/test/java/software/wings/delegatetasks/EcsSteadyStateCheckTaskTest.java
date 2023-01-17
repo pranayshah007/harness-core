@@ -37,8 +37,10 @@ import io.harness.rule.Owner;
 import software.wings.WingsBaseTest;
 import software.wings.beans.container.EcsSteadyStateCheckParams;
 import software.wings.beans.container.EcsSteadyStateCheckResponse;
-import software.wings.cloudprovider.aws.EcsContainerService;
-import software.wings.service.impl.AwsHelperService;
+import software.wings.cloudprovider.aws.ifc.EcsContainerService;
+import software.wings.delegatetasks.logservice.DelegateLogService;
+import software.wings.delegatetasks.tasks.EcsSteadyStateCheckTask;
+import software.wings.service.impl.realization.AwsHelperService;
 
 import com.amazonaws.services.ecs.model.DescribeServicesResult;
 import com.amazonaws.services.ecs.model.Service;

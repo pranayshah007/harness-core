@@ -21,7 +21,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.time.Timestamp;
 
 import software.wings.beans.SumoConfig;
-import software.wings.delegatetasks.DelegateLogService;
+import software.wings.delegatetasks.logservice.DelegateLogService;
 import software.wings.delegatetasks.cv.DataCollectionException;
 import software.wings.service.impl.ThirdPartyApiCallLog;
 import software.wings.service.impl.ThirdPartyApiCallLog.FieldType;

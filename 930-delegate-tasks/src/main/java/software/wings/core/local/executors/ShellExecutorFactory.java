@@ -12,11 +12,11 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.shell.ScriptProcessExecutor;
 import io.harness.shell.ShellExecutorConfig;
 
-import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 import software.wings.core.ssh.executors.FileBasedProcessScriptExecutor;
 import software.wings.core.ssh.executors.FileBasedScriptExecutor;
-import software.wings.delegatetasks.DelegateFileManager;
-import software.wings.delegatetasks.DelegateLogService;
+import software.wings.delegatetasks.services.DelegateFileManager;
+import software.wings.delegatetasks.logservice.DelegateLogService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;

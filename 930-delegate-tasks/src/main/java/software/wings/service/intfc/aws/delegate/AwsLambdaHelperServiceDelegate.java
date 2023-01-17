@@ -13,7 +13,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 
-import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 import software.wings.service.impl.aws.model.AwsLambdaExecuteFunctionRequest;
 import software.wings.service.impl.aws.model.AwsLambdaExecuteFunctionResponse;
 import software.wings.service.impl.aws.model.AwsLambdaExecuteWfRequest;

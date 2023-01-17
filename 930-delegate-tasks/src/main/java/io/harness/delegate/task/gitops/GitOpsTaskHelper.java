@@ -23,7 +23,7 @@ import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.git.GitFetchFilesTaskHelper;
-import io.harness.delegate.task.git.ScmFetchFilesHelperNG;
+import io.harness.delegate.task.git.scm.ScmFetchFilesHelperNG;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.git.model.FetchFilesResult;
 import io.harness.logging.LogCallback;

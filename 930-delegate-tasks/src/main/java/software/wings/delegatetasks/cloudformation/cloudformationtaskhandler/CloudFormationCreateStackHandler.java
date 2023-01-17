@@ -42,7 +42,7 @@ import software.wings.beans.LogColor;
 import software.wings.beans.LogWeight;
 import software.wings.beans.NameValuePair;
 import software.wings.beans.ServiceVariableType;
-import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 import software.wings.helpers.ext.cloudformation.request.CloudFormationCommandRequest;
 import software.wings.helpers.ext.cloudformation.request.CloudFormationCreateStackRequest;
 import software.wings.helpers.ext.cloudformation.response.CloudFormationCommandExecutionResponse;

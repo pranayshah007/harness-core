@@ -39,7 +39,7 @@ import io.harness.spotinst.model.SpotInstConstants;
 
 import software.wings.beans.AwsConfig;
 import software.wings.beans.SpotInstConfig;
-import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 
 import com.google.inject.Singleton;
 import lombok.NoArgsConstructor;

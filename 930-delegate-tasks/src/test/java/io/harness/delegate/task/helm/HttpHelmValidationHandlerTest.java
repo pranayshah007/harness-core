@@ -33,6 +33,7 @@ import io.harness.delegate.beans.connector.helm.HttpHelmAuthenticationDTO;
 import io.harness.delegate.beans.connector.helm.HttpHelmConnectorDTO;
 import io.harness.delegate.beans.connector.helm.HttpHelmUsernamePasswordDTO;
 import io.harness.delegate.beans.connector.helm.HttpHelmValidationParams;
+import io.harness.delegate.task.helm.helper.HelmTaskHelperBase;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
 import io.harness.errorhandling.NGErrorHelper;

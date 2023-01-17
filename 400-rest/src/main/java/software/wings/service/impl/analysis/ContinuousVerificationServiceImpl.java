@@ -118,7 +118,7 @@ import software.wings.security.AppPermissionSummary.EnvInfo;
 import software.wings.security.PermissionAttribute.Action;
 import software.wings.security.UserThreadLocal;
 import software.wings.service.impl.ThirdPartyApiCallLog;
-import software.wings.service.impl.VerificationLogContext;
+import software.wings.service.impl.realization.VerificationLogContext;
 import software.wings.service.impl.analysis.AnalysisContext.AnalysisContextKeys;
 import software.wings.service.impl.analysis.ContinuousVerificationExecutionMetaData.ContinuousVerificationExecutionMetaDataKeys;
 import software.wings.service.impl.analysis.MetricAnalysisRecord.MetricAnalysisRecordKeys;

@@ -12,13 +12,13 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
-import io.harness.delegate.task.winrm.DefaultWinRmExecutor;
-import io.harness.delegate.task.winrm.WinRmSessionConfig;
+import io.harness.delegate.task.winrm.executors.DefaultWinRmExecutor;
+import io.harness.delegate.task.winrm.session.WinRmSessionConfig;
 
-import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 import software.wings.core.ssh.executors.FileBasedWinRmExecutor;
-import software.wings.delegatetasks.DelegateFileManager;
-import software.wings.delegatetasks.DelegateLogService;
+import software.wings.delegatetasks.services.DelegateFileManager;
+import software.wings.delegatetasks.logservice.DelegateLogService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;

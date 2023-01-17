@@ -10,6 +10,7 @@ package io.harness.delegate.beans.executioncapability;
 import io.harness.delegate.beans.ci.CIInitializeTaskParams;
 
 import java.time.Duration;
+
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Value;

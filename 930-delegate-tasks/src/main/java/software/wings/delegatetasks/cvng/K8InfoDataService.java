@@ -13,7 +13,7 @@ import io.harness.k8s.model.KubernetesConfig;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.beans.TaskType;
-import software.wings.delegatetasks.DelegateTaskType;
+import software.wings.delegatetasks.tasktype.DelegateTaskType;
 
 import java.util.List;
 

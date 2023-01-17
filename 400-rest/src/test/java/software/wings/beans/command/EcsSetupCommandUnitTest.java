@@ -37,7 +37,7 @@ import io.harness.rule.Owner;
 import software.wings.WingsBaseTest;
 import software.wings.beans.AwsConfig;
 import software.wings.beans.SettingAttribute;
-import software.wings.cloudprovider.aws.AwsClusterService;
+import software.wings.cloudprovider.aws.ifc.AwsClusterService;
 import software.wings.delegatetasks.aws.ecs.ecstaskhandler.EcsSetupCommandHandler;
 import software.wings.delegatetasks.aws.ecs.ecstaskhandler.EcsSetupCommandTaskHelper;
 import software.wings.service.intfc.aws.delegate.AwsEcsHelperServiceDelegate;

@@ -39,10 +39,12 @@ import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import software.wings.service.impl.realization.GitServiceImpl;
 
 public class GitServiceImplTest extends CategoryTest {
   @Mock GitClientV2 gitClient;
-  @Inject @InjectMocks GitServiceImpl gitService;
+  @Inject @InjectMocks
+  GitServiceImpl gitService;
 
   @Before
   public void setUp() throws Exception {

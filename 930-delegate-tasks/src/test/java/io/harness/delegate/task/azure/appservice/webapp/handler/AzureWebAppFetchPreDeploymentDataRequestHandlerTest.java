@@ -35,7 +35,7 @@ import io.harness.delegate.task.azure.common.AzureAppServiceService;
 import io.harness.delegate.task.azure.common.AzureLogCallbackProvider;
 import io.harness.rule.Owner;
 
-import software.wings.delegatetasks.azure.AzureSecretHelper;
+import software.wings.delegatetasks.azure.helpers.AzureSecretHelper;
 
 import org.junit.Rule;
 import org.junit.Test;

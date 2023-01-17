@@ -36,7 +36,7 @@ import io.harness.encryption.SecretRefData;
 import io.harness.exception.AwsInstanceException;
 import io.harness.rule.Owner;
 
-import software.wings.service.impl.AwsUtils;
+import software.wings.service.impl.realization.AwsUtils;
 import software.wings.service.impl.aws.model.AwsEC2Instance;
 
 import com.amazonaws.services.ec2.AmazonEC2Client;

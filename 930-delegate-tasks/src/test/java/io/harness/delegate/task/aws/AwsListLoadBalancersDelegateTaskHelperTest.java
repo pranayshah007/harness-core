@@ -34,7 +34,7 @@ import io.harness.encryption.SecretRefData;
 import io.harness.exception.AwsLoadBalancerException;
 import io.harness.rule.Owner;
 
-import software.wings.service.impl.AwsUtils;
+import software.wings.service.impl.realization.AwsUtils;
 
 import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancingClient;
 import com.amazonaws.services.elasticloadbalancing.model.DescribeLoadBalancersResult;

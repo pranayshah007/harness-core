@@ -23,6 +23,7 @@ import io.harness.delegate.beans.TaskData;
 import io.harness.rule.Owner;
 
 import software.wings.beans.BambooConfig;
+import software.wings.delegatetasks.tasks.BambooTask;
 import software.wings.helpers.ext.bamboo.BambooService;
 import software.wings.helpers.ext.bamboo.Result;
 import software.wings.helpers.ext.bamboo.Status;

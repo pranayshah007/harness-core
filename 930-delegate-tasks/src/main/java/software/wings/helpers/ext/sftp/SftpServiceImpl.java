@@ -19,7 +19,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.beans.SftpConfig;
 import software.wings.helpers.ext.jenkins.BuildDetails;
-import software.wings.service.impl.SftpHelperService;
+import software.wings.service.impl.realization.SftpHelperService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;

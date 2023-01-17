@@ -32,7 +32,7 @@ import io.harness.security.encryption.EncryptionConfig;
 import io.harness.shell.ShellExecutionData;
 
 import software.wings.beans.CustomSecretNGManagerConfig;
-import software.wings.delegatetasks.ShellScriptTaskHandlerNG;
+import software.wings.delegatetasks.tasks.ShellScriptTaskHandlerNG;
 
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.inject.Inject;

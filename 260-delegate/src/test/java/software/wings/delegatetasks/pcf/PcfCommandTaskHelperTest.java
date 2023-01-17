@@ -68,7 +68,7 @@ import software.wings.beans.GcpConfig;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.beans.config.ArtifactoryConfig;
 import software.wings.beans.dto.SettingAttribute;
-import software.wings.delegatetasks.DelegateFileManager;
+import software.wings.delegatetasks.services.DelegateFileManager;
 import software.wings.helpers.ext.pcf.request.CfCommandSetupRequest;
 import software.wings.service.intfc.security.EncryptionService;
 import software.wings.settings.SettingValue;

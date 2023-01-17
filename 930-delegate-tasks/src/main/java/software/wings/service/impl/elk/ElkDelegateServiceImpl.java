@@ -30,7 +30,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.JsonUtils;
 
 import software.wings.beans.ElkConfig;
-import software.wings.delegatetasks.DelegateLogService;
+import software.wings.delegatetasks.logservice.DelegateLogService;
 import software.wings.delegatetasks.cv.RequestExecutor;
 import software.wings.helpers.ext.elk.ElkRestClient;
 import software.wings.helpers.ext.elk.KibanaRestClient;

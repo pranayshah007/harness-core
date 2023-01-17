@@ -22,7 +22,7 @@ import io.harness.service.intfc.LearningEngineService;
 import io.harness.service.intfc.LogAnalysisService;
 
 import software.wings.common.VerificationConstants;
-import software.wings.service.impl.VerificationLogContext;
+import software.wings.service.impl.realization.VerificationLogContext;
 import software.wings.service.impl.analysis.AnalysisComparisonStrategy;
 import software.wings.service.impl.analysis.AnalysisContext;
 import software.wings.service.impl.analysis.AnalysisContext.AnalysisContextKeys;

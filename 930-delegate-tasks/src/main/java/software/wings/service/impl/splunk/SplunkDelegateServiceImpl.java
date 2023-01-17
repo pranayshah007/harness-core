@@ -28,7 +28,7 @@ import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.serializer.JsonUtils;
 
 import software.wings.beans.SplunkConfig;
-import software.wings.delegatetasks.DelegateLogService;
+import software.wings.delegatetasks.logservice.DelegateLogService;
 import software.wings.delegatetasks.cv.DataCollectionException;
 import software.wings.service.impl.ThirdPartyApiCallLog;
 import software.wings.service.impl.ThirdPartyApiCallLog.FieldType;

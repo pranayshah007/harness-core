@@ -11,7 +11,7 @@ import static io.harness.delegate.beans.TaskData.DEFAULT_SYNC_CALL_TIMEOUT;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.common.VerificationConstants.TIME_DURATION_FOR_LOGS_IN_MINUTES;
-import static software.wings.delegatetasks.ElkLogzDataCollectionTask.parseElkResponse;
+import static software.wings.delegatetasks.tasks.ElkLogzDataCollectionTask.parseElkResponse;
 import static software.wings.service.impl.ThirdPartyApiCallLog.createApiCallLog;
 
 import io.harness.annotations.dev.HarnessTeam;

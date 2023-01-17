@@ -7,7 +7,7 @@
 
 package software.wings.service.impl.instana;
 
-import static software.wings.delegatetasks.AbstractDelegateDataCollectionTask.getUnsafeHttpClient;
+import static software.wings.delegatetasks.tasks.AbstractDelegateDataCollectionTask.getUnsafeHttpClient;
 
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.time.Timestamp;

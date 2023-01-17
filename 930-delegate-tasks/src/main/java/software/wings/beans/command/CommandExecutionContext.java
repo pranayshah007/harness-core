@@ -25,7 +25,7 @@ import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.delegate.beans.executioncapability.SelectorCapability;
 import io.harness.delegate.task.mixin.HttpConnectionExecutionCapabilityGenerator;
-import io.harness.delegate.task.winrm.WinRmSessionConfig;
+import io.harness.delegate.task.winrm.session.WinRmSessionConfig;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.WingsException;
 import io.harness.expression.ExpressionEvaluator;

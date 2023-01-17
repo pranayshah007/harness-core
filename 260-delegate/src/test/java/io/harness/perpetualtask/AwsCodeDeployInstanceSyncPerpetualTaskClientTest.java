@@ -53,7 +53,7 @@ import software.wings.beans.AwsInstanceFilter;
 import software.wings.beans.CodeDeployInfrastructureMapping;
 import software.wings.beans.Environment;
 import software.wings.beans.Service;
-import software.wings.service.impl.AwsUtils;
+import software.wings.service.impl.realization.AwsUtils;
 import software.wings.service.impl.aws.model.AwsEc2ListInstancesRequest;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.EnvironmentService;

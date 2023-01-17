@@ -19,7 +19,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.beans.AwsConfig;
 import software.wings.helpers.ext.jenkins.BuildDetails;
-import software.wings.service.impl.AwsHelperService;
+import software.wings.service.impl.realization.AwsHelperService;
 
 import com.amazonaws.services.ec2.model.DescribeImagesRequest;
 import com.amazonaws.services.ec2.model.DescribeImagesResult;

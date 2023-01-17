@@ -19,7 +19,7 @@ import io.harness.exception.AwsTagException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.logging.CommandExecutionStatus;
 
-import software.wings.service.impl.AwsUtils;
+import software.wings.service.impl.realization.AwsUtils;
 import software.wings.service.impl.aws.client.CloseableAmazonWebServiceClient;
 
 import com.amazonaws.regions.Regions;

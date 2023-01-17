@@ -104,6 +104,7 @@ import software.wings.persistence.artifact.Artifact;
 import software.wings.persistence.artifact.Artifact.ArtifactKeys;
 import software.wings.prune.PruneEntityListener;
 import software.wings.prune.PruneEvent;
+import software.wings.service.impl.realization.ServiceClassLocator;
 import software.wings.service.intfc.AlertService;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.ArtifactService;
@@ -1357,7 +1358,7 @@ public class ArtifactStreamServiceImpl implements ArtifactStreamService {
 
   @Override
   public void pruneDescendingEntities(@NotEmpty String appId, @NotEmpty String artifactStreamId) {
-    List<OwnedByArtifactStream> services = software.wings.service.impl.ServiceClassLocator.descendingServices(
+    List<OwnedByArtifactStream> services = ServiceClassLocator.descendingServices(
         this, ArtifactStreamServiceImpl.class, OwnedByArtifactStream.class);
     PruneEntityListener.pruneDescendingEntities(
         services, descending -> descending.pruneByArtifactStream(appId, artifactStreamId));

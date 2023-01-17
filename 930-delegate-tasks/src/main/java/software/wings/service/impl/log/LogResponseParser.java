@@ -13,7 +13,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import io.harness.exception.WingsException;
 import io.harness.time.Timestamp;
 
-import software.wings.delegatetasks.CustomDataCollectionUtils;
+import software.wings.delegatetasks.utils.CustomDataCollectionUtils;
 import software.wings.delegatetasks.cv.DataCollectionException;
 import software.wings.delegatetasks.cv.beans.CustomLogResponseMapper;
 import software.wings.service.impl.analysis.LogElement;

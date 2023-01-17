@@ -18,7 +18,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import software.wings.beans.EcrConfig;
 import software.wings.common.BuildDetailsComparatorAscending;
 import software.wings.helpers.ext.jenkins.BuildDetails;
-import software.wings.service.impl.AwsHelperService;
+import software.wings.service.impl.realization.AwsHelperService;
 import software.wings.service.intfc.security.EncryptionService;
 
 import com.amazonaws.services.ecr.model.DescribeRepositoriesRequest;

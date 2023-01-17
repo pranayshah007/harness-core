@@ -27,7 +27,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 
 import software.wings.beans.SplunkConfig;
-import software.wings.delegatetasks.DelegateCVActivityLogService.Logger;
+import software.wings.delegatetasks.cv.DelegateCVActivityLogService.Logger;
 import software.wings.service.impl.ThirdPartyApiCallLog;
 import software.wings.service.impl.analysis.LogElement;
 import software.wings.service.impl.splunk.SplunkDataCollectionInfoV2;

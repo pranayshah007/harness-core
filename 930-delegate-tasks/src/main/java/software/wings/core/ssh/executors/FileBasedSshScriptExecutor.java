@@ -18,7 +18,7 @@ import io.harness.shell.FileBasedSshScriptExecutorHelper;
 import io.harness.shell.ScriptExecutionContext;
 import io.harness.shell.SshSessionConfig;
 
-import software.wings.delegatetasks.DelegateFileManager;
+import software.wings.delegatetasks.services.DelegateFileManager;
 
 import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;

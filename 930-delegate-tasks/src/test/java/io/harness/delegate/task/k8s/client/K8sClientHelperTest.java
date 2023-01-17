@@ -19,7 +19,7 @@ import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
-import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
+import io.harness.delegate.task.k8s.helpers.containerdeployment.ContainerDeploymentDelegateBaseHelper;
 import io.harness.delegate.task.k8s.DirectK8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
 import io.harness.k8s.KubernetesHelperService;

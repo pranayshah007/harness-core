@@ -172,7 +172,7 @@ import software.wings.prune.PruneEvent;
 import software.wings.service.impl.AuditServiceHelper;
 import software.wings.service.impl.AwsInfrastructureProvider;
 import software.wings.service.impl.PcfHelperService;
-import software.wings.service.impl.ServiceClassLocator;
+import software.wings.service.impl.realization.ServiceClassLocator;
 import software.wings.service.impl.aws.model.AwsAsgGetRunningCountData;
 import software.wings.service.impl.aws.model.AwsRoute53HostedZoneData;
 import software.wings.service.impl.aws.model.AwsSecurityGroup;
@@ -206,7 +206,7 @@ import software.wings.settings.SettingVariableTypes;
 import software.wings.sm.ExecutionContext;
 import software.wings.sm.StateExecutionContext;
 import software.wings.utils.EcsConvention;
-import software.wings.utils.ServiceVersionConvention;
+import software.wings.utils.nonkryos.ServiceVersionConvention;
 
 import com.amazonaws.services.ec2.model.Tag;
 import com.amazonaws.services.ecs.model.LaunchType;

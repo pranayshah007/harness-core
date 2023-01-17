@@ -26,7 +26,6 @@ import io.harness.serializer.JsonUtils;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.InstanaConfig;
-import software.wings.delegatetasks.DelegateCVActivityLogService;
 import software.wings.service.impl.ThirdPartyApiCallLog;
 import software.wings.service.impl.analysis.MetricElement;
 import software.wings.service.impl.instana.InstanaAnalyzeMetrics;

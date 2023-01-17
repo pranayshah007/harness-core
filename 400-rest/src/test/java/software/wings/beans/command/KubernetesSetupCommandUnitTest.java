@@ -44,6 +44,7 @@ import software.wings.WingsBaseTest;
 import software.wings.beans.GcpConfig;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.command.KubernetesSetupParams.KubernetesSetupParamsBuilder;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 import software.wings.beans.container.KubernetesBlueGreenConfig;
 import software.wings.beans.container.KubernetesPortProtocol;
 import software.wings.beans.container.KubernetesServiceSpecification;

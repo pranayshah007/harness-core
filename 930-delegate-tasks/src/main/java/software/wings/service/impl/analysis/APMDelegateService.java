@@ -9,7 +9,7 @@ package software.wings.service.impl.analysis;
 
 import software.wings.beans.APMValidateCollectorConfig;
 import software.wings.beans.TaskType;
-import software.wings.delegatetasks.DelegateTaskType;
+import software.wings.delegatetasks.tasktype.DelegateTaskType;
 import software.wings.service.impl.ThirdPartyApiCallLog;
 
 public interface APMDelegateService {

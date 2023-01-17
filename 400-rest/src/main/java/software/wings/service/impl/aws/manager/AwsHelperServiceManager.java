@@ -13,7 +13,7 @@ import static io.harness.exception.ExceptionUtils.getMessage;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.threading.Morpheus.sleep;
 
-import static software.wings.service.impl.AwsHelperService.AUTOSCALING_REQUEST_STATUS_CHECK_INTERVAL;
+import static software.wings.service.impl.realization.AwsHelperService.AUTOSCALING_REQUEST_STATUS_CHECK_INTERVAL;
 import static software.wings.service.impl.aws.model.AwsConstants.BASE_DELAY_ACCOUNT_VARIABLE;
 import static software.wings.service.impl.aws.model.AwsConstants.MAX_BACKOFF_ACCOUNT_VARIABLE;
 import static software.wings.service.impl.aws.model.AwsConstants.MAX_ERROR_RETRY_ACCOUNT_VARIABLE;
@@ -42,7 +42,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import software.wings.beans.AmazonClientSDKDefaultBackoffStrategy;
 import software.wings.beans.AwsConfig;
 import software.wings.service.impl.AwsApiHelperService;
-import software.wings.service.impl.AwsHelperService;
+import software.wings.service.impl.realization.AwsHelperService;
 import software.wings.service.impl.aws.client.CloseableAmazonWebServiceClient;
 import software.wings.service.impl.aws.model.AwsResponse;
 import software.wings.service.intfc.security.EncryptionService;

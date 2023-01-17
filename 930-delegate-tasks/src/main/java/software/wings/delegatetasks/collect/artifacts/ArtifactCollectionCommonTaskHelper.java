@@ -16,7 +16,7 @@ import io.harness.delegate.beans.FileBucket;
 import io.harness.delegate.task.ListNotifyResponseData;
 
 import software.wings.beans.artifact.ArtifactFile;
-import software.wings.delegatetasks.DelegateFileManager;
+import software.wings.delegatetasks.services.DelegateFileManager;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;

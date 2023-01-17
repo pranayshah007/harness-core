@@ -55,8 +55,8 @@ import io.harness.spotinst.model.ElastiGroupInstanceHealth;
 import software.wings.WingsBaseTest;
 import software.wings.beans.AwsConfig;
 import software.wings.beans.SpotInstConfig;
-import software.wings.beans.command.ExecutionLogCallback;
-import software.wings.delegatetasks.DelegateLogService;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
+import software.wings.delegatetasks.logservice.DelegateLogService;
 import software.wings.service.intfc.aws.delegate.AwsEc2HelperServiceDelegate;
 import software.wings.service.intfc.aws.delegate.AwsElbHelperServiceDelegate;
 

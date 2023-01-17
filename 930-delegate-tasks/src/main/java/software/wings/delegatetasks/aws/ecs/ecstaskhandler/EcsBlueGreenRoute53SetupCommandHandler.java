@@ -24,7 +24,7 @@ import software.wings.beans.AwsConfig;
 import software.wings.beans.command.ContainerSetupCommandUnitExecutionData;
 import software.wings.beans.command.ContainerSetupCommandUnitExecutionData.ContainerSetupCommandUnitExecutionDataBuilder;
 import software.wings.beans.command.EcsSetupParams;
-import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 import software.wings.beans.dto.SettingAttribute;
 import software.wings.helpers.ext.ecs.request.EcsBGRoute53ServiceSetupRequest;
 import software.wings.helpers.ext.ecs.request.EcsCommandRequest;

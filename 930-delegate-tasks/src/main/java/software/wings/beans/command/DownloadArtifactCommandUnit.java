@@ -20,7 +20,7 @@ import static io.harness.logging.LogLevel.INFO;
 
 import static software.wings.beans.command.DownloadArtifactConstants.AUTHORIZATION;
 import static software.wings.beans.command.DownloadArtifactConstants.PWSH_ARTIFACTORY_USING_CREDENTIALS;
-import static software.wings.beans.dto.Log.Builder.aLog;
+import static software.wings.beans.dto.log.Log.Builder.aLog;
 
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isBlank;
@@ -50,15 +50,15 @@ import software.wings.beans.artifact.ArtifactStreamType;
 import software.wings.beans.config.ArtifactoryConfig;
 import software.wings.beans.config.NexusConfig;
 import software.wings.beans.settings.azureartifacts.AzureArtifactsConfig;
-import software.wings.delegatetasks.DelegateLogService;
+import software.wings.delegatetasks.logservice.DelegateLogService;
 import software.wings.helpers.ext.azure.devops.AzureArtifactsPackageFileInfo;
 import software.wings.helpers.ext.azure.devops.AzureArtifactsService;
 import software.wings.helpers.ext.azure.devops.AzureArtifactsServiceHelper;
 import software.wings.helpers.ext.jenkins.BuildDetails;
 import software.wings.helpers.ext.nexus.NexusTwoServiceImpl;
-import software.wings.service.impl.AwsHelperService;
-import software.wings.service.impl.SftpHelperService;
-import software.wings.service.impl.SmbHelperService;
+import software.wings.service.impl.realization.AwsHelperService;
+import software.wings.service.impl.realization.SftpHelperService;
+import software.wings.service.impl.realization.SmbHelperService;
 import software.wings.service.intfc.security.EncryptionService;
 import software.wings.service.mappers.artifact.NexusConfigToNexusRequestMapper;
 import software.wings.utils.RepositoryType;

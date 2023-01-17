@@ -22,7 +22,7 @@ import io.harness.rule.Owner;
 
 import software.wings.beans.artifact.ArtifactFile;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
-import software.wings.delegatetasks.DelegateFileManager;
+import software.wings.delegatetasks.services.DelegateFileManager;
 import software.wings.delegatetasks.azure.common.context.ArtifactDownloaderContext;
 
 import java.io.File;

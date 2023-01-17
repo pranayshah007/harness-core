@@ -40,7 +40,7 @@ import software.wings.service.intfc.AlertService;
 import software.wings.service.intfc.ArtifactService;
 import software.wings.service.intfc.ArtifactStreamService;
 import software.wings.service.intfc.TriggerService;
-import software.wings.utils.DelegateArtifactCollectionUtils;
+import software.wings.utils.nonkryos.DelegateArtifactCollectionUtils;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;

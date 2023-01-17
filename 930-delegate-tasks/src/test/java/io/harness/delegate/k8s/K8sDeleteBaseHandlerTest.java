@@ -23,7 +23,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.delegate.task.k8s.DeleteResourcesType;
 import io.harness.delegate.task.k8s.K8sDeleteRequest;
 import io.harness.delegate.task.k8s.K8sDeployResponse;
-import io.harness.delegate.task.k8s.K8sTaskHelperBase;
+import io.harness.delegate.task.k8s.helpers.k8sbase.K8sTaskHelperBase;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.WingsException;
 import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;

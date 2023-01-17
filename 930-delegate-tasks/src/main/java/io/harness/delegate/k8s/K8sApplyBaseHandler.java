@@ -21,7 +21,7 @@ import static software.wings.beans.LogWeight.Bold;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.k8s.beans.K8sApplyHandlerConfig;
-import io.harness.delegate.task.k8s.K8sTaskHelperBase;
+import io.harness.delegate.task.k8s.helpers.k8sbase.K8sTaskHelperBase;
 import io.harness.exception.ExceptionUtils;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.model.K8sDelegateTaskParams;

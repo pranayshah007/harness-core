@@ -27,8 +27,8 @@ import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
+import io.harness.delegate.task.k8s.helpers.k8sbase.K8sTaskHelperBase;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.manifest.VersionUtils;

@@ -18,7 +18,7 @@ import software.wings.beans.TaskType;
 import software.wings.beans.approval.ServiceNowApprovalParams;
 import software.wings.beans.servicenow.ServiceNowMetaDTO;
 import software.wings.beans.servicenow.ServiceNowTaskParameters;
-import software.wings.delegatetasks.DelegateTaskType;
+import software.wings.delegatetasks.tasktype.DelegateTaskType;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.List;

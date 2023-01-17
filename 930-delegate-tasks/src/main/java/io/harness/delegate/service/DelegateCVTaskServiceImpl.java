@@ -16,7 +16,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.managerclient.VerificationServiceClient;
 
-import software.wings.delegatetasks.DelegateCVTaskService;
+import software.wings.delegatetasks.services.DelegateCVTaskService;
 import software.wings.service.impl.analysis.DataCollectionTaskResult;
 
 import com.google.common.annotations.VisibleForTesting;

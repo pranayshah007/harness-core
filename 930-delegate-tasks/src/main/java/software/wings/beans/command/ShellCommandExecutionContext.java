@@ -13,7 +13,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.FileBucket;
-import io.harness.delegate.task.shell.ConfigFileMetaData;
+import io.harness.delegate.task.shell.config.ConfigFileMetaData;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.shell.BaseScriptExecutor;
 

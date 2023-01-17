@@ -18,7 +18,7 @@ import static io.harness.state.StateConstants.DEFAULT_STEADY_STATE_TIMEOUT;
 import static io.harness.validation.Validator.notNullCheck;
 
 import static software.wings.beans.TaskType.GIT_FETCH_FILES_TASK;
-import static software.wings.delegatetasks.GitFetchFilesTask.GIT_FETCH_FILES_TASK_ASYNC_TIMEOUT;
+import static software.wings.delegatetasks.tasks.GitFetchFilesTask.GIT_FETCH_FILES_TASK_ASYNC_TIMEOUT;
 import static software.wings.service.impl.aws.model.AwsConstants.ECS_SERVICE_DEPLOY_SWEEPING_OUTPUT_NAME;
 import static software.wings.service.impl.aws.model.AwsConstants.ECS_SERVICE_SETUP_SWEEPING_OUTPUT_NAME;
 import static software.wings.sm.StateType.ECS_DAEMON_SERVICE_SETUP;

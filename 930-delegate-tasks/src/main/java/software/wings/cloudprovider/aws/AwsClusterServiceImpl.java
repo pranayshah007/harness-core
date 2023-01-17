@@ -24,7 +24,7 @@ import io.harness.exception.WingsException;
 import io.harness.logging.LogCallback;
 import io.harness.security.encryption.EncryptedDataDetail;
 
-import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 import software.wings.beans.dto.SettingAttribute;
 import software.wings.cloudprovider.ClusterConfiguration;
 
@@ -44,6 +44,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
+import software.wings.cloudprovider.aws.ifc.AwsClusterService;
+import software.wings.cloudprovider.aws.ifc.EcsContainerService;
 
 /**
  * Created by anubhaw on 12/29/16.

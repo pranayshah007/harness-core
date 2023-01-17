@@ -54,7 +54,7 @@ import io.harness.shell.SshSessionConfig;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.ConfigFile;
-import software.wings.delegatetasks.DelegateFileManager;
+import software.wings.delegatetasks.services.DelegateFileManager;
 import software.wings.rules.SshRule;
 import software.wings.service.intfc.security.SSHVaultService;
 

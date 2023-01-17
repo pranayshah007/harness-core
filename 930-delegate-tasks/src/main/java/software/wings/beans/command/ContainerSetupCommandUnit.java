@@ -17,8 +17,9 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.security.encryption.EncryptedDataDetail;
 
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 import software.wings.beans.dto.SettingAttribute;
-import software.wings.delegatetasks.DelegateLogService;
+import software.wings.delegatetasks.logservice.DelegateLogService;
 
 import com.google.inject.Inject;
 import dev.morphia.annotations.Transient;

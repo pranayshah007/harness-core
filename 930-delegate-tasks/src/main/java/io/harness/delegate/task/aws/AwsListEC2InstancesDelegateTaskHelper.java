@@ -28,7 +28,7 @@ import software.wings.api.DeploymentType;
 import software.wings.beans.AwsInstanceFilter;
 import software.wings.beans.AwsInstanceFilter.AwsInstanceFilterBuilder;
 import software.wings.beans.AwsInstanceFilter.Tag;
-import software.wings.service.impl.AwsUtils;
+import software.wings.service.impl.realization.AwsUtils;
 import software.wings.service.impl.aws.client.CloseableAmazonWebServiceClient;
 import software.wings.service.impl.aws.model.AwsEC2Instance;
 

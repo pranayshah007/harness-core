@@ -30,6 +30,7 @@ import io.harness.rule.Owner;
 import software.wings.WingsBaseTest;
 import software.wings.beans.GitConfig;
 import software.wings.beans.yaml.GitFetchFilesResult;
+import software.wings.delegatetasks.tasks.TriggerTask;
 import software.wings.helpers.ext.trigger.request.TriggerDeploymentNeededRequest;
 import software.wings.helpers.ext.trigger.response.TriggerDeploymentNeededResponse;
 import software.wings.helpers.ext.trigger.response.TriggerResponse;

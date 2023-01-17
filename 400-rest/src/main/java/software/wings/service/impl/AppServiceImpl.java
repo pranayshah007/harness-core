@@ -82,6 +82,7 @@ import software.wings.security.PermissionAttribute.Action;
 import software.wings.security.PermissionAttribute.PermissionType;
 import software.wings.security.UserPermissionInfo;
 import software.wings.security.UserThreadLocal;
+import software.wings.service.impl.realization.ServiceClassLocator;
 import software.wings.service.impl.security.auth.AuthHandler;
 import software.wings.service.intfc.AlertService;
 import software.wings.service.intfc.AppService;

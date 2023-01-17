@@ -34,7 +34,7 @@ import io.harness.rule.Owner;
 import software.wings.WingsBaseTest;
 import software.wings.beans.AwsConfig;
 import software.wings.beans.SettingAttribute;
-import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 
 import com.amazonaws.regions.Regions;
 import com.google.common.collect.ImmutableMap;
@@ -44,6 +44,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import software.wings.cloudprovider.aws.ifc.AwsClusterService;
+import software.wings.cloudprovider.aws.ifc.EcsContainerService;
 
 /**
  * Created by anubhaw on 1/3/17.

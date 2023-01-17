@@ -11,7 +11,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.beans.AwsConfig;
 import software.wings.beans.TaskType;
-import software.wings.delegatetasks.DelegateTaskType;
+import software.wings.delegatetasks.tasktype.DelegateTaskType;
 import software.wings.service.impl.ThirdPartyApiCallLog;
 import software.wings.service.impl.analysis.VerificationNodeDataSetupResponse;
 import software.wings.service.impl.cloudwatch.CloudWatchSetupTestNodeData;

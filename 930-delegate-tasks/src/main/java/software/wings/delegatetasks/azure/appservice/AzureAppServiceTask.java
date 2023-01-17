@@ -25,7 +25,7 @@ import io.harness.delegate.task.azure.appservice.AzureAppServiceTaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 
 import software.wings.beans.artifact.ArtifactStreamAttributes;
-import software.wings.delegatetasks.azure.AzureSecretHelper;
+import software.wings.delegatetasks.azure.helpers.AzureSecretHelper;
 import software.wings.service.impl.azure.manager.AzureTaskExecutionRequest;
 
 import com.google.inject.Inject;

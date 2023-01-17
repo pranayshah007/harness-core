@@ -24,7 +24,7 @@ import software.wings.security.UserThreadLocal;
 import software.wings.security.annotations.AuthRule;
 import software.wings.service.intfc.ArtifactStreamService;
 import software.wings.service.intfc.AuthService;
-import software.wings.utils.DelegateArtifactCollectionUtils;
+import software.wings.utils.nonkryos.DelegateArtifactCollectionUtils;
 
 import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;

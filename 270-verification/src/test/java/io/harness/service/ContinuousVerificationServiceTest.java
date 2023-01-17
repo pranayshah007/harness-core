@@ -25,7 +25,7 @@ import static software.wings.common.VerificationConstants.DUMMY_HOST_NAME;
 import static software.wings.common.VerificationConstants.SERVICE_GUARD_ANALYSIS_WINDOW_MINS;
 import static software.wings.common.VerificationConstants.TIME_DELAY_QUERY_MINS;
 import static software.wings.common.VerificationConstants.VERIFICATION_SERVICE_BASE_URL;
-import static software.wings.delegatetasks.AbstractDelegateDataCollectionTask.PREDECTIVE_HISTORY_MINUTES;
+import static software.wings.delegatetasks.tasks.AbstractDelegateDataCollectionTask.PREDECTIVE_HISTORY_MINUTES;
 import static software.wings.service.impl.analysis.LogMLAnalysisRecord.LogMLAnalysisRecordKeys;
 import static software.wings.service.impl.analysis.LogMLAnalysisStatus.FEEDBACK_ANALYSIS_COMPLETE;
 import static software.wings.service.impl.analysis.MLAnalysisType.FEEDBACK_ANALYSIS;

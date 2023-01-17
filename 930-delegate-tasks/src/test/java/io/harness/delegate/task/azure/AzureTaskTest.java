@@ -63,7 +63,7 @@ import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.rule.Owner;
 
-import software.wings.delegatetasks.azure.AzureAsyncTaskHelper;
+import software.wings.delegatetasks.azure.helpers.taskhelper.AzureAsyncTaskHelper;
 import software.wings.delegatetasks.azure.AzureTask;
 
 import com.google.common.collect.ImmutableMap;

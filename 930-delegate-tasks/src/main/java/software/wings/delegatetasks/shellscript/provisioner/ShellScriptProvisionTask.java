@@ -9,7 +9,7 @@ package software.wings.delegatetasks.shellscript.provisioner;
 
 import static io.harness.logging.LogLevel.INFO;
 
-import static software.wings.beans.dto.Log.Builder.aLog;
+import static software.wings.beans.dto.log.Log.Builder.aLog;
 
 import static java.util.Collections.emptyList;
 
@@ -35,7 +35,7 @@ import io.harness.shell.ShellExecutorConfig;
 import software.wings.api.shellscript.provision.ShellScriptProvisionExecutionData;
 import software.wings.beans.shellscript.provisioner.ShellScriptProvisionParameters;
 import software.wings.core.local.executors.ShellExecutorFactory;
-import software.wings.delegatetasks.DelegateLogService;
+import software.wings.delegatetasks.logservice.DelegateLogService;
 import software.wings.service.intfc.security.EncryptionService;
 
 import com.google.common.annotations.VisibleForTesting;

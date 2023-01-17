@@ -19,9 +19,10 @@ import io.harness.scm.SecretName;
 import software.wings.WingsBaseTest;
 import software.wings.beans.AwsConfig;
 import software.wings.beans.SettingAttribute;
-import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 import software.wings.cloudprovider.CodeDeployDeploymentInfo;
-import software.wings.service.impl.AwsHelperService;
+import software.wings.cloudprovider.aws.ifc.AwsCodeDeployService;
+import software.wings.service.impl.realization.AwsHelperService;
 
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.codedeploy.model.CreateDeploymentRequest;

@@ -9,7 +9,7 @@ package software.wings.service.impl.prometheus;
 
 import io.harness.exception.WingsException;
 
-import software.wings.delegatetasks.DelegateCVActivityLogService.Logger;
+import software.wings.delegatetasks.cv.DelegateCVActivityLogService.Logger;
 import software.wings.delegatetasks.DelegateStateType;
 import software.wings.service.impl.newrelic.NewRelicMetricDataRecord;
 import software.wings.service.intfc.analysis.MetricCollectionResponse;

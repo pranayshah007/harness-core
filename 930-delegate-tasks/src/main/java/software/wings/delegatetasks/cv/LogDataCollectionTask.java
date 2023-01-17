@@ -16,7 +16,7 @@ import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 
-import software.wings.delegatetasks.LogAnalysisStoreService;
+import software.wings.delegatetasks.services.LogAnalysisStoreService;
 import software.wings.service.impl.analysis.LogDataCollectionInfoV2;
 import software.wings.service.impl.analysis.LogElement;
 import software.wings.service.intfc.analysis.ClusterLevel;

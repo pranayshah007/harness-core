@@ -40,7 +40,7 @@ import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.beans.artifact.AzureArtifactsArtifactStreamProtocolType;
 import software.wings.beans.settings.azureartifacts.AzureArtifactsConfig;
 import software.wings.beans.settings.azureartifacts.AzureArtifactsPATConfig;
-import software.wings.delegatetasks.DelegateFileManager;
+import software.wings.delegatetasks.services.DelegateFileManager;
 import software.wings.helpers.ext.azure.devops.AzureArtifactsFeed;
 import software.wings.helpers.ext.azure.devops.AzureArtifactsPackage;
 import software.wings.helpers.ext.azure.devops.AzureArtifactsPackageFileInfo;

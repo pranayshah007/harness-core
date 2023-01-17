@@ -35,11 +35,11 @@ import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.AwsConfig;
-import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 import software.wings.helpers.ext.ecs.request.EcsRunTaskDeployRequest;
 import software.wings.helpers.ext.ecs.response.EcsCommandExecutionResponse;
 import software.wings.helpers.ext.ecs.response.EcsRunTaskDeployResponse;
-import software.wings.service.impl.AwsHelperService;
+import software.wings.service.impl.realization.AwsHelperService;
 
 import com.amazonaws.services.ecs.model.Container;
 import com.amazonaws.services.ecs.model.DesiredStatus;

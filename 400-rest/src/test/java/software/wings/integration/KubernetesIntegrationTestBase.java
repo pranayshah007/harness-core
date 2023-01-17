@@ -17,7 +17,7 @@ import io.harness.k8s.model.KubernetesConfig;
 
 import software.wings.beans.GcpConfig;
 import software.wings.beans.SettingAttribute;
-import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 import software.wings.cloudprovider.gke.GkeClusterServiceImpl;
 import software.wings.rules.Integration;
 

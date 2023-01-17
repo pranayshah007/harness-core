@@ -36,7 +36,7 @@ import io.harness.k8s.model.K8sPod;
 import io.harness.k8s.model.KubernetesResourceId;
 import io.harness.logging.CommandExecutionStatus;
 
-import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 import software.wings.delegatetasks.k8s.K8sTaskHelper;
 import software.wings.helpers.ext.container.ContainerDeploymentDelegateHelper;
 import software.wings.helpers.ext.k8s.request.K8sRollingDeployRollbackTaskParameters;

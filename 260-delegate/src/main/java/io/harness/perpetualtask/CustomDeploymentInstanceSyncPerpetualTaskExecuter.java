@@ -28,7 +28,7 @@ import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.task.customdeployment.FetchInstanceScriptTaskNGRequest;
 import io.harness.delegate.task.customdeployment.FetchInstanceScriptTaskNGResponse;
-import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
+import io.harness.delegate.task.k8s.helpers.containerdeployment.ContainerDeploymentDelegateBaseHelper;
 import io.harness.delegate.task.shell.ShellExecutorFactoryNG;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;

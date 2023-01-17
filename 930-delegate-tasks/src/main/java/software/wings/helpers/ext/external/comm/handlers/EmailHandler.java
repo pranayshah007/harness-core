@@ -21,7 +21,7 @@ import software.wings.helpers.ext.external.comm.EmailRequest;
 import software.wings.helpers.ext.mail.Mailer;
 import software.wings.helpers.ext.mail.SmtpConfig;
 import software.wings.service.intfc.security.EncryptionService;
-import software.wings.utils.EmailUtils;
+import software.wings.utils.nonkryos.EmailUtils;
 
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.inject.Inject;

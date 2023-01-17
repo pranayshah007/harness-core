@@ -24,8 +24,8 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.clienttools.ClientTool;
 import io.harness.delegate.clienttools.InstallUtils;
-import io.harness.delegate.task.git.ScmFetchFilesHelperNG;
-import io.harness.delegate.task.k8s.K8sTaskHelperBase;
+import io.harness.delegate.task.git.scm.ScmFetchFilesHelperNG;
+import io.harness.delegate.task.k8s.helpers.k8sbase.K8sTaskHelperBase;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.kubectl.Utils;
 import io.harness.k8s.manifest.ManifestHelper;
@@ -34,7 +34,7 @@ import io.harness.k8s.model.KubernetesResource;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
-import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 
 import com.google.api.client.util.Charsets;
 import com.google.common.io.Resources;

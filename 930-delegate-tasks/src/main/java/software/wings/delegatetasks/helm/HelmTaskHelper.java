@@ -10,8 +10,8 @@ package software.wings.delegatetasks.helm;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.delegate.task.helm.CustomManifestFetchTaskHelper.unzipManifestFiles;
-import static io.harness.delegate.task.helm.HelmTaskHelperBase.getChartDirectory;
+import static io.harness.delegate.task.helm.helper.CustomManifestFetchTaskHelper.unzipManifestFiles;
+import static io.harness.delegate.task.helm.helper.HelmTaskHelperBase.getChartDirectory;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.filesystem.FileIo.createDirectoryIfDoesNotExist;
 import static io.harness.filesystem.FileIo.deleteDirectoryAndItsContentIfExists;
@@ -33,6 +33,8 @@ import static java.util.Collections.singletonList;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static software.wings.delegatetasks.helm.constants.HelmTaskConstants.REGISTRY_URL_PREFIX;
+import static software.wings.delegatetasks.helm.constants.HelmTaskConstants.RESOURCE_DIR_BASE;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
@@ -45,7 +47,7 @@ import io.harness.delegate.beans.FileBucket;
 import io.harness.delegate.chartmuseum.CgChartmuseumClientFactory;
 import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.helm.HelmCommandFlag;
-import io.harness.delegate.task.helm.HelmTaskHelperBase;
+import io.harness.delegate.task.helm.helper.HelmTaskHelperBase;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.HelmClientException;
 import io.harness.exception.HelmClientRuntimeException;
@@ -57,7 +59,7 @@ import io.harness.k8s.model.HelmVersion;
 
 import software.wings.annotation.EncryptableSetting;
 import software.wings.beans.appmanifest.HelmChart;
-import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 import software.wings.beans.dto.HelmChartSpecification;
 import software.wings.beans.settings.helm.AmazonS3HelmRepoConfig;
 import software.wings.beans.settings.helm.GCSHelmRepoConfig;
@@ -81,7 +83,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -100,7 +101,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.zeroturnaround.exec.ProcessExecutor;
@@ -113,25 +113,10 @@ import org.zeroturnaround.exec.stream.LogOutputStream;
 @OwnedBy(CDP)
 public class HelmTaskHelper {
   private static final long DEFAULT_TIMEOUT_IN_MILLIS = Duration.ofMinutes(DEFAULT_STEADY_STATE_TIMEOUT).toMillis();
-  public static final String RESOURCE_DIR_BASE = "./repository/helm/resources/";
-  public static final String REGISTRY_URL = "${REGISTRY_URL}";
-  public static final String REGISTRY_URL_PREFIX = "oci://%s";
-
   @Inject private EncryptionService encryptionService;
   @Inject private CgChartmuseumClientFactory cgChartmuseumClientFactory;
   @Inject private HelmTaskHelperBase helmTaskHelperBase;
   @Inject private DelegateFileManagerBase delegateFileManagerBase;
-
-  public static void copyManifestFilesToWorkingDir(File src, File dest) throws IOException {
-    if (src.isDirectory()) {
-      FileUtils.copyDirectory(src, dest);
-    } else {
-      Path destFilePath = Paths.get(dest.getPath(), src.getName());
-      FileUtils.copyFile(src, destFilePath.toFile());
-    }
-    deleteDirectoryAndItsContentIfExists(src.getAbsolutePath());
-    waitForDirectoryToBeAccessibleOutOfProcess(dest.getPath(), 10);
-  }
 
   public static void handleIncorrectConfiguration(K8sDelegateManifestConfig sourceRepoConfig) {
     if (sourceRepoConfig == null) {

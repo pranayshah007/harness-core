@@ -57,7 +57,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
-import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 
 import com.azure.core.management.polling.PollResult;
 import com.azure.core.util.polling.LongRunningOperationStatus;

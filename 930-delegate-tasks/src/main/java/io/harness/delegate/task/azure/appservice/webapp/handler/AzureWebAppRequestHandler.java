@@ -23,7 +23,7 @@ import io.harness.delegate.task.azure.common.AzureConnectorMapper;
 import io.harness.delegate.task.azure.common.AzureLogCallbackProvider;
 import io.harness.exception.InvalidArgumentsException;
 
-import software.wings.delegatetasks.azure.AzureSecretHelper;
+import software.wings.delegatetasks.azure.helpers.AzureSecretHelper;
 
 import com.google.inject.Inject;
 import org.apache.commons.lang3.tuple.Pair;

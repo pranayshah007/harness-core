@@ -10,7 +10,7 @@ package io.harness.jobs.workflow.timeseries;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
-import static software.wings.delegatetasks.AbstractDelegateDataCollectionTask.PREDECTIVE_HISTORY_MINUTES;
+import static software.wings.delegatetasks.tasks.AbstractDelegateDataCollectionTask.PREDECTIVE_HISTORY_MINUTES;
 import static software.wings.service.impl.newrelic.NewRelicMetricDataRecord.DEFAULT_GROUP_NAME;
 
 import io.harness.beans.ExecutionStatus;
@@ -25,7 +25,7 @@ import io.harness.service.intfc.LearningEngineService;
 import io.harness.service.intfc.TimeSeriesAnalysisService;
 
 import software.wings.common.VerificationConstants;
-import software.wings.delegatetasks.NewRelicDataCollectionTask;
+import software.wings.delegatetasks.tasks.NewRelicDataCollectionTask;
 import software.wings.metrics.MetricType;
 import software.wings.metrics.RiskLevel;
 import software.wings.metrics.TimeSeriesMetricDefinition;

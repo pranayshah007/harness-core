@@ -124,7 +124,7 @@ import software.wings.beans.SettingAttribute;
 import software.wings.beans.TaskType;
 import software.wings.beans.TerraformSourceType;
 import software.wings.beans.delegation.TerraformProvisionParameters;
-import software.wings.beans.settings.helm.HelmRepoConfigValidationTaskParams;
+import software.wings.beans.settings.helm.repoconfigvalidation.HelmRepoConfigValidationTaskParams;
 import software.wings.beans.yaml.GitCommand.GitCommandType;
 import software.wings.core.managerConfiguration.ConfigurationController;
 import software.wings.delegatetasks.validation.core.DelegateConnectionResult;

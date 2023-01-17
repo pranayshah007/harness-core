@@ -15,7 +15,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import software.wings.beans.AwsConfig;
 import software.wings.beans.TaskType;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
-import software.wings.delegatetasks.DelegateTaskType;
+import software.wings.delegatetasks.tasktype.DelegateTaskType;
 import software.wings.helpers.ext.jenkins.BuildDetails;
 
 import java.util.List;

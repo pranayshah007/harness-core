@@ -21,7 +21,7 @@ import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander
 import io.harness.delegate.task.ActivityAccess;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.mixin.ProcessExecutorCapabilityGenerator;
-import io.harness.delegate.task.winrm.WinRmSessionConfig;
+import io.harness.delegate.task.winrm.session.WinRmSessionConfig;
 import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.security.encryption.EncryptedDataDetail;

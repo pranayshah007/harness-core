@@ -21,7 +21,7 @@ import static org.mockito.Mockito.verify;
 import io.harness.DelegateTestBase;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.delegate.task.k8s.K8sTaskHelperBase;
+import io.harness.delegate.task.k8s.helpers.k8sbase.K8sTaskHelperBase;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.model.K8sPod;
 import io.harness.logging.CommandExecutionStatus;

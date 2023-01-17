@@ -7,7 +7,7 @@
 
 package software.wings.service.intfc.analysis;
 
-import software.wings.delegatetasks.DelegateCVActivityLogService.Logger;
+import software.wings.delegatetasks.cv.DelegateCVActivityLogService.Logger;
 import software.wings.service.impl.newrelic.NewRelicMetricDataRecord;
 
 import com.google.common.collect.TreeBasedTable;

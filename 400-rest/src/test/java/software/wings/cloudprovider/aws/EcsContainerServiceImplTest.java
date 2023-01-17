@@ -61,9 +61,10 @@ import io.harness.serializer.JsonUtils;
 import software.wings.WingsBaseTest;
 import software.wings.beans.AwsConfig;
 import software.wings.beans.SettingAttribute;
-import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 import software.wings.cloudprovider.UpdateServiceCountRequestData;
-import software.wings.service.impl.AwsHelperService;
+import software.wings.cloudprovider.aws.ifc.EcsContainerService;
+import software.wings.service.impl.realization.AwsHelperService;
 
 import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.amazonaws.services.autoscaling.model.CreateAutoScalingGroupRequest;

@@ -38,7 +38,7 @@ import io.harness.delegate.task.azure.response.AzureVMSSTaskExecutionResponse;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
-import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 
 import com.azure.core.http.rest.PagedIterable;
 import com.azure.core.http.rest.Response;

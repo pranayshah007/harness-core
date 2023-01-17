@@ -30,6 +30,7 @@ import software.wings.beans.AwsConfig;
 import software.wings.beans.SyncTaskContext;
 import software.wings.beans.TaskType;
 import software.wings.beans.dto.SettingAttribute;
+import software.wings.delegatetasks.tasktype.DelegateTaskType;
 import software.wings.service.impl.ContainerServiceParams;
 import software.wings.service.impl.aws.model.AwsRequest;
 import software.wings.service.intfc.DelegateService;

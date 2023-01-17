@@ -13,7 +13,7 @@ import static io.harness.expression.Expression.ALLOW_SECRETS;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.LogLevel.ERROR;
 
-import static software.wings.beans.dto.Log.Builder.aLog;
+import static software.wings.beans.dto.log.Log.Builder.aLog;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
@@ -21,16 +21,16 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.FileBucket;
-import io.harness.delegate.task.shell.ConfigFileMetaData;
+import io.harness.delegate.task.shell.config.ConfigFileMetaData;
 import io.harness.expression.Expression;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.reflection.ExpressionReflectionUtils.NestedAnnotationResolver;
 
 import software.wings.beans.configfile.ConfigFileDto;
-import software.wings.beans.dto.Log;
-import software.wings.delegatetasks.DelegateConfigService;
-import software.wings.delegatetasks.DelegateFileManager;
-import software.wings.delegatetasks.DelegateLogService;
+import software.wings.beans.dto.log.Log;
+import software.wings.delegatetasks.services.DelegateConfigService;
+import software.wings.delegatetasks.services.DelegateFileManager;
+import software.wings.delegatetasks.logservice.DelegateLogService;
 import software.wings.stencils.DefaultValue;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;

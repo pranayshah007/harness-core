@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.shell.SshSessionConfig.Builder.aSshSessionConfig;
 import static io.harness.shell.SshSessionFactory.getSSHSession;
 
-import static software.wings.utils.SshDelegateHelperUtils.populateBuilderWithCredentials;
+import static software.wings.utils.nonkryos.SshDelegateHelperUtils.populateBuilderWithCredentials;
 
 import static java.time.Duration.ofSeconds;
 

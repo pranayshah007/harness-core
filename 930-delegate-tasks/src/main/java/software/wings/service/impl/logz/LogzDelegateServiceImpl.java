@@ -17,7 +17,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.JsonUtils;
 
 import software.wings.beans.config.LogzConfig;
-import software.wings.delegatetasks.DelegateLogService;
+import software.wings.delegatetasks.logservice.DelegateLogService;
 import software.wings.delegatetasks.cv.RequestExecutor;
 import software.wings.helpers.ext.logz.LogzRestClient;
 import software.wings.service.impl.ThirdPartyApiCallLog;

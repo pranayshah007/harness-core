@@ -50,7 +50,7 @@ import software.wings.beans.TaskType;
 import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.beans.appmanifest.HelmChart;
 import software.wings.beans.appmanifest.StoreType;
-import software.wings.beans.settings.helm.HelmRepoConfigValidationTaskParams;
+import software.wings.beans.settings.helm.repoconfigvalidation.HelmRepoConfigValidationTaskParams;
 import software.wings.beans.settings.helm.HttpHelmRepoConfig;
 import software.wings.helpers.ext.helm.request.HelmChartCollectionParams;
 import software.wings.helpers.ext.helm.request.HelmChartConfigParams;

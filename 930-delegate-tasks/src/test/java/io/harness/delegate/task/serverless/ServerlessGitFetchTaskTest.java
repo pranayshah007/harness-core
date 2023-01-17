@@ -37,7 +37,7 @@ import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.git.GitFetchFilesTaskHelper;
 import io.harness.delegate.task.git.GitFetchTaskHelper;
-import io.harness.delegate.task.git.ScmFetchFilesHelperNG;
+import io.harness.delegate.task.git.scm.ScmFetchFilesHelperNG;
 import io.harness.delegate.task.serverless.request.ServerlessGitFetchRequest;
 import io.harness.delegate.task.serverless.response.ServerlessGitFetchResponse;
 import io.harness.git.GitClientV2;

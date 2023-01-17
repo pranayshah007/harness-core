@@ -108,6 +108,7 @@ import software.wings.prune.PruneEntityListener;
 import software.wings.prune.PruneEvent;
 import software.wings.service.impl.pipeline.PipelineServiceHelper;
 import software.wings.service.impl.pipeline.PipelineServiceValidator;
+import software.wings.service.impl.realization.ServiceClassLocator;
 import software.wings.service.impl.workflow.WorkflowServiceHelper;
 import software.wings.service.impl.workflow.WorkflowServiceTemplateHelper;
 import software.wings.service.intfc.AppService;

@@ -9,7 +9,7 @@ package software.wings.delegatetasks.k8s.taskhandler;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
-import static io.harness.delegate.task.k8s.K8sTaskHelperBase.getTimeoutMillisFromMinutes;
+import static io.harness.delegate.task.k8s.helpers.k8sbase.K8sTaskHelperBase.getTimeoutMillisFromMinutes;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.govern.Switch.unhandled;
 import static io.harness.k8s.K8sCommandUnitConstants.Init;
@@ -32,7 +32,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
-import io.harness.delegate.task.k8s.K8sTaskHelperBase;
+import io.harness.delegate.task.k8s.helpers.k8sbase.K8sTaskHelperBase;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.k8s.KubernetesContainerService;
@@ -43,7 +43,7 @@ import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResourceId;
 import io.harness.logging.CommandExecutionStatus;
 
-import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 import software.wings.delegatetasks.k8s.K8sTaskHelper;
 import software.wings.helpers.ext.container.ContainerDeploymentDelegateHelper;
 import software.wings.helpers.ext.k8s.request.K8sScaleTaskParameters;

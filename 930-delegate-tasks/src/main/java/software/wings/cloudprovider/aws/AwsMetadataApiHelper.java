@@ -22,7 +22,7 @@ import io.harness.logging.LogLevel;
 import io.harness.network.Http;
 import io.harness.serializer.JsonUtils;
 
-import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 
 import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ecs.model.Task;

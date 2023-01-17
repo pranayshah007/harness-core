@@ -21,7 +21,7 @@ import static software.wings.common.VerificationConstants.DEMO_APPLICAITON_ID;
 import static software.wings.common.VerificationConstants.DEMO_FAILURE_TS_STATE_EXECUTION_ID;
 import static software.wings.common.VerificationConstants.DEMO_SUCCESS_TS_STATE_EXECUTION_ID;
 import static software.wings.common.VerificationConstants.DEMO_WORKFLOW_EXECUTION_ID;
-import static software.wings.delegatetasks.AppdynamicsDataCollectionTask.PREDECTIVE_HISTORY_MINUTES;
+import static software.wings.delegatetasks.tasks.AppdynamicsDataCollectionTask.PREDECTIVE_HISTORY_MINUTES;
 import static software.wings.metrics.ThresholdType.ALERT_WHEN_HIGHER;
 import static software.wings.metrics.ThresholdType.ALERT_WHEN_LOWER;
 import static software.wings.service.impl.newrelic.NewRelicMetricDataRecord.DEFAULT_GROUP_NAME;

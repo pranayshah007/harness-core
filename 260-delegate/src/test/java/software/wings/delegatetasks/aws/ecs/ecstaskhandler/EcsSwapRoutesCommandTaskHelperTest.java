@@ -31,10 +31,10 @@ import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.AwsConfig;
-import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 import software.wings.beans.container.AwsAutoScalarConfig;
-import software.wings.cloudprovider.aws.EcsContainerService;
-import software.wings.service.impl.AwsHelperService;
+import software.wings.cloudprovider.aws.ifc.EcsContainerService;
+import software.wings.service.impl.realization.AwsHelperService;
 import software.wings.service.intfc.aws.delegate.AwsAppAutoScalingHelperServiceDelegate;
 
 import com.amazonaws.services.applicationautoscaling.model.DescribeScalableTargetsRequest;

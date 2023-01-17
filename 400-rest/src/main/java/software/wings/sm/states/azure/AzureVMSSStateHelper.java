@@ -19,7 +19,7 @@ import static io.harness.exception.WingsException.USER;
 import static io.harness.validation.Validator.notNullCheck;
 
 import static software.wings.beans.ServiceVariableType.ENCRYPTED_TEXT;
-import static software.wings.beans.dto.Log.Builder.aLog;
+import static software.wings.beans.dto.log.Log.Builder.aLog;
 import static software.wings.service.impl.artifact.ArtifactServiceImpl.metadataOnlyBehindFlag;
 import static software.wings.sm.InstanceStatusSummary.InstanceStatusSummaryBuilder.anInstanceStatusSummary;
 
@@ -85,7 +85,7 @@ import software.wings.beans.command.Command;
 import software.wings.beans.command.CommandUnit;
 import software.wings.beans.command.CommandUnitDetails;
 import software.wings.beans.container.UserDataSpecification;
-import software.wings.beans.dto.Log;
+import software.wings.beans.dto.log.Log;
 import software.wings.persistence.artifact.Artifact;
 import software.wings.service.intfc.ActivityService;
 import software.wings.service.intfc.ArtifactService;
@@ -105,7 +105,7 @@ import software.wings.sm.states.ManagerExecutionLogCallback;
 import software.wings.sm.states.azure.appservices.AzureAppServiceStateData;
 import software.wings.sm.states.azure.artifact.ArtifactConnectorMapper;
 import software.wings.utils.ArtifactType;
-import software.wings.utils.ServiceVersionConvention;
+import software.wings.utils.nonkryos.ServiceVersionConvention;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.Ints;

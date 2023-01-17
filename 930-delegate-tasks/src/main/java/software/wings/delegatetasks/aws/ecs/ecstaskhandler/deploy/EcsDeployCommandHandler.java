@@ -26,16 +26,16 @@ import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.api.ContainerServiceData;
 import software.wings.beans.command.EcsResizeParams;
-import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 import software.wings.beans.command.ResizeCommandUnitExecutionData;
 import software.wings.beans.command.ResizeCommandUnitExecutionData.ResizeCommandUnitExecutionDataBuilder;
-import software.wings.cloudprovider.aws.AwsClusterService;
+import software.wings.cloudprovider.aws.ifc.AwsClusterService;
 import software.wings.delegatetasks.aws.ecs.ecstaskhandler.EcsCommandTaskHandler;
 import software.wings.helpers.ext.ecs.request.EcsCommandRequest;
 import software.wings.helpers.ext.ecs.request.EcsServiceDeployRequest;
 import software.wings.helpers.ext.ecs.response.EcsCommandExecutionResponse;
 import software.wings.helpers.ext.ecs.response.EcsServiceDeployResponse;
-import software.wings.service.impl.AwsHelperService;
+import software.wings.service.impl.realization.AwsHelperService;
 
 import com.amazonaws.services.ecs.model.DescribeServicesRequest;
 import com.amazonaws.services.ecs.model.Service;

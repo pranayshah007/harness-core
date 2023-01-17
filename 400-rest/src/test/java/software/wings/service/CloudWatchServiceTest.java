@@ -38,7 +38,7 @@ import software.wings.WingsBaseTest;
 import software.wings.beans.AwsConfig;
 import software.wings.delegatetasks.DelegateProxyFactory;
 import software.wings.metrics.MetricType;
-import software.wings.service.impl.AwsHelperService;
+import software.wings.service.impl.realization.AwsHelperService;
 import software.wings.service.impl.AwsInfrastructureProvider;
 import software.wings.service.impl.CloudWatchServiceImpl;
 import software.wings.service.impl.ThirdPartyApiCallLog;

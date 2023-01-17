@@ -8,8 +8,8 @@
 package io.harness.delegate.task.helm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.delegate.task.helm.CustomManifestFetchTaskHelper.unzipManifestFiles;
-import static io.harness.delegate.task.helm.CustomManifestFetchTaskHelper.zipManifestDirectory;
+import static io.harness.delegate.task.helm.helper.CustomManifestFetchTaskHelper.unzipManifestFiles;
+import static io.harness.delegate.task.helm.helper.CustomManifestFetchTaskHelper.zipManifestDirectory;
 import static io.harness.filesystem.FileIo.deleteDirectoryAndItsContentIfExists;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.TATHAGAT;
@@ -37,6 +37,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.DelegateFileManagerBase;
 import io.harness.delegate.beans.FileBucket;
+import io.harness.delegate.task.helm.helper.CustomManifestFetchTaskHelper;
 import io.harness.delegate.task.manifests.request.CustomManifestFetchConfig;
 import io.harness.delegate.task.manifests.request.CustomManifestValuesFetchParams;
 import io.harness.delegate.task.manifests.response.CustomManifestValuesFetchResponse;

@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import io.harness.annotations.dev.OwnedBy;
 
 import com.google.inject.Singleton;
+import software.wings.cloudprovider.aws.ifc.AwsLambdaService;
 
 @Singleton
 @OwnedBy(CDP)

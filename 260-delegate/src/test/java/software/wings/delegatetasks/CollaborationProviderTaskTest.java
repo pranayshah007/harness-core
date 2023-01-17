@@ -27,6 +27,7 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
+import software.wings.delegatetasks.tasks.CollaborationProviderTask;
 import software.wings.helpers.ext.external.comm.CollaborationProviderRequest;
 import software.wings.helpers.ext.external.comm.CollaborationProviderRequest.CommunicationType;
 import software.wings.helpers.ext.external.comm.CollaborationProviderResponse;

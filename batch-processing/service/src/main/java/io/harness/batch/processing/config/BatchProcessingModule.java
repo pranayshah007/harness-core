@@ -90,7 +90,7 @@ import io.harness.time.TimeModule;
 
 import software.wings.dl.WingsMongoPersistence;
 import software.wings.dl.WingsPersistence;
-import software.wings.service.impl.SlackMessageSenderImpl;
+import software.wings.service.impl.realization.SlackMessageSenderImpl;
 import software.wings.service.impl.ce.CeAccountExpirationCheckerImpl;
 import software.wings.service.impl.instance.CloudToHarnessMappingServiceImpl;
 import software.wings.service.impl.instance.DeploymentServiceImpl;

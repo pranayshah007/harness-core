@@ -13,7 +13,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 
-import static software.wings.delegatetasks.helm.ArtifactoryHelmTaskHelper.shouldFetchHelmChartsFromArtifactory;
+import static software.wings.helpers.ext.helm.request.ArtifactoryHelmTaskHelper.shouldFetchHelmChartsFromArtifactory;
 
 import static java.lang.String.format;
 
@@ -30,7 +30,7 @@ import io.harness.expression.RegexFunctor;
 import io.harness.perpetualtask.manifest.ManifestRepositoryService;
 
 import software.wings.beans.appmanifest.HelmChart;
-import software.wings.delegatetasks.DelegateLogService;
+import software.wings.delegatetasks.logservice.DelegateLogService;
 import software.wings.helpers.ext.helm.request.HelmChartCollectionParams;
 import software.wings.helpers.ext.helm.request.HelmChartCollectionParams.HelmChartCollectionType;
 import software.wings.helpers.ext.helm.response.HelmCollectChartResponse;

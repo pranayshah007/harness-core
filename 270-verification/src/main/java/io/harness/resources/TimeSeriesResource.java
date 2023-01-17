@@ -25,7 +25,7 @@ import software.wings.metrics.TimeSeriesMetricDefinition;
 import software.wings.security.PermissionAttribute.ResourceType;
 import software.wings.security.annotations.Scope;
 import software.wings.service.impl.GoogleDataStoreServiceImpl;
-import software.wings.service.impl.VerificationLogContext;
+import software.wings.service.impl.realization.VerificationLogContext;
 import software.wings.service.impl.analysis.MLAnalysisType;
 import software.wings.service.impl.analysis.TSRequest;
 import software.wings.service.impl.analysis.TimeSeriesMLAnalysisRecord;

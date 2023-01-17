@@ -31,7 +31,7 @@ import software.wings.beans.AwsConfig;
 import software.wings.beans.SettingAttribute;
 import software.wings.cloudprovider.aws.AwsClusterServiceImpl;
 import software.wings.cloudprovider.aws.EcsContainerServiceImpl;
-import software.wings.service.impl.AwsHelperService;
+import software.wings.service.impl.realization.AwsHelperService;
 import software.wings.service.intfc.security.EncryptionService;
 
 import com.amazonaws.services.ecs.AmazonECSClient;

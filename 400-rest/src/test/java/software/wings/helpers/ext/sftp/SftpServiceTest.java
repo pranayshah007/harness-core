@@ -26,7 +26,7 @@ import software.wings.WingsBaseTest;
 import software.wings.beans.SftpConfig;
 import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.helpers.ext.jenkins.BuildDetails;
-import software.wings.service.impl.SftpHelperService;
+import software.wings.service.impl.realization.SftpHelperService;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;

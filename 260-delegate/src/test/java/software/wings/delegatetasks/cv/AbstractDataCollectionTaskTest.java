@@ -32,10 +32,9 @@ import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.annotation.EncryptableSetting;
-import software.wings.delegatetasks.DelegateCVActivityLogService;
-import software.wings.delegatetasks.DelegateCVActivityLogService.Logger;
-import software.wings.delegatetasks.DelegateCVTaskService;
-import software.wings.delegatetasks.DelegateLogService;
+import software.wings.delegatetasks.cv.DelegateCVActivityLogService.Logger;
+import software.wings.delegatetasks.services.DelegateCVTaskService;
+import software.wings.delegatetasks.logservice.DelegateLogService;
 import software.wings.delegatetasks.DelegateStateType;
 import software.wings.service.impl.analysis.DataCollectionInfoV2;
 import software.wings.service.impl.analysis.DataCollectionTaskResult;

@@ -15,7 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.delegate.task.winrm.WinRmSessionConfig;
+import io.harness.delegate.task.winrm.session.WinRmSessionConfig;
 import io.harness.rule.Owner;
 
 import org.junit.Test;

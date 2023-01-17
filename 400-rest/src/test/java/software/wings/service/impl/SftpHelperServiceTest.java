@@ -42,6 +42,7 @@ import net.schmizz.sshj.sftp.SFTPClient;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.Mock;
+import software.wings.service.impl.realization.SftpHelperService;
 
 @OwnedBy(HarnessTeam.CDC)
 public class SftpHelperServiceTest extends WingsBaseTest {
@@ -50,7 +51,8 @@ public class SftpHelperServiceTest extends WingsBaseTest {
   @Inject SftpHelperService sftpHelperService;
   @Mock SSHClient sshClient;
   @Mock SFTPClient sftpClient;
-  @Mock SftpHelperService mockSftpHelperService;
+  @Mock
+  SftpHelperService mockSftpHelperService;
 
   private static final String A_DIR = ".";
   private static final String A_PATH = "test.zip";

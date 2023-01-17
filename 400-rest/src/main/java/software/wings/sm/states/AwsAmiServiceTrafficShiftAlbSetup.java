@@ -14,7 +14,7 @@ import static io.harness.delegate.beans.TaskData.DEFAULT_ASYNC_CALL_TIMEOUT;
 import static io.harness.exception.ExceptionUtils.getMessage;
 import static io.harness.logging.Misc.normalizeExpression;
 
-import static software.wings.beans.dto.Log.Builder.aLog;
+import static software.wings.beans.dto.log.Log.Builder.aLog;
 import static software.wings.service.impl.aws.model.AwsConstants.AMI_ALB_SETUP_SWEEPING_OUTPUT_NAME;
 import static software.wings.service.impl.aws.model.AwsConstants.AMI_SETUP_COMMAND_NAME;
 import static software.wings.service.impl.aws.model.AwsConstants.DEFAULT_AMI_ASG_DESIRED_INSTANCES;
@@ -50,7 +50,7 @@ import software.wings.beans.Service;
 import software.wings.beans.TaskType;
 import software.wings.beans.command.Command;
 import software.wings.beans.command.CommandUnit;
-import software.wings.beans.dto.Log;
+import software.wings.beans.dto.log.Log;
 import software.wings.service.impl.aws.model.AwsAmiServiceTrafficShiftAlbSetupRequest;
 import software.wings.service.impl.aws.model.AwsAmiServiceTrafficShiftAlbSetupResponse;
 import software.wings.service.impl.workflow.WorkflowServiceHelper;
@@ -65,7 +65,7 @@ import software.wings.sm.ExecutionResponse.ExecutionResponseBuilder;
 import software.wings.sm.State;
 import software.wings.sm.StateType;
 import software.wings.sm.states.spotinst.SpotInstStateHelper;
-import software.wings.utils.AsgConvention;
+import software.wings.utils.nonkryos.AsgConvention;
 
 import com.google.inject.Inject;
 import java.util.HashMap;

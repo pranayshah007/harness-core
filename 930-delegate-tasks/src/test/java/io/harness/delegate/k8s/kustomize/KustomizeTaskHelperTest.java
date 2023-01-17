@@ -21,6 +21,7 @@ import io.harness.CategoryTest;
 import io.harness.beans.FileData;
 import io.harness.category.element.UnitTests;
 import io.harness.cli.CliResponse;
+import io.harness.delegate.task.k8s.helpers.k8sbase.KustomizeTaskHelper;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
@@ -46,7 +47,8 @@ public class KustomizeTaskHelperTest extends CategoryTest {
   @Mock KustomizeClient kustomizeClient;
   @Mock LogCallback logCallback;
 
-  @InjectMocks KustomizeTaskHelper kustomizeTaskHelper;
+  @InjectMocks
+  KustomizeTaskHelper kustomizeTaskHelper;
   KustomizeTaskHelper spyKustomizeTaskHelper = spy(new KustomizeTaskHelper());
 
   @Before

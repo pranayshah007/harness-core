@@ -31,8 +31,9 @@ import io.harness.rule.Owner;
 import io.harness.utils.Functions;
 
 import software.wings.WingsBaseTest;
-import software.wings.delegatetasks.delegatecapability.CapabilityCheckFactory;
-import software.wings.service.impl.PerpetualTaskCapabilityCheckResponse;
+import software.wings.delegatetasks.delegatecapability.capabilitycheck.CapabilityCheckFactory;
+import software.wings.delegatetasks.tasks.PerpetualTaskCapabilityCheckTask;
+import software.wings.service.impl.realization.PerpetualTaskCapabilityCheckResponse;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.junit.Test;

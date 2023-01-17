@@ -29,7 +29,7 @@ import static software.wings.service.impl.aws.model.AwsConstants.DOWN_SCALE_ASG_
 import static software.wings.service.impl.aws.model.AwsConstants.MAX_TRAFFIC_SHIFT_WEIGHT;
 import static software.wings.service.impl.aws.model.AwsConstants.MIN_TRAFFIC_SHIFT_WEIGHT;
 import static software.wings.service.impl.aws.model.AwsConstants.UP_SCALE_ASG_COMMAND_UNIT;
-import static software.wings.utils.AsgConvention.getRevisionFromTag;
+import static software.wings.utils.nonkryos.AsgConvention.getRevisionFromTag;
 
 import static com.google.common.base.Joiner.on;
 import static java.lang.String.format;
@@ -51,8 +51,8 @@ import io.harness.logging.LogCallback;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.beans.AwsConfig;
-import software.wings.beans.command.ExecutionLogCallback;
-import software.wings.delegatetasks.DelegateLogService;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
+import software.wings.delegatetasks.logservice.DelegateLogService;
 import software.wings.service.impl.aws.model.AwsAmiPreDeploymentData;
 import software.wings.service.impl.aws.model.AwsAmiResizeData;
 import software.wings.service.impl.aws.model.AwsAmiServiceDeployRequest;
@@ -72,7 +72,7 @@ import software.wings.service.intfc.aws.delegate.AwsAmiHelperServiceDelegate;
 import software.wings.service.intfc.aws.delegate.AwsAsgHelperServiceDelegate;
 import software.wings.service.intfc.aws.delegate.AwsEc2HelperServiceDelegate;
 import software.wings.service.intfc.aws.delegate.AwsElbHelperServiceDelegate;
-import software.wings.utils.AsgConvention;
+import software.wings.utils.nonkryos.AsgConvention;
 
 import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.amazonaws.services.autoscaling.model.BlockDeviceMapping;

@@ -24,7 +24,7 @@ import io.harness.delegate.task.azure.AzureTaskExecutionResponse;
 import io.harness.delegate.task.azure.resource.AzureResourceTaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 
-import software.wings.delegatetasks.azure.AzureSecretHelper;
+import software.wings.delegatetasks.azure.helpers.AzureSecretHelper;
 import software.wings.delegatetasks.azure.resource.taskhandler.AbstractAzureResourceTaskHandler;
 import software.wings.service.impl.azure.manager.AzureTaskExecutionRequest;
 

@@ -20,7 +20,7 @@ import software.wings.common.VerificationConstants;
 import software.wings.dl.WingsPersistence;
 import software.wings.security.PermissionAttribute;
 import software.wings.security.annotations.Scope;
-import software.wings.service.impl.VerificationLogContext;
+import software.wings.service.impl.realization.VerificationLogContext;
 import software.wings.service.impl.analysis.AnalysisComparisonStrategy;
 import software.wings.service.impl.analysis.CVFeedbackRecord;
 import software.wings.service.impl.analysis.ExperimentalLogMLAnalysisRecord;

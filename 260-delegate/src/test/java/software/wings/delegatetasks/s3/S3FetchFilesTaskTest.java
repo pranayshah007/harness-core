@@ -26,13 +26,13 @@ import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.AwsConfig;
-import software.wings.beans.dto.Log;
+import software.wings.beans.dto.log.Log;
 import software.wings.beans.s3.FetchS3FilesCommandParams;
 import software.wings.beans.s3.FetchS3FilesExecutionResponse;
 import software.wings.beans.s3.S3File;
 import software.wings.beans.s3.S3FileRequest;
-import software.wings.delegatetasks.DelegateLogService;
-import software.wings.service.impl.AwsHelperService;
+import software.wings.delegatetasks.logservice.DelegateLogService;
+import software.wings.service.impl.realization.AwsHelperService;
 import software.wings.service.intfc.aws.delegate.AwsS3HelperServiceDelegate;
 import software.wings.service.intfc.security.EncryptionService;
 

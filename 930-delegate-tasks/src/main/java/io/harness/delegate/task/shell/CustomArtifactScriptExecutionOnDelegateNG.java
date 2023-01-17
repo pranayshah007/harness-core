@@ -17,7 +17,7 @@ import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateRequest;
-import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
+import io.harness.delegate.task.k8s.helpers.containerdeployment.ContainerDeploymentDelegateBaseHelper;
 import io.harness.eraro.Level;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArtifactServerException;

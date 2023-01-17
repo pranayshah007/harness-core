@@ -37,7 +37,7 @@ import static software.wings.beans.artifact.ArtifactStreamType.SMB;
 import static software.wings.expression.SecretFunctor.Mode.CASCADING;
 import static software.wings.helpers.ext.jenkins.BuildDetails.Builder.aBuildDetails;
 import static software.wings.persistence.artifact.Artifact.Builder.anArtifact;
-import static software.wings.service.impl.ArtifactoryBuildServiceImpl.MANUAL_PULL_ARTIFACTORY_LIMIT;
+import static software.wings.service.impl.realization.ArtifactoryBuildServiceImpl.MANUAL_PULL_ARTIFACTORY_LIMIT;
 import static software.wings.service.intfc.BuildService.ARTIFACT_RETENTION_SIZE;
 
 import static java.lang.String.format;
@@ -109,7 +109,7 @@ import software.wings.helpers.ext.ecr.EcrClassicService;
 import software.wings.helpers.ext.jenkins.BuildDetails;
 import software.wings.persistence.artifact.Artifact;
 import software.wings.persistence.artifact.Artifact.Builder;
-import software.wings.service.impl.AwsHelperService;
+import software.wings.service.impl.realization.AwsHelperService;
 import software.wings.service.intfc.ArtifactService;
 import software.wings.service.intfc.ArtifactStreamService;
 import software.wings.service.intfc.ArtifactStreamServiceBindingService;
@@ -120,7 +120,7 @@ import software.wings.service.intfc.security.SecretManager;
 import software.wings.settings.SettingValue;
 import software.wings.settings.SettingVariableTypes;
 import software.wings.utils.ArtifactType;
-import software.wings.utils.DelegateArtifactCollectionUtils;
+import software.wings.utils.nonkryos.DelegateArtifactCollectionUtils;
 import software.wings.utils.RepositoryType;
 
 import com.google.inject.Inject;

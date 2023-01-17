@@ -42,8 +42,8 @@ import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.command.CommandExecutionResult;
 import io.harness.delegate.service.ExecutionConfigOverrideFromFileOnDelegate;
-import io.harness.delegate.task.winrm.DefaultWinRmExecutor;
-import io.harness.delegate.task.winrm.WinRmSessionConfig;
+import io.harness.delegate.task.winrm.executors.DefaultWinRmExecutor;
+import io.harness.delegate.task.winrm.session.WinRmSessionConfig;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -63,6 +63,9 @@ import software.wings.beans.delegation.ShellScriptParameters;
 import software.wings.core.local.executors.ShellExecutorFactory;
 import software.wings.core.ssh.executors.SshExecutorFactory;
 import software.wings.core.winrm.executors.WinRmExecutorFactory;
+import software.wings.delegatetasks.logservice.DelegateLogService;
+import software.wings.delegatetasks.tasks.ShellScriptTask;
+import software.wings.delegatetasks.tasks.ShellScriptTaskHandler;
 import software.wings.helpers.ext.container.ContainerDeploymentDelegateHelper;
 import software.wings.service.intfc.security.EncryptionService;
 
@@ -86,10 +89,12 @@ public class ShellScriptTaskTest extends WingsBaseTest {
   @Mock ScriptSshExecutor scriptSshExecutor;
   @Mock ScriptProcessExecutor scriptProcessExecutor;
   @Mock DefaultWinRmExecutor defaultWinRmExecutor;
-  @Mock DelegateLogService logService;
+  @Mock
+  DelegateLogService logService;
   @Mock ShellExecutorConfig shellExecutorConfig;
   @Mock ExecutionConfigOverrideFromFileOnDelegate delegateLocalConfigService;
-  @InjectMocks ShellScriptTaskHandler shellScriptTaskHandler;
+  @InjectMocks
+  ShellScriptTaskHandler shellScriptTaskHandler;
 
   EncryptedDataDetail encryptedDataDetail1 = EncryptedDataDetail.builder()
                                                  .encryptedData(EncryptedRecordData.builder().build())

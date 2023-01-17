@@ -44,7 +44,7 @@ import software.wings.api.BambooExecutionData;
 import software.wings.api.JenkinsExecutionData;
 import software.wings.beans.Activity;
 import software.wings.beans.BambooConfig;
-import software.wings.delegatetasks.BambooTask.BambooExecutionResponse;
+import software.wings.delegatetasks.tasks.BambooTask.BambooExecutionResponse;
 import software.wings.service.impl.SettingServiceHelper;
 import software.wings.service.intfc.ActivityService;
 import software.wings.service.intfc.DelegateService;

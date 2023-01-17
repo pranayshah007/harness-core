@@ -29,6 +29,8 @@ import io.harness.time.Timestamp;
 import software.wings.WingsBaseTest;
 import software.wings.beans.ElkConfig;
 import software.wings.beans.TaskType;
+import software.wings.delegatetasks.services.LogAnalysisStoreService;
+import software.wings.delegatetasks.tasks.ElkLogzDataCollectionTask;
 import software.wings.service.impl.analysis.DataCollectionTaskResult;
 import software.wings.service.impl.analysis.ElkConnector;
 import software.wings.service.impl.analysis.LogElement;

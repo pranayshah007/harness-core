@@ -14,7 +14,7 @@ import io.harness.shell.FileBasedProcessScriptExecutorHelper;
 import io.harness.shell.ScriptExecutionContext;
 import io.harness.shell.ShellExecutorConfig;
 
-import software.wings.delegatetasks.DelegateFileManager;
+import software.wings.delegatetasks.services.DelegateFileManager;
 
 import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;

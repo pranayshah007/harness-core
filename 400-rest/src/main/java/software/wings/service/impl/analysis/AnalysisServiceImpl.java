@@ -23,7 +23,7 @@ import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.common.VerificationConstants.DEMO_FAILURE_LOG_STATE_EXECUTION_ID;
 import static software.wings.common.VerificationConstants.DEMO_SUCCESS_LOG_STATE_EXECUTION_ID;
 import static software.wings.common.VerificationConstants.IGNORED_ERRORS_METRIC_NAME;
-import static software.wings.delegatetasks.ElkLogzDataCollectionTask.parseElkResponse;
+import static software.wings.delegatetasks.tasks.ElkLogzDataCollectionTask.parseElkResponse;
 import static software.wings.service.impl.ThirdPartyApiCallLog.createApiCallLog;
 
 import io.harness.beans.ExecutionStatus;

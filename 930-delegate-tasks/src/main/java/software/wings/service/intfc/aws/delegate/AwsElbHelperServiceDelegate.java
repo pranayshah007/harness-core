@@ -19,7 +19,7 @@ import io.harness.delegate.task.aws.LoadBalancerDetailsForBGDeployment;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.beans.AwsConfig;
-import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.elasticloadbalancingv2.AmazonElasticLoadBalancing;

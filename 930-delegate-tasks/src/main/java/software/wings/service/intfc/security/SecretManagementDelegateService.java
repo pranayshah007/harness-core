@@ -23,7 +23,7 @@ import software.wings.beans.HostConnectionAttributes;
 import software.wings.beans.SSHVaultConfig;
 import software.wings.beans.TaskType;
 import software.wings.beans.VaultConfig;
-import software.wings.delegatetasks.DelegateTaskType;
+import software.wings.delegatetasks.tasktype.DelegateTaskType;
 import software.wings.helpers.ext.vault.VaultTokenLookupResult;
 
 import java.util.List;

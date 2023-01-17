@@ -25,7 +25,7 @@ import io.harness.exception.NestedExceptionUtils;
 import io.harness.filesystem.LazyAutoCloseableWorkingDirectory;
 import io.harness.security.encryption.SecretDecryptionService;
 
-import software.wings.delegatetasks.azure.AzureAsyncTaskHelper;
+import software.wings.delegatetasks.azure.helpers.taskhelper.AzureAsyncTaskHelper;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;

@@ -26,7 +26,7 @@ import io.harness.rule.Owner;
 import software.wings.WingsBaseTest;
 import software.wings.beans.GcpConfig;
 import software.wings.beans.artifact.GcsArtifactStream;
-import software.wings.delegatetasks.DelegateFileManager;
+import software.wings.delegatetasks.services.DelegateFileManager;
 import software.wings.helpers.ext.gcs.GcsService;
 import software.wings.helpers.ext.jenkins.BuildDetails;
 import software.wings.helpers.ext.jenkins.BuildDetails.Builder;

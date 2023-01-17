@@ -30,10 +30,11 @@ import io.harness.logging.LogLevel;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.beans.AwsConfig;
-import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 import software.wings.beans.dto.SettingAttribute;
 import software.wings.cloudprovider.CodeDeployDeploymentInfo;
-import software.wings.service.impl.AwsHelperService;
+import software.wings.cloudprovider.aws.ifc.AwsCodeDeployService;
+import software.wings.service.impl.realization.AwsHelperService;
 
 import com.amazonaws.services.codedeploy.model.CreateDeploymentRequest;
 import com.amazonaws.services.codedeploy.model.CreateDeploymentResult;

@@ -15,7 +15,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.beans.AwsConfig;
-import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 
 import com.amazonaws.services.ecs.model.ServiceEvent;
 import java.util.List;

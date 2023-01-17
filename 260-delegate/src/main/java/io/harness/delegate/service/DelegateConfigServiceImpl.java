@@ -16,7 +16,7 @@ import io.harness.rest.RestResponse;
 import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.configfile.ConfigFileDto;
-import software.wings.delegatetasks.DelegateConfigService;
+import software.wings.delegatetasks.services.DelegateConfigService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;

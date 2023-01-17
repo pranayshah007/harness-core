@@ -10,7 +10,7 @@ package software.wings.service.impl.cloudwatch;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.govern.Switch.unhandled;
 
-import static software.wings.delegatetasks.AbstractDelegateDataCollectionTask.PREDECTIVE_HISTORY_MINUTES;
+import static software.wings.delegatetasks.tasks.AbstractDelegateDataCollectionTask.PREDECTIVE_HISTORY_MINUTES;
 import static software.wings.delegatetasks.cv.CVConstants.CONTROL_HOST_NAME;
 import static software.wings.delegatetasks.cv.CVConstants.DURATION_TO_ASK_MINUTES;
 import static software.wings.delegatetasks.cv.CVConstants.TEST_HOST_NAME;
@@ -26,10 +26,10 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.JsonUtils;
 
 import software.wings.beans.AwsConfig;
-import software.wings.delegatetasks.DelegateLogService;
+import software.wings.delegatetasks.logservice.DelegateLogService;
 import software.wings.delegatetasks.DelegateStateType;
 import software.wings.delegatetasks.cv.CVConstants;
-import software.wings.service.impl.AwsHelperService;
+import software.wings.service.impl.realization.AwsHelperService;
 import software.wings.service.impl.ThirdPartyApiCallLog;
 import software.wings.service.impl.ThirdPartyApiCallLog.FieldType;
 import software.wings.service.impl.ThirdPartyApiCallLog.ThirdPartyApiCallField;

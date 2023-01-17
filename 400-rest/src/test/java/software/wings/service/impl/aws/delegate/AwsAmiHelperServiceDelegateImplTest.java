@@ -63,8 +63,8 @@ import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.AwsConfig;
-import software.wings.beans.command.ExecutionLogCallback;
-import software.wings.delegatetasks.DelegateLogService;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
+import software.wings.delegatetasks.logservice.DelegateLogService;
 import software.wings.service.impl.aws.model.AwsAmiPreDeploymentData;
 import software.wings.service.impl.aws.model.AwsAmiResizeData;
 import software.wings.service.impl.aws.model.AwsAmiServiceDeployRequest;

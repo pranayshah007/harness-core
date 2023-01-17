@@ -20,7 +20,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.beans.SmbConfig;
 import software.wings.helpers.ext.jenkins.BuildDetails;
-import software.wings.service.impl.SmbHelperService;
+import software.wings.service.impl.realization.SmbHelperService;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;

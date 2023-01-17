@@ -19,7 +19,7 @@ import io.harness.rule.Owner;
 import io.harness.shell.ScriptSshExecutor;
 import io.harness.shell.SshSessionConfig;
 
-import software.wings.delegatetasks.DelegateFileManager;
+import software.wings.delegatetasks.services.DelegateFileManager;
 
 import org.junit.Before;
 import org.junit.Test;

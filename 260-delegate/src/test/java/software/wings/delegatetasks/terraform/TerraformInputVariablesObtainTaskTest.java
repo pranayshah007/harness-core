@@ -38,13 +38,13 @@ import software.wings.beans.NameValuePair;
 import software.wings.beans.TerraformInputVariablesTaskResponse;
 import software.wings.beans.TerraformSourceType;
 import software.wings.beans.delegation.TerraformProvisionParameters;
-import software.wings.delegatetasks.TerraformInputVariablesObtainTask;
+import software.wings.delegatetasks.tasks.TerraformInputVariablesObtainTask;
 import software.wings.service.impl.aws.delegate.AwsS3HelperServiceDelegateImpl;
 import software.wings.service.intfc.GitService;
 import software.wings.service.intfc.TerraformConfigInspectService;
 import software.wings.service.intfc.security.EncryptionService;
-import software.wings.utils.GitUtilsDelegate;
-import software.wings.utils.S3Utils;
+import software.wings.utils.nonkryos.GitUtilsDelegate;
+import software.wings.utils.nonkryos.S3Utils;
 import software.wings.utils.WingsTestConstants;
 
 import java.io.File;

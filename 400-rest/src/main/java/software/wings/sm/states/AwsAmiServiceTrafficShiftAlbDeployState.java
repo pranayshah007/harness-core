@@ -20,7 +20,7 @@ import static io.harness.validation.Validator.notNullCheck;
 
 import static software.wings.beans.InstanceUnitType.PERCENTAGE;
 import static software.wings.beans.TaskType.AWS_AMI_ASYNC_TASK;
-import static software.wings.beans.dto.Log.Builder.aLog;
+import static software.wings.beans.dto.log.Log.Builder.aLog;
 import static software.wings.service.impl.aws.model.AwsConstants.AMI_ALB_SETUP_SWEEPING_OUTPUT_NAME;
 import static software.wings.sm.InstanceStatusSummary.InstanceStatusSummaryBuilder.anInstanceStatusSummary;
 import static software.wings.sm.states.AwsAmiServiceDeployState.ASG_COMMAND_NAME;
@@ -63,7 +63,7 @@ import software.wings.beans.Service;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.command.Command;
 import software.wings.beans.command.CommandUnit;
-import software.wings.beans.dto.Log.Builder;
+import software.wings.beans.dto.log.Log.Builder;
 import software.wings.persistence.artifact.Artifact;
 import software.wings.service.impl.aws.model.AwsAmiServiceDeployResponse;
 import software.wings.service.impl.aws.model.AwsAmiServiceTrafficShiftAlbDeployRequest;

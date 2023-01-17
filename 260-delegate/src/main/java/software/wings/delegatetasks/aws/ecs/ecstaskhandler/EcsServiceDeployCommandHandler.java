@@ -21,7 +21,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.api.DeploymentType;
 import software.wings.beans.command.CommandExecutionContext;
-import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 import software.wings.beans.command.ResizeCommandUnit;
 import software.wings.beans.command.ResizeCommandUnitExecutionData;
 import software.wings.beans.dto.SettingAttribute;

@@ -48,7 +48,7 @@ import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 
 import software.wings.beans.AwsConfig;
-import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 import software.wings.service.impl.aws.model.AwsAsgGetRunningCountData;
 import software.wings.service.intfc.aws.delegate.AwsEc2HelperServiceDelegate;
 import software.wings.service.intfc.security.EncryptionService;

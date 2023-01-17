@@ -9,7 +9,7 @@ package software.wings.delegatetasks.k8s.taskhandler;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.delegate.task.k8s.K8sTaskHelperBase.getTimeoutMillisFromMinutes;
+import static io.harness.delegate.task.k8s.helpers.k8sbase.K8sTaskHelperBase.getTimeoutMillisFromMinutes;
 import static io.harness.k8s.K8sCommandUnitConstants.Apply;
 import static io.harness.k8s.K8sCommandUnitConstants.FetchFiles;
 import static io.harness.k8s.K8sCommandUnitConstants.Init;
@@ -34,7 +34,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.k8s.K8sApplyBaseHandler;
 import io.harness.delegate.k8s.beans.K8sApplyHandlerConfig;
-import io.harness.delegate.task.k8s.K8sTaskHelperBase;
+import io.harness.delegate.task.k8s.helpers.k8sbase.K8sTaskHelperBase;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.k8s.kubectl.Kubectl;
@@ -44,7 +44,7 @@ import io.harness.logging.CommandExecutionStatus;
 
 import software.wings.beans.LogColor;
 import software.wings.beans.LogWeight;
-import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 import software.wings.delegatetasks.k8s.K8sTaskHelper;
 import software.wings.helpers.ext.container.ContainerDeploymentDelegateHelper;
 import software.wings.helpers.ext.k8s.request.K8sApplyTaskParameters;

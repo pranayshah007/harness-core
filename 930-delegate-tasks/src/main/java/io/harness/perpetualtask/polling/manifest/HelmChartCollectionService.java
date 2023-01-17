@@ -18,7 +18,7 @@ import io.harness.delegate.beans.storeconfig.OciHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.S3HelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.delegate.exception.ManifestCollectionException;
-import io.harness.delegate.task.helm.HelmTaskHelperBase;
+import io.harness.delegate.task.helm.helper.HelmTaskHelperBase;
 import io.harness.delegate.task.k8s.HelmChartManifestDelegateConfig;
 import io.harness.delegate.task.k8s.ManifestDelegateConfig;
 

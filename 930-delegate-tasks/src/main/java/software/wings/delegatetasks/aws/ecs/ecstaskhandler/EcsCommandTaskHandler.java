@@ -14,9 +14,9 @@ import io.harness.exception.WingsException;
 import io.harness.logging.LogLevel;
 import io.harness.security.encryption.EncryptedDataDetail;
 
-import software.wings.beans.command.ExecutionLogCallback;
-import software.wings.delegatetasks.DelegateFileManager;
-import software.wings.delegatetasks.DelegateLogService;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
+import software.wings.delegatetasks.services.DelegateFileManager;
+import software.wings.delegatetasks.logservice.DelegateLogService;
 import software.wings.helpers.ext.ecs.request.EcsCommandRequest;
 import software.wings.helpers.ext.ecs.response.EcsCommandExecutionResponse;
 import software.wings.service.intfc.security.EncryptionService;

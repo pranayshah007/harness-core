@@ -27,7 +27,7 @@ import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.shell.winrm.WinRmConfigAuthEnhancer;
-import io.harness.delegate.task.winrm.WinRmExecutorFactoryNG;
+import io.harness.delegate.task.winrm.executors.WinRmExecutorFactoryNG;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.rule.Owner;
 import io.harness.shell.ExecuteCommandResponse;

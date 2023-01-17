@@ -9,7 +9,7 @@ package software.wings.helpers.ext.k8s;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
-import io.harness.delegate.task.k8s.K8sTaskHelperBase;
+import io.harness.delegate.task.k8s.helpers.k8sbase.K8sTaskHelperBase;
 import io.harness.git.model.GitFile;
 
 import software.wings.beans.appmanifest.ManifestFile;

@@ -13,7 +13,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.FileBucket;
-import io.harness.delegate.task.shell.ConfigFileMetaData;
+import io.harness.delegate.task.shell.config.ConfigFileMetaData;
 import io.harness.logging.CommandExecutionStatus;
 
 import software.wings.beans.artifact.ArtifactStreamAttributes;

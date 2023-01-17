@@ -34,10 +34,10 @@ import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
 import software.wings.api.ContainerServiceData;
-import software.wings.beans.command.ExecutionLogCallback;
-import software.wings.cloudprovider.aws.AwsClusterService;
-import software.wings.delegatetasks.DelegateFileManager;
-import software.wings.delegatetasks.DelegateLogService;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
+import software.wings.cloudprovider.aws.ifc.AwsClusterService;
+import software.wings.delegatetasks.services.DelegateFileManager;
+import software.wings.delegatetasks.logservice.DelegateLogService;
 import software.wings.helpers.ext.ecs.request.EcsCommandRequest;
 import software.wings.helpers.ext.ecs.request.EcsDeployRollbackDataFetchRequest;
 import software.wings.helpers.ext.ecs.response.EcsCommandExecutionResponse;

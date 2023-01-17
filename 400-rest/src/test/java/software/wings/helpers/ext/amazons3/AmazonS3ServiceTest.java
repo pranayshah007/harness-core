@@ -25,10 +25,10 @@ import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.AwsConfig;
-import software.wings.delegatetasks.DelegateFileManager;
+import software.wings.delegatetasks.services.DelegateFileManager;
 import software.wings.helpers.ext.jenkins.BuildDetails;
 import software.wings.persistence.artifact.ArtifactFile;
-import software.wings.service.impl.AwsHelperService;
+import software.wings.service.impl.realization.AwsHelperService;
 import software.wings.service.intfc.aws.delegate.AwsS3HelperServiceDelegate;
 
 import com.amazonaws.services.s3.model.AmazonS3Exception;

@@ -19,7 +19,7 @@ import static software.wings.common.TemplateExpressionProcessor.checkFieldTempla
 import static software.wings.common.VerificationConstants.DELAY_MINUTES;
 import static software.wings.common.VerificationConstants.GA_PER_MINUTE_CV_STATES;
 import static software.wings.common.VerificationConstants.URL_STRING;
-import static software.wings.delegatetasks.AbstractDelegateDataCollectionTask.PREDECTIVE_HISTORY_MINUTES;
+import static software.wings.delegatetasks.tasks.AbstractDelegateDataCollectionTask.PREDECTIVE_HISTORY_MINUTES;
 import static software.wings.service.impl.ThirdPartyApiCallLog.PAYLOAD;
 import static software.wings.service.impl.analysis.AnalysisComparisonStrategy.COMPARE_WITH_PREVIOUS;
 import static software.wings.service.impl.analysis.AnalysisComparisonStrategy.PREDICTIVE;
@@ -55,7 +55,7 @@ import software.wings.common.TemplateExpressionProcessor;
 import software.wings.delegatetasks.cv.DataCollectionException;
 import software.wings.dl.WingsPersistence;
 import software.wings.persistence.artifact.Artifact;
-import software.wings.service.impl.AwsHelperService;
+import software.wings.service.impl.realization.AwsHelperService;
 import software.wings.service.impl.ThirdPartyApiCallLog;
 import software.wings.service.impl.ThirdPartyApiCallLog.FieldType;
 import software.wings.service.impl.ThirdPartyApiCallLog.ThirdPartyApiCallField;

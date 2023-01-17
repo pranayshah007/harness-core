@@ -48,6 +48,8 @@ import software.wings.delegatetasks.DelegateProxyFactory;
 import software.wings.infra.AwsInstanceInfrastructure;
 import software.wings.infra.InfrastructureDefinition;
 import software.wings.service.impl.aws.manager.AwsHelperServiceManager;
+import software.wings.service.impl.realization.AwsHelperService;
+import software.wings.service.impl.realization.AwsUtils;
 import software.wings.service.impl.servicetemplates.ServiceTemplateHelper;
 import software.wings.service.intfc.HostService;
 import software.wings.service.intfc.InfrastructureProvider;

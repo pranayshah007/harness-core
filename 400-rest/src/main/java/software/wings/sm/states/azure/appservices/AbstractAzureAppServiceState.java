@@ -16,7 +16,7 @@ import static io.harness.exception.ExceptionUtils.getMessage;
 import static io.harness.validation.Validator.notNullCheck;
 
 import static software.wings.beans.TaskType.GIT_FETCH_FILES_TASK;
-import static software.wings.delegatetasks.GitFetchFilesTask.GIT_FETCH_FILES_TASK_ASYNC_TIMEOUT;
+import static software.wings.delegatetasks.tasks.GitFetchFilesTask.GIT_FETCH_FILES_TASK_ASYNC_TIMEOUT;
 import static software.wings.sm.states.azure.appservices.AzureAppServiceSlotSetupContextElement.SWEEPING_OUTPUT_APP_SERVICE;
 
 import static java.lang.String.format;

@@ -23,7 +23,7 @@ import io.harness.pcf.model.CfRequestConfig;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
-import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 
 import java.util.ArrayList;
 import org.junit.Test;

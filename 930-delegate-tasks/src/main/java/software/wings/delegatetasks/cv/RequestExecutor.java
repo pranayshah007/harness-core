@@ -18,7 +18,7 @@ import static software.wings.delegatetasks.cv.CVConstants.URL_STRING;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 
-import software.wings.delegatetasks.DelegateLogService;
+import software.wings.delegatetasks.logservice.DelegateLogService;
 import software.wings.service.impl.ThirdPartyApiCallLog;
 import software.wings.service.impl.ThirdPartyApiCallLog.FieldType;
 import software.wings.service.impl.ThirdPartyApiCallLog.ThirdPartyApiCallField;

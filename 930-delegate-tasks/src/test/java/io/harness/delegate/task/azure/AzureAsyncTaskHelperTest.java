@@ -90,7 +90,7 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.SecretDecryptionService;
 
-import software.wings.delegatetasks.azure.AzureAsyncTaskHelper;
+import software.wings.delegatetasks.azure.helpers.taskhelper.AzureAsyncTaskHelper;
 import software.wings.helpers.ext.azure.AzureIdentityAccessTokenResponse;
 
 import com.azure.core.http.rest.PagedFlux;

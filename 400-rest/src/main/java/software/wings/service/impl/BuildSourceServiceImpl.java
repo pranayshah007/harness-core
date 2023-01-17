@@ -67,6 +67,7 @@ import software.wings.helpers.ext.jenkins.JobDetails;
 import software.wings.persistence.artifact.Artifact;
 import software.wings.service.ArtifactStreamHelper;
 import software.wings.service.impl.artifact.ArtifactCollectionUtils;
+import software.wings.service.impl.realization.ServiceClassLocator;
 import software.wings.service.intfc.ArtifactCollectionService;
 import software.wings.service.intfc.ArtifactStreamService;
 import software.wings.service.intfc.ArtifactStreamServiceBindingService;

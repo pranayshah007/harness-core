@@ -105,7 +105,7 @@ import software.wings.exception.TemplateException;
 import software.wings.prune.PruneEntityListener;
 import software.wings.prune.PruneEvent;
 import software.wings.service.impl.AuditServiceHelper;
-import software.wings.service.impl.ServiceClassLocator;
+import software.wings.service.impl.realization.ServiceClassLocator;
 import software.wings.service.impl.yaml.handler.BaseYamlHandler;
 import software.wings.service.impl.yaml.handler.YamlHandlerFactory;
 import software.wings.service.intfc.UserGroupService;

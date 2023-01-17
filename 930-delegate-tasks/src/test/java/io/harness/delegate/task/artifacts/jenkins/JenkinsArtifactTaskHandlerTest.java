@@ -41,7 +41,7 @@ import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 
 import software.wings.beans.JenkinsConfig;
-import software.wings.delegatetasks.DelegateLogService;
+import software.wings.delegatetasks.logservice.DelegateLogService;
 import software.wings.helpers.ext.jenkins.BuildDetails;
 import software.wings.helpers.ext.jenkins.Jenkins;
 import software.wings.helpers.ext.jenkins.JenkinsFactory;

@@ -57,7 +57,7 @@ import io.harness.delegate.k8s.K8sRollingBaseHandler;
 import io.harness.delegate.k8s.beans.K8sHandlerConfig;
 import io.harness.delegate.k8s.beans.K8sRollingHandlerConfig;
 import io.harness.delegate.task.helm.HelmChartInfo;
-import io.harness.delegate.task.k8s.K8sTaskHelperBase;
+import io.harness.delegate.task.k8s.helpers.k8sbase.K8sTaskHelperBase;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.KubernetesYamlException;
@@ -82,7 +82,7 @@ import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.appmanifest.StoreType;
-import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 import software.wings.delegatetasks.k8s.K8sTaskHelper;
 import software.wings.delegatetasks.k8s.K8sTestHelper;
 import software.wings.helpers.ext.container.ContainerDeploymentDelegateHelper;

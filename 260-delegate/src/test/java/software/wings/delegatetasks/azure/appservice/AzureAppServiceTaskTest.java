@@ -32,7 +32,7 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.rule.Owner;
 
-import software.wings.delegatetasks.azure.AzureSecretHelper;
+import software.wings.delegatetasks.azure.helpers.AzureSecretHelper;
 import software.wings.delegatetasks.azure.appservice.webapp.taskhandler.AzureWebAppSlotSetupTaskHandler;
 import software.wings.service.impl.azure.manager.AzureTaskExecutionRequest;
 import software.wings.service.impl.azure.manager.AzureVMSSCommandRequest;

@@ -13,7 +13,7 @@ import software.wings.beans.TaskType;
 import software.wings.beans.dto.LdapSettings;
 import software.wings.beans.sso.LdapGroupResponse;
 import software.wings.beans.sso.LdapTestResponse;
-import software.wings.delegatetasks.DelegateTaskType;
+import software.wings.delegatetasks.tasktype.DelegateTaskType;
 import software.wings.helpers.ext.ldap.LdapResponse;
 
 import java.util.Collection;

@@ -1,4 +1,4 @@
-# Copyright 2022 Harness Inc. All rights reserved.
+# Copyright 2023 Harness Inc. All rights reserved.
 # Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
 # that can be found in the licenses directory at the root of this repository, also available at
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
@@ -11,11 +11,18 @@ java_library(
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     deps = [
-        #"//930-delegate-tasks:module",
-        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/k8s:module",
-        "//930-delegate-tasks/src/main/java/io/harness/delegate/task:module",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/beans/logstreaming:module",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/k8s/beans:module",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/k8s/client:module",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/k8s/helpers/containerdeployment:module",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/k8s/helpers/k8sbase:module",
+        "//930-delegate-tasks/src/main/java/io/harness/helpers/k8s/releasehistory:module",
         "//950-delegate-tasks-beans:module",
-        "//960-api-services:module",
+        "//960-api-services/src/main/java/io/harness/exception/sanitizer:module",
+        "//960-api-services/src/main/java/io/harness/k8s/kubectl:module",
+        "//960-api-services/src/main/java/io/harness/k8s/model:module",
+        "//960-api-services/src/main/java/io/harness/k8s/releasehistory:module",
+        "//960-api-services/src/main/java/io/harness/k8s:module",
         "//970-api-services-beans:module",
         "//980-commons/src/main/java/io/harness/beans:module",
         "//980-commons/src/main/java/io/harness/data/structure:module",
@@ -30,7 +37,7 @@ java_library(
         "@maven//:com_google_inject_guice",
         "@maven//:com_intellij_annotations",
         "@maven//:commons_collections_commons_collections",
-        "@maven//:io_kubernetes_client_java_api",
+        "@maven//:io_kubernetes_client_java_api_fluent",
         "@maven//:javax_annotation_javax_annotation_api",
         "@maven//:org_apache_commons_commons_lang3",
         "@maven//:org_zeroturnaround_zt_exec",

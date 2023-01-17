@@ -34,7 +34,7 @@ import io.harness.delegate.task.azure.response.AzureVMSSTaskExecutionResponse;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 
-import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 
 import com.azure.resourcemanager.compute.models.VirtualMachineScaleSet;
 import com.azure.resourcemanager.compute.models.VirtualMachineScaleSetVM;

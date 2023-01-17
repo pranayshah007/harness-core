@@ -31,8 +31,8 @@ import software.wings.beans.configfile.ConfigFileDto;
 import software.wings.beans.infrastructure.Host;
 import software.wings.core.ssh.executors.FileBasedWinRmExecutor;
 import software.wings.core.winrm.executors.WinRmExecutor;
-import software.wings.delegatetasks.DelegateConfigService;
-import software.wings.delegatetasks.DelegateFileManager;
+import software.wings.delegatetasks.services.DelegateConfigService;
+import software.wings.delegatetasks.services.DelegateFileManager;
 import software.wings.utils.WingsTestConstants;
 
 import java.io.IOException;

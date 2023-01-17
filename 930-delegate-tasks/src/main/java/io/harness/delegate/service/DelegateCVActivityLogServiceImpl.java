@@ -10,8 +10,8 @@ package io.harness.delegate.service;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 
-import software.wings.delegatetasks.DelegateCVActivityLogService;
-import software.wings.delegatetasks.DelegateLogService;
+import software.wings.delegatetasks.cv.DelegateCVActivityLogService;
+import software.wings.delegatetasks.logservice.DelegateLogService;
 import software.wings.verification.CVActivityLog;
 import software.wings.verification.CVActivityLog.LogLevel;
 

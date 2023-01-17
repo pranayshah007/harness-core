@@ -43,7 +43,7 @@ import io.harness.encryption.SecretRefData;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.SecretDecryptionService;
 
-import software.wings.delegatetasks.azure.AzureAsyncTaskHelper;
+import software.wings.delegatetasks.azure.helpers.taskhelper.AzureAsyncTaskHelper;
 
 import java.util.HashMap;
 import java.util.LinkedList;

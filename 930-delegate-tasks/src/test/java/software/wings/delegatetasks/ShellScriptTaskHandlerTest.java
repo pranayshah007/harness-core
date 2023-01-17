@@ -18,7 +18,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.command.CommandExecutionResult;
-import io.harness.delegate.task.winrm.WinRmSessionConfig;
+import io.harness.delegate.task.winrm.session.WinRmSessionConfig;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
@@ -29,6 +29,7 @@ import software.wings.beans.ConnectionType;
 import software.wings.beans.delegation.ShellScriptParameters;
 import software.wings.core.winrm.executors.WinRmExecutor;
 import software.wings.core.winrm.executors.WinRmExecutorFactory;
+import software.wings.delegatetasks.tasks.ShellScriptTaskHandler;
 import software.wings.service.intfc.security.EncryptionService;
 
 import java.io.IOException;

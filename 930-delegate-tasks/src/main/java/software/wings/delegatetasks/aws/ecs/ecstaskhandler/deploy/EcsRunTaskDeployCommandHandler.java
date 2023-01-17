@@ -29,14 +29,14 @@ import io.harness.logging.Misc;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.beans.AwsConfig;
-import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 import software.wings.beans.dto.SettingAttribute;
 import software.wings.delegatetasks.aws.ecs.ecstaskhandler.EcsCommandTaskHandler;
 import software.wings.helpers.ext.ecs.request.EcsCommandRequest;
 import software.wings.helpers.ext.ecs.request.EcsRunTaskDeployRequest;
 import software.wings.helpers.ext.ecs.response.EcsCommandExecutionResponse;
 import software.wings.helpers.ext.ecs.response.EcsRunTaskDeployResponse;
-import software.wings.service.impl.AwsHelperService;
+import software.wings.service.impl.realization.AwsHelperService;
 
 import com.amazonaws.services.ecs.model.Container;
 import com.amazonaws.services.ecs.model.DesiredStatus;

@@ -40,7 +40,7 @@ import software.wings.beans.BambooConfig;
 import software.wings.beans.Environment;
 import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.TaskType;
-import software.wings.delegatetasks.BambooTask.BambooExecutionResponse;
+import software.wings.delegatetasks.tasks.BambooTask.BambooExecutionResponse;
 import software.wings.service.impl.SettingServiceHelper;
 import software.wings.service.intfc.ActivityService;
 import software.wings.service.intfc.DelegateService;

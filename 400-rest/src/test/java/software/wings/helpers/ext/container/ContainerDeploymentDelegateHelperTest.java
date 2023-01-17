@@ -27,7 +27,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import io.harness.category.element.UnitTests;
-import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
+import io.harness.delegate.task.k8s.helpers.containerdeployment.ContainerDeploymentDelegateBaseHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.model.KubernetesConfig;
@@ -41,7 +41,7 @@ import software.wings.WingsBaseTest;
 import software.wings.beans.KubernetesClusterConfig;
 import software.wings.beans.RancherConfig;
 import software.wings.beans.SettingAttribute;
-import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 import software.wings.cloudprovider.gke.GkeClusterService;
 import software.wings.delegatetasks.rancher.RancherTaskHelper;
 import software.wings.helpers.ext.k8s.request.K8sClusterConfig;

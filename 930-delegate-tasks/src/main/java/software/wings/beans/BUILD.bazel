@@ -1,0 +1,73 @@
+# Copyright 2023 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
+load("@rules_java//java:defs.bzl", "java_library")
+load("//:tools/bazel/macros.bzl", "run_analysis_per_module")
+
+java_library(
+    name = "module",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//930-delegate-tasks/src/main/java/io/harness/beans:module",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/common:module",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/winrm:module",
+        "//930-delegate-tasks/src/main/java/io/harness/helpers:module",
+        "//930-delegate-tasks/src/main/java/io/harness/mappers:module",
+        "//930-delegate-tasks/src/main/java/software/wings/api:module",
+        "//930-delegate-tasks/src/main/java/software/wings/beans/apm:module",
+        "//930-delegate-tasks/src/main/java/software/wings/beans/appmanifest:module",
+        "//930-delegate-tasks/src/main/java/software/wings/delegatetasks/delegatecapability:module",
+        "//930-delegate-tasks/src/main/java/software/wings/delegatetasks/validation/capabilities:module",
+        "//930-delegate-tasks/src/main/java/software/wings/delegatetasks:module",
+        "//930-delegate-tasks/src/main/java/software/wings/service/impl/analysis:module",
+        "//930-delegate-tasks/src/main/java/software/wings/service/impl/newrelic:module",
+        "//930-delegate-tasks/src/main/java/software/wings/service/impl:module",
+        "//930-delegate-tasks/src/main/java/software/wings/service/intfc/security:module",
+        "//940-secret-manager-client:module",
+        "//950-delegate-tasks-beans:module",
+        "//954-connector-beans:module",
+        "//955-delegate-beans:module",
+        "//957-cg-beans:module",
+        "//960-api-services/src/main/java/io/harness/k8s/model:module",
+        "//960-api-services/src/main/java/io/harness/k8s:module",
+        "//960-persistence/src/main/java/io/harness/annotation:module",
+        "//960-persistence/src/main/java/io/harness/mongo/index/annotation:module",
+        "//960-persistence/src/main/java/io/harness/ng:module",
+        "//960-persistence/src/main/java/io/harness/persistence/api:module",
+        "//960-persistence:module",
+        "//970-api-services-beans:module",
+        "//970-rbac-core:module",
+        "//980-commons/src/main/java/io/harness/annotations:module",
+        "//980-commons/src/main/java/io/harness/beans/user:module",
+        "//980-commons/src/main/java/io/harness/data/structure:module",
+        "//980-commons/src/main/java/io/harness/data/validator:module",
+        "//980-commons/src/main/java/io/harness/encryption:module",
+        "//980-commons/src/main/java/io/harness/eraro:module",
+        "//980-commons/src/main/java/io/harness/exception:module",
+        "//980-commons/src/main/java/io/harness/expression/common:module",
+        "//980-commons/src/main/java/io/harness/expression:module",
+        "//980-commons/src/main/java/io/harness/reflection:module",
+        "//980-commons/src/main/java/io/harness/validation:module",
+        "//980-commons/src/main/java/software/wings/jersey:module",
+        "//980-commons/src/main/java/software/wings/stencils:module",
+        "//999-annotations/src/main/java/io/harness/annotations/dev:module",
+        "//:lombok",
+        "@maven//:com_amazonaws_aws_java_sdk_core",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:com_github_reinert_jjschema",
+        "@maven//:com_google_guava_guava",
+        "@maven//:com_google_inject_guice",
+        "@maven//:commons_codec_commons_codec",
+        "@maven//:dev_morphia_morphia_core",
+        "@maven//:javax_validation_validation_api",
+        "@maven//:javax_ws_rs_javax_ws_rs_api",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_hibernate_validator_hibernate_validator",
+        "@maven//:org_jooq_joor",
+    ],
+)
+
+run_analysis_per_module()

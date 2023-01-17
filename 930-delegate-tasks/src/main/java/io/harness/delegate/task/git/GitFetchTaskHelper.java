@@ -18,6 +18,7 @@ import io.harness.connector.service.git.NGGitService;
 import io.harness.connector.task.git.GitDecryptionHelper;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
+import io.harness.delegate.task.git.scm.ScmFetchFilesHelperNG;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.git.GitClientV2;
 import io.harness.git.model.FetchFilesByPathRequest;

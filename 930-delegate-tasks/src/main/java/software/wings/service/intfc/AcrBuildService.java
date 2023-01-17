@@ -19,7 +19,7 @@ import software.wings.beans.AzureImageGallery;
 import software.wings.beans.AzureResourceGroup;
 import software.wings.beans.TaskType;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
-import software.wings.delegatetasks.DelegateTaskType;
+import software.wings.delegatetasks.tasktype.DelegateTaskType;
 import software.wings.helpers.ext.jenkins.BuildDetails;
 
 import java.util.List;

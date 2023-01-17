@@ -27,8 +27,9 @@ import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.api.ContainerServiceData;
 import software.wings.beans.command.ResizeCommandUnitExecutionData.ResizeCommandUnitExecutionDataBuilder;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 import software.wings.beans.dto.SettingAttribute;
-import software.wings.delegatetasks.DelegateLogService;
+import software.wings.delegatetasks.logservice.DelegateLogService;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;

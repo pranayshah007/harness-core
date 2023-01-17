@@ -14,7 +14,7 @@ import io.harness.exception.WingsException;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.logging.CommandExecutionStatus;
 
-import software.wings.delegatetasks.DelegateLogService;
+import software.wings.delegatetasks.logservice.DelegateLogService;
 import software.wings.helpers.ext.k8s.request.K8sTaskParameters;
 import software.wings.helpers.ext.k8s.response.K8sTaskExecutionResponse;
 

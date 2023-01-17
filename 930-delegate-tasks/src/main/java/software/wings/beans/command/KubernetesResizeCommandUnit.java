@@ -34,6 +34,7 @@ import software.wings.api.DeploymentType;
 import software.wings.beans.AzureConfig;
 import software.wings.beans.GcpConfig;
 import software.wings.beans.KubernetesClusterConfig;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 import software.wings.cloudprovider.gke.GkeClusterService;
 import software.wings.helpers.ext.azure.AzureDelegateHelperService;
 import software.wings.service.intfc.security.EncryptionService;

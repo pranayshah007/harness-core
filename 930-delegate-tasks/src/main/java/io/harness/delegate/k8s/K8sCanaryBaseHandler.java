@@ -24,7 +24,7 @@ import static org.apache.commons.lang3.BooleanUtils.isNotTrue;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.k8s.beans.K8sCanaryHandlerConfig;
-import io.harness.delegate.task.k8s.K8sTaskHelperBase;
+import io.harness.delegate.task.k8s.helpers.k8sbase.K8sTaskHelperBase;
 import io.harness.exception.KubernetesTaskException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;

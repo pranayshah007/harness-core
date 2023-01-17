@@ -144,6 +144,7 @@ import software.wings.security.PermissionAttribute;
 import software.wings.security.PermissionAttribute.Action;
 import software.wings.security.UsageRestrictions;
 import software.wings.service.impl.newrelic.NewRelicApplication.NewRelicApplications;
+import software.wings.service.impl.realization.ServiceClassLocator;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.AlertService;
 import software.wings.service.intfc.AppService;

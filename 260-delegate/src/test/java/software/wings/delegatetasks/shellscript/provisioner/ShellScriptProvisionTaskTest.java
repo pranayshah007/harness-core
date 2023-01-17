@@ -44,8 +44,8 @@ import software.wings.WingsBaseTest;
 import software.wings.api.shellscript.provision.ShellScriptProvisionExecutionData;
 import software.wings.beans.shellscript.provisioner.ShellScriptProvisionParameters;
 import software.wings.core.local.executors.ShellExecutorFactory;
-import software.wings.delegatetasks.DelegateFileManager;
-import software.wings.delegatetasks.DelegateLogService;
+import software.wings.delegatetasks.services.DelegateFileManager;
+import software.wings.delegatetasks.logservice.DelegateLogService;
 import software.wings.service.intfc.security.EncryptionService;
 
 import java.io.IOException;

@@ -18,10 +18,10 @@ import lombok.experimental.FieldDefaults;
 @OwnedBy(CDP)
 @FieldDefaults(level = PUBLIC)
 public class HelmTestConstants {
-  static String ACCOUNT_ID = "ACCOUNT_ID";
-  static String APP_ID = "APP_ID";
-  static String MANIFEST_ID = "MANIFEST_ID";
-  static String SERVICE_ID = "SERVICE_ID";
+  public static String ACCOUNT_ID = "ACCOUNT_ID";
+  public static String APP_ID = "APP_ID";
+  public static String MANIFEST_ID = "MANIFEST_ID";
+  public static String SERVICE_ID = "SERVICE_ID";
 
-  static long LONG_TIMEOUT_INTERVAL = 60 * 1000L;
+  public static long LONG_TIMEOUT_INTERVAL = 60 * 1000L;
 }

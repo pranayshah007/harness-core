@@ -20,6 +20,7 @@ import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.loginSettings.LoginSettingsService;
+import software.wings.service.impl.realization.ServiceClassLocator;
 import software.wings.service.intfc.ActivityService;
 import software.wings.service.intfc.AlertNotificationRuleService;
 import software.wings.service.intfc.AlertService;

@@ -35,7 +35,7 @@ import io.harness.security.encryption.EncryptionConfig;
 import io.harness.shell.ShellExecutionData;
 
 import software.wings.beans.delegation.ShellScriptParameters;
-import software.wings.delegatetasks.ShellScriptTaskHandler;
+import software.wings.delegatetasks.tasks.ShellScriptTaskHandler;
 import software.wings.security.encryption.secretsmanagerconfigs.CustomSecretsManagerConfig;
 
 import com.google.common.util.concurrent.TimeLimiter;

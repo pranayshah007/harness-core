@@ -10,7 +10,7 @@ package software.wings.utils;
 import static io.harness.rule.OwnerRule.PRAVEEN;
 import static io.harness.rule.OwnerRule.RAGHU;
 
-import static software.wings.delegatetasks.ElkLogzDataCollectionTask.parseElkResponse;
+import static software.wings.delegatetasks.tasks.ElkLogzDataCollectionTask.parseElkResponse;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -18,7 +18,7 @@ import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 
-import software.wings.delegatetasks.ElkLogzDataCollectionTask;
+import software.wings.delegatetasks.tasks.ElkLogzDataCollectionTask;
 import software.wings.service.impl.analysis.LogElement;
 import software.wings.service.impl.elk.ElkLogFetchRequest;
 import software.wings.service.impl.elk.ElkQueryType;

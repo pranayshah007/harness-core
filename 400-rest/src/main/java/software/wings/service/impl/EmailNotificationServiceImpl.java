@@ -34,7 +34,7 @@ import software.wings.service.intfc.DelegateService;
 import software.wings.service.intfc.EmailNotificationService;
 import software.wings.service.intfc.security.SecretManager;
 import software.wings.utils.EmailHelperUtils;
-import software.wings.utils.EmailUtils;
+import software.wings.utils.nonkryos.EmailUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;

@@ -24,8 +24,8 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.executioncapability.CapabilityResponse;
 import io.harness.delegate.task.winrm.AuthenticationScheme;
-import io.harness.delegate.task.winrm.WinRmSession;
-import io.harness.delegate.task.winrm.WinRmSessionConfig;
+import io.harness.delegate.task.winrm.session.WinRmSession;
+import io.harness.delegate.task.winrm.session.WinRmSessionConfig;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 

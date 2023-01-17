@@ -24,6 +24,7 @@ import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
+import io.harness.delegate.task.helm.helper.HelmTaskHelperBase;
 import io.harness.delegate.task.k8s.HelmChartManifestDelegateConfig;
 import io.harness.logging.CommandExecutionStatus;
 

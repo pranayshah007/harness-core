@@ -37,6 +37,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import software.wings.service.impl.realization.AwsUtils;
 
 @OwnedBy(CDP)
 public class AwsUtilsTest extends WingsBaseTest {

@@ -14,7 +14,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.ListUtils.trimStrings;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
-import static io.harness.delegate.task.helm.CustomManifestFetchTaskHelper.unzipManifestFiles;
+import static io.harness.delegate.task.helm.helper.CustomManifestFetchTaskHelper.unzipManifestFiles;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.filesystem.FileIo.createDirectoryIfDoesNotExist;
 import static io.harness.filesystem.FileIo.getFilesUnderPath;
@@ -46,8 +46,8 @@ import static io.harness.pcf.model.PcfConstants.WEB_PROCESS_TYPE_MANIFEST_YML_EL
 import static io.harness.validation.Validator.notNullCheck;
 
 import static software.wings.beans.TaskType.GIT_FETCH_FILES_TASK;
-import static software.wings.beans.dto.Log.Builder.aLog;
-import static software.wings.delegatetasks.GitFetchFilesTask.GIT_FETCH_FILES_TASK_ASYNC_TIMEOUT;
+import static software.wings.beans.dto.log.Log.Builder.aLog;
+import static software.wings.delegatetasks.tasks.GitFetchFilesTask.GIT_FETCH_FILES_TASK_ASYNC_TIMEOUT;
 import static software.wings.helpers.ext.k8s.request.K8sValuesLocation.EnvironmentGlobal;
 import static software.wings.helpers.ext.k8s.request.K8sValuesLocation.ServiceOverride;
 
@@ -138,7 +138,7 @@ import software.wings.beans.appmanifest.StoreType;
 import software.wings.beans.command.CommandUnit;
 import software.wings.beans.command.CommandUnitDetails.CommandUnitType;
 import software.wings.beans.container.PcfServiceSpecification;
-import software.wings.beans.dto.Log;
+import software.wings.beans.dto.log.Log;
 import software.wings.beans.yaml.GitFetchFilesFromMultipleRepoResult;
 import software.wings.beans.yaml.GitFetchFilesResult;
 import software.wings.helpers.ext.k8s.request.K8sValuesLocation;

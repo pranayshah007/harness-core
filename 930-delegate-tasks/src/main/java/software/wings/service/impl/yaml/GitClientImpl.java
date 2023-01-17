@@ -34,7 +34,7 @@ import static software.wings.beans.yaml.YamlConstants.GIT_TRIGGER_LOG_PREFIX;
 import static software.wings.beans.yaml.YamlConstants.GIT_YAML_LOG_PREFIX;
 import static software.wings.beans.yaml.YamlConstants.PATH_DELIMITER;
 import static software.wings.beans.yaml.YamlConstants.SETUP_FOLDER;
-import static software.wings.utils.SshDelegateHelperUtils.createSshSessionConfig;
+import static software.wings.utils.nonkryos.SshDelegateHelperUtils.createSshSessionConfig;
 
 import static com.google.common.base.Charsets.UTF_8;
 import static java.lang.String.format;

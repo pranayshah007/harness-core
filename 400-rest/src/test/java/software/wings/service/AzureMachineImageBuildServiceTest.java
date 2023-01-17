@@ -26,7 +26,7 @@ import software.wings.beans.AzureImageVersion;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.helpers.ext.azure.AzureDelegateHelperService;
 import software.wings.helpers.ext.jenkins.BuildDetails;
-import software.wings.service.impl.AzureMachineImageBuildServiceImpl;
+import software.wings.service.impl.realization.AzureMachineImageBuildServiceImpl;
 import software.wings.service.intfc.AzureMachineImageBuildService;
 
 import com.fasterxml.jackson.databind.JsonNode;

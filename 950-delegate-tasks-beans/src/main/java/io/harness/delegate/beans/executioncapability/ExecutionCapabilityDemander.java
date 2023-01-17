@@ -18,6 +18,6 @@ import java.util.List;
 @OwnedBy(HarnessTeam.DEL)
 @TargetModule(HarnessModule._955_DELEGATE_BEANS)
 public interface ExecutionCapabilityDemander {
-  List<io.harness.delegate.beans.executioncapability.ExecutionCapability> fetchRequiredExecutionCapabilities(
+  List<ExecutionCapability> fetchRequiredExecutionCapabilities(
       ExpressionEvaluator maskingEvaluator);
 }

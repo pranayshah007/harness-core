@@ -28,7 +28,7 @@ import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.AwsConfig;
-import software.wings.service.impl.AwsUtils;
+import software.wings.service.impl.realization.AwsUtils;
 import software.wings.service.impl.aws.model.AwsCodeDeployS3LocationData;
 import software.wings.service.intfc.aws.delegate.AwsEc2HelperServiceDelegate;
 import software.wings.service.intfc.security.EncryptionService;

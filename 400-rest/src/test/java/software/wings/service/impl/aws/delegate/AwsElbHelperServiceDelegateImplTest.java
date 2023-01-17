@@ -46,7 +46,7 @@ import io.harness.spotinst.model.SpotInstConstants;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.AwsConfig;
-import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 import software.wings.service.intfc.security.EncryptionService;
 
 import com.amazonaws.services.elasticloadbalancing.model.DescribeInstanceHealthResult;

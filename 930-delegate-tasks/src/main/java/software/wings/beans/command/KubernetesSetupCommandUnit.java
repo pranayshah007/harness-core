@@ -78,6 +78,7 @@ import software.wings.beans.AzureConfig;
 import software.wings.beans.KubernetesClusterConfig;
 import software.wings.beans.LogColor;
 import software.wings.beans.command.ContainerSetupCommandUnitExecutionData.ContainerSetupCommandUnitExecutionDataBuilder;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 import software.wings.beans.container.ContainerDefinition;
 import software.wings.beans.container.KubernetesContainerTaskUtils;
 import software.wings.beans.container.KubernetesServiceSpecification;
@@ -550,8 +551,8 @@ public class KubernetesSetupCommandUnit extends ContainerSetupCommandUnit {
   }
 
   private Service setupServiceAndIngress(KubernetesSetupParams setupParams, KubernetesConfig kubernetesConfig,
-      String containerServiceName, ExecutionLogCallback executionLogCallback, StringBuilder summaryOutput,
-      ContainerSetupCommandUnitExecutionDataBuilder commandExecutionDataBuilder) {
+                                         String containerServiceName, ExecutionLogCallback executionLogCallback, StringBuilder summaryOutput,
+                                         ContainerSetupCommandUnitExecutionDataBuilder commandExecutionDataBuilder) {
     String kubernetesServiceName = getKubernetesServiceName(setupParams.getControllerNamePrefix());
     Map<String, String> labels = getLabels(setupParams);
 

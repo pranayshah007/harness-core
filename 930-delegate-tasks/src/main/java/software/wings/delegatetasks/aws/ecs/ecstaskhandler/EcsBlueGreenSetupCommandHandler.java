@@ -33,14 +33,14 @@ import software.wings.beans.AwsConfig;
 import software.wings.beans.command.ContainerSetupCommandUnitExecutionData;
 import software.wings.beans.command.ContainerSetupCommandUnitExecutionData.ContainerSetupCommandUnitExecutionDataBuilder;
 import software.wings.beans.command.EcsSetupParams;
-import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.command.logcallback.ExecutionLogCallback;
 import software.wings.beans.dto.SettingAttribute;
-import software.wings.cloudprovider.aws.EcsContainerService;
+import software.wings.cloudprovider.aws.ifc.EcsContainerService;
 import software.wings.helpers.ext.ecs.request.EcsBGServiceSetupRequest;
 import software.wings.helpers.ext.ecs.request.EcsCommandRequest;
 import software.wings.helpers.ext.ecs.response.EcsCommandExecutionResponse;
 import software.wings.helpers.ext.ecs.response.EcsServiceSetupResponse;
-import software.wings.service.impl.AwsHelperService;
+import software.wings.service.impl.realization.AwsHelperService;
 import software.wings.service.intfc.aws.delegate.AwsElbHelperServiceDelegate;
 
 import com.amazonaws.services.ecs.model.TaskDefinition;

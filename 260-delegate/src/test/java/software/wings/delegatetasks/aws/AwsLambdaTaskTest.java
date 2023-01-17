@@ -30,7 +30,7 @@ import io.harness.delegate.beans.TaskData;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
-import software.wings.delegatetasks.DelegateLogService;
+import software.wings.delegatetasks.logservice.DelegateLogService;
 import software.wings.service.impl.aws.model.AwsLambdaExecuteFunctionRequest;
 import software.wings.service.impl.aws.model.AwsLambdaExecuteFunctionResponse;
 import software.wings.service.impl.aws.model.AwsLambdaExecuteWfRequest;
