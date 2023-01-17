@@ -37,7 +37,8 @@ public class InstanceStatsRepositoryImpl implements InstanceStatsRepository {
     while (totalTries <= MAX_RETRY_COUNT) {
       ResultSet resultSet = null;
       try (Connection dbConnection = timeScaleDBService.getDBConnection();
-           PreparedStatement statement = getScopedStatement(dbConnection, accountId, orgId, projectId, serviceId)) {
+           PreparedStatement statement =
+               getScopedStatementForInstanceStats(dbConnection, accountId, orgId, projectId, serviceId)) {
         resultSet = statement.executeQuery();
         return parseInstanceStatsRecord(resultSet);
       } catch (SQLException ex) {
@@ -82,7 +83,7 @@ public class InstanceStatsRepositoryImpl implements InstanceStatsRepository {
    * @return statement to get instance stats by using service ref and scoped query
    * @throws SQLException
    */
-  private PreparedStatement getScopedStatement(
+  private PreparedStatement getScopedStatementForInstanceStats(
       Connection dbConnection, String accountId, String orgId, String projectId, String serviceId) throws SQLException {
     IdentifierRef serviceIdentifierRef =
         FullyQualifiedIdentifierHelper.getIdentifierRefWithScope(accountId, orgId, projectId, serviceId);

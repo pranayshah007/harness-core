@@ -394,11 +394,6 @@ public class CDDashboardOverviewResource {
       @QueryParam(NGCommonEntityConstants.CLUSTER_IDENTIFIER) String clusterId,
       @NotNull @QueryParam(NGCommonEntityConstants.PIPELINE_EXECUTION_ID) String pipelineExecutionId,
       @NotNull @QueryParam(NGCommonEntityConstants.BUILD_KEY) String buildId) {
-    /*
-    if (clusterId != null && infraId != null) {
-
-    }
-     */
     return ResponseDTO.newResponse(cdOverviewDashboardService.getActiveInstanceDetails(accountIdentifier, orgIdentifier,
         projectIdentifier, serviceId, envId, infraId, clusterId, pipelineExecutionId, buildId));
   }

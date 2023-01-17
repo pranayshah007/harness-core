@@ -893,21 +893,35 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
                                        -> FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(
                                            accountIdentifier, orgIdentifier, projectIdentifier, serviceId))
                                    .collect(Collectors.toList());
+    String baseQuery =
+        "select distinct on(service_id) service_id, pipeline_execution_summary_cd_id, service_startts from "
+        + "service_infra_info where ";
+    StringBuilder totalQueryBuilder = new StringBuilder(200);
+    totalQueryBuilder.append(baseQuery);
 
-    String query = "select distinct on(service_id) service_id, pipeline_execution_summary_cd_id, service_startts from "
-        + "service_infra_info where accountid=? and orgidentifier=? and projectidentifier=? and service_id = any (?) "
-        + "order by service_id, service_startts desc";
+    if (EmptyPredicate.isNotEmpty(accountIdentifier)) {
+      totalQueryBuilder.append(String.format("accountid='%s' and ", accountIdentifier));
+    }
+
+    if (EmptyPredicate.isNotEmpty(orgIdentifier)) {
+      totalQueryBuilder.append(String.format("orgidentifier='%s' and ", orgIdentifier));
+    }
+
+    if (EmptyPredicate.isNotEmpty(projectIdentifier)) {
+      totalQueryBuilder.append(String.format("projectidentifier='%s' and ", projectIdentifier));
+    }
+
+    totalQueryBuilder.append("service_id = any (?) order by service_id, service_startts desc");
 
     int totalTries = 0;
     boolean successfulOperation = false;
     while (!successfulOperation && totalTries <= MAX_RETRY_COUNT) {
       ResultSet resultSet = null;
       try (Connection connection = timeScaleDBService.getDBConnection();
-           PreparedStatement statement = connection.prepareStatement(query)) {
-        statement.setString(1, accountIdentifier);
-        statement.setString(2, orgIdentifier);
-        statement.setString(3, projectIdentifier);
-        statement.setArray(4, connection.createArrayOf("VARCHAR", serviceRefs.toArray()));
+           PreparedStatement statement = connection.prepareStatement(totalQueryBuilder.toString())) {
+        int currParamIndex =
+            setScopedParametersInStatement(accountIdentifier, orgIdentifier, projectIdentifier, null, statement);
+        statement.setArray(currParamIndex, connection.createArrayOf("VARCHAR", serviceRefs.toArray()));
         resultSet = statement.executeQuery();
         while (resultSet != null && resultSet.next()) {
           String service_id = resultSet.getString(SERVICE_ID);
@@ -941,23 +955,39 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
                                        accountIdentifier, orgIdentifier, projectIdentifier, envId))
                                .collect(Collectors.toList());
 
-    String query =
+    String baseQuery =
         "select distinct on(env_id, service_id) service_id, env_id, pipeline_execution_summary_cd_id, service_startts from "
-        + "service_infra_info where accountid=? and orgidentifier=? and projectidentifier=? and service_id = any (?) and env_id = any (?) "
+        + "service_infra_info where ";
+
+    StringBuilder totalQueryBuilder = new StringBuilder(200);
+    totalQueryBuilder.append(baseQuery);
+
+    if (EmptyPredicate.isNotEmpty(accountIdentifier)) {
+      totalQueryBuilder.append(String.format("accountid='%s' and ", accountIdentifier));
+    }
+
+    if (EmptyPredicate.isNotEmpty(orgIdentifier)) {
+      totalQueryBuilder.append(String.format("orgidentifier='%s' and ", orgIdentifier));
+    }
+
+    if (EmptyPredicate.isNotEmpty(projectIdentifier)) {
+      totalQueryBuilder.append(String.format("projectidentifier='%s' and ", projectIdentifier));
+    }
+
+    totalQueryBuilder.append("service_id = any (?) and env_id = any (?) "
         + "group by service_id, env_id, pipeline_execution_summary_cd_id, service_startts "
-        + "order by env_id, service_id, service_startts desc";
+        + "order by env_id, service_id, service_startts desc");
 
     int totalTries = 0;
     boolean successfulOperation = false;
     while (!successfulOperation && totalTries <= MAX_RETRY_COUNT) {
       ResultSet resultSet = null;
       try (Connection connection = timeScaleDBService.getDBConnection();
-           PreparedStatement statement = connection.prepareStatement(query)) {
-        statement.setString(1, accountIdentifier);
-        statement.setString(2, orgIdentifier);
-        statement.setString(3, projectIdentifier);
-        statement.setArray(4, connection.createArrayOf("VARCHAR", serviceRefs.toArray()));
-        statement.setArray(5, connection.createArrayOf("VARCHAR", envRefs.toArray()));
+           PreparedStatement statement = connection.prepareStatement(totalQueryBuilder.toString())) {
+        int currParamIndex =
+            setScopedParametersInStatement(accountIdentifier, orgIdentifier, projectIdentifier, null, statement);
+        statement.setArray(currParamIndex++, connection.createArrayOf("VARCHAR", serviceRefs.toArray()));
+        statement.setArray(currParamIndex, connection.createArrayOf("VARCHAR", envRefs.toArray()));
 
         resultSet = statement.executeQuery();
         while (resultSet != null && resultSet.next()) {
@@ -982,20 +1012,34 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
       String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> serviceIds) {
     Map<String, Set<String>> serviceIdToDeploymentType = new HashMap<>();
 
-    String query =
-        "select service_id, deployment_type, gitOpsEnabled from service_infra_info where accountid=? and orgidentifier=? "
-        + "and projectidentifier=? and service_id = any (?) group by service_id, deployment_type, gitOpsEnabled";
+    String baseQuery = "select service_id, deployment_type, gitOpsEnabled from service_infra_info where ";
+
+    StringBuilder totalQueryBuilder = new StringBuilder(200);
+    totalQueryBuilder.append(baseQuery);
+
+    if (EmptyPredicate.isNotEmpty(accountIdentifier)) {
+      totalQueryBuilder.append(String.format("accountid='%s' and ", accountIdentifier));
+    }
+
+    if (EmptyPredicate.isNotEmpty(orgIdentifier)) {
+      totalQueryBuilder.append(String.format("orgidentifier='%s' and ", orgIdentifier));
+    }
+
+    if (EmptyPredicate.isNotEmpty(projectIdentifier)) {
+      totalQueryBuilder.append(String.format("projectidentifier='%s' and ", projectIdentifier));
+    }
+
+    totalQueryBuilder.append("service_id = any (?) group by service_id, deployment_type, gitOpsEnabled");
 
     int totalTries = 0;
     boolean successfulOperation = false;
     while (!successfulOperation && totalTries <= MAX_RETRY_COUNT) {
       ResultSet resultSet = null;
       try (Connection connection = timeScaleDBService.getDBConnection();
-           PreparedStatement statement = connection.prepareStatement(query)) {
-        statement.setString(1, accountIdentifier);
-        statement.setString(2, orgIdentifier);
-        statement.setString(3, projectIdentifier);
-        statement.setArray(4, connection.createArrayOf("VARCHAR", serviceIds.toArray()));
+           PreparedStatement statement = connection.prepareStatement(totalQueryBuilder.toString())) {
+        int currParamIndex =
+            setScopedParametersInStatement(accountIdentifier, orgIdentifier, projectIdentifier, null, statement);
+        statement.setArray(currParamIndex, connection.createArrayOf("VARCHAR", serviceIds.toArray()));
         resultSet = statement.executeQuery();
         while (resultSet != null && resultSet.next()) {
           String service_id = resultSet.getString(SERVICE_ID);
@@ -2865,8 +2909,12 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   public InstanceDetailsByBuildId getActiveInstanceDetails(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String serviceIdentifier, String envIdentifier, String infraIdentifier,
       String clusterIdentifier, String pipelineExecutionId, String buildId) {
+    String serviceRef = FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(
+        accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier);
+    String environmentRef = FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(
+        accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier);
     return instanceDashboardService.getActiveInstanceDetails(accountIdentifier, orgIdentifier, projectIdentifier,
-        serviceIdentifier, envIdentifier, infraIdentifier, clusterIdentifier, pipelineExecutionId, buildId,
+        serviceRef, environmentRef, infraIdentifier, clusterIdentifier, pipelineExecutionId, buildId,
         isGitopsEnabled(accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier));
   }
 
@@ -2951,23 +2999,38 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
 
     String serviceRef = FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
+    String baseQuery = "select reportedat, SUM(instancecount) as count from ng_instance_stats_day where ";
+    StringBuilder totalQueryBuilder = new StringBuilder(200);
+    totalQueryBuilder.append(baseQuery);
 
-    final String query =
-        "select reportedat, SUM(instancecount) as count from ng_instance_stats_day where accountid = ? and orgid = ? and projectid = ? and serviceid = ? and reportedat >= ? and reportedat <= ? group by reportedat order by reportedat asc";
+    if (EmptyPredicate.isNotEmpty(accountIdentifier)) {
+      totalQueryBuilder.append(String.format("accountid='%s' and ", accountIdentifier));
+    }
+
+    if (EmptyPredicate.isNotEmpty(orgIdentifier)) {
+      totalQueryBuilder.append(String.format("orgidentifier='%s' and ", orgIdentifier));
+    }
+
+    if (EmptyPredicate.isNotEmpty(projectIdentifier)) {
+      totalQueryBuilder.append(String.format("projectidentifier='%s' and ", projectIdentifier));
+    }
+
+    if (EmptyPredicate.isNotEmpty(serviceRef)) {
+      totalQueryBuilder.append(String.format("serviceid='%s' and ", serviceRef));
+    }
+
+    totalQueryBuilder.append("reportedat >= ? and reportedat <= ? group by reportedat order by reportedat asc");
 
     int totalTries = 0;
     boolean successfulOperation = false;
     while (!successfulOperation && totalTries <= MAX_RETRY_COUNT) {
       ResultSet resultSet = null;
       try (Connection connection = timeScaleDBService.getDBConnection();
-           PreparedStatement statement = connection.prepareStatement(query)) {
-        statement.setString(1, accountIdentifier);
-        // org/project can be optional
-        statement.setString(2, orgIdentifier);
-        statement.setString(3, projectIdentifier);
-        statement.setString(4, serviceRef);
-        statement.setTimestamp(5, new Timestamp(tunedStartTimeInMs), DateUtils.getDefaultCalendar());
-        statement.setTimestamp(6, new Timestamp(tunedEndTimeInMs), DateUtils.getDefaultCalendar());
+           PreparedStatement statement = connection.prepareStatement(totalQueryBuilder.toString())) {
+        int currParamIndex =
+            setScopedParametersInStatement(accountIdentifier, orgIdentifier, projectIdentifier, serviceRef, statement);
+        statement.setTimestamp(currParamIndex++, new Timestamp(tunedStartTimeInMs), DateUtils.getDefaultCalendar());
+        statement.setTimestamp(currParamIndex, new Timestamp(tunedEndTimeInMs), DateUtils.getDefaultCalendar());
 
         resultSet = statement.executeQuery();
         while (resultSet != null && resultSet.next()) {
@@ -2993,6 +3056,24 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     return new io.harness.ng.overview.dto.TimeValuePairListDTO<>(timeValuePairList);
   }
 
+  private int setScopedParametersInStatement(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String serviceRef, PreparedStatement statement) throws SQLException {
+    int currParamIndex = 1;
+    if (EmptyPredicate.isNotEmpty(accountIdentifier)) {
+      statement.setString(currParamIndex++, accountIdentifier);
+    }
+    if (EmptyPredicate.isNotEmpty(orgIdentifier)) {
+      statement.setString(currParamIndex++, orgIdentifier);
+    }
+    if (EmptyPredicate.isNotEmpty(projectIdentifier)) {
+      statement.setString(currParamIndex++, projectIdentifier);
+    }
+    if (EmptyPredicate.isNotEmpty(serviceRef)) {
+      statement.setString(currParamIndex++, serviceRef);
+    }
+    return currParamIndex;
+  }
+
   /*
     Returns a list of time value pairs where value is a pair of envid and instance count
   */
@@ -3008,22 +3089,39 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
 
     String serviceRef = FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
-    final String query =
-        "select reportedat, envid, SUM(instancecount) as count from ng_instance_stats_day where accountid = ? and orgid = ? and projectid = ? and serviceid = ? and reportedat >= ? and reportedat <= ? group by reportedat, envid order by reportedat asc";
+
+    String baseQuery = "select reportedat, envid, SUM(instancecount) as count from ng_instance_stats_day where ";
+    StringBuilder totalQueryBuilder = new StringBuilder(200);
+    totalQueryBuilder.append(baseQuery);
+
+    if (EmptyPredicate.isNotEmpty(accountIdentifier)) {
+      totalQueryBuilder.append(String.format("accountid='%s' and ", accountIdentifier));
+    }
+
+    if (EmptyPredicate.isNotEmpty(orgIdentifier)) {
+      totalQueryBuilder.append(String.format("orgidentifier='%s' and ", orgIdentifier));
+    }
+
+    if (EmptyPredicate.isNotEmpty(projectIdentifier)) {
+      totalQueryBuilder.append(String.format("projectidentifier='%s' and ", projectIdentifier));
+    }
+
+    if (EmptyPredicate.isNotEmpty(serviceRef)) {
+      totalQueryBuilder.append(String.format("serviceid='%s' and ", serviceRef));
+    }
+
+    totalQueryBuilder.append("reportedat <= ? group by reportedat, envid order by reportedat asc");
 
     int totalTries = 0;
     boolean successfulOperation = false;
     while (!successfulOperation && totalTries <= MAX_RETRY_COUNT) {
       ResultSet resultSet = null;
       try (Connection connection = timeScaleDBService.getDBConnection();
-           PreparedStatement statement = connection.prepareStatement(query)) {
-        statement.setString(1, accountIdentifier);
-        // org/project can be absent in org/acc level dashboards
-        statement.setString(2, orgIdentifier);
-        statement.setString(3, projectIdentifier);
-        statement.setString(4, serviceRef);
-        statement.setTimestamp(5, new Timestamp(tunedStartTimeInMs), DateUtils.getDefaultCalendar());
-        statement.setTimestamp(6, new Timestamp(tunedEndTimeInMs), DateUtils.getDefaultCalendar());
+           PreparedStatement statement = connection.prepareStatement(totalQueryBuilder.toString())) {
+        int currParamIndex =
+            setScopedParametersInStatement(accountIdentifier, orgIdentifier, projectIdentifier, serviceRef, statement);
+        statement.setTimestamp(currParamIndex++, new Timestamp(tunedStartTimeInMs), DateUtils.getDefaultCalendar());
+        statement.setTimestamp(currParamIndex, new Timestamp(tunedEndTimeInMs), DateUtils.getDefaultCalendar());
 
         resultSet = statement.executeQuery();
         while (resultSet != null && resultSet.next()) {
@@ -3078,10 +3176,21 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
 
   private String queryToGetId(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId) {
-    return "select distinct pipeline_execution_summary_cd_id from " + tableNameServiceAndInfra + " where "
-        + String.format("accountid='%s' and ", accountIdentifier)
-        + String.format("orgidentifier='%s' and ", orgIdentifier)
-        + String.format("projectidentifier='%s' and ", projectIdentifier) + String.format("service_id='%s'", serviceId);
+    StringBuilder queryBuilder = new StringBuilder("select distinct pipeline_execution_summary_cd_id from "
+        + tableNameServiceAndInfra + " where " + String.format("accountid='%s' and ", accountIdentifier));
+
+    if (EmptyPredicate.isNotEmpty(orgIdentifier)) {
+      queryBuilder.append(String.format("orgidentifier='%s' and ", orgIdentifier));
+    }
+
+    if (EmptyPredicate.isNotEmpty(projectIdentifier)) {
+      queryBuilder.append(String.format("projectidentifier='%s' and ", projectIdentifier));
+    }
+
+    if (EmptyPredicate.isNotEmpty(serviceId)) {
+      queryBuilder.append(String.format("service_id='%s'", serviceId));
+    }
+    return queryBuilder.toString();
   }
 
   public io.harness.ng.overview.dto.ServiceHeaderInfo getServiceHeaderInfo(
