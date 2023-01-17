@@ -42,6 +42,7 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.api.gax.core.FixedCredentialsProvider;
 import com.google.api.gax.rpc.ApiException;
 import com.google.auth.oauth2.GoogleCredentials;
+import com.google.auth.oauth2.ServiceAccountCredentials;
 import com.google.cloud.kms.v1.CryptoKeyName;
 import com.google.cloud.kms.v1.DecryptResponse;
 import com.google.cloud.kms.v1.EncryptResponse;
@@ -277,9 +278,15 @@ public class GcpKmsEncryptor implements KmsEncryptor {
   private KeyManagementServiceClient getClient(GcpKmsConfig gcpKmsConfig, boolean useWorkloadIdentity) {
     if (useWorkloadIdentity) {
       try {
-        log.info("Using workload identity for GCP KMS");
-        return KeyManagementServiceClient.create();
+        log.info("[WI]: Using workload identity for GCP KMS");
+        KeyManagementServiceClient keyManagementServiceClient = KeyManagementServiceClient.create(
+            KeyManagementServiceSettings.newBuilder()
+                .setCredentialsProvider(KeyManagementServiceSettings.defaultCredentialsProviderBuilder().build())
+                .build());
+        log.info("Created KMS client successfully");
+        return keyManagementServiceClient;
       } catch (IOException e) {
+        log.error("[WI]: Failed to create KMS client", e);
         throw new RuntimeException(e);
       }
     } else {
