@@ -19,7 +19,7 @@ export GIT_COMMIT=$(git rev-parse HEAD)
 export IMAGE_TAG=$VERSION-$GIT_BRANCH
 
 echo "--------------------------------------"
-echo $JDK $BUILD $VERSION $PURPOSE $GIT_BRANCH $GIT_COMMIT $(date)
+echo $JDK $BUILD $VERSION $BUILD_PURPOSE $GIT_BRANCH $GIT_COMMIT $(date)
 echo "--------------------------------------"
 
 scripts/bazel/generate_credentials.sh
@@ -31,10 +31,9 @@ cat bazelrc.remote
 yum install zlib-devel -y
 
 chmod +x scripts/bazel/UpdateVersionInfoyaml.sh
-chmod +x platform-service/build/build_jar.sh
-chmod +x platform-service/build/build_dist.sh
+chmod +x scripts/cie/service-script/build/build_jar.sh
+chmod +x scripts/cie/service-script/build/build_dist.sh
 
-MODULE="ce-nextgen" # runtime input
 scripts/bazel/UpdateVersionInfoyaml.sh $BUILD $MODULE/build.properties
 scripts/cie/service-script/build/build_jar.sh
 scripts/cie/service-script/build/build_dist.sh || true
