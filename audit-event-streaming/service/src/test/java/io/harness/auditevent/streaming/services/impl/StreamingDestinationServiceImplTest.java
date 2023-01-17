@@ -21,10 +21,12 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
+import io.harness.audit.client.remote.streaming.StreamingDestinationClient;
 import io.harness.audit.entities.streaming.AwsS3StreamingDestination;
 import io.harness.audit.entities.streaming.StreamingDestination;
 import io.harness.audit.entities.streaming.StreamingDestination.StreamingDestinationKeys;
 import io.harness.audit.entities.streaming.StreamingDestinationFilterProperties;
+import io.harness.auditevent.streaming.mappers.StreamingDestinationMapper;
 import io.harness.auditevent.streaming.repositories.StreamingDestinationRepository;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
@@ -43,9 +45,11 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.data.mongodb.core.query.Criteria;
 
-public class StreamingDestinationsServiceImplTest extends CategoryTest {
+public class StreamingDestinationServiceImplTest extends CategoryTest {
   @Mock private StreamingDestinationRepository streamingDestinationRepository;
-  private StreamingDestinationsServiceImpl streamingDestinationsService;
+  @Mock private StreamingDestinationMapper streamingDestinationMapper;
+  @Mock private StreamingDestinationClient streamingDestinationClient;
+  private StreamingDestinationServiceImpl streamingDestinationsService;
 
   ArgumentCaptor<Criteria> criteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
 
@@ -55,7 +59,8 @@ public class StreamingDestinationsServiceImplTest extends CategoryTest {
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
-    this.streamingDestinationsService = new StreamingDestinationsServiceImpl(streamingDestinationRepository);
+    this.streamingDestinationsService = new StreamingDestinationServiceImpl(
+        streamingDestinationRepository, streamingDestinationMapper, streamingDestinationClient);
   }
 
   @Test

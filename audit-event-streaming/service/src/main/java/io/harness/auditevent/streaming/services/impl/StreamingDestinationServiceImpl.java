@@ -7,25 +7,37 @@
 
 package io.harness.auditevent.streaming.services.impl;
 
+import static io.harness.spec.server.audit.v1.model.StreamingDestinationDTO.StatusEnum.INACTIVE;
+
 import io.harness.NGResourceFilterConstants;
+import io.harness.audit.client.remote.streaming.StreamingDestinationClient;
 import io.harness.audit.entities.streaming.StreamingDestination;
 import io.harness.audit.entities.streaming.StreamingDestinationFilterProperties;
+import io.harness.auditevent.streaming.mappers.StreamingDestinationMapper;
 import io.harness.auditevent.streaming.repositories.StreamingDestinationRepository;
-import io.harness.auditevent.streaming.services.StreamingDestinationsService;
+import io.harness.auditevent.streaming.services.StreamingDestinationService;
+import io.harness.exception.UnexpectedException;
+import io.harness.spec.server.audit.v1.model.StreamingDestinationDTO;
 
+import java.io.IOException;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
-public class StreamingDestinationsServiceImpl implements StreamingDestinationsService {
+public class StreamingDestinationServiceImpl implements StreamingDestinationService {
   private final StreamingDestinationRepository streamingDestinationRepository;
+  private final StreamingDestinationMapper streamingDestinationMapper;
+  private final StreamingDestinationClient streamingDestinationClient;
 
-  @Autowired
-  public StreamingDestinationsServiceImpl(StreamingDestinationRepository streamingDestinationRepository) {
+  public StreamingDestinationServiceImpl(StreamingDestinationRepository streamingDestinationRepository,
+      StreamingDestinationMapper streamingDestinationMapper, StreamingDestinationClient streamingDestinationClient) {
     this.streamingDestinationRepository = streamingDestinationRepository;
+    this.streamingDestinationMapper = streamingDestinationMapper;
+    this.streamingDestinationClient = streamingDestinationClient;
   }
 
   @Override
@@ -50,5 +62,23 @@ public class StreamingDestinationsServiceImpl implements StreamingDestinationsSe
               .regex(filterProperties.getSearchTerm(), NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS));
     }
     return criteria;
+  }
+
+  public void disableStreamingDestination(StreamingDestination streamingDestination) {
+    String identifier = streamingDestination.getIdentifier();
+    String accountIdentifier = streamingDestination.getAccountIdentifier();
+    try {
+      StreamingDestinationDTO streamingDestinationDTO =
+          streamingDestinationMapper.toStreamingDestinationDTO(streamingDestination);
+      streamingDestinationDTO.setStatus(INACTIVE);
+      streamingDestinationClient.updateStreamingDestination(identifier, streamingDestinationDTO, accountIdentifier)
+          .execute();
+    } catch (IOException exception) {
+      String errorMessage =
+          String.format("Error disabling streaming destination. [streamingDestination = %s] [accountIdentifier = %s]",
+              identifier, accountIdentifier);
+      log.error(errorMessage, exception);
+      throw new UnexpectedException(errorMessage, exception);
+    }
   }
 }

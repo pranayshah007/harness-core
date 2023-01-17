@@ -40,6 +40,7 @@ import io.harness.auditevent.streaming.publishers.StreamingPublisher;
 import io.harness.auditevent.streaming.publishers.impl.AwsS3StreamingPublisher;
 import io.harness.auditevent.streaming.services.BatchProcessorService;
 import io.harness.auditevent.streaming.services.StreamingBatchService;
+import io.harness.auditevent.streaming.services.StreamingDestinationService;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 
@@ -66,6 +67,7 @@ public class AuditEventStreamingServiceImplTest extends CategoryTest {
   public static final int RANDOM_STRING_LENGTH = 10;
   @Mock private BatchProcessorService batchProcessorService;
   @Mock private StreamingBatchService streamingBatchService;
+  @Mock private StreamingDestinationService streamingDestinationService;
   @Mock private AuditEventRepository auditEventRepository;
   @Mock private AwsS3StreamingPublisher awsS3StreamingPublisher;
   @Mock private BatchConfig batchConfig;
@@ -84,7 +86,7 @@ public class AuditEventStreamingServiceImplTest extends CategoryTest {
     MockitoAnnotations.openMocks(this);
     streamingPublisherMap = Map.of(AWS_S3_STREAMING_PUBLISHER, awsS3StreamingPublisher);
     this.auditEventStreamingService = new AuditEventStreamingServiceImpl(batchProcessorService, streamingBatchService,
-        auditEventRepository, batchConfig, template, streamingPublisherMap);
+        streamingDestinationService, auditEventRepository, batchConfig, template, streamingPublisherMap);
   }
 
   @Test

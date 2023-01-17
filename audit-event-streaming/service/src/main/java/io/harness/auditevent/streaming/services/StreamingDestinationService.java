@@ -12,6 +12,7 @@ import io.harness.audit.entities.streaming.StreamingDestinationFilterProperties;
 
 import java.util.List;
 
-public interface StreamingDestinationsService {
+public interface StreamingDestinationService {
   List<StreamingDestination> list(String accountIdentifier, StreamingDestinationFilterProperties filterProperties);
+  void disableStreamingDestination(StreamingDestination streamingDestination);
 }
