@@ -484,6 +484,9 @@ public class AzureArtifactsRegistryServiceImpl implements AzureArtifactsRegistry
 
   private void constructBuildDetails(
       List<BuildDetails> buildDetails, AzureArtifactsPackageVersion azureArtifactsPackageVersion) {
+    if (azureArtifactsPackageVersion == null) {
+      throw new InvalidRequestException("Artifact package version not found.");
+    }
     Map<String, String> metadata = new HashMap<>();
 
     metadata.put(ArtifactMetadataKeys.version, azureArtifactsPackageVersion.getVersion());

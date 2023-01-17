@@ -38,7 +38,6 @@ import static io.harness.helm.HelmConstants.V3Commands.HELM_CACHE_HOME_PATH;
 import static io.harness.helm.HelmConstants.V3Commands.HELM_REPO_ADD_FORCE_UPDATE;
 import static io.harness.helm.HelmConstants.V3Commands.HELM_REPO_FLAGS;
 import static io.harness.k8s.kubectl.Utils.encloseWithQuotesIfNeeded;
-import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.WARN;
 
 import static software.wings.beans.LogColor.White;
@@ -83,7 +82,6 @@ import io.harness.helm.HelmSubCommandType;
 import io.harness.k8s.K8sGlobalConfigService;
 import io.harness.k8s.manifest.ObjectYamlUtils;
 import io.harness.k8s.model.HelmVersion;
-import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.utils.FieldWithPlainTextOrSecretValueHelper;
@@ -101,6 +99,7 @@ import com.google.inject.Singleton;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
@@ -1083,7 +1082,7 @@ public class HelmTaskHelperBase {
       } else {
         String msg = "Exception in processing HelmValuesFetchTask. " + exceptionMsg;
         log.error(msg, ex);
-        logCallback.saveExecutionLog(msg, ERROR, CommandExecutionStatus.FAILURE);
+        logCallback.saveExecutionLog(msg, WARN);
         throw ex;
       }
     }
@@ -1494,5 +1493,32 @@ public class HelmTaskHelperBase {
     } catch (Exception e) {
       log.error("Unable to revoke the readable permissions for KubeConfig file ", e);
     }
+  }
+
+  public int skipDefaultHelmValuesYaml(
+      String chartDir, List<String> valuesYamlList, boolean skipDefaultValuesYaml, HelmVersion helmVersion) {
+    if (HelmVersion.V2.equals(helmVersion) || !skipDefaultValuesYaml || isEmpty(valuesYamlList)) {
+      return -1;
+    }
+    try {
+      String defaultValuesYaml = new String(Files.readAllBytes(Paths.get(chartDir, "values.yaml")));
+      if (isEmpty(defaultValuesYaml)) {
+        return -1;
+      }
+      String valuesYaml;
+      for (int i = 0; i < valuesYamlList.size(); i++) {
+        valuesYaml = valuesYamlList.get(i);
+        if (isNotEmpty(valuesYaml) && valuesYaml.equals(defaultValuesYaml)) {
+          return i;
+        }
+      }
+    } catch (FileNotFoundException e) {
+      log.error("Unable to find default values.yaml " + e.getMessage());
+      return -1;
+    } catch (IOException e) {
+      log.error("Unable to read default values.yaml " + e.getMessage());
+      return -1;
+    }
+    return -1;
   }
 }

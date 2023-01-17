@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.logging.LogLevel.INFO;
 import static io.harness.threading.Morpheus.sleep;
 
-import static software.wings.beans.Log.Builder.aLog;
+import static software.wings.beans.dto.Log.Builder.aLog;
 import static software.wings.delegatetasks.GcbDelegateResponse.failedGcbTaskResponse;
 import static software.wings.delegatetasks.GcbDelegateResponse.gcbDelegateResponseOf;
 import static software.wings.sm.states.gcbconfigs.GcbRemoteBuildSpec.RemoteFileSource.BRANCH;
@@ -36,8 +36,8 @@ import io.harness.exception.UnsupportedOperationException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.serializer.JsonUtils;
 
-import software.wings.beans.Log;
 import software.wings.beans.command.GcbTaskParams;
+import software.wings.beans.dto.Log;
 import software.wings.beans.yaml.GitFetchFilesRequest;
 import software.wings.beans.yaml.GitFetchFilesResult;
 import software.wings.helpers.ext.gcb.GcbService;

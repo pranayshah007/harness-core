@@ -236,6 +236,7 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
         .when(helmTaskHelperBase)
         .downloadChartFilesFromHttpRepo(eq(helmChartManifestDelegateConfig.build()), anyString(), anyLong());
     doReturn(logCallback).when(k8sTaskHelperBase).getLogCallback(any(), any(), anyBoolean(), any());
+    doReturn(-1).when(helmTaskHelperBase).skipDefaultHelmValuesYaml(anyString(), any(), anyBoolean(), any());
   }
 
   @Test

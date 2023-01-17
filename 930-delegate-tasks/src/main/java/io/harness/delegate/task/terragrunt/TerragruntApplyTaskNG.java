@@ -121,9 +121,11 @@ public class TerragruntApplyTaskNG extends AbstractDelegateRunnableTask {
 
       TerragruntClient client = terragruntContext.getClient();
 
-      executeWithErrorHandling(client::init,
-          createCliRequest(TerragruntCliRequest.builder(), terragruntContext, applyTaskParameters).build(),
-          applyLogCallback);
+      if (TerragruntTaskRunType.RUN_MODULE == applyTaskParameters.getRunConfiguration().getRunType()) {
+        executeWithErrorHandling(client::init,
+            createCliRequest(TerragruntCliRequest.builder(), terragruntContext, applyTaskParameters).build(),
+            applyLogCallback);
+      }
 
       if (isNotEmpty(applyTaskParameters.getWorkspace())) {
         log.info("Create or select workspace {}", applyTaskParameters.getWorkspace());
@@ -164,8 +166,7 @@ public class TerragruntApplyTaskNG extends AbstractDelegateRunnableTask {
       }
 
       String planName = TERRAFORM_PLAN_FILE_OUTPUT_NAME;
-      applyLogCallback.saveExecutionLog(
-          color(format("\nExecute terragrunt apply for '%s'", planName), LogColor.White, LogWeight.Bold));
+      applyLogCallback.saveExecutionLog(color("\nExecute terragrunt apply", LogColor.White, LogWeight.Bold));
       executeWithErrorHandling(client::apply,
           createCliRequest(TerragruntApplyCliRequest.builder(), terragruntContext, applyTaskParameters)
               .terraformPlanName(planName)
@@ -173,7 +174,7 @@ public class TerragruntApplyTaskNG extends AbstractDelegateRunnableTask {
           applyLogCallback);
 
       applyLogCallback.saveExecutionLog(
-          color(format("Terragrunt Apply '%s' successfully executed \n", planName), LogColor.White, LogWeight.Bold));
+          color("Terragrunt Apply successfully executed \n", LogColor.White, LogWeight.Bold));
 
       File tfOutputsFile =
           Paths.get(terragruntContext.getScriptDirectory(), format(TERRAFORM_VARIABLES_FILE_NAME, "output")).toFile();

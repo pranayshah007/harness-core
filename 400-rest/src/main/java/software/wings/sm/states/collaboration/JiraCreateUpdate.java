@@ -115,6 +115,7 @@ public class JiraCreateUpdate extends State implements SweepingOutputStateMixin 
   private static final String JIRA_ISSUE = "issue";
   private static final String DATETIME_ISO_FORMAT = "yyyy-MM-dd'T'HH:mm:ssXX";
   private static final String DATETIME_UI_FORMAT = "yyyy/MM/dd HH:mm";
+  private static final String DATETIME_UI_CAL_FORMAT = "MM/dd/yyyy HH:mm";
   private static final String MULTISELECT = "multiselect";
   private static final String ARRAY = "array";
   private static final String OPTION = "option";
@@ -172,6 +173,8 @@ public class JiraCreateUpdate extends State implements SweepingOutputStateMixin 
 
   private static final Pattern uiPattern =
       Pattern.compile("^\\d{4}\\/\\d{2}\\/\\d{2}\\s*\\d{2}:\\d{2}$", Pattern.CASE_INSENSITIVE);
+  private static final Pattern uiCalPattern =
+      Pattern.compile("^\\d{2}\\/\\d{2}\\/\\d{4}\\s*\\d{2}:\\d{2}$", Pattern.CASE_INSENSITIVE);
   private static final Pattern uiCurrentPattern = Pattern.compile(
       "(current\\(\\))(?:\\s*)([+\\-])((?:(\\d{1,2}(?:ms|[smhdw]|)(?:\\s*)))*)", Pattern.CASE_INSENSITIVE);
 
@@ -663,6 +666,15 @@ public class JiraCreateUpdate extends State implements SweepingOutputStateMixin 
     if (matcher.matches()) {
       try {
         SimpleDateFormat dateFormat = new SimpleDateFormat(DATETIME_UI_FORMAT);
+        return String.valueOf(dateFormat.parse(matcher.group(0)).getTime());
+      } catch (ParseException e) {
+        throw new InvalidRequestException("Cannot parse date time value from " + fieldValue, USER);
+      }
+    }
+    matcher = uiCalPattern.matcher(fieldValue);
+    if (matcher.matches()) {
+      try {
+        SimpleDateFormat dateFormat = new SimpleDateFormat(DATETIME_UI_CAL_FORMAT);
         return String.valueOf(dateFormat.parse(matcher.group(0)).getTime());
       } catch (ParseException e) {
         throw new InvalidRequestException("Cannot parse date time value from " + fieldValue, USER);

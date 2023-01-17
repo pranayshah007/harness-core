@@ -27,4 +27,5 @@ public interface K8sCommandUnitConstants {
   String Prune = "Prune";
   String RecreatePrunedResource = "Recreate Pruned Resources";
   String DeleteFailedReleaseResources = "Delete Failed Release Resources";
+  String K8sDryRun = "K8s Dry Run";
 }

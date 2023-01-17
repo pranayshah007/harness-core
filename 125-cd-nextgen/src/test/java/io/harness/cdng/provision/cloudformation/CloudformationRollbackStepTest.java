@@ -52,6 +52,7 @@ import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 
 import software.wings.beans.TaskType;
 
@@ -182,8 +183,8 @@ public class CloudformationRollbackStepTest extends CategoryTest {
     doReturn(createStackCloudformationTaskNGParameters)
         .when(spyCloudformationRollbackStep)
         .getCreateStackCloudformationTaskNGParameters(any(), any(), any());
-    Mockito.mockStatic(StepUtils.class);
-    PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(expectedTaskRequest);
     ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
 
@@ -191,8 +192,8 @@ public class CloudformationRollbackStepTest extends CategoryTest {
         getAmbiance(), stepElementParameters, StepInputPackage.builder().build());
 
     assertThat(taskRequest).isNotNull();
-    PowerMockito.verifyStatic(StepUtils.class, times(1));
-    StepUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any());
+    PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
+    TaskRequestsUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any());
     TaskData taskData = taskDataArgumentCaptor.getValue();
     assertThat(taskData.getTaskType()).isEqualTo(TaskType.CLOUDFORMATION_TASK_NG.name());
     assertThat(taskData.getParameters()[0]).isEqualTo(createStackCloudformationTaskNGParameters);
@@ -231,8 +232,8 @@ public class CloudformationRollbackStepTest extends CategoryTest {
     doReturn(deleteStackCloudformationTaskNGParameters)
         .when(spyCloudformationRollbackStep)
         .getDeleteStackCloudformationTaskNGParameters(any(), any());
-    Mockito.mockStatic(StepUtils.class);
-    PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(expectedTaskRequest);
     ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
 
@@ -240,8 +241,8 @@ public class CloudformationRollbackStepTest extends CategoryTest {
         getAmbiance(), stepElementParameters, StepInputPackage.builder().build());
 
     assertThat(taskRequest).isNotNull();
-    PowerMockito.verifyStatic(StepUtils.class, times(1));
-    StepUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any());
+    PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
+    TaskRequestsUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any());
     TaskData taskData = taskDataArgumentCaptor.getValue();
     assertThat(taskData.getTaskType()).isEqualTo(TaskType.CLOUDFORMATION_TASK_NG.name());
     assertThat(taskData.getParameters()[0]).isEqualTo(deleteStackCloudformationTaskNGParameters);

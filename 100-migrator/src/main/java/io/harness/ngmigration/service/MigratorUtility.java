@@ -69,6 +69,7 @@ public class MigratorUtility {
   private static final int MANIFEST = 15;
   private static final int CONFIG_FILE = 16;
   private static final int SERVICE = 20;
+  private static final int INFRA_PROVISIONER = 23;
   private static final int ENVIRONMENT = 25;
   private static final int INFRA = 35;
   private static final int SERVICE_VARIABLE = 40;
@@ -86,6 +87,7 @@ public class MigratorUtility {
           .put(NGMigrationEntityType.MANIFEST, MANIFEST)
           .put(NGMigrationEntityType.CONFIG_FILE, CONFIG_FILE)
           .put(NGMigrationEntityType.SERVICE, SERVICE)
+          .put(NGMigrationEntityType.INFRA_PROVISIONER, INFRA_PROVISIONER)
           .put(NGMigrationEntityType.ENVIRONMENT, ENVIRONMENT)
           .put(NGMigrationEntityType.INFRA, INFRA)
           .put(NGMigrationEntityType.SERVICE_VARIABLE, SERVICE_VARIABLE)
@@ -338,5 +340,15 @@ public class MigratorUtility {
   public static ParameterField<List<String>> splitWithComma(String str) {
     return ParameterField.createValueField(
         Arrays.stream(str.split(",")).map(String::trim).filter(StringUtils::isNotBlank).collect(Collectors.toList()));
+  }
+
+  public static ParameterField<String> getIdentifierWithScopeDefaultsRuntime(
+      Map<CgEntityId, NGYamlFile> migratedEntities, String entityId, NGMigrationEntityType entityType) {
+    NGYamlFile ngYamlFile = migratedEntities.get(CgEntityId.builder().type(entityType).id(entityId).build());
+    if (ngYamlFile == null) {
+      return RUNTIME_INPUT;
+    }
+    NgEntityDetail detail = ngYamlFile.getNgEntityDetail();
+    return ParameterField.createValueField(getIdentifierWithScope(detail));
   }
 }

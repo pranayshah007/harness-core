@@ -37,7 +37,7 @@ if [[ "${ENABLE_APPDYNAMICS}" == "true" ]]; then
 fi
 
 if [[ "${DEPLOY_MODE}" == "KUBERNETES" ]] || [[ "${DEPLOY_MODE}" == "KUBERNETES_ONPREM" ]]; then
-    java $JAVA_OPTS -jar $CAPSULE_JAR $COMMAND /opt/harness/sto-manager-config.yml
+    java $JAVA_OPTS -jar $CAPSULE_JAR $COMMAND /opt/harness/ci-manager-config.yml
 else
-    java $JAVA_OPTS -jar $CAPSULE_JAR $COMMAND /opt/harness/sto-manager-config.yml > /opt/harness/logs/sto-manager.log 2>&1
+    java $JAVA_OPTS -jar $CAPSULE_JAR $COMMAND /opt/harness/ci-manager-config.yml > /opt/harness/logs/sto-manager.log 2>&1
 fi

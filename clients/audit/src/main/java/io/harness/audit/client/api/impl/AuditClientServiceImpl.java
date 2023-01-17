@@ -60,7 +60,8 @@ public class AuditClientServiceImpl implements AuditClientService {
     return getResponse(auditClient.createAudit(auditEventDTO));
   }
 
-  private AuditEventDTO getAuditEventDTO(
+  @Override
+  public AuditEventDTO getAuditEventDTO(
       AuditEntry auditEntry, GlobalContext globalContext, AuthenticationInfoDTO authenticationInfoDTO) {
     HttpRequestInfo httpRequestInfo = null;
     RequestMetadata requestMetadata = null;

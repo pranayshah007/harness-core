@@ -47,6 +47,8 @@ public class DockerArtifactDelegateRequest implements ArtifactSourceDelegateRequ
   List<EncryptedDataDetail> encryptedDataDetails;
   /** Artifact Source type.*/
   ArtifactSourceType sourceType;
+  /** If shouldFetchDockerV2DigestSHA256 is true, metainfo will be populated with V2 SHA256 of the docker image too.*/
+  @Builder.Default Boolean shouldFetchDockerV2DigestSHA256 = false;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

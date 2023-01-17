@@ -84,6 +84,7 @@ public class InternalChangeConsumerServiceImpl implements InternalChangeConsumer
     }
 
     ChangeEventDTO changeEventDTO = ChangeEventDTO.builder()
+                                        .name(internalChangeEventDTO.getEventDetails().getName())
                                         .accountId(internalChangeEventDTO.getAccountId())
                                         .orgIdentifier(internalChangeEventDTO.getOrgIdentifier())
                                         .projectIdentifier(internalChangeEventDTO.getProjectIdentifier())

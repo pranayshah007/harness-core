@@ -21,8 +21,8 @@ import lombok.NonNull;
 public class InfrastructureMappingDTO {
   @Nullable private String id;
   @NonNull private String accountIdentifier;
-  @NonNull private String orgIdentifier;
-  @NonNull private String projectIdentifier;
+  @Nullable private String orgIdentifier;
+  @Nullable private String projectIdentifier;
   @NonNull private String infrastructureKind;
   @Nullable private String connectorRef;
   @NonNull private String envIdentifier;

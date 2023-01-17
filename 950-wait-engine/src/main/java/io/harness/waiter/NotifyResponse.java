@@ -48,13 +48,13 @@ public class NotifyResponse implements WaitEngineEntity, CreatedAtAccess {
   public static final Duration TTL = ofDays(21);
 
   @Id @org.springframework.data.annotation.Id String uuid;
-  @FdIndex long createdAt;
+  @FdIndex Long createdAt;
   byte[] responseData;
-  boolean error;
+  @Builder.Default Boolean error = false;
 
   @Default @FdTtlIndex @NonFinal @Wither Date validUntil = Date.from(OffsetDateTime.now().plus(TTL).toInstant());
 
-  private Boolean usingKryoWithoutReference;
+  Boolean usingKryoWithoutReference;
 
   public Boolean getUsingKryoWithoutReference() {
     return isUsingKryoWithoutReference();
@@ -65,5 +65,19 @@ public class NotifyResponse implements WaitEngineEntity, CreatedAtAccess {
       return false;
     }
     return usingKryoWithoutReference;
+  }
+
+  public boolean isError() {
+    if (error == null) {
+      return false;
+    }
+    return error;
+  }
+
+  public long getCreatedAt() {
+    if (createdAt == null) {
+      return 0;
+    }
+    return createdAt;
   }
 }

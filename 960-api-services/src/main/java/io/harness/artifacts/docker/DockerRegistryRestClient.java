@@ -55,6 +55,13 @@ public interface DockerRegistryRestClient {
   getImageManifest(@Header("Authorization") String bearerAuthHeader,
       @Path(value = "imageName", encoded = true) String imageName, @Path(value = "tag", encoded = true) String tag);
 
+  @Headers(
+      "Accept: application/vnd.docker.distribution.manifest.v2+json, application/vnd.docker.distribution.manifest.v2+prettyjws")
+  @GET("/v2/{imageName}/manifests/{tag}")
+  Call<DockerImageManifestResponse>
+  getImageManifestV2(@Header("Authorization") String bearerAuthHeader,
+      @Path(value = "imageName", encoded = true) String imageName, @Path(value = "tag", encoded = true) String tag);
+
   @GET("/v2/repositories/{imageName}/tags")
   Call<DockerPublicImageTagResponse> listPublicImageTags(@Path(value = "imageName", encoded = true) String imageName,
       @Query("page") Integer pageNum, @Query("page_size") int pageSize);

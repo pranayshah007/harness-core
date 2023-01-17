@@ -28,6 +28,7 @@ import static io.harness.remote.client.NGRestUtils.getResponse;
 import static software.wings.beans.Account.AccountKeys;
 import static software.wings.beans.User.Builder;
 
+import static com.google.common.collect.Sets.newHashSet;
 import static org.apache.cxf.common.util.UrlUtils.urlDecode;
 
 import io.harness.annotations.dev.HarnessModule;
@@ -79,7 +80,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import javax.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
 
@@ -300,7 +300,7 @@ public class AuthenticationManager {
       }
     }
     if (user != null && isEmpty(user.getSupportAccounts())) {
-      userService.loadSupportAccounts(user, Set.of(AccountKeys.uuid));
+      userService.loadSupportAccounts(user, newHashSet(AccountKeys.uuid));
     }
     return user;
   }

@@ -39,6 +39,7 @@ You can run multiple PR check triggers by comma separating them in a single comm
 - CodeBaseHash: `trigger codebasehash`
 - CodeFormatCheckstyle: `trigger checkstylecodeformat`
 - SonarScan: `trigger ss`
+- GitLeaks: `trigger gitleaks`
 - Trigger all Checks: `trigger smartchecks`
 </details>
 

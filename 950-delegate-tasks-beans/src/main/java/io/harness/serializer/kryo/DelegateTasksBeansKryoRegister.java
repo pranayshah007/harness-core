@@ -433,6 +433,9 @@ import io.harness.delegate.task.aws.AwsLoadBalancerDetails;
 import io.harness.delegate.task.aws.LbDetailsForAlbTrafficShift;
 import io.harness.delegate.task.aws.LoadBalancerDetailsForBGDeployment;
 import io.harness.delegate.task.aws.LoadBalancerType;
+import io.harness.delegate.task.aws.asg.AsgBlueGreenSwapServiceRequest;
+import io.harness.delegate.task.aws.asg.AsgBlueGreenSwapServiceResponse;
+import io.harness.delegate.task.aws.asg.AsgBlueGreenSwapServiceResult;
 import io.harness.delegate.task.aws.asg.AsgCanaryDeleteRequest;
 import io.harness.delegate.task.aws.asg.AsgCanaryDeleteResponse;
 import io.harness.delegate.task.aws.asg.AsgCanaryDeleteResult;
@@ -688,6 +691,8 @@ import io.harness.delegate.task.k8s.K8sCanaryDeployResponse;
 import io.harness.delegate.task.k8s.K8sDeleteRequest;
 import io.harness.delegate.task.k8s.K8sDeployRequest;
 import io.harness.delegate.task.k8s.K8sDeployResponse;
+import io.harness.delegate.task.k8s.K8sDryRunManifestRequest;
+import io.harness.delegate.task.k8s.K8sDryRunManifestResponse;
 import io.harness.delegate.task.k8s.K8sManifestDelegateConfig;
 import io.harness.delegate.task.k8s.K8sRollingDeployRequest;
 import io.harness.delegate.task.k8s.K8sRollingDeployResponse;
@@ -732,6 +737,8 @@ import io.harness.delegate.task.pcf.request.CfInfraMappingDataRequest;
 import io.harness.delegate.task.pcf.request.CfInfraMappingDataRequestNG;
 import io.harness.delegate.task.pcf.request.CfInstanceSyncRequest;
 import io.harness.delegate.task.pcf.request.CfRollbackCommandRequestNG;
+import io.harness.delegate.task.pcf.request.CfRollingDeployRequestNG;
+import io.harness.delegate.task.pcf.request.CfRollingRollbackRequestNG;
 import io.harness.delegate.task.pcf.request.CfRunPluginCommandRequest;
 import io.harness.delegate.task.pcf.request.CfRunPluginCommandRequestNG;
 import io.harness.delegate.task.pcf.request.CfSwapRollbackCommandRequestNG;
@@ -747,6 +754,8 @@ import io.harness.delegate.task.pcf.response.CfInfraMappingDataResponse;
 import io.harness.delegate.task.pcf.response.CfInfraMappingDataResponseNG;
 import io.harness.delegate.task.pcf.response.CfInstanceSyncResponse;
 import io.harness.delegate.task.pcf.response.CfRollbackCommandResponseNG;
+import io.harness.delegate.task.pcf.response.CfRollingDeployResponseNG;
+import io.harness.delegate.task.pcf.response.CfRollingRollbackResponseNG;
 import io.harness.delegate.task.pcf.response.CfRouteUpdateCommandResponse;
 import io.harness.delegate.task.pcf.response.CfSetupCommandResponse;
 import io.harness.delegate.task.pcf.response.CfSwapRouteCommandResponseNG;
@@ -855,6 +864,7 @@ import io.harness.delegate.task.ssh.ScriptCommandUnit;
 import io.harness.delegate.task.ssh.artifact.ArtifactoryArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.ArtifactoryDockerArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.AwsS3ArtifactDelegateConfig;
+import io.harness.delegate.task.ssh.artifact.AzureArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.CustomArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.JenkinsArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.NexusArtifactDelegateConfig;
@@ -1486,6 +1496,10 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(TasConstants.class, 10000259);
     kryo.register(TasManifestsPackage.class, 10000260);
     kryo.register(CfSwapRouteCommandResult.class, 10000261);
+    kryo.register(CfRollingDeployRequestNG.class, 10000263);
+    kryo.register(CfRollingDeployResponseNG.class, 10000264);
+    kryo.register(CfRollingRollbackRequestNG.class, 10000265);
+    kryo.register(CfRollingRollbackResponseNG.class, 10000266);
 
     kryo.register(SecretType.class, 543214);
     kryo.register(ValueType.class, 543215);
@@ -2056,6 +2070,9 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AsgRollingRollbackRequest.class, 573590);
     kryo.register(AsgRollingRollbackResponse.class, 573591);
     kryo.register(AsgRollingRollbackResult.class, 573592);
+    kryo.register(AsgBlueGreenSwapServiceRequest.class, 573596);
+    kryo.register(AsgBlueGreenSwapServiceResponse.class, 573597);
+    kryo.register(AsgBlueGreenSwapServiceResult.class, 573598);
 
     kryo.register(AzurePackageArtifactConfig.class, 55410);
     kryo.register(AzureArtifactRequestDetails.class, 55411);
@@ -2099,6 +2116,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AwsS3ArtifactDelegateConfig.class, 9800007);
     kryo.register(InlineTerraformBackendConfigFileInfo.class, 9800008);
     kryo.register(RemoteTerraformBackendConfigFileInfo.class, 9800009);
+    kryo.register(AzureArtifactDelegateConfig.class, 9800010);
     kryo.register(WinrmConnectivityExecutionCapability.class, 55425);
     kryo.register(GcpSecretManagerValidationParams.class, 19879);
     kryo.register(ShellScriptProvisionTaskNGRequest.class, 55426);
@@ -2183,5 +2201,8 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(EcsRunTaskArnRequest.class, 573583);
     kryo.register(TfVarS3Source.class, 573593);
     kryo.register(ConcurrentHashMap.class, 673567);
+
+    kryo.register(K8sDryRunManifestRequest.class, 573594);
+    kryo.register(K8sDryRunManifestResponse.class, 573595);
   }
 }

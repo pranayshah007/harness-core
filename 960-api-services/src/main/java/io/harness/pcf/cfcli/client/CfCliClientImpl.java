@@ -208,6 +208,10 @@ public class CfCliClientImpl implements CfCliClient {
   private String constructCfPushCommand(CfCreateApplicationRequestData requestData, String finalFilePath) {
     CfRequestConfig pcfRequestConfig = requestData.getCfRequestConfig();
     if (!requestData.isVarsYmlFilePresent()) {
+      if (!isEmpty(requestData.getStrategy())) {
+        return CfCliCommandResolver.getRollingPushCliCommand(
+            pcfRequestConfig.getCfCliPath(), pcfRequestConfig.getCfCliVersion(), finalFilePath);
+      }
       return CfCliCommandResolver.getPushCliCommand(
           pcfRequestConfig.getCfCliPath(), pcfRequestConfig.getCfCliVersion(), finalFilePath);
     }
@@ -220,6 +224,11 @@ public class CfCliClientImpl implements CfCliClient {
           varFiles.add(String.valueOf(varsFile.getAbsoluteFile()));
         }
       });
+    }
+
+    if (!isEmpty(requestData.getStrategy())) {
+      return CfCliCommandResolver.getRollingPushCliCommand(
+          pcfRequestConfig.getCfCliPath(), pcfRequestConfig.getCfCliVersion(), finalFilePath, varFiles);
     }
 
     return CfCliCommandResolver.getPushCliCommand(

@@ -16,7 +16,7 @@ import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
 
-import static software.wings.beans.Log.Builder.aLog;
+import static software.wings.beans.dto.Log.Builder.aLog;
 
 import static java.lang.String.format;
 
@@ -34,10 +34,10 @@ import io.harness.shell.ShellExecutorConfig;
 import io.harness.shell.SshSessionConfig;
 import io.harness.shell.SshSessionManager;
 
-import software.wings.beans.Log.Builder;
 import software.wings.beans.command.CommandExecutionContext;
 import software.wings.beans.command.CommandUnit;
 import software.wings.beans.command.ShellCommandExecutionContext;
+import software.wings.beans.dto.Log.Builder;
 import software.wings.beans.infrastructure.Host;
 import software.wings.core.local.executors.ShellExecutorFactory;
 import software.wings.core.ssh.executors.FileBasedScriptExecutor;

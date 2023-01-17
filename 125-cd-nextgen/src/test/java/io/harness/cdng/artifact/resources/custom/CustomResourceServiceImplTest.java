@@ -64,7 +64,7 @@ public class CustomResourceServiceImplTest extends CategoryTest {
             .artifactTaskExecutionResponse(
                 ArtifactTaskExecutionResponse.builder().buildDetails(Collections.singletonList(buildDetails)).build())
             .build();
-    when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(artifactTaskResponse);
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any())).thenReturn(artifactTaskResponse);
 
     List<BuildDetails> customResourceServiceBuilds = customResourceService.getBuilds("script", "versionPath",
         "arrayPath", Collections.emptyMap(), ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER,

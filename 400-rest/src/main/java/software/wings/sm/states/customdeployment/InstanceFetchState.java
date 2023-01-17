@@ -14,11 +14,11 @@ import static io.harness.utils.Utils.isInstanceOf;
 
 import static software.wings.api.InstanceElement.Builder.anInstanceElement;
 import static software.wings.api.ServiceTemplateElement.Builder.aServiceTemplateElement;
-import static software.wings.beans.Log.Builder.aLog;
 import static software.wings.beans.LogColor.Red;
 import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogHelper.doneColoring;
 import static software.wings.beans.command.CommandUnitDetails.CommandUnitType.CUSTOM_DEPLOYMENT_FETCH_INSTANCES;
+import static software.wings.beans.dto.Log.Builder.aLog;
 import static software.wings.sm.InstanceStatusSummary.InstanceStatusSummaryBuilder.anInstanceStatusSummary;
 import static software.wings.sm.states.customdeploymentng.InstanceMapperUtils.getHostnameFieldName;
 
@@ -60,12 +60,12 @@ import software.wings.api.shellscript.provision.ShellScriptProvisionExecutionDat
 import software.wings.beans.Activity;
 import software.wings.beans.CustomInfrastructureMapping;
 import software.wings.beans.InfrastructureMapping;
-import software.wings.beans.Log.Builder;
 import software.wings.beans.LogColor;
 import software.wings.beans.ServiceTemplate;
 import software.wings.beans.TaskType;
 import software.wings.beans.command.CommandUnit;
 import software.wings.beans.command.FetchInstancesCommandUnit;
+import software.wings.beans.dto.Log.Builder;
 import software.wings.beans.shellscript.provisioner.ShellScriptProvisionParameters;
 import software.wings.beans.template.deploymenttype.CustomDeploymentTypeTemplate;
 import software.wings.expression.ManagerPreviewExpressionEvaluator;

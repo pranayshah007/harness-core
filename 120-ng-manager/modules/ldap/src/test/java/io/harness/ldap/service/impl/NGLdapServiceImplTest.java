@@ -119,7 +119,7 @@ public class NGLdapServiceImplTest extends CategoryTest {
 
     mockCgClientCall();
 
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(NGLdapDelegateTaskResponse.builder().ldapTestResponse(successfulTestResponse).build());
 
     LdapTestResponse ldapTestResponse =
@@ -133,7 +133,7 @@ public class NGLdapServiceImplTest extends CategoryTest {
     LdapTestResponse unsuccessfulTestResponse =
         LdapTestResponse.builder().status(FAILURE).message(INVALID_CREDENTIALS).build();
 
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(NGLdapDelegateTaskResponse.builder().ldapTestResponse(unsuccessfulTestResponse).build());
 
     try {
@@ -153,7 +153,7 @@ public class NGLdapServiceImplTest extends CategoryTest {
     final String accountId = "testAccountId";
     software.wings.beans.sso.LdapSettings ldapSettings = getLdapSettings(accountId);
     mockCgClientCall();
-    when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(buildErrorNotifyResponseData());
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any())).thenReturn(buildErrorNotifyResponseData());
 
     LdapTestResponse ldapTestResponse = null;
     try {
@@ -184,7 +184,7 @@ public class NGLdapServiceImplTest extends CategoryTest {
                                      .totalMembers(totalMembers)
                                      .build();
     Collection<LdapGroupResponse> matchedGroups = Collections.singletonList(response);
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(NGLdapGroupSearchTaskResponse.builder().ldapListGroupsResponses(matchedGroups).build());
     Collection<LdapGroupResponse> resultUserGroups =
         ngLdapService.searchLdapGroupsByName(ACCOUNT_ID, ORG_ID, PROJECT_ID, "TestLdapID", groupNameQuery);
@@ -220,7 +220,7 @@ public class NGLdapServiceImplTest extends CategoryTest {
     doReturn(request).when(managerClient).getLdapSettingsUsingAccountId(ACCOUNT_ID);
     doReturn(Response.success(mockResponse)).when(request).execute();
     final String groupNameQuery = "grpName";
-    when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(buildErrorNotifyResponseData());
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any())).thenReturn(buildErrorNotifyResponseData());
     Collection<LdapGroupResponse> resultUserGroups = null;
 
     try {
@@ -246,7 +246,7 @@ public class NGLdapServiceImplTest extends CategoryTest {
             .message("Configuration looks good. Server returned non-zero number of records")
             .build();
     mockCgClientCall();
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(NGLdapDelegateTaskResponse.builder().ldapTestResponse(successfulTestResponse).build());
 
     LdapTestResponse ldapTestResponse = ngLdapService.validateLdapUserSettings(accountId, null, null, ldapSettings);
@@ -256,7 +256,7 @@ public class NGLdapServiceImplTest extends CategoryTest {
 
     LdapTestResponse unsuccessfulTestResponse = LdapTestResponse.builder().status(FAILURE).message(null).build();
 
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(NGLdapDelegateTaskResponse.builder().ldapTestResponse(unsuccessfulTestResponse).build());
 
     ldapTestResponse = ngLdapService.validateLdapUserSettings(accountId, null, null, ldapSettings);
@@ -277,7 +277,7 @@ public class NGLdapServiceImplTest extends CategoryTest {
             .message("Configuration looks good. Server returned non-zero number of records")
             .build();
     mockCgClientCall();
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(NGLdapDelegateTaskResponse.builder().ldapTestResponse(successfulTestResponse).build());
 
     LdapTestResponse ldapTestResponse = ngLdapService.validateLdapGroupSettings(accountId, null, null, ldapSettings);
@@ -291,7 +291,7 @@ public class NGLdapServiceImplTest extends CategoryTest {
             .message("Please check configuration. Server returned zero records for the configuration.")
             .build();
 
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(NGLdapDelegateTaskResponse.builder().ldapTestResponse(unsuccessfulTestResponse).build());
 
     try {
@@ -310,7 +310,7 @@ public class NGLdapServiceImplTest extends CategoryTest {
     final String accountId = "testAccountId";
     software.wings.beans.sso.LdapSettings ldapSettings = getLdapSettings(accountId);
     mockCgClientCall();
-    when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(buildErrorNotifyResponseData());
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any())).thenReturn(buildErrorNotifyResponseData());
 
     LdapTestResponse ldapTestResponse = null;
     try {
@@ -330,7 +330,7 @@ public class NGLdapServiceImplTest extends CategoryTest {
     final String accountId = "testAccountId";
     software.wings.beans.sso.LdapSettings ldapSettings = getLdapSettings(accountId);
     mockCgClientCall();
-    when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(buildErrorNotifyResponseData());
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any())).thenReturn(buildErrorNotifyResponseData());
 
     LdapTestResponse ldapTestResponse = null;
     try {
@@ -380,13 +380,13 @@ public class NGLdapServiceImplTest extends CategoryTest {
     usrGroupToLdapGroupMap.put(ug1, response);
 
     doNothing().when(groupSyncHelper).reconcileAllUserGroups(any(), anyString(), anyString());
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(NGLdapGroupSyncTaskResponse.builder().ldapGroupsResponse(response).build());
     when(userGroupService.getUserGroupsBySsoId(anyString(), anyString())).thenReturn(Collections.singletonList(ug1));
     ngLdapService.syncUserGroupsJob(ACCOUNT_ID, ORG_ID, PROJECT_ID);
     verify(managerClient, times(1)).getLdapSettingsUsingAccountId(ACCOUNT_ID);
     verify(groupSyncHelper, times(1)).reconcileAllUserGroups(usrGroupToLdapGroupMap, LDAP_SETTINGS_ID, ACCOUNT_ID);
-    verify(delegateGrpcClientWrapper, times(1)).executeSyncTask(any());
+    verify(delegateGrpcClientWrapper, times(1)).executeSyncTaskV2(any());
   }
 
   @Test
@@ -407,7 +407,7 @@ public class NGLdapServiceImplTest extends CategoryTest {
     // Assert
     verify(managerClient, times(1)).getLdapSettingsUsingAccountId(ACCOUNT_ID);
     verify(groupSyncHelper, times(0)).reconcileAllUserGroups(any(), anyString(), anyString());
-    verify(delegateGrpcClientWrapper, times(0)).executeSyncTask(any());
+    verify(delegateGrpcClientWrapper, times(0)).executeSyncTaskV2(any());
   }
 
   @Test
@@ -441,7 +441,7 @@ public class NGLdapServiceImplTest extends CategoryTest {
     String authSuccessMsg = "Authentication Successful";
     LdapResponse ldapResponse =
         LdapResponse.builder().status(LdapResponse.Status.SUCCESS).message(authSuccessMsg).build();
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(NGLdapTestAuthenticationTaskResponse.builder().ldapAuthenticationResponse(ldapResponse).build());
 
     // Act
@@ -483,7 +483,7 @@ public class NGLdapServiceImplTest extends CategoryTest {
     doReturn(Response.success(mockResponse)).when(request).execute();
     LdapResponse ldapResponse =
         LdapResponse.builder().status(LdapResponse.Status.FAILURE).message(LdapConstants.INVALID_CREDENTIALS).build();
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(NGLdapTestAuthenticationTaskResponse.builder().ldapAuthenticationResponse(ldapResponse).build());
 
     // Act & Assert

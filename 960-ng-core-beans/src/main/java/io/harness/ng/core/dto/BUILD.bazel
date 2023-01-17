@@ -17,7 +17,7 @@ java_library(
         "//960-ng-core-beans/src/main/java/io/harness/ng/core/user/remote/dto:module",
         "//960-ng-core-beans/src/main/java/io/harness/ng/core/usergroups/filter:module",
         "//970-ng-commons:module",
-        "//980-commons:module",
+        "//980-commons/src/main/java/io/harness/data/validator:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
         "@maven//:com_fasterxml_jackson_core_jackson_annotations",
         "@maven//:dev_morphia_morphia_core",

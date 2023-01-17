@@ -12,7 +12,6 @@ import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 import static io.harness.exception.WingsException.USER;
-import static io.harness.steps.StepUtils.prepareCDTaskRequest;
 
 import static java.lang.String.format;
 
@@ -92,6 +91,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 
@@ -99,6 +99,7 @@ import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -113,7 +114,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 public class ServerlessStepCommonHelper extends ServerlessStepUtils {
   @Inject private EngineExpressionService engineExpressionService;
   @Inject private ServerlessEntityHelper serverlessEntityHelper;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private StepHelper stepHelper;
   private static final String PRIMARY_ARTIFACT_PATH_FOR_NON_ECR = "<+artifact.path>";
   private static final String PRIMARY_ARTIFACT_PATH_FOR_ECR = "<+artifact.image>";
@@ -252,11 +253,11 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
     String taskName =
         TaskType.SERVERLESS_COMMAND_TASK.getDisplayName() + " : " + serverlessCommandRequest.getCommandName();
     ServerlessSpecParameters serverlessSpecParameters = (ServerlessSpecParameters) stepElementParameters.getSpec();
-    final TaskRequest taskRequest =
-        prepareCDTaskRequest(ambiance, taskData, kryoSerializer, serverlessSpecParameters.getCommandUnits(), taskName,
-            TaskSelectorYaml.toTaskSelector(
-                emptyIfNull(getParameterFieldValue(serverlessSpecParameters.getDelegateSelectors()))),
-            stepHelper.getEnvironmentType(ambiance));
+    final TaskRequest taskRequest = TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData,
+        referenceFalseKryoSerializer, serverlessSpecParameters.getCommandUnits(), taskName,
+        TaskSelectorYaml.toTaskSelector(
+            emptyIfNull(getParameterFieldValue(serverlessSpecParameters.getDelegateSelectors()))),
+        stepHelper.getEnvironmentType(ambiance));
     return TaskChainResponse.builder()
         .taskRequest(taskRequest)
         .chainEnd(isChainEnd)
@@ -512,11 +513,11 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
                                   .build();
     String taskName = TaskType.SERVERLESS_GIT_FETCH_TASK_NG.getDisplayName();
     ServerlessSpecParameters serverlessSpecParameters = (ServerlessSpecParameters) stepElementParameters.getSpec();
-    final TaskRequest taskRequest =
-        prepareCDTaskRequest(ambiance, taskData, kryoSerializer, serverlessSpecParameters.getCommandUnits(), taskName,
-            TaskSelectorYaml.toTaskSelector(
-                emptyIfNull(getParameterFieldValue(serverlessSpecParameters.getDelegateSelectors()))),
-            stepHelper.getEnvironmentType(ambiance));
+    final TaskRequest taskRequest = TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData,
+        referenceFalseKryoSerializer, serverlessSpecParameters.getCommandUnits(), taskName,
+        TaskSelectorYaml.toTaskSelector(
+            emptyIfNull(getParameterFieldValue(serverlessSpecParameters.getDelegateSelectors()))),
+        stepHelper.getEnvironmentType(ambiance));
     return TaskChainResponse.builder()
         .chainEnd(false)
         .taskRequest(taskRequest)
@@ -541,11 +542,11 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
                                   .build();
     String taskName = TaskType.SERVERLESS_S3_FETCH_TASK_NG.getDisplayName();
     ServerlessSpecParameters serverlessSpecParameters = (ServerlessSpecParameters) stepElementParameters.getSpec();
-    final TaskRequest taskRequest =
-        prepareCDTaskRequest(ambiance, taskData, kryoSerializer, serverlessSpecParameters.getCommandUnits(), taskName,
-            TaskSelectorYaml.toTaskSelector(
-                emptyIfNull(getParameterFieldValue(serverlessSpecParameters.getDelegateSelectors()))),
-            stepHelper.getEnvironmentType(ambiance));
+    final TaskRequest taskRequest = TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData,
+        referenceFalseKryoSerializer, serverlessSpecParameters.getCommandUnits(), taskName,
+        TaskSelectorYaml.toTaskSelector(
+            emptyIfNull(getParameterFieldValue(serverlessSpecParameters.getDelegateSelectors()))),
+        stepHelper.getEnvironmentType(ambiance));
     return TaskChainResponse.builder()
         .chainEnd(false)
         .taskRequest(taskRequest)

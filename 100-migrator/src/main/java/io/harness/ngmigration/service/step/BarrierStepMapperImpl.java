@@ -15,6 +15,7 @@ import io.harness.steps.StepSpecTypeConstants;
 
 import software.wings.beans.GraphNode;
 import software.wings.ngmigration.CgEntityId;
+import software.wings.ngmigration.CgEntityNode;
 import software.wings.sm.State;
 import software.wings.sm.states.BarrierState;
 
@@ -35,7 +36,8 @@ public class BarrierStepMapperImpl implements StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(Map<CgEntityId, NGYamlFile> migratedEntities, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities, GraphNode graphNode) {
     BarrierState state = (BarrierState) getState(graphNode);
     BarrierStepNode barrierStepNode = new BarrierStepNode();
     baseSetup(graphNode, barrierStepNode);

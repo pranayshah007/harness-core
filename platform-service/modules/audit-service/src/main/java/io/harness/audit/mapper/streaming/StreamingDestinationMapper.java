@@ -7,6 +7,9 @@
 
 package io.harness.audit.mapper.streaming;
 
+import static io.harness.spec.server.audit.v1.model.StreamingDestinationSpecDTO.TypeEnum.AWS_S3;
+
+import io.harness.audit.entities.streaming.AwsS3StreamingDestination;
 import io.harness.audit.entities.streaming.StreamingDestination;
 import io.harness.exception.UnknownEnumTypeException;
 import io.harness.spec.server.audit.v1.model.AwsS3StreamingDestinationSpecDTO;
@@ -25,6 +28,24 @@ public class StreamingDestinationMapper {
     streamingDestination.setType(streamingDestinationDTO.getSpec().getType());
     streamingDestination.setLastStatusChangedAt(System.currentTimeMillis());
     return streamingDestination;
+  }
+
+  private StreamingDestinationSpecDTO getSpec(StreamingDestination streamingDestination) {
+    if (AWS_S3.equals(streamingDestination.getType())) {
+      return new AwsS3StreamingDestinationSpecDTO()
+          .bucket(((AwsS3StreamingDestination) streamingDestination).getBucket())
+          .type(AWS_S3);
+    } else
+      throw new UnknownEnumTypeException("Streaming Destination type", streamingDestination.getType().name());
+  }
+
+  public StreamingDestinationDTO toDTO(StreamingDestination streamingDestination) {
+    return new StreamingDestinationDTO()
+        .identifier(streamingDestination.getIdentifier())
+        .name(streamingDestination.getName())
+        .status(streamingDestination.getStatus())
+        .connectorRef(streamingDestination.getConnectorRef())
+        .spec(getSpec(streamingDestination));
   }
 
   private StreamingDestination getStreamingDestination(StreamingDestinationSpecDTO streamingDestinationSpecDTO) {

@@ -71,6 +71,7 @@ import io.harness.pms.pipeline.governance.service.PipelineGovernanceService;
 import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
 import io.harness.pms.sdk.PmsSdkInstanceService;
 import io.harness.pms.utils.PipelineYamlHelper;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.pipeline.PMSPipelineRepository;
@@ -197,11 +198,19 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
 
     String sourcePipelineEntityYaml = sourcePipelineEntity.getYaml();
 
-    String destYaml =
-        pipelineCloneHelper.updatePipelineMetadataInSourceYaml(clonePipelineDTO, sourcePipelineEntityYaml, accountId);
+    String destYaml;
+    String sourcePipelineVersion = sourcePipelineEntity.getHarnessVersion();
+    switch (sourcePipelineVersion) {
+      case PipelineVersion.V1:
+        destYaml = pipelineCloneHelper.updatePipelineMetadataInSourceYamlV1(clonePipelineDTO, sourcePipelineEntityYaml);
+        break;
+      default:
+        destYaml = pipelineCloneHelper.updatePipelineMetadataInSourceYaml(
+            clonePipelineDTO, sourcePipelineEntityYaml, accountId);
+    }
     PipelineEntity destPipelineEntity =
         PMSPipelineDtoMapper.toPipelineEntity(accountId, clonePipelineDTO.getDestinationConfig().getOrgIdentifier(),
-            clonePipelineDTO.getDestinationConfig().getProjectIdentifier(), destYaml);
+            clonePipelineDTO.getDestinationConfig().getProjectIdentifier(), destYaml, false, sourcePipelineVersion);
 
     PipelineCRUDResult pipelineCRUDResult = validateAndCreatePipeline(destPipelineEntity, false);
     GovernanceMetadata destGovernanceMetadata = pipelineCRUDResult.getGovernanceMetadata();

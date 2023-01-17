@@ -622,10 +622,10 @@ public class DockerRegistryServiceImplTest extends CategoryTest {
 
     ArtifactMetaInfo artifactMetaInfo = ArtifactMetaInfo.builder().build();
 
-    when(dockerPublicRegistryProcessor.getArtifactMetaInfo(dockerInternalConfig, "imageName", "tag"))
+    when(dockerPublicRegistryProcessor.getArtifactMetaInfo(dockerInternalConfig, "imageName", "tag", false))
         .thenReturn(artifactMetaInfo);
 
-    assertThat(dockerRegistryService.getArtifactMetaInfo(dockerInternalConfig, "imageName", "tag"))
+    assertThat(dockerRegistryService.getArtifactMetaInfo(dockerInternalConfig, "imageName", "tag", false))
         .isEqualTo(artifactMetaInfo);
   }
 

@@ -199,4 +199,8 @@ public interface EntityTypeConstants {
   String ASG_ROLLING_DEPLOY = "AsgRollingDeploy";
   String ASG_ROLLING_ROLLBACK = "AsgRollingRollback";
   String CCM_GOVERNANCE_RULE_AWS = "GovernanceRuleAWS";
+  String TAS_ROLLING_DEPLOY = "TasRollingDeploy";
+  String TAS_ROLLING_ROLLBACK = "TasRollingRollback";
+  String K8S_DRY_RUN_MANIFEST = "K8sDryRun";
+  String ASG_BLUE_GREEN_SWAP_SERVICE_STEP = "AsgBlueGreenSwapService";
 }

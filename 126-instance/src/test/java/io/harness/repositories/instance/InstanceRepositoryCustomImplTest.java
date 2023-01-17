@@ -110,16 +110,10 @@ public class InstanceRepositoryCustomImplTest extends InstancesTestBase {
   @Category(UnitTests.class)
   public void getActiveInstancesByAccountTestWithoutTimestamp() {
     Instance instance = Instance.builder().instanceKey("abc").build();
-    Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier)
-                            .is(ACCOUNT_ID)
-                            .and(InstanceKeys.orgIdentifier)
-                            .is(ORGANIZATION_ID)
-                            .and(InstanceKeys.projectIdentifier)
-                            .is(PROJECT_ID)
-                            .and(InstanceKeys.serviceIdentifier)
-                            .is(SERVICE_ID)
-                            .and(InstanceKeys.isDeleted)
-                            .is(false);
+    Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier).is(ACCOUNT_ID);
+    criteria.and(InstanceKeys.orgIdentifier).is(ORGANIZATION_ID);
+    criteria.and(InstanceKeys.projectIdentifier).is(PROJECT_ID);
+    criteria.and(InstanceKeys.serviceIdentifier).is(SERVICE_ID).and(InstanceKeys.isDeleted).is(false);
     Query query = new Query().addCriteria(criteria);
     when(analyticsMongoTemplate.find(query, Instance.class)).thenReturn(Collections.singletonList(instance));
 
@@ -269,16 +263,14 @@ public class InstanceRepositoryCustomImplTest extends InstancesTestBase {
   @Owner(developers = PIYUSH_BHUWALKA)
   @Category(UnitTests.class)
   public void getActiveInstancesByInfrastructureMappingIdTest() {
-    Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier)
-                            .is(ACCOUNT_ID)
-                            .and(InstanceKeys.orgIdentifier)
-                            .is(ORGANIZATION_ID)
-                            .and(InstanceKeys.projectIdentifier)
-                            .is(PROJECT_ID)
-                            .and(InstanceKeys.infrastructureMappingId)
-                            .is(INFRASTRUCTURE_MAPPING_ID)
-                            .and(InstanceKeys.isDeleted)
-                            .is(false);
+    Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier).is(ACCOUNT_ID);
+    criteria.and(InstanceKeys.orgIdentifier).is(ORGANIZATION_ID);
+    criteria.and(InstanceKeys.projectIdentifier).is(PROJECT_ID);
+    criteria.and(InstanceKeys.infrastructureMappingId)
+        .is(INFRASTRUCTURE_MAPPING_ID)
+        .and(InstanceKeys.isDeleted)
+        .is(false);
+
     Query query = new Query().addCriteria(criteria);
     Instance instance = Instance.builder().build();
     when(secondaryMongoTemplate.find(query, Instance.class)).thenReturn(Arrays.asList(instance));
