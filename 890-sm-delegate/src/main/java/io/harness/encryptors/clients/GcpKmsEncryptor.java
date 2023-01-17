@@ -246,7 +246,7 @@ public class GcpKmsEncryptor implements KmsEncryptor {
   }
 
   private String encryptDekFromKms(GcpKmsConfig gcpKmsConfig, ByteString plainTextDek) {
-    try (KeyManagementServiceClient gcpKmsClient = getClient(gcpKmsConfig)) {
+    try (KeyManagementServiceClient gcpKmsClient = getClient(gcpKmsConfig, true)) {
       String resourceName = CryptoKeyName.format(
           gcpKmsConfig.getProjectId(), gcpKmsConfig.getRegion(), gcpKmsConfig.getKeyRing(), gcpKmsConfig.getKeyName());
       EncryptResponse encryptResponse = gcpKmsClient.encrypt(resourceName, plainTextDek);
@@ -255,7 +255,7 @@ public class GcpKmsEncryptor implements KmsEncryptor {
   }
 
   private byte[] decryptDekFromKms(GcpKmsConfig gcpKmsConfig, String encryptionKey) {
-    try (KeyManagementServiceClient client = getClient(gcpKmsConfig)) {
+    try (KeyManagementServiceClient client = getClient(gcpKmsConfig, true)) {
       String resourceName = CryptoKeyName.format(
           gcpKmsConfig.getProjectId(), gcpKmsConfig.getRegion(), gcpKmsConfig.getKeyRing(), gcpKmsConfig.getKeyName());
       ByteString key = ByteString.copyFrom(StandardCharsets.ISO_8859_1.encode(encryptionKey));
@@ -274,15 +274,24 @@ public class GcpKmsEncryptor implements KmsEncryptor {
     return simpleEncryption.decrypt(encryptedPlainTextKey);
   }
 
-  private KeyManagementServiceClient getClient(GcpKmsConfig gcpKmsConfig) {
-    Preconditions.checkNotNull(gcpKmsConfig.getCredentials(), "credentials are not provided");
-    Preconditions.checkNotNull(gcpKmsConfig.getRegion(), "region is not present");
-    Preconditions.checkNotNull(gcpKmsConfig.getProjectId(), "projectId is not present");
-    Preconditions.checkNotNull(gcpKmsConfig.getKeyRing(), "keyRing is not present");
-    Preconditions.checkNotNull(gcpKmsConfig.getKeyName(), "keyName is not provided");
-    InputStream credentialsStream =
-        new ByteArrayInputStream(String.copyValueOf(gcpKmsConfig.getCredentials()).getBytes(StandardCharsets.UTF_8));
-    return getClientInternal(credentialsStream);
+  private KeyManagementServiceClient getClient(GcpKmsConfig gcpKmsConfig, boolean useWorkloadIdentity) {
+    if (gcpKmsConfig.isGlobalKms() && useWorkloadIdentity) {
+      try {
+        log.info("Using workload identity for GCP KMS");
+        return KeyManagementServiceClient.create();
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    } else {
+      Preconditions.checkNotNull(gcpKmsConfig.getCredentials(), "credentials are not provided");
+      Preconditions.checkNotNull(gcpKmsConfig.getRegion(), "region is not present");
+      Preconditions.checkNotNull(gcpKmsConfig.getProjectId(), "projectId is not present");
+      Preconditions.checkNotNull(gcpKmsConfig.getKeyRing(), "keyRing is not present");
+      Preconditions.checkNotNull(gcpKmsConfig.getKeyName(), "keyName is not provided");
+      InputStream credentialsStream =
+          new ByteArrayInputStream(String.copyValueOf(gcpKmsConfig.getCredentials()).getBytes(StandardCharsets.UTF_8));
+      return getClientInternal(credentialsStream);
+    }
   }
 
   @VisibleForTesting
