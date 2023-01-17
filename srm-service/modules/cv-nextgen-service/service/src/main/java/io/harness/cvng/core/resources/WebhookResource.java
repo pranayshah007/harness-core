@@ -54,12 +54,19 @@ public class WebhookResource {
   @ExceptionMetered
   @SRMServiceAuthIfHasApiKey
   @ApiOperation(value = "accepts a custom change webhook request", nickname = "handleCustomChangeWebhookRequest")
-  public void handleCustomChangeWebhookRequest(@NotNull @BeanParam ProjectParams projectParams,
+  public void handleCustomChangeWebhookRequest(@NotNull @QueryParam("accountIdentifier") String accountIdentifier,
+      @NotNull @QueryParam("orgIdentifier") String orgIdentifier,
+      @NotNull @QueryParam("projectIdentifier") String projectIdentifier,
       @NotNull @QueryParam("monitoredServiceIdentifier") String monitoredServiceIdentifier,
       @NotNull @QueryParam("changeSourceIdentifier") String changeSourceIdentifier,
       @Body @Valid CustomChangeWebhookPayload customChangeWebhookPayload, @Context HttpHeaders httpHeaders) {
-    /*webhookService.checkAuthorization(projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
-        projectParams.getProjectIdentifier(), httpHeaders);*/
+    ProjectParams projectParams = ProjectParams.builder()
+                                      .projectIdentifier(projectIdentifier)
+                                      .orgIdentifier(orgIdentifier)
+                                      .accountIdentifier(accountIdentifier)
+                                      .build();
+    webhookService.checkAuthorization(projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
+        projectParams.getProjectIdentifier(), httpHeaders);
     webhookService.handleCustomChangeWebhook(
         projectParams, monitoredServiceIdentifier, changeSourceIdentifier, customChangeWebhookPayload);
   }

@@ -10,6 +10,7 @@ package io.harness.cvng.core.services.impl;
 import static io.harness.NGConstants.X_API_KEY;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.beans.HeaderConfig;
@@ -27,6 +28,7 @@ import io.harness.cvng.core.entities.Webhook.WebhookKeys;
 import io.harness.cvng.core.jobs.CustomChangeEventPublisherService;
 import io.harness.cvng.core.services.api.ChangeEventService;
 import io.harness.cvng.core.services.api.WebhookService;
+import io.harness.cvng.utils.SRMServiceAuthIfHasApiKey;
 import io.harness.exception.InvalidRequestException;
 import io.harness.persistence.HPersistence;
 
@@ -45,7 +47,7 @@ public class WebhookServiceImpl implements WebhookService {
 
   @Inject AccessControlClient accessControlClient;
 
-  public static final String SRM_ADMIN = "srm_admin";
+  public static final String SRM_ADMIN = "chi_srm_admin";
 
   @Override
   public void createPagerdutyWebhook(
@@ -116,6 +118,7 @@ public class WebhookServiceImpl implements WebhookService {
   }
 
   @Override
+  @SRMServiceAuthIfHasApiKey
   public void handleCustomChangeWebhook(ProjectParams projectParams, String monitoredServiceIdentifier,
       String changeSourceIdentifier, CustomChangeWebhookPayload customChangeWebhookPayload) {
     customChangeEventPublisherService.registerCustomChangeEvent(

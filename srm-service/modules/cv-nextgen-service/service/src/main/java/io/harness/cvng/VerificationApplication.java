@@ -160,6 +160,7 @@ import io.harness.outbox.OutboxEventPollService;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
+import io.harness.pms.annotations.PipelineServiceAuthIfHasApiKey;
 import io.harness.pms.contracts.plan.ExpansionRequestType;
 import io.harness.pms.contracts.plan.JsonExpansionInfo;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -1044,7 +1045,9 @@ public class VerificationApplication extends Application<VerificationConfigurati
     Predicate<Pair<ResourceInfo, ContainerRequestContext>> predicate = resourceInfoAndRequest
         -> resourceInfoAndRequest.getKey().getResourceMethod().getAnnotation(NextGenManagerAuth.class) != null
         || resourceInfoAndRequest.getKey().getResourceClass().getAnnotation(NextGenManagerAuth.class) != null
-        || (resourceInfoAndRequest.getKey().getResourceClass().getAnnotation(SRMServiceAuthIfHasApiKey.class) != null
+        || (resourceInfoAndRequest.getKey().getResourceMethod() != null
+            && resourceInfoAndRequest.getKey().getResourceMethod().getAnnotation(SRMServiceAuthIfHasApiKey.class)
+                != null
             && resourceInfoAndRequest.getValue().getHeaders().get(X_API_KEY) != null);
     serviceToSecretMapping.put(BEARER.getServiceId(), configuration.getManagerAuthConfig().getJwtAuthSecret());
     serviceToSecretMapping.put(
