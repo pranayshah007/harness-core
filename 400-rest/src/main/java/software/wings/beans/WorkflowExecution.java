@@ -119,7 +119,7 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
                  .field(WorkflowExecutionKeys.endTs)
                  .build())
         .add(SortCompoundMongoIndex.builder()
-                 .name("lastInfraMappingSearch")
+                 .name("lastInfraMappingSearch2")
                  .field(WorkflowExecutionKeys.appId)
                  .field(WorkflowExecutionKeys.workflowType)
                  .field(WorkflowExecutionKeys.status)

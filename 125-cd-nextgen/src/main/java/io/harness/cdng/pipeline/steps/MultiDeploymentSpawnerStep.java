@@ -219,6 +219,7 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
         }
       }
     } else {
+      maxConcurrency = 1;
       for (EnvironmentMapResponse environmentMap : environmentsMapList) {
         for (Map<String, String> serviceMap : servicesMap) {
           children.add(
@@ -334,7 +335,7 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
         Map<String, String> serviceMatrixMetadata =
             CollectionUtils.emptyIfNull(serviceToMatrixMetadataMap.get(serviceRef));
         children.add(getChildForMultiServiceInfra(
-            childNodeId, currentIteration, totalIterations, serviceMatrixMetadata, envMap));
+            childNodeId, currentIteration++, totalIterations, serviceMatrixMetadata, envMap));
       }
     }
     return ChildrenExecutableResponse.newBuilder().addAllChildren(children).setMaxConcurrency(maxConcurrency).build();
@@ -437,11 +438,13 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
   }
 
   private boolean shouldDeployInParallel(EnvironmentsMetadata metadata) {
-    return metadata != null && metadata.getParallel() != null && metadata.getParallel();
+    // If metadata is not provided, we assume parallel by default.
+    return metadata == null || Boolean.TRUE == metadata.getParallel();
   }
 
   private boolean shouldDeployInParallel(ServicesMetadata metadata) {
-    return metadata != null && metadata.getParallel() != null && metadata.getParallel();
+    // If metadata is not provided, we assume parallel by default.
+    return metadata == null || Boolean.TRUE == metadata.getParallel();
   }
 
   private ChildrenExecutableResponse.Child getChildForMultiServiceInfra(String childNodeId, int currentIteration,

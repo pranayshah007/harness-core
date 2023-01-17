@@ -417,4 +417,22 @@ public class Log implements GoogleDataStoreAware, PersistentEntity, AccountDataR
   public static final class LogKeys {
     public static final String compressedLogLine = "compressedLogLine";
   }
+
+  public static Log fromDTO(software.wings.beans.dto.Log log) {
+    return aLog()
+        .uuid(log.getUuid())
+        .appId(log.getAppId())
+        .createdBy(log.getCreatedBy())
+        .createdAt(log.getCreatedAt())
+        .lastUpdatedBy(log.getLastUpdatedBy())
+        .lastUpdatedAt(log.getLastUpdatedAt())
+        .activityId(log.getActivityId())
+        .hostName(log.getHostName())
+        .commandUnitName(log.getCommandUnitName())
+        .logLine(log.getLogLine())
+        .logLevel(log.getLogLevel())
+        .executionResult(log.getCommandExecutionStatus())
+        .accountId(log.getAccountId())
+        .build();
+  }
 }

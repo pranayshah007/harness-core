@@ -81,6 +81,7 @@ public enum FeatureRestrictionName {
   AZURE_CREATE_BP_RESOURCE,
   AZURE_ROLLBACK_ARM_RESOURCE,
   SHELL_SCRIPT_PROVISION,
+  K8S_DRY_RUN,
 
   // STO Features
   SECURITY,

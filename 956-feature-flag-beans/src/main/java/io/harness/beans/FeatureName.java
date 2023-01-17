@@ -567,7 +567,16 @@ public enum FeatureName {
   DEPLOYMENT_RECONCILIATION_LOGIC_QUERY_OPTIMIZATIONS(
       "Used to modify logic for reconciliation queries", HarnessTeam.CDC),
   SPG_MODULE_VERSION_INFO("Enable version information on module level", HarnessTeam.SPG),
-  CIE_HOSTED_VMS_WINDOWS("FF for enabling hosted builds for windows amd64", HarnessTeam.CI);
+  CIE_HOSTED_VMS_WINDOWS("FF for enabling hosted builds for windows amd64", HarnessTeam.CI),
+  CD_TRIGGER_CATALOG_API_ENABLED("Enable support for pipeline/api/triggers/catalog API in UI", HarnessTeam.CDC),
+  K8S_DRY_RUN_NG("Enable K8s Dry Run Step in NG", HarnessTeam.CDP),
+  CDS_SERVICENOW_ADFS_AUTH("ADFS auth support for servicenow connector", HarnessTeam.CDC),
+  CDP_SKIP_DEFAULT_VALUES_YAML_NG(
+      "Skip adding the default values file as an override if it doesn't contain any expressions in case of helm chart manifest for NG",
+      HarnessTeam.CDP),
+  CDP_SKIP_DEFAULT_VALUES_YAML_CG(
+      "Skip adding the default values file as an override if it doesn't contain any expressions in case of helm chart manifest for CG",
+      HarnessTeam.CDP);
 
   @Deprecated
   FeatureName() {

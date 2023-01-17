@@ -16,6 +16,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.INVALID_AZURE_VAULT_CONFIGURATION;
 import static io.harness.eraro.ErrorCode.INVALID_CREDENTIAL;
 import static io.harness.eraro.ErrorCode.SECRET_MANAGEMENT_ERROR;
+import static io.harness.eraro.ErrorCode.SECRET_NOT_FOUND;
 import static io.harness.eraro.ErrorCode.VAULT_OPERATION_ERROR;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.remote.client.CGRestUtils.getResponse;
@@ -880,6 +881,11 @@ public class NGVaultServiceImpl implements NGVaultService {
     // Get EncryptedData
     NGEncryptedData encryptedData =
         encryptedDataService.get(accountIdentifier, orgIdentifier, projectIdentifier, secretRefData.getIdentifier());
+
+    if (encryptedData == null) {
+      throw new SecretManagementException(SECRET_NOT_FOUND,
+          String.format("Secret [%s] not found or has been deleted.", secretRefData.getIdentifier()), USER);
+    }
 
     // Get KMS Config for secret Manager of encrypted data's secret manager
     EncryptionConfig encryptionConfig = getDecryptedEncryptionConfig(

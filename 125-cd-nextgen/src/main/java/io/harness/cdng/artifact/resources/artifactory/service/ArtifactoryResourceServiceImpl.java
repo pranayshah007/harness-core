@@ -180,7 +180,7 @@ public class ArtifactoryResourceServiceImpl implements ArtifactoryResourceServic
                                                         .taskSetupAbstractions(abstractions)
                                                         .build();
     try {
-      return delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
+      return delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);
     } catch (DelegateServiceDriverException ex) {
       throw exceptionManager.processException(ex, WingsException.ExecutionContext.MANAGER, log);
     }
@@ -384,7 +384,7 @@ public class ArtifactoryResourceServiceImpl implements ArtifactoryResourceServic
                                                         .taskSelectors(delegateSelectors)
                                                         .build();
     try {
-      return delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
+      return delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);
     } catch (DelegateServiceDriverException ex) {
       throw exceptionManager.processException(ex, WingsException.ExecutionContext.MANAGER, log);
     }

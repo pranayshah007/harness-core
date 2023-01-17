@@ -56,6 +56,7 @@ import io.harness.cdng.k8s.K8sStepPassThroughData;
 import io.harness.cdng.k8s.beans.CustomFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.HelmValuesFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
+import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.steps.ManifestsOutcome;
 import io.harness.cdng.manifest.yaml.CustomRemoteStoreConfig;
 import io.harness.cdng.manifest.yaml.GcsStoreConfig;
@@ -97,7 +98,10 @@ import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialType;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.executioncapability.GitConnectionNGCapability;
+import io.harness.delegate.beans.logstreaming.CommandUnitProgress;
+import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
+import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.beans.storeconfig.CustomRemoteStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.GcsHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
@@ -133,7 +137,9 @@ import io.harness.filestore.utils.FileStoreNodeUtils;
 import io.harness.git.model.FetchFilesResult;
 import io.harness.git.model.GitFile;
 import io.harness.helm.HelmSubCommandType;
+import io.harness.k8s.K8sCommandUnitConstants;
 import io.harness.k8s.model.HelmVersion;
+import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
 import io.harness.logging.UnitProgress;
@@ -175,6 +181,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -1183,7 +1191,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
                     .manifestFiles(asList(manifestFiles))
                     .lastActiveUnitProgressData(null)
                     .build()),
-            eq(false), eq(UnitProgressData.builder().build()));
+            eq(false), eq(getUnitProgressData()));
     List<String> valuesFilesContent = valuesFilesContentCaptor.getValue();
     assertThat(valuesFilesContent).isNotEmpty();
     assertThat(valuesFilesContent.size()).isEqualTo(2);
@@ -1801,13 +1809,15 @@ public class NativeHelmStepHelperTest extends CategoryTest {
     doReturn(k8sDirectInfrastructureOutcome).when(cdStepHelper).getInfrastructureOutcome(eq(ambiance));
     ValuesManifestOutcome valuesManifestOutcome =
         ValuesManifestOutcome.builder().identifier("helm").store(CustomRemoteStoreConfig.builder().build()).build();
-    K8sStepPassThroughData passThroughData = K8sStepPassThroughData.builder()
-                                                 .manifestOutcome(manifestOutcome)
-                                                 .manifestOutcomeList(asList(valuesManifestOutcome))
-                                                 .infrastructure(K8sDirectInfrastructureOutcome.builder().build())
-                                                 .shouldOpenFetchFilesStream(true)
-                                                 .shouldCloseFetchFilesStream(false)
-                                                 .build();
+    K8sStepPassThroughData passThroughData =
+        K8sStepPassThroughData.builder()
+            .manifestOutcome(manifestOutcome)
+            .manifestOutcomeList(asList(valuesManifestOutcome))
+            .manifestStoreTypeVisited(new HashSet<>(Collections.singletonList(ManifestStoreType.CUSTOM_REMOTE)))
+            .infrastructure(K8sDirectInfrastructureOutcome.builder().build())
+            .shouldOpenFetchFilesStream(true)
+            .shouldCloseFetchFilesStream(false)
+            .build();
     Map<String, Collection<CustomSourceFile>> valuesFilesContentMap = new HashMap<>();
     valuesFilesContentMap.put("id",
         asList(CustomSourceFile.builder().fileContent("values yaml payload").filePath("path/to/values.yaml").build()));
@@ -1823,7 +1833,6 @@ public class NativeHelmStepHelperTest extends CategoryTest {
     Map<String, ResponseData> responseDataMap =
         ImmutableMap.of("custom-manifest-values-fetch-response", customManifestValuesFetchResponse);
     ThrowingSupplier responseDataSuplier = StrategyHelper.buildResponseDataSupplier(responseDataMap);
-    passThroughData.setShouldCloseFetchFilesStream(true);
 
     TaskChainResponse taskChainResponse = nativeHelmStepHelper.executeNextLink(
         nativeHelmStepExecutor, ambiance, stepElementParams, passThroughData, responseDataSuplier);
@@ -2419,7 +2428,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
                 .infrastructure(passThroughData.getInfrastructure())
                 .lastActiveUnitProgressData(unitProgressData)
                 .build(),
-            passThroughData.getShouldOpenFetchFilesStream(), unitProgressData);
+            false, unitProgressData);
 
     TaskChainResponse response = nativeHelmStepHelper.executeNextLink(
         nativeHelmStepExecutor, ambiance, stepElementParameters, passThroughData, responseDataSuplier);
@@ -2724,5 +2733,14 @@ public class NativeHelmStepHelperTest extends CategoryTest {
 
   private FileStoreNodeDTO getFolderStoreNode(String path, String name) {
     return FolderNodeDTO.builder().name(name).identifier("identifier").parentIdentifier("helm").path(path).build();
+  }
+
+  private UnitProgressData getUnitProgressData() {
+    CommandUnitProgress commandUnitProgress =
+        CommandUnitProgress.builder().status(CommandExecutionStatus.SUCCESS).build();
+    LinkedHashMap<String, CommandUnitProgress> commandUnitProgressMap = new LinkedHashMap<>();
+    commandUnitProgressMap.put(K8sCommandUnitConstants.FetchFiles, commandUnitProgress);
+    return UnitProgressDataMapper.toUnitProgressData(
+        CommandUnitsProgress.builder().commandUnitProgressMap(commandUnitProgressMap).build());
   }
 }

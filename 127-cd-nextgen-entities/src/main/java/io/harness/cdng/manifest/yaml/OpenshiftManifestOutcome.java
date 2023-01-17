@@ -8,6 +8,7 @@
 package io.harness.cdng.manifest.yaml;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
@@ -16,6 +17,7 @@ import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.pms.yaml.ParameterField;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.Collections;
 import java.util.List;
 import lombok.Builder;
 import lombok.Value;
@@ -35,4 +37,11 @@ public class OpenshiftManifestOutcome implements ManifestOutcome {
   StoreConfig store;
   ParameterField<Boolean> skipResourceVersioning;
   ParameterField<List<String>> paramsPaths;
+
+  public ParameterField<List<String>> getParamsPaths() {
+    if (!(getParameterFieldValue(this.paramsPaths) instanceof List)) {
+      return ParameterField.createValueField(Collections.emptyList());
+    }
+    return this.paramsPaths;
+  }
 }

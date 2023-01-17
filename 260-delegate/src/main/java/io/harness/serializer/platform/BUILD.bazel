@@ -15,7 +15,7 @@ java_library(
         "//950-delegate-tasks-beans:module",
         "//955-delegate-beans:module",
         "//970-api-services-beans:module",
-        "//980-commons:module",
+        "//980-commons/src/main/java/io/harness/serializer:module",
         "@maven//:com_esotericsoftware_kryo",
     ],
 )

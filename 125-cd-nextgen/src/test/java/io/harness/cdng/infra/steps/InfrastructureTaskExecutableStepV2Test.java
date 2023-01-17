@@ -202,7 +202,7 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
              any(Ambiance.class), any(ExecutionInfoKey.class), any(), any(Set.class), anyString(), anyBoolean(), any()))
         .thenAnswer(invocationOnMock -> invocationOnMock.getArgument(3, Set.class));
 
-    Mockito.doReturn("taskId").when(delegateGrpcClientWrapper).submitAsyncTask(any(), any());
+    Mockito.doReturn("taskId").when(delegateGrpcClientWrapper).submitAsyncTaskV2(any(), any());
 
     doCallRealMethod().when(cdStepHelper).mapTaskRequestToDelegateTaskRequest(any(), any(), anySet());
   }
@@ -402,7 +402,7 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
     verify(resolver, times(1)).updateExpressions(any(Ambiance.class), any(Infrastructure.class));
 
     ArgumentCaptor<DelegateTaskRequest> captor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
-    verify(delegateGrpcClientWrapper, times(1)).submitAsyncTask(captor.capture(), eq(Duration.ZERO));
+    verify(delegateGrpcClientWrapper, times(1)).submitAsyncTaskV2(captor.capture(), eq(Duration.ZERO));
 
     DelegateTaskRequest delegateTaskRequest = captor.getValue();
 
@@ -452,7 +452,7 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
     verify(resolver, times(1)).updateExpressions(any(Ambiance.class), any(Infrastructure.class));
 
     ArgumentCaptor<DelegateTaskRequest> captor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
-    verify(delegateGrpcClientWrapper, times(1)).submitAsyncTask(captor.capture(), eq(Duration.ZERO));
+    verify(delegateGrpcClientWrapper, times(1)).submitAsyncTaskV2(captor.capture(), eq(Duration.ZERO));
 
     DelegateTaskRequest delegateTaskRequest = captor.getValue();
 

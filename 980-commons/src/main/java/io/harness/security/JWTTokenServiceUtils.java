@@ -10,12 +10,14 @@ package io.harness.security;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.authorization.AuthorizationServiceHeader.DEFAULT;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.EXPIRED_TOKEN;
 import static io.harness.eraro.ErrorCode.INVALID_TOKEN;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.exception.WingsException.USER_ADMIN;
 import static io.harness.exception.WingsException.USER_SRE;
 
+import static java.util.Objects.isNull;
 import static org.apache.commons.lang3.StringUtils.SPACE;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -90,6 +92,19 @@ public class JWTTokenServiceUtils {
     }
   }
 
+  public static Map<String, Claim> verifyJWTToken(String jwtToken, RSAKey publicKey, String issuer) {
+    try {
+      Algorithm algorithm = Algorithm.RSA256(publicKey);
+      JWTVerifier verifier = JWT.require(algorithm).withIssuer(issuer).build();
+      verifier.verify(jwtToken);
+      return JWT.decode(jwtToken).getClaims();
+    } catch (JWTDecodeException | SignatureVerificationException | InvalidClaimException e) {
+      throw new InvalidRequestException(
+          "Error while verifying jwt token: Invalid JWTToken received, failed to decode the token", e, INVALID_TOKEN,
+          USER);
+    }
+  }
+
   public String extractToken(ContainerRequestContext requestContext, String prefix) {
     return extractToken(HttpHeaders.AUTHORIZATION, requestContext, prefix)
         .orElseThrow(() -> new InvalidRequestException("Invalid token", INVALID_TOKEN, USER_ADMIN));
@@ -149,6 +164,28 @@ public class JWTTokenServiceUtils {
       }
       return jwtBuilder.sign(algorithm);
     } catch (UnsupportedEncodingException | JWTCreationException exception) {
+      throw new JWTCreationException("JWTToken could not be generated", exception);
+    }
+  }
+
+  public static String generateJWTToken(
+      Map<String, String> jwtClaims, Map<String, Object> jwtHeader, Long validityDurationInMillis, RSAKey privateKey) {
+    if (isNull(privateKey)) {
+      throw new InvalidRequestException("Empty privateKey provided to generate Jwt Token");
+    }
+    try {
+      Algorithm algorithm = Algorithm.RSA256(privateKey);
+
+      Date exp = new Date(System.currentTimeMillis() + validityDurationInMillis);
+      Date iat = new Date(System.currentTimeMillis());
+
+      JWTCreator.Builder jwtBuilder = JWT.create().withIssuedAt(iat).withExpiresAt(exp).withHeader(jwtHeader);
+
+      if (isNotEmpty(jwtClaims)) {
+        jwtClaims.forEach(jwtBuilder::withClaim);
+      }
+      return jwtBuilder.sign(algorithm);
+    } catch (IllegalArgumentException | JWTCreationException exception) {
       throw new JWTCreationException("JWTToken could not be generated", exception);
     }
   }

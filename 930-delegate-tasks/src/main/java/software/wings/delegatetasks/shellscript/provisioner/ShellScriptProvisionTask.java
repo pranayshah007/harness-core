@@ -9,7 +9,7 @@ package software.wings.delegatetasks.shellscript.provisioner;
 
 import static io.harness.logging.LogLevel.INFO;
 
-import static software.wings.beans.Log.Builder.aLog;
+import static software.wings.beans.dto.Log.Builder.aLog;
 
 import static java.util.Collections.emptyList;
 

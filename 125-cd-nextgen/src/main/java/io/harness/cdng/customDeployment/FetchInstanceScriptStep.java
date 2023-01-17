@@ -66,6 +66,7 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.yaml.utils.NGVariablesUtils;
 
@@ -73,6 +74,7 @@ import software.wings.beans.TaskType;
 import software.wings.sm.states.customdeploymentng.InstanceMapperUtils;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -96,7 +98,8 @@ public class FetchInstanceScriptStep extends CdTaskExecutable<FetchInstanceScrip
   public static final String WORKING_DIRECTORY = "/tmp";
   public static final String INSTANCE_NAME = "instancename";
   @Inject private CDStepHelper cdStepHelper;
-  @Inject private KryoSerializer kryoSerializer;
+
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private StepHelper stepHelper;
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private InstanceInfoService instanceInfoService;
@@ -178,7 +181,7 @@ public class FetchInstanceScriptStep extends CdTaskExecutable<FetchInstanceScrip
                                   .taskType(TaskType.FETCH_INSTANCE_SCRIPT_TASK_NG.name())
                                   .parameters(new Object[] {taskParameters})
                                   .build();
-    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+    return TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
         Collections.singletonList(FetchInstanceScriptTaskNG.COMMAND_UNIT),
         FETCH_INSTANCE_SCRIPT_TASK_NG.getDisplayName(),
         TaskSelectorYaml.toTaskSelector(stepSpec.getDelegateSelectors()), stepHelper.getEnvironmentType(ambiance));

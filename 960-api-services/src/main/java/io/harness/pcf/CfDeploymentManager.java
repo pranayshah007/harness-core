@@ -99,4 +99,10 @@ public interface CfDeploymentManager {
 
   void runPcfPluginScript(CfRunPluginScriptRequestData requestData, LogCallback logCallback)
       throws PivotalClientApiException;
+
+  ApplicationDetail createRollingApplicationWithSteadyStateCheck(CfCreateApplicationRequestData requestData,
+      LogCallback executionLogCallback) throws PivotalClientApiException, InterruptedException;
+
+  List<ApplicationSummary> getPreviousReleasesForRolling(CfRequestConfig cfRequestConfig, String prefix)
+      throws PivotalClientApiException;
 }

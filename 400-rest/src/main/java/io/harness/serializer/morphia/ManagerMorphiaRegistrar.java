@@ -170,6 +170,7 @@ import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.InfrastructureProvisioner;
 import software.wings.beans.LambdaSpecification;
 import software.wings.beans.License;
+import software.wings.beans.Log;
 import software.wings.beans.ManagerConfiguration;
 import software.wings.beans.MarketPlace;
 import software.wings.beans.MultiServiceOrchestrationWorkflow;
@@ -873,6 +874,7 @@ public class ManagerMorphiaRegistrar implements MorphiaRegistrar {
     set.add(BaseFile.class);
     set.add(AppContainer.class);
     set.add(LongerDataRetentionState.class);
+    set.add(Log.class);
   }
 
   @Override

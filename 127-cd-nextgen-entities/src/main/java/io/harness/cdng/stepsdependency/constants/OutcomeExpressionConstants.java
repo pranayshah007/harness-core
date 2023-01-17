@@ -69,4 +69,5 @@ public class OutcomeExpressionConstants {
   public final String TAS_SWAP_ROUTES_OUTCOME = "TasSwapRoutesOutcome";
   public final String TAS_INBUILT_VARIABLES_OUTCOME = "pcf";
   public final String ASG_ROLLING_DEPLOY_OUTCOME = "asgRollingDeployOutcome";
+  public final String TAS_ROLLING_DEPLOY_OUTCOME = "TasRollingDeployOutcome";
 }

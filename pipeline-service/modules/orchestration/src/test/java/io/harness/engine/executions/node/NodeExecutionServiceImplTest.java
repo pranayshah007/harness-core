@@ -9,6 +9,7 @@ package io.harness.engine.executions.node;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.pms.contracts.execution.Status.ERRORED;
+import static io.harness.pms.contracts.execution.Status.FAILED;
 import static io.harness.pms.contracts.execution.Status.RUNNING;
 import static io.harness.pms.contracts.execution.Status.SUCCEEDED;
 import static io.harness.rule.OwnerRule.ALEXEI;
@@ -174,35 +175,62 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
                                .parentId(forkNode.getUuid())
                                .stepType(StepType.newBuilder().setStepCategory(StepCategory.STEP).build())
                                .build();
+    NodeExecution strategyNode = NodeExecution.builder()
+                                     .uuid("strategyNode")
+                                     .status(FAILED)
+                                     .parentId(stageNode.getUuid())
+                                     .stepType(StepType.newBuilder().setStepCategory(StepCategory.STRATEGY).build())
+                                     .build();
 
-    List<NodeExecution> nodeExecutions = Arrays.asList(pipelineNode, stageNode, forkNode, child1, child2, child3);
+    NodeExecution strategyChildNode = NodeExecution.builder()
+                                          .uuid("childNode")
+                                          .status(FAILED)
+                                          .parentId(strategyNode.getUuid())
+                                          .stepType(StepType.newBuilder().setStepCategory(StepCategory.STEP).build())
+                                          .build();
+
+    List<NodeExecution> nodeExecutions =
+        Arrays.asList(pipelineNode, stageNode, forkNode, child1, child2, child3, strategyNode, strategyChildNode);
     CloseableIterator<NodeExecution> iterator =
         OrchestrationTestHelper.createCloseableIterator(nodeExecutions.iterator());
     doReturn(iterator).when(service).fetchNodeExecutionsWithoutOldRetriesAndStatusInIterator(any(), any(), any());
 
-    List<NodeExecution> stageChildList = service.findAllChildrenWithStatusInAndWithoutOldRetries(
-        ambiance.getPlanExecutionId(), stageNode.getUuid(), EnumSet.of(Status.RUNNING), true, Collections.emptySet());
+    List<NodeExecution> stageChildList =
+        service.findAllChildrenWithStatusInAndWithoutOldRetries(ambiance.getPlanExecutionId(), stageNode.getUuid(),
+            EnumSet.of(Status.RUNNING), true, Collections.emptySet(), false);
     assertThat(stageChildList).isNotEmpty();
-    assertThat(stageChildList).hasSize(5);
-    assertThat(stageChildList).containsExactlyInAnyOrder(stageNode, forkNode, child1, child2, child3);
+    assertThat(stageChildList).hasSize(6);
+    assertThat(stageChildList).containsExactlyInAnyOrder(stageNode, forkNode, child1, child2, child3, strategyNode);
 
     // Iterator cannot be reused again, thus initialise again
     iterator = OrchestrationTestHelper.createCloseableIterator(nodeExecutions.iterator());
     doReturn(iterator).when(service).fetchNodeExecutionsWithoutOldRetriesAndStatusInIterator(any(), any(), any());
-    List<NodeExecution> stageChildListWithoutParent = service.findAllChildrenWithStatusInAndWithoutOldRetries(
-        ambiance.getPlanExecutionId(), stageNode.getUuid(), EnumSet.of(Status.RUNNING), false, Collections.emptySet());
+    List<NodeExecution> stageChildListWithoutParent =
+        service.findAllChildrenWithStatusInAndWithoutOldRetries(ambiance.getPlanExecutionId(), stageNode.getUuid(),
+            EnumSet.of(Status.RUNNING), false, Collections.emptySet(), false);
     assertThat(stageChildListWithoutParent).isNotEmpty();
-    assertThat(stageChildListWithoutParent).hasSize(4);
-    assertThat(stageChildListWithoutParent).containsExactlyInAnyOrder(forkNode, child1, child2, child3);
+    assertThat(stageChildListWithoutParent).hasSize(5);
+    assertThat(stageChildListWithoutParent).containsExactlyInAnyOrder(forkNode, child1, child2, child3, strategyNode);
 
     // Iterator cannot be reused again, thus initialise again
     iterator = OrchestrationTestHelper.createCloseableIterator(nodeExecutions.iterator());
     doReturn(iterator).when(service).fetchNodeExecutionsWithoutOldRetriesAndStatusInIterator(any(), any(), any());
-    List<NodeExecution> forkChildList = service.findAllChildrenWithStatusInAndWithoutOldRetries(
-        ambiance.getPlanExecutionId(), forkNode.getUuid(), EnumSet.of(Status.RUNNING), true, Collections.emptySet());
+    List<NodeExecution> forkChildList =
+        service.findAllChildrenWithStatusInAndWithoutOldRetries(ambiance.getPlanExecutionId(), forkNode.getUuid(),
+            EnumSet.of(Status.RUNNING), true, Collections.emptySet(), false);
     assertThat(forkChildList).isNotEmpty();
     assertThat(forkChildList).hasSize(4);
     assertThat(forkChildList).containsExactlyInAnyOrder(forkNode, child1, child2, child3);
+
+    iterator = OrchestrationTestHelper.createCloseableIterator(nodeExecutions.iterator());
+    doReturn(iterator).when(service).fetchNodeExecutionsWithoutOldRetriesAndStatusInIterator(any(), any(), any());
+    List<NodeExecution> strategyChildList =
+        service.findAllChildrenWithStatusInAndWithoutOldRetries(ambiance.getPlanExecutionId(), stageNode.getUuid(),
+            EnumSet.of(Status.RUNNING), true, Collections.emptySet(), true);
+    assertThat(strategyChildList).isNotEmpty();
+    assertThat(strategyChildList).hasSize(7);
+    assertThat(strategyChildList)
+        .containsExactlyInAnyOrder(forkNode, child1, child2, child3, strategyNode, strategyChildNode, stageNode);
   }
 
   @Test

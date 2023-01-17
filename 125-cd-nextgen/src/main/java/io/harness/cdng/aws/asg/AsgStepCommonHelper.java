@@ -14,7 +14,6 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.LogLevel.INFO;
-import static io.harness.steps.StepUtils.prepareCDTaskRequest;
 
 import static software.wings.beans.LogColor.Green;
 import static software.wings.beans.LogHelper.color;
@@ -77,12 +76,14 @@ import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
-import io.harness.service.DelegateGrpcClientWrapper;
+import io.harness.serializer.KryoSerializer;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.utils.LogWrapper;
 
 import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -101,9 +102,8 @@ public class AsgStepCommonHelper extends CDStepHelper {
   @Inject private AsgStepHelper asgStepHelper;
   @Inject private CDStepHelper cdStepHelper;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
-  @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   @Inject private TaskSetupAbstractionHelper taskSetupAbstractionHelper;
-
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   private final LogWrapper logger = new LogWrapper(log);
 
   public TaskChainResponse startChainLink(
@@ -270,8 +270,8 @@ public class AsgStepCommonHelper extends CDStepHelper {
 
     AsgSpecParameters asgSpecParameters = (AsgSpecParameters) stepElementParameters.getSpec();
 
-    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
-        asgSpecParameters.getCommandUnits(), taskName,
+    final TaskRequest taskRequest = TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData,
+        referenceFalseKryoSerializer, asgSpecParameters.getCommandUnits(), taskName,
         TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(asgSpecParameters.getDelegateSelectors()))),
         stepHelper.getEnvironmentType(ambiance));
     return TaskChainResponse.builder()
@@ -438,8 +438,9 @@ public class AsgStepCommonHelper extends CDStepHelper {
 
     AsgSpecParameters asgSpecParameters = (AsgSpecParameters) stepElementParameters.getSpec();
 
-    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
-        asgSpecParameters.getCommandUnits(), TaskType.GIT_FETCH_NEXT_GEN_TASK.getDisplayName(),
+    final TaskRequest taskRequest = TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData,
+        referenceFalseKryoSerializer, asgSpecParameters.getCommandUnits(),
+        TaskType.GIT_FETCH_NEXT_GEN_TASK.getDisplayName(),
         TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(asgSpecParameters.getDelegateSelectors()))),
         stepHelper.getEnvironmentType(ambiance));
 

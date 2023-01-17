@@ -29,9 +29,11 @@ import io.harness.entities.instanceinfo.GitopsInstanceInfo;
 import io.harness.entities.instanceinfo.K8sInstanceInfo;
 import io.harness.mappers.InstanceDetailsMapper;
 import io.harness.models.ActiveServiceInstanceInfoV2;
+import io.harness.models.ArtifactDeploymentDetailModel;
 import io.harness.models.BuildsByEnvironment;
 import io.harness.models.CountByServiceIdAndEnvType;
 import io.harness.models.EnvBuildInstanceCount;
+import io.harness.models.EnvironmentInstanceCountModel;
 import io.harness.models.InstanceDetailsByBuildId;
 import io.harness.models.InstanceDetailsDTO;
 import io.harness.models.InstancesByBuildId;
@@ -51,6 +53,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.bson.Document;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
@@ -63,12 +66,30 @@ public class InstanceDashboardServiceImplTest extends InstancesTestBase {
   private final String ORG_IDENTIFIER = "org";
   private final String SERVICE_IDENTIFIER = "serv";
   private final String ENV_IDENTIFIER = "env";
+  private final String DISPLAY_NAME = "displayName";
+  private final String ENV_1 = "env1";
+  private final String ENV_2 = "env2";
   private final List<String> BUILD_IDS = Arrays.asList("id1", "id2");
+  private final List<ArtifactDeploymentDetailModel> artifactDeploymentDetailModels =
+      Arrays.asList(new ArtifactDeploymentDetailModel(ENV_1, DISPLAY_NAME, 2l),
+          new ArtifactDeploymentDetailModel(ENV_2, DISPLAY_NAME, 1l));
+  private final List<EnvironmentInstanceCountModel> environmentInstanceCountModels =
+      Arrays.asList(new EnvironmentInstanceCountModel(ENV_1, 2), new EnvironmentInstanceCountModel(ENV_2, 1));
+  private AggregationResults<ArtifactDeploymentDetailModel> artifactDeploymentDetailModelAggregationResults;
+  private AggregationResults<EnvironmentInstanceCountModel> environmentInstanceCountModelAggregationResults;
   @Mock InstanceService instanceService;
   @Mock InstanceDetailsMapper instanceDetailsMapper;
   @InjectMocks InstanceDashboardServiceImpl instanceDashboardService;
   @Inject InstanceDashboardServiceImpl instanceDashboardService1;
   @Inject InstanceRepository instanceRepository;
+
+  @Before
+  public void setup() {
+    artifactDeploymentDetailModelAggregationResults =
+        new AggregationResults<>(artifactDeploymentDetailModels, new Document());
+    environmentInstanceCountModelAggregationResults =
+        new AggregationResults<>(environmentInstanceCountModels, new Document());
+  }
 
   public static List<Instance> getInstanceList() {
     List<Instance> instances = new ArrayList<>();
@@ -572,5 +593,113 @@ public class InstanceDashboardServiceImplTest extends InstancesTestBase {
 
     assertThat(instanceDetailsByBuildId.getInstances().get(0)).isEqualTo(instanceDetailsDTO1);
     assertThat(instanceDetailsByBuildId.getInstances().get(1)).isEqualTo(instanceDetailsDTO2);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void test_getLastDeployedInstance_environmentCard_nonGitOps() {
+    when(instanceService.getLastDeployedInstance(
+             ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, true, false))
+        .thenReturn(artifactDeploymentDetailModelAggregationResults);
+
+    List<ArtifactDeploymentDetailModel> artifactDeploymentDetailModels1 =
+        instanceDashboardService.getLastDeployedInstance(
+            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, true, false);
+
+    verify(instanceService)
+        .getLastDeployedInstance(
+            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, true, false);
+    assertThat(artifactDeploymentDetailModels).isEqualTo(artifactDeploymentDetailModels1);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void test_getLastDeployedInstance_environmentCard_gitOps() {
+    when(instanceService.getLastDeployedInstance(
+             ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, true, true))
+        .thenReturn(artifactDeploymentDetailModelAggregationResults);
+
+    List<ArtifactDeploymentDetailModel> artifactDeploymentDetailModels1 =
+        instanceDashboardService.getLastDeployedInstance(
+            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, true, true);
+
+    verify(instanceService)
+        .getLastDeployedInstance(
+            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, true, true);
+    assertThat(artifactDeploymentDetailModels).isEqualTo(artifactDeploymentDetailModels1);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void test_getLastDeployedInstance_notEnvironmentCard_nonGitOps() {
+    when(instanceService.getLastDeployedInstance(
+             ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, false, false))
+        .thenReturn(artifactDeploymentDetailModelAggregationResults);
+
+    List<ArtifactDeploymentDetailModel> artifactDeploymentDetailModels1 =
+        instanceDashboardService.getLastDeployedInstance(
+            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, false, false);
+
+    verify(instanceService)
+        .getLastDeployedInstance(
+            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, false, false);
+    assertThat(artifactDeploymentDetailModels).isEqualTo(artifactDeploymentDetailModels1);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void test_getLastDeployedInstance_notEnvironmentCard_gitOps() {
+    when(instanceService.getLastDeployedInstance(
+             ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, false, true))
+        .thenReturn(artifactDeploymentDetailModelAggregationResults);
+
+    List<ArtifactDeploymentDetailModel> artifactDeploymentDetailModels1 =
+        instanceDashboardService.getLastDeployedInstance(
+            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, false, true);
+
+    verify(instanceService)
+        .getLastDeployedInstance(
+            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, false, true);
+    assertThat(artifactDeploymentDetailModels).isEqualTo(artifactDeploymentDetailModels1);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void test_getInstanceCountForEnvironmentFilteredByService_nonGitOps() {
+    when(instanceService.getInstanceCountForEnvironmentFilteredByService(
+             ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, false))
+        .thenReturn(environmentInstanceCountModelAggregationResults);
+
+    List<EnvironmentInstanceCountModel> environmentInstanceCountModels1 =
+        instanceDashboardService.getInstanceCountForEnvironmentFilteredByService(
+            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, false);
+
+    verify(instanceService)
+        .getInstanceCountForEnvironmentFilteredByService(
+            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, false);
+    assertThat(environmentInstanceCountModels).isEqualTo(environmentInstanceCountModels1);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void test_getInstanceCountForEnvironmentFilteredByService_gitOps() {
+    when(instanceService.getInstanceCountForEnvironmentFilteredByService(
+             ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, true))
+        .thenReturn(environmentInstanceCountModelAggregationResults);
+
+    List<EnvironmentInstanceCountModel> environmentInstanceCountModels1 =
+        instanceDashboardService.getInstanceCountForEnvironmentFilteredByService(
+            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, true);
+
+    verify(instanceService)
+        .getInstanceCountForEnvironmentFilteredByService(
+            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, true);
+    assertThat(environmentInstanceCountModels).isEqualTo(environmentInstanceCountModels1);
   }
 }

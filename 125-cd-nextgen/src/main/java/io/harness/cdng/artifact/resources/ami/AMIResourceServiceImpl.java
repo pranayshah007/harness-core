@@ -172,7 +172,7 @@ public class AMIResourceServiceImpl implements AMIResourceService {
             .taskSelectors(amiArtifactDelegateRequest.getAwsConnectorDTO().getDelegateSelectors())
             .build();
 
-    return delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
+    return delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);
   }
 
   private ArtifactTaskExecutionResponse getTaskExecutionResponse(

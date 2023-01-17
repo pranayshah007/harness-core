@@ -2788,7 +2788,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     MonitoredServiceHealthScoreCondition condition =
         MonitoredServiceHealthScoreCondition.builder().threshold(20.0).period(600000).build();
     assertThat(((MonitoredServiceServiceImpl) monitoredServiceService)
-                   .getNotificationData(monitoredService, condition)
+                   .getHealthScoreNotificationData(monitoredService, condition)
                    .shouldSendNotification())
         .isTrue();
   }
@@ -2815,7 +2815,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     MonitoredServiceHealthScoreCondition condition =
         MonitoredServiceHealthScoreCondition.builder().threshold(20.0).period(600000).build();
     assertThat(((MonitoredServiceServiceImpl) monitoredServiceService)
-                   .getNotificationData(monitoredService, condition)
+                   .getHealthScoreNotificationData(monitoredService, condition)
                    .shouldSendNotification())
         .isFalse();
   }
@@ -2846,7 +2846,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
             .build();
 
     assertThat(((MonitoredServiceServiceImpl) monitoredServiceService)
-                   .getNotificationData(monitoredService, condition)
+                   .getChangeObservedNotificationData(monitoredService, condition)
                    .shouldSendNotification())
         .isTrue();
   }
@@ -2880,14 +2880,14 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
             .period(600000)
             .build();
     assertThat(((MonitoredServiceServiceImpl) monitoredServiceService)
-                   .getNotificationData(monitoredService, condition)
+                   .getChangeImpactNotificationData(monitoredService, condition)
                    .shouldSendNotification())
         .isTrue();
 
     clock = Clock.fixed(clock.instant().plus(10, ChronoUnit.MINUTES), ZoneOffset.UTC);
     FieldUtils.writeField(monitoredServiceService, "clock", clock, true);
     assertThat(((MonitoredServiceServiceImpl) monitoredServiceService)
-                   .getNotificationData(monitoredService, condition)
+                   .getChangeImpactNotificationData(monitoredService, condition)
                    .shouldSendNotification())
         .isFalse();
   }

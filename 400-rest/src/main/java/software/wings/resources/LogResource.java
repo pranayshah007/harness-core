@@ -13,7 +13,7 @@ import io.harness.rest.RestResponse;
 import io.harness.security.annotations.DelegateAuth;
 import io.harness.serializer.KryoSerializer;
 
-import software.wings.beans.Log;
+import software.wings.beans.dto.Log;
 import software.wings.delegatetasks.DelegateStateType;
 import software.wings.security.PermissionAttribute.ResourceType;
 import software.wings.security.annotations.AuthRule;

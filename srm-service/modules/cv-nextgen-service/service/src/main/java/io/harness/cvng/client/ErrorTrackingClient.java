@@ -19,5 +19,5 @@ public interface ErrorTrackingClient {
   Call<ErrorTrackingNotificationData> getNotificationData(@Query("orgId") String orgIdentifier,
       @Query("accountId") String accountId, @Query("projectId") String projectIdentifier,
       @Query("serviceId") String serviceIdentifier, @Query("environmentId") String environmentIdentifier,
-      @Query("eventTypes") List<ErrorTrackingEventType> eventTypes);
+      @Query("eventTypes") List<ErrorTrackingEventType> eventTypes, @Query("notificationId") String notificationId);
 }

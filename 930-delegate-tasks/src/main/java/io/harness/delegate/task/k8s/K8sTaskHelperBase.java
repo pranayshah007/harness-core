@@ -2390,6 +2390,11 @@ public class K8sTaskHelperBase {
 
       case HELM_CHART:
         HelmChartManifestDelegateConfig helmChartManifest = (HelmChartManifestDelegateConfig) manifestDelegateConfig;
+        int index = helmTaskHelperBase.skipDefaultHelmValuesYaml(manifestFilesDirectory, manifestOverrideFiles,
+            helmChartManifest.isSkipApplyHelmDefaultValues(), helmChartManifest.getHelmVersion());
+        if (index != -1) {
+          manifestOverrideFiles.remove(index);
+        }
         return renderTemplateForHelm(k8sDelegateTaskParams.getHelmPath(),
             getManifestDirectoryForHelmChart(manifestFilesDirectory, helmChartManifest), manifestOverrideFiles,
             releaseName, namespace, executionLogCallback, helmChartManifest.getHelmVersion(), timeoutInMillis,
@@ -2439,6 +2444,11 @@ public class K8sTaskHelperBase {
 
       case HELM_CHART:
         HelmChartManifestDelegateConfig helmChartManifest = (HelmChartManifestDelegateConfig) manifestDelegateConfig;
+        int index = helmTaskHelperBase.skipDefaultHelmValuesYaml(manifestFilesDirectory, manifestOverrideFiles,
+            helmChartManifest.isSkipApplyHelmDefaultValues(), helmChartManifest.getHelmVersion());
+        if (index != -1) {
+          manifestOverrideFiles.remove(index);
+        }
         return renderTemplateForHelmChartFiles(k8sDelegateTaskParams.getHelmPath(),
             getManifestDirectoryForHelmChart(manifestFilesDirectory, helmChartManifest), filesList,
             manifestOverrideFiles, releaseName, namespace, executionLogCallback, helmChartManifest.getHelmVersion(),

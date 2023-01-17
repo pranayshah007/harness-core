@@ -57,5 +57,6 @@ public interface LogService extends OwnedByActivity {
    * @param unitName   the unit name
    * @param logs       the logs
    */
-  boolean batchedSaveCommandUnitLogs(@NotEmpty String activityId, @NotEmpty String unitName, @Valid Log logs);
+  boolean batchedSaveCommandUnitLogs(
+      @NotEmpty String activityId, @NotEmpty String unitName, @Valid software.wings.beans.dto.Log logs);
 }

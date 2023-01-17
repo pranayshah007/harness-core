@@ -54,9 +54,9 @@ import software.wings.beans.HostConnectionType;
 import software.wings.beans.ServiceTemplate;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.infrastructure.Host;
-import software.wings.service.impl.AwsHelperService;
 import software.wings.service.impl.AwsInfrastructureProvider;
 import software.wings.service.impl.AwsUtils;
+import software.wings.service.impl.aws.manager.AwsHelperServiceManager;
 import software.wings.service.intfc.HostService;
 import software.wings.service.intfc.ServiceResourceService;
 import software.wings.service.intfc.ServiceTemplateService;
@@ -93,7 +93,7 @@ public class AwsInfrastructureProviderTest extends WingsBaseTest {
   @Mock private AwsAsgHelperServiceManager mockAwsAsgHelperServiceManager;
   @Mock private ServiceResourceService serviceResourceService;
   @Mock private ServiceTemplateService serviceTemplateService;
-  @Spy private AwsHelperService awsHelperService;
+  @Spy private AwsHelperServiceManager awsHelperServiceManager;
 
   @Inject @InjectMocks private AwsInfrastructureProvider infrastructureProvider = new AwsInfrastructureProvider();
 
@@ -271,7 +271,7 @@ public class AwsInfrastructureProviderTest extends WingsBaseTest {
         .thenReturn(ServiceTemplate.Builder.aServiceTemplate().withUuid(SERVICE_TEMPLATE_ID).build());
     doReturn(HOST_NAME).when(mockAwsUtils).getHostnameFromPrivateDnsName(HOST_NAME);
     doNothing()
-        .when(awsHelperService)
+        .when(awsHelperServiceManager)
         .setAutoScalingGroupCapacityAndWaitForInstancesReadyState(awsConfig, Collections.emptyList(),
             infrastructureMapping.getRegion(), infrastructureMapping.getAutoScalingGroupName(),
             infrastructureMapping.getDesiredCapacity(), new ManagerExecutionLogCallback());
@@ -285,7 +285,7 @@ public class AwsInfrastructureProviderTest extends WingsBaseTest {
     Instance instance = host.getEc2Instance();
     assertThat(instance).isNotNull();
     assertThat(instance.getInstanceId()).isEqualTo("INSTANCE_ID");
-    verify(awsHelperService)
+    verify(awsHelperServiceManager)
         .setAutoScalingGroupCapacityAndWaitForInstancesReadyState(awsConfig, Collections.emptyList(),
             infrastructureMapping.getRegion(), infrastructureMapping.getAutoScalingGroupName(),
             infrastructureMapping.getDesiredCapacity(), new ManagerExecutionLogCallback());
