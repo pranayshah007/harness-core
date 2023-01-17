@@ -40,3 +40,7 @@ scripts/cie/service-script/build/build_dist.sh || true
 
 echo "INFO: list the jars built"
 find . -name "*.jar"
+
+repo="harness/develop-${MODULE}-openjdk-8u242"
+dockerfile="/harness/dist/${MODULE}/Dockerfile-cie-jdk"
+context="/harness/dist/${MODULE}"
