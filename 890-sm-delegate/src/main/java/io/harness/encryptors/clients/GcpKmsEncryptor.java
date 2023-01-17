@@ -275,7 +275,7 @@ public class GcpKmsEncryptor implements KmsEncryptor {
   }
 
   private KeyManagementServiceClient getClient(GcpKmsConfig gcpKmsConfig, boolean useWorkloadIdentity) {
-    if (gcpKmsConfig.isGlobalKms() && useWorkloadIdentity) {
+    if (useWorkloadIdentity) {
       try {
         log.info("Using workload identity for GCP KMS");
         return KeyManagementServiceClient.create();
