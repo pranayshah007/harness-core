@@ -7,6 +7,7 @@
 
 package software.wings.resources;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.eraro.ErrorCode.USER_DOES_NOT_EXIST;
 import static io.harness.exception.WingsException.USER;
 
@@ -43,14 +44,7 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import javax.validation.constraints.NotNull;
-import javax.ws.rs.BeanParam;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
+import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.NotBlank;
@@ -84,7 +78,11 @@ public class IdentityServiceResource {
   @Timed
   @ExceptionMetered
   public RestResponse<User> loginUser(@QueryParam("email") String email) {
-    return new RestResponse<>(authenticationManager.loginUserForIdentityService(urlDecode(email)));
+    User user = authenticationManager.loginUserForIdentityService(urlDecode(email));
+    if(user != null && isEmpty(user.getSupportAccounts()) {
+      userService.loadSupportAccounts(user);
+    }
+    return new RestResponse<>(user);
   }
 
   private String urlDecode(String encoded) {
@@ -141,15 +139,13 @@ public class IdentityServiceResource {
   @Path("/user")
   @Timed
   @ExceptionMetered
-  public RestResponse<User> getUser() {
+  public RestResponse<User> getUser(
+      @QueryParam("includeSupportAccounts") @DefaultValue("true") boolean includeSupportAccounts) {
     User user = UserThreadLocal.get();
     if (user == null) {
       throw new WingsException(USER_DOES_NOT_EXIST, USER);
     } else {
-      if (userService.isFFToAvoidLoadingSupportAccountsUnncessarilyDisabled()) {
-        return new RestResponse<>(user.getPublicUser(true));
-      }
-      return new RestResponse<>(user.getPublicUser(false));
+      return new RestResponse<>(user.getPublicUser(includeSupportAccounts));
     }
   }
 

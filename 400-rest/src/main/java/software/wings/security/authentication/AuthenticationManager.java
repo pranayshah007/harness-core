@@ -299,9 +299,6 @@ public class AuthenticationManager {
         userService.update(user);
       }
     }
-    if (user != null && isEmpty(user.getSupportAccounts())) {
-      userService.loadSupportAccounts(user, Set.of(AccountKeys.uuid));
-    }
     return user;
   }
 
