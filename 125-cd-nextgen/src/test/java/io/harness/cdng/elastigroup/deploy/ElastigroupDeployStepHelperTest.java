@@ -27,7 +27,6 @@ import io.harness.cdng.common.capacity.PercentageCapacitySpec;
 import io.harness.cdng.elastigroup.ElastigroupEntityHelper;
 import io.harness.cdng.elastigroup.beans.ElastigroupSetupDataOutcome;
 import io.harness.cdng.infra.beans.ElastigroupInfrastructureOutcome;
-import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO;
 import io.harness.delegate.task.spot.elastigroup.deploy.ElastigroupDeployTaskParameters;
