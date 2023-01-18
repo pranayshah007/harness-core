@@ -11,6 +11,7 @@ import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.encryption.Scope.PROJECT;
 
 import static software.wings.ngmigration.NGMigrationEntityType.APPLICATION;
+import static software.wings.ngmigration.NGMigrationEntityType.INFRA_PROVISIONER;
 import static software.wings.ngmigration.NGMigrationEntityType.MANIFEST;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -40,6 +41,7 @@ import io.harness.serializer.JsonUtils;
 import software.wings.beans.Application;
 import software.wings.beans.Application.ApplicationKeys;
 import software.wings.beans.EntityType;
+import software.wings.beans.InfrastructureProvisioner;
 import software.wings.beans.Pipeline;
 import software.wings.beans.Pipeline.PipelineKeys;
 import software.wings.beans.Service;
@@ -57,6 +59,7 @@ import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.EnvironmentService;
+import software.wings.service.intfc.InfrastructureProvisionerService;
 import software.wings.service.intfc.ServiceResourceService;
 import software.wings.service.intfc.ServiceVariableService;
 
@@ -82,6 +85,8 @@ public class AppMigrationService extends NgMigrationService {
   @Inject private ServiceResourceService serviceResourceService;
   @Inject private ServiceVariableService serviceVariableService;
   @Inject private TemplateImportService templateService;
+
+  @Inject InfrastructureProvisionerService infrastructureProvisionerService;
 
   @Override
   public MigratedEntityMapping generateMappingEntity(NGYamlFile yamlFile) {
@@ -176,6 +181,20 @@ public class AppMigrationService extends NgMigrationService {
                           .distinct()
                           .map(manifest -> CgEntityId.builder().id(manifest.getUuid()).type(MANIFEST).build())
                           .collect(Collectors.toList()));
+    }
+
+    // Infra Provisioners
+    List<InfrastructureProvisioner> infrastructureProvisioners =
+        hPersistence.createQuery(InfrastructureProvisioner.class)
+            .filter(InfrastructureProvisioner.APP_ID, appId)
+            .filter(InfrastructureProvisioner.ACCOUNT_ID_KEY, application.getAccountId())
+            .asList();
+    if (EmptyPredicate.isNotEmpty(infrastructureProvisioners)) {
+      children.addAll(
+          infrastructureProvisioners.stream()
+              .distinct()
+              .map(provisioner -> CgEntityId.builder().id(provisioner.getUuid()).type(INFRA_PROVISIONER).build())
+              .collect(Collectors.toList()));
     }
 
     return DiscoveryNode.builder()

@@ -9,6 +9,8 @@ package io.harness.cdng.envGroup.services;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.ENVIRONMENT;
+import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 import static io.harness.utils.IdentifierRefHelper.MAX_RESULT_THRESHOLD_FOR_SPLIT;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -24,6 +26,7 @@ import io.harness.beans.IdentifierRef;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity.EnvironmentGroupKeys;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupFilterPropertiesDTO;
+import io.harness.cdng.events.EnvironmentGroupDeleteEvent;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.eventsframework.EventsFrameworkConstants;
 import io.harness.eventsframework.EventsFrameworkMetadataConstants;
@@ -40,7 +43,9 @@ import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.common.beans.NGTag.NGTagKeys;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.entitysetupusage.service.EntitySetupUsageService;
+import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
+import io.harness.outbox.api.OutboxService;
 import io.harness.repositories.envGroup.EnvironmentGroupRepository;
 import io.harness.utils.IdentifierRefHelper;
 
@@ -49,6 +54,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.google.protobuf.StringValue;
+import com.mongodb.client.result.DeleteResult;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -56,12 +62,15 @@ import java.util.Optional;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import net.jodah.failsafe.Failsafe;
+import net.jodah.failsafe.RetryPolicy;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.transaction.support.TransactionTemplate;
 
 // TODO: Add transaction for outbox event and setup usages
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -73,17 +82,23 @@ public class EnvironmentGroupServiceImpl implements EnvironmentGroupService {
   private final IdentifierRefProtoDTOHelper identifierRefProtoDTOHelper;
   private final EntitySetupUsageService entitySetupUsageService;
   private final EnvironmentGroupServiceHelper environmentGroupServiceHelper;
+  @Inject @Named(OUTBOX_TRANSACTION_TEMPLATE) private final TransactionTemplate transactionTemplate;
+  private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_RETRY_POLICY;
+  private final OutboxService outboxService;
 
   @Inject
   public EnvironmentGroupServiceImpl(EnvironmentGroupRepository environmentRepository,
       @Named(EventsFrameworkConstants.SETUP_USAGE) Producer setupUsagesEventProducer,
       IdentifierRefProtoDTOHelper identifierRefProtoDTOHelper, EntitySetupUsageService entitySetupUsageService,
-      EnvironmentGroupServiceHelper environmentGroupServiceHelper) {
+      EnvironmentGroupServiceHelper environmentGroupServiceHelper, TransactionTemplate transactionTemplate,
+      OutboxService outboxService) {
     this.environmentRepository = environmentRepository;
     this.setupUsagesEventProducer = setupUsagesEventProducer;
     this.identifierRefProtoDTOHelper = identifierRefProtoDTOHelper;
     this.entitySetupUsageService = entitySetupUsageService;
     this.environmentGroupServiceHelper = environmentGroupServiceHelper;
+    this.transactionTemplate = transactionTemplate;
+    this.outboxService = outboxService;
   }
 
   @Override
@@ -205,19 +220,56 @@ public class EnvironmentGroupServiceImpl implements EnvironmentGroupService {
   }
 
   @Override
-  public void deleteAllEnvGroupInProject(String accountId, String orgIdentifier, String projectIdentifier) {
+  public boolean deleteAllInProject(String accountId, String orgIdentifier, String projectIdentifier) {
+    checkArgument(isNotEmpty(accountId), "accountId must be present");
+    checkArgument(isNotEmpty(orgIdentifier), "org identifier must be present");
+    checkArgument(isNotEmpty(projectIdentifier), "project identifier must be present");
+
+    return deleteInternal(accountId, orgIdentifier, projectIdentifier);
+  }
+
+  @Override
+  public boolean deleteAllInOrg(String accountId, String orgIdentifier) {
+    checkArgument(isNotEmpty(accountId), "accountId must be present");
+    checkArgument(isNotEmpty(orgIdentifier), "orgIdentifier must be present");
+
+    return deleteInternal(accountId, orgIdentifier, null);
+  }
+
+  private boolean deleteInternal(String accountId, String orgIdentifier, String projectIdentifier) {
     Criteria criteria = CoreCriteriaUtils.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier, false);
     Pageable pageRequest = PageRequest.of(
         0, 1000, Sort.by(Sort.Direction.DESC, EnvironmentGroupEntity.EnvironmentGroupKeys.lastModifiedAt));
-    Page<EnvironmentGroupEntity> envGroupListPage =
+    Page<EnvironmentGroupEntity> environmentGroupEntities =
         list(criteria, pageRequest, projectIdentifier, orgIdentifier, accountId);
 
-    for (EnvironmentGroupEntity entity : envGroupListPage) {
-      boolean deleted = environmentRepository.deleteEnvGroup(entity.withDeleted(true));
-      if (deleted) {
-        setupUsagesForEnvironmentList(entity);
+    return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+      DeleteResult deleteResult = environmentRepository.delete(criteria);
+
+      if (deleteResult.wasAcknowledged()) {
+        for (EnvironmentGroupEntity environmentGroupEntity : environmentGroupEntities) {
+          setupUsagesForEnvironmentList(environmentGroupEntity);
+          outboxService.save(EnvironmentGroupDeleteEvent.builder()
+                                 .accountIdentifier(environmentGroupEntity.getAccountIdentifier())
+                                 .orgIdentifier(environmentGroupEntity.getOrgIdentifier())
+                                 .projectIdentifier(environmentGroupEntity.getProjectIdentifier())
+                                 .environmentGroupEntity(environmentGroupEntity)
+                                 .build());
+        }
+      } else {
+        log.error(getScopedErrorForCascadeDeletion(orgIdentifier, projectIdentifier));
       }
+
+      return deleteResult.wasAcknowledged();
+    }));
+  }
+
+  private String getScopedErrorForCascadeDeletion(String orgIdentifier, String projectIdentifier) {
+    if (isNotEmpty(projectIdentifier)) {
+      return String.format("Environment Groups under Project[%s], Organization [%s] couldn't be deleted.",
+          projectIdentifier, orgIdentifier);
     }
+    return String.format("Environment Groups under Organization: [%s] couldn't be deleted.", orgIdentifier);
   }
 
   @Override

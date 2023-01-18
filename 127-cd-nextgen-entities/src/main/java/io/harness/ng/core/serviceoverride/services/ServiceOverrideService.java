@@ -29,8 +29,22 @@ public interface ServiceOverrideService {
   boolean deleteAllInEnv(@NotEmpty String accountId, @NotEmpty String orgIdentifier, @NotEmpty String projectIdentifier,
       @NotEmpty String environmentRef);
 
+  /**
+   * Deletes all infrastructures linked to a particular environment at project level.
+   * @param accountId  the account id
+   * @param orgIdentifier the organization identifier
+   * @return boolean to indicate if deletion was successful
+   */
   boolean deleteAllInProject(
       @NotEmpty String accountId, @NotEmpty String orgIdentifier, @NotEmpty String projectIdentifier);
+
+  /**
+   * Deletes all infrastructures linked to a particular environment at org level.
+   * @param accountId  the account id
+   * @param orgIdentifier the organization identifier
+   * @return boolean to indicate if deletion was successful
+   */
+  boolean deleteAllInOrg(@NotEmpty String accountId, @NotEmpty String orgIdentifier);
 
   boolean deleteAllInProjectForAService(@NotEmpty String accountId, @NotEmpty String orgIdentifier,
       @NotEmpty String projectIdentifier, @NotEmpty String serviceRef);

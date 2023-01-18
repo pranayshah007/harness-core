@@ -7,6 +7,7 @@
 
 package io.harness.ng.core.environment.resources;
 
+import static io.harness.NGCommonEntityConstants.FORCE_DELETE_MESSAGE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ng.core.environment.mappers.EnvironmentMapper.toNGEnvironmentConfig;
@@ -282,9 +283,11 @@ public class EnvironmentResourceV2 {
       @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
-          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier) {
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+      @Parameter(description = FORCE_DELETE_MESSAGE) @QueryParam(NGCommonEntityConstants.FORCE_DELETE) @DefaultValue(
+          "false") boolean forceDelete) {
     return ResponseDTO.newResponse(environmentService.delete(accountId, orgIdentifier, projectIdentifier,
-        environmentIdentifier, isNumeric(ifMatch) ? parseLong(ifMatch) : null));
+        environmentIdentifier, isNumeric(ifMatch) ? parseLong(ifMatch) : null, forceDelete));
   }
 
   @PUT

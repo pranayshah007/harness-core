@@ -72,5 +72,7 @@ public enum CCMField {
   TOTAL_COST,
   IDLE_COST,
   UNALLOCATED_COST,
-  ALL
+  ALL,
+  RULE_NAME,
+  RULE_SET_NAME
 }

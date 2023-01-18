@@ -383,24 +383,43 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
     checkArgument(isNotEmpty(orgIdentifier), "org id must be present");
     checkArgument(isNotEmpty(projectIdentifier), "project id must be present");
 
-    Criteria criteria = getInfrastructureEqualityCriteriaForProject(accountId, orgIdentifier, projectIdentifier);
-    List<InfrastructureEntity> infrastructureEntityListForProjectIdentifier =
-        getAllInfrastructureFromProjectIdentifier(accountId, orgIdentifier, projectIdentifier);
+    return forceDeleteAllInternal(accountId, orgIdentifier, projectIdentifier);
+  }
+
+  @Override
+  public boolean forceDeleteAllInOrg(String accountId, String orgIdentifier) {
+    checkArgument(isNotEmpty(accountId), "account id must be present");
+    checkArgument(isNotEmpty(orgIdentifier), "org identifier must be present");
+
+    return forceDeleteAllInternal(accountId, orgIdentifier, null);
+  }
+
+  private boolean forceDeleteAllInternal(String accountId, String orgIdentifier, String projectIdentifier) {
+    Criteria criteria = getInfrastructureEqualityCriteria(accountId, orgIdentifier, projectIdentifier);
+    List<InfrastructureEntity> infrastructureEntityList =
+        getInfrastructures(accountId, orgIdentifier, projectIdentifier);
 
     return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
       DeleteResult deleteResult = infrastructureRepository.delete(criteria);
 
       if (deleteResult.wasAcknowledged()) {
-        for (InfrastructureEntity infra : infrastructureEntityListForProjectIdentifier) {
+        for (InfrastructureEntity infra : infrastructureEntityList) {
           infrastructureEntitySetupUsageHelper.deleteSetupUsages(infra);
         }
       } else {
-        log.error(String.format("Infrastructures under Project[%s], Organization [%s] couldn't be deleted.",
-            projectIdentifier, orgIdentifier));
+        log.error(getScopedErrorForCascadeDeletion(orgIdentifier, projectIdentifier));
       }
 
       return deleteResult.wasAcknowledged();
     }));
+  }
+
+  private String getScopedErrorForCascadeDeletion(String orgIdentifier, String projectIdentifier) {
+    if (isNotEmpty(projectIdentifier)) {
+      return String.format("Infrastructures under Project[%s], Organization [%s] couldn't be deleted.",
+          projectIdentifier, orgIdentifier);
+    }
+    return String.format("Infrastructures under Organization: [%s] couldn't be deleted.", orgIdentifier);
   }
 
   private void setObsoleteAsFalse(InfrastructureEntity requestInfra) {
@@ -508,7 +527,7 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
     }
   }
   @Override
-  public List<InfrastructureEntity> getAllInfrastructureFromProjectIdentifier(
+  public List<InfrastructureEntity> getInfrastructures(
       String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     return infrastructureRepository.findAllFromProjectIdentifier(accountIdentifier, orgIdentifier, projectIdentifier);
   }
@@ -702,8 +721,7 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
     }
   }
 
-  private Criteria getInfrastructureEqualityCriteriaForProject(
-      String accountId, String orgIdentifier, String projectIdentifier) {
+  private Criteria getInfrastructureEqualityCriteria(String accountId, String orgIdentifier, String projectIdentifier) {
     return Criteria.where(InfrastructureEntityKeys.accountId)
         .is(accountId)
         .and(InfrastructureEntityKeys.orgIdentifier)

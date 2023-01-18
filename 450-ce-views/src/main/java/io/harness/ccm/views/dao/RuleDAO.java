@@ -7,6 +7,10 @@
 
 package io.harness.ccm.views.dao;
 
+import static io.harness.ccm.commons.entities.CCMField.RULE_NAME;
+
+import io.harness.ccm.commons.entities.CCMSort;
+import io.harness.ccm.commons.entities.CCMSortOrder;
 import io.harness.ccm.views.entities.Rule;
 import io.harness.ccm.views.entities.Rule.RuleId;
 import io.harness.ccm.views.helper.GovernanceRuleFilter;
@@ -45,8 +49,7 @@ public class RuleDAO {
     RuleList ruleList = RuleList.builder().build();
     Query<Rule> rules = hPersistence.createQuery(Rule.class)
                             .field(RuleId.accountId)
-                            .in(Arrays.asList(governancePolicyFilter.getAccountId(), GLOBAL_ACCOUNT_ID))
-                            .order(Sort.ascending(RuleId.name));
+                            .in(Arrays.asList(governancePolicyFilter.getAccountId(), GLOBAL_ACCOUNT_ID));
 
     if (governancePolicyFilter.getCloudProvider() != null) {
       rules.field(RuleId.cloudProvider).equal(governancePolicyFilter.getCloudProvider());
@@ -64,13 +67,33 @@ public class RuleDAO {
     if (governancePolicyFilter.getSearch() != null) {
       rules.field(RuleId.name).containsIgnoreCase(governancePolicyFilter.getSearch());
     }
+    if (governancePolicyFilter.getOrderBy() != null) {
+      for (CCMSort sort : governancePolicyFilter.getOrderBy()) {
+        switch (sort.getField()) {
+          case RULE_NAME:
+            sortByRuleName(rules, sort.getOrder());
+            break;
+          default:
+            throw new InvalidRequestException("Sort field " + sort.getField() + " is not supported");
+        }
+      }
+    }
     ruleList.setTotalItems(rules.asList().size());
 
-    ruleList.setRule(rules.limit(governancePolicyFilter.getLimit())
-                         .offset(governancePolicyFilter.getOffset())
-                         .order(Sort.descending(RuleId.name))
-                         .asList());
+    ruleList.setRule(
+        rules.limit(governancePolicyFilter.getLimit()).offset(governancePolicyFilter.getOffset()).asList());
     return ruleList;
+  }
+
+  public Query<Rule> sortByRuleName(Query<Rule> rules, CCMSortOrder order) {
+    switch (order) {
+      case ASCENDING:
+        return rules.order(Sort.ascending(RuleId.name));
+      case DESCENDING:
+        return rules.order(Sort.descending(RuleId.name));
+      default:
+        throw new InvalidRequestException("Operator not supported not supported for time fields");
+    }
   }
 
   public Rule fetchByName(String accountId, String name, boolean create) {

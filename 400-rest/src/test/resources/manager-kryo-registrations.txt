@@ -2255,6 +2255,8 @@
 88512:io.harness.yaml.repository.Reference
 88513:io.harness.yaml.repository.ReferenceType
 88514:io.harness.yaml.repository.Strategy
+88515:io.harness.yaml.registry.Registry
+88516:io.harness.yaml.registry.RegistryCredential
 90001:software.wings.service.impl.apm.AWSPrometheusInfo
 95001:io.harness.delegate.beans.logstreaming.UnitProgressData
 95002:io.harness.waiter.WaitInstanceTimeoutCallback
@@ -2785,6 +2787,9 @@
 573593:software.wings.api.terraform.TfVarS3Source
 573594:io.harness.delegate.task.k8s.K8sDryRunManifestRequest
 573595:io.harness.delegate.task.k8s.K8sDryRunManifestResponse
+573596:io.harness.delegate.task.aws.asg.AsgBlueGreenSwapServiceRequest
+573597:io.harness.delegate.task.aws.asg.AsgBlueGreenSwapServiceResponse
+573598:io.harness.delegate.task.aws.asg.AsgBlueGreenSwapServiceResult
 573600:io.harness.delegate.exception.ElastigroupNGException
 573601:io.harness.delegate.task.elastigroup.response.SpotInstConfig
 573602:io.harness.delegate.task.elastigroup.response.ElastigroupParametersFetchResponse
@@ -2912,6 +2917,18 @@
 980100:software.wings.beans.infrastructure.instance.info.K8sPodInfo
 980101:software.wings.beans.infrastructure.instance.info.K8sContainerInfo
 1010101:io.harness.delegate.beans.connector.awsconnector.S3BuildsResponse
+
+5731600:io.harness.delegate.task.aws.asg.AsgLoadBalancerConfig
+5731601:io.harness.delegate.task.aws.asg.AsgBlueGreenRollbackRequest
+5731602:io.harness.delegate.task.aws.asg.AsgBlueGreenRollbackResponse
+5731603:io.harness.delegate.task.aws.asg.AsgBlueGreenRollbackResult
+5731604:io.harness.delegate.task.aws.asg.AsgBlueGreenPrepareRollbackDataRequest
+5731605:io.harness.delegate.task.aws.asg.AsgBlueGreenPrepareRollbackDataResponse
+5731606:io.harness.delegate.task.aws.asg.AsgBlueGreenPrepareRollbackDataResult
+5731607:io.harness.delegate.task.aws.asg.AsgBlueGreenDeployRequest
+5731608:io.harness.delegate.task.aws.asg.AsgBlueGreenDeployResponse
+5731609:io.harness.delegate.task.aws.asg.AsgBlueGreenDeployResult
+
 9000312:software.wings.helpers.ext.nexus.NexusRepositories
 9300122:io.harness.yaml.core.timeout.Timeout
 9300123:io.harness.beans.WebhookEncryptedSecretDTO

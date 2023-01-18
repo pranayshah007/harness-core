@@ -1682,6 +1682,8 @@ public class BuilderFactory {
         .controlNodeIdentifier("controlNodeIdentifier")
         .controlData(Collections.singletonList(MetricValue.builder().value(1.0).timestamp(1L).build()))
         .testData(Collections.singletonList(MetricValue.builder().value(1.0).timestamp(1L).build()))
+        .normalisedTestData(Collections.singletonList(MetricValue.builder().value(1.0).timestamp(1L).build()))
+        .normalisedControlData(Collections.singletonList(MetricValue.builder().value(1.0).timestamp(1L).build()))
         .build();
   }
 

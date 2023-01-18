@@ -505,29 +505,35 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
     }
     List<EnvironmentMapResponse> environmentMapResponses = new ArrayList<>();
     for (EnvironmentYamlV2 environmentYamlV2 : environments) {
-      EnvironmentMapResponseBuilder environmentMapResponseBuilder = EnvironmentMapResponse.builder();
       if (ParameterField.isNull(environmentYamlV2.getInfrastructureDefinitions())) {
-        environmentMapResponseBuilder.environmentsMapList(MultiDeploymentSpawnerUtils.getMapFromEnvironmentYaml(
+        environmentMapResponses.add(getEnvironmentsMapResponse(
             environmentYamlV2, environmentYamlV2.getInfrastructureDefinition().getValue(), envGroupScope));
       } else {
         if (environmentYamlV2.getInfrastructureDefinitions().getValue() == null) {
           throw new InvalidYamlException("No infrastructure definition provided. Please provide atleast one value");
         }
         for (InfraStructureDefinitionYaml infra : environmentYamlV2.getInfrastructureDefinitions().getValue()) {
-          environmentMapResponseBuilder.environmentsMapList(
-              MultiDeploymentSpawnerUtils.getMapFromEnvironmentYaml(environmentYamlV2, infra, envGroupScope));
+          environmentMapResponses.add(getEnvironmentsMapResponse(environmentYamlV2, infra, envGroupScope));
         }
       }
-      if (EmptyPredicate.isNotEmpty(environmentYamlV2.getServicesOverrides())) {
-        Map<String, ServiceOverrideInputsYaml> serviceRefToServiceOverrides = new HashMap<>();
-        for (ServiceOverrideInputsYaml serviceOverrideInputsYaml : environmentYamlV2.getServicesOverrides()) {
-          serviceRefToServiceOverrides.put(serviceOverrideInputsYaml.getServiceRef(), serviceOverrideInputsYaml);
-        }
-        environmentMapResponseBuilder.serviceOverrideInputsYamlMap(serviceRefToServiceOverrides);
-      }
-      environmentMapResponses.add(environmentMapResponseBuilder.build());
     }
     return environmentMapResponses;
+  }
+
+  private EnvironmentMapResponse getEnvironmentsMapResponse(
+      EnvironmentYamlV2 environmentYamlV2, InfraStructureDefinitionYaml infra, Scope envGroupScope) {
+    EnvironmentMapResponseBuilder environmentMapResponseBuilder = EnvironmentMapResponse.builder();
+
+    environmentMapResponseBuilder.environmentsMapList(
+        MultiDeploymentSpawnerUtils.getMapFromEnvironmentYaml(environmentYamlV2, infra, envGroupScope));
+    if (EmptyPredicate.isNotEmpty(environmentYamlV2.getServicesOverrides())) {
+      Map<String, ServiceOverrideInputsYaml> serviceRefToServiceOverrides = new HashMap<>();
+      for (ServiceOverrideInputsYaml serviceOverrideInputsYaml : environmentYamlV2.getServicesOverrides()) {
+        serviceRefToServiceOverrides.put(serviceOverrideInputsYaml.getServiceRef(), serviceOverrideInputsYaml);
+      }
+      environmentMapResponseBuilder.serviceOverrideInputsYamlMap(serviceRefToServiceOverrides);
+    }
+    return environmentMapResponseBuilder.build();
   }
 
   private List<Map<String, String>> getServicesMap(ServicesYaml servicesYaml) {

@@ -94,6 +94,15 @@ public class YamlUtils {
   public YamlField readTree(String content) throws IOException {
     return readTreeInternal(content, mapper);
   }
+
+  public YamlField tryReadTree(String content) {
+    try {
+      return readTreeInternal(content, mapper);
+    } catch (Exception ex) {
+      throw new InvalidRequestException("Invalid yaml", ex);
+    }
+  }
+
   public YamlField readTreeWithDefaultObjectMapper(String content) throws IOException {
     return readTreeInternal(content, NG_DEFAULT_OBJECT_MAPPER);
   }

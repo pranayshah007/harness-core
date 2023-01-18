@@ -561,11 +561,16 @@ public enum FeatureName {
       "FF to make the Artifactory Repository Url as mandatory in case of docker repositoryFormat", HarnessTeam.CDC),
   VALIDATE_SERVICE_NAME_IN_FILE_PATH("Validate the service name in yaml file path", HarnessTeam.SPG),
   NG_K8_COMMAND_FLAGS("Added Support for adding Command flags to K8s commands. PM Rohan", HarnessTeam.CDP),
+  CD_NG_DOCKER_ARTIFACT_DIGEST(
+      "Use SHA256 digest as optional parameter for docker image artifact config", HarnessTeam.SPG),
   CDS_FORCE_DELETE_ENTITIES("Enables force delete of entities irrespective of existing references.", HarnessTeam.CDC),
   CDP_PUBLISH_INSTANCE_STATS_FOR_ENV_NG(
       "Publish instance stats at environment granularity in NG. PM Rohan", HarnessTeam.CDP),
   DEPLOYMENT_RECONCILIATION_LOGIC_QUERY_OPTIMIZATIONS(
       "Used to modify logic for reconciliation queries", HarnessTeam.CDC),
+  NOTIFY_GIT_SYNC_ERRORS_PER_APP(
+      "Notifies git sync errors per application to the user, general behaviour is at the account level",
+      HarnessTeam.SPG),
   SPG_MODULE_VERSION_INFO("Enable version information on module level", HarnessTeam.SPG),
   CIE_HOSTED_VMS_WINDOWS("FF for enabling hosted builds for windows amd64", HarnessTeam.CI),
   CD_TRIGGER_CATALOG_API_ENABLED("Enable support for pipeline/api/triggers/catalog API in UI", HarnessTeam.CDC),
@@ -578,7 +583,8 @@ public enum FeatureName {
       "Skip adding the default values file as an override if it doesn't contain any expressions in case of helm chart manifest for CG",
       HarnessTeam.CDP),
   PIE_PIPELINE_SETTINGS_ENFORCEMENT_LIMIT(
-      "To enable pipeline-settings and limits in Project Default Settings in UI", HarnessTeam.PIPELINE);
+      "To enable pipeline-settings and limits in Project Default Settings in UI", HarnessTeam.PIPELINE),
+  ENABLE_K8_BUILDS("FF for enabling kubernetes builds as an option", HarnessTeam.CI);
 
   @Deprecated
   FeatureName() {

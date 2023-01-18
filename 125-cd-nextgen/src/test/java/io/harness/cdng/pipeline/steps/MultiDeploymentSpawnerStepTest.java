@@ -50,6 +50,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.utils.NGFeatureFlagHelperService;
 
+import io.fabric8.utils.Lists;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -313,6 +314,77 @@ public class MultiDeploymentSpawnerStepTest extends CategoryTest {
     map2.put("environmentRef", "env1");
     map2.put("identifier", "identifier");
     map2.put("serviceRef", "svc2");
+
+    assertThat(
+        multiDeploymentSpawnerStep.obtainChildrenAfterRbac(prepareAmbience(), multiDeploymentStepParameters, null))
+        .isEqualTo(
+            ChildrenExecutableResponse.newBuilder()
+                .addChildren(ChildrenExecutableResponse.Child.newBuilder().setChildNodeId("test").setStrategyMetadata(
+                    StrategyMetadata.newBuilder()
+                        .setTotalIterations(2)
+                        .setCurrentIteration(0)
+                        .setMatrixMetadata(MatrixMetadata.newBuilder()
+                                               .setSubType(MultiDeploymentSpawnerUtils.MULTI_SERVICE_ENV_DEPLOYMENT)
+                                               .putAllMatrixValues(map)
+                                               .build())
+                        .build()))
+                .addChildren(ChildrenExecutableResponse.Child.newBuilder().setChildNodeId("test").setStrategyMetadata(
+                    StrategyMetadata.newBuilder()
+                        .setTotalIterations(2)
+                        .setCurrentIteration(1)
+                        .setMatrixMetadata(MatrixMetadata.newBuilder()
+                                               .setSubType(MultiDeploymentSpawnerUtils.MULTI_SERVICE_ENV_DEPLOYMENT)
+                                               .putAllMatrixValues(map2)
+                                               .build())
+                        .build()))
+                .setMaxConcurrency(1)
+                .build());
+  }
+
+  @Test
+  @Owner(developers = SAHIL)
+  @Category(UnitTests.class)
+  public void testForMultiInfras() {
+    ServiceYamlV2 serviceYamlV2 = ServiceYamlV2.builder().serviceRef(ParameterField.createValueField("svc1")).build();
+
+    List<ServiceYamlV2> serviceYamlV2s = new ArrayList<>();
+    serviceYamlV2s.add(serviceYamlV2);
+    EnvironmentYamlV2 environmentYamlV2 =
+        EnvironmentYamlV2.builder()
+            .environmentRef(ParameterField.createValueField("env1"))
+            .infrastructureDefinitions(ParameterField.createValueField(
+                Lists.newArrayList(InfraStructureDefinitionYaml.builder()
+                                       .identifier(ParameterField.createValueField("identifier1"))
+                                       .build(),
+                    InfraStructureDefinitionYaml.builder()
+                        .identifier(ParameterField.createValueField("identifier2"))
+                        .build())))
+            .build();
+
+    List<EnvironmentYamlV2> environmentYamlV2s = new ArrayList<>();
+
+    environmentYamlV2s.add(environmentYamlV2);
+    MultiDeploymentStepParameters multiDeploymentStepParameters =
+        MultiDeploymentStepParameters.builder()
+            .childNodeId("test")
+            .environments(EnvironmentsYaml.builder()
+                              .environmentsMetadata(EnvironmentsMetadata.builder().parallel(false).build())
+                              .values(ParameterField.createValueField(environmentYamlV2s))
+                              .build())
+            .services(ServicesYaml.builder()
+                          .servicesMetadata(ServicesMetadata.builder().parallel(false).build())
+                          .values(ParameterField.createValueField(serviceYamlV2s))
+                          .build())
+            .build();
+    Map<String, String> map = new HashMap<>();
+    map.put("environmentRef", "env1");
+    map.put("identifier", "identifier1");
+    map.put("serviceRef", "svc1");
+
+    Map<String, String> map2 = new HashMap<>();
+    map2.put("environmentRef", "env1");
+    map2.put("identifier", "identifier2");
+    map2.put("serviceRef", "svc1");
 
     assertThat(
         multiDeploymentSpawnerStep.obtainChildrenAfterRbac(prepareAmbience(), multiDeploymentStepParameters, null))

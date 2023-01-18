@@ -12,7 +12,7 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
-        "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng:module",
+        "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/helpers:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/infra:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/rbac:module",
         "//125-freeze:module",

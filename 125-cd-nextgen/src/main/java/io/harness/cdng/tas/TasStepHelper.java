@@ -644,7 +644,7 @@ public class TasStepHelper {
       String stageName =
           AmbianceUtils.getStageLevelFromAmbiance(ambiance).map(Level::getIdentifier).orElse("Deployment stage");
       String stepType =
-          Optional.ofNullable(AmbianceUtils.getCurrentStepType(ambiance)).map(StepType::getType).orElse("Kubernetes");
+          Optional.ofNullable(AmbianceUtils.getCurrentStepType(ambiance)).map(StepType::getType).orElse("TAS");
       throw new GeneralException(format(
           "No manifests found in stage %s. %s step requires at least one manifest defined in stage service definition",
           stageName, stepType));
@@ -772,10 +772,13 @@ public class TasStepHelper {
   }
 
   public CfCliVersion cfCliVersionNGMapper(CfCliVersionNG cfCliVersionNG) {
+    if (isNull(cfCliVersionNG)) {
+      throw new InvalidRequestException("CF CLI Version can't be null");
+    }
     if (cfCliVersionNG == CfCliVersionNG.V7) {
       return CfCliVersion.V7;
     }
-    throw new InvalidRequestException(format("Invalid CF CLI Version: %s", cfCliVersionNG.toString()));
+    throw new InvalidRequestException(format("Invalid CF CLI Version: %s", cfCliVersionNG));
   }
 
   private TaskChainResponse handleCustomFetchResponse(ResponseData responseData, TasStepExecutor tasStepExecutor,
@@ -947,7 +950,8 @@ public class TasStepHelper {
         .build();
   }
 
-  private CustomManifestFetchConfig buildCustomManifestFetchConfig(String identifier, boolean required,
+  @VisibleForTesting
+  protected CustomManifestFetchConfig buildCustomManifestFetchConfig(String identifier, boolean required,
       boolean defaultSource, List<String> filePaths, String script, String accountId) {
     return CustomManifestFetchConfig.builder()
         .key(identifier)
@@ -1223,26 +1227,6 @@ public class TasStepHelper {
     return tasManifestsPackage;
   }
 
-  public TasManifestsPackage resolveExpressionsInManifests(Ambiance ambiance, TasManifestsPackage tasManifestsPackage) {
-    TasManifestsPackage resolvedTasManifestsPackage = TasManifestsPackage.builder().build();
-    if (!isNull(tasManifestsPackage.getAutoscalarManifestYml())) {
-      resolvedTasManifestsPackage.setAutoscalarManifestYml(
-          engineExpressionService.renderExpression(ambiance, tasManifestsPackage.getAutoscalarManifestYml()));
-    }
-    if (!isEmpty(tasManifestsPackage.getVariableYmls())) {
-      List<String> resolvedVarsYaml = new ArrayList<>();
-      for (String varsYaml : tasManifestsPackage.getVariableYmls()) {
-        resolvedVarsYaml.add(engineExpressionService.renderExpression(ambiance, varsYaml));
-      }
-      resolvedTasManifestsPackage.setVariableYmls(resolvedVarsYaml);
-    }
-    if (!isNull(tasManifestsPackage.getManifestYml())) {
-      resolvedTasManifestsPackage.setManifestYml(
-          engineExpressionService.renderExpression(ambiance, tasManifestsPackage.getManifestYml()));
-    }
-    return resolvedTasManifestsPackage;
-  }
-
   public void addToPcfManifestPackageByType(
       TasManifestsPackage tasManifestsPackage, String fileContent, String filePath, LogCallback executionLogCallback) {
     if (isEmpty(fileContent)) {
@@ -1289,6 +1273,9 @@ public class TasStepHelper {
     if (isNull(manifestOutcome)) {
       return;
     }
+    if (isNull(manifestOutcome.getStore())) {
+      throw new InvalidRequestException(format("Store is null for manifest: %s", manifestOutcome.getIdentifier()));
+    }
     if (ManifestStoreType.CUSTOM_REMOTE.equals(manifestOutcome.getStore().getKind())) {
       tasStepPassThroughData.setShouldExecuteCustomFetch(true);
     } else if (ManifestStoreType.isInGitSubset(manifestOutcome.getStore().getKind())) {
@@ -1297,7 +1284,7 @@ public class TasStepHelper {
       tasStepPassThroughData.setShouldExecuteHarnessStoreFetch(true);
     } else {
       throw new InvalidRequestException(
-          format("Manifest store type: %s not supported yet", manifestOutcome.getStore().getKind()));
+          format("Manifest store type: %s is not supported yet", manifestOutcome.getStore().getKind()));
     }
   }
 
@@ -1705,9 +1692,11 @@ public class TasStepHelper {
         .encryptedDataDetails(encryptedDataDetails)
         .build();
   }
+
   public static String getErrorMessage(CfCommandResponseNG cfCommandResponseNG) {
     return cfCommandResponseNG.getErrorMessage() == null ? "" : cfCommandResponseNG.getErrorMessage();
   }
+
   public UnitProgressData completeUnitProgressData(
       UnitProgressData currentProgressData, Ambiance ambiance, String exceptionMessage) {
     if (currentProgressData == null) {
@@ -1756,7 +1745,7 @@ public class TasStepHelper {
     try {
       map = mapper.readValue(content, Map.class);
     } catch (Exception e) {
-      log.warn(getParseErrorMessage(fileName), e);
+      log.warn(getParseErrorMessage(fileName, e.getMessage()));
       logCallback.saveExecutionLog(getParseErrorMessage(fileName), LogLevel.WARN);
       logCallback.saveExecutionLog("Error: " + e.getMessage(), LogLevel.WARN);
       return null;
@@ -1779,6 +1768,11 @@ public class TasStepHelper {
   private String getParseErrorMessage(String fileName) {
     return "Failed to parse file" + (isNotEmpty(fileName) ? " " + fileName : "") + ".";
   }
+
+  private String getParseErrorMessage(String fileName, String errorMessage) {
+    return String.format("Failed to parse file [%s]. Error - [%s]", isEmpty(fileName) ? "" : fileName, errorMessage);
+  }
+
   private boolean isAutoscalarManifest(Map<String, Object> map) {
     return map.containsKey(PCF_AUTOSCALAR_MANIFEST_INSTANCE_LIMITS_ELE)
         && map.containsKey(PCF_AUTOSCALAR_MANIFEST_RULES_ELE);

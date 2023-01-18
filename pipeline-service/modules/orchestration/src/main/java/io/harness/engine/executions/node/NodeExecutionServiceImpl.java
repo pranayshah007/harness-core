@@ -25,6 +25,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.events.OrchestrationEventEmitter;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.engine.executions.retry.RetryStageInfo;
+import io.harness.engine.observers.NodeExecutionDeleteObserver;
 import io.harness.engine.observers.NodeExecutionStartObserver;
 import io.harness.engine.observers.NodeStartInfo;
 import io.harness.engine.observers.NodeStatusUpdateObserver;
@@ -104,6 +105,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   @Getter private final Subject<NodeStatusUpdateObserver> nodeStatusUpdateSubject = new Subject<>();
   @Getter private final Subject<NodeExecutionStartObserver> nodeExecutionStartSubject = new Subject<>();
   @Getter private final Subject<NodeUpdateObserver> nodeUpdateObserverSubject = new Subject<>();
+  @Getter private final Subject<NodeExecutionDeleteObserver> nodeDeleteObserverSubject = new Subject<>();
 
   @Override
   public NodeExecution get(String nodeExecutionId) {
@@ -555,6 +557,34 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     return true;
   }
 
+  @Override
+  public void deleteAllNodeExecutionAndMetadata(String planExecutionId) {
+    // Fetches all nodeExecutions from analytics for given planExecutionId
+    List<NodeExecution> batchNodeExecutionSet = new LinkedList<>();
+    try (CloseableIterator<NodeExecution> iterator =
+             fetchNodeExecutionsFromAnalytics(planExecutionId, NodeProjectionUtils.fieldsForNodeExecutionDelete)) {
+      while (iterator.hasNext()) {
+        batchNodeExecutionSet.add(iterator.next());
+        if (batchNodeExecutionSet.size() >= MAX_BATCH_SIZE) {
+          deleteNodeExecutionsAndMetadataInternal(batchNodeExecutionSet);
+          batchNodeExecutionSet.clear();
+        }
+      }
+    }
+    if (EmptyPredicate.isNotEmpty(batchNodeExecutionSet)) {
+      deleteNodeExecutionsAndMetadataInternal(batchNodeExecutionSet);
+    }
+  }
+
+  /**
+   * Deletes all nodeExecutions and its related metadata once we have the nodeExecutionToDelete data we collected
+   * @param nodeExecutionsToDelete
+   */
+  private void deleteNodeExecutionsAndMetadataInternal(List<NodeExecution> nodeExecutionsToDelete) {
+    // Delete example - WaitInstances, resourceRestraintInstances, timeoutInstanceIds, etc
+    nodeDeleteObserverSubject.fireInform(NodeExecutionDeleteObserver::onNodesDelete, nodeExecutionsToDelete);
+  }
+
   /**
    * Update Nodes for which the previousId was failed node execution and replace it with the
    * note execution which is being retried
@@ -589,6 +619,17 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
       return false;
     }
     return true;
+  }
+
+  @VisibleForTesting
+  CloseableIterator<NodeExecution> fetchNodeExecutionsFromAnalytics(
+      String planExecutionId, @NotNull Set<String> fieldsToInclude) {
+    // Uses - planExecutionId_status_idx
+    Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId));
+    for (String field : fieldsToInclude) {
+      query.fields().include(field);
+    }
+    return nodeExecutionReadHelper.fetchNodeExecutionsFromAnalytics(query);
   }
 
   @VisibleForTesting

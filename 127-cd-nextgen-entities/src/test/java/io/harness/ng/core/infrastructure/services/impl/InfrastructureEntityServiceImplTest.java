@@ -610,6 +610,30 @@ public class InfrastructureEntityServiceImplTest extends CDNGEntitiesTestBase {
     assertThat(createdInfra.getEnvIdentifier()).isEqualTo("ENV_IDENTIFIER");
   }
 
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testCascadeDeletionForOrgLevelInfrastructures() {
+    String filename = "infrastructure-without-runtime-inputs.yaml";
+    String yaml = readFile(filename);
+    for (int i = 1; i < 3; i++) {
+      InfrastructureEntity createInfraRequest = InfrastructureEntity.builder()
+                                                    .accountId(ACCOUNT_ID)
+                                                    .identifier("IDENTIFIER" + i)
+                                                    .orgIdentifier(ORG_ID)
+                                                    .envIdentifier("ENV_IDENTIFIER")
+                                                    .yaml(yaml)
+                                                    .build();
+
+      infrastructureEntityService.create(createInfraRequest);
+    }
+
+    // delete operations
+    boolean delete = infrastructureEntityService.forceDeleteAllInOrg(ACCOUNT_ID, ORG_ID);
+    assertThat(delete).isTrue();
+    verify(infrastructureEntitySetupUsageHelper, times(2)).deleteSetupUsages(any());
+  }
+
   private String readFile(String filename) {
     ClassLoader classLoader = getClass().getClassLoader();
     try {

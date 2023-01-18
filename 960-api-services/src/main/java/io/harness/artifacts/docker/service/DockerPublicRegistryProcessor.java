@@ -205,10 +205,12 @@ public class DockerPublicRegistryProcessor {
         .build();
   }
 
-  public ArtifactMetaInfo getArtifactMetaInfo(DockerInternalConfig dockerConfig, String imageName, String buildNo) {
+  public ArtifactMetaInfo getArtifactMetaInfo(
+      DockerInternalConfig dockerConfig, String imageName, String buildNo, boolean shouldFetchDockerV2DigestSHA256) {
     DockerRegistryRestClient registryRestClient = dockerRestClientFactory.getDockerRegistryRestClient(dockerConfig);
     Function<Headers, String> getToken = headers -> getToken(headers, registryRestClient);
-    return dockerRegistryUtils.getArtifactMetaInfo(dockerConfig, registryRestClient, getToken, "", imageName, buildNo);
+    return dockerRegistryUtils.getArtifactMetaInfo(
+        dockerConfig, registryRestClient, getToken, "", imageName, buildNo, shouldFetchDockerV2DigestSHA256);
   }
 
   public List<Map<String, String>> getLabels(

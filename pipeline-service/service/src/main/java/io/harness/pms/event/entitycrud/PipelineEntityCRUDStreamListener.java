@@ -15,6 +15,7 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.PIPELI
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.interrupts.InterruptService;
 import io.harness.engine.pms.data.PmsOutcomeService;
 import io.harness.engine.pms.data.PmsSweepingOutputService;
@@ -28,6 +29,7 @@ import io.harness.pms.pipeline.service.PipelineMetadataService;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.service.PmsExecutionSummaryService;
 import io.harness.pms.preflight.service.PreflightService;
+import io.harness.service.GraphGenerationService;
 import io.harness.steps.barriers.service.BarrierService;
 
 import com.google.inject.Inject;
@@ -51,13 +53,16 @@ public class PipelineEntityCRUDStreamListener implements MessageListener {
   private final PmsSweepingOutputService pmsSweepingOutputService;
   private final PmsOutcomeService pmsOutcomeService;
   private final InterruptService interruptService;
+  private final GraphGenerationService graphGenerationService;
+  private final NodeExecutionService nodeExecutionService;
 
   @Inject
   public PipelineEntityCRUDStreamListener(NGTriggerService ngTriggerService,
       PipelineMetadataService pipelineMetadataService, PmsExecutionSummaryService pmsExecutionSummaryService,
       BarrierService barrierService, PreflightService preflightService,
       PmsSweepingOutputService pmsSweepingOutputService, PmsOutcomeService pmsOutcomeService,
-      InterruptService interruptService) {
+      InterruptService interruptService, GraphGenerationService graphGenerationService,
+      NodeExecutionService nodeExecutionService) {
     this.ngTriggerService = ngTriggerService;
     this.pipelineMetadataService = pipelineMetadataService;
     this.pmsExecutionSummaryService = pmsExecutionSummaryService;
@@ -66,6 +71,8 @@ public class PipelineEntityCRUDStreamListener implements MessageListener {
     this.pmsSweepingOutputService = pmsSweepingOutputService;
     this.pmsOutcomeService = pmsOutcomeService;
     this.interruptService = interruptService;
+    this.graphGenerationService = graphGenerationService;
+    this.nodeExecutionService = nodeExecutionService;
   }
 
   @Override
@@ -83,14 +90,14 @@ public class PipelineEntityCRUDStreamListener implements MessageListener {
         }
         String action = metadataMap.get(ACTION);
         if (action != null) {
-          return processAccountEntityChangeEvent(entityChangeDTO, action);
+          return processPipelineEntityChangeEvent(entityChangeDTO, action);
         }
       }
     }
     return true;
   }
 
-  private boolean processAccountEntityChangeEvent(EntityChangeDTO entityChangeDTO, String action) {
+  private boolean processPipelineEntityChangeEvent(EntityChangeDTO entityChangeDTO, String action) {
     switch (action) {
       case DELETE_ACTION:
         if (checkIfAnyRequiredFieldIsNotEmpty(entityChangeDTO)) {
@@ -177,6 +184,12 @@ public class PipelineEntityCRUDStreamListener implements MessageListener {
     pmsOutcomeService.deleteAllOutcomesInstances(planExecutionsToDelete);
     // Delete all interrupts
     interruptService.deleteAllInterrupts(planExecutionsToDelete);
+    // Delete all graph metadata
+    graphGenerationService.deleteAllGraphMetadataForGivenExecutionIds(planExecutionsToDelete);
+    // Delete nodeExecutions and its metadata
+    for (String planExecutionToDelete : planExecutionsToDelete) {
+      nodeExecutionService.deleteAllNodeExecutionAndMetadata(planExecutionToDelete);
+    }
   }
 
   private boolean checkIfAnyRequiredFieldIsNotEmpty(EntityChangeDTO entityChangeDTO) {

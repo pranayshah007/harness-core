@@ -20,6 +20,7 @@ import io.harness.pms.yaml.ParameterField;
 
 import software.wings.beans.GraphNode;
 import software.wings.ngmigration.CgEntityId;
+import software.wings.ngmigration.CgEntityNode;
 import software.wings.sm.State;
 import software.wings.sm.states.JenkinsState;
 
@@ -43,7 +44,8 @@ public class JenkinsStepMapperImpl implements StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(Map<CgEntityId, NGYamlFile> migratedEntities, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities, GraphNode graphNode) {
     JenkinsState state = (JenkinsState) getState(graphNode);
     JenkinsBuildStepNode stepNode = new JenkinsBuildStepNode();
     baseSetup(graphNode, stepNode);

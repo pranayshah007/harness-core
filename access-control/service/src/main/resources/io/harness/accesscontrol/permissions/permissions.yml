@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: permissionsConfiguration
-version: 44
+version: 45
 permissions:
   - identifier: core_project_delete
     name: Delete Project
@@ -1371,3 +1371,18 @@ permissions:
       - account
       - organization
       - project
+  - identifier: core_streamingDestination_view
+    name: View Streaming Destination
+    status: ACTIVE
+    allowedScopeLevels:
+      - account
+  - identifier: core_streamingDestination_edit
+    name: Create or Edit Streaming Destination
+    status: ACTIVE
+    allowedScopeLevels:
+      - account
+  - identifier: core_streamingDestination_delete
+    name: Delete Streaming Destination
+    status: ACTIVE
+    allowedScopeLevels:
+      - account

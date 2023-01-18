@@ -142,6 +142,33 @@ public class PmsExecutionSummaryReadHelperTest extends OrchestrationVisualizatio
   }
 
   @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void testFetchExecutionSummaryEntityFromSecondary() {
+    String ACCOUNT_ID = "accountId";
+    String ORG_ID = "orgId";
+    String PROJECT_ID = "projectId";
+    List<PipelineExecutionSummaryEntity> pipelineExecutionSummaryEntityList = new LinkedList<>();
+    Criteria criteria = Criteria.where(PlanExecutionSummaryKeys.accountId)
+                            .is(ACCOUNT_ID)
+                            .and(PlanExecutionSummaryKeys.orgIdentifier)
+                            .is(ORG_ID)
+                            .and(PlanExecutionSummaryKeys.projectIdentifier)
+                            .is(PROJECT_ID)
+                            .and(PlanExecutionSummaryKeys.pipelineIdentifier)
+                            .is("pip1");
+    Query q = new Query(criteria);
+    q.fields().include(PlanExecutionSummaryKeys.planExecutionId);
+    try (CloseableIterator<PipelineExecutionSummaryEntity> iterator =
+             pmsExecutionSummaryReadHelper.fetchExecutionSummaryEntityFromSecondary(q)) {
+      while (iterator.hasNext()) {
+        pipelineExecutionSummaryEntityList.add(iterator.next());
+      }
+    }
+    assertThat(pipelineExecutionSummaryEntityList.size()).isEqualTo(2);
+  }
+
+  @Test
   @Owner(developers = SHALINI)
   @Category(UnitTests.class)
   public void testFindListOfUniqueBranches() {

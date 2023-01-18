@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.DEL;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.Delegate;
+import io.harness.delegate.beans.DelegateFeedback;
 import io.harness.delegate.beans.DelegateGroup;
 import io.harness.delegate.beans.DelegateRing;
 import io.harness.delegate.beans.VersionOverride;
@@ -36,6 +37,7 @@ public class DelegateServiceMorphiaRegistrar implements MorphiaRegistrar {
     set.add(DelegateGroup.class);
     set.add(PerpetualTaskRecord.class);
     set.add(DelegateRing.class);
+    set.add(DelegateFeedback.class);
     set.add(VersionOverride.class);
     set.add(DelegateConnectionResult.class);
   }

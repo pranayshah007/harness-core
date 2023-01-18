@@ -11,3 +11,4 @@ jobCommonConfig:
   batchConfig:
     cursorBatchSize: 1000
     limit: 10000
+    maxRetries: 2

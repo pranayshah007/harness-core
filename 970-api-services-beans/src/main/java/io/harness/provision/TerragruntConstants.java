@@ -30,10 +30,15 @@ public final class TerragruntConstants {
       "terragrunt run-all apply -input=false --terragrunt-non-interactive --terragrunt-include-external-dependencies %s %s";
   public static final String TERRAGRUNT_RUN_ALL_PLAN_COMMAND_FORMAT =
       "terragrunt run-all plan -out=tfplan -input=false %s %s";
+  public static final String TERRAGRUNT_RUN_ALL_PLAN_COMMAND_FORMAT_WITH_EXTERNAL_DEPENDENCY =
+      "terragrunt run-all plan -out=tfplan -input=false --terragrunt-include-external-dependencies %s %s";
   public static final String TERRAGRUNT_RUN_ALL_PLAN_DESTROY_COMMAND_FORMAT =
       "terragrunt run-all plan -destroy -out=tfdestroyplan -input=false %s %s";
+  public static final String TERRAGRUNT_RUN_ALL_PLAN_DESTROY_COMMAND_FORMAT_WITH_EXTERNAL_DEPENDENCY =
+      "terragrunt run-all plan -destroy -out=tfdestroyplan -input=false --terragrunt-include-external-dependencies %s %s";
   public static final String TERRAGRUNT_RUN_ALL_DESTROY_COMMAND_FORMAT =
       "terragrunt run-all destroy %s --terragrunt-non-interactive %s %s";
+  public static final String TERRAGRUNT_WORKSPACE_RUN_ALL_LIST_COMMAND_FORMAT = "terragrunt run-all workspace list";
   public static final String TERRAGRUNT_WORKSPACE_LIST_COMMAND_FORMAT = "terragrunt workspace list";
   public static final String TERRAGRUNT_WORKSPACE_NEW_COMMAND_FORMAT = "terragrunt workspace new %s";
   public static final String TERRAGRUNT_WORKSPACE_RUN_ALL_NEW_COMMAND_FORMAT = "terragrunt run-all workspace new %s";

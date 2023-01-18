@@ -24,15 +24,19 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import io.harness.OrchestrationTestBase;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.OrchestrationTestHelper;
+import io.harness.engine.observers.NodeExecutionDeleteObserver;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
+import io.harness.observer.Subject;
 import io.harness.plan.Node;
 import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -53,19 +57,20 @@ import java.util.EnumSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import org.joor.Reflect;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.Spy;
-import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.util.CloseableIterator;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
+  @Mock private Subject<NodeExecutionDeleteObserver> nodeDeleteObserverSubject;
   @Inject @InjectMocks @Spy private NodeExecutionServiceImpl nodeExecutionService;
-  MongoTemplate mongoTemplate;
 
   @Before
   public void beforeTest() {
@@ -694,5 +699,23 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
     Update update = new Update();
     update.set(NodeExecutionKeys.nodeId, "test");
     assertThat(nodeExecutionService.shouldLog(update)).isFalse();
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void testDeleteAllNodeExecutionAndMetadata() {
+    Reflect.on(nodeExecutionService).set("nodeDeleteObserverSubject", nodeDeleteObserverSubject);
+    List<NodeExecution> nodeExecutionList = new LinkedList<>();
+    for (int i = 0; i < 1200; i++) {
+      nodeExecutionList.add(NodeExecution.builder().uuid(generateUuid()).build());
+    }
+    CloseableIterator<NodeExecution> iterator =
+        OrchestrationTestHelper.createCloseableIterator(nodeExecutionList.iterator());
+    doReturn(iterator)
+        .when(nodeExecutionService)
+        .fetchNodeExecutionsFromAnalytics("EXECUTION_1", NodeProjectionUtils.fieldsForNodeExecutionDelete);
+    nodeExecutionService.deleteAllNodeExecutionAndMetadata("EXECUTION_1");
+    verify(nodeDeleteObserverSubject, times(2)).fireInform(any(), any());
   }
 }

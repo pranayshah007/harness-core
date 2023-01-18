@@ -1524,7 +1524,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
       return;
     }
     delegateCallbackService.publishTaskProgressResponse(
-        delegateTaskId, generateUuid(), kryoSerializer.asDeflatedBytes(responseData));
+        delegateTaskId, generateUuid(), referenceFalseKryoSerializer.asDeflatedBytes(responseData));
   }
 
   @VisibleForTesting
@@ -1879,11 +1879,11 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
       if (delegateTask.getData().isAsync()) {
         log.debug("Publishing async task response...");
         delegateCallbackService.publishAsyncTaskResponse(
-            delegateTask.getUuid(), kryoSerializer.asDeflatedBytes(response.getResponse()));
+            delegateTask.getUuid(), referenceFalseKryoSerializer.asDeflatedBytes(response.getResponse()));
       } else {
         log.debug("Publishing sync task response...");
         delegateCallbackService.publishSyncTaskResponse(
-            delegateTask.getUuid(), kryoSerializer.asDeflatedBytes(response.getResponse()));
+            delegateTask.getUuid(), referenceFalseKryoSerializer.asDeflatedBytes(response.getResponse()));
       }
     } catch (Exception ex) {
       log.error("Failed publishing task response for task", ex);

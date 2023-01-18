@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: rolesConfiguration
-version: 42
+version: 43
 roles:
     - identifier: _project_admin
       name: Project Admin
@@ -433,6 +433,9 @@ roles:
         - core_environmentgroup_delete
         - core_environmentgroup_access
         - core_audit_view
+        - core_streamingDestination_view
+        - core_streamingDestination_edit
+        - core_streamingDestination_delete
         - core_usergroup_view
         - core_usergroup_manage
         - core_user_view
@@ -596,6 +599,7 @@ roles:
         - core_environment_view
         - core_environmentgroup_view
         - core_audit_view
+        - core_streamingDestination_view
         - core_usergroup_view
         - core_user_view
         - core_role_view

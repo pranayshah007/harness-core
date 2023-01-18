@@ -443,7 +443,12 @@ public enum TaskType {
   TAS_ROLLING_DEPLOY(TaskGroup.TAS, "Tas Rolling Deploy task"),
   TAS_ROLLING_ROLLBACK(TaskGroup.TAS, "Tas Rolling Rollback task"),
   K8S_DRY_RUN_MANIFEST_TASK_NG(TaskGroup.K8S_NG, "K8s Dry Run Manifest Task"),
-  COMMAND_TASK_NG_WITH_AZURE_ARTIFACT(TaskGroup.COMMAND_TASK_NG, "Command Task");
+  COMMAND_TASK_NG_WITH_AZURE_ARTIFACT(TaskGroup.COMMAND_TASK_NG, "Command Task"),
+  AWS_ASG_BLUE_GREEN_SWAP_SERVICE_TASK_NG(TaskGroup.ASG, "AWS Asg Blue Green Swap Service"),
+
+  AWS_ASG_BLUE_GREEN_PREPARE_ROLLBACK_DATA_TASK_NG(TaskGroup.ASG, "AWS Asg Blue Green Prepare Rollback Data"),
+  AWS_ASG_BLUE_GREEN_DEPLOY_TASK_NG(TaskGroup.ASG, "AWS Asg Blue Green Deploy"),
+  AWS_ASG_BLUE_GREEN_ROLLBACK_TASK_NG(TaskGroup.ASG, "AWS Asg Blue Green Rollback");
 
   private final TaskGroup taskGroup;
   private final String displayName;
