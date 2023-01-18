@@ -283,7 +283,7 @@ public class GcpKmsEncryptor implements KmsEncryptor {
             KeyManagementServiceSettings.newBuilder()
                 .setCredentialsProvider(KeyManagementServiceSettings.defaultCredentialsProviderBuilder().build())
                 .build());
-        log.info("Created KMS client successfully");
+        log.info("[WI]: Created KMS client successfully: {}", keyManagementServiceClient.getSettings());
         return keyManagementServiceClient;
       } catch (IOException e) {
         log.error("[WI]: Failed to create KMS client", e);
