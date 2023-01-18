@@ -7,7 +7,6 @@
 
 package software.wings.resources;
 
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.eraro.ErrorCode.USER_DOES_NOT_EXIST;
 import static io.harness.exception.WingsException.USER;
 
@@ -86,11 +85,7 @@ public class IdentityServiceResource {
   @Timed
   @ExceptionMetered
   public RestResponse<User> loginUser(@QueryParam("email") String email) {
-    User user = authenticationManager.loginUserForIdentityService(urlDecode(email));
-    if (user != null && isEmpty(user.getSupportAccounts())) {
-      userService.loadSupportAccounts(user);
-    }
-    return new RestResponse<>(user);
+    return new RestResponse<>(authenticationManager.loginUserForIdentityService(urlDecode(email)));
   }
 
   private String urlDecode(String encoded) {
