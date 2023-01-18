@@ -10,6 +10,7 @@ package io.harness.cdng.elastigroup.rollback;
 import static io.harness.rule.OwnerRule.FILIP;
 import static io.harness.rule.OwnerRule.VITALIE;
 
+import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -27,11 +28,15 @@ import io.harness.cdng.infra.beans.ElastigroupInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.task.spot.elastigroup.rollback.ElastigroupRollbackTaskParameters;
+import io.harness.delegate.task.spot.elastigroup.rollback.ElastigroupRollbackTaskResponse;
+import io.harness.eraro.Level;
+import io.harness.logging.CommandExecutionStatus;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.failure.FailureData;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
@@ -196,6 +201,30 @@ public class ElastigroupRollbackStepHelperTest extends CDNGTestBase {
     assertThat(result.getFailureInfo())
         .isNotNull()
         .extracting(FailureInfo::getErrorMessage, FailureInfo::getFailureTypesList)
-        .containsExactly("Exception: Exception message", Collections.singletonList(FailureType.APPLICATION_FAILURE));
+        .containsExactly("Exception: Exception message", singletonList(FailureType.APPLICATION_FAILURE));
+  }
+
+  @Test
+  @Owner(developers = {FILIP})
+  @Category(UnitTests.class)
+  public void handleTaskResultTest() throws Exception {
+    // Given
+    ElastigroupRollbackTaskResponse response = ElastigroupRollbackTaskResponse.builder()
+                                                   .status(CommandExecutionStatus.FAILURE)
+                                                   .errorMessage("Error msg")
+                                                   .build();
+
+    // When
+    StepResponse result = elastigroupRollbackStepHelper.handleTaskResult(null, null, response);
+
+    // Then
+    assertThat(result).isNotNull().extracting(StepResponse::getStatus).isEqualTo(Status.FAILED);
+
+    assertThat(result.getFailureInfo()).isNotNull();
+
+    assertThat(result.getFailureInfo().getFailureData(0))
+        .isNotNull()
+        .extracting(FailureData::getMessage, FailureData::getFailureTypesList, FailureData::getLevel)
+        .containsExactly("Error msg", singletonList(FailureType.APPLICATION_FAILURE), Level.ERROR.name());
   }
 }
