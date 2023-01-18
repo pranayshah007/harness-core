@@ -18,6 +18,7 @@ import java.util.Arrays;
 @OwnedBy(HarnessTeam.CDP)
 public enum ManifestConfigType {
   @JsonProperty(ManifestType.HelmChart) HELM_CHART(ManifestType.HelmChart),
+  @JsonProperty(ManifestType.HelmRepoOverride) HELM_REPO_OVERRIDE(ManifestType.HelmRepoOverride),
   @JsonProperty(ManifestType.K8Manifest) K8_MANIFEST(ManifestType.K8Manifest),
   @JsonProperty(ManifestType.Kustomize) KUSTOMIZE(ManifestType.Kustomize),
   @JsonProperty(ManifestType.KustomizePatches) KUSTOMIZE_PATCHES(ManifestType.KustomizePatches),

@@ -366,6 +366,52 @@ public class FileStoreResourceTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testListFileStoreNodesOnPath() {
+    String path = "/folder1/folder2";
+    doNothing().when(accessControlClient).checkForAccessOrThrow(any(), any(), eq(FILE_VIEW_PERMISSION));
+    when(fileStoreService.listFileStoreNodesOnPath(ACCOUNT, ORG, PROJECT, path, null))
+        .thenReturn(FolderNodeDTO.builder().name("returnedFolderName").identifier("returnedFolderIdentifier").build());
+
+    ResponseDTO<FolderNodeDTO> folderNodeDTOResponseDTO =
+        fileStoreResource.listFileStoreNodesOnPath(ACCOUNT, ORG, PROJECT, path, null);
+
+    FolderNodeDTO data = folderNodeDTOResponseDTO.getData();
+    assertThat(data).isNotNull();
+    assertThat(data.getName()).isEqualTo("returnedFolderName");
+    assertThat(data.getIdentifier()).isEqualTo("returnedFolderIdentifier");
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testListFileStoreNodesOnPathWithAccessDeniedException() {
+    String path = "/folder1/folder2";
+    doThrow(new NGAccessDeniedException("Principal doesn't have file view permission", USER, null))
+        .when(accessControlClient)
+        .checkForAccessOrThrow(any(), any(), eq(FILE_VIEW_PERMISSION));
+
+    assertThatThrownBy(() -> fileStoreResource.listFileStoreNodesOnPath(ACCOUNT, ORG, PROJECT, path, null))
+        .isInstanceOf(NGAccessDeniedException.class)
+        .hasMessage("Principal doesn't have file view permission");
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testListFileStoreNodesOnPathWithException() {
+    String path = "/folder1/folder2";
+    doNothing().when(accessControlClient).checkForAccessOrThrow(any(), any(), eq(FILE_VIEW_PERMISSION));
+    when(fileStoreService.listFileStoreNodesOnPath(ACCOUNT, ORG, PROJECT, path, null))
+        .thenThrow(new InvalidRequestException("Unable to list folder nodes including sub-nodes on path"));
+
+    assertThatThrownBy(() -> fileStoreResource.listFileStoreNodesOnPath(ACCOUNT, ORG, PROJECT, path, null))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Unable to list folder nodes including sub-nodes on path");
+  }
+
+  @Test
   @Owner(developers = VLAD)
   @Category(UnitTests.class)
   public void shouldListReferencedBy() {

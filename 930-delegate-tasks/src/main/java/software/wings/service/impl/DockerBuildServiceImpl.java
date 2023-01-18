@@ -146,7 +146,7 @@ public class DockerBuildServiceImpl implements DockerBuildService {
       DockerConfig dockerConfig, List<EncryptedDataDetail> encryptionDetails) {
     encryptionService.decrypt(dockerConfig, encryptionDetails, false);
     return dockerRegistryService.getArtifactMetaInfo(DockerConfigToInternalMapper.toDockerInternalConfig(dockerConfig),
-        artifactStreamAttributes.getImageName(), buildNo);
+        artifactStreamAttributes.getImageName(), buildNo, false);
   }
 
   @Override

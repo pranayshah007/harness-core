@@ -148,6 +148,7 @@ public class InfrastructureResource {
   @Inject CustomDeploymentInfrastructureHelper customDeploymentInfrastructureHelper;
   @Inject private final SshEntityHelper sshEntityHelper;
   private final NGFeatureFlagHelperService featureFlagHelperService;
+  private InfrastructureYamlSchemaHelper infrastructureYamlSchemaHelper;
 
   public static final String INFRA_PARAM_MESSAGE = "Infrastructure Identifier for the entity";
 
@@ -214,7 +215,7 @@ public class InfrastructureResource {
     checkForAccessOrThrow(accountId, infrastructureRequestDTO.getOrgIdentifier(),
         infrastructureRequestDTO.getProjectIdentifier(), infrastructureRequestDTO.getEnvironmentRef(),
         ENVIRONMENT_UPDATE_PERMISSION, "create");
-
+    infrastructureYamlSchemaHelper.validateSchema(accountId, infrastructureRequestDTO.getYaml());
     InfrastructureEntity infrastructureEntity =
         InfrastructureMapper.toInfrastructureEntity(accountId, infrastructureRequestDTO);
     validateInfrastructureYaml(infrastructureEntity);
@@ -249,6 +250,8 @@ public class InfrastructureResource {
     });
 
     checkForAccessBatch(accountId, infrastructureRequestDTOS, ENVIRONMENT_UPDATE_PERMISSION);
+    infrastructureRequestDTOS.forEach(infrastructureRequestDTO
+        -> infrastructureYamlSchemaHelper.validateSchema(accountId, infrastructureRequestDTO.getYaml()));
     List<InfrastructureEntity> infrastructureEntities =
         infrastructureRequestDTOS.stream()
             .map(infrastructureRequestDTO
@@ -311,7 +314,7 @@ public class InfrastructureResource {
     checkForAccessOrThrow(accountId, infrastructureRequestDTO.getOrgIdentifier(),
         infrastructureRequestDTO.getProjectIdentifier(), infrastructureRequestDTO.getEnvironmentRef(),
         ENVIRONMENT_UPDATE_PERMISSION, "update");
-
+    infrastructureYamlSchemaHelper.validateSchema(accountId, infrastructureRequestDTO.getYaml());
     InfrastructureEntity requestInfrastructure =
         InfrastructureMapper.toInfrastructureEntity(accountId, infrastructureRequestDTO);
     validateInfrastructureYaml(requestInfrastructure);
@@ -342,7 +345,7 @@ public class InfrastructureResource {
     checkForAccessOrThrow(accountId, infrastructureRequestDTO.getOrgIdentifier(),
         infrastructureRequestDTO.getProjectIdentifier(), infrastructureRequestDTO.getEnvironmentRef(),
         ENVIRONMENT_UPDATE_PERMISSION, "upsert");
-
+    infrastructureYamlSchemaHelper.validateSchema(accountId, infrastructureRequestDTO.getYaml());
     InfrastructureEntity requestInfra =
         InfrastructureMapper.toInfrastructureEntity(accountId, infrastructureRequestDTO);
     validateInfrastructureYaml(requestInfra);

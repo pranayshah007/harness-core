@@ -7,6 +7,9 @@
 
 package io.harness.delegate.service.intfc;
 
+import java.io.IOException;
+
 public interface DelegateInstallationCommandService {
   String getCommand(String commandType, String managerUrl, String accountId);
+  String getTerraformExampleModuleFile(String managerUrl, String accountId) throws IOException;
 }

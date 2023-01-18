@@ -28,11 +28,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class SecretsDelegateCacheServiceImpl implements SecretsDelegateCacheService {
   private final Cache<SecretUniqueIdentifier, char[]> secretsCache;
-  private SecretsDelegateCacheHelperService secretsDelegateCacheHelperService;
 
   @Inject
   public SecretsDelegateCacheServiceImpl(SecretsDelegateCacheHelperService secretsDelegateCacheHelperService) {
-    this.secretsDelegateCacheHelperService = secretsDelegateCacheHelperService;
     this.secretsCache = Caffeine.newBuilder()
                             .maximumWeight(2 * 1024 * 1024) // 4MB worth of characters
                             .expireAfterAccess(secretsDelegateCacheHelperService.initializeCacheExpiryTTL().toMillis(),

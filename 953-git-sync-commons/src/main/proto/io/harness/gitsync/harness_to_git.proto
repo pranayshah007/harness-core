@@ -30,6 +30,7 @@ service HarnessToGitPushInfoService {
   rpc isOldGitSyncEnabledForModule(IsOldGitSyncEnabledForModule) returns (IsOldGitSyncEnabledResponse);
   rpc getBranchHeadCommitDetails(GetBranchHeadCommitRequest) returns (GetBranchHeadCommitResponse);
   rpc listFiles(ListFilesRequest) returns (ListFilesResponse);
+  rpc getBatchFiles(GetBatchFilesRequest) returns (GetBatchFilesResponse);
 }
 
 message PushInfo {
@@ -252,6 +253,17 @@ message ListFilesRequest {
 message ListFilesResponse {
   int32 statusCode = 1;
   repeated FileGitDetails fileGitDetails = 2;
+  ErrorDetails error = 3;
+}
+
+message GetBatchFilesRequest {
+  string accountIdentifier = 1;
+  map<string, GetFileRequest> getFileRequestMap = 2;
+}
+
+message GetBatchFilesResponse {
+  int32 statusCode = 1;
+  map<string, GetFileResponse> getFileResponseMap = 2;
   ErrorDetails error = 3;
 }
 

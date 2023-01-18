@@ -22,6 +22,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.dtos.InstanceDTO;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.service.services.exception.ActiveServiceInstancesPresentException;
 import io.harness.ngsettings.SettingIdentifiers;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.remote.client.CGRestUtils;
@@ -50,17 +51,23 @@ public class ServiceEntityManagementServiceImpl implements ServiceEntityManageme
           format("Parameter forcedDelete cannot be true. Force Delete is not enabled for account [%s]", accountId),
           USER);
     }
-    if (!forceDelete) {
-      List<InstanceDTO> instanceInfoNGList = instanceService.getActiveInstancesByServiceId(
-          accountId, orgIdentifier, projectIdentifier, serviceIdentifier, System.currentTimeMillis());
-      if (isNotEmpty(instanceInfoNGList)) {
-        throw new InvalidRequestException(String.format(
-            "Service [%s] under Project[%s], Organization [%s] couldn't be deleted since there are currently %d active instances for the service",
-            serviceIdentifier, projectIdentifier, orgIdentifier, instanceInfoNGList.size()));
-      }
+
+    List<InstanceDTO> instanceInfoNGList = instanceService.getActiveInstancesByServiceId(
+        accountId, orgIdentifier, projectIdentifier, serviceIdentifier, System.currentTimeMillis());
+    if (!forceDelete && isNotEmpty(instanceInfoNGList)) {
+      throw new ActiveServiceInstancesPresentException(String.format(
+          "Service [%s] under Project[%s], Organization [%s] couldn't be deleted since there are currently %d active instances for the service",
+          serviceIdentifier, projectIdentifier, orgIdentifier, instanceInfoNGList.size()));
     }
-    return serviceEntityService.delete(accountId, orgIdentifier, projectIdentifier, serviceIdentifier,
+
+    boolean success = serviceEntityService.delete(accountId, orgIdentifier, projectIdentifier, serviceIdentifier,
         isNumeric(ifMatch) ? parseLong(ifMatch) : null, forceDelete);
+
+    if (success && forceDelete) {
+      instanceService.deleteAll(instanceInfoNGList);
+    }
+
+    return success;
   }
   private boolean isForceDeleteEnabled(String accountIdentifier) {
     boolean isForceDeleteFFEnabled = isForceDeleteFFEnabled(accountIdentifier);

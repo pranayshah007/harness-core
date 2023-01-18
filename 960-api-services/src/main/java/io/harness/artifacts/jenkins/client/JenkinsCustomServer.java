@@ -22,7 +22,6 @@ import com.offbytwo.jenkins.model.JobWithDetails;
 import java.io.IOException;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpResponseException;
-
 public class JenkinsCustomServer extends JenkinsServer {
   private JenkinsHttpClient client;
 
@@ -39,6 +38,18 @@ public class JenkinsCustomServer extends JenkinsServer {
       jobWithExtendedDetails.setClient(client);
 
       return jobWithExtendedDetails;
+    } catch (HttpResponseException e) {
+      if (e.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
+        return null;
+      }
+      throw e;
+    }
+  }
+
+  public String getJenkinsConsoleLogs(FolderJob folder, String jobName, String jobId) throws IOException {
+    try {
+      String consoleLogs = client.get(toConsoleLogs(folder, jobName, jobId));
+      return consoleLogs;
     } catch (HttpResponseException e) {
       if (e.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
         return null;
@@ -108,6 +119,10 @@ public class JenkinsCustomServer extends JenkinsServer {
    */
   private String toJobUrl(FolderJob folder, String jobName) {
     return toBaseJobUrl(folder) + "job/" + EncodingUtils.encode(jobName);
+  }
+
+  private String toConsoleLogs(FolderJob folder, String jobName, String jobId) {
+    return toBaseJobUrl(folder) + "job/" + EncodingUtils.encode(jobName) + "/" + jobId + "/logText/progressiveText";
   }
 
   /**

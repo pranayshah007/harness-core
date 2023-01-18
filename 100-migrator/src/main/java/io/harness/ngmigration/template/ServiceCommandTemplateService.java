@@ -57,7 +57,6 @@ import software.wings.beans.command.ProcessCheckStoppedCommandUnit;
 import software.wings.beans.command.ScpCommandUnit;
 import software.wings.beans.command.SetupEnvCommandUnit;
 import software.wings.beans.template.Template;
-import software.wings.beans.template.command.ShellScriptTemplate;
 import software.wings.beans.template.command.SshCommandTemplate;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -76,15 +75,6 @@ public class ServiceCommandTemplateService implements NgTemplateService {
   private static final Set<CommandUnitType> SUPPORTED_COMMAND_UNITS =
       Sets.newHashSet(SCP, COPY_CONFIGS, EXEC, DOWNLOAD_ARTIFACT, SETUP_ENV, DOCKER_START, DOCKER_STOP,
           PORT_CHECK_CLEARED, PORT_CHECK_LISTENING, PROCESS_CHECK_RUNNING, PROCESS_CHECK_STOPPED);
-
-  @Override
-  public Set<String> getExpressions(Template template) {
-    ShellScriptTemplate shellScriptTemplate = (ShellScriptTemplate) template.getTemplateObject();
-    if (StringUtils.isBlank(shellScriptTemplate.getScriptString())) {
-      return Collections.emptySet();
-    }
-    return MigratorExpressionUtils.extractAll(shellScriptTemplate.getScriptString());
-  }
 
   @Override
   public boolean isMigrationSupported() {

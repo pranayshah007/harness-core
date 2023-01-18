@@ -116,7 +116,7 @@ public class ServiceNowResourceServiceTest extends CategoryTest {
                             .type(ServiceNowFieldTypeNG.UNKNOWN)
                             .build())
                 .build());
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(ServiceNowTaskNGResponse.builder().serviceNowFieldNGList(serviceNowFieldNGList).build());
     List<ServiceNowFieldNG> serviceNowFieldNGListReturn = serviceNowResourceService.getIssueCreateMetadata(
         identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "CHANGE_REQUEST");
@@ -124,7 +124,7 @@ public class ServiceNowResourceServiceTest extends CategoryTest {
         && serviceNowFieldNGListReturn.containsAll(serviceNowFieldNGListExpected)
         && serviceNowFieldNGListExpected.containsAll(serviceNowFieldNGListReturn));
     ArgumentCaptor<DelegateTaskRequest> requestArgumentCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
-    verify(delegateGrpcClientWrapper).executeSyncTask(requestArgumentCaptor.capture());
+    verify(delegateGrpcClientWrapper).executeSyncTaskV2(requestArgumentCaptor.capture());
     assertThat(requestArgumentCaptor.getValue().getTaskType()).isEqualTo(NGTaskType.SERVICENOW_TASK_NG.name());
     assertThat(requestArgumentCaptor.getValue().getAccountId()).isEqualTo(ACCOUNT_ID);
     ServiceNowTaskNGParameters parameters =
@@ -153,7 +153,7 @@ public class ServiceNowResourceServiceTest extends CategoryTest {
             .internalType(null)
             .schema(ServiceNowFieldSchemaNG.builder().array(false).customType(null).typeStr(null).type(null).build())
             .build());
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(ServiceNowTaskNGResponse.builder().serviceNowFieldNGList(serviceNowFieldNGList).build());
     List<ServiceNowFieldNG> serviceNowFieldNGListReturn = serviceNowResourceService.getIssueCreateMetadata(
         identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "CHANGE_REQUEST");
@@ -161,7 +161,7 @@ public class ServiceNowResourceServiceTest extends CategoryTest {
         && serviceNowFieldNGListReturn.containsAll(serviceNowFieldNGListExpected)
         && serviceNowFieldNGListExpected.containsAll(serviceNowFieldNGListReturn));
     ArgumentCaptor<DelegateTaskRequest> requestArgumentCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
-    verify(delegateGrpcClientWrapper).executeSyncTask(requestArgumentCaptor.capture());
+    verify(delegateGrpcClientWrapper).executeSyncTaskV2(requestArgumentCaptor.capture());
     assertThat(requestArgumentCaptor.getValue().getTaskType()).isEqualTo(NGTaskType.SERVICENOW_TASK_NG.name());
     assertThat(requestArgumentCaptor.getValue().getAccountId()).isEqualTo(ACCOUNT_ID);
     ServiceNowTaskNGParameters parameters =
@@ -207,12 +207,12 @@ public class ServiceNowResourceServiceTest extends CategoryTest {
     List<ServiceNowFieldNG> serviceNowFieldNGList =
         Arrays.asList(ServiceNowFieldNG.builder().name("name1").key("key1").build(),
             ServiceNowFieldNG.builder().name("name2").key("key2").build());
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(ServiceNowTaskNGResponse.builder().serviceNowFieldNGList(serviceNowFieldNGList).build());
     assertThat(serviceNowResourceService.getMetadata(identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "CHANGE_TASK"))
         .isEqualTo(serviceNowFieldNGList);
     ArgumentCaptor<DelegateTaskRequest> requestArgumentCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
-    verify(delegateGrpcClientWrapper).executeSyncTask(requestArgumentCaptor.capture());
+    verify(delegateGrpcClientWrapper).executeSyncTaskV2(requestArgumentCaptor.capture());
     ServiceNowTaskNGParameters parameters =
         (ServiceNowTaskNGParameters) requestArgumentCaptor.getValue().getTaskParameters();
     assertThat(parameters.getAction()).isEqualTo(ServiceNowActionNG.GET_METADATA);
@@ -226,13 +226,13 @@ public class ServiceNowResourceServiceTest extends CategoryTest {
     List<ServiceNowTemplate> serviceNowFieldNGList1 =
         Arrays.asList(ServiceNowTemplate.builder().name("name1").sys_id("key1").build(),
             ServiceNowTemplate.builder().name("name2").sys_id("key2").build());
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(ServiceNowTaskNGResponse.builder().serviceNowTemplateList(serviceNowFieldNGList1).build());
     assertThat(serviceNowResourceService.getTemplateList(
                    identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER, 0, 0, TEMPLATE_NAME, "CHANGE_TASK"))
         .isEqualTo(serviceNowFieldNGList1);
     ArgumentCaptor<DelegateTaskRequest> requestArgumentCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
-    verify(delegateGrpcClientWrapper).executeSyncTask(requestArgumentCaptor.capture());
+    verify(delegateGrpcClientWrapper).executeSyncTaskV2(requestArgumentCaptor.capture());
     ServiceNowTaskNGParameters parameters =
         (ServiceNowTaskNGParameters) requestArgumentCaptor.getValue().getTaskParameters();
     assertThat(parameters.getAction()).isEqualTo(ServiceNowActionNG.GET_TEMPLATE);
@@ -246,14 +246,14 @@ public class ServiceNowResourceServiceTest extends CategoryTest {
     List<ServiceNowStagingTable> serviceNowStagingTableList =
         Arrays.asList(ServiceNowStagingTable.builder().name("name1").label("label1").build(),
             ServiceNowStagingTable.builder().name("name2").label("label2").build());
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(ServiceNowTaskNGResponse.builder().serviceNowStagingTableList(serviceNowStagingTableList).build());
     assertThat(serviceNowResourceService.getStagingTableList(identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
         .isEqualTo(serviceNowStagingTableList);
     ArgumentCaptor<DelegateTaskRequest> requestArgumentCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
     ArgumentCaptor<DecryptableEntity> requestArgumentCaptorForSecretService =
         ArgumentCaptor.forClass(DecryptableEntity.class);
-    verify(delegateGrpcClientWrapper).executeSyncTask(requestArgumentCaptor.capture());
+    verify(delegateGrpcClientWrapper).executeSyncTaskV2(requestArgumentCaptor.capture());
     ServiceNowTaskNGParameters parameters =
         (ServiceNowTaskNGParameters) requestArgumentCaptor.getValue().getTaskParameters();
     verify(secretManagerClientService).getEncryptionDetails(any(), requestArgumentCaptorForSecretService.capture());
@@ -269,14 +269,14 @@ public class ServiceNowResourceServiceTest extends CategoryTest {
         Arrays.asList(ServiceNowStagingTable.builder().name("name1").label("label1").build(),
             ServiceNowStagingTable.builder().name("name2").label("label2").build());
     when(connectorService.get(any(), any(), any(), any())).thenReturn(Optional.of(getConnector(true)));
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(ServiceNowTaskNGResponse.builder().serviceNowStagingTableList(serviceNowStagingTableList).build());
     assertThat(serviceNowResourceService.getStagingTableList(identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
         .isEqualTo(serviceNowStagingTableList);
     ArgumentCaptor<DelegateTaskRequest> requestArgumentCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
     ArgumentCaptor<DecryptableEntity> requestArgumentCaptorForSecretService =
         ArgumentCaptor.forClass(DecryptableEntity.class);
-    verify(delegateGrpcClientWrapper).executeSyncTask(requestArgumentCaptor.capture());
+    verify(delegateGrpcClientWrapper).executeSyncTaskV2(requestArgumentCaptor.capture());
     ServiceNowTaskNGParameters parameters =
         (ServiceNowTaskNGParameters) requestArgumentCaptor.getValue().getTaskParameters();
     verify(secretManagerClientService).getEncryptionDetails(any(), requestArgumentCaptorForSecretService.capture());

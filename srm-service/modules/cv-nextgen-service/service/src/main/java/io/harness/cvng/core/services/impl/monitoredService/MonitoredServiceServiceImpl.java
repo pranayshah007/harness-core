@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Harness Inc. All rights reserved.
+ * Copyright 2022 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
@@ -11,12 +11,15 @@ import static io.harness.cvng.core.beans.params.ServiceEnvironmentParams.builder
 import static io.harness.cvng.core.constant.MonitoredServiceConstants.REGULAR_EXPRESSION;
 import static io.harness.cvng.core.utils.FeatureFlagNames.SRM_CODE_ERROR_NOTIFICATIONS;
 import static io.harness.cvng.notification.beans.MonitoredServiceChangeEventType.getMonitoredServiceChangeEventTypeFromActivityType;
+import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.ENVIRONMENT_NAME;
+import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.NOTIFICATION_NAME;
+import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.NOTIFICATION_URL;
+import static io.harness.cvng.notification.utils.ErrorTrackingNotificationRuleUtils.buildMonitoredServiceConfigurationTabUrl;
+import static io.harness.cvng.notification.utils.ErrorTrackingNotificationRuleUtils.getCodeErrorTemplateData;
 import static io.harness.cvng.notification.utils.NotificationRuleCommonUtils.getDurationInSeconds;
-import static io.harness.cvng.notification.utils.NotificationRuleCommonUtils.getNotificationTemplateId;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.CHANGE_EVENT_TYPE;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.COOL_OFF_DURATION;
 import static io.harness.cvng.notification.utils.NotificationRuleConstants.CURRENT_HEALTH_SCORE;
-import static io.harness.cvng.notification.utils.NotificationRuleConstants.ERROR_TRACKING_TYPE;
 import static io.harness.data.structure.CollectionUtils.distinctByKey;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -109,6 +112,7 @@ import io.harness.cvng.notification.entities.NotificationRule.CVNGNotificationCh
 import io.harness.cvng.notification.services.api.NotificationRuleService;
 import io.harness.cvng.notification.services.api.NotificationRuleTemplateDataGenerator;
 import io.harness.cvng.notification.services.api.NotificationRuleTemplateDataGenerator.NotificationData;
+import io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.TimePeriod;
@@ -1738,14 +1742,37 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
       List<MonitoredServiceNotificationRuleCondition> conditions =
           ((MonitoredServiceNotificationRule) notificationRule).getConditions();
       for (MonitoredServiceNotificationRuleCondition condition : conditions) {
-        NotificationData notificationData = getNotificationData(monitoredService, condition);
+        NotificationData notificationData;
+        switch (condition.getType()) {
+          case HEALTH_SCORE:
+            notificationData =
+                getHealthScoreNotificationData(monitoredService, (MonitoredServiceHealthScoreCondition) condition);
+            break;
+          case CHANGE_OBSERVED:
+            notificationData = getChangeObservedNotificationData(
+                monitoredService, (MonitoredServiceChangeObservedCondition) condition);
+            break;
+          case CHANGE_IMPACT:
+            notificationData =
+                getChangeImpactNotificationData(monitoredService, (MonitoredServiceChangeImpactCondition) condition);
+            break;
+          case CODE_ERRORS:
+            notificationData = getCodeErrorsNotificationData(
+                monitoredService, (MonitoredServiceCodeErrorCondition) condition, notificationRule);
+            break;
+          default:
+            notificationData = NotificationData.builder().shouldSendNotification(false).build();
+            break;
+        }
         if (notificationData.shouldSendNotification()) {
           CVNGNotificationChannel notificationChannel = notificationRule.getNotificationMethod();
-          String templateId = getNotificationTemplateId(notificationRule.getType(), notificationChannel.getType());
-          Map<String, String> templateData =
-              notificationRuleConditionTypeTemplateDataGeneratorMap.get(condition.getType())
-                  .getTemplateData(projectParams, monitoredService.getName(), monitoredService.getIdentifier(),
-                      monitoredService.getServiceIdentifier(), condition, notificationData.getTemplateDataMap());
+          final NotificationRuleTemplateDataGenerator notificationRuleTemplateDataGenerator =
+              notificationRuleConditionTypeTemplateDataGeneratorMap.get(condition.getType());
+          Map<String, String> templateData = notificationRuleTemplateDataGenerator.getTemplateData(projectParams,
+              monitoredService.getName(), monitoredService.getIdentifier(), monitoredService.getServiceIdentifier(),
+              condition, notificationData.getTemplateDataMap());
+          String templateId = notificationRuleTemplateDataGenerator.getTemplateId(
+              notificationRule.getType(), notificationChannel.getType());
           try {
             NotificationResult notificationResult =
                 notificationClient.sendNotificationAsync(notificationChannel.toNotificationChannel(
@@ -1882,105 +1909,131 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
     hPersistence.update(monitoredService, updateOperations);
   }
 
+  private static MonitoredServiceParams buildMonitoredServiceParams(MonitoredService monitoredService) {
+    return MonitoredServiceParams.builder()
+        .accountIdentifier(monitoredService.getAccountId())
+        .orgIdentifier(monitoredService.getOrgIdentifier())
+        .projectIdentifier(monitoredService.getProjectIdentifier())
+        .monitoredServiceIdentifier(monitoredService.getIdentifier())
+        .build();
+  }
+
   @VisibleForTesting
-  NotificationData getNotificationData(
-      MonitoredService monitoredService, MonitoredServiceNotificationRuleCondition condition) {
-    MonitoredServiceParams monitoredServiceParams = MonitoredServiceParams.builder()
-                                                        .accountIdentifier(monitoredService.getAccountId())
-                                                        .orgIdentifier(monitoredService.getOrgIdentifier())
-                                                        .projectIdentifier(monitoredService.getProjectIdentifier())
-                                                        .monitoredServiceIdentifier(monitoredService.getIdentifier())
-                                                        .build();
+  NotificationData getHealthScoreNotificationData(
+      MonitoredService monitoredService, MonitoredServiceHealthScoreCondition healthScoreCondition) {
+    MonitoredServiceParams monitoredServiceParams = buildMonitoredServiceParams(monitoredService);
     Map<String, String> templateDataMap = new HashMap<>();
     boolean isEveryHeatMapBelowThreshold = false;
     long riskTimeBufferMins = 0;
 
-    switch (condition.getType()) {
-      case HEALTH_SCORE:
-        MonitoredServiceHealthScoreCondition healthScoreCondition = (MonitoredServiceHealthScoreCondition) condition;
-        riskTimeBufferMins = getDurationInSeconds(healthScoreCondition.getPeriod());
-        isEveryHeatMapBelowThreshold =
-            heatMapService.isEveryHeatMapBelowThresholdForRiskTimeBuffer(monitoredServiceParams,
-                monitoredService.getIdentifier(), healthScoreCondition.getThreshold(), riskTimeBufferMins);
-        if (isEveryHeatMapBelowThreshold) {
-          List<RiskData> allServiceRiskScoreList =
-              heatMapService.getLatestRiskScoreForAllServicesList(monitoredServiceParams.getAccountIdentifier(),
-                  monitoredServiceParams.getOrgIdentifier(), monitoredServiceParams.getProjectIdentifier(),
-                  Collections.singletonList(monitoredServiceParams.getMonitoredServiceIdentifier()));
-          templateDataMap.put(CURRENT_HEALTH_SCORE, allServiceRiskScoreList.get(0).getHealthScore().toString());
-        }
-        return NotificationData.builder()
-            .shouldSendNotification(isEveryHeatMapBelowThreshold)
-            .templateDataMap(templateDataMap)
-            .build();
-      case CHANGE_OBSERVED:
-        MonitoredServiceChangeObservedCondition changeObservedCondition =
-            (MonitoredServiceChangeObservedCondition) condition;
-        List<ActivityType> changeObservedActivityTypes = new ArrayList<>();
-        changeObservedCondition.getChangeEventTypes().forEach(
-            changeEventType -> changeObservedActivityTypes.addAll(changeEventType.getActivityTypes()));
-        Optional<Activity> activity = activityService.getAnyEventFromListOfActivityTypes(monitoredServiceParams,
-            changeObservedActivityTypes, clock.instant().minus(5, ChronoUnit.MINUTES), clock.instant());
-        activity.ifPresent(value
-            -> templateDataMap.put(CHANGE_EVENT_TYPE,
-                getMonitoredServiceChangeEventTypeFromActivityType(value.getType()).getDisplayName()));
-        return NotificationData.builder()
-            .shouldSendNotification(activity.isPresent())
-            .templateDataMap(templateDataMap)
-            .build();
-      case CHANGE_IMPACT:
-        MonitoredServiceChangeImpactCondition changeImpactCondition = (MonitoredServiceChangeImpactCondition) condition;
-        List<ActivityType> changeImpactActivityTypes = new ArrayList<>();
-        changeImpactCondition.getChangeEventTypes().forEach(
-            changeEventType -> changeImpactActivityTypes.addAll(changeEventType.getActivityTypes()));
-        Optional<Activity> optionalActivity =
-            activityService.getAnyEventFromListOfActivityTypes(monitoredServiceParams, changeImpactActivityTypes,
-                clock.instant().minus(changeImpactCondition.getPeriod(), ChronoUnit.MILLIS), clock.instant());
-        if (optionalActivity.isPresent()) {
-          templateDataMap.put(CHANGE_EVENT_TYPE,
-              getMonitoredServiceChangeEventTypeFromActivityType(optionalActivity.get().getType()).getDisplayName());
-          Instant activityStartTime = optionalActivity.get().getActivityStartTime();
-          riskTimeBufferMins = Duration.between(activityStartTime, clock.instant()).toMinutes();
-          isEveryHeatMapBelowThreshold =
-              heatMapService.isEveryHeatMapBelowThresholdForRiskTimeBuffer(monitoredServiceParams,
-                  monitoredService.getIdentifier(), changeImpactCondition.getThreshold(), riskTimeBufferMins);
-          if (isEveryHeatMapBelowThreshold) {
-            List<RiskData> allServiceRiskScoreList =
-                heatMapService.getLatestRiskScoreForAllServicesList(monitoredServiceParams.getAccountIdentifier(),
-                    monitoredServiceParams.getOrgIdentifier(), monitoredServiceParams.getProjectIdentifier(),
-                    Collections.singletonList(monitoredServiceParams.getMonitoredServiceIdentifier()));
-            templateDataMap.put(CURRENT_HEALTH_SCORE, allServiceRiskScoreList.get(0).getHealthScore().toString());
-          }
-          return NotificationData.builder()
-              .shouldSendNotification(isEveryHeatMapBelowThreshold)
-              .templateDataMap(templateDataMap)
-              .build();
-        } else {
-          return NotificationData.builder().shouldSendNotification(false).build();
-        }
-      case CODE_ERRORS:
-        if (featureFlagService.isFeatureFlagEnabled(SRM_CODE_ERROR_NOTIFICATIONS, monitoredService.getAccountId())) {
-          log.info("SRM_CODE_ERROR_NOTIFICATIONS feature flag enabled");
-          MonitoredServiceCodeErrorCondition codeErrorCondition = (MonitoredServiceCodeErrorCondition) condition;
-          try {
-            final ErrorTrackingNotificationData notificationData =
-                errorTrackingService.getNotificationData(monitoredService.getOrgIdentifier(),
-                    monitoredService.getAccountId(), monitoredService.getProjectIdentifier(),
-                    monitoredService.getServiceIdentifier(), monitoredService.getEnvironmentIdentifierList().get(0),
-                    codeErrorCondition.getErrorTrackingEventTypes());
-            templateDataMap.put(ERROR_TRACKING_TYPE, notificationData.toString());
-          } catch (Exception e) {
-            log.error("Error connecting to the ErrorTracking Event Summary API.", e);
-            templateDataMap.put(ERROR_TRACKING_TYPE, "<INSERT CODE ERROR DATA>");
-          }
-          // Always send a notification for this current iteration as the event summary api isn't expected to work
-          // initially
-          return NotificationData.builder().shouldSendNotification(true).templateDataMap(templateDataMap).build();
-        }
-        return NotificationData.builder().shouldSendNotification(false).build();
-      default:
-        return NotificationData.builder().shouldSendNotification(false).build();
+    riskTimeBufferMins = getDurationInSeconds(healthScoreCondition.getPeriod());
+    isEveryHeatMapBelowThreshold = heatMapService.isEveryHeatMapBelowThresholdForRiskTimeBuffer(monitoredServiceParams,
+        monitoredService.getIdentifier(), healthScoreCondition.getThreshold(), riskTimeBufferMins);
+    if (isEveryHeatMapBelowThreshold) {
+      List<RiskData> allServiceRiskScoreList =
+          heatMapService.getLatestRiskScoreForAllServicesList(monitoredServiceParams.getAccountIdentifier(),
+              monitoredServiceParams.getOrgIdentifier(), monitoredServiceParams.getProjectIdentifier(),
+              Collections.singletonList(monitoredServiceParams.getMonitoredServiceIdentifier()));
+      templateDataMap.put(CURRENT_HEALTH_SCORE, allServiceRiskScoreList.get(0).getHealthScore().toString());
     }
+    return NotificationData.builder()
+        .shouldSendNotification(isEveryHeatMapBelowThreshold)
+        .templateDataMap(templateDataMap)
+        .build();
+  }
+
+  @VisibleForTesting
+  NotificationData getChangeObservedNotificationData(
+      MonitoredService monitoredService, MonitoredServiceChangeObservedCondition changeObservedCondition) {
+    MonitoredServiceParams monitoredServiceParams = buildMonitoredServiceParams(monitoredService);
+    Map<String, String> templateDataMap = new HashMap<>();
+
+    List<ActivityType> changeObservedActivityTypes = new ArrayList<>();
+    changeObservedCondition.getChangeEventTypes().forEach(
+        changeEventType -> changeObservedActivityTypes.addAll(changeEventType.getActivityTypes()));
+    Optional<Activity> activity = activityService.getAnyEventFromListOfActivityTypes(monitoredServiceParams,
+        changeObservedActivityTypes, clock.instant().minus(5, ChronoUnit.MINUTES), clock.instant());
+    activity.ifPresent(value
+        -> templateDataMap.put(
+            CHANGE_EVENT_TYPE, getMonitoredServiceChangeEventTypeFromActivityType(value.getType()).getDisplayName()));
+    return NotificationData.builder()
+        .shouldSendNotification(activity.isPresent())
+        .templateDataMap(templateDataMap)
+        .build();
+  }
+
+  @VisibleForTesting
+  NotificationData getChangeImpactNotificationData(
+      MonitoredService monitoredService, MonitoredServiceChangeImpactCondition changeImpactCondition) {
+    MonitoredServiceParams monitoredServiceParams = buildMonitoredServiceParams(monitoredService);
+    Map<String, String> templateDataMap = new HashMap<>();
+    boolean isEveryHeatMapBelowThreshold = false;
+    long riskTimeBufferMins = 0;
+
+    List<ActivityType> changeImpactActivityTypes = new ArrayList<>();
+    changeImpactCondition.getChangeEventTypes().forEach(
+        changeEventType -> changeImpactActivityTypes.addAll(changeEventType.getActivityTypes()));
+    Optional<Activity> optionalActivity =
+        activityService.getAnyEventFromListOfActivityTypes(monitoredServiceParams, changeImpactActivityTypes,
+            clock.instant().minus(changeImpactCondition.getPeriod(), ChronoUnit.MILLIS), clock.instant());
+    if (optionalActivity.isPresent()) {
+      templateDataMap.put(CHANGE_EVENT_TYPE,
+          getMonitoredServiceChangeEventTypeFromActivityType(optionalActivity.get().getType()).getDisplayName());
+      Instant activityStartTime = optionalActivity.get().getActivityStartTime();
+      riskTimeBufferMins = Duration.between(activityStartTime, clock.instant()).toMinutes();
+      isEveryHeatMapBelowThreshold =
+          heatMapService.isEveryHeatMapBelowThresholdForRiskTimeBuffer(monitoredServiceParams,
+              monitoredService.getIdentifier(), changeImpactCondition.getThreshold(), riskTimeBufferMins);
+      if (isEveryHeatMapBelowThreshold) {
+        List<RiskData> allServiceRiskScoreList =
+            heatMapService.getLatestRiskScoreForAllServicesList(monitoredServiceParams.getAccountIdentifier(),
+                monitoredServiceParams.getOrgIdentifier(), monitoredServiceParams.getProjectIdentifier(),
+                Collections.singletonList(monitoredServiceParams.getMonitoredServiceIdentifier()));
+        templateDataMap.put(CURRENT_HEALTH_SCORE, allServiceRiskScoreList.get(0).getHealthScore().toString());
+      }
+      return NotificationData.builder()
+          .shouldSendNotification(isEveryHeatMapBelowThreshold)
+          .templateDataMap(templateDataMap)
+          .build();
+    } else {
+      return NotificationData.builder().shouldSendNotification(false).build();
+    }
+  }
+
+  private NotificationData getCodeErrorsNotificationData(MonitoredService monitoredService,
+      MonitoredServiceCodeErrorCondition codeErrorCondition, NotificationRule notificationRule) {
+    MonitoredServiceParams monitoredServiceParams = buildMonitoredServiceParams(monitoredService);
+    Map<String, String> templateDataMap = new HashMap<>();
+    boolean featureFlagEnabled =
+        featureFlagService.isFeatureFlagEnabled(monitoredService.getAccountId(), SRM_CODE_ERROR_NOTIFICATIONS);
+    final List<String> environmentIdentifierList = monitoredService.getEnvironmentIdentifierList();
+    boolean oneEnvironmentId = environmentIdentifierList != null && environmentIdentifierList.size() == 1;
+
+    if (featureFlagEnabled && oneEnvironmentId) {
+      String environmentId = environmentIdentifierList.get(0);
+      ErrorTrackingNotificationData notificationData = null;
+      try {
+        notificationData = errorTrackingService.getNotificationData(monitoredService.getOrgIdentifier(),
+            monitoredService.getAccountId(), monitoredService.getProjectIdentifier(),
+            monitoredService.getServiceIdentifier(), environmentId, codeErrorCondition.getErrorTrackingEventTypes(),
+            notificationRule.getUuid());
+      } catch (Exception e) {
+        log.error("Error connecting to the ErrorTracking Event Summary API.", e);
+      }
+      if (notificationData != null && !notificationData.getScorecards().isEmpty()) {
+        final String baseLinkUrl =
+            ((ErrorTrackingTemplateDataGenerator) notificationRuleConditionTypeTemplateDataGeneratorMap.get(
+                 NotificationRuleConditionType.CODE_ERRORS))
+                .getBaseLinkUrl(monitoredService.getAccountId());
+        templateDataMap.putAll(getCodeErrorTemplateData(notificationData, baseLinkUrl));
+        templateDataMap.put(
+            NOTIFICATION_URL, buildMonitoredServiceConfigurationTabUrl(baseLinkUrl, monitoredServiceParams));
+        templateDataMap.put(NOTIFICATION_NAME, notificationRule.getName());
+        templateDataMap.put(ENVIRONMENT_NAME, environmentId);
+        return NotificationData.builder().shouldSendNotification(true).templateDataMap(templateDataMap).build();
+      }
+    }
+    return NotificationData.builder().shouldSendNotification(false).build();
   }
 
   private List<NotificationRuleRef> getNotificationRuleRefs(

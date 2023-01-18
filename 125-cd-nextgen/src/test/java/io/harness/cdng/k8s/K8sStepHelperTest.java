@@ -3074,7 +3074,7 @@ public class K8sStepHelperTest extends CategoryTest {
                 .infrastructure(passThroughData.getInfrastructure())
                 .lastActiveUnitProgressData(unitProgressData)
                 .build(),
-            passThroughData.getShouldOpenFetchFilesStream(), unitProgressData);
+            false, unitProgressData);
 
     TaskChainResponse response = k8sStepHelper.executeNextLink(
         k8sStepExecutor, ambiance, rollingStepElementParams, passThroughData, responseDataSuplier);

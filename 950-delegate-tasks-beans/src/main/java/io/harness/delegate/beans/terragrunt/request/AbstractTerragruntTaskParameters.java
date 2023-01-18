@@ -48,10 +48,10 @@ public abstract class AbstractTerragruntTaskParameters
     implements TaskParameters, ExecutionCapabilityDemander, NestedAnnotationResolver {
   @NonNull String accountId;
   @NonNull String entityId;
-  @NonNull TerragruntRunConfiguration runConfiguration;
+  @Expression(ALLOW_SECRETS) @NonNull TerragruntRunConfiguration runConfiguration;
   @NonNull StoreDelegateConfig configFilesStore;
-  StoreDelegateConfig backendFilesStore;
-  List<StoreDelegateConfig> varFiles;
+  @Expression(ALLOW_SECRETS) StoreDelegateConfig backendFilesStore;
+  @Expression(ALLOW_SECRETS) List<StoreDelegateConfig> varFiles;
   EncryptionConfig planSecretManager;
 
   @Expression(ALLOW_SECRETS) List<String> targets;

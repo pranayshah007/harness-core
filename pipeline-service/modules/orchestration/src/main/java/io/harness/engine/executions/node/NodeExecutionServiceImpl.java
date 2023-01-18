@@ -25,6 +25,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.events.OrchestrationEventEmitter;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.engine.executions.retry.RetryStageInfo;
+import io.harness.engine.observers.NodeExecutionDeleteObserver;
 import io.harness.engine.observers.NodeExecutionStartObserver;
 import io.harness.engine.observers.NodeStartInfo;
 import io.harness.engine.observers.NodeStatusUpdateObserver;
@@ -62,7 +63,6 @@ import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -105,6 +105,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   @Getter private final Subject<NodeStatusUpdateObserver> nodeStatusUpdateSubject = new Subject<>();
   @Getter private final Subject<NodeExecutionStartObserver> nodeExecutionStartSubject = new Subject<>();
   @Getter private final Subject<NodeUpdateObserver> nodeUpdateObserverSubject = new Subject<>();
+  @Getter private final Subject<NodeExecutionDeleteObserver> nodeDeleteObserverSubject = new Subject<>();
 
   @Override
   public NodeExecution get(String nodeExecutionId) {
@@ -293,8 +294,8 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   }
 
   @Override
-  public List<NodeExecution> extractChildExecutions(
-      String parentId, boolean includeParent, List<NodeExecution> finalList, List<NodeExecution> allExecutions) {
+  public List<NodeExecution> extractChildExecutions(String parentId, boolean includeParent,
+      List<NodeExecution> finalList, List<NodeExecution> allExecutions, boolean includeChildrenOfStrategy) {
     Map<String, List<NodeExecution>> parentChildrenMap = new HashMap<>();
     for (NodeExecution execution : allExecutions) {
       if (execution.getParentId() == null) {
@@ -307,7 +308,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
         parentChildrenMap.put(execution.getParentId(), cList);
       }
     }
-    extractChildList(parentChildrenMap, parentId, finalList);
+    extractChildList(parentChildrenMap, parentId, finalList, includeChildrenOfStrategy);
     if (includeParent) {
       finalList.add(allExecutions.stream()
                         .filter(ne -> ne.getUuid().equals(parentId))
@@ -318,8 +319,8 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   }
 
   // Extracts child list recursively from parentChildrenMap into finalList
-  private void extractChildList(
-      Map<String, List<NodeExecution>> parentChildrenMap, String parentId, List<NodeExecution> finalList) {
+  private void extractChildList(Map<String, List<NodeExecution>> parentChildrenMap, String parentId,
+      List<NodeExecution> finalList, boolean includeChildrenOfStrategy) {
     List<NodeExecution> children = parentChildrenMap.get(parentId);
     if (isEmpty(children)) {
       return;
@@ -328,15 +329,16 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     children.forEach(child -> {
       // NOTE: We are ignoring the status of steps inside strategy because of max concurrency defined.
       // We need to run all the steps inside strategy once
-      if (child.getStepType().getStepCategory() != StepCategory.STRATEGY) {
-        extractChildList(parentChildrenMap, child.getUuid(), finalList);
+      if (includeChildrenOfStrategy || child.getStepType().getStepCategory() != StepCategory.STRATEGY) {
+        extractChildList(parentChildrenMap, child.getUuid(), finalList, true);
       }
     });
   }
 
   @Override
   public List<NodeExecution> findAllChildrenWithStatusInAndWithoutOldRetries(String planExecutionId, String parentId,
-      EnumSet<Status> flowingStatuses, boolean includeParent, Set<String> fieldsToBeIncluded) {
+      EnumSet<Status> flowingStatuses, boolean includeParent, Set<String> fieldsToBeIncluded,
+      boolean includeChildrenOfStrategy) {
     List<NodeExecution> finalList = new ArrayList<>();
     Set<String> finalFieldsToBeIncluded = new HashSet<>(NodeProjectionUtils.fieldsForAllChildrenExtractor);
     if (EmptyPredicate.isNotEmpty(fieldsToBeIncluded)) {
@@ -350,7 +352,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
         allExecutions.add(iterator.next());
       }
     }
-    return extractChildExecutions(parentId, includeParent, finalList, allExecutions);
+    return extractChildExecutions(parentId, includeParent, finalList, allExecutions, includeChildrenOfStrategy);
   }
 
   @Override
@@ -555,6 +557,34 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     return true;
   }
 
+  @Override
+  public void deleteAllNodeExecutionAndMetadata(String planExecutionId) {
+    // Fetches all nodeExecutions from analytics for given planExecutionId
+    List<NodeExecution> batchNodeExecutionSet = new LinkedList<>();
+    try (CloseableIterator<NodeExecution> iterator =
+             fetchNodeExecutionsFromAnalytics(planExecutionId, NodeProjectionUtils.fieldsForNodeExecutionDelete)) {
+      while (iterator.hasNext()) {
+        batchNodeExecutionSet.add(iterator.next());
+        if (batchNodeExecutionSet.size() >= MAX_BATCH_SIZE) {
+          deleteNodeExecutionsAndMetadataInternal(batchNodeExecutionSet);
+          batchNodeExecutionSet.clear();
+        }
+      }
+    }
+    if (EmptyPredicate.isNotEmpty(batchNodeExecutionSet)) {
+      deleteNodeExecutionsAndMetadataInternal(batchNodeExecutionSet);
+    }
+  }
+
+  /**
+   * Deletes all nodeExecutions and its related metadata once we have the nodeExecutionToDelete data we collected
+   * @param nodeExecutionsToDelete
+   */
+  private void deleteNodeExecutionsAndMetadataInternal(List<NodeExecution> nodeExecutionsToDelete) {
+    // Delete example - WaitInstances, resourceRestraintInstances, timeoutInstanceIds, etc
+    nodeDeleteObserverSubject.fireInform(NodeExecutionDeleteObserver::onNodesDelete, nodeExecutionsToDelete);
+  }
+
   /**
    * Update Nodes for which the previousId was failed node execution and replace it with the
    * note execution which is being retried
@@ -589,6 +619,17 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
       return false;
     }
     return true;
+  }
+
+  @VisibleForTesting
+  CloseableIterator<NodeExecution> fetchNodeExecutionsFromAnalytics(
+      String planExecutionId, @NotNull Set<String> fieldsToInclude) {
+    // Uses - planExecutionId_status_idx
+    Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId));
+    for (String field : fieldsToInclude) {
+      query.fields().include(field);
+    }
+    return nodeExecutionReadHelper.fetchNodeExecutionsFromAnalytics(query);
   }
 
   @VisibleForTesting
@@ -632,7 +673,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
           && nodeExecution.getStatus() == ABORTED) {
         List<NodeExecution> allChildrenWithStatusInAborted = findAllChildrenWithStatusInAndWithoutOldRetries(
             nodeExecution.getAmbiance().getPlanExecutionId(), nodeExecution.getUuid(), EnumSet.of(ABORTED), false,
-            Sets.newHashSet(NodeExecutionKeys.interruptHistories));
+            Sets.newHashSet(NodeExecutionKeys.interruptHistories), false);
         if (isEmpty(allChildrenWithStatusInAborted)) {
           return;
         }

@@ -10,6 +10,7 @@ package io.harness.pms.pipeline.metadata;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.PersistentLockException;
 import io.harness.execution.PlanExecution;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
@@ -75,7 +76,7 @@ public class RecentExecutionsInfoHelper {
       Update update = getUpdateOperationForRecentExecutionInfo(recentExecutionInfoList);
       pipelineMetadataService.update(criteria, update);
     };
-    updateMetadata(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, subject);
+    updateMetadata(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, subject, planExecution);
   }
 
   /*
@@ -115,11 +116,11 @@ public class RecentExecutionsInfoHelper {
         }
       }
     };
-    updateMetadata(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, subject);
+    updateMetadata(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, subject, planExecution);
   }
 
   void updateMetadata(String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier,
-      Informant0<List<RecentExecutionInfo>> subject) {
+      Informant0<List<RecentExecutionInfo>> subject, PlanExecution planExecution) {
     String lockName = getLockName(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
     try (AcquiredLock<?> lock =
              persistentLocker.waitToAcquireLock(lockName, Duration.ofSeconds(1), Duration.ofSeconds(2))) {
@@ -140,7 +141,22 @@ public class RecentExecutionsInfoHelper {
       }
       PipelineMetadataV2 pipelineMetadata = optionalPipelineMetadata.get();
       List<RecentExecutionInfo> recentExecutionInfoList = pipelineMetadata.getRecentExecutionInfoList();
+      // If the last element in recentExecutionInfoList is more recent than the PlanExecution. Then update is not
+      // required.
+      if (recentExecutionInfoList != null && recentExecutionInfoList.size() == NUM_RECENT_EXECUTIONS
+          && recentExecutionInfoList.get(NUM_RECENT_EXECUTIONS - 1).getStartTs() > planExecution.getStartTs()) {
+        return;
+      }
+
       subject.inform(recentExecutionInfoList);
+    } catch (PersistentLockException ex) {
+      log.error(
+          "RecentExecutionInfo could not be updated for the planExecution: {} to status {} in account: {}, org: {}, project: {}",
+          planExecution.getUuid(), planExecution.getStatus(), accountId, orgIdentifier, projectIdentifier, ex);
+    } catch (Exception ex) {
+      log.error(
+          "Could not update recentExecutions in PipelineMetadata for Pipeline {} and planExecutionId {} having account: {} org: {} project {}",
+          pipelineIdentifier, planExecution.getUuid(), accountId, orgIdentifier, projectIdentifier, ex);
     }
   }
 

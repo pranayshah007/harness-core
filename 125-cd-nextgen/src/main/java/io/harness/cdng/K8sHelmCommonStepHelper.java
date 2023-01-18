@@ -14,7 +14,6 @@ import static io.harness.data.structure.UUIDGenerator.convertBase64UuidToCanonic
 import static io.harness.filestore.utils.FileStoreNodeUtils.mapFileNodes;
 import static io.harness.k8s.manifest.ManifestHelper.getValuesYamlGitFilePath;
 import static io.harness.k8s.manifest.ManifestHelper.values_filename;
-import static io.harness.steps.StepUtils.prepareCDTaskRequest;
 
 import static software.wings.beans.LogColor.White;
 import static software.wings.beans.LogHelper.color;
@@ -118,6 +117,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
+import io.harness.steps.TaskRequestsUtils;
 
 import software.wings.beans.LogColor;
 import software.wings.beans.LogWeight;
@@ -126,6 +126,7 @@ import software.wings.beans.TaskType;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -151,7 +152,7 @@ public class K8sHelmCommonStepHelper {
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private FileStoreService fileStoreService;
   @Inject protected OutcomeService outcomeService;
-  @Inject protected KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") protected KryoSerializer referenceFalseKryoSerializer;
   @Inject protected StepHelper stepHelper;
   @Inject protected CDStepHelper cdStepHelper;
 
@@ -332,9 +333,10 @@ public class K8sHelmCommonStepHelper {
 
     String taskName = TaskType.CUSTOM_MANIFEST_VALUES_FETCH_TASK_NG.getDisplayName();
 
-    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer, commandUnits, taskName,
-        TaskSelectorYaml.toTaskSelector(CollectionUtils.emptyIfNull(delegateSelectors)),
-        stepHelper.getEnvironmentType(ambiance));
+    final TaskRequest taskRequest =
+        TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer, commandUnits, taskName,
+            TaskSelectorYaml.toTaskSelector(CollectionUtils.emptyIfNull(delegateSelectors)),
+            stepHelper.getEnvironmentType(ambiance));
 
     K8sStepPassThroughData updatedK8sStepPassThroughData =
         k8sStepPassThroughData.toBuilder().manifestOutcomeList(new ArrayList<>(paramsOrValuesManifests)).build();
@@ -374,9 +376,10 @@ public class K8sHelmCommonStepHelper {
       stepLevelSelectors = ((HelmSpecParameters) stepElementParameters.getSpec()).getDelegateSelectors();
       commandUnits = ((HelmSpecParameters) stepElementParameters.getSpec()).getCommandUnits();
     }
-    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer, commandUnits, taskName,
-        TaskSelectorYaml.toTaskSelector(CollectionUtils.emptyIfNull(getParameterFieldValue(stepLevelSelectors))),
-        stepHelper.getEnvironmentType(ambiance));
+    final TaskRequest taskRequest =
+        TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer, commandUnits, taskName,
+            TaskSelectorYaml.toTaskSelector(CollectionUtils.emptyIfNull(getParameterFieldValue(stepLevelSelectors))),
+            stepHelper.getEnvironmentType(ambiance));
 
     return TaskChainResponse.builder()
         .chainEnd(false)
@@ -452,9 +455,10 @@ public class K8sHelmCommonStepHelper {
       commandUnits = ((HelmSpecParameters) stepElementParameters.getSpec()).getCommandUnits();
     }
 
-    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer, commandUnits, taskName,
-        TaskSelectorYaml.toTaskSelector(CollectionUtils.emptyIfNull(getParameterFieldValue(stepLevelSelectors))),
-        stepHelper.getEnvironmentType(ambiance));
+    final TaskRequest taskRequest =
+        TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer, commandUnits, taskName,
+            TaskSelectorYaml.toTaskSelector(CollectionUtils.emptyIfNull(getParameterFieldValue(stepLevelSelectors))),
+            stepHelper.getEnvironmentType(ambiance));
 
     K8sStepPassThroughData updatedK8sStepPassThroughData =
         k8sStepPassThroughData.toBuilder().manifestOutcomeList(new ArrayList<>(aggregatedValuesManifests)).build();
@@ -579,6 +583,8 @@ public class K8sHelmCommonStepHelper {
             .checkIncorrectChartVersion(true)
             .useRepoFlags(helmVersion != HelmVersion.V2)
             .deleteRepoCacheDir(helmVersion != HelmVersion.V2)
+            .skipApplyHelmDefaultValues(cdFeatureFlagHelper.isEnabled(
+                AmbianceUtils.getAccountId(ambiance), FeatureName.CDP_SKIP_DEFAULT_VALUES_YAML_NG))
             .build();
 
       case ManifestType.Kustomize:
@@ -732,19 +738,6 @@ public class K8sHelmCommonStepHelper {
       retVal = retVal || ManifestStoreType.isInGitSubset(manifestOutcome.getStore().getKind());
     }
     return retVal;
-  }
-
-  public boolean shouldCloseFetchFilesStream(List<ManifestOutcome> manifestOutcomeList,
-      Set<String> manifestStoreTypesVisited, Set<String> manifestStoreTypeList, boolean isFetchFilesStreamClosed) {
-    boolean shouldCloseFetchFilesStream = true;
-    if (!isFetchFilesStreamClosed) {
-      manifestStoreTypesVisited.addAll(manifestStoreTypeList);
-      for (ManifestOutcome manifestOutcome : manifestOutcomeList) {
-        shouldCloseFetchFilesStream =
-            shouldCloseFetchFilesStream && manifestStoreTypesVisited.contains(manifestOutcome.getStore().getKind());
-      }
-    }
-    return shouldCloseFetchFilesStream;
   }
 
   public List<String> getManifestOverridePaths(ManifestOutcome manifestOutcome) {
@@ -1272,9 +1265,5 @@ public class K8sHelmCommonStepHelper {
     for (String scopedFilePath : scopedFilePathList) {
       logCallback.saveExecutionLog(color(format("- %s", scopedFilePath), LogColor.White));
     }
-  }
-
-  public static boolean shouldOpenFetchFilesStream(Boolean openFetchFilesStream) {
-    return openFetchFilesStream == null;
   }
 }

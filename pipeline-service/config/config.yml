@@ -156,10 +156,13 @@ eventsFramework:
       CATrustStorePath: "/tmp/ca_trust_store"
       CATrustStorePassword: ""
 
-debeziumConsumerConfigs:
-  - debeziumTopicName: ${DEBEZIUM_CONSUMER_TOPIC_NAME:-DEBEZIUM_pmsMongo.pms-harness.planExecutionsSummary}
-    debeziumNumberOfThreads: ${DEBEZIUM_CONSUMER_THREADS:-2}
-    debeziumBatchSize: ${DEBEZIUM_CONSUMER_BATCH_SIZE:-100}
+debeziumConsumersConfigs:
+  planExecutionsSummaryStreaming:
+    topic: ${DEBEZIUM_CONSUMER_TOPIC_NAME:-DEBEZIUM_pmsMongo.pms-harness.planExecutionsSummary}
+    batchSize: ${DEBEZIUM_CONSUMER_BATCH_SIZE:-100}
+  planExecutionsSummarySnapshot:
+    topic: ${DEBEZIUM_CONSUMER_SNAPSHOT_TOPIC_NAME:-DEBEZIUM_SNAPSHOT_pmsMongoSnapshot.pms-harness.planExecutionsSummary}
+    batchSize: ${DEBEZIUM_CONSUMER_SNAPSHOT_BATCH_SIZE:-100}
 
 managerClientConfig:
   baseUrl: http://localhost:3457/api/
@@ -366,6 +369,8 @@ pipelineEventConsumersConfig:
     threads: 1
   pipelineExecutionEvent:
     threads: 1
+  pipelineExecutionEventSnapshot:
+    threads: 1
   partialPlanResponse:
     threads: 1
   createPlan:
@@ -510,3 +515,24 @@ orchestrationRestrictionConfiguration:
 grpcNegotiationType: ${GRPC_NEGOTIATION_TYPE:-TLS}
 
 lockNotifyResponseCleanup: ${LOCK_NOTIFY_RESPONSE_CLEANUP:-true}
+
+# Events framework configuration for debezium consumer in case of snapshotting
+eventsFrameworkSnapshotDebezium:
+  redis:
+    sentinel: false
+    masterName: "test"
+    redisUrl: "redis://localhost:6379"
+    sentinelUrls:
+      - "redis://redis1:26379"
+      - "redis://redis2:26379"
+      - "redis://redis3:26379"
+    envNamespace: ""
+    readMode: MASTER
+    nettyThreads: 16
+    useScriptCache: true
+    userName: ""
+    password: ""
+    sslConfig:
+      enabled: false
+      CATrustStorePath: "/tmp/ca_trust_store"
+      CATrustStorePassword: ""

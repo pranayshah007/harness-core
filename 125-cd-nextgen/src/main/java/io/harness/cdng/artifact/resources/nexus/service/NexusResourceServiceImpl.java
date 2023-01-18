@@ -241,7 +241,7 @@ public class NexusResourceServiceImpl implements NexusResourceService {
             .taskSelectors(delegateRequest.getNexusConnectorDTO().getDelegateSelectors())
             .build();
     try {
-      return delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
+      return delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);
     } catch (DelegateServiceDriverException ex) {
       throw exceptionManager.processException(ex, WingsException.ExecutionContext.MANAGER, log);
     }

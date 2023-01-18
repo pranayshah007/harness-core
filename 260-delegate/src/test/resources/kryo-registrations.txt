@@ -838,7 +838,7 @@
 7254:software.wings.service.impl.aws.model.request.AwsCloudWatchStatisticsRequest
 7255:software.wings.service.impl.aws.model.request.AwsLambdaDetailsRequest
 7256:software.wings.service.impl.aws.model.response.AwsLambdaDetailsResponse
-7258:io.harness.security.encryption.EncryptableSettingWithEncryptionDetails
+7258:io.harness.security.encryption.setting.EncryptableSettingWithEncryptionDetails
 7259:software.wings.api.jira.JiraExecutionData.JiraIssueData
 7261:software.wings.beans.SlackMessage
 7262:software.wings.service.impl.SlackMessageSenderImpl
@@ -1835,7 +1835,7 @@
 60019:io.harness.delegate.task.serverless.response.ServerlessS3FetchResponse
 71100:software.wings.service.impl.ThirdPartyApiCallLog.ThirdPartyApiCallField
 71101:software.wings.service.impl.ThirdPartyApiCallLog.FieldType
-71102:software.wings.beans.Log
+71102:software.wings.beans.dto.Log
 71103:io.harness.logging.LogLevel
 71104:software.wings.delegatetasks.manifest.ManifestCollectionExecutionResponse
 71105:software.wings.delegatetasks.manifest.ManifestCollectionResponse
@@ -2388,6 +2388,11 @@
 573591:io.harness.delegate.task.aws.asg.AsgRollingRollbackResponse
 573592:io.harness.delegate.task.aws.asg.AsgRollingRollbackResult
 573593:software.wings.api.terraform.TfVarS3Source
+573594:io.harness.delegate.task.k8s.K8sDryRunManifestRequest
+573595:io.harness.delegate.task.k8s.K8sDryRunManifestResponse
+573596:io.harness.delegate.task.aws.asg.AsgBlueGreenSwapServiceRequest
+573597:io.harness.delegate.task.aws.asg.AsgBlueGreenSwapServiceResponse
+573598:io.harness.delegate.task.aws.asg.AsgBlueGreenSwapServiceResult
 573600:io.harness.delegate.exception.ElastigroupNGException
 573601:io.harness.delegate.task.elastigroup.response.SpotInstConfig
 573602:io.harness.delegate.task.elastigroup.response.ElastigroupParametersFetchResponse
@@ -2511,6 +2516,18 @@
 980100:software.wings.beans.infrastructure.instance.info.K8sPodInfo
 980101:software.wings.beans.infrastructure.instance.info.K8sContainerInfo
 1010101:io.harness.delegate.beans.connector.awsconnector.S3BuildsResponse
+
+5731600:io.harness.delegate.task.aws.asg.AsgLoadBalancerConfig
+5731601:io.harness.delegate.task.aws.asg.AsgBlueGreenRollbackRequest
+5731602:io.harness.delegate.task.aws.asg.AsgBlueGreenRollbackResponse
+5731603:io.harness.delegate.task.aws.asg.AsgBlueGreenRollbackResult
+5731604:io.harness.delegate.task.aws.asg.AsgBlueGreenPrepareRollbackDataRequest
+5731605:io.harness.delegate.task.aws.asg.AsgBlueGreenPrepareRollbackDataResponse
+5731606:io.harness.delegate.task.aws.asg.AsgBlueGreenPrepareRollbackDataResult
+5731607:io.harness.delegate.task.aws.asg.AsgBlueGreenDeployRequest
+5731608:io.harness.delegate.task.aws.asg.AsgBlueGreenDeployResponse
+5731609:io.harness.delegate.task.aws.asg.AsgBlueGreenDeployResult
+
 9000312:software.wings.helpers.ext.nexus.NexusRepositories
 9300122:io.harness.yaml.core.timeout.Timeout
 9300123:io.harness.beans.WebhookEncryptedSecretDTO
@@ -2523,6 +2540,7 @@
 9800007:io.harness.delegate.task.ssh.artifact.AwsS3ArtifactDelegateConfig
 9800008:io.harness.delegate.task.terraform.InlineTerraformBackendConfigFileInfo
 9800009:io.harness.delegate.task.terraform.RemoteTerraformBackendConfigFileInfo
+9800010:io.harness.delegate.task.ssh.artifact.AzureArtifactDelegateConfig
 10000001:io.harness.delegate.beans.connector.elkconnector.ELKConnectorDTO
 10000002:io.harness.delegate.beans.connector.elkconnector.ELKAuthType
 10000101:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsConnectorDTO
@@ -2534,6 +2552,9 @@
 10000113:io.harness.delegate.beans.connector.servicenow.ServiceNowAuthType
 10000114:io.harness.delegate.beans.connector.servicenow.ServiceNowAuthCredentialsDTO
 10000115:io.harness.delegate.beans.connector.servicenow.ServiceNowUserNamePasswordDTO
+10000116:io.harness.delegate.beans.connector.servicenow.ServiceNowADFSDTO
+10000120:io.harness.exception.AdfsAuthException
+10000121:io.harness.adfs.AdfsAccessTokenResponse
 10000201:io.harness.delegate.beans.connector.tasconnector.TasConnectorDTO
 10000202:io.harness.delegate.beans.connector.tasconnector.TasCredentialDTO
 10000203:io.harness.delegate.beans.connector.tasconnector.TasCredentialSpecDTO
@@ -2584,3 +2605,7 @@
 10000260:io.harness.delegate.task.pcf.request.TasManifestsPackage
 10000261:io.harness.delegate.beans.pcf.CfSwapRouteCommandResult
 10000262:io.harness.exception.TerragruntCommandExecutionException
+10000263:io.harness.delegate.task.pcf.request.CfRollingDeployRequestNG
+10000264:io.harness.delegate.task.pcf.response.CfRollingDeployResponseNG
+10000265:io.harness.delegate.task.pcf.request.CfRollingRollbackRequestNG
+10000266:io.harness.delegate.task.pcf.response.CfRollingRollbackResponseNG

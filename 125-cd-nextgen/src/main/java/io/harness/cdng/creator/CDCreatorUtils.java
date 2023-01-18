@@ -53,6 +53,9 @@ public class CDCreatorUtils {
         StepSpecTypeConstants.TAS_APP_RESIZE, StepSpecTypeConstants.TAS_SWAP_ROUTES, StepSpecTypeConstants.TAS_ROLLBACK,
         StepSpecTypeConstants.SWAP_ROLLBACK, StepSpecTypeConstants.ELASTIGROUP_BG_STAGE_SETUP,
         StepSpecTypeConstants.ELASTIGROUP_SWAP_ROUTE, StepSpecTypeConstants.ASG_ROLLING_DEPLOY,
-        StepSpecTypeConstants.ASG_ROLLING_ROLLBACK);
+        StepSpecTypeConstants.ASG_ROLLING_ROLLBACK, StepSpecTypeConstants.TAS_ROLLING_DEPLOY,
+        StepSpecTypeConstants.TAS_ROLLING_ROLLBACK, StepSpecTypeConstants.K8S_DRY_RUN_MANIFEST,
+        StepSpecTypeConstants.ASG_BLUE_GREEN_SWAP_SERVICE, StepSpecTypeConstants.ASG_BLUE_GREEN_DEPLOY,
+        StepSpecTypeConstants.ASG_BLUE_GREEN_ROLLBACK);
   }
 }

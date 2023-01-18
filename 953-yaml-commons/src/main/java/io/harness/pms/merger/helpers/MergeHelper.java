@@ -97,7 +97,8 @@ public class MergeHelper {
         // input sets can now have <+input> in them as we will not remove those fields anymore. So if the first input
         // set provides some value and the second does not, then the first value should and not be overriden by the
         // <+input> in the second input set
-        if (value instanceof TextNode && NGExpressionUtils.matchesInputSetPattern(((TextNode) value).asText())) {
+        if (value instanceof TextNode && NGExpressionUtils.matchesInputSetPattern(((TextNode) value).asText())
+            && !NGExpressionUtils.matchesExecutionInputPattern(((TextNode) value).asText())) {
           return;
         }
         if (key.isType() || key.isIdentifierOrVariableName()) {
@@ -139,10 +140,13 @@ public class MergeHelper {
     Set<FQN> newKeys = new HashSet<>();
     for (FQN nonIgnorableKey : nonIgnorableKeys.keySet()) {
       List<FQNNode> fqnList = nonIgnorableKey.getFqnList();
-      for (int i = 0; i < fqnList.size(); i++) {
+      for (int i = 0; i < fqnList.size() - 1; i++) {
         FQNNode fqnNode = fqnList.get(i);
         if (fqnNode.getNodeType() == NodeType.KEY && acceptAllChildrenKeys.contains(fqnNode.getKey())) {
           newKeys.add(FQN.builder().fqnList(fqnList.subList(0, i + 2)).build());
+          // if the nonIgnorableKey is environmentGroup.environments.values, then once environmentGroup.environments is
+          // added as a new key, we should break as environmentGroup.environments.values is not needed anymore
+          break;
         }
       }
     }

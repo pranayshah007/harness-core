@@ -48,7 +48,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
-import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 
 import software.wings.beans.VaultConfig;
 
@@ -74,7 +74,7 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 
 @RunWith(MockitoJUnitRunner.class)
-@PrepareForTest({StepUtils.class})
+@PrepareForTest({TaskRequestsUtils.class})
 @OwnedBy(HarnessTeam.CDP)
 public class TerragruntDestroyStepTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
@@ -218,13 +218,13 @@ public class TerragruntDestroyStepTest extends CategoryTest {
                                 .encryptionConfig(VaultConfig.builder().build())
                                 .encryptedData(EncryptedRecordData.builder().build())
                                 .build()));
-    Mockito.mockStatic(StepUtils.class);
+    Mockito.mockStatic(TaskRequestsUtils.class);
 
     terragruntDestroyStep.obtainTaskAfterRbac(
         TerragruntTestStepUtils.getAmbiance(), stepElementParameters, StepInputPackage.builder().build());
 
-    PowerMockito.verifyStatic(StepUtils.class, times(1));
-    StepUtils.prepareCDTaskRequest(
+    PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
+    TaskRequestsUtils.prepareCDTaskRequest(
         any(), taskDataArgumentCaptor.capture(), any(), any(), eq("Terragrunt Destroy Task"), any(), any());
     assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
     assertThat(taskDataArgumentCaptor.getValue().getParameters()).isNotNull();
@@ -308,13 +308,13 @@ public class TerragruntDestroyStepTest extends CategoryTest {
                                 .encryptionConfig(VaultConfig.builder().build())
                                 .encryptedData(EncryptedRecordData.builder().build())
                                 .build()));
-    Mockito.mockStatic(StepUtils.class);
+    Mockito.mockStatic(TaskRequestsUtils.class);
 
     terragruntDestroyStep.obtainTaskAfterRbac(
         TerragruntTestStepUtils.getAmbiance(), stepElementParameters, StepInputPackage.builder().build());
 
-    PowerMockito.verifyStatic(StepUtils.class, times(1));
-    StepUtils.prepareCDTaskRequest(
+    PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
+    TaskRequestsUtils.prepareCDTaskRequest(
         any(), taskDataArgumentCaptor.capture(), any(), any(), eq("Terragrunt Destroy Task"), any(), any());
     assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
     assertThat(taskDataArgumentCaptor.getValue().getParameters()).isNotNull();
@@ -397,13 +397,13 @@ public class TerragruntDestroyStepTest extends CategoryTest {
                                 .encryptionConfig(VaultConfig.builder().build())
                                 .encryptedData(EncryptedRecordData.builder().build())
                                 .build()));
-    Mockito.mockStatic(StepUtils.class);
+    Mockito.mockStatic(TaskRequestsUtils.class);
 
     terragruntDestroyStep.obtainTaskAfterRbac(
         TerragruntTestStepUtils.getAmbiance(), stepElementParameters, StepInputPackage.builder().build());
 
-    PowerMockito.verifyStatic(StepUtils.class, times(1));
-    StepUtils.prepareCDTaskRequest(
+    PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
+    TaskRequestsUtils.prepareCDTaskRequest(
         any(), taskDataArgumentCaptor.capture(), any(), any(), eq("Terragrunt Destroy Task"), any(), any());
     assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
     assertThat(taskDataArgumentCaptor.getValue().getParameters()).isNotNull();

@@ -58,8 +58,9 @@ java_library(
         "//:resource",
     ],
     visibility = ["//visibility:public"],
-    runtime_deps = shared_dependencies + [
+    deps = shared_dependencies + [
         ":module",
+        "//990-commons-test:module",
         "@maven//:junit_junit",
         "@maven//:org_assertj_assertj_core",
         "@maven//:org_mockito_mockito_core",
@@ -68,6 +69,6 @@ java_library(
     ],
 )
 
-#run_tests()
+run_tests()
 
 run_analysis()

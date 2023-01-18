@@ -44,6 +44,7 @@ import static software.wings.beans.yaml.YamlType.LOADBALANCER_PROVIDER;
 import static software.wings.beans.yaml.YamlType.VERIFICATION_PROVIDER;
 import static software.wings.utils.Utils.generatePath;
 
+import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
@@ -107,8 +108,10 @@ import software.wings.yaml.templatelibrary.TemplateYamlConfig;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
@@ -189,6 +192,12 @@ public class YamlHelper {
     Application app = getApp(accountId, yamlFilePath);
     notNullCheck("App null in the given yaml file: " + yamlFilePath, app);
     return app.getUuid();
+  }
+
+  public Set<String> getAppIdsFromYamlFilePaths(Set<String> yamlFilePaths, String accountId) {
+    List<String> appIds =
+        yamlFilePaths.stream().map(yamlFilePath -> getAppId(accountId, String.valueOf(yamlFilePath))).collect(toList());
+    return new HashSet<>(appIds);
   }
 
   public Application getApp(String accountId, String yamlFilePath) {

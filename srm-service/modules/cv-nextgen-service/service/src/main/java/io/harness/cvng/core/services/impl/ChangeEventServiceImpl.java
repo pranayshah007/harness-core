@@ -46,6 +46,7 @@ import io.harness.cvng.utils.ScopedInformation;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.persistence.HPersistence;
+import io.harness.utils.PageUtils;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
@@ -174,21 +175,9 @@ public class ChangeEventServiceImpl implements ChangeEventService {
     List<Activity> activities = createQuery(startTime, endTime, projectParams, monitoredServiceIdentifiers, searchText,
         changeCategories, changeSourceTypes, isMonitoredServiceIdentifierScoped)
                                     .order(Sort.descending(ActivityKeys.eventTime))
-                                    .asList(new FindOptions()
-                                                .skip(pageRequest.getPageIndex() * pageRequest.getPageSize())
-                                                .limit(pageRequest.getPageSize()));
-    long total = createQuery(startTime, endTime, projectParams, monitoredServiceIdentifiers, searchText,
-        changeCategories, changeSourceTypes, isMonitoredServiceIdentifierScoped)
-                     .count();
-    long totalPages = (total / pageRequest.getPageSize()) + ((total % pageRequest.getPageSize()) == 0 ? 0 : 1);
-    return PageResponse.<ChangeEventDTO>builder()
-        .pageIndex(pageRequest.getPageIndex())
-        .totalPages(totalPages)
-        .pageSize(pageRequest.getPageSize())
-        .totalItems(total)
-        .pageItemCount(activities.size())
-        .content(activities.stream().map(transformer::getDto).collect(Collectors.toList()))
-        .build();
+                                    .asList();
+    return PageUtils.offsetAndLimit(activities.stream().map(transformer::getDto).collect(Collectors.toList()),
+        pageRequest.getPageIndex(), pageRequest.getPageSize());
   }
 
   private ChangeTimeline getTimeline(ProjectParams projectParams, List<String> monitoredServiceIdentifiers,

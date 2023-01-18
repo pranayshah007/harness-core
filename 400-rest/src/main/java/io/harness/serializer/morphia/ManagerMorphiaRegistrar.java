@@ -170,6 +170,7 @@ import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.InfrastructureProvisioner;
 import software.wings.beans.LambdaSpecification;
 import software.wings.beans.License;
+import software.wings.beans.Log;
 import software.wings.beans.ManagerConfiguration;
 import software.wings.beans.MarketPlace;
 import software.wings.beans.MultiServiceOrchestrationWorkflow;
@@ -387,6 +388,7 @@ import software.wings.service.impl.event.AlertEvent;
 import software.wings.service.impl.event.timeseries.TimeSeriesBatchEventInfo;
 import software.wings.service.impl.event.timeseries.TimeSeriesEventInfo;
 import software.wings.service.impl.instance.InstanceSyncPerpetualTaskInfo;
+import software.wings.service.impl.instance.backup.InstanceSyncPTInfoBackup;
 import software.wings.service.impl.newrelic.LearningEngineAnalysisTask;
 import software.wings.service.impl.newrelic.LearningEngineExperimentalAnalysisTask;
 import software.wings.service.impl.newrelic.MLExperiments;
@@ -873,6 +875,8 @@ public class ManagerMorphiaRegistrar implements MorphiaRegistrar {
     set.add(BaseFile.class);
     set.add(AppContainer.class);
     set.add(LongerDataRetentionState.class);
+    set.add(Log.class);
+    set.add(InstanceSyncPTInfoBackup.class);
   }
 
   @Override

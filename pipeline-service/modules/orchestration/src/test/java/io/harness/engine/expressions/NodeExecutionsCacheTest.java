@@ -53,8 +53,8 @@ public class NodeExecutionsCacheTest extends CategoryTest {
     doReturn(Collections.singletonList(NodeExecution.builder().identifier("test").status(Status.ABORTED).build()))
         .when(nodeExecutionService)
         .findAllChildrenWithStatusInAndWithoutOldRetries(
-            "PLAN_EXECUTION_ID", "PARENT_ID", null, false, Collections.emptySet());
-    List<Status> allChildren = nodeExecutionsCache.findAllTerminalChildrenStatusOnly("PARENT_ID");
+            "PLAN_EXECUTION_ID", "PARENT_ID", null, false, Collections.emptySet(), false);
+    List<Status> allChildren = nodeExecutionsCache.findAllTerminalChildrenStatusOnly("PARENT_ID", false);
     assertThat(allChildren.size()).isEqualTo(1);
   }
 }

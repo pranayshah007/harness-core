@@ -19,6 +19,7 @@ import static org.springframework.data.mongodb.core.query.Query.query;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.mongo.helper.SecondaryMongoTemplateHolder;
@@ -43,7 +44,9 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.mongodb.client.result.DeleteResult;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -85,6 +88,39 @@ public class SpringPersistenceWrapper implements PersistenceWrapper {
     this.timeoutEngine = timeoutEngine;
     this.transactionTemplate = transactionTemplate;
     this.findAndModifyOptions = new FindAndModifyOptions().returnNew(false).upsert(false);
+  }
+
+  /**
+   * Deletes all wait instances and notifyResponses for given correlation id and its related timeoutInstances
+   * in a batch operation
+   * @param correlationIds
+   */
+  public void deleteWaitInstancesAndMetadata(Set<String> correlationIds) {
+    Set<String> batchCorrelationIds = new HashSet<>();
+    for (String correlationId : correlationIds) {
+      batchCorrelationIds.add(correlationId);
+      if (batchCorrelationIds.size() >= MAX_BATCH_SIZE) {
+        deleteWaitInstancesAndMetadataInternal(batchCorrelationIds);
+        batchCorrelationIds.clear();
+      }
+    }
+    if (EmptyPredicate.isNotEmpty(batchCorrelationIds)) {
+      deleteWaitInstancesAndMetadataInternal(batchCorrelationIds);
+    }
+  }
+
+  private void deleteWaitInstancesAndMetadataInternal(Set<String> correlationIds) {
+    Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> {
+      deleteNotifyResponses(new ArrayList<>(correlationIds));
+      Query query = query(where(WaitInstanceKeys.correlationIds).in(correlationIds));
+      query.fields().include(WaitInstanceKeys.timeoutInstanceId);
+      // Uses - correlationIds_1 idx
+      List<WaitInstance> deletedWaitInstances = mongoTemplate.findAllAndRemove(query, WaitInstance.class);
+      List<String> timeoutInstanceIdsToDelete =
+          deletedWaitInstances.stream().map(WaitInstance::getTimeoutInstanceId).collect(toList());
+      timeoutEngine.deleteTimeouts(timeoutInstanceIdsToDelete);
+      return null;
+    });
   }
 
   @Override
@@ -231,6 +267,7 @@ public class SpringPersistenceWrapper implements PersistenceWrapper {
       return;
     }
     log.info("Deleting {} not needed responses", responseIds.size());
+    // Uses - id index
     DeleteResult deleteResult =
         mongoTemplate.remove(query(where(NotifyResponseKeys.uuid).in(responseIds)), NotifyResponse.class);
     if (!deleteResult.wasAcknowledged()) {

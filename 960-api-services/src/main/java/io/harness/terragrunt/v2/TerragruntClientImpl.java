@@ -85,8 +85,8 @@ public class TerragruntClientImpl implements TerragruntClient {
   @Override
   public CliResponse workspace(@NotNull TerragruntWorkspaceCliRequest request, @NotNull LogCallback logCallback)
       throws InterruptedException, TimeoutException, IOException {
-    CliResponse workspaceListResponse = executeCliCommand(
-        TerragruntCommandUtils.workspaceList(), request, logCallback, new LogCallbackOutputStream(logCallback));
+    CliResponse workspaceListResponse = executeCliCommand(TerragruntCommandUtils.workspaceList(request.getRunType()),
+        request, logCallback, new LogCallbackOutputStream(logCallback));
     if (CommandExecutionStatus.SUCCESS != workspaceListResponse.getCommandExecutionStatus()) {
       return workspaceListResponse;
     }

@@ -11,9 +11,9 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.eraro.ErrorCode.VAULT_OPERATION_ERROR;
 import static io.harness.exception.WingsException.USER;
-import static io.harness.helpers.NGVaultTaskHelper.getToken;
-import static io.harness.helpers.NGVaultTaskHelper.getVaultAppRoleLoginResult;
-import static io.harness.helpers.NGVaultTaskHelper.logAndThrowVaultError;
+import static io.harness.helpers.vault.NGVaultTaskHelper.getToken;
+import static io.harness.helpers.vault.NGVaultTaskHelper.getVaultAppRoleLoginResult;
+import static io.harness.helpers.vault.NGVaultTaskHelper.logAndThrowVaultError;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateResponseData;

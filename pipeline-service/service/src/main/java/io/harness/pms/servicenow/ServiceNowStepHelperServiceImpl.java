@@ -43,7 +43,7 @@ import io.harness.remote.client.NGRestUtils;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.KryoSerializer;
-import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.steps.servicenow.ServiceNowStepHelperService;
 import io.harness.steps.servicenow.ServiceNowTicketOutcome;
 import io.harness.steps.servicenow.ServiceNowTicketOutcome.ServiceNowTicketOutcomeBuilder;
@@ -115,7 +115,7 @@ public class ServiceNowStepHelperServiceImpl implements ServiceNowStepHelperServ
                             .taskType(NGTaskType.SERVICENOW_TASK_NG.name())
                             .parameters(new Object[] {params})
                             .build();
-    return StepUtils.prepareTaskRequest(ambiance, taskData, kryoSerializer, TaskCategory.DELEGATE_TASK_V2,
+    return TaskRequestsUtils.prepareTaskRequest(ambiance, taskData, kryoSerializer, TaskCategory.DELEGATE_TASK_V2,
         Collections.singletonList(ShellScriptTaskNG.COMMAND_UNIT), true, taskName,
         params.getDelegateSelectors()
             .stream()

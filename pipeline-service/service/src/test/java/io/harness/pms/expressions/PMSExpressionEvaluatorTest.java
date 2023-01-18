@@ -239,7 +239,7 @@ public class PMSExpressionEvaluatorTest extends PipelineServiceTestBase {
 
     // pipeline children
     when(nodeExecutionService.findAllChildrenWithStatusInAndWithoutOldRetries(
-             planExecutionId, nodeExecution1.getUuid(), null, false, Collections.emptySet()))
+             planExecutionId, nodeExecution1.getUuid(), null, false, Collections.emptySet(), false))
         .thenReturn(Arrays.asList(nodeExecution4, nodeExecution5));
 
     EngineExpressionEvaluator engineExpressionEvaluator = prepareEngineExpressionEvaluator(newAmbiance);
@@ -249,6 +249,45 @@ public class PMSExpressionEvaluatorTest extends PipelineServiceTestBase {
     Object pipelineCurrentStatus = engineExpressionEvaluator.evaluateExpression("<+pipeline.currentStatus>");
     assertThat((String) pipelineCurrentStatus).isEqualTo("IGNORE_FAILED");
     Object stageCurrentStatus = engineExpressionEvaluator.evaluateExpression("<+pipeline.currentStatus>");
+    assertThat((String) stageCurrentStatus).isEqualTo("IGNORE_FAILED");
+    Object pipelineSuccess =
+        engineExpressionEvaluator.evaluateExpression("<+" + OrchestrationConstants.PIPELINE_SUCCESS + ">");
+    assertThat(pipelineSuccess).isInstanceOf(Boolean.class);
+    assertThat((Boolean) pipelineSuccess).isEqualTo(true);
+
+    Object stageSuccess =
+        engineExpressionEvaluator.evaluateExpression("<+" + OrchestrationConstants.STAGE_SUCCESS + ">");
+    assertThat(stageSuccess).isInstanceOf(Boolean.class);
+    assertThat((Boolean) stageSuccess).isEqualTo(true);
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void testNodeExecutionLiveStatusWhenIgnoredFailure() {
+    Ambiance newAmbiance = Ambiance.newBuilder()
+                               .setPlanExecutionId(planExecutionId)
+                               .addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecution1.getUuid(), planNode1))
+                               .addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecution2.getUuid(), planNode2))
+                               .addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecution3.getUuid(), planNode3))
+                               .addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecution5.getUuid(), planNode5))
+                               .build();
+
+    Reflect.on(nodeExecution5).set("status", Status.IGNORE_FAILED);
+    Reflect.on(nodeExecution4).set("status", Status.SUCCEEDED);
+
+    // pipeline children
+    when(nodeExecutionService.findAllChildrenWithStatusInAndWithoutOldRetries(
+             planExecutionId, nodeExecution1.getUuid(), null, false, Collections.emptySet(), true))
+        .thenReturn(Arrays.asList(nodeExecution4, nodeExecution5));
+
+    EngineExpressionEvaluator engineExpressionEvaluator = prepareEngineExpressionEvaluator(newAmbiance);
+    PmsSdkInstance pmsSdkInstance =
+        PmsSdkInstance.builder().staticAliases(new PipelineServiceApplication().getStaticAliases()).build();
+    doReturn(ImmutableMap.of("cd", pmsSdkInstance)).when(pmsSdkInstanceService).getSdkInstanceCacheValue();
+    Object pipelineCurrentStatus = engineExpressionEvaluator.evaluateExpression("<+pipeline.liveStatus>");
+    assertThat((String) pipelineCurrentStatus).isEqualTo("IGNORE_FAILED");
+    Object stageCurrentStatus = engineExpressionEvaluator.evaluateExpression("<+pipeline.liveStatus>");
     assertThat((String) stageCurrentStatus).isEqualTo("IGNORE_FAILED");
     Object pipelineSuccess =
         engineExpressionEvaluator.evaluateExpression("<+" + OrchestrationConstants.PIPELINE_SUCCESS + ">");

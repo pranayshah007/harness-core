@@ -50,7 +50,7 @@ import io.harness.remote.client.NGRestUtils;
 import io.harness.rule.Owner;
 import io.harness.secrets.remote.SecretNGManagerClient;
 import io.harness.serializer.KryoSerializer;
-import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.steps.approval.step.beans.ApprovalType;
 import io.harness.steps.approval.step.beans.CriteriaSpecWrapperDTO;
 import io.harness.steps.approval.step.beans.KeyValuesCriteriaSpecDTO;
@@ -75,7 +75,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 
 @RunWith(PowerMockRunner.class)
 @OwnedBy(CDC)
-@PrepareForTest({NGRestUtils.class, StepUtils.class})
+@PrepareForTest({NGRestUtils.class, TaskRequestsUtils.class})
 public class ServiceNowApprovalHelperServiceImplTest extends CategoryTest {
   @Mock private NgDelegate2TaskExecutor ngDelegate2TaskExecutor;
   @Mock private ConnectorResourceClient connectorResourceClient;
@@ -104,7 +104,7 @@ public class ServiceNowApprovalHelperServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testHandlePollingEvent() {
     MockedStatic<NGRestUtils> mockStatic = Mockito.mockStatic(NGRestUtils.class);
-    Mockito.mockStatic(StepUtils.class);
+    Mockito.mockStatic(TaskRequestsUtils.class);
     Ambiance ambiance = Ambiance.newBuilder()
                             .putSetupAbstractions("accountId", accountId)
                             .putSetupAbstractions("orgIdentifier", orgIdentifier)
@@ -125,7 +125,7 @@ public class ServiceNowApprovalHelperServiceImplTest extends CategoryTest {
     when(kryoSerializer.asDeflatedBytes(any())).thenReturn("task".getBytes());
 
     ArgumentCaptor<TaskDetails> taskDetailsArgumentCaptor = ArgumentCaptor.forClass(TaskDetails.class);
-    when(StepUtils.prepareTaskRequest(
+    when(TaskRequestsUtils.prepareTaskRequest(
              any(), taskDetailsArgumentCaptor.capture(), anyList(), anyList(), any(), anyBoolean()))
         .thenReturn(null);
 

@@ -36,7 +36,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.serializer.KryoSerializer;
-import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.steps.jira.JiraIssueOutcome;
 import io.harness.steps.jira.JiraStepHelperService;
 import io.harness.supplier.ThrowingSupplier;
@@ -101,7 +101,7 @@ public class JiraStepHelperServiceImpl implements JiraStepHelperService {
                             .taskType(NGTaskType.JIRA_TASK_NG.name())
                             .parameters(new Object[] {params})
                             .build();
-    return StepUtils.prepareTaskRequest(ambiance, taskData, kryoSerializer, TaskCategory.DELEGATE_TASK_V2,
+    return TaskRequestsUtils.prepareTaskRequest(ambiance, taskData, kryoSerializer, TaskCategory.DELEGATE_TASK_V2,
         Collections.emptyList(), false, taskName,
         params.getDelegateSelectors()
             .stream()

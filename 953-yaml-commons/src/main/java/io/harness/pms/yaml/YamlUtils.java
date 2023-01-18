@@ -68,6 +68,7 @@ public class YamlUtils {
 
     // map empty string to null instead of failing with Mapping Exception
     mapper.coercionConfigFor(LinkedHashMap.class).setCoercion(CoercionInputShape.EmptyString, CoercionAction.AsNull);
+    mapper.coercionConfigFor(ArrayList.class).setCoercion(CoercionInputShape.EmptyString, CoercionAction.AsEmpty);
   }
 
   public <T> T read(String yaml, Class<T> cls) throws IOException {
@@ -93,6 +94,15 @@ public class YamlUtils {
   public YamlField readTree(String content) throws IOException {
     return readTreeInternal(content, mapper);
   }
+
+  public YamlField tryReadTree(String content) {
+    try {
+      return readTreeInternal(content, mapper);
+    } catch (Exception ex) {
+      throw new InvalidRequestException("Invalid yaml", ex);
+    }
+  }
+
   public YamlField readTreeWithDefaultObjectMapper(String content) throws IOException {
     return readTreeInternal(content, NG_DEFAULT_OBJECT_MAPPER);
   }

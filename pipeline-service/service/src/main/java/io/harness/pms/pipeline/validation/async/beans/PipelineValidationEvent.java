@@ -13,6 +13,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.UuidAware;
@@ -53,11 +54,11 @@ public class PipelineValidationEvent implements UuidAware, CreatedAtAware {
 
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
-        .add(CompoundMongoIndex.builder()
-                 .name("fqn_action")
-                 .unique(false)
+        .add(SortCompoundMongoIndex.builder()
+                 .name("fqn_action_startTs_idx")
                  .field(PipelineValidationEventKeys.fqn)
                  .field(PipelineValidationEventKeys.action)
+                 .descSortField(PipelineValidationEventKeys.startTs)
                  .build())
         .build();
   }

@@ -15,6 +15,7 @@ import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.DOWNL
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_DESTINATION_DOWNLOAD_ARTIFACT_PATH_SPECIFIED;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_DESTINATION_DOWNLOAD_ARTIFACT_PATH_SPECIFIED_EXPLANATION;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_DESTINATION_DOWNLOAD_PATH_SPECIFIED_HINT;
+import static io.harness.delegate.utils.AzureArtifactsUtils.getAzureArtifactDelegateConfig;
 import static io.harness.delegate.utils.NexusUtils.getNexusArtifactFileName;
 import static io.harness.delegate.utils.NexusUtils.getNexusVersion;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
@@ -27,9 +28,11 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
+import io.harness.delegate.task.azure.artifact.AzureArtifactsHelper;
 import io.harness.delegate.task.shell.ssh.CommandHandler;
 import io.harness.delegate.task.ssh.NgCommandUnit;
 import io.harness.delegate.task.ssh.NgDownloadArtifactCommandUnit;
+import io.harness.delegate.task.ssh.artifact.AzureArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.CustomArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.NexusArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.SkipCopyArtifactDelegateConfig;
@@ -57,6 +60,7 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 public abstract class AbstractDownloadArtifactCommandHandler implements CommandHandler {
   @Inject private Map<SshWinRmArtifactType, ArtifactDownloadHandler> artifactHandlers;
+  @Inject private AzureArtifactsHelper azureArtifactsHelper;
 
   @Override
   public ExecuteCommandResponse handle(CommandTaskParameters parameters, NgCommandUnit commandUnit,
@@ -160,6 +164,8 @@ public abstract class AbstractDownloadArtifactCommandHandler implements CommandH
       NexusVersion nexusVersion = getNexusVersion(nexusArtifactDelegateConfig);
       return getNexusArtifactFileName(
           nexusVersion, nexusArtifactDelegateConfig.getRepositoryFormat(), nexusArtifactDelegateConfig.getMetadata());
+    } else if (artifactDelegateConfig instanceof AzureArtifactDelegateConfig) {
+      return azureArtifactsHelper.getArtifactFileName(getAzureArtifactDelegateConfig(artifactDelegateConfig));
     }
 
     return ArtifactoryUtils.getArtifactFileName(artifactDelegateConfig.getArtifactPath());
