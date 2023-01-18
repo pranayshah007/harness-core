@@ -271,5 +271,5 @@ cfClientConfig:
   sleepInterval: 5000
 
 featureFlagConfig:
-  featureFlagSystem: FF
+  featureFlagSystem: LOCAL
   syncFeaturesToCF: false
