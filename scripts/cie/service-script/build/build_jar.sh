@@ -13,7 +13,11 @@ fi
 
 BAZEL_DIRS=${HOME}/.bazel-dirs
 BAZEL_ARGUMENTS="--show_timestamps --announce_rc --experimental_convenience_symlinks=normal --symlink_prefix=${BAZEL_DIRS}/"
-SERVICE_MODULE="//${MODULE}/service:module //${MODULE}/service:module_deploy.jar"
+if [ ${MODULE} == "310-iacm-manager" ];then
+  SERVICE_MODULE="//${MODULE}/app:module //${MODULE}/app:module_deploy.jar"
+else
+  SERVICE_MODULE="//${MODULE}/service:module //${MODULE}/service:module_deploy.jar"
+fi
 bazel ${bazelrc} build $SERVICE_MODULE ${BAZEL_ARGUMENTS}
 
 if [ $MODULE == "pipeline-service" ];
