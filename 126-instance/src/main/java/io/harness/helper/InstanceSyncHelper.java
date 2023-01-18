@@ -45,7 +45,7 @@ public class InstanceSyncHelper {
         infrastructureMappingDTO.getAccountIdentifier(), infrastructureMappingDTO.getOrgIdentifier(),
         infrastructureMappingDTO.getProjectIdentifier(), infrastructureMappingDTO.getServiceIdentifier(), false);
     return serviceEntityOptional.orElseThrow(()
-                                                 -> new EntityNotFoundException("Service not found for serviceId : {}"
+                                                 -> new EntityNotFoundException("Service not found for service ref : {}"
                                                      + infrastructureMappingDTO.getServiceIdentifier()));
   }
 
@@ -56,6 +56,6 @@ public class InstanceSyncHelper {
     return environmentServiceOptional.orElseThrow(
         ()
             -> new EntityNotFoundException(
-                "Environment not found for envId : {}" + infrastructureMappingDTO.getEnvIdentifier()));
+                "Environment not found for environment ref : {}" + infrastructureMappingDTO.getEnvIdentifier()));
   }
 }

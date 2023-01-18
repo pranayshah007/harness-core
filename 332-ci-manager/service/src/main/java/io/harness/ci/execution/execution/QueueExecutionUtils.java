@@ -29,7 +29,6 @@ import com.google.inject.Inject;
 public class QueueExecutionUtils {
   @Inject private CIExecutionRepository ciExecutionRepository;
   @Inject private CIExecutionServiceConfig ciExecutionServiceConfig;
-  @Inject private RunTimeInputHandler runTimeInputHandler;
 
   public void addActiveExecutionBuild(OrchestrationEvent event, String accountID, String runtimeID) {
     int count = 0;
@@ -66,7 +65,7 @@ public class QueueExecutionUtils {
       HostedVmInfraYaml infrastructure = (HostedVmInfraYaml) specConfig.getInfrastructure();
       return RunTimeInputHandler.resolveOSType(infrastructure.getSpec().getPlatform().getValue().getOs());
     } else {
-      throw new CIStageExecutionException("unexptected type of infra received");
+      throw new CIStageExecutionException("unexpected type of infra received");
     }
   }
 

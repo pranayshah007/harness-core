@@ -117,6 +117,7 @@ public class AsgRollingRollbackStep extends CdTaskExecutable<AsgCommandResponse>
         (AsgRollingRollbackStepParameters) stepElementParameters.getSpec();
 
     if (EmptyPredicate.isEmpty(asgRollingRollbackStepParameters.getAsgRollingDeployFqn())) {
+      log.info("Asg Rolling Deploy Step was not executed. Skipping Rollback.");
       return TaskRequest.newBuilder()
           .setSkipTaskRequest(SkipTaskRequest.newBuilder()
                                   .setMessage("Asg Rolling Deploy Step was not executed. Skipping Rollback.")
@@ -130,6 +131,7 @@ public class AsgRollingRollbackStep extends CdTaskExecutable<AsgCommandResponse>
                 + OutcomeExpressionConstants.ASG_ROLLING_PREPARE_ROLLBACK_DATA_OUTCOME));
 
     if (!asgRollingPrepareRollbackDataOptionalOutput.isFound()) {
+      log.info("Asg Rolling Deploy Step was not executed. Skipping Rollback.");
       return TaskRequest.newBuilder()
           .setSkipTaskRequest(SkipTaskRequest.newBuilder()
                                   .setMessage("Asg Rolling Deploy Step was not executed. Skipping Rollback.")
@@ -148,7 +150,8 @@ public class AsgRollingRollbackStep extends CdTaskExecutable<AsgCommandResponse>
     AsgRollingRollbackRequest asgRollingRollbackRequest =
         AsgRollingRollbackRequest.builder()
             .accountId(accountId)
-            .asgStoreManifestsContent(asgRollingPrepareRollbackDataOutcome.getAsgStoreManifestsContent())
+            .asgName(asgRollingPrepareRollbackDataOutcome.getAsgName())
+            .asgManifestsDataForRollback(asgRollingPrepareRollbackDataOutcome.getAsgManifestsDataForRollback())
             .commandName(ASG_ROLLING_ROLLBACK_COMMAND_NAME)
             .commandUnitsProgress(CommandUnitsProgress.builder().build())
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))

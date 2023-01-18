@@ -190,6 +190,7 @@ public class K8sTaskHelperTest extends CategoryTest {
     spyHelperBase = Mockito.spy(k8sTaskHelperBase);
     when(helmTaskHelperBase.isHelmLocalRepoSet()).thenReturn(false);
     when(helmTaskHelperBase.getHelmLocalRepositoryPath()).thenReturn("");
+    doReturn(-1).when(helmTaskHelperBase).skipDefaultHelmValuesYaml(anyString(), any(), anyBoolean(), any());
   }
 
   private List<KubernetesResourceId> getKubernetesResourceIdList(String suffix) {

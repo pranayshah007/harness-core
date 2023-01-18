@@ -21,13 +21,9 @@ import lombok.Data;
 @Data
 @OwnedBy(STO)
 public class STOYamlSonarqubeToolData {
-  @YamlSchemaTypes(value = {runtime})
-  @ApiModelProperty(dataType = STRING_CLASSPATH)
-  protected ParameterField<String> include;
+  @ApiModelProperty(dataType = STRING_CLASSPATH) protected ParameterField<String> include;
 
-  @YamlSchemaTypes(value = {runtime})
-  @ApiModelProperty(dataType = STRING_CLASSPATH)
-  protected ParameterField<String> exclude;
+  @ApiModelProperty(dataType = STRING_CLASSPATH) protected ParameterField<String> exclude;
 
   @YamlSchemaTypes(value = {runtime})
   @ApiModelProperty(dataType = "io.harness.beans.steps.stepinfo.security.shared.STOYamlJavaParameters")

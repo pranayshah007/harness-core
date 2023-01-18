@@ -49,12 +49,14 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.utils.IdentifierRefHelper;
 
 import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -68,7 +70,7 @@ public class CloudformationDeleteStackStep extends CdTaskExecutable<Cloudformati
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
   @Inject private CloudformationStepHelper cloudFormationStepHelper;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private PipelineRbacHelper pipelineRbacHelper;
   @Inject private StepHelper stepHelper;
   @Inject private CloudformationConfigDAL cloudformationConfigDAL;
@@ -183,7 +185,7 @@ public class CloudformationDeleteStackStep extends CdTaskExecutable<Cloudformati
             .parameters(new Object[] {builder.build()})
             .build();
 
-    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+    return TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
         Collections.singletonList(CloudformationCommandUnit.DeleteStack.name()),
         TaskType.CLOUDFORMATION_TASK_NG.getDisplayName(),
         TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(parameters.getDelegateSelectors()))),

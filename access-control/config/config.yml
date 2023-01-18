@@ -47,7 +47,7 @@ allowedOrigins:
   - "https://127.0.0.1:8000"
 
 mongo:
-  uri: ${MONGO_URI:-mongodb://127.0.0.1:27017,127.0.0.1:27019/accesscontrol?replicaSet=replocal}
+  uri: ${MONGO_URI:-mongodb://127.0.0.1:27018,127.0.0.1:27019,127.0.0.1:27020/accesscontrol?replicaSet=rs0}
   connectTimeout: ${MONGO_CONNECT_TIMEOUT:-30000}
   serverSelectionTimeout: ${MONGO_SERVER_SELECTION_TIMEOUT:-90000}
   socketTimeout: ${MONGO_SOCKET_TIMEOUT:-360000}
@@ -187,14 +187,14 @@ notificationConfig:
 aggregatorModuleConfig:
   debezium:
     name: ${DEBEZIUM_NAME:-aggregator}
-    offset.storage.file.filename: ${OFFSET_STORAGE_FILE_FILENAME:-mongodb://127.0.0.1:27017,127.0.0.1:27019/accesscontrol?replicaSet=replocal}
+    offset.storage.file.filename: ${OFFSET_STORAGE_FILE_FILENAME:-mongodb://127.0.0.1:27018,127.0.0.1:27019,127.0.0.1:27020/accesscontrol?replicaSet=rs0}
     key.converter.schemas.enable: ${KEY_CONVERTER_SCHEMAS_ENABLE:-false}
     value.converter.schemas.enable: ${VALUE_CONVERTER_SCHEMAS_ENABLE:-false}
     offset.flush.interval.ms: ${OFFSET_FLUSH_INTERVAL_MS:-5000}
     connect.backoff.initial.delay.ms: ${CONNECT_BACKOFF_INITIAL_DELAY_MS:-1000}
     connect.backoff.max.delay.ms: ${CONNECT_BACKOFF_MAX_DELAY_MS:-10000}
     connect.max.attempts: ${CONNECT_MAX_ATTEMPTS:-3}
-    mongodb.hosts: ${MONGODB_HOSTS:-replocal/localhost:27017,replocal/localhost:27019}
+    mongodb.hosts: ${MONGODB_HOSTS:-rs0/localhost:27018,rs0/localhost:27019,rs0/127.0.0.1:27020}
     mongodb.name: ${MONGODB_NAME:-access_control_db}
     mongodb.user: ${MONGODB_USER:-""}
     mongodb.password: ${MONGODB_PASSWORD:-""}

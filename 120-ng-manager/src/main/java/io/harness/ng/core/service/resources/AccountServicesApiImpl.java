@@ -46,8 +46,9 @@ public class AccountServicesApiImpl extends AbstractServicesApiImpl implements A
 
   @NGAccessControlCheck(resourceType = NGResourceType.SERVICE, permission = "core_service_delete")
   @Override
-  public Response deleteAccountScopedService(@ResourceIdentifier String service, @AccountIdentifier String account) {
-    return super.deleteServiceEntity(null, null, service, account);
+  public Response deleteAccountScopedService(
+      @ResourceIdentifier String service, @AccountIdentifier String account, Boolean forceDelete) {
+    return super.deleteServiceEntity(null, null, service, account, Boolean.TRUE == forceDelete);
   }
 
   @NGAccessControlCheck(resourceType = NGResourceType.SERVICE, permission = "core_service_view")

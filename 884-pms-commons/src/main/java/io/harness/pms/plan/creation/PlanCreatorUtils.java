@@ -16,6 +16,7 @@ import io.harness.logging.AutoLogContext;
 import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.YamlUpdates;
+import io.harness.pms.utils.PipelineYamlHelper;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.RepositoryUtils;
@@ -24,6 +25,7 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.KryoSerializer;
+import io.harness.yaml.registry.Registry;
 import io.harness.yaml.repository.Reference;
 import io.harness.yaml.repository.Repository;
 
@@ -210,6 +212,7 @@ public class PlanCreatorUtils {
       case PipelineVersion.V1:
         return Dependency.newBuilder()
             .putAllMetadata(getRepositoryDependency(kryoSerializer, pipelineYaml, inputSetYaml))
+            .putAllMetadata(getRegistryDependency(kryoSerializer, pipelineYaml))
             .build();
       default:
         return null;
@@ -224,5 +227,11 @@ public class PlanCreatorUtils {
     repository.setReference(
         optionalReference.map(ParameterField::createValueField).orElseGet(repository::getReference));
     return Map.of(YAMLFieldNameConstants.REPOSITORY, ByteString.copyFrom(kryoSerializer.asBytes(repository)));
+  }
+
+  private Map<String, ByteString> getRegistryDependency(KryoSerializer kryoSerializer, String pipelineYaml) {
+    Optional<Registry> optionalRegistry = PipelineYamlHelper.getRegistry(pipelineYaml);
+    Registry registry = optionalRegistry.orElse(Registry.builder().build());
+    return Map.of(YAMLFieldNameConstants.REGISTRY, ByteString.copyFrom(kryoSerializer.asBytes(registry)));
   }
 }

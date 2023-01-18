@@ -18,6 +18,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import java.io.IOException;
 import lombok.experimental.UtilityClass;
@@ -36,8 +37,8 @@ public class AsgContentParser {
   static {
     mapperWithFailOnUnknownPropertiesFalse.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     final var simpleModule = new SimpleModule().addAbstractTypeMapping(ProgressListener.class, AsgDummy.class);
-
     mapperWithFailOnUnknownPropertiesFalse.registerModule(simpleModule);
+    mapperWithFailOnUnknownPropertiesFalse.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
   }
 
   public <T> T parseJson(String json, Class<T> clazz, boolean failOnUnknownProperties) {

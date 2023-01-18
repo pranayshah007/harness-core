@@ -21,6 +21,7 @@ import io.harness.artifacts.azureartifacts.beans.AzureArtifactsInternalConfig;
 import io.harness.azure.utility.AzureUtils;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidArtifactServerException;
+import io.harness.security.encryption.SecretDecryptionService;
 
 import software.wings.helpers.ext.azure.devops.AzureArtifactsPackage;
 import software.wings.helpers.ext.azure.devops.AzureArtifactsPackageVersion;
@@ -44,6 +45,7 @@ import retrofit2.Response;
 @Singleton
 public class AzureArtifactsDownloadHelper {
   @Inject private AzureArtifactsRegistryService azureArtifactsRegistryService;
+  @Inject private SecretDecryptionService secretDecryptionService;
 
   static long getInputStreamSize(InputStream inputStream) throws IOException {
     long size = 0;
@@ -177,7 +179,7 @@ public class AzureArtifactsDownloadHelper {
     }
   }
 
-  InputStream downloadArtifactByUrl(String artifactDownloadUrl, String authHeader) throws IOException {
+  public InputStream downloadArtifactByUrl(String artifactDownloadUrl, String authHeader) throws IOException {
     OkHttpClient okHttpClient = getAzureArtifactsDownloadClient(artifactDownloadUrl);
     Request request = new Request.Builder().url(artifactDownloadUrl).addHeader("Authorization", authHeader).build();
     okhttp3.Response response = okHttpClient.newCall(request).execute();

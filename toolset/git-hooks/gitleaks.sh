@@ -11,7 +11,7 @@ Then add the exclusion in .gitleaksignore file. For more info visit: https://git
 
 GIT_LEAKS=$(git config --bool hook.pre-commit.gitleaks)
 
-if [ ${GIT_LEAKS} == 'true'  ]; then
+if [ "${GIT_LEAKS}" == "true" ]; then
     echo "INFO: Scanning Commits information for any GIT LEAKS"
     gitleaks protect -v --staged
     STATUS=$?

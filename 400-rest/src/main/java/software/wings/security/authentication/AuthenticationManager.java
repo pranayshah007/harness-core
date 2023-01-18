@@ -28,6 +28,7 @@ import static io.harness.remote.client.NGRestUtils.getResponse;
 import static software.wings.beans.Account.AccountKeys;
 import static software.wings.beans.User.Builder;
 
+import static com.google.common.collect.Sets.newHashSet;
 import static org.apache.cxf.common.util.UrlUtils.urlDecode;
 
 import io.harness.annotations.dev.HarnessModule;
@@ -79,7 +80,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import javax.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
 
@@ -275,9 +275,6 @@ public class AuthenticationManager {
    */
   public User loginUserForIdentityService(String email) {
     User user = userService.getUserByEmail(email);
-    if (user != null && user.getSupportAccounts() == null) {
-      userService.loadSupportAccounts(user, Set.of(AccountKeys.uuid));
-    }
     // Null check just in case identity service might accidentally forwarded wrong user to this cluster.
     if (user == null) {
       log.info("User {} doesn't exist in this manager cluster", email);
@@ -302,7 +299,9 @@ public class AuthenticationManager {
         userService.update(user);
       }
     }
-
+    if (user != null && isEmpty(user.getSupportAccounts())) {
+      userService.loadSupportAccounts(user, newHashSet(AccountKeys.uuid));
+    }
     return user;
   }
 

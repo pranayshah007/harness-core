@@ -88,7 +88,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.steps.StepHelper;
-import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.tasks.ResponseData;
 
 import software.wings.beans.TaskType;
@@ -115,7 +115,7 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({StepUtils.class})
+@PrepareForTest({TaskRequestsUtils.class})
 @OwnedBy(CDP)
 public class ServerlessStepCommonHelperTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
@@ -137,7 +137,7 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
   @Mock private ServerlessAwsLambdaDeployStep serverlessAwsLambdaDeployStep;
   @Mock private ServerlessEntityHelper serverlessEntityHelper;
   @Mock private ServerlessStepHelper serverlessStepHelper;
-  @Mock private StepUtils stepUtils;
+  @Mock private TaskRequestsUtils TaskRequestsUtils;
   @Mock private StepHelper stepHelper;
   @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
 
@@ -184,15 +184,15 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
         .getGitStoreDelegateConfig(
             gitStoreConfig, connectorInfoDTO, manifestOutcome, Arrays.asList(folderPath), ambiance);
 
-    Mockito.mockStatic(StepUtils.class);
-    PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
 
     TaskChainResponse taskChainResponse =
         serverlessStepCommonHelper.startChainLink(ambiance, stepElementParameters, serverlessStepHelper);
 
-    PowerMockito.verifyStatic(StepUtils.class, times(1));
-    StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any());
+    PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
+    TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any());
 
     ServerlessStepPassThroughData serverlessStepPassThroughData =
         (ServerlessStepPassThroughData) taskChainResponse.getPassThroughData();
@@ -238,8 +238,8 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
         .when(serverlessStepCommonHelper)
         .getS3StoreDelegateConfig(ambiance, s3StoreConfig, manifestOutcome);
 
-    Mockito.mockStatic(StepUtils.class);
-    PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
     ServerlessStepHelper serverlessStepHelper = new ServerlessAwsLambdaStepHelper();
     TaskChainResponse taskChainResponse =
@@ -265,8 +265,8 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
                                   .parameters(new Object[] {serverlessS3FetchRequest})
                                   .build();
 
-    PowerMockito.verifyStatic(StepUtils.class, times(1));
-    StepUtils.prepareCDTaskRequest(any(), eq(taskData), any(), any(), any(), any(), any());
+    PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
+    TaskRequestsUtils.prepareCDTaskRequest(any(), eq(taskData), any(), any(), any(), any(), any());
 
     ServerlessStepPassThroughData serverlessStepPassThroughData =
         (ServerlessStepPassThroughData) taskChainResponse.getPassThroughData();
@@ -290,14 +290,14 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
                                                            .manifestContent("content")
                                                            .build();
     ServerlessExecutionPassThroughData executionPassThroughData = ServerlessExecutionPassThroughData.builder().build();
-    Mockito.mockStatic(StepUtils.class);
-    PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
 
     serverlessStepCommonHelper.queueServerlessTask(
         stepElementParameters, serverlessCommandRequest, ambiance, executionPassThroughData, false);
-    PowerMockito.verifyStatic(StepUtils.class, times(1));
-    StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any());
+    PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
+    TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any());
   }
 
   @Test(expected = GeneralException.class)

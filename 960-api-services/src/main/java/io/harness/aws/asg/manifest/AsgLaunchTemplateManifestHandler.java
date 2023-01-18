@@ -18,7 +18,7 @@ import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.amazonaws.services.ec2.model.CreateLaunchTemplateRequest;
 import com.amazonaws.services.ec2.model.LaunchTemplate;
 import com.amazonaws.services.ec2.model.LaunchTemplateVersion;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -55,6 +55,8 @@ public class AsgLaunchTemplateManifestHandler extends AsgManifestHandler<CreateL
         chainState.setLaunchTemplateVersion(launchTemplate.getLatestVersionNumber().toString());
       }
     }
+    // currently assuming that during rollback - the launch template would always be available already and thus the
+    // above if condition will not be executed
 
     return chainState;
   }
@@ -76,14 +78,16 @@ public class AsgLaunchTemplateManifestHandler extends AsgManifestHandler<CreateL
     if (autoScalingGroup != null) {
       String launchTemplateVersion = autoScalingGroup.getLaunchTemplate().getVersion();
 
+      List<String> launchTemplateVersionList = new ArrayList<>();
+      launchTemplateVersionList.add(launchTemplateVersion);
+
       Map<String, List<String>> asgManifestsDataForRollback = chainState.getAsgManifestsDataForRollback();
       if (asgManifestsDataForRollback == null) {
-        Map<String, List<String>> asgManifestsDataForRollback2 = new HashMap<>() {
-          { put(AsgLaunchTemplate, Collections.singletonList(launchTemplateVersion)); }
-        };
+        Map<String, List<String>> asgManifestsDataForRollback2 = new HashMap<>();
+        asgManifestsDataForRollback2.put(AsgLaunchTemplate, launchTemplateVersionList);
         chainState.setAsgManifestsDataForRollback(asgManifestsDataForRollback2);
       } else {
-        asgManifestsDataForRollback.put(AsgLaunchTemplate, Collections.singletonList(launchTemplateVersion));
+        asgManifestsDataForRollback.put(AsgLaunchTemplate, launchTemplateVersionList);
         chainState.setAsgManifestsDataForRollback(asgManifestsDataForRollback);
       }
     }

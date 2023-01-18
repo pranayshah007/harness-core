@@ -17,7 +17,7 @@ import io.harness.cvng.beans.appd.AppDynamicsApplication;
 import io.harness.cvng.beans.appd.AppDynamicsFileDefinition;
 import io.harness.cvng.beans.appd.AppDynamicsTier;
 import io.harness.cvng.beans.appd.AppdynamicsMetricDataResponse;
-import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.core.beans.params.ProjectScopedProjectParams;
 import io.harness.cvng.core.services.api.AppDynamicsService;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.CorrelationContext;
@@ -65,7 +65,8 @@ public class AppDynamicsResource {
   @Timed
   @ExceptionMetered
   @ApiOperation(value = "get metric data for given metric packs", nickname = "getAppdynamicsMetricData")
-  public ResponseDTO<Set<AppdynamicsValidationResponse>> getMetricData(@NotNull @BeanParam ProjectParams projectParams,
+  public ResponseDTO<Set<AppdynamicsValidationResponse>> getMetricData(
+      @NotNull @BeanParam ProjectScopedProjectParams projectParams,
       @QueryParam("connectorIdentifier") @NotNull String connectorIdentifier,
       @QueryParam("appName") @NotNull String appName, @QueryParam("tierName") @NotNull String tierName,
       @QueryParam("requestGuid") @NotNull String requestGuid, @NotNull @Valid @Body List<MetricPackDTO> metricPacks) {
@@ -80,7 +81,7 @@ public class AppDynamicsResource {
   @ExceptionMetered
   @ApiOperation(value = "get all appdynamics applications", nickname = "getAppdynamicsApplications")
   public ResponseDTO<PageResponse<AppDynamicsApplication>> getAllApplications(
-      @NotNull @BeanParam ProjectParams projectParams,
+      @NotNull @BeanParam ProjectScopedProjectParams projectParams,
       @NotNull @QueryParam("connectorIdentifier") final String connectorIdentifier,
       @QueryParam("offset") @NotNull Integer offset, @QueryParam("pageSize") @NotNull Integer pageSize,
       @QueryParam("filter") String filter) {
@@ -94,7 +95,8 @@ public class AppDynamicsResource {
   @Timed
   @ExceptionMetered
   @ApiOperation(value = "get all appdynamics tiers for an application", nickname = "getAppdynamicsTiers")
-  public ResponseDTO<PageResponse<AppDynamicsTier>> getAllTiers(@NotNull @BeanParam ProjectParams projectParams,
+  public ResponseDTO<PageResponse<AppDynamicsTier>> getAllTiers(
+      @NotNull @BeanParam ProjectScopedProjectParams projectParams,
       @NotNull @QueryParam("connectorIdentifier") final String connectorIdentifier,
       @NotNull @QueryParam("appName") String appName, @QueryParam("offset") @NotNull Integer offset,
       @QueryParam("pageSize") @NotNull Integer pageSize, @QueryParam("filter") String filter) {
@@ -108,15 +110,15 @@ public class AppDynamicsResource {
   @Timed
   @ExceptionMetered
   @ApiOperation(value = "get all appdynamics base folders for an application", nickname = "getAppdynamicsBaseFolders")
-  public ResponseDTO<List<String>> getBaseFolders(@NotNull @BeanParam ProjectParams projectParams,
+  public ResponseDTO<List<String>> getBaseFolders(@NotNull @BeanParam ProjectScopedProjectParams projectParams,
       @NotNull @QueryParam("connectorIdentifier") final String connectorIdentifier,
       @NotNull @QueryParam("appName") String appName, @QueryParam("path") @DefaultValue("") String path,
       @QueryParam("routingId") String routingId) {
     if (StringUtils.isEmpty(routingId)) {
       routingId = CorrelationContext.getCorrelationId();
     }
-    return ResponseDTO.newResponse(
-        appDynamicsService.getBaseFolders(projectParams, connectorIdentifier, appName, path, routingId));
+    return ResponseDTO.newResponse(appDynamicsService.getBaseFolders(
+        projectParams.getProjectParams(), connectorIdentifier, appName, path, routingId));
   }
 
   @GET
@@ -126,7 +128,7 @@ public class AppDynamicsResource {
   @ApiOperation(
       value = "get all appdynamics metric structure for an application", nickname = "getAppdynamicsMetricStructure")
   public ResponseDTO<List<AppDynamicsFileDefinition>>
-  getMetricStructure(@NotNull @BeanParam ProjectParams projectParams,
+  getMetricStructure(@NotNull @BeanParam ProjectScopedProjectParams projectParams,
       @NotNull @QueryParam("connectorIdentifier") final String connectorIdentifier,
       @NotNull @QueryParam("appName") String appName, @NotNull @QueryParam("baseFolder") String baseFolder,
       @NotNull @QueryParam("tier") String tier, @NotNull @QueryParam("metricPath") @DefaultValue("") String metricPath,
@@ -135,7 +137,7 @@ public class AppDynamicsResource {
       routingId = CorrelationContext.getCorrelationId();
     }
     return ResponseDTO.newResponse(appDynamicsService.getMetricStructure(
-        projectParams, connectorIdentifier, appName, baseFolder, tier, metricPath, routingId));
+        projectParams.getProjectParams(), connectorIdentifier, appName, baseFolder, tier, metricPath, routingId));
   }
 
   @GET
@@ -146,7 +148,7 @@ public class AppDynamicsResource {
       nickname = "getAppdynamicsMetricDataByPath")
   @Deprecated(since = "moving to v2")
   public ResponseDTO<AppdynamicsMetricDataResponse>
-  getMetricData(@NotNull @BeanParam ProjectParams projectParams,
+  getMetricData(@NotNull @BeanParam ProjectScopedProjectParams projectParams,
       @NotNull @QueryParam("connectorIdentifier") String connectorIdentifier,
       @NotNull @QueryParam("appName") String appName, @NotNull @QueryParam("baseFolder") String baseFolder,
       @NotNull @QueryParam("tier") String tier, @NotNull @QueryParam("metricPath") String metricPath,
@@ -155,7 +157,7 @@ public class AppDynamicsResource {
       routingId = CorrelationContext.getCorrelationId();
     }
     return ResponseDTO.newResponse(appDynamicsService.getMetricData(
-        projectParams, connectorIdentifier, appName, baseFolder, tier, metricPath, routingId));
+        projectParams.getProjectParams(), connectorIdentifier, appName, baseFolder, tier, metricPath, routingId));
   }
 
   @GET
@@ -166,7 +168,7 @@ public class AppDynamicsResource {
       nickname = "getServiceInstanceMetricPath")
   @Deprecated(since = "moving to getCompleteServiceInstanceMetricPath")
   public ResponseDTO<String>
-  getServiceInstanceMetricPath(@BeanParam ProjectParams projectParams,
+  getServiceInstanceMetricPath(@BeanParam ProjectScopedProjectParams projectParams,
       @NotNull @QueryParam("connectorIdentifier") final String connectorIdentifier,
       @NotNull @QueryParam("appName") String appName, @NotNull @QueryParam("baseFolder") String baseFolder,
       @NotNull @QueryParam("tier") String tier, @NotNull @QueryParam("metricPath") String metricPath,
@@ -175,7 +177,7 @@ public class AppDynamicsResource {
       routingId = CorrelationContext.getCorrelationId();
     }
     return ResponseDTO.newResponse(appDynamicsService.getServiceInstanceMetricPath(
-        projectParams, connectorIdentifier, appName, baseFolder, tier, metricPath, routingId));
+        projectParams.getProjectParams(), connectorIdentifier, appName, baseFolder, tier, metricPath, routingId));
   }
 
   @GET
@@ -185,12 +187,12 @@ public class AppDynamicsResource {
   @ApiOperation(value = "get all appdynamics metric data for an application and a complete metric path",
       nickname = "getAppdynamicsMetricDataByPathV2")
   public ResponseDTO<AppdynamicsMetricDataResponse>
-  getMetricData(@NotNull @BeanParam ProjectParams projectParams,
+  getMetricData(@NotNull @BeanParam ProjectScopedProjectParams projectParams,
       @NotNull @QueryParam("connectorIdentifier") String connectorIdentifier,
       @NotNull @QueryParam("appName") String appName,
       @NotNull @QueryParam("completeMetricPath") String completeMetricPath) {
-    return ResponseDTO.newResponse(appDynamicsService.getMetricDataV2(
-        projectParams, connectorIdentifier, appName, completeMetricPath, CorrelationContext.getCorrelationId()));
+    return ResponseDTO.newResponse(appDynamicsService.getMetricDataV2(projectParams.getProjectParams(),
+        connectorIdentifier, appName, completeMetricPath, CorrelationContext.getCorrelationId()));
   }
 
   @GET
@@ -200,11 +202,12 @@ public class AppDynamicsResource {
   @ApiOperation(value = "get complete service instance metric path for an application and a complete metric path",
       nickname = "getCompleteServiceInstanceMetricPath")
   public ResponseDTO<String>
-  getCompleteServiceInstanceMetricPath(@BeanParam ProjectParams projectParams,
+  getCompleteServiceInstanceMetricPath(@BeanParam ProjectScopedProjectParams projectParams,
       @NotNull @QueryParam("connectorIdentifier") final String connectorIdentifier,
       @NotNull @QueryParam("appName") String appName,
       @NotNull @QueryParam("completeMetricPath") String completeMetricPath) {
-    return ResponseDTO.newResponse(appDynamicsService.getCompleteServiceInstanceMetricPath(
-        projectParams, connectorIdentifier, appName, completeMetricPath, CorrelationContext.getCorrelationId()));
+    return ResponseDTO.newResponse(
+        appDynamicsService.getCompleteServiceInstanceMetricPath(projectParams.getProjectParams(), connectorIdentifier,
+            appName, completeMetricPath, CorrelationContext.getCorrelationId()));
   }
 }

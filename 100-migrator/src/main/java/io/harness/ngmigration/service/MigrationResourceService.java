@@ -7,6 +7,7 @@
 
 package io.harness.ngmigration.service;
 
+import static software.wings.ngmigration.NGMigrationEntityType.PIPELINE;
 import static software.wings.ngmigration.NGMigrationEntityType.WORKFLOW;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -18,6 +19,7 @@ import io.harness.ngmigration.dto.ApplicationFilter;
 import io.harness.ngmigration.dto.ConnectorFilter;
 import io.harness.ngmigration.dto.Filter;
 import io.harness.ngmigration.dto.ImportDTO;
+import io.harness.ngmigration.dto.PipelineFilter;
 import io.harness.ngmigration.dto.SaveSummaryDTO;
 import io.harness.ngmigration.dto.SecretFilter;
 import io.harness.ngmigration.dto.SecretManagerFilter;
@@ -27,6 +29,7 @@ import io.harness.ngmigration.dto.TemplateFilter;
 import io.harness.ngmigration.dto.WorkflowFilter;
 import io.harness.ngmigration.service.importer.AppImportService;
 import io.harness.ngmigration.service.importer.ConnectorImportService;
+import io.harness.ngmigration.service.importer.PipelineImportService;
 import io.harness.ngmigration.service.importer.SecretManagerImportService;
 import io.harness.ngmigration.service.importer.SecretsImportService;
 import io.harness.ngmigration.service.importer.ServiceImportService;
@@ -42,6 +45,7 @@ import software.wings.ngmigration.DiscoveryResult;
 import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.service.intfc.WorkflowService;
 
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -61,6 +65,7 @@ public class MigrationResourceService {
   @Inject private DiscoveryService discoveryService;
   @Inject private TemplateImportService templateImportService;
   @Inject private WorkflowImportService workflowImportService;
+  @Inject private PipelineImportService pipelineImportService;
   @Inject private WorkflowService workflowService;
   @Inject HPersistence hPersistence;
   @Inject WorkflowHandlerFactory workflowHandlerFactory;
@@ -90,6 +95,9 @@ public class MigrationResourceService {
     if (filter instanceof WorkflowFilter) {
       return workflowImportService.discover(authToken, importDTO);
     }
+    if (filter instanceof PipelineFilter) {
+      return pipelineImportService.discover(authToken, importDTO);
+    }
     return DiscoveryResult.builder().build();
   }
 
@@ -112,11 +120,15 @@ public class MigrationResourceService {
       expressions = importDTO.getInputs().getExpressions();
     }
 
-    // We do not want to auto migrate WFs. We want customers to migrate WFs by choice.
-    if (!WORKFLOW.equals(importDTO.getEntityType())) {
-      InputDefaults inputDefaults = defaults.getOrDefault(WORKFLOW, new InputDefaults());
-      inputDefaults.setSkipMigration(true);
-      defaults.put(WORKFLOW, inputDefaults);
+    // We do not want to auto migrate WFs/Pipelines. We want customers to migrate WFs/Pipelines by choice.
+    if (!Sets.newHashSet(WORKFLOW, PIPELINE).contains(importDTO.getEntityType())) {
+      InputDefaults wfDefaults = defaults.getOrDefault(WORKFLOW, new InputDefaults());
+      wfDefaults.setSkipMigration(true);
+      defaults.put(WORKFLOW, wfDefaults);
+
+      InputDefaults pipelineDefaults = defaults.getOrDefault(PIPELINE, new InputDefaults());
+      pipelineDefaults.setSkipMigration(true);
+      defaults.put(PIPELINE, pipelineDefaults);
     }
 
     return MigrationInputDTO.builder()
@@ -134,6 +146,7 @@ public class MigrationResourceService {
     Map<String, Workflow> workflowMap = new HashMap<>();
     List<Workflow> workflowsWithAppId = hPersistence.createQuery(Workflow.class)
                                             .filter(WorkflowKeys.accountId, accountId)
+                                            .project(WorkflowKeys.name, true)
                                             .project(WorkflowKeys.uuid, true)
                                             .project(WorkflowKeys.appId, true)
                                             .asList();
@@ -158,9 +171,11 @@ public class MigrationResourceService {
     Map<Integer, Set<SimilarWorkflowDetail>> similarWorkflows = new HashMap<>();
     for (int i = 0; i < list.length; ++i) {
       Set<SimilarWorkflowDetail> ids = similarWorkflows.getOrDefault(list[i], new HashSet<>());
+      Workflow wf = workflowsWithAppId.get(i);
       ids.add(SimilarWorkflowDetail.builder()
-                  .appId(workflowsWithAppId.get(i).getAppId())
-                  .workflowId(workflowsWithAppId.get(i).getUuid())
+                  .workflowName(wf.getName())
+                  .appId(wf.getAppId())
+                  .workflowId(wf.getUuid())
                   .build());
       similarWorkflows.put(list[i], ids);
     }

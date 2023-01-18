@@ -20,6 +20,7 @@ import io.harness.OrchestrationTestBase;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.engine.OrchestrationTestHelper;
 import io.harness.execution.PlanExecution;
 import io.harness.metrics.service.api.MetricService;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
@@ -34,6 +35,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.springframework.data.util.CloseableIterator;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PlanExecutionMonitorServiceImplTest extends OrchestrationTestBase {
@@ -60,7 +62,9 @@ public class PlanExecutionMonitorServiceImplTest extends OrchestrationTestBase {
                            .setupAbstractions(ImmutableMap.of(SetupAbstractionKeys.accountId, "accId3"))
                            .metadata(ExecutionMetadata.newBuilder().setPipelineIdentifier("PiD3").build())
                            .build());
-    doReturn(planExecutions).when(planExecutionService).findByStatusWithProjections(any(), any());
+    CloseableIterator<PlanExecution> iterator =
+        OrchestrationTestHelper.createCloseableIterator(planExecutions.iterator());
+    doReturn(iterator).when(planExecutionService).fetchPlanExecutionsByStatus(any(), any());
     planExecutionMonitorService.registerActiveExecutionMetrics();
     verify(metricService, times(3)).recordMetric(anyString(), anyDouble());
   }

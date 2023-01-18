@@ -25,5 +25,6 @@ public enum SettingCategory {
   GOVERNANCE,
   CHAOS,
   SCIM,
-  GIT_EXPERIENCE
+  GIT_EXPERIENCE,
+  CONNECTORS
 }

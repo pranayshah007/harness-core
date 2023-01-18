@@ -9,10 +9,10 @@ FROM us.gcr.io/platform-205701/ubi/ubi-java:latest as base
 
 ARG INCLUDE_SAAS_APM
 
-# Add the capsule JAR and sto-manager-config.yml
+# Add the capsule JAR and manager-config.yml
 COPY --chown=65534:65534 sto-manager-capsule.jar /opt/harness/
 COPY --chown=65534:65534 keystore.jks /opt/harness/
-COPY --chown=65534:65534 sto-manager-config.yml /opt/harness/
+COPY --chown=65534:65534 ci-manager-config.yml /opt/harness/
 COPY --chown=65534:65534 redisson-jcache.yaml /opt/harness/
 COPY --chown=65534:65534 enterprise-redisson-jcache.yaml /opt/harness/
 COPY --chown=65534:65534 scripts /opt/harness

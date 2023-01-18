@@ -26,6 +26,8 @@ import io.harness.yaml.extended.ci.codebase.impl.BranchBuildSpec;
 import io.harness.yaml.extended.ci.codebase.impl.PRBuildSpec;
 import io.harness.yaml.extended.ci.codebase.impl.TagBuildSpec;
 import io.harness.yaml.extended.ci.container.ContainerResource;
+import io.harness.yaml.registry.Registry;
+import io.harness.yaml.registry.RegistryCredential;
 import io.harness.yaml.repository.Reference;
 import io.harness.yaml.repository.ReferenceType;
 import io.harness.yaml.repository.Repository;
@@ -57,5 +59,7 @@ public class YamlKryoRegistrar implements KryoRegistrar {
     kryo.register(Reference.class, 88512);
     kryo.register(ReferenceType.class, 88513);
     kryo.register(Strategy.class, 88514);
+    kryo.register(Registry.class, 88515);
+    kryo.register(RegistryCredential.class, 88516);
   }
 }

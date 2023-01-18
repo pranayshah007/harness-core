@@ -19,6 +19,7 @@ import io.harness.data.validator.Trimmed;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
+import io.harness.ng.core.ScopeAware;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.infrastructure.InfrastructureType;
 import io.harness.persistence.PersistentEntity;
@@ -49,7 +50,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document("infrastructures")
 @TypeAlias("io.harness.ng.core.infrastructure.entity.InfrastructureEntity")
 @ChangeDataCapture(table = "infrastructures", dataStore = "ng-harness", fields = {}, handler = "Infrastructures")
-public class InfrastructureEntity implements PersistentEntity {
+public class InfrastructureEntity implements PersistentEntity, ScopeAware {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()

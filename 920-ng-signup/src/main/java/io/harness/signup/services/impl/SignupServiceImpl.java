@@ -13,6 +13,7 @@ import static io.harness.configuration.DeployMode.DEPLOY_MODE;
 import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.remote.client.CGRestUtils.getResponse;
+import static io.harness.remote.client.CGRestUtils.getRetryPolicy;
 import static io.harness.signup.services.SignupType.COMMUNITY_PROVISION;
 import static io.harness.utils.CryptoUtils.secureRandAlphaNumString;
 
@@ -104,6 +105,9 @@ public class SignupServiceImpl implements SignupService {
   public static final String INTENT = "module";
   public static final String SIGNUP_ACTION = "license_type";
   public static final String EDITION = "plan";
+  private static final long INITIAL_DELAY = 5L;
+  private static final long MAX_DELAY = 10L;
+
   private AccountService accountService;
   private UserClient userClient;
   private SignupValidator signupValidator;
@@ -212,7 +216,8 @@ public class SignupServiceImpl implements SignupService {
 
     UserInfo userInfo = null;
     try {
-      userInfo = getResponse(userClient.createCommunityUserAndCompleteSignup(signupRequest));
+      userInfo = getResponse(userClient.createCommunityUserAndCompleteSignup(signupRequest),
+          getRetryPolicy("SignupServiceImpl-Request failed", INITIAL_DELAY, MAX_DELAY, ChronoUnit.SECONDS));
     } catch (InvalidRequestException e) {
       if (e.getMessage().contains("User with this email is already registered")) {
         throw new InvalidRequestException("Email is already signed up", ErrorCode.USER_ALREADY_REGISTERED, USER);

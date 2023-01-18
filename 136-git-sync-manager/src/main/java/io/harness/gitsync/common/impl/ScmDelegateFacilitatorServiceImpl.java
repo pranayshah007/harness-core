@@ -9,6 +9,7 @@ package io.harness.gitsync.common.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.utils.DelegateOwner.getNGTaskSetupAbstractionsWithOwner;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -17,6 +18,7 @@ import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.PageRequestDTO;
 import io.harness.beans.Scope;
+import io.harness.beans.WebhookEncryptedSecretDTO;
 import io.harness.beans.gitsync.GitFileDetails;
 import io.harness.beans.gitsync.GitFileDetails.GitFileDetailsBuilder;
 import io.harness.beans.gitsync.GitFilePathDetails;
@@ -49,6 +51,8 @@ import io.harness.delegate.task.scm.ScmPRTaskParams;
 import io.harness.delegate.task.scm.ScmPRTaskResponseData;
 import io.harness.delegate.task.scm.ScmPushTaskParams;
 import io.harness.delegate.task.scm.ScmPushTaskResponseData;
+import io.harness.encryption.SecretRefData;
+import io.harness.encryption.SecretRefHelper;
 import io.harness.exception.DelegateNotAvailableException;
 import io.harness.exception.DelegateServiceDriverException;
 import io.harness.exception.ExplanationException;
@@ -78,6 +82,7 @@ import io.harness.ng.beans.PageRequest;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.userprofile.commons.SCMType;
 import io.harness.ng.webhook.UpsertWebhookRequestDTO;
+import io.harness.ngtriggers.WebhookSecretData;
 import io.harness.product.ci.scm.proto.Commit;
 import io.harness.product.ci.scm.proto.CompareCommitsResponse;
 import io.harness.product.ci.scm.proto.CreateBranchResponse;
@@ -590,6 +595,7 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
     final List<EncryptedDataDetail> encryptionDetails =
         getEncryptedDataDetails(upsertWebhookRequestDTO.getAccountIdentifier(),
             upsertWebhookRequestDTO.getOrgIdentifier(), upsertWebhookRequestDTO.getProjectIdentifier(), scmConnector);
+    final WebhookSecretData webhookSecretData = getWebhookSecretData(upsertWebhookRequestDTO);
     final ScmGitWebhookTaskParams gitWebhookTaskParams =
         ScmGitWebhookTaskParams.builder()
             .gitWebhookTaskType(gitWebhookTaskType)
@@ -599,6 +605,7 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
                                    .hookEventType(upsertWebhookRequestDTO.getHookEventType())
                                    .target(target)
                                    .build())
+            .webhookSecretData(webhookSecretData)
             .build();
     DelegateTaskRequest delegateTaskRequest = getDelegateTaskRequest(upsertWebhookRequestDTO.getAccountIdentifier(),
         upsertWebhookRequestDTO.getOrgIdentifier(), upsertWebhookRequestDTO.getProjectIdentifier(),
@@ -919,6 +926,25 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
     // setting back current principal for all other operations
     GitSyncUtils.setCurrentPrincipalContext(currentPrincipal);
     return encryptedDataDetails;
+  }
+
+  private WebhookSecretData getWebhookSecretData(UpsertWebhookRequestDTO upsertWebhookRequestDTO) {
+    WebhookSecretData webhookSecretData = null;
+    String secretIdentifierRef = upsertWebhookRequestDTO.getWebhookSecretIdentifierRef();
+    if (isNotEmpty(secretIdentifierRef)) {
+      final BaseNGAccess baseNGAccess = getBaseNGAccess(upsertWebhookRequestDTO.getAccountIdentifier(),
+          upsertWebhookRequestDTO.getOrgIdentifier(), upsertWebhookRequestDTO.getProjectIdentifier());
+      SecretRefData secretRefData = SecretRefHelper.createSecretRef(secretIdentifierRef);
+      WebhookEncryptedSecretDTO webhookEncryptedSecretDTO =
+          WebhookEncryptedSecretDTO.builder().secretRef(secretRefData).build();
+      List<EncryptedDataDetail> encryptedDataDetail =
+          secretManagerClientService.getEncryptionDetails(baseNGAccess, webhookEncryptedSecretDTO);
+      webhookSecretData = WebhookSecretData.builder()
+                              .webhookEncryptedSecretDTO(webhookEncryptedSecretDTO)
+                              .encryptedDataDetails(encryptedDataDetail)
+                              .build();
+    }
+    return webhookSecretData;
   }
 
   private DelegateTaskRequest getDelegateTaskRequest(String accountIdentifier, String orgIdentifier,

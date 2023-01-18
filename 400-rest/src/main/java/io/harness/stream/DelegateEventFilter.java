@@ -73,6 +73,7 @@ public class DelegateEventFilter extends BroadcastFilterAdapter {
                                                         .withDelegateTaskId(broadcast.getTaskId())
                                                         .withSync(!broadcast.isAsync())
                                                         .withAccountId(broadcast.getAccountId())
+                                                        .withTaskType(broadcast.getTaskType())
                                                         .build()));
       }
     }

@@ -32,12 +32,10 @@ import io.harness.delegate.beans.terragrunt.response.TerragruntDestroyTaskRespon
 import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
-import io.harness.delegate.task.terraform.TerraformBaseHelper;
 import io.harness.delegate.utils.TaskExceptionUtils;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.logging.LogCallback;
-import io.harness.secretmanagerclient.EncryptDecryptHelper;
 import io.harness.terragrunt.v2.TerragruntClient;
 import io.harness.terragrunt.v2.request.TerragruntApplyCliRequest;
 import io.harness.terragrunt.v2.request.TerragruntCliRequest;
@@ -59,8 +57,6 @@ import org.jose4j.lang.JoseException;
 @OwnedBy(CDP)
 public class TerragruntDestroyTaskNG extends AbstractDelegateRunnableTask {
   @Inject private TerragruntTaskService taskService;
-  @Inject private EncryptDecryptHelper encryptDecryptHelper;
-  @Inject private TerraformBaseHelper terraformHelper;
 
   public TerragruntDestroyTaskNG(DelegateTaskPackage delegateTaskPackage,
       ILogStreamingTaskClient logStreamingTaskClient, Consumer<DelegateTaskResponse> consumer,
@@ -116,13 +112,15 @@ public class TerragruntDestroyTaskNG extends AbstractDelegateRunnableTask {
       LogCallback fetchFilesLogCallback =
           taskService.getLogCallback(getLogStreamingTaskClient(), FETCH_CONFIG_FILES, commandUnitsProgress);
       TerragruntContext terragruntContext =
-          taskService.prepareTerragrunt(fetchFilesLogCallback, destroyTaskParameters, baseDir);
+          taskService.prepareTerragrunt(fetchFilesLogCallback, destroyTaskParameters, baseDir, destroyLogCallback);
 
       TerragruntClient client = terragruntContext.getClient();
 
-      executeWithErrorHandling(client::init,
-          createCliRequest(TerragruntCliRequest.builder(), terragruntContext, destroyTaskParameters).build(),
-          destroyLogCallback);
+      if (TerragruntTaskRunType.RUN_MODULE == destroyTaskParameters.getRunConfiguration().getRunType()) {
+        executeWithErrorHandling(client::init,
+            createCliRequest(TerragruntCliRequest.builder(), terragruntContext, destroyTaskParameters).build(),
+            destroyLogCallback);
+      }
 
       if (isNotEmpty(destroyTaskParameters.getWorkspace())) {
         log.info("Create or select workspace {}", destroyTaskParameters.getWorkspace());

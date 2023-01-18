@@ -40,7 +40,6 @@ import io.harness.security.annotations.NextGenManagerAuth;
 
 import software.wings.ngmigration.DiscoveryResult;
 import software.wings.ngmigration.NGMigrationEntityType;
-import software.wings.ngmigration.NGMigrationStatus;
 import software.wings.security.PermissionAttribute.ResourceType;
 import software.wings.security.annotations.ApiKeyAuthorized;
 import software.wings.security.annotations.Scope;
@@ -152,18 +151,6 @@ public class NgMigrationResource {
         .header("content-disposition", format("attachment; filename = %s_%s_%s.zip", accountId, entityId, entityType))
         .header("content-type", ContentType.IMAGE_PNG)
         .build();
-  }
-
-  @GET
-  @Path("/discover/validate")
-  @Timed
-  @ExceptionMetered
-  @ApiKeyAuthorized(permissionType = LOGGED_IN)
-  public RestResponse<NGMigrationStatus> findDiscoveryErrors(@QueryParam("entityId") String entityId,
-      @QueryParam("appId") String appId, @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @QueryParam("entityType") NGMigrationEntityType entityType) {
-    DiscoveryResult discoveryResult = discoveryService.discover(accountId, appId, entityId, entityType, null);
-    return new RestResponse<>(discoveryService.getMigrationStatus(discoveryResult));
   }
 
   @POST

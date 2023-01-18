@@ -15,12 +15,14 @@ import static io.harness.distribution.constraint.Consumer.State.BLOCKED;
 import static io.harness.distribution.constraint.Consumer.State.FINISHED;
 import static io.harness.execution.NodeExecution.NodeExecutionKeys;
 import static io.harness.pms.contracts.execution.Status.DISCONTINUING;
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import static java.util.stream.Collectors.toList;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 import static org.springframework.data.mongodb.core.query.Query.query;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.distribution.constraint.Constraint;
 import io.harness.distribution.constraint.ConstraintId;
 import io.harness.distribution.constraint.ConstraintUnit;
@@ -53,6 +55,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
+import net.jodah.failsafe.Failsafe;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -71,6 +74,20 @@ public class ResourceRestraintInstanceServiceImpl implements ResourceRestraintIn
   @Override
   public ResourceRestraintInstance save(ResourceRestraintInstance resourceRestraintInstance) {
     return HPersistence.retry(() -> restraintInstanceRepository.save(resourceRestraintInstance));
+  }
+
+  @Override
+  public void deleteInstancesForGivenReleaseType(Set<String> releaseEntityIds, HoldingScope holdingScope) {
+    if (EmptyPredicate.isEmpty(releaseEntityIds)) {
+      return;
+    }
+    Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> {
+      // Uses - releaseEntityType_releaseEntityId_idx
+      Query query = query(where(ResourceRestraintInstanceKeys.releaseEntityType).is(holdingScope.name()))
+                        .addCriteria(where(ResourceRestraintInstanceKeys.releaseEntityId).in(releaseEntityIds));
+      mongoTemplate.remove(query, ResourceRestraintInstance.class);
+      return true;
+    });
   }
 
   @Override

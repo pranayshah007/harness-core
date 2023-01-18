@@ -12,23 +12,36 @@ SUITE_PACKAGE_NAME = "package_name"
 SUITE_INDEX = "index"
 SUITE_TEST_CLASS = "test_class"
 COMBINED_TESTS_TARGET = "combined_tests"
+TEST_PACKAGE_PATTERNS = ["src/test/java/", "src/test/"]  # needs to be ordered most specific to least specific
 
-def run_tests_targets():
+def run_tests_targets(srcs = "src/test/**/*Test.java"):
     targets = []
-    test_files = native.glob(["src/test/**/*Test.java"])
+    test_files = native.glob([srcs])
     for idx in range(len(test_files)):
-        test = test_files[idx][14:][:-5].replace("/", ".")
+        test = normalize_path(test_files[idx])
         x = hash(test)
         if (x % DISTRIBUTE_TESTING_WORKERS != DISTRIBUTE_TESTING_WORKER):
             continue
         targets += [test]
     return targets
 
-def run_tests(**kwargs):
-    targets = run_tests_targets()
+def normalize_path(path):
+    for pattern in TEST_PACKAGE_PATTERNS:
+        if pattern in path:  # For root level build file we have relative path from root
+            return path[len(pattern):][:-5].replace("/", ".")
+
+        # native.package_name() resolves to the package of the BUILD.bazel file that invokes the rule starting from the src root
+        # e.g. 260-delegate/src/test/java/io/harness/delegate/app/platform, we are interested in Java package part.
+        bazel_package = native.package_name()
+        class_name = path[:-5].replace("/", ".")
+        if pattern in bazel_package:  # For package level build files, we have just class names
+            return bazel_package.split(pattern)[1].replace("/", ".") + "." + class_name
+
+def run_tests(srcs = "src/test/**/*Test.java", **kwargs):
+    targets = run_tests_targets(srcs)
     for test in targets:
         native.java_test(
-            name = test,
+            name = test,  # IntelliJ bazel plugin (mostly) assumes test target name is FQN of test class.
             runtime_deps = ["tests"],
             size = "enormous",
             jvm_flags = [

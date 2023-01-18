@@ -10,7 +10,7 @@ package io.harness.cvng.core.resources;
 import io.harness.annotations.ExposeInternalException;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.core.beans.params.ProjectScopedProjectParams;
 import io.harness.cvng.core.services.api.AwsService;
 import io.harness.cvng.core.services.api.CloudWatchService;
 import io.harness.ng.core.dto.ErrorDTO;
@@ -55,14 +55,14 @@ public class CloudWatchMetricsResource {
   @Timed
   @ExceptionMetered
   @ApiOperation(value = "get sample data for given query", nickname = "getSampleDataForQuery")
-  public ResponseDTO<Map> getSampleDataForQuery(@NotNull @BeanParam ProjectParams projectParams,
+  public ResponseDTO<Map> getSampleDataForQuery(@NotNull @BeanParam ProjectScopedProjectParams projectParams,
       @QueryParam("connectorIdentifier") @NotNull @NotBlank String connectorIdentifier,
       @QueryParam("requestGuid") @NotNull @NotBlank String requestGuid,
       @QueryParam("region") @NotNull @NotBlank String region,
       @QueryParam("expression") @NotNull @NotBlank String expression, @QueryParam("metricName") String metricName,
       @QueryParam("metricIdentifier") String metricIdentifier) {
-    return ResponseDTO.newResponse(cloudWatchService.fetchSampleData(
-        projectParams, connectorIdentifier, requestGuid, expression, region, metricName, metricIdentifier));
+    return ResponseDTO.newResponse(cloudWatchService.fetchSampleData(projectParams.getProjectParams(),
+        connectorIdentifier, requestGuid, expression, region, metricName, metricIdentifier));
   }
 
   @GET

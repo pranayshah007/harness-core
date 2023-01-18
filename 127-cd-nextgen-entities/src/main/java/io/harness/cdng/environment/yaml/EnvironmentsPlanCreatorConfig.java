@@ -52,4 +52,5 @@ public class EnvironmentsPlanCreatorConfig {
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) String description;
   List<IndividualEnvData> individualEnvDataList;
   ParameterField<List<FilterYaml>> filters;
+  EnvironmentsYaml environmentsYaml;
 }

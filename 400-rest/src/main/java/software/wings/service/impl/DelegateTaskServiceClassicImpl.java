@@ -1504,7 +1504,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
       // TODO: Ideally we should not land here, as we should always be passing TaskParameter only for
       // TODO: delegate task. But for now, this is needed. (e.g. Tasks containing Jenkinsonfig, BambooConfig etc.)
       Map<String, EncryptionConfig> encryptionConfigMap =
-          CapabilityHelper.fetchEncryptionDetailsListFromParameters(delegateTask.getData());
+          CapabilityHelper.fetchEncryptionDetailsListFromParametersV2(delegateTask.getTaskDataV2());
       copyTaskDataV2ToTaskData(delegateTask);
       return DelegateTaskPackage.builder()
           .accountId(delegateTask.getAccountId())
@@ -1524,7 +1524,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
       return;
     }
     delegateCallbackService.publishTaskProgressResponse(
-        delegateTaskId, generateUuid(), kryoSerializer.asDeflatedBytes(responseData));
+        delegateTaskId, generateUuid(), referenceFalseKryoSerializer.asDeflatedBytes(responseData));
   }
 
   @VisibleForTesting
@@ -1879,11 +1879,11 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
       if (delegateTask.getData().isAsync()) {
         log.debug("Publishing async task response...");
         delegateCallbackService.publishAsyncTaskResponse(
-            delegateTask.getUuid(), kryoSerializer.asDeflatedBytes(response.getResponse()));
+            delegateTask.getUuid(), referenceFalseKryoSerializer.asDeflatedBytes(response.getResponse()));
       } else {
         log.debug("Publishing sync task response...");
         delegateCallbackService.publishSyncTaskResponse(
-            delegateTask.getUuid(), kryoSerializer.asDeflatedBytes(response.getResponse()));
+            delegateTask.getUuid(), referenceFalseKryoSerializer.asDeflatedBytes(response.getResponse()));
       }
     } catch (Exception ex) {
       log.error("Failed publishing task response for task", ex);
@@ -1990,6 +1990,12 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
             .collect(Collectors.joining("\n")));
   }
   private void saveDelegateTask(DelegateTask delegateTask, String accountId) {
+    if (mainConfiguration.getQueueServiceConfig() != null
+        && !mainConfiguration.getQueueServiceConfig().isEnableQueueAndDequeue()) {
+      persistence.save(delegateTask);
+      return;
+    }
+
     if (featureFlagService.isEnabled(QUEUE_CI_EXECUTIONS, accountId)
         && !delegateTaskQueueService.isResourceAvailableToAssignTask(delegateTask)) {
       delegateTaskQueueService.enqueue(delegateTask);

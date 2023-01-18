@@ -59,5 +59,17 @@ public class PipelineAsyncValidationHelperTest extends CategoryTest {
         ValidationStatus.IN_PROGRESS, ValidationResult.builder().build());
     assertTrue(updateOperations.modifies("status"));
     assertTrue(updateOperations.modifies("result"));
+
+    updateOperations =
+        PipelineAsyncValidationHelper.getUpdateOperations(ValidationStatus.SUCCESS, ValidationResult.builder().build());
+    assertTrue(updateOperations.modifies("status"));
+    assertTrue(updateOperations.modifies("result"));
+    assertTrue(updateOperations.modifies("endTs"));
+
+    updateOperations =
+        PipelineAsyncValidationHelper.getUpdateOperations(ValidationStatus.FAILURE, ValidationResult.builder().build());
+    assertTrue(updateOperations.modifies("status"));
+    assertTrue(updateOperations.modifies("result"));
+    assertTrue(updateOperations.modifies("endTs"));
   }
 }

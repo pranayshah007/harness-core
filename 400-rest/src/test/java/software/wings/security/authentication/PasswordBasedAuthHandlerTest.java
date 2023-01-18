@@ -9,6 +9,7 @@ package software.wings.security.authentication;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.NATHAN;
+import static io.harness.rule.OwnerRule.PRATEEK;
 import static io.harness.rule.OwnerRule.RAJ;
 import static io.harness.rule.OwnerRule.RUSHABH;
 
@@ -261,5 +262,25 @@ public class PasswordBasedAuthHandlerTest extends CategoryTest {
     when(domainWhitelistCheckerService.isDomainWhitelisted(mockUser)).thenReturn(true);
     User user = authHandler.authenticate("admin@harness.io", "admin").getUser();
     assertThat(user).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
+  public void testSaasUserPasswordNoPasswordHash() throws MaxLoginAttemptExceededException {
+    User user = new User();
+    user.setDefaultAccountId("kmpySmUISimoRrJL6NL73w");
+    user.setEmailVerified(true);
+    user.setUuid("kmpySmUISimoRrJL6NL73w");
+    user.setPasswordHash(null);
+
+    authHandler.setDeployVariant(DeployVariant.SAAS);
+    doReturn(user).when(authHandler).getUser(anyString());
+
+    try {
+      authHandler.authenticate("admin@harness.io", "admin");
+    } catch (WingsException e) {
+      assertThat(e.getMessage()).isEqualTo(ErrorCode.INVALID_CREDENTIAL.name());
+    }
   }
 }

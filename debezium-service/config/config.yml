@@ -26,34 +26,58 @@ server:
     appenders: []
   maxThreads: 1024
 
-
+# explanation about fields is mentioned in DebeziumConfig class.
+# Please follow the naming convention for override variables for the configs
 debeziumConfigs:
-  - isEnabled: true
-    name: ${DEBEZIUM_NAME:-pipeline} # unique for each debezium config
-    key.converter.schemas.enable: ${KEY_CONVERTER_SCHEMAS_ENABLE:-false}
-    value.converter.schemas.enable: ${VALUE_CONVERTER_SCHEMAS_ENABLE:-false}
-    offset.flush.interval.ms: ${OFFSET_FLUSH_INTERVAL_MS:-5000}
-    mongodb.name: ${MONGODB_NAME:-pmsMongo} # unique for each debezium config
-    mongodb.ssl.enabled: ${MONGO_DB_SSL_ENABLED:-false}
-    connector.class: ${CONNECTOR_CLASS:-io.debezium.connector.mongodb.MongoDbConnector}
-    database.include.list: ${DATABASE_INCLUDE_LIST:-pms-harness}
-    collection.include.list: ${COLLECTION_INCLUDE_LIST:-pms-harness.planExecutionsSummary}
-    connect.backoff.initial.delay.ms: ${CONNECT_BACKOFF_INITIAL_DELAY_MS:-1000}
-    connect.backoff.max.delay.ms: ${CONNECT_BACKOFF_MAX_DELAY_MS:-10000}
-    connect.max.attempts: ${CONNECT_MAX_ATTEMPTS:-3}
-    snapshot.fetch.size: ${SNAPSHOT_FETCH_SIZE:-2000}
-    sleepInterval: ${SLEEP_INTERVAL:-0}
-    producingCountPerBatch: ${PRODUCING_COUNT_PER_BATCH:-1000}
-    redisStreamSize: ${REDIS_STREAM_SIZE:-10000}
-    snapshot.mode: ${SNAPSHOT_MODE:-never}
-    transforms.unwrap.array.encoding: ${TRANSFORMS_UNWRAP_ARRAY_ENCODING:-document}
-    max.queue.size: ${MAX_QUEUE_SIZE:-8192}
-    max.batch.size: ${MAX_BATCH_SIZE:-2048}
-    max.queue.size.in.bytes: ${MAX_QUEUE_SIZE_IN_BYTES:-1000000000}
-    poll.interval.ms: ${POLL_INTERVAL_MS:-3000}
-    field.exclude.list: ${FIELD_EXCLUDE_LIST:-pms-harness.planExecutionsSummary.layoutNodeMap}
-    heartbeat.interval.ms: ${HEARTBEAT_INTERVAL_MS:-10000}
-    mongodb.connection.string: ${MONGODB_CONNECTION_STRING:-mongodb://localhost:27017}
+  - isEnabled: ${IS_ENABLED_PIPELINE:-true}
+    name: ${DEBEZIUM_NAME_PIPELINE:-pipeline} # unique for each debezium config
+    mongodb.name: ${MONGODB_NAME_PIPELINE:-pmsMongo} # unique for each debezium config
+    mongodb.ssl.enabled: ${MONGO_DB_SSL_ENABLED_PIPELINE:-false}
+    database.include.list: ${DATABASE_INCLUDE_LIST_PIPELINE:-pms-harness}
+    collection.include.list: ${COLLECTION_INCLUDE_LIST_PIPELINE:-pms-harness.planExecutionsSummary}
+    redisStreamSize: ${REDIS_STREAM_SIZE_PIPELINE:-10000}
+    snapshot.mode: ${SNAPSHOT_MODE_PIPELINE:-never}
+    max.queue.size: ${MAX_QUEUE_SIZE_PIPELINE:-8192}
+    max.batch.size: ${MAX_BATCH_SIZE_PIPELINE:-2048}
+    max.queue.size.in.bytes: ${MAX_QUEUE_SIZE_IN_BYTES_PIPELINE:-1000000000}
+    poll.interval.ms: ${POLL_INTERVAL_MS_PIPELINE:-3000}
+    field.exclude.list: ${FIELD_EXCLUDE_LIST_PIPELINE:-pms-harness.planExecutionsSummary.layoutNodeMap}
+    heartbeat.interval.ms: ${HEARTBEAT_INTERVAL_MS_PIPELINE:-10000}
+    mongodb.connection.string: ${MONGODB_CONNECTION_STRING_PIPELINE:-mongodb://localhost:27017}
+  - isEnabled: ${IS_ENABLED_PIPELINE_SNAPSHOT:-true}
+    name: ${DEBEZIUM_NAME_PIPELINE_SNAPSHOT:-pipelineSnapshot} # unique for each debezium config
+    mongodb.name: ${MONGODB_NAME_PIPELINE_SNAPSHOT:-pmsMongoSnapshot} # unique for each debezium config
+    mongodb.ssl.enabled: ${MONGO_DB_SSL_ENABLED_PIPELINE_SNAPSHOT:-false}
+    database.include.list: ${DATABASE_INCLUDE_LIST_PIPELINE_SNAPSHOT:-pms-harness}
+    collection.include.list: ${COLLECTION_INCLUDE_LIST_PIPELINE_SNAPSHOT:-pms-harness.planExecutionsSummary}
+    redisStreamSize: ${REDIS_STREAM_SIZE_PIPELINE_SNAPSHOT:-10000}
+    snapshot.mode: ${SNAPSHOT_MODE_PIPELINE_SNAPSHOT:-initial}
+    max.queue.size: ${MAX_QUEUE_SIZE_PIPELINE_SNAPSHOT:-8192}
+    max.batch.size: ${MAX_BATCH_SIZE_PIPELINE_SNAPSHOT:-2048}
+    max.queue.size.in.bytes: ${MAX_QUEUE_SIZE_IN_BYTES_PIPELINE_SNAPSHOT:-1000000000}
+    poll.interval.ms: ${POLL_INTERVAL_MS_PIPELINE_SNAPSHOT:-3000}
+    field.exclude.list: ${FIELD_EXCLUDE_LIST_PIPELINE_SNAPSHOT:-pms-harness.planExecutionsSummary.layoutNodeMap}
+    heartbeat.interval.ms: ${HEARTBEAT_INTERVAL_MS_PIPELINE_SNAPSHOT:-10000}
+    mongodb.connection.string: ${MONGODB_CONNECTION_STRING_PIPELINE_SNAPSHOT:-mongodb://localhost:27017}
+    eventsFramework:
+      redis:
+        sentinel: false
+        masterName: ${SNAPSHOT_EVENTS_FRAMEWORK_MASTER_NAME:-test}
+        redisUrl: ${SNAPSHOT_EVENTS_FRAMEWORK_REDIS_URL:-redis://localhost:6379}
+        sentinelUrls:
+          - "redis://redis1:26379"
+          - "redis://redis2:26379"
+          - "redis://redis3:26379"
+        envNamespace: ${SNAPSHOT_EVENTS_FRAMEWORK_ENV_NAMESPACE:-""}
+        readMode: ${SNAPSHOT_EVENTS_FRAMEWORK_READ_MODE:-MASTER}
+        nettyThreads: ${SNAPSHOT_EVENTS_FRAMEWORK_NETTY_THREADS:-16}
+        useScriptCache:  ${SNAPSHOT_EVENTS_FRAMEWORK_USE_SCRIPT_CACHE:-true}
+        userName: ${SNAPSHOT_EVENTS_FRAMEWORK_USERNAME:-}
+        password: ${SNAPSHOT_EVENTS_FRAMEWORK_PASSWORD:-}
+        sslConfig:
+          enabled: ${SNAPSHOT_EVENTS_FRAMEWORK_SSL_CONFIG_ENABLED:-false}
+          CATrustStorePath: ${SNAPSHOT_EVENTS_FRAMEWORK_CATRUST_STORE_PATH:-/tmp/ca_trust_store}
+          CATrustStorePassword:  ${SNAPSHOT_EVENTS_FRAMEWORK_CATRUST_STORE_PASSWORD:-}
 
 eventsFramework:
   redis:

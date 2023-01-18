@@ -21,7 +21,7 @@ import io.harness.cdng.creator.plan.service.ServiceAllInOnePlanCreatorUtils;
 import io.harness.cdng.creator.plan.service.ServicePlanCreatorHelper;
 import io.harness.cdng.envGroup.yaml.EnvGroupPlanCreatorConfig;
 import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
-import io.harness.cdng.environment.helper.EnvironmentInfraFilterHelper;
+import io.harness.cdng.environment.helper.EnvironmentInfraFilterUtils;
 import io.harness.cdng.environment.helper.EnvironmentsPlanCreatorHelper;
 import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
@@ -146,8 +146,6 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   @Inject private ServicePlanCreatorHelper servicePlanCreatorHelper;
   @Inject private FreezeEvaluateService freezeEvaluateService;
   @Inject @Named("PRIVILEGED") private AccessControlClient accessControlClient;
-
-  @Inject private EnvironmentInfraFilterHelper environmentInfraFilterHelper;
 
   @Override
   public Set<String> getSupportedStageTypes() {
@@ -402,7 +400,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
 
     // If filters are present
     if (featureFlagHelperService.isEnabled(ctx.getAccountIdentifier(), FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS)
-        && (environmentInfraFilterHelper.areFiltersPresent(stageNode.deploymentStageConfig.getEnvironments()))) {
+        && (EnvironmentInfraFilterUtils.areFiltersPresent(stageNode.deploymentStageConfig.getEnvironments()))) {
       subType = MultiDeploymentSpawnerUtils.MULTI_SERVICE_ENV_DEPLOYMENT;
     } else {
       if (stageConfig.getEnvironments() == null) {
@@ -636,7 +634,6 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
       YamlField executionUuid) {
     PlanNode gitopsNode = null;
     final String postServiceStepUuid = "gitOpsClusters-" + UUIDGenerator.generateUuid();
-
     EnvironmentGroupYaml envGroupYaml = stageNode.getDeploymentStageConfig().getEnvironmentGroup();
     if (envGroupYaml != null) {
       EnvGroupPlanCreatorConfig config = envGroupPlanCreatorHelper.createEnvGroupPlanCreatorConfig(ctx, envGroupYaml);

@@ -54,6 +54,9 @@ public class ExplanationException extends WingsException {
       "One or more of Client Id, Subscription, Tenant ID and Secret key is/are invalid.";
   public static String INVALID_PARAMETER = "The credentials provided are incorrect.";
   public static String AZURE_INVALID = "There was an issue with Azure.";
+  public static final String AZURE_ARTIFACT_NOT_FOUND_FOR_PACKAGE =
+      "Artifact file not found for downloading the package.";
+  public static final String AZURE_ARTIFACT_DOWNLOAD_FAILED = "Artifact download failed.";
 
   // GIT
   public static String INVALID_GIT_REPO = "Provided repo url is invalid.";

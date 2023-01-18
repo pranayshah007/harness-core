@@ -19,7 +19,7 @@ import io.harness.cvng.core.beans.change.ChangeSummaryDTO;
 import io.harness.cvng.core.beans.change.ChangeTimeline;
 import io.harness.cvng.core.beans.monitoredService.DurationDTO;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
-import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.core.beans.params.ProjectScopedProjectParams;
 import io.harness.cvng.core.services.api.ChangeEventService;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.DelegateAuth;
@@ -71,7 +71,7 @@ public class ChangeEventResource {
   @ApiOperation(
       value = "get ChangeEvent summary for monitored service", nickname = "getMonitoredServiceChangeEventSummary")
   public RestResponse<ChangeSummaryDTO>
-  getSummary(@NotNull @BeanParam ProjectParams projectParams,
+  getSummary(@NotNull @BeanParam ProjectScopedProjectParams projectParams,
       @QueryParam("monitoredServiceIdentifier") String monitoredServiceIdentifier,
       @QueryParam("monitoredServiceIdentifiers") List<String> monitoredServiceIdentifiers,
       @QueryParam("isMonitoredServiceIdentifierScoped") boolean isMonitoredServiceIdentifierScoped,
@@ -79,9 +79,9 @@ public class ChangeEventResource {
       @QueryParam("changeSourceTypes") List<ChangeSourceType> changeSourceTypes,
       @ApiParam(required = true) @NotNull @QueryParam("startTime") long startTime,
       @ApiParam(required = true) @NotNull @QueryParam("endTime") long endTime) {
-    return new RestResponse<>(changeEventService.getChangeSummary(projectParams, monitoredServiceIdentifier,
-        monitoredServiceIdentifiers, isMonitoredServiceIdentifierScoped, changeCategories, changeSourceTypes,
-        Instant.ofEpochMilli(startTime), Instant.ofEpochMilli(endTime)));
+    return new RestResponse<>(changeEventService.getChangeSummary(projectParams.getProjectParams(),
+        monitoredServiceIdentifier, monitoredServiceIdentifiers, isMonitoredServiceIdentifierScoped, changeCategories,
+        changeSourceTypes, Instant.ofEpochMilli(startTime), Instant.ofEpochMilli(endTime)));
   }
 
   @GET
@@ -92,7 +92,7 @@ public class ChangeEventResource {
   @ApiOperation(
       value = "get monitored service timeline with durationDTO", nickname = "getMonitoredServiceChangeTimeline")
   public RestResponse<ChangeTimeline>
-  getMonitoredServiceChangeTimeline(@NotNull @BeanParam ProjectParams projectParams,
+  getMonitoredServiceChangeTimeline(@NotNull @BeanParam ProjectScopedProjectParams projectParams,
       @QueryParam("monitoredServiceIdentifier") String monitoredServiceIdentifier,
       @QueryParam("changeSourceTypes") List<ChangeSourceType> changeSourceTypes,
       @QueryParam("searchText") String searchText, @NotNull @QueryParam("duration") DurationDTO durationDTO,

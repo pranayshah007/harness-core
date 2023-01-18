@@ -47,10 +47,12 @@ import io.harness.provision.TerraformConstants;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.utils.IdentifierRefHelper;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -67,7 +69,7 @@ public class TerraformApplyStep extends CdTaskExecutable<TerraformTaskNGResponse
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
 
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private TerraformStepHelper helper;
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
   @Inject private PipelineRbacHelper pipelineRbacHelper;
@@ -183,7 +185,7 @@ public class TerraformApplyStep extends CdTaskExecutable<TerraformTaskNGResponse
             .timeout(StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
             .parameters(new Object[] {terraformTaskNGParameters})
             .build();
-    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+    return TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
         Collections.singletonList(TerraformCommandUnit.Apply.name()),
         terraformTaskNGParameters.getDelegateTaskType().getDisplayName(),
         TaskSelectorYaml.toTaskSelector(stepParameters.getDelegateSelectors()),
@@ -235,7 +237,7 @@ public class TerraformApplyStep extends CdTaskExecutable<TerraformTaskNGResponse
             .timeout(StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
             .parameters(new Object[] {terraformTaskNGParameters})
             .build();
-    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+    return TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
         Collections.singletonList(TerraformCommandUnit.Apply.name()),
         terraformTaskNGParameters.getDelegateTaskType().getDisplayName(),
         TaskSelectorYaml.toTaskSelector(stepParameters.getDelegateSelectors()),

@@ -7,14 +7,25 @@
 
 package io.harness.template.utils;
 
+import static java.lang.String.format;
+
 import io.harness.beans.Scope;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ScmException;
+import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorDTO;
+import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperDTO;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityInfo;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
+import io.harness.pms.yaml.YamlField;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.template.entity.TemplateEntity;
+import io.harness.yaml.validator.InvalidYamlException;
 
+import java.io.IOException;
+import java.util.Collections;
+import lombok.NonNull;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -73,5 +84,40 @@ public class TemplateUtils {
       gitEntityInfo.setParentEntityAccountIdentifier(accountIdentifier);
       GitAwareContextHelper.updateGitEntityContext(gitEntityInfo);
     }
+  }
+
+  @NonNull
+  public YamlField getTemplateYamlFieldElseThrow(
+      String orgIdentifier, String projectIdentifier, String templateIdentifier, String importedTemplate) {
+    if (EmptyPredicate.isEmpty(importedTemplate)) {
+      String errorMessage =
+          format("Empty YAML found on Git in branch [%s] for template [%s] under Project[%s], Organization [%s].",
+              GitAwareContextHelper.getBranchInRequest(), templateIdentifier, projectIdentifier, orgIdentifier);
+      throw buildInvalidYamlException(errorMessage, importedTemplate);
+    }
+    YamlField templateYamlField;
+    try {
+      templateYamlField = YamlUtils.readTree(importedTemplate);
+    } catch (IOException e) {
+      String errorMessage = format("File found on Git in branch [%s] for filepath [%s] is not a YAML.",
+          GitAwareContextHelper.getBranchInRequest(), GitAwareContextHelper.getFilepathInRequest());
+      throw buildInvalidYamlException(errorMessage, importedTemplate);
+    }
+    YamlField templateInnerField = templateYamlField.getNode().getField(YAMLFieldNameConstants.TEMPLATE);
+    if (templateInnerField == null) {
+      String errorMessage = format("File found on Git in branch [%s] for filepath [%s] is not a Template YAML.",
+          GitAwareContextHelper.getBranchInRequest(), GitAwareContextHelper.getFilepathInRequest());
+      throw buildInvalidYamlException(errorMessage, importedTemplate);
+    }
+    return templateInnerField;
+  }
+
+  private InvalidYamlException buildInvalidYamlException(String errorMessage, String pipelineYaml) {
+    YamlSchemaErrorWrapperDTO errorWrapperDTO =
+        YamlSchemaErrorWrapperDTO.builder()
+            .schemaErrors(
+                Collections.singletonList(YamlSchemaErrorDTO.builder().message(errorMessage).fqn("$.template").build()))
+            .build();
+    return new InvalidYamlException(errorMessage, errorWrapperDTO, pipelineYaml);
   }
 }

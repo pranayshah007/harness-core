@@ -90,7 +90,7 @@ public class ScmDelegateClientImpl implements ScmDelegateClient {
           "The delegate encountered internal error and was unable to perform the operation. Scm Manager could not be created",
           e);
       throw new ScmInternalServerErrorException(
-          "The delegate encountered internal error and was unable to perform the operation. Please try after some time.");
+          "The delegate encountered internal error and was unable to perform the operation. Scm binary not found.");
     }
     throw new InvalidRequestException("SCM on" + OS + "is not supported yet");
   }

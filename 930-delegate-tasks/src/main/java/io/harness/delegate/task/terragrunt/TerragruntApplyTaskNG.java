@@ -33,13 +33,11 @@ import io.harness.delegate.beans.terragrunt.response.TerragruntApplyTaskResponse
 import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
-import io.harness.delegate.task.terraform.TerraformBaseHelper;
 import io.harness.delegate.utils.TaskExceptionUtils;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.logging.LogCallback;
 import io.harness.logging.PlanLogOutputStream;
-import io.harness.secretmanagerclient.EncryptDecryptHelper;
 import io.harness.terragrunt.v2.TerragruntClient;
 import io.harness.terragrunt.v2.request.TerragruntApplyCliRequest;
 import io.harness.terragrunt.v2.request.TerragruntCliRequest;
@@ -66,8 +64,6 @@ import org.jose4j.lang.JoseException;
 @OwnedBy(CDP)
 public class TerragruntApplyTaskNG extends AbstractDelegateRunnableTask {
   @Inject private TerragruntTaskService taskService;
-  @Inject private EncryptDecryptHelper encryptDecryptHelper;
-  @Inject private TerraformBaseHelper terraformHelper;
 
   public TerragruntApplyTaskNG(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
       Consumer<DelegateTaskResponse> consumer, BooleanSupplier preExecute) {
@@ -121,13 +117,15 @@ public class TerragruntApplyTaskNG extends AbstractDelegateRunnableTask {
       LogCallback fetchFilesLogCallback =
           taskService.getLogCallback(getLogStreamingTaskClient(), FETCH_CONFIG_FILES, commandUnitsProgress);
       TerragruntContext terragruntContext =
-          taskService.prepareTerragrunt(fetchFilesLogCallback, applyTaskParameters, baseDir);
+          taskService.prepareTerragrunt(fetchFilesLogCallback, applyTaskParameters, baseDir, applyLogCallback);
 
       TerragruntClient client = terragruntContext.getClient();
 
-      executeWithErrorHandling(client::init,
-          createCliRequest(TerragruntCliRequest.builder(), terragruntContext, applyTaskParameters).build(),
-          applyLogCallback);
+      if (TerragruntTaskRunType.RUN_MODULE == applyTaskParameters.getRunConfiguration().getRunType()) {
+        executeWithErrorHandling(client::init,
+            createCliRequest(TerragruntCliRequest.builder(), terragruntContext, applyTaskParameters).build(),
+            applyLogCallback);
+      }
 
       if (isNotEmpty(applyTaskParameters.getWorkspace())) {
         log.info("Create or select workspace {}", applyTaskParameters.getWorkspace());
@@ -168,8 +166,7 @@ public class TerragruntApplyTaskNG extends AbstractDelegateRunnableTask {
       }
 
       String planName = TERRAFORM_PLAN_FILE_OUTPUT_NAME;
-      applyLogCallback.saveExecutionLog(
-          color(format("\nExecute terragrunt apply for '%s'", planName), LogColor.White, LogWeight.Bold));
+      applyLogCallback.saveExecutionLog(color("\nExecute terragrunt apply", LogColor.White, LogWeight.Bold));
       executeWithErrorHandling(client::apply,
           createCliRequest(TerragruntApplyCliRequest.builder(), terragruntContext, applyTaskParameters)
               .terraformPlanName(planName)
@@ -177,7 +174,7 @@ public class TerragruntApplyTaskNG extends AbstractDelegateRunnableTask {
           applyLogCallback);
 
       applyLogCallback.saveExecutionLog(
-          color(format("Terragrunt Apply '%s' successfully executed \n", planName), LogColor.White, LogWeight.Bold));
+          color("Terragrunt Apply successfully executed \n", LogColor.White, LogWeight.Bold));
 
       File tfOutputsFile =
           Paths.get(terragruntContext.getScriptDirectory(), format(TERRAFORM_VARIABLES_FILE_NAME, "output")).toFile();

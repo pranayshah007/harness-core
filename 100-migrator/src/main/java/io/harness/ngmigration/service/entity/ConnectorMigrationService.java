@@ -53,7 +53,6 @@ import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.DiscoveryNode;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.ngmigration.NGMigrationEntityType;
-import software.wings.ngmigration.NGMigrationStatus;
 import software.wings.service.intfc.SettingsService;
 
 import com.google.inject.Inject;
@@ -141,26 +140,6 @@ public class ConnectorMigrationService extends NgMigrationService {
   @Override
   public DiscoveryNode discover(String accountId, String appId, String entityId) {
     return discover(settingsService.getByAccountAndId(accountId, entityId));
-  }
-
-  @Override
-  public NGMigrationStatus canMigrate(NGMigrationEntity entity) {
-    SettingAttribute settingAttribute = (SettingAttribute) entity;
-    BaseConnector connectorImpl = ConnectorFactory.getConnector(settingAttribute);
-    if (connectorImpl.isConnectorSupported(settingAttribute)) {
-      return NGMigrationStatus.builder().status(true).build();
-    }
-    return NGMigrationStatus.builder()
-        .status(false)
-        .reasons(Collections.singletonList(
-            String.format("Connector/Cloud Provider %s is not supported with migration", settingAttribute.getName())))
-        .build();
-  }
-
-  @Override
-  public NGMigrationStatus canMigrate(
-      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId) {
-    return canMigrate(entities.get(entityId).getEntity());
   }
 
   @Override

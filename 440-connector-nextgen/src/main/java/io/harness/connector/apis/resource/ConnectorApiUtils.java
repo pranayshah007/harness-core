@@ -98,7 +98,7 @@ public class ConnectorApiUtils {
     ConnectorInfoDTO connectorInfoDTO = connectorResponseDTO.getConnector();
     Connector connector = new Connector();
     connector.setName(connectorInfoDTO.getName());
-    connector.setSlug(connectorInfoDTO.getIdentifier());
+    connector.setIdentifier(connectorInfoDTO.getIdentifier());
     connector.setOrg(connectorInfoDTO.getOrgIdentifier());
     connector.setProject(connectorInfoDTO.getProjectIdentifier());
     connector.setDescription(connectorInfoDTO.getDescription());
@@ -392,7 +392,7 @@ public class ConnectorApiUtils {
   public ConnectorInfoDTO toConnectorInfoDTO(Connector connector) {
     ConnectorInfoDTOBuilder connectorInfoDTOBuilder = ConnectorInfoDTO.builder()
                                                           .name(connector.getName())
-                                                          .identifier(connector.getSlug())
+                                                          .identifier(connector.getIdentifier())
                                                           .description(connector.getDescription())
                                                           .orgIdentifier(connector.getOrg())
                                                           .projectIdentifier(connector.getProject())

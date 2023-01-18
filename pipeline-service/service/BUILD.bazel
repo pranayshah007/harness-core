@@ -43,6 +43,7 @@ java_binary(
         "//955-filters-sdk:module",
         "//955-outbox-sdk:module",
         "//956-feature-flag-beans:module",
+        "//958-debezium-utils:module",
         "//958-migration-sdk:module",
         "//959-psql-database-models:module",
         "//959-timeout-engine:module",

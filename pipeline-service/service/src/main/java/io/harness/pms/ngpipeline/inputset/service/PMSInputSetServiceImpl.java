@@ -98,7 +98,9 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
     boolean isOldGitSync = gitSyncSdkService.isGitSyncEnabled(inputSetEntity.getAccountIdentifier(),
         inputSetEntity.getOrgIdentifier(), inputSetEntity.getProjectIdentifier());
     InputSetValidationHelper.validateInputSet(this, inputSetEntity, hasNewYamlStructure);
-    InputSetValidationHelper.checkForPipelineStoreType(inputSetEntity, pipelineService);
+    if (!isOldGitSync) {
+      InputSetValidationHelper.checkForPipelineStoreType(inputSetEntity, pipelineService);
+    }
 
     try {
       if (isOldGitSync) {

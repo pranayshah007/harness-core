@@ -20,32 +20,33 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
+@Getter
 public class BuildFile {
   private static final Pattern JAVA_BINARY_DEPS_PATTERN =
-      Pattern.compile("java_binary\\([\\s\\S]*?(deps = \\[[\\s\\S]*?\\]),?", Pattern.MULTILINE);
+      Pattern.compile("java_binary\\([\\s\\S]*?(deps = \\[[\\s\\S]*?]),?", Pattern.MULTILINE);
   private static final Pattern JAVA_BINARY_RUNTIME_DEPS_PATTERN =
-      Pattern.compile("java_binary\\([\\s\\S]*?(runtime_deps = \\[[\\s\\S]*?\\]),?", Pattern.MULTILINE);
+      Pattern.compile("java_binary\\([\\s\\S]*?(runtime_deps = \\[[\\s\\S]*?]),?", Pattern.MULTILINE);
   private static final Pattern JAVA_LIBRARY_DEPS_PATTERN =
-      Pattern.compile("java_library\\([\\s\\S]*?module[\\s\\S]*?(deps = \\[[\\s\\S]*?\\]),?", Pattern.MULTILINE);
+      Pattern.compile("java_library\\([\\s\\S]*?(module|tests)[\\s\\S]*?(deps = \\[[\\s\\S]*?]),?", Pattern.MULTILINE);
   private static final Pattern JAVA_LIBRARY_RUNTIME_DEPS_PATTERN = Pattern.compile(
-      "java_library\\([\\s\\S]*?module[\\s\\S]*?(runtime_deps = \\[[\\s\\S]*?\\]),?", Pattern.MULTILINE);
-
-  private static final Logger logger = LoggerFactory.getLogger(BuildFile.class);
+      "java_library\\([\\s\\S]*?(module|tests)[\\s\\S]*?(runtime_deps = \\[[\\s\\S]*?]),?", Pattern.MULTILINE);
+  private static final int DEPS_CAPTURING_GROUP = 2;
 
   private final SortedSet<LoadStatement> loadStatements = new TreeSet<>();
   private final List<JavaLibrary> javaLibraries = new ArrayList<>();
   private final List<JavaBinary> javaBinaries = new ArrayList<>();
   private boolean runAnalysisPerModule = false;
 
-  public void addJavaLibrary(JavaLibrary javaLibrary) {
-    loadStatements.add(new LoadStatement("@rules_java//java:defs.bzl", "java_library"));
+  public void addJavaLibrary(final JavaLibrary javaLibrary) {
+    loadStatements.addAll(javaLibrary.getLoadStatements());
     javaLibraries.add(javaLibrary);
   }
-  public void addJavaBinary(JavaBinary javaBinary) {
-    loadStatements.add(new LoadStatement("@rules_java//java:defs.bzl", "java_binary"));
+  public void addJavaBinary(final JavaBinary javaBinary) {
+    loadStatements.addAll(javaBinary.getLoadStatements());
     javaBinaries.add(javaBinary);
   }
 
@@ -64,36 +65,45 @@ public class BuildFile {
     return "";
   }
 
-  public String toString() {
-    StringBuilder response = new StringBuilder();
-    for (LoadStatement loadStatement : loadStatements) {
-      response.append(loadStatement.toString());
-      response.append("\n");
-    }
+  public String toStarlark() {
+    final StringBuilder response = new StringBuilder();
+    loadStatements.forEach(statement -> response.append(statement.toStarlark()).append("\n"));
     response.append("\n");
 
-    for (JavaLibrary javaLibrary : javaLibraries) {
-      response.append(javaLibrary.toString());
-      response.append("\n");
-    }
+    javaLibraries.forEach(library -> response.append(library.toStarlark()).append("\n"));
     response.append("\n");
 
-    for (JavaBinary javaBinary : javaBinaries) {
-      response.append(javaBinary.toString());
-      response.append("\n");
-    }
+    javaBinaries.forEach(binary -> response.append(binary.toStarlark()).append("\n"));
 
     if (runAnalysisPerModule) {
-      response.append("run_analysis_per_module()");
-      response.append("\n");
+      response.append("run_analysis_per_module(");
+      if (javaLibraries.stream().allMatch(JavaLibrary::isTest)) {
+        response.append("test_only = True");
+      }
+      response.append(")").append("\n");
     }
+
+    javaLibraries.stream()
+        .filter(JavaLibrary::isTest)
+        .forEach(library
+            -> response.append("\n")
+                   .append("run_tests(\"")
+                   .append(normalizeRunTestSrcGlob(library.getSrcsGlob()))
+                   .append("\")\n"));
 
     return response.toString();
   }
 
-  public void writeToPackage(Path directory) throws FileNotFoundException {
-    try (PrintWriter out = new PrintWriter(directory + "/BUILD.bazel");) {
-      out.println(toString());
+  // Run test srcs glob must end with Test.java (so that run_tests macro only create java_test targets for actual tests)
+  private String normalizeRunTestSrcGlob(final String srcsGlob) {
+    if (srcsGlob.endsWith("Test.java"))
+      return srcsGlob;
+    return srcsGlob.replace(".java", "Test.java");
+  }
+
+  public void writeToPackage(final Path directory) throws FileNotFoundException {
+    try (final PrintWriter out = new PrintWriter(directory + "/BUILD.bazel")) {
+      out.print(this.toStarlark());
     } catch (FileNotFoundException ex) {
       throw new RuntimeException("Could not write out build file to: " + directory + "/BUILD.bazel");
     }
@@ -108,8 +118,8 @@ public class BuildFile {
 
   private String getNewLibraryDeps(String updateField) {
     String newDeps = String.format("%s = []", updateField);
-    for (JavaLibrary javaLibrary : getJavaLibraryList()) {
-      logger.debug("Library Name: {}", javaLibrary.getName());
+    for (final JavaLibrary javaLibrary : getJavaLibraries()) {
+      log.debug("Library Name: {}", javaLibrary.getName());
       switch (updateField) {
         case "deps":
           newDeps = javaLibrary.getDepsSection();
@@ -119,14 +129,14 @@ public class BuildFile {
           break;
       }
     }
-    logger.debug("New {} for java_library: {}", updateField, newDeps);
+    log.debug("New {} for java_library: {}", updateField, newDeps);
     return newDeps;
   }
 
   private String getNewBinaryDeps(String updateField) {
     String newDeps = String.format("%s = []", updateField);
-    for (JavaBinary javaBinary : getJavaBinaryList()) {
-      logger.debug("Binary Name: {}", javaBinary.getName());
+    for (final JavaBinary javaBinary : getJavaBinaries()) {
+      log.debug("Binary Name: {}", javaBinary.getName());
       switch (updateField) {
         case "deps":
           newDeps = javaBinary.getDepsSection();
@@ -136,7 +146,7 @@ public class BuildFile {
           break;
       }
     }
-    logger.debug("New {} for java_binary: {}", updateField, newDeps);
+    log.debug("New {} for java_binary: {}", updateField, newDeps);
     return newDeps;
   }
 
@@ -145,7 +155,7 @@ public class BuildFile {
   // updateField: Accepted values are "deps" and "runtime_deps"
   private void updateDepsHelper(Path buildFilePath, String buildRule, String updateField) throws IOException {
     // This will contain the latest values which should be updated in the file.
-    String newDeps = "";
+    String newDeps;
     Pattern pattern = null;
     switch (buildRule) {
       case "java_library":
@@ -165,7 +175,7 @@ public class BuildFile {
         }
         break;
       default:
-        logger.warn("Unsupported buildRule: {}", buildRule);
+        log.warn("Unsupported buildRule: {}", buildRule);
         return;
     }
 
@@ -174,32 +184,21 @@ public class BuildFile {
     }
 
     String currContent = Files.readString(buildFilePath);
-    logger.debug("Current file content: \n {}", currContent);
+    log.debug("Current file content: \n {}", currContent);
     Matcher matcher = pattern.matcher(currContent);
     StringBuilder builder = new StringBuilder();
     builder.append(currContent);
     String replacedFileContent = "";
     while (matcher.find()) {
-      String textToReplace = matcher.group(1);
-      logger.debug("Found text to replace: {}", textToReplace);
-      replacedFileContent = builder.replace(matcher.start(1), matcher.end(1), newDeps).toString();
-      logger.debug("Replaced file content: {}", replacedFileContent);
+      String textToReplace = matcher.group(DEPS_CAPTURING_GROUP);
+      log.debug("Found text to replace: {}", textToReplace);
+      replacedFileContent =
+          builder.replace(matcher.start(DEPS_CAPTURING_GROUP), matcher.end(DEPS_CAPTURING_GROUP), newDeps).toString();
+      log.debug("Replaced file content: {}", replacedFileContent);
     }
     if (!replacedFileContent.equalsIgnoreCase("")) {
       // Overwrite a file only if we are able to replace.
       Files.writeString(buildFilePath, replacedFileContent, TRUNCATE_EXISTING);
     }
-  }
-
-  public SortedSet<LoadStatement> getLoadStatements() {
-    return loadStatements;
-  }
-
-  public List<JavaLibrary> getJavaLibraryList() {
-    return javaLibraries;
-  }
-
-  public List<JavaBinary> getJavaBinaryList() {
-    return javaBinaries;
   }
 }

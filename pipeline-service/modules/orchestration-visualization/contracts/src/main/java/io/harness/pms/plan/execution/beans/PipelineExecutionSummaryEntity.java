@@ -29,9 +29,7 @@ import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.ng.core.common.beans.NGTag;
-import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
-import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UuidAware;
 import io.harness.pms.contracts.execution.ExecutionErrorInfo;
 import io.harness.pms.contracts.execution.Status;
@@ -87,13 +85,13 @@ import org.springframework.data.mongodb.core.mapping.Document;
     handler = "PipelineExecutionSummaryEntityServiceAndInfra")
 @ChangeDataCapture(table = "stage_execution_summary_ci", dataStore = "pms-harness", fields = {},
     handler = "PipelineExecutionSummaryEntityCIStage")
-public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware {
+public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAware {
   public static final Duration TTL = ofDays(183);
   public static final long TTL_MONTHS = 6;
 
   @Setter @NonFinal @Id @dev.morphia.annotations.Id String uuid;
 
-  @NotEmpty int runSequence;
+  @NotEmpty Integer runSequence;
   @NotEmpty String accountId;
   @NotEmpty String orgIdentifier;
   @Trimmed @NotEmpty String projectIdentifier;
@@ -164,8 +162,8 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
   PipelineStageInfo parentStageInfo;
   Boolean isLatestExecution;
   // Required Index for PipelineTelemetryPublisher
-  @Setter @NonFinal @SchemaIgnore @FdIndex @CreatedDate long createdAt;
-  @Setter @NonFinal @SchemaIgnore @NotNull @LastModifiedDate long lastUpdatedAt;
+  @Setter @NonFinal @SchemaIgnore @FdIndex @CreatedDate Long createdAt;
+  @Setter @NonFinal @SchemaIgnore @NotNull @LastModifiedDate Long lastUpdatedAt;
   @Setter @NonFinal @Version Long version;
 
   public ExecutionStatus getStatus() {

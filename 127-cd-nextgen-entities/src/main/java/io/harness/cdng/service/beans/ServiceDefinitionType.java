@@ -71,14 +71,20 @@ public enum ServiceDefinitionType {
   @JsonProperty(ServiceSpecType.TAS)
   TAS(ServiceSpecType.TAS,
       Lists.newArrayList(ExecutionStrategyType.BASIC, ExecutionStrategyType.CANARY, ExecutionStrategyType.BLUE_GREEN,
-          ExecutionStrategyType.DEFAULT),
+          ExecutionStrategyType.DEFAULT, ExecutionStrategyType.ROLLING),
       ServiceSpecType.TAS),
 
   @JsonProperty(ServiceSpecType.ASG)
   ASG(ServiceSpecType.ASG,
       Lists.newArrayList(ExecutionStrategyType.ROLLING, ExecutionStrategyType.CANARY, ExecutionStrategyType.BLUE_GREEN,
           ExecutionStrategyType.DEFAULT),
-      ServiceSpecType.ASG);
+      ServiceSpecType.ASG),
+
+  @JsonProperty(ServiceSpecType.GOOGLE_CLOUD_FUNCTIONS)
+  GOOGLE_CLOUD_FUNCTIONS(ServiceSpecType.GOOGLE_CLOUD_FUNCTIONS,
+      Lists.newArrayList(ExecutionStrategyType.BASIC, ExecutionStrategyType.CANARY, ExecutionStrategyType.BLUE_GREEN,
+          ExecutionStrategyType.DEFAULT),
+      ServiceSpecType.GOOGLE_CLOUD_FUNCTIONS);
 
   /*
   //Unsupported for now

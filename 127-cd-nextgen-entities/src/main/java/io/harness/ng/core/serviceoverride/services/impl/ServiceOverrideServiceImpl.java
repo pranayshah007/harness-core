@@ -255,9 +255,21 @@ public class ServiceOverrideServiceImpl implements ServiceOverrideService {
     checkArgument(isNotEmpty(orgIdentifier), "orgId must be present");
     checkArgument(isNotEmpty(projectIdentifier), "projectId must be present");
 
-    Criteria criteria = getServiceOverrideEqualityCriteriaForProj(accountId, orgIdentifier, projectIdentifier);
+    return deleteAllInternal(accountId, orgIdentifier, projectIdentifier);
+  }
+
+  private boolean deleteAllInternal(String accountId, String orgIdentifier, String projectIdentifier) {
+    Criteria criteria = getServiceOverrideEqualityCriteria(accountId, orgIdentifier, projectIdentifier);
     DeleteResult delete = serviceOverrideRepository.delete(criteria);
     return delete.wasAcknowledged();
+  }
+
+  @Override
+  public boolean deleteAllInOrg(String accountId, String orgIdentifier) {
+    checkArgument(isNotEmpty(accountId), "accountId must be present");
+    checkArgument(isNotEmpty(orgIdentifier), "orgId must be present");
+
+    return deleteAllInternal(accountId, orgIdentifier, null);
   }
 
   @Override
@@ -404,7 +416,7 @@ public class ServiceOverrideServiceImpl implements ServiceOverrideService {
     return criteria;
   }
 
-  private Criteria getServiceOverrideEqualityCriteriaForProj(String accountId, String orgId, String projId) {
+  private Criteria getServiceOverrideEqualityCriteria(String accountId, String orgId, String projId) {
     return Criteria.where(NGServiceOverridesEntityKeys.accountId)
         .is(accountId)
         .and(NGServiceOverridesEntityKeys.orgIdentifier)

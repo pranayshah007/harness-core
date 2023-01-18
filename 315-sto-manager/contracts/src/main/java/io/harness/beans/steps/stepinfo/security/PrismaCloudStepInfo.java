@@ -19,7 +19,6 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
-import javax.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.springframework.data.annotation.TypeAlias;
@@ -33,11 +32,13 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.beans.steps.stepinfo.security.PrismaCloudStepInfo")
 public class PrismaCloudStepInfo extends STOGenericStepInfo {
   private static final String PRODUCT_NAME = "twistlock";
+
+  @JsonProperty protected STOYamlAuth auth;
+
+  @JsonProperty protected STOYamlImage image;
+
   @ApiModelProperty(hidden = true)
   public String getProductName() {
     return PRODUCT_NAME;
   }
-  @NotNull @JsonProperty protected STOYamlAuth auth;
-
-  @JsonProperty protected STOYamlImage image;
 }

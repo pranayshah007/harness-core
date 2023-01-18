@@ -34,11 +34,9 @@ public class NotifyResponseCleanerV2 implements Runnable {
       return;
     }
 
-    try {
-      try (AcquiredLock lock = persistentLocker.waitToAcquireLock(
-               NotifyResponse.class, NOTIFY_RESPONSE_LOCK, Duration.ofSeconds(10), Duration.ofSeconds(1))) {
-        notifyResponseCleanupHelper.execute();
-      }
+    try (AcquiredLock lock = persistentLocker.waitToAcquireLock(
+             NotifyResponse.class, NOTIFY_RESPONSE_LOCK, Duration.ofSeconds(10), Duration.ofSeconds(1))) {
+      notifyResponseCleanupHelper.execute();
     } catch (PersistentLockException ex) {
       log.info("Unable to acquire lock");
     } catch (Exception e) {

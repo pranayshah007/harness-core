@@ -108,15 +108,18 @@ public class TerragruntPlanTaskNG extends AbstractDelegateRunnableTask {
 
       LogCallback fetchFilesLogCallback =
           taskService.getLogCallback(getLogStreamingTaskClient(), FETCH_CONFIG_FILES, commandUnitsProgress);
-      TerragruntContext terragruntContext =
-          taskService.prepareTerragrunt(fetchFilesLogCallback, planTaskParameters, baseDir);
-
-      TerragruntClient client = terragruntContext.getClient();
       LogCallback planLogCallback = taskService.getLogCallback(getLogStreamingTaskClient(), PLAN, commandUnitsProgress);
 
-      executeWithErrorHandling(client::init,
-          createCliRequest(TerragruntCliRequest.builder(), terragruntContext, planTaskParameters).build(),
-          planLogCallback);
+      TerragruntContext terragruntContext =
+          taskService.prepareTerragrunt(fetchFilesLogCallback, planTaskParameters, baseDir, planLogCallback);
+
+      TerragruntClient client = terragruntContext.getClient();
+
+      if (TerragruntTaskRunType.RUN_MODULE == planTaskParameters.getRunConfiguration().getRunType()) {
+        executeWithErrorHandling(client::init,
+            createCliRequest(TerragruntCliRequest.builder(), terragruntContext, planTaskParameters).build(),
+            planLogCallback);
+      }
 
       if (isNotEmpty(planTaskParameters.getWorkspace())) {
         log.info("Create or select workspace {}", planTaskParameters.getWorkspace());

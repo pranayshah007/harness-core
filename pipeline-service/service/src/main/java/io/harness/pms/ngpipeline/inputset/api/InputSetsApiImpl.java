@@ -146,9 +146,10 @@ public class InputSetsApiImpl implements InputSetsApi {
     if (requestBody == null) {
       throw new InvalidRequestException("Input Set update request body must not be null.");
     }
-    if (!Objects.equals(inputSet, requestBody.getSlug())) {
-      throw new InvalidRequestException(String.format(
-          "Expected Input Set identifier in Request Body to be [%s], but was [%s]", inputSet, requestBody.getSlug()));
+    if (!Objects.equals(inputSet, requestBody.getIdentifier())) {
+      throw new InvalidRequestException(
+          String.format("Expected Input Set identifier in Request Body to be [%s], but was [%s]", inputSet,
+              requestBody.getIdentifier()));
     }
     GitAwareContextHelper.populateGitDetails(InputSetsApiUtils.populateGitUpdateDetails(requestBody.getGitDetails()));
     log.info(String.format("Updating input set with identifier %s for pipeline %s in project %s, org %s, account %s",

@@ -21,8 +21,10 @@ import io.harness.delegate.service.intfc.DelegateInstallationCommandService;
 import io.harness.delegate.service.intfc.DelegateNgTokenService;
 import io.harness.rule.Owner;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.io.IOUtils;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -46,13 +48,13 @@ public class DelegateInstallationCommandServiceTest {
     when(delegateNgTokenService.isDelegateTokenActive(ACCOUNT_ID, List.of("default_token"))).thenReturn(ACTIVE_STATUS);
     when(delegateNgTokenService.getDelegateTokenValue(ACCOUNT_ID, "default_token")).thenReturn(TOKEN_VALUE);
     when(delegateVersionService.getImmutableDelegateImageTag(ACCOUNT_ID)).thenReturn(IMAGE);
-    final String result = String.format("docker run -d --name=docker-delegate --cpus=0.5 --memory=2g "
-            + "-e DELEGATE_NAME=docker-delegate "
-            + "-e NEXT_GEN=\"true\" "
-            + "-e DELEGATE_TYPE=\"DOCKER\" "
-            + "-e ACCOUNT_ID=%s "
-            + "-e DELEGATE_TOKEN=%s "
-            + "-e MANAGER_HOST_AND_PORT=%s %s",
+    final String result = String.format("docker run --cpus=1 --memory=2g \\\n"
+            + "  -e DELEGATE_NAME=docker-delegate \\\n"
+            + "  -e NEXT_GEN=\"true\" \\\n"
+            + "  -e DELEGATE_TYPE=\"DOCKER\" \\\n"
+            + "  -e ACCOUNT_ID=%s \\\n"
+            + "  -e DELEGATE_TOKEN=%s \\\n"
+            + "  -e MANAGER_HOST_AND_PORT=%s %s",
         ACCOUNT_ID, TOKEN_VALUE, MANAGER_URL, IMAGE);
 
     assertThat(delegateInstallationCommandService.getCommand("DOCKER", MANAGER_URL, ACCOUNT_ID)).isEqualTo(result);
@@ -66,14 +68,14 @@ public class DelegateInstallationCommandServiceTest {
     when(delegateNgTokenService.getDelegateTokenValue(ACCOUNT_ID, "default_token")).thenReturn(TOKEN_VALUE);
     when(delegateVersionService.getImmutableDelegateImageTag(ACCOUNT_ID)).thenReturn(IMAGE);
     final String result =
-        String.format("helm upgrade -i helm-delegate --namespace harness-delegate-ng --create-namespace "
-                + "harness/harness-delegate-ng "
-                + "--set delegateName=helm-delegate "
-                + "--set accountId=%s "
-                + "--set delegateToken=%s "
-                + "--set managerEndpoint=%s "
-                + "--set delegateDockerImage=%s "
-                + "--set replicas=1 --set upgrader.enabled=false",
+        String.format("helm upgrade -i helm-delegate --namespace harness-delegate-ng --create-namespace \\\n"
+                + "  harness-delegate/harness-delegate-ng \\\n"
+                + "  --set delegateName=helm-delegate \\\n"
+                + "  --set accountId=%s \\\n"
+                + "  --set delegateToken=%s \\\n"
+                + "  --set managerEndpoint=%s \\\n"
+                + "  --set delegateDockerImage=%s \\\n"
+                + "  --set replicas=1 --set upgrader.enabled=false",
             ACCOUNT_ID, TOKEN_VALUE, MANAGER_URL, IMAGE);
 
     assertThat(delegateInstallationCommandService.getCommand("HELM", MANAGER_URL, ACCOUNT_ID)).isEqualTo(result);
@@ -86,16 +88,29 @@ public class DelegateInstallationCommandServiceTest {
     when(delegateNgTokenService.isDelegateTokenActive(ACCOUNT_ID, List.of("default_token"))).thenReturn(ACTIVE_STATUS);
     when(delegateNgTokenService.getDelegateTokenValue(ACCOUNT_ID, "default_token")).thenReturn(TOKEN_VALUE);
     when(delegateVersionService.getImmutableDelegateImageTag(ACCOUNT_ID)).thenReturn(IMAGE);
-    final String result = String.format("terraform apply "
-            + "-var delegate_name=terraform-delegate "
-            + "-var account_id=%s "
-            + "-var delegate_token=%s "
-            + "-var manager_endpoint=%s "
-            + "-var delegate_image=%s "
-            + "-var replicas=1 "
+    final String result = String.format("terraform apply \\\n"
+            + "-var delegate_name=terraform-delegate \\\n"
+            + "-var account_id=%s \\\n"
+            + "-var delegate_token=%s \\\n"
+            + "-var manager_endpoint=%s \\\n"
+            + "-var delegate_image=%s \\\n"
+            + "-var replicas=1 \\\n"
             + "-var upgrader_enabled=false",
         ACCOUNT_ID, TOKEN_VALUE, MANAGER_URL, IMAGE);
 
     assertThat(delegateInstallationCommandService.getCommand("TERRAFORM", MANAGER_URL, ACCOUNT_ID)).isEqualTo(result);
+  }
+
+  @Test
+  @Owner(developers = XINGCHI_JIN)
+  @Category(UnitTests.class)
+  public void testGetTerraformExampleModuleFile() throws IOException {
+    when(delegateNgTokenService.isDelegateTokenActive(ACCOUNT_ID, List.of("default_token"))).thenReturn(ACTIVE_STATUS);
+    when(delegateNgTokenService.getDelegateTokenValue(ACCOUNT_ID, "default_token")).thenReturn(TOKEN_VALUE);
+    when(delegateVersionService.getImmutableDelegateImageTag(ACCOUNT_ID)).thenReturn(IMAGE);
+    final String result = delegateInstallationCommandService.getTerraformExampleModuleFile(MANAGER_URL, ACCOUNT_ID);
+    String expected =
+        IOUtils.toString(this.getClass().getResourceAsStream("/expectedTerraformExampleModule.yaml"), "UTF-8");
+    assertThat(result).isEqualTo(expected);
   }
 }

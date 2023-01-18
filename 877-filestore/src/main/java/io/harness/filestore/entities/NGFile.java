@@ -78,7 +78,7 @@ public class NGFile implements PersistentEntity, UuidAware, NGAccountAccess, NGO
   @EntityIdentifier(allowBlank = true) String orgIdentifier;
   @EntityIdentifier(allowBlank = true) String projectIdentifier;
 
-  @EntityIdentifier String identifier;
+  @EntityIdentifier(maxLength = 128) String identifier;
   @Size(max = 1024) String description;
   @Size(max = 128) List<NGTag> tags;
   @NotNull FileUsage fileUsage;

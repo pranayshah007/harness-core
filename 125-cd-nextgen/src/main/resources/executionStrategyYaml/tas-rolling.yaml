@@ -1,0 +1,25 @@
+failureStrategies:
+  - onFailure:
+      errors:
+        - AllErrors
+      action:
+        type: StageRollback
+spec:
+  execution:
+    steps:
+      - step:
+          name: Tas Rolling Deploy
+          identifier: rollingDeploy
+          type: TasRollingDeploy
+          timeout: 20m
+          spec:
+            additionalRoutes: []
+            delegateSelectors: []
+    rollbackSteps:
+      - step:
+          name: Tas Rolling Rollback
+          identifier: tasRollback
+          type: TasRollingRollback
+          timeout: 10m
+          spec:
+            delegateSelectors: []
