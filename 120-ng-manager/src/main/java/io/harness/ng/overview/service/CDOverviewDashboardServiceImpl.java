@@ -2403,12 +2403,15 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
       String projectIdentifier, String envIdentifier, String serviceIdentifier, String buildIdentifier) {
     String serviceRef = FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier);
+    String environmentRef = FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(
+        accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier);
+
     List<ActiveServiceInstanceInfoV2> activeServiceInstanceInfoList =
         instanceDashboardService.getActiveServiceInstanceInfo(
-            accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier, serviceRef, buildIdentifier, false);
+            accountIdentifier, orgIdentifier, projectIdentifier, environmentRef, serviceRef, buildIdentifier, false);
     List<ActiveServiceInstanceInfoV2> activeServiceInstanceGitOpsInfoList =
         instanceDashboardService.getActiveServiceInstanceInfo(
-            accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier, serviceRef, buildIdentifier, true);
+            accountIdentifier, orgIdentifier, projectIdentifier, environmentRef, serviceRef, buildIdentifier, true);
     activeServiceInstanceInfoList.addAll(activeServiceInstanceGitOpsInfoList);
 
     return getInstanceGroupedByServiceListHelper(activeServiceInstanceInfoList);
