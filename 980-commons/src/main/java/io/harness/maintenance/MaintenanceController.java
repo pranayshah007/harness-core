@@ -31,6 +31,7 @@ public class MaintenanceController implements Managed {
   private static final String SHUTDOWN_FILENAME = "shutdown";
 
   private static Boolean forceMaintenance;
+  private static final AtomicBoolean maintenance = new AtomicBoolean(true);
 
   // true: in maintenance, false: not in maintenance
   private static final AtomicBoolean currentMaintenanceState = new AtomicBoolean(false);
@@ -87,10 +88,11 @@ public class MaintenanceController implements Managed {
     boolean isShutdown = new File(SHUTDOWN_FILENAME).exists();
     boolean isMaintenance = isShutdown || currentMaintenanceState.get() || new File(MAINTENANCE_FILENAME).exists();
 
-    if (currentMaintenanceState.getAndSet(isMaintenance) != isMaintenance) {
-      log.info("{} maintenance mode", isMaintenance ? "Entering" : "Leaving");
+    if (maintenance.getAndSet(currentMaintenanceState.get()) != isMaintenance) {
+      log.info("{} maintenance mode by second flag", isMaintenance ? "Entering" : "Leaving");
       maintenanceListenerSubject.fireInform(
           isMaintenance ? MaintenanceListener::onEnterMaintenance : MaintenanceListener::onLeaveMaintenance);
+      currentMaintenanceState.getAndSet(isMaintenance);
     }
 
     if (shutdown.getAndSet(isShutdown) != isShutdown) {
