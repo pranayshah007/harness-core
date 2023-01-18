@@ -229,7 +229,10 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
     TerraformStepResponse terraformPlanStepResponse = executeTerraformPlanCommand(terraformExecuteStepRequest);
 
     TerraformApplyCommandRequest terraformApplyCommandRequest =
-        TerraformApplyCommandRequest.builder().planName(TERRAFORM_PLAN_FILE_OUTPUT_NAME).isEnterpriseCli(true).build();
+        TerraformApplyCommandRequest.builder()
+            .planName(TERRAFORM_PLAN_FILE_OUTPUT_NAME)
+            .isEnterpriseCli(terraformExecuteStepRequest.isEnterpriseCli())
+            .build();
     terraformClient.apply(terraformApplyCommandRequest, terraformExecuteStepRequest.getTimeoutInMillis(),
         terraformExecuteStepRequest.getEnvVars(), terraformExecuteStepRequest.getScriptDirectory(), logCallback);
 
