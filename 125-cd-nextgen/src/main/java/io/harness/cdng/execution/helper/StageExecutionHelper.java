@@ -32,6 +32,7 @@ import io.harness.cdng.execution.azure.webapps.AzureWebAppsStageExecutionDetails
 import io.harness.cdng.execution.service.StageExecutionInfoService;
 import io.harness.cdng.execution.spot.elastigroup.ElastigroupStageExecutionDetails;
 import io.harness.cdng.execution.sshwinrm.SshWinRmStageExecutionDetails;
+import io.harness.cdng.execution.tas.TasStageExecutionDetails;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.InstanceDeploymentInfo;
 import io.harness.cdng.instance.InstanceDeploymentInfoStatus;
@@ -311,6 +312,13 @@ public class StageExecutionHelper {
     } else if (InfrastructureKind.ELASTIGROUP.equals(infrastructureKind)) {
       return Optional.of(
           ElastigroupStageExecutionDetails.builder().pipelineExecutionId(ambiance.getPlanExecutionId()).build());
+    } else if (InfrastructureKind.TAS.equals(infrastructureKind)) {
+      Optional<ArtifactOutcome> artifactOutcome = cdStepHelper.resolveArtifactsOutcome(ambiance);
+      List<ArtifactOutcome> artifactsOutcome = artifactOutcome.map(Lists::newArrayList).orElse(new ArrayList<>());
+      return Optional.of(TasStageExecutionDetails.builder()
+                             .artifactsOutcome(artifactsOutcome)
+                             .pipelineExecutionId(ambiance.getPlanExecutionId())
+                             .build());
     }
     Optional<ArtifactOutcome> artifactOutcome = cdStepHelper.resolveArtifactsOutcome(ambiance);
     List<ArtifactOutcome> artifactsOutcome = artifactOutcome.map(Lists::newArrayList).orElse(new ArrayList<>());

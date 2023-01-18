@@ -51,6 +51,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
 
 import software.wings.beans.TaskType;
@@ -115,9 +116,9 @@ public class FetchLinkedAppsStepTest extends CategoryTest {
             githubStore, connectorInfoDTO, manifestOutcome, Collections.singletonList("path"), ambiance);
     doReturn(EnvironmentType.PROD).when(stepHelper).getEnvironmentType(ambiance);
     ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
-    Mockito.mockStatic(StepUtils.class);
+    Mockito.mockStatic(TaskRequestsUtils.class);
     PowerMockito
-        .when(StepUtils.prepareCDTaskRequest(
+        .when(TaskRequestsUtils.prepareCDTaskRequest(
             eq(ambiance), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
 

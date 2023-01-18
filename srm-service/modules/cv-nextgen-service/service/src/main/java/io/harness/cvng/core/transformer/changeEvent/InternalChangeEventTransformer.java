@@ -32,6 +32,7 @@ public class InternalChangeEventTransformer
         .projectIdentifier(changeEventDTO.getProjectIdentifier())
         .changeSourceIdentifier(changeEventDTO.getChangeSourceIdentifier())
         .monitoredServiceIdentifier(changeEventDTO.getMonitoredServiceIdentifier())
+        .activityName(changeEventDTO.getName())
         .build();
   }
 

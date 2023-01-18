@@ -34,7 +34,6 @@ import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.extern.slf4j.Slf4j;
@@ -49,7 +48,7 @@ public class CIExecutionPoller implements Managed {
   @Inject InitializeTaskStepV2 initializeTaskStepV2;
   @Inject AsyncWaitEngine asyncWaitEngine;
   private AtomicBoolean shouldStop = new AtomicBoolean(false);
-  private static final int WAIT_TIME_IN_SECONDS = 10;
+  private static final int WAIT_TIME_IN_SECONDS = 5;
   private final String moduleName = "ci";
   private final int batchSize = 1;
   private final Duration RETRY_SLEEP_DURATION = Duration.ofSeconds(2);
@@ -70,6 +69,7 @@ public class CIExecutionPoller implements Managed {
           sleep(ofSeconds(1));
         }
         readEventsFrameworkMessages();
+        TimeUnit.SECONDS.sleep(WAIT_TIME_IN_SECONDS);
       } while (!Thread.currentThread().isInterrupted() && !shouldStop.get());
     } catch (Exception ex) {
       log.error("Consumer {} unexpectedly stopped", this.getClass().getSimpleName(), ex);

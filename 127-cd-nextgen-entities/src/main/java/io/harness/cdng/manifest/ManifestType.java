@@ -25,7 +25,7 @@ public interface ManifestType {
           ManifestType.EcsScalableTargetDefinition, ManifestType.EcsScalingPolicyDefinition);
   Set<String> SERVICE_OVERRIDE_SUPPORTED_MANIFEST_TYPES =
       ImmutableSet.of(ManifestType.VALUES, ManifestType.KustomizePatches, ManifestType.OpenshiftParam,
-          ManifestType.TAS_MANIFEST, ManifestType.TAS_VARS, ManifestType.TAS_AUTOSCALER);
+          ManifestType.TAS_MANIFEST, ManifestType.TAS_VARS, ManifestType.TAS_AUTOSCALER, ManifestType.HelmRepoOverride);
   Set<String> ASG_SUPPORTED_MANIFEST_TYPES = ImmutableSet.of(ManifestType.AsgLaunchTemplate,
       ManifestType.AsgConfiguration, ManifestType.AsgScalingPolicy, ManifestType.AsgScheduledUpdateGroupAction);
 
@@ -52,6 +52,8 @@ public interface ManifestType {
   String AsgConfiguration = "AsgConfiguration";
   String AsgScalingPolicy = "AsgScalingPolicy";
   String AsgScheduledUpdateGroupAction = "AsgScheduledUpdateGroupAction";
+  String GoogleCloudFunctionDefinition = "GoogleCloudFunctionDefinition";
+  String HelmRepoOverride = "HelmRepoOverride";
 
   static HashSet<String> getAllManifestTypes() {
     return new HashSet<>(Arrays.asList(ManifestType.K8Manifest, ManifestType.VALUES, ManifestType.OpenshiftTemplate,
@@ -60,6 +62,6 @@ public interface ManifestType {
         ManifestType.DeploymentRepo, ManifestType.EcsTaskDefinition, ManifestType.EcsServiceDefinition,
         ManifestType.EcsScalableTargetDefinition, ManifestType.EcsScalingPolicyDefinition, ManifestType.TAS_MANIFEST,
         ManifestType.TAS_VARS, ManifestType.TAS_AUTOSCALER, AsgLaunchTemplate, AsgConfiguration, AsgScalingPolicy,
-        AsgScheduledUpdateGroupAction));
+        AsgScheduledUpdateGroupAction, ManifestType.GoogleCloudFunctionDefinition));
   }
 }

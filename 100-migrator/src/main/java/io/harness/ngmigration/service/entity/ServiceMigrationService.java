@@ -71,7 +71,6 @@ import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.DiscoveryNode;
 import software.wings.ngmigration.NGMigrationEntity;
-import software.wings.ngmigration.NGMigrationStatus;
 import software.wings.service.intfc.ApplicationManifestService;
 import software.wings.service.intfc.ArtifactStreamService;
 import software.wings.service.intfc.ConfigService;
@@ -229,26 +228,6 @@ public class ServiceMigrationService extends NgMigrationService {
   @Override
   public DiscoveryNode discover(String accountId, String appId, String entityId) {
     return discover(serviceResourceService.getWithDetails(appId, entityId));
-  }
-
-  @Override
-  public NGMigrationStatus canMigrate(NGMigrationEntity entity) {
-    Service service = (Service) entity;
-    if (!ArtifactType.DOCKER.equals(service.getArtifactType())) {
-      return NGMigrationStatus.builder()
-          .status(false)
-          .reasons(Collections.singletonList(String.format(
-              "%s service of artifact type %s is not supported", service.getName(), service.getArtifactType())))
-          .build();
-    }
-    if (!DeploymentType.KUBERNETES.equals(service.getDeploymentType())) {
-      return NGMigrationStatus.builder()
-          .status(false)
-          .reasons(Collections.singletonList(String.format(
-              "%s service of deployment type %s is not supported", service.getName(), service.getDeploymentType())))
-          .build();
-    }
-    return NGMigrationStatus.builder().status(true).build();
   }
 
   @Override

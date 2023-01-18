@@ -86,11 +86,10 @@ public class EcrImagePullSecretHelperTest extends CategoryTest {
         EcrArtifactDelegateRequest.builder().imagePath("imagePath").tag("1.0").build();
     when(kryoSerializer.asDeflatedBytes(any())).thenReturn("".getBytes());
     when(kryoSerializer.asInflatedObject(any())).thenReturn(response);
-    when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(artifactTaskResponse);
-    assertThat(ecrImagePullSecretHelper
-                   .executeSyncTask(ecrArtifactDelegateRequest, ArtifactTaskType.GET_IMAGE_URL, baseNGAccess,
-                       "execute sync task failed")
-                   .equals(artifactTaskExecutionResponse));
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any())).thenReturn(artifactTaskResponse);
+    assertThat(ecrImagePullSecretHelper.executeSyncTask(ecrArtifactDelegateRequest, ArtifactTaskType.GET_IMAGE_URL,
+                   baseNGAccess, "execute sync task failed"))
+        .isEqualTo(artifactTaskExecutionResponse);
   }
 
   @Test
@@ -148,7 +147,7 @@ public class EcrImagePullSecretHelperTest extends CategoryTest {
 
     when(kryoSerializer.asInflatedObject(any())).thenReturn(response);
 
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(ErrorNotifyResponseData.builder().errorMessage("Testing").build());
 
     assertThatThrownBy(()
@@ -186,7 +185,7 @@ public class EcrImagePullSecretHelperTest extends CategoryTest {
 
     when(kryoSerializer.asInflatedObject(any())).thenReturn(response);
 
-    when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(artifactTaskResponse);
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any())).thenReturn(artifactTaskResponse);
 
     assertThatThrownBy(()
                            -> ecrImagePullSecretHelper.executeSyncTask(ecrArtifactDelegateRequest,
@@ -223,7 +222,7 @@ public class EcrImagePullSecretHelperTest extends CategoryTest {
 
     when(kryoSerializer.asInflatedObject(any())).thenReturn(response);
 
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenThrow(new DelegateServiceDriverException("DelegateServiceDriverException"));
 
     when(exceptionManager.processException(any(), any(), any()))

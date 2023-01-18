@@ -7,6 +7,7 @@
 
 package io.harness.debezium;
 
+import io.harness.exception.InvalidRequestException;
 import io.harness.redis.RedisConfig;
 import io.harness.redis.RedissonClientFactory;
 import io.harness.serializer.JsonUtils;
@@ -32,9 +33,13 @@ public class DebeziumUtils {
     };
   }
 
-  public static DebeziumEngine.CompletionCallback getCompletionCallback(String redisConfigJson, String redisKey) {
+  public static DebeziumEngine.CompletionCallback getCompletionCallback(
+      String redisConfigJson, String redisKey, DebeziumController debeziumController, String collection) {
     return (success, message, error) -> {
-      if (!success) {
+      if (error instanceof InvalidRequestException && error.getMessage().equals("Snapshot completed")) {
+        log.info("Snapshot Completed for collection {}, stopping debezium controller..", collection);
+        debeziumController.stopDebeziumController();
+      } else if (!success) {
         resetOffset(JsonUtils.asObject(redisConfigJson, RedisConfig.class), redisKey);
         log.error(
             "Offset reset for key: {} because of exception: {}, at {}", redisKey, error, System.currentTimeMillis());

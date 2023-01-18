@@ -16,6 +16,7 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
+        "//953-events-api:module",
         "//959-debezium-beans/src/main/proto:959_debezium_beans_java_proto",
         "//960-persistence:module",
         "@maven//:org_redisson_redisson",

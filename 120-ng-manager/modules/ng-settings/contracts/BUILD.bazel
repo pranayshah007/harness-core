@@ -14,6 +14,7 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
+        "//943-enforcement-beans:module",
         "//960-ng-core-beans:module",
         "//970-ng-commons:module",
         "//980-commons:module",

@@ -349,7 +349,7 @@ public class NGHostValidationServiceImpl implements NGHostValidationService {
   private DelegateResponseData executeDelegateSyncTask(DelegateTaskRequest delegateTaskRequest) {
     final DelegateResponseData delegateResponseData;
     try {
-      delegateResponseData = delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
+      delegateResponseData = delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);
     } catch (DelegateServiceDriverException ex) {
       throw new HintException(
           String.format(HintException.DELEGATE_NOT_AVAILABLE, DocumentLinksConstants.DELEGATE_INSTALLATION_LINK),

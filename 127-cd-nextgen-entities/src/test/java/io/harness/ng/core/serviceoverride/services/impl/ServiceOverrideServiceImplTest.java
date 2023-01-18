@@ -423,6 +423,75 @@ public class ServiceOverrideServiceImplTest extends NGCoreTestBase {
         .isTrue();
   }
 
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testDeleteAllOrgLevelOverrides() {
+    final String org1 = UUIDGenerator.generateUuid();
+    final String org2 = UUIDGenerator.generateUuid();
+
+    final String env1 = UUIDGenerator.generateUuid();
+    final String env2 = UUIDGenerator.generateUuid();
+
+    NGServiceOverridesEntity e1 = NGServiceOverridesEntity.builder()
+                                      .accountId(ACCOUNT_ID)
+                                      .orgIdentifier(org1)
+                                      .environmentRef(env1)
+                                      .serviceRef(UUIDGenerator.generateUuid())
+                                      .build();
+    NGServiceOverridesEntity e2 = NGServiceOverridesEntity.builder()
+                                      .accountId(ACCOUNT_ID)
+                                      .orgIdentifier(org1)
+                                      .environmentRef(env2)
+                                      .serviceRef(UUIDGenerator.generateUuid())
+                                      .build();
+
+    NGServiceOverridesEntity e3 = NGServiceOverridesEntity.builder()
+                                      .accountId(ACCOUNT_ID)
+                                      .orgIdentifier(org2)
+                                      .environmentRef(env1)
+                                      .serviceRef(UUIDGenerator.generateUuid())
+                                      .build();
+    NGServiceOverridesEntity e4 = NGServiceOverridesEntity.builder()
+                                      .accountId(ACCOUNT_ID)
+                                      .orgIdentifier(org2)
+                                      .environmentRef(env1)
+                                      .serviceRef(UUIDGenerator.generateUuid())
+                                      .build();
+
+    NGServiceOverridesEntity e5 = NGServiceOverridesEntity.builder()
+                                      .accountId(ACCOUNT_ID)
+                                      .orgIdentifier(org2)
+                                      .environmentRef(env1)
+                                      .serviceRef(UUIDGenerator.generateUuid())
+                                      .build();
+
+    serviceOverrideService.upsert(e1);
+    serviceOverrideService.upsert(e2);
+    serviceOverrideService.upsert(e3);
+    serviceOverrideService.upsert(e4);
+    serviceOverrideService.upsert(e5);
+
+    // should delete e3, e5
+    assertThat(serviceOverrideService.deleteAllInOrg(ACCOUNT_ID, org2)).isTrue();
+
+    assertThat(
+        serviceOverrideService.get(ACCOUNT_ID, e1.getOrgIdentifier(), null, e1.getEnvironmentRef(), e1.getServiceRef()))
+        .isPresent();
+    assertThat(
+        serviceOverrideService.get(ACCOUNT_ID, e2.getOrgIdentifier(), null, e2.getEnvironmentRef(), e2.getServiceRef()))
+        .isPresent();
+    assertThat(
+        serviceOverrideService.get(ACCOUNT_ID, e3.getOrgIdentifier(), null, e3.getEnvironmentRef(), e3.getServiceRef()))
+        .isNotPresent();
+    assertThat(
+        serviceOverrideService.get(ACCOUNT_ID, e4.getOrgIdentifier(), null, e4.getEnvironmentRef(), e4.getServiceRef()))
+        .isNotPresent();
+    assertThat(
+        serviceOverrideService.get(ACCOUNT_ID, e5.getOrgIdentifier(), null, e5.getEnvironmentRef(), e5.getServiceRef()))
+        .isNotPresent();
+  }
+
   private String readFile(String filename) {
     ClassLoader classLoader = getClass().getClassLoader();
     try {

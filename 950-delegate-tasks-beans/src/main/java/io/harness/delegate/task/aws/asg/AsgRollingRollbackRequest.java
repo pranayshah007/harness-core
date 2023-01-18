@@ -29,7 +29,8 @@ public class AsgRollingRollbackRequest implements AsgCommandRequest, NestedAnnot
   String commandName;
   CommandUnitsProgress commandUnitsProgress;
   Integer timeoutIntervalInMin;
-  Map<String, List<String>> asgStoreManifestsContent;
+  Map<String, List<String>> asgManifestsDataForRollback;
+  String asgName;
 
   @NonFinal @Expression(ALLOW_SECRETS) AsgInfraConfig asgInfraConfig;
 }

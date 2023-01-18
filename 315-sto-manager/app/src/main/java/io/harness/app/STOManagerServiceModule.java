@@ -104,9 +104,9 @@ import org.reflections.Reflections;
 @Slf4j
 @OwnedBy(HarnessTeam.STO)
 public class STOManagerServiceModule extends AbstractModule {
-  private final STOManagerConfiguration stoManagerConfiguration;
+  private final CIManagerConfiguration stoManagerConfiguration;
 
-  public STOManagerServiceModule(STOManagerConfiguration stoManagerConfiguration) {
+  public STOManagerServiceModule(CIManagerConfiguration stoManagerConfiguration) {
     this.stoManagerConfiguration = stoManagerConfiguration;
   }
 
@@ -137,14 +137,13 @@ public class STOManagerServiceModule extends AbstractModule {
   }
 
   private DelegateCallbackToken getDelegateCallbackToken(
-      DelegateServiceGrpcClient delegateServiceClient, STOManagerConfiguration appConfig) {
+      DelegateServiceGrpcClient delegateServiceClient, CIManagerConfiguration appConfig) {
     log.info("Generating Delegate callback token");
+    String connectionUri = STOManagerConfiguration.getHarnessSTOMongo(appConfig.getHarnessCIMongo()).getUri();
     final DelegateCallbackToken delegateCallbackToken = delegateServiceClient.registerCallback(
         DelegateCallback.newBuilder()
-            .setMongoDatabase(MongoDatabase.newBuilder()
-                                  .setCollectionNamePrefix("stoManager")
-                                  .setConnection(appConfig.getHarnessSTOMongo().getUri())
-                                  .build())
+            .setMongoDatabase(
+                MongoDatabase.newBuilder().setCollectionNamePrefix("stoManager").setConnection(connectionUri).build())
             .build());
     log.info("Delegate callback token generated =[{}]", delegateCallbackToken.getToken());
     return delegateCallbackToken;
@@ -199,7 +198,6 @@ public class STOManagerServiceModule extends AbstractModule {
   @Override
   protected void configure() {
     install(VersionModule.getInstance());
-    bind(STOManagerConfiguration.class).toInstance(stoManagerConfiguration);
     bind(HPersistence.class).to(MongoPersistence.class).in(Singleton.class);
     bind(STOYamlSchemaService.class).to(STOYamlSchemaServiceImpl.class).in(Singleton.class);
     bind(CIFeatureFlagService.class).to(CIFeatureFlagServiceImpl.class).in(Singleton.class);

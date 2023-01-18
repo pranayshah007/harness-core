@@ -151,4 +151,12 @@ public interface TemplateResourceClient {
       @Query(value = NGCommonEntityConstants.ORG_KEY) String orgId,
       @Query(value = NGCommonEntityConstants.PROJECT_KEY) String projectId, @Body @NotNull RequestBody templateYaml,
       @Query(value = "setDefaultTemplate") boolean setDefaultTemplate, @Query(value = "comments") String comments);
+
+  @GET(TEMPLATE_ENDPOINT + "templateInputs/{templateIdentifier}")
+  Call<ResponseDTO<String>> getTemplateInputsYaml(@Path("templateIdentifier") String templateIdentifier,
+      @Query(NGCommonEntityConstants.ACCOUNT_KEY) @NotEmpty String accountIdentifier,
+      @Query(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Query(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @Query(NGCommonEntityConstants.VERSION_LABEL_KEY) String versionLabel,
+      @Query(NGCommonEntityConstants.DELETED_KEY) boolean deleted);
 }

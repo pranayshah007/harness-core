@@ -93,7 +93,7 @@ public class ManagerEncryptorHelper {
                                     .setupAbstractions(buildAbstractions(parameters.getEncryptionConfig()))
                                     .build();
     try {
-      DelegateResponseData delegateResponseData = delegateService.executeTask(delegateTask);
+      DelegateResponseData delegateResponseData = delegateService.executeTaskV2(delegateTask);
       DelegateTaskUtils.validateDelegateTaskResponse(delegateResponseData);
       if (!(delegateResponseData instanceof FetchSecretTaskResponse)) {
         throw new SecretManagementException(SECRET_MANAGEMENT_ERROR, "Unknown Response from delegate", USER);
@@ -120,7 +120,7 @@ public class ManagerEncryptorHelper {
                                     .setupAbstractions(buildAbstractions(parameters.getEncryptionConfig()))
                                     .build();
     try {
-      DelegateResponseData delegateResponseData = delegateService.executeTask(delegateTask);
+      DelegateResponseData delegateResponseData = delegateService.executeTaskV2(delegateTask);
       DelegateTaskUtils.validateDelegateTaskResponse(delegateResponseData);
       if (!(delegateResponseData instanceof ValidateSecretReferenceTaskResponse)) {
         throw new SecretManagementException(SECRET_MANAGEMENT_ERROR, "Unknown Response from delegate", USER);
@@ -148,7 +148,7 @@ public class ManagerEncryptorHelper {
                                     .build();
 
     try {
-      DelegateResponseData delegateResponseData = delegateService.executeTask(delegateTask);
+      DelegateResponseData delegateResponseData = delegateService.executeTaskV2(delegateTask);
       DelegateTaskUtils.validateDelegateTaskResponse(delegateResponseData);
       if (!(delegateResponseData instanceof ValidateSecretManagerConfigurationTaskResponse)) {
         throw new SecretManagementException(SECRET_MANAGEMENT_ERROR, "Unknown Response from delegate", USER);

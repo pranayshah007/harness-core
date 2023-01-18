@@ -14,6 +14,7 @@ import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineMetadataV2;
+import io.harness.pms.pipeline.PipelineMetadataV2.PipelineMetadataV2Keys;
 import io.harness.repositories.pipeline.PipelineMetadataV2Repository;
 
 import com.google.inject.Inject;
@@ -109,5 +110,19 @@ public class PipelineMetadataServiceImpl implements PipelineMetadataService {
         accountId, orgIdentifier, projectIdentifier, identifiers);
     return pipelineMetadataList.stream().collect(
         Collectors.toMap(PipelineMetadataV2::getIdentifier, Function.identity()));
+  }
+
+  @Override
+  public boolean deletePipelineMetadata(
+      String accountId, String orgIdentifier, String projectIdentifier, String identifier) {
+    Criteria metadataFindCriteria = Criteria.where(PipelineMetadataV2Keys.accountIdentifier)
+                                        .is(accountId)
+                                        .and(PipelineMetadataV2Keys.orgIdentifier)
+                                        .is(orgIdentifier)
+                                        .and(PipelineMetadataV2Keys.projectIdentifier)
+                                        .is(projectIdentifier)
+                                        .and(PipelineMetadataV2Keys.identifier)
+                                        .is(identifier);
+    return pipelineMetadataV2Repository.delete(metadataFindCriteria);
   }
 }

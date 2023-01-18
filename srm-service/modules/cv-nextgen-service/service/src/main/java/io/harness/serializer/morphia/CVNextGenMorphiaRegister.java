@@ -87,6 +87,8 @@ import io.harness.cvng.core.entities.changeSource.PagerDutyChangeSource;
 import io.harness.cvng.core.entities.demo.CVNGDemoDataIndex;
 import io.harness.cvng.core.entities.demo.CVNGDemoPerpetualTask;
 import io.harness.cvng.dashboard.entities.HeatMap;
+import io.harness.cvng.downtime.entities.Downtime;
+import io.harness.cvng.downtime.entities.EntityUnavailabilityStatuses;
 import io.harness.cvng.migration.beans.CVNGSchema;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule;
 import io.harness.cvng.notification.entities.NotificationRule;
@@ -234,6 +236,8 @@ public class CVNextGenMorphiaRegister implements MorphiaRegistrar {
     set.add(VerificationTaskBase.class);
     set.add(NextGenMetricCVConfig.class);
     set.add(NextGenLogCVConfig.class);
+    set.add(Downtime.class);
+    set.add(EntityUnavailabilityStatuses.class);
   }
 
   @Override

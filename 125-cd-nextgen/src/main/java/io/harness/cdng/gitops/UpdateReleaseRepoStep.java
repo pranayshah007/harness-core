@@ -12,7 +12,6 @@ import static io.harness.cdng.gitops.constants.GitopsConstants.GITOPS_SWEEPING_O
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.ListUtils.trimStrings;
-import static io.harness.steps.StepUtils.prepareCDTaskRequest;
 
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.trim;
@@ -59,6 +58,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 
@@ -66,6 +66,7 @@ import software.wings.beans.TaskType;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -82,7 +83,7 @@ public class UpdateReleaseRepoStep extends CdTaskExecutable<NGGitOpsResponse> {
                                                .build();
 
   @Inject private EngineExpressionService engineExpressionService;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private CDStepHelper cdStepHelper;
   @Inject private StepHelper stepHelper;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
@@ -163,8 +164,8 @@ public class UpdateReleaseRepoStep extends CdTaskExecutable<NGGitOpsResponse> {
                                     .parameters(new Object[] {ngGitOpsTaskParams})
                                     .build();
 
-      return prepareCDTaskRequest(ambiance, taskData, kryoSerializer, gitOpsSpecParams.getCommandUnits(),
-          TaskType.GITOPS_TASK_NG.getDisplayName(),
+      return TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
+          gitOpsSpecParams.getCommandUnits(), TaskType.GITOPS_TASK_NG.getDisplayName(),
           TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(gitOpsSpecParams.getDelegateSelectors()))),
           stepHelper.getEnvironmentType(ambiance));
 

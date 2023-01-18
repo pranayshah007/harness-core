@@ -26,6 +26,7 @@ import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanEx
 import io.harness.pms.plan.execution.service.PmsExecutionSummaryService;
 import io.harness.rule.Owner;
 
+import com.google.common.collect.Sets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -68,9 +69,9 @@ public class OrchestrationEndTagsResolverHandlerTest extends CategoryTest {
     List<NGTag> dummyTags = new ArrayList<>();
     Ambiance ambiance =
         Ambiance.newBuilder().putAllSetupAbstractions(setupAbstractions).setPlanExecutionId(PLAN_EXECUTION_ID).build();
-    doReturn(Optional.ofNullable(dummyEntity))
+    doReturn(dummyEntity)
         .when(pmsExecutionSummaryService)
-        .getPipelineExecutionSummary(ACC_ID, ORG_ID, PRO_ID, PLAN_EXECUTION_ID);
+        .getPipelineExecutionSummaryWithProjections(PLAN_EXECUTION_ID, Sets.newHashSet(PlanExecutionSummaryKeys.tags));
     doReturn(dummyTags).when(pmsEngineExpressionService).resolve(ambiance, dummyEntity.getTags(), true);
     orchestrationEndTagsResolveHandler.onEnd(ambiance);
 

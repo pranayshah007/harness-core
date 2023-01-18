@@ -22,8 +22,11 @@ public class NextGenClientModule extends AbstractModule {
 
   @Override
   protected void configure() {
-    bind(NextGenClient.class)
-        .toProvider(new NextGenClientFactory(ngManagerServiceConfig, new ServiceTokenGenerator()))
+    bind(NextGenPrivilegedClient.class)
+        .toProvider(new NextGenPrivilegedClientFactory(ngManagerServiceConfig, new ServiceTokenGenerator()))
+        .in(Scopes.SINGLETON);
+    bind(NextGenNonPrivilegedClient.class)
+        .toProvider(new NextGenNonPrivilegedClientFactory(ngManagerServiceConfig, new ServiceTokenGenerator()))
         .in(Scopes.SINGLETON);
   }
 }

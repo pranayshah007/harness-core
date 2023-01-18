@@ -13,6 +13,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.freeze.beans.FilterType;
 import io.harness.freeze.beans.FreezeEntityRule;
 import io.harness.freeze.beans.FreezeEntityType;
+import io.harness.freeze.beans.FreezeStatus;
 import io.harness.freeze.beans.FreezeType;
 import io.harness.freeze.beans.FreezeWindow;
 import io.harness.freeze.beans.response.FreezeBannerDetails;
@@ -24,6 +25,7 @@ import io.harness.freeze.beans.yaml.FreezeInfoConfig;
 import io.harness.freeze.entity.FreezeConfigEntity;
 import io.harness.freeze.helpers.FreezeTimeUtils;
 import io.harness.ng.core.mapper.TagMapper;
+import io.harness.ng.core.utils.NGYamlUtils;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.google.common.collect.Sets;
@@ -184,7 +186,7 @@ public class NGFreezeDtoMapper {
   }
 
   public String toYaml(FreezeConfig freezeConfig) {
-    return YamlPipelineUtils.writeYamlString(freezeConfig);
+    return NGYamlUtils.getYamlString(freezeConfig);
   }
 
   private FreezeConfigEntity toFreezeConfigEntityResponse(String accountId, FreezeConfig freezeConfig,
@@ -232,6 +234,26 @@ public class NGFreezeDtoMapper {
     }
   }
 
+  public boolean setGlobalFreezeStatus(FreezeConfig freezeConfig) {
+    FreezeInfoConfig freezeInfoConfig = freezeConfig.getFreezeInfoConfig();
+    List<FreezeWindow> windows = freezeInfoConfig.getWindows();
+    boolean[] update = {false};
+    if (windows != null) {
+      windows.stream().forEach(freezeWindow -> {
+        try {
+          boolean active = FreezeTimeUtils.globalFreezeIsActive(freezeWindow);
+          if (!active && freezeInfoConfig.getStatus() == FreezeStatus.ENABLED) {
+            update[0] = true;
+            return;
+          }
+        } catch (Exception e) {
+          // Ignore the exception if caught
+        }
+      });
+    }
+    return update[0];
+  }
+
   public static void validateFreezeYaml(FreezeConfig freezeConfig, String orgId, String projectId, FreezeType type) {
     if (freezeConfig.getFreezeInfoConfig() == null) {
       throw new InvalidRequestException("FreezeInfoConfig cannot be empty");
@@ -275,7 +297,9 @@ public class NGFreezeDtoMapper {
     if (windows != null) {
       windows.stream().forEach(freezeWindow -> {
         try {
-          FreezeTimeUtils.validateTimeRange(freezeWindow);
+          if (freezeConfig.getFreezeInfoConfig().getStatus() == FreezeStatus.ENABLED) {
+            FreezeTimeUtils.validateTimeRange(freezeWindow);
+          }
         } catch (ParseException e) {
           throw new InvalidRequestException("Invalid time format provided.", e);
         } catch (DateTimeParseException e) {

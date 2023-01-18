@@ -1288,9 +1288,15 @@ public class WingsApplication extends Application<MainConfiguration> {
         .scheduleWithFixedDelay(
             injector.getInstance(GitChangeSetRunnable.class), random.nextInt(5), 5L, TimeUnit.SECONDS);
 
-    injector.getInstance(DeploymentReconExecutorService.class)
-        .scheduleWithFixedDelay(
-            injector.getInstance(DeploymentReconTask.class), random.nextInt(60), 15 * 60L, TimeUnit.SECONDS);
+    if (configuration.getDataReconciliationConfig() == null) {
+      injector.getInstance(DeploymentReconExecutorService.class)
+          .scheduleWithFixedDelay(
+              injector.getInstance(DeploymentReconTask.class), random.nextInt(60), 15 * 60L, TimeUnit.SECONDS);
+    } else if (configuration.getDataReconciliationConfig().isEnabled()) {
+      injector.getInstance(DeploymentReconExecutorService.class)
+          .scheduleWithFixedDelay(injector.getInstance(DeploymentReconTask.class), random.nextInt(60),
+              configuration.getDataReconciliationConfig().getDuration(), TimeUnit.SECONDS);
+    }
 
     injector.getInstance(LookerEntityReconExecutorService.class)
         .scheduleWithFixedDelay(

@@ -31,7 +31,6 @@ import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.sdk.core.steps.executables.SyncExecutable;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
@@ -40,6 +39,7 @@ import io.harness.serializer.JsonUtils;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.StepUtils;
+import io.harness.steps.executables.PipelineSyncExecutable;
 
 import com.google.inject.Inject;
 import java.io.IOException;
@@ -55,12 +55,13 @@ import retrofit2.Response;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CDC)
-public class EmailStep implements SyncExecutable<StepElementParameters> {
+public class EmailStep extends PipelineSyncExecutable {
   @Inject private NotificationClient notificationClient;
   public static final StepType STEP_TYPE = StepSpecTypeConstants.EMAIL_STEP_TYPE;
 
   @Inject private KryoSerializer kryoSerializer;
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
+
   @Override
   public List<String> getLogKeys(Ambiance ambiance) {
     // TODO need to figure out how this should work...
@@ -68,7 +69,7 @@ public class EmailStep implements SyncExecutable<StepElementParameters> {
   }
 
   @Override
-  public StepResponse executeSync(Ambiance ambiance, StepElementParameters stepParameters,
+  public StepResponse executeSyncAfterRbac(Ambiance ambiance, StepElementParameters stepParameters,
       StepInputPackage inputPackage, PassThroughData passThroughData) {
     long startTime = System.currentTimeMillis();
     NGLogCallback logCallback = new NGLogCallback(logStreamingStepClientFactory, ambiance, null, true);

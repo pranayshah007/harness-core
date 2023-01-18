@@ -90,7 +90,7 @@ public class JiraResourceServiceTest extends CategoryTest {
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
   public void testValidateCredentials() {
-    when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(JiraTaskNGResponse.builder().build());
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any())).thenReturn(JiraTaskNGResponse.builder().build());
     assertThat(jiraResourceService.validateCredentials(identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER)).isTrue();
   }
 
@@ -98,7 +98,7 @@ public class JiraResourceServiceTest extends CategoryTest {
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
   public void testValidateCredentialsDelegateError() {
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(ErrorNotifyResponseData.builder().errorMessage("exception").build());
     assertThatThrownBy(() -> jiraResourceService.validateCredentials(identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
         .isInstanceOf(HarnessJiraException.class);
@@ -109,7 +109,7 @@ public class JiraResourceServiceTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetProjects() {
     List<JiraProjectBasicNG> projects = Collections.emptyList();
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(JiraTaskNGResponse.builder().projects(projects).build());
     assertThat(jiraResourceService.getProjects(identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER)).isEqualTo(projects);
   }
@@ -119,7 +119,7 @@ public class JiraResourceServiceTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetIssueCreateMeta() {
     JiraIssueCreateMetadataNG createMetadata = new JiraIssueCreateMetadataNG();
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(JiraTaskNGResponse.builder().issueCreateMetadata(createMetadata).build());
     assertThat(jiraResourceService.getIssueCreateMetadata(
                    identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER, null, null, null, false, false))
@@ -140,7 +140,7 @@ public class JiraResourceServiceTest extends CategoryTest {
 
     JiraSearchUserData jiraSearchUserData = JiraSearchUserData.builder().build();
     JiraTaskNGResponse jiraTaskNGResponse = JiraTaskNGResponse.builder().jiraSearchUserData(jiraSearchUserData).build();
-    when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(jiraTaskNGResponse);
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any())).thenReturn(jiraTaskNGResponse);
     jiraResourceService.searchUser(
         ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, connectorId, defaultSyncTimeout, "search", offset);
 

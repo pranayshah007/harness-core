@@ -18,12 +18,10 @@ import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.ng.core.dto.UserGroupDTO;
 import io.harness.plancreator.steps.common.StepElementParameters;
-import io.harness.plancreator.steps.common.rollback.AsyncExecutableWithRollback;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.steps.StepSpecTypeConstants;
@@ -32,6 +30,7 @@ import io.harness.steps.approval.ApprovalNotificationHandler;
 import io.harness.steps.approval.step.ApprovalInstanceService;
 import io.harness.steps.approval.step.beans.ApprovalUserGroupDTO;
 import io.harness.steps.approval.step.harness.entities.HarnessApprovalInstance;
+import io.harness.steps.executables.PipelineAsyncExecutable;
 import io.harness.tasks.ResponseData;
 
 import com.google.inject.Inject;
@@ -43,7 +42,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 
 @OwnedBy(CDC)
-public class HarnessApprovalStep extends AsyncExecutableWithRollback {
+public class HarnessApprovalStep extends PipelineAsyncExecutable {
   public static final StepType STEP_TYPE = StepSpecTypeConstants.HARNESS_APPROVAL_STEP_TYPE;
 
   @Inject private ApprovalInstanceService approvalInstanceService;
@@ -52,8 +51,8 @@ public class HarnessApprovalStep extends AsyncExecutableWithRollback {
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
 
   @Override
-  public AsyncExecutableResponse executeAsync(Ambiance ambiance, StepElementParameters stepParameters,
-      StepInputPackage inputPackage, PassThroughData passThroughData) {
+  public AsyncExecutableResponse executeAsyncAfterRbac(
+      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
     ILogStreamingStepClient logStreamingStepClient = logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
     logStreamingStepClient.openStream(ShellScriptTaskNG.COMMAND_UNIT);
     HarnessApprovalInstance approvalInstance = HarnessApprovalInstance.fromStepParameters(ambiance, stepParameters);
@@ -77,7 +76,7 @@ public class HarnessApprovalStep extends AsyncExecutableWithRollback {
   }
 
   @Override
-  public StepResponse handleAsyncResponse(
+  public StepResponse handleAsyncResponseInternal(
       Ambiance ambiance, StepElementParameters stepParameters, Map<String, ResponseData> responseDataMap) {
     try {
       HarnessApprovalResponseData responseData =

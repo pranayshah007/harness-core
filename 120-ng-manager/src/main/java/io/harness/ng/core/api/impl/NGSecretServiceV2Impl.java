@@ -308,7 +308,7 @@ public class NGSecretServiceV2Impl implements NGSecretServiceV2 {
 
     DelegateTaskRequest delegateTaskRequest = delegateTaskRequestBuilder.build();
     try {
-      DelegateResponseData delegateResponseData = this.delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
+      DelegateResponseData delegateResponseData = this.delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);
       if (delegateResponseData instanceof RemoteMethodReturnValueData) {
         return buildRemoteMethodResponse((RemoteMethodReturnValueData) delegateResponseData);
       } else if (delegateResponseData instanceof SSHConfigValidationTaskResponse) {
@@ -355,7 +355,7 @@ public class NGSecretServiceV2Impl implements NGSecretServiceV2 {
             .executionTimeout(Duration.ofSeconds(45));
 
     DelegateTaskRequest delegateTaskRequest = delegateTaskRequestBuilder.build();
-    DelegateResponseData delegateResponseData = this.delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
+    DelegateResponseData delegateResponseData = this.delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);
 
     if (delegateResponseData instanceof RemoteMethodReturnValueData) {
       return buildRemoteMethodResponse((RemoteMethodReturnValueData) delegateResponseData);

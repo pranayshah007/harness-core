@@ -33,6 +33,7 @@ import io.harness.delegate.beans.instancesync.mapper.AzureSshWinrmToServiceInsta
 import io.harness.delegate.beans.instancesync.mapper.PdcToServiceInstanceInfoMapper;
 import io.harness.delegate.task.shell.CommandTaskParameters;
 import io.harness.delegate.task.shell.CommandTaskResponse;
+import io.harness.delegate.task.ssh.NgCommandUnit;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.SkipRollbackException;
 import io.harness.executions.steps.ExecutionNodeType;
@@ -56,11 +57,13 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.shell.ShellExecutionData;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
 
 import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -74,12 +77,13 @@ public class CommandStep extends CdTaskExecutable<CommandTaskResponse> {
   public static final StepType STEP_TYPE =
       StepType.newBuilder().setType(ExecutionNodeType.COMMAND.getYamlType()).setStepCategory(StepCategory.STEP).build();
 
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private StepHelper stepHelper;
   @Inject private CDStepHelper cdStepHelper;
   @Inject private SshCommandStepHelper sshCommandStepHelper;
   @Inject private InstanceInfoService instanceInfoService;
   @Inject private OutcomeService outcomeService;
+  @Inject private CommandTaskDataFactory commandTaskDataFactory;
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
@@ -101,19 +105,14 @@ public class CommandStep extends CdTaskExecutable<CommandTaskResponse> {
       CommandTaskParameters taskParameters =
           sshCommandStepHelper.buildCommandTaskParameters(ambiance, executeCommandStepParameters);
 
-      TaskData taskData =
-          TaskData.builder()
-              .async(true)
-              .taskType(TaskType.COMMAND_TASK_NG.name())
-              .parameters(new Object[] {taskParameters})
-              .timeout(StepUtils.getTimeoutMillis(stepParameters.getTimeout(), StepUtils.DEFAULT_STEP_TIMEOUT))
-              .build();
+      TaskData taskData = commandTaskDataFactory.create(taskParameters, stepParameters.getTimeout());
 
       List<String> commandExecutionUnits =
-          taskParameters.getCommandUnits().stream().map(cu -> cu.getName()).collect(Collectors.toList());
-      String taskName = TaskType.COMMAND_TASK_NG.getDisplayName();
+          taskParameters.getCommandUnits().stream().map(NgCommandUnit::getName).collect(Collectors.toList());
+      String taskName = TaskType.valueOf(taskData.getTaskType()).getDisplayName();
 
-      return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer, commandExecutionUnits, taskName,
+      return TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
+          commandExecutionUnits, taskName,
           TaskSelectorYaml.toTaskSelector(
               emptyIfNull(getParameterFieldValue(executeCommandStepParameters.getDelegateSelectors()))),
           stepHelper.getEnvironmentType(ambiance));

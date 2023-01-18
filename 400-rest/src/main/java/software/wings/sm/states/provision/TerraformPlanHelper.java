@@ -71,4 +71,17 @@ public class TerraformPlanHelper {
       sweepingOutputService.deleteById(context.getAppId(), sweepingOutputInstance.getUuid());
     }
   }
+
+  public void removeTfPlanJsonFileIdFromSweepingOutput(
+      ExecutionContext context, String variableName, SweepingOutputInstance.Scope scope) {
+    SweepingOutputInstance sweepingOutputInstance =
+        sweepingOutputService.find(context.prepareSweepingOutputInquiryBuilder().name(variableName).build());
+    if (sweepingOutputInstance != null) {
+      sweepingOutputService.deleteById(context.getAppId(), sweepingOutputInstance.getUuid());
+      TerraformPlanParam terraformPlanParam = (TerraformPlanParam) sweepingOutputInstance.getValue();
+      terraformPlanParam.setTfPlanJsonFileId(null);
+      sweepingOutputService.save(
+          context.prepareSweepingOutputBuilder(scope).name(variableName).value(terraformPlanParam).build());
+    }
+  }
 }

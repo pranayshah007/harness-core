@@ -54,8 +54,16 @@ public class EventsFrameworkChangeConsumerTest extends CategoryTest {
   private static final String collection = "coll";
   @Mock private static DebeziumProducerFactory producerFactory;
   @Mock private CfClient cfClient;
-  private static final EventsFrameworkChangeConsumer eventsFrameworkChangeConsumer =
-      new EventsFrameworkChangeConsumer(60, collection, producerFactory, 1000, 1000, null);
+  ConsumerMode mode = ConsumerMode.SNAPSHOT;
+  private static final EventsFrameworkChangeConsumerStreaming EVENTS_FRAMEWORK_CHANGE_CONSUMER_STREAMING =
+      new EventsFrameworkChangeConsumerStreaming(ChangeConsumerConfig.builder()
+                                                     .sleepInterval(10)
+                                                     .producingCountPerBatch(10)
+                                                     .redisStreamSize(10)
+                                                     .consumerType(ConsumerType.EVENTS_FRAMEWORK)
+                                                     .eventsFrameworkConfiguration(null)
+                                                     .build(),
+          null, "coll", null);
   private static final String key = "key";
   private static final String value = "value";
   ChangeEvent<String, String> testRecord = new EmbeddedEngineChangeEvent<>(key, value, null);
@@ -65,16 +73,16 @@ public class EventsFrameworkChangeConsumerTest extends CategoryTest {
   @Owner(developers = SHALINI)
   @Category(UnitTests.class)
   public void testGetValueOrDefault() {
-    assertEquals(DEFAULT_STRING, eventsFrameworkChangeConsumer.getValueOrDefault(emptyRecord));
-    assertEquals(value, eventsFrameworkChangeConsumer.getValueOrDefault(testRecord));
+    assertEquals(DEFAULT_STRING, EVENTS_FRAMEWORK_CHANGE_CONSUMER_STREAMING.getValueOrDefault(emptyRecord));
+    assertEquals(value, EVENTS_FRAMEWORK_CHANGE_CONSUMER_STREAMING.getValueOrDefault(testRecord));
   }
 
   @Test
   @Owner(developers = SHALINI)
   @Category(UnitTests.class)
   public void testGetKeyOrDefault() {
-    assertEquals(DEFAULT_STRING, eventsFrameworkChangeConsumer.getKeyOrDefault(emptyRecord));
-    assertEquals(key, eventsFrameworkChangeConsumer.getKeyOrDefault(testRecord));
+    assertEquals(DEFAULT_STRING, EVENTS_FRAMEWORK_CHANGE_CONSUMER_STREAMING.getKeyOrDefault(emptyRecord));
+    assertEquals(key, EVENTS_FRAMEWORK_CHANGE_CONSUMER_STREAMING.getKeyOrDefault(testRecord));
   }
 
   @Test
@@ -83,7 +91,7 @@ public class EventsFrameworkChangeConsumerTest extends CategoryTest {
   public void testGetOperationType() {
     ConnectHeaders headers = new ConnectHeaders();
     headers.add("__op", "c", Schema.STRING_SCHEMA);
-    Optional<OpType> opType = eventsFrameworkChangeConsumer.getOperationType(new SourceRecord(
+    Optional<OpType> opType = EVENTS_FRAMEWORK_CHANGE_CONSUMER_STREAMING.getOperationType(new SourceRecord(
         new HashMap<>(), new HashMap<>(), "", 0, Schema.BOOLEAN_SCHEMA, "", Schema.BOOLEAN_SCHEMA, "", 0L, headers));
     assertEquals(opType, Optional.of(OpType.CREATE));
   }
@@ -92,15 +100,23 @@ public class EventsFrameworkChangeConsumerTest extends CategoryTest {
   @Owner(developers = SHALINI)
   @Category(UnitTests.class)
   public void testGetCollection() {
-    assertEquals(collection, eventsFrameworkChangeConsumer.getCollection());
+    assertEquals(collection, EVENTS_FRAMEWORK_CHANGE_CONSUMER_STREAMING.getCollection());
   }
 
   @Test
   @Owner(developers = SHALINI)
   @Category(UnitTests.class)
   public void testHandleBatch() throws InterruptedException, InvalidProtocolBufferException {
-    EventsFrameworkChangeConsumer eventsFrameworkChangeConsumer =
-        new EventsFrameworkChangeConsumer(60, collection, producerFactory, 1000, 1000, cfClient);
+    EventsFrameworkChangeConsumerStreaming eventsFrameworkChangeConsumerStreaming =
+        new EventsFrameworkChangeConsumerStreaming(ChangeConsumerConfig.builder()
+                                                       .sleepInterval(10)
+                                                       .producingCountPerBatch(10)
+                                                       .redisStreamSize(10)
+                                                       .consumerType(ConsumerType.EVENTS_FRAMEWORK)
+                                                       .eventsFrameworkConfiguration(null)
+                                                       .consumerMode(mode)
+                                                       .build(),
+            cfClient, "coll", producerFactory);
     List<ChangeEvent<String, String>> records = new ArrayList<>();
     ConnectHeaders headers = new ConnectHeaders();
     headers.add("__op", "c", Schema.STRING_SCHEMA);
@@ -108,11 +124,11 @@ public class EventsFrameworkChangeConsumerTest extends CategoryTest {
         new SourceRecord(new HashMap<>(), new HashMap<>(), "topic", 0, Schema.BOOLEAN_SCHEMA, "", Schema.BOOLEAN_SCHEMA,
             "", 0L, headers));
     records.add(testRecord);
-    doReturn(producer).when(producerFactory).get("topic", 1000);
+    doReturn(producer).when(producerFactory).get("topic", 10, ConsumerMode.SNAPSHOT, null);
     doNothing().when(recordCommitter).markBatchFinished();
     doNothing().when(recordCommitter).markProcessed(testRecord);
     doReturn(true).when(cfClient).boolVariation(anyString(), any(), anyBoolean());
-    eventsFrameworkChangeConsumer.handleBatch(records, recordCommitter);
+    eventsFrameworkChangeConsumerStreaming.handleBatch(records, recordCommitter);
     ArgumentCaptor<Message> captor = ArgumentCaptor.forClass(Message.class);
     verify(producer, times(1)).send(captor.capture());
     DebeziumChangeEvent debeziumChangeEvent =

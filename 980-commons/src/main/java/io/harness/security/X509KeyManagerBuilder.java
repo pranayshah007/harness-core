@@ -8,6 +8,7 @@
 package io.harness.security;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.security.SimpleEncryption.CHARSET;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.KeyManagerBuilderException;
@@ -15,7 +16,9 @@ import io.harness.filesystem.DefaultFileReader;
 import io.harness.filesystem.FileReader;
 
 import com.google.common.annotations.VisibleForTesting;
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.nio.CharBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.StandardOpenOption;
 import java.security.KeyFactory;
@@ -28,6 +31,7 @@ import java.util.Base64;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.X509KeyManager;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Responsible for building a X509KeyManager.
@@ -124,6 +128,17 @@ public class X509KeyManagerBuilder {
     }
   }
 
+  protected static Certificate[] loadCertificatesFromPemString(String fileContent) throws KeyManagerBuilderException {
+    try (InputStream certificateChainAsInputStream =
+             new ByteArrayInputStream(CHARSET.encode(CharBuffer.wrap(fileContent)).array())) {
+      CertificateFactory certificateFactory = CertificateFactory.getInstance(CERTIFICATE_TYPE_X509);
+      return certificateFactory.generateCertificates(certificateChainAsInputStream).toArray(new Certificate[0]);
+    } catch (Exception ex) {
+      throw new KeyManagerBuilderException(
+          String.format("Failed to load certificate(s), expecting x509 certificates: %s", ex.getMessage()), ex);
+    }
+  }
+
   private PrivateKey loadPkcs8EncodedPrivateKeyFromPem(String filePath) throws KeyManagerBuilderException {
     return this.loadPkcs8EncodedPrivateKeyFromPem(filePath, KEY_ALGORITHM_RSA);
   }
@@ -141,7 +156,43 @@ public class X509KeyManagerBuilder {
     if (fileContent == null) {
       throw new KeyManagerBuilderException(String.format("Received NULL content for file '%s'.", filePath));
     }
+    String base64DerEncodedPrivateKey = sanitizePkcs8EncodedPrivateKey(fileContent);
 
+    try {
+      // decode to raw DER encoded key
+      byte[] derEncodedPrivateKey = Base64.getDecoder().decode(base64DerEncodedPrivateKey);
+
+      // generate private key
+      KeyFactory keyFactory = KeyFactory.getInstance(keyAlgorithm);
+      PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(derEncodedPrivateKey);
+
+      return keyFactory.generatePrivate(keySpec);
+    } catch (Exception ex) {
+      throw new KeyManagerBuilderException(
+          String.format("Failed to generate key (expected DER encoded key in PKCS8 format): %s", ex.getMessage()), ex);
+    }
+  }
+
+  protected static PKCS8EncodedKeySpec loadPkcs8EncodedPrivateKeySpecFromPem(String fileContent)
+      throws KeyManagerBuilderException {
+    if (StringUtils.isBlank(fileContent)) {
+      throw new KeyManagerBuilderException("Private key can not be empty");
+    }
+    String base64DerEncodedPrivateKey = sanitizePkcs8EncodedPrivateKey(fileContent);
+
+    try {
+      // decode to raw DER encoded key
+      byte[] derEncodedPrivateKey = Base64.getDecoder().decode(base64DerEncodedPrivateKey);
+
+      // generate private key spec
+      return new PKCS8EncodedKeySpec(derEncodedPrivateKey);
+    } catch (Exception ex) {
+      throw new KeyManagerBuilderException(
+          String.format("Failed to generate key (expected DER encoded key in PKCS8 format): %s", ex), ex);
+    }
+  }
+
+  private static String sanitizePkcs8EncodedPrivateKey(String fileContent) throws KeyManagerBuilderException {
     // prepare string - some sanitation to avoid too many complications.
     fileContent = fileContent.trim().replace("\n", "").replace("\r", "");
 
@@ -160,19 +211,6 @@ public class X509KeyManagerBuilder {
 
     // remove any remaining spaces (base64 is expected to be a continuous string, safe to remove spaces)
     base64DerEncodedPrivateKey = base64DerEncodedPrivateKey.replace(" ", "");
-
-    try {
-      // decode to raw DER encoded key
-      byte[] derEncodedPrivateKey = Base64.getDecoder().decode(base64DerEncodedPrivateKey);
-
-      // generate private key
-      KeyFactory keyFactory = KeyFactory.getInstance(keyAlgorithm);
-      PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(derEncodedPrivateKey);
-
-      return keyFactory.generatePrivate(keySpec);
-    } catch (Exception ex) {
-      throw new KeyManagerBuilderException(
-          String.format("Failed to generate key (expected DER encoded key in PKCS8 format): %s", ex.getMessage()), ex);
-    }
+    return base64DerEncodedPrivateKey;
   }
 }

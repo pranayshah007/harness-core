@@ -70,7 +70,7 @@ public class RolesApiImplTest extends CategoryTest {
   private RolesApiUtils rolesApiUtils;
   private Validator validator;
 
-  String slug = randomAlphabetic(10);
+  String identifier = randomAlphabetic(10);
   String name = randomAlphabetic(10);
   String account = randomAlphabetic(10);
   String org = randomAlphabetic(10);
@@ -105,7 +105,7 @@ public class RolesApiImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testAccountScopedRoleCreate() {
     CreateRoleRequest request = new CreateRoleRequest();
-    request.setSlug(slug);
+    request.setIdentifier(identifier);
     request.setName(name);
     Scope scope = Scope.builder().instanceId(account).level(HarnessScopeLevel.ACCOUNT).build();
     when(scopeService.getOrCreate(scope)).thenReturn(scope);
@@ -118,7 +118,7 @@ public class RolesApiImplTest extends CategoryTest {
 
     Response response = accountRolesApi.createRoleAcc(request, account);
     RolesResponse entity = (RolesResponse) response.getEntity();
-    assertEquals(slug, entity.getSlug());
+    assertEquals(identifier, entity.getIdentifier());
     assertEquals(name, entity.getName());
     assertEquals(account, entity.getScope().getAccount());
     verify(accessControlClient, times(1)).checkForAccessOrThrow(any(), any(), any());
@@ -133,13 +133,13 @@ public class RolesApiImplTest extends CategoryTest {
     Scope scope = Scope.builder().instanceId(account).level(HarnessScopeLevel.ACCOUNT).build();
     when(scopeService.buildScopeFromScopeIdentifier(scopeIdentifierAcc)).thenReturn(scope);
 
-    Role role = Role.builder().identifier(slug).name(name).scopeIdentifier(scopeIdentifierAcc).build();
+    Role role = Role.builder().identifier(identifier).name(name).scopeIdentifier(scopeIdentifierAcc).build();
     RolesResponse rolesResponse = RolesApiUtils.getRolesResponse(roleDTOMapper.toResponseDTO(role));
     when(transactionTemplate.execute(any())).thenReturn(rolesResponse);
 
-    Response response = accountRolesApi.deleteRoleAcc(slug, account);
+    Response response = accountRolesApi.deleteRoleAcc(identifier, account);
     RolesResponse entity = (RolesResponse) response.getEntity();
-    assertEquals(slug, entity.getSlug());
+    assertEquals(identifier, entity.getIdentifier());
     assertEquals(name, entity.getName());
     assertEquals(account, entity.getScope().getAccount());
     verify(accessControlClient, times(1)).checkForAccessOrThrow(any(), any(), any());
@@ -152,12 +152,12 @@ public class RolesApiImplTest extends CategoryTest {
   public void testAccountScopedRoleGet() {
     Scope scope = Scope.builder().instanceId(account).level(HarnessScopeLevel.ACCOUNT).build();
     when(scopeService.buildScopeFromScopeIdentifier(scopeIdentifierAcc)).thenReturn(scope);
-    Role role = Role.builder().identifier(slug).name(name).scopeIdentifier(scopeIdentifierAcc).build();
-    when(roleService.get(slug, scopeIdentifierAcc, NO_FILTER)).thenReturn(Optional.ofNullable(role));
+    Role role = Role.builder().identifier(identifier).name(name).scopeIdentifier(scopeIdentifierAcc).build();
+    when(roleService.get(identifier, scopeIdentifierAcc, NO_FILTER)).thenReturn(Optional.ofNullable(role));
 
-    Response response = accountRolesApi.getRoleAcc(slug, account);
+    Response response = accountRolesApi.getRoleAcc(identifier, account);
     RolesResponse entity = (RolesResponse) response.getEntity();
-    assertEquals(slug, entity.getSlug());
+    assertEquals(identifier, entity.getIdentifier());
     assertEquals(name, entity.getName());
     assertEquals(account, entity.getScope().getAccount());
     verify(accessControlClient, times(1)).checkForAccessOrThrow(any(), any(), any());
@@ -170,7 +170,7 @@ public class RolesApiImplTest extends CategoryTest {
     Scope scope = Scope.builder().instanceId(account).level(HarnessScopeLevel.ACCOUNT).build();
     when(scopeService.buildScopeFromScopeIdentifier(scopeIdentifierAcc)).thenReturn(scope);
     String searchTerm = randomAlphabetic(10);
-    Role role = Role.builder().identifier(slug).name(name).scopeIdentifier(scopeIdentifierAcc).build();
+    Role role = Role.builder().identifier(identifier).name(name).scopeIdentifier(scopeIdentifierAcc).build();
     RoleFilter roleFilter = RoleFilter.builder()
                                 .searchTerm(searchTerm)
                                 .scopeIdentifier(scopeIdentifierAcc)
@@ -180,13 +180,13 @@ public class RolesApiImplTest extends CategoryTest {
     when(roleService.list(any(), any(), eq(true)))
         .thenReturn(getNGPageResponse(getPage(Collections.singletonList(role), 1)));
 
-    Response response = accountRolesApi.listRolesAcc(page, limit, searchTerm, account, "slug", "ASC");
+    Response response = accountRolesApi.listRolesAcc(page, limit, searchTerm, account, "identifier", "ASC");
     List<RolesResponse> entity = (List<RolesResponse>) response.getEntity();
 
     assertEquals(searchTerm, roleFilter.getSearchTerm());
     assertEquals(2, response.getLinks().size());
     assertEquals(1, entity.size());
-    assertEquals(slug, entity.get(0).getSlug());
+    assertEquals(identifier, entity.get(0).getIdentifier());
     assertEquals(name, entity.get(0).getName());
     assertEquals(account, entity.get(0).getScope().getAccount());
   }
@@ -199,16 +199,16 @@ public class RolesApiImplTest extends CategoryTest {
     when(scopeService.buildScopeFromScopeIdentifier(scopeIdentifierAcc)).thenReturn(scope);
     String updatedName = randomAlphabetic(10);
     CreateRoleRequest request = new CreateRoleRequest();
-    request.setSlug(slug);
+    request.setIdentifier(identifier);
     request.setName(updatedName);
     RoleDTO roleDTO = rolesApiUtils.getRoleAccDTO(request);
     RolesResponse rolesResponse = RolesApiUtils.getRolesResponse(
         RoleResponseDTO.builder().role(roleDTO).scope(ScopeDTO.builder().accountIdentifier(account).build()).build());
     when(transactionTemplate.execute(any())).thenReturn(rolesResponse);
 
-    Response response = accountRolesApi.updateRoleAcc(request, slug, account);
+    Response response = accountRolesApi.updateRoleAcc(request, identifier, account);
     RolesResponse entity = (RolesResponse) response.getEntity();
-    assertEquals(slug, entity.getSlug());
+    assertEquals(identifier, entity.getIdentifier());
     assertEquals(updatedName, entity.getName());
     assertEquals(account, entity.getScope().getAccount());
     verify(accessControlClient, times(1)).checkForAccessOrThrow(any(), any(), any());
@@ -220,7 +220,7 @@ public class RolesApiImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testOrgScopedRoleCreate() {
     CreateRoleRequest request = new CreateRoleRequest();
-    request.setSlug(slug);
+    request.setIdentifier(identifier);
     request.setName(name);
     HarnessScopeParams harnessScopeParams =
         HarnessScopeParams.builder().accountIdentifier(account).orgIdentifier(org).build();
@@ -238,7 +238,7 @@ public class RolesApiImplTest extends CategoryTest {
 
     Response response = orgRolesApi.createRoleOrg(request, org, account);
     RolesResponse entity = (RolesResponse) response.getEntity();
-    assertEquals(slug, entity.getSlug());
+    assertEquals(identifier, entity.getIdentifier());
     assertEquals(name, entity.getName());
     assertEquals(account, entity.getScope().getAccount());
     assertEquals(org, entity.getScope().getOrg());
@@ -256,13 +256,13 @@ public class RolesApiImplTest extends CategoryTest {
     Scope scope = ScopeMapper.fromParams(harnessScopeParams);
     when(scopeService.buildScopeFromScopeIdentifier(scopeIdentifierOrg)).thenReturn(scope);
 
-    Role role = Role.builder().identifier(slug).name(name).scopeIdentifier(scopeIdentifierOrg).build();
+    Role role = Role.builder().identifier(identifier).name(name).scopeIdentifier(scopeIdentifierOrg).build();
     RolesResponse rolesResponse = RolesApiUtils.getRolesResponse(roleDTOMapper.toResponseDTO(role));
     when(transactionTemplate.execute(any())).thenReturn(rolesResponse);
 
-    Response response = orgRolesApi.deleteRoleOrg(org, slug, account);
+    Response response = orgRolesApi.deleteRoleOrg(org, identifier, account);
     RolesResponse entity = (RolesResponse) response.getEntity();
-    assertEquals(slug, entity.getSlug());
+    assertEquals(identifier, entity.getIdentifier());
     assertEquals(name, entity.getName());
     assertEquals(account, entity.getScope().getAccount());
     assertEquals(org, entity.getScope().getOrg());
@@ -278,12 +278,12 @@ public class RolesApiImplTest extends CategoryTest {
         HarnessScopeParams.builder().accountIdentifier(account).orgIdentifier(org).build();
     Scope scope = ScopeMapper.fromParams(harnessScopeParams);
     when(scopeService.buildScopeFromScopeIdentifier(scopeIdentifierOrg)).thenReturn(scope);
-    Role role = Role.builder().identifier(slug).name(name).scopeIdentifier(scopeIdentifierOrg).build();
-    when(roleService.get(slug, scopeIdentifierOrg, NO_FILTER)).thenReturn(Optional.ofNullable(role));
+    Role role = Role.builder().identifier(identifier).name(name).scopeIdentifier(scopeIdentifierOrg).build();
+    when(roleService.get(identifier, scopeIdentifierOrg, NO_FILTER)).thenReturn(Optional.ofNullable(role));
 
-    Response response = orgRolesApi.getRoleOrg(org, slug, account);
+    Response response = orgRolesApi.getRoleOrg(org, identifier, account);
     RolesResponse entity = (RolesResponse) response.getEntity();
-    assertEquals(slug, entity.getSlug());
+    assertEquals(identifier, entity.getIdentifier());
     assertEquals(name, entity.getName());
     assertEquals(account, entity.getScope().getAccount());
     assertEquals(org, entity.getScope().getOrg());
@@ -299,7 +299,7 @@ public class RolesApiImplTest extends CategoryTest {
     Scope scope = ScopeMapper.fromParams(harnessScopeParams);
     when(scopeService.buildScopeFromScopeIdentifier(scopeIdentifierOrg)).thenReturn(scope);
     String searchTerm = randomAlphabetic(10);
-    Role role = Role.builder().identifier(slug).name(name).scopeIdentifier(scopeIdentifierOrg).build();
+    Role role = Role.builder().identifier(identifier).name(name).scopeIdentifier(scopeIdentifierOrg).build();
     RoleFilter roleFilter = RoleFilter.builder()
                                 .searchTerm(searchTerm)
                                 .scopeIdentifier(scopeIdentifierOrg)
@@ -315,7 +315,7 @@ public class RolesApiImplTest extends CategoryTest {
     assertEquals(searchTerm, roleFilter.getSearchTerm());
     assertEquals(2, response.getLinks().size());
     assertEquals(1, entity.size());
-    assertEquals(slug, entity.get(0).getSlug());
+    assertEquals(identifier, entity.get(0).getIdentifier());
     assertEquals(name, entity.get(0).getName());
     assertEquals(account, entity.get(0).getScope().getAccount());
     assertEquals(org, entity.get(0).getScope().getOrg());
@@ -331,7 +331,7 @@ public class RolesApiImplTest extends CategoryTest {
     when(scopeService.buildScopeFromScopeIdentifier(scopeIdentifierOrg)).thenReturn(scope);
     String updatedName = randomAlphabetic(10);
     CreateRoleRequest request = new CreateRoleRequest();
-    request.setSlug(slug);
+    request.setIdentifier(identifier);
     request.setName(updatedName);
     RoleDTO roleDTO = rolesApiUtils.getRoleOrgDTO(request);
     RolesResponse rolesResponse = RolesApiUtils.getRolesResponse(
@@ -341,9 +341,9 @@ public class RolesApiImplTest extends CategoryTest {
             .build());
     when(transactionTemplate.execute(any())).thenReturn(rolesResponse);
 
-    Response response = orgRolesApi.updateRoleOrg(request, org, slug, account);
+    Response response = orgRolesApi.updateRoleOrg(request, org, identifier, account);
     RolesResponse entity = (RolesResponse) response.getEntity();
-    assertEquals(slug, entity.getSlug());
+    assertEquals(identifier, entity.getIdentifier());
     assertEquals(updatedName, entity.getName());
     assertEquals(account, entity.getScope().getAccount());
     assertEquals(org, entity.getScope().getOrg());
@@ -356,7 +356,7 @@ public class RolesApiImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testProjectScopedRoleCreate() {
     CreateRoleRequest request = new CreateRoleRequest();
-    request.setSlug(slug);
+    request.setIdentifier(identifier);
     request.setName(name);
     HarnessScopeParams harnessScopeParams =
         HarnessScopeParams.builder().accountIdentifier(account).orgIdentifier(org).projectIdentifier(project).build();
@@ -374,7 +374,7 @@ public class RolesApiImplTest extends CategoryTest {
 
     Response response = projectRolesApi.createRoleProject(request, org, project, account);
     RolesResponse entity = (RolesResponse) response.getEntity();
-    assertEquals(slug, entity.getSlug());
+    assertEquals(identifier, entity.getIdentifier());
     assertEquals(name, entity.getName());
     assertEquals(account, entity.getScope().getAccount());
     assertEquals(org, entity.getScope().getOrg());
@@ -393,13 +393,13 @@ public class RolesApiImplTest extends CategoryTest {
     Scope scope = ScopeMapper.fromParams(harnessScopeParams);
     when(scopeService.buildScopeFromScopeIdentifier(scopeIdentifierProject)).thenReturn(scope);
 
-    Role role = Role.builder().identifier(slug).name(name).scopeIdentifier(scopeIdentifierProject).build();
+    Role role = Role.builder().identifier(identifier).name(name).scopeIdentifier(scopeIdentifierProject).build();
     RolesResponse rolesResponse = RolesApiUtils.getRolesResponse(roleDTOMapper.toResponseDTO(role));
     when(transactionTemplate.execute(any())).thenReturn(rolesResponse);
 
-    Response response = projectRolesApi.deleteRoleProject(org, project, slug, account);
+    Response response = projectRolesApi.deleteRoleProject(org, project, identifier, account);
     RolesResponse entity = (RolesResponse) response.getEntity();
-    assertEquals(slug, entity.getSlug());
+    assertEquals(identifier, entity.getIdentifier());
     assertEquals(name, entity.getName());
     assertEquals(account, entity.getScope().getAccount());
     assertEquals(org, entity.getScope().getOrg());
@@ -416,12 +416,12 @@ public class RolesApiImplTest extends CategoryTest {
         HarnessScopeParams.builder().accountIdentifier(account).orgIdentifier(org).projectIdentifier(project).build();
     Scope scope = ScopeMapper.fromParams(harnessScopeParams);
     when(scopeService.buildScopeFromScopeIdentifier(scopeIdentifierProject)).thenReturn(scope);
-    Role role = Role.builder().identifier(slug).name(name).scopeIdentifier(scopeIdentifierProject).build();
-    when(roleService.get(slug, scopeIdentifierProject, NO_FILTER)).thenReturn(Optional.ofNullable(role));
+    Role role = Role.builder().identifier(identifier).name(name).scopeIdentifier(scopeIdentifierProject).build();
+    when(roleService.get(identifier, scopeIdentifierProject, NO_FILTER)).thenReturn(Optional.ofNullable(role));
 
-    Response response = projectRolesApi.getRoleProject(org, project, slug, account);
+    Response response = projectRolesApi.getRoleProject(org, project, identifier, account);
     RolesResponse entity = (RolesResponse) response.getEntity();
-    assertEquals(slug, entity.getSlug());
+    assertEquals(identifier, entity.getIdentifier());
     assertEquals(name, entity.getName());
     assertEquals(account, entity.getScope().getAccount());
     assertEquals(org, entity.getScope().getOrg());
@@ -438,7 +438,7 @@ public class RolesApiImplTest extends CategoryTest {
     Scope scope = ScopeMapper.fromParams(harnessScopeParams);
     when(scopeService.buildScopeFromScopeIdentifier(scopeIdentifierProject)).thenReturn(scope);
     String searchTerm = randomAlphabetic(10);
-    Role role = Role.builder().identifier(slug).name(name).scopeIdentifier(scopeIdentifierProject).build();
+    Role role = Role.builder().identifier(identifier).name(name).scopeIdentifier(scopeIdentifierProject).build();
     RoleFilter roleFilter = RoleFilter.builder()
                                 .searchTerm(searchTerm)
                                 .scopeIdentifier(scopeIdentifierProject)
@@ -455,7 +455,7 @@ public class RolesApiImplTest extends CategoryTest {
     assertEquals(searchTerm, roleFilter.getSearchTerm());
     assertEquals(2, response.getLinks().size());
     assertEquals(1, entity.size());
-    assertEquals(slug, entity.get(0).getSlug());
+    assertEquals(identifier, entity.get(0).getIdentifier());
     assertEquals(name, entity.get(0).getName());
     assertEquals(account, entity.get(0).getScope().getAccount());
     assertEquals(org, entity.get(0).getScope().getOrg());
@@ -472,7 +472,7 @@ public class RolesApiImplTest extends CategoryTest {
     when(scopeService.buildScopeFromScopeIdentifier(scopeIdentifierProject)).thenReturn(scope);
     String updatedName = randomAlphabetic(10);
     CreateRoleRequest request = new CreateRoleRequest();
-    request.setSlug(slug);
+    request.setIdentifier(identifier);
     request.setName(updatedName);
     RoleDTO roleDTO = rolesApiUtils.getRoleProjectDTO(request);
     RolesResponse rolesResponse = RolesApiUtils.getRolesResponse(
@@ -482,9 +482,9 @@ public class RolesApiImplTest extends CategoryTest {
             .build());
     when(transactionTemplate.execute(any())).thenReturn(rolesResponse);
 
-    Response response = projectRolesApi.updateRoleProject(request, org, project, slug, account);
+    Response response = projectRolesApi.updateRoleProject(request, org, project, identifier, account);
     RolesResponse entity = (RolesResponse) response.getEntity();
-    assertEquals(slug, entity.getSlug());
+    assertEquals(identifier, entity.getIdentifier());
     assertEquals(updatedName, entity.getName());
     assertEquals(account, entity.getScope().getAccount());
     assertEquals(org, entity.getScope().getOrg());

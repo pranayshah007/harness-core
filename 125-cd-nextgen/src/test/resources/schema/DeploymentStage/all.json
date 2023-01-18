@@ -759,6 +759,172 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "AsgBlueGreenDeployStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "loadBalancer",
+            "prodListener",
+            "prodListenerRuleArn",
+            "stageListener",
+            "stageListenerRuleArn"
+          ],
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "loadBalancer": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "prodListener": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "prodListenerRuleArn": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "stageListener": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "stageListenerRuleArn": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AsgBlueGreenRollbackStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AsgBlueGreenSwapServiceStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "downsizeOldAsg"
+          ],
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "downsizeOldAsg": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "AsgCanaryDeleteStepInfo": {
       "allOf": [
         {
@@ -916,7 +1082,8 @@
               "oneOf": [
                 {
                   "type": "integer",
-                  "format": "int32"
+                  "format": "int32",
+                  "minimum": 0
                 },
                 {
                   "type": "string",
@@ -929,7 +1096,9 @@
               "oneOf": [
                 {
                   "type": "integer",
-                  "format": "int32"
+                  "format": "int32",
+                  "minimum": 0,
+                  "maximum": 100
                 },
                 {
                   "type": "string",
@@ -3522,7 +3691,8 @@
             "ECS",
             "Elastigroup",
             "TAS",
-            "Asg"
+            "Asg",
+            "GoogleCloudFunctions"
           ]
         },
         "environment": {
@@ -3674,6 +3844,9 @@
           ],
           "properties": {
             "connectorRef": {
+              "type": "string"
+            },
+            "digest": {
               "type": "string"
             },
             "imagePath": {
@@ -5499,6 +5672,37 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "GoogleCloudFunctionDefinitionManifest": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ManifestAttributes"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "metadata": {
+              "type": "string"
+            },
+            "store": {
+              "$ref": "#/definitions/StoreConfigWrapper"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "GoogleCloudFunctionsServiceSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ServiceSpec"
+        },
+        {
+          "type": "object",
+          "properties": { }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "HarnessFileStoreSource": {
       "allOf": [
         {
@@ -5802,6 +6006,25 @@
           "type": "string"
         }
       },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "HelmRepoOverrideManifest": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ManifestAttributes"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "metadata": {
+              "type": "string"
+            },
+            "store": {
+              "$ref": "#/definitions/StoreConfigWrapper"
+            }
+          }
+        }
+      ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "HelmRollbackStepInfo": {
@@ -6715,7 +6938,17 @@
               "minLength": 1
             },
             "namespace": {
-              "type": "string",
+              "oneOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$"
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ],
               "minLength": 1
             },
             "releaseName": {
@@ -6846,7 +7079,17 @@
               "minLength": 1
             },
             "namespace": {
-              "type": "string",
+              "oneOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$"
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ],
               "minLength": 1
             },
             "releaseName": {
@@ -7072,6 +7315,34 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "K8sDryRunManifestStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "K8sGcpInfrastructure": {
       "allOf": [
         {
@@ -7098,7 +7369,17 @@
               "type": "string"
             },
             "namespace": {
-              "type": "string",
+              "oneOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$"
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ],
               "minLength": 1
             },
             "releaseName": {
@@ -7490,6 +7771,7 @@
           "type": "string",
           "enum": [
             "HelmChart",
+            "HelmRepoOverride",
             "K8sManifest",
             "Kustomize",
             "KustomizePatches",
@@ -7509,7 +7791,8 @@
             "AsgLaunchTemplate",
             "AsgConfiguration",
             "AsgScalingPolicy",
-            "AsgScheduledUpdateGroupAction"
+            "AsgScheduledUpdateGroupAction",
+            "GoogleCloudFunctionDefinition"
           ]
         }
       },
@@ -7663,6 +7946,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "GoogleCloudFunctionDefinition"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GoogleCloudFunctionDefinitionManifest"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "HelmChart"
               }
             }
@@ -7671,6 +7970,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/HelmChartManifest"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "HelmRepoOverride"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/HelmRepoOverrideManifest"
               }
             }
           }
@@ -8995,6 +9310,39 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ParameterFieldMatrixConfigInterface": {
+      "type": "object",
+      "properties": {
+        "defaultValue": {
+          "$ref": "#/definitions/MatrixConfigInterface"
+        },
+        "executionInput": {
+          "type": "boolean"
+        },
+        "expression": {
+          "type": "boolean"
+        },
+        "expressionValue": {
+          "type": "string"
+        },
+        "inputSetValidator": {
+          "$ref": "#/definitions/InputSetValidator"
+        },
+        "jsonResponseField": {
+          "type": "boolean"
+        },
+        "responseField": {
+          "type": "string"
+        },
+        "typeString": {
+          "type": "boolean"
+        },
+        "value": {
+          "$ref": "#/definitions/MatrixConfigInterface"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "ParameterFieldString": {
       "type": "object",
       "properties": {
@@ -9066,6 +9414,29 @@
                 }
               ]
             },
+            "dynamicallyProvisioned": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "hostAttributes": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
             "hostFilter": {
               "$ref": "#/definitions/HostFilter"
             }
@@ -9098,6 +9469,29 @@
                 }
               ]
             },
+            "dynamicallyProvisioned": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "hostAttributes": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
             "hostFilter": {
               "$ref": "#/definitions/HostFilter"
             },
@@ -9111,6 +9505,73 @@
                 },
                 {
                   "type": "string"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "credentialsRef",
+            "hostFilter",
+            "hostObjectArray"
+          ],
+          "properties": {
+            "credentialsRef": {
+              "type": "string"
+            },
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "dynamicallyProvisioned": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "hostAttributes": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "hostFilter": {
+              "$ref": "#/definitions/HostFilter"
+            },
+            "hostObjectArray": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/JsonNode"
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
                 }
               ]
             }
@@ -10098,7 +10559,8 @@
             "ECS",
             "Elastigroup",
             "TAS",
-            "Asg"
+            "Asg",
+            "GoogleCloudFunctions"
           ]
         }
       },
@@ -10180,6 +10642,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/ElastigroupServiceSpec"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "GoogleCloudFunctions"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GoogleCloudFunctionsServiceSpec"
               }
             }
           }
@@ -11188,6 +11666,54 @@
           "if": {
             "properties": {
               "type": {
+                "const": "AsgBlueGreenDeploy"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AsgBlueGreenDeployStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AsgBlueGreenRollback"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AsgBlueGreenRollbackStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AsgBlueGreenSwapService"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AsgBlueGreenSwapServiceStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "AsgCanaryDelete"
               }
             }
@@ -11892,6 +12418,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "K8sDryRun"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/K8sDryRunManifestStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "K8sRollingDeploy"
               }
             }
@@ -12060,6 +12602,38 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/TasCommandStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "TasRollingDeploy"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/TasRollingDeployStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "TasRollingRollback"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/TasRollingRollbackStepInfo"
               }
             }
           }
@@ -12625,7 +13199,16 @@
       "type": "object",
       "properties": {
         "matrix": {
-          "$ref": "#/definitions/MatrixConfigInterface"
+          "oneOf": [
+            {
+              "$ref": "#/definitions/ParameterFieldMatrixConfigInterface"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
         },
         "parallelism": {
           "oneOf": [
@@ -13287,6 +13870,77 @@
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "TasRollbackStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TasRollingDeployStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "additionalRoutes": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TasRollingRollbackStepInfo": {
       "allOf": [
         {
           "$ref": "#/definitions/StepSpecType"

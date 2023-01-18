@@ -651,6 +651,11 @@ public class CfCommandTaskHelperNG {
     return cfDeploymentManager.getApplicationByName(cfRequestConfig);
   }
 
+  public ApplicationDetail getApplicationDetails(
+      CfRequestConfig cfRequestConfig, CfDeploymentManager cfDeploymentManager) throws PivotalClientApiException {
+    return cfDeploymentManager.getApplicationByName(cfRequestConfig);
+  }
+
   public void downsizePreviousReleases(CfDeployCommandRequestNG cfDeployCommandRequestNG,
       CfRequestConfig cfRequestConfig, LogCallback executionLogCallback, List<CfServiceData> cfServiceDataUpdated,
       Integer updateCount, List<CfInternalInstanceElement> oldAppInstances,
@@ -1002,6 +1007,14 @@ public class CfCommandTaskHelperNG {
       LogCallback logCallback) throws PivotalClientApiException {
     autoscalarRequestData.setApplicationName(oldAppInfo.getApplicationName());
     autoscalarRequestData.setApplicationGuid(oldAppInfo.getApplicationGuid());
+    autoscalarRequestData.setExpectedEnabled(false);
+    cfDeploymentManager.changeAutoscalarState(autoscalarRequestData, logCallback, true);
+  }
+
+  public void enableAutoscalerIfNeeded(ApplicationDetail applicationDetail,
+      CfAppAutoscalarRequestData autoscalarRequestData, LogCallback logCallback) throws PivotalClientApiException {
+    autoscalarRequestData.setApplicationName(applicationDetail.getName());
+    autoscalarRequestData.setApplicationGuid(applicationDetail.getId());
     autoscalarRequestData.setExpectedEnabled(false);
     cfDeploymentManager.changeAutoscalarState(autoscalarRequestData, logCallback, true);
   }

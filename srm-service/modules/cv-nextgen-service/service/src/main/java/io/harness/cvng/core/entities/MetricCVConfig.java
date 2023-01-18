@@ -33,6 +33,7 @@ import io.harness.cvng.core.constant.MonitoredServiceConstants;
 import io.harness.cvng.core.transformer.metricThresholdSpec.MetricThresholdSpecDTOTransformer;
 import io.harness.cvng.core.utils.DateTimeUtils;
 import io.harness.cvng.models.VerificationType;
+import io.harness.data.structure.UUIDGenerator;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.gson.Gson;
@@ -108,6 +109,7 @@ public abstract class MetricCVConfig<I extends AnalysisInfo> extends CVConfig {
               gson.fromJson(gson.toJson(threshold), TimeSeriesThresholdCriteria.class);
           criteria.setThresholdType(type);
           thresholds.add(TimeSeriesThreshold.builder()
+                             .uuid(UUIDGenerator.generateUuid())
                              .accountId(getAccountId())
                              .projectIdentifier(getProjectIdentifier())
                              .dataSourceType(getType())
@@ -253,6 +255,7 @@ public abstract class MetricCVConfig<I extends AnalysisInfo> extends CVConfig {
                 String metricName = metricPackDTO.getMetricName();
                 TimeSeriesThreshold timeSeriesThreshold =
                     TimeSeriesThreshold.builder()
+                        .uuid(UUIDGenerator.generateUuid())
                         .accountId(getAccountId())
                         .projectIdentifier(getProjectIdentifier())
                         .dataSourceType(getType())

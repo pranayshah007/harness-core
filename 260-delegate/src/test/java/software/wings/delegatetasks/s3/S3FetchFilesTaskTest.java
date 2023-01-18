@@ -26,7 +26,7 @@ import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.AwsConfig;
-import software.wings.beans.Log;
+import software.wings.beans.dto.Log;
 import software.wings.beans.s3.FetchS3FilesCommandParams;
 import software.wings.beans.s3.FetchS3FilesExecutionResponse;
 import software.wings.beans.s3.S3File;

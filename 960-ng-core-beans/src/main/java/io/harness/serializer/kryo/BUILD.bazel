@@ -15,7 +15,7 @@ java_library(
         "//960-ng-core-beans/src/main/java/io/harness/ng/core/environment/beans:module",
         "//960-ng-core-beans/src/main/java/io/harness/ng/core/user:module",
         "//960-ng-core-beans/src/main/java/io/harness/steps/shellscript:module",
-        "//980-commons:module",
+        "//980-commons/src/main/java/io/harness/serializer:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
         "@maven//:com_esotericsoftware_kryo",
     ],

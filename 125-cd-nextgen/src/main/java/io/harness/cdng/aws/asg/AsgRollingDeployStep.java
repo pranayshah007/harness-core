@@ -120,8 +120,9 @@ public class AsgRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
             .asgStoreManifestsContent(asgStepExecutorParams.getAsgStoreManifestsContent())
-            .skipMatching(asgSpecParameters.getSkipMatching().getValue())
-            .useAlreadyRunningInstances(asgSpecParameters.getUseAlreadyRunningInstances().getValue())
+            .skipMatching(Boolean.TRUE.equals(asgSpecParameters.getSkipMatching().getValue()))
+            .useAlreadyRunningInstances(
+                Boolean.TRUE.equals(asgSpecParameters.getUseAlreadyRunningInstances().getValue()))
             .instanceWarmup(asgSpecParameters.getInstanceWarmup().getValue())
             .minimumHealthyPercentage(asgSpecParameters.getMinimumHealthyPercentage().getValue())
             .build();

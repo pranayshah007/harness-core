@@ -245,6 +245,8 @@ public class VerifyStepResourceImplTest extends CvNextGenTestBase {
         .isEqualTo("controlNodeIdentifier");
     assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getControlData()).hasSize(1);
     assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getTestData()).hasSize(1);
+    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getNormalisedControlData()).hasSize(1);
+    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getNormalisedTestData()).hasSize(1);
     assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getControlDataType())
         .isEqualTo(ControlDataType.MINIMUM_DEVIATION);
     assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getAppliedThresholds()).isNull();

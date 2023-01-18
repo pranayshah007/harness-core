@@ -69,37 +69,55 @@ public class GitOpsInstanceSyncResource {
   private final CDOverviewDashboardService cdOverviewDashboardService;
 
   @POST
-  @ApiOperation(value = "Create instances and save in DB", nickname = "createGitOpsInstances")
-  public ResponseDTO<Boolean> createGitOpsInstances(
+  @ApiOperation(value = "Process Gitops instances", nickname = "processGitOpsInstances")
+  public ResponseDTO<Boolean> processGitOpsInstances(
       @NotEmpty @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @NotEmpty @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotEmpty @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
-      @QueryParam(NGCommonEntityConstants.AGENT_KEY) String agentIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @NotEmpty @QueryParam(NGCommonEntityConstants.AGENT_KEY) String agentIdentifier,
       @NotNull @Valid List<GitOpsInstanceRequest> gitOpsInstanceRequestList) {
     if (isEmpty(gitOpsInstanceRequestList)) {
-      // TODO remove the condition after the params change in Gitops service is deployed
-      if (agentIdentifier != null) {
-        deleteInstances(accountId, orgIdentifier, projectIdentifier, agentIdentifier);
-      }
+      deleteInstances(accountId, orgIdentifier, projectIdentifier, agentIdentifier);
       return ResponseDTO.newResponse(Boolean.TRUE);
     } else {
-      return processInstances(accountId, orgIdentifier, projectIdentifier, agentIdentifier, gitOpsInstanceRequestList)
+      return processInstances(accountId, agentIdentifier, gitOpsInstanceRequestList)
           ? ResponseDTO.newResponse(Boolean.TRUE)
           : ResponseDTO.newResponse(Boolean.FALSE);
     }
   }
 
-  private Boolean processInstances(String accountId, String orgIdentifier, String projectIdentifier,
-      String agentIdentifier, List<GitOpsInstanceRequest> gitOpsInstanceRequestList) {
-    List<GitOpsInstance> processedInstances =
-        prepareInstanceSync(accountId, orgIdentifier, projectIdentifier, gitOpsInstanceRequestList);
-    if (processedInstances.isEmpty()) {
-      return false;
+  private Boolean processInstances(
+      String accountId, String agentIdentifier, List<GitOpsInstanceRequest> gitOpsInstanceRequestList) {
+    Boolean response = false;
+
+    // group instances per org, project
+    Map<String, Map<String, List<GitOpsInstanceRequest>>> instancesPerOrgAndProject =
+        gitOpsInstanceRequestList.stream().collect(Collectors.groupingBy(GitOpsInstanceRequest::getOrgIdentifier,
+            Collectors.groupingBy(GitOpsInstanceRequest::getProjectIdentifier)));
+
+    for (Map.Entry<String, Map<String, List<GitOpsInstanceRequest>>> instancesPerOrg :
+        instancesPerOrgAndProject.entrySet()) {
+      String orgId = instancesPerOrg.getKey();
+      for (Map.Entry<String, List<GitOpsInstanceRequest>> instancesPerProject : instancesPerOrg.getValue().entrySet()) {
+        String projectId = instancesPerProject.getKey();
+        List<GitOpsInstance> processedInstances =
+            prepareInstanceSync(accountId, orgId, projectId, instancesPerProject.getValue());
+
+        if (processedInstances.isEmpty()) {
+          continue;
+        }
+        List<InstanceDTO> instanceDTOs =
+            gitOpsRequestDTOMapper.toInstanceDTOList(accountId, orgId, projectId, processedInstances);
+
+        if (instanceDTOs.isEmpty()) {
+          continue;
+        }
+        response = response
+            || gitopsInstanceSyncService.processInstanceSync(
+                accountId, orgId, projectId, agentIdentifier, instanceDTOs);
+      }
     }
-    final List<InstanceDTO> instanceDTOs =
-        gitOpsRequestDTOMapper.toInstanceDTOList(accountId, orgIdentifier, projectIdentifier, processedInstances);
-    return gitopsInstanceSyncService.processInstanceSync(
-        accountId, orgIdentifier, projectIdentifier, agentIdentifier, instanceDTOs);
+    return response;
   }
 
   private void deleteInstances(
@@ -119,6 +137,8 @@ public class GitOpsInstanceSyncResource {
         DeleteInstancesRequest.builder().deletedCount(gitOpsInstanceRequestList.size()).status(true).build());
   }
 
+  // this method cannot be moved to service because cdOverviewDashboardService is in 120-ng-manager and service is in
+  // 126-instance
   List<GitOpsInstance> prepareInstanceSync(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       List<GitOpsInstanceRequest> gitOpsInstanceRequestList) {
     log.info("Processing {} Gitops instances for sync to NG", gitOpsInstanceRequestList.size());

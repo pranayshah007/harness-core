@@ -7,3 +7,8 @@ auditDbConfig:
   connectionsPerHost: 300
   indexManagerMode: AUTO
   aliasDBName: ng-audits
+jobCommonConfig:
+  batchConfig:
+    cursorBatchSize: 1000
+    limit: 10000
+    maxRetries: 2

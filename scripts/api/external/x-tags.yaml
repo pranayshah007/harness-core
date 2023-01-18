@@ -39,9 +39,6 @@
     - Organization Resource Groups
     - Project Resource Groups
     - Filter Resource Groups
-- name: Audit Streaming
-  tags:
-    - Streaming Destinations
 - name: Role Assignments
   tags:
     - Account Role Assignments

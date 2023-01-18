@@ -68,7 +68,11 @@ springboot(
         ":immutable": "io.harness.delegate.app.DelegateAgentApplication",
         "//conditions:default": "io.harness.delegate.app.DelegateApplication",
     }),
-    deps_exclude = ["@maven//:org_mongodb_mongo_java_driver"],
+    deps_exclude = [
+        "@maven//:org_mongodb_mongo_java_driver",
+        "@maven//:org_mongodb_mongodb_driver_sync",
+        "@maven//:org_mongodb_mongodb_driver_legacy",
+    ],
     java_library = ":module",
     visibility = ["//visibility:public"],
 )

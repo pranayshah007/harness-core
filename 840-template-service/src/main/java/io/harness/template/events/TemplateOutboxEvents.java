@@ -15,4 +15,5 @@ public class TemplateOutboxEvents {
   public static final String TEMPLATE_VERSION_CREATED = "TemplateVersionCreated";
   public static final String TEMPLATE_VERSION_UPDATED = "TemplateVersionUpdated";
   public static final String TEMPLATE_VERSION_DELETED = "TemplateVersionDeleted";
+  public static final String TEMPLATE_VERSION_FORCE_DELETED = "TemplateVersionForceDeleted";
 }

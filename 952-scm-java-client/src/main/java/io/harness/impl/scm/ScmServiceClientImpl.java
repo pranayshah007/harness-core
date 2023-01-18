@@ -811,6 +811,9 @@ public class ScmServiceClientImpl implements ScmServiceClient {
                                                                          .setSlug(slug)
                                                                          .setProvider(gitProvider)
                                                                          .setTarget(gitWebhookDetails.getTarget());
+    if (isNotEmpty(gitWebhookDetails.getSecret())) {
+      createWebhookRequestBuilder.setSecret(gitWebhookDetails.getSecret());
+    }
     return ScmGitWebhookHelper.getCreateWebhookRequest(
         createWebhookRequestBuilder, gitWebhookDetails, scmConnector, identicalTarget, existingNativeEventsList);
   }

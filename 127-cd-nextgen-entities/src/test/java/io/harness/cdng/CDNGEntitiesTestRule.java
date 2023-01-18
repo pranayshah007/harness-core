@@ -46,6 +46,7 @@ import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.service.services.impl.ServiceEntityServiceImpl;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.serviceoverride.services.impl.ServiceOverrideServiceImpl;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.outbox.api.OutboxService;
 import io.harness.outbox.api.impl.OutboxDaoImpl;
 import io.harness.outbox.api.impl.OutboxServiceImpl;
@@ -215,6 +216,7 @@ public class CDNGEntitiesTestRule implements InjectorRuleMixin, MethodRule, Mong
             .toInstance(mock(NoOpProducer.class));
         bind(ClusterService.class).to(ClusterServiceImpl.class);
         bind(InfrastructureEntityService.class).to(InfrastructureEntityServiceImpl.class);
+        bind(NGSettingsClient.class).toInstance(mock(NGSettingsClient.class));
         bind(EnvironmentService.class).to(EnvironmentServiceImpl.class);
         bind(ServiceOverrideService.class).to(ServiceOverrideServiceImpl.class);
         bind(ServiceEntityService.class).to(ServiceEntityServiceImpl.class);

@@ -34,6 +34,8 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.yaml.ParameterField;
 
+import software.wings.beans.TaskType;
+
 import com.google.common.collect.ImmutableMap;
 import java.util.Collections;
 import java.util.Map;
@@ -92,6 +94,19 @@ public abstract class AbstractK8sStepExecutorTestBase extends CategoryTest {
     ArgumentCaptor<T> requestCaptor = ArgumentCaptor.forClass(requestType);
     verify(k8sStepHelper, times(1))
         .queueK8sTask(eq(stepElementParameters), requestCaptor.capture(), eq(ambiance), eq(passThroughData));
+    return requestCaptor.getValue();
+  }
+
+  protected <T extends K8sDeployRequest> T executeTaskForDryRunManifest(
+      StepElementParameters stepElementParameters, Class<T> requestType) {
+    K8sExecutionPassThroughData passThroughData =
+        K8sExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build();
+    getK8sStepExecutor().executeK8sTask(
+        manifestOutcome, ambiance, stepElementParameters, emptyList(), passThroughData, true, unitProgressData);
+    ArgumentCaptor<T> requestCaptor = ArgumentCaptor.forClass(requestType);
+    verify(k8sStepHelper, times(1))
+        .queueK8sTask(eq(stepElementParameters), requestCaptor.capture(), eq(ambiance), eq(passThroughData),
+            eq(TaskType.K8S_DRY_RUN_MANIFEST_TASK_NG));
     return requestCaptor.getValue();
   }
 

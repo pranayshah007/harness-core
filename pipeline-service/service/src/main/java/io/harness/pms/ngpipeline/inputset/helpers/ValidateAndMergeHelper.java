@@ -37,13 +37,16 @@ import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.pipeline.service.PipelineCRUDErrorResponse;
 import io.harness.pms.plan.execution.StagesExecutionHelper;
 import io.harness.pms.stages.StagesExpressionExtractor;
+import io.harness.pms.yaml.PipelineVersion;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -195,6 +198,7 @@ public class ValidateAndMergeHelper {
   public String getMergeInputSetFromPipelineTemplate(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, List<String> inputSetReferences, String pipelineBranch, String pipelineRepoID,
       List<String> stageIdentifiers) {
+    Set<String> inputSetVersions = new HashSet<>();
     PipelineEntity pipelineEntity = getPipelineEntity(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, pipelineBranch, pipelineRepoID, false);
     String pipelineYaml = pipelineEntity.getYaml();
@@ -215,6 +219,7 @@ public class ValidateAndMergeHelper {
         return;
       }
       InputSetEntity inputSet = entity.get();
+      inputSetVersions.add(inputSet.getHarnessVersion());
       checkAndThrowExceptionWhenPipelineAndInputSetStoreTypesAreDifferent(pipelineEntity, inputSet);
       if (inputSet.getInputSetEntityType() == InputSetEntityType.INPUT_SET) {
         inputSetYamlList.add(inputSet.getYaml());
@@ -230,6 +235,13 @@ public class ValidateAndMergeHelper {
         });
       }
     });
+
+    if (inputSetVersions.contains(PipelineVersion.V0) && inputSetVersions.contains(PipelineVersion.V1)) {
+      throw new InvalidRequestException("Input set versions 0 and 1 are not compatible");
+    }
+    if (inputSetVersions.contains(PipelineVersion.V1)) {
+      return InputSetMergeHelper.mergeInputSetsV1(inputSetYamlList);
+    }
 
     if (EmptyPredicate.isEmpty(stageIdentifiers)) {
       return mergeInputSets(pipelineTemplate, inputSetYamlList, false);

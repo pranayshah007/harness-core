@@ -23,6 +23,7 @@ import io.harness.delegate.beans.ci.vm.steps.VmJunitTestReport;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.yaml.ParameterField;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -41,8 +42,13 @@ public class VmBackgroundStepSerializer {
         "Image", "Background", identifier, backgroundStepInfo.getImage(), false);
     String connectorIdentifier = RunTimeInputHandler.resolveStringParameter(
         "connectorRef", "Background", identifier, backgroundStepInfo.getConnectorRef(), false);
-    Map<String, String> portBindings = RunTimeInputHandler.resolveMapParameter(
-        "portBindings", "Background", backgroundStepInfo.getIdentifier(), backgroundStepInfo.getPortBindings(), false);
+    Map<String, String> portBindings;
+    if (ParameterField.isNotNull(backgroundStepInfo.getPorts())) {
+      portBindings = SerializerUtils.getPortBindingMap(backgroundStepInfo.getPorts().getValue());
+    } else {
+      portBindings = RunTimeInputHandler.resolveMapParameter("portBindings", "Background",
+          backgroundStepInfo.getIdentifier(), backgroundStepInfo.getPortBindings(), false);
+    }
     List<String> entrypoint = RunTimeInputHandler.resolveListParameter(
         "entrypoint", "Background", identifier, backgroundStepInfo.getEntrypoint(), false);
     String imagePullPolicy = RunTimeInputHandler.resolveImagePullPolicy(backgroundStepInfo.getImagePullPolicy());

@@ -29,17 +29,9 @@ public class STOYamlTarget {
   @ApiModelProperty(dataType = "io.harness.yaml.sto.variables.STOYamlTargetType")
   protected STOYamlTargetType type;
 
-  @NotNull
-  @YamlSchemaTypes(value = {runtime})
-  @ApiModelProperty(dataType = STRING_CLASSPATH)
-  protected ParameterField<String> name;
+  @NotNull @ApiModelProperty(dataType = STRING_CLASSPATH) protected ParameterField<String> name;
 
-  @NotNull
-  @YamlSchemaTypes(value = {runtime})
-  @ApiModelProperty(dataType = STRING_CLASSPATH)
-  protected ParameterField<String> variant;
+  @NotNull @ApiModelProperty(dataType = STRING_CLASSPATH) protected ParameterField<String> variant;
 
-  @YamlSchemaTypes(value = {runtime})
-  @ApiModelProperty(dataType = STRING_CLASSPATH)
-  protected ParameterField<String> workspace;
+  @ApiModelProperty(dataType = STRING_CLASSPATH) protected ParameterField<String> workspace;
 }

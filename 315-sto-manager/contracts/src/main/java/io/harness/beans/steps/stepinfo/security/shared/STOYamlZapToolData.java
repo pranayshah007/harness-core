@@ -22,9 +22,7 @@ import lombok.Data;
 @Data
 @OwnedBy(STO)
 public class STOYamlZapToolData {
-  @YamlSchemaTypes(value = {runtime})
-  @ApiModelProperty(dataType = STRING_CLASSPATH)
-  protected ParameterField<String> context;
+  @ApiModelProperty(dataType = STRING_CLASSPATH) protected ParameterField<String> context;
 
   @YamlSchemaTypes(value = {runtime})
   @ApiModelProperty(dataType = INTEGER_CLASSPATH)

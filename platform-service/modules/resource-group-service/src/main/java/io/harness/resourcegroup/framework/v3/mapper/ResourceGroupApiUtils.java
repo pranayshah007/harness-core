@@ -36,7 +36,7 @@ public class ResourceGroupApiUtils {
         .resourceGroup(
             ResourceGroupDTO.builder()
                 .accountIdentifier(account)
-                .identifier(body.getSlug())
+                .identifier(body.getIdentifier())
                 .name(body.getName())
                 .color(body.getColor())
                 .tags(body.getTags())
@@ -54,7 +54,7 @@ public class ResourceGroupApiUtils {
             ResourceGroupDTO.builder()
                 .accountIdentifier(account)
                 .orgIdentifier(org)
-                .identifier(body.getSlug())
+                .identifier(body.getIdentifier())
                 .name(body.getName())
                 .color(body.getColor())
                 .tags(body.getTags())
@@ -73,7 +73,7 @@ public class ResourceGroupApiUtils {
                 .accountIdentifier(account)
                 .orgIdentifier(org)
                 .projectIdentifier(project)
-                .identifier(body.getSlug())
+                .identifier(body.getIdentifier())
                 .name(body.getName())
                 .color(body.getColor())
                 .tags(body.getTags())
@@ -144,7 +144,7 @@ public class ResourceGroupApiUtils {
       return null;
     }
     ResourceGroupsResponse resourceGroupsResponse = new ResourceGroupsResponse();
-    resourceGroupsResponse.setSlug(response.getResourceGroup().getIdentifier());
+    resourceGroupsResponse.setIdentifier(response.getResourceGroup().getIdentifier());
     resourceGroupsResponse.setName(response.getResourceGroup().getName());
     resourceGroupsResponse.setColor(response.getResourceGroup().getColor());
     resourceGroupsResponse.setTags(response.getResourceGroup().getTags());
@@ -245,7 +245,7 @@ public class ResourceGroupApiUtils {
       io.harness.spec.server.resourcegroup.v1.model.ResourceSelectorFilter resourceSelectorFilter) {
     return ResourceSelectorFilter.builder()
         .resourceType(resourceSelectorFilter.getResourceType())
-        .resourceIdentifier(resourceSelectorFilter.getResourceSlug())
+        .resourceIdentifier(resourceSelectorFilter.getResourceIdentifier())
         .build();
   }
 
