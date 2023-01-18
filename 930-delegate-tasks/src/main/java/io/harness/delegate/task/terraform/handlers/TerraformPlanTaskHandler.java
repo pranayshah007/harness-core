@@ -165,6 +165,7 @@ public class TerraformPlanTaskHandler extends TerraformAbstractTaskHandler {
               .isTfPlanDestroy(taskParameters.getTerraformCommand() == TerraformCommand.DESTROY)
               .useOptimizedTfPlan(taskParameters.isUseOptimizedTfPlan())
               .accountId(taskParameters.getAccountId())
+              .isEnterpriseCli(taskParameters.getIsTerraformEnterpriseRemoteBackend())
               .build();
 
       TerraformStepResponse terraformStepResponse =
@@ -200,9 +201,11 @@ public class TerraformPlanTaskHandler extends TerraformAbstractTaskHandler {
           CommandExecutionStatus.RUNNING);
 
       String planName = terraformBaseHelper.getPlanName(taskParameters.getTerraformCommand());
-
-      EncryptedRecordData encryptedTfPlan = terraformBaseHelper.encryptPlan(
-          Files.readAllBytes(Paths.get(scriptDirectory, planName)), taskParameters, delegateId, taskId);
+      EncryptedRecordData encryptedTfPlan = null;
+      if (!taskParameters.getIsTerraformEnterpriseRemoteBackend()) {
+        encryptedTfPlan = terraformBaseHelper.encryptPlan(
+            Files.readAllBytes(Paths.get(scriptDirectory, planName)), taskParameters, delegateId, taskId);
+      }
 
       String tfHumanReadablePlanFileId = null;
       if (taskParameters.isSaveTerraformHumanReadablePlan()) {

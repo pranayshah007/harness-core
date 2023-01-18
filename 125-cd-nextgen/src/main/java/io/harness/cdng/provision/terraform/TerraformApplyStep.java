@@ -7,6 +7,7 @@
 
 package io.harness.cdng.provision.terraform;
 
+import static io.harness.beans.FeatureName.CDS_TERRAFORM_ENTERPRISE_BACKEND_CLI_SUPPORT;
 import static io.harness.cdng.provision.terraform.TerraformPlanCommand.APPLY;
 
 import io.harness.EntityType;
@@ -71,6 +72,8 @@ public class TerraformApplyStep extends CdTaskExecutable<TerraformTaskNGResponse
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
   @Inject private PipelineRbacHelper pipelineRbacHelper;
   @Inject private StepHelper stepHelper;
+
+  @Inject private CDFeatureFlagHelper featureFlagHelper;
 
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
@@ -141,6 +144,10 @@ public class TerraformApplyStep extends CdTaskExecutable<TerraformTaskNGResponse
     builder.accountId(accountId);
     String provisionerIdentifier =
         ParameterFieldHelper.getParameterFieldValue(stepParameters.getProvisionerIdentifier());
+    if (featureFlagHelper.isEnabled(accountId, CDS_TERRAFORM_ENTERPRISE_BACKEND_CLI_SUPPORT)) {
+      // ToDo: @Akhil -Curently hardcoded, but set this value from UI/YAML
+      builder.isTerraformEnterpriseRemoteBackend(true);
+    }
     String entityId = helper.generateFullIdentifier(provisionerIdentifier, ambiance);
     TerraformTaskNGParameters terraformTaskNGParameters =
         builder.currentStateFileId(helper.getLatestFileId(entityId))

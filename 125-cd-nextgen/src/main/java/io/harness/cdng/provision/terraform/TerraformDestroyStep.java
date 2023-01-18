@@ -7,6 +7,7 @@
 
 package io.harness.cdng.provision.terraform;
 
+import static io.harness.beans.FeatureName.CDS_TERRAFORM_ENTERPRISE_BACKEND_CLI_SUPPORT;
 import static io.harness.cdng.provision.terraform.TerraformPlanCommand.DESTROY;
 
 import io.harness.EntityType;
@@ -71,6 +72,8 @@ public class TerraformDestroyStep extends CdTaskExecutable<TerraformTaskNGRespon
   @Inject private StepHelper stepHelper;
   @Inject public TerraformConfigDAL terraformConfigDAL;
 
+  @Inject private CDFeatureFlagHelper featureFlagHelper;
+
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
     return StepElementParameters.class;
@@ -134,6 +137,11 @@ public class TerraformDestroyStep extends CdTaskExecutable<TerraformTaskNGRespon
     TerraformTaskNGParametersBuilder builder = TerraformTaskNGParameters.builder();
     String accountId = AmbianceUtils.getAccountId(ambiance);
     builder.accountId(accountId);
+
+    if (featureFlagHelper.isEnabled(accountId, CDS_TERRAFORM_ENTERPRISE_BACKEND_CLI_SUPPORT)) {
+      // ToDo: @Akhil -Curently hardcoded, but set this value from UI/YAML
+      builder.isTerraformEnterpriseRemoteBackend(true);
+    }
     String entityId = helper.generateFullIdentifier(
         ParameterFieldHelper.getParameterFieldValue(parameters.getProvisionerIdentifier()), ambiance);
     TerraformTaskNGParameters terraformTaskNGParameters =

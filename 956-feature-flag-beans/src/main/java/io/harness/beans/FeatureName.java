@@ -556,7 +556,8 @@ public enum FeatureName {
   NG_K8_COMMAND_FLAGS("Added Support for adding Command flags to K8s commands. PM Rohan", HarnessTeam.CDP),
   CDS_FORCE_DELETE_ENTITIES("Enables force delete of entities irrespective of existing references.", HarnessTeam.CDC),
   CDP_PUBLISH_INSTANCE_STATS_FOR_ENV_NG(
-      "Publish instance stats at environment granularity in NG. PM Rohan", HarnessTeam.CDP);
+      "Publish instance stats at environment granularity in NG. PM Rohan", HarnessTeam.CDP),
+  CDS_TERRAFORM_ENTERPRISE_BACKEND_CLI_SUPPORT("Allow Terraform Enterprise to be used as a Remote Backend", HarnessTeam.CDP);
 
   @Deprecated
   FeatureName() {

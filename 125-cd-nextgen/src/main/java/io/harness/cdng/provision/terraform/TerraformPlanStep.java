@@ -7,6 +7,8 @@
 
 package io.harness.cdng.provision.terraform;
 
+import static io.harness.beans.FeatureName.CDS_TERRAFORM_ENTERPRISE_BACKEND_CLI_SUPPORT;
+
 import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -135,6 +137,11 @@ public class TerraformPlanStep extends CdTaskExecutable<TerraformTaskNGResponse>
     ParameterField<Boolean> exportTfPlanJsonField = planStepParameters.getConfiguration().getExportTerraformPlanJson();
     ParameterField<Boolean> exportTfHumanReadablePlanField =
         planStepParameters.getConfiguration().getExportTerraformHumanReadablePlan();
+    if (featureFlagHelper.isEnabled(accountId, CDS_TERRAFORM_ENTERPRISE_BACKEND_CLI_SUPPORT)) {
+      // ToDo: @Akhil -Curently hardcoded, but set this value from UI/YAML
+      builder.isTerraformEnterpriseRemoteBackend(true);
+    }
+
     TerraformTaskNGParameters terraformTaskNGParameters =
         builder.taskType(TFTaskType.PLAN)
             .terraformCommandUnit(TerraformCommandUnit.Plan)

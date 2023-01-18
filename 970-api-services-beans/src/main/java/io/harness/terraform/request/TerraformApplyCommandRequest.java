@@ -19,4 +19,5 @@ import lombok.Value;
 @OwnedBy(CDP)
 public class TerraformApplyCommandRequest {
   String planName;
+  boolean isEnterpriseCli;
 }

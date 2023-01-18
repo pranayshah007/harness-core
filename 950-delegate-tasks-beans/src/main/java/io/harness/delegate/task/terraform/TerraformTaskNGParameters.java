@@ -75,6 +75,8 @@ public class TerraformTaskNGParameters
   EncryptionConfig encryptionConfig;
   EncryptedRecordData encryptedTfPlan;
   String planName;
+  //  ToDo : Update this to be taken from UI
+  Boolean isTerraformEnterpriseRemoteBackend;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

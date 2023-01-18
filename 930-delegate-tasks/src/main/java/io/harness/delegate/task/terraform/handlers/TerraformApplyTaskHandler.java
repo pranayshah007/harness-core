@@ -157,6 +157,7 @@ public class TerraformApplyTaskHandler extends TerraformAbstractTaskHandler {
               .timeoutInMillis(taskParameters.getTimeoutInMillis())
               .useOptimizedTfPlan(taskParameters.isUseOptimizedTfPlan())
               .accountId(taskParameters.getAccountId())
+              .isEnterpriseCli(taskParameters.getIsTerraformEnterpriseRemoteBackend())
               .build();
 
       TerraformStepResponse terraformStepResponse =

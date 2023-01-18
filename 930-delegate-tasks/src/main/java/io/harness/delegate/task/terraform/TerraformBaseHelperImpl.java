@@ -135,6 +135,7 @@ import org.jetbrains.annotations.NotNull;
 @Slf4j
 @OwnedBy(CDP)
 public class TerraformBaseHelperImpl implements TerraformBaseHelper {
+  private static Boolean isTerraformEnterpriseRemoteBackend = false;
   private static final String ARTIFACT_PATH_METADATA_KEY = "artifactPath";
   private static final String ARTIFACT_NAME_METADATA_KEY = "artifactName";
   private static final String PRINT_BACKEND_CONFIG = "Initialize terraform with backend configuration: %n%s%n";
@@ -211,7 +212,8 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
     }
 
     if (!(terraformExecuteStepRequest.getEncryptedTfPlan() != null
-            && terraformExecuteStepRequest.isSkipRefreshBeforeApplyingPlan())) {
+            && terraformExecuteStepRequest.isSkipRefreshBeforeApplyingPlan())
+        && !terraformExecuteStepRequest.isEnterpriseCli()) {
       TerraformRefreshCommandRequest terraformRefreshCommandRequest =
           TerraformRefreshCommandRequest.builder()
               .varFilePaths(terraformExecuteStepRequest.getTfVarFilePaths())
@@ -227,7 +229,7 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
     TerraformStepResponse terraformPlanStepResponse = executeTerraformPlanCommand(terraformExecuteStepRequest);
 
     TerraformApplyCommandRequest terraformApplyCommandRequest =
-        TerraformApplyCommandRequest.builder().planName(TERRAFORM_PLAN_FILE_OUTPUT_NAME).build();
+        TerraformApplyCommandRequest.builder().planName(TERRAFORM_PLAN_FILE_OUTPUT_NAME).isEnterpriseCli(true).build();
     terraformClient.apply(terraformApplyCommandRequest, terraformExecuteStepRequest.getTimeoutInMillis(),
         terraformExecuteStepRequest.getEnvVars(), terraformExecuteStepRequest.getScriptDirectory(), logCallback);
 
@@ -352,8 +354,11 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
             .targets(terraformExecuteStepRequest.getTargets())
             .uiLogs(terraformExecuteStepRequest.getUiLogs())
             .build();
-    terraformClient.refresh(terraformRefreshCommandRequest, terraformExecuteStepRequest.getTimeoutInMillis(),
-        terraformExecuteStepRequest.getEnvVars(), terraformExecuteStepRequest.getScriptDirectory(), logCallback);
+
+    if (!terraformExecuteStepRequest.isEnterpriseCli()) {
+      terraformClient.refresh(terraformRefreshCommandRequest, terraformExecuteStepRequest.getTimeoutInMillis(),
+          terraformExecuteStepRequest.getEnvVars(), terraformExecuteStepRequest.getScriptDirectory(), logCallback);
+    }
 
     return executeTerraformPlanCommand(terraformExecuteStepRequest);
   }
@@ -382,7 +387,8 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
     }
 
     if (!(terraformExecuteStepRequest.getEncryptedTfPlan() != null
-            && terraformExecuteStepRequest.isSkipRefreshBeforeApplyingPlan())) {
+            && terraformExecuteStepRequest.isSkipRefreshBeforeApplyingPlan())
+        && !terraformExecuteStepRequest.isEnterpriseCli()) {
       TerraformRefreshCommandRequest terraformRefreshCommandRequest =
           TerraformRefreshCommandRequest.builder()
               .varFilePaths(terraformExecuteStepRequest.getTfVarFilePaths())

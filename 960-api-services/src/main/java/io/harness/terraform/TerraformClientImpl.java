@@ -99,19 +99,25 @@ public class TerraformClientImpl implements TerraformClient {
   @Nonnull
   @Override
   public CliResponse plan(TerraformPlanCommandRequest terraformPlanCommandRequest, long timeoutInMillis,
-      Map<String, String> envVariables, String scriptDirectory, @Nonnull LogCallback executionLogCallback)
-      throws InterruptedException, TimeoutException, IOException {
-    String command;
+      Map<String, String> envVariables, String scriptDirectory, @Nonnull LogCallback executionLogCallback) throws InterruptedException, TimeoutException, IOException {
+    String command = "terraform plan -input=false -detailed-exitcode";
     if (terraformPlanCommandRequest.isDestroySet()) {
-      command = format("terraform plan -input=false -detailed-exitcode -destroy -out=tfdestroyplan %s %s",
-          TerraformHelperUtils.generateCommandFlagsString(terraformPlanCommandRequest.getTargets(), TARGET_PARAM),
-          TerraformHelperUtils.generateCommandFlagsString(
-              terraformPlanCommandRequest.getVarFilePaths(), VAR_FILE_PARAM));
+      if (terraformPlanCommandRequest.isEnterpriseRemoteBackend()) {
+        command = command.concat(" -destroy");
+      } else {
+        command = command.concat(format(" -destroy -out=tfdestroyplan %s %s",
+            TerraformHelperUtils.generateCommandFlagsString(terraformPlanCommandRequest.getTargets(), TARGET_PARAM),
+            TerraformHelperUtils.generateCommandFlagsString(
+                terraformPlanCommandRequest.getVarFilePaths(), VAR_FILE_PARAM)));
+      }
+
     } else {
-      command = format("terraform plan -input=false -detailed-exitcode -out=tfplan %s %s",
-          TerraformHelperUtils.generateCommandFlagsString(terraformPlanCommandRequest.getTargets(), TARGET_PARAM),
-          TerraformHelperUtils.generateCommandFlagsString(
-              terraformPlanCommandRequest.getVarFilePaths(), VAR_FILE_PARAM));
+      if (!terraformPlanCommandRequest.isEnterpriseRemoteBackend()) {
+        command = format("terraform plan -input=false -detailed-exitcode -out=tfplan %s %s",
+            TerraformHelperUtils.generateCommandFlagsString(terraformPlanCommandRequest.getTargets(), TARGET_PARAM),
+            TerraformHelperUtils.generateCommandFlagsString(
+                terraformPlanCommandRequest.getVarFilePaths(), VAR_FILE_PARAM));
+      }
     }
 
     if (isNotEmpty(terraformPlanCommandRequest.getVarParams())) {
@@ -152,7 +158,12 @@ public class TerraformClientImpl implements TerraformClient {
   public CliResponse apply(TerraformApplyCommandRequest terraformApplyCommandRequest, long timeoutInMillis,
       Map<String, String> envVariables, String scriptDirectory, @Nonnull LogCallback executionLogCallback)
       throws InterruptedException, TimeoutException, IOException {
-    String command = "terraform apply -input=false " + terraformApplyCommandRequest.getPlanName();
+    String command = "terraform apply -input=false ";
+    if(terraformApplyCommandRequest.isEnterpriseCli()){
+      command = "echo yes | " + command;
+    } else {
+      command += terraformApplyCommandRequest.getPlanName();
+    }
     return executeTerraformCLICommand(command, timeoutInMillis, envVariables, scriptDirectory, executionLogCallback,
         command, new LogCallbackOutputStream(executionLogCallback));
   }
