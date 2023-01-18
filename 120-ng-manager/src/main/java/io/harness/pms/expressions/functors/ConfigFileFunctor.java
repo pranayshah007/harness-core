@@ -33,17 +33,22 @@ import java.util.Optional;
 
 public class ConfigFileFunctor implements SdkFunctor {
   private static final int MAX_CONFIG_FILE_SIZE = 4 * ExpressionEvaluatorUtils.EXPANSION_LIMIT;
+  private static final int NUMBER_OF_EXPECTED_ARGUMENTS = 3;
+  private static final int REFERENCE_TYPE_ARGUMENT = 0;
+  private static final int METHOD_NAME_ARGUMENT = 1;
+  private static final int FILE_OR_SECRET_REF_ARGUMENT = 2;
+
   @Inject private FileStoreService fileStoreService;
 
   @Override
   public Object get(Ambiance ambiance, String... args) {
-    if (args.length != 3) {
+    if (args.length != NUMBER_OF_EXPECTED_ARGUMENTS) {
       throw new InvalidArgumentsException(
           format("Invalid number of config file functor arguments: %s", Arrays.asList(args)));
     }
-    String refType = args[0];
-    String methodName = args[1];
-    String ref = args[2];
+    String refType = args[REFERENCE_TYPE_ARGUMENT];
+    String methodName = args[METHOD_NAME_ARGUMENT];
+    String ref = args[FILE_OR_SECRET_REF_ARGUMENT];
 
     if (FILES.equals(refType)) {
       return getFileContent(ambiance, methodName, ref);

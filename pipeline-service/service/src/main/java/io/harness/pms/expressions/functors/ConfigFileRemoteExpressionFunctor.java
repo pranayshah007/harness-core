@@ -13,6 +13,8 @@ import static io.harness.NGCommonEntityConstants.CONFIG_FILE_FUNCTOR_STRING_METH
 import static io.harness.common.EntityTypeConstants.FILES;
 import static io.harness.common.EntityTypeConstants.SECRETS;
 
+import static java.lang.String.format;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
@@ -28,8 +30,10 @@ import io.harness.pms.sdk.core.execution.expression.ExpressionResultUtils;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.utils.PmsGrpcClientUtils;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Pattern;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 
@@ -37,6 +41,9 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
 public class ConfigFileRemoteExpressionFunctor extends LateBindingMap implements ExpressionFunctor {
+  private static final long serialVersionUID = 1558480125999800030L;
+  private static final Pattern FILE_PATH_PATTERN = Pattern.compile("^(\\b(account|org)\\b:)*\\/.+$");
+
   private RemoteFunctorServiceBlockingStub remoteFunctorServiceBlockingStub;
   private Ambiance ambiance;
 
@@ -50,12 +57,13 @@ public class ConfigFileRemoteExpressionFunctor extends LateBindingMap implements
     return get(args);
   }
 
-  private String getReferenceType(String ref) {
+  @VisibleForTesting
+  String getReferenceType(String ref) {
     if (EmptyPredicate.isEmpty(ref)) {
       throw new InvalidArgumentsException("File or secret reference cannot be null or empty");
     }
 
-    return ref.contains("/") ? FILES : SECRETS;
+    return FILE_PATH_PATTERN.matcher(ref).find() ? FILES : SECRETS;
   }
 
   private Object get(List<String> args) {
@@ -72,12 +80,9 @@ public class ConfigFileRemoteExpressionFunctor extends LateBindingMap implements
             expressionResponse.getValue(), expressionResponse.getPrimitiveType());
       }
       return RecastOrchestrationUtils.fromJson(expressionResponse.getValue());
-    } catch (ClassNotFoundException e) {
-      log.error(e.getMessage());
-      throw new InvalidRequestException(e.getMessage(), e);
     } catch (Exception ex) {
-      log.error("Could not get object from remote functor for key: " + CONFIG_FILE_FUNCTOR);
-      throw ex;
+      throw new InvalidRequestException(
+          format("Could not get object from remote SDK functor for key: %s", CONFIG_FILE_FUNCTOR), ex);
     }
   }
 }

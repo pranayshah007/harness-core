@@ -64,6 +64,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @TargetModule(HarnessModule._950_NG_CORE)
 public class NgSecretManagerFunctor implements ExpressionFunctor, NgSecretManagerFunctorInterface {
+  private static final String MISSMATCHING_INTERNAL_FUNCTOR_ERROR_MSG = "Inappropriate usage of internal functor";
+
   int expressionFunctorToken;
   String accountId;
   String orgId;
@@ -85,7 +87,7 @@ public class NgSecretManagerFunctor implements ExpressionFunctor, NgSecretManage
   @Override
   public Object obtain(String secretIdentifier, int token) {
     if (token != expressionFunctorToken) {
-      throw new FunctorException("Inappropriate usage of internal functor");
+      throw new FunctorException(MISSMATCHING_INTERNAL_FUNCTOR_ERROR_MSG);
     }
     try {
       if (!evaluateSync) {
@@ -105,7 +107,7 @@ public class NgSecretManagerFunctor implements ExpressionFunctor, NgSecretManage
   @Override
   public Object obtainSecretFileAsString(String secretIdentifier, int token) {
     if (token != expressionFunctorToken) {
-      throw new FunctorException("Inappropriate usage of internal functor");
+      throw new FunctorException(MISSMATCHING_INTERNAL_FUNCTOR_ERROR_MSG);
     }
 
     if (evaluatedSecrets.containsKey(secretIdentifier)) {
@@ -123,7 +125,7 @@ public class NgSecretManagerFunctor implements ExpressionFunctor, NgSecretManage
   @Override
   public Object obtainSecretFileAsBase64(String secretIdentifier, int token) {
     if (token != expressionFunctorToken) {
-      throw new FunctorException("Inappropriate usage of internal functor");
+      throw new FunctorException(MISSMATCHING_INTERNAL_FUNCTOR_ERROR_MSG);
     }
 
     if (evaluatedSecrets.containsKey(secretIdentifier)) {
@@ -153,8 +155,9 @@ public class NgSecretManagerFunctor implements ExpressionFunctor, NgSecretManage
       return format("${ngSecretManager.%s(\"%s\", %s)}", method, secretIdentifier, expressionFunctorToken);
     } else if (mode == SecretManagerMode.CHECK_FOR_SECRETS) {
       return format("<<<%s>>>", secretIdentifier);
+    } else {
+      return value;
     }
-    return value;
   }
 
   private Object obtainInternal(String secretIdentifier, SecretVariableDTO.Type secretType) {

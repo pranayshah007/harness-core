@@ -7,6 +7,8 @@
 
 package io.harness.pms.expressions.functors;
 
+import static io.harness.common.EntityTypeConstants.FILES;
+import static io.harness.common.EntityTypeConstants.SECRETS;
 import static io.harness.rule.OwnerRule.IVAN;
 
 import static junit.framework.TestCase.assertEquals;
@@ -15,6 +17,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
 
 import io.harness.CategoryTest;
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.expression.ExpressionRequest;
@@ -38,7 +42,9 @@ import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.MockitoAnnotations;
 
+@OwnedBy(HarnessTeam.CDP)
 public class ConfigFileRemoteExpressionFunctorTest extends CategoryTest {
+  private static final int EXPECTED_NUMBER_OF_ARGUMENTS = 3;
   private RemoteFunctorServiceGrpc.RemoteFunctorServiceBlockingStub blockingStub;
   @Rule public final GrpcCleanupRule grpcCleanup = new GrpcCleanupRule();
   private ExpressionRequest request;
@@ -80,7 +86,7 @@ public class ConfigFileRemoteExpressionFunctorTest extends CategoryTest {
     Map<String, Object> map = (Map<String, Object>) configFileRemoteExpressionFunctor.getAsString("/folder/filename");
 
     assertEquals(request.getAmbiance(), ambiance);
-    assertEquals(request.getArgsList().size(), 3);
+    assertEquals(request.getArgsList().size(), EXPECTED_NUMBER_OF_ARGUMENTS);
     List<String> args = Arrays.asList(request.getArgsList().toArray(new String[0]));
     assertThat(args).contains("Files", "getAsString", "/folder/filename");
     assertNotNull(map);
@@ -98,10 +104,30 @@ public class ConfigFileRemoteExpressionFunctorTest extends CategoryTest {
     Map<String, Object> map = (Map<String, Object>) configFileRemoteExpressionFunctor.getAsBase64("secretRef");
 
     assertEquals(request.getAmbiance(), ambiance);
-    assertEquals(request.getArgsList().size(), 3);
+    assertEquals(request.getArgsList().size(), EXPECTED_NUMBER_OF_ARGUMENTS);
     List<String> args = Arrays.asList(request.getArgsList().toArray(new String[0]));
     assertThat(args).contains("Secrets", "getAsBase64", "secretRef");
     assertNotNull(map);
     assertEquals(map.get("value"), "DummyValue");
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testGetReferenceType() {
+    assertThat(configFileRemoteExpressionFunctor.getReferenceType("account:/folder")).isEqualTo(FILES);
+    assertThat(configFileRemoteExpressionFunctor.getReferenceType("account:/folder/file")).isEqualTo(FILES);
+    assertThat(configFileRemoteExpressionFunctor.getReferenceType("account:/folder/file1.txt")).isEqualTo(FILES);
+    assertThat(configFileRemoteExpressionFunctor.getReferenceType("org:/folder")).isEqualTo(FILES);
+    assertThat(configFileRemoteExpressionFunctor.getReferenceType("org:/folder/file")).isEqualTo(FILES);
+    assertThat(configFileRemoteExpressionFunctor.getReferenceType("org:/folder/file1/txt")).isEqualTo(FILES);
+    assertThat(configFileRemoteExpressionFunctor.getReferenceType("/folder")).isEqualTo(FILES);
+    assertThat(configFileRemoteExpressionFunctor.getReferenceType("/folder/file")).isEqualTo(FILES);
+    assertThat(configFileRemoteExpressionFunctor.getReferenceType("/folder/file1.txt")).isEqualTo(FILES);
+    assertThat(configFileRemoteExpressionFunctor.getReferenceType("/file1.txt")).isEqualTo(FILES);
+
+    assertThat(configFileRemoteExpressionFunctor.getReferenceType("account.secretRef")).isEqualTo(SECRETS);
+    assertThat(configFileRemoteExpressionFunctor.getReferenceType("org.secretRef")).isEqualTo(SECRETS);
+    assertThat(configFileRemoteExpressionFunctor.getReferenceType("secretRef")).isEqualTo(SECRETS);
   }
 }
