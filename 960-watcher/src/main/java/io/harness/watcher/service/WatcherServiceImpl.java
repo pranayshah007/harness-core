@@ -177,7 +177,7 @@ public class WatcherServiceImpl implements WatcherService {
   private static final long DELEGATE_VERSION_MATCH_TIMEOUT = TimeUnit.HOURS.toMillis(2);
   private static final long DELEGATE_RESTART_TO_UPGRADE_JRE_TIMEOUT = MINUTES.toMillis(5);
   private static final int DELEGATE_VERSION_CHECK_FREQ_MINS = 25;
-  private static final Pattern VERSION_PATTERN = Pattern.compile("^[1-9]\\.[0-9]\\.[0-9]*-\\d{3}$");
+  private static final Pattern VERSION_PATTERN = Pattern.compile("^[1-9]\\.[0-9]\\.[0-9]*-?[0-9]*");
   private static final String DELEGATE_SEQUENCE_CONFIG_FILE = "./delegate_sequence_config";
   private static final String USER_DIR = "user.dir";
   private static final String DELEGATE_RESTART_SCRIPT = "DelegateRestartScript";
