@@ -91,14 +91,52 @@ public class NgSecretManagerFunctor implements ExpressionFunctor, NgSecretManage
       if (!evaluateSync) {
         if (expressionEvaluatorExecutor != null) {
           // Offload expression evaluation of secrets to another threadpool.
-          return expressionEvaluatorExecutor.submit(() -> obtainInternal(secretIdentifier));
+          return expressionEvaluatorExecutor.submit(
+              () -> obtainInternal(secretIdentifier, SecretVariableDTO.Type.TEXT));
         }
       }
       log.warn("Expression evaluation is being processed synchronously");
-      return obtainInternal(secretIdentifier);
+      return obtainInternal(secretIdentifier, SecretVariableDTO.Type.TEXT);
     } catch (Exception ex) {
       throw new FunctorException("Error occurred while evaluating the secret [" + secretIdentifier + "]", ex);
     }
+  }
+
+  @Override
+  public Object obtainSecretFileAsString(String secretIdentifier, int token) {
+    if (token != expressionFunctorToken) {
+      throw new FunctorException("Inappropriate usage of internal functor");
+    }
+
+    if (evaluatedSecrets.containsKey(secretIdentifier)) {
+      return returnSecretFileValue(
+          "obtainSecretFileAsString", secretIdentifier, evaluatedSecrets.get(secretIdentifier));
+    }
+
+    obtainInternal(secretIdentifier, SecretVariableDTO.Type.FILE);
+    String evaluatedSecret = evaluatedSecrets.get(secretIdentifier);
+    String secretValueOrDelegateExpression =
+        isEmpty(evaluatedSecret) ? evaluatedDelegateSecrets.get(secretIdentifier) : evaluatedSecret;
+    return returnSecretFileValue("obtainSecretFileAsString", secretIdentifier, secretValueOrDelegateExpression);
+  }
+
+  @Override
+  public Object obtainSecretFileAsBase64(String secretIdentifier, int token) {
+    if (token != expressionFunctorToken) {
+      throw new FunctorException("Inappropriate usage of internal functor");
+    }
+
+    if (evaluatedSecrets.containsKey(secretIdentifier)) {
+      return returnSecretFileValue("obtainSecretFileAsBase64", secretIdentifier,
+          EncodingUtils.encodeBase64(evaluatedSecrets.get(secretIdentifier)));
+    }
+
+    obtainInternal(secretIdentifier, SecretVariableDTO.Type.FILE);
+    String evaluatedSecret = evaluatedSecrets.get(secretIdentifier);
+    String secretValueOrDelegateExpression = isEmpty(evaluatedSecret)
+        ? evaluatedDelegateSecrets.get(secretIdentifier).replace("secretDelegate.obtain", "secretDelegate.obtainBase64")
+        : EncodingUtils.encodeBase64(evaluatedSecret);
+    return returnSecretFileValue("obtainSecretFileAsBase64", secretIdentifier, secretValueOrDelegateExpression);
   }
 
   private Object returnValue(String secretIdentifier, Object value) {
@@ -110,7 +148,16 @@ public class NgSecretManagerFunctor implements ExpressionFunctor, NgSecretManage
     return value;
   }
 
-  private Object obtainInternal(String secretIdentifier) {
+  private Object returnSecretFileValue(String method, String secretIdentifier, String value) {
+    if (mode == SecretManagerMode.DRY_RUN) {
+      return format("${ngSecretManager.%s(\"%s\", %s)}", method, secretIdentifier, expressionFunctorToken);
+    } else if (mode == SecretManagerMode.CHECK_FOR_SECRETS) {
+      return format("<<<%s>>>", secretIdentifier);
+    }
+    return value;
+  }
+
+  private Object obtainInternal(String secretIdentifier, SecretVariableDTO.Type secretType) {
     if (evaluatedSecrets.containsKey(secretIdentifier)) {
       return returnValue(secretIdentifier, evaluatedSecrets.get(secretIdentifier));
     }
@@ -126,7 +173,7 @@ public class NgSecretManagerFunctor implements ExpressionFunctor, NgSecretManage
                                                           .identifier(secretIdentifierRef.getIdentifier())
                                                           .scope(secretIdentifierRef.getScope())
                                                           .build())
-                                              .type(SecretVariableDTO.Type.TEXT)
+                                              .type(secretType)
                                               .build();
 
     int keyHash = SecretsCacheKey.builder()

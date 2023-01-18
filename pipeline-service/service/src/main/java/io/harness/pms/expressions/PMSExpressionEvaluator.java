@@ -7,6 +7,8 @@
 
 package io.harness.pms.expressions;
 
+import static io.harness.NGCommonEntityConstants.CONFIG_FILE_FUNCTOR;
+
 import io.harness.ModuleType;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
@@ -24,6 +26,7 @@ import io.harness.organization.remote.OrganizationClient;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.expression.RemoteFunctorServiceGrpc.RemoteFunctorServiceBlockingStub;
 import io.harness.pms.expressions.functors.AccountFunctor;
+import io.harness.pms.expressions.functors.ConfigFileRemoteExpressionFunctor;
 import io.harness.pms.expressions.functors.ExecutionInputExpressionFunctor;
 import io.harness.pms.expressions.functors.OrgFunctor;
 import io.harness.pms.expressions.functors.PipelineExecutionFunctor;
@@ -85,12 +88,20 @@ public class PMSExpressionEvaluator extends AmbianceExpressionEvaluator {
 
     cacheValueMap.forEach((key, value) -> {
       for (String functorKey : CollectionUtils.emptyIfNull(value.getSdkFunctors())) {
-        addToContext(functorKey,
-            RemoteExpressionFunctor.builder()
-                .ambiance(ambiance)
-                .remoteFunctorServiceBlockingStub(remoteFunctorServiceBlockingStubMap.get(ModuleType.fromString(key)))
-                .functorKey(functorKey)
-                .build());
+        if (CONFIG_FILE_FUNCTOR.equals(functorKey)) {
+          addToContext(CONFIG_FILE_FUNCTOR,
+              ConfigFileRemoteExpressionFunctor.builder()
+                  .ambiance(ambiance)
+                  .remoteFunctorServiceBlockingStub(remoteFunctorServiceBlockingStubMap.get(ModuleType.fromString(key)))
+                  .build());
+        } else {
+          addToContext(functorKey,
+              RemoteExpressionFunctor.builder()
+                  .ambiance(ambiance)
+                  .remoteFunctorServiceBlockingStub(remoteFunctorServiceBlockingStubMap.get(ModuleType.fromString(key)))
+                  .functorKey(functorKey)
+                  .build());
+        }
       }
     });
 
