@@ -233,7 +233,6 @@ public class GovernanceRuleResource {
         })));
   }
 
-  // Update a rule already made
   @PUT
   @Path("rule")
   @Consumes(MediaType.APPLICATION_JSON)
@@ -257,10 +256,13 @@ public class GovernanceRuleResource {
     }
     Rule rule = createRuleDTO.getRule();
     rule.toDTO();
-    governanceRuleService.fetchById(accountId, rule.getUuid(), true);
+    Rule oldRule = governanceRuleService.fetchById(accountId, rule.getUuid(), true);
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(MODULE, MODULE_NAME);
-    properties.put(RULE_NAME, rule.getName());
+    properties.put(RULE_NAME, oldRule.getName());
+    oldRule.setRulesYaml(rule.getRulesYaml());
+    governanceRuleService.validateAWSSchema(oldRule);
+    governanceRuleService.custodianValidate(oldRule);
     telemetryReporter.sendTrackEvent(GOVERNANCE_RULE_UPDATED, null, accountId, properties,
         Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
 

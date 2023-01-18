@@ -92,7 +92,7 @@ public class NGHostValidationServiceImplTest extends CategoryTest {
     mockEncryptionDetails();
     mockTaskAbstractions();
 
-    when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(buildSSHConfigValidationTaskResponseSuccess());
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any())).thenReturn(buildSSHConfigValidationTaskResponseSuccess());
 
     HostValidationDTO result = hostValidationService.validateHost(
         HOST, ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, SECRET_IDENTIFIER, Collections.emptySet());
@@ -112,7 +112,7 @@ public class NGHostValidationServiceImplTest extends CategoryTest {
 
     when(ngErrorHelper.getReason(VALIDATION_HOST_FAILED_ERROR_MSG)).thenReturn(VALIDATION_HOST_FAILED_ERROR_MSG);
     when(ngErrorHelper.getCode(VALIDATION_HOST_FAILED_ERROR_MSG)).thenReturn(450);
-    when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(buildSSHConfigValidationTaskResponseFailed());
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any())).thenReturn(buildSSHConfigValidationTaskResponseFailed());
 
     HostValidationDTO result = hostValidationService.validateHost(
         HOST, ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, SECRET_IDENTIFIER, Collections.emptySet());
@@ -135,7 +135,8 @@ public class NGHostValidationServiceImplTest extends CategoryTest {
     mockWinRmEncryptionDetails();
     mockTaskAbstractions();
 
-    when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(buildWinRmConfigValidationTaskResponseSuccess());
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
+        .thenReturn(buildWinRmConfigValidationTaskResponseSuccess());
 
     HostValidationDTO result = hostValidationService.validateHost(
         HOST, ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, SECRET_IDENTIFIER, Collections.emptySet());
@@ -155,7 +156,7 @@ public class NGHostValidationServiceImplTest extends CategoryTest {
 
     when(ngErrorHelper.getReason(VALIDATION_HOST_FAILED_ERROR_MSG)).thenReturn(VALIDATION_HOST_FAILED_ERROR_MSG);
     when(ngErrorHelper.getCode(VALIDATION_HOST_FAILED_ERROR_MSG)).thenReturn(450);
-    when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(buildWinRmConfigValidationTaskResponseFailed());
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any())).thenReturn(buildWinRmConfigValidationTaskResponseFailed());
 
     HostValidationDTO result = hostValidationService.validateHost(
         HOST, ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, SECRET_IDENTIFIER, Collections.emptySet());
@@ -260,13 +261,13 @@ public class NGHostValidationServiceImplTest extends CategoryTest {
   public void testValidateHostConnectivity() {
     mockTaskAbstractions();
 
-    when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(buildHostConnectivityTaskResponseSuccess());
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any())).thenReturn(buildHostConnectivityTaskResponseSuccess());
     ArgumentCaptor<DelegateTaskRequest> delegateTaskRequestCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
 
     HostValidationDTO result = hostValidationService.validateHostConnectivity(
         HOST, ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, Sets.newHashSet(DELEGATE_SELECTOR));
 
-    verify(delegateGrpcClientWrapper).executeSyncTask(delegateTaskRequestCaptor.capture());
+    verify(delegateGrpcClientWrapper).executeSyncTaskV2(delegateTaskRequestCaptor.capture());
     DelegateTaskRequest delegateTaskRequest = delegateTaskRequestCaptor.getValue();
     HostConnectivityTaskParams hostConnectivityTaskParams =
         (HostConnectivityTaskParams) delegateTaskRequest.getTaskParameters();
@@ -287,7 +288,7 @@ public class NGHostValidationServiceImplTest extends CategoryTest {
 
     when(ngErrorHelper.getReason(VALIDATION_HOST_FAILED_ERROR_MSG)).thenReturn(VALIDATION_HOST_FAILED_ERROR_MSG);
     when(ngErrorHelper.getCode(VALIDATION_HOST_FAILED_ERROR_MSG)).thenReturn(450);
-    when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(buildHostConnectivityTaskResponseFailed());
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any())).thenReturn(buildHostConnectivityTaskResponseFailed());
 
     HostValidationDTO result = hostValidationService.validateHostConnectivity(
         HOST, ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, Sets.newHashSet(DELEGATE_SELECTOR));
@@ -308,7 +309,7 @@ public class NGHostValidationServiceImplTest extends CategoryTest {
   public void testValidateHostConnectivityWithErrorNotifyResponseData() {
     mockTaskAbstractions();
     String errorMessage = "error message";
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(HostConnectivityTaskResponse.builder().errorMessage(errorMessage).build());
 
     HostValidationDTO result = hostValidationService.validateHostConnectivity(
@@ -337,7 +338,7 @@ public class NGHostValidationServiceImplTest extends CategoryTest {
     mockEncryptionDetails();
     String errorMessage = "error message";
     String hostValidationFailedMessage = "Host validation check failed";
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(HostConnectivityTaskResponse.builder().errorMessage(errorMessage).build());
 
     HostValidationDTO result = hostValidationService.validateHost(HOST, ACCOUNT_IDENTIFIER, ORG_IDENTIFIER,
@@ -355,7 +356,7 @@ public class NGHostValidationServiceImplTest extends CategoryTest {
     mockEncryptionDetails();
     String errorMessage = "error message";
     String hostValidationFailedMessage = "Host connectivity validation failed.";
-    when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(buildErrorNotifyResponseData());
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any())).thenReturn(buildErrorNotifyResponseData());
 
     HostValidationDTO result = hostValidationService.validateHost(HOST, ACCOUNT_IDENTIFIER, ORG_IDENTIFIER,
         PROJECT_IDENTIFIER, SECRET_IDENTIFIER, Sets.newHashSet(DELEGATE_SELECTOR));
@@ -379,7 +380,7 @@ public class NGHostValidationServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testValidateHostsConnectivity() {
     mockTaskAbstractions();
-    when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(buildHostConnectivityTaskResponseSuccess());
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any())).thenReturn(buildHostConnectivityTaskResponseSuccess());
 
     List<HostValidationDTO> result = hostValidationService.validateHostsConnectivity(
         Arrays.asList(HOST), ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, Collections.emptySet());
@@ -393,7 +394,7 @@ public class NGHostValidationServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testValidateHostsConnectivityThrowsException() {
     mockTaskAbstractions();
-    when(delegateGrpcClientWrapper.executeSyncTask(any())).thenThrow(new WingsException("some error"));
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any())).thenThrow(new WingsException("some error"));
 
     assertThatThrownBy(()
                            -> hostValidationService.validateHostsConnectivity(Arrays.asList(HOST), ACCOUNT_IDENTIFIER,

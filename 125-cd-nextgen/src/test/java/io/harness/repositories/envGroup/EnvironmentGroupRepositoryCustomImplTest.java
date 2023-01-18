@@ -20,7 +20,7 @@ import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.persistance.GitAwarePersistence;
 import io.harness.ng.core.environment.beans.Environment;
-import io.harness.ng.core.environment.services.impl.EnvironmentServiceImpl;
+import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.outbox.api.OutboxService;
 import io.harness.rule.Owner;
 
@@ -50,7 +50,7 @@ public class EnvironmentGroupRepositoryCustomImplTest extends CDNGTestBase {
   @Mock private OutboxService outboxService;
 
   @Inject private MongoTemplate mongoTemplate;
-  @Inject private EnvironmentServiceImpl environmentService;
+  @Inject private EnvironmentService environmentService;
 
   @InjectMocks private EnvironmentGroupRepositoryCustomImpl environmentGroupRepositoryCustom;
 

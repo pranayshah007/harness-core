@@ -7,7 +7,7 @@
 
 package io.harness.ng.core.customDeployment.helper;
 
-import static io.harness.cdng.customDeployment.CustomDeploymentConstants.VARIABLES;
+import static io.harness.cdng.customDeployment.constants.CustomDeploymentConstants.VARIABLES;
 import static io.harness.common.EntityYamlRootNames.INFRASTRUCTURE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -20,7 +20,7 @@ import static java.util.Objects.isNull;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.customDeployment.CustomDeploymentConstants;
+import io.harness.cdng.customDeployment.constants.CustomDeploymentConstants;
 import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;

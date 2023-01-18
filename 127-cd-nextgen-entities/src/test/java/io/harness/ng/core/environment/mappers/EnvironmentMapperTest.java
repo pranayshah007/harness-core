@@ -10,6 +10,7 @@ package io.harness.ng.core.environment.mappers;
 import static io.harness.ng.core.environment.EnvironmentTestHelper.readFile;
 import static io.harness.ng.core.environment.beans.EnvironmentType.PreProduction;
 import static io.harness.ng.core.environment.beans.EnvironmentType.Production;
+import static io.harness.rule.OwnerRule.ABHINAV2;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.TATHAGAT;
@@ -284,6 +285,24 @@ public class EnvironmentMapperTest extends CategoryTest {
     assertThatThrownBy(() -> EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", requestDTO))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageContaining("Found duplicate manifest identifiers [m1]");
+  }
+
+  @Test
+  @Owner(developers = ABHINAV2)
+  @Category(UnitTests.class)
+  public void testMultipleHelmOverridesException() {
+    final String filename = "env-with-multiple-helm-overrides.yaml";
+    final String yaml = readFile(filename, getClass());
+    final EnvironmentRequestDTO requestDTO = EnvironmentRequestDTO.builder()
+                                                 .identifier("ENV")
+                                                 .orgIdentifier("ORG_ID")
+                                                 .projectIdentifier("PROJECT_ID")
+                                                 .type(PreProduction)
+                                                 .yaml(yaml)
+                                                 .build();
+    assertThatThrownBy(() -> EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", requestDTO))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining("Manifests cannot contain more than one helm repo override");
   }
 
   @Test

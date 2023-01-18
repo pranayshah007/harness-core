@@ -109,7 +109,7 @@ public class EnvironmentResource {
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
     return ResponseDTO.newResponse(environmentService.delete(accountId, orgIdentifier, projectIdentifier,
-        environmentIdentifier, isNumeric(ifMatch) ? parseLong(ifMatch) : null));
+        environmentIdentifier, isNumeric(ifMatch) ? parseLong(ifMatch) : null, false));
   }
 
   @PUT

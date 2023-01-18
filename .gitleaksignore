@@ -2,3 +2,7 @@
 
 #CommitID:FilePath:TypeOfSecret:LineNumber
 aee83e4f314e220afbf237a39d6520e292823d6e:batch-processing/service/src/test/java/io/harness/batch/processing/anomalydetection/AnomalyAlertsServiceImplTest.java:slack-web-hook:57
+c413d0c2f7894d2a8c202422abaca4e05fb9a531:930-delegate-tasks/src/test/resources/servicenow/rsa-key-valid.pem:private-key:1
+c413d0c2f7894d2a8c202422abaca4e05fb9a531:980-commons/src/test/resources/io/harness/security/certs/adfs-test/rsa-key-valid.pem:private-key:1
+42f87933e0ee3b0ae46262e640415aba986ad7b7:980-commons/src/test/resources/io/harness/security/certs/adfs-test/rsa-key-valid.pem:private-key:1
+42f87933e0ee3b0ae46262e640415aba986ad7b7:930-delegate-tasks/src/test/resources/servicenow/rsa-key-valid.pem:private-key:1

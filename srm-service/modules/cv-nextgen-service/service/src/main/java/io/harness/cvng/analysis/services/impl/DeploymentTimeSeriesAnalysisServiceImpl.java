@@ -7,8 +7,10 @@
 
 package io.harness.cvng.analysis.services.impl;
 
+import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.getAdjustedAnalysisEndTime;
 import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.getFilteredAnalysedTestDataNodes;
 import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.getMetricTypeFromCvConfigAndMetricDefinition;
+import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.getMetricValuesFromTimeSeriesRecordDtos;
 import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.isAnalysisResultExcluded;
 import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.isTransactionGroupExcluded;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -21,12 +23,14 @@ import io.harness.cvng.analysis.beans.DeploymentTimeSeriesAnalysisDTO.HostData;
 import io.harness.cvng.analysis.beans.DeploymentTimeSeriesAnalysisDTO.TransactionMetricHostData;
 import io.harness.cvng.analysis.beans.NodeRiskCountDTO;
 import io.harness.cvng.analysis.beans.Risk;
+import io.harness.cvng.analysis.beans.TimeSeriesRecordDTO;
 import io.harness.cvng.analysis.beans.TransactionMetricInfo;
 import io.harness.cvng.analysis.beans.TransactionMetricInfoSummaryPageDTO;
 import io.harness.cvng.analysis.entities.DeploymentTimeSeriesAnalysis;
 import io.harness.cvng.analysis.entities.DeploymentTimeSeriesAnalysis.DeploymentTimeSeriesAnalysisKeys;
 import io.harness.cvng.analysis.services.api.DeploymentTimeSeriesAnalysisService;
 import io.harness.cvng.beans.DataSourceType;
+import io.harness.cvng.cdng.beans.v2.AnalysedDeploymentTestDataNode;
 import io.harness.cvng.cdng.beans.v2.AnalysisResult;
 import io.harness.cvng.cdng.beans.v2.MetricsAnalysis;
 import io.harness.cvng.cdng.beans.v2.MetricsAnalysisOverview;
@@ -41,6 +45,7 @@ import io.harness.cvng.core.entities.MetricPack.MetricDefinition;
 import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.core.entities.VerificationTask.DeploymentInfo;
 import io.harness.cvng.core.entities.VerificationTask.TaskType;
+import io.harness.cvng.core.services.api.TimeSeriesRecordService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.utils.CVNGObjectUtils;
 import io.harness.cvng.models.VerificationType;
@@ -82,6 +87,7 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
   @Inject private VerificationTaskService verificationTaskService;
   @Inject private VerificationJobInstanceService verificationJobInstanceService;
   @Inject private NextGenService nextGenService;
+  @Inject private TimeSeriesRecordService timeSeriesRecordService;
 
   @Override
   public void save(DeploymentTimeSeriesAnalysis deploymentTimeSeriesAnalysis) {
@@ -348,7 +354,7 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
   @Override
   public List<MetricsAnalysis> getFilteredMetricAnalysesForVerifyStepExecutionId(String accountId,
       String verifyStepExecutionId, DeploymentTimeSeriesAnalysisFilter deploymentTimeSeriesAnalysisFilter) {
-    List<DeploymentTimeSeriesAnalysis> latestDeploymentTimeSeriesAnalysis =
+    List<DeploymentTimeSeriesAnalysis> latestDeploymentTimeSeriesAnalyses =
         getLatestDeploymentTimeSeriesAnalysis(accountId, verifyStepExecutionId, deploymentTimeSeriesAnalysisFilter);
     Set<String> requestedHealthSources =
         new HashSet<>(CollectionUtils.emptyIfNull(deploymentTimeSeriesAnalysisFilter.getHealthSourceIdentifiers()));
@@ -366,7 +372,9 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
 
     List<MetricsAnalysis> metricsAnalyses = new ArrayList<>();
 
-    for (DeploymentTimeSeriesAnalysis timeSeriesAnalysis : latestDeploymentTimeSeriesAnalysis) {
+    Instant analysisStartTime = verificationJobInstance.getStartTime();
+
+    for (DeploymentTimeSeriesAnalysis timeSeriesAnalysis : latestDeploymentTimeSeriesAnalyses) {
       VerificationTask verificationTask = verificationTaskService.get(timeSeriesAnalysis.getVerificationTaskId());
       Preconditions.checkArgument(verificationTask.getTaskInfo().getTaskType() == TaskType.DEPLOYMENT,
           "VerificationTask should be of Deployment type");
@@ -381,6 +389,16 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
       Set<MetricDefinition> metricDefinitions = cvConfig.getMetricPack().getMetrics();
       Map<String, MetricDefinition> metricDefinitionMap = metricDefinitions.stream().collect(
           Collectors.toMap(MetricDefinition::getIdentifier, metricDefinition -> metricDefinition, (u, v) -> v));
+
+      Instant analysisEndTime = timeSeriesAnalysis.getEndTime();
+      // required as the timeSeriesRecordService.getTimeSeriesRecordDTOs(...) method treats analysisEndTime as exclusive
+      analysisEndTime = getAdjustedAnalysisEndTime(analysisEndTime);
+      List<TimeSeriesRecordDTO> timeSeriesRecordDtos = timeSeriesRecordService.getTimeSeriesRecordDTOs(
+          verificationTask.getUuid(), analysisStartTime, analysisEndTime);
+      Map<String, List<TimeSeriesRecordDTO>> mapOfMetricIdentifierAndTimeSeriesRecordDtos =
+          CollectionUtils.emptyIfNull(timeSeriesRecordDtos)
+              .stream()
+              .collect(Collectors.groupingBy(TimeSeriesRecordDTO::getMetricIdentifier));
       for (TransactionMetricHostData transactionMetricHostData : timeSeriesAnalysis.getTransactionMetricSummaries()) {
         // LE metricName is BE metricIdentifier
         String metricIdentifier = transactionMetricHostData.getMetricName();
@@ -407,11 +425,45 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
                 .testDataNodes(
                     getFilteredAnalysedTestDataNodes(transactionMetricHostData, deploymentTimeSeriesAnalysisFilter))
                 .build();
-
+        populateRawMetricData(
+            mapOfMetricIdentifierAndTimeSeriesRecordDtos, metricDefinition.getIdentifier(), metricsAnalysis);
         metricsAnalyses.add(metricsAnalysis);
       }
     }
     return metricsAnalyses;
+  }
+
+  private void populateRawMetricData(
+      Map<String, List<TimeSeriesRecordDTO>> mapOfMetricIdentifierAndTimeSeriesRecordDtos, String metricIdentifier,
+      MetricsAnalysis metricsAnalysis) {
+    List<TimeSeriesRecordDTO> timeSeriesRecordDtosForMetric =
+        mapOfMetricIdentifierAndTimeSeriesRecordDtos.get(metricIdentifier);
+    Map<String, List<TimeSeriesRecordDTO>> mapOfHostIdentifierAndTimeSeriesRecordDtos =
+        CollectionUtils.emptyIfNull(timeSeriesRecordDtosForMetric)
+            .stream()
+            .collect(Collectors.groupingBy(TimeSeriesRecordDTO::getHost));
+    metricsAnalysis.getTestDataNodes().forEach(analysedDeploymentTestDataNode
+        -> populateRawMetricDataForAnalysedDeploymentTestDataNode(
+            analysedDeploymentTestDataNode, mapOfHostIdentifierAndTimeSeriesRecordDtos));
+  }
+
+  private void populateRawMetricDataForAnalysedDeploymentTestDataNode(
+      AnalysedDeploymentTestDataNode analysedDeploymentTestDataNode,
+      Map<String, List<TimeSeriesRecordDTO>> mapOfHostIdentifierAndTimeSeriesRecordDtos) {
+    populateRawTestDataForAnalysedDeploymentTestDataNode(
+        analysedDeploymentTestDataNode, mapOfHostIdentifierAndTimeSeriesRecordDtos);
+    populateRawControlDataForAnalysedDeploymentTestDataNode();
+  }
+
+  private void populateRawTestDataForAnalysedDeploymentTestDataNode(
+      AnalysedDeploymentTestDataNode analysedDeploymentTestDataNode,
+      Map<String, List<TimeSeriesRecordDTO>> mapOfHostIdentifierAndTimeSeriesRecordDtos) {
+    analysedDeploymentTestDataNode.setTestData(getMetricValuesFromTimeSeriesRecordDtos(
+        mapOfHostIdentifierAndTimeSeriesRecordDtos.get(analysedDeploymentTestDataNode.getNodeIdentifier())));
+  }
+
+  private void populateRawControlDataForAnalysedDeploymentTestDataNode() {
+    // TODO: Add raw control data
   }
 
   private NodeRiskCountDTO getNodeRiskCountDTO(Map<Risk, Integer> nodeCountByRiskStatusMap) {

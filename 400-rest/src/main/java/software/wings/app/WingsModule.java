@@ -119,10 +119,12 @@ import io.harness.delegate.outbox.DelegateOutboxEventHandler;
 import io.harness.delegate.queueservice.DelegateTaskQueueService;
 import io.harness.delegate.queueservice.HQueueServiceClientFactory;
 import io.harness.delegate.service.impl.DelegateDownloadServiceImpl;
+import io.harness.delegate.service.impl.DelegateFeedbacksServiceImpl;
 import io.harness.delegate.service.impl.DelegateInstallationCommandServiceImpl;
 import io.harness.delegate.service.impl.DelegateRingServiceImpl;
 import io.harness.delegate.service.impl.DelegateUpgraderServiceImpl;
 import io.harness.delegate.service.intfc.DelegateDownloadService;
+import io.harness.delegate.service.intfc.DelegateFeedbacksService;
 import io.harness.delegate.service.intfc.DelegateInstallationCommandService;
 import io.harness.delegate.service.intfc.DelegateNgTokenService;
 import io.harness.delegate.service.intfc.DelegateRingService;
@@ -1212,6 +1214,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(InstanceDataService.class).to(InstanceDataServiceImpl.class);
     bind(EntityMetadataService.class).to(EntityMetadataServiceImpl.class);
     bind(DelegateDownloadService.class).to(DelegateDownloadServiceImpl.class);
+    bind(DelegateFeedbacksService.class).to(DelegateFeedbacksServiceImpl.class);
 
     bind(WingsMongoExportImport.class);
 

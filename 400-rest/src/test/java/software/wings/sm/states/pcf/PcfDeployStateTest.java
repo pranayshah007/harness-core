@@ -16,6 +16,7 @@ import static io.harness.pcf.CfCommandUnitConstants.Wrapup;
 import static io.harness.pcf.model.PcfConstants.DEFAULT_PCF_TASK_TIMEOUT_MIN;
 import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.ANIL;
+import static io.harness.rule.OwnerRule.SOURABH;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 import static io.harness.rule.OwnerRule.TMACARI;
 
@@ -589,5 +590,56 @@ public class PcfDeployStateTest extends WingsBaseTest {
     FieldUtils.writeField(pcfDeployState, "pcfStateHelper", mockPcfStateHelper, true);
     doReturn(10).when(mockPcfStateHelper).getStateTimeoutMillis(context, DEFAULT_PCF_TASK_TIMEOUT_MIN, false);
     assertThat(pcfDeployState.getTimeoutMillis(context)).isEqualTo(10);
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testTimeoutWhenNotGivenFromUI() {
+    on(context).set("serviceTemplateService", serviceTemplateService);
+    on(context).set("variableProcessor", variableProcessor);
+    on(context).set("sweepingOutputService", sweepingOutputService);
+    on(context).set("evaluator", evaluator);
+
+    pcfDeployState.setInstanceCount(50);
+    pcfDeployState.setInstanceUnitType(PERCENTAGE);
+    ExecutionResponse response = pcfDeployState.execute(context);
+    assertThat(response.getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);
+    assertThat(response).isNotNull().hasFieldOrPropertyWithValue("async", true);
+    assertThat(response.getCorrelationIds()).isNotNull().hasSize(1);
+    verify(activityService).save(any(Activity.class));
+    verify(delegateService).queueTask(any(DelegateTask.class));
+
+    ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
+    verify(delegateService).queueTask(captor.capture());
+    DelegateTask delegateTask = captor.getValue();
+
+    assertThat(delegateTask.getData().getTimeout()).isEqualTo(300000);
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testTimeoutWhenValueIsGivenFromUI() {
+    on(context).set("serviceTemplateService", serviceTemplateService);
+    on(context).set("variableProcessor", variableProcessor);
+    on(context).set("sweepingOutputService", sweepingOutputService);
+    on(context).set("evaluator", evaluator);
+
+    pcfDeployState.setTimeoutIntervalInMinutes(7);
+    pcfDeployState.setInstanceCount(50);
+    pcfDeployState.setInstanceUnitType(PERCENTAGE);
+    ExecutionResponse response = pcfDeployState.execute(context);
+    assertThat(response.getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);
+    assertThat(response).isNotNull().hasFieldOrPropertyWithValue("async", true);
+    assertThat(response.getCorrelationIds()).isNotNull().hasSize(1);
+    verify(activityService).save(any(Activity.class));
+    verify(delegateService).queueTask(any(DelegateTask.class));
+
+    ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
+    verify(delegateService).queueTask(captor.capture());
+    DelegateTask delegateTask = captor.getValue();
+
+    assertThat(delegateTask.getData().getTimeout()).isEqualTo(420000);
   }
 }

@@ -82,6 +82,7 @@ public class NGCommonEntityConstants {
   public static final Integer MAX_PAGE_SIZE = 10000;
   public static final String EXPIRY_TIME = "expiryTime";
   public static final String SORT = "sort";
+  public static final String FILE_PATH_KEY = "path";
 
   // TODO(UTSAV): Move to ce-nextgen
   public static final String IS_EVENTS_ENABLED = "eventsEnabled";
@@ -111,6 +112,7 @@ public class NGCommonEntityConstants {
   public static final String FILE_TAGS_MESSAGE = "The File or Folder tags";
   public static final String FILE_CONTENT_MESSAGE = "The content of the File as InputStream";
   public static final String FILE_FILTER_PROPERTIES_MESSAGE = "Details of the File filter properties to be applied";
+  public static final String FILE_PATH_PARAM_MESSAGE = "The file path";
   public static final String FILTER_IDENTIFIER_MESSAGE = "Filter identifier";
   public static final String ENTITY_TYPE_MESSAGE = "Entity type";
   public static final String FOLDER_DETAILS_MESSAGE = "Folder details";

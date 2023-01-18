@@ -56,6 +56,7 @@ import software.wings.beans.WorkflowPhase;
 import software.wings.beans.workflow.StepSkipStrategy;
 import software.wings.beans.workflow.StepSkipStrategy.Scope;
 import software.wings.ngmigration.CgEntityId;
+import software.wings.ngmigration.CgEntityNode;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableMap;
@@ -170,7 +171,8 @@ public abstract class WorkflowHandler {
         true, true, INPUT_EXPRESSION, variable.getValue(), validator, true);
   }
 
-  public abstract JsonNode getTemplateSpec(Map<CgEntityId, NGYamlFile> migratedEntities, Workflow workflow);
+  public abstract JsonNode getTemplateSpec(
+      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities, Workflow workflow);
 
   List<WorkflowPhase> getRollbackPhases(Workflow workflow) {
     CanaryOrchestrationWorkflow orchestrationWorkflow =
@@ -229,14 +231,14 @@ public abstract class WorkflowHandler {
         .collect(Collectors.toList());
   }
 
-  List<ExecutionWrapperConfig> getStepGroups(
+  List<ExecutionWrapperConfig> getStepGroups(Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, NGYamlFile> migratedEntities, StepMapperFactory stepMapperFactory, WorkflowPhase phase) {
     List<PhaseStep> phaseSteps = phase != null ? phase.getPhaseSteps() : Collections.emptyList();
     List<ExecutionWrapperConfig> stepGroups = new ArrayList<>();
     if (EmptyPredicate.isNotEmpty(phaseSteps)) {
       stepGroups = phaseSteps.stream()
                        .filter(phaseStep -> EmptyPredicate.isNotEmpty(phaseStep.getSteps()))
-                       .map(phaseStep -> getStepGroup(migratedEntities, stepMapperFactory, phaseStep))
+                       .map(phaseStep -> getStepGroup(entities, migratedEntities, stepMapperFactory, phaseStep))
                        .filter(Objects::nonNull)
                        .collect(Collectors.toList());
     }
@@ -288,11 +290,12 @@ public abstract class WorkflowHandler {
     return true;
   }
 
-  ExecutionWrapperConfig getStepGroup(
+  ExecutionWrapperConfig getStepGroup(Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, NGYamlFile> migratedEntities, StepMapperFactory stepMapperFactory, PhaseStep phaseStep) {
     List<GraphNode> stepYamls = phaseStep.getSteps();
 
-    List<ExecutionWrapperConfig> steps = getStepWrappers(migratedEntities, stepMapperFactory, phaseStep, stepYamls);
+    List<ExecutionWrapperConfig> steps =
+        getStepWrappers(entities, migratedEntities, stepMapperFactory, phaseStep, stepYamls);
     if (EmptyPredicate.isEmpty(steps)) {
       return null;
     }
@@ -340,8 +343,9 @@ public abstract class WorkflowHandler {
         .build();
   }
 
-  List<ExecutionWrapperConfig> getStepWrappers(Map<CgEntityId, NGYamlFile> migratedEntities,
-      StepMapperFactory stepMapperFactory, PhaseStep phaseStep, List<GraphNode> stepYamls) {
+  List<ExecutionWrapperConfig> getStepWrappers(Map<CgEntityId, CgEntityNode> entities,
+      Map<CgEntityId, NGYamlFile> migratedEntities, StepMapperFactory stepMapperFactory, PhaseStep phaseStep,
+      List<GraphNode> stepYamls) {
     if (EmptyPredicate.isEmpty(stepYamls)) {
       return Collections.emptyList();
     }
@@ -356,22 +360,22 @@ public abstract class WorkflowHandler {
     }
     return stepYamls.stream()
         .map(stepYaml
-            -> getStepElementConfig(
-                migratedEntities, stepMapperFactory, stepYaml, skipStrategies.getOrDefault(stepYaml.getId(), null)))
+            -> getStepElementConfig(entities, migratedEntities, stepMapperFactory, stepYaml,
+                skipStrategies.getOrDefault(stepYaml.getId(), null)))
         .filter(Objects::nonNull)
         .map(stepNodeJson -> ExecutionWrapperConfig.builder().step(stepNodeJson).build())
         .collect(Collectors.toList());
   }
 
-  JsonNode getStepElementConfig(Map<CgEntityId, NGYamlFile> migratedEntities, StepMapperFactory stepMapperFactory,
-      GraphNode step, String skipCondition) {
+  JsonNode getStepElementConfig(Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities,
+      StepMapperFactory stepMapperFactory, GraphNode step, String skipCondition) {
     StepMapper stepMapper = stepMapperFactory.getStepMapper(step.getType());
     MigratorExpressionUtils.render(step, new HashMap<>());
     TemplateStepNode templateStepNode = stepMapper.getTemplateSpec(migratedEntities, step);
     if (templateStepNode != null) {
       return JsonPipelineUtils.asTree(templateStepNode);
     }
-    AbstractStepNode stepNode = stepMapper.getSpec(migratedEntities, step);
+    AbstractStepNode stepNode = stepMapper.getSpec(entities, migratedEntities, step);
     if (stepNode == null) {
       return null;
     }
@@ -397,14 +401,15 @@ public abstract class WorkflowHandler {
     return ParameterField.createExpressionField(true, "<+input>", null, false);
   }
 
-  DeploymentStageConfig getDeploymentStageConfig(Map<CgEntityId, NGYamlFile> migratedEntities,
-      StepMapperFactory stepMapperFactory, ServiceDefinitionType serviceDefinitionType, WorkflowPhase phase,
-      WorkflowPhase rollbackPhase) {
-    List<ExecutionWrapperConfig> stepGroups = getStepGroups(migratedEntities, stepMapperFactory, phase);
+  DeploymentStageConfig getDeploymentStageConfig(Map<CgEntityId, CgEntityNode> entities,
+      Map<CgEntityId, NGYamlFile> migratedEntities, StepMapperFactory stepMapperFactory,
+      ServiceDefinitionType serviceDefinitionType, WorkflowPhase phase, WorkflowPhase rollbackPhase) {
+    List<ExecutionWrapperConfig> stepGroups = getStepGroups(entities, migratedEntities, stepMapperFactory, phase);
     if (EmptyPredicate.isEmpty(stepGroups)) {
       return null;
     }
-    List<ExecutionWrapperConfig> rollbackSteps = getStepGroups(migratedEntities, stepMapperFactory, rollbackPhase);
+    List<ExecutionWrapperConfig> rollbackSteps =
+        getStepGroups(entities, migratedEntities, stepMapperFactory, rollbackPhase);
     return getDeploymentStageConfig(serviceDefinitionType, stepGroups, rollbackSteps);
   }
 
@@ -443,7 +448,7 @@ public abstract class WorkflowHandler {
     return Collections.singletonList(failureStrategyConfig);
   }
 
-  JsonNode getDeploymentStageTemplateSpec(
+  JsonNode getDeploymentStageTemplateSpec(Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, NGYamlFile> migratedEntities, Workflow workflow, StepMapperFactory stepMapperFactory) {
     List<ExecutionWrapperConfig> steps = new ArrayList<>();
     List<ExecutionWrapperConfig> rollbackSteps = new ArrayList<>();
@@ -453,17 +458,18 @@ public abstract class WorkflowHandler {
     // Add all the steps
     if (EmptyPredicate.isNotEmpty(phases)) {
       steps.addAll(phases.stream()
-                       .flatMap(phase -> getStepGroups(migratedEntities, stepMapperFactory, phase).stream())
+                       .flatMap(phase -> getStepGroups(entities, migratedEntities, stepMapperFactory, phase).stream())
                        .filter(Objects::nonNull)
                        .collect(Collectors.toList()));
     }
 
     // Add all the rollback steps
     if (EmptyPredicate.isNotEmpty(rollbackPhases)) {
-      rollbackSteps.addAll(rollbackPhases.stream()
-                               .flatMap(phase -> getStepGroups(migratedEntities, stepMapperFactory, phase).stream())
-                               .filter(Objects::nonNull)
-                               .collect(Collectors.toList()));
+      rollbackSteps.addAll(
+          rollbackPhases.stream()
+              .flatMap(phase -> getStepGroups(entities, migratedEntities, stepMapperFactory, phase).stream())
+              .filter(Objects::nonNull)
+              .collect(Collectors.toList()));
     }
 
     Map<String, Object> templateSpec = ImmutableMap.<String, Object>builder()
@@ -475,27 +481,27 @@ public abstract class WorkflowHandler {
     return JsonPipelineUtils.asTree(templateSpec);
   }
 
-  List<ExecutionWrapperConfig> getSteps(
+  List<ExecutionWrapperConfig> getSteps(Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, NGYamlFile> migratedEntities, StepMapperFactory stepMapperFactory, List<WorkflowPhase> phases) {
     if (EmptyPredicate.isEmpty(phases)) {
       return Collections.emptyList();
     }
     return phases.stream()
-        .flatMap(phase -> getStepGroups(migratedEntities, stepMapperFactory, phase).stream())
+        .flatMap(phase -> getStepGroups(entities, migratedEntities, stepMapperFactory, phase).stream())
         .filter(Objects::nonNull)
         .collect(Collectors.toList());
   }
 
-  JsonNode getCustomStageTemplateSpec(
+  JsonNode getCustomStageTemplateSpec(Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, NGYamlFile> migratedEntities, Workflow workflow, StepMapperFactory stepMapperFactory) {
     List<WorkflowPhase> phases = getPhases(workflow);
     List<WorkflowPhase> rollbackPhases = getRollbackPhases(workflow);
 
     // Add all the steps
-    List<ExecutionWrapperConfig> steps = getSteps(migratedEntities, stepMapperFactory, phases);
+    List<ExecutionWrapperConfig> steps = getSteps(entities, migratedEntities, stepMapperFactory, phases);
 
     // Add all the steps
-    List<ExecutionWrapperConfig> rollingSteps = getSteps(migratedEntities, stepMapperFactory, rollbackPhases);
+    List<ExecutionWrapperConfig> rollingSteps = getSteps(entities, migratedEntities, stepMapperFactory, rollbackPhases);
 
     // Build Stage
     CustomStageConfig customStageConfig =
@@ -512,9 +518,9 @@ public abstract class WorkflowHandler {
     return JsonPipelineUtils.asTree(templateSpec);
   }
 
-  StageElementWrapperConfig buildCustomStage(
+  StageElementWrapperConfig buildCustomStage(Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, NGYamlFile> migratedEntities, StepMapperFactory stepMapperFactory, PhaseStep phaseStep) {
-    ExecutionWrapperConfig wrapper = getStepGroup(migratedEntities, stepMapperFactory, phaseStep);
+    ExecutionWrapperConfig wrapper = getStepGroup(entities, migratedEntities, stepMapperFactory, phaseStep);
     CustomStageConfig customStageConfig =
         CustomStageConfig.builder()
             .execution(ExecutionElementConfig.builder().steps(Collections.singletonList(wrapper)).build())
@@ -527,11 +533,11 @@ public abstract class WorkflowHandler {
   }
 
   // This is for multi service only
-  StageElementWrapperConfig buildDeploymentStage(Map<CgEntityId, NGYamlFile> migratedEntities,
-      StepMapperFactory stepMapperFactory, ServiceDefinitionType serviceDefinitionType, WorkflowPhase phase,
-      WorkflowPhase rollbackPhase) {
-    DeploymentStageConfig stageConfig =
-        getDeploymentStageConfig(migratedEntities, stepMapperFactory, serviceDefinitionType, phase, rollbackPhase);
+  StageElementWrapperConfig buildDeploymentStage(Map<CgEntityId, CgEntityNode> entities,
+      Map<CgEntityId, NGYamlFile> migratedEntities, StepMapperFactory stepMapperFactory,
+      ServiceDefinitionType serviceDefinitionType, WorkflowPhase phase, WorkflowPhase rollbackPhase) {
+    DeploymentStageConfig stageConfig = getDeploymentStageConfig(
+        entities, migratedEntities, stepMapperFactory, serviceDefinitionType, phase, rollbackPhase);
     if (stageConfig == null) {
       return null;
     }
@@ -555,7 +561,7 @@ public abstract class WorkflowHandler {
     return StageElementWrapperConfig.builder().stage(JsonPipelineUtils.asTree(stageNode)).build();
   }
 
-  JsonNode buildMultiStagePipelineTemplate(
+  JsonNode buildMultiStagePipelineTemplate(Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, NGYamlFile> migratedEntities, StepMapperFactory stepMapperFactory, Workflow workflow) {
     PhaseStep prePhase = getPreDeploymentPhase(workflow);
     List<WorkflowPhase> phases = getPhases(workflow);
@@ -565,7 +571,7 @@ public abstract class WorkflowHandler {
     List<StageElementWrapperConfig> stages = new ArrayList<>();
     if (EmptyPredicate.isNotEmpty(prePhase.getSteps())) {
       prePhase.setName("Pre Deployment");
-      stages.add(buildCustomStage(migratedEntities, stepMapperFactory, prePhase));
+      stages.add(buildCustomStage(entities, migratedEntities, stepMapperFactory, prePhase));
     }
 
     final Map<String, WorkflowPhase> rollbackPhaseMap = new HashMap<>();
@@ -578,15 +584,15 @@ public abstract class WorkflowHandler {
       stages.addAll(
           phases.stream()
               .map(phase
-                  -> buildDeploymentStage(migratedEntities, stepMapperFactory, ServiceDefinitionType.KUBERNETES, phase,
-                      rollbackPhaseMap.getOrDefault(phase.getName(), null)))
+                  -> buildDeploymentStage(entities, migratedEntities, stepMapperFactory,
+                      ServiceDefinitionType.KUBERNETES, phase, rollbackPhaseMap.getOrDefault(phase.getName(), null)))
               .filter(Objects::nonNull)
               .collect(Collectors.toList()));
     }
 
     if (EmptyPredicate.isNotEmpty(postPhase.getSteps())) {
       postPhase.setName("Post Deployment");
-      stages.add(buildCustomStage(migratedEntities, stepMapperFactory, postPhase));
+      stages.add(buildCustomStage(entities, migratedEntities, stepMapperFactory, postPhase));
     }
 
     PipelineInfoConfig pipelineInfoConfig =

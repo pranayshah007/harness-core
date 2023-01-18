@@ -19,11 +19,10 @@ import com.offbytwo.jenkins.client.util.EncodingUtils;
 import com.offbytwo.jenkins.model.FolderJob;
 import com.offbytwo.jenkins.model.Job;
 import com.offbytwo.jenkins.model.JobWithDetails;
-import groovy.util.logging.Slf4j;
 import java.io.IOException;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpResponseException;
-@Slf4j
+
 public class JenkinsCustomServer extends JenkinsServer {
   private JenkinsHttpClient client;
 

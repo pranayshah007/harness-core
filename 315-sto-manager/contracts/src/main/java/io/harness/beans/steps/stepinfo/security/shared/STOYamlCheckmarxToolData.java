@@ -9,11 +9,9 @@ package io.harness.beans.steps.stepinfo.security.shared;
 
 import static io.harness.annotations.dev.HarnessTeam.STO;
 import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.yaml.YamlSchemaTypes;
 
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
@@ -22,12 +20,8 @@ import org.codehaus.jackson.annotate.JsonProperty;
 @Data
 @OwnedBy(STO)
 public class STOYamlCheckmarxToolData {
-  @YamlSchemaTypes(value = {runtime})
-  @ApiModelProperty(dataType = STRING_CLASSPATH)
-  @JsonProperty("team_name")
-  protected ParameterField<String> teamName;
+  @ApiModelProperty(dataType = STRING_CLASSPATH) @JsonProperty("team_name") protected ParameterField<String> teamName;
 
-  @YamlSchemaTypes(value = {runtime})
   @ApiModelProperty(dataType = STRING_CLASSPATH)
   @JsonProperty("project_name")
   protected ParameterField<String> projectName;

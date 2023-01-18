@@ -62,6 +62,7 @@ import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactD
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactDelegateResponse;
+import io.harness.exception.ArtifactServerException;
 import io.harness.pms.yaml.ParameterField;
 
 import software.wings.utils.RepositoryFormat;
@@ -260,6 +261,17 @@ public class ArtifactResponseToOutcomeMapper {
     if (useDelegateResponse && dockerDelegateResponse != null && dockerDelegateResponse.getBuildDetails() != null
         && dockerDelegateResponse.getBuildDetails().getMetadata() != null) {
       metadata = dockerDelegateResponse.getBuildDetails().getMetadata();
+      if (dockerConfig.getDigest() != null && isNotEmpty(dockerConfig.getDigest().getValue())) {
+        // If user explicitly passes a digest for the image, we validate it against available image's SHA256 digests.
+        String digest = dockerConfig.getDigest().getValue();
+        String sha256V1 = metadata.get(ArtifactMetadataKeys.SHA);
+        String sha256V2 = metadata.get(ArtifactMetadataKeys.SHAV2);
+        if (!digest.equals(sha256V1) && !digest.equals(sha256V2)) {
+          throw new ArtifactServerException(
+              "Artifact image SHA256 validation failed: image sha256 digest mismatch.\n Requested digest: " + digest
+              + "\nAvailable digests:\n" + sha256V1 + " (V1)\n" + sha256V2 + " (V2)");
+        }
+      }
     }
     if (useDelegateResponse && dockerDelegateResponse != null && dockerDelegateResponse.getBuildDetails() != null
         && dockerDelegateResponse.getBuildDetails().getUiDisplayName() != null) {
@@ -280,6 +292,7 @@ public class ArtifactResponseToOutcomeMapper {
         .displayName(displayName)
         .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(dockerConfig)))
         .label(getLabels(dockerDelegateResponse))
+        .digest(dockerConfig.getDigest() != null ? dockerConfig.getDigest().getValue() : null)
         .metadata(metadata)
         .build();
   }

@@ -261,6 +261,19 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
         executionSummaryEntity.getPlanExecutionId(), executionSummaryEntity.getLastUpdatedAt());
   }
 
+  @Override
+  public void deleteAllGraphMetadataForGivenExecutionIds(Set<String> planExecutionIds) {
+    // Delete all related orchestration logs
+    orchestrationEventLogRepository.deleteAllOrchestrationLogEvents(planExecutionIds);
+    // Delete related cache entities
+    List<OrchestrationGraph> cacheEntities = new LinkedList<>();
+    for (String planExecutionId : planExecutionIds) {
+      OrchestrationGraph graph = OrchestrationGraph.builder().cacheKey(planExecutionId).cacheParams(null).build();
+      cacheEntities.add(graph);
+    }
+    mongoStore.delete(cacheEntities);
+  }
+
   private void sendUpdateEventIfAny(OrchestrationGraph orchestrationGraph) {
     sendUpdateEventIfAny(
         orchestrationGraph.getStatus(), orchestrationGraph.getPlanExecutionId(), orchestrationGraph.getLastUpdatedAt());

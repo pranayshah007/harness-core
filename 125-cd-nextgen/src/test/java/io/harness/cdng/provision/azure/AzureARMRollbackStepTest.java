@@ -45,7 +45,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.steps.StepHelper;
-import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -94,8 +94,8 @@ public class AzureARMRollbackStepTest extends CategoryTest {
     List<EncryptedDataDetail> encryptedDataDetails = new ArrayList<>();
     when(azureCommonHelper.getAzureEncryptionDetails(any(), any())).thenReturn(encryptedDataDetails);
     when(stepHelper.getEnvironmentType(any())).thenReturn(EnvironmentType.NON_PROD);
-    Mockito.mockStatic(StepUtils.class);
-    when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
     ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
 
@@ -107,8 +107,8 @@ public class AzureARMRollbackStepTest extends CategoryTest {
     azureARMRollbackStep.obtainTaskAfterRbac(azureHelperTest.getAmbiance(), steps, inputPackage);
 
     verify(azureARMConfigDAL).getAzureARMConfig(any(), eq("abc"));
-    verifyStatic(StepUtils.class, times(1));
-    StepUtils.prepareCDTaskRequest(
+    verifyStatic(TaskRequestsUtils.class, times(1));
+    TaskRequestsUtils.prepareCDTaskRequest(
         any(), taskDataArgumentCaptor.capture(), any(), any(), any(), taskSelectorsArgumentCaptor.capture(), any());
     assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
     assertThat(taskDataArgumentCaptor.getValue().getParameters()).isNotNull();

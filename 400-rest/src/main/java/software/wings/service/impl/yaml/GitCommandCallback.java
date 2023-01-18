@@ -7,6 +7,7 @@
 
 package software.wings.service.impl.yaml;
 
+import static io.harness.beans.FeatureName.NOTIFY_GIT_SYNC_ERRORS_PER_APP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
@@ -133,8 +134,15 @@ public class GitCommandCallback implements NotifyCallbackWithErrorHandling {
           }
           // raise alert if GitConnectionErrorAlert is not already open
 
-          yamlGitService.raiseAlertForGitFailure(
-              accountId, GLOBAL_APP_ID, getGitFailureDetailsFromGitResponse(gitCommandExecutionResponse));
+          // Initialising the appId to group the errors at App level, behind FF
+          if (featureFlagService.isEnabled(NOTIFY_GIT_SYNC_ERRORS_PER_APP, accountId) && isNotEmpty(changeSetId)) {
+            String appId = yamlChangeSetService.get(accountId, changeSetId).getAppId();
+            yamlGitService.raiseAlertForGitFailure(
+                accountId, appId, getGitFailureDetailsFromGitResponse(gitCommandExecutionResponse));
+          } else {
+            yamlGitService.raiseAlertForGitFailure(
+                accountId, GLOBAL_APP_ID, getGitFailureDetailsFromGitResponse(gitCommandExecutionResponse));
+          }
 
           return;
         }
@@ -427,6 +435,7 @@ public class GitCommandCallback implements NotifyCallbackWithErrorHandling {
   public void notify(Map<String, Supplier<ResponseData>> response) {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_NESTS);
          AutoLogContext ignore2 = new GitCommandCallbackLogContext(getContext(), OVERRIDE_NESTS)) {
+      String appId = GLOBAL_APP_ID;
       Supplier<ResponseData> responseDataSupplier = response.values().iterator().next();
       try {
         ResponseData responseData = responseDataSupplier.get();
@@ -436,7 +445,12 @@ public class GitCommandCallback implements NotifyCallbackWithErrorHandling {
         log.error(
             "Git request failed because of no delegate for command:[{}], changeSetId:[{}], account:[{}], response:[{}]",
             gitCommandType, changeSetId, accountId, response, e);
-        yamlGitService.raiseAlertForGitFailure(accountId, GLOBAL_APP_ID,
+
+        // Initialising the appId to group the errors at App level
+        if (featureFlagService.isEnabled(NOTIFY_GIT_SYNC_ERRORS_PER_APP, accountId) && isNotEmpty(changeSetId)) {
+          appId = yamlChangeSetService.get(accountId, changeSetId).getAppId();
+        }
+        yamlGitService.raiseAlertForGitFailure(accountId, appId,
             GitSyncFailureAlertDetails.builder()
                 .branchName(branchName)
                 .repositoryName(repositoryName)

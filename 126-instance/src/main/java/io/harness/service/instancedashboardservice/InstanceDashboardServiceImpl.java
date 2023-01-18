@@ -31,6 +31,7 @@ import io.harness.models.dashboard.InstanceCountDetailsByEnvTypeBase;
 import io.harness.models.dashboard.InstanceCountDetailsByService;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.service.instance.InstanceService;
+import io.harness.utils.FullyQualifiedIdentifierHelper;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -38,6 +39,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 
@@ -302,11 +304,16 @@ public class InstanceDashboardServiceImpl implements InstanceDashboardService {
   */
   @Override
   public InstanceCountDetailsByEnvTypeAndServiceId getActiveServiceInstanceCountBreakdown(String accountIdentifier,
-      String orgIdentifier, String projectIdentifier, List<String> serviceId, long timestampInMs) {
+      String orgIdentifier, String projectIdentifier, List<String> serviceIdentifiers, long timestampInMs) {
     Map<String, Map<EnvironmentType, Integer>> serviceIdToEnvTypeVsInstanceCountMap = new HashMap<>();
+    List<String> serviceRefs = serviceIdentifiers.stream()
+                                   .map(serviceId
+                                       -> FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(
+                                           accountIdentifier, orgIdentifier, projectIdentifier, serviceId))
+                                   .collect(Collectors.toList());
     instanceService
         .getActiveServiceInstanceCountBreakdown(
-            accountIdentifier, orgIdentifier, projectIdentifier, serviceId, timestampInMs)
+            accountIdentifier, orgIdentifier, projectIdentifier, serviceRefs, timestampInMs)
         .getMappedResults()
         .forEach(countByEnvType -> {
           final String currentServiceId = countByEnvType.getServiceIdentifier();

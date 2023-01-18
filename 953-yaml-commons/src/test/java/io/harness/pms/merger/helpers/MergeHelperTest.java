@@ -253,7 +253,10 @@ public class MergeHelperTest extends CategoryTest {
         + "        serviceRef: <+input>\n"
         + "      environment:\n"
         + "        environmentRef: <+input>\n"
-        + "        infrastructureDefinitions: <+input>\n";
+        + "        infrastructureDefinitions: <+input>\n"
+        + "      variables:\n"
+        + "        - name: var1\n"
+        + "          value: <+input>";
     String runtimeInput = "pipeline:\n"
         + "  stages:\n"
         + "  - stage:\n"
@@ -285,7 +288,10 @@ public class MergeHelperTest extends CategoryTest {
         + "              description: \"not valid\"\n"
         + "          - step:\n"
         + "              identifier: \"s5\"\n"
-        + "              description: \"not valid\"\n";
+        + "              description: \"not valid\"\n"
+        + "      variables:\n"
+        + "        - name: var1\n"
+        + "          value: <+input>.executionInput()";
     String merged = "pipeline:\n"
         + "  stages:\n"
         + "  - stage:\n"
@@ -316,8 +322,74 @@ public class MergeHelperTest extends CategoryTest {
         + "              description: \"not valid\"\n"
         + "          - step:\n"
         + "              identifier: \"s5\"\n"
-        + "              description: \"not valid\"\n";
+        + "              description: \"not valid\"\n"
+        + "      variables:\n"
+        + "      - name: \"var1\"\n"
+        + "        value: \"<+input>.executionInput()\"\n";
     String result = mergeRuntimeInputValuesIntoOriginalYaml(pipelineYaml, runtimeInput, false);
+    assertThat(result).isEqualTo(merged);
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testMergeWithServiceAsAxisName() {
+    String baseYaml = "stage:\n"
+        + "  strategy:\n"
+        + "    matrix:\n"
+        + "      service: <+input>\n"
+        + "      env: <+input>\n";
+    String runtimeInput = "stage:\n"
+        + "  strategy:\n"
+        + "    matrix:\n"
+        + "      service:\n"
+        + "      - svc1\n"
+        + "      env:\n"
+        + "      - env1\n"
+        + "      - env2\n";
+    String merged = "stage:\n"
+        + "  strategy:\n"
+        + "    matrix:\n"
+        + "      service:\n"
+        + "      - \"svc1\"\n"
+        + "      env:\n"
+        + "      - \"env1\"\n"
+        + "      - \"env2\"\n";
+    String result = mergeRuntimeInputValuesIntoOriginalYaml(baseYaml, runtimeInput, false);
+    assertThat(result).isEqualTo(merged);
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testMergeWithEnvAsInputUnderEnvGroups() {
+    String baseYaml = "stage:\n"
+        + "  environmentGroup:\n"
+        + "    environments: <+input>\n";
+    String runtimeInput = "stage:\n"
+        + "  junk: \"yes\"\n"
+        + "  environmentGroup:\n"
+        + "    environments:\n"
+        + "      values:\n"
+        + "      - environmentRef: \"Env2\"\n"
+        + "        infrastructureDefinitions:\n"
+        + "        - identifier: \"Infra2\"\n"
+        + "      - environmentRef: \"Env3\"\n"
+        + "        infrastructureDefinitions:\n"
+        + "        - identifier: \"Infra3\"\n"
+        + "    deployToAll: \"true\"\n";
+    String merged = "stage:\n"
+        + "  environmentGroup:\n"
+        + "    environments:\n"
+        + "      values:\n"
+        + "      - environmentRef: \"Env2\"\n"
+        + "        infrastructureDefinitions:\n"
+        + "        - identifier: \"Infra2\"\n"
+        + "      - environmentRef: \"Env3\"\n"
+        + "        infrastructureDefinitions:\n"
+        + "        - identifier: \"Infra3\"\n"
+        + "    deployToAll: \"true\"\n";
+    String result = mergeRuntimeInputValuesIntoOriginalYaml(baseYaml, runtimeInput, false);
     assertThat(result).isEqualTo(merged);
   }
 }

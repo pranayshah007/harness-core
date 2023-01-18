@@ -18,7 +18,6 @@ import io.harness.beans.steps.stepinfo.security.shared.STOYamlSonarqubeToolData;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
-import javax.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.springframework.data.annotation.TypeAlias;
@@ -31,7 +30,7 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(STO)
 @RecasterAlias("io.harness.beans.steps.stepinfo.security.SonarqubeStepInfo")
 public class SonarqubeStepInfo extends STOGenericStepInfo {
-  @NotNull @JsonProperty protected STOYamlAuth auth;
+  @JsonProperty protected STOYamlAuth auth;
 
   @JsonProperty protected STOYamlSonarqubeToolData tool;
 }

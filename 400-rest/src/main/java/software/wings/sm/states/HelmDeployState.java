@@ -9,6 +9,7 @@ package software.wings.sm.states;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.EnvironmentType.ALL;
+import static io.harness.beans.FeatureName.CDP_SKIP_DEFAULT_VALUES_YAML_CG;
 import static io.harness.beans.FeatureName.CUSTOM_MANIFEST;
 import static io.harness.beans.FeatureName.DISABLE_HELM_REPO_YAML_CACHE;
 import static io.harness.beans.FeatureName.GIT_HOST_CONNECTIVITY;
@@ -1032,6 +1033,8 @@ public class HelmDeployState extends State {
                                .encryptedDataDetails(fetchEncryptedDataDetail(context, sourceRepoGitConfig))
                                .manifestStoreTypes(StoreType.HelmSourceRepo)
                                .helmCommandFlag(helmCommandFlag)
+                               .skipApplyHelmDefaultValues(featureFlagService.isEnabled(
+                                   CDP_SKIP_DEFAULT_VALUES_YAML_CG, context.getAccountId()))
                                .build();
 
           break;
@@ -1069,6 +1072,8 @@ public class HelmDeployState extends State {
                                  .helmChartConfigParams(helmChartConfigTaskParams)
                                  .manifestStoreTypes(HelmChartRepo)
                                  .helmCommandFlag(helmCommandFlag)
+                                 .skipApplyHelmDefaultValues(featureFlagService.isEnabled(
+                                     CDP_SKIP_DEFAULT_VALUES_YAML_CG, context.getAccountId()))
                                  .build();
           }
           break;

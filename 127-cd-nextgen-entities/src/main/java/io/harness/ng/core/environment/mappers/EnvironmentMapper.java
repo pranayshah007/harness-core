@@ -12,16 +12,13 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.HarnessStringUtils.join;
+import static io.harness.ng.core.environment.validator.EnvironmentV2ManifestValidator.checkDuplicateConfigFilesIdentifiersWithIn;
+import static io.harness.ng.core.environment.validator.EnvironmentV2ManifestValidator.checkDuplicateManifestIdentifiersWithIn;
+import static io.harness.ng.core.environment.validator.EnvironmentV2ManifestValidator.validateNoMoreThanOneHelmOverridePresent;
 import static io.harness.ng.core.mapper.TagMapper.convertToList;
 import static io.harness.ng.core.mapper.TagMapper.convertToMap;
 
-import static java.lang.String.format;
-
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.configfile.ConfigFile;
-import io.harness.cdng.configfile.ConfigFileWrapper;
-import io.harness.cdng.manifest.yaml.ManifestConfig;
-import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.EnvironmentBasicInfo;
@@ -36,13 +33,11 @@ import io.harness.utils.YamlPipelineUtils;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import javax.validation.ConstraintViolation;
 import javax.validation.Valid;
 import javax.validation.Validation;
@@ -51,7 +46,6 @@ import javax.validation.ValidatorFactory;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.math3.util.Pair;
-import org.jetbrains.annotations.NotNull;
 
 @OwnedBy(PIPELINE)
 @UtilityClass
@@ -241,46 +235,9 @@ public class EnvironmentMapper {
       final NGEnvironmentGlobalOverride environmentGlobalOverride =
           ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride();
       checkDuplicateManifestIdentifiersWithIn(environmentGlobalOverride.getManifests());
+      validateNoMoreThanOneHelmOverridePresent(environmentGlobalOverride.getManifests());
       checkDuplicateConfigFilesIdentifiersWithIn(environmentGlobalOverride.getConfigFiles());
     }
-  }
-
-  public static void checkDuplicateManifestIdentifiersWithIn(List<ManifestConfigWrapper> manifests) {
-    if (isEmpty(manifests)) {
-      return;
-    }
-    final Stream<String> identifierStream =
-        manifests.stream().map(ManifestConfigWrapper::getManifest).map(ManifestConfig::getIdentifier);
-    Set<String> duplicateIds = getDuplicateIdentifiers(identifierStream);
-    if (isNotEmpty(duplicateIds)) {
-      throw new InvalidRequestException(format("Found duplicate manifest identifiers [%s]",
-          duplicateIds.stream().map(Object::toString).collect(Collectors.joining(","))));
-    }
-  }
-
-  public static void checkDuplicateConfigFilesIdentifiersWithIn(List<ConfigFileWrapper> configFiles) {
-    if (isEmpty(configFiles)) {
-      return;
-    }
-    final Stream<String> identifierStream =
-        configFiles.stream().map(ConfigFileWrapper::getConfigFile).map(ConfigFile::getIdentifier);
-    Set<String> duplicateIds = getDuplicateIdentifiers(identifierStream);
-    if (isNotEmpty(duplicateIds)) {
-      throw new InvalidRequestException(format("Found duplicate configFiles identifiers [%s]",
-          duplicateIds.stream().map(Object::toString).collect(Collectors.joining(","))));
-    }
-  }
-
-  @NotNull
-  private static Set<String> getDuplicateIdentifiers(Stream<String> identifierStream) {
-    Set<String> uniqueIds = new HashSet<>();
-    Set<String> duplicateIds = new HashSet<>();
-    identifierStream.forEach(id -> {
-      if (!uniqueIds.add(id)) {
-        duplicateIds.add(id);
-      }
-    });
-    return duplicateIds;
   }
 
   private void validateYamlOrThrow(NGEnvironmentConfig fromYaml, EnvironmentRequestDTO environmentRequest) {

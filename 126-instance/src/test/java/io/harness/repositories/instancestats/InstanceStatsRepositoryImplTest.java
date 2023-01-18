@@ -48,7 +48,8 @@ public class InstanceStatsRepositoryImplTest extends InstancesTestBase {
   @Category(UnitTests.class)
   public void getLatestRecordTest() throws Exception {
     when(timeScaleDBService.getDBConnection()).thenReturn(dbConnection);
-    when(dbConnection.prepareStatement(InstanceStatsQuery.FETCH_LATEST_RECORD.query())).thenReturn(statement);
+    when(dbConnection.prepareStatement(InstanceStatsQuery.FETCH_LATEST_RECORD_PROJECT_LEVEL.query()))
+        .thenReturn(statement);
     statement.setString(1, ACCOUNT_ID);
     statement.setString(2, ORG_ID);
     statement.setString(3, PROJECT_ID);
@@ -74,7 +75,8 @@ public class InstanceStatsRepositoryImplTest extends InstancesTestBase {
   @Category(UnitTests.class)
   public void getLatestRecordTestShouldPassOnRetry() throws SQLException {
     when(timeScaleDBService.getDBConnection()).thenReturn(dbConnection);
-    when(dbConnection.prepareStatement(InstanceStatsQuery.FETCH_LATEST_RECORD.query())).thenReturn(statement);
+    when(dbConnection.prepareStatement(InstanceStatsQuery.FETCH_LATEST_RECORD_PROJECT_LEVEL.query()))
+        .thenReturn(statement);
     statement.setString(1, ACCOUNT_ID);
     statement.setString(2, ORG_ID);
     statement.setString(3, PROJECT_ID);
@@ -105,7 +107,8 @@ public class InstanceStatsRepositoryImplTest extends InstancesTestBase {
   @Category(UnitTests.class)
   public void getLatestRecordTestShouldFailAfterAllRetries() throws SQLException {
     when(timeScaleDBService.getDBConnection()).thenReturn(dbConnection);
-    when(dbConnection.prepareStatement(InstanceStatsQuery.FETCH_LATEST_RECORD.query())).thenReturn(statement);
+    when(dbConnection.prepareStatement(InstanceStatsQuery.FETCH_LATEST_RECORD_PROJECT_LEVEL.query()))
+        .thenReturn(statement);
     statement.setString(1, ACCOUNT_ID);
     statement.setString(2, ORG_ID);
     statement.setString(3, PROJECT_ID);
@@ -124,7 +127,8 @@ public class InstanceStatsRepositoryImplTest extends InstancesTestBase {
   @Category(UnitTests.class)
   public void getLatestRecordTestShouldFailAfterThrowingException() throws SQLException {
     when(timeScaleDBService.getDBConnection()).thenReturn(dbConnection);
-    when(dbConnection.prepareStatement(InstanceStatsQuery.FETCH_LATEST_RECORD.query())).thenReturn(statement);
+    when(dbConnection.prepareStatement(InstanceStatsQuery.FETCH_LATEST_RECORD_PROJECT_LEVEL.query()))
+        .thenReturn(statement);
     statement.setString(1, ACCOUNT_ID);
     statement.setString(2, ORG_ID);
     statement.setString(3, PROJECT_ID);
