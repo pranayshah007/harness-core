@@ -56,12 +56,11 @@ public class UserRoleAssignmentRemovalJob implements Runnable {
   private final FeatureFlagService featureFlagService;
   private final AccountClient accountClient;
   private final ScopeService scopeService;
-  private final
-  String DEBUG_MESSAGE = "UserRoleAssignmentRemovalJob";
+  private final String DEBUG_MESSAGE = "UserRoleAssignmentRemovalJob";
 
   @Inject
   public UserRoleAssignmentRemovalJob(RoleAssignmentRepository roleAssignmentRepository,
-                                      FeatureFlagService featureFlagService, AccountClient accountClient, ScopeService scopeService) {
+      FeatureFlagService featureFlagService, AccountClient accountClient, ScopeService scopeService) {
     this.roleAssignmentRepository = roleAssignmentRepository;
     this.featureFlagService = featureFlagService;
     this.accountClient = accountClient;
@@ -134,7 +133,8 @@ public class UserRoleAssignmentRemovalJob implements Runnable {
     List<String> targetAccounts = new ArrayList<>();
     try {
       for (AccountDTO accountDTO : ngEnabledAccounts) {
-        boolean isRemoveUserViewerRoleAssignment = featureFlagService.isEnabled(PL_REMOVE_USER_VIEWER_ROLE_ASSIGNMENTS, accountDTO.getIdentifier());
+        boolean isRemoveUserViewerRoleAssignment =
+            featureFlagService.isEnabled(PL_REMOVE_USER_VIEWER_ROLE_ASSIGNMENTS, accountDTO.getIdentifier());
         if (isRemoveUserViewerRoleAssignment) {
           targetAccounts.add(accountDTO.getIdentifier());
         }
