@@ -25,13 +25,15 @@ public class CiTelemetryRecordsJob {
   public void scheduleTasks() {
     long initialDelay = 10;
 
-    try {
-      log.info("CiTelemetryRecordsJob scheduler starting");
-      executorService.scheduleAtFixedRate(
-          () -> publisher.recordTelemetry(), initialDelay, THIRTY_MINS, TimeUnit.SECONDS);
-      log.info("CiTelemetryRecordsJob scheduler started");
-    } catch (Exception e) {
-      log.error("Exception while creating the scheduled job to track CI developers", e);
-    }
+    log.info("CiTelemetryRecordsJob scheduler disabled for testing");
+
+    //    try {
+    //      log.info("CiTelemetryRecordsJob scheduler starting");
+    //      executorService.scheduleAtFixedRate(
+    //          () -> publisher.recordTelemetry(), initialDelay, THIRTY_MINS, TimeUnit.SECONDS);
+    //      log.info("CiTelemetryRecordsJob scheduler started");
+    //    } catch (Exception e) {
+    //      log.error("Exception while creating the scheduled job to track CI developers", e);
+    //    }
   }
 }
