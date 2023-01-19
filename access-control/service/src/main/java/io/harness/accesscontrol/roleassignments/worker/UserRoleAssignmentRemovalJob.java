@@ -56,7 +56,7 @@ public class UserRoleAssignmentRemovalJob implements Runnable {
   private final FeatureFlagService featureFlagService;
   private final AccountClient accountClient;
   private final ScopeService scopeService;
-  private final String DEBUG_MESSAGE = "UserRoleAssignmentRemovalJob";
+  private final String DEBUG_MESSAGE = "UserRoleAssignmentRemovalJob: ";
 
   @Inject
   public UserRoleAssignmentRemovalJob(RoleAssignmentRepository roleAssignmentRepository,
@@ -233,18 +233,18 @@ public class UserRoleAssignmentRemovalJob implements Runnable {
       scopeIdentifiers.add(scopeIdentifier);
     }
     try {
-      Criteria criteria = Criteria.where(RoleAssignmentDBO.RoleAssignmentDBOKeys.scopeIdentifier)
+      Criteria criteria = Criteria.where(RoleAssignmentDBO.RoleAssignmentDBOKeys.principalIdentifier)
+                              .is(DEFAULT_ACCOUNT_LEVEL_USER_GROUP_IDENTIFIER)
+                              .and(RoleAssignmentDBO.RoleAssignmentDBOKeys.principalType)
+                              .is(USER_GROUP)
+                              .and(RoleAssignmentDBO.RoleAssignmentDBOKeys.scopeIdentifier)
                               .in(scopeIdentifiers)
                               .and(RoleAssignmentDBO.RoleAssignmentDBOKeys.resourceGroupIdentifier)
                               .is(DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER)
                               .and(RoleAssignmentDBO.RoleAssignmentDBOKeys.roleIdentifier)
                               .in(NGConstants.ACCOUNT_VIEWER_ROLE)
-                              .and(RoleAssignmentDBO.RoleAssignmentDBOKeys.principalIdentifier)
-                              .is(DEFAULT_ACCOUNT_LEVEL_USER_GROUP_IDENTIFIER)
                               .and(RoleAssignmentDBO.RoleAssignmentDBOKeys.principalScopeLevel)
                               .is(HarnessScopeLevel.ACCOUNT.getName())
-                              .and(RoleAssignmentDBO.RoleAssignmentDBOKeys.principalType)
-                              .is(USER_GROUP)
                               .and(RoleAssignmentDBO.RoleAssignmentDBOKeys.scopeLevel)
                               .is(HarnessScopeLevel.ACCOUNT.getName());
 
