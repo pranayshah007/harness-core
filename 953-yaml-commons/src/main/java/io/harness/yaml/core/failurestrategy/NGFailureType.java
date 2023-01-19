@@ -12,6 +12,7 @@ import static io.harness.pms.contracts.execution.failure.FailureType.AUTHENTICAT
 import static io.harness.pms.contracts.execution.failure.FailureType.AUTHORIZATION_FAILURE;
 import static io.harness.pms.contracts.execution.failure.FailureType.CONNECTIVITY_FAILURE;
 import static io.harness.pms.contracts.execution.failure.FailureType.DELEGATE_PROVISIONING_FAILURE;
+import static io.harness.pms.contracts.execution.failure.FailureType.DELEGATE_RESTART;
 import static io.harness.pms.contracts.execution.failure.FailureType.SKIPPING_FAILURE;
 import static io.harness.pms.contracts.execution.failure.FailureType.TIMEOUT_FAILURE;
 import static io.harness.pms.contracts.execution.failure.FailureType.UNKNOWN_FAILURE;
@@ -35,7 +36,7 @@ public enum NGFailureType {
   ALL_ERRORS(NGFailureTypeConstants.ALL_ERRORS,
       EnumSet.of(APPLICATION_FAILURE, SKIPPING_FAILURE, UNKNOWN_FAILURE, AUTHENTICATION_FAILURE, AUTHORIZATION_FAILURE,
           CONNECTIVITY_FAILURE, VERIFICATION_FAILURE, TIMEOUT_FAILURE, DELEGATE_PROVISIONING_FAILURE,
-          FailureType.POLICY_EVALUATION_FAILURE, FailureType.APPROVAL_REJECTION)),
+          FailureType.POLICY_EVALUATION_FAILURE, FailureType.APPROVAL_REJECTION, DELEGATE_RESTART)),
   @JsonProperty(NGFailureTypeConstants.AUTHENTICATION_ERROR)
   AUTHENTICATION_ERROR(NGFailureTypeConstants.AUTHENTICATION_ERROR, EnumSet.of(AUTHENTICATION_FAILURE)),
   @JsonProperty(NGFailureTypeConstants.CONNECTIVITY_ERROR)
@@ -55,7 +56,9 @@ public enum NGFailureType {
   @JsonProperty(NGFailureTypeConstants.INPUT_TIMEOUT_ERROR)
   INPUT_TIMEOUT_FAILURE(NGFailureTypeConstants.INPUT_TIMEOUT_ERROR, EnumSet.of(FailureType.INPUT_TIMEOUT_FAILURE)),
   @JsonProperty(NGFailureTypeConstants.APPROVAL_REJECTION)
-  APPROVAL_REJECTION(NGFailureTypeConstants.APPROVAL_REJECTION, EnumSet.of(FailureType.APPROVAL_REJECTION));
+  APPROVAL_REJECTION(NGFailureTypeConstants.APPROVAL_REJECTION, EnumSet.of(FailureType.APPROVAL_REJECTION)),
+  @JsonProperty(NGFailureTypeConstants.DELEGATE_RESTART_ERROR)
+  DELEGATE_RESTART_ERROR(NGFailureTypeConstants.DELEGATE_RESTART_ERROR, EnumSet.of(DELEGATE_RESTART));
 
   private final String yamlName;
   private final EnumSet<FailureType> failureType;

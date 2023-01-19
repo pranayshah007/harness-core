@@ -22,6 +22,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.dtos.InstanceDTO;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.service.services.exception.ActiveServiceInstancesPresentException;
 import io.harness.ngsettings.SettingIdentifiers;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.remote.client.CGRestUtils;
@@ -54,7 +55,7 @@ public class ServiceEntityManagementServiceImpl implements ServiceEntityManageme
     List<InstanceDTO> instanceInfoNGList = instanceService.getActiveInstancesByServiceId(
         accountId, orgIdentifier, projectIdentifier, serviceIdentifier, System.currentTimeMillis());
     if (!forceDelete && isNotEmpty(instanceInfoNGList)) {
-      throw new InvalidRequestException(String.format(
+      throw new ActiveServiceInstancesPresentException(String.format(
           "Service [%s] under Project[%s], Organization [%s] couldn't be deleted since there are currently %d active instances for the service",
           serviceIdentifier, projectIdentifier, orgIdentifier, instanceInfoNGList.size()));
     }

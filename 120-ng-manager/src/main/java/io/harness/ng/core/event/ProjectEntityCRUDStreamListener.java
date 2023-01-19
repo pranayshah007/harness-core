@@ -16,6 +16,7 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.PROJEC
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.RESTORE_ACTION;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.envGroup.services.EnvironmentGroupService;
 import io.harness.cdng.gitops.service.ClusterService;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.entity_crud.organization.OrganizationEntityChangeDTO;
@@ -49,17 +50,20 @@ public class ProjectEntityCRUDStreamListener implements MessageListener {
   private final ServiceOverrideService serviceOverrideService;
   private final InfrastructureEntityService infraService;
   private final ClusterService clusterService;
+  private final EnvironmentGroupService environmentGroupService;
 
   @Inject
   public ProjectEntityCRUDStreamListener(ProjectService projectService, EnvironmentService environmentService,
       ServiceOverrideService serviceOverrideService, InfrastructureEntityService infraService,
-      ServiceEntityService serviceEntityService, ClusterService clusterService) {
+      ServiceEntityService serviceEntityService, ClusterService clusterService,
+      EnvironmentGroupService environmentGroupService) {
     this.projectService = projectService;
     this.environmentService = environmentService;
     this.serviceOverrideService = serviceOverrideService;
     this.serviceEntityService = serviceEntityService;
     this.infraService = infraService;
     this.clusterService = clusterService;
+    this.environmentGroupService = environmentGroupService;
   }
 
   @Override
@@ -187,7 +191,18 @@ public class ProjectEntityCRUDStreamListener implements MessageListener {
           "Successfully completed deletion for projects in organization having accountIdentifier %s and identifier %s",
           accountIdentifier, orgIdentifier));
     }
-    return success.get();
+
+    boolean envDeleted = processQuietly(() -> environmentService.forceDeleteAllInOrg(accountIdentifier, orgIdentifier));
+    boolean infraDeleted = processQuietly(() -> infraService.forceDeleteAllInOrg(accountIdentifier, orgIdentifier));
+    // delete org level clusters when clusters are supported at org/account level
+    boolean serviceDeleted =
+        processQuietly(() -> serviceEntityService.forceDeleteAllInOrg(accountIdentifier, orgIdentifier));
+    boolean serviceOverridesDeleted =
+        processQuietly(() -> serviceOverrideService.deleteAllInOrg(accountIdentifier, orgIdentifier));
+    boolean envGroupsDeleted =
+        processQuietly(() -> environmentGroupService.deleteAllInOrg(accountIdentifier, orgIdentifier));
+
+    return success.get() && envDeleted && infraDeleted && serviceDeleted && serviceOverridesDeleted && envGroupsDeleted;
   }
 
   private boolean processOrganizationRestoreEvent(OrganizationEntityChangeDTO organizationEntityChangeDTO) {

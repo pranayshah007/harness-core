@@ -17,6 +17,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 @OwnedBy(PL)
+// When adding new module the internal and ignore fields should be set to true unless all the services deploys these
+// changes.
 public enum ModuleType {
   @JsonProperty("CD") CD("Continuous Deployment"),
   @JsonProperty("CI") CI("Continuous Integration"),

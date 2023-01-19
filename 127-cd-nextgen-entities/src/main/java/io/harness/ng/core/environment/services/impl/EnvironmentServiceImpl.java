@@ -360,19 +360,37 @@ public class EnvironmentServiceImpl implements EnvironmentService {
   @Override
   public boolean forceDeleteAllInProject(String accountId, String orgIdentifier, String projectIdentifier) {
     checkArgument(isNotEmpty(accountId), "accountId must be present");
-    checkArgument(isNotEmpty(orgIdentifier), "orgIdentifier must be present");
-    checkArgument(isNotEmpty(projectIdentifier), "project Identifier must be present");
+    checkArgument(isNotEmpty(orgIdentifier), "org identifier must be present");
+    checkArgument(isNotEmpty(projectIdentifier), "project identifier must be present");
 
-    Criteria criteria = getAllEnvironmentsEqualityCriteriaWithinProject(accountId, orgIdentifier, projectIdentifier);
+    return forceDeleteInternal(accountId, orgIdentifier, projectIdentifier);
+  }
+
+  private boolean forceDeleteInternal(String accountId, String orgIdentifier, String projectIdentifier) {
+    Criteria criteria = getEnvironmentsEqualityCriteria(accountId, orgIdentifier, projectIdentifier);
     return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
       boolean deleted = environmentRepository.delete(criteria);
       if (!deleted) {
-        throw new InvalidRequestException(
-            String.format("Environments under Project[%s], Organization [%s] couldn't be deleted.", projectIdentifier,
-                orgIdentifier));
+        throw new InvalidRequestException(getScopedErrorMessageForCascadeDeletion(orgIdentifier, projectIdentifier));
       }
       return true;
     }));
+  }
+
+  private String getScopedErrorMessageForCascadeDeletion(String orgIdentifier, String projectIdentifier) {
+    if (isNotEmpty(projectIdentifier)) {
+      return String.format(
+          "Environments under Project[%s], Organization [%s] couldn't be deleted.", projectIdentifier, orgIdentifier);
+    }
+    return String.format("Environments under Organization [%s] couldn't be deleted.", orgIdentifier);
+  }
+
+  @Override
+  public boolean forceDeleteAllInOrg(String accountId, String orgIdentifier) {
+    checkArgument(isNotEmpty(accountId), "accountId must be present");
+    checkArgument(isNotEmpty(orgIdentifier), "orgIdentifier must be present");
+
+    return forceDeleteInternal(accountId, orgIdentifier, null);
   }
 
   @Override
@@ -587,7 +605,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
     return criteria;
   }
 
-  private Criteria getAllEnvironmentsEqualityCriteriaWithinProject(String accountId, String orgId, String projectId) {
+  private Criteria getEnvironmentsEqualityCriteria(String accountId, String orgId, String projectId) {
     return Criteria.where(EnvironmentKeys.accountId)
         .is(accountId)
         .and(EnvironmentKeys.orgIdentifier)

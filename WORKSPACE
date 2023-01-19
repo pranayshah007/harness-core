@@ -4821,8 +4821,6 @@ plain_artifacts = [
     "com.splunk:splunk:1.6.3.0",
     "com.spotify:docker-client:8.16.0",
     "com.spotify:docker-client:8.16.0",
-    "com.squareup.okhttp:okhttp:2.7.5",
-    "com.squareup.okhttp:logging-interceptor:2.7.5",
     "com.squareup.okhttp3:logging-interceptor:4.9.2",
     "com.squareup.okhttp3:okhttp-urlconnection:4.9.2",
     "com.squareup.okhttp3:okhttp:4.9.2",

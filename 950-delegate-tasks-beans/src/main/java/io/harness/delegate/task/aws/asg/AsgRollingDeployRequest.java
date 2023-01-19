@@ -35,4 +35,5 @@ public class AsgRollingDeployRequest implements AsgCommandRequest, NestedAnnotat
   @NonFinal @Expression(ALLOW_SECRETS) boolean useAlreadyRunningInstances;
   @NonFinal @Expression(ALLOW_SECRETS) Integer instanceWarmup;
   @NonFinal @Expression(ALLOW_SECRETS) Integer minimumHealthyPercentage;
+  String amiImageId;
 }

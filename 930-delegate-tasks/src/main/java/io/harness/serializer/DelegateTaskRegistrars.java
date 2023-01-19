@@ -9,7 +9,9 @@ package io.harness.serializer;
 
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.serializer.kryo.DelegateTasksKryoRegistrar;
+import io.harness.serializer.kryo.SecretConfigKryoRegistrar;
 import io.harness.serializer.morphia.DelegateTasksMorphiaRegistrar;
+import io.harness.serializer.morphia.SecretConfigMorphiaRegistrar;
 
 import com.google.common.collect.ImmutableSet;
 import lombok.experimental.UtilityClass;
@@ -19,6 +21,7 @@ public class DelegateTaskRegistrars {
   public final ImmutableSet<Class<? extends KryoRegistrar>> kryoRegistrars =
       ImmutableSet.<Class<? extends KryoRegistrar>>builder()
           .add(DelegateTasksKryoRegistrar.class)
+          .add(SecretConfigKryoRegistrar.class)
           .addAll(CvNextGenBeansRegistrars.kryoRegistrars)
           .addAll(ApiServicesRegistrars.kryoRegistrars)
           .addAll(CvNextGenBeansRegistrars.kryoRegistrars)
@@ -29,6 +32,7 @@ public class DelegateTaskRegistrars {
   public static final ImmutableSet<Class<? extends MorphiaRegistrar>> morphiaRegistrars =
       ImmutableSet.<Class<? extends MorphiaRegistrar>>builder()
           .add(DelegateTasksMorphiaRegistrar.class)
+          .add(SecretConfigMorphiaRegistrar.class)
           .addAll(ApiServicesRegistrars.morphiaRegistrars)
           .addAll(DelegateTasksBeansRegistrars.morphiaRegistrars)
           .addAll(SecretManagerClientRegistrars.morphiaRegistrars)

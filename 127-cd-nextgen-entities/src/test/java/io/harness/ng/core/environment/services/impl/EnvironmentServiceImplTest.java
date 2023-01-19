@@ -190,6 +190,48 @@ public class EnvironmentServiceImplTest extends CDNGEntitiesTestBase {
   }
 
   @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testForceDeleteAllOrgLevelEnvironments() {
+    Environment e1 = Environment.builder()
+                         .accountId("ACCOUNT_ID")
+                         .identifier(UUIDGenerator.generateUuid())
+                         .orgIdentifier("ORG_ID")
+                         .build();
+    Environment e2 = Environment.builder()
+                         .accountId("ACCOUNT_ID")
+                         .identifier(UUIDGenerator.generateUuid())
+                         .orgIdentifier("ORG_ID")
+                         .build();
+
+    // env from different org
+    Environment e3 = Environment.builder()
+                         .accountId("ACCOUNT_ID")
+                         .identifier(UUIDGenerator.generateUuid())
+                         .orgIdentifier("ORG_ID_1")
+                         .build();
+
+    environmentService.create(e1);
+    environmentService.create(e2);
+    environmentService.create(e3);
+
+    boolean deleted = environmentService.forceDeleteAllInOrg("ACCOUNT_ID", "ORG_ID");
+    assertThat(deleted).isTrue();
+
+    Optional<Environment> environment1 =
+        environmentService.get("ACCOUNT_ID", "ORG_ID", null, e1.getIdentifier(), false);
+    Optional<Environment> environment2 =
+        environmentService.get("ACCOUNT_ID", "ORG_ID", null, e2.getIdentifier(), false);
+    assertThat(environment1).isNotPresent();
+    assertThat(environment2).isNotPresent();
+
+    Optional<Environment> environment3 =
+        environmentService.get("ACCOUNT_ID", "ORG_ID_1", null, e3.getIdentifier(), false);
+    assertThat(environment3).isPresent();
+    assertThat(environment3.get().getIdentifier()).isEqualTo(e3.getIdentifier());
+  }
+
+  @Test
   @Owner(developers = YOGESH)
   @Category(UnitTests.class)
   public void testDelete() {

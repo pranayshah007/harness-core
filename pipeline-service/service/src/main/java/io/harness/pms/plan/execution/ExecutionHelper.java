@@ -291,7 +291,8 @@ public class ExecutionHelper {
   }
 
   @VisibleForTesting
-  TemplateMergeResponseDTO getPipelineYamlAndValidate(String mergedRuntimeInputYaml, PipelineEntity pipelineEntity) {
+  TemplateMergeResponseDTO getPipelineYamlAndValidate(String mergedRuntimeInputYaml, PipelineEntity pipelineEntity)
+      throws IOException {
     YamlConfig pipelineYamlConfig;
     YamlConfig pipelineYamlConfigForSchemaValidations;
 
@@ -335,8 +336,9 @@ public class ExecutionHelper {
           ? pipelineYaml
           : templateMergeResponseDTO.getMergedPipelineYamlWithTemplateRef();
     }
+    String yamlWithoutRuntimeInputs = YamlUtils.getYamlWithoutInputs(pipelineYaml);
     pmsYamlSchemaService.validateYamlSchema(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
-        pipelineEntity.getProjectIdentifier(), pipelineYamlForSchemaValidations);
+        pipelineEntity.getProjectIdentifier(), yamlWithoutRuntimeInputs);
     if (pipelineEntity.getStoreType() == null || pipelineEntity.getStoreType() == StoreType.INLINE) {
       // For REMOTE Pipelines, entity setup usage framework cannot be relied upon. That is because the setup usages can
       // be outdated wrt the YAML we find on Git during execution. This means the fail fast approach that we have for

@@ -771,12 +771,17 @@ import io.harness.delegate.task.pcf.response.CfSetupCommandResponse;
 import io.harness.delegate.task.pcf.response.CfSwapRouteCommandResponseNG;
 import io.harness.delegate.task.pcf.response.TasInfraConfig;
 import io.harness.delegate.task.pcf.response.TasRunPluginResponse;
+import io.harness.delegate.task.scm.ConnectorDecryptionParams;
+import io.harness.delegate.task.scm.GetFileTaskParamsPerConnector;
+import io.harness.delegate.task.scm.GitFileLocationDetails;
 import io.harness.delegate.task.scm.GitFileTaskResponseData;
 import io.harness.delegate.task.scm.GitFileTaskType;
 import io.harness.delegate.task.scm.GitPRTaskType;
 import io.harness.delegate.task.scm.GitRefType;
 import io.harness.delegate.task.scm.GitWebhookTaskType;
 import io.harness.delegate.task.scm.PushTaskType;
+import io.harness.delegate.task.scm.ScmBatchGetFileTaskParams;
+import io.harness.delegate.task.scm.ScmBatchGetFileTaskResponseData;
 import io.harness.delegate.task.scm.ScmGitFileTaskParams;
 import io.harness.delegate.task.scm.ScmGitRefTaskParams;
 import io.harness.delegate.task.scm.ScmGitRefTaskResponseData;
@@ -2225,5 +2230,10 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
 
     kryo.register(K8sDryRunManifestRequest.class, 573594);
     kryo.register(K8sDryRunManifestResponse.class, 573595);
+    kryo.register(ScmBatchGetFileTaskParams.class, 673568);
+    kryo.register(GetFileTaskParamsPerConnector.class, 673569);
+    kryo.register(ConnectorDecryptionParams.class, 673570);
+    kryo.register(GitFileLocationDetails.class, 673571);
+    kryo.register(ScmBatchGetFileTaskResponseData.class, 673572);
   }
 }

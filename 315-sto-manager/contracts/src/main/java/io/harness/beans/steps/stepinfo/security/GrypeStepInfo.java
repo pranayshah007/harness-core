@@ -12,8 +12,10 @@ import static io.harness.annotations.dev.HarnessTeam.STO;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.stepinfo.security.shared.STOGenericStepInfo;
+import io.harness.beans.steps.stepinfo.security.shared.STOYamlImage;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -26,4 +28,6 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("grypeStepInfo")
 @OwnedBy(STO)
 @RecasterAlias("io.harness.beans.steps.stepinfo.security.GrypeStepInfo")
-public class GrypeStepInfo extends STOGenericStepInfo {}
+public class GrypeStepInfo extends STOGenericStepInfo {
+  @JsonProperty protected STOYamlImage image;
+}

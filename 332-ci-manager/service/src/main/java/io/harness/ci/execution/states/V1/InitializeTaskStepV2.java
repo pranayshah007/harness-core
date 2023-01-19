@@ -201,9 +201,7 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
                                           .payload(payload)
                                           .build();
       try {
-        Response<EnqueueResponse> execute =
-            hsqsServiceClient.enqueue(enqueueRequest, ciExecutionServiceConfig.getQueueServiceClient().getAuthToken())
-                .execute();
+        Response<EnqueueResponse> execute = hsqsServiceClient.enqueue(enqueueRequest).execute();
         log.info("build queued. response code {}", execute.code());
       } catch (IOException e) {
         throw new RuntimeException(e);

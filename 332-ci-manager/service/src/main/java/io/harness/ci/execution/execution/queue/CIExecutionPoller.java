@@ -95,16 +95,14 @@ public class CIExecutionPoller implements Managed {
   @VisibleForTesting
   void pollAndProcessMessages() throws InterruptedException {
     try {
-      Response<List<DequeueResponse>> messages =
-          hsqsServiceClient
-              .dequeue(DequeueRequest.builder()
-                           .batchSize(batchSize)
-                           .consumerName(moduleName)
-                           .topic(moduleName)
-                           .maxWaitDuration(100)
-                           .build(),
-                  ciExecutionServiceConfig.getQueueServiceClient().getAuthToken())
-              .execute();
+      Response<List<DequeueResponse>> messages = hsqsServiceClient
+                                                     .dequeue(DequeueRequest.builder()
+                                                                  .batchSize(batchSize)
+                                                                  .consumerName(moduleName)
+                                                                  .topic(moduleName)
+                                                                  .maxWaitDuration(100)
+                                                                  .build())
+                                                     .execute();
       if (messages.body() == null) {
         TimeUnit.SECONDS.sleep(WAIT_TIME_IN_SECONDS);
         return;
@@ -135,8 +133,7 @@ public class CIExecutionPoller implements Managed {
                                                       .itemID(message.getItemId())
                                                       .topic(moduleName)
                                                       .subTopic(processMessageResponse.getAccountId())
-                                                      .build(),
-                                                 authToken)
+                                                      .build())
                                              .execute();
         log.info("ack response code: {}", response.code());
       } else {
@@ -145,8 +142,7 @@ public class CIExecutionPoller implements Managed {
                                                           .itemID(message.getItemId())
                                                           .topic(moduleName)
                                                           .subTopic(processMessageResponse.getAccountId())
-                                                          .build(),
-                                                   authToken)
+                                                          .build())
                                                .execute();
         log.info("unack response code: {}", response.code());
       }

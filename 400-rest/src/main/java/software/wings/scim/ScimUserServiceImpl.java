@@ -358,7 +358,7 @@ public class ScimUserServiceImpl implements ScimUserService {
 
       if (userResource.getActive() != null && userResource.getActive() == user.isDisabled()) {
         userUpdate = true;
-        log.info("SCIM: Updating user's {}, enabled: {}", userId, userResource.getActive());
+        log.info("SCIM: Updating users disabled state for user: {}, to: {}", userId, !userResource.getActive());
         updateOperations.set(UserKeys.disabled, !userResource.getActive());
       }
       if (featureFlagService.isEnabled(FeatureName.UPDATE_EMAILS_VIA_SCIM, accountId)
@@ -384,6 +384,7 @@ public class ScimUserServiceImpl implements ScimUserService {
   public boolean changeScimUserDisabled(String accountId, String userId, boolean disabled) {
     UpdateOperations<User> updateOperation = wingsPersistence.createUpdateOperations(User.class);
     updateOperation.set(UserKeys.disabled, disabled);
+    log.info("SCIM: Updating disabled state for user: {}, to: {}", userId, disabled);
     userService.updateUser(userId, updateOperation);
     if (disabled) {
       removeUserFromAllScimGroups(accountId, userId);

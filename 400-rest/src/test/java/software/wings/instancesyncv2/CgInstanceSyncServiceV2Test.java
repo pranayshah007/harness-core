@@ -22,6 +22,7 @@ import static org.mockito.Mockito.verify;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.ff.FeatureFlagService;
 import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
@@ -91,14 +92,14 @@ public class CgInstanceSyncServiceV2Test extends CategoryTest {
   @Mock private PersistentLocker persistentLocker;
   @Mock private AcquiredLock acquiredLock;
   @Mock private ContainerInstanceHandler containerInstanceHandler;
-
   @Mock private InstanceHandlerFactoryService instanceHandlerFactory;
-
   @Mock private DeploymentService deploymentService;
+  @Mock private FeatureFlagService featureFlagService;
 
   @Before
   public void setup() {
     doReturn(acquiredLock).when(persistentLocker).waitToAcquireLock(any(), any(), any(), any());
+    doReturn(true).when(featureFlagService).isEnabled(any(), any());
     doReturn(acquiredLock)
         .when(persistentLocker)
         .tryToAcquireLock(eq(InfrastructureMapping.class), any(), eq(Duration.ofSeconds(180)));

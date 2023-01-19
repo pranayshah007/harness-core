@@ -17,10 +17,13 @@ package io.harness.cdng;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 
+import static software.wings.DataStorageMode.MONGO;
+
 import static io.serializer.HObjectMapper.NG_DEFAULT_OBJECT_MAPPER;
 import static org.mockito.Mockito.mock;
 
 import io.harness.account.AccountClient;
+import io.harness.account.services.AccountService;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.gitops.ClusterServiceImpl;
@@ -31,12 +34,16 @@ import io.harness.eventsframework.EventsFrameworkConstants;
 import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.impl.noop.NoOpProducer;
 import io.harness.factory.ClosingFactory;
+import io.harness.file.NGFileServiceModule;
+import io.harness.filestore.NgFileStoreModule;
+import io.harness.filter.FiltersModule;
 import io.harness.gitsync.persistance.testing.GitSyncablePersistenceTestModule;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
 import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
+import io.harness.ng.core.NGCoreModule;
 import io.harness.ng.core.entitysetupusage.EntitySetupUsageModule;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.environment.services.impl.EnvironmentServiceImpl;
@@ -46,6 +53,8 @@ import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.service.services.impl.ServiceEntityServiceImpl;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.serviceoverride.services.impl.ServiceOverrideServiceImpl;
+import io.harness.ng.core.services.OrganizationService;
+import io.harness.ng.core.services.ProjectService;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.outbox.api.OutboxService;
 import io.harness.outbox.api.impl.OutboxDaoImpl;
@@ -112,6 +121,10 @@ public class CDNGEntitiesTestRule implements InjectorRuleMixin, MethodRule, Mong
     modules.add(KryoModule.getInstance());
     modules.add(YamlSdkModule.getInstance());
     modules.add(new GitSyncablePersistenceTestModule());
+    modules.add(NgFileStoreModule.getInstance());
+    modules.add(NGCoreModule.getInstance());
+    modules.add(NGFileServiceModule.getInstance(MONGO, "test"));
+    modules.add(FiltersModule.getInstance());
     modules.add(new ProviderModule() {
       @Provides
       @Singleton
@@ -220,6 +233,9 @@ public class CDNGEntitiesTestRule implements InjectorRuleMixin, MethodRule, Mong
         bind(EnvironmentService.class).to(EnvironmentServiceImpl.class);
         bind(ServiceOverrideService.class).to(ServiceOverrideServiceImpl.class);
         bind(ServiceEntityService.class).to(ServiceEntityServiceImpl.class);
+        bind(AccountService.class).toInstance(mock(AccountService.class));
+        bind(OrganizationService.class).toInstance(mock(OrganizationService.class));
+        bind(ProjectService.class).toInstance(mock(ProjectService.class));
       }
     });
     modules.add(TimeModule.getInstance());

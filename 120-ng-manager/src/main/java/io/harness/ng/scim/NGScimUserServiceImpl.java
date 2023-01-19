@@ -256,7 +256,7 @@ public class NGScimUserServiceImpl implements ScimUserService {
       log.info("NGSCIM: Updated metadata for user: {}", userId);
 
       if (scimUser.getActive() != null && scimUser.getActive() == existingUser.isDisabled()) {
-        log.info("NGSCIM: Updated user's {}, active: {}", userId, scimUser.getActive());
+        log.info("NGSCIM: Updating disabled state for user: {}, to: {}", userId, !scimUser.getActive());
         changeScimUserDisabled(accountId, userId, !scimUser.getActive());
       }
 
@@ -293,6 +293,8 @@ public class NGScimUserServiceImpl implements ScimUserService {
     }
 
     if ("active".equals(patchOperation.getPath()) && patchOperation.getValue(Boolean.class) != null) {
+      log.info("NGSCIM: Updating disabled state for user: {} in account: {} with value: {} for patch operation case",
+          userId, accountId, !patchOperation.getValue(Boolean.class));
       changeScimUserDisabled(accountId, userId, !patchOperation.getValue(Boolean.class));
     }
 
@@ -314,6 +316,9 @@ public class NGScimUserServiceImpl implements ScimUserService {
     }
 
     if (patchOperation.getValue(ScimUserValuedObject.class) != null) {
+      log.info(
+          "NGSCIM: Updating disabled state for user: {} in account: {} with value: {} for scim user value object case",
+          userId, accountId, !patchOperation.getValue(Boolean.class));
       changeScimUserDisabled(accountId, userId, !(patchOperation.getValue(ScimUserValuedObject.class)).isActive());
     } else {
       // Not supporting any other updates as of now.

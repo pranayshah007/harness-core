@@ -32,6 +32,11 @@ public class NGExpressionUtils {
   private static final Pattern InputSetVariablePattern =
       Pattern.compile(EXPR_START_ESC + "input" + EXPR_END_ESC + ".*");
 
+  // We can remove validator as well, but current regex will remove for default as well, which we should not as if not
+  // given default would be used.
+  private static final Pattern RawInputSetPattern =
+      Pattern.compile("\"" + EXPR_START_ESC + "input" + EXPR_END_ESC + "\"");
+
   public static final String EXPRESSION_INPUT_CONSTANT = "executionInput";
 
   private static final Pattern ExecutionInputPattern = Pattern.compile(EXPR_START_ESC + "input" + EXPR_END_ESC + ".*"
@@ -53,6 +58,13 @@ public class NGExpressionUtils {
       return false;
     }
     return NGExpressionUtils.InputSetVariablePattern.matcher(expression).matches();
+  }
+
+  public boolean matchesRawInputSetPattern(String expression) {
+    if (isEmpty(expression)) {
+      return false;
+    }
+    return NGExpressionUtils.RawInputSetPattern.matcher(expression).matches();
   }
 
   public boolean matchesExecutionInputPattern(String expression) {

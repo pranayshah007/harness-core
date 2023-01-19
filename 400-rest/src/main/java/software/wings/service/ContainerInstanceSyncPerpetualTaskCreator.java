@@ -66,6 +66,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
@@ -154,18 +155,7 @@ INSTANCE_SYNC_V2_CG we do not want the migration job to recreate the Perpetual t
   public List<String> createPerpetualTasksForNewDeployment(List<DeploymentSummary> deploymentSummaries,
       List<PerpetualTaskRecord> existingPerpetualTasks, InfrastructureMapping infrastructureMapping) {
     Set<ContainerMetadata> existingContainersMetadata =
-        existingPerpetualTasks.stream()
-            .map(record
-                -> ContainerMetadata.builder()
-                       .containerServiceName(record.getClientContext().getClientParams().get(
-                           InstanceSyncConstants.CONTAINER_SERVICE_NAME))
-                       .namespace(record.getClientContext().getClientParams().get(InstanceSyncConstants.NAMESPACE))
-                       .releaseName(record.getClientContext().getClientParams().get(InstanceSyncConstants.RELEASE_NAME))
-                       .type(extractContainerMetadataType(
-                           record.getClientContext().getClientParams().get(InstanceSyncConstants.CONTAINER_TYPE)))
-                       .clusterName(record.getClientContext().getClientParams().get(CLUSTER_NAME))
-                       .build())
-            .collect(Collectors.toSet());
+        existingPerpetualTasks.stream().map(this::getContainerMetadataFromPT).collect(Collectors.toSet());
 
     Set<ContainerMetadata> newDeploymentContainersMetadata =
         deploymentSummaries.stream()
@@ -181,6 +171,39 @@ INSTANCE_SYNC_V2_CG we do not want the migration job to recreate the Perpetual t
     return createPerpetualTasks(containersMetadataToExamine, infrastructureMapping);
   }
 
+  @Override
+  public Optional<String> restorePerpetualTask(
+      PerpetualTaskRecord perpetualTask, List<PerpetualTaskRecord> existingPerpetualTasks) {
+    Set<ContainerMetadata> existingContainersMetadata =
+        existingPerpetualTasks.stream().map(this::getContainerMetadataFromPT).collect(Collectors.toSet());
+
+    ContainerMetadata newPTContainerMetadata = getContainerMetadataFromPT(perpetualTask);
+    if (existingContainersMetadata.contains(newPTContainerMetadata)) {
+      log.warn("Perpetual task with old uuid {} already exists with", perpetualTask.getUuid());
+      return Optional.empty();
+    }
+
+    PerpetualTaskSchedule schedule = PerpetualTaskSchedule.newBuilder()
+                                         .setInterval(Durations.fromMinutes(INTERVAL_MINUTES))
+                                         .setTimeout(Durations.fromSeconds(TIMEOUT_SECONDS))
+                                         .build();
+
+    return Optional.of(
+        perpetualTaskService.createTask(PerpetualTaskType.CONTAINER_INSTANCE_SYNC, perpetualTask.getAccountId(),
+            perpetualTask.getClientContext(), schedule, ALLOW_DUPLICATE, perpetualTask.getTaskDescription()));
+  }
+
+  private ContainerMetadata getContainerMetadataFromPT(PerpetualTaskRecord record) {
+    return ContainerMetadata.builder()
+        .containerServiceName(
+            record.getClientContext().getClientParams().get(InstanceSyncConstants.CONTAINER_SERVICE_NAME))
+        .namespace(record.getClientContext().getClientParams().get(InstanceSyncConstants.NAMESPACE))
+        .releaseName(record.getClientContext().getClientParams().get(InstanceSyncConstants.RELEASE_NAME))
+        .type(extractContainerMetadataType(
+            record.getClientContext().getClientParams().get(InstanceSyncConstants.CONTAINER_TYPE)))
+        .clusterName(record.getClientContext().getClientParams().get(CLUSTER_NAME))
+        .build();
+  }
   private ContainerMetadataType extractContainerMetadataType(String containerTypeRecord) {
     return K8S.name().equals(containerTypeRecord) ? K8S : null;
   }

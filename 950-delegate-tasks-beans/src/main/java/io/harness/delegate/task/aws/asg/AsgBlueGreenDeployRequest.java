@@ -33,4 +33,5 @@ public class AsgBlueGreenDeployRequest implements AsgCommandRequest, NestedAnnot
   Map<String, List<String>> asgStoreManifestsContent;
   @NonFinal AsgLoadBalancerConfig asgLoadBalancerConfig;
   String asgName;
+  String amiImageId;
 }

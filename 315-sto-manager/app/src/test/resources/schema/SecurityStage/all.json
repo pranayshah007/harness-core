@@ -294,6 +294,9 @@
                 "default"
               ]
             },
+            "image": {
+              "$ref": "#/definitions/STOYamlImage"
+            },
             "imagePullPolicy": {
               "oneOf": [
                 {
@@ -3265,6 +3268,9 @@
                 "default"
               ]
             },
+            "image": {
+              "$ref": "#/definitions/STOYamlImage"
+            },
             "imagePullPolicy": {
               "oneOf": [
                 {
@@ -4348,6 +4354,9 @@
             "advanced": {
               "$ref": "#/definitions/STOYamlAdvancedSettings"
             },
+            "auth": {
+              "$ref": "#/definitions/STOYamlAuth"
+            },
             "baseImageConnectorRefs": {
               "$ref": "#/definitions/ParameterFieldListString"
             },
@@ -4356,6 +4365,9 @@
               "enum": [
                 "default"
               ]
+            },
+            "image": {
+              "$ref": "#/definitions/STOYamlImage"
             },
             "imagePullPolicy": {
               "oneOf": [
@@ -4438,6 +4450,9 @@
             },
             "target": {
               "$ref": "#/definitions/STOYamlTarget"
+            },
+            "tool": {
+              "$ref": "#/definitions/STOYamlMendToolData"
             }
           }
         }
@@ -5126,7 +5141,8 @@
               "DelegateProvisioning",
               "PolicyEvaluationFailure",
               "InputTimeoutError",
-              "ApprovalRejection"
+              "ApprovalRejection",
+              "DelegateRestart"
             ]
           }
         }
@@ -7717,9 +7733,64 @@
       "type": "object",
       "properties": {
         "level": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": [
+                "info",
+                "debug",
+                "warning",
+                "error"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
         },
         "serializer": {
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": [
+                "simple",
+                "basic",
+                "bunyan",
+                "simple_onprem",
+                "onprem"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "STOYamlMendToolData": {
+      "type": "object",
+      "properties": {
+        "exclude": {
+          "type": "string"
+        },
+        "include": {
+          "type": "string"
+        },
+        "productName": {
+          "type": "string"
+        },
+        "productToken": {
+          "type": "string"
+        },
+        "projectName": {
+          "type": "string"
+        },
+        "projectToken": {
           "type": "string"
         }
       },

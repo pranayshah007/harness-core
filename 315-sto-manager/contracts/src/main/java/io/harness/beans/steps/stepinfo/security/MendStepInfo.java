@@ -12,9 +12,14 @@ import static io.harness.annotations.dev.HarnessTeam.STO;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.stepinfo.security.shared.STOGenericStepInfo;
+import io.harness.beans.steps.stepinfo.security.shared.STOYamlAuth;
+import io.harness.beans.steps.stepinfo.security.shared.STOYamlImage;
+import io.harness.beans.steps.stepinfo.security.shared.STOYamlMendToolData;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.springframework.data.annotation.TypeAlias;
@@ -26,4 +31,16 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("mendStepInfo")
 @OwnedBy(STO)
 @RecasterAlias("io.harness.beans.steps.stepinfo.security.MendStepInfo")
-public class MendStepInfo extends STOGenericStepInfo {}
+public class MendStepInfo extends STOGenericStepInfo {
+  private static final String PRODUCT_NAME = "whitesource";
+  @JsonProperty protected STOYamlAuth auth;
+
+  @JsonProperty("tool") protected STOYamlMendToolData tool;
+
+  @JsonProperty protected STOYamlImage image;
+
+  @ApiModelProperty(hidden = true)
+  public String getProductName() {
+    return PRODUCT_NAME;
+  }
+}

@@ -34,4 +34,5 @@ public class PipelineServiceConsumersConfig {
   PipelineServiceConsumerConfig initiateNode;
   PipelineServiceConsumerConfig pollingEvent;
   PipelineServiceConsumerConfig pipelineExecutionEvent;
+  PipelineServiceConsumerConfig pipelineExecutionEventSnapshot;
 }

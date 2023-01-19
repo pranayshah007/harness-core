@@ -10,6 +10,7 @@ package io.harness.cdng.jira.resources.service;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.rule.OwnerRule.ALEXEI;
 import static io.harness.rule.OwnerRule.GARVIT;
+import static io.harness.rule.OwnerRule.NAMANG;
 import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -36,7 +37,12 @@ import io.harness.delegate.task.jira.JiraSearchUserParams;
 import io.harness.delegate.task.jira.JiraTaskNGParameters.JiraTaskNGParametersBuilder;
 import io.harness.delegate.task.jira.JiraTaskNGResponse;
 import io.harness.encryption.SecretRefData;
+import io.harness.exception.DelegateNotAvailableException;
+import io.harness.exception.DelegateServiceDriverException;
 import io.harness.exception.HarnessJiraException;
+import io.harness.exception.HintException;
+import io.harness.exception.WingsException;
+import io.harness.exception.exceptionmanager.exceptionhandler.DocumentLinksConstants;
 import io.harness.jira.JiraIssueCreateMetadataNG;
 import io.harness.jira.JiraProjectBasicNG;
 import io.harness.rule.Owner;
@@ -112,6 +118,21 @@ public class JiraResourceServiceTest extends CategoryTest {
     when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(JiraTaskNGResponse.builder().projects(projects).build());
     assertThat(jiraResourceService.getProjects(identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER)).isEqualTo(projects);
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testGetProjectsWhenDelegatesNotAvailable() {
+    List<JiraProjectBasicNG> projects = Collections.emptyList();
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
+        .thenThrow(new DelegateServiceDriverException("delegates not available"));
+    assertThatThrownBy(() -> jiraResourceService.getProjects(identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(HintException.class)
+        .hasMessage(
+            String.format(HintException.DELEGATE_NOT_AVAILABLE, DocumentLinksConstants.DELEGATE_INSTALLATION_LINK))
+        .hasCause(new DelegateNotAvailableException(
+            "Delegates are not available for performing jira operation.", WingsException.USER));
   }
 
   @Test

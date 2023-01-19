@@ -222,6 +222,15 @@ public class MigratorUtility {
         .build();
   }
 
+  public static String getIdentifierWithScopeDefaults(
+      Map<CgEntityId, NGYamlFile> migratedEntities, String entityId, NGMigrationEntityType entityType) {
+    NGYamlFile detail = migratedEntities.get(CgEntityId.builder().type(entityType).id(entityId).build());
+    if (detail == null) {
+      return "__PLEASE_FIX_ME__";
+    }
+    return getIdentifierWithScope(detail.getNgEntityDetail());
+  }
+
   public static String getIdentifierWithScope(
       Map<CgEntityId, NGYamlFile> migratedEntities, String entityId, NGMigrationEntityType entityType) {
     NgEntityDetail detail =

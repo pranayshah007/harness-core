@@ -10,13 +10,17 @@ package io.harness.aws.asg.manifest.request;
 import io.harness.manifest.request.ManifestRequest;
 
 import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Getter;
 
 @Getter
 public class AsgLaunchTemplateManifestRequest extends ManifestRequest {
+  Map<String, Object> overrideProperties;
+
   @Builder
-  public AsgLaunchTemplateManifestRequest(List<String> manifests) {
+  public AsgLaunchTemplateManifestRequest(List<String> manifests, Map<String, Object> overrideProperties) {
     super(manifests);
+    this.overrideProperties = overrideProperties;
   }
 }

@@ -1,0 +1,21 @@
+template:
+  name: orgStepGroupTemplate
+  identifier: orgStepGroupTemplate
+  versionLabel: v1
+  type: StepGroup
+  orgIdentifier: default
+  tags: {}
+  spec:
+    stageType: Deployment
+    steps:
+      - stepGroup:
+          name: stepgrp
+          identifier: stepgrp
+          steps:
+            - parallel:
+                - step:
+                    name: "Fetch Instances"
+                    identifier: fetchInstances
+                    type: FetchInstanceScript
+                    timeout: 10m
+                    spec: { }

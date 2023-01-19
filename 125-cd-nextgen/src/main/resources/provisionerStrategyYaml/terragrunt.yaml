@@ -1,0 +1,36 @@
+provisioner:
+  steps:
+    - step:
+        type: TerragruntPlan
+        name: Terragrunt Plan
+        identifier: dfe31012-d346-5323-be6f-c55cbb619cc3
+        timeout: 10m
+        spec: {}
+    - step:
+        type: HarnessApproval
+        name: Harness Approval
+        identifier: dfe31012-d346-5323-be6f-c55cbb619cc4
+        timeout: 1d
+        spec:
+          approvalMessage:
+          includePipelineExecutionHistory: true
+          approvers:
+            userGroups: []
+            minimumCount: 1
+            disallowPipelineExecutor: true
+          approverInputs:
+            - name: ""
+              defaultValue: ""
+    - step:
+        type: TerragruntApply
+        name: Terragrunt Apply
+        identifier: dfe31012-d346-5323-be6f-c55cbb619cc5
+        timeout: 10m
+        spec: {}
+  rollbackSteps:
+    - step:
+        type: TerragruntRollback
+        name: Terragrunt Rollback
+        identifier: dfe31012-d346-5323-be6f-c55cbb619cc6
+        timeout: 10m
+        spec: {}

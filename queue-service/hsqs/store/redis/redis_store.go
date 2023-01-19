@@ -24,8 +24,10 @@ import (
 
 // Store Redis type store used for enqueuing and dequeuing
 type Store struct {
-	Client *redis.Client
-	Logger *zerolog.Logger
+	Client         *redis.Client
+	Logger         *zerolog.Logger
+	PendingTimeout int `default:"10000"`
+	ClaimTimeout   int `default:"10000"`
 }
 
 func newTlSConfig(certPathForTLS string) (*tls.Config, error) {
@@ -44,7 +46,7 @@ func newTlSConfig(certPathForTLS string) (*tls.Config, error) {
 }
 
 // NewRedisStore returns a new instance of RedisStore.
-func NewRedisStoreWithTLS(endpoint, password string, useTLS bool, certPathForTLS string) *Store {
+func NewRedisStoreWithTLS(endpoint, password string, useTLS bool, certPathForTLS string, pendingTimeout int, claimTimeout int) *Store {
 	opt := &redis.Options{
 		Addr:     endpoint,
 		Password: password,
@@ -59,7 +61,7 @@ func NewRedisStoreWithTLS(endpoint, password string, useTLS bool, certPathForTLS
 	}
 	c := redis.NewClient(opt)
 	l := zerolog.New(os.Stderr).With().Timestamp().Logger()
-	return &Store{Client: c, Logger: &l}
+	return &Store{Client: c, Logger: &l, PendingTimeout: pendingTimeout, ClaimTimeout: claimTimeout}
 }
 
 // NewRedisStore returns a new instance of RedisStore.
@@ -86,6 +88,8 @@ func (s *Store) Close() error {
 // Enqueue enqueues a given task message in there respective topic and subtopic
 func (s *Store) Enqueue(ctx context.Context, request store.EnqueueRequest) (*store.EnqueueResponse, error) {
 
+	s.Logger.Info().Msgf("Calling enqueue Request for Topic %s and subtopic %s and producer %s", request.Topic, request.SubTopic, request.ProducerName)
+
 	err := ValidateEnqueueRequest(&request)
 	if err != nil {
 		return &store.EnqueueResponse{}, err
@@ -97,6 +101,7 @@ func (s *Store) Enqueue(ctx context.Context, request store.EnqueueRequest) (*sto
 	// add subtopic in subtopics set
 	sAddResult, err := s.Client.SAdd(ctx, allSubTopicsKey, request.SubTopic).Result()
 	if err != nil {
+		s.Logger.Error().Msgf("Adding %s subtopic to Set %s failed due to %s", request.SubTopic, allSubTopicsKey, err.Error())
 		return nil, &store.EnqueueErrorResponse{ErrorMessage: err.Error()}
 	}
 
@@ -109,6 +114,7 @@ func (s *Store) Enqueue(ctx context.Context, request store.EnqueueRequest) (*sto
 	val, err := s.Client.XAdd(ctx, xAddArgs).Result()
 
 	if err != nil {
+		s.Logger.Error().Msgf("Adding to queue %s failed due to %s", subTopicQueueKey, err.Error())
 		return nil, &store.EnqueueErrorResponse{ErrorMessage: err.Error()}
 	}
 
@@ -116,15 +122,20 @@ func (s *Store) Enqueue(ctx context.Context, request store.EnqueueRequest) (*sto
 	if sAddResult == int64(1) {
 		err = s.RegisterQueue(ctx, request.Topic, request.SubTopic, request.ProducerName)
 		if err != nil {
+			s.Logger.Error().Msgf("Registering new Consumer %s  to queue %s failed due to %s", request.ProducerName, subTopicQueueKey, err.Error())
 			return nil, &store.EnqueueErrorResponse{ErrorMessage: err.Error()}
 		}
 	}
+
+	s.Logger.Info().Msgf("Queue Request Successful for queue %s with topic %s and producer %s with itemId %s", subTopicQueueKey, request.Topic, request.ProducerName, val)
 
 	return &store.EnqueueResponse{ItemID: val}, nil
 }
 
 // Dequeue dequeues a message for processing randomly from the queues for all the subTopics
 func (s *Store) Dequeue(ctx context.Context, request store.DequeueRequest) ([]*store.DequeueResponse, error) {
+
+	s.Logger.Info().Msgf("received Dequeue Request for topic %s by consumer %s with batchsize %d", request.Topic, request.ConsumerName, request.BatchSize)
 
 	err := ValidateDequeueRequest(&request)
 	if err != nil {
@@ -143,7 +154,7 @@ func (s *Store) Dequeue(ctx context.Context, request store.DequeueRequest) ([]*s
 	index := utils.RandInt(len(subtopics))
 
 	selectedTopic := subtopics[index]
-	s.Logger.Debug().Msgf("selected subTopic is %s", selectedTopic)
+	s.Logger.Info().Msgf("selected subTopic is %s", selectedTopic)
 
 	return s.ReadFromStream(ctx, utils.GetSubTopicStreamQueueKey(request.Topic, selectedTopic), request.BatchSize, utils.GetConsumerGroupKeyForTopic(request.Topic), request.ConsumerName, request.MaxWaitDuration)
 }
@@ -154,7 +165,7 @@ func (s *Store) ReadFromStream(ctx context.Context, streamKey string, batchSize 
 	// Claim entries for pending items more than retry interval duration for given topic
 	// else return new Messages
 
-	s.Logger.Debug().Msgf("Reading from stream %s for batchSize of %d from groupName %s and Consumer %s", streamKey, batchSize, groupName, consumerName)
+	s.Logger.Info().Msgf("Reading from stream %s for batchSize of %d from groupName %s and Consumer %s", streamKey, batchSize, groupName, consumerName)
 
 	pendingRequest := &PendingEntriesRequest{
 		Stream:   streamKey,
@@ -165,7 +176,7 @@ func (s *Store) ReadFromStream(ctx context.Context, streamKey string, batchSize 
 	pendingEntries, err := s.GetPendingEntries(ctx, pendingRequest)
 
 	if err != nil {
-		s.Logger.Debug().Msgf("Pending Entries Error received for stream %s with error %s", streamKey, err)
+		s.Logger.Info().Msgf("Pending Entries Error received for stream %s with error %s", streamKey, err.Error())
 	}
 	if pendingEntries == nil || len(pendingEntries) == 0 {
 		readRequest := &ReadNewMessagesRequest{
@@ -185,7 +196,7 @@ func (s *Store) ReadFromStream(ctx context.Context, streamKey string, batchSize 
 	}
 	claimResponse, err := s.ClaimEntries(ctx, claimRequest, pendingEntries)
 	if err != nil {
-		s.Logger.Debug().Msgf("Claim Entries Error received for stream %s with error %s", streamKey, err)
+		s.Logger.Error().Msgf("Claim Entries Error received for stream %s with error %s", streamKey, err.Error())
 	}
 	// If claim entries are errored out or empty result then fetch new messages
 	if claimResponse.Messages == nil || len(claimResponse.Messages) == 0 {
@@ -240,7 +251,7 @@ func (s *Store) ReadNewMessages(ctx context.Context, r *ReadNewMessagesRequest) 
 		return []*store.DequeueResponse{}, nil
 	}
 
-	s.Logger.Debug().Msgf("Consumer reading new messages from stream %v", r.Stream)
+	s.Logger.Info().Msgf("Consumer reading new messages from stream %v", r.Stream)
 	xReadGroupArgs := &redis.XReadGroupArgs{
 		Group:    r.Group,
 		Consumer: r.Consumer,
@@ -255,19 +266,22 @@ func (s *Store) ReadNewMessages(ctx context.Context, r *ReadNewMessagesRequest) 
 	}
 
 	if err != nil {
+		s.Logger.Error().Msgf("Error while fetching new messages from queue %s is %s", r.Stream, err.Error())
 		return nil, &store.DequeueErrorResponse{ErrorMessage: err.Error()}
 	}
 	messages := MapXStreamToResponse(r.Stream, result)
-	s.Logger.Debug().Msgf("Result for new messages %v", len(messages))
+	s.Logger.Info().Msgf("Result for new messages from queue %s is %v", r.Stream, len(messages))
 	return messages, nil
 }
 
 func (s *Store) GetPendingEntries(ctx context.Context, request *PendingEntriesRequest) ([]string, error) {
+	s.Logger.Info().Msgf("Getting pending entries for Stream %s for group %s for consumer %s", request.Stream, request.Group, request.Consumer)
+
 	xPendingArgs := &redis.XPendingExtArgs{
 		Stream: request.Stream,
 		Group:  request.Group,
 		// todo: use RegisterTopicMetadata instead of hardcoding
-		Idle:     10000 * time.Millisecond,
+		Idle:     time.Duration(s.PendingTimeout) * time.Millisecond,
 		Count:    int64(request.Count),
 		Start:    "-",
 		End:      "+",
@@ -283,11 +297,7 @@ func (s *Store) GetPendingEntries(ctx context.Context, request *PendingEntriesRe
 	//TODO handle retry count and move to dead letter queue
 	messageIds := fetchPendingMessageIds(pending)
 
-	nLogger := s.Logger.With().Str("StreamName", request.Stream).
-		Str("ConsumerName", request.Consumer).
-		Str("GroupName", request.Group).Logger()
-
-	nLogger.Debug().Msgf("Length of pending entries : %d", len(messageIds))
+	s.Logger.Info().Msgf("Length of pending entries from stream %s and consumer %s and group %s is : %d", request.Stream, request.Consumer, request.Group, len(messageIds))
 	return messageIds, nil
 }
 
@@ -302,25 +312,26 @@ func fetchPendingMessageIds(msgs []redis.XPendingExt) []string {
 
 // ClaimEntries helper method to claim redis stream entries
 func (s *Store) ClaimEntries(ctx context.Context, request *ClaimRequest, ids []string) (*ClaimResponse, error) {
+
+	s.Logger.Info().Msgf("Rasing claim Request Stream %s for group %s for consumer %s", request.Stream, request.Group, request.Consumer)
 	result, err := s.Client.XClaim(ctx, &redis.XClaimArgs{
 		Stream:   request.Stream,
 		Group:    request.Group,
 		Consumer: request.Consumer,
+		MinIdle:  time.Duration(s.ClaimTimeout) * time.Millisecond,
 		Messages: ids,
 	}).Result()
 
 	if err != nil {
+
+		s.Logger.Error().Msgf("Error in claiming Messages %s from stream %s and consumer %s and group %s", err.Error(), request.Stream, request.Consumer, request.Group)
 		return &ClaimResponse{
 			Stream:   request.Stream,
 			Messages: nil,
 		}, err
 	}
 
-	nLogger := s.Logger.With().Str("StreamName", request.Stream).
-		Str("ConsumerName", request.Consumer).
-		Str("GroupName", request.Group).Logger()
-
-	nLogger.Info().Msgf("Claimed %d Messages", len(result))
+	s.Logger.Info().Msgf("Claimed %d Messages", len(result))
 	return &ClaimResponse{
 		Stream:   request.Stream,
 		Messages: MapXMessageToResponse(request.Stream, result),
@@ -359,15 +370,21 @@ func MapXMessageToResponse(queueKey string, msgs []redis.XMessage) []*store.Dequ
 // Ack method is used to acknowledge processing of a pending message
 func (s *Store) Ack(ctx context.Context, request store.AckRequest) (*store.AckResponse, error) {
 
+	s.Logger.Info().Msgf("received Ack Request for topic %s and subTopic %s for message Id %s", request.Topic, request.SubTopic, request.ItemID)
+
 	ids := []string{request.ItemID}
 	topicKey := utils.GetSubTopicStreamQueueKey(request.Topic, request.SubTopic)
+	s.Logger.Info().Msgf("Acknowleding itemId %s for topic %s for subTopic %s and consumer %s", request.ItemID, request.Topic, request.SubTopic, request.ConsumerName)
 
 	// acknowledging the processed method
-	if _, err := s.Client.XAck(ctx, topicKey, utils.GetConsumerGroupKeyForTopic(request.ConsumerName), ids...).Result(); err != nil {
+	if _, err := s.Client.XAck(ctx, topicKey, utils.GetConsumerGroupKeyForTopic(request.Topic), ids...).Result(); err != nil {
+		s.Logger.Error().Msgf("Acknowleding itemId %s failed due to %s", request.ItemID, err.Error())
 		return &store.AckResponse{}, &store.AckErrorResponse{ErrorMessage: err.Error()}
 	}
+
 	//deleting the method from queue
 	if _, err := s.Client.XDel(ctx, topicKey, ids...).Result(); err != nil {
+		s.Logger.Error().Msgf("Deleting itemId %s failed due to %s", request.ItemID, err.Error())
 		return &store.AckResponse{}, &store.AckErrorResponse{ErrorMessage: err.Error()}
 	}
 	return &store.AckResponse{ItemID: request.ItemID}, nil
@@ -375,6 +392,9 @@ func (s *Store) Ack(ctx context.Context, request store.AckRequest) (*store.AckRe
 
 // UnAck Method will add a specific topic to blockList processing list
 func (s *Store) UnAck(ctx context.Context, request store.UnAckRequest) (*store.UnAckResponse, error) {
+
+	s.Logger.Info().Msgf("received unAck Request for topic %s and subTopic %s", request.Topic, request.SubTopic)
+
 	blockedKey := utils.GetAllBlockedSubTopicsFromTopicKey(request.Topic, request.SubTopic)
 	result, err := s.Client.Set(ctx, blockedKey, true, request.RetryAfterTimeDuration).Result()
 	if err != nil {
@@ -517,7 +537,7 @@ func (s *Store) RegisterQueue(ctx context.Context, topic, subtopic, producer str
 	_, err := s.Client.XGroupCreate(
 		ctx,
 		utils.GetSubTopicStreamQueueKey(topic, subtopic),
-		utils.GetConsumerGroupKeyForTopic(producer),
+		utils.GetConsumerGroupKeyForTopic(topic),
 		"0",
 	).Result()
 	if err != nil {
