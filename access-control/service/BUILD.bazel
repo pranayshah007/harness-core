@@ -25,6 +25,7 @@ java_binary(
     deps = [
         "//:lombok",
         "//930-ng-core-clients:module",
+        "//940-feature-flag:module",
         "//942-enforcement-sdk:module",
         "//945-account-mgmt:module",
         "//950-telemetry:module",
@@ -72,7 +73,6 @@ java_binary(
         "@maven//:io_dropwizard_metrics_metrics_annotation",
         "@maven//:io_dropwizard_metrics_metrics_core",
         "@maven//:io_dropwizard_metrics_metrics_healthchecks",
-        "@maven//:io_harness_ff_java_server_sdk",
         "@maven//:io_swagger_core_v3_swagger_annotations",
         "@maven//:io_swagger_core_v3_swagger_core",
         "@maven//:io_swagger_core_v3_swagger_integration",

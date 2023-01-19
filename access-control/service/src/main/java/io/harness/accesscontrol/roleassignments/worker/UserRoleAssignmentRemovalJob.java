@@ -21,7 +21,6 @@ import static io.harness.beans.FeatureName.PL_REMOVE_USER_VIEWER_ROLE_ASSIGNMENT
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.NGConstants;
-import io.harness.accesscontrol.commons.helpers.FeatureFlagSdkService;
 import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBO;
 import io.harness.accesscontrol.roleassignments.persistence.repositories.RoleAssignmentRepository;
 import io.harness.accesscontrol.scopes.core.Scope;
@@ -30,7 +29,7 @@ import io.harness.accesscontrol.scopes.harness.HarnessScopeLevel;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cf.client.dto.Target;
+import io.harness.ff.FeatureFlagService;
 import io.harness.ng.core.dto.AccountDTO;
 import io.harness.remote.client.CGRestUtils;
 import io.harness.security.SecurityContextBuilder;
@@ -54,16 +53,17 @@ import org.springframework.data.mongodb.core.query.Criteria;
 @OwnedBy(HarnessTeam.PL)
 public class UserRoleAssignmentRemovalJob implements Runnable {
   private final RoleAssignmentRepository roleAssignmentRepository;
-  private final FeatureFlagSdkService featureFlagSdkService;
+  private final FeatureFlagService featureFlagService;
   private final AccountClient accountClient;
   private final ScopeService scopeService;
+  private final
   String DEBUG_MESSAGE = "UserRoleAssignmentRemovalJob";
 
   @Inject
   public UserRoleAssignmentRemovalJob(RoleAssignmentRepository roleAssignmentRepository,
-      FeatureFlagSdkService featureFlagSdkService, AccountClient accountClient, ScopeService scopeService) {
+                                      FeatureFlagService featureFlagService, AccountClient accountClient, ScopeService scopeService) {
     this.roleAssignmentRepository = roleAssignmentRepository;
-    this.featureFlagSdkService = featureFlagSdkService;
+    this.featureFlagService = featureFlagService;
     this.accountClient = accountClient;
     this.scopeService = scopeService;
   }
@@ -119,8 +119,7 @@ public class UserRoleAssignmentRemovalJob implements Runnable {
     List<String> filteredAccounts = new ArrayList<>();
     try {
       for (String accountId : accountIds) {
-        boolean isAccountBasicRoleOnlyEnabled =
-            featureFlagSdkService.isEnabled(ACCOUNT_BASIC_ROLE_ONLY, Target.builder().identifier(accountId).build());
+        boolean isAccountBasicRoleOnlyEnabled = featureFlagService.isEnabled(ACCOUNT_BASIC_ROLE_ONLY, accountId);
         if (isAccountBasicRoleOnlyEnabled) {
           filteredAccounts.add(accountId);
         }
@@ -135,9 +134,8 @@ public class UserRoleAssignmentRemovalJob implements Runnable {
     List<String> targetAccounts = new ArrayList<>();
     try {
       for (AccountDTO accountDTO : ngEnabledAccounts) {
-        boolean isAccountBasicRoleOnlyEnabled = featureFlagSdkService.isEnabled(
-            PL_REMOVE_USER_VIEWER_ROLE_ASSIGNMENTS, Target.builder().identifier(accountDTO.getIdentifier()).build());
-        if (isAccountBasicRoleOnlyEnabled) {
+        boolean isRemoveUserViewerRoleAssignment = featureFlagService.isEnabled(PL_REMOVE_USER_VIEWER_ROLE_ASSIGNMENTS, accountDTO.getIdentifier());
+        if (isRemoveUserViewerRoleAssignment) {
           targetAccounts.add(accountDTO.getIdentifier());
         }
       }

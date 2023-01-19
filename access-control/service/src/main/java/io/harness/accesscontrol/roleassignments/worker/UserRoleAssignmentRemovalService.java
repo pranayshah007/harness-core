@@ -39,7 +39,7 @@ public class UserRoleAssignmentRemovalService implements Managed {
   public void start() throws Exception {
     log.info(DEBUG_MESSAGE + "started...");
     userRoleAssignmentRemovalJobFuture =
-        executorService.scheduleWithFixedDelay(userRoleAssignmentRemovalMigrationJob, 1, 1440, TimeUnit.MINUTES);
+        executorService.scheduleWithFixedDelay(userRoleAssignmentRemovalMigrationJob, 15, 1440, TimeUnit.MINUTES);
   }
 
   @Override
