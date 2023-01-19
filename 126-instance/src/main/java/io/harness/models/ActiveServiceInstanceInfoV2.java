@@ -29,4 +29,6 @@ public class ActiveServiceInstanceInfoV2 {
   private String tag;
   private String displayName;
   private Integer count;
+  private String orgIdentifier;
+  private String projectIdentifier;
 }

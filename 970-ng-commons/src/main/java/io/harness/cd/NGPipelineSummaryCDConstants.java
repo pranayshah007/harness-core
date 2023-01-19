@@ -18,4 +18,6 @@ public class NGPipelineSummaryCDConstants {
   public static final String AUTHOR_NAME = "author_name";
   public static final String AUTHOR_AVATAR = "author_avatar";
   public static final String TRIGGER_TYPE = "trigger_type";
+  public static final String ORG_IDENTIFIER = "orgidentifier";
+  public static final String PROJECT_IDENTIFIER = "projectidentifier";
 }

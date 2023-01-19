@@ -69,5 +69,7 @@ public class InstanceGroupedByServiceList {
     String lastPipelineExecutionId;
     String lastPipelineExecutionName;
     Long lastDeployedAt;
+    String orgIdentifier;
+    String projectIdentifier;
   }
 }

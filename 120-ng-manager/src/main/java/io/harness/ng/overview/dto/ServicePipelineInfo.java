@@ -30,4 +30,6 @@ public class ServicePipelineInfo {
   String deployedById;
   String deployedByName;
   long lastExecutedAt;
+  String orgIdentifier;
+  String projectIdentifier;
 }

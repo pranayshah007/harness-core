@@ -192,9 +192,13 @@ public class InstanceDashboardServiceImpl implements InstanceDashboardService {
       final String buildId = activeServiceInstanceInfo.getTag();
       final String displayName = activeServiceInstanceInfo.getDisplayName();
       final Integer count = activeServiceInstanceInfo.getCount();
-      activeServiceInstanceInfoList.add(new ActiveServiceInstanceInfoV2(serviceId, serviceName, envId, envName,
-          infraIdentifier, infraName, clusterIdentifier, agentIdentifier, lastPipelineExecutionId,
-          lastPipelineExecutionName, lastDeployedAt, buildId, displayName, count));
+      final String orgIdentifierFromInstance = activeServiceInstanceInfo.getOrgIdentifier();
+      final String projectIdentifierFromInstance = activeServiceInstanceInfo.getProjectIdentifier();
+
+      activeServiceInstanceInfoList.add(
+          new ActiveServiceInstanceInfoV2(serviceId, serviceName, envId, envName, infraIdentifier, infraName,
+              clusterIdentifier, agentIdentifier, lastPipelineExecutionId, lastPipelineExecutionName, lastDeployedAt,
+              buildId, displayName, count, orgIdentifierFromInstance, projectIdentifierFromInstance));
     });
 
     return activeServiceInstanceInfoList;
@@ -316,9 +320,9 @@ public class InstanceDashboardServiceImpl implements InstanceDashboardService {
             accountIdentifier, orgIdentifier, projectIdentifier, serviceRefs, timestampInMs)
         .getMappedResults()
         .forEach(countByEnvType -> {
-          final String currentServiceId = countByEnvType.getServiceIdentifier();
-          serviceIdToEnvTypeVsInstanceCountMap.putIfAbsent(currentServiceId, new HashMap<>());
-          serviceIdToEnvTypeVsInstanceCountMap.get(currentServiceId)
+          final String currentServiceRef = countByEnvType.getServiceIdentifier();
+          serviceIdToEnvTypeVsInstanceCountMap.putIfAbsent(currentServiceRef, new HashMap<>());
+          serviceIdToEnvTypeVsInstanceCountMap.get(currentServiceRef)
               .put(countByEnvType.getEnvType(), countByEnvType.getCount());
         });
 

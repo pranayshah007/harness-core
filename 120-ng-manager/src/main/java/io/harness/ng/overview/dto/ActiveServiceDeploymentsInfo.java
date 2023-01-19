@@ -22,4 +22,6 @@ public class ActiveServiceDeploymentsInfo {
   private String artifactPath;
   private String serviceId;
   private String serviceName;
+  private String orgIdentifier;
+  private String projectIdentifier;
 }

@@ -275,10 +275,11 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
     criteria.and(InstanceKeysAdditional.instanceInfoClusterIdentifier).is(null);
 
     MatchOperation matchStage = Aggregation.match(criteria);
-    GroupOperation groupEnvId = group(InstanceKeys.serviceIdentifier, InstanceKeys.serviceName,
-        InstanceKeys.envIdentifier, InstanceKeys.envName, InstanceKeys.infraIdentifier, InstanceKeys.infraName,
-        InstanceKeys.lastPipelineExecutionId, InstanceKeys.lastPipelineExecutionName, InstanceKeys.lastDeployedAt,
-        InstanceSyncConstants.PRIMARY_ARTIFACT_TAG, InstanceSyncConstants.PRIMARY_ARTIFACT_DISPLAY_NAME)
+    GroupOperation groupEnvId = group(InstanceKeys.orgIdentifier, InstanceKeys.projectIdentifier,
+        InstanceKeys.serviceIdentifier, InstanceKeys.serviceName, InstanceKeys.envIdentifier, InstanceKeys.envName,
+        InstanceKeys.infraIdentifier, InstanceKeys.infraName, InstanceKeys.lastPipelineExecutionId,
+        InstanceKeys.lastPipelineExecutionName, InstanceKeys.lastDeployedAt, InstanceSyncConstants.PRIMARY_ARTIFACT_TAG,
+        InstanceSyncConstants.PRIMARY_ARTIFACT_DISPLAY_NAME)
                                     .count()
                                     .as(InstanceSyncConstants.COUNT);
     return secondaryMongoTemplate.aggregate(
@@ -324,11 +325,11 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
 
     MatchOperation matchStage = Aggregation.match(criteria);
 
-    GroupOperation groupClusterEnvId = group(InstanceKeys.serviceIdentifier, InstanceKeys.serviceName,
-        InstanceKeys.envIdentifier, InstanceKeys.envName, InstanceKeysAdditional.instanceInfoClusterIdentifier,
-        InstanceKeysAdditional.instanceInfoAgentIdentifier, InstanceKeys.lastPipelineExecutionId,
-        InstanceKeys.lastPipelineExecutionName, InstanceKeys.lastDeployedAt, InstanceSyncConstants.PRIMARY_ARTIFACT_TAG,
-        InstanceSyncConstants.PRIMARY_ARTIFACT_DISPLAY_NAME)
+    GroupOperation groupClusterEnvId = group(InstanceKeys.orgIdentifier, InstanceKeys.projectIdentifier,
+        InstanceKeys.serviceIdentifier, InstanceKeys.serviceName, InstanceKeys.envIdentifier, InstanceKeys.envName,
+        InstanceKeysAdditional.instanceInfoClusterIdentifier, InstanceKeysAdditional.instanceInfoAgentIdentifier,
+        InstanceKeys.lastPipelineExecutionId, InstanceKeys.lastPipelineExecutionName, InstanceKeys.lastDeployedAt,
+        InstanceSyncConstants.PRIMARY_ARTIFACT_TAG, InstanceSyncConstants.PRIMARY_ARTIFACT_DISPLAY_NAME)
                                            .count()
                                            .as(InstanceSyncConstants.COUNT);
     return mongoTemplate.aggregate(
