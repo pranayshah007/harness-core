@@ -18,20 +18,20 @@ import org.mockito.junit.MockitoRule;
 
 @Slf4j
 public abstract class DelegateServiceAppTestBase extends CategoryTest {
-  @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
-  @Rule public LifecycleRule lifecycleRule = new LifecycleRule();
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+    @Rule public LifecycleRule lifecycleRule = new LifecycleRule();
 
-  private static boolean isBazelTest() {
-    return System.getProperty("user.dir").contains("/bin/");
-  }
+    private static boolean isBazelTest() {
+        return System.getProperty("user.dir").contains("/bin/");
+    }
 
-  public static String getResourceFilePath(String filePath) {
-    return isBazelTest() ? "419-delegate-service-app/src/test/resources/" + filePath
-                         : ResourceHelpers.resourceFilePath(filePath);
-  }
+    public static String getResourceFilePath(String filePath) {
+        return isBazelTest() ? "270-delegate-service-app/src/test/resources/" + filePath
+                : ResourceHelpers.resourceFilePath(filePath);
+    }
 
-  public static String getSourceResourceFile(Class clazz, String filePath) {
-    return isBazelTest() ? "419-delegate-service-app/src/main/resources" + filePath
-                         : clazz.getResource(filePath).getFile();
-  }
+    public static String getSourceResourceFile(Class clazz, String filePath) {
+        return isBazelTest() ? "270-delegate-service-app/src/main/resources" + filePath
+                : clazz.getResource(filePath).getFile();
+    }
 }

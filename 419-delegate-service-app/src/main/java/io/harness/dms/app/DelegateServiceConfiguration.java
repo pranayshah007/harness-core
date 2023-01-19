@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.delegate.app;
+package io.harness.dms.app;
 
 import static io.harness.annotations.dev.HarnessTeam.DEL;
 
@@ -98,7 +98,6 @@ public class DelegateServiceConfiguration extends Configuration {
     return logbackAccessRequestLogFactory;
   }
 
-
   /**
    * Gets swagger bundle configuration.
    *
@@ -119,6 +118,7 @@ public class DelegateServiceConfiguration extends Configuration {
     return HarnessReflections.get()
         .getTypesAnnotatedWith(Path.class)
         .stream()
+        // below package will be changed to io.harness.dms.resources later when we have resources in DMS
         .filter(klazz -> StringUtils.startsWithAny(klazz.getPackage().getName(), "io.harness.delegate.resources"))
         .collect(Collectors.toList());
   }

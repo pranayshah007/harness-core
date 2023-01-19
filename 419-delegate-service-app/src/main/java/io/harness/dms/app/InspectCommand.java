@@ -1,4 +1,4 @@
-package io.harness.delegate.app;
+package io.harness.dms.app;
 
 import io.dropwizard.Application;
 import io.dropwizard.cli.ConfiguredCommand;
