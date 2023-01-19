@@ -496,7 +496,8 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
       BulkWriteResult writeResults =
           persistenceProvider.bulkWriteDocumentsMatchingIds(clazz, docIds, fieldName, base, targetInterval);
       long processTime = currentTimeMillis() - startTime;
-      log.debug("Redis Batch Iterator Mode - time to carryout bulk write for {} docs is {}", docIds.size(), processTime);
+      log.debug(
+          "Redis Batch Iterator Mode - time to carryout bulk write for {} docs is {}", docIds.size(), processTime);
 
       // Do not do any further time-consuming processing here because
       // the distributed lock has to be released in the finally block for safety.
