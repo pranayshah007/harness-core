@@ -31,6 +31,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.BasicBSONObject;
 import org.bson.types.BasicBSONList;
@@ -434,42 +436,71 @@ public class PlanExecutionSummaryCdChangeServiceInfraChangeDataHandlerNew implem
 
   private List<Map<String, String>> generateEnvMappingFromGitOpsExecSummary(DBObject cdObject) {
     final List<Map<String, String>> result = new ArrayList<>();
-    if (cdObject.containsField("gitopsExecutionSummary")) {
-      BasicBSONObject gitopsExecutionSummary = (BasicBSONObject) cdObject.get("gitopsExecutionSummary");
-      if (gitopsExecutionSummary.containsField("environments")) {
-        BasicBSONList environments = (BasicBSONList) gitopsExecutionSummary.get("environments");
-        for (Object environment : environments) {
-          Map<String, String> columnMappingForSingleEnv = new HashMap<>();
-          if (environment instanceof BasicBSONObject) {
-            BasicBSONObject environmentObject = (BasicBSONObject) environment;
-            if (environmentObject.get("name") != null) {
-              String envName = environmentObject.get("name").toString();
-              columnMappingForSingleEnv.put("env_name", envName);
-            }
-            if (environmentObject.get(PlanExecutionSummaryCDConstants.IDENTIFIER_KEY) != null
-                && environmentObject.get(PlanExecutionSummaryCDConstants.IDENTIFIER_KEY).toString().length() != 0) {
-              String envIdentifier = environmentObject.get(PlanExecutionSummaryCDConstants.IDENTIFIER_KEY).toString();
-              columnMappingForSingleEnv.put("env_id", envIdentifier);
-            }
+    if (cdObject.containsField(PlanExecutionSummaryCDConstants.GITOPS_EXECUTION_SUMMARY)) {
+      BasicBSONObject gitopsExecutionSummary =
+          (BasicBSONObject) cdObject.get(PlanExecutionSummaryCDConstants.GITOPS_EXECUTION_SUMMARY);
+      if (!gitopsExecutionSummary.containsField(PlanExecutionSummaryCDConstants.ENVIRONMENTS)
+          || !gitopsExecutionSummary.containsField(PlanExecutionSummaryCDConstants.CLUSTERS)) {
+        return result;
+      }
+      BasicBSONList environments =
+          (BasicBSONList) gitopsExecutionSummary.get(PlanExecutionSummaryCDConstants.ENVIRONMENTS);
+      BasicBSONList clusters = (BasicBSONList) gitopsExecutionSummary.get(PlanExecutionSummaryCDConstants.CLUSTERS);
 
-            if (environmentObject.get("type") != null && environmentObject.get("type").toString().length() != 0) {
-              String envType = environmentObject.get("type").toString();
-              columnMappingForSingleEnv.put("env_type", envType);
-            }
+      // check if the value can be something other than BasicBSONObject, what if its empty?
+      Map<String, BasicBSONObject> envMap =
+          environments.stream()
+              .map(o -> (BasicBSONObject) o)
+              .collect(Collectors.toMap(
+                  e -> (String) e.get(PlanExecutionSummaryCDConstants.IDENTIFIER_KEY), Function.identity()));
 
-            if (environmentObject.get(ENV_GROUP_IDENTIFIER) != null
-                && environmentObject.get(ENV_GROUP_IDENTIFIER).toString().length() > 0) {
-              String envGroupId = environmentObject.get(ENV_GROUP_IDENTIFIER).toString();
-              columnMappingForSingleEnv.put("env_group_ref", envGroupId);
-            }
+      for (Object cluster : clusters) {
+        cla Map<String, String> columnMappingForSingleCluster = new HashMap<>();
+        if (cluster instanceof BasicBSONObject) {
+          BasicBSONObject clusterObject = (BasicBSONObject) cluster;
+          BasicBSONObject environmentObject =
+              envMap.get(clusterObject.get(PlanExecutionSummaryCDConstants.ENV_ID).toString());
 
-            if (environmentObject.get(PlanExecutionSummaryCDConstants.ENV_GROUP_NAME) != null
-                && environmentObject.get(PlanExecutionSummaryCDConstants.ENV_GROUP_NAME).toString().length() > 0) {
-              String envGroupName = environmentObject.get(PlanExecutionSummaryCDConstants.ENV_GROUP_NAME).toString();
-              columnMappingForSingleEnv.put("env_group_name", envGroupName);
-            }
+          // when clusters exist - env will always exist
+          if (environmentObject.get("name") != null) {
+            String envName = environmentObject.get("name").toString();
+            columnMappingForSingleCluster.put("env_name", envName);
           }
-          result.add(columnMappingForSingleEnv);
+          if (environmentObject.get(PlanExecutionSummaryCDConstants.IDENTIFIER_KEY) != null
+              && environmentObject.get(PlanExecutionSummaryCDConstants.IDENTIFIER_KEY).toString().length() != 0) {
+            String envIdentifier = environmentObject.get(PlanExecutionSummaryCDConstants.IDENTIFIER_KEY).toString();
+            columnMappingForSingleCluster.put("env_id", envIdentifier);
+          }
+
+          if (clusterObject.get(PlanExecutionSummaryCDConstants.CLUSTER_ID) != null
+              && clusterObject.get(PlanExecutionSummaryCDConstants.CLUSTER_ID).toString().length() != 0) {
+            String clusterIdentifier = clusterObject.get(PlanExecutionSummaryCDConstants.CLUSTER_ID).toString();
+            columnMappingForSingleCluster.put("cluster_identifier", clusterIdentifier);
+          }
+
+          if (clusterObject.get(PlanExecutionSummaryCDConstants.CLUSTER_NAME) != null
+              && clusterObject.get(PlanExecutionSummaryCDConstants.CLUSTER_NAME).toString().length() != 0) {
+            String clusterName = clusterObject.get(PlanExecutionSummaryCDConstants.CLUSTER_NAME).toString();
+            columnMappingForSingleCluster.put("cluster_name", clusterName);
+          }
+
+          if (environmentObject.get("type") != null && environmentObject.get("type").toString().length() != 0) {
+            String envType = environmentObject.get("type").toString();
+            columnMappingForSingleCluster.put("env_type", envType);
+          }
+
+          if (environmentObject.get(ENV_GROUP_IDENTIFIER) != null
+              && environmentObject.get(ENV_GROUP_IDENTIFIER).toString().length() > 0) {
+            String envGroupId = environmentObject.get(ENV_GROUP_IDENTIFIER).toString();
+            columnMappingForSingleCluster.put("env_group_ref", envGroupId);
+          }
+
+          if (environmentObject.get(PlanExecutionSummaryCDConstants.ENV_GROUP_NAME) != null
+              && environmentObject.get(PlanExecutionSummaryCDConstants.ENV_GROUP_NAME).toString().length() > 0) {
+            String envGroupName = environmentObject.get(PlanExecutionSummaryCDConstants.ENV_GROUP_NAME).toString();
+            columnMappingForSingleCluster.put("env_group_name", envGroupName);
+          }
+          result.add(columnMappingForSingleCluster);
         }
       }
     }

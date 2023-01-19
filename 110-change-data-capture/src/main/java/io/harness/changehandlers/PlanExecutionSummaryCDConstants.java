@@ -26,4 +26,10 @@ class PlanExecutionSummaryCDConstants {
   static final String GITOPS_ENABLED_KEY = "gitOpsEnabled";
   static final String ENV_GROUP_ID = "envGroupId";
   static final String ENV_GROUP_NAME = "envGroupName";
+  static final String ENV_ID = "envId";
+  static final String CLUSTER_ID = "clusterId";
+  static final String CLUSTER_NAME = "clusterName";
+  static final String ENVIRONMENTS = "environments";
+  static final String CLUSTERS = "clusters";
+  static final String GITOPS_EXECUTION_SUMMARY = "gitopsExecutionSummary";
 }
