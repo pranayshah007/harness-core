@@ -148,6 +148,9 @@ public class IdentityServiceResource {
     if (user == null) {
       throw new WingsException(USER_DOES_NOT_EXIST, USER);
     } else {
+      if (includeSupportAccounts) {
+        userService.loadSupportAccounts(user);
+      }
       return new RestResponse<>(user.getPublicUser(includeSupportAccounts));
     }
   }
