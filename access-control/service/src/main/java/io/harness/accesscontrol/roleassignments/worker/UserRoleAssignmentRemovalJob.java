@@ -98,10 +98,10 @@ public class UserRoleAssignmentRemovalJob implements Runnable {
       return;
     }
     try {
-      List<String> filteredAccountsForOrgAndProject = filterAccountsForAccountBasicRoleOnlyFF(targetAccounts);
-      HashSet<String> filteredAccountIds = new HashSet<>(
-          filterAccountsWhereDefaultUserGroupDoesntHaveViewerRoleAssignment(filteredAccountsForOrgAndProject));
-      for (String accountId : filteredAccountsForOrgAndProject) {
+      List<String> filteredAccountsByFF = filterAccountsForAccountBasicRoleOnlyFF(targetAccounts);
+      HashSet<String> filteredAccountIds =
+          new HashSet<>(filterAccountsWhereDefaultUserGroupDoesntHaveViewerRoleAssignment(filteredAccountsByFF));
+      for (String accountId : targetAccounts) {
         if (filteredAccountIds.contains(accountId)) {
           deleteAccountScopeRoleAssignments(accountId);
         }
@@ -119,7 +119,7 @@ public class UserRoleAssignmentRemovalJob implements Runnable {
     try {
       for (String accountId : accountIds) {
         boolean isAccountBasicRoleOnlyEnabled = featureFlagService.isEnabled(ACCOUNT_BASIC_ROLE_ONLY, accountId);
-        if (isAccountBasicRoleOnlyEnabled) {
+        if (!isAccountBasicRoleOnlyEnabled) {
           filteredAccounts.add(accountId);
         }
       }
@@ -154,10 +154,12 @@ public class UserRoleAssignmentRemovalJob implements Runnable {
                               .is(DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER)
                               .and(RoleAssignmentDBO.RoleAssignmentDBOKeys.roleIdentifier)
                               .in(NGConstants.ACCOUNT_BASIC_ROLE, NGConstants.ACCOUNT_VIEWER_ROLE)
+                              .and(RoleAssignmentDBO.RoleAssignmentDBOKeys.principalType)
+                              .is(USER)
                               .and(RoleAssignmentDBO.RoleAssignmentDBOKeys.scopeLevel)
                               .is(HarnessScopeLevel.ACCOUNT.getName())
-                              .and(RoleAssignmentDBO.RoleAssignmentDBOKeys.principalType)
-                              .is(USER);
+                              .and(RoleAssignmentDBO.RoleAssignmentDBOKeys.managed)
+                              .is(true);
 
       long count = roleAssignmentRepository.deleteMulti(criteria);
       log.info(DEBUG_MESSAGE
