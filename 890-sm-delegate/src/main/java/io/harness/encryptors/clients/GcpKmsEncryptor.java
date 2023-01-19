@@ -279,10 +279,7 @@ public class GcpKmsEncryptor implements KmsEncryptor {
     if (useWorkloadIdentity) {
       try {
         log.info("[WI]: Using workload identity for GCP KMS");
-        KeyManagementServiceClient keyManagementServiceClient = KeyManagementServiceClient.create(
-            KeyManagementServiceSettings.newBuilder()
-                .setCredentialsProvider(KeyManagementServiceSettings.defaultCredentialsProviderBuilder().build())
-                .build());
+        KeyManagementServiceClient keyManagementServiceClient = KeyManagementServiceClient.create();
         log.info("[WI]: Created KMS client successfully: {}", keyManagementServiceClient.getSettings());
         return keyManagementServiceClient;
       } catch (IOException e) {
