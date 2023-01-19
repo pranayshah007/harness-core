@@ -17,6 +17,12 @@ if [[ -z "$COMMAND" ]]; then
 fi
 
 echo "Using memory " $MEMORY
+mkdir -p ~/.harness/conf/
+echo "filter-type: user" > ~/.harness/conf/filters.yaml
+echo "packages:" >> ~/.harness/conf/filters.yaml
+echo "  - io.harness" >> ~/.harness/conf/filters.yaml
+echo "  - software.wings" >> ~/.harness/conf/filters.yaml
+echo "strategy: override" >> ~/.harness/conf/filters.yaml
 
 if [[ -f /mongo/ca.pem ]]; then
   echo "Adding Mongo CA file to truststore"
