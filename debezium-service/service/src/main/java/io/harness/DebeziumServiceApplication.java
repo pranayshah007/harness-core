@@ -151,15 +151,12 @@ public class DebeziumServiceApplication extends Application<DebeziumServiceConfi
         if (eventsFrameworkConfiguration == null) {
           eventsFrameworkConfiguration = appConfig.getEventsFrameworkConfiguration();
         }
-        ChangeConsumerConfig changeConsumerConfig =
-            ChangeConsumerConfig.builder()
-                .consumerMode(consumerMode)
-                .consumerType(ConsumerType.EVENTS_FRAMEWORK)
-                .eventsFrameworkConfiguration(eventsFrameworkConfiguration)
-                .producingCountPerBatch(debeziumConfig.getProducingCountPerBatch())
-                .redisStreamSize(debeziumConfig.getRedisStreamSize())
-                .sleepInterval(debeziumConfig.getSleepInterval())
-                .build();
+        ChangeConsumerConfig changeConsumerConfig = ChangeConsumerConfig.builder()
+                                                        .consumerMode(consumerMode)
+                                                        .consumerType(ConsumerType.EVENTS_FRAMEWORK)
+                                                        .eventsFrameworkConfiguration(eventsFrameworkConfiguration)
+                                                        .redisStreamSize(debeziumConfig.getRedisStreamSize())
+                                                        .build();
 
         starter.startDebeziumController(debeziumConfig, changeConsumerConfig, locker, appConfig.getRedisLockConfig());
       }

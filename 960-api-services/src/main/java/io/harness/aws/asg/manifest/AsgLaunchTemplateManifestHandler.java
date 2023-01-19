@@ -9,9 +9,11 @@ package io.harness.aws.asg.manifest;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.aws.asg.manifest.AsgManifestType.AsgLaunchTemplate;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.asg.AsgSdkManager;
+import io.harness.aws.asg.manifest.request.AsgLaunchTemplateManifestRequest;
 import io.harness.manifest.request.ManifestRequest;
 
 import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
@@ -26,6 +28,10 @@ import java.util.stream.Collectors;
 
 @OwnedBy(CDP)
 public class AsgLaunchTemplateManifestHandler extends AsgManifestHandler<CreateLaunchTemplateRequest> {
+  public interface OverrideProperties {
+    String amiImageId = "amiImageId";
+  }
+
   public AsgLaunchTemplateManifestHandler(AsgSdkManager asgSdkManager, ManifestRequest manifestRequest) {
     super(asgSdkManager, manifestRequest);
   }
@@ -35,15 +41,34 @@ public class AsgLaunchTemplateManifestHandler extends AsgManifestHandler<CreateL
     return CreateLaunchTemplateRequest.class;
   }
 
+  public void applyOverrideProperties(CreateLaunchTemplateRequest request, Map<String, Object> overrideProperties) {
+    overrideProperties.entrySet().stream().forEach(entry -> {
+      switch (entry.getKey()) {
+        case AsgLaunchTemplateManifestHandler.OverrideProperties.amiImageId:
+          request.getLaunchTemplateData().setImageId(entry.getValue().toString());
+          break;
+        default:
+          // do nothing
+      }
+    });
+  }
+
   @Override
   public AsgManifestHandlerChainState upsert(AsgManifestHandlerChainState chainState, ManifestRequest manifestRequest) {
     if (chainState.getLaunchTemplateVersion() == null) {
+      AsgLaunchTemplateManifestRequest asgLaunchTemplateManifestRequest =
+          (AsgLaunchTemplateManifestRequest) manifestRequest;
+
       List<CreateLaunchTemplateRequest> manifests =
           manifestRequest.getManifests().stream().map(this::parseContentToManifest).collect(Collectors.toList());
       String asgName = chainState.getAsgName();
       CreateLaunchTemplateRequest createLaunchTemplateRequest = manifests.get(0);
       // launch template should always have same name as ASG name
       createLaunchTemplateRequest.setLaunchTemplateName(asgName);
+
+      if (isNotEmpty(asgLaunchTemplateManifestRequest.getOverrideProperties())) {
+        applyOverrideProperties(createLaunchTemplateRequest, asgLaunchTemplateManifestRequest.getOverrideProperties());
+      }
 
       LaunchTemplate launchTemplate = asgSdkManager.getLaunchTemplate(asgName);
       if (launchTemplate != null) {

@@ -7,7 +7,10 @@
 
 package io.harness.ngmigration.service.step.terraform;
 
-import static software.wings.ngmigration.NGMigrationEntityType.CONNECTOR;
+import static io.harness.provision.TerraformConstants.LOCAL_STORE_TYPE;
+import static io.harness.provision.TerraformConstants.REMOTE_STORE_TYPE;
+
+import static software.wings.beans.ServiceVariableType.ENCRYPTED_TEXT;
 import static software.wings.ngmigration.NGMigrationEntityType.INFRA_PROVISIONER;
 import static software.wings.ngmigration.NGMigrationEntityType.SECRET;
 import static software.wings.ngmigration.NGMigrationEntityType.SECRET_MANAGER;
@@ -15,33 +18,43 @@ import static software.wings.ngmigration.NGMigrationEntityType.SECRET_MANAGER;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.manifest.yaml.GitStore;
+import io.harness.cdng.manifest.yaml.GitStore.GitStoreBuilder;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
+import io.harness.cdng.manifest.yaml.storeConfig.moduleSource.ModuleSource;
+import io.harness.cdng.provision.terraform.InlineTerraformBackendConfigSpec;
 import io.harness.cdng.provision.terraform.InlineTerraformVarFileSpec;
 import io.harness.cdng.provision.terraform.RemoteTerraformBackendConfigSpec;
 import io.harness.cdng.provision.terraform.RemoteTerraformVarFileSpec;
+import io.harness.cdng.provision.terraform.TerraformApplyStepInfo;
+import io.harness.cdng.provision.terraform.TerraformApplyStepNode;
 import io.harness.cdng.provision.terraform.TerraformBackendConfig;
 import io.harness.cdng.provision.terraform.TerraformConfigFilesWrapper;
 import io.harness.cdng.provision.terraform.TerraformExecutionData;
 import io.harness.cdng.provision.terraform.TerraformPlanCommand;
 import io.harness.cdng.provision.terraform.TerraformPlanExecutionData;
+import io.harness.cdng.provision.terraform.TerraformPlanStepInfo;
+import io.harness.cdng.provision.terraform.TerraformPlanStepNode;
+import io.harness.cdng.provision.terraform.TerraformStepConfiguration;
+import io.harness.cdng.provision.terraform.TerraformStepConfigurationType;
 import io.harness.cdng.provision.terraform.TerraformVarFile;
 import io.harness.cdng.provision.terraform.TerraformVarFileTypes;
 import io.harness.cdng.provision.terraform.TerraformVarFileWrapper;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.delegate.beans.storeconfig.FetchType;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.step.StepMapper;
+import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.core.variables.NGVariableType;
-import io.harness.yaml.core.variables.SecretNGVariable;
 import io.harness.yaml.core.variables.StringNGVariable;
 
 import software.wings.beans.GitFileConfig;
 import software.wings.beans.GraphNode;
-import software.wings.beans.InfrastructureProvisioner;
 import software.wings.beans.NameValuePair;
 import software.wings.beans.TerraformInfrastructureProvisioner;
 import software.wings.ngmigration.CgEntityId;
@@ -60,6 +73,8 @@ import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.CDC)
 public abstract class BaseTerraformProvisionerMapper implements StepMapper {
+  private static final String SECRET_FORMAT = "<+secrets.getValue(\"%s\")>";
+
   public List<CgEntityId> getReferencedEntities(GraphNode graphNode) {
     TerraformProvisionState state = (TerraformProvisionState) getState(graphNode);
 
@@ -73,7 +88,7 @@ public abstract class BaseTerraformProvisionerMapper implements StepMapper {
     if (EmptyPredicate.isNotEmpty(state.getEnvironmentVariables())) {
       references.addAll(state.getEnvironmentVariables()
                             .stream()
-                            .filter(item -> "ENCRYPTED_TEXT".equals(item.getValueType()))
+                            .filter(item -> ENCRYPTED_TEXT.name().equals(item.getValueType()))
                             .map(item -> CgEntityId.builder().type(SECRET).id(item.getValue()).build())
                             .collect(Collectors.toList()));
     }
@@ -81,7 +96,25 @@ public abstract class BaseTerraformProvisionerMapper implements StepMapper {
     if (EmptyPredicate.isNotEmpty(state.getVariables())) {
       references.addAll(state.getVariables()
                             .stream()
-                            .filter(item -> "ENCRYPTED_TEXT".equals(item.getValueType()))
+                            .filter(item -> ENCRYPTED_TEXT.name().equals(item.getValueType()))
+                            .map(item -> CgEntityId.builder().type(SECRET).id(item.getValue()).build())
+                            .collect(Collectors.toList()));
+    }
+
+    if (EmptyPredicate.isNotEmpty(state.getBackendConfigs())) {
+      references.addAll(state.getBackendConfigs()
+                            .stream()
+                            .filter(item -> ENCRYPTED_TEXT.name().equals(item.getValueType()))
+                            .map(item -> CgEntityId.builder().type(SECRET).id(item.getValue()).build())
+                            .collect(Collectors.toList()));
+    }
+
+    if (state.getBackendConfig() != null
+        && EmptyPredicate.isNotEmpty(state.getBackendConfig().getInlineBackendConfig())) {
+      references.addAll(state.getBackendConfig()
+                            .getInlineBackendConfig()
+                            .stream()
+                            .filter(item -> ENCRYPTED_TEXT.name().equals(item.getValueType()))
                             .map(item -> CgEntityId.builder().type(SECRET).id(item.getValue()).build())
                             .collect(Collectors.toList()));
     }
@@ -98,11 +131,12 @@ public abstract class BaseTerraformProvisionerMapper implements StepMapper {
     ngVariables.addAll(variables.stream()
                            .filter(variable -> "ENCRYPTED_TEXT".equals(variable.getValueType()))
                            .map(variable
-                               -> SecretNGVariable.builder()
+                               -> StringNGVariable.builder()
                                       .name(variable.getName())
-                                      .value(ParameterField.createValueField(
-                                          MigratorUtility.getSecretRef(migratedEntities, variable.getValue())))
-                                      .type(NGVariableType.SECRET)
+                                      .value(ParameterField.createValueField(String.format(SECRET_FORMAT,
+                                          MigratorUtility.getSecretRef(migratedEntities, variable.getValue())
+                                              .toSecretRefStringValue())))
+                                      .type(NGVariableType.STRING)
                                       .build())
                            .collect(Collectors.toList()));
 
@@ -119,42 +153,68 @@ public abstract class BaseTerraformProvisionerMapper implements StepMapper {
     return ngVariables;
   }
 
+  String convertNameValuePairToContent(Map<CgEntityId, NGYamlFile> migratedEntities, List<NameValuePair> valuePairs) {
+    if (EmptyPredicate.isEmpty(valuePairs)) {
+      return "";
+    }
+
+    StringBuilder content = new StringBuilder();
+    for (NameValuePair valuePair : valuePairs) {
+      String val = valuePair.getValue();
+      if ("ENCRYPTED_TEXT".equals(valuePair.getValueType())) {
+        String secretIdentifier =
+            MigratorUtility.getIdentifierWithScopeDefaults(migratedEntities, valuePair.getValue(), SECRET);
+        val = String.format(SECRET_FORMAT, secretIdentifier);
+      }
+      content.append(String.format("%s=%s", valuePair.getName(), val)).append('\n');
+    }
+
+    return content.toString();
+  }
+
+  private TerraformBackendConfig toInlineBackendConfig(
+      Map<CgEntityId, NGYamlFile> migratedEntities, List<NameValuePair> configs) {
+    InlineTerraformBackendConfigSpec spec = new InlineTerraformBackendConfigSpec();
+    spec.setContent(ParameterField.createValueField(convertNameValuePairToContent(migratedEntities, configs)));
+    return TerraformBackendConfig.builder().type(TerraformVarFileTypes.Inline).spec(spec).build();
+  }
+
   protected TerraformBackendConfig getBackendConfig(Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, NGYamlFile> migratedEntities, TerraformProvisionState state) {
-    CgEntityId provisionerId = CgEntityId.builder().id(state.getProvisionerId()).type(INFRA_PROVISIONER).build();
-    ParameterField<String> connectorRef = MigratorUtility.RUNTIME_INPUT;
-    String branch = null;
-    String commitId = null;
-    String folderPath = null;
-    if (entities.containsKey(provisionerId)) {
-      TerraformInfrastructureProvisioner provisioner =
-          (TerraformInfrastructureProvisioner) entities.get(provisionerId).getEntity();
-      connectorRef = MigratorUtility.getIdentifierWithScopeDefaultsRuntime(
-          migratedEntities, provisioner.getSourceRepoSettingId(), CONNECTOR);
-      branch = provisioner.getSourceRepoBranch();
-      commitId = provisioner.getCommitId();
-      folderPath = provisioner.getPath();
-    }
-    GitStore store = GitStore.builder().connectorRef(connectorRef).build();
+    List<NameValuePair> beConfigs = state.getBackendConfigs();
 
-    // Branch/Commit Logic
-    if (StringUtils.isAllBlank(branch, commitId)) {
-      store.setBranch(MigratorUtility.RUNTIME_INPUT);
+    if (EmptyPredicate.isNotEmpty(beConfigs)) {
+      return toInlineBackendConfig(migratedEntities, beConfigs);
     }
-    if (StringUtils.isNotBlank(branch)) {
-      store.setBranch(ParameterField.createValueField(branch));
-    } else {
-      store.setCommitId(ParameterField.createValueField(commitId));
+    software.wings.beans.TerraformBackendConfig beConfig = state.getBackendConfig();
+
+    if (beConfig == null) {
+      return null;
     }
 
-    // Path
-    store.setFolderPath(StringUtils.isNotBlank(folderPath) ? ParameterField.createValueField(folderPath)
-                                                           : MigratorUtility.RUNTIME_INPUT);
+    if (LOCAL_STORE_TYPE.equals(beConfig.getStoreType())) {
+      return toInlineBackendConfig(migratedEntities, beConfig.getInlineBackendConfig());
+    }
 
-    RemoteTerraformBackendConfigSpec spec = new RemoteTerraformBackendConfigSpec();
-    spec.setStore(StoreConfigWrapper.builder().type(StoreConfigType.GIT).spec(store).build());
+    if (REMOTE_STORE_TYPE.equals(beConfig.getStoreType())) {
+      GitStore store = GitStore.builder().connectorRef(MigratorUtility.RUNTIME_INPUT).build();
 
-    return TerraformBackendConfig.builder().type(TerraformVarFileTypes.Remote).spec(spec).build();
+      GitFileConfig gitFileConfig = beConfig.getRemoteBackendConfig();
+      if (StringUtils.isNotBlank(gitFileConfig.getBranch())) {
+        store.setGitFetchType(FetchType.BRANCH);
+        store.setBranch(ParameterField.createValueField(gitFileConfig.getBranch()));
+      } else {
+        store.setGitFetchType(FetchType.COMMIT);
+        store.setCommitId(ParameterField.createValueField(gitFileConfig.getCommitId()));
+      }
+      store.setFolderPath(ParameterField.createValueField(gitFileConfig.getFilePath()));
+      RemoteTerraformBackendConfigSpec spec = new RemoteTerraformBackendConfigSpec();
+      spec.setStore(StoreConfigWrapper.builder().type(StoreConfigType.GIT).spec(store).build());
+
+      return TerraformBackendConfig.builder().type(TerraformVarFileTypes.Remote).spec(spec).build();
+    }
+
+    throw new InvalidRequestException("S3 Terraform store types are currently not supported");
   }
 
   protected ParameterField<String> getSecretManagerRef(
@@ -172,39 +232,56 @@ public abstract class BaseTerraformProvisionerMapper implements StepMapper {
         migratedEntities, infraProv.getKmsId(), SECRET_MANAGER);
   }
 
-  protected List<TerraformVarFileWrapper> getVarFiles(TerraformProvisionState state) {
-    // TODO
-    if (EmptyPredicate.isEmpty(state.getTfVarFiles())) {
-      return Collections.emptyList();
+  protected List<TerraformVarFileWrapper> getVarFiles(Map<CgEntityId, CgEntityNode> entities,
+      Map<CgEntityId, NGYamlFile> migratedEntities, TerraformProvisionState state) {
+    List<TerraformVarFileWrapper> varFileWrappers = new ArrayList<>();
+    if (EmptyPredicate.isNotEmpty(state.getVariables())) {
+      String inlineContent = convertNameValuePairToContent(migratedEntities, state.getVariables());
+      TerraformVarFileWrapper wrapper = new TerraformVarFileWrapper();
+      InlineTerraformVarFileSpec inlineTerraformVarFileSpec = new InlineTerraformVarFileSpec();
+      inlineTerraformVarFileSpec.setContent(ParameterField.createValueField(inlineContent));
+      wrapper.setVarFile(TerraformVarFile.builder()
+                             .identifier("inline")
+                             .type(TerraformVarFileTypes.Inline)
+                             .spec(inlineTerraformVarFileSpec)
+                             .build());
+      varFileWrappers.add(wrapper);
     }
 
-    return state.getTfVarFiles()
-        .stream()
-        .map(file -> {
-          TerraformVarFileWrapper wrapper = new TerraformVarFileWrapper();
-          InlineTerraformVarFileSpec inlineTerraformVarFileSpec = null;
-          RemoteTerraformVarFileSpec remoteTerraformVarFileSpec = null;
-
-          wrapper.setVarFile(TerraformVarFile.builder()
-                                 .identifier("")
-                                 .type(TerraformVarFileTypes.Inline)
-                                 .spec(inlineTerraformVarFileSpec)
-                                 .build());
-
-          return wrapper;
-        })
-        .collect(Collectors.toList());
-  }
-
-  protected String getProvisionerIdentifier(Map<CgEntityId, CgEntityNode> entities, TerraformProvisionState state) {
-    String provisionerIdentifier = "__PLEASE_FIX_ME__";
-    CgEntityNode cgEntityNode =
-        entities.getOrDefault(CgEntityId.builder().type(INFRA_PROVISIONER).id(state.getProvisionerId()).build(), null);
-    if (cgEntityNode != null) {
-      InfrastructureProvisioner infrastructureProvisioner = (InfrastructureProvisioner) cgEntityNode.getEntity();
-      provisionerIdentifier = MigratorUtility.generateIdentifier(infrastructureProvisioner.getName());
+    if (EmptyPredicate.isEmpty(state.getTfVarFiles()) && state.getTfVarGitFileConfig() == null) {
+      return varFileWrappers;
     }
-    return provisionerIdentifier;
+
+    TerraformVarFileWrapper wrapper = new TerraformVarFileWrapper();
+    RemoteTerraformVarFileSpec remoteTerraformVarFileSpec = new RemoteTerraformVarFileSpec();
+    GitStore gitStore = null;
+    if (EmptyPredicate.isNotEmpty(state.getTfVarFiles())) {
+      gitStore = getGitStore(entities, migratedEntities, state);
+      gitStore.setPaths(ParameterField.createValueField(state.getTfVarFiles()));
+    } else if (state.getTfVarGitFileConfig() != null) {
+      GitStoreBuilder storeBuilder = GitStore.builder().connectorRef(MigratorUtility.RUNTIME_INPUT);
+      if (StringUtils.isNotBlank(state.getTfVarGitFileConfig().getBranch())) {
+        storeBuilder.gitFetchType(FetchType.BRANCH);
+        storeBuilder.branch(ParameterField.createValueField(state.getTfVarGitFileConfig().getBranch()));
+      } else {
+        storeBuilder.gitFetchType(FetchType.COMMIT);
+        storeBuilder.branch(ParameterField.createValueField(state.getTfVarGitFileConfig().getCommitId()));
+      }
+      storeBuilder.paths(ParameterField.createValueField(
+          Arrays.stream(state.getTfVarGitFileConfig().getFilePath().split(",")).collect(Collectors.toList())));
+      gitStore = storeBuilder.build();
+    }
+    if (gitStore != null) {
+      remoteTerraformVarFileSpec.setStore(
+          StoreConfigWrapper.builder().type(StoreConfigType.GIT).spec(gitStore).build());
+      wrapper.setVarFile(TerraformVarFile.builder()
+                             .identifier("remote")
+                             .type(TerraformVarFileTypes.Remote)
+                             .spec(remoteTerraformVarFileSpec)
+                             .build());
+      varFileWrappers.add(wrapper);
+    }
+    return varFileWrappers;
   }
 
   protected ParameterField<List<TaskSelectorYaml>> getDelegateSelectors(TerraformProvisionState state) {
@@ -223,36 +300,37 @@ public abstract class BaseTerraformProvisionerMapper implements StepMapper {
 
   private TerraformConfigFilesWrapper getConfigFilesWrapper(Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, NGYamlFile> migratedEntities, TerraformProvisionState state) {
-    ParameterField<String> connectorRef = MigratorUtility.RUNTIME_INPUT;
-    GitStore store = GitStore.builder().connectorRef(connectorRef).build();
-    String branch = null;
-    String commitId = null;
-    List<String> files = new ArrayList<>();
-    if (state.getTfVarGitFileConfig() != null) {
-      GitFileConfig gitFileConfig = state.getTfVarGitFileConfig();
-      branch = gitFileConfig.getBranch();
-      commitId = gitFileConfig.getCommitId();
-      if (StringUtils.isNotBlank(gitFileConfig.getFilePath())) {
-        files = Arrays.stream(gitFileConfig.getFilePath().split(",")).map(String::trim).collect(Collectors.toList());
-      }
-    }
-    // Branch/Commit Logic
-    if (StringUtils.isAllBlank(branch, commitId)) {
-      store.setBranch(MigratorUtility.RUNTIME_INPUT);
-    }
-    if (StringUtils.isNotBlank(branch)) {
-      store.setBranch(ParameterField.createValueField(branch));
-    } else {
-      store.setCommitId(ParameterField.createValueField(commitId));
-    }
-
-    // Path
-    store.setPaths(ParameterField.createValueField(files));
-
+    GitStore store = getGitStore(entities, migratedEntities, state);
     TerraformConfigFilesWrapper configFilesWrapper = new TerraformConfigFilesWrapper();
     configFilesWrapper.setStore(StoreConfigWrapper.builder().spec(store).type(StoreConfigType.GIT).build());
-    configFilesWrapper.setModuleSource(null);
+    configFilesWrapper.setModuleSource(
+        ModuleSource.builder().useConnectorCredentials(ParameterField.createValueField(true)).build());
     return configFilesWrapper;
+  }
+
+  private GitStore getGitStore(Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities,
+      TerraformProvisionState state) {
+    GitStoreBuilder storeBuilder = GitStore.builder().connectorRef(MigratorUtility.RUNTIME_INPUT);
+
+    CgEntityNode node =
+        entities.getOrDefault(CgEntityId.builder().id(state.getProvisionerId()).type(INFRA_PROVISIONER).build(), null);
+    if (node == null || node.getEntity() == null) {
+      return storeBuilder.branch(MigratorUtility.RUNTIME_INPUT)
+          .gitFetchType(FetchType.BRANCH)
+          .folderPath(MigratorUtility.RUNTIME_INPUT)
+          .build();
+    }
+    TerraformInfrastructureProvisioner provisioner = (TerraformInfrastructureProvisioner) node.getEntity();
+
+    if (StringUtils.isNotBlank(provisioner.getSourceRepoBranch())) {
+      storeBuilder.gitFetchType(FetchType.BRANCH);
+      storeBuilder.branch(ParameterField.createValueField(provisioner.getSourceRepoBranch()));
+    } else {
+      storeBuilder.gitFetchType(FetchType.COMMIT);
+      storeBuilder.branch(ParameterField.createValueField(provisioner.getCommitId()));
+    }
+    storeBuilder.folderPath(ParameterField.createValueField(provisioner.getPath()));
+    return storeBuilder.build();
   }
 
   protected TerraformExecutionData getExecutionData(Map<CgEntityId, CgEntityNode> entities,
@@ -260,7 +338,7 @@ public abstract class BaseTerraformProvisionerMapper implements StepMapper {
     TerraformExecutionData executionData = new TerraformExecutionData();
     executionData.setEnvironmentVariables(getVariables(migratedEntities, state.getEnvironmentVariables()));
     executionData.setTargets(ParameterField.createValueField(state.getTargets()));
-    executionData.setTerraformVarFiles(getVarFiles(state));
+    executionData.setTerraformVarFiles(getVarFiles(entities, migratedEntities, state));
     executionData.setTerraformConfigFilesWrapper(getConfigFilesWrapper(entities, migratedEntities, state));
     executionData.setWorkspace(ParameterField.createValueField(state.getWorkspace()));
     executionData.setTerraformBackendConfig(getBackendConfig(entities, migratedEntities, state));
@@ -281,10 +359,40 @@ public abstract class BaseTerraformProvisionerMapper implements StepMapper {
         .exportTerraformHumanReadablePlan(ParameterField.createValueField(state.isExportPlanToHumanReadableOutput()))
         .environmentVariables(getVariables(migratedEntities, state.getEnvironmentVariables()))
         .command(command)
-        .terraformVarFiles(getVarFiles(state))
+        .terraformVarFiles(getVarFiles(entities, migratedEntities, state))
         .secretManagerRef(getSecretManagerRef(entities, migratedEntities, state.getProvisionerId()))
         .terraformConfigFilesWrapper(getConfigFilesWrapper(entities, migratedEntities, state))
         .terraformBackendConfig(getBackendConfig(entities, migratedEntities, state))
         .build();
+  }
+
+  protected AbstractStepNode getStepNode(
+      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities, GraphNode graphNode) {
+    TerraformProvisionState state = (TerraformProvisionState) getState(graphNode);
+    if (state.isRunPlanOnly()) {
+      TerraformPlanExecutionData executionData = getPlanExecutionData(entities, migratedEntities, state);
+      TerraformPlanStepInfo stepInfo = TerraformPlanStepInfo.infoBuilder()
+                                           .delegateSelectors(getDelegateSelectors(state))
+                                           .provisionerIdentifier(MigratorUtility.RUNTIME_INPUT)
+                                           .terraformPlanExecutionData(executionData)
+                                           .build();
+      TerraformPlanStepNode planStepNode = new TerraformPlanStepNode();
+      baseSetup(graphNode, planStepNode);
+      planStepNode.setTerraformPlanStepInfo(stepInfo);
+      return planStepNode;
+    } else {
+      TerraformStepConfiguration stepConfiguration = new TerraformStepConfiguration();
+      stepConfiguration.setTerraformExecutionData(getExecutionData(entities, migratedEntities, state));
+      stepConfiguration.setTerraformStepConfigurationType(TerraformStepConfigurationType.INLINE);
+      TerraformApplyStepInfo stepInfo = TerraformApplyStepInfo.infoBuilder()
+                                            .delegateSelectors(getDelegateSelectors(state))
+                                            .terraformStepConfiguration(stepConfiguration)
+                                            .provisionerIdentifier(MigratorUtility.RUNTIME_INPUT)
+                                            .build();
+      TerraformApplyStepNode applyStepNode = new TerraformApplyStepNode();
+      baseSetup(graphNode, applyStepNode);
+      applyStepNode.setTerraformApplyStepInfo(stepInfo);
+      return applyStepNode;
+    }
   }
 }

@@ -18,6 +18,10 @@ import static io.harness.cdng.pipeline.NGStepType.TERRAFORM_APPLY;
 import static io.harness.cdng.pipeline.NGStepType.TERRAFORM_DESTROY;
 import static io.harness.cdng.pipeline.NGStepType.TERRAFORM_PLAN;
 import static io.harness.cdng.pipeline.NGStepType.TERRAFORM_ROLLBACK;
+import static io.harness.cdng.pipeline.NGStepType.TERRAGRUNT_APPLY;
+import static io.harness.cdng.pipeline.NGStepType.TERRAGRUNT_DESTROY;
+import static io.harness.cdng.pipeline.NGStepType.TERRAGRUNT_PLAN;
+import static io.harness.cdng.pipeline.NGStepType.TERRAGRUNT_ROLLBACK;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.pipeline.NGStepType;
@@ -34,13 +38,16 @@ public enum ProvisionerType {
   CLOUD_FORMATION("CloudFormation"),
   AZURE_ARM("ARM"),
   AZURE_BLUEPRINT("Blueprint"),
-  SHELL_SCRIPT_PROVISIONER("Script");
+  SHELL_SCRIPT_PROVISIONER("Script"),
+  TERRAGRUNT("Terragrunt");
 
   private static final Set<ProvisionerType> supportedTypes =
-      ImmutableSet.of(TERRAFORM, CLOUD_FORMATION, AZURE_ARM, AZURE_BLUEPRINT, SHELL_SCRIPT_PROVISIONER);
-  private static final List<NGStepType> supportedSteps = Arrays.asList(TERRAFORM_APPLY, TERRAFORM_PLAN,
-      TERRAFORM_DESTROY, TERRAFORM_ROLLBACK, CF_CREATE_STACK, CF_DELETE_STACK, CF_ROLLBACK_STACK,
-      AZURE_CREATE_ARM_RESOURCE, AZURE_CREATE_BP_RESOURCE, AZURE_ROLLBACK_ARM_RESOURCE);
+      ImmutableSet.of(TERRAFORM, CLOUD_FORMATION, AZURE_ARM, AZURE_BLUEPRINT, SHELL_SCRIPT_PROVISIONER, TERRAGRUNT);
+  private static final List<NGStepType> supportedSteps =
+      Arrays.asList(TERRAFORM_APPLY, TERRAFORM_PLAN, TERRAFORM_DESTROY, TERRAFORM_ROLLBACK, CF_CREATE_STACK,
+          CF_DELETE_STACK, CF_ROLLBACK_STACK, AZURE_CREATE_ARM_RESOURCE, AZURE_CREATE_BP_RESOURCE,
+          AZURE_ROLLBACK_ARM_RESOURCE, io.harness.cdng.pipeline.NGStepType.SHELL_SCRIPT_PROVISIONER, TERRAGRUNT_PLAN,
+          TERRAGRUNT_APPLY, TERRAGRUNT_DESTROY, TERRAGRUNT_ROLLBACK);
 
   @Getter private final String displayName;
   ProvisionerType(String displayName) {

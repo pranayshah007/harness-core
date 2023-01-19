@@ -20,6 +20,7 @@ import io.harness.ng.core.template.RefreshResponseDTO;
 import io.harness.ng.core.template.TemplateApplyRequestDTO;
 import io.harness.ng.core.template.TemplateListType;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
+import io.harness.ng.core.template.TemplateMetadataSummaryResponseDTO;
 import io.harness.ng.core.template.TemplateReferenceRequestDTO;
 import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.ng.core.template.TemplateSummaryResponseDTO;
@@ -56,6 +57,15 @@ public interface TemplateResourceClient {
 
   @POST(TEMPLATE_ENDPOINT + "list")
   Call<ResponseDTO<PageResponse<TemplateSummaryResponseDTO>>> listTemplates(
+      @Query(value = NGCommonEntityConstants.ACCOUNT_KEY) @NotEmpty String accountIdentifier,
+      @Query(value = NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Query(value = NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @Query(value = "templateListType") TemplateListType templateListType,
+      @Query(value = NGResourceFilterConstants.PAGE_KEY) int page, @Query(NGCommonEntityConstants.SIZE) int size,
+      @Body TemplateFilterPropertiesDTO filterProperties);
+
+  @POST(TEMPLATE_ENDPOINT + "list-metadata")
+  Call<ResponseDTO<PageResponse<TemplateMetadataSummaryResponseDTO>>> listTemplateMetadata(
       @Query(value = NGCommonEntityConstants.ACCOUNT_KEY) @NotEmpty String accountIdentifier,
       @Query(value = NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Query(value = NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,

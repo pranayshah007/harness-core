@@ -993,7 +993,7 @@
 7254:software.wings.service.impl.aws.model.request.AwsCloudWatchStatisticsRequest
 7255:software.wings.service.impl.aws.model.request.AwsLambdaDetailsRequest
 7256:software.wings.service.impl.aws.model.response.AwsLambdaDetailsResponse
-7258:io.harness.security.encryption.EncryptableSettingWithEncryptionDetails
+7258:io.harness.security.encryption.setting.EncryptableSettingWithEncryptionDetails
 7259:software.wings.api.jira.JiraExecutionData.JiraIssueData
 7260:software.wings.api.k8s.K8sSwapServiceElement
 7261:software.wings.beans.SlackMessage
@@ -2255,6 +2255,8 @@
 88512:io.harness.yaml.repository.Reference
 88513:io.harness.yaml.repository.ReferenceType
 88514:io.harness.yaml.repository.Strategy
+88515:io.harness.yaml.registry.Registry
+88516:io.harness.yaml.registry.RegistryCredential
 90001:software.wings.service.impl.apm.AWSPrometheusInfo
 95001:io.harness.delegate.beans.logstreaming.UnitProgressData
 95002:io.harness.waiter.WaitInstanceTimeoutCallback
@@ -2831,6 +2833,11 @@
 643310:io.harness.delegate.beans.connector.awssecretmanager.AwsSMCredentialSpecAssumeIAMDTO
 643311:io.harness.delegate.beans.connector.awssecretmanager.AwsSMCredentialSpecAssumeSTSDTO
 673567:java.util.concurrent.ConcurrentHashMap
+673568:io.harness.delegate.task.scm.ScmBatchGetFileTaskParams
+673569:io.harness.delegate.task.scm.GetFileTaskParamsPerConnector
+673570:io.harness.delegate.task.scm.ConnectorDecryptionParams
+673571:io.harness.delegate.task.scm.GitFileLocationDetails
+673572:io.harness.delegate.task.scm.ScmBatchGetFileTaskResponseData
 878001:io.harness.steps.matrix.StrategyMetadata
 878018:io.harness.pms.sdk.core.adviser.proceedwithdefault.ProceedWithDefaultAdviserParameters
 878019:io.harness.pms.sdk.core.execution.AsyncTimeoutResponseData
@@ -2866,6 +2873,8 @@
 955017:io.harness.beans.response.ListFilesInCommitResponse
 955018:io.harness.beans.FileGitDetails
 955019:io.harness.beans.ContentType
+955020:io.harness.beans.response.ScmGitMetadata
+955021:io.harness.beans.GetBatchFileRequestIdentifier
 970001:io.harness.request.RequestContextData
 970002:io.harness.request.RequestContext
 970003:io.harness.gitsync.interceptor.GitSyncBranchContext

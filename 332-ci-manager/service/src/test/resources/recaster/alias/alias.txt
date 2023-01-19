@@ -165,6 +165,7 @@ io.harness.yaml.sto.variables.STOYamlScanMode
 io.harness.yaml.sto.variables.STOYamlGenericConfig
 io.harness.yaml.sto.variables.STOYamlTargetType
 io.harness.yaml.sto.variables.STOYamlLogLevel
+io.harness.yaml.sto.variables.STOYamlLogSerializer
 io.harness.yaml.sto.variables.STOYamlFailOnSeverity
 io.harness.beans.steps.stepinfo.security.NiktoStepInfo
 io.harness.beans.steps.stepinfo.security.NmapStepInfo

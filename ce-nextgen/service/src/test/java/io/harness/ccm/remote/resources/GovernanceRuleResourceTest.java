@@ -90,6 +90,7 @@ public class GovernanceRuleResourceTest extends CategoryTest {
                .cloudProvider(CLOUD)
                .build();
     when(governanceRuleService.fetchById(ACCOUNT_ID, UUID, false)).thenReturn(rule);
+    when(governanceRuleService.fetchById(ACCOUNT_ID, UUID, true)).thenReturn(rule);
     rulesManagement = new GovernanceRuleResource(governanceRuleService, ruleEnforcementService, ruleSetService,
         connectorResourceClient, rulesExecutionService, telemetryReporter, transactionTemplate, outboxService,
         yamlSchemaProvider, yamlSchemaValidator);

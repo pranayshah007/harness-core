@@ -9,7 +9,6 @@ package io.harness.ngmigration.service.step.terraform;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.provision.terraform.TerraformApplyStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.plancreator.steps.AbstractStepNode;
@@ -47,10 +46,7 @@ public class TerraformProvisionStepMapperImpl extends BaseTerraformProvisionerMa
   @Override
   public AbstractStepNode getSpec(
       Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities, GraphNode graphNode) {
-    ApplyTerraformProvisionState state = (ApplyTerraformProvisionState) getState(graphNode);
-    TerraformApplyStepNode terraformApplyStepNode = new TerraformApplyStepNode();
-    baseSetup(graphNode, terraformApplyStepNode);
-    return terraformApplyStepNode;
+    return getStepNode(entities, migratedEntities, graphNode);
   }
 
   @Override

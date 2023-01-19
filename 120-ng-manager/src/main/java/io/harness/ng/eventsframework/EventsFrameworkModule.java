@@ -33,7 +33,7 @@ import io.harness.eventsframework.impl.noop.NoOpProducer;
 import io.harness.eventsframework.impl.redis.GitAwareRedisProducer;
 import io.harness.eventsframework.impl.redis.RedisConsumer;
 import io.harness.eventsframework.impl.redis.RedisProducer;
-import io.harness.pms.redisConsumer.DebeziumConsumerConfig;
+import io.harness.pms.redisConsumer.DebeziumConsumersConfig;
 import io.harness.redis.RedisConfig;
 import io.harness.redis.RedissonClientFactory;
 import io.harness.version.VersionInfoManager;
@@ -43,7 +43,6 @@ import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
-import java.util.List;
 import javax.cache.Cache;
 import javax.cache.expiry.AccessedExpiryPolicy;
 import javax.cache.expiry.Duration;
@@ -54,7 +53,7 @@ import org.redisson.api.RedissonClient;
 @AllArgsConstructor
 public class EventsFrameworkModule extends AbstractModule {
   private final EventsFrameworkConfiguration eventsFrameworkConfiguration;
-  private final List<DebeziumConsumerConfig> debeziumConsumerConfigs;
+  private final DebeziumConsumersConfig debeziumConsumersConfigs;
 
   @Override
   protected void configure() {
@@ -243,9 +242,10 @@ public class EventsFrameworkModule extends AbstractModule {
               redisConfig.getEnvNamespace()));
       bind(Consumer.class)
           .annotatedWith(Names.named(PIPELINE_EXECUTION_SUMMARY_REDIS_EVENT_CONSUMER_CD))
-          .toInstance(RedisConsumer.of(debeziumConsumerConfigs.get(0).getTopicName(), NG_MANAGER.getServiceId(),
-              redissonClient, EventsFrameworkConstants.DEFAULT_MAX_PROCESSING_TIME,
-              debeziumConsumerConfigs.get(0).getBatchSize(), redisConfig.getEnvNamespace()));
+          .toInstance(RedisConsumer.of(debeziumConsumersConfigs.getPlanExecutionsSummaryStreaming().getTopic(),
+              NG_MANAGER.getServiceId(), redissonClient, EventsFrameworkConstants.DEFAULT_MAX_PROCESSING_TIME,
+              debeziumConsumersConfigs.getPlanExecutionsSummaryStreaming().getBatchSize(),
+              redisConfig.getEnvNamespace()));
     }
   }
 

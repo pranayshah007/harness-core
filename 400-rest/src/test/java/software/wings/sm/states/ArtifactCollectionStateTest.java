@@ -18,6 +18,7 @@ import static io.harness.rule.OwnerRule.AADITI;
 import static io.harness.rule.OwnerRule.FERNANDOD;
 import static io.harness.rule.OwnerRule.GEORGE;
 import static io.harness.rule.OwnerRule.INDER;
+import static io.harness.rule.OwnerRule.LUCAS_SALES;
 import static io.harness.rule.OwnerRule.PRABU;
 import static io.harness.rule.OwnerRule.PUNEET;
 import static io.harness.rule.OwnerRule.SRINIVAS;
@@ -46,6 +47,7 @@ import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyMap;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -225,6 +227,21 @@ public class ArtifactCollectionStateTest extends CategoryTest {
     when(delayEventHelper.delay(anyInt(), any())).thenReturn("anyGUID");
     when(subdomainUrlHelper.getPortalBaseUrl(any())).thenReturn("baseUrl");
     nexusArtifactStream.setArtifactStreamParameterized(true);
+  }
+
+  @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void shouldFetchArtifacSourcetBySourceVariableValue() {
+    doReturn(null).when(artifactStreamService).get(ARTIFACT_STREAM_ID);
+    doReturn(jenkinsArtifactStream)
+        .when(artifactStreamService)
+        .fetchByArtifactSourceVariableValue(APP_ID, ARTIFACT_STREAM_ID);
+    ExecutionResponse executionResponse = artifactCollectionState.execute(executionContext);
+    assertThat(executionResponse).isNotNull();
+    assertThat(executionResponse.getExecutionStatus()).isEqualTo(SUCCESS);
+    verify(artifactStreamService).get(ARTIFACT_STREAM_ID);
+    verify(artifactStreamService).fetchByArtifactSourceVariableValue(APP_ID, ARTIFACT_STREAM_ID);
   }
 
   @Test

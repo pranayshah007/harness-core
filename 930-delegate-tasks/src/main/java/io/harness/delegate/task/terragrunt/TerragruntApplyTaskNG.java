@@ -57,6 +57,7 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.Charsets;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jose4j.lang.JoseException;
 
@@ -121,7 +122,9 @@ public class TerragruntApplyTaskNG extends AbstractDelegateRunnableTask {
 
       TerragruntClient client = terragruntContext.getClient();
 
-      if (TerragruntTaskRunType.RUN_MODULE == applyTaskParameters.getRunConfiguration().getRunType()) {
+      if (TerragruntTaskRunType.RUN_MODULE == applyTaskParameters.getRunConfiguration().getRunType()
+          || (TerragruntTaskRunType.RUN_ALL == applyTaskParameters.getRunConfiguration().getRunType()
+              && StringUtils.isNotBlank(terragruntContext.getBackendFile()))) {
         executeWithErrorHandling(client::init,
             createCliRequest(TerragruntCliRequest.builder(), terragruntContext, applyTaskParameters).build(),
             applyLogCallback);

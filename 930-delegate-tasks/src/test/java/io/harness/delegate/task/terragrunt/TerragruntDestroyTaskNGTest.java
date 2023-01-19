@@ -193,6 +193,10 @@ public class TerragruntDestroyTaskNGTest extends CategoryTest {
         .thenReturn(terragruntContext);
     doNothing().when(taskService).decryptTaskParameters(any());
     doReturn(logCallback).when(taskService).getLogCallback(any(), any(), any());
+    when(cliHelper.executeCliCommand(
+             eq("echo \"y\" | terragrunt run-all init -backend-config=backendFileDirectory/test-backendFile.tfvars"),
+             anyLong(), eq(destroyParameters.getEnvVars()), any(), any(), any(), any(), any()))
+        .thenReturn(CliResponse.builder().exitCode(0).build());
     when(cliHelper.executeCliCommand(eq("echo \"y\" | terragrunt run-all workspace list"), anyLong(),
              eq(destroyParameters.getEnvVars()), any(), any(), any(), any(), any()))
         .thenReturn(CliResponse.builder()

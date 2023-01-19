@@ -29,6 +29,7 @@ public class ResourceClientConfigs {
   @JsonProperty("resourceGroup") @ConfigSecret ServiceConfig resourceGroupService;
   @JsonProperty("template-service") @ConfigSecret ServiceConfig templateService;
   @JsonProperty("gitops-service") @ConfigSecret ServiceConfig gitopsService;
+  @JsonProperty("ce-nextgen") @ConfigSecret ServiceConfig ceNextGen;
 
   @Value
   @Builder

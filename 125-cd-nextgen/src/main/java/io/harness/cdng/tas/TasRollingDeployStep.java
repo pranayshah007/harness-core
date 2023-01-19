@@ -70,6 +70,7 @@ import io.harness.tasks.ResponseData;
 import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -86,7 +87,7 @@ public class TasRollingDeployStep extends TaskChainExecutableWithRollbackAndRbac
                                                .build();
   @Inject private OutcomeService outcomeService;
   @Inject private TasStepHelper tasStepHelper;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer kryoSerializer;
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private InstanceInfoService instanceInfoService;
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;

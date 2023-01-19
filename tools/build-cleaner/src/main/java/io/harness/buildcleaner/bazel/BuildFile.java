@@ -184,17 +184,17 @@ public class BuildFile {
     }
 
     String currContent = Files.readString(buildFilePath);
-    log.debug("Current file content: \n {}", currContent);
+    log.trace("Current file content: \n {}", currContent);
     Matcher matcher = pattern.matcher(currContent);
     StringBuilder builder = new StringBuilder();
     builder.append(currContent);
     String replacedFileContent = "";
     while (matcher.find()) {
       String textToReplace = matcher.group(DEPS_CAPTURING_GROUP);
-      log.debug("Found text to replace: {}", textToReplace);
+      log.trace("Found text to replace: {}", textToReplace);
       replacedFileContent =
           builder.replace(matcher.start(DEPS_CAPTURING_GROUP), matcher.end(DEPS_CAPTURING_GROUP), newDeps).toString();
-      log.debug("Replaced file content: {}", replacedFileContent);
+      log.trace("Replaced file content: {}", replacedFileContent);
     }
     if (!replacedFileContent.equalsIgnoreCase("")) {
       // Overwrite a file only if we are able to replace.

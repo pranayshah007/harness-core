@@ -177,6 +177,10 @@ public class AzureArtifactsRegistryServiceImpl implements AzureArtifactsRegistry
       }
     }
 
+    if (feedId == null) {
+      throw new InvalidRequestException("Invalid feed. Please input a valid feed.");
+    }
+
     List<AzureArtifactsPackage> packages = listPackages(azureArtifactsInternalConfig, project, feed, packageType);
 
     String packageId = null;
@@ -190,6 +194,10 @@ public class AzureArtifactsRegistryServiceImpl implements AzureArtifactsRegistry
     }
 
     Response<AzureArtifactsPackageVersions> packageVersionsList;
+
+    if (packageId == null) {
+      throw new InvalidRequestException("Please input a valid packageName for the given feed and packageType.");
+    }
 
     try {
       packageVersionsList =
@@ -316,6 +324,10 @@ public class AzureArtifactsRegistryServiceImpl implements AzureArtifactsRegistry
     }
 
     AzureDevopsProjects ngAzureArtifactsProjects = projectResponse.body();
+
+    if (ngAzureArtifactsProjects == null) {
+      return new ArrayList<>();
+    }
 
     return ngAzureArtifactsProjects.getValue();
   }

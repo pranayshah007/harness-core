@@ -71,7 +71,7 @@ public class EnvironmentsPlanCreatorHelper {
         emptyIfNull(environments).stream().collect(Collectors.toMap(Environment::getIdentifier, Function.identity()));
 
     Set<IndividualEnvData> listEnvData = new HashSet<>();
-    if (!EnvironmentInfraFilterHelper.areFiltersPresent(environmentsYaml)) {
+    if (!EnvironmentInfraFilterUtils.areFiltersPresent(environmentsYaml)) {
       if (isNotEmpty(environmentYamlV2s)) {
         for (EnvironmentYamlV2 envV2Yaml : environmentYamlV2s) {
           if (isNotEmpty(envV2Yaml.getFilters().getValue())) {

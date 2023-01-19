@@ -111,6 +111,7 @@ bazel* diptiman.adak@harness.io udham.singh@harness.io
 
 /100-migrator/ deepak.puthraya@harness.io manjunatha.etagi@harness.io brett@harness.io arvind.choudhary@harness.io
 /120-ng-manager/modules/ng-settings/ nishant.saini@harness.io piyush.patel@harness.io manish.manchanda@harness.io
+/970-ng-commons/src/main/java/io/harness/ModuleType.java piyush.patel@harness.io manish.manchanda@harness.io shashank.singh@harness.io meenakshi.raikwar@harness.io
 
 **/contracts/openapi/v1/ mankrit.singh@harness.io vaibhav.si@harness.io ashish.sanodia@harness.io deepak.bolangady@harness.io rashmi.nandasahoo@harness.io
 /scripts/api mankrit.singh@harness.io vaibhav.si@harness.io ashish.sanodia@harness.io

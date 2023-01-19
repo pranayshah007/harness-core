@@ -24,12 +24,25 @@ public interface EnvironmentGroupService {
   Page<EnvironmentGroupEntity> list(
       Criteria criteria, Pageable pageRequest, String projectIdentifier, String orgIdentifier, String accountId);
 
-  EnvironmentGroupEntity delete(
-      String accountId, String orgIdentifier, String projectIdentifier, String envGroupId, Long version);
+  EnvironmentGroupEntity delete(String accountId, String orgIdentifier, String projectIdentifier, String envGroupId,
+      Long version, boolean forceDelete);
 
   EnvironmentGroupEntity update(EnvironmentGroupEntity requestedEntity);
 
-  void deleteAllEnvGroupInProject(String accountId, String orgIdentifier, String projectIdentifier);
+  /**
+   * Deletes all environment groups linked to a particular harness project.
+   * @param accountId  the account id
+   * @param orgIdentifier the organization identifier
+   * @param projectIdentifier the project identifier
+   */
+  boolean deleteAllInProject(String accountId, String orgIdentifier, String projectIdentifier);
+
+  /**
+   * Deletes all environment groups linked to a particular harness org.
+   * @param accountId  the account id
+   * @param orgIdentifier the organization identifier
+   */
+  boolean deleteAllInOrg(String accountId, String orgIdentifier);
 
   Criteria formCriteria(String accountId, String orgIdentifier, String projectIdentifier, boolean deleted,
       String searchTerm, String filterIdentifier, EnvironmentGroupFilterPropertiesDTO filterProperties,

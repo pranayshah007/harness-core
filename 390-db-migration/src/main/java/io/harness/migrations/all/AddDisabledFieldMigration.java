@@ -32,6 +32,7 @@ public class AddDisabledFieldMigration implements Migration {
         User user = userHIterator.next();
         if (!user.getDisabled()) {
           UpdateOperations<User> operations = wingsPersistence.createUpdateOperations(User.class);
+          log.info("Setting users disabled state of user: {}, to: {}", user.getUuid(), false);
           setUnset(operations, UserKeys.disabled, false);
           wingsPersistence.update(user, operations);
         }

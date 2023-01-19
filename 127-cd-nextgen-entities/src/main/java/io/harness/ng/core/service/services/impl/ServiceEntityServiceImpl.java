@@ -777,8 +777,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
     primaryArtifactObjectNode.set(YamlTypes.ARTIFACT_SOURCES, filteredArtifactSourcesNode);
   }
 
-  @Override
-  public boolean forceDeleteAllInProject(String accountId, String orgIdentifier, String projectIdentifier) {
+  private boolean forceDeleteInternal(String accountId, String orgIdentifier, String projectIdentifier) {
     Criteria criteria = CoreCriteriaUtils.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier);
     List<String> services = getServiceIdentifiers(accountId, orgIdentifier, projectIdentifier);
     return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
@@ -798,6 +797,23 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       }
       return true;
     }));
+  }
+
+  @Override
+  public boolean forceDeleteAllInProject(String accountId, String orgIdentifier, String projectIdentifier) {
+    checkArgument(isNotEmpty(accountId), "accountId must be present");
+    checkArgument(isNotEmpty(orgIdentifier), "org identifier must be present");
+    checkArgument(isNotEmpty(projectIdentifier), "project identifier must be present");
+
+    return forceDeleteInternal(accountId, orgIdentifier, projectIdentifier);
+  }
+
+  @Override
+  public boolean forceDeleteAllInOrg(String accountId, String orgIdentifier) {
+    checkArgument(isNotEmpty(accountId), "accountId must be present");
+    checkArgument(isNotEmpty(orgIdentifier), "org identifier must be present");
+
+    return forceDeleteInternal(accountId, orgIdentifier, null);
   }
 
   @Override
