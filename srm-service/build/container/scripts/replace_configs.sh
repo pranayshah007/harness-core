@@ -102,6 +102,10 @@ if [[ "" != "$AUDIT_CLIENT_BASEURL" ]]; then
   export AUDIT_CLIENT_BASEURL; yq -i '.auditClientConfig.baseUrl=env(AUDIT_CLIENT_BASEURL)' $CONFIG_FILE
 fi
 
+if [[ "" != "$WEBHOOK_BASEURL" ]]; then
+  export WEBHOOK_BASEURL; yq -i '.webhookConfig.webhookBaseUrl=env(WEBHOOK_BASEURL)' $CONFIG_FILE
+fi
+
 if [[ "" != "$AUDIT_CLIENT_CONNECT_TIMEOUT" ]]; then
   export AUDIT_CLIENT_CONNECT_TIMEOUT; yq -i '.auditClientConfig.connectTimeOutSeconds=env(AUDIT_CLIENT_CONNECT_TIMEOUT)' $CONFIG_FILE
 fi

@@ -19,16 +19,17 @@ import org.apache.cxf.annotations.EvaluateAllEndpoints;
 @AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CustomChangeWebhookPayload {
+  @NotNull String eventIdentifier;
   @NotNull long startTime;
   @NotNull long endTime;
   @NotNull String user;
   @NotNull CustomChangeWebhookEventDetail eventDetail;
-
   @Value
   @Builder
   public static class CustomChangeWebhookEventDetail {
     @NotNull String description;
     String changeEventDetailsLink;
     String internalLinkToEntity;
+    @NotNull String name;
   }
 }

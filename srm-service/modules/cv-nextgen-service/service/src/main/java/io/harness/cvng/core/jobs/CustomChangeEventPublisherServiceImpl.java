@@ -32,11 +32,13 @@ public class CustomChangeEventPublisherServiceImpl implements CustomChangeEventP
             .setProjectIdentifier(projectParams.getProjectIdentifier())
             .setMonitoredServiceIdentifier(monitoredServiceIdentifier)
             .setChangeSourceIdentifier(changeSourceIdentifier)
+            .setEventIdentifier(customChangeWebhookPayload.getEventIdentifier())
             .setEventDetails(
                 CustomChangeEventDetails.newBuilder()
                     .setChangeEventDetailsLink(customChangeWebhookPayload.getEventDetail().getChangeEventDetailsLink())
                     .setInternalLinkToEntity(customChangeWebhookPayload.getEventDetail().getInternalLinkToEntity())
                     .setDescription(customChangeWebhookPayload.getEventDetail().getDescription())
+                    .setName(customChangeWebhookPayload.getEventDetail().getName())
                     .build())
             .setStartTime(customChangeWebhookPayload.getStartTime())
             .setEndTime(customChangeWebhookPayload.getEndTime())

@@ -20,10 +20,12 @@ message CustomChangeEventDTO {
   int64 startTime = 7;
   int64 endTime = 8;
   string user = 9;
+  string eventIdentifier = 10;
 }
 
 message CustomChangeEventDetails {
   string description = 1;
   string changeEventDetailsLink = 2;
   string internalLinkToEntity = 3;
+  string name = 4;
 }

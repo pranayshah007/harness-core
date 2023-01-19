@@ -10,6 +10,7 @@ package io.harness.serializer.morphia;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.activity.entities.Activity;
+import io.harness.cvng.activity.entities.CustomChangeActivity;
 import io.harness.cvng.activity.entities.DeploymentActivity;
 import io.harness.cvng.activity.entities.HarnessCDCurrentGenActivity;
 import io.harness.cvng.activity.entities.InternalChangeActivity;
@@ -156,6 +157,7 @@ public class CVNextGenMorphiaRegister implements MorphiaRegistrar {
     set.add(BlueGreenVerificationJob.class);
     set.add(DeploymentDataCollectionTask.class);
     set.add(InternalChangeActivity.class);
+    set.add(CustomChangeActivity.class);
     set.add(AppDynamicsCVConfig.class);
     set.add(DeploymentLogAnalysis.class);
     set.add(TestVerificationJob.class);

@@ -64,6 +64,10 @@ public class EventsFrameworkModule extends AbstractModule {
       bind(Producer.class)
           .annotatedWith(Names.named(EventsFrameworkConstants.CUSTOM_CHANGE_EVENT))
           .toInstance(NoOpProducer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME));
+      bind(Consumer.class)
+          .annotatedWith(Names.named(EventsFrameworkConstants.CUSTOM_CHANGE_EVENT))
+          .toInstance(
+              NoOpConsumer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME, EventsFrameworkConstants.DUMMY_GROUP_NAME));
     } else {
       RedissonClient redissonClient = RedissonClientFactory.getClient(redisConfig);
       bind(AbstractProducer.class)
@@ -109,6 +113,12 @@ public class EventsFrameworkModule extends AbstractModule {
           .toInstance(RedisProducer.of(EventsFrameworkConstants.CUSTOM_CHANGE_EVENT, redissonClient,
               EventsFrameworkConstants.CUSTOM_CHANGE_EVENT_MAX_TOPIC_SIZE, CUSTOM_CHANGE_PUBLISHER,
               redisConfig.getEnvNamespace()));
+
+      bind(Consumer.class)
+          .annotatedWith(Names.named(EventsFrameworkConstants.CUSTOM_CHANGE_EVENT))
+          .toInstance(RedisConsumer.of(EventsFrameworkConstants.CUSTOM_CHANGE_EVENT, CV_NEXT_GEN.getServiceId(),
+              redissonClient, EventsFrameworkConstants.CUSTOM_CHANGE_EVENT_MAX_PROCESSING_TIME,
+              EventsFrameworkConstants.CUSTOM_CHANGE_EVENT_FF_BATCH_SIZE, redisConfig.getEnvNamespace()));
     }
   }
 }

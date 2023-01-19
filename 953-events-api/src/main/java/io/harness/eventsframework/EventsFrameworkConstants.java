@@ -127,6 +127,7 @@ public final class EventsFrameworkConstants {
 
   public static final String CUSTOM_CHANGE_EVENT = "srm_custom_change";
 
+  public static final int CUSTOM_CHANGE_EVENT_FF_BATCH_SIZE = 1;
   public static final int CUSTOM_CHANGE_EVENT_MAX_TOPIC_SIZE = 5000;
   public static final int DEFAULT_TOPIC_SIZE = 10000;
   public static final int USER_MEMBERSHIP_TOPIC_SIZE = 100000;
@@ -163,6 +164,8 @@ public final class EventsFrameworkConstants {
   public static final Duration CD_DEPLOYMENT_EVENT_MAX_PROCESSING_TIME = Duration.ofSeconds(20);
 
   public static final Duration INTERNAL_CHANGE_EVENT_MAX_PROCESSING_TIME = Duration.ofSeconds(20);
+
+  public static final Duration CUSTOM_CHANGE_EVENT_MAX_PROCESSING_TIME = Duration.ofSeconds(20);
 
   public static final int DEFAULT_READ_BATCH_SIZE = 50;
   public static final int ENTITY_CRUD_READ_BATCH_SIZE = 50;
