@@ -18,5 +18,5 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ServiceSecrets {
-  @ConfigSecret String ngManagerServiceSecret;
+  @ConfigSecret String platformServiceSecret;
 }

@@ -25,7 +25,7 @@ public class AuditEventStreamingModule extends AbstractModule {
   @Override
   protected void configure() {
     install(new StreamingDestinationClientModule(auditEventStreamingConfig.getAuditClientConfig(),
-        auditEventStreamingConfig.getServiceSecrets().getNgManagerServiceSecret(),
+        auditEventStreamingConfig.getServiceSecrets().getPlatformServiceSecret(),
         AUDIT_EVENT_STREAMING.getServiceId()));
   }
 }

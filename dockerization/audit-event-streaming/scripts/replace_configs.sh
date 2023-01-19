@@ -58,6 +58,6 @@ if [[ "" != "$AUDIT_CLIENT_BASEURL" ]]; then
   export AUDIT_CLIENT_BASEURL; yq -i '.auditClientConfig.baseUrl=env(AUDIT_CLIENT_BASEURL)' $CONFIG_FILE
 fi
 
-if [[ "" != "$NEXT_GEN_MANAGER_SECRET" ]]; then
-  export NEXT_GEN_MANAGER_SECRET; yq -i '.serviceSecrets.ngManagerServiceSecret=env(NEXT_GEN_MANAGER_SECRET)' $CONFIG_FILE
+if [[ "" != "$PLATFORM_SECRET" ]]; then
+  export PLATFORM_SECRET; yq -i '.serviceSecrets.platformServiceSecret=env(PLATFORM_SECRET)' $CONFIG_FILE
 fi

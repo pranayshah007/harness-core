@@ -11,10 +11,13 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import io.harness.serializer.YamlUtils;
 
-import java.io.File;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.stream.Collectors;
+import javax.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.FileUtils;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
@@ -24,10 +27,15 @@ import org.springframework.core.env.Environment;
 public class AuditEventStreamingConfiguration {
   @Bean
   public static AuditEventStreamingConfig auditEventStreamingConfig(Environment environment) throws IOException {
-    String configFilePath = environment.getProperty("config-file",
-        "/Users/nishantsaini/IdeaProjects/harness-core/audit-event-streaming/service/src/main/resources/application.yml");
-    log.info("audit-event-streaming configFilePath: {}", configFilePath);
-    File configFile = new File(configFilePath);
-    return new YamlUtils().read(FileUtils.readFileToString(configFile, UTF_8), AuditEventStreamingConfig.class);
+    String fileName = "application.yml";
+    InputStream inputStream = Thread.currentThread().getContextClassLoader().getResourceAsStream(fileName);
+    if (inputStream != null) {
+      InputStreamReader inputStreamReader = new InputStreamReader(inputStream, UTF_8);
+      BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
+      String fileContent = bufferedReader.lines().collect(Collectors.joining(System.lineSeparator()));
+      return new YamlUtils().read(fileContent, AuditEventStreamingConfig.class);
+    } else {
+      throw new NotFoundException(String.format("File %s not found or could not be read.", fileName));
+    }
   }
 }
