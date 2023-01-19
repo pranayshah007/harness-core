@@ -26,12 +26,12 @@ public abstract class DelegateServiceAppTestBase extends CategoryTest {
   }
 
   public static String getResourceFilePath(String filePath) {
-    return isBazelTest() ? "270-delegate-service-app/src/test/resources/" + filePath
+    return isBazelTest() ? "419-delegate-service-app/src/test/resources/" + filePath
                          : ResourceHelpers.resourceFilePath(filePath);
   }
 
   public static String getSourceResourceFile(Class clazz, String filePath) {
-    return isBazelTest() ? "270-delegate-service-app/src/main/resources" + filePath
+    return isBazelTest() ? "419-delegate-service-app/src/main/resources" + filePath
                          : clazz.getResource(filePath).getFile();
   }
 }

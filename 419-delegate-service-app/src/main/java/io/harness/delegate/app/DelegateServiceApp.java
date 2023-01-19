@@ -1,0 +1,97 @@
+/*
+ * Copyright 2021 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
+package io.harness.delegate.app;
+
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.introspect.Annotated;
+import com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector;
+import com.fasterxml.jackson.databind.jsontype.NamedType;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
+import io.dropwizard.configuration.SubstitutingSourceProvider;
+import io.dropwizard.setup.Bootstrap;
+import io.federecio.dropwizard.swagger.SwaggerBundle;
+import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
+
+import io.dropwizard.Application;
+import io.dropwizard.setup.Environment;
+import io.harness.serializer.AnnotationAwareJsonSubtypeResolver;
+import io.harness.threading.ExecutorModule;
+import io.harness.threading.ThreadPool;
+import lombok.extern.slf4j.Slf4j;
+import software.wings.jersey.JsonViews;
+
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+import static io.harness.data.structure.CollectionUtils.emptyIfNull;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.logging.LoggingInitializer.initializeLogging;
+
+@OwnedBy(HarnessTeam.DEL)
+@Slf4j
+public class DelegateServiceApp extends Application<DelegateServiceConfiguration> {
+  public static void main(String... args) throws Exception {
+    new DelegateServiceApp().run(args);
+  }
+
+  @Override
+  public String getName() {
+    return "Delegate Service Application";
+  }
+
+  @Override
+  public void run(DelegateServiceConfiguration delegateServiceConfig, Environment environment) throws Exception {
+    log.info("Starting Delegate Service App");
+    ExecutorModule.getInstance().setExecutorService(ThreadPool.create(
+            20, 1000, 500L, TimeUnit.MILLISECONDS, new ThreadFactoryBuilder().setNameFormat("main-app-pool-%d").build()));
+    // Modules to be added as needed.
+  }
+
+  @Override
+  public void initialize(Bootstrap<DelegateServiceConfiguration> bootstrap) {
+    initializeLogging();
+    log.info("bootstrapping ...");
+    bootstrap.addCommand(new InspectCommand<>(this));
+    // Enable variable substitution with environment variables
+    bootstrap.setConfigurationSourceProvider(new SubstitutingSourceProvider(
+            bootstrap.getConfigurationSourceProvider(), new EnvironmentVariableSubstitutor(false)));
+    bootstrap.addBundle(new SwaggerBundle<DelegateServiceConfiguration>() {
+      @Override
+      protected SwaggerBundleConfiguration getSwaggerBundleConfiguration(DelegateServiceConfiguration delegateServiceConfig) {
+        return delegateServiceConfig.getSwaggerBundleConfiguration();
+      }
+    });
+    configureObjectMapper(bootstrap.getObjectMapper());
+    log.info("bootstrapping done.");
+  }
+
+  public static void configureObjectMapper(final ObjectMapper mapper) {
+    mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    final AnnotationAwareJsonSubtypeResolver subtypeResolver =
+            AnnotationAwareJsonSubtypeResolver.newInstance(mapper.getSubtypeResolver());
+    mapper.setSubtypeResolver(subtypeResolver);
+    mapper.setConfig(mapper.getSerializationConfig().withView(JsonViews.Public.class));
+    mapper.setAnnotationIntrospector(new JacksonAnnotationIntrospector() {
+      // defining a different serialVersionUID then base. We don't care about serializing it.
+      private static final long serialVersionUID = 7777451630128399020L;
+      @Override
+      public List<NamedType> findSubtypes(Annotated a) {
+        final List<NamedType> subtypesFromSuper = super.findSubtypes(a);
+        if (isNotEmpty(subtypesFromSuper)) {
+          return subtypesFromSuper;
+        }
+        return emptyIfNull(subtypeResolver.findSubtypes(a));
+      }
+    });
+  }
+
+}
