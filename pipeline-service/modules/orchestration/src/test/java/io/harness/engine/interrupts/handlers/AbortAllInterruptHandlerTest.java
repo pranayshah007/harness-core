@@ -8,11 +8,17 @@
 package io.harness.engine.interrupts.handlers;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.pms.contracts.execution.Status.ABORTED;
 import static io.harness.pms.contracts.execution.Status.DISCONTINUING;
+import static io.harness.pms.contracts.execution.Status.QUEUED;
+import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.PRASHANT;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.OrchestrationTestBase;
@@ -23,6 +29,7 @@ import io.harness.engine.OrchestrationTestHelper;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.execution.NodeExecution;
+import io.harness.execution.PlanExecution;
 import io.harness.interrupts.Interrupt;
 import io.harness.interrupts.Interrupt.State;
 import io.harness.pms.contracts.execution.Status;
@@ -148,6 +155,37 @@ public class AbortAllInterruptHandlerTest extends OrchestrationTestBase {
   }
 
   @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testFinalisePlanExecutionIfQueued() {
+    String planExecutionId = generateUuid();
+    String interruptUuid = generateUuid();
+    Interrupt interrupt = Interrupt.builder()
+                              .uuid(interruptUuid)
+                              .type(InterruptType.ABORT_ALL)
+                              .interruptConfig(InterruptConfig.newBuilder().build())
+                              .planExecutionId(planExecutionId)
+                              .state(State.PROCESSING)
+                              .build();
+
+    mongoTemplate.save(interrupt);
+
+    abortAllInterruptHandler.finalisePlanExecutionIfQueued(interrupt);
+    verify(planExecutionService, times(1))
+        .updateStatusForceful(interrupt.getPlanExecutionId(), ABORTED, null, false, EnumSet.of(QUEUED));
+    // returned PlanExecution will be null. So no action on interrupt.
+    assertThat(mongoTemplate.findById(interruptUuid, Interrupt.class).getState()).isEqualTo(State.PROCESSING);
+
+    doReturn(PlanExecution.builder().status(ABORTED).build())
+        .when(planExecutionService)
+        .updateStatusForceful(interrupt.getPlanExecutionId(), ABORTED, null, false, EnumSet.of(QUEUED));
+    abortAllInterruptHandler.finalisePlanExecutionIfQueued(interrupt);
+    // Returned planExecution has the status ABORTED. So interrupt will be marked as PROCESSED_SUCCESSFULLY.
+    assertThat(mongoTemplate.findById(interruptUuid, Interrupt.class).getState())
+        .isEqualTo(State.PROCESSED_SUCCESSFULLY);
+  }
+
+  @Test
   @Owner(developers = PRASHANTSHARMA)
   @Category(UnitTests.class)
   public void testHandleAllNodes() {
@@ -171,6 +209,8 @@ public class AbortAllInterruptHandlerTest extends OrchestrationTestBase {
     assertThat(handledInterrupt).isNotNull();
     assertThat(handledInterrupt.getUuid()).isEqualTo(interruptUuid);
     assertThat(handledInterrupt.getState()).isEqualTo(State.PROCESSING);
+    verify(planExecutionService, times(1))
+        .updateStatusForceful(interrupt.getPlanExecutionId(), ABORTED, null, false, EnumSet.of(QUEUED));
 
     // case2: updatedCount < 0
     when(nodeExecutionService.markAllLeavesAndQueuedNodesDiscontinuing(

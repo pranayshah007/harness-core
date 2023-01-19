@@ -26,6 +26,7 @@ import io.harness.engine.interrupts.InterruptService;
 import io.harness.engine.interrupts.helpers.AbortHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
+import io.harness.execution.PlanExecution;
 import io.harness.interrupts.Interrupt;
 import io.harness.logging.AutoLogContext;
 import io.harness.pms.contracts.execution.Status;
@@ -36,6 +37,7 @@ import io.harness.waiter.WaitNotifyEngine;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import javax.validation.Valid;
 import lombok.NonNull;
@@ -111,6 +113,17 @@ public class AbortAllInterruptHandler extends InterruptPropagatorHandler impleme
     try (AutoLogContext ignore = interrupt.autoLogContext()) {
       log.info("Stating to handle interrupt for Plan Execution");
       return handleAllNodes(interrupt);
+    }
+  }
+
+  @Override
+  void finalisePlanExecutionIfQueued(Interrupt interrupt) {
+    // ABORT the planExecution if its QUEUED.
+    PlanExecution planExecution = planExecutionService.updateStatusForceful(
+        interrupt.getPlanExecutionId(), Status.ABORTED, null, false, EnumSet.of(Status.QUEUED));
+    if (planExecution != null && planExecution.getStatus() == Status.ABORTED) {
+      // IF planExecution status is ABORTED then mark the interrupt as PROCESSED_SUCCESSFULLY.
+      interruptService.markProcessed(interrupt.getUuid(), PROCESSED_SUCCESSFULLY);
     }
   }
 

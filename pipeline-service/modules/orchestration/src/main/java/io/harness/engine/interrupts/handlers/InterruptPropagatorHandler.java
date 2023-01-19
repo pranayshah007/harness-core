@@ -83,11 +83,16 @@ public abstract class InterruptPropagatorHandler {
     return handleDiscontinuingNodes(updatedInterrupt, updatedCount);
   }
 
+  void finalisePlanExecutionIfQueued(Interrupt interrupt) {}
+
   protected Interrupt handleDiscontinuingNodes(Interrupt updatedInterrupt, long updatedCount) {
     if (updatedCount < 0) {
       // IF count is less than 0 then the update didn't go through
       return interruptService.markProcessed(updatedInterrupt.getUuid(), PROCESSED_UNSUCCESSFULLY);
     } else if (updatedCount == 0) {
+      // If the planExecution is queued then no nodeExecution is created. So in that case updatedCount will always be 0.
+      // And we can directly conclude the execution.
+      finalisePlanExecutionIfQueued(updatedInterrupt);
       // If count is 0 that means no running leaf node and hence nothing to do
       return updatedInterrupt;
     } else {
