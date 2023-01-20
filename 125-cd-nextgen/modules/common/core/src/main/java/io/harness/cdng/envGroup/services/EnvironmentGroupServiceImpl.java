@@ -43,6 +43,7 @@ import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
 import io.harness.eventsframework.schemas.entitysetupusage.EntitySetupUsageCreateV2DTO;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.ReferencedEntityException;
 import io.harness.exception.UnexpectedException;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.common.beans.NGTag.NGTagKeys;
@@ -448,7 +449,7 @@ public class EnvironmentGroupServiceImpl implements EnvironmentGroupService {
           "Error while deleting the Environment Group as was not able to check entity reference records.");
     }
     if (EmptyPredicate.isNotEmpty(referredByEntities)) {
-      throw new InvalidRequestException(String.format(
+      throw new ReferencedEntityException(String.format(
           "Could not delete the Environment Group %s as it is referenced by other entities - " + referredByEntities,
           envGroupEntity.getIdentifier()));
     }

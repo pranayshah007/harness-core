@@ -4449,7 +4449,6 @@ public class DelegateServiceImpl implements DelegateService {
             -> DelegateDTO.convertToDTO(delegate, delegateSetupService.listDelegateImplicitSelectors(delegate)))
         .collect(Collectors.toList());
   }
-
   private boolean checkForDelegateHavingAllTags(Delegate delegate, DelegateTags tags) {
     List<String> delegateTags = delegateSetupService.listDelegateImplicitSelectors(delegate);
     if (isNotEmpty(delegate.getTags())) {

@@ -417,6 +417,15 @@ if [[ "$EVENTS_FRAMEWORK_USE_SENTINEL" == "true" ]]; then
   fi
 fi
 
+if [[ "" != "$EVENTS_FRAMEWORK_SNAPSHOT_REDIS_SENTINELS" ]]; then
+  IFS=',' read -ra SENTINEL_URLS <<< "$EVENTS_FRAMEWORK_SNAPSHOT_REDIS_SENTINELS"
+  INDEX=0
+  for REDIS_SENTINEL_URL in "${SENTINEL_URLS[@]}"; do
+    export REDIS_SENTINEL_URL; export INDEX; yq -i '.eventsFrameworkSnapshotDebezium.redis.sentinelUrls.[env(INDEX)]=env(REDIS_SENTINEL_URL)' $CONFIG_FILE
+    INDEX=$(expr $INDEX + 1)
+  done
+fi
+
 replace_key_value cacheConfig.cacheNamespace $CACHE_NAMESPACE
 replace_key_value cacheConfig.cacheBackend $CACHE_BACKEND
 replace_key_value cacheConfig.enterpriseCacheEnabled $ENTERPRISE_CACHE_ENABLED
@@ -431,6 +440,17 @@ replace_key_value eventsFramework.redis.nettyThreads $EVENTS_FRAMEWORK_NETTY_THR
 replace_key_value eventsFramework.redis.sslConfig.enabled $EVENTS_FRAMEWORK_REDIS_SSL_ENABLED
 replace_key_value eventsFramework.redis.sslConfig.CATrustStorePath $EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PATH
 replace_key_value eventsFramework.redis.sslConfig.CATrustStorePassword $EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PASSWORD
+
+replace_key_value eventsFrameworkSnapshotDebezium.redis.sentinel $EVENTS_FRAMEWORK_SNAPSHOT_USE_SENTINEL
+replace_key_value eventsFrameworkSnapshotDebezium.redis.envNamespace $EVENTS_FRAMEWORK_SNAPSHOT_ENV_NAMESPACE
+replace_key_value eventsFrameworkSnapshotDebezium.redis.redisUrl $EVENTS_FRAMEWORK_SNAPSHOT_REDIS_URL
+replace_key_value eventsFrameworkSnapshotDebezium.redis.masterName $EVENTS_FRAMEWORK_SNAPSHOT_SENTINEL_MASTER_NAME
+replace_key_value eventsFrameworkSnapshotDebezium.redis.userName $EVENTS_FRAMEWORK_SNAPSHOT_REDIS_USERNAME
+replace_key_value eventsFrameworkSnapshotDebezium.redis.password $EVENTS_FRAMEWORK_SNAPSHOT_REDIS_PASSWORD
+replace_key_value eventsFrameworkSnapshotDebezium.redis.nettyThreads $EVENTS_FRAMEWORK_SNAPSHOT_NETTY_THREADS
+replace_key_value eventsFrameworkSnapshotDebezium.redis.sslConfig.enabled $EVENTS_FRAMEWORK_SNAPSHOT_REDIS_SSL_ENABLED
+replace_key_value eventsFrameworkSnapshotDebezium.redis.sslConfig.CATrustStorePath $EVENTS_FRAMEWORK_SNAPSHOT_REDIS_SSL_CA_TRUST_STORE_PATH
+replace_key_value eventsFrameworkSnapshotDebezium.redis.sslConfig.CATrustStorePassword $EVENTS_FRAMEWORK_SNAPSHOT_REDIS_SSL_CA_TRUST_STORE_PASSWORD
 
 if [[ "" != "$LOCK_CONFIG_REDIS_SENTINELS" ]]; then
   IFS=',' read -ra SENTINEL_URLS <<< "$LOCK_CONFIG_REDIS_SENTINELS"

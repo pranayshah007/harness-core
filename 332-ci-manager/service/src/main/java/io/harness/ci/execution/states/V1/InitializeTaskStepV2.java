@@ -201,9 +201,7 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
                                           .payload(payload)
                                           .build();
       try {
-        Response<EnqueueResponse> execute =
-            hsqsServiceClient.enqueue(enqueueRequest, ciExecutionServiceConfig.getQueueServiceClient().getAuthToken())
-                .execute();
+        Response<EnqueueResponse> execute = hsqsServiceClient.enqueue(enqueueRequest).execute();
         if (execute.code() == 200) {
           log.info("build queued. message id: {}", execute.body().getItemId());
         } else {

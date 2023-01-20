@@ -14,9 +14,11 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.serializer.HObjectMapper.configureObjectMapperForNG;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.common.NGExpressionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.serializer.AnnotationAwareJsonSubtypeResolver;
+import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -586,6 +588,44 @@ public class YamlUtils {
       removeUuidInObject(node);
     } else if (node.isArray()) {
       removeUuidInArray(node);
+    }
+  }
+
+  public String getYamlWithoutInputs(String yaml) throws IOException {
+    YamlField yamlField = YamlUtils.readTree(yaml);
+    JsonNode pipelineJsonNode = yamlField.getNode().getCurrJsonNode();
+    YamlUtils.removeInputs(pipelineJsonNode);
+    return YamlPipelineUtils.writeYamlString(pipelineJsonNode);
+  }
+
+  public void removeInputs(JsonNode node) {
+    if (node.isObject()) {
+      removeInputInObject(node);
+    } else if (node.isArray()) {
+      removeInputInArray(node);
+    }
+  }
+
+  private void removeInputInObject(JsonNode node) {
+    ObjectNode objectNode = (ObjectNode) node;
+    List<String> keysToRemove = new ArrayList<>();
+    for (Iterator<Entry<String, JsonNode>> it = objectNode.fields(); it.hasNext();) {
+      Entry<String, JsonNode> field = it.next();
+      if (NGExpressionUtils.matchesRawInputSetPattern(field.getValue().toString())) {
+        keysToRemove.add(field.getKey());
+      } else {
+        removeInputs(field.getValue());
+      }
+    }
+    for (String key : keysToRemove) {
+      objectNode.remove(key);
+    }
+  }
+
+  private void removeInputInArray(JsonNode node) {
+    ArrayNode arrayNode = (ArrayNode) node;
+    for (Iterator<JsonNode> it = arrayNode.elements(); it.hasNext();) {
+      removeInputs(it.next());
     }
   }
 

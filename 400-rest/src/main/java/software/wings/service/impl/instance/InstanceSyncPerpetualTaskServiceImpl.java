@@ -20,13 +20,16 @@ import io.harness.perpetualtask.internal.PerpetualTaskRecord.PerpetualTaskRecord
 import software.wings.api.DeploymentSummary;
 import software.wings.beans.InfrastructureMapping;
 import software.wings.dl.WingsPersistence;
+import software.wings.service.InstanceSyncPerpetualTaskCreator;
 import software.wings.service.impl.instance.InstanceSyncPerpetualTaskInfo.InstanceSyncPerpetualTaskInfoKeys;
+import software.wings.service.impl.instance.backup.InstanceSyncPTBackupService;
 import software.wings.service.intfc.instance.InstanceService;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import dev.morphia.query.Query;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -40,6 +43,7 @@ public class InstanceSyncPerpetualTaskServiceImpl implements InstanceSyncPerpetu
   @Inject private PerpetualTaskService perpetualTaskService;
   @Inject private WingsPersistence wingsPersistence;
   @Inject private InstanceHandlerFactoryService instanceHandlerFactory;
+  @Inject private InstanceSyncPTBackupService instanceSyncPTBackupService;
 
   @Override
   public void createPerpetualTasks(InfrastructureMapping infrastructureMapping) {
@@ -149,7 +153,18 @@ public class InstanceSyncPerpetualTaskServiceImpl implements InstanceSyncPerpetu
   }
 
   @Override
-  public void deletePerpetualTask(String accountId, String infrastructureMappingId, String perpetualTaskId) {
+  public void deletePerpetualTask(
+      String accountId, String infrastructureMappingId, String perpetualTaskId, boolean backup) {
+    // Backing Up first before deleting the V1 Perpetual task so that to avoid any deletion without the backup
+    PerpetualTaskRecord perpetualTaskRecord = null;
+    if (backup) {
+      perpetualTaskRecord = perpetualTaskService.getTaskRecord(perpetualTaskId);
+
+      if (perpetualTaskRecord != null) {
+        instanceSyncPTBackupService.save(accountId, infrastructureMappingId, perpetualTaskRecord);
+      }
+    }
+
     perpetualTaskService.deleteTask(accountId, perpetualTaskId);
 
     Optional<InstanceSyncPerpetualTaskInfo> optionalInfo =
@@ -198,6 +213,32 @@ public class InstanceSyncPerpetualTaskServiceImpl implements InstanceSyncPerpetu
       return;
     }
     deletePerpetualTasks(perpetualTaskRecord.getAccountId(), infrastructureMappingId);
+  }
+
+  @Override
+  public void restorePerpetualTasks(String accountId, InfrastructureMapping infrastructureMapping) {
+    InstanceSyncByPerpetualTaskHandler handler = getInstanceHandler(infrastructureMapping);
+    InstanceSyncPerpetualTaskCreator instanceSyncPTCreator = handler.getInstanceSyncPerpetualTaskCreator();
+    // TODO: merge existing perpetual task and get perpetual task info
+    List<PerpetualTaskRecord> existingTasks = getExistingPerpetualTasks(infrastructureMapping);
+    Optional<InstanceSyncPerpetualTaskInfo> perpetualTaskInfoOptional =
+        getByAccountIdAndInfrastructureMappingId(accountId, infrastructureMapping.getUuid());
+    final InstanceSyncPerpetualTaskInfo perpetualTaskInfo =
+        perpetualTaskInfoOptional.orElseGet(()
+                                                -> InstanceSyncPerpetualTaskInfo.builder()
+                                                       .accountId(accountId)
+                                                       .infrastructureMappingId(infrastructureMapping.getUuid())
+                                                       .perpetualTaskIds(new ArrayList<>())
+                                                       .build());
+
+    instanceSyncPTBackupService.restore(accountId, infrastructureMapping.getUuid(), perpetualTask -> {
+      Optional<String> taskId = instanceSyncPTCreator.restorePerpetualTask(perpetualTask, existingTasks);
+      taskId.ifPresent(id -> perpetualTaskInfo.getPerpetualTaskIds().add(id));
+    });
+
+    if (!perpetualTaskInfo.getPerpetualTaskIds().isEmpty()) {
+      save(perpetualTaskInfo);
+    }
   }
 
   private InfrastructureMapping get(String appId, String infraMappingId) {

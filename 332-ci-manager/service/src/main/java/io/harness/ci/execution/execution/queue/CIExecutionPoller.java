@@ -95,16 +95,14 @@ public class CIExecutionPoller implements Managed {
   @VisibleForTesting
   void pollAndProcessMessages() throws InterruptedException {
     try {
-      Response<List<DequeueResponse>> messages =
-          hsqsServiceClient
-              .dequeue(DequeueRequest.builder()
-                           .batchSize(batchSize)
-                           .consumerName(moduleName)
-                           .topic(moduleName)
-                           .maxWaitDuration(100)
-                           .build(),
-                  ciExecutionServiceConfig.getQueueServiceClient().getAuthToken())
-              .execute();
+      Response<List<DequeueResponse>> messages = hsqsServiceClient
+                                                     .dequeue(DequeueRequest.builder()
+                                                                  .batchSize(batchSize)
+                                                                  .consumerName(moduleName)
+                                                                  .topic(moduleName)
+                                                                  .maxWaitDuration(100)
+                                                                  .build())
+                                                     .execute();
       if (messages.body() == null) {
         TimeUnit.SECONDS.sleep(WAIT_TIME_IN_SECONDS);
         return;
@@ -126,8 +124,9 @@ public class CIExecutionPoller implements Managed {
 
     RetryPolicy<Object> retryPolicy =
         getRetryPolicy(format("[Retrying failed call to hsqs: {}"), format("Failed to call hsqs retrying {} times"));
-    ProcessMessageResponse processMessageResponse = ciInitTaskMessageProcessor.processMessage(message);
+
     try {
+      ProcessMessageResponse processMessageResponse = ciInitTaskMessageProcessor.processMessage(message);
       if (processMessageResponse.getSuccess()) {
         Response<AckResponse> response = hsqsServiceClient
                                              .ack(AckRequest.builder()
@@ -137,9 +136,17 @@ public class CIExecutionPoller implements Managed {
                                                       .build(),
                                                  authToken)
                                              .execute();
-        log.info("ack response code: {}, message id: {}", response.code(), message.getItemId());
+        log.info("ack response code: {}", response.code());
       } else {
-        log.info("skipping ack. message id: {}", message.getItemId());
+        Response<UnAckResponse> response = hsqsServiceClient
+                                               .unack(UnAckRequest.builder()
+                                                          .itemID(message.getItemId())
+                                                          .topic(moduleName)
+                                                          .subTopic(processMessageResponse.getAccountId())
+                                                          .build(),
+                                                   authToken)
+                                               .execute();
+        log.info("unack response code: {}", response.code());
       }
     } catch (Exception ex) {
       log.error("got error in calling hsqs client", ex);

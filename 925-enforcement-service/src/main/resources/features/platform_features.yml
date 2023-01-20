@@ -45,8 +45,26 @@ features:
         limit: 1
         clientName: ngmanager
       FREE:
+        restrictionType: STATIC_LIMIT
+        limit: 100
+        clientName: ngmanager
+      TEAM:
         restrictionType: AVAILABILITY
         enabled: true
+      ENTERPRISE:
+        restrictionType: AVAILABILITY
+        enabled: true
+  - name: MULTIPLE_SECRETS
+    description: Allow creating multiple secrets within an account
+    restrictions:
+      COMMUNITY:
+        restrictionType: STATIC_LIMIT
+        limit: 10
+        clientName: ngmanager
+      FREE:
+        restrictionType: STATIC_LIMIT
+        limit: 100
+        clientName: ngmanager
       TEAM:
         restrictionType: AVAILABILITY
         enabled: true

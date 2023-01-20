@@ -16,7 +16,6 @@ import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.YamlSchemaTypes;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
 import javax.validation.constraints.NotNull;
@@ -31,35 +30,15 @@ import org.springframework.data.annotation.TypeAlias;
 @AllArgsConstructor
 @TypeAlias("AsgBlueGreenDeployBaseStepInfo")
 public class AsgBlueGreenDeployBaseStepInfo {
-  @NotNull
-  @YamlSchemaTypes({runtime})
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
-  @JsonProperty("loadBalancer")
-  ParameterField<String> loadBalancer;
+  @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> loadBalancer;
 
-  @NotNull
-  @YamlSchemaTypes({runtime})
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
-  @JsonProperty("prodListener")
-  ParameterField<String> prodListener;
+  @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> prodListener;
 
-  @NotNull
-  @YamlSchemaTypes({runtime})
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
-  @JsonProperty("prodListenerRuleArn")
-  ParameterField<String> prodListenerRuleArn;
+  @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> prodListenerRuleArn;
 
-  @NotNull
-  @YamlSchemaTypes({runtime})
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
-  @JsonProperty("stageListener")
-  ParameterField<String> stageListener;
+  @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> stageListener;
 
-  @NotNull
-  @YamlSchemaTypes({runtime})
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
-  @JsonProperty("stageListenerRuleArn")
-  ParameterField<String> stageListenerRuleArn;
+  @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> stageListenerRuleArn;
 
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)

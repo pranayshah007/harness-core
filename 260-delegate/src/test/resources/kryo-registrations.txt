@@ -2436,6 +2436,11 @@
 643310:io.harness.delegate.beans.connector.awssecretmanager.AwsSMCredentialSpecAssumeIAMDTO
 643311:io.harness.delegate.beans.connector.awssecretmanager.AwsSMCredentialSpecAssumeSTSDTO
 673567:java.util.concurrent.ConcurrentHashMap
+673568:io.harness.delegate.task.scm.ScmBatchGetFileTaskParams
+673569:io.harness.delegate.task.scm.GetFileTaskParamsPerConnector
+673570:io.harness.delegate.task.scm.ConnectorDecryptionParams
+673571:io.harness.delegate.task.scm.GitFileLocationDetails
+673572:io.harness.delegate.task.scm.ScmBatchGetFileTaskResponseData
 930001:io.harness.licensing.beans.modules.CDModuleLicenseDTO
 930002:io.harness.licensing.beans.modules.CEModuleLicenseDTO
 930003:io.harness.licensing.beans.modules.CFModuleLicenseDTO
@@ -2467,6 +2472,8 @@
 955017:io.harness.beans.response.ListFilesInCommitResponse
 955018:io.harness.beans.FileGitDetails
 955019:io.harness.beans.ContentType
+955020:io.harness.beans.response.ScmGitMetadata
+955021:io.harness.beans.GetBatchFileRequestIdentifier
 970001:io.harness.request.RequestContextData
 970002:io.harness.request.RequestContext
 970003:io.harness.gitsync.interceptor.GitSyncBranchContext

@@ -72,19 +72,20 @@ public class VaultSecretMigrator implements SecretMigrator {
     String projectIdentifier = MigratorUtility.getProjectIdentifier(scope, inputDTO);
     String orgIdentifier = MigratorUtility.getOrgIdentifier(scope, inputDTO);
 
-    VaultConnectorDTOBuilder connectorDTO = VaultConnectorDTO.builder()
-                                                .appRoleId(vaultConfig.getAppRoleId())
-                                                .basePath(vaultConfig.getBasePath())
-                                                .vaultUrl(vaultConfig.getVaultUrl())
-                                                .renewalIntervalMinutes(vaultConfig.getRenewalInterval())
-                                                .secretEngineManuallyConfigured(vaultConfig.isEngineManuallyEntered())
-                                                .secretEngineName(vaultConfig.getSecretEngineName())
-                                                .secretEngineVersion(vaultConfig.getSecretEngineVersion())
-                                                .useVaultAgent(vaultConfig.isUseVaultAgent())
-                                                .useAwsIam(false)
-                                                .isDefault(vaultConfig.isDefault())
-                                                .isReadOnly(vaultConfig.isReadOnly())
-                                                .delegateSelectors(vaultConfig.getDelegateSelectors());
+    VaultConnectorDTOBuilder connectorDTO =
+        VaultConnectorDTO.builder()
+            .namespace(StringUtils.isNotBlank(vaultConfig.getNamespace()) ? vaultConfig.getNamespace() : "/")
+            .basePath(vaultConfig.getBasePath())
+            .vaultUrl(vaultConfig.getVaultUrl())
+            .renewalIntervalMinutes(vaultConfig.getRenewalInterval())
+            .secretEngineManuallyConfigured(vaultConfig.isEngineManuallyEntered())
+            .secretEngineName(vaultConfig.getSecretEngineName())
+            .secretEngineVersion(vaultConfig.getSecretEngineVersion())
+            .useVaultAgent(vaultConfig.isUseVaultAgent())
+            .useAwsIam(false)
+            .isDefault(vaultConfig.isDefault())
+            .isReadOnly(vaultConfig.isReadOnly())
+            .delegateSelectors(vaultConfig.getDelegateSelectors());
 
     String secretIdentifier =
         String.format("migratedHarnessSecret_%s", MigratorUtility.generateIdentifier(vaultConfig.getName()));

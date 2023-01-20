@@ -34,14 +34,6 @@ public class InstanceSyncPTInfoBackupDao {
     persistence.delete(instanceSyncPTInfoBackup);
   }
 
-  Optional<InstanceSyncPTInfoBackup> findByAccountIdAndInfraMappingId(String accountId, String infraMappingId) {
-    Query<InstanceSyncPTInfoBackup> query =
-        persistence.createQuery(InstanceSyncPTInfoBackup.class)
-            .filter(InstanceSyncPTInfoBackup.ACCOUNT_ID_KEY, accountId)
-            .filter(InstanceSyncPTBackupKeys.infrastructureMappingId, infraMappingId);
-    return Optional.ofNullable(query.get());
-  }
-
   List<InstanceSyncPTInfoBackup> findAllByAccountIdAndInfraMappingId(String accountId, String infraMappingId) {
     Query<InstanceSyncPTInfoBackup> query =
         persistence.createQuery(InstanceSyncPTInfoBackup.class)

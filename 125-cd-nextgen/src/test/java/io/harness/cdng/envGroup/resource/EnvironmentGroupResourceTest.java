@@ -53,6 +53,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Scanner;
+import javax.ws.rs.NotFoundException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -143,8 +144,9 @@ public class EnvironmentGroupResourceTest extends CategoryTest {
     // case2: get function returns empty object
     Optional<EnvironmentGroupEntity> optional = Optional.empty();
     doReturn(optional).when(environmentGroupService).get(ACC_ID, ORG_ID, PRO_ID, ENV_GROUP_ID, false);
-    responseDTO = environmentGroupResource.get(ENV_GROUP_ID, ACC_ID, ORG_ID, PRO_ID, false, null);
-    assertThat(responseDTO).isNull();
+    assertThatThrownBy(() -> environmentGroupResource.get(ENV_GROUP_ID, ACC_ID, ORG_ID, PRO_ID, false, null))
+        .isInstanceOf(NotFoundException.class)
+        .hasMessage("Environment Group with identifier [newEnvGroup] in project [proId], org [orgId] not found");
   }
 
   @Test

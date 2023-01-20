@@ -448,7 +448,9 @@ public enum TaskType {
 
   AWS_ASG_BLUE_GREEN_PREPARE_ROLLBACK_DATA_TASK_NG(TaskGroup.ASG, "AWS Asg Blue Green Prepare Rollback Data"),
   AWS_ASG_BLUE_GREEN_DEPLOY_TASK_NG(TaskGroup.ASG, "AWS Asg Blue Green Deploy"),
-  AWS_ASG_BLUE_GREEN_ROLLBACK_TASK_NG(TaskGroup.ASG, "AWS Asg Blue Green Rollback");
+  AWS_ASG_BLUE_GREEN_ROLLBACK_TASK_NG(TaskGroup.ASG, "AWS Asg Blue Green Rollback"),
+  SCM_BATCH_GET_FILE_TASK(TaskGroup.GIT, "SCM Batch Get File Task"),
+  ;
 
   private final TaskGroup taskGroup;
   private final String displayName;

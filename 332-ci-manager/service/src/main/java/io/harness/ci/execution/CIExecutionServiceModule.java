@@ -104,7 +104,7 @@ public class CIExecutionServiceModule extends AbstractModule {
     install(CIBeansModule.getInstance());
     install(new io.harness.hsqs.client.HsqsServiceClientModule(
         ciExecutionServiceConfig.getQueueServiceClient().getQueueServiceConfig(),
-        ciExecutionServiceConfig.getQueueServiceClient().getAuthToken(), "ci-manager"));
+        ciExecutionServiceConfig.getQueueServiceClient().getAuthToken(), "Bearer"));
     bind(ExecutorService.class)
         .annotatedWith(Names.named("ciRatelimitHandlerExecutor"))
         .toInstance(ThreadPool.create(

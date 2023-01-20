@@ -42,6 +42,7 @@ import io.harness.ng.core.environment.mappers.EnvironmentFilterHelper;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
+import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.RetryUtils;
@@ -147,13 +148,13 @@ public class EnvironmentInfraFilterHelper {
   public Set<Environment> getAllEnvironmentsInProject(
       String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     // Fetch All Environments
-    Criteria criteria = environmentFilterHelper.createCriteriaForGetList(
-        accountIdentifier, orgIdentifier, projectIdentifier, false, "");
+    Criteria criteria =
+        CoreCriteriaUtils.createCriteriaForGetList(accountIdentifier, orgIdentifier, projectIdentifier, false);
 
     PageRequest pageRequest = PageRequest.of(0, PAGE_SIZE, Sort.by(Sort.Direction.DESC, EnvironmentKeys.createdAt));
     Page<Environment> allEnvsInProject = environmentService.list(criteria, pageRequest);
     if (isEmpty(allEnvsInProject.getContent())) {
-      throw new InvalidRequestException("No enviroments exists in the project");
+      throw new InvalidRequestException("No environments exists in the project");
     }
     return new HashSet<>(allEnvsInProject.getContent());
   }

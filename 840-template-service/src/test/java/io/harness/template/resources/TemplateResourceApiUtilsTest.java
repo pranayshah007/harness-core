@@ -14,7 +14,7 @@ import static io.harness.template.resources.NGTemplateResource.TEMPLATE;
 import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -61,7 +61,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -114,9 +116,18 @@ public class TemplateResourceApiUtilsTest extends CategoryTest {
               responseObserver.onCompleted();
             }
           }));
+  private AutoCloseable mocks;
+
+  @After
+  public void tearDown() throws Exception {
+    if (mocks != null) {
+      mocks.close();
+    }
+  }
+
   @Before
   public void setUp() throws IOException {
-    MockitoAnnotations.initMocks(this);
+    mocks = MockitoAnnotations.openMocks(this);
 
     // Generate a unique in-process server name.
     String serverName = InProcessServerBuilder.generateName();
@@ -166,7 +177,7 @@ public class TemplateResourceApiUtilsTest extends CategoryTest {
   @Test
   @Owner(developers = TARUN_UBA)
   @Category(UnitTests.class)
-  public void testCreateTemplate() throws IOException {
+  public void testCreateTemplate() {
     doReturn(entityWithMongoVersion).when(templateService).create(entity, false, "");
     TemplateResponse templateResponse = new TemplateResponse();
     templateResponse.setAccount(entity.getAccountId());
@@ -247,7 +258,7 @@ public class TemplateResourceApiUtilsTest extends CategoryTest {
         ()
             -> templateResourceApiUtils.getTemplate(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
                 incorrectTemplateIdentifier, TEMPLATE_VERSION_LABEL, false, null, null, null, null, null, null, false))
-        .isInstanceOf(InvalidRequestException.class);
+        .isInstanceOf(NotFoundException.class);
   }
 
   @Test
@@ -352,8 +363,7 @@ public class TemplateResourceApiUtilsTest extends CategoryTest {
     Response response = templateResourceApiUtils.getTemplates(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, 0, 25, null,
         null, null, "ALL", false, null, null, null, Collections.singletonList("Stage"), null);
     List<TemplateMetadataSummaryResponse> templates = (List<TemplateMetadataSummaryResponse>) response.getEntity();
-    assertThat(templates).isNotEmpty();
-    assertThat(templates.size()).isEqualTo(1);
+    assertThat(templates).isNotEmpty().hasSize(1);
 
     TemplateMetadataSummaryResponse responseDTO = templates.get(0);
     assertThat(responseDTO.getIdentifier()).isEqualTo(TEMPLATE_IDENTIFIER);

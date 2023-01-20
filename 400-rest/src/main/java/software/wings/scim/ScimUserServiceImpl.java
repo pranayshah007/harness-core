@@ -247,7 +247,25 @@ public class ScimUserServiceImpl implements ScimUserService {
     return getUser(userId, accountId);
   }
 
-  private void applyUserUpdateOperation(String accountId, String userId, PatchOperation patchOperation)
+  @Override
+  public ScimUser updateUserDetails(String accountId, String userId, PatchRequest patchRequest) {
+    String operation = isNotEmpty(patchRequest.getOperations()) ? patchRequest.getOperations().toString() : null;
+    String schemas = isNotEmpty(patchRequest.getSchemas()) ? patchRequest.getSchemas().toString() : null;
+    log.info(
+        "SCIM: Updating user: Patch Request Logging\nOperations {}\n, Schemas {}\n,External Id {}\n, Meta {}, for userId: {}, accountId {}",
+        operation, schemas, patchRequest.getExternalId(), patchRequest.getMeta(), userId, accountId);
+
+    patchRequest.getOperations().forEach(patchOperation -> {
+      try {
+        applyUserUpdateOnlyDetails(accountId, userId, patchOperation);
+      } catch (Exception ex) {
+        log.error("SCIM: Failed to update user: {}, patchOperation: {}", userId, patchOperation, ex);
+      }
+    });
+    return getUser(userId, accountId);
+  }
+
+  private void applyUserUpdateOnlyDetails(String accountId, String userId, PatchOperation patchOperation)
       throws JsonProcessingException {
     User user = userService.get(accountId, userId);
     if (user == null) {
@@ -275,10 +293,34 @@ public class ScimUserServiceImpl implements ScimUserService {
         && patchOperation.getValue(ScimMultiValuedObject.class).getDisplayName() != null) {
       updateUser(patchOperation, user, UserKeys.name);
     }
+  }
 
-    if (patchOperation.getValue(ScimUserValuedObject.class) != null) {
+  private void applyUserUpdateOperation(String accountId, String userId, PatchOperation patchOperation)
+      throws JsonProcessingException {
+    applyUserUpdateOnlyDetails(accountId, userId, patchOperation);
+    User user = userService.get(accountId, userId);
+    if (featureFlagService.isEnabled(FeatureName.PL_USER_DELETION_V2, accountId)) {
+      if ("active".equals(patchOperation.getPath()) && patchOperation.getValue(Boolean.class) != null
+          && !(patchOperation.getValue(Boolean.class))) {
+        log.info("SCIM: Removing user {}, from account: {}, user deletion flow V2", user.getEmail(), accountId);
+        deleteUser(userId, accountId);
+      }
+    } else {
+      if ("active".equals(patchOperation.getPath()) && patchOperation.getValue(Boolean.class) != null) {
+        log.info("SCIM: Updating user {} disabled flag to true, in account: {}", userId, accountId);
+        changeScimUserDisabled(accountId, user.getEmail(), !(patchOperation.getValue(Boolean.class)));
+      }
+    }
+
+    if (!featureFlagService.isEnabled(FeatureName.PL_USER_DELETION_V2, accountId)
+        && patchOperation.getValue(ScimUserValuedObject.class) != null) {
       changeScimUserDisabled(
           accountId, user.getUuid(), !(patchOperation.getValue(ScimUserValuedObject.class)).isActive());
+    } else if (featureFlagService.isEnabled(FeatureName.PL_USER_DELETION_V2, accountId)
+        && patchOperation.getValue(ScimUserValuedObject.class) != null
+        && !(patchOperation.getValue(ScimUserValuedObject.class)).isActive()) {
+      log.info("SCIM: Removing user {}, from account: {}", userId, accountId);
+      deleteUser(userId, accountId);
     } else {
       // Not supporting any other updates as of now.
       log.error("SCIM: Unexpected patch operation received: accountId: {}, userId: {}, patchOperation: {}", accountId,
@@ -356,11 +398,20 @@ public class ScimUserServiceImpl implements ScimUserService {
         }
       }
 
-      if (userResource.getActive() != null && userResource.getActive() == user.isDisabled()) {
-        userUpdate = true;
-        log.info("SCIM: Updating users disabled state for user: {}, to: {}", userId, !userResource.getActive());
-        updateOperations.set(UserKeys.disabled, !userResource.getActive());
+      if (featureFlagService.isEnabled(FeatureName.PL_USER_DELETION_V2, accountId)) {
+        if (userResource.getActive() != null && !userResource.getActive()) {
+          userUpdate = true;
+          log.info("SCIM: Removing user {}, from account: {}", userId, accountId);
+          deleteUser(userId, accountId);
+        }
+      } else {
+        if (userResource.getActive() != null && userResource.getActive() == user.isDisabled()) {
+          userUpdate = true;
+          log.info("SCIM: Updating users disabled state for user: {}, to: {}", userId, !userResource.getActive());
+          updateOperations.set(UserKeys.disabled, !userResource.getActive());
+        }
       }
+
       if (featureFlagService.isEnabled(FeatureName.UPDATE_EMAILS_VIA_SCIM, accountId)
           && userResource.getEmails() != null && userResource.getEmails().get(0) != null
           && userResource.getEmails().get(0).get("value") != null

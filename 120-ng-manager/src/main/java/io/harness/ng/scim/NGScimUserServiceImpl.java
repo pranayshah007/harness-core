@@ -35,6 +35,7 @@ import io.harness.scim.ScimUser;
 import io.harness.scim.ScimUserValuedObject;
 import io.harness.scim.service.ScimUserService;
 import io.harness.serializer.JsonUtils;
+import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.inject.Inject;
@@ -48,6 +49,7 @@ import javax.validation.constraints.NotNull;
 import javax.ws.rs.core.Response;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
@@ -62,6 +64,8 @@ public class NGScimUserServiceImpl implements ScimUserService {
   private final InviteService inviteService;
   private final UserGroupService userGroupService;
   private final AccountClient accountClient;
+
+  private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
 
   @Override
   public Response createUser(ScimUser userQuery, String accountId) {
@@ -200,8 +204,13 @@ public class NGScimUserServiceImpl implements ScimUserService {
         "NGSCIM: Updating user: Patch Request Logging\nOperations {}\n, Schemas {}\n,External Id {}\n, Meta {}, for userId: {}, accountId {}",
         operation, schemas, patchRequest.getExternalId(), patchRequest.getMeta(), userId, accountId);
 
-    // Call CG to update the user as it is
-    ngUserService.updateScimUser(accountId, userId, patchRequest);
+    // Call CG to update only the user details
+    if (ngFeatureFlagHelperService.isEnabled(accountId, FeatureName.PL_USER_DELETION_V2)) {
+      ngUserService.updateUserDetails(accountId, userId, patchRequest);
+    } else {
+      ngUserService.updateScimUser(accountId, userId, patchRequest);
+    }
+
     Optional<UserMetadataDTO> userMetadataDTOOptional = ngUserService.getUserMetadata(userId);
     if (!userMetadataDTOOptional.isPresent()) {
       log.error(
@@ -219,6 +228,11 @@ public class NGScimUserServiceImpl implements ScimUserService {
   }
 
   @Override
+  public ScimUser updateUserDetails(String accountId, String userId, PatchRequest patchRequest) {
+    throw new NotImplementedException("NGSCIM: Update method can be invoked only on CG SCIM");
+  }
+
+  @Override
   public Response updateUser(String userId, String accountId, ScimUser scimUser) {
     log.info("NGSCIM: Updating user - userId: {}, accountId: {}", userId, accountId);
     Optional<UserInfo> userInfo = ngUserService.getUserById(userId);
@@ -227,10 +241,20 @@ public class NGScimUserServiceImpl implements ScimUserService {
       log.error("NGSCIM: User is not found. userId: {}, accountId: {}", userId, accountId);
       return Response.status(Response.Status.NOT_FOUND).build();
     } else {
-      boolean cgUpdateResult = ngUserService.updateScimUser(accountId, userId, scimUser);
-      if (!cgUpdateResult) {
-        log.error("NGSCIM: User is not in CG found. userId: {}, accountId: {}", userId, accountId);
-        return Response.status(Response.Status.NOT_FOUND).build();
+      // Passing the changed details on NG to CG, provided the user is active in NG.
+      if (!ngFeatureFlagHelperService.isEnabled(accountId, FeatureName.PL_USER_DELETION_V2)) {
+        boolean cgUpdateResult = ngUserService.updateScimUser(accountId, userId, scimUser);
+        if (!cgUpdateResult) {
+          log.error("NGSCIM: User is not found in CG. userId: {}, accountId: {}", userId, accountId);
+          return Response.status(Response.Status.NOT_FOUND).build();
+        }
+      } else if (scimUser.getActive()
+          && ngFeatureFlagHelperService.isEnabled(accountId, FeatureName.PL_USER_DELETION_V2)) {
+        boolean cgUpdateResult = ngUserService.updateScimUser(accountId, userId, scimUser);
+        if (!cgUpdateResult) {
+          log.error("NGSCIM: User is not found in CG. userId: {}, accountId: {}", userId, accountId);
+          return Response.status(Response.Status.NOT_FOUND).build();
+        }
       }
       String displayName = getName(scimUser);
       UserInfo existingUser = userInfo.get();
@@ -255,9 +279,16 @@ public class NGScimUserServiceImpl implements ScimUserService {
       ngUserService.updateUserMetadata(userMetadata);
       log.info("NGSCIM: Updated metadata for user: {}", userId);
 
-      if (scimUser.getActive() != null && scimUser.getActive() == existingUser.isDisabled()) {
-        log.info("NGSCIM: Updating disabled state for user: {}, to: {}", userId, !scimUser.getActive());
-        changeScimUserDisabled(accountId, userId, !scimUser.getActive());
+      if (ngFeatureFlagHelperService.isEnabled(accountId, FeatureName.PL_USER_DELETION_V2)) {
+        if (scimUser.getActive() != null && !scimUser.getActive()) {
+          log.info("NGSCIM: Removing user {}, from account: {}", userId, accountId);
+          deleteUser(userId, accountId);
+        }
+      } else {
+        if (scimUser.getActive() != null && scimUser.getActive() == existingUser.isDisabled()) {
+          log.info("NGSCIM: Updating disabled state for user: {}, to: {}", userId, !scimUser.getActive());
+          changeScimUserDisabled(accountId, userId, !scimUser.getActive());
+        }
       }
 
       log.info("NGSCIM: Updating user completed - userId: {}, accountId: {}", userId, accountId);
@@ -269,14 +300,19 @@ public class NGScimUserServiceImpl implements ScimUserService {
 
   @Override
   public boolean changeScimUserDisabled(String accountId, String userId, boolean disabled) {
-    if (disabled) {
-      // OKTA doesn't send an explicit delete user request but only makes active true/false.
-      // We need to remove the user completely if active=false as we do not have any first
-      // class support for a disabled user vs a deleted user
-      ngUserService.removeUser(userId, accountId);
+    if (ngFeatureFlagHelperService.isEnabled(accountId, FeatureName.PL_USER_DELETION_V2)) {
+      log.info("NGSCIM: Removing user {}, from account: {}", userId, accountId);
+      deleteUser(userId, accountId);
     } else {
-      // This is to keep CG implementation working as it is.
-      ngUserService.updateUserDisabled(accountId, userId, disabled);
+      if (disabled) {
+        // OKTA doesn't send an explicit delete user request but only makes active true/false.
+        // We need to remove the user completely if active=false as we do not have any first
+        // class support for a disabled user vs a deleted user
+        ngUserService.removeUser(userId, accountId);
+      } else {
+        // This is to keep CG implementation working as it is.
+        ngUserService.updateUserDisabled(accountId, userId, disabled);
+      }
     }
     return true;
   }
@@ -292,10 +328,18 @@ public class NGScimUserServiceImpl implements ScimUserService {
       ngUserService.updateUserMetadata(userMetadataDTO);
     }
 
-    if ("active".equals(patchOperation.getPath()) && patchOperation.getValue(Boolean.class) != null) {
-      log.info("NGSCIM: Updating disabled state for user: {} in account: {} with value: {} for patch operation case",
-          userId, accountId, !patchOperation.getValue(Boolean.class));
-      changeScimUserDisabled(accountId, userId, !patchOperation.getValue(Boolean.class));
+    if (ngFeatureFlagHelperService.isEnabled(accountId, FeatureName.PL_USER_DELETION_V2)) {
+      if ("active".equals(patchOperation.getPath()) && patchOperation.getValue(Boolean.class) != null
+          && !patchOperation.getValue(Boolean.class)) {
+        log.info("NGSCIM: Removing user {}, from account: {}", userId, accountId);
+        deleteUser(userId, accountId);
+      }
+    } else {
+      if ("active".equals(patchOperation.getPath()) && patchOperation.getValue(Boolean.class) != null) {
+        log.info("NGSCIM: Updating disabled state for user: {} in account: {} with value: {} for patch operation case",
+            userId, accountId, !patchOperation.getValue(Boolean.class));
+        changeScimUserDisabled(accountId, userId, !patchOperation.getValue(Boolean.class));
+      }
     }
 
     if (CGRestUtils.getResponse(
@@ -315,11 +359,17 @@ public class NGScimUserServiceImpl implements ScimUserService {
       ngUserService.updateUserMetadata(userMetadataDTO);
     }
 
-    if (patchOperation.getValue(ScimUserValuedObject.class) != null) {
+    if (!ngFeatureFlagHelperService.isEnabled(accountId, FeatureName.PL_USER_DELETION_V2)
+        && patchOperation.getValue(ScimUserValuedObject.class) != null) {
       log.info(
           "NGSCIM: Updating disabled state for user: {} in account: {} with value: {} for scim user value object case",
           userId, accountId, !patchOperation.getValue(Boolean.class));
       changeScimUserDisabled(accountId, userId, !(patchOperation.getValue(ScimUserValuedObject.class)).isActive());
+    } else if (ngFeatureFlagHelperService.isEnabled(accountId, FeatureName.PL_USER_DELETION_V2)
+        && patchOperation.getValue(ScimUserValuedObject.class) != null
+        && !(patchOperation.getValue(ScimUserValuedObject.class)).isActive()) {
+      log.info("NGSCIM: Removing user {}, from account: {}", userId, accountId);
+      deleteUser(userId, accountId);
     } else {
       // Not supporting any other updates as of now.
       log.error("NGSCIM: Unexpected patch operation received: accountId: {}, userId: {}, patchOperation: {}", accountId,
