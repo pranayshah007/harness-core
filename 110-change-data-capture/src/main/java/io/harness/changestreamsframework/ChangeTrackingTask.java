@@ -32,6 +32,7 @@ import org.bson.Document;
 @Slf4j
 @OwnedBy(HarnessTeam.CE)
 class ChangeTrackingTask implements Runnable {
+  private static int BATCH_SIZE = 5000;
   private ChangeStreamSubscriber changeStreamSubscriber;
   private MongoCollection<DBObject> collection;
   private ClientSession clientSession;
@@ -67,10 +68,12 @@ class ChangeTrackingTask implements Runnable {
       changeStreamIterableResumeToken = collection.watch(clientSession);
     }
 
-    changeStreamIterable =
-        changeStreamIterable.fullDocument(FullDocument.UPDATE_LOOKUP).maxAwaitTime(1, TimeUnit.MINUTES);
-    changeStreamIterableResumeToken =
-        changeStreamIterableResumeToken.fullDocument(FullDocument.UPDATE_LOOKUP).maxAwaitTime(1, TimeUnit.MINUTES);
+    changeStreamIterable = changeStreamIterable.fullDocument(FullDocument.UPDATE_LOOKUP)
+                               .maxAwaitTime(1, TimeUnit.MINUTES)
+                               .batchSize(BATCH_SIZE);
+    changeStreamIterableResumeToken = changeStreamIterableResumeToken.fullDocument(FullDocument.UPDATE_LOOKUP)
+                                          .maxAwaitTime(1, TimeUnit.MINUTES)
+                                          .batchSize(BATCH_SIZE);
 
     MongoCursor<ChangeStreamDocument<DBObject>> mongoCursor = null;
     try {
