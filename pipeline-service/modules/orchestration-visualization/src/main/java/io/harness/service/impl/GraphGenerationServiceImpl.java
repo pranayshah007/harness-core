@@ -186,9 +186,6 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
           }
           nodeExecutionIds.add(nodeExecutionId);
           NodeExecution nodeExecution = nodeExecutionService.get(nodeExecutionId);
-          if (nodeExecution.getStepType().getStepCategory() == StepCategory.STRATEGY) {
-            log.info("Status" + nodeExecution.getStatus());
-          }
 
           updateRequired = pmsExecutionSummaryService.handleNodeExecutionUpdateFromGraphUpdate(
                                planExecutionId, nodeExecution, executionSummaryUpdate)
