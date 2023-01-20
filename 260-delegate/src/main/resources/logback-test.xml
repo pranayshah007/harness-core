@@ -27,7 +27,7 @@
         <withJansi>true</withJansi>
 
         <encoder>
-            <pattern>%date{ISO8601} [%version] %process_id [%thread] %-5level %logger - %msg %replace(%mdc){'(.+)', '[$1]'} %n</pattern>
+            <pattern>%date{ISO8601} [%thread] %-5level %logger - %msg %replace(%mdc){'(.+)', '[$1]'} %n</pattern>
         </encoder>
     </appender>
 
