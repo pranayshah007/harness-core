@@ -341,7 +341,8 @@ public class TokenServiceImpl implements TokenService {
     } else {
       String tokenId = tokenValidationHelper.parseApiKeyToken(apiKey);
       TokenDTO tokenDTO = getToken(tokenId, true);
-      tokenValidationHelper.validateToken(tokenDTO, accountIdentifier, tokenId, apiKey);
+      tokenValidationHelper.validateToken(tokenDTO, accountIdentifier, tokenId, apiKey,
+          ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.PL_USE_APIKEY_TOKEN_PASSWORD_HASH_CACHE));
       tokenDTO.setEncodedPassword(null);
       return tokenDTO;
     }

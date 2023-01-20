@@ -586,7 +586,9 @@ public enum FeatureName {
       HarnessTeam.CDP),
   PIE_PIPELINE_SETTINGS_ENFORCEMENT_LIMIT(
       "To enable pipeline-settings and limits in Project Default Settings in UI", HarnessTeam.PIPELINE),
-  ENABLE_K8_BUILDS("FF for enabling kubernetes builds as an option", HarnessTeam.CI);
+  ENABLE_K8_BUILDS("FF for enabling kubernetes builds as an option", HarnessTeam.CI),
+  PL_USE_APIKEY_TOKEN_PASSWORD_HASH_CACHE(
+      "Enable api key token password hash value caching for faster matching of token password", HarnessTeam.PL);
 
   @Deprecated
   FeatureName() {

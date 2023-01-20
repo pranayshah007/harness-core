@@ -55,58 +55,59 @@ public class TokenValidationHelper {
     }
   }
 
-  private void checkIFRawPasswordMatches(String[] splitToken, String tokenId, TokenDTO tokenDTO) {
+  private void checkIFRawPasswordMatches(
+      String[] splitToken, String tokenId, TokenDTO tokenDTO, boolean usePasswordHashCache) {
     String errMessage = String.format("Invalid API token %s: %s", tokenId, "Password not matching for API key token");
-    if (apiTokenPasswordHashCache.containsKey(tokenId)) {
+    if (usePasswordHashCache && apiTokenPasswordHashCache.containsKey(tokenId)) {
       log.info(
           "NG_API_KEY_TOKEN: [CACHE_HIT] on [{}] cache for password hash matching of api key token: {} for account: {}",
           API_TOKEN_PASSWORD_HASH_CACHE_KEY, tokenId, tokenDTO.getAccountIdentifier());
-      matchRawPasswordsHashInCache(splitToken, tokenId, errMessage);
+      matchPasswordsHashInCache(splitToken, tokenId, errMessage);
     } else {
-      matchRawPasswordsNotFoundInCache(splitToken, tokenId, tokenDTO, errMessage);
+      matchRawPasswordsNotFoundInCache(splitToken, tokenId, tokenDTO, errMessage, usePasswordHashCache);
     }
   }
 
-  private void matchRawPasswordsHashInCache(String[] splitToken, String tokenId, String errMessage) {
+  private void matchPasswordsHashInCache(String[] splitToken, String tokenId, String errMessage) {
     if (isOldApiKeyToken(splitToken)) {
       final String sha256HashOfToken = HashUtils.calculateSha256(splitToken[2]);
-      if (isNotEmpty(sha256HashOfToken)
-          && !sha256HashOfToken.equals(apiTokenPasswordHashCache.get(tokenId))) { // old token format
-        log.warn(errMessage);
-        throw new InvalidRequestException(errMessage);
-      }
+      matchTokenPwdHash(sha256HashOfToken, tokenId, errMessage);
     } else if (isNewApiKeyToken(splitToken)) {
       final String sha256HashOfToken = HashUtils.calculateSha256(splitToken[3]);
-      if (isNotEmpty(sha256HashOfToken)
-          && !sha256HashOfToken.equals(apiTokenPasswordHashCache.get(tokenId))) { // new token format
-        log.warn(errMessage);
-        throw new InvalidRequestException(errMessage);
-      }
+      matchTokenPwdHash(sha256HashOfToken, tokenId, errMessage);
+    }
+  }
+
+  private void matchTokenPwdHash(String sha256HashOfTokenPwd, String tokenId, String errMessage) {
+    if (isNotEmpty(sha256HashOfTokenPwd) && !sha256HashOfTokenPwd.equals(apiTokenPasswordHashCache.get(tokenId))) {
+      log.warn(errMessage);
+      throw new InvalidRequestException(errMessage);
     }
   }
 
   private void matchRawPasswordsNotFoundInCache(
-      String[] splitToken, String tokenId, TokenDTO tokenDTO, String errMessage) {
+      String[] splitToken, String tokenId, TokenDTO tokenDTO, String errMessage, boolean usePasswordHashCache) {
     BCryptPasswordEncoder bCryptPasswordEncoder = new BCryptPasswordEncoder($2A, 10);
     if (isOldApiKeyToken(splitToken)) {
-      if (!bCryptPasswordEncoder.matches(splitToken[2], tokenDTO.getEncodedPassword())) {
-        log.warn(errMessage);
-        throw new InvalidRequestException(errMessage);
-      } else {
-        log.info(
-            "NG_API_KEY_TOKEN: [CACHE_MISS] on [{}] cache for old format api key token: {} on account: {}, adding to cache",
-            API_TOKEN_PASSWORD_HASH_CACHE_KEY, tokenId, tokenDTO.getAccountIdentifier());
-        apiTokenPasswordHashCache.put(tokenId, HashUtils.calculateSha256(splitToken[2]));
-      }
+      matchRawPasswordsValue(
+          splitToken[2], tokenId, tokenDTO, errMessage, usePasswordHashCache, bCryptPasswordEncoder, "old format");
     } else if (isNewApiKeyToken(splitToken)) {
-      if (!bCryptPasswordEncoder.matches(splitToken[3], tokenDTO.getEncodedPassword())) {
-        log.warn(errMessage);
-        throw new InvalidRequestException(errMessage);
-      } else {
+      matchRawPasswordsValue(
+          splitToken[3], tokenId, tokenDTO, errMessage, usePasswordHashCache, bCryptPasswordEncoder, "new format");
+    }
+  }
+
+  private void matchRawPasswordsValue(String splitTokenValue, String tokenId, TokenDTO tokenDTO, String errMessage,
+      boolean usePasswordHashCache, BCryptPasswordEncoder bCryptPasswordEncoder, String tokenFormat) {
+    if (!bCryptPasswordEncoder.matches(splitTokenValue, tokenDTO.getEncodedPassword())) {
+      log.warn(errMessage);
+      throw new InvalidRequestException(errMessage);
+    } else {
+      if (usePasswordHashCache) {
         log.info(
-            "NG_API_KEY_TOKEN: [CACHE_MISS] on [{}] cache for new format api key token: {} on account: {}, adding to cache",
-            API_TOKEN_PASSWORD_HASH_CACHE_KEY, tokenId, tokenDTO.getAccountIdentifier());
-        apiTokenPasswordHashCache.put(tokenId, HashUtils.calculateSha256(splitToken[3]));
+            "NG_API_KEY_TOKEN: [CACHE_MISS] on [{}] cache for {} api key token: {} on account: {}, adding to cache",
+            API_TOKEN_PASSWORD_HASH_CACHE_KEY, tokenFormat, tokenId, tokenDTO.getAccountIdentifier());
+        apiTokenPasswordHashCache.put(tokenId, HashUtils.calculateSha256(splitTokenValue));
       }
     }
   }
@@ -123,13 +124,14 @@ public class TokenValidationHelper {
     }
   }
 
-  public void validateToken(TokenDTO tokenDTO, String accountIdentifier, String tokenId, String apiKey) {
+  public void validateToken(
+      TokenDTO tokenDTO, String accountIdentifier, String tokenId, String apiKey, boolean useTokenPasswordHashCache) {
     if (tokenDTO != null) {
       String[] splitToken = getApiKeyTokenComponents(apiKey);
       checkIfAccountIdMatches(accountIdentifier, tokenDTO, tokenId);
       checkIfAccountIdInTokenMatches(splitToken, tokenDTO, tokenId);
       checkIfPrefixMatches(splitToken, tokenDTO, tokenId);
-      checkIFRawPasswordMatches(splitToken, tokenId, tokenDTO);
+      checkIFRawPasswordMatches(splitToken, tokenId, tokenDTO, useTokenPasswordHashCache);
       checkIfApiKeyHasExpired(tokenId, tokenDTO);
     } else {
       throw new InvalidRequestException(String.format("Invalid API token %s: Token not found", tokenId));

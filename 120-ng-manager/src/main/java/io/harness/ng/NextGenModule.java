@@ -42,8 +42,8 @@ import static io.harness.ng.core.api.utils.JWTTokenFlowAuthFilterUtils.JWT_TOKEN
 import static io.harness.ng.core.api.utils.JWTTokenFlowAuthFilterUtils.JWT_TOKEN_SCIM_SETTINGS_DATA_CACHE_KEY;
 import static io.harness.ng.core.api.utils.JWTTokenFlowAuthFilterUtils.JWT_TOKEN_SERVICE_ACCOUNT_DATA_CACHE_KEY;
 import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCHESTRATION;
-
 import static io.harness.token.TokenValidationHelper.API_TOKEN_PASSWORD_HASH_CACHE_KEY;
+
 import static java.lang.Boolean.TRUE;
 
 import io.harness.AccessControlClientModule;
@@ -546,8 +546,8 @@ public class NextGenModule extends AbstractModule {
   @Named(API_TOKEN_PASSWORD_HASH_CACHE_KEY)
   Cache<String, String> getApiTokenPasswordHashCacheKey(
       HarnessCacheManager harnessCacheManager, VersionInfoManager versionInfoManager) {
-    return harnessCacheManager.getCache(API_TOKEN_PASSWORD_HASH_CACHE_KEY, String.class,
-        String.class, AccessedExpiryPolicy.factoryOf(new Duration(TimeUnit.HOURS, 4)),
+    return harnessCacheManager.getCache(API_TOKEN_PASSWORD_HASH_CACHE_KEY, String.class, String.class,
+        AccessedExpiryPolicy.factoryOf(new Duration(TimeUnit.HOURS, 4)),
         versionInfoManager.getVersionInfo().getBuildNo());
   }
 

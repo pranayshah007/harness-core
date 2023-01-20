@@ -31,6 +31,7 @@ import static org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder.B
 import io.harness.NgManagerTestBase;
 import io.harness.account.services.AccountService;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.hash.HashUtils;
@@ -343,7 +344,7 @@ public class TokenServiceImplTest extends NgManagerTestBase {
   @Test
   @Owner(developers = PRATEEK)
   @Category(UnitTests.class)
-  public void testValidateApiKeyToken_sat_cache_miss() {
+  public void testValidateApiKeyToken_sat_cache_miss_ffDisabled() {
     tokenDTO.setApiKeyType(SERVICE_ACCOUNT);
     token.setApiKeyType(SERVICE_ACCOUNT);
     String rawPassword = generateUuid();
@@ -357,7 +358,39 @@ public class TokenServiceImplTest extends NgManagerTestBase {
 
     doReturn(false).when(ngFeatureFlagHelperService).isEnabled(anyString(), any());
     doReturn(false).when(apiTokenPasswordHashCache).containsKey(anyString());
-    // doReturn(identifier).when(tokenValidationHelper).parseApiKeyToken(anyString());
+    String delimiter = ".";
+    final String apiKeyDummy = "sat" + delimiter + accountIdentifier + delimiter + identifier + delimiter + rawPassword;
+
+    TokenDTO resultTokenDTO = tokenService.validateToken(accountIdentifier, apiKeyDummy);
+
+    assertThat(resultTokenDTO).isNotNull();
+    assertThat(resultTokenDTO.getEncodedPassword()).isNull();
+    assertThat(resultTokenDTO.getEmail()).isEqualTo(email);
+    verify(apiTokenPasswordHashCache, times(0)).put(anyString(), anyString());
+  }
+
+  @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
+  public void testValidateApiKeyToken_sat_cache_miss_ffEnabled() {
+    tokenDTO.setApiKeyType(SERVICE_ACCOUNT);
+    token.setApiKeyType(SERVICE_ACCOUNT);
+    String rawPassword = generateUuid();
+    String encodedPassword = new BCryptPasswordEncoder($2A, 10).encode(rawPassword);
+    String email = "test123@mailinator.in";
+    token.setEncodedPassword(encodedPassword);
+    when(tokenRepository.findById(anyString())).thenReturn(Optional.of(token));
+    when(serviceAccountService.getServiceAccountDTO(
+             accountIdentifier, orgIdentifier, projectIdentifier, parentIdentifier))
+        .thenReturn(ServiceAccountDTO.builder().email(email).name(email).build());
+
+    doReturn(false)
+        .when(ngFeatureFlagHelperService)
+        .isEnabled(accountIdentifier, FeatureName.PL_SUPPORT_JWT_TOKEN_SCIM_API);
+    doReturn(true)
+        .when(ngFeatureFlagHelperService)
+        .isEnabled(accountIdentifier, FeatureName.PL_USE_APIKEY_TOKEN_PASSWORD_HASH_CACHE);
+    doReturn(false).when(apiTokenPasswordHashCache).containsKey(anyString());
     String delimiter = ".";
     final String apiKeyDummy = "sat" + delimiter + accountIdentifier + delimiter + identifier + delimiter + rawPassword;
 
@@ -367,12 +400,13 @@ public class TokenServiceImplTest extends NgManagerTestBase {
     assertThat(resultTokenDTO.getEncodedPassword()).isNull();
     assertThat(resultTokenDTO.getEmail()).isEqualTo(email);
     verify(apiTokenPasswordHashCache, times(1)).put(anyString(), anyString());
+    verify(apiTokenPasswordHashCache, times(0)).get(anyString());
   }
 
   @Test
   @Owner(developers = PRATEEK)
   @Category(UnitTests.class)
-  public void testValidateApiKeyToken_sat_cache_hit() {
+  public void testValidateApiKeyToken_sat_cache_hit_ffEnabled() {
     tokenDTO.setApiKeyType(SERVICE_ACCOUNT);
     token.setApiKeyType(SERVICE_ACCOUNT);
 
@@ -385,7 +419,12 @@ public class TokenServiceImplTest extends NgManagerTestBase {
              accountIdentifier, orgIdentifier, projectIdentifier, parentIdentifier))
         .thenReturn(ServiceAccountDTO.builder().email(email).name(email).build());
 
-    doReturn(false).when(ngFeatureFlagHelperService).isEnabled(anyString(), any());
+    doReturn(false)
+        .when(ngFeatureFlagHelperService)
+        .isEnabled(accountIdentifier, FeatureName.PL_SUPPORT_JWT_TOKEN_SCIM_API);
+    doReturn(true)
+        .when(ngFeatureFlagHelperService)
+        .isEnabled(accountIdentifier, FeatureName.PL_USE_APIKEY_TOKEN_PASSWORD_HASH_CACHE);
     doReturn(true).when(apiTokenPasswordHashCache).containsKey(anyString());
     String delimiter = ".";
     final String apiKeyDummy = "sat" + delimiter + accountIdentifier + delimiter + identifier + delimiter + rawPassword;
