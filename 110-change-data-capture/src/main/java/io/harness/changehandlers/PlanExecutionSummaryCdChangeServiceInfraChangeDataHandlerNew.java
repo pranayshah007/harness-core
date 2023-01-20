@@ -455,7 +455,7 @@ public class PlanExecutionSummaryCdChangeServiceInfraChangeDataHandlerNew implem
                   e -> (String) e.get(PlanExecutionSummaryCDConstants.IDENTIFIER_KEY), Function.identity()));
 
       for (Object cluster : clusters) {
-        cla Map<String, String> columnMappingForSingleCluster = new HashMap<>();
+        Map<String, String> columnMappingForSingleCluster = new HashMap<>();
         if (cluster instanceof BasicBSONObject) {
           BasicBSONObject clusterObject = (BasicBSONObject) cluster;
           BasicBSONObject environmentObject =
