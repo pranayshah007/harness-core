@@ -13,8 +13,15 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
-        "//980-commons:module",
-        "@maven//:org_slf4j_slf4j_api",
+        "//979-recaster/src/main/java/io/harness/annotation:module",
+        "//980-commons/src/main/java/io/harness/data/structure:module",
+        "//980-commons/src/main/java/io/harness/serializer:module",
+        "//999-annotations/src/main/java/io/harness/annotations/dev:module",
+        "@maven//:com_esotericsoftware_kryo",
+        "@maven//:com_google_guava_guava",
+        "@maven//:javax_annotation_javax_annotation_api",
+        "@maven//:org_modelmapper_modelmapper",
+        "@maven//:org_reflections_reflections",
     ],
 )
 

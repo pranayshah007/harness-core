@@ -58,6 +58,10 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
+import dev.morphia.annotations.PrePersist;
+import dev.morphia.annotations.Transient;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
@@ -73,10 +77,6 @@ import lombok.Builder.Default;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.UtilityClass;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
-import org.mongodb.morphia.annotations.PrePersist;
-import org.mongodb.morphia.annotations.Transient;
 
 /**
  * The Class WorkflowExecution.
@@ -97,7 +97,7 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(SortCompoundMongoIndex.builder()
-                 .name("search")
+                 .name("search2")
                  .field(WorkflowExecutionKeys.workflowId)
                  .field(WorkflowExecutionKeys.status)
                  .descSortField(WorkflowExecutionKeys.endTs)
@@ -119,12 +119,13 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
                  .field(WorkflowExecutionKeys.endTs)
                  .build())
         .add(SortCompoundMongoIndex.builder()
-                 .name("lastInfraMappingSearch")
+                 .name("lastInfraMappingSearch2")
                  .field(WorkflowExecutionKeys.appId)
                  .field(WorkflowExecutionKeys.workflowType)
                  .field(WorkflowExecutionKeys.status)
                  .field(WorkflowExecutionKeys.infraMappingIds)
                  .descSortField(WorkflowExecutionKeys.createdAt)
+                 .rangeField(WorkflowExecutionKeys.deployment)
                  .build())
         .add(CompoundMongoIndex.builder()
                  .name("workflowExecutionMonitor")
@@ -360,6 +361,7 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
   private HelmExecutionSummary helmExecutionSummary;
   private List<AwsLambdaExecutionSummary> awsLambdaExecutionSummaries;
   private ConcurrencyStrategy concurrencyStrategy;
+  private Boolean deployment;
 
   // For pipeline resume.
   //

@@ -58,6 +58,7 @@ public class AlertCheckJobTest extends WingsBaseTest {
   @Mock private EmailHelperUtils emailHelperUtils;
   @Mock private MainConfiguration mainConfiguration;
   @InjectMocks @Inject AlertCheckJob alertCheckJob;
+  @InjectMocks @Inject DelegateDisconnectAlertHelper delegateDisconnectAlertHelper;
   @Inject private HPersistence persistence;
 
   @Before
@@ -157,7 +158,7 @@ public class AlertCheckJobTest extends WingsBaseTest {
 
     List<Delegate> delegates = Arrays.asList(delegate1, delegate2);
 
-    alertCheckJob.processDelegateWhichBelongsToGroup(ACCOUNT_ID, delegates);
+    delegateDisconnectAlertHelper.processDelegateWhichBelongsToGroup(ACCOUNT_ID, delegates);
 
     verify(alertService, times(1))
         .openAlert(eq(ACCOUNT_ID), eq(GLOBAL_APP_ID), eq(AlertType.DelegatesDown),
@@ -178,7 +179,7 @@ public class AlertCheckJobTest extends WingsBaseTest {
                             .build();
     persistence.save(delegate);
     List<Delegate> delegates = Collections.singletonList(delegate);
-    alertCheckJob.processDelegateWhichBelongsToGroup(ACCOUNT_ID, delegates);
+    delegateDisconnectAlertHelper.checkIfAnyDelegatesAreDown(ACCOUNT_ID, delegates);
     verify(alertService, times(1))
         .closeAlert(eq(ACCOUNT_ID), eq(GLOBAL_APP_ID), eq(AlertType.DelegatesDown),
             eq(DelegatesDownAlert.builder().accountId(ACCOUNT_ID).delegateGroupName(delegateGroupName).build()));

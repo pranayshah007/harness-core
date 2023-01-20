@@ -55,7 +55,7 @@ public class RunStepPlanCreatorV1 extends CIPMSStepPlanCreatorV2<ScriptStepNode>
         .runStepInfo(RunStepInfo.builder()
                          .command(scriptStepInfo.getRun())
                          .image(scriptStepInfo.getImage())
-                         .envVariables(scriptStepInfo.getEnv())
+                         .envVariables(scriptStepInfo.getEnvs())
                          .resources(scriptStepInfo.getResources())
                          .retry(scriptStepInfo.getRetry())
                          .shell(scriptStepInfo.getShell() == null

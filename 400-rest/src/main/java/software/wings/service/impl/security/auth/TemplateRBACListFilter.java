@@ -19,10 +19,10 @@ import io.harness.data.structure.EmptyPredicate;
 import software.wings.beans.template.Template;
 import software.wings.beans.template.Template.TemplateKeys;
 
+import dev.morphia.query.Query;
 import java.util.Set;
 import lombok.Builder;
 import lombok.Value;
-import org.mongodb.morphia.query.Query;
 
 @Value
 @Builder

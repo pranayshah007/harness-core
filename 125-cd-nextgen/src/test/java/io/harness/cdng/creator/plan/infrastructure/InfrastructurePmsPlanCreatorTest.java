@@ -18,7 +18,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGTestBase;
 import io.harness.cdng.creator.plan.PlanCreatorConstants;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
-import io.harness.cdng.infra.steps.InfraSectionStepParameters;
+import io.harness.cdng.infra.InfraSectionStepParameters;
 import io.harness.cdng.infra.steps.InfrastructureSectionStep;
 import io.harness.cdng.infra.steps.InfrastructureTaskExecutableStepV2;
 import io.harness.cdng.infra.steps.InfrastructureTaskExecutableStepV2Params;

@@ -36,6 +36,7 @@ import software.wings.service.intfc.UserGroupService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.query.Query;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -45,7 +46,6 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
 
 @OwnedBy(CDC)
 @Singleton

@@ -92,14 +92,14 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.mongodb.ReadPreference;
+import dev.morphia.query.FindOptions;
+import dev.morphia.query.Sort;
+import dev.morphia.query.UpdateOperations;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.FindOptions;
-import org.mongodb.morphia.query.Sort;
-import org.mongodb.morphia.query.UpdateOperations;
 
 /**
  * The interface State machine event manager.

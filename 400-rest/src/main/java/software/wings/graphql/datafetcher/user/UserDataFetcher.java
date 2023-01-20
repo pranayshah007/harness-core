@@ -28,9 +28,9 @@ import software.wings.security.PermissionAttribute;
 import software.wings.security.annotations.AuthRule;
 
 import com.google.inject.Inject;
+import dev.morphia.query.CriteriaContainer;
+import dev.morphia.query.Query;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.CriteriaContainer;
-import org.mongodb.morphia.query.Query;
 
 @Slf4j
 @OwnedBy(PL)

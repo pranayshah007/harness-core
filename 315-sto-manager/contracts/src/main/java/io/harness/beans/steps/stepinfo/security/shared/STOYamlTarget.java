@@ -8,7 +8,6 @@
 package io.harness.beans.steps.stepinfo.security.shared;
 
 import static io.harness.annotations.dev.HarnessTeam.STO;
-import static io.harness.beans.SwaggerConstants.BOOLEAN_CLASSPATH;
 import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
@@ -30,21 +29,9 @@ public class STOYamlTarget {
   @ApiModelProperty(dataType = "io.harness.yaml.sto.variables.STOYamlTargetType")
   protected STOYamlTargetType type;
 
-  @NotNull
-  @YamlSchemaTypes(value = {runtime})
-  @ApiModelProperty(dataType = STRING_CLASSPATH)
-  protected ParameterField<String> name;
+  @NotNull @ApiModelProperty(dataType = STRING_CLASSPATH) protected ParameterField<String> name;
 
-  @NotNull
-  @YamlSchemaTypes(value = {runtime})
-  @ApiModelProperty(dataType = STRING_CLASSPATH)
-  protected ParameterField<String> variant;
+  @NotNull @ApiModelProperty(dataType = STRING_CLASSPATH) protected ParameterField<String> variant;
 
-  @YamlSchemaTypes(value = {runtime})
-  @ApiModelProperty(dataType = STRING_CLASSPATH)
-  protected ParameterField<String> workspace;
-
-  @YamlSchemaTypes(value = {runtime})
-  @ApiModelProperty(dataType = BOOLEAN_CLASSPATH)
-  protected ParameterField<Boolean> ssl;
+  @ApiModelProperty(dataType = STRING_CLASSPATH) protected ParameterField<String> workspace;
 }

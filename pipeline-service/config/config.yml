@@ -165,10 +165,13 @@ eventsFramework:
       CATrustStorePath: "/tmp/ca_trust_store"
       CATrustStorePassword: ""
 
-debeziumConsumerConfigs:
-  - debeziumTopicName: ${DEBEZIUM_CONSUMER_TOPIC_NAME:-DEBEZIUM_pmsMongo.pms-harness.planExecutionsSummary}
-    debeziumNumberOfThreads: ${DEBEZIUM_CONSUMER_THREADS:-2}
-    debeziumBatchSize: ${DEBEZIUM_CONSUMER_BATCH_SIZE:-100}
+debeziumConsumersConfigs:
+  planExecutionsSummaryStreaming:
+    topic: ${DEBEZIUM_CONSUMER_TOPIC_NAME:-DEBEZIUM_pmsMongo.pms-harness.planExecutionsSummary}
+    batchSize: ${DEBEZIUM_CONSUMER_BATCH_SIZE:-100}
+  planExecutionsSummarySnapshot:
+    topic: ${DEBEZIUM_CONSUMER_SNAPSHOT_TOPIC_NAME:-DEBEZIUM_SNAPSHOT_pmsMongoSnapshot.pms-harness.planExecutionsSummary}
+    batchSize: ${DEBEZIUM_CONSUMER_SNAPSHOT_BATCH_SIZE:-100}
 
 managerClientConfig:
   baseUrl: http://localhost:3457/api/
@@ -207,6 +210,13 @@ templateServiceClientConfig:
   connectTimeOutSeconds: 30
   readTimeOutSeconds: 30
 
+
+queueServiceClientConfig:
+  baseUrl: http://localhost:3457/api/
+  connectTimeOutSeconds: 15
+  readTimeOutSeconds: 15
+
+queueServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
 ngManagerServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
 pipelineServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
 templateServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
@@ -375,6 +385,8 @@ pipelineEventConsumersConfig:
     threads: 1
   pipelineExecutionEvent:
     threads: 1
+  pipelineExecutionEventSnapshot:
+    threads: 1
   partialPlanResponse:
     threads: 1
   createPlan:
@@ -517,3 +529,27 @@ orchestrationRestrictionConfiguration:
     enterprise: ${MAX_STEP_TIMEOUT_ENTERPRISE:-0}
 
 grpcNegotiationType: ${GRPC_NEGOTIATION_TYPE:-TLS}
+
+lockNotifyResponseCleanup: ${LOCK_NOTIFY_RESPONSE_CLEANUP:-true}
+
+shouldUseEventsFrameworkSnapshotDebezium: ${SHOULD_USE_EVENTS_FRAMEWORK_SNAPSHOT_DEBEZIUM:-false}
+# Events framework configuration for debezium consumer in case of snapshotting
+eventsFrameworkSnapshotDebezium:
+  redis:
+    sentinel: false
+    masterName: "test"
+    redisUrl: "redis://localhost:6379"
+    sentinelUrls:
+      - "redis://redis1:26379"
+      - "redis://redis2:26379"
+      - "redis://redis3:26379"
+    envNamespace: ""
+    readMode: MASTER
+    nettyThreads: 16
+    useScriptCache: true
+    userName: ""
+    password: ""
+    sslConfig:
+      enabled: false
+      CATrustStorePath: "/tmp/ca_trust_store"
+      CATrustStorePassword: ""

@@ -13,7 +13,7 @@ import static java.time.Duration.ofMinutes;
 import static java.time.Duration.ofSeconds;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 
-import io.harness.cdng.NgExpressionHelper;
+import io.harness.cdng.helpers.NgExpressionHelper;
 import io.harness.freeze.beans.FreezeStatus;
 import io.harness.freeze.beans.FreezeType;
 import io.harness.freeze.entity.FreezeConfigEntity;

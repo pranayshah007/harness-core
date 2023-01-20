@@ -8,6 +8,7 @@
 package io.harness.resourcegroup.framework.v2.remote.resource;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.exception.WingsException.USER;
 import static io.harness.resourcegroup.ResourceGroupPermissions.DELETE_RESOURCEGROUP_PERMISSION;
 import static io.harness.resourcegroup.ResourceGroupPermissions.EDIT_RESOURCEGROUP_PERMISSION;
 import static io.harness.resourcegroup.ResourceGroupPermissions.VIEW_RESOURCEGROUP_PERMISSION;
@@ -26,6 +27,9 @@ import io.harness.beans.Scope;
 import io.harness.beans.ScopeLevel;
 import io.harness.enforcement.client.annotation.FeatureRestrictionCheck;
 import io.harness.enforcement.constants.FeatureRestrictionName;
+import io.harness.eraro.ErrorCode;
+import io.harness.eraro.Level;
+import io.harness.exception.NoResultFoundException;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -56,10 +60,20 @@ public class HarnessResourceGroupResourceImpl implements HarnessResourceGroupRes
   public ResponseDTO<ResourceGroupResponse> get(@ResourceIdentifier String identifier,
       @AccountIdentifier String accountIdentifier, @OrgIdentifier String orgIdentifier,
       @ProjectIdentifier String projectIdentifier) {
-    Optional<ResourceGroupResponse> resourceGroupResponseOpt = Optional.ofNullable(
-        resourceGroupService.get(Scope.of(accountIdentifier, orgIdentifier, projectIdentifier), identifier, NO_FILTER)
-            .orElse(null));
-    return ResponseDTO.newResponse(resourceGroupResponseOpt.orElse(null));
+    Optional<ResourceGroupResponse> optionalResourceGroupResponse =
+        resourceGroupService.get(Scope.of(accountIdentifier, orgIdentifier, projectIdentifier), identifier, NO_FILTER);
+
+    if (optionalResourceGroupResponse.isEmpty()) {
+      String message = String.format("Resource group with identifier [%s] not found.", identifier);
+      throw NoResultFoundException.newBuilder()
+          .code(ErrorCode.RESOURCE_NOT_FOUND)
+          .message(message)
+          .level(Level.ERROR)
+          .reportTargets(USER)
+          .build();
+    }
+
+    return ResponseDTO.newResponse(optionalResourceGroupResponse.get());
   }
 
   @InternalApi

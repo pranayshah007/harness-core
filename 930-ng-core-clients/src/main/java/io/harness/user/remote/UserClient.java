@@ -52,6 +52,7 @@ public interface UserClient {
   String USER_BATCH_LIST_API = "ng/user/batch";
   String SCIM_USER_SEARCH = "ng/user/scim/search";
   String SCIM_USER_PATCH_UPDATE = "ng/user/scim/patch";
+  String SCIM_USER_PATCH_UPDATE_DETAILS = "ng/user/scim/patch/details";
   String SCIM_USER_UPDATE = "ng/user/scim";
   String SCIM_USER_DISABLED_UPDATE = "ng/user/scim/disabled";
   String USER_IN_ACCOUNT_VERIFICATION = "ng/user/user-account";
@@ -85,6 +86,10 @@ public interface UserClient {
 
   @PUT(SCIM_USER_PATCH_UPDATE)
   Call<RestResponse<ScimUser>> scimUserPatchUpdate(
+      @Query("accountId") String accountId, @Query("userId") String userId, @Body PatchRequest patchRequest);
+
+  @PUT(SCIM_USER_PATCH_UPDATE_DETAILS)
+  Call<RestResponse<ScimUser>> scimUserPatchUpdateDeatils(
       @Query("accountId") String accountId, @Query("userId") String userId, @Body PatchRequest patchRequest);
 
   @PUT(SCIM_USER_UPDATE)

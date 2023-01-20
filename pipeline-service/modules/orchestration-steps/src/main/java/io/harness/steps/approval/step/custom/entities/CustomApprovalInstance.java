@@ -18,7 +18,7 @@ import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.servicenow.TicketNG;
+import io.harness.servicenow.misc.TicketNG;
 import io.harness.steps.approval.step.beans.CriteriaSpecWrapperDTO;
 import io.harness.steps.approval.step.custom.CustomApprovalOutcome;
 import io.harness.steps.approval.step.custom.CustomApprovalSpecParameters;
@@ -29,6 +29,7 @@ import io.harness.steps.shellscript.ShellScriptStepParameters;
 import io.harness.steps.shellscript.ShellType;
 import io.harness.yaml.core.timeout.Timeout;
 
+import dev.morphia.annotations.Entity;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -41,7 +42,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.Persistent;
 import org.springframework.data.annotation.TypeAlias;
 

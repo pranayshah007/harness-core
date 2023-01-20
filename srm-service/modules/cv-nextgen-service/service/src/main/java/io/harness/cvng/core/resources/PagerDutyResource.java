@@ -12,7 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CV;
 import io.harness.annotations.ExposeInternalException;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.beans.pagerduty.PagerDutyServiceDetail;
-import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.core.beans.params.ProjectScopedProjectParams;
 import io.harness.cvng.core.services.api.PagerDutyService;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
@@ -54,9 +54,10 @@ public class PagerDutyResource {
   @ExceptionMetered
   @ApiOperation(value = "gets services from PagerDuty", nickname = "getServicesFromPagerDuty")
   public RestResponse<List<PagerDutyServiceDetail>> getServicesFromPagerDuty(
-      @NotNull @BeanParam ProjectParams projectParams, @QueryParam("connectorIdentifier") String connectorIdentifier,
+      @NotNull @BeanParam ProjectScopedProjectParams projectParams,
+      @QueryParam("connectorIdentifier") String connectorIdentifier,
       @QueryParam("requestGuid") @NotNull String requestGuid, @QueryParam("query") String query) {
-    return new RestResponse<>(
-        pagerDutyService.getPagerDutyServices(projectParams, connectorIdentifier, requestGuid, query));
+    return new RestResponse<>(pagerDutyService.getPagerDutyServices(
+        projectParams.getProjectParams(), connectorIdentifier, requestGuid, query));
   }
 }

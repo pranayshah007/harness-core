@@ -7,7 +7,7 @@
 
 package io.harness.cvng.resources;
 
-import static io.harness.cvng.core.services.CVNextGenConstants.PROJECT_PATH;
+import static io.harness.cvng.core.services.CVNextGenConstants.VERIFICATIONS_RESOURCE_PATH;
 
 import io.harness.annotations.ExposeInternalException;
 import io.harness.cvng.cdng.beans.v2.HealthSource;
@@ -31,8 +31,8 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 
-@Path(PROJECT_PATH + "/verifications/{verifyStepExecutionId}")
-@Api(PROJECT_PATH + "/verifications/{verifyStepExecutionId}")
+@Path(VERIFICATIONS_RESOURCE_PATH)
+@Api(VERIFICATIONS_RESOURCE_PATH)
 @Produces("application/json")
 @ExposeInternalException
 @NextGenManagerAuth
@@ -41,15 +41,17 @@ public interface VerifyStepResource {
   @Path("/transaction-groups")
   @Timed
   @ExceptionMetered
-  @ApiOperation(value = "get all the transaction groups", nickname = "getTransactionGroups")
-  List<String> getTransactionGroups(@BeanParam @Valid VerifyStepPathParams verifyStepPathParams);
+  @ApiOperation(value = "get all the transaction groups", nickname = "getTransactionGroupsForVerifyStepExecutionId")
+  List<String> getTransactionGroupsForVerifyStepExecutionId(
+      @BeanParam @Valid VerifyStepPathParams verifyStepPathParams);
 
   @GET
   @Path("/health-sources")
   @Timed
   @ExceptionMetered
-  @ApiOperation(value = "get all the health sources", nickname = "getHealthSources")
-  List<HealthSource> getHealthSources(@BeanParam @Valid VerifyStepPathParams verifyStepPathParams);
+  @ApiOperation(value = "get all the health sources", nickname = "getHealthSourcesForVerifyStepExecutionId")
+  List<HealthSource> getHealthSourcesForVerifyStepExecutionId(
+      @BeanParam @Valid VerifyStepPathParams verifyStepPathParams);
 
   @GET
   @Path("/overview")
@@ -57,7 +59,7 @@ public interface VerifyStepResource {
   @ExceptionMetered
   @ApiOperation(value = "get verification overview for given verifyStepExecutionId",
       nickname = "getVerificationOverviewForVerifyStepExecutionId")
-  List<VerificationOverview>
+  VerificationOverview
   getVerificationOverviewForVerifyStepExecutionId(@BeanParam @Valid VerifyStepPathParams verifyStepPathParams);
 
   @GET
@@ -69,7 +71,8 @@ public interface VerifyStepResource {
   PageResponse<MetricsAnalysis>
   getMetricsAnalysisForVerifyStepExecutionId(@BeanParam @Valid VerifyStepPathParams verifyStepPathParams,
       @QueryParam("anomalousMetricsOnly") @DefaultValue("false") boolean anomalousMetricsOnly,
-      @QueryParam("healthSource") List<String> healthSource, @QueryParam("node") List<String> node,
+      @QueryParam("healthSource") List<String> healthSources,
+      @QueryParam("transactionGroup") List<String> transactionGroups, @QueryParam("node") List<String> nodes,
       @QueryParam("limit") @DefaultValue("30") @Min(1) int limit,
       @QueryParam("page") @DefaultValue("1") @Min(1) int page);
 }

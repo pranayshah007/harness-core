@@ -76,7 +76,7 @@ func startServer(c *config.Config) {
 		}
 	}
 
-	store := redis.NewRedisStoreWithTLS(c.Redis.Endpoint, c.Redis.Password, c.Redis.SSLEnabled, c.Redis.CertPath)
+	store := redis.NewRedisStoreWithTLS(c.Redis.Endpoint, c.Redis.Password, c.Redis.SSLEnabled, c.Redis.CertPath, c.PendingTimeout, c.ClaimTimeout)
 	customMetrics := metrics.InitMetrics()
 	h := handler.NewHandler(store, customMetrics)
 

@@ -30,13 +30,13 @@ import software.wings.security.UserThreadLocal;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.query.Query;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.mongodb.morphia.query.Query;
 
 /**
  * @author rktummala on 07/01/19

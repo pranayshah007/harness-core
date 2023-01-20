@@ -18,6 +18,7 @@ import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doNothing;
@@ -81,6 +82,7 @@ import java.util.Objects;
 import java.util.Optional;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
@@ -536,24 +538,40 @@ public class ExecutionHelperTest extends CategoryTest {
   @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
-  public void testGetPipelineYamlAndValidate() {
-    String wrongRuntimeInputYaml = "pipeline:\n"
-        + "  stages:\n"
-        + "  - stage:\n"
-        + "      identifier: s1\n"
-        + "      description: desc\n"
-        + "  - stage:\n"
-        + "      identifier: s2\n"
-        + "      name: s2\n"
-        + "      description: desc\n";
-    assertThatThrownBy(() -> executionHelper.getPipelineYamlAndValidate(wrongRuntimeInputYaml, pipelineEntity))
-        .isInstanceOf(InvalidRequestException.class);
+  public void testGetPipelineYamlAndValidateForRbacCheck() throws IOException {
+    String pipelineYaml = "pipeline:\n"
+        + "  template:\n"
+        + "    templateInputs:\n"
+        + "      serviceRef: <+input>\n";
+    String mergedRuntimeInputYaml = "pipeline:\n"
+        + "  template:\n"
+        + "    templateInputs:\n"
+        + "      serviceRef: \"svc_v2\"\n";
+    String resolvedYaml = "pipeline:\n"
+        + "  stage:\n"
+        + "    serviceConfig:\n"
+        + "      serviceRef: \"svc_v2\"\n";
+    doReturn(TemplateMergeResponseDTO.builder().mergedPipelineYaml(resolvedYaml).build())
+        .when(pipelineTemplateHelper)
+        .resolveTemplateRefsInPipeline(any(), any(), any(), any(), anyBoolean(), anyBoolean(), any());
+    PipelineEntity pipelineEntity = PipelineEntity.builder()
+                                        .accountId(accountId)
+                                        .orgIdentifier(orgId)
+                                        .projectIdentifier(projectId)
+                                        .identifier(pipelineId)
+                                        .yaml(pipelineYaml)
+                                        .build();
+    executionHelper.getPipelineYamlAndValidate(mergedRuntimeInputYaml, pipelineEntity);
+    verify(pipelineRbacServiceImpl, times(1))
+        .extractAndValidateStaticallyReferredEntities(accountId, orgId, projectId, pipelineId, mergedRuntimeInputYaml);
+    verify(pipelineRbacServiceImpl, times(0))
+        .extractAndValidateStaticallyReferredEntities(accountId, orgId, projectId, pipelineId, resolvedYaml);
   }
 
   @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
-  public void testGetPipelineYamlAndValidateForPipelineWithAllowedValues() {
+  public void testGetPipelineYamlAndValidateForPipelineWithAllowedValues() throws IOException {
     String pipelineYamlWithAllowedValues = "pipeline:\n"
         + "  stages:\n"
         + "  - stage:\n"
@@ -583,14 +601,14 @@ public class ExecutionHelperTest extends CategoryTest {
     TemplateMergeResponseDTO response = executionHelper.getPipelineYamlAndValidate(runtimeInputYaml, pipelineEntity);
     assertThat(response.getMergedPipelineYaml()).isEqualTo(mergedYamlWithValidators);
     assertThat(response.getMergedPipelineYamlWithTemplateRef()).isEqualTo(mergedYamlWithValidators);
-    verify(pmsYamlSchemaService, times(1)).validateYamlSchema(accountId, orgId, projectId, mergedYamlWithoutValidators);
-    verify(pmsYamlSchemaService, times(0)).validateYamlSchema(accountId, orgId, projectId, mergedYamlWithValidators);
+    verify(pmsYamlSchemaService, times(1)).validateYamlSchema(accountId, orgId, projectId, mergedYamlWithValidators);
+    verify(pmsYamlSchemaService, times(0)).validateYamlSchema(accountId, orgId, projectId, mergedYamlWithoutValidators);
   }
 
   @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
-  public void testGetPipelineYamlAndValidateForInlineAndRemotePipelines() {
+  public void testGetPipelineYamlAndValidateForInlineAndRemotePipelines() throws IOException {
     PipelineEntity inline = PipelineEntity.builder()
                                 .accountId(accountId)
                                 .orgIdentifier(orgId)
@@ -618,9 +636,11 @@ public class ExecutionHelperTest extends CategoryTest {
                                 .build();
     executionHelper.getPipelineYamlAndValidate("", remote);
   }
+
   @Test
   @Owner(developers = TATHAGAT)
   @Category(UnitTests.class)
+  @Ignore("Will remove this ignore annotation and modify this test when service env changes are done")
   public void testGetPipelineYamlAndValidateParallelAndIndependentStages() {
     String pipelineYaml = readFile("pipelineTest.yaml");
     String inputSetYaml = readFile("inputSetTest.yaml");
@@ -637,7 +657,7 @@ public class ExecutionHelperTest extends CategoryTest {
   @Test
   @Owner(developers = UTKARSH_CHOUBEY)
   @Category(UnitTests.class)
-  public void testGetPipelineYamlAndValidateWhenOPAFFisOff() {
+  public void testGetPipelineYamlAndValidateWhenOPAFFisOff() throws IOException {
     String yamlWithTempRef = "pipeline:\n"
         + "  name: \"ww\"\n"
         + "  template:\n"

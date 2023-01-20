@@ -16,6 +16,7 @@ import io.harness.pms.contracts.refobjects.RefObject;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import lombok.NonNull;
 
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -37,4 +38,11 @@ public interface PmsOutcomeService extends Resolver {
   List<StepOutcomeRef> fetchOutcomeRefs(String nodeExecutionId);
 
   Map<String, List<StepOutcomeRef>> fetchOutcomeRefs(List<String> nodeExecutionIds);
+
+  /**
+   * Delete all outcome instances for given planExecutionIds
+   * Uses - unique_levelRuntimeIdUniqueIdx
+   * @param planExecutionIds
+   */
+  void deleteAllOutcomesInstances(Set<String> planExecutionIds);
 }

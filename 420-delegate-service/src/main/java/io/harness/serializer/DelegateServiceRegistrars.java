@@ -21,6 +21,7 @@ import io.harness.serializer.morphia.CommonEntitiesMorphiaRegister;
 import io.harness.serializer.morphia.DelegateServiceMorphiaRegistrar;
 import io.harness.serializer.morphia.DelegateTasksMorphiaRegistrar;
 import io.harness.serializer.morphia.FeatureFlagBeansMorphiaRegistrar;
+import io.harness.serializer.morphia.SecretConfigMorphiaRegistrar;
 
 import com.google.common.collect.ImmutableSet;
 import lombok.experimental.UtilityClass;
@@ -52,6 +53,7 @@ public class DelegateServiceRegistrars {
           .addAll(CgOrchestrationRegistrars.morphiaRegistrars)
           .addAll(DelegateTaskRegistrars.morphiaRegistrars)
           .add(DelegateTasksMorphiaRegistrar.class)
+          .add(SecretConfigMorphiaRegistrar.class)
           .addAll(EventsFrameworkRegistrars.morphiaRegistrars)
           .add(FeatureFlagBeansMorphiaRegistrar.class)
           .addAll(OutboxEventRegistrars.morphiaRegistrars)

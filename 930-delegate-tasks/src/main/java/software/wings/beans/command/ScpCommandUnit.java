@@ -17,8 +17,8 @@ import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.WARN;
 
-import static software.wings.beans.Log.Builder.aLog;
 import static software.wings.beans.command.ScpCommandUnit.ScpFileCategory.ARTIFACTS;
+import static software.wings.beans.dto.Log.Builder.aLog;
 
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toMap;
@@ -70,6 +70,7 @@ import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.annotations.Transient;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -82,7 +83,6 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
-import org.mongodb.morphia.annotations.Transient;
 
 /**
  * Created by anubhaw on 7/14/16.

@@ -10,13 +10,16 @@ package io.harness.security;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.rule.OwnerRule.BOOPESH;
+import static io.harness.rule.OwnerRule.NAMANG;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
 import io.harness.rule.Owner;
 
@@ -26,7 +29,14 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTCreationException;
 import com.auth0.jwt.interfaces.Claim;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.io.Resources;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
+import java.security.KeyFactory;
+import java.security.interfaces.RSAKey;
+import java.security.interfaces.RSAPrivateCrtKey;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.RSAPublicKeySpec;
 import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -43,6 +53,11 @@ public class JWTTokenServiceUtilsTest extends CategoryTest {
   private static final String EXP = "exp";
   private static final String TYPE = "type";
   private static final String NAME = "name";
+  private static final String PEM_KEY_VALID = loadResource("/io/harness/security/certs/key-valid.pem");
+  private static final ImmutableMap<String, String> claims = ImmutableMap.of(
+      "iss", "clientID", "sub", "clientID", "aud", "https://aud.url.com", "jti", UUIDGenerator.generateUuid());
+  private static final ImmutableMap<String, Object> headers =
+      ImmutableMap.of("alg", "RS256", "typ", "JWT", "kid", UUIDGenerator.generateUuid());
 
   private String generateToken(ImmutableMap<String, String> claims) {
     try {
@@ -120,5 +135,64 @@ public class JWTTokenServiceUtilsTest extends CategoryTest {
     String jwtToken = JWTTokenServiceUtils.generateJWTToken(claims, 1L, JWT_PASSWORD_SECRET);
     Thread.sleep(1100);
     JWTTokenServiceUtils.isServiceAuthorizationValid(jwtToken, JWT_PASSWORD_SECRET);
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testGenerateJWTTokenWithRSAPrivateKey() throws Exception {
+    RSAKey rsaKey = getRSAPrivateKey();
+    String jwtToken = JWTTokenServiceUtils.generateJWTToken(claims, headers, TimeUnit.DAYS.toMillis(2), rsaKey);
+    assertThat(jwtToken).isNotNull();
+    // key is null
+    assertThatThrownBy(() -> JWTTokenServiceUtils.generateJWTToken(claims, headers, TimeUnit.DAYS.toMillis(2), null))
+        .isInstanceOf(InvalidRequestException.class);
+    // invalid private key but a valid key
+    assertThatThrownBy(
+        () -> JWTTokenServiceUtils.generateJWTToken(claims, headers, TimeUnit.DAYS.toMillis(2), getRSAPublicKey()))
+        .isInstanceOf(JWTCreationException.class);
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testGenerateVerifyJWTTokenWithRSAPrivateKey() throws Exception {
+    RSAKey rsaKey = getRSAPrivateKey();
+    String jwtToken = JWTTokenServiceUtils.generateJWTToken(claims, headers, TimeUnit.DAYS.toMillis(2), rsaKey);
+    Map<String, Claim> decodedClaims = JWTTokenServiceUtils.verifyJWTToken(jwtToken, getRSAPublicKey(), "clientID");
+    assertThat(decodedClaims.size()).isEqualTo(6);
+    assertThat(decodedClaims.get("iss").asString()).isEqualTo("clientID");
+    assertThat(decodedClaims.get("aud").asString()).isEqualTo("https://aud.url.com");
+    assertThat(decodedClaims.get("sub").asString()).isEqualTo("clientID");
+    assertThat(TimeUnit.MILLISECONDS.toDays(
+                   decodedClaims.get("exp").asDate().getTime() - decodedClaims.get("iat").asDate().getTime()))
+        .isEqualTo(2);
+
+    // invalid token case (iss claim)
+    assertThatThrownBy(() -> JWTTokenServiceUtils.verifyJWTToken(jwtToken, getRSAPublicKey(), "diffClientID"))
+        .isInstanceOf(InvalidRequestException.class);
+  }
+
+  private RSAKey getRSAPrivateKey() throws Exception {
+    PKCS8EncodedKeySpec pkcs8EncodedKeySpec =
+        X509KeyManagerBuilder.loadPkcs8EncodedPrivateKeySpecFromPem(PEM_KEY_VALID);
+    KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+    return (RSAKey) keyFactory.generatePrivate(pkcs8EncodedKeySpec);
+  }
+
+  private RSAKey getRSAPublicKey() throws Exception {
+    RSAPrivateCrtKey rsaPrivateCrtKey = (RSAPrivateCrtKey) getRSAPrivateKey();
+    RSAPublicKeySpec publicKeySpec =
+        new RSAPublicKeySpec(rsaPrivateCrtKey.getModulus(), rsaPrivateCrtKey.getPublicExponent());
+    KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+    return (RSAKey) keyFactory.generatePublic(publicKeySpec);
+  }
+
+  private static String loadResource(String resourcePath) {
+    try {
+      return Resources.toString(JWTTokenServiceUtilsTest.class.getResource(resourcePath), StandardCharsets.UTF_8);
+    } catch (Exception ex) {
+      return "NOT FOUND";
+    }
   }
 }

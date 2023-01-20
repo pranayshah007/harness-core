@@ -18,8 +18,8 @@ import static java.util.Collections.singletonList;
 import static org.joda.time.Months.monthsBetween;
 
 import io.harness.batch.processing.config.BatchMainConfig;
-import io.harness.batch.processing.mail.CEMailNotificationService;
 import io.harness.batch.processing.shard.AccountShardService;
+import io.harness.batch.processing.tasklet.util.CurrencyPreferenceHelper;
 import io.harness.ccm.BudgetCommon;
 import io.harness.ccm.budget.AlertThreshold;
 import io.harness.ccm.budget.BudgetBreakdown;
@@ -29,7 +29,6 @@ import io.harness.ccm.budget.entities.BudgetAlertsData;
 import io.harness.ccm.budget.utils.BudgetUtils;
 import io.harness.ccm.budgetGroup.BudgetGroup;
 import io.harness.ccm.budgetGroup.dao.BudgetGroupDao;
-import io.harness.ccm.commons.dao.CEMetadataRecordDao;
 import io.harness.ccm.commons.entities.billing.Budget;
 import io.harness.ccm.currency.Currency;
 import io.harness.notification.Team;
@@ -45,7 +44,6 @@ import software.wings.beans.notification.SlackNotificationSetting;
 import software.wings.beans.security.UserGroup;
 import software.wings.graphql.datafetcher.billing.CloudBillingHelper;
 import software.wings.graphql.datafetcher.budget.BudgetTimescaleQueryHelper;
-import software.wings.service.intfc.SlackMessageSender;
 import software.wings.service.intfc.instance.CloudToHarnessMappingService;
 
 import com.google.common.collect.ImmutableMap;
@@ -75,9 +73,7 @@ import retrofit2.Response;
 @Slf4j
 public class BudgetAlertsServiceImpl {
   @Autowired private TimeScaleDBService timeScaleDBService;
-  @Autowired private CEMailNotificationService emailNotificationService;
   @Autowired private NotificationResourceClient notificationResourceClient;
-  @Autowired private SlackMessageSender slackMessageSender;
   @Autowired private BudgetTimescaleQueryHelper budgetTimescaleQueryHelper;
   @Autowired private BudgetDao budgetDao;
   @Autowired private BudgetGroupDao budgetGroupDao;
@@ -85,7 +81,7 @@ public class BudgetAlertsServiceImpl {
   @Autowired private CloudToHarnessMappingService cloudToHarnessMappingService;
   @Autowired private AccountShardService accountShardService;
   @Autowired private CloudBillingHelper cloudBillingHelper;
-  @Autowired private CEMetadataRecordDao ceMetadataRecordDao;
+  @Autowired private CurrencyPreferenceHelper currencyPreferenceHelper;
 
   private static final String BUDGET_MAIL_ERROR = "Budget alert email couldn't be sent";
   private static final String NG_PATH_CONST = "ng/";
@@ -110,13 +106,14 @@ public class BudgetAlertsServiceImpl {
     accountIds.forEach(accountId -> {
       List<Budget> budgets = budgetDao.list(accountId);
       // [TODO]: Cache currency symbol for each account
-      Currency currency = getDestinationCurrency(accountId);
+      Currency currency = currencyPreferenceHelper.getDestinationCurrency(accountId);
       budgets.forEach(budget -> {
         updateCGBudget(budget);
         try {
           checkAndSendAlerts(buildBudgetCommon(budget, null), currency);
         } catch (Exception e) {
-          log.error("Can't send alert for budget : {}, Exception: ", budget.getUuid(), e);
+          log.error("Can't send alert for budget : {}, accountId: {}, Exception: ", budget.getUuid(),
+              budget.getAccountId(), e);
         }
       });
       List<BudgetGroup> budgetGroups = budgetGroupDao.list(accountId, Integer.MAX_VALUE, 0);
@@ -124,7 +121,8 @@ public class BudgetAlertsServiceImpl {
         try {
           checkAndSendAlerts(buildBudgetCommon(null, budgetGroup), currency);
         } catch (Exception e) {
-          log.error("Can't send alert for budget group : {}, Exception: ", budgetGroup.getUuid(), e);
+          log.error("Can't send alert for budget group : {}, accountId: {}, Exception: ", budgetGroup.getUuid(),
+              budgetGroup.getAccountId(), e);
         }
       });
     });
@@ -253,7 +251,8 @@ public class BudgetAlertsServiceImpl {
           costType = FORECASTED_COST_BUDGET;
           subjectCostType = SUBJECT_FORECASTED_COST_BUDGET;
         }
-        log.info("{} has been spent under the {} with id={} ", cost, budgetOrBudgetGroup, budgetCommon.getUuid());
+        log.info("{} has been spent under the {} with id={}, accountId={}", cost, budgetOrBudgetGroup,
+            budgetCommon.getUuid(), budgetCommon.getAccountId());
       } catch (Exception e) {
         log.error(e.getMessage());
         break;
@@ -262,9 +261,11 @@ public class BudgetAlertsServiceImpl {
       if (exceedsThreshold(cost, getThresholdAmount(budgetCommon, alertThreshold))) {
         try {
           sendBudgetAlertViaSlack(budgetCommon, alertThreshold, slackWebhooks);
-          log.info("slack {} alert sent!", budgetOrBudgetGroup);
+          log.info("slack {} alert sent! for accountId: {}, budgetId: {}", budgetOrBudgetGroup,
+              budgetCommon.getAccountId(), budgetCommon.getUuid());
         } catch (Exception e) {
-          log.error("Notification via slack not send : ", e);
+          log.error("Notification via slack not sent for accountId: {}, budgetId: {} : ", budgetCommon.getAccountId(),
+              budgetCommon.getUuid(), e);
         }
         sendBudgetAlertMail(budgetCommon.getAccountId(), emailAddresses, budgetCommon.getUuid(), budgetCommon.getName(),
             alertThreshold, cost, costType, budgetCommon.isNgBudget(), subjectCostType,
@@ -298,7 +299,8 @@ public class BudgetAlertsServiceImpl {
     Response<RestResponse<NotificationResult>> response =
         notificationResourceClient.sendNotification(budgetCommon.getAccountId(), slackChannelBuilder.build()).execute();
     if (!response.isSuccessful()) {
-      log.error("Failed to send slack notification: {}",
+      log.error("Failed to send slack notification for accountId: {}, budgetId: {} error: {}",
+          budgetCommon.getAccountId(), budgetCommon.getUuid(),
           (response.errorBody() != null) ? response.errorBody().string() : response.code());
     }
   }
@@ -346,7 +348,7 @@ public class BudgetAlertsServiceImpl {
       templateModel.put("url", budgetUrl);
       templateModel.put("BUDGET_NAME", budgetName);
       templateModel.put("THRESHOLD_PERCENTAGE", format("%.1f", alertThreshold.getPercentage()));
-      templateModel.put("CURRENT_COST", format("%s%s", currency.getSymbol(), format("%.2f", currentCost)));
+      templateModel.put("CURRENT_COST", format("%s%s", currency.getUtf8HexSymbol(), format("%.2f", currentCost)));
       templateModel.put("COST_TYPE", costType);
       templateModel.put("SUBJECT_COST_TYPE", subjectCostType);
       templateModel.put("PERIOD", period);
@@ -367,10 +369,10 @@ public class BudgetAlertsServiceImpl {
           Response<RestResponse<NotificationResult>> response =
               notificationResourceClient.sendNotification(accountId, emailChannelBuilder.build()).execute();
           if (!response.isSuccessful()) {
-            log.error("Failed to send email notification: {}",
-                (response.errorBody() != null) ? response.errorBody().string() : response.code());
+            log.error("Failed to send email notification for accountId: {}, budgetId: {} error: {}", accountId,
+                budgetId, (response.errorBody() != null) ? response.errorBody().string() : response.code());
           } else {
-            log.info("email sent to {} successfully", emailAddress);
+            log.info("email sent successfully for accountId: {}, budgetId: {}", accountId, budgetId);
           }
         } catch (IOException e) {
           log.error(BUDGET_MAIL_ERROR, e);
@@ -463,13 +465,5 @@ public class BudgetAlertsServiceImpl {
       default:
         return MONTH;
     }
-  }
-
-  private Currency getDestinationCurrency(String accountId) {
-    Currency currency = ceMetadataRecordDao.getDestinationCurrency(accountId);
-    if (Currency.NONE.equals(currency)) {
-      currency = Currency.USD;
-    }
-    return currency;
   }
 }

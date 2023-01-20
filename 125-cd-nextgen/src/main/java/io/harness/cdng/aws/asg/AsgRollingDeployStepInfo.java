@@ -10,7 +10,7 @@ package io.harness.cdng.aws.asg;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.pipeline.CDStepInfo;
+import io.harness.cdng.pipeline.CDAbstractStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.AsgRollingDeployStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -41,7 +41,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName(StepSpecTypeConstants.ASG_ROLLING_DEPLOY)
 @TypeAlias("asgRollingDeployStepInfo")
 @RecasterAlias("io.harness.cdng.aws.asg.AsgRollingDeployStepInfo")
-public class AsgRollingDeployStepInfo extends AsgRollingDeployBaseStepInfo implements CDStepInfo, Visitable {
+public class AsgRollingDeployStepInfo extends AsgRollingDeployBaseStepInfo implements CDAbstractStepInfo, Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -52,7 +52,7 @@ public class AsgRollingDeployStepInfo extends AsgRollingDeployBaseStepInfo imple
   @Builder(builderMethodName = "infoBuilder")
   public AsgRollingDeployStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
       ParameterField<Boolean> skipMatching, ParameterField<Boolean> useAlreadyRunningInstances,
-      ParameterField<Integer> instanceWarmup, ParameterField<Double> minimumHealthyPercentage) {
+      ParameterField<Integer> instanceWarmup, ParameterField<Integer> minimumHealthyPercentage) {
     super(delegateSelectors, skipMatching, useAlreadyRunningInstances, instanceWarmup, minimumHealthyPercentage);
   }
 

@@ -15,6 +15,7 @@ import io.harness.ngsettings.entities.Setting.SettingKeys;
 
 import com.google.inject.Inject;
 import com.mongodb.client.result.DeleteResult;
+import com.mongodb.client.result.UpdateResult;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -22,6 +23,7 @@ import org.springframework.data.mongodb.core.FindAndReplaceOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 
 @OwnedBy(PL)
 @AllArgsConstructor(access = AccessLevel.PRIVATE, onConstructor = @__({ @Inject }))
@@ -52,5 +54,16 @@ public class SettingRepositoryCustomImpl implements SettingRepositoryCustom {
   public DeleteResult delete(Criteria criteria) {
     Query query = new Query(criteria);
     return mongoTemplate.remove(query, Setting.class);
+  }
+
+  @Override
+  public List<Setting> deleteAll(Criteria criteria) {
+    Query query = new Query(criteria);
+    return mongoTemplate.findAllAndRemove(query, Setting.class);
+  }
+
+  @Override
+  public UpdateResult updateMultiple(Query query, Update update) {
+    return mongoTemplate.updateMulti(query, update, Setting.class);
   }
 }

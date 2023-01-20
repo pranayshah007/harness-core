@@ -38,6 +38,7 @@ import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceServi
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import java.net.URISyntaxException;
 import java.time.Duration;
 import java.time.Instant;
@@ -51,7 +52,6 @@ import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.client.utils.URIBuilder;
-import org.mongodb.morphia.query.Query;
 
 @Slf4j
 public class LogClusterServiceImpl implements LogClusterService {
@@ -120,10 +120,8 @@ public class LogClusterServiceImpl implements LogClusterService {
     } else {
       Optional<String> baselineVerificationTaskId = verificationTaskService.findBaselineVerificationTaskId(
           input.getVerificationTaskId(), verificationJobInstance);
-      if (baselineVerificationTaskId.isPresent()) {
-        testDataUrl = buildTestDataUrlForLogClustering(baselineVerificationTaskId.get(), input.getVerificationTaskId(),
-            verificationJobInstance.getStartTime(), input.getEndTime());
-      }
+      testDataUrl = buildTestDataUrlForLogClustering(baselineVerificationTaskId.orElse(null),
+          input.getVerificationTaskId(), verificationJobInstance.getStartTime(), input.getEndTime());
     }
     return Optional.of(createLogClusterLearningEngineTask(
         input.getVerificationTaskId(), input.getStartTime(), input.getEndTime(), LogClusterLevel.L2, testDataUrl));

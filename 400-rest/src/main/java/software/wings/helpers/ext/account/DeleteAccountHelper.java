@@ -17,6 +17,7 @@ import static java.lang.reflect.Modifier.isAbstract;
 
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.delegate.service.intfc.DelegateNgTokenService;
 import io.harness.ff.FeatureFlagService;
 import io.harness.limits.checker.rate.UsageBucket;
@@ -48,15 +49,15 @@ import software.wings.service.intfc.ownership.OwnedByAccount;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import dev.morphia.Morphia;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.Morphia;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
 import org.quartz.SchedulerException;
 import org.reflections.Reflections;
 
@@ -79,6 +80,7 @@ public class DeleteAccountHelper {
   @Inject private HPersistence hPersistence;
   @Inject @Named("BackgroundJobScheduler") private PersistentScheduler persistentScheduler;
   @Inject private PerpetualTaskService perpetualTaskService;
+
   @Inject private FeatureFlagService featureFlagService;
   @Inject private DelegateService delegateService;
   @Inject private DelegateNgTokenService delegateNgTokenService;
@@ -194,7 +196,11 @@ public class DeleteAccountHelper {
     });
     List<User> users = userService.getUsersOfAccount(accountId);
     if (!users.isEmpty()) {
-      users.forEach(user -> userService.delete(accountId, user.getUuid()));
+      if (featureFlagService.isEnabled(FeatureName.PL_USER_DELETION_V2, accountId)) {
+        users.forEach(user -> userService.forceDelete(accountId, user.getUuid()));
+      } else {
+        users.forEach(user -> userService.delete(accountId, user.getUuid()));
+      }
     }
     ssoSettingService.deleteByAccountId(accountId);
     return hPersistence.delete(Account.class, accountId);

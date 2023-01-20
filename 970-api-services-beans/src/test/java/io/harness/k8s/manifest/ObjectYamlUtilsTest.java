@@ -8,14 +8,14 @@
 package io.harness.k8s.manifest;
 
 import static io.harness.govern.Switch.noop;
-import static io.harness.k8s.manifest.ObjectYamlUtils.encodeDot;
-import static io.harness.k8s.manifest.ObjectYamlUtils.getField;
-import static io.harness.k8s.manifest.ObjectYamlUtils.getFields;
-import static io.harness.k8s.manifest.ObjectYamlUtils.readYaml;
-import static io.harness.k8s.manifest.ObjectYamlUtils.setField;
-import static io.harness.k8s.manifest.ObjectYamlUtils.splitYamlFile;
-import static io.harness.k8s.manifest.ObjectYamlUtils.transformField;
-import static io.harness.k8s.manifest.ObjectYamlUtils.tryReadYaml;
+import static io.harness.k8s.utils.ObjectYamlUtils.encodeDot;
+import static io.harness.k8s.utils.ObjectYamlUtils.getField;
+import static io.harness.k8s.utils.ObjectYamlUtils.getFields;
+import static io.harness.k8s.utils.ObjectYamlUtils.readYaml;
+import static io.harness.k8s.utils.ObjectYamlUtils.setField;
+import static io.harness.k8s.utils.ObjectYamlUtils.splitYamlFile;
+import static io.harness.k8s.utils.ObjectYamlUtils.transformField;
+import static io.harness.k8s.utils.ObjectYamlUtils.tryReadYaml;
 import static io.harness.rule.OwnerRule.PUNEET;
 
 import static org.assertj.core.api.Assertions.assertThat;

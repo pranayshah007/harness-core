@@ -42,6 +42,7 @@ import static software.wings.utils.WingsTestConstants.COMPANY_NAME;
 import static software.wings.utils.WingsTestConstants.ILLEGAL_ACCOUNT_NAME;
 import static software.wings.utils.WingsTestConstants.PORTAL_URL;
 
+import static com.google.common.collect.Sets.newHashSet;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -594,14 +595,15 @@ public class AccountServiceTest extends WingsBaseTest {
   @Owner(developers = SRINIVAS)
   @Category(UnitTests.class)
   public void shouldListSupportAccounts() {
-    Account account = anAccount().withCompanyName(HARNESS_NAME).build();
+    Account account = anAccount().withCompanyName(HARNESS_NAME).withAccountName("account").build();
     wingsPersistence.save(account);
     assertThat(accountService.get(account.getUuid())).isEqualTo(account);
     assertThat(accountService.listHarnessSupportAccounts(Collections.emptySet(), null).get(0).getUuid()).isNotEmpty();
-    assertThat(accountService.listHarnessSupportAccounts(Collections.emptySet(), Set.of(AccountKeys.uuid))
-                   .get(0)
-                   .getAccountName())
-        .isNull();
+    assertThat(
+        accountService.listHarnessSupportAccounts(Collections.emptySet(), newHashSet("accountName", AccountKeys.uuid))
+            .get(0)
+            .getAccountName())
+        .isNotNull();
     assertThat(accountService.getAccountsWithBasicInfo(false)).isNotEmpty();
     assertThat(accountService.getAccountsWithBasicInfo(false).get(0)).isNotNull();
     assertThat(accountService.getAccountsWithBasicInfo(false)).isNotEmpty();

@@ -8,11 +8,16 @@
 package io.harness.cvng.cdng.beans.v2;
 
 import java.util.List;
-import lombok.Value;
+import lombok.AccessLevel;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import lombok.experimental.SuperBuilder;
 
-@Value
+@Data
 @SuperBuilder
+@NoArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class MetricsAnalysis {
   String metricIdentifier;
   String metricName;
@@ -21,5 +26,5 @@ public class MetricsAnalysis {
   String healthSourceIdentifier;
   List<MetricThreshold> thresholds;
   AnalysisResult analysisResult;
-  List<AnalysedTestDataNode> testDataNodes;
+  List<AnalysedDeploymentTestDataNode> testDataNodes;
 }

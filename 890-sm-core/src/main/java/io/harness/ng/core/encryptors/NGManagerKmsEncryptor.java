@@ -59,7 +59,7 @@ public class NGManagerKmsEncryptor implements KmsEncryptor {
             .accountId(accountId)
             .taskSetupAbstractions(managerEncryptorHelper.buildAbstractions(encryptionConfig))
             .build();
-    DelegateResponseData delegateResponseData = delegateService.executeSyncTask(delegateTaskRequest);
+    DelegateResponseData delegateResponseData = delegateService.executeSyncTaskV2(delegateTaskRequest);
     DelegateTaskUtils.validateDelegateTaskResponse(delegateResponseData);
     if (!(delegateResponseData instanceof EncryptSecretTaskResponse)) {
       throw new SecretManagementException(SECRET_MANAGEMENT_ERROR, "Unknown Response from delegate", USER);

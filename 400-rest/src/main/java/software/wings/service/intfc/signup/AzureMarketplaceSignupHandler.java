@@ -10,7 +10,7 @@ package software.wings.service.intfc.signup;
 import static io.harness.annotations.dev.HarnessModule._950_NG_SIGNUP;
 import static io.harness.annotations.dev.HarnessTeam.GTM;
 
-import static org.mindrot.jbcrypt.BCrypt.hashpw;
+import static org.springframework.security.crypto.bcrypt.BCrypt.hashpw;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -29,7 +29,7 @@ import com.google.inject.Inject;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
-import org.mindrot.jbcrypt.BCrypt;
+import org.springframework.security.crypto.bcrypt.BCrypt;
 
 @OwnedBy(GTM)
 @TargetModule(_950_NG_SIGNUP)

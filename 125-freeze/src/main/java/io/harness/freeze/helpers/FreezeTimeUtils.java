@@ -206,6 +206,15 @@ public class FreezeTimeUtils {
         && currentWindowIsActive(currentOrUpcomingWindow.getStartTime(), currentOrUpcomingWindow.getEndTime());
   }
 
+  public boolean globalFreezeIsActive(FreezeWindow freezeWindow) {
+    TimeZone timeZone = TimeZone.getTimeZone(freezeWindow.getTimeZone());
+    LocalDateTime startTime = LocalDateTime.parse(freezeWindow.getStartTime(), dtf);
+    LocalDateTime endTime = getLocalDateTime(freezeWindow, timeZone, startTime);
+    Long startTs = getEpochValue(null, startTime, timeZone, 0);
+    Long endTs = getEpochValue(null, endTime, timeZone, 0);
+    return currentWindowIsActive(startTs, endTs);
+  }
+
   public Pair<LocalDateTime, LocalDateTime> setCurrWindowStartAndEndTime(LocalDateTime firstWindowStartTime,
       LocalDateTime firstWindowEndTime, RecurrenceType recurrenceType, TimeZone timeZone) {
     Long startTime = getEpochValue(recurrenceType, firstWindowStartTime, timeZone, 0);
@@ -311,6 +320,13 @@ public class FreezeTimeUtils {
       Recurrence recurrence = freezeWindow.getRecurrence();
       if (recurrence.getRecurrenceType() == null) {
         throw new InvalidRequestException("Recurrence Type cannot be empty");
+      }
+      if (recurrence.getSpec() != null && recurrence.getSpec().getUntil() != null) {
+        LocalDateTime until = LocalDateTime.parse(freezeWindow.getRecurrence().getSpec().getUntil(), dtf);
+        Long untilMs = getEpochValue(recurrence.getRecurrenceType(), until, timeZone, 0);
+        if (untilMs < getCurrentTime()) {
+          throw new InvalidRequestException("End time for recurrence cannot be less than current time");
+        }
       }
     } else {
       Long endTime = getEpochValue(null, firstWindowEndTime, timeZone, 0);

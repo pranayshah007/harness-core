@@ -64,6 +64,7 @@ import io.harness.delegate.event.handler.DelegateProfileEventHandler;
 import io.harness.delegate.eventstream.EntityCRUDConsumer;
 import io.harness.delegate.heartbeat.polling.DelegatePollingHeartbeatService;
 import io.harness.delegate.heartbeat.stream.DelegateStreamHeartbeatService;
+import io.harness.delegate.queueservice.DelegateTaskQueueService;
 import io.harness.delegate.resources.DelegateTaskResource;
 import io.harness.delegate.resources.DelegateTaskResourceV2;
 import io.harness.delegate.service.intfc.DelegateNgTokenService;
@@ -80,9 +81,9 @@ import io.harness.eventframework.dms.DmsEventConsumerService;
 import io.harness.eventframework.dms.DmsObserverEventProducer;
 import io.harness.eventframework.manager.ManagerEventConsumerService;
 import io.harness.eventframework.manager.ManagerObserverEventProducer;
-import io.harness.exception.ConstraintViolationExceptionMapper;
 import io.harness.exception.MongoExecutionTimeoutExceptionMapper;
 import io.harness.exception.WingsException;
+import io.harness.exception.violation.ConstraintViolationExceptionMapper;
 import io.harness.execution.export.background.ExportExecutionsRequestCleanupHandler;
 import io.harness.execution.export.background.ExportExecutionsRequestHandler;
 import io.harness.ff.FeatureFlagConfig;
@@ -109,7 +110,6 @@ import io.harness.metrics.service.api.MetricService;
 import io.harness.migrations.MigrationModule;
 import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.QuartzCleaner;
-import io.harness.mongo.QueryFactory;
 import io.harness.mongo.tracing.TraceMode;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ng.core.CorrelationFilter;
@@ -140,8 +140,9 @@ import io.harness.perpetualtask.instancesync.SpotinstAmiInstanceSyncPerpetualTas
 import io.harness.perpetualtask.internal.PerpetualTaskRecordHandler;
 import io.harness.perpetualtask.k8s.watch.K8sWatchPerpetualTaskServiceClient;
 import io.harness.persistence.HPersistence;
-import io.harness.persistence.Store;
+import io.harness.persistence.QueryFactory;
 import io.harness.persistence.UserProvider;
+import io.harness.persistence.store.Store;
 import io.harness.queue.QueueListener;
 import io.harness.queue.QueueListenerController;
 import io.harness.queue.QueuePublisher;
@@ -162,10 +163,8 @@ import io.harness.serializer.KryoRegistrar;
 import io.harness.service.DelegateServiceModule;
 import io.harness.service.impl.DelegateNgTokenServiceImpl;
 import io.harness.service.impl.DelegateSyncServiceImpl;
-import io.harness.service.impl.DelegateTaskServiceImpl;
 import io.harness.service.impl.DelegateTokenServiceImpl;
 import io.harness.service.intfc.DelegateProfileObserver;
-import io.harness.service.intfc.DelegateTaskService;
 import io.harness.service.intfc.DelegateTokenService;
 import io.harness.springdata.SpringPersistenceModule;
 import io.harness.state.inspection.StateInspectionListener;
@@ -218,6 +217,7 @@ import software.wings.resources.SearchResource;
 import software.wings.resources.graphql.GraphQLResource;
 import software.wings.scheduler.AccessRequestHandler;
 import software.wings.scheduler.AccountPasswordExpirationJob;
+import software.wings.scheduler.DelegateDisconnectAlertHelper;
 import software.wings.scheduler.DeletedEntityHandler;
 import software.wings.scheduler.InstancesPurgeJob;
 import software.wings.scheduler.LdapGroupScheduledHandler;
@@ -253,6 +253,7 @@ import software.wings.service.impl.CloudProviderObserver;
 import software.wings.service.impl.DelegateObserver;
 import software.wings.service.impl.DelegateProfileServiceImpl;
 import software.wings.service.impl.DelegateServiceImpl;
+import software.wings.service.impl.DelegateTaskServiceClassicImpl;
 import software.wings.service.impl.ExecutionEventListener;
 import software.wings.service.impl.InfrastructureMappingServiceImpl;
 import software.wings.service.impl.SettingAttributeObserver;
@@ -328,6 +329,8 @@ import com.google.inject.matcher.AbstractMatcher;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import com.palominolabs.metrics.guice.MetricsInstrumentationModule;
+import dev.morphia.AdvancedDatastore;
+import dev.morphia.converters.TypeConverter;
 import io.dropwizard.Application;
 import io.dropwizard.auth.AuthValueFactoryProvider;
 import io.dropwizard.bundles.assets.AssetsConfiguration;
@@ -378,8 +381,6 @@ import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.glassfish.jersey.server.ServerProperties;
 import org.glassfish.jersey.server.model.Resource;
 import org.hibernate.validator.parameternameprovider.ReflectionParameterNameProvider;
-import org.mongodb.morphia.AdvancedDatastore;
-import org.mongodb.morphia.converters.TypeConverter;
 import org.springframework.core.convert.converter.Converter;
 import ru.vyarus.guice.validator.ValidationModule;
 import ru.vyarus.guice.validator.aop.ValidationMethodInterceptor;
@@ -1287,9 +1288,15 @@ public class WingsApplication extends Application<MainConfiguration> {
         .scheduleWithFixedDelay(
             injector.getInstance(GitChangeSetRunnable.class), random.nextInt(5), 5L, TimeUnit.SECONDS);
 
-    injector.getInstance(DeploymentReconExecutorService.class)
-        .scheduleWithFixedDelay(
-            injector.getInstance(DeploymentReconTask.class), random.nextInt(60), 15 * 60L, TimeUnit.SECONDS);
+    if (configuration.getDataReconciliationConfig() == null) {
+      injector.getInstance(DeploymentReconExecutorService.class)
+          .scheduleWithFixedDelay(
+              injector.getInstance(DeploymentReconTask.class), random.nextInt(60), 15 * 60L, TimeUnit.SECONDS);
+    } else if (configuration.getDataReconciliationConfig().isEnabled()) {
+      injector.getInstance(DeploymentReconExecutorService.class)
+          .scheduleWithFixedDelay(injector.getInstance(DeploymentReconTask.class), random.nextInt(60),
+              configuration.getDataReconciliationConfig().getDuration(), TimeUnit.SECONDS);
+    }
 
     injector.getInstance(LookerEntityReconExecutorService.class)
         .scheduleWithFixedDelay(
@@ -1343,6 +1350,11 @@ public class WingsApplication extends Application<MainConfiguration> {
         new Schedulable("Failed while broadcasting perpetual tasks",
             () -> injector.getInstance(PerpetualTaskServiceImpl.class).broadcastToDelegate()),
         0L, 10L, TimeUnit.SECONDS);
+    if (configuration.getQueueServiceConfig().isEnableQueueAndDequeue()) {
+      delegateExecutor.scheduleWithFixedDelay(
+          new Schedulable("Failed to dequeue delegate task", injector.getInstance(DelegateTaskQueueService.class)), 0L,
+          15L, TimeUnit.SECONDS);
+    }
   }
 
   public void registerObservers(MainConfiguration configuration, Injector injector, Environment environment) {
@@ -1363,7 +1375,7 @@ public class WingsApplication extends Application<MainConfiguration> {
           (DelegateServiceImpl) injector.getInstance(Key.get(DelegateService.class));
 
       if (isManager()) {
-        registerManagerObservers(injector, delegateServiceImpl);
+        registerManagerObservers(injector);
       }
 
       if (shouldEnableDelegateMgmt(configuration)) {
@@ -1383,8 +1395,6 @@ public class WingsApplication extends Application<MainConfiguration> {
    * @param delegateServiceImpl
    */
   private void registerDelegateServiceObservers(Injector injector, DelegateServiceImpl delegateServiceImpl) {
-    DelegateTaskServiceImpl delegateTaskService =
-        (DelegateTaskServiceImpl) injector.getInstance(Key.get(DelegateTaskService.class));
     DelegateProfileServiceImpl delegateProfileService =
         (DelegateProfileServiceImpl) injector.getInstance(Key.get(DelegateProfileService.class));
     DelegateProfileEventHandler delegateProfileEventHandler =
@@ -1398,6 +1408,9 @@ public class WingsApplication extends Application<MainConfiguration> {
     perpetualTaskService.getPerpetualTaskCrudSubject().register(
         injector.getInstance(Key.get(PerpetualTaskRecordHandler.class)));
     delegateServiceImpl.getSubject().register(perpetualTaskService);
+    DelegateDisconnectAlertHelper delegateDisconnectAlertHelper =
+        injector.getInstance(Key.get(DelegateDisconnectAlertHelper.class));
+    delegateServiceImpl.getSubject().register(delegateDisconnectAlertHelper);
 
     ClusterRecordHandler clusterRecordHandler = injector.getInstance(Key.get(ClusterRecordHandler.class));
     SettingsServiceImpl settingsService = (SettingsServiceImpl) injector.getInstance(Key.get(SettingsService.class));
@@ -1405,6 +1418,10 @@ public class WingsApplication extends Application<MainConfiguration> {
 
     KubernetesClusterHandler kubernetesClusterHandler = injector.getInstance(Key.get(KubernetesClusterHandler.class));
     delegateServiceImpl.getSubject().register(kubernetesClusterHandler);
+
+    DelegateTaskServiceClassicImpl delegateTaskServiceClassic =
+        injector.getInstance(Key.get(DelegateTaskServiceClassicImpl.class));
+    delegateServiceImpl.getSubject().register(delegateTaskServiceClassic);
 
     CEPerpetualTaskHandler cePerpetualTaskHandler = injector.getInstance(Key.get(CEPerpetualTaskHandler.class));
     ClusterRecordServiceImpl clusterRecordService =
@@ -1429,10 +1446,10 @@ public class WingsApplication extends Application<MainConfiguration> {
 
   /**
    * All the observers that belong to manager
+   *
    * @param injector
-   * @param delegateServiceImpl
    */
-  private void registerManagerObservers(Injector injector, DelegateServiceImpl delegateServiceImpl) {
+  private void registerManagerObservers(Injector injector) {
     YamlPushServiceImpl yamlPushService = (YamlPushServiceImpl) injector.getInstance(Key.get(YamlPushService.class));
     AuditServiceImpl auditService = (AuditServiceImpl) injector.getInstance(Key.get(AuditService.class));
     yamlPushService.getEntityCrudSubject().register(auditService);

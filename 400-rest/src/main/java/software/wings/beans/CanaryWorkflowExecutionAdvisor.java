@@ -92,6 +92,7 @@ import software.wings.sm.states.PhaseSubWorkflow;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
+import dev.morphia.annotations.Transient;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
@@ -100,7 +101,6 @@ import java.util.Objects;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.jexl3.JexlException;
-import org.mongodb.morphia.annotations.Transient;
 
 /**
  * Created by rishi on 1/24/17.
@@ -146,7 +146,6 @@ public class CanaryWorkflowExecutionAdvisor implements ExecutionEventAdvisor {
     WorkflowExecution workflowExecution =
         workflowExecutionService.getWorkflowExecution(context.getAppId(), context.getWorkflowExecutionId());
     StateExecutionInstance stateExecutionInstance = context.getStateExecutionInstance();
-
     try (AutoLogContext ignore = context.autoLogContext()) {
       log.info("Calculating execution advice for workflow");
       List<ExecutionInterrupt> executionInterrupts =
@@ -301,7 +300,7 @@ public class CanaryWorkflowExecutionAdvisor implements ExecutionEventAdvisor {
             if (isNotEmpty(phaseStep.getFailureStrategies())) {
               FailureStrategy failureStrategy = selectTopMatchingStrategy(phaseStep.getFailureStrategies(),
                   executionEvent.getFailureTypes(), state.getName(), phaseElement, FailureStrategyLevel.STEP);
-              if (failureStrategy.getRepairActionCode() == MANUAL_INTERVENTION
+              if (failureStrategy != null && failureStrategy.getRepairActionCode() == MANUAL_INTERVENTION
                   && !state.getStateType().equals(APPROVAL.getType())) {
                 wingsPersistence.updateField(StateExecutionInstance.class, stateExecutionInstance.getUuid(),
                     StateExecutionInstanceKeys.manualInterventionCandidate, true);

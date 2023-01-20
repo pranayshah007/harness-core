@@ -71,6 +71,7 @@ import software.wings.yaml.handler.YamlHandlerTestBase;
 import com.amazonaws.services.ecs.model.LaunchType;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import dev.morphia.Key;
 import org.assertj.core.api.Assertions;
 import org.junit.Before;
 import org.junit.Test;
@@ -78,7 +79,6 @@ import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.mongodb.morphia.Key;
 
 @OwnedBy(HarnessTeam.CDP)
 public class EcsInfraMappingYamlHandlerTest extends YamlHandlerTestBase {

@@ -7,4 +7,4 @@
 
 package io.harness.cvng.cdng.beans.v2;
 
-public enum AnalysedNodeType { CANARY, POST_DEPLOYMENT, PRE_DEPLOYMENT, PRIMARY }
+public enum AnalysedNodeType { BASELINE_TEST, CANARY, CURRENT_TEST, POST_DEPLOYMENT, PRE_DEPLOYMENT, PRIMARY }

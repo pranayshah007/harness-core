@@ -92,6 +92,8 @@ public final class EventsFrameworkConstants {
       "PIPELINE_EXECUTION_SUMMARY_REDIS_EVENT_CONSUMER";
   public static final String PIPELINE_EXECUTION_SUMMARY_REDIS_EVENT_CONSUMER_CD =
       "PIPELINE_EXECUTION_SUMMARY_REDIS_EVENT_CONSUMER_CD";
+  public static final String PIPELINE_EXECUTION_SUMMARY_SNAPSHOT_REDIS_EVENT_CONSUMER =
+      "PIPELINE_EXECUTION_SUMMARY_SNAPSHOT_REDIS_EVENT_CONSUMER";
   public static final String PIPELINE_EXECUTION_SUMMARY_CD_CONSUMER = "PIPELINE_EXECUTION_SUMMARY_CD_CONSUMER";
 
   public static final String START_PARTIAL_PLAN_CREATOR_EVENT_TOPIC = "pipeline_start_plan";
@@ -112,7 +114,7 @@ public final class EventsFrameworkConstants {
   public static final int CD_DEPLOYMENT_EVENT_BATCH_SIZE = 1;
   public static final int CD_DEPLOYMENT_EVENT_MAX_TOPIC_SIZE = 5000;
 
-  public static final String INTERNAL_CHANGE_EVENT_FF = "feature_flag_change_event";
+  public static final String INTERNAL_CHANGE_EVENT_FF = "cf_svc_updates";
 
   public static final int INTERNAL_CHANGE_EVENT_FF_BATCH_SIZE = 1;
 

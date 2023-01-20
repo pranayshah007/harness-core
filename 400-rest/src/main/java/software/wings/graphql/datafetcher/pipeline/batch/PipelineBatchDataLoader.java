@@ -21,6 +21,7 @@ import software.wings.graphql.schema.type.QLPipeline;
 import software.wings.graphql.schema.type.QLPipeline.QLPipelineBuilder;
 
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -32,7 +33,6 @@ import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import org.apache.commons.collections4.CollectionUtils;
 import org.dataloader.MappedBatchLoader;
-import org.mongodb.morphia.query.Query;
 
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @TargetModule(HarnessModule._380_CG_GRAPHQL)

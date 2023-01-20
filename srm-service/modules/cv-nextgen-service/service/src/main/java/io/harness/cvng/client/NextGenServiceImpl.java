@@ -29,12 +29,14 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
@@ -43,7 +45,9 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 @OwnedBy(HarnessTeam.CV)
 public class NextGenServiceImpl implements NextGenService {
-  @Inject private NextGenClient nextGenClient;
+  @Inject private NextGenPrivilegedClient nextGenPrivilegedClient;
+
+  @Inject private NextGenNonPrivilegedClient nextGenNonPrivilegedClient;
   @Inject private RequestExecutor requestExecutor;
 
   private LoadingCache<EntityKey, EnvironmentResponseDTO> environmentCache =
@@ -55,8 +59,8 @@ public class NextGenServiceImpl implements NextGenService {
             public EnvironmentResponseDTO load(EntityKey entityKey) {
               EnvironmentResponse environmentResponse =
                   requestExecutor
-                      .execute(nextGenClient.getEnvironment(entityKey.getEntityIdentifier(), entityKey.getAccountId(),
-                          entityKey.getOrgIdentifier(), entityKey.getProjectIdentifier()))
+                      .execute(nextGenPrivilegedClient.getEnvironment(entityKey.getEntityIdentifier(),
+                          entityKey.getAccountId(), entityKey.getOrgIdentifier(), entityKey.getProjectIdentifier()))
                       .getData();
               Preconditions.checkNotNull(environmentResponse, "Environment Response from Ng Manager cannot be null");
               return environmentResponse.getEnvironment();
@@ -72,8 +76,8 @@ public class NextGenServiceImpl implements NextGenService {
             public ServiceResponseDTO load(EntityKey entityKey) {
               ServiceResponse serviceResponse =
                   requestExecutor
-                      .execute(nextGenClient.getService(entityKey.getEntityIdentifier(), entityKey.getAccountId(),
-                          entityKey.getOrgIdentifier(), entityKey.getProjectIdentifier()))
+                      .execute(nextGenPrivilegedClient.getService(entityKey.getEntityIdentifier(),
+                          entityKey.getAccountId(), entityKey.getOrgIdentifier(), entityKey.getProjectIdentifier()))
                       .getData();
               Preconditions.checkNotNull(serviceResponse, "Service Response from Ng Manager cannot be null");
               return serviceResponse.getService();
@@ -88,7 +92,7 @@ public class NextGenServiceImpl implements NextGenService {
             @Override
             public ProjectDTO load(EntityKey entityKey) {
               return requestExecutor
-                  .execute(nextGenClient.getProject(
+                  .execute(nextGenPrivilegedClient.getProject(
                       entityKey.getProjectIdentifier(), entityKey.getAccountId(), entityKey.getOrgIdentifier()))
                   .getData()
                   .getProject();
@@ -103,7 +107,8 @@ public class NextGenServiceImpl implements NextGenService {
             @Override
             public OrganizationDTO load(EntityKey entityKey) {
               return requestExecutor
-                  .execute(nextGenClient.getOrganization(entityKey.getOrgIdentifier(), entityKey.getAccountId()))
+                  .execute(
+                      nextGenPrivilegedClient.getOrganization(entityKey.getOrgIdentifier(), entityKey.getAccountId()))
                   .getData()
                   .getOrganization();
             }
@@ -111,7 +116,7 @@ public class NextGenServiceImpl implements NextGenService {
 
   @Override
   public ConnectorResponseDTO create(ConnectorDTO connectorRequestDTO, String accountIdentifier) {
-    return requestExecutor.execute(nextGenClient.create(connectorRequestDTO, accountIdentifier)).getData();
+    return requestExecutor.execute(nextGenPrivilegedClient.create(connectorRequestDTO, accountIdentifier)).getData();
   }
 
   @Override
@@ -121,7 +126,7 @@ public class NextGenServiceImpl implements NextGenService {
         IdentifierRefHelper.getIdentifierRef(connectorIdentifier, accountIdentifier, orgIdentifier, projectIdentifier);
     ConnectorResponseDTO connectorResponse =
         requestExecutor
-            .execute(nextGenClient.get(identifierRef.getIdentifier(), identifierRef.getAccountIdentifier(),
+            .execute(nextGenPrivilegedClient.get(identifierRef.getIdentifier(), identifierRef.getAccountIdentifier(),
                 identifierRef.getOrgIdentifier(), identifierRef.getProjectIdentifier()))
             .getData();
     return connectorResponse != null ? Optional.of(connectorResponse.getConnector()) : Optional.empty();
@@ -162,7 +167,8 @@ public class NextGenServiceImpl implements NextGenService {
       String accountId, String orgIdentifier, String projectIdentifier, List<String> environmentIdentifiers) {
     PageResponse<EnvironmentResponse> environmentsResponse =
         requestExecutor
-            .execute(nextGenClient.listEnvironment(accountId, orgIdentifier, projectIdentifier, environmentIdentifiers))
+            .execute(nextGenPrivilegedClient.listEnvironment(
+                accountId, orgIdentifier, projectIdentifier, environmentIdentifiers))
             .getData();
 
     return environmentsResponse.getContent();
@@ -171,10 +177,10 @@ public class NextGenServiceImpl implements NextGenService {
   @Override
   public List<ServiceResponse> listService(
       String accountId, String orgIdentifier, String projectIdentifier, List<String> serviceIdentifiers) {
-    PageResponse<ServiceResponse> servicesResponse =
-        requestExecutor
-            .execute(nextGenClient.listService(accountId, orgIdentifier, projectIdentifier, serviceIdentifiers))
-            .getData();
+    PageResponse<ServiceResponse> servicesResponse = requestExecutor
+                                                         .execute(nextGenPrivilegedClient.listService(accountId,
+                                                             orgIdentifier, projectIdentifier, serviceIdentifiers))
+                                                         .getData();
 
     return servicesResponse.getContent();
   }
@@ -203,7 +209,8 @@ public class NextGenServiceImpl implements NextGenService {
       }
     }
 
-    return requestExecutor.execute(nextGenClient.getProject(projectIdentifier, accountIdentifier, orgIdentifier))
+    return requestExecutor
+        .execute(nextGenPrivilegedClient.getProject(projectIdentifier, accountIdentifier, orgIdentifier))
         .getData()
         .getProject();
   }
@@ -220,7 +227,8 @@ public class NextGenServiceImpl implements NextGenService {
   @Override
   public int getServicesCount(String accountId, String orgIdentifier, String projectIdentifier) {
     return (int) requestExecutor
-        .execute(nextGenClient.listServicesForProject(0, 1000, accountId, orgIdentifier, projectIdentifier, null))
+        .execute(
+            nextGenPrivilegedClient.listServicesForProject(0, 1000, accountId, orgIdentifier, projectIdentifier, null))
         .getData()
         .getTotalItems();
   }
@@ -228,8 +236,8 @@ public class NextGenServiceImpl implements NextGenService {
   @Override
   public int getEnvironmentCount(String accountId, String orgIdentifier, String projectIdentifier) {
     return (int) requestExecutor
-        .execute(
-            nextGenClient.listEnvironmentsForProject(0, 1000, accountId, orgIdentifier, projectIdentifier, null, null))
+        .execute(nextGenPrivilegedClient.listEnvironmentsForProject(
+            0, 1000, accountId, orgIdentifier, projectIdentifier, null, null))
         .getData()
         .getTotalItems();
   }
@@ -256,6 +264,32 @@ public class NextGenServiceImpl implements NextGenService {
     return environmentIdNameMap;
   }
 
+  @SuppressWarnings("checkstyle:UnnecessaryParentheses")
+  @Override
+  public List<ProjectDTO> listAccessibleProjects(String accountIdentifier) {
+    List<ProjectDTO> projectDTOList = new ArrayList<>();
+
+    int page = 0;
+    int pageSize = 100;
+    boolean morePages = true;
+    while (morePages) {
+      List<ProjectDTO> projects =
+          requestExecutor
+              .execute(nextGenNonPrivilegedClient.listAccessibleProjects(accountIdentifier, null, page, pageSize))
+              .getData()
+              .getContent()
+              .stream()
+              .map(projectAggregateDTO -> projectAggregateDTO.getProjectResponse().getProject())
+              .collect(Collectors.toList());
+
+      projectDTOList.addAll(projects);
+
+      page++;
+      morePages = projects.size() == pageSize;
+    }
+
+    return projectDTOList;
+  }
   @Value
   @Builder
   public static class EntityKey {

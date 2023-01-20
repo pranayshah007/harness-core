@@ -55,9 +55,13 @@ public class MetricHealthSourceSpecTest extends CvNextGenTestBase {
 
   @SneakyThrows
   private DataSourceType getSourceType(Class<? extends HealthSourceSpec> healthSourceSpecClass) {
-    Constructor constructor = healthSourceSpecClass.getConstructors()[0];
-    HealthSourceSpec healthSourceSpec = (HealthSourceSpec) constructor.newInstance();
-    System.out.println(healthSourceSpec);
-    return healthSourceSpec.getType();
+    Constructor<?>[] constructors = healthSourceSpecClass.getConstructors();
+    if (constructors.length > 0) {
+      Constructor constructor = constructors[0];
+      HealthSourceSpec healthSourceSpec = (HealthSourceSpec) constructor.newInstance();
+      System.out.println(healthSourceSpec);
+      return healthSourceSpec.getType();
+    }
+    return null;
   }
 }

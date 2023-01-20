@@ -58,12 +58,12 @@ import software.wings.settings.SettingValue;
 import com.google.inject.Inject;
 import com.mongodb.BulkWriteOperation;
 import com.mongodb.DBCollection;
+import dev.morphia.Morphia;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.Morphia;
 
 /**
  * This migration will create an entry for any auditable entity into ResourceLookup collection

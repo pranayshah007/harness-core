@@ -21,6 +21,7 @@ import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.beans.DataSourceType;
+import io.harness.cvng.beans.job.Sensitivity;
 import io.harness.cvng.beans.job.VerificationJobType;
 import io.harness.cvng.core.beans.TimeRange;
 import io.harness.cvng.core.entities.CVConfig;
@@ -40,6 +41,8 @@ import io.harness.persistence.UuidAware;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
 import java.net.URISyntaxException;
 import java.time.Duration;
 import java.time.Instant;
@@ -57,8 +60,6 @@ import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.utils.URIBuilder;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
 
 @Data
 @FieldNameConstants(innerTypeName = "VerificationJobKeys")
@@ -106,6 +107,8 @@ public abstract class VerificationJob
   private String activitySourceIdentifier;
   @NotNull private String accountId;
   private String monitoredServiceIdentifier;
+  private String monitoredServiceTemplateIdentifier;
+  private String monitoredServiceTemplateVersionLabel;
   @NotNull private RuntimeParameter serviceIdentifier;
   @NotNull private RuntimeParameter envIdentifier;
   @Deprecated private List<DataSourceType> dataSources;
@@ -119,6 +122,8 @@ public abstract class VerificationJob
   private List<CVConfig> cvConfigs;
 
   public abstract VerificationJobType getType();
+
+  public abstract Sensitivity getSensitivity();
 
   public void validate() {
     Preconditions.checkNotNull(accountId, generateErrorMessageFromParam(VerificationJobKeys.accountId));

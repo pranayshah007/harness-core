@@ -10,7 +10,7 @@ package io.harness.cdng.provision.azure;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.pipeline.CDStepInfo;
+import io.harness.cdng.pipeline.CDAbstractStepInfo;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
@@ -31,7 +31,7 @@ import lombok.experimental.FieldDefaults;
 @JsonTypeName(StepSpecTypeConstants.AZURE_ROLLBACK_ARM_RESOURCE)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @RecasterAlias("io.harness.cdng.provision.azure.AzureARMRollbackStepInfo")
-public class AzureARMRollbackStepInfo extends AzureARMRollbackBaseStepInfo implements CDStepInfo {
+public class AzureARMRollbackStepInfo extends AzureARMRollbackBaseStepInfo implements CDAbstractStepInfo {
   @Override
   public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
     return getDelegateSelectors();

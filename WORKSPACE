@@ -389,9 +389,9 @@ grpc_java_repositories()
 
 http_archive(
     name = "com_github_query_builder_generator",
-    sha256 = "7f6a7b4dc2d038e5a3e205aa1ac24e30659c9506c48105040732f3ff189c437f",
-    strip_prefix = "query-builder-generator-0.1.22",
-    urls = ["https://github.com/wings-software/query-builder-generator/archive/refs/tags/v0.1.22.zip"],
+    sha256 = "d72449d0ed7848260c6421be3677633946de46dc69af6588dbb4bc938e9714db",
+    strip_prefix = "query-builder-generator-0.1.23",
+    urls = ["https://github.com/wings-software/query-builder-generator/archive/refs/tags/v0.1.23.zip"],
 )
 
 # Add a go repository
@@ -4821,8 +4821,6 @@ plain_artifacts = [
     "com.splunk:splunk:1.6.3.0",
     "com.spotify:docker-client:8.16.0",
     "com.spotify:docker-client:8.16.0",
-    "com.squareup.okhttp:okhttp:2.7.5",
-    "com.squareup.okhttp:logging-interceptor:2.7.5",
     "com.squareup.okhttp3:logging-interceptor:4.9.2",
     "com.squareup.okhttp3:okhttp-urlconnection:4.9.2",
     "com.squareup.okhttp3:okhttp:4.9.2",
@@ -5211,10 +5209,10 @@ plain_artifacts = [
     "org.jboss.marshalling:jboss-marshalling-river:2.0.9.Final",
     "org.jboss.marshalling:jboss-marshalling:2.0.9.Final",
     "org.jboss.spec.javax.rmi:jboss-rmi-api_1.0_spec:1.0.6.Final",
-    "org.jetbrains.kotlin:kotlin-stdlib-common:1.4.10",
-    "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.4.10",
-    "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.4.10",
-    "org.jetbrains.kotlin:kotlin-stdlib:1.4.10",
+    "org.jetbrains.kotlin:kotlin-stdlib-common:1.7.20",
+    "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.7.20",
+    "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.7.20",
+    "org.jetbrains.kotlin:kotlin-stdlib:1.7.20",
     "org.jetbrains:annotations:13.0",
     "org.jfree:jfreechart:1.5.0",
     "org.jfrog.artifactory.client:artifactory-java-client-api:2.9.1",
@@ -5237,9 +5235,12 @@ plain_artifacts = [
     "org.lz4:lz4-java:1.6.0",
     "org.mindrot:jbcrypt:0.4",
     "org.modelmapper:modelmapper:0.7.5",
-    "org.mongodb.morphia:morphia-logging-slf4j:1.3.2",
-    "org.mongodb.morphia:morphia:1.3.2",
+    "dev.morphia.morphia:core:1.6.1",
+    "org.mongodb:mongodb-driver-legacy:3.12.2",
+    "org.mongodb:mongodb-driver-sync:3.12.2",
+    "org.mongodb:mongodb-driver-core:3.12.2",
     "org.mongodb:mongo-java-driver:3.12.2",
+    "org.mongodb:bson:3.12.2",
     "org.mortbay.jetty.alpn:alpn-boot:8.1.13.v20181017",
     "org.mozilla:rhino:1.7R4",
     "org.objenesis:objenesis:2.6",
@@ -5596,15 +5597,15 @@ maven_install(
     ],
 )
 
-# Adding maven rule for upgraded version of debezium (2.0.0.Final) and required version of mongodb java driver for debezium service
+# Adding maven rule for upgraded version of debezium (2.1.1.Final) and required version of mongodb java driver for debezium service
 maven_install(
     name = "maven_debezium",
     artifacts = [
         "org.mongodb:mongodb-driver-core:4.0.4",
         "org.mongodb:mongodb-driver-sync:4.0.4",
-        "io.debezium:debezium-api:2.0.0.Final",
-        "io.debezium:debezium-connector-mongodb:2.0.0.Final",
-        "io.debezium:debezium-core:2.0.0.Final",
+        "io.debezium:debezium-api:2.1.1.Final",
+        "io.debezium:debezium-connector-mongodb:2.1.1.Final",
+        "io.debezium:debezium-core:2.1.1.Final",
         maven.artifact(
             artifact = "debezium-embedded",
             exclusions = [
@@ -5612,7 +5613,7 @@ maven_install(
                 "org.slf4j:slf4j-log4j12",
             ],
             group = "io.debezium",
-            version = "2.0.0.Final",
+            version = "2.1.1.Final",
         ),
     ],
     repositories = [

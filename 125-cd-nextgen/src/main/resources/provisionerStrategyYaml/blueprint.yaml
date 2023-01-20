@@ -1,0 +1,9 @@
+provisioner:
+  steps:
+    - step:
+        type: AzureCreateBPResource
+        name: Azure Create BP Resource
+        identifier: dfe51017-d346-5323-be6f-c55cbb699cc5
+        spec: {}
+        timeout: 10m
+  rollbackSteps:

@@ -13,6 +13,7 @@ shared_dependencies = [
     "//315-sto-manager/contracts:module",
     "//323-sto-utilities:module",
     "//332-ci-manager/service:module",
+    "//332-ci-manager/app:module",
     "//:lombok",
 ]
 
@@ -41,7 +42,7 @@ test_deps = [
     "@maven//:junit_junit",
     "@maven//:org_assertj_assertj_core",
     "@maven//:org_mockito_mockito_core",
-    "@maven//:org_mongodb_morphia_morphia",
+    "@maven//:dev_morphia_morphia_core",
 ]
 
 java_library(
@@ -61,5 +62,4 @@ run_analysis()
 
 exports_files([
     "keystore.jks",
-    "sto-manager-config.yml",
 ])

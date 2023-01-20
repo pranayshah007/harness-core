@@ -175,7 +175,7 @@ def trigger_historical_cost_update_in_preferred_currency(jsonData):
                 AND cloudServiceProvider = "AZURE"
                 AND month NOT IN (%s);
                 """ % (ds, CURRENCYCONVERSIONFACTORUSERINPUT, jsonData.get("accountId"),
-                       ", ".join(f"{month}" for month in jsonData["disableHistoricalUpdateForMonths"]))
+                       ", ".join(f"DATE('{month}')" for month in jsonData["disableHistoricalUpdateForMonths"]))
     print_(query)
     historical_update_months = set()
     custom_factors_dict = {}
@@ -183,7 +183,7 @@ def trigger_historical_cost_update_in_preferred_currency(jsonData):
         query_job = client.query(query)
         results = query_job.result()  # wait for job to complete
         for row in results:
-            historical_update_months.add(row.month)
+            historical_update_months.add(str(row.month))
             if row.conversionType == "CUSTOM":
                 custom_factors_dict[row.sourceCurrency] = float(row.conversionFactor)
     except Exception as e:
@@ -206,6 +206,8 @@ def trigger_historical_cost_update_in_preferred_currency(jsonData):
     except Exception as e:
         print_(e)
         print_("Failed to unset isHistoricalUpdateRequired flags in CURRENCYCONVERSIONFACTORUSERINPUT table", "WARN")
+        # updates on table are disallowed after streaming insert from currency APIs. retry in next run.
+        return
 
     # trigger historical update CF if required
     if list(historical_update_months):
@@ -231,8 +233,8 @@ def trigger_historical_cost_update_in_preferred_currency(jsonData):
             receiving_function_headers = {'Authorization': f'bearer {jwt}'}
             r = requests.post(url, json=trigger_payload, timeout=30, headers=receiving_function_headers)
         except Exception as e:
-            print_("Post-request timeout reached when triggering historical update CF.")
-            pass
+            print_(e)
+            print_("Encountered an exception during triggering historical update for Azure (Ignore if timeout exception).")
 
 
 def get_cf_v2_uri(cf_name):
@@ -305,7 +307,7 @@ def update_fx_rate_column_in_raw_table(jsonData, azure_column_mapping):
 def insert_currencies_with_unit_conversion_factors_in_bq(jsonData, azure_column_mapping):
     ds = "%s.%s" % (PROJECTID, jsonData["datasetName"])
     current_timestamp = datetime.datetime.utcnow()
-    currentMonth = current_timestamp.month
+    currentMonth = f"{current_timestamp.month:02d}"
     currentYear = current_timestamp.year
 
     year, month = jsonData["reportYear"], jsonData["reportMonth"]
@@ -420,7 +422,7 @@ def fetch_default_conversion_factors_from_API(jsonData):
 
     # update currencyConversionFactorDefault table if reportMonth is current month
     current_timestamp = datetime.datetime.utcnow()
-    currentMonth = current_timestamp.month
+    currentMonth = f"{current_timestamp.month:02d}"
     currentYear = current_timestamp.year
     if str(year) != str(currentYear) or str(month) != str(currentMonth):
         return
@@ -511,7 +513,7 @@ def fetch_default_conversion_factors_from_billing_export(jsonData):
     year, month = jsonData["reportYear"], jsonData["reportMonth"]
     date_start = "%s-%s-01" % (year, month)
     current_timestamp = datetime.datetime.utcnow()
-    currentMonth = current_timestamp.month
+    currentMonth = f"{current_timestamp.month:02d}"
     currentYear = current_timestamp.year
     if str(year) != str(currentYear) or str(month) != str(currentMonth):
         return
@@ -1115,9 +1117,10 @@ def ingest_data_to_costagg(jsonData):
                INSERT INTO `%s` (day, cost, cloudProvider, accountId)
                 SELECT TIMESTAMP_TRUNC(startTime, DAY) AS day, SUM(cost) AS cost, "AZURE" AS cloudProvider, '%s' as accountId
                 FROM `%s`  
-                WHERE DATE(startTime) >= '%s' and cloudProvider = "AZURE" 
+                WHERE DATE(startTime) >= '%s' and DATE(startTime) <= '%s' and cloudProvider = "AZURE" 
                 GROUP BY day;
-     """ % (table_name, date_start, date_end, jsonData.get("accountId"), table_name, jsonData.get("accountId"), source_table, date_start)
+     """ % (table_name, date_start, date_end, jsonData.get("accountId"), table_name, jsonData.get("accountId"),
+            source_table, date_start, date_end)
 
     job_config = bigquery.QueryJobConfig(
         priority=bigquery.QueryPriority.BATCH

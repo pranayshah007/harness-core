@@ -25,6 +25,7 @@ import software.wings.beans.InfrastructureProvisioner;
 import software.wings.beans.InfrastructureProvisionerDetails;
 import software.wings.beans.NameValuePair;
 import software.wings.beans.TerraGroupProvisioners;
+import software.wings.beans.TerraformSourceType;
 import software.wings.beans.shellscript.provisioner.ShellScriptInfrastructureProvisioner;
 import software.wings.infra.InfrastructureDefinition;
 import software.wings.service.impl.aws.model.AwsCFTemplateParamsData;
@@ -81,7 +82,8 @@ public interface InfrastructureProvisionerService extends OwnedByApplication {
   void delete(String appId, String infrastructureProvisionerId, boolean syncFromGit);
 
   List<NameValuePair> getTerraformVariables(String appId, String scmSettingId, String terraformDirectory,
-      String accountId, String sourceRepoBranch, String commitId, String repoName);
+      String accountId, String sourceRepoBranch, String commitId, String repoName,
+      TerraformSourceType terraformSourceType, String s3URI, String awsConfigId);
 
   List<String> getTerraformTargets(String appId, String accountId, String provisionerId);
 

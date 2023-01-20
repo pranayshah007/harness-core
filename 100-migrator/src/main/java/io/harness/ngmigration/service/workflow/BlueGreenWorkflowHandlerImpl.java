@@ -14,10 +14,9 @@ import io.harness.ngmigration.service.step.StepMapperFactory;
 import software.wings.beans.CanaryOrchestrationWorkflow;
 import software.wings.beans.GraphNode;
 import software.wings.beans.Workflow;
-import software.wings.beans.WorkflowPhase.Yaml;
 import software.wings.ngmigration.CgEntityId;
+import software.wings.ngmigration.CgEntityNode;
 import software.wings.service.impl.yaml.handler.workflow.BlueGreenWorkflowYamlHandler;
-import software.wings.yaml.workflow.BlueGreenWorkflowYaml;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
@@ -30,12 +29,6 @@ public class BlueGreenWorkflowHandlerImpl extends WorkflowHandler {
   @Inject private StepMapperFactory stepMapperFactory;
 
   @Override
-  public List<Yaml> getPhases(Workflow workflow) {
-    BlueGreenWorkflowYaml blueGreenWorkflowYaml = blueGreenWorkflowYamlHandler.toYaml(workflow, workflow.getAppId());
-    return blueGreenWorkflowYaml.getPhases();
-  }
-
-  @Override
   public List<GraphNode> getSteps(Workflow workflow) {
     CanaryOrchestrationWorkflow orchestrationWorkflow =
         (CanaryOrchestrationWorkflow) workflow.getOrchestrationWorkflow();
@@ -44,19 +37,14 @@ public class BlueGreenWorkflowHandlerImpl extends WorkflowHandler {
   }
 
   @Override
-  public List<Yaml> getRollbackPhases(Workflow workflow) {
-    BlueGreenWorkflowYaml blueGreenWorkflowYaml = blueGreenWorkflowYamlHandler.toYaml(workflow, workflow.getAppId());
-    return blueGreenWorkflowYaml.getRollbackPhases();
-  }
-
-  @Override
   public boolean areSimilar(Workflow workflow1, Workflow workflow2) {
     return areSimilar(stepMapperFactory, workflow1, workflow2);
   }
 
   @Override
-  public JsonNode getTemplateSpec(Map<CgEntityId, NGYamlFile> migratedEntities, Workflow workflow) {
-    return getDeploymentStageTemplateSpec(migratedEntities, workflow, stepMapperFactory);
+  public JsonNode getTemplateSpec(
+      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities, Workflow workflow) {
+    return getDeploymentStageTemplateSpec(entities, migratedEntities, workflow, stepMapperFactory);
   }
 
   @Override

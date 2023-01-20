@@ -18,6 +18,8 @@ import io.harness.mongo.index.FdTtlIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.CreatedAtAccess;
 
+import dev.morphia.annotations.Entity;
+import dev.morphia.annotations.Id;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.Date;
@@ -27,8 +29,6 @@ import lombok.Value;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.NonFinal;
 import lombok.experimental.Wither;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -48,13 +48,13 @@ public class NotifyResponse implements WaitEngineEntity, CreatedAtAccess {
   public static final Duration TTL = ofDays(21);
 
   @Id @org.springframework.data.annotation.Id String uuid;
-  @FdIndex long createdAt;
+  @FdIndex Long createdAt;
   byte[] responseData;
-  boolean error;
+  @Builder.Default Boolean error = false;
 
   @Default @FdTtlIndex @NonFinal @Wither Date validUntil = Date.from(OffsetDateTime.now().plus(TTL).toInstant());
 
-  private Boolean usingKryoWithoutReference;
+  Boolean usingKryoWithoutReference;
 
   public Boolean getUsingKryoWithoutReference() {
     return isUsingKryoWithoutReference();
@@ -65,5 +65,19 @@ public class NotifyResponse implements WaitEngineEntity, CreatedAtAccess {
       return false;
     }
     return usingKryoWithoutReference;
+  }
+
+  public boolean isError() {
+    if (error == null) {
+      return false;
+    }
+    return error;
+  }
+
+  public long getCreatedAt() {
+    if (createdAt == null) {
+      return 0;
+    }
+    return createdAt;
   }
 }

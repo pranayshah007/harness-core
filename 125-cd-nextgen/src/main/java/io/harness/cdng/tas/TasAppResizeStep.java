@@ -15,6 +15,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.TanzuApplicationServiceInfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
@@ -45,7 +46,6 @@ import io.harness.ng.core.BaseNGAccess;
 import io.harness.pcf.CfCommandUnitConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
-import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
@@ -63,22 +63,24 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
-import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
 
 import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
-public class TasAppResizeStep extends TaskExecutableWithRollbackAndRbac<CfCommandResponseNG> {
+public class TasAppResizeStep extends CdTaskExecutable<CfCommandResponseNG> {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.TAS_APP_RESIZE.getYamlType())
                                                .setStepCategory(StepCategory.STEP)
@@ -86,7 +88,7 @@ public class TasAppResizeStep extends TaskExecutableWithRollbackAndRbac<CfComman
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private OutcomeService outcomeService;
   @Inject private TasEntityHelper tasEntityHelper;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private StepHelper stepHelper;
   @Inject private TasStepHelper tasStepHelper;
   @Inject private InstanceInfoService instanceInfoService;
@@ -127,14 +129,15 @@ public class TasAppResizeStep extends TaskExecutableWithRollbackAndRbac<CfComman
             .instanceData(response.getCfDeployCommandResult().getInstanceDataUpdated())
             .cfInstanceElements(response.getCfDeployCommandResult().getNewAppInstances())
             .build();
-    List<ServerInstanceInfo> serverInstanceInfoList = getServerInstanceInfoList(response, ambiance);
-    StepResponse.StepOutcome stepOutcome =
-        instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfoList);
+    if (!response.getCfDeployCommandResult().isStandardBG()) {
+      List<ServerInstanceInfo> serverInstanceInfoList = getServerInstanceInfoList(response, ambiance);
+      StepResponse.StepOutcome stepOutcome =
+          instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, serverInstanceInfoList);
+      builder.stepOutcome(stepOutcome);
+    }
     executionSweepingOutputService.consume(
         ambiance, OutcomeExpressionConstants.TAS_APP_RESIZE_OUTCOME, tasAppResizeDataOutcome, StepCategory.STEP.name());
-    tasStepHelper.saveInstancesOutcome(ambiance, serverInstanceInfoList);
 
-    builder.stepOutcome(stepOutcome);
     builder.stepOutcome(StepResponse.StepOutcome.builder()
                             .name(OutcomeExpressionConstants.OUTPUT)
                             .outcome(tasAppResizeDataOutcome)
@@ -189,14 +192,10 @@ public class TasAppResizeStep extends TaskExecutableWithRollbackAndRbac<CfComman
               SkipTaskRequest.newBuilder().setMessage("Tas App resize Step was not executed. Skipping .").build())
           .build();
     }
-    Integer upsizeInstanceCount =
-        new BigDecimal(getParameterFieldValue(tasAppResizeStepParameters.getNewAppInstances().getSpec().getValue()))
-            .intValueExact();
+    Integer upsizeInstanceCount = getValue(tasAppResizeStepParameters.getNewAppInstances());
     Integer downsizeInstanceCount = null;
     if (!isNull(tasAppResizeStepParameters.getOldAppInstances())) {
-      downsizeInstanceCount =
-          new BigDecimal(getParameterFieldValue(tasAppResizeStepParameters.getOldAppInstances().getSpec().getValue()))
-              .intValueExact();
+      downsizeInstanceCount = getValue(tasAppResizeStepParameters.getOldAppInstances());
     }
     TasInstanceUnitType upsizeInstanceCountType = tasAppResizeStepParameters.getNewAppInstances().getType();
     TasInstanceUnitType downsizeCountType = isNull(tasAppResizeStepParameters.getOldAppInstances())
@@ -207,7 +206,6 @@ public class TasAppResizeStep extends TaskExecutableWithRollbackAndRbac<CfComman
 
     Integer upsizeCount = getUpsizeCount(upsizeInstanceCount, upsizeInstanceCountType, totalDesiredCount);
     Integer downsizeCount = getDownsizeCount(downsizeCountType, downsizeInstanceCount, totalDesiredCount, upsizeCount);
-
     TanzuApplicationServiceInfrastructureOutcome infrastructureOutcome =
         (TanzuApplicationServiceInfrastructureOutcome) outcomeService.resolve(
             ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
@@ -254,10 +252,23 @@ public class TasAppResizeStep extends TaskExecutableWithRollbackAndRbac<CfComman
                                   .taskType(TaskType.TAS_APP_RESIZE.name())
                                   .parameters(new Object[] {cfDeployCommandRequestNG})
                                   .build();
-    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+    return TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
         getCommandUnitList(tasSetupDataOutcome.getResizeStrategy()), TaskType.TAS_APP_RESIZE.getDisplayName(),
         TaskSelectorYaml.toTaskSelector(tasAppResizeStepParameters.getDelegateSelectors()),
         stepHelper.getEnvironmentType(ambiance));
+  }
+
+  @NotNull
+  private Integer getValue(TasInstanceSelectionWrapper tasInstanceSelectionWrapper) {
+    if (tasInstanceSelectionWrapper.getType().equals(TasInstanceUnitType.COUNT)) {
+      return new BigDecimal(
+          getParameterFieldValue(((TasCountInstanceSelection) tasInstanceSelectionWrapper.getSpec()).getValue()))
+          .intValueExact();
+    } else {
+      return new BigDecimal(
+          getParameterFieldValue(((TasPercentageInstanceSelection) tasInstanceSelectionWrapper.getSpec()).getValue()))
+          .intValueExact();
+    }
   }
 
   private List<String> getCommandUnitList(TasResizeStrategyType resizeStrategy) {

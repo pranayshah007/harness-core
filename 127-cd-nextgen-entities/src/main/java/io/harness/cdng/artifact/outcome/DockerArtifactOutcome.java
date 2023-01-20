@@ -51,6 +51,8 @@ public class DockerArtifactOutcome implements ArtifactOutcome {
   Map<String, String> label;
   /** display Name*/
   String displayName;
+  /** display Name*/
+  String digest;
   /** Custom Artifact metadata */
   Map<String, String> metadata;
 

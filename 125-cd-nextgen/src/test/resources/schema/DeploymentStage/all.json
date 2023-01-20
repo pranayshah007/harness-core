@@ -121,14 +121,38 @@
               "minLength": 1
             },
             "filters": {
-              "$ref": "#/definitions/ParameterFieldListAMIFilter"
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/AMIFilter"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
             },
             "region": {
               "type": "string",
               "minLength": 1
             },
             "tags": {
-              "$ref": "#/definitions/ParameterFieldListAMITag"
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/AMITag"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
             },
             "version": {
               "type": "string"
@@ -735,6 +759,127 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "AsgBlueGreenDeployStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "loadBalancer",
+            "prodListener",
+            "prodListenerRuleArn",
+            "stageListener",
+            "stageListenerRuleArn"
+          ],
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "loadBalancer": {
+              "type": "string"
+            },
+            "prodListener": {
+              "type": "string"
+            },
+            "prodListenerRuleArn": {
+              "type": "string"
+            },
+            "stageListener": {
+              "type": "string"
+            },
+            "stageListenerRuleArn": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AsgBlueGreenRollbackStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AsgBlueGreenSwapServiceStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "downsizeOldAsg"
+          ],
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "downsizeOldAsg": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "AsgCanaryDeleteStepInfo": {
       "allOf": [
         {
@@ -869,6 +1014,9 @@
         },
         {
           "type": "object",
+          "required": [
+            "useAlreadyRunningInstances"
+          ],
           "properties": {
             "delegateSelectors": {
               "oneOf": [
@@ -886,18 +1034,57 @@
               ]
             },
             "instanceWarmup": {
-              "type": "integer",
-              "format": "int32"
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
             },
             "minimumHealthyPercentage": {
-              "type": "number",
-              "format": "double"
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
             },
             "skipMatching": {
-              "type": "boolean"
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
             },
             "useAlreadyRunningInstances": {
-              "type": "boolean"
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
             }
           }
         }
@@ -3459,7 +3646,8 @@
             "ECS",
             "Elastigroup",
             "TAS",
-            "Asg"
+            "Asg",
+            "GoogleCloudFunctions"
           ]
         },
         "environment": {
@@ -3611,6 +3799,9 @@
           ],
           "properties": {
             "connectorRef": {
+              "type": "string"
+            },
+            "digest": {
               "type": "string"
             },
             "imagePath": {
@@ -5436,6 +5627,37 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "GoogleCloudFunctionDefinitionManifest": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ManifestAttributes"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "metadata": {
+              "type": "string"
+            },
+            "store": {
+              "$ref": "#/definitions/StoreConfigWrapper"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "GoogleCloudFunctionsServiceSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ServiceSpec"
+        },
+        {
+          "type": "object",
+          "properties": { }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "HarnessFileStoreSource": {
       "allOf": [
         {
@@ -5739,6 +5961,25 @@
           "type": "string"
         }
       },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "HelmRepoOverrideManifest": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ManifestAttributes"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "metadata": {
+              "type": "string"
+            },
+            "store": {
+              "$ref": "#/definitions/StoreConfigWrapper"
+            }
+          }
+        }
+      ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "HelmRollbackStepInfo": {
@@ -6617,6 +6858,13 @@
         "name": {
           "type": "string"
         },
+        "type": {
+          "type": "string",
+          "enum": [
+            "String",
+            "Number"
+          ]
+        },
         "value": {
           "type": "string"
         }
@@ -6645,7 +6893,17 @@
               "minLength": 1
             },
             "namespace": {
-              "type": "string",
+              "oneOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$"
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ],
               "minLength": 1
             },
             "releaseName": {
@@ -6776,7 +7034,17 @@
               "minLength": 1
             },
             "namespace": {
-              "type": "string",
+              "oneOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$"
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ],
               "minLength": 1
             },
             "releaseName": {
@@ -7002,6 +7270,34 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "K8sDryRunManifestStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "K8sGcpInfrastructure": {
       "allOf": [
         {
@@ -7028,7 +7324,17 @@
               "type": "string"
             },
             "namespace": {
-              "type": "string",
+              "oneOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$"
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
+                }
+              ],
               "minLength": 1
             },
             "releaseName": {
@@ -7420,6 +7726,7 @@
           "type": "string",
           "enum": [
             "HelmChart",
+            "HelmRepoOverride",
             "K8sManifest",
             "Kustomize",
             "KustomizePatches",
@@ -7439,7 +7746,8 @@
             "AsgLaunchTemplate",
             "AsgConfiguration",
             "AsgScalingPolicy",
-            "AsgScheduledUpdateGroupAction"
+            "AsgScheduledUpdateGroupAction",
+            "GoogleCloudFunctionDefinition"
           ]
         }
       },
@@ -7593,6 +7901,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "GoogleCloudFunctionDefinition"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GoogleCloudFunctionDefinitionManifest"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "HelmChart"
               }
             }
@@ -7601,6 +7925,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/HelmChartManifest"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "HelmRepoOverride"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/HelmRepoOverrideManifest"
               }
             }
           }
@@ -8646,7 +8986,8 @@
               "DelegateProvisioning",
               "PolicyEvaluationFailure",
               "InputTimeoutError",
-              "ApprovalRejection"
+              "ApprovalRejection",
+              "DelegateRestart"
             ]
           }
         }
@@ -8886,84 +9227,6 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "ParameterFieldListAMIFilter": {
-      "type": "object",
-      "properties": {
-        "defaultValue": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/AMIFilter"
-          }
-        },
-        "executionInput": {
-          "type": "boolean"
-        },
-        "expression": {
-          "type": "boolean"
-        },
-        "expressionValue": {
-          "type": "string"
-        },
-        "inputSetValidator": {
-          "$ref": "#/definitions/InputSetValidator"
-        },
-        "jsonResponseField": {
-          "type": "boolean"
-        },
-        "responseField": {
-          "type": "string"
-        },
-        "typeString": {
-          "type": "boolean"
-        },
-        "value": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/AMIFilter"
-          }
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "ParameterFieldListAMITag": {
-      "type": "object",
-      "properties": {
-        "defaultValue": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/AMITag"
-          }
-        },
-        "executionInput": {
-          "type": "boolean"
-        },
-        "expression": {
-          "type": "boolean"
-        },
-        "expressionValue": {
-          "type": "string"
-        },
-        "inputSetValidator": {
-          "$ref": "#/definitions/InputSetValidator"
-        },
-        "jsonResponseField": {
-          "type": "boolean"
-        },
-        "responseField": {
-          "type": "string"
-        },
-        "typeString": {
-          "type": "boolean"
-        },
-        "value": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/AMITag"
-          }
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
     "ParameterFieldMapStringString": {
       "type": "object",
       "properties": {
@@ -8999,6 +9262,39 @@
           "additionalProperties": {
             "type": "string"
           }
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ParameterFieldMatrixConfigInterface": {
+      "type": "object",
+      "properties": {
+        "defaultValue": {
+          "$ref": "#/definitions/MatrixConfigInterface"
+        },
+        "executionInput": {
+          "type": "boolean"
+        },
+        "expression": {
+          "type": "boolean"
+        },
+        "expressionValue": {
+          "type": "string"
+        },
+        "inputSetValidator": {
+          "$ref": "#/definitions/InputSetValidator"
+        },
+        "jsonResponseField": {
+          "type": "boolean"
+        },
+        "responseField": {
+          "type": "string"
+        },
+        "typeString": {
+          "type": "boolean"
+        },
+        "value": {
+          "$ref": "#/definitions/MatrixConfigInterface"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -9074,6 +9370,29 @@
                 }
               ]
             },
+            "dynamicallyProvisioned": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "hostAttributes": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
             "hostFilter": {
               "$ref": "#/definitions/HostFilter"
             }
@@ -9106,6 +9425,29 @@
                 }
               ]
             },
+            "dynamicallyProvisioned": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "hostAttributes": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
             "hostFilter": {
               "$ref": "#/definitions/HostFilter"
             },
@@ -9119,6 +9461,73 @@
                 },
                 {
                   "type": "string"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "credentialsRef",
+            "hostFilter",
+            "hostObjectArray"
+          ],
+          "properties": {
+            "credentialsRef": {
+              "type": "string"
+            },
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "dynamicallyProvisioned": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "hostAttributes": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "hostFilter": {
+              "$ref": "#/definitions/HostFilter"
+            },
+            "hostObjectArray": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/JsonNode"
+                },
+                {
+                  "type": "string",
+                  "pattern": "(<\\+.+>.*)",
+                  "minLength": 1
                 }
               ]
             }
@@ -10106,7 +10515,8 @@
             "ECS",
             "Elastigroup",
             "TAS",
-            "Asg"
+            "Asg",
+            "GoogleCloudFunctions"
           ]
         }
       },
@@ -10188,6 +10598,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/ElastigroupServiceSpec"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "GoogleCloudFunctions"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GoogleCloudFunctionsServiceSpec"
               }
             }
           }
@@ -11196,6 +11622,54 @@
           "if": {
             "properties": {
               "type": {
+                "const": "AsgBlueGreenDeploy"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AsgBlueGreenDeployStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AsgBlueGreenRollback"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AsgBlueGreenRollbackStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AsgBlueGreenSwapService"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AsgBlueGreenSwapServiceStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "AsgCanaryDelete"
               }
             }
@@ -11900,6 +12374,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "K8sDryRun"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/K8sDryRunManifestStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "K8sRollingDeploy"
               }
             }
@@ -12076,6 +12566,38 @@
           "if": {
             "properties": {
               "type": {
+                "const": "TasRollingDeploy"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/TasRollingDeployStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "TasRollingRollback"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/TasRollingRollbackStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "TerraformApply"
               }
             }
@@ -12206,8 +12728,7 @@
       "type": "object",
       "required": [
         "identifier",
-        "name",
-        "steps"
+        "name"
       ],
       "properties": {
         "delegateSelectors": {
@@ -12250,11 +12771,30 @@
         "strategy": {
           "$ref": "#/definitions/StrategyConfig"
         },
+        "template": {
+          "$ref": "#/definitions/TemplateLinkConfig"
+        },
         "when": {
           "$ref": "#/definitions/StepWhenCondition"
         }
       },
-      "$schema": "http://json-schema.org/draft-07/schema#"
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "oneOf": [
+            {
+              "required": [
+                "template"
+              ]
+            },
+            {
+              "required": [
+                "steps"
+              ]
+            }
+          ]
+        }
+      ]
     },
     "StepGroupFailureActionConfig": {
       "allOf": [
@@ -12615,7 +13155,16 @@
       "type": "object",
       "properties": {
         "matrix": {
-          "$ref": "#/definitions/MatrixConfigInterface"
+          "oneOf": [
+            {
+              "$ref": "#/definitions/ParameterFieldMatrixConfigInterface"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
         },
         "parallelism": {
           "oneOf": [
@@ -12834,8 +13383,7 @@
           "type": "object",
           "required": [
             "existingVersionToKeep",
-            "tasInstanceCountType",
-            "tempRoutes"
+            "tasInstanceCountType"
           ],
           "properties": {
             "additionalRoutes": {
@@ -13117,12 +13665,40 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "TasCountInstanceSelection": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/TasInstanceSelectionBase"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "value": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldString"
+                },
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TasInstanceSelectionBase": {
+      "type": "object",
+      "discriminator": "type",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "TasInstanceSelectionWrapper": {
       "type": "object",
       "properties": {
-        "spec": {
-          "$ref": "#/definitions/TasInstanceValue"
-        },
         "type": {
           "type": "string",
           "enum": [
@@ -13131,29 +13707,41 @@
           ]
         }
       },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "TasInstanceValue": {
-      "type": "object",
-      "required": [
-        "value"
-      ],
-      "properties": {
-        "value": {
-          "oneOf": [
-            {
-              "type": "integer",
-              "format": "int32"
-            },
-            {
-              "type": "string",
-              "pattern": "(<\\+.+>.*)",
-              "minLength": 1
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Count"
+              }
             }
-          ]
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/TasCountInstanceSelection"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Percentage"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/TasPercentageInstanceSelection"
+              }
+            }
+          }
         }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
+      ]
     },
     "TasManifest": {
       "allOf": [
@@ -13210,7 +13798,104 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "TasPercentageInstanceSelection": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/TasInstanceSelectionBase"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "value": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldString"
+                },
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "TasRollbackStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TasRollingDeployStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "additionalRoutes": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TasRollingRollbackStepInfo": {
       "allOf": [
         {
           "$ref": "#/definitions/StepSpecType"

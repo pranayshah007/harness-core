@@ -192,6 +192,12 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.mongodb.DuplicateKeyException;
+import dev.morphia.Morphia;
+import dev.morphia.mapping.Mapper;
+import dev.morphia.query.CountOptions;
+import dev.morphia.query.Query;
+import dev.morphia.query.UpdateOperations;
+import dev.morphia.query.UpdateResults;
 import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -218,12 +224,6 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.validator.routines.DomainValidator;
 import org.apache.commons.validator.routines.UrlValidator;
-import org.mongodb.morphia.Morphia;
-import org.mongodb.morphia.mapping.Mapper;
-import org.mongodb.morphia.query.CountOptions;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateOperations;
-import org.mongodb.morphia.query.UpdateResults;
 
 /**
  * Created by peeyushaggarwal on 10/11/16.
@@ -1251,6 +1251,8 @@ public class AccountServiceImpl implements AccountService {
     Account account = get(accountId);
     updateMigratedToClusterUrl(account, migratedToClusterUrl);
     // Also need to prevent all existing users in the migration account from logging in after completion of migration.
+    log.info("Marking users in migration account: {}, migrated to cluster: {}, to disabled", accountId,
+        migratedToClusterUrl);
     setUserStatusInAccount(accountId, false);
     return setAccountStatusInternal(account, AccountStatus.INACTIVE);
   }

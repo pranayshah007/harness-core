@@ -23,6 +23,7 @@ import io.harness.ng.DbAliases;
 import software.wings.beans.Base;
 import software.wings.beans.ExecutionArgs;
 
+import dev.morphia.annotations.Entity;
 import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.List;
@@ -32,7 +33,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
 
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._815_CG_TRIGGERS)

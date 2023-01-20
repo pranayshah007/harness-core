@@ -23,10 +23,9 @@ import software.wings.beans.CanaryOrchestrationWorkflow;
 import software.wings.beans.GraphNode;
 import software.wings.beans.PhaseStep;
 import software.wings.beans.Workflow;
-import software.wings.beans.WorkflowPhase.Yaml;
 import software.wings.ngmigration.CgEntityId;
+import software.wings.ngmigration.CgEntityNode;
 import software.wings.service.impl.yaml.handler.workflow.CanaryWorkflowYamlHandler;
-import software.wings.yaml.workflow.CanaryWorkflowYaml;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.Sets;
@@ -41,12 +40,6 @@ public class CanaryWorkflowHandlerImpl extends WorkflowHandler {
 
   @Inject CanaryWorkflowYamlHandler canaryWorkflowYamlHandler;
   @Inject private StepMapperFactory stepMapperFactory;
-
-  @Override
-  public List<Yaml> getPhases(Workflow workflow) {
-    CanaryWorkflowYaml canaryWorkflowYaml = canaryWorkflowYamlHandler.toYaml(workflow, workflow.getAppId());
-    return canaryWorkflowYaml.getPhases();
-  }
 
   @Override
   public List<GraphNode> getSteps(Workflow workflow) {
@@ -70,41 +63,28 @@ public class CanaryWorkflowHandlerImpl extends WorkflowHandler {
     return areSimilar(stepMapperFactory, workflow1, workflow2);
   }
 
-  PhaseStep.Yaml getPreDeploymentPhase(Workflow workflow) {
-    CanaryWorkflowYaml canaryWorkflowYaml = canaryWorkflowYamlHandler.toYaml(workflow, workflow.getAppId());
-    CanaryOrchestrationWorkflow orchestrationWorkflow = (CanaryOrchestrationWorkflow) workflow.getOrchestration();
-    return PhaseStep.Yaml.builder()
-        .stepSkipStrategies(canaryWorkflowYaml.getPreDeploymentStepSkipStrategy())
-        .stepsInParallel(orchestrationWorkflow.getPreDeploymentSteps().isStepsInParallel())
-        .steps(canaryWorkflowYaml.getPreDeploymentSteps())
-        .build();
+  PhaseStep getPreDeploymentPhase(Workflow workflow) {
+    CanaryOrchestrationWorkflow orchestrationWorkflow =
+        (CanaryOrchestrationWorkflow) workflow.getOrchestrationWorkflow();
+    return orchestrationWorkflow.getPreDeploymentSteps();
   }
 
-  PhaseStep.Yaml getPostDeploymentPhase(Workflow workflow) {
-    CanaryWorkflowYaml canaryWorkflowYaml = canaryWorkflowYamlHandler.toYaml(workflow, workflow.getAppId());
-    CanaryOrchestrationWorkflow orchestrationWorkflow = (CanaryOrchestrationWorkflow) workflow.getOrchestration();
-    return PhaseStep.Yaml.builder()
-        .stepSkipStrategies(canaryWorkflowYaml.getPostDeploymentStepSkipStrategy())
-        .stepsInParallel(orchestrationWorkflow.getPostDeploymentSteps().isStepsInParallel())
-        .steps(canaryWorkflowYaml.getPostDeploymentSteps())
-        .build();
+  PhaseStep getPostDeploymentPhase(Workflow workflow) {
+    CanaryOrchestrationWorkflow orchestrationWorkflow =
+        (CanaryOrchestrationWorkflow) workflow.getOrchestrationWorkflow();
+    return orchestrationWorkflow.getPostDeploymentSteps();
   }
 
   @Override
-  public JsonNode getTemplateSpec(Map<CgEntityId, NGYamlFile> migratedEntities, Workflow workflow) {
+  public JsonNode getTemplateSpec(
+      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities, Workflow workflow) {
     OrchestrationWorkflowType workflowType = workflow.getOrchestration().getOrchestrationWorkflowType();
     if (ROLLING_WORKFLOW_TYPES.contains(workflowType)) {
-      return getDeploymentStageTemplateSpec(migratedEntities, workflow, stepMapperFactory);
+      return getDeploymentStageTemplateSpec(entities, migratedEntities, workflow, stepMapperFactory);
     }
     if (workflowType == BUILD) {
-      return getCustomStageTemplateSpec(migratedEntities, workflow, stepMapperFactory);
+      return getCustomStageTemplateSpec(entities, migratedEntities, workflow, stepMapperFactory);
     }
-    return buildMultiStagePipelineTemplate(migratedEntities, stepMapperFactory, workflow);
-  }
-
-  @Override
-  List<Yaml> getRollbackPhases(Workflow workflow) {
-    CanaryWorkflowYaml canaryWorkflowYaml = canaryWorkflowYamlHandler.toYaml(workflow, workflow.getAppId());
-    return canaryWorkflowYaml.getRollbackPhases();
+    return buildMultiStagePipelineTemplate(entities, migratedEntities, stepMapperFactory, workflow);
   }
 }

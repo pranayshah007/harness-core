@@ -51,10 +51,8 @@ import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.helpers.PrincipalInfoHelper;
 import io.harness.pms.helpers.TriggeredByHelper;
 import io.harness.pms.merger.YamlConfig;
-import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.helpers.InputSetMergeHelper;
 import io.harness.pms.merger.helpers.MergeHelper;
-import io.harness.pms.ngpipeline.inputset.helpers.InputSetErrorsHelper;
 import io.harness.pms.ngpipeline.inputset.helpers.InputSetSanitizer;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.api.PipelinesApiUtils;
@@ -100,7 +98,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -294,7 +291,8 @@ public class ExecutionHelper {
   }
 
   @VisibleForTesting
-  TemplateMergeResponseDTO getPipelineYamlAndValidate(String mergedRuntimeInputYaml, PipelineEntity pipelineEntity) {
+  TemplateMergeResponseDTO getPipelineYamlAndValidate(String mergedRuntimeInputYaml, PipelineEntity pipelineEntity)
+      throws IOException {
     YamlConfig pipelineYamlConfig;
     YamlConfig pipelineYamlConfigForSchemaValidations;
 
@@ -305,15 +303,6 @@ public class ExecutionHelper {
     } else {
       YamlConfig pipelineEntityYamlConfig = new YamlConfig(pipelineEntity.getYaml());
       YamlConfig runtimeInputYamlConfig = new YamlConfig(mergedRuntimeInputYaml);
-      Map<FQN, String> invalidFQNsInInputSet =
-          InputSetErrorsHelper.getInvalidFQNsInInputSet(pipelineEntityYamlConfig, runtimeInputYamlConfig);
-      if (isNotEmpty(invalidFQNsInInputSet)) {
-        throw new InvalidRequestException("Some fields are not valid: "
-            + invalidFQNsInInputSet.entrySet()
-                  .stream()
-                  .map(o -> o.getKey().getExpressionFqn() + ": " + o.getValue())
-                  .collect(Collectors.toList()));
-      }
       pipelineYamlConfig =
           MergeHelper.mergeRuntimeInputValuesIntoOriginalYaml(pipelineEntityYamlConfig, runtimeInputYamlConfig, true);
 
@@ -333,6 +322,7 @@ public class ExecutionHelper {
     String pipelineYamlForSchemaValidations = pipelineYamlConfigForSchemaValidations.getYaml();
     log.info("[PMS_EXECUTE] Pipeline input set merge total time took {}ms", System.currentTimeMillis() - start);
 
+    String unresolvedPipelineYaml = pipelineYaml;
     String pipelineYamlWithTemplateRef = pipelineYaml;
     if (Boolean.TRUE.equals(TemplateRefHelper.hasTemplateRef(pipelineYamlConfig))) {
       TemplateMergeResponseDTO templateMergeResponseDTO =
@@ -346,15 +336,16 @@ public class ExecutionHelper {
           ? pipelineYaml
           : templateMergeResponseDTO.getMergedPipelineYamlWithTemplateRef();
     }
+    String yamlWithoutRuntimeInputs = YamlUtils.getYamlWithoutInputs(pipelineYaml);
     pmsYamlSchemaService.validateYamlSchema(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
-        pipelineEntity.getProjectIdentifier(), pipelineYamlForSchemaValidations);
+        pipelineEntity.getProjectIdentifier(), yamlWithoutRuntimeInputs);
     if (pipelineEntity.getStoreType() == null || pipelineEntity.getStoreType() == StoreType.INLINE) {
       // For REMOTE Pipelines, entity setup usage framework cannot be relied upon. That is because the setup usages can
       // be outdated wrt the YAML we find on Git during execution. This means the fail fast approach that we have for
       // RBAC checks can't be provided for remote pipelines
       pipelineRbacServiceImpl.extractAndValidateStaticallyReferredEntities(pipelineEntity.getAccountId(),
           pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineEntity.getIdentifier(),
-          pipelineYaml);
+          unresolvedPipelineYaml);
     }
     return TemplateMergeResponseDTO.builder()
         .mergedPipelineYaml(pipelineYaml)
@@ -530,7 +521,7 @@ public class ExecutionHelper {
         // TODO: check with @sahilHindwani whether this update is required or not.
         pmsExecutionService.sendGraphUpdateEvent(executionSummaryEntity);
         return pipelineStageHelper.getResponseDTOWithChildGraph(
-            accountId, childStageNodeId, executionSummaryEntity, entityGitDetails, nodeExecution);
+            accountId, childStageNodeId, executionSummaryEntity, entityGitDetails, nodeExecution, stageNodeExecutionId);
       }
     }
 

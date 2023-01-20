@@ -13,6 +13,8 @@ import static io.harness.rule.OwnerRule.ACASIAN;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -24,6 +26,7 @@ import io.harness.delegate.task.k8s.K8sDeployResponse;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.WingsException;
+import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResourceId;
 import io.harness.logging.LogCallback;
@@ -44,11 +47,13 @@ public class K8sDeleteBaseHandlerTest extends CategoryTest {
   @Mock K8sTaskHelperBase k8sTaskHelperBase;
   @Mock private LogCallback logCallback;
   @Mock private KubernetesConfig kubernetesConfig;
+  @Mock K8sReleaseHandler releaseHandler;
 
   @InjectMocks private K8sDeleteBaseHandler k8sDeleteBaseHandler;
   @Before
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks(this);
+    doReturn(releaseHandler).when(k8sTaskHelperBase).getReleaseHandler(anyBoolean());
   }
 
   @Test
@@ -167,20 +172,14 @@ public class K8sDeleteBaseHandlerTest extends CategoryTest {
                                          .deleteResourcesType(DeleteResourcesType.ReleaseName)
                                          .releaseName(releaseName)
                                          .deleteNamespacesForRelease(false)
+                                         .useDeclarativeRollback(true)
                                          .build();
-
-    List<KubernetesResourceId> kubernetesResources =
-        Arrays.asList(KubernetesResourceId.builder().kind("Deployment").name("test-deployment").build(),
-            KubernetesResourceId.builder().kind("Service").name("test-service").build(),
-            KubernetesResourceId.builder().kind("Namespace").name("test").build());
 
     List<KubernetesResourceId> kubernetesResourcesWithoutNamespace =
         Arrays.asList(KubernetesResourceId.builder().kind("Deployment").name("test-deployment").build(),
             KubernetesResourceId.builder().kind("Service").name("test-service").build());
 
-    when(k8sTaskHelperBase.fetchAllResourcesForRelease(releaseName, kubernetesConfig, logCallback))
-        .thenReturn(kubernetesResources);
-    when(k8sTaskHelperBase.arrangeResourceIdsInDeletionOrder(kubernetesResourcesWithoutNamespace))
+    when(k8sTaskHelperBase.getResourceIdsForDeletion(true, releaseName, kubernetesConfig, logCallback, false))
         .thenReturn(kubernetesResourcesWithoutNamespace);
 
     List<KubernetesResourceId> result =
@@ -199,6 +198,7 @@ public class K8sDeleteBaseHandlerTest extends CategoryTest {
                                          .deleteResourcesType(DeleteResourcesType.ReleaseName)
                                          .releaseName(releaseName)
                                          .deleteNamespacesForRelease(true)
+                                         .useDeclarativeRollback(true)
                                          .build();
 
     List<KubernetesResourceId> kubernetesResources =
@@ -206,9 +206,8 @@ public class K8sDeleteBaseHandlerTest extends CategoryTest {
             KubernetesResourceId.builder().kind("Service").name("test-service").build(),
             KubernetesResourceId.builder().kind("Namespace").name("test").build());
 
-    when(k8sTaskHelperBase.fetchAllResourcesForRelease(releaseName, kubernetesConfig, logCallback))
+    when(k8sTaskHelperBase.getResourceIdsForDeletion(true, releaseName, kubernetesConfig, logCallback, true))
         .thenReturn(kubernetesResources);
-    when(k8sTaskHelperBase.arrangeResourceIdsInDeletionOrder(kubernetesResources)).thenReturn(kubernetesResources);
 
     List<KubernetesResourceId> result =
         k8sDeleteBaseHandler.getResourceIdsToDelete(deleteRequest, kubernetesConfig, logCallback);
@@ -230,9 +229,8 @@ public class K8sDeleteBaseHandlerTest extends CategoryTest {
 
     List<KubernetesResourceId> kubernetesResources = Collections.emptyList();
 
-    when(k8sTaskHelperBase.fetchAllResourcesForRelease(releaseName, kubernetesConfig, logCallback))
+    when(k8sTaskHelperBase.getResourceIdsForDeletion(true, releaseName, kubernetesConfig, logCallback, true))
         .thenReturn(kubernetesResources);
-    when(k8sTaskHelperBase.arrangeResourceIdsInDeletionOrder(kubernetesResources)).thenReturn(kubernetesResources);
 
     List<KubernetesResourceId> result =
         k8sDeleteBaseHandler.getResourceIdsToDelete(deleteRequest, kubernetesConfig, logCallback);

@@ -86,4 +86,10 @@ public class ApiKeyCustomRepositoryImpl implements ApiKeyCustomRepository {
             -> result.put(countByKeyAggregationResult.getKey(), countByKeyAggregationResult.getCount()));
     return result;
   }
+
+  @Override
+  public List<ApiKey> deleteAll(Criteria criteria) {
+    Query query = new Query(criteria);
+    return mongoTemplate.findAllAndRemove(query, ApiKey.class);
+  }
 }

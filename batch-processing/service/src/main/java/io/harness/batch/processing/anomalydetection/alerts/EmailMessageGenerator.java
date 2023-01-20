@@ -15,6 +15,7 @@ import io.harness.ccm.anomaly.entities.AnomalyEntity.AnomalyEntityKeys;
 import io.harness.ccm.anomaly.entities.EntityType;
 import io.harness.ccm.anomaly.utility.AnomalyUtility;
 import io.harness.ccm.commons.entities.anomaly.AnomalyData;
+import io.harness.ccm.communication.entities.CommunicationMedium;
 import io.harness.ccm.currency.Currency;
 import io.harness.data.structure.EmptyPredicate;
 
@@ -56,7 +57,8 @@ public class EmailMessageGenerator {
       templateString = addAwsAccountInfo(templateString, anomalyEntity);
       templateString = addAwsServiceInfo(templateString, anomalyEntity);
       templateString = String.format(ANOMALY_LIST_ITEM_FORMAT, templateString);
-      templateString = replace(templateString, AnomalyUtility.getEntityMap(anomalyEntity, currency));
+      templateString =
+          replace(templateString, AnomalyUtility.getEntityMap(anomalyEntity, currency, CommunicationMedium.EMAIL));
       templateString = replace(templateString,
           AnomalyUtility.getNgURLMap(
               accountId, perspectiveId, perspectiveName, anomaly, mainConfiguration.getBaseUrl()));

@@ -7,12 +7,11 @@
 
 package io.harness.ng.core.service.resources;
 
+import static io.harness.NGCommonEntityConstants.FORCE_DELETE_MESSAGE;
 import static io.harness.artifact.ArtifactUtilities.getArtifactoryRegistryUrl;
 import static io.harness.cdng.artifact.resources.artifactory.service.ArtifactoryResourceServiceImpl.getConnector;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.ng.accesscontrol.PlatformPermissions.VIEW_PROJECT_PERMISSION;
-import static io.harness.ng.accesscontrol.PlatformResourceTypes.PROJECT;
 import static io.harness.rbac.CDNGRbacPermissions.SERVICE_CREATE_PERMISSION;
 import static io.harness.rbac.CDNGRbacPermissions.SERVICE_UPDATE_PERMISSION;
 import static io.harness.rbac.CDNGRbacPermissions.SERVICE_VIEW_PERMISSION;
@@ -42,21 +41,20 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
+import io.harness.beans.Scope;
 import io.harness.cdng.artifact.ArtifactSummary;
 import io.harness.cdng.artifact.bean.yaml.ArtifactSourceConfig;
-import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
 import io.harness.cdng.artifact.utils.ArtifactSourceTemplateHelper;
 import io.harness.cdng.manifest.yaml.K8sCommandFlagType;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
-import io.harness.delegate.task.artifacts.ArtifactSourceType;
+import io.harness.delegate.task.artifacts.ArtifactSourceConstants;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.OrgAndProjectValidationHelper;
 import io.harness.ng.core.artifact.ArtifactSourceYamlRequestDTO;
-import io.harness.ng.core.artifacts.resources.util.ArtifactResourceUtils.ArtifactInternalDTO;
 import io.harness.ng.core.beans.NGEntityTemplateResponseDTO;
 import io.harness.ng.core.beans.ServiceV2YamlMetadata;
 import io.harness.ng.core.beans.ServicesV2YamlMetadataDTO;
@@ -65,6 +63,7 @@ import io.harness.ng.core.customDeployment.helper.CustomDeploymentYamlHelper;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.remote.utils.ScopeAccessHelper;
 import io.harness.ng.core.service.dto.ServiceRequestDTO;
 import io.harness.ng.core.service.dto.ServiceResponse;
 import io.harness.ng.core.service.entity.ArtifactSourcesResponseDTO;
@@ -176,6 +175,7 @@ public class ServiceResourceV2 {
   @Inject CustomDeploymentYamlHelper customDeploymentYamlHelper;
   @Inject ArtifactSourceTemplateHelper artifactSourceTemplateHelper;
   private ServiceEntityYamlSchemaHelper serviceSchemaHelper;
+  private ScopeAccessHelper scopeAccessHelper;
 
   private final NGFeatureFlagHelperService featureFlagService;
   public static final String SERVICE_PARAM_MESSAGE = "Service Identifier for the entity";
@@ -301,9 +301,11 @@ public class ServiceResourceV2 {
       @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
-          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier) {
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+      @Parameter(description = FORCE_DELETE_MESSAGE) @QueryParam(NGCommonEntityConstants.FORCE_DELETE) @DefaultValue(
+          "false") boolean forceDelete) {
     return ResponseDTO.newResponse(serviceEntityManagementService.deleteService(
-        accountId, orgIdentifier, projectIdentifier, serviceIdentifier, ifMatch));
+        accountId, orgIdentifier, projectIdentifier, serviceIdentifier, ifMatch, forceDelete));
   }
 
   @PUT
@@ -446,8 +448,9 @@ public class ServiceResourceV2 {
       @Parameter(
           description = "The version label of deployment template if infrastructure is of type custom deployment")
       @QueryParam("versionLabel") String versionLabel) {
-    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
-        Resource.of(PROJECT, projectIdentifier), VIEW_PROJECT_PERMISSION, "Unauthorized to list services");
+    accessControlClient.checkForAccessOrThrow(List.of(scopeAccessHelper.getPermissionCheckDtoForViewAccessForScope(
+                                                  Scope.of(accountId, orgIdentifier, projectIdentifier))),
+        "Unauthorized to list services");
 
     Criteria criteria = ServiceFilterHelper.createCriteriaForGetList(
         accountId, orgIdentifier, projectIdentifier, false, searchTerm, type, gitOpsEnabled, false);
@@ -693,37 +696,97 @@ public class ServiceResourceV2 {
     return ResponseDTO.newResponse(k8sCmdFlags);
   }
 
-  private ServiceEntity updateArtifactoryRegistryUrlIfEmpty(
+  @Hidden
+  public ServiceEntity updateArtifactoryRegistryUrlIfEmpty(
       ServiceEntity serviceEntity, String accountId, String orgIdentifier, String projectIdentifier) {
+    if (serviceEntity == null) {
+      return null;
+    }
+
+    String repositoryUrlField = "repositoryUrl";
+
     String serviceYaml = serviceEntity.getYaml();
+
     YamlNode node = validateAndGetYamlNode(serviceYaml);
-    JsonNode serviceNode = node.getCurrJsonNode().get("service");
-    JsonNode artifactSpecNode = serviceNode.get("serviceDefinition").get("spec").get("artifacts").get("primary");
-    ArtifactInternalDTO artifactDTO;
-    try {
-      artifactDTO = YamlUtils.read(artifactSpecNode.toString(), ArtifactInternalDTO.class);
-    } catch (IOException e) {
-      throw new InvalidRequestException("Unable to read artifact spec in service yaml", e);
-    }
-    ArtifactoryRegistryArtifactConfig artifactoryRegistryArtifactConfig =
-        (ArtifactoryRegistryArtifactConfig) artifactDTO.spec;
-    ArtifactSourceType artifactSourceType = artifactDTO.sourceType;
-    if (artifactSourceType != ArtifactSourceType.ARTIFACTORY_REGISTRY) {
-      return serviceEntity;
-    }
-    String repositoryUrl = artifactoryRegistryArtifactConfig.getRepositoryUrl().getValue();
-    if (artifactoryRegistryArtifactConfig.getRepositoryFormat().getValue().equals("docker")) {
-      if (EmptyPredicate.isEmpty(repositoryUrl)) {
-        String artifactoryConnectorRef = artifactoryRegistryArtifactConfig.getConnectorRef().getValue();
-        IdentifierRef connectorRef =
-            IdentifierRefHelper.getIdentifierRef(artifactoryConnectorRef, accountId, orgIdentifier, projectIdentifier);
-        ArtifactoryConnectorDTO connector = getConnector(connectorRef);
-        repositoryUrl = getArtifactoryRegistryUrl(
-            connector.getArtifactoryServerUrl(), null, artifactoryRegistryArtifactConfig.getRepository().getValue());
+
+    JsonNode artifactSpecNode = null;
+    if (node != null) {
+      JsonNode serviceNode = node.getCurrJsonNode().get("service");
+
+      if (serviceNode != null) {
+        JsonNode serviceDefinitionNode = serviceNode.get("serviceDefinition");
+
+        if (serviceDefinitionNode != null) {
+          JsonNode specNode = serviceDefinitionNode.get("spec");
+
+          if (specNode != null) {
+            JsonNode artifactsNode = specNode.get("artifacts");
+
+            if (artifactsNode != null) {
+              JsonNode primaryNode = artifactsNode.get("primary");
+
+              if (primaryNode != null) {
+                artifactSpecNode = primaryNode.get("sources");
+              }
+            }
+          }
+        }
       }
     }
-    Map<String, Object> resMap = getResMap(node, repositoryUrl);
-    serviceEntity.setYaml(YamlPipelineUtils.writeYamlString(resMap));
+
+    if (artifactSpecNode == null) {
+      return serviceEntity;
+    }
+
+    Map<String, Object> yamlResMap = getResMap(node, null);
+    LinkedHashMap<String, Object> serviceResMap = (LinkedHashMap<String, Object>) yamlResMap.get("service");
+    LinkedHashMap<String, Object> serviceDefinitionResMap =
+        (LinkedHashMap<String, Object>) serviceResMap.get("serviceDefinition");
+    LinkedHashMap<String, Object> specResMap = (LinkedHashMap<String, Object>) serviceDefinitionResMap.get("spec");
+    LinkedHashMap<String, Object> artifactsResMap = (LinkedHashMap<String, Object>) specResMap.get("artifacts");
+    LinkedHashMap<String, Object> primaryResMap = (LinkedHashMap<String, Object>) artifactsResMap.get("primary");
+    ArrayList<LinkedHashMap<String, Object>> sourcesResMap =
+        (ArrayList<LinkedHashMap<String, Object>>) primaryResMap.get("sources");
+
+    for (int i = 0; i < sourcesResMap.size(); i++) {
+      LinkedHashMap<String, Object> source = sourcesResMap.get(i);
+
+      String type = String.valueOf(source.get("type"));
+      type = type.substring(1, type.length() - 1);
+      LinkedHashMap<String, Object> spec = (LinkedHashMap<String, Object>) source.get("spec");
+
+      if (type.equals(ArtifactSourceConstants.ARTIFACTORY_REGISTRY_NAME)) {
+        if (!spec.containsKey(repositoryUrlField)) {
+          String finalUrl = null;
+          String connectorRef = String.valueOf(spec.get("connectorRef"));
+          connectorRef = connectorRef.substring(1, connectorRef.length() - 1);
+          String repository = String.valueOf(spec.get("repository"));
+          repository = repository.substring(1, repository.length() - 1);
+          String repositoryFormat = String.valueOf(spec.get("repositoryFormat"));
+          repositoryFormat = repositoryFormat.substring(1, repositoryFormat.length() - 1);
+
+          if (repositoryFormat.equals("docker")) {
+            IdentifierRef connectorIdentifier =
+                IdentifierRefHelper.getIdentifierRef(connectorRef, accountId, orgIdentifier, projectIdentifier);
+            ArtifactoryConnectorDTO connector = getConnector(connectorIdentifier);
+            finalUrl = getArtifactoryRegistryUrl(connector.getArtifactoryServerUrl(), null, repository);
+
+            spec.put(repositoryUrlField, finalUrl);
+          }
+        }
+        source.replace("spec", spec);
+      }
+      sourcesResMap.set(i, source);
+    }
+
+    primaryResMap.replace("sources", sourcesResMap);
+    artifactsResMap.replace("primary", primaryResMap);
+    specResMap.replace("artifacts", artifactsResMap);
+    serviceDefinitionResMap.replace("spec", specResMap);
+    serviceResMap.replace("serviceDefinition", serviceDefinitionResMap);
+    yamlResMap.replace("service", serviceResMap);
+
+    serviceEntity.setYaml(YamlPipelineUtils.writeYamlString(yamlResMap));
     return serviceEntity;
   }
 
@@ -762,7 +825,7 @@ public class ServiceResourceV2 {
         resMap.put(fieldName, getResMap(childYamlField.getNode(), url));
       }
     }
-    if (connectorRefFlag == true) {
+    if (connectorRefFlag == true && EmptyPredicate.isNotEmpty(url)) {
       resMap.put("repositoryUrl", url);
     }
     return resMap;

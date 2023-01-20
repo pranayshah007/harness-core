@@ -15,6 +15,7 @@ import static software.wings.beans.TaskType.SHELL_SCRIPT_PROVISION;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.ssh.SshCommandStepHelper;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
@@ -28,7 +29,6 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
-import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
@@ -41,12 +41,13 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
-import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -56,13 +57,13 @@ import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
-public class ShellScriptProvisionStep extends TaskExecutableWithRollbackAndRbac<ShellScriptProvisionTaskNGResponse> {
+public class ShellScriptProvisionStep extends CdTaskExecutable<ShellScriptProvisionTaskNGResponse> {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.SHELL_SCRIPT_PROVISION.getYamlType())
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
 
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
   @Inject private StepHelper stepHelper;
   @Inject private SshCommandStepHelper sshCommandStepHelper;
@@ -103,7 +104,7 @@ public class ShellScriptProvisionStep extends TaskExecutableWithRollbackAndRbac<
                             .parameters(new Object[] {taskParameters})
                             .timeout(CDStepHelper.getTimeoutInMillis(stepElementParameters))
                             .build();
-    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+    return TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
         Collections.singletonList(ShellScriptProvisionTaskNG.COMMAND_UNIT), SHELL_SCRIPT_PROVISION.getDisplayName(),
         TaskSelectorYaml.toTaskSelector(
             ParameterFieldHelper.getParameterFieldValue(stepParameters.getDelegateSelectors())),

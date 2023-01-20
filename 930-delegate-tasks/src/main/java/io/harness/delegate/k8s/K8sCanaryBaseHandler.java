@@ -27,6 +27,7 @@ import io.harness.delegate.k8s.beans.K8sCanaryHandlerConfig;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.exception.KubernetesTaskException;
 import io.harness.exception.NestedExceptionUtils;
+import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
 import io.harness.k8s.K8sConstants;
 import io.harness.k8s.exception.KubernetesExceptionExplanation;
 import io.harness.k8s.exception.KubernetesExceptionHints;
@@ -40,9 +41,12 @@ import io.harness.k8s.model.K8sPod;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
-import io.harness.k8s.releasehistory.IK8sRelease;
+import io.harness.k8s.releasehistory.K8SLegacyReleaseHistory;
 import io.harness.k8s.releasehistory.K8sLegacyRelease;
-import io.harness.k8s.releasehistory.ReleaseHistory;
+import io.harness.k8s.releasehistory.K8sRelease;
+import io.harness.k8s.releasehistory.K8sReleaseHistory;
+import io.harness.k8s.releasehistory.K8sReleaseHistoryCleanupDTO;
+import io.harness.k8s.releasehistory.K8sReleasePersistDTO;
 import io.harness.logging.LogCallback;
 
 import software.wings.beans.LogColor;
@@ -65,7 +69,8 @@ public class K8sCanaryBaseHandler {
   public boolean prepareForCanary(K8sCanaryHandlerConfig canaryHandlerConfig,
       K8sDelegateTaskParams k8sDelegateTaskParams, Boolean skipVersioning, LogCallback logCallback,
       boolean isErrorFrameworkEnabled) throws Exception {
-    if (isNotTrue(skipVersioning)) {
+    boolean useDeclarativeRollback = canaryHandlerConfig.isUseDeclarativeRollback();
+    if (isNotTrue(skipVersioning) && !useDeclarativeRollback) {
       markVersionedResources(canaryHandlerConfig.getResources());
     }
 
@@ -102,33 +107,57 @@ public class K8sCanaryBaseHandler {
       return false;
     }
 
-    for (K8sLegacyRelease release : canaryHandlerConfig.getReleaseHistory().getReleases()) {
-      if (release.getStatus() == InProgress) {
-        release.setStatus(Failed);
-      }
-    }
+    failInProgressReleases(canaryHandlerConfig);
 
-    K8sLegacyRelease currentRelease =
-        canaryHandlerConfig.getReleaseHistory().createNewRelease(canaryHandlerConfig.getResources()
-                                                                     .stream()
-                                                                     .map(KubernetesResource::getResourceId)
-                                                                     .collect(Collectors.toList()));
-    canaryHandlerConfig.setCurrentRelease(currentRelease);
+    K8sReleaseHandler releaseHandler = k8sTaskHelperBase.getReleaseHandler(useDeclarativeRollback);
+    int currentReleaseNumber = canaryHandlerConfig.getCurrentReleaseNumber();
+    logCallback.saveExecutionLog("\nCurrent release number is: " + currentReleaseNumber);
 
-    logCallback.saveExecutionLog("\nCurrent release number is: " + currentRelease.getNumber());
-    logCallback.saveExecutionLog("\nVersioning resources.");
-
-    if (isNotTrue(skipVersioning)) {
-      k8sTaskHelperBase.addRevisionNumber(canaryHandlerConfig.getResources(), currentRelease.getNumber());
+    if (isNotTrue(skipVersioning) && !useDeclarativeRollback) {
+      logCallback.saveExecutionLog("\nVersioning resources.");
+      k8sTaskHelperBase.addRevisionNumber(canaryHandlerConfig.getResources(), currentReleaseNumber);
     }
 
     KubernetesResource canaryWorkload = workloads.get(0);
     canaryHandlerConfig.setCanaryWorkload(canaryWorkload);
 
-    k8sTaskHelperBase.cleanup(
-        canaryHandlerConfig.getClient(), k8sDelegateTaskParams, canaryHandlerConfig.getReleaseHistory(), logCallback);
+    K8sReleaseHistoryCleanupDTO releaseCleanupDTO = k8sTaskHelperBase.createReleaseHistoryCleanupRequest(
+        canaryHandlerConfig.getReleaseName(), canaryHandlerConfig.getReleaseHistory(), canaryHandlerConfig.getClient(),
+        canaryHandlerConfig.getKubernetesConfig(), logCallback, currentReleaseNumber, k8sDelegateTaskParams);
+    releaseHandler.cleanReleaseHistory(releaseCleanupDTO);
 
     return true;
+  }
+
+  private void failInProgressReleases(K8sCanaryHandlerConfig canaryHandlerConfig) throws Exception {
+    if (!canaryHandlerConfig.isUseDeclarativeRollback()) {
+      failInProgressLegacyReleases((K8SLegacyReleaseHistory) canaryHandlerConfig.getReleaseHistory());
+    } else {
+      failInProgressReleases(
+          (K8sReleaseHistory) canaryHandlerConfig.getReleaseHistory(), canaryHandlerConfig.getKubernetesConfig());
+    }
+  }
+
+  private void failInProgressReleases(K8sReleaseHistory releaseHistory, KubernetesConfig kubernetesConfig)
+      throws Exception {
+    for (K8sRelease release : releaseHistory.getReleaseHistory()) {
+      if (InProgress == release.getReleaseStatus()) {
+        release.updateReleaseStatus(Failed);
+
+        K8sReleaseHandler releaseHandler = k8sTaskHelperBase.getReleaseHandler(true);
+        K8sReleasePersistDTO persistDTO =
+            K8sReleasePersistDTO.builder().kubernetesConfig(kubernetesConfig).release(release).build();
+        releaseHandler.saveRelease(persistDTO);
+      }
+    }
+  }
+
+  private void failInProgressLegacyReleases(K8SLegacyReleaseHistory releaseHistory) {
+    for (K8sLegacyRelease release : releaseHistory.getReleaseHistory().getReleases()) {
+      if (InProgress == release.getReleaseStatus()) {
+        release.setStatus(Failed);
+      }
+    }
   }
 
   public Integer getCurrentInstances(K8sCanaryHandlerConfig canaryHandlerConfig,
@@ -200,11 +229,11 @@ public class K8sCanaryBaseHandler {
     k8sTaskHelperBase.describe(client, k8sDelegateTaskParams, logCallback);
   }
 
-  public void failAndSaveKubernetesRelease(K8sCanaryHandlerConfig canaryHandlerConfig, String releaseName)
-      throws IOException {
-    ReleaseHistory releaseHistory = canaryHandlerConfig.getReleaseHistory();
-    releaseHistory.setReleaseStatus(IK8sRelease.Status.Failed);
-    k8sTaskHelperBase.saveReleaseHistoryInConfigMap(
-        canaryHandlerConfig.getKubernetesConfig(), releaseName, releaseHistory.getAsYaml());
+  public void failAndSaveRelease(K8sCanaryHandlerConfig canaryHandlerConfig) throws Exception {
+    canaryHandlerConfig.getCurrentRelease().updateReleaseStatus(Failed);
+
+    k8sTaskHelperBase.saveRelease(canaryHandlerConfig.isUseDeclarativeRollback(), false,
+        canaryHandlerConfig.getKubernetesConfig(), canaryHandlerConfig.getCurrentRelease(),
+        canaryHandlerConfig.getReleaseHistory(), canaryHandlerConfig.getReleaseName());
   }
 }

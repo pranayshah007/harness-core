@@ -138,7 +138,7 @@ public class HelmChartServiceImpl implements HelmChartService {
 
     DelegateResponseData delegateResponseData = null;
     try {
-      delegateResponseData = delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
+      delegateResponseData = delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);
     } catch (DelegateServiceDriverException ex) {
       throw exceptionManager.processException(ex, WingsException.ExecutionContext.MANAGER, log);
     }

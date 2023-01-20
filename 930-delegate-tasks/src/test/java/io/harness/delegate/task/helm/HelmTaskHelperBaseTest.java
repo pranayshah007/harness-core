@@ -85,6 +85,7 @@ import com.google.common.collect.ImmutableMap;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
@@ -1164,6 +1165,31 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
     assertThat(
         helmTaskHelperBase.checkChartVersion(chartVer3, Paths.get(chartDir).toAbsolutePath().toString(), chartName))
         .isTrue();
+    deleteDirectoryAndItsContentIfExists(directory);
+  }
+
+  @Test
+  @Owner(developers = ACHYUTH)
+  @Category(UnitTests.class)
+  public void testSkipApplyDefaultValuesYaml() throws IOException {
+    String valuesYaml = "config:\n"
+        + "  aString: \"some text\"\n"
+        + "  aNumber: 1234\n"
+        + "  anotherString: null\n"
+        + "  anotherNumber: null";
+    String chartDir = "charts/testTemplate/";
+    String directory = Paths.get(chartDir).toAbsolutePath().toString();
+    createDirectoryIfDoesNotExist(directory);
+    final String fileName = "/values.yaml";
+    File testFile = new File(directory, fileName);
+    writeFile(testFile.getAbsolutePath(), valuesYaml.getBytes());
+
+    assertThat(helmTaskHelperBase.skipDefaultHelmValuesYaml(chartDir, Arrays.asList(valuesYaml), true, HelmVersion.V3))
+        .isEqualTo(0);
+    assertThat(helmTaskHelperBase.skipDefaultHelmValuesYaml(
+                   chartDir, Arrays.asList(valuesYaml.replace("1234", "234")), true, HelmVersion.V3))
+        .isEqualTo(-1);
+
     deleteDirectoryAndItsContentIfExists(directory);
   }
 

@@ -212,7 +212,7 @@ public class GcrResourceServiceImpl implements GcrResourceService {
             .taskSelectors(gcrRequest.getGcpConnectorDTO().getDelegateSelectors())
             .build();
     try {
-      return delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
+      return delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);
     } catch (DelegateServiceDriverException ex) {
       throw exceptionManager.processException(ex, WingsException.ExecutionContext.MANAGER, log);
     }

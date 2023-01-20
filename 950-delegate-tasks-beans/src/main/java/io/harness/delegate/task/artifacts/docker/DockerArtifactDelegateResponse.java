@@ -7,6 +7,8 @@
 
 package io.harness.delegate.task.artifacts.docker;
 
+import io.harness.artifact.ArtifactMetadataKeys;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.response.ArtifactBuildDetailsNG;
 import io.harness.delegate.task.artifacts.response.ArtifactDelegateResponse;
@@ -33,5 +35,28 @@ public class DockerArtifactDelegateResponse extends ArtifactDelegateResponse {
     this.imagePath = imagePath;
     this.tag = tag;
     this.label = label;
+  }
+
+  @Override
+  public String describe() {
+    String dockerPullCommand = (getBuildDetails() != null && getBuildDetails().getMetadata() != null)
+        ? "\nImage pull command: docker pull " + getBuildDetails().getMetadata().get(ArtifactMetadataKeys.IMAGE)
+        : null;
+    String metadataKeys = (getBuildDetails() != null && getBuildDetails().getMetadata() != null)
+        ? String.valueOf(getBuildDetails().getMetadata().keySet())
+        : null;
+    String sha256Digest =
+        (getBuildDetails() != null && getBuildDetails().getMetadata() != null
+            && getBuildDetails().getMetadata().containsKey(ArtifactMetadataKeys.SHAV2)
+            && EmptyPredicate.isNotEmpty(getBuildDetails().getMetadata().get(ArtifactMetadataKeys.SHAV2)))
+        ? "\nV1 SHA256 Digest: " + getBuildDetails().getMetadata().get(ArtifactMetadataKeys.SHA)
+            + "\nV2 SHA256 Digest: " + getBuildDetails().getMetadata().get(ArtifactMetadataKeys.SHAV2)
+        : null;
+
+    return "type: " + (getSourceType() != null ? getSourceType().getDisplayName() : null)
+        + "\nimagePath: " + getImagePath() + "\ntag: " + getTag()
+        + "\nMetadata keys: " + (EmptyPredicate.isNotEmpty(metadataKeys) ? metadataKeys : "")
+        + (EmptyPredicate.isNotEmpty(dockerPullCommand) ? dockerPullCommand : "")
+        + (EmptyPredicate.isNotEmpty(sha256Digest) ? sha256Digest : "");
   }
 }

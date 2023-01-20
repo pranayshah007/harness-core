@@ -20,7 +20,6 @@ import io.harness.cvng.core.entities.MetricPack;
 import io.harness.cvng.core.entities.NextGenLogCVConfig;
 import io.harness.cvng.core.entities.NextGenMetricCVConfig;
 import io.harness.cvng.core.entities.NextGenMetricInfo;
-import io.harness.cvng.core.entities.QueryParams;
 import io.harness.cvng.core.services.impl.MetricPackServiceImpl;
 import io.harness.delegate.beans.connector.sumologic.SumoLogicConnectorDTO;
 
@@ -30,11 +29,12 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class HealthSourceOnboardMappingUtils {
+  private static final String DATE_FORMAT_STRING = "yyyy-MM-dd'T'HH:mm:ss";
+
   public static DataCollectionRequest<SumoLogicConnectorDTO> getSumoLogicLogDataCollectionRequest(
       HealthSourceRecordsRequest healthSourceRecordsRequest) {
     DataCollectionRequest<SumoLogicConnectorDTO> request;
@@ -43,13 +43,13 @@ public class HealthSourceOnboardMappingUtils {
                                   .toLocalDateTime();
     LocalDateTime endTime =
         Instant.ofEpochMilli(healthSourceRecordsRequest.getEndTime()).atZone(ZoneId.systemDefault()).toLocalDateTime();
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern(DATE_FORMAT_STRING);
 
     request = SumologicLogSampleDataRequest.builder()
                   .from(startTime.format(formatter))
                   .to(endTime.format(formatter))
                   .dsl(MetricPackServiceImpl.SUMOLOGIC_LOG_SAMPLE_DSL)
-                  .query(healthSourceRecordsRequest.getQuery())
+                  .query(healthSourceRecordsRequest.getQuery().trim())
                   .type(DataCollectionRequestType.SUMOLOGIC_LOG_SAMPLE_DATA)
                   .build();
     return request;
@@ -62,7 +62,7 @@ public class HealthSourceOnboardMappingUtils {
                   .from(healthSourceRecordsRequest.getStartTime())
                   .to(healthSourceRecordsRequest.getEndTime())
                   .dsl(MetricPackServiceImpl.SUMOLOGIC_METRIC_SAMPLE_DSL)
-                  .query(healthSourceRecordsRequest.getQuery())
+                  .query(healthSourceRecordsRequest.getQuery().trim())
                   .type(DataCollectionRequestType.SUMOLOGIC_METRIC_SAMPLE_DATA)
                   .build();
     return request;
@@ -80,34 +80,27 @@ public class HealthSourceOnboardMappingUtils {
                                                       .connectorIdentifier(queryRecordsRequest.getConnectorIdentifier())
                                                       .category(CVMonitoringCategory.PERFORMANCE)
                                                       .build();
-    QueryParams queryParams =
-        Optional.ofNullable(queryRecordsRequest.getHealthSourceQueryParams())
-            .map(x -> QueryParams.builder().serviceInstanceField(x.getServiceInstanceField()).build())
-            .orElse(null);
-    nextGenMetricCVConfig.setMetricInfos(Collections.singletonList(NextGenMetricInfo.builder()
-                                                                       .query(queryRecordsRequest.getQuery())
-                                                                       .identifier("sample_metric")
-                                                                       .metricName("sample_metric")
-                                                                       .queryParams(queryParams)
-                                                                       .build()));
+    nextGenMetricCVConfig.setMetricInfos(Collections.singletonList(
+        NextGenMetricInfo.builder()
+            .query(queryRecordsRequest.getQuery().trim())
+            .identifier("sample_metric")
+            .metricName("sample_metric")
+            .queryParams(queryRecordsRequest.getHealthSourceQueryParams().getQueryParamsEntity())
+            .build()));
     nextGenMetricCVConfig.setMetricPack(metricPacks.get(0));
     return nextGenMetricCVConfig;
   }
 
   public static NextGenLogCVConfig getCVConfigForNextGenLog(
       QueryRecordsRequest queryRecordsRequest, ProjectParams projectParams) {
-    // TODO make queryParams mapping null safe.
     return NextGenLogCVConfig.builder()
         .orgIdentifier(projectParams.getOrgIdentifier())
         .projectIdentifier(projectParams.getProjectIdentifier())
         .dataSourceType(queryRecordsRequest.getProviderType())
         .accountId(projectParams.getAccountIdentifier())
         .monitoredServiceIdentifier("fetch_sample_data_MS")
-        .queryParams(
-            QueryParams.builder()
-                .serviceInstanceField(queryRecordsRequest.getHealthSourceQueryParams().getServiceInstanceField())
-                .build())
-        .query(queryRecordsRequest.getQuery())
+        .queryParams(queryRecordsRequest.getHealthSourceQueryParams().getQueryParamsEntity())
+        .query(queryRecordsRequest.getQuery().trim())
         .queryName("queryName")
         .connectorIdentifier(queryRecordsRequest.getConnectorIdentifier())
         .build();

@@ -9,8 +9,8 @@ package io.harness.mongo;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import static dev.morphia.logging.MorphiaLoggerFactory.registerLogger;
 import static java.lang.String.format;
-import static org.mongodb.morphia.logging.MorphiaLoggerFactory.registerLogger;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -21,7 +21,8 @@ import io.harness.mongo.index.migrator.Migrator;
 import io.harness.mongo.metrics.HarnessConnectionPoolListener;
 import io.harness.mongo.tracing.TracerModule;
 import io.harness.morphia.MorphiaModule;
-import io.harness.persistence.Store;
+import io.harness.persistence.QueryFactory;
+import io.harness.persistence.store.Store;
 import io.harness.serializer.KryoModule;
 
 import com.google.common.base.Preconditions;
@@ -36,6 +37,9 @@ import com.mongodb.MongoClientURI;
 import com.mongodb.ReadPreference;
 import com.mongodb.Tag;
 import com.mongodb.TagSet;
+import dev.morphia.AdvancedDatastore;
+import dev.morphia.Morphia;
+import dev.morphia.ObjectFactory;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -48,9 +52,6 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.mongodb.morphia.AdvancedDatastore;
-import org.mongodb.morphia.Morphia;
-import org.mongodb.morphia.ObjectFactory;
 
 @OwnedBy(HarnessTeam.PL)
 @Slf4j
@@ -133,7 +134,7 @@ public class MongoModule extends AbstractModule {
     MongoClient mongoClient = new MongoClient(clientUri);
 
     AdvancedDatastore datastore = (AdvancedDatastore) morphia.createDatastore(mongoClient, clientUri.getDatabase());
-    datastore.setQueryFactory(new QueryFactory(mongoConfig));
+    datastore.setQueryFactory(new QueryFactory(mongoConfig.getTraceMode(), mongoConfig.getMaxOperationTimeInMillis()));
 
     return datastore;
   }
@@ -203,7 +204,8 @@ public class MongoModule extends AbstractModule {
 
     AdvancedDatastore primaryDatastore = (AdvancedDatastore) morphia.createDatastore(
         mongoClient, new MongoClientURI(mongoConfig.getUri()).getDatabase());
-    primaryDatastore.setQueryFactory(new QueryFactory(mongoConfig));
+    primaryDatastore.setQueryFactory(
+        new QueryFactory(mongoConfig.getTraceMode(), mongoConfig.getMaxOperationTimeInMillis()));
 
     Store store = null;
     if (Objects.nonNull(mongoConfig.getAliasDBName())) {
@@ -246,7 +248,8 @@ public class MongoModule extends AbstractModule {
 
     MongoClient mongoClient = new MongoClient(uri);
     AdvancedDatastore analyticalDataStore = (AdvancedDatastore) morphia.createDatastore(mongoClient, uri.getDatabase());
-    analyticalDataStore.setQueryFactory(new QueryFactory(mongoConfig));
+    analyticalDataStore.setQueryFactory(
+        new QueryFactory(mongoConfig.getTraceMode(), mongoConfig.getMaxOperationTimeInMillis()));
     return analyticalDataStore;
   }
 

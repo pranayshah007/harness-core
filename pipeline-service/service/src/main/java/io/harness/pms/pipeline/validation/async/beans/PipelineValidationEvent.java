@@ -13,15 +13,18 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
+import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.UuidAware;
 
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -35,8 +38,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @TypeAlias("pipelineValidationEvent")
 @HarnessEntity(exportable = false)
 @OwnedBy(HarnessTeam.PIPELINE)
-public class PipelineValidationEvent implements UuidAware {
-  @Id @org.mongodb.morphia.annotations.Id String uuid;
+public class PipelineValidationEvent implements UuidAware, CreatedAtAware {
+  @Id @dev.morphia.annotations.Id String uuid;
 
   String fqn; // account/org/project/pipeline for Inline, account/org/project/pipeline/branch for Remote
 
@@ -46,14 +49,27 @@ public class PipelineValidationEvent implements UuidAware {
   ValidationParams params;
   ValidationResult result;
 
+  @CreatedDate Long startTs;
+  Long endTs;
+
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
-        .add(CompoundMongoIndex.builder()
-                 .name("fqn_action")
-                 .unique(false)
+        .add(SortCompoundMongoIndex.builder()
+                 .name("fqn_action_startTs_idx")
                  .field(PipelineValidationEventKeys.fqn)
                  .field(PipelineValidationEventKeys.action)
+                 .descSortField(PipelineValidationEventKeys.startTs)
                  .build())
         .build();
+  }
+
+  @Override
+  public long getCreatedAt() {
+    return startTs;
+  }
+
+  @Override
+  public void setCreatedAt(long createdAt) {
+    startTs = createdAt;
   }
 }

@@ -15,12 +15,14 @@ import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.beans.ScopeLevel;
+import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.licensing.Edition;
 import io.harness.licensing.services.LicenseService;
 import io.harness.ngsettings.SettingCategory;
 import io.harness.ngsettings.SettingUpdateType;
+import io.harness.ngsettings.SettingsValidatorFactory;
 import io.harness.ngsettings.dto.SettingDTO;
 import io.harness.ngsettings.dto.SettingRequestDTO;
 import io.harness.ngsettings.dto.SettingResponseDTO;
@@ -33,6 +35,7 @@ import io.harness.ngsettings.entities.SettingConfiguration.SettingConfigurationK
 import io.harness.ngsettings.events.SettingRestoreEvent;
 import io.harness.ngsettings.events.SettingUpdateEvent;
 import io.harness.ngsettings.mapper.SettingsMapper;
+import io.harness.ngsettings.services.SettingEnforcementValidator;
 import io.harness.ngsettings.services.SettingValidator;
 import io.harness.ngsettings.services.SettingsService;
 import io.harness.ngsettings.utils.SettingUtils;
@@ -65,19 +68,22 @@ public class SettingsServiceImpl implements SettingsService {
   private final TransactionTemplate transactionTemplate;
   private final OutboxService outboxService;
   private final Map<String, SettingValidator> settingValidatorMap;
+  private final Map<String, SettingEnforcementValidator> settingEnforcementValidatorMap;
   private final LicenseService licenseService;
 
   @Inject
   public SettingsServiceImpl(SettingConfigurationRepository settingConfigurationRepository,
       SettingRepository settingRepository, SettingsMapper settingsMapper,
       @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate, OutboxService outboxService,
-      Map<String, SettingValidator> settingValidatorMap, LicenseService licenseService) {
+      Map<String, SettingValidator> settingValidatorMap,
+      Map<String, SettingEnforcementValidator> settingEnforcementValidatorMap, LicenseService licenseService) {
     this.settingConfigurationRepository = settingConfigurationRepository;
     this.settingRepository = settingRepository;
     this.settingsMapper = settingsMapper;
     this.transactionTemplate = transactionTemplate;
     this.outboxService = outboxService;
     this.settingValidatorMap = settingValidatorMap;
+    this.settingEnforcementValidatorMap = settingEnforcementValidatorMap;
     this.licenseService = licenseService;
   }
 
@@ -250,6 +256,21 @@ public class SettingsServiceImpl implements SettingsService {
     settingRepository.delete(criteria);
   }
 
+  @Override
+  public void deleteAtAllScopes(Scope scope) {
+    Criteria criteria =
+        createScopeCriteria(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier());
+    settingRepository.deleteAll(criteria);
+  }
+
+  private Criteria createScopeCriteria(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    Criteria criteria = new Criteria();
+    criteria.and(SettingKeys.accountIdentifier).is(accountIdentifier);
+    criteria.and(SettingKeys.orgIdentifier).is(orgIdentifier);
+    criteria.and(SettingKeys.projectIdentifier).is(projectIdentifier);
+    return criteria;
+  }
+
   private Map<Pair<String, Scope>, Setting> getSettings(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, SettingCategory category, String groupIdentifier) {
     List<Setting> settings;
@@ -387,6 +408,14 @@ public class SettingsServiceImpl implements SettingsService {
     SettingValidator settingValidator = settingValidatorMap.get(oldSettingDTO.getIdentifier());
     if (settingValidator != null) {
       settingValidator.validate(accountIdentifier, oldSettingDTO, newSettingDTO);
+    }
+
+    SettingEnforcementValidator settingEnforcementValidator =
+        settingEnforcementValidatorMap.get(oldSettingDTO.getIdentifier());
+    if (settingEnforcementValidator != null) {
+      FeatureRestrictionName featureRestrictionName =
+          SettingsValidatorFactory.getFeatureRestrictionName(oldSettingDTO.getIdentifier());
+      settingEnforcementValidator.validate(accountIdentifier, featureRestrictionName, oldSettingDTO, newSettingDTO);
     }
   }
 

@@ -7,12 +7,12 @@
 
 package io.harness.persistence;
 
+import dev.morphia.annotations.Id;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Id;
 
 @Data
 @Builder

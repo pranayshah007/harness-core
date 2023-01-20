@@ -14,9 +14,11 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.serializer.HObjectMapper.configureObjectMapperForNG;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.common.NGExpressionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.serializer.AnnotationAwareJsonSubtypeResolver;
+import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -68,6 +70,7 @@ public class YamlUtils {
 
     // map empty string to null instead of failing with Mapping Exception
     mapper.coercionConfigFor(LinkedHashMap.class).setCoercion(CoercionInputShape.EmptyString, CoercionAction.AsNull);
+    mapper.coercionConfigFor(ArrayList.class).setCoercion(CoercionInputShape.EmptyString, CoercionAction.AsEmpty);
   }
 
   public <T> T read(String yaml, Class<T> cls) throws IOException {
@@ -93,6 +96,15 @@ public class YamlUtils {
   public YamlField readTree(String content) throws IOException {
     return readTreeInternal(content, mapper);
   }
+
+  public YamlField tryReadTree(String content) {
+    try {
+      return readTreeInternal(content, mapper);
+    } catch (Exception ex) {
+      throw new InvalidRequestException("Invalid yaml", ex);
+    }
+  }
+
   public YamlField readTreeWithDefaultObjectMapper(String content) throws IOException {
     return readTreeInternal(content, NG_DEFAULT_OBJECT_MAPPER);
   }
@@ -328,7 +340,7 @@ public class YamlUtils {
     return response.toString();
   }
 
-  private List<String> getQualifiedNameList(
+  public List<String> getQualifiedNameList(
       YamlNode yamlNode, String fieldName, boolean shouldAppendStrategyExpression) {
     if (yamlNode.getParentNode() == null) {
       List<String> qualifiedNameList = new ArrayList<>();
@@ -576,6 +588,44 @@ public class YamlUtils {
       removeUuidInObject(node);
     } else if (node.isArray()) {
       removeUuidInArray(node);
+    }
+  }
+
+  public String getYamlWithoutInputs(String yaml) throws IOException {
+    YamlField yamlField = YamlUtils.readTree(yaml);
+    JsonNode pipelineJsonNode = yamlField.getNode().getCurrJsonNode();
+    YamlUtils.removeInputs(pipelineJsonNode);
+    return YamlPipelineUtils.writeYamlString(pipelineJsonNode);
+  }
+
+  public void removeInputs(JsonNode node) {
+    if (node.isObject()) {
+      removeInputInObject(node);
+    } else if (node.isArray()) {
+      removeInputInArray(node);
+    }
+  }
+
+  private void removeInputInObject(JsonNode node) {
+    ObjectNode objectNode = (ObjectNode) node;
+    List<String> keysToRemove = new ArrayList<>();
+    for (Iterator<Entry<String, JsonNode>> it = objectNode.fields(); it.hasNext();) {
+      Entry<String, JsonNode> field = it.next();
+      if (NGExpressionUtils.matchesRawInputSetPattern(field.getValue().toString())) {
+        keysToRemove.add(field.getKey());
+      } else {
+        removeInputs(field.getValue());
+      }
+    }
+    for (String key : keysToRemove) {
+      objectNode.remove(key);
+    }
+  }
+
+  private void removeInputInArray(JsonNode node) {
+    ArrayNode arrayNode = (ArrayNode) node;
+    for (Iterator<JsonNode> it = arrayNode.elements(); it.hasNext();) {
+      removeInputs(it.next());
     }
   }
 

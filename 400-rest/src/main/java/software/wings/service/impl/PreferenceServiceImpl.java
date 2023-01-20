@@ -35,13 +35,13 @@ import software.wings.service.intfc.PreferenceService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import dev.morphia.query.UpdateOperations;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.UpdateOperations;
 
 @Singleton
 @Slf4j

@@ -7,6 +7,7 @@
 
 package io.harness.cdng.pipeline.steps;
 
+import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.SAHIL;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -19,13 +20,16 @@ import io.harness.cdng.creator.plan.stage.DeploymentStageNode;
 import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.environment.yaml.EnvironmentsYaml;
+import io.harness.cdng.infra.yaml.InfraStructureDefinitionYaml;
 import io.harness.cdng.service.beans.ServiceYamlV2;
 import io.harness.cdng.service.beans.ServicesYaml;
+import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
 import io.fabric8.utils.Lists;
+import java.util.Map;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -194,5 +198,31 @@ public class MultiDeploymentSpawnerUtilsTest extends CategoryTest {
     assertThatThrownBy(
         () -> MultiDeploymentSpawnerUtils.validateMultiServiceInfra(deploymentStageNode.getDeploymentStageConfig()))
         .isInstanceOf(InvalidRequestException.class);
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testGetScopedEnvRefWithEnvironmentGroup() {
+    EnvironmentYamlV2 environmentYamlV2 =
+        EnvironmentYamlV2.builder().environmentRef(ParameterField.createValueField("env1")).build();
+    InfraStructureDefinitionYaml infraStructureDefinitionYaml =
+        InfraStructureDefinitionYaml.builder().identifier(ParameterField.createValueField("identifier")).build();
+    Map<String, String> envMap = MultiDeploymentSpawnerUtils.getMapFromEnvironmentYaml(
+        environmentYamlV2, infraStructureDefinitionYaml, Scope.ACCOUNT);
+    assertThat(envMap.get("environmentRef")).isEqualTo("account.env1");
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testGetScopedEnvRefWithEnvironmentGroup_withScopedEnvRef() {
+    EnvironmentYamlV2 environmentYamlV2 =
+        EnvironmentYamlV2.builder().environmentRef(ParameterField.createValueField("account.env1")).build();
+    InfraStructureDefinitionYaml infraStructureDefinitionYaml =
+        InfraStructureDefinitionYaml.builder().identifier(ParameterField.createValueField("identifier")).build();
+    Map<String, String> envMap = MultiDeploymentSpawnerUtils.getMapFromEnvironmentYaml(
+        environmentYamlV2, infraStructureDefinitionYaml, Scope.ACCOUNT);
+    assertThat(envMap.get("environmentRef")).isEqualTo("account.env1");
   }
 }

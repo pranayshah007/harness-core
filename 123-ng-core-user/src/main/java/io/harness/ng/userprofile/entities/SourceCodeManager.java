@@ -22,6 +22,7 @@ import io.harness.persistence.PersistentEntity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -31,7 +32,6 @@ import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.validator.constraints.NotEmpty;
-import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -61,7 +61,7 @@ public abstract class SourceCodeManager implements PersistentEntity {
         .build();
   }
 
-  @JsonIgnore @Id @org.mongodb.morphia.annotations.Id String id;
+  @JsonIgnore @Id @dev.morphia.annotations.Id String id;
   @NotEmpty String userIdentifier;
   @NotEmpty @FdIndex String accountIdentifier;
   String name;

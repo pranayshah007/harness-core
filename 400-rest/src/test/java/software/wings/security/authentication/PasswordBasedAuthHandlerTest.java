@@ -9,12 +9,12 @@ package software.wings.security.authentication;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.NATHAN;
+import static io.harness.rule.OwnerRule.PRATEEK;
 import static io.harness.rule.OwnerRule.RAJ;
 import static io.harness.rule.OwnerRule.RUSHABH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
-import static org.mindrot.jbcrypt.BCrypt.hashpw;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
@@ -26,6 +26,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
+import static org.springframework.security.crypto.bcrypt.BCrypt.hashpw;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessModule;
@@ -52,11 +53,11 @@ import com.google.inject.Inject;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mindrot.jbcrypt.BCrypt;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
+import org.springframework.security.crypto.bcrypt.BCrypt;
 
 @OwnedBy(PL)
 @TargetModule(HarnessModule._950_NG_AUTHENTICATION_SERVICE)
@@ -261,5 +262,25 @@ public class PasswordBasedAuthHandlerTest extends CategoryTest {
     when(domainWhitelistCheckerService.isDomainWhitelisted(mockUser)).thenReturn(true);
     User user = authHandler.authenticate("admin@harness.io", "admin").getUser();
     assertThat(user).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
+  public void testSaasUserPasswordNoPasswordHash() throws MaxLoginAttemptExceededException {
+    User user = new User();
+    user.setDefaultAccountId("kmpySmUISimoRrJL6NL73w");
+    user.setEmailVerified(true);
+    user.setUuid("kmpySmUISimoRrJL6NL73w");
+    user.setPasswordHash(null);
+
+    authHandler.setDeployVariant(DeployVariant.SAAS);
+    doReturn(user).when(authHandler).getUser(anyString());
+
+    try {
+      authHandler.authenticate("admin@harness.io", "admin");
+    } catch (WingsException e) {
+      assertThat(e.getMessage()).isEqualTo(ErrorCode.INVALID_CREDENTIAL.name());
+    }
   }
 }

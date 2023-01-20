@@ -21,12 +21,13 @@ import io.harness.spec.server.audit.v1.model.StreamingDestinationSpecDTO;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.collect.ImmutableList;
+import dev.morphia.annotations.Entity;
 import java.util.List;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Entity;
+import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -34,6 +35,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 @OwnedBy(HarnessTeam.PL)
 @Data
+@SuperBuilder
 @FieldNameConstants(innerTypeName = "StreamingDestinationKeys")
 @StoreIn(DbAliases.AUDITS)
 @Entity(value = "streamingDestinations", noClassnameStored = true)
@@ -56,7 +58,7 @@ public abstract class StreamingDestination {
         .build();
   }
 
-  @Id @org.mongodb.morphia.annotations.Id String id;
+  @Id @dev.morphia.annotations.Id String id;
   @NotBlank @EntityIdentifier String identifier;
   @Trimmed @NotBlank String accountIdentifier;
   @Trimmed @NotBlank @NGEntityName String name;

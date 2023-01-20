@@ -23,6 +23,7 @@ import software.wings.beans.appmanifest.HelmChart;
 import software.wings.persistence.artifact.Artifact;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import dev.morphia.annotations.Transient;
 import java.util.List;
 import java.util.Map;
 import lombok.AllArgsConstructor;
@@ -30,7 +31,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
-import org.mongodb.morphia.annotations.Transient;
 
 /**
  * The type Execution args.

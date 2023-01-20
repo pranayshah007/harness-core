@@ -9,6 +9,7 @@ package io.harness.cdng.ssh;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.ACASIAN;
+import static io.harness.rule.OwnerRule.IVAN;
 import static io.harness.rule.OwnerRule.VITALIE;
 import static io.harness.utils.PageUtils.getPageRequest;
 
@@ -35,6 +36,7 @@ import io.harness.cdng.infra.beans.host.dto.HostAttributesFilterDTO;
 import io.harness.cdng.infra.beans.host.dto.HostFilterDTO;
 import io.harness.cdng.infra.beans.host.dto.HostNamesFilterDTO;
 import io.harness.cdng.serverless.ServerlessEntityHelper;
+import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
@@ -53,12 +55,15 @@ import io.harness.delegate.task.ssh.PdcSshInfraDelegateConfig;
 import io.harness.delegate.task.ssh.PdcWinRmInfraDelegateConfig;
 import io.harness.delegate.task.ssh.SshInfraDelegateConfig;
 import io.harness.delegate.task.ssh.WinRmInfraDelegateConfig;
+import io.harness.exception.InvalidArgumentsException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
 import io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO;
+import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.pms.yaml.ParameterField;
@@ -75,7 +80,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -90,6 +97,47 @@ import retrofit2.Response;
 
 @OwnedBy(CDP)
 public class SshEntityHelperTest extends CategoryTest {
+  public static final String infraWithSshCredentialsYaml = ""
+      + "infrastructureDefinition:\n"
+      + "  name: PDC infra\n"
+      + "  identifier: PDCInfra\n"
+      + "  description: \"\"\n"
+      + "  tags: {}\n"
+      + "  orgIdentifier: SSH_Organization\n"
+      + "  projectIdentifier: SSHProject\n"
+      + "  environmentRef: ProdValid\n"
+      + "  deploymentType: Ssh\n"
+      + "  type: Pdc\n"
+      + "  spec:\n"
+      + "    credentialsRef: account.sshCredentials\n"
+      + "    hostFilter:\n"
+      + "      type: All\n"
+      + "      spec: {}\n"
+      + "    hosts:\n"
+      + "      - ec2-52-201-252-114.compute-1.amazonaws.com\n"
+      + "      - ec2-54-167-41-15.compute-1.amazonaws.com\n"
+      + "  allowSimultaneousDeployments: false";
+
+  public static final String infraWithWinRmCredentialsYaml = ""
+      + "infrastructureDefinition:\n"
+      + "  name: WinRmInfra\n"
+      + "  identifier: WinRmInfra\n"
+      + "  description: \"\"\n"
+      + "  tags: {}\n"
+      + "  orgIdentifier: Org_Identifier\n"
+      + "  projectIdentifier: Project_Identifier\n"
+      + "  environmentRef: prod\n"
+      + "  deploymentType: WinRm\n"
+      + "  type: Pdc\n"
+      + "  spec:\n"
+      + "    credentialsRef: account.winRmCredentials\n"
+      + "    hostFilter:\n"
+      + "      type: All\n"
+      + "      spec: {}\n"
+      + "    hosts:\n"
+      + "      - ec2-52-201-252-114.compute-1.amazonaws.com\n"
+      + "  allowSimultaneousDeployments: false";
+
   @Mock private SecretNGManagerClient secretManagerClient;
   @Mock private ConnectorService connectorService;
   @Mock private SshKeySpecDTOHelper sshKeySpecDTOHelper;
@@ -149,16 +197,7 @@ public class SshEntityHelperTest extends CategoryTest {
     PdcInfrastructureOutcome pdcInfrastructure =
         PdcInfrastructureOutcome.builder().connectorRef("pdcConnector").credentialsRef("sshKeyRef").build();
 
-    Call<ResponseDTO<SecretResponseWrapper>> getSecretCall = mock(Call.class);
-    ResponseDTO<SecretResponseWrapper> responseDTO =
-        ResponseDTO.newResponse(SecretResponseWrapper.builder()
-                                    .secret(SecretDTOV2.builder().type(SecretType.SSHKey).spec(sshKeySpecDTO).build())
-                                    .build());
-    doReturn(Response.success(responseDTO)).when(getSecretCall).execute();
-    doReturn(getSecretCall).when(secretManagerClient).getSecret(anyString(), anyString(), anyString(), anyString());
-    doReturn(Arrays.asList(EncryptedDataDetail.builder().build()))
-        .when(sshKeySpecDTOHelper)
-        .getSSHKeyEncryptionDetails(eq(sshKeySpecDTO), any());
+    mockSecretKey();
 
     SshInfraDelegateConfig infraDelegateConfig = helper.getSshInfraDelegateConfig(pdcInfrastructure, ambiance);
     assertThat(infraDelegateConfig).isInstanceOf(PdcSshInfraDelegateConfig.class);
@@ -192,16 +231,7 @@ public class SshEntityHelperTest extends CategoryTest {
     doReturn(pageResponse)
         .when(ngHostService)
         .filterHostsByConnector(eq(accountId), eq(orgId), eq(projectId), eq("pdcConnector"), any(), any());
-    Call<ResponseDTO<SecretResponseWrapper>> getSecretCall = mock(Call.class);
-    ResponseDTO<SecretResponseWrapper> responseDTO =
-        ResponseDTO.newResponse(SecretResponseWrapper.builder()
-                                    .secret(SecretDTOV2.builder().type(SecretType.SSHKey).spec(sshKeySpecDTO).build())
-                                    .build());
-    doReturn(Response.success(responseDTO)).when(getSecretCall).execute();
-    doReturn(getSecretCall).when(secretManagerClient).getSecret(anyString(), anyString(), anyString(), anyString());
-    doReturn(Arrays.asList(EncryptedDataDetail.builder().build()))
-        .when(sshKeySpecDTOHelper)
-        .getSSHKeyEncryptionDetails(eq(sshKeySpecDTO), any());
+    mockSecretKey();
 
     SshInfraDelegateConfig infraDelegateConfig = helper.getSshInfraDelegateConfig(pdcInfrastructure, ambiance);
     assertThat(infraDelegateConfig).isInstanceOf(PdcSshInfraDelegateConfig.class);
@@ -244,16 +274,7 @@ public class SshEntityHelperTest extends CategoryTest {
     doReturn(pageResponse)
         .when(ngHostService)
         .filterHostsByConnector(eq(accountId), eq(orgId), eq(projectId), eq("pdcConnector"), any(), any());
-    Call<ResponseDTO<SecretResponseWrapper>> getSecretCall = mock(Call.class);
-    ResponseDTO<SecretResponseWrapper> responseDTO =
-        ResponseDTO.newResponse(SecretResponseWrapper.builder()
-                                    .secret(SecretDTOV2.builder().type(SecretType.SSHKey).spec(sshKeySpecDTO).build())
-                                    .build());
-    doReturn(Response.success(responseDTO)).when(getSecretCall).execute();
-    doReturn(getSecretCall).when(secretManagerClient).getSecret(anyString(), anyString(), anyString(), anyString());
-    doReturn(Arrays.asList(EncryptedDataDetail.builder().build()))
-        .when(sshKeySpecDTOHelper)
-        .getSSHKeyEncryptionDetails(eq(sshKeySpecDTO), any());
+    mockSecretKey();
 
     SshInfraDelegateConfig infraDelegateConfig = helper.getSshInfraDelegateConfig(pdcInfrastructure, ambiance);
     assertThat(infraDelegateConfig).isInstanceOf(PdcSshInfraDelegateConfig.class);
@@ -261,6 +282,44 @@ public class SshEntityHelperTest extends CategoryTest {
     assertThat(pdcSshInfraDelegateConfig.getSshKeySpecDto()).isEqualTo(sshKeySpecDTO);
     assertThat(pdcSshInfraDelegateConfig.getHosts()).isEmpty();
     assertThat(pdcSshInfraDelegateConfig.getEncryptionDataDetails()).isNotEmpty();
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testExtractDynamicallyProvisionedHostNames() throws IOException {
+    PdcInfrastructureOutcome pdcInfrastructure =
+        PdcInfrastructureOutcome.builder()
+            .credentialsRef("sshKeyRef")
+            .hostFilter(HostFilterDTO.builder().type(HostFilterType.ALL).build())
+            .hosts(Arrays.asList("host1", "host2"))
+            .dynamicallyProvisioned(true)
+            .build();
+    mockSecretKey();
+
+    SshInfraDelegateConfig infraDelegateConfig = helper.getSshInfraDelegateConfig(pdcInfrastructure, ambiance);
+    assertThat(infraDelegateConfig).isInstanceOf(PdcSshInfraDelegateConfig.class);
+    PdcSshInfraDelegateConfig pdcSshInfraDelegateConfig = (PdcSshInfraDelegateConfig) infraDelegateConfig;
+    assertThat(pdcSshInfraDelegateConfig.getHosts()).contains("host1", "host2");
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testExtractDynamicallyProvisionedAllHosts() throws IOException {
+    PdcInfrastructureOutcome pdcInfrastructure =
+        PdcInfrastructureOutcome.builder()
+            .credentialsRef("sshKeyRef")
+            .hostFilter(HostFilterDTO.builder().type(HostFilterType.ALL).build())
+            .hosts(Arrays.asList("host1", "host2"))
+            .dynamicallyProvisioned(true)
+            .build();
+    mockSecretKey();
+
+    SshInfraDelegateConfig infraDelegateConfig = helper.getSshInfraDelegateConfig(pdcInfrastructure, ambiance);
+    assertThat(infraDelegateConfig).isInstanceOf(PdcSshInfraDelegateConfig.class);
+    PdcSshInfraDelegateConfig pdcSshInfraDelegateConfig = (PdcSshInfraDelegateConfig) infraDelegateConfig;
+    assertThat(pdcSshInfraDelegateConfig.getHosts()).contains("host1", "host2");
   }
 
   @Test
@@ -286,16 +345,7 @@ public class SshEntityHelperTest extends CategoryTest {
     doReturn(pageResponse)
         .when(ngHostService)
         .filterHostsByConnector(eq(accountId), eq(orgId), eq(projectId), eq("pdcConnector"), any(), any());
-    Call<ResponseDTO<SecretResponseWrapper>> getSecretCall = mock(Call.class);
-    ResponseDTO<SecretResponseWrapper> responseDTO =
-        ResponseDTO.newResponse(SecretResponseWrapper.builder()
-                                    .secret(SecretDTOV2.builder().type(SecretType.SSHKey).spec(sshKeySpecDTO).build())
-                                    .build());
-    doReturn(Response.success(responseDTO)).when(getSecretCall).execute();
-    doReturn(getSecretCall).when(secretManagerClient).getSecret(anyString(), anyString(), anyString(), anyString());
-    doReturn(Arrays.asList(EncryptedDataDetail.builder().build()))
-        .when(sshKeySpecDTOHelper)
-        .getSSHKeyEncryptionDetails(eq(sshKeySpecDTO), any());
+    mockSecretKey();
 
     SshInfraDelegateConfig infraDelegateConfig = helper.getSshInfraDelegateConfig(pdcInfrastructure, ambiance);
     assertThat(infraDelegateConfig).isInstanceOf(PdcSshInfraDelegateConfig.class);
@@ -338,16 +388,7 @@ public class SshEntityHelperTest extends CategoryTest {
     doReturn(pageResponse)
         .when(ngHostService)
         .filterHostsByConnector(eq(accountId), eq(orgId), eq(projectId), eq("pdcConnector"), any(), any());
-    Call<ResponseDTO<SecretResponseWrapper>> getSecretCall = mock(Call.class);
-    ResponseDTO<SecretResponseWrapper> responseDTO =
-        ResponseDTO.newResponse(SecretResponseWrapper.builder()
-                                    .secret(SecretDTOV2.builder().type(SecretType.SSHKey).spec(sshKeySpecDTO).build())
-                                    .build());
-    doReturn(Response.success(responseDTO)).when(getSecretCall).execute();
-    doReturn(getSecretCall).when(secretManagerClient).getSecret(anyString(), anyString(), anyString(), anyString());
-    doReturn(Arrays.asList(EncryptedDataDetail.builder().build()))
-        .when(sshKeySpecDTOHelper)
-        .getSSHKeyEncryptionDetails(eq(sshKeySpecDTO), any());
+    mockSecretKey();
 
     SshInfraDelegateConfig infraDelegateConfig = helper.getSshInfraDelegateConfig(pdcInfrastructure, ambiance);
     assertThat(infraDelegateConfig).isInstanceOf(PdcSshInfraDelegateConfig.class);
@@ -364,16 +405,7 @@ public class SshEntityHelperTest extends CategoryTest {
     PdcInfrastructureOutcome pdcInfrastructure =
         PdcInfrastructureOutcome.builder().credentialsRef("sshKeyRef").hosts(Arrays.asList("host2")).build();
 
-    Call<ResponseDTO<SecretResponseWrapper>> getSecretCall = mock(Call.class);
-    ResponseDTO<SecretResponseWrapper> responseDTO =
-        ResponseDTO.newResponse(SecretResponseWrapper.builder()
-                                    .secret(SecretDTOV2.builder().type(SecretType.SSHKey).spec(sshKeySpecDTO).build())
-                                    .build());
-    doReturn(Response.success(responseDTO)).when(getSecretCall).execute();
-    doReturn(getSecretCall).when(secretManagerClient).getSecret(anyString(), anyString(), anyString(), anyString());
-    doReturn(Arrays.asList(EncryptedDataDetail.builder().build()))
-        .when(sshKeySpecDTOHelper)
-        .getSSHKeyEncryptionDetails(eq(sshKeySpecDTO), any());
+    mockSecretKey();
 
     SshInfraDelegateConfig infraDelegateConfig = helper.getSshInfraDelegateConfig(pdcInfrastructure, ambiance);
     assertThat(infraDelegateConfig).isInstanceOf(PdcSshInfraDelegateConfig.class);
@@ -398,16 +430,7 @@ public class SshEntityHelperTest extends CategoryTest {
                                                                  .hostConnectionType("Hostname")
                                                                  .build();
 
-    Call<ResponseDTO<SecretResponseWrapper>> getSecretCall = mock(Call.class);
-    ResponseDTO<SecretResponseWrapper> responseDTO =
-        ResponseDTO.newResponse(SecretResponseWrapper.builder()
-                                    .secret(SecretDTOV2.builder().type(SecretType.SSHKey).spec(sshKeySpecDTO).build())
-                                    .build());
-    doReturn(Response.success(responseDTO)).when(getSecretCall).execute();
-    doReturn(getSecretCall).when(secretManagerClient).getSecret(anyString(), anyString(), anyString(), anyString());
-    doReturn(Arrays.asList(EncryptedDataDetail.builder().build()))
-        .when(sshKeySpecDTOHelper)
-        .getSSHKeyEncryptionDetails(eq(sshKeySpecDTO), any());
+    mockSecretKey();
     doReturn(Arrays.asList(EncryptedDataDetail.builder().build()))
         .when(azureHelperService)
         .getEncryptionDetails(eq(azureConnector), any());
@@ -437,16 +460,7 @@ public class SshEntityHelperTest extends CategoryTest {
                                                              .tags(Collections.singletonMap("testTag", "test"))
                                                              .build();
 
-    Call<ResponseDTO<SecretResponseWrapper>> getSecretCall = mock(Call.class);
-    ResponseDTO<SecretResponseWrapper> responseDTO =
-        ResponseDTO.newResponse(SecretResponseWrapper.builder()
-                                    .secret(SecretDTOV2.builder().type(SecretType.SSHKey).spec(sshKeySpecDTO).build())
-                                    .build());
-    doReturn(Response.success(responseDTO)).when(getSecretCall).execute();
-    doReturn(getSecretCall).when(secretManagerClient).getSecret(anyString(), anyString(), anyString(), anyString());
-    doReturn(Arrays.asList(EncryptedDataDetail.builder().build()))
-        .when(sshKeySpecDTOHelper)
-        .getSSHKeyEncryptionDetails(eq(sshKeySpecDTO), any());
+    mockSecretKey();
     doReturn(Arrays.asList(EncryptedDataDetail.builder().build()))
         .when(serverlessEntityHelper)
         .getEncryptionDataDetails(eq(awsConnectorInfoDTO), any());
@@ -613,5 +627,322 @@ public class SshEntityHelperTest extends CategoryTest {
     assertThat(awsWinrmInfraDelegateConfig.getConnectorEncryptionDataDetails()).isNotEmpty();
     assertThat(awsWinrmInfraDelegateConfig.getTags()).isNotEmpty();
     assertThat(awsWinrmInfraDelegateConfig.getAutoScalingGroupName()).isNullOrEmpty();
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testValidateInfrastructureYamlInvalidDeploymentType() {
+    InfrastructureEntity infrastructureEntity =
+        InfrastructureEntity.builder().deploymentType(ServiceDefinitionType.AZURE_WEBAPP).build();
+    helper.validateInfrastructureYaml(infrastructureEntity);
+
+    verify(secretManagerClient, times(0)).getSecret(anyString(), anyString(), anyString(), anyString());
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testValidateInfrastructureYamlEmptyYaml() {
+    InfrastructureEntity infrastructureEntity =
+        InfrastructureEntity.builder().deploymentType(ServiceDefinitionType.SSH).build();
+    helper.validateInfrastructureYaml(infrastructureEntity);
+
+    verify(secretManagerClient, times(0)).getSecret(anyString(), anyString(), anyString(), anyString());
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testValidateInfrastructureYamlSshCredentials() throws IOException {
+    InfrastructureEntity infrastructureEntity = InfrastructureEntity.builder()
+                                                    .deploymentType(ServiceDefinitionType.SSH)
+                                                    .accountId(accountId)
+                                                    .orgIdentifier(orgId)
+                                                    .projectIdentifier(projectId)
+                                                    .yaml(infraWithSshCredentialsYaml)
+                                                    .build();
+
+    Call<ResponseDTO<SecretResponseWrapper>> getSecretCall = mock(Call.class);
+    ResponseDTO<SecretResponseWrapper> responseDTO =
+        ResponseDTO.newResponse(SecretResponseWrapper.builder()
+                                    .secret(SecretDTOV2.builder().type(SecretType.SSHKey).spec(sshKeySpecDTO).build())
+                                    .build());
+    doReturn(Response.success(responseDTO)).when(getSecretCall).execute();
+    doReturn(getSecretCall).when(secretManagerClient).getSecret(anyString(), anyString(), any(), any());
+
+    helper.validateInfrastructureYaml(infrastructureEntity);
+    verify(secretManagerClient, times(1)).getSecret("sshCredentials", accountId, null, null);
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testValidateInfrastructureYamlSshCredentialsInvalidSecretType() throws IOException {
+    InfrastructureEntity infrastructureEntity = InfrastructureEntity.builder()
+                                                    .deploymentType(ServiceDefinitionType.SSH)
+                                                    .accountId(accountId)
+                                                    .orgIdentifier(orgId)
+                                                    .projectIdentifier(projectId)
+                                                    .yaml(infraWithSshCredentialsYaml)
+                                                    .build();
+
+    Call<ResponseDTO<SecretResponseWrapper>> getSecretCall = mock(Call.class);
+    ResponseDTO<SecretResponseWrapper> responseDTO = ResponseDTO.newResponse(
+        SecretResponseWrapper.builder()
+            .secret(SecretDTOV2.builder().type(SecretType.WinRmCredentials).spec(winRmCredentials).build())
+            .build());
+    doReturn(Response.success(responseDTO)).when(getSecretCall).execute();
+    doReturn(getSecretCall).when(secretManagerClient).getSecret(anyString(), anyString(), any(), any());
+
+    assertThatThrownBy(() -> helper.validateInfrastructureYaml(infrastructureEntity))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Not found SSH credentials, type: WinRmCredentials");
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testValidateInfrastructureYamlWinRmCredentials() throws IOException {
+    InfrastructureEntity infrastructureEntity = InfrastructureEntity.builder()
+                                                    .deploymentType(ServiceDefinitionType.WINRM)
+                                                    .accountId(accountId)
+                                                    .orgIdentifier(orgId)
+                                                    .projectIdentifier(projectId)
+                                                    .yaml(infraWithWinRmCredentialsYaml)
+                                                    .build();
+
+    Call<ResponseDTO<SecretResponseWrapper>> getSecretCall = mock(Call.class);
+    ResponseDTO<SecretResponseWrapper> responseDTO = ResponseDTO.newResponse(
+        SecretResponseWrapper.builder()
+            .secret(SecretDTOV2.builder().type(SecretType.WinRmCredentials).spec(winRmCredentials).build())
+            .build());
+    doReturn(Response.success(responseDTO)).when(getSecretCall).execute();
+    doReturn(getSecretCall).when(secretManagerClient).getSecret(anyString(), anyString(), any(), any());
+
+    helper.validateInfrastructureYaml(infrastructureEntity);
+    verify(secretManagerClient, times(1)).getSecret("winRmCredentials", accountId, null, null);
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testValidateInfrastructureYamlWinRmCredentialsInvalidSecretType() throws IOException {
+    InfrastructureEntity infrastructureEntity = InfrastructureEntity.builder()
+                                                    .deploymentType(ServiceDefinitionType.WINRM)
+                                                    .accountId(accountId)
+                                                    .orgIdentifier(orgId)
+                                                    .projectIdentifier(projectId)
+                                                    .yaml(infraWithWinRmCredentialsYaml)
+                                                    .build();
+
+    Call<ResponseDTO<SecretResponseWrapper>> getSecretCall = mock(Call.class);
+    ResponseDTO<SecretResponseWrapper> responseDTO =
+        ResponseDTO.newResponse(SecretResponseWrapper.builder()
+                                    .secret(SecretDTOV2.builder().type(SecretType.SSHKey).spec(sshKeySpecDTO).build())
+                                    .build());
+    doReturn(Response.success(responseDTO)).when(getSecretCall).execute();
+    doReturn(getSecretCall).when(secretManagerClient).getSecret(anyString(), anyString(), any(), any());
+
+    assertThatThrownBy(() -> helper.validateInfrastructureYaml(infrastructureEntity))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Not found WinRm credentials, type: SSHKey");
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testExtractDynamicallyProvisionedHostNamesAll() {
+    PdcInfrastructureOutcome pdcInfrastructure =
+        PdcInfrastructureOutcome.builder()
+            .credentialsRef("sshKeyRef")
+            .hostFilter(HostFilterDTO.builder().type(HostFilterType.ALL).build())
+            .hosts(Arrays.asList("host1", "host2"))
+            .dynamicallyProvisioned(true)
+            .build();
+    Set<String> hosts = helper.extractDynamicallyProvisionedHostNames(pdcInfrastructure);
+
+    assertThat(hosts).isNotEmpty();
+    assertThat(hosts).contains("host1", "host2");
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testExtractDynamicallyProvisionedHostNamesHostAttrsEmptyFilter() {
+    PdcInfrastructureOutcome pdcInfrastructure = PdcInfrastructureOutcome.builder()
+                                                     .credentialsRef("sshKeyRef")
+                                                     .hostFilter(HostFilterDTO.builder()
+                                                                     .type(HostFilterType.HOST_ATTRIBUTES)
+                                                                     .spec(HostAttributesFilterDTO.builder().build())
+                                                                     .build())
+                                                     .hosts(Arrays.asList("host1", "host2"))
+                                                     .dynamicallyProvisioned(true)
+                                                     .build();
+    Set<String> hosts = helper.extractDynamicallyProvisionedHostNames(pdcInfrastructure);
+
+    assertThat(hosts).isNotEmpty();
+    assertThat(hosts).contains("host1", "host2");
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testExtractDynamicallyProvisionedHostNamesHostAttrsEmptyAttrsList() {
+    Map<String, String> attrsFilter = new HashMap<>();
+    attrsFilter.put("hostname", "localhost");
+    PdcInfrastructureOutcome pdcInfrastructure =
+        PdcInfrastructureOutcome.builder()
+            .credentialsRef("sshKeyRef")
+            .hostFilter(
+                HostFilterDTO.builder()
+                    .type(HostFilterType.HOST_ATTRIBUTES)
+                    .spec(HostAttributesFilterDTO.builder().value(ParameterField.createValueField(attrsFilter)).build())
+                    .build())
+            .hosts(Arrays.asList("host1", "host2"))
+            .hostsAttributes(Collections.emptyList())
+            .dynamicallyProvisioned(true)
+            .build();
+    assertThatThrownBy(() -> helper.extractDynamicallyProvisionedHostNames(pdcInfrastructure))
+        .isInstanceOf(InvalidArgumentsException.class)
+        .hasMessage("Host attributes filter cannot be applied on empty attributes list");
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testExtractDynamicallyProvisionedHostNamesHostInvalidFilterType() {
+    PdcInfrastructureOutcome pdcInfrastructure = PdcInfrastructureOutcome.builder()
+                                                     .credentialsRef("sshKeyRef")
+                                                     .hostFilter(HostFilterDTO.builder()
+                                                                     .type(HostFilterType.HOST_NAMES)
+                                                                     .spec(HostAttributesFilterDTO.builder().build())
+                                                                     .build())
+                                                     .hosts(Arrays.asList("host1", "host2"))
+                                                     .dynamicallyProvisioned(true)
+                                                     .build();
+
+    assertThatThrownBy(() -> helper.extractDynamicallyProvisionedHostNames(pdcInfrastructure))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Unsupported host filter type found for dynamic provisioned PDC infra, HostNames");
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testExtractDynamicallyProvisionedHostNamesHostAllFilterMatch() {
+    Map<String, String> attrsFilter = new HashMap<>();
+    attrsFilter.put("cluster", "db");
+    attrsFilter.put("region", "west");
+
+    Map<String, Object> host1Attrs = new HashMap<>();
+    host1Attrs.put("hostname", "localhost1");
+    host1Attrs.put("cluster", "db");
+    host1Attrs.put("region", "west");
+
+    Map<String, Object> host2Attrs = new HashMap<>();
+    host2Attrs.put("hostname", "localhost2");
+    host2Attrs.put("cluster", "db");
+    host2Attrs.put("region", "west");
+    PdcInfrastructureOutcome pdcInfrastructure =
+        PdcInfrastructureOutcome.builder()
+            .credentialsRef("sshKeyRef")
+            .hostFilter(
+                HostFilterDTO.builder()
+                    .type(HostFilterType.HOST_ATTRIBUTES)
+                    .spec(HostAttributesFilterDTO.builder().value(ParameterField.createValueField(attrsFilter)).build())
+                    .build())
+            .hosts(Arrays.asList("localhost1", "localhost2", "localhost3"))
+            .hostsAttributes(Arrays.asList(host1Attrs, host2Attrs))
+            .dynamicallyProvisioned(true)
+            .build();
+
+    Set<String> hosts = helper.extractDynamicallyProvisionedHostNames(pdcInfrastructure);
+
+    assertThat(hosts).isNotEmpty();
+    assertThat(hosts).contains("localhost1", "localhost2");
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testExtractDynamicallyProvisionedHostNamesHostOneHostFilterMatch() {
+    Map<String, String> attrsFilter = new HashMap<>();
+    attrsFilter.put("cluster", "db");
+    attrsFilter.put("region", "west");
+
+    Map<String, Object> host1Attrs = new HashMap<>();
+    host1Attrs.put("hostname", "localhost1");
+    host1Attrs.put("cluster", "db");
+
+    Map<String, Object> host2Attrs = new HashMap<>();
+    host2Attrs.put("hostname", "localhost2");
+    host2Attrs.put("cluster", "db");
+    host2Attrs.put("region", "west");
+    PdcInfrastructureOutcome pdcInfrastructure =
+        PdcInfrastructureOutcome.builder()
+            .credentialsRef("sshKeyRef")
+            .hostFilter(
+                HostFilterDTO.builder()
+                    .type(HostFilterType.HOST_ATTRIBUTES)
+                    .spec(HostAttributesFilterDTO.builder().value(ParameterField.createValueField(attrsFilter)).build())
+                    .build())
+            .hosts(Arrays.asList("localhost1", "localhost2", "localhost3"))
+            .hostsAttributes(Arrays.asList(host1Attrs, host2Attrs))
+            .dynamicallyProvisioned(true)
+            .build();
+
+    Set<String> hosts = helper.extractDynamicallyProvisionedHostNames(pdcInfrastructure);
+
+    assertThat(hosts).isNotEmpty();
+    assertThat(hosts).contains("localhost2");
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testExtractDynamicallyProvisionedHostNamesHostEmptyNoMatchHosts() {
+    Map<String, String> attrsFilter = new HashMap<>();
+    attrsFilter.put("cluster", "db");
+    attrsFilter.put("region", "west");
+
+    Map<String, Object> host1Attrs = new HashMap<>();
+    host1Attrs.put("hostname", "localhost1");
+    host1Attrs.put("cluster", "db");
+    host1Attrs.put("region", "west");
+
+    Map<String, Object> host2Attrs = new HashMap<>();
+    host2Attrs.put("hostname", "localhost2");
+    host2Attrs.put("cluster", "db");
+    host2Attrs.put("region", "west");
+    PdcInfrastructureOutcome pdcInfrastructure =
+        PdcInfrastructureOutcome.builder()
+            .credentialsRef("sshKeyRef")
+            .hostFilter(
+                HostFilterDTO.builder()
+                    .type(HostFilterType.HOST_ATTRIBUTES)
+                    .spec(HostAttributesFilterDTO.builder().value(ParameterField.createValueField(attrsFilter)).build())
+                    .build())
+            .hosts(Arrays.asList("localhost4", "localhost5", "localhost6"))
+            .hostsAttributes(Arrays.asList(host1Attrs, host2Attrs))
+            .dynamicallyProvisioned(true)
+            .build();
+
+    Set<String> hosts = helper.extractDynamicallyProvisionedHostNames(pdcInfrastructure);
+
+    assertThat(hosts).isEmpty();
+  }
+
+  private void mockSecretKey() throws IOException {
+    Call<ResponseDTO<SecretResponseWrapper>> getSecretCall = mock(Call.class);
+    ResponseDTO<SecretResponseWrapper> responseDTO =
+        ResponseDTO.newResponse(SecretResponseWrapper.builder()
+                                    .secret(SecretDTOV2.builder().type(SecretType.SSHKey).spec(sshKeySpecDTO).build())
+                                    .build());
+    doReturn(Response.success(responseDTO)).when(getSecretCall).execute();
+    doReturn(getSecretCall).when(secretManagerClient).getSecret(anyString(), anyString(), anyString(), anyString());
+    doReturn(Arrays.asList(EncryptedDataDetail.builder().build()))
+        .when(sshKeySpecDTOHelper)
+        .getSSHKeyEncryptionDetails(eq(sshKeySpecDTO), any());
   }
 }

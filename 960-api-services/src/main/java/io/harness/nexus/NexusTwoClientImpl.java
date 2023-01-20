@@ -23,6 +23,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.artifact.ArtifactFileMetadataInternal;
+import io.harness.exception.HintException;
 import io.harness.exception.InvalidArtifactServerException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
@@ -47,6 +48,7 @@ import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Credentials;
 import org.jetbrains.annotations.NotNull;
+import org.sonatype.nexus.rest.model.ContentListResource;
 import org.sonatype.nexus.rest.model.ContentListResourceResponse;
 import org.sonatype.nexus.rest.model.RepositoryListResource;
 import org.sonatype.nexus.rest.model.RepositoryListResourceResponse;
@@ -127,6 +129,7 @@ public class NexusTwoClientImpl {
       if (isSuccessful(response)) {
         final List<IndexBrowserTreeNode> treeNodes = response.body().getData().getChildren();
         if (treeNodes != null) {
+          existsVersion(treeNodes, nexusConfig, repoId, groupId, artifactName, extension, classifier);
           for (IndexBrowserTreeNode treeNode : treeNodes) {
             if (treeNode.getType().equals("A")) {
               List<IndexBrowserTreeNode> children = treeNode.getChildren();
@@ -152,6 +155,63 @@ public class NexusTwoClientImpl {
           "Please check Nexus artifact configuration and verify that repository is valid.",
           String.format("Failed to retrieve artifact '%s'", artifactName), new NexusRegistryException(e.getMessage()));
     }
+  }
+
+  public boolean existsVersion(List<IndexBrowserTreeNode> treeNodes, NexusRequest nexusConfig, String repoId,
+      String groupId, String artifactName, String extension, String classifier) throws IOException {
+    if (isEmpty(extension) && isEmpty(classifier)) {
+      return true;
+    }
+    for (IndexBrowserTreeNode treeNode : treeNodes) {
+      if (treeNode.getType().equals("A")) {
+        List<IndexBrowserTreeNode> children = treeNode.getChildren();
+        for (IndexBrowserTreeNode child : children) {
+          if (child.getType().equals("V")) {
+            log.info("Checking if required artifacts exist for version: " + child.getNodeName());
+            String relativePath = getGroupId(groupId) + artifactName + '/' + child.getNodeName() + '/';
+            relativePath = relativePath.charAt(0) == '/' ? relativePath.substring(1) : relativePath;
+            Call<ContentListResourceResponse> request;
+            if (nexusConfig.isHasCredentials()) {
+              request = getRestClient(nexusConfig)
+                            .getRepositoryContents(
+                                Credentials.basic(nexusConfig.getUsername(), new String(nexusConfig.getPassword())),
+                                repoId, relativePath);
+            } else {
+              request = getRestClient(nexusConfig).getRepositoryContents(repoId, relativePath);
+            }
+
+            final Response<ContentListResourceResponse> contentResponse = request.execute();
+            if (isSuccessful(contentResponse)) {
+              if (isNotEmpty(contentResponse.body().getData())) {
+                for (ContentListResource contentListResource : contentResponse.body().getData()) {
+                  if (contentListResource.isLeaf()) {
+                    if (isNotEmpty(extension) && isNotEmpty(classifier)) {
+                      if (contentListResource.getText().endsWith('-' + classifier + '.' + extension)) {
+                        return true;
+                      }
+                    } else if (isNotEmpty(extension)) {
+                      if (contentListResource.getText().endsWith(extension)) {
+                        return true;
+                      }
+                    } else if (isNotEmpty(classifier)) {
+                      int index = contentListResource.getText().lastIndexOf('.');
+                      if (index != -1) {
+                        if (contentListResource.getText().substring(0, index).endsWith(classifier)) {
+                          return true;
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+        throw new HintException(HintException.HINT_NEXUS_ISSUE,
+            new InvalidRequestException("No versions found with specified extension/classifier", USER));
+      }
+    }
+    return true;
   }
 
   public List<BuildDetailsInternal> constructBuildDetails(String repoId, String groupId, String artifactName,

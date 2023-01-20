@@ -26,6 +26,7 @@ import software.wings.beans.InfrastructureProvisionerType;
 import software.wings.beans.NameValuePair;
 import software.wings.beans.TerraformInfrastructureProvisioner;
 import software.wings.beans.TerraformInfrastructureProvisioner.Yaml;
+import software.wings.beans.TerraformSourceType;
 import software.wings.beans.yaml.ChangeContext;
 import software.wings.service.impl.yaml.handler.NameValuePairYamlHandler;
 import software.wings.service.intfc.security.SecretManager;
@@ -47,11 +48,18 @@ public class TerraformInfrastructureProvisionerYamlHandler
     super.toYaml(yaml, bean);
 
     yaml.setType(InfrastructureProvisionerType.TERRAFORM.name());
-    yaml.setPath(bean.getPath());
-    yaml.setSourceRepoSettingName(getSourceRepoSettingName(appId, bean.getSourceRepoSettingId()));
-    yaml.setSourceRepoBranch(bean.getSourceRepoBranch());
-    yaml.setCommitId(bean.getCommitId());
-    yaml.setRepoName(bean.getRepoName());
+    yaml.setSourceType(bean.getSourceType());
+
+    if (bean.getSourceType() != null && bean.getSourceType().equals(TerraformSourceType.S3)) {
+      yaml.setS3URI(bean.getS3URI());
+      yaml.setAwsSourceConfigName(getSourceRepoSettingName(appId, bean.getAwsConfigId()));
+    } else {
+      yaml.setPath(bean.getPath());
+      yaml.setSourceRepoSettingName(getSourceRepoSettingName(appId, bean.getSourceRepoSettingId()));
+      yaml.setSourceRepoBranch(bean.getSourceRepoBranch());
+      yaml.setCommitId(bean.getCommitId());
+      yaml.setRepoName(bean.getRepoName());
+    }
 
     if (isNotEmpty(bean.getKmsId())) {
       SecretManagerConfig secretManagerConfig = secretManager.getSecretManager(bean.getAccountId(), bean.getKmsId());
@@ -109,11 +117,21 @@ public class TerraformInfrastructureProvisionerYamlHandler
     yaml.setVariables(null);
     super.toBean(changeContext, bean, appId, yamlFilePath);
     bean.setPath(yaml.getPath());
-    bean.setSourceRepoSettingId(getSourceRepoSettingId(appId, yaml.getSourceRepoSettingName()));
-    validateBranchCommitId(yaml.getSourceRepoBranch(), yaml.getCommitId());
-    bean.setSourceRepoBranch(yaml.getSourceRepoBranch());
-    bean.setCommitId(yaml.getCommitId());
-    bean.setRepoName(yaml.getRepoName());
+
+    if (yaml.getSourceType() != null && yaml.getSourceType().equals(TerraformSourceType.S3)) {
+      validateS3Source(yaml.getAwsSourceConfigName(), yaml.getS3URI(), yaml.getSourceRepoSettingName());
+      bean.setAwsConfigId(getSourceRepoSettingId(appId, yaml.getAwsSourceConfigName()));
+      bean.setS3URI(yaml.getS3URI());
+      bean.setSourceType(TerraformSourceType.S3);
+    } else {
+      bean.setSourceRepoSettingId(getSourceRepoSettingId(appId, yaml.getSourceRepoSettingName()));
+      validateBranchCommitId(yaml.getSourceRepoBranch(), yaml.getCommitId());
+      bean.setSourceRepoBranch(yaml.getSourceRepoBranch());
+      bean.setCommitId(yaml.getCommitId());
+      bean.setRepoName(yaml.getRepoName());
+      bean.setSourceType(TerraformSourceType.GIT);
+    }
+
     bean.setSkipRefreshBeforeApplyingPlan(yaml.isSkipRefreshBeforeApplyingPlan());
 
     if (isNotEmpty(yaml.getSecretMangerName())) {

@@ -12,7 +12,7 @@ import io.harness.cvng.core.beans.TimeSeriesSampleDTO;
 import io.harness.cvng.core.beans.datadog.DatadogDashboardDTO;
 import io.harness.cvng.core.beans.datadog.DatadogDashboardDetail;
 import io.harness.cvng.core.beans.datadog.MetricTagResponseDTO;
-import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.core.beans.params.ProjectScopedProjectParams;
 import io.harness.cvng.core.services.api.DatadogService;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ErrorDTO;
@@ -53,12 +53,13 @@ public class DatadogMetricsResource {
   @Timed
   @ExceptionMetered
   @ApiOperation(value = "get all datadog dashboards", nickname = "getDatadogDashboards")
-  public ResponseDTO<PageResponse<DatadogDashboardDTO>> getDatadogDashboards(@BeanParam ProjectParams projectParams,
+  public ResponseDTO<PageResponse<DatadogDashboardDTO>> getDatadogDashboards(
+      @BeanParam ProjectScopedProjectParams projectParams,
       @NotNull @QueryParam("connectorIdentifier") String connectorIdentifier,
       @QueryParam("pageSize") @NotNull int pageSize, @QueryParam("offset") @NotNull int offset,
       @QueryParam("filter") String filter, @NotNull @QueryParam("tracingId") String tracingId) {
-    return ResponseDTO.newResponse(
-        datadogService.getAllDashboards(projectParams, connectorIdentifier, pageSize, offset, filter, tracingId));
+    return ResponseDTO.newResponse(datadogService.getAllDashboards(
+        projectParams.getProjectParams(), connectorIdentifier, pageSize, offset, filter, tracingId));
   }
 
   @GET
@@ -66,11 +67,12 @@ public class DatadogMetricsResource {
   @Timed
   @ExceptionMetered
   @ApiOperation(value = "get datadog dashboard details", nickname = "getDatadogDashboardDetails")
-  public ResponseDTO<List<DatadogDashboardDetail>> getDatadogDashboardDetails(@BeanParam ProjectParams projectParams,
+  public ResponseDTO<List<DatadogDashboardDetail>> getDatadogDashboardDetails(
+      @BeanParam ProjectScopedProjectParams projectParams,
       @NotNull @QueryParam("connectorIdentifier") String connectorIdentifier,
       @NotNull @QueryParam("dashboardId") String dashboardId, @NotNull @QueryParam("tracingId") String tracingId) {
-    return ResponseDTO.newResponse(
-        datadogService.getDashboardDetails(projectParams, connectorIdentifier, dashboardId, tracingId));
+    return ResponseDTO.newResponse(datadogService.getDashboardDetails(
+        projectParams.getProjectParams(), connectorIdentifier, dashboardId, tracingId));
   }
 
   @GET
@@ -78,11 +80,11 @@ public class DatadogMetricsResource {
   @Timed
   @ExceptionMetered
   @ApiOperation(value = "get datadog active metrics", nickname = "getDatadogActiveMetrics")
-  public ResponseDTO<List<String>> getActiveMetrics(@BeanParam ProjectParams projectParams,
+  public ResponseDTO<List<String>> getActiveMetrics(@BeanParam ProjectScopedProjectParams projectParams,
       @NotNull @QueryParam("connectorIdentifier") String connectorIdentifier, @QueryParam("filter") String filter,
       @NotNull @QueryParam("tracingId") String tracingId) {
     return ResponseDTO.newResponse(
-        datadogService.getActiveMetrics(projectParams, connectorIdentifier, filter, tracingId));
+        datadogService.getActiveMetrics(projectParams.getProjectParams(), connectorIdentifier, filter, tracingId));
   }
 
   @GET
@@ -90,11 +92,11 @@ public class DatadogMetricsResource {
   @Timed
   @ExceptionMetered
   @ApiOperation(value = "get datadog metric tag list", nickname = "getDatadogMetricTagsList")
-  public ResponseDTO<List<String>> getDatadogMetricTagsList(@BeanParam ProjectParams projectParams,
+  public ResponseDTO<List<String>> getDatadogMetricTagsList(@BeanParam ProjectScopedProjectParams projectParams,
       @NotNull @QueryParam("connectorIdentifier") String connectorIdentifier,
       @NotNull @QueryParam("metric") String metricName, @NotNull @QueryParam("tracingId") String tracingId) {
     return ResponseDTO.newResponse(
-        datadogService.getMetricTagsList(projectParams, connectorIdentifier, metricName, tracingId));
+        datadogService.getMetricTagsList(projectParams.getProjectParams(), connectorIdentifier, metricName, tracingId));
   }
 
   @GET
@@ -102,12 +104,12 @@ public class DatadogMetricsResource {
   @Timed
   @ExceptionMetered
   @ApiOperation(value = "get datadog metric tag list", nickname = "getDatadogMetricTags")
-  public ResponseDTO<MetricTagResponseDTO> getDatadogMetricTags(@BeanParam ProjectParams projectParams,
+  public ResponseDTO<MetricTagResponseDTO> getDatadogMetricTags(@BeanParam ProjectScopedProjectParams projectParams,
       @NotNull @QueryParam("connectorIdentifier") String connectorIdentifier,
       @NotNull @QueryParam("metric") String metricName, @QueryParam("filter") String filter,
       @NotNull @QueryParam("tracingId") String tracingId) {
-    return ResponseDTO.newResponse(
-        datadogService.getMetricTagsResponse(projectParams, connectorIdentifier, metricName, filter, tracingId));
+    return ResponseDTO.newResponse(datadogService.getMetricTagsResponse(
+        projectParams.getProjectParams(), connectorIdentifier, metricName, filter, tracingId));
   }
 
   @GET
@@ -115,10 +117,11 @@ public class DatadogMetricsResource {
   @Timed
   @ExceptionMetered
   @ApiOperation(value = "get datadog sample data", nickname = "getDatadogSampleData")
-  public ResponseDTO<List<TimeSeriesSampleDTO>> getDatadogSampleData(@BeanParam ProjectParams projectParams,
+  public ResponseDTO<List<TimeSeriesSampleDTO>> getDatadogSampleData(
+      @BeanParam ProjectScopedProjectParams projectParams,
       @NotNull @QueryParam("connectorIdentifier") String connectorIdentifier,
       @NotNull @QueryParam("tracingId") String tracingId, @NotNull @QueryParam("query") String query) {
     return ResponseDTO.newResponse(
-        datadogService.getTimeSeriesPoints(projectParams, connectorIdentifier, query, tracingId));
+        datadogService.getTimeSeriesPoints(projectParams.getProjectParams(), connectorIdentifier, query, tracingId));
   }
 }

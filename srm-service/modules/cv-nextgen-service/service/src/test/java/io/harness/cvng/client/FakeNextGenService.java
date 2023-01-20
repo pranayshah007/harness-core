@@ -19,6 +19,7 @@ import io.harness.ng.core.environment.dto.EnvironmentResponseDTO;
 import io.harness.ng.core.service.dto.ServiceResponse;
 import io.harness.ng.core.service.dto.ServiceResponseDTO;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -138,5 +139,14 @@ public class FakeNextGenService implements NextGenService {
                 projectParams.getProjectIdentifier(), envIdentifier)
                 .getName()));
     return envIdNameMap;
+  }
+
+  @Override
+  public List<ProjectDTO> listAccessibleProjects(String accountIdentifier) {
+    List<ProjectDTO> projectDTOS = new ArrayList<>();
+    projectDTOS.add(ProjectDTO.builder().orgIdentifier("orgIdentifier").identifier("project").build());
+    projectDTOS.add(ProjectDTO.builder().orgIdentifier("orgIdentifier").identifier("project1").build());
+    projectDTOS.add(ProjectDTO.builder().orgIdentifier("orgIdentifier").identifier("project3").build());
+    return projectDTOS;
   }
 }

@@ -90,8 +90,9 @@ public class NodeExecutionMap extends LateBindingMap {
       return null;
     }
 
-    return fetchFirst(asList(this::fetchCurrentStatus, this::fetchChild, this::fetchNodeExecutionField,
-                          this::fetchStepParameters, this::fetchOutcomeOrOutput, this::fetchStrategyData),
+    return fetchFirst(asList(this::fetchCurrentStatus, this::fetchCurrentStatusIncludingChildOfStrategy,
+                          this::fetchChild, this::fetchNodeExecutionField, this::fetchStepParameters,
+                          this::fetchOutcomeOrOutput, this::fetchStrategyData),
         (String) key);
   }
 
@@ -121,7 +122,19 @@ public class NodeExecutionMap extends LateBindingMap {
     if (nodeExecution == null) {
       return Optional.empty();
     }
-    List<Status> childStatuses = nodeExecutionsCache.findAllTerminalChildrenStatusOnly(nodeExecution.getUuid());
+    List<Status> childStatuses = nodeExecutionsCache.findAllTerminalChildrenStatusOnly(nodeExecution.getUuid(), false);
+    return Optional.of(StatusUtils.calculateStatus(childStatuses, ambiance.getPlanExecutionId()).name());
+  }
+
+  // This function calculates final status of the node TILL now.
+  private Optional<Object> fetchCurrentStatusIncludingChildOfStrategy(String key) {
+    if (!key.equals(OrchestrationConstants.LIVE_STATUS)) {
+      return Optional.empty();
+    }
+    if (nodeExecution == null) {
+      return Optional.empty();
+    }
+    List<Status> childStatuses = nodeExecutionsCache.findAllTerminalChildrenStatusOnly(nodeExecution.getUuid(), true);
     return Optional.of(StatusUtils.calculateStatus(childStatuses, ambiance.getPlanExecutionId()).name());
   }
 

@@ -34,6 +34,7 @@ import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.steps.approval.step.ApprovalInstanceService;
 import io.harness.steps.approval.step.beans.ApprovalType;
 import io.harness.steps.approval.step.custom.entities.CustomApprovalInstance;
@@ -95,8 +96,8 @@ public class CustomApprovalHelperServiceTest extends CategoryTest {
     when(shellScriptHelperService.buildShellScriptTaskParametersNG(any(), any()))
         .thenReturn(ShellScriptTaskParametersNG.builder().build());
     when(ngDelegate2TaskExecutor.queueTask(any(), any(), eq(Duration.ofSeconds(0)))).thenReturn("__TASK_ID__");
-    try (MockedStatic<StepUtils> aStatic = Mockito.mockStatic(StepUtils.class)) {
-      aStatic.when(() -> StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any(), any()))
+    try (MockedStatic<TaskRequestsUtils> aStatic = Mockito.mockStatic(TaskRequestsUtils.class)) {
+      aStatic.when(() -> TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any(), any()))
           .thenReturn(TaskRequest.newBuilder().build());
       customApprovalHelperService.handlePollingEvent(null, instance);
       verify(approvalInstanceService, never()).resetNextIterations(any(), any());
@@ -128,8 +129,8 @@ public class CustomApprovalHelperServiceTest extends CategoryTest {
     when(ngDelegate2TaskExecutor.queueTask(any(), any(), eq(Duration.ofSeconds(0)))).thenReturn("__TASK_ID__");
     when(ngDelegate2TaskExecutor.queueTask(any(), any(), eq(Duration.ofSeconds(0))))
         .thenThrow(new IllegalStateException());
-    try (MockedStatic<StepUtils> aStatic = Mockito.mockStatic(StepUtils.class)) {
-      aStatic.when(() -> StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any(), any()))
+    try (MockedStatic<TaskRequestsUtils> aStatic = Mockito.mockStatic(TaskRequestsUtils.class)) {
+      aStatic.when(() -> TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any(), any()))
           .thenReturn(TaskRequest.newBuilder().build());
       customApprovalHelperService.handlePollingEvent(iterator, instance);
       verify(approvalInstanceService).resetNextIterations(any(), any());

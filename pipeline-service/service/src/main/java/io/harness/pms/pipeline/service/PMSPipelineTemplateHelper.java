@@ -23,6 +23,7 @@ import io.harness.exception.ngexception.beans.templateservice.TemplateInputsErro
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
+import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.ng.core.template.RefreshRequestDTO;
 import io.harness.ng.core.template.RefreshResponseDTO;
 import io.harness.ng.core.template.TemplateApplyRequestDTO;
@@ -33,6 +34,7 @@ import io.harness.ng.core.template.exception.NGTemplateResolveException;
 import io.harness.ng.core.template.exception.NGTemplateResolveExceptionV2;
 import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.ng.core.template.refresh.YamlFullRefreshResponseDTO;
+import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.template.remote.TemplateResourceClient;
@@ -92,14 +94,17 @@ public class PMSPipelineTemplateHelper {
                   .getMergedYamlWithTemplateField(getMergedTemplateWithTemplateReferences)
                   .build()));
         }
-        return NGRestUtils.getResponse(templateResourceClient.applyTemplatesOnGivenYamlV2(accountId, orgId, projectId,
-            null, null, null, null, null, null, null, null, loadFromCache,
-            TemplateApplyRequestDTO.builder()
-                .originalEntityYaml(yaml)
-                .checkForAccess(checkForTemplateAccess)
-                .getMergedYamlWithTemplateField(getMergedTemplateWithTemplateReferences)
-                .build()));
-
+        GitSyncBranchContext gitSyncBranchContext =
+            GitSyncBranchContext.builder().gitBranchInfo(GitEntityInfo.builder().build()).build();
+        try (PmsGitSyncBranchContextGuard ignored = new PmsGitSyncBranchContextGuard(gitSyncBranchContext, true)) {
+          return NGRestUtils.getResponse(templateResourceClient.applyTemplatesOnGivenYamlV2(accountId, orgId, projectId,
+              null, null, null, null, null, null, null, null, loadFromCache,
+              TemplateApplyRequestDTO.builder()
+                  .originalEntityYaml(yaml)
+                  .checkForAccess(checkForTemplateAccess)
+                  .getMergedYamlWithTemplateField(getMergedTemplateWithTemplateReferences)
+                  .build()));
+        }
       } catch (InvalidRequestException e) {
         if (e.getMetadata() instanceof TemplateInputsErrorMetadataDTO) {
           throw new NGTemplateResolveException(

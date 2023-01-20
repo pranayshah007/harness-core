@@ -18,9 +18,9 @@ import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
 
-import static software.wings.beans.Log.Builder.aLog;
 import static software.wings.beans.command.DownloadArtifactConstants.AUTHORIZATION;
 import static software.wings.beans.command.DownloadArtifactConstants.PWSH_ARTIFACTORY_USING_CREDENTIALS;
+import static software.wings.beans.dto.Log.Builder.aLog;
 
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isBlank;
@@ -67,6 +67,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.github.reinert.jjschema.Attributes;
 import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.inject.Inject;
+import dev.morphia.annotations.Transient;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -83,7 +84,6 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.mongodb.morphia.annotations.Transient;
 
 @OwnedBy(CDC)
 @JsonTypeName("DOWNLOAD_ARTIFACT")

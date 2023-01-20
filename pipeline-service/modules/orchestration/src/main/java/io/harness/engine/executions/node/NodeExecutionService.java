@@ -15,10 +15,9 @@ import io.harness.execution.NodeExecution;
 import io.harness.plan.Node;
 import io.harness.pms.contracts.execution.Status;
 
-import com.google.common.annotations.VisibleForTesting;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -26,12 +25,18 @@ import java.util.Set;
 import java.util.function.Consumer;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.util.CloseableIterator;
 
 @OwnedBy(PIPELINE)
 public interface NodeExecutionService {
-  // TODO(archit): remove usage
+  /**
+   * Fetches nodeExecution and uses id Index
+   * Use this method only when all or most fields are required, like clone, graph etc
+   * @param nodeExecutionId
+   * @return
+   */
   NodeExecution get(String nodeExecutionId);
 
   /**
@@ -116,8 +121,8 @@ public interface NodeExecutionService {
       String planExecutionId, @NotNull Set<String> fieldsToInclude);
 
   /**
-   * Returns iterator for children nodeExecution for given parentId(direct children only) with projection
-   * Uses - planExecutionId_parentId_createdAt_idx
+   * Returns iterator for children nodeExecution for given parentId(direct children only) with projection sort by
+   * CreatedAt (Desc) Uses - planExecutionId_parentId_createdAt_idx
    * TODO(archit): Check if planExecutionId and sort is required or not
    * @param planExecutionId
    * @param parentId
@@ -128,8 +133,20 @@ public interface NodeExecutionService {
       String planExecutionId, String parentId, Set<String> fieldsToBeIncluded);
 
   /**
-   * Returns iterator for children nodeExecution for given parentId(direct children only) with projection
-   * Uses - parentId_status_idx
+   * Returns iterator for children nodeExecution for given parentId(direct children only) with projection sort by
+   * CreatedAt (Desc) Uses - planExecutionId_parentId_createdAt_idx
+   * TODO(archit): Check if planExecutionId and sort is required or not
+   * @param planExecutionId
+   * @param parentId
+   * @param fieldsToBeIncluded
+   * @return
+   */
+  CloseableIterator<NodeExecution> fetchChildrenNodeExecutionsIterator(
+      String planExecutionId, String parentId, Direction sortOrderOfCreatedAt, Set<String> fieldsToBeIncluded);
+
+  /**
+   * Returns iterator for children nodeExecution for given parentId(direct children only) with projection (No Sort, thus
+   * default db sort) Uses - parentId_status_idx
    * @param parentId
    * @param fieldsToBeIncluded
    * @return
@@ -159,14 +176,16 @@ public interface NodeExecutionService {
    * Returns children executions (including grandchildren) for given parentId
    * Note: nodeExecution should atleast have parentId projected fields
    * Doesn't make any DB calls
+   *
    * @param parentId
    * @param includeParent
-   * @param finalList -> it contains the result from allExecutions
+   * @param finalList                 -> it contains the result from allExecutions
    * @param allExecutions
+   * @param includeChildrenOfStrategy
    * @return
    */
-  List<NodeExecution> extractChildExecutions(
-      String parentId, boolean includeParent, List<NodeExecution> finalList, List<NodeExecution> allExecutions);
+  List<NodeExecution> extractChildExecutions(String parentId, boolean includeParent, List<NodeExecution> finalList,
+      List<NodeExecution> allExecutions, boolean includeChildrenOfStrategy);
 
   // stepType, parentId and Status are already included into projections
 
@@ -174,15 +193,18 @@ public interface NodeExecutionService {
    * Internally uses pagination to get all children of given planExecutionId
    * Apart from fieldsTobeIncluded, NodeProjectionUtils.fieldsForAllChildrenExtractor fields are already in projection
    * Uses - planExecutionId_status_idx index
+   *
    * @param planExecutionId
    * @param parentId
    * @param statuses
    * @param includeParent
    * @param fieldsToBeIncluded
+   * @param includeChildrenOfStrategy
    * @return all children(including grandchildren) in given planExecutionId and of parentId having one of the statuses
    */
   List<NodeExecution> findAllChildrenWithStatusInAndWithoutOldRetries(String planExecutionId, String parentId,
-      EnumSet<Status> statuses, boolean includeParent, Set<String> fieldsToBeIncluded);
+      EnumSet<Status> statuses, boolean includeParent, Set<String> fieldsToBeIncluded,
+      boolean includeChildrenOfStrategy);
 
   /**
    * Note: It depends upon findAllChildrenWithStatusInAndWithoutOldRetries
@@ -194,47 +216,120 @@ public interface NodeExecutionService {
    */
   default List<NodeExecution> findAllChildrenOnlyIds(String planExecutionId, String parentId, boolean includeParent) {
     return findAllChildrenWithStatusInAndWithoutOldRetries(
-        planExecutionId, parentId, EnumSet.noneOf(Status.class), includeParent, Collections.emptySet());
+        planExecutionId, parentId, EnumSet.noneOf(Status.class), includeParent, new HashSet<>(), false);
   }
 
+  /**
+   * Creates NodeExecution for given value, and sends orchestrationLog event of type NodeExecutionStart and
+   * OrchestrationEvent of type NodeExecutionStart
+   * @param nodeExecution
+   * @return
+   */
+  NodeExecution save(NodeExecution nodeExecution);
+
+  /**
+   * Save a collection nodeExecutions.
+   * This does not send any orchestration event nor orchestration log event . So if you want to do graph update
+   * operations on NodeExecution save, then use the above save() method.
+   * @param nodeExecutions
+   * @return
+   */
+  List<NodeExecution> saveAll(Collection<NodeExecution> nodeExecutions);
+
+  /**
+   * Use this method to update nodeExecution, it will return new NodeExecution after update
+   * Get approval before this, as it will return all fields in return value
+   * It will also send OrchestrationLogEvent if any set field contains GRAPH_FIELDS in NodeExecutionServiceImpl
+   * Example -> retry node or clone nodes or processAdviserResponse where different impl may require different fields
+   * @param nodeExecutionId
+   * @param ops
+   * @return
+   */
   NodeExecution update(@NonNull String nodeExecutionId, @NonNull Consumer<Update> ops);
 
-  NodeExecution update(@NonNull String nodeExecutionId, @NonNull Consumer<Update> ops, Set<String> fieldsToBeIncluded);
+  /**
+   * Use this method to update nodeExecution, it will return new NodeExecution after update
+   * Projection fields cannot be empty, else it throws exception
+   * It will also send OrchestrationLogEvent if any set field contains GRAPH_FIELDS in NodeExecutionServiceImpl
+   * @param nodeExecutionId
+   * @param ops
+   * @param fieldsToBeIncluded
+   * @return
+   */
+  NodeExecution update(
+      @NonNull String nodeExecutionId, @NonNull Consumer<Update> ops, @NonNull Set<String> fieldsToBeIncluded);
 
-  @VisibleForTesting boolean shouldLog(Update updateOps);
-
+  /**
+   * NodeExecution update with ops, use this if returned value is not required
+   * It will also send OrchestrationLogEvent if any set field contains GRAPH_FIELDS in NodeExecutionServiceImpl
+   * Get approval before using this method
+   * @param nodeExecutionId
+   * @param ops
+   */
   void updateV2(@NonNull String nodeExecutionId, @NonNull Consumer<Update> ops);
 
+  /**
+   * Use this method while updating statuses. This guarantees we are hopping from correct statuses.
+   * As we don't have transactions it is possible that your node execution state is manipulated by some other thread and
+   * your transition is no longer valid.
+   * Like your workflow is aborted but some other thread try to set it to running. Same logic applied to plan execution
+   * status as well
+   */
   NodeExecution updateStatusWithOps(@NonNull String nodeExecutionId, @NonNull Status targetStatus, Consumer<Update> ops,
       EnumSet<Status> overrideStatusSet);
 
-  NodeExecution updateStatusWithOpsV2(@NonNull String nodeExecutionId, @NonNull Status targetStatus,
-      Consumer<Update> ops, EnumSet<Status> overrideStatusSet, Set<String> fieldsToBeIncluded);
+  /**
+   * Mark the given nodeExecutionIds to status as discontinuing
+   * @param leafInstanceIds
+   * @return
+   */
+  long markLeavesDiscontinuing(List<String> leafInstanceIds);
 
-  NodeExecution updateStatusWithUpdate(
-      @NonNull String nodeExecutionId, @NonNull Status targetStatus, Update ops, EnumSet<Status> overrideStatusSet);
-
-  List<NodeExecution> saveAll(Collection<NodeExecution> nodeExecutions);
-
-  NodeExecution save(NodeExecution nodeExecution);
-
-  NodeExecution updateStatusWithUpdate(@NotNull String nodeExecutionId, @NotNull Status status, Update ops,
-      EnumSet<Status> overrideStatusSet, Set<String> includedFields, boolean shouldUseProjections);
-
-  long markLeavesDiscontinuing(String planExecutionId, List<String> leafInstanceIds);
-
+  /**
+   * Mark all leaf nodes in given status and oldRetry false or all nodes in status [INPUT_WAITING , QUEUED]
+   * as Discontinuing
+   * Uses - planExecutionId_status_idx
+   * @param planExecutionId
+   * @param statuses
+   * @return
+   */
   long markAllLeavesAndQueuedNodesDiscontinuing(String planExecutionId, EnumSet<Status> statuses);
 
+  /**
+   * Update the old execution -> set oldRetry flag set to true
+   * It also sends OrchestrationLogEvent for NodeUpdate
+   * @param nodeExecutionId Id of Failed Node Execution
+   */
   boolean markRetried(String nodeExecutionId);
 
+  /**
+   * Deletes the nodeExecutions and its related metadata
+   * @param planExecutionId Id of to be deleted planExecution
+   */
+  void deleteAllNodeExecutionAndMetadata(String planExecutionId);
+
+  /**
+   * Update Nodes for which the previousId was failed node execution and replace it with the
+   * note execution which is being retried
+   * Uses - previous_id_idx
+   * @param nodeExecutionId Old nodeExecutionId
+   * @param newNodeExecutionId Id of new retry node execution
+   */
   boolean updateRelationShipsForRetryNode(String nodeExecutionId, String newNodeExecutionId);
 
-  // TODO(Projection): Make it paginated, has projection
-  List<NodeExecution> fetchNodeExecutionsByParentIdWithAmbianceAndNode(
-      String nodeExecutionId, boolean oldRetry, boolean includeParent);
-
+  /**
+   * Mark all the activeStatuses nodes in given planExecutionId as ERRORED
+   * Uses - planExecutionId_status_idx
+   * @param planExecutionId
+   * @return
+   */
   boolean errorOutActiveNodes(String planExecutionId);
 
+  /**
+   * Make the timeoutInstanceId for given nodeExecutionId as empty
+   * @param nodeExecutionId
+   * @return
+   */
   boolean removeTimeoutInstances(String nodeExecutionId);
 
   // TODO(Projection): Make it paginated, and projection, in retry flow
@@ -251,6 +346,4 @@ public interface NodeExecutionService {
 
   // TODO(Projection): Make it paginated, has projection
   List<NodeExecution> fetchStageExecutionsWithEndTsAndStatusProjection(String planExecutionId);
-
-  NodeExecution update(@NonNull NodeExecution nodeExecution);
 }

@@ -8,12 +8,14 @@
 package software.wings.graphql.datafetcher.trigger;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.beans.FeatureName.SPG_WORKFLOW_RBAC_ON_TRIGGER_RESOURCE;
 import static io.harness.exception.WingsException.USER;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.persistence.HPersistence;
 
 import software.wings.beans.trigger.Trigger;
@@ -26,6 +28,7 @@ import software.wings.security.PermissionAttribute.PermissionType;
 import software.wings.security.annotations.AuthRule;
 import software.wings.service.impl.trigger.TriggerAuthHandler;
 import software.wings.service.intfc.AppService;
+import software.wings.service.intfc.TriggerService;
 
 import com.google.inject.Inject;
 import java.util.Collections;
@@ -36,7 +39,9 @@ public class TriggerDataFetcher extends AbstractObjectDataFetcher<QLTrigger, QLT
   @Inject HPersistence persistence;
   @Inject AppService appService;
   @Inject TriggerAuthHandler triggerAuthHandler;
+  @Inject private TriggerService triggerService;
   @Inject TriggerController triggerController;
+  @Inject private FeatureFlagService featureFlagService;
   public static final String EMPTY_APPLICATION_ID = "Application Id should not be empty";
 
   @Override
@@ -71,6 +76,9 @@ public class TriggerDataFetcher extends AbstractObjectDataFetcher<QLTrigger, QLT
       throw new InvalidRequestException("Trigger doesn't exist", USER);
     }
     triggerAuthHandler.authorizeAppAccess(Collections.singletonList(trigger.getAppId()), accountId);
+    if (featureFlagService.isEnabled(SPG_WORKFLOW_RBAC_ON_TRIGGER_RESOURCE, trigger.getAccountId())) {
+      triggerService.authorizeRead(trigger);
+    }
 
     QLTriggerBuilder qlTriggerBuilder = QLTrigger.builder();
     triggerController.populateTrigger(trigger, qlTriggerBuilder, accountId);

@@ -31,6 +31,7 @@ import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.pipelinestage.PipelineStageStepParameters;
 import io.harness.pms.pipelinestage.PipelineStageStepParameters.PipelineStageStepParametersKeys;
 import io.harness.pms.pipelinestage.outcome.PipelineStageOutcome;
+import io.harness.pms.pipelinestage.v1.helper.PipelineStageHelperV1;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.dto.ChildExecutionDetailDTO;
 import io.harness.pms.plan.execution.beans.dto.ChildExecutionDetailDTO.ChildExecutionDetailDTOBuilder;
@@ -40,6 +41,7 @@ import io.harness.pms.plan.execution.beans.dto.PipelineExecutionDetailDTO.Pipeli
 import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
@@ -71,14 +73,24 @@ public class PipelineStageHelper {
   @Inject private final PmsGitSyncHelper pmsGitSyncHelper;
   @Inject private final AccessControlClient accessControlClient;
   @Inject private PmsEngineExpressionService pmsEngineExpressionService;
+  @Inject private final PipelineStageHelperV1 pipelineStageHelperV1;
 
   private final List<String> actionTypeNotSupported = Arrays.asList(NGFailureActionTypeConstants.RETRY,
       NGFailureActionTypeConstants.PIPELINE_ROLLBACK, NGFailureActionTypeConstants.MANUAL_INTERVENTION);
   public void validateNestedChainedPipeline(PipelineEntity entity) {
     TemplateMergeResponseDTO templateMergeResponseDTO =
         pmsPipelineTemplateHelper.resolveTemplateRefsInPipeline(entity, BOOLEAN_FALSE_VALUE);
-
-    containsPipelineStage(templateMergeResponseDTO.getMergedPipelineYaml());
+    String pipelineVersion = entity.getHarnessVersion();
+    switch (pipelineVersion) {
+      case PipelineVersion.V0:
+        containsPipelineStage(templateMergeResponseDTO.getMergedPipelineYaml());
+        break;
+      case PipelineVersion.V1:
+        pipelineStageHelperV1.containsPipelineStage(templateMergeResponseDTO.getMergedPipelineYaml());
+        break;
+      default:
+        throw new InvalidRequestException(String.format("Child pipeline version: %s not supported", pipelineVersion));
+    }
   }
 
   private void containsPipelineStage(String yaml) {
@@ -128,7 +140,18 @@ public class PipelineStageHelper {
         Resource.of("PIPELINE", stepParameters.getPipeline()), PipelineRbacPermissions.PIPELINE_EXECUTE);
   }
 
-  public String getInputSetYaml(YamlField pipelineInputs) {
+  public String getInputSetYaml(YamlField pipelineInputs, String pipelineVersion) {
+    switch (pipelineVersion) {
+      case PipelineVersion.V0:
+        return getInputSetYaml(pipelineInputs);
+      case PipelineVersion.V1:
+        return pipelineStageHelperV1.getInputSet(pipelineInputs);
+      default:
+        throw new InvalidRequestException(String.format("Child pipeline version: %s not supported", pipelineVersion));
+    }
+  }
+
+  private String getInputSetYaml(YamlField pipelineInputs) {
     String inputSetYaml = "";
     if (pipelineInputs != null) {
       JsonNode inputJsonNode = pipelineInputs.getNode().getCurrJsonNode();
@@ -142,19 +165,19 @@ public class PipelineStageHelper {
 
   public PipelineExecutionDetailDTO getResponseDTOWithChildGraph(String accountId, String childStageNodeId,
       PipelineExecutionSummaryEntity executionSummaryEntity, EntityGitDetails entityGitDetails,
-      NodeExecution nodeExecution) {
+      NodeExecution nodeExecution, String stageNodeExecutionId) {
     String childExecutionId = nodeExecution.getExecutableResponses().get(0).getAsync().getCallbackIds(0);
     PmsStepParameters parameters = nodeExecution.getResolvedParams();
 
     String orgId = parameters.get(PipelineStageStepParametersKeys.org).toString();
     String projectId = parameters.get(PipelineStageStepParametersKeys.project).toString();
-    return getExecutionDetailDTO(
-        accountId, childStageNodeId, executionSummaryEntity, entityGitDetails, childExecutionId, orgId, projectId);
+    return getExecutionDetailDTO(accountId, childStageNodeId, executionSummaryEntity, entityGitDetails,
+        childExecutionId, orgId, projectId, stageNodeExecutionId);
   }
 
   private PipelineExecutionDetailDTO getExecutionDetailDTO(String accountId, String childStageNodeId,
       PipelineExecutionSummaryEntity executionSummaryEntity, EntityGitDetails entityGitDetails, String childExecutionId,
-      String orgId, String projectId) {
+      String orgId, String projectId, String stageNodeExecutionId) {
     PipelineExecutionSummaryEntity executionSummaryEntityForChild =
         pmsExecutionService.getPipelineExecutionSummaryEntity(accountId, orgId, projectId, childExecutionId, false);
 
@@ -176,13 +199,14 @@ public class PipelineStageHelper {
         PipelineExecutionDetailDTO.builder().pipelineExecutionSummary(
             PipelineExecutionSummaryDtoMapper.toDto(executionSummaryEntity, entityGitDetails));
 
-    ChildExecutionDetailDTO childGraph =
-        getChildGraph(childStageNodeId, childExecutionId, executionSummaryEntityForChild, entityGitDetailsForChild);
+    ChildExecutionDetailDTO childGraph = getChildGraph(childStageNodeId, childExecutionId,
+        executionSummaryEntityForChild, entityGitDetailsForChild, stageNodeExecutionId);
     return pipelineStageGraphBuilder.childGraph(childGraph).build();
   }
 
   private ChildExecutionDetailDTO getChildGraph(String childStageNodeId, String childExecutionId,
-      PipelineExecutionSummaryEntity executionSummaryEntityForChild, EntityGitDetails entityGitDetailsForChild) {
+      PipelineExecutionSummaryEntity executionSummaryEntityForChild, EntityGitDetails entityGitDetailsForChild,
+      String stageNodeExecutionId) {
     // Top graph for child execution
     ChildExecutionDetailDTOBuilder childGraphBuilder = ChildExecutionDetailDTO.builder().pipelineExecutionSummary(
         PipelineExecutionSummaryDtoMapper.toDto(executionSummaryEntityForChild, entityGitDetailsForChild));
@@ -190,7 +214,7 @@ public class PipelineStageHelper {
     // if child stage node id is not null, add bottom graph for child execution
     if (childStageNodeId != null) {
       childGraphBuilder.executionGraph(ExecutionGraphMapper.toExecutionGraph(
-          pmsExecutionService.getOrchestrationGraph(childStageNodeId, childExecutionId, null),
+          pmsExecutionService.getOrchestrationGraph(childStageNodeId, childExecutionId, stageNodeExecutionId),
           executionSummaryEntityForChild));
     }
     return childGraphBuilder.build();

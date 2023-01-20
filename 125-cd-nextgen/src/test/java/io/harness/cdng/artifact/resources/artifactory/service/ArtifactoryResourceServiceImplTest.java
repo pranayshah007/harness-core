@@ -119,7 +119,7 @@ public class ArtifactoryResourceServiceImplTest extends CategoryTest {
                  .repositories(Collections.singletonMap("repo", "repo"))
                  .build())
         .when(delegateGrpcClientWrapper)
-        .executeSyncTask(any());
+        .executeSyncTaskV2(any());
     doReturn(Collections.singletonList(EncryptedDataDetail.builder().build()))
         .when(secretManagerClientService)
         .getEncryptionDetails(any(), any());
@@ -128,7 +128,7 @@ public class ArtifactoryResourceServiceImplTest extends CategoryTest {
     ArtifactoryRepoDetailsDTO artifactoryRepoDetailsDTO =
         artifactoryResourceService.getRepositories("any", connectorRef, "orgId", "projectId");
 
-    verify(delegateGrpcClientWrapper, times(1)).executeSyncTask(any());
+    verify(delegateGrpcClientWrapper, times(1)).executeSyncTaskV2(any());
     verify(secretManagerClientService, times(1)).getEncryptionDetails(any(), any());
     assertThat(artifactoryRepoDetailsDTO.getRepositories().keySet().size()).isEqualTo(1);
     assertThat(artifactoryRepoDetailsDTO.getRepositories().get("repo")).isEqualTo("repo");
@@ -141,7 +141,7 @@ public class ArtifactoryResourceServiceImplTest extends CategoryTest {
     ConnectorResponseDTO connectorResponseDTO = getConnectorResponseDTO();
     doReturn(ErrorNotifyResponseData.builder().errorMessage("error message").build())
         .when(delegateGrpcClientWrapper)
-        .executeSyncTask(any());
+        .executeSyncTaskV2(any());
     doReturn(Collections.singletonList(EncryptedDataDetail.builder().build()))
         .when(secretManagerClientService)
         .getEncryptionDetails(any(), any());
@@ -160,7 +160,7 @@ public class ArtifactoryResourceServiceImplTest extends CategoryTest {
     doReturn(
         ArtifactoryFetchRepositoriesResponse.builder().commandExecutionStatus(CommandExecutionStatus.FAILURE).build())
         .when(delegateGrpcClientWrapper)
-        .executeSyncTask(any());
+        .executeSyncTaskV2(any());
     doReturn(Collections.singletonList(EncryptedDataDetail.builder().build()))
         .when(secretManagerClientService)
         .getEncryptionDetails(any(), any());
@@ -195,7 +195,7 @@ public class ArtifactoryResourceServiceImplTest extends CategoryTest {
                  .buildDetails(buildDetails)
                  .build())
         .when(delegateGrpcClientWrapper)
-        .executeSyncTask(any());
+        .executeSyncTaskV2(any());
     doReturn(Collections.singletonList(EncryptedDataDetail.builder().build()))
         .when(secretManagerClientService)
         .getEncryptionDetails(any(), any());
@@ -204,7 +204,7 @@ public class ArtifactoryResourceServiceImplTest extends CategoryTest {
     List<ArtifactoryArtifactBuildDetailsDTO> response =
         artifactoryResourceService.getBuildDetails("repoName", "filepath", 10, connectorRef, "orgId", "projectId");
 
-    verify(delegateGrpcClientWrapper, times(1)).executeSyncTask(any());
+    verify(delegateGrpcClientWrapper, times(1)).executeSyncTaskV2(any());
     verify(secretManagerClientService, times(1)).getEncryptionDetails(any(), any());
     assertThat(response.get(0).getArtifactPath()).isEqualTo("artifactPath");
   }
@@ -216,7 +216,7 @@ public class ArtifactoryResourceServiceImplTest extends CategoryTest {
     ConnectorResponseDTO connectorResponseDTO = getConnectorResponseDTO();
     doReturn(ErrorNotifyResponseData.builder().errorMessage("error message").build())
         .when(delegateGrpcClientWrapper)
-        .executeSyncTask(any());
+        .executeSyncTaskV2(any());
     doReturn(Collections.singletonList(EncryptedDataDetail.builder().build()))
         .when(secretManagerClientService)
         .getEncryptionDetails(any(), any());
@@ -227,7 +227,7 @@ public class ArtifactoryResourceServiceImplTest extends CategoryTest {
                                "repoName", "filepath", 10, connectorRef, "orgId", "projectId"))
         .isInstanceOf(ArtifactoryServerException.class)
         .hasMessageContaining("Failed to fetch artifacts - error message");
-    verify(delegateGrpcClientWrapper, times(1)).executeSyncTask(any());
+    verify(delegateGrpcClientWrapper, times(1)).executeSyncTaskV2(any());
     verify(secretManagerClientService, times(1)).getEncryptionDetails(any(), any());
   }
 
@@ -238,7 +238,7 @@ public class ArtifactoryResourceServiceImplTest extends CategoryTest {
     ConnectorResponseDTO connectorResponseDTO = getConnectorResponseDTO();
     doReturn(ArtifactoryFetchBuildsResponse.builder().commandExecutionStatus(CommandExecutionStatus.FAILURE).build())
         .when(delegateGrpcClientWrapper)
-        .executeSyncTask(any());
+        .executeSyncTaskV2(any());
     doReturn(Collections.singletonList(EncryptedDataDetail.builder().build()))
         .when(secretManagerClientService)
         .getEncryptionDetails(any(), any());
@@ -249,7 +249,7 @@ public class ArtifactoryResourceServiceImplTest extends CategoryTest {
                                "repoName", "filepath", 10, connectorRef, "orgId", "projectId"))
         .isInstanceOf(ArtifactoryServerException.class)
         .hasMessageContaining("Failed to fetch artifacts");
-    verify(delegateGrpcClientWrapper, times(1)).executeSyncTask(any());
+    verify(delegateGrpcClientWrapper, times(1)).executeSyncTaskV2(any());
     verify(secretManagerClientService, times(1)).getEncryptionDetails(any(), any());
   }
 
@@ -295,7 +295,7 @@ public class ArtifactoryResourceServiceImplTest extends CategoryTest {
     EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
     when(secretManagerClientService.getEncryptionDetails(any(), any()))
         .thenReturn(Lists.newArrayList(encryptedDataDetail));
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(
             ArtifactTaskResponse.builder()
                 .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
@@ -309,7 +309,7 @@ public class ArtifactoryResourceServiceImplTest extends CategoryTest {
 
     ArgumentCaptor<DelegateTaskRequest> delegateTaskRequestCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
     verify(connectorService).get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "identifier");
-    verify(delegateGrpcClientWrapper).executeSyncTask(delegateTaskRequestCaptor.capture());
+    verify(delegateGrpcClientWrapper).executeSyncTaskV2(delegateTaskRequestCaptor.capture());
     DelegateTaskRequest delegateTaskRequest = delegateTaskRequestCaptor.getValue();
     ArtifactTaskParameters artifactTaskParameters = (ArtifactTaskParameters) delegateTaskRequest.getTaskParameters();
     assertThat(artifactTaskParameters.getArtifactTaskType()).isEqualTo(ArtifactTaskType.GET_BUILDS);
@@ -332,7 +332,7 @@ public class ArtifactoryResourceServiceImplTest extends CategoryTest {
     EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
     when(secretManagerClientService.getEncryptionDetails(any(), any()))
         .thenReturn(Lists.newArrayList(encryptedDataDetail));
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(
             ArtifactTaskResponse.builder()
                 .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
@@ -351,7 +351,7 @@ public class ArtifactoryResourceServiceImplTest extends CategoryTest {
 
     ArgumentCaptor<DelegateTaskRequest> delegateTaskRequestCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
     verify(connectorService).get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "identifier");
-    verify(delegateGrpcClientWrapper).executeSyncTask(delegateTaskRequestCaptor.capture());
+    verify(delegateGrpcClientWrapper).executeSyncTaskV2(delegateTaskRequestCaptor.capture());
     DelegateTaskRequest delegateTaskRequest = delegateTaskRequestCaptor.getValue();
     ArtifactTaskParameters artifactTaskParameters = (ArtifactTaskParameters) delegateTaskRequest.getTaskParameters();
     assertThat(artifactTaskParameters.getArtifactTaskType()).isEqualTo(ArtifactTaskType.GET_LAST_SUCCESSFUL_BUILD);
@@ -373,7 +373,7 @@ public class ArtifactoryResourceServiceImplTest extends CategoryTest {
     EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
     when(secretManagerClientService.getEncryptionDetails(any(), any()))
         .thenReturn(Lists.newArrayList(encryptedDataDetail));
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(
             ArtifactTaskResponse.builder()
                 .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
@@ -391,7 +391,7 @@ public class ArtifactoryResourceServiceImplTest extends CategoryTest {
 
     ArgumentCaptor<DelegateTaskRequest> delegateTaskRequestCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
     verify(connectorService).get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "identifier");
-    verify(delegateGrpcClientWrapper).executeSyncTask(delegateTaskRequestCaptor.capture());
+    verify(delegateGrpcClientWrapper).executeSyncTaskV2(delegateTaskRequestCaptor.capture());
     DelegateTaskRequest delegateTaskRequest = delegateTaskRequestCaptor.getValue();
     ArtifactTaskParameters artifactTaskParameters = (ArtifactTaskParameters) delegateTaskRequest.getTaskParameters();
     assertThat(artifactTaskParameters.getArtifactTaskType()).isEqualTo(ArtifactTaskType.VALIDATE_ARTIFACT_SERVER);
@@ -413,7 +413,7 @@ public class ArtifactoryResourceServiceImplTest extends CategoryTest {
     when(secretManagerClientService.getEncryptionDetails(any(), any()))
         .thenReturn(Lists.newArrayList(encryptedDataDetail));
     List<ArtifactoryImagePath> imagePaths = new ArrayList<>();
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(ArtifactoryFetchImagePathResponse.builder()
                         .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                         .artifactoryImagePathsFetchDTO(imagePaths)
@@ -425,7 +425,7 @@ public class ArtifactoryResourceServiceImplTest extends CategoryTest {
 
     ArgumentCaptor<DelegateTaskRequest> delegateTaskRequestCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
     verify(connectorService).get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "identifier");
-    verify(delegateGrpcClientWrapper).executeSyncTask(delegateTaskRequestCaptor.capture());
+    verify(delegateGrpcClientWrapper).executeSyncTaskV2(delegateTaskRequestCaptor.capture());
     DelegateTaskRequest delegateTaskRequest = delegateTaskRequestCaptor.getValue();
     ArtifactoryTaskParams artifactTaskParameters = (ArtifactoryTaskParams) delegateTaskRequest.getTaskParameters();
     assertThat(artifactTaskParameters.getTaskType()).isEqualTo(FETCH_IMAGE_PATHS);

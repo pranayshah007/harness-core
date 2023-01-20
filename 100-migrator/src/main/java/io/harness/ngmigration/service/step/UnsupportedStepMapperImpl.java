@@ -7,34 +7,38 @@
 
 package io.harness.ngmigration.service.step;
 
+import io.harness.exception.InvalidRequestException;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.plancreator.steps.AbstractStepNode;
 
+import software.wings.beans.GraphNode;
 import software.wings.ngmigration.CgEntityId;
+import software.wings.ngmigration.CgEntityNode;
 import software.wings.sm.State;
-import software.wings.yaml.workflow.StepYaml;
 
 import java.util.Map;
-import org.apache.commons.lang3.NotImplementedException;
 
 public class UnsupportedStepMapperImpl implements StepMapper {
   @Override
-  public String getStepType(StepYaml stepYaml) {
-    throw new NotImplementedException("Unsupported step");
+  public String getStepType(GraphNode stepYaml) {
+    throw new InvalidRequestException(
+        String.format("Unsupported step - %s of type %s", stepYaml.getName(), stepYaml.getType()));
   }
 
   @Override
-  public State getState(StepYaml stepYaml) {
+  public State getState(GraphNode stepYaml) {
     return null;
   }
 
   @Override
-  public AbstractStepNode getSpec(Map<CgEntityId, NGYamlFile> migratedEntities, StepYaml stepYaml) {
-    throw new NotImplementedException("Unsupported step");
+  public AbstractStepNode getSpec(
+      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities, GraphNode graphNode) {
+    throw new InvalidRequestException(
+        String.format("Unsupported step - %s of type %s", graphNode.getName(), graphNode.getType()));
   }
 
   @Override
-  public boolean areSimilar(StepYaml stepYaml1, StepYaml stepYaml2) {
+  public boolean areSimilar(GraphNode stepYaml1, GraphNode stepYaml2) {
     return false;
   }
 }

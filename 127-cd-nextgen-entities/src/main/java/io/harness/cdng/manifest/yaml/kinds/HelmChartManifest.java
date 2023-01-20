@@ -79,6 +79,7 @@ public class HelmChartManifest implements ManifestAttributes, Visitable {
   @ApiModelProperty(dataType = STRING_LIST_CLASSPATH)
   @YamlSchemaTypes({runtime})
   @SkipAutoEvaluation
+  @JsonProperty("valuesPaths")
   ParameterField<List<String>> valuesPaths;
   @Wither
   @ApiModelProperty(dataType = BOOLEAN_CLASSPATH)
@@ -89,6 +90,9 @@ public class HelmChartManifest implements ManifestAttributes, Visitable {
 
   @Override
   public ManifestAttributes applyOverrides(ManifestAttributes overrideConfig) {
+    if (ManifestType.HelmRepoOverride.equals(overrideConfig.getKind())) {
+      return applyHelmRepoOverride(overrideConfig);
+    }
     HelmChartManifest helmChartManifest = (HelmChartManifest) overrideConfig;
     HelmChartManifest resultantManifest = this;
     if (helmChartManifest.getStore() != null && helmChartManifest.getStore().getValue() != null) {
@@ -122,6 +126,15 @@ public class HelmChartManifest implements ManifestAttributes, Visitable {
     }
 
     return resultantManifest;
+  }
+
+  private ManifestAttributes applyHelmRepoOverride(ManifestAttributes overrideConfig) {
+    HelmRepoOverrideManifest helmRepoOverrideManifest = (HelmRepoOverrideManifest) overrideConfig;
+    if (helmRepoOverrideManifest.getStore() != null && helmRepoOverrideManifest.getStore().getValue() != null) {
+      StoreConfigWrapper storeConfigOverride = helmRepoOverrideManifest.getStore().getValue();
+      store = ParameterField.createValueField(store.getValue().applyOverrides(storeConfigOverride));
+    }
+    return this;
   }
 
   @Override

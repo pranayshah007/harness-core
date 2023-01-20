@@ -82,7 +82,7 @@ public class IdentityStepTest extends CategoryTest {
     ExecutableResponse executableResponse = ExecutableResponse.newBuilder().setChild(expectedChildExecutable).build();
     NodeExecution nodeExecution =
         NodeExecution.builder().uuid("nodeUuid").executableResponse(executableResponse).build();
-    doReturn(nodeExecution).when(nodeExecutionService).get(any());
+    doReturn(nodeExecution).when(nodeExecutionService).getWithFieldsIncluded(any(), any());
 
     ChildExecutableResponse childExecutableResponse = identityStep.obtainChild(ambiance, identityParams, null);
     verify(pmsSweepingOutputService, times(1)).cloneForRetryExecution(ambiance, "nodeUuid");

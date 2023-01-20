@@ -12,5 +12,5 @@ if [ "${PLATFORM}" == "jenkins" ]; then
 fi
 BAZEL_DIRS=${HOME}/.bazel-dirs
 BAZEL_ARGUMENTS="--show_timestamps --announce_rc --experimental_convenience_symlinks=normal --remote_download_outputs=all --symlink_prefix=${BAZEL_DIRS}/"
-STO_MODULE="//310-iacm-manager:module //310-iacm-manager:module_deploy.jar"
-bazel ${bazelrc} build $STO_MODULE ${BAZEL_ARGUMENTS}
+IACM_MODULE="//310-iacm-manager/app:module //310-iacm-manager/app:module_deploy.jar"
+bazel ${bazelrc} build $IACM_MODULE ${BAZEL_ARGUMENTS}

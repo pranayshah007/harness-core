@@ -7,13 +7,13 @@
 
 package io.harness.ng.core.environment.resources;
 
+import static io.harness.NGCommonEntityConstants.FORCE_DELETE_MESSAGE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.ng.accesscontrol.PlatformPermissions.VIEW_PROJECT_PERMISSION;
-import static io.harness.ng.accesscontrol.PlatformResourceTypes.PROJECT;
-import static io.harness.ng.core.environment.mappers.EnvironmentMapper.checkDuplicateConfigFilesIdentifiersWithIn;
-import static io.harness.ng.core.environment.mappers.EnvironmentMapper.checkDuplicateManifestIdentifiersWithIn;
 import static io.harness.ng.core.environment.mappers.EnvironmentMapper.toNGEnvironmentConfig;
+import static io.harness.ng.core.environment.validator.EnvironmentV2ManifestValidator.checkDuplicateConfigFilesIdentifiersWithIn;
+import static io.harness.ng.core.environment.validator.EnvironmentV2ManifestValidator.checkDuplicateManifestIdentifiersWithIn;
+import static io.harness.ng.core.environment.validator.EnvironmentV2ManifestValidator.validateNoMoreThanOneHelmOverridePresent;
 import static io.harness.ng.core.serviceoverride.mapper.NGServiceOverrideEntityConfigMapper.toNGServiceOverrideConfig;
 import static io.harness.pms.rbac.NGResourceType.ENVIRONMENT;
 import static io.harness.pms.rbac.NGResourceType.SERVICE;
@@ -21,6 +21,7 @@ import static io.harness.rbac.CDNGRbacPermissions.ENVIRONMENT_CREATE_PERMISSION;
 import static io.harness.rbac.CDNGRbacPermissions.ENVIRONMENT_UPDATE_PERMISSION;
 import static io.harness.rbac.CDNGRbacPermissions.ENVIRONMENT_VIEW_PERMISSION;
 import static io.harness.rbac.CDNGRbacPermissions.SERVICE_UPDATE_PERMISSION;
+import static io.harness.utils.IdentifierRefHelper.MAX_RESULT_THRESHOLD_FOR_SPLIT;
 import static io.harness.utils.PageUtils.getNGPageResponse;
 
 import static java.lang.Long.parseLong;
@@ -44,6 +45,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
+import io.harness.beans.Scope;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.envGroup.services.EnvironmentGroupService;
 import io.harness.data.structure.EmptyPredicate;
@@ -69,6 +71,7 @@ import io.harness.ng.core.environment.mappers.EnvironmentFilterHelper;
 import io.harness.ng.core.environment.mappers.EnvironmentMapper;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
+import io.harness.ng.core.remote.utils.ScopeAccessHelper;
 import io.harness.ng.core.service.ServiceEntityValidationHelper;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity.NGServiceOverridesEntityKeys;
@@ -178,6 +181,8 @@ public class EnvironmentResourceV2 {
   private final EnvironmentGroupService environmentGroupService;
   private final CDOverviewDashboardService cdOverviewDashboardService;
   private final NGFeatureFlagHelperService featureFlagHelperService;
+  private final ScopeAccessHelper scopeAccessHelper;
+  private EnvironmentEntityYamlSchemaHelper environmentEntityYamlSchemaHelper;
 
   public static final String ENVIRONMENT_YAML_METADATA_INPUT_PARAM_MESSAGE =
       "Lists of Environment Identifiers and service identifiers for the entities";
@@ -246,6 +251,7 @@ public class EnvironmentResourceV2 {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, environmentRequestDTO.getOrgIdentifier(),
                                                   environmentRequestDTO.getProjectIdentifier()),
         Resource.of(ENVIRONMENT, null, environmentAttributes), ENVIRONMENT_CREATE_PERMISSION);
+    environmentEntityYamlSchemaHelper.validateSchema(accountId, environmentRequestDTO.getYaml());
     Environment environmentEntity = EnvironmentMapper.toEnvironmentEntity(accountId, environmentRequestDTO);
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(environmentEntity.getOrgIdentifier(),
         environmentEntity.getProjectIdentifier(), environmentEntity.getAccountId());
@@ -277,9 +283,11 @@ public class EnvironmentResourceV2 {
       @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
-          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier) {
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+      @Parameter(description = FORCE_DELETE_MESSAGE) @QueryParam(NGCommonEntityConstants.FORCE_DELETE) @DefaultValue(
+          "false") boolean forceDelete) {
     return ResponseDTO.newResponse(environmentService.delete(accountId, orgIdentifier, projectIdentifier,
-        environmentIdentifier, isNumeric(ifMatch) ? parseLong(ifMatch) : null));
+        environmentIdentifier, isNumeric(ifMatch) ? parseLong(ifMatch) : null, forceDelete));
   }
 
   @PUT
@@ -302,7 +310,7 @@ public class EnvironmentResourceV2 {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, environmentRequestDTO.getOrgIdentifier(),
                                                   environmentRequestDTO.getProjectIdentifier()),
         Resource.of(ENVIRONMENT, environmentRequestDTO.getIdentifier()), ENVIRONMENT_UPDATE_PERMISSION);
-
+    environmentEntityYamlSchemaHelper.validateSchema(accountId, environmentRequestDTO.getYaml());
     Environment requestEnvironment = EnvironmentMapper.toEnvironmentEntity(accountId, environmentRequestDTO);
     requestEnvironment.setVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
     Environment updatedEnvironment = environmentService.update(requestEnvironment);
@@ -331,7 +339,7 @@ public class EnvironmentResourceV2 {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, environmentRequestDTO.getOrgIdentifier(),
                                                   environmentRequestDTO.getProjectIdentifier()),
         Resource.of(ENVIRONMENT, environmentRequestDTO.getIdentifier()), ENVIRONMENT_UPDATE_PERMISSION);
-
+    environmentEntityYamlSchemaHelper.validateSchema(accountId, environmentRequestDTO.getYaml());
     Environment requestEnvironment = EnvironmentMapper.toEnvironmentEntity(accountId, environmentRequestDTO);
     requestEnvironment.setVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(requestEnvironment.getOrgIdentifier(),
@@ -444,11 +452,16 @@ public class EnvironmentResourceV2 {
       @QueryParam("sort") List<String> sort,
       @RequestBody(description = "This is the body for the filter properties for listing environments.")
       EnvironmentFilterPropertiesDTO filterProperties,
-      @QueryParam(NGResourceFilterConstants.FILTER_KEY) String filterIdentifier) {
+      @QueryParam(NGResourceFilterConstants.FILTER_KEY) String filterIdentifier,
+      @Parameter(
+          description =
+              "Specify true if all accessible environments are to be included. Returns environments at account/org/project level.")
+      @QueryParam(NGResourceFilterConstants.INCLUDE_ALL_ACCESSIBLE_AT_SCOPE) @DefaultValue(
+          "false") boolean includeAllAccessibleAtScope) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
         Resource.of(ENVIRONMENT, null), ENVIRONMENT_VIEW_PERMISSION, "Unauthorized to list environments");
-    Criteria criteria = environmentFilterHelper.createCriteriaForGetList(
-        accountId, orgIdentifier, projectIdentifier, false, searchTerm, filterIdentifier, filterProperties);
+    Criteria criteria = environmentFilterHelper.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier,
+        false, searchTerm, filterIdentifier, filterProperties, includeAllAccessibleAtScope);
     Pageable pageRequest;
 
     if (isNotEmpty(envIdentifiers)) {
@@ -498,8 +511,10 @@ public class EnvironmentResourceV2 {
           description =
               "Specifies sorting criteria of the list. Like sorting based on the last updated entity, alphabetical sorting in an ascending or descending order")
       @QueryParam("sort") List<String> sort) {
-    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
-        Resource.of(PROJECT, projectIdentifier), VIEW_PROJECT_PERMISSION, "Unauthorized to list environments");
+    accessControlClient.checkForAccessOrThrow(List.of(scopeAccessHelper.getPermissionCheckDtoForViewAccessForScope(
+                                                  Scope.of(accountId, orgIdentifier, projectIdentifier))),
+        "Unauthorized to list environments");
+
     Criteria criteria;
     if (isEmpty(envIdentifiers) && isNotEmpty(envGroupIdentifier)) {
       Optional<EnvironmentGroupEntity> environmentGroupEntity =
@@ -645,6 +660,7 @@ public class EnvironmentResourceV2 {
       }
 
       checkDuplicateManifestIdentifiersWithIn(serviceOverrideInfoConfig.getManifests());
+      validateNoMoreThanOneHelmOverridePresent(serviceOverrideInfoConfig.getManifests());
       checkDuplicateConfigFilesIdentifiersWithIn(serviceOverrideInfoConfig.getConfigFiles());
     }
   }
@@ -753,9 +769,9 @@ public class EnvironmentResourceV2 {
           "environmentIdentifier") @ResourceIdentifier String environmentIdentifier,
       @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
-      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @NotNull @QueryParam(
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
-      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @NotNull @QueryParam(
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier) {
     String environmentInputsYaml = environmentService.createEnvironmentInputsYaml(
         accountId, orgIdentifier, projectIdentifier, environmentIdentifier);
@@ -773,9 +789,9 @@ public class EnvironmentResourceV2 {
           NGCommonEntityConstants.ENVIRONMENT_IDENTIFIER_KEY) @ResourceIdentifier String environmentIdentifier,
       @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
-      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @NotNull @QueryParam(
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
-      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @NotNull @QueryParam(
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
       @Parameter(description = NGCommonEntityConstants.SERVICE_PARAM_MESSAGE) @NotNull @QueryParam(
           NGCommonEntityConstants.SERVICE_IDENTIFIER_KEY) @ResourceIdentifier String serviceIdentifier) {
@@ -802,18 +818,45 @@ public class EnvironmentResourceV2 {
   private void checkForServiceOverrideUpdateAccess(
       String accountId, String orgIdentifier, String projectIdentifier, String environmentRef, String serviceRef) {
     final List<PermissionCheckDTO> permissionCheckDTOList = new ArrayList<>();
-    permissionCheckDTOList.add(PermissionCheckDTO.builder()
-                                   .permission(ENVIRONMENT_UPDATE_PERMISSION)
-                                   .resourceIdentifier(environmentRef)
-                                   .resourceType(ENVIRONMENT)
-                                   .resourceScope(ResourceScope.of(accountId, orgIdentifier, projectIdentifier))
-                                   .build());
-    permissionCheckDTOList.add(PermissionCheckDTO.builder()
-                                   .permission(SERVICE_UPDATE_PERMISSION)
-                                   .resourceIdentifier(serviceRef)
-                                   .resourceType(SERVICE)
-                                   .resourceScope(ResourceScope.of(accountId, orgIdentifier, projectIdentifier))
-                                   .build());
+    String[] envRefSplit = StringUtils.split(environmentRef, ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
+    if (envRefSplit == null || envRefSplit.length == 1) {
+      permissionCheckDTOList.add(PermissionCheckDTO.builder()
+                                     .permission(ENVIRONMENT_UPDATE_PERMISSION)
+                                     .resourceIdentifier(environmentRef)
+                                     .resourceType(ENVIRONMENT)
+                                     .resourceScope(ResourceScope.of(accountId, orgIdentifier, projectIdentifier))
+                                     .build());
+    } else {
+      IdentifierRef envIdentifierRef =
+          IdentifierRefHelper.getIdentifierRef(environmentRef, accountId, orgIdentifier, projectIdentifier);
+      permissionCheckDTOList.add(PermissionCheckDTO.builder()
+                                     .permission(ENVIRONMENT_UPDATE_PERMISSION)
+                                     .resourceIdentifier(envIdentifierRef.getIdentifier())
+                                     .resourceType(ENVIRONMENT)
+                                     .resourceScope(ResourceScope.of(envIdentifierRef.getAccountIdentifier(),
+                                         envIdentifierRef.getOrgIdentifier(), envIdentifierRef.getProjectIdentifier()))
+                                     .build());
+    }
+    String[] serviceRefSplit = StringUtils.split(serviceRef, ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
+    if (serviceRefSplit == null || serviceRefSplit.length == 1) {
+      permissionCheckDTOList.add(PermissionCheckDTO.builder()
+                                     .permission(SERVICE_UPDATE_PERMISSION)
+                                     .resourceIdentifier(serviceRef)
+                                     .resourceType(SERVICE)
+                                     .resourceScope(ResourceScope.of(accountId, orgIdentifier, projectIdentifier))
+                                     .build());
+    } else {
+      IdentifierRef serviceIdentifierRef =
+          IdentifierRefHelper.getIdentifierRef(serviceRef, accountId, orgIdentifier, projectIdentifier);
+      permissionCheckDTOList.add(
+          PermissionCheckDTO.builder()
+              .permission(SERVICE_UPDATE_PERMISSION)
+              .resourceIdentifier(serviceIdentifierRef.getIdentifier())
+              .resourceType(SERVICE)
+              .resourceScope(ResourceScope.of(serviceIdentifierRef.getAccountIdentifier(),
+                  serviceIdentifierRef.getOrgIdentifier(), serviceIdentifierRef.getProjectIdentifier()))
+              .build());
+    }
 
     final AccessCheckResponseDTO accessCheckResponse = accessControlClient.checkForAccess(permissionCheckDTOList);
     accessCheckResponse.getAccessControlList().forEach(accessControlDTO -> {

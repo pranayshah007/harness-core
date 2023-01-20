@@ -18,18 +18,19 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.harness.accesscontrol.acl.api.AccessCheckResponseDTO;
 import io.harness.accesscontrol.acl.api.Principal;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.beans.common.VariablesSweepingOutput;
 import io.harness.category.element.UnitTests;
-import io.harness.cdng.NgExpressionHelper;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.freeze.FreezeOutcome;
 import io.harness.cdng.gitops.steps.GitOpsEnvOutCome;
+import io.harness.cdng.helpers.NgExpressionHelper;
 import io.harness.cdng.manifest.steps.ManifestsOutcome;
 import io.harness.cdng.manifest.yaml.kinds.K8sManifest;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
@@ -132,6 +133,10 @@ public class ServiceStepV3Test {
     doReturn(OptionalSweepingOutput.builder().found(false).build())
         .when(sweepingOutputService)
         .resolveOptional(any(Ambiance.class), any());
+
+    doReturn(AccessCheckResponseDTO.builder().accessControlList(List.of()).build())
+        .when(accessControlClient)
+        .checkForAccess(any(Principal.class), anyList());
   }
   @After
   public void tearDown() throws Exception {
@@ -314,7 +319,8 @@ public class ServiceStepV3Test {
             .build(),
         null);
 
-    verify(serviceStepsHelper).checkForVariablesAccessOrThrow(any(Ambiance.class), any(NGServiceConfig.class));
+    verify(serviceStepsHelper)
+        .checkForVariablesAccessOrThrow(any(Ambiance.class), any(NGServiceConfig.class), anyString());
 
     ArgumentCaptor<ExecutionSweepingOutput> captor = ArgumentCaptor.forClass(ExecutionSweepingOutput.class);
     ArgumentCaptor<String> stringCaptor = ArgumentCaptor.forClass(String.class);

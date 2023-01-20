@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
+import static io.harness.rule.OwnerRule.ABHINAV2;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ANSHUL;
 import static io.harness.rule.OwnerRule.TATHAGAT;
@@ -19,6 +20,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyMap;
@@ -36,6 +38,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.exception.InvalidRequestException;
+import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.K8sPod;
@@ -43,6 +46,8 @@ import io.harness.k8s.model.Kind;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
+import io.harness.k8s.releasehistory.IK8sRelease;
+import io.harness.k8s.releasehistory.IK8sReleaseHistory;
 import io.harness.k8s.releasehistory.K8sLegacyRelease;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
@@ -304,6 +309,39 @@ public class K8sRollingBaseHandlerTest extends CategoryTest {
         true, false, asList(resource1, resource2), singletonList(resource1));
     verify(resource1, times(1)).addLabelsInDeploymentSelector(anyMap());
     verify(resource2, times(1)).addLabelsInDeploymentSelector(anyMap());
+  }
+
+  @Test
+  @Owner(developers = ABHINAV2)
+  @Category(UnitTests.class)
+  public void testFetchLastSuccessfulReleaseFromOldReleaseHistory() throws Exception {
+    K8sReleaseHandler releaseHandler = mock(K8sReleaseHandler.class);
+    IK8sReleaseHistory oldReleaseHistory = mock(IK8sReleaseHistory.class);
+    IK8sReleaseHistory currentReleaseHistory = mock(IK8sReleaseHistory.class);
+    IK8sRelease lastSuccessfulRelease = mock(IK8sRelease.class);
+
+    doReturn(releaseHandler).when(k8sTaskHelperBase).getReleaseHandler(false);
+    doReturn(null).when(currentReleaseHistory).getLastSuccessfulRelease(anyInt());
+    doReturn(oldReleaseHistory).when(releaseHandler).getReleaseHistory(any(), any());
+    doReturn(lastSuccessfulRelease).when(oldReleaseHistory).getLastSuccessfulRelease(anyInt());
+
+    assertThat(k8sRollingBaseHandler.getLastSuccessfulRelease(true, currentReleaseHistory, 1, null, null))
+        .isEqualTo(lastSuccessfulRelease);
+    verify(k8sTaskHelperBase).getReleaseHandler(false);
+  }
+
+  @Test
+  @Owner(developers = ABHINAV2)
+  @Category(UnitTests.class)
+  public void testFetchLastSuccessfulReleaseFromCurrentRelease() throws Exception {
+    IK8sReleaseHistory currentReleaseHistory = mock(IK8sReleaseHistory.class);
+    IK8sRelease lastSuccessfulRelease = mock(IK8sRelease.class);
+
+    doReturn(lastSuccessfulRelease).when(currentReleaseHistory).getLastSuccessfulRelease(anyInt());
+
+    assertThat(k8sRollingBaseHandler.getLastSuccessfulRelease(true, currentReleaseHistory, 1, null, null))
+        .isEqualTo(lastSuccessfulRelease);
+    verify(k8sTaskHelperBase, never()).getReleaseHandler(false);
   }
 
   private void prepareMockedKubernetesResource(KubernetesResource resource) {

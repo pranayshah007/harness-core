@@ -44,6 +44,7 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.outbox.api.OutboxService;
+import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.security.annotations.PublicApi;
 import io.harness.telemetry.Category;
 import io.harness.telemetry.TelemetryReporter;
@@ -116,8 +117,7 @@ import retrofit2.Response;
       @ApiResponse(code = 400, response = FailureDTO.class, message = "Bad Request")
       , @ApiResponse(code = 500, response = ErrorDTO.class, message = "Internal server error")
     })
-// @NextGenManagerAuth
-@PublicApi
+@NextGenManagerAuth
 public class GovernanceRuleEnforcementResource {
   public static final String ACCOUNT_ID = "accountId";
   public static final String EXECUTION_SCHEDULE = "executionSchedule";
@@ -261,7 +261,7 @@ public class GovernanceRuleEnforcementResource {
         Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
 
     return ResponseDTO.newResponse(Failsafe.with(transactionRetryRule).get(() -> transactionTemplate.execute(status -> {
-      outboxService.save(new RuleEnforcementCreateEvent(accountId, ruleEnforcement));
+      outboxService.save(new RuleEnforcementCreateEvent(accountId, ruleEnforcement.toDTO()));
       return ruleEnforcementService.listName(accountId, ruleEnforcement.getName(), false);
     })));
   }
@@ -298,14 +298,14 @@ public class GovernanceRuleEnforcementResource {
         log.error("Error in deleting job from dkron", e);
       }
     }
+    RuleEnforcement ruleEnforcement = ruleEnforcementService.listId(accountId, uuid, false);
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(MODULE, MODULE_NAME);
-    properties.put(RULE_ENFORCEMENT_NAME, ruleEnforcementService.listId(accountId, uuid, false).getName());
+    properties.put(RULE_ENFORCEMENT_NAME, ruleEnforcement.getName());
     telemetryReporter.sendTrackEvent(GOVERNANCE_RULE_ENFORCEMENT_DELETE, null, accountId, properties,
         Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
     return ResponseDTO.newResponse(Failsafe.with(transactionRetryRule).get(() -> transactionTemplate.execute(status -> {
-      outboxService.save(
-          new RuleEnforcementDeleteEvent(accountId, ruleEnforcementService.listId(accountId, uuid, false)));
+      outboxService.save(new RuleEnforcementDeleteEvent(accountId, ruleEnforcement.toDTO()));
       return ruleEnforcementService.delete(accountId, uuid);
     })));
   }
@@ -347,6 +347,7 @@ public class GovernanceRuleEnforcementResource {
     properties.put(RULE_ENFORCEMENT_NAME, ruleEnforcement.getName());
     telemetryReporter.sendTrackEvent(GOVERNANCE_RULE_ENFORCEMENT_UPDATED, null, accountId, properties,
         Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
+
     // Update dkron if enforcement is toggled
     if (configuration.getGovernanceConfig().isUseDkron()
         && !Objects.equals(ruleEnforcementFromMongo.getIsEnabled(), ruleEnforcement.getIsEnabled())) {
@@ -361,7 +362,8 @@ public class GovernanceRuleEnforcementResource {
       }
     }
     return ResponseDTO.newResponse(Failsafe.with(transactionRetryRule).get(() -> transactionTemplate.execute(status -> {
-      outboxService.save(new RuleEnforcementUpdateEvent(accountId, ruleEnforcement));
+      outboxService.save(
+          new RuleEnforcementUpdateEvent(accountId, ruleEnforcement.toDTO(), ruleEnforcementFromMongo.toDTO()));
       return ruleEnforcementService.update(ruleEnforcement);
     })));
   }

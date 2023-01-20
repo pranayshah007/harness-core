@@ -19,4 +19,5 @@ import lombok.NonNull;
 public interface CurrencyPreferenceHelper {
   Double getDestinationCurrencyConversionFactor(
       @NonNull String accountId, @NonNull CloudServiceProvider cloudServiceProvider, @NonNull Currency sourceCurrency);
+  Currency getDestinationCurrency(@NonNull String accountId);
 }

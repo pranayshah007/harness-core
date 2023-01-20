@@ -69,11 +69,17 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImpl
   @Override
   public ResolvedCVConfigInfo fetchAndPersistResolvedCVConfigInfo(
       ServiceEnvironmentParams serviceEnvironmentParams, MonitoredServiceNode monitoredServiceNode) {
-    ResolvedCVConfigInfoBuilder resolvedCVConfigInfoBuilder = ResolvedCVConfigInfo.builder();
+    TemplateMonitoredServiceSpec templateMonitoredServiceSpec =
+        (TemplateMonitoredServiceSpec) monitoredServiceNode.getSpec();
     String executionIdentifier = generateUuid();
-    resolvedCVConfigInfoBuilder.monitoredServiceIdentifier(executionIdentifier);
+    ResolvedCVConfigInfoBuilder resolvedCVConfigInfoBuilder =
+        ResolvedCVConfigInfo.builder()
+            .monitoredServiceIdentifier(executionIdentifier)
+            .monitoredServiceTemplateIdentifier(
+                templateMonitoredServiceSpec.getMonitoredServiceTemplateRef().getValue())
+            .monitoredServiceTemplateVersionLabel(templateMonitoredServiceSpec.getVersionLabel());
     populateSourceDataFromTemplate(
-        serviceEnvironmentParams, monitoredServiceNode, resolvedCVConfigInfoBuilder, executionIdentifier);
+        serviceEnvironmentParams, templateMonitoredServiceSpec, resolvedCVConfigInfoBuilder, executionIdentifier);
     return resolvedCVConfigInfoBuilder.build();
   }
 
@@ -109,10 +115,8 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImpl
   }
 
   private void populateSourceDataFromTemplate(ServiceEnvironmentParams serviceEnvironmentParams,
-      MonitoredServiceNode monitoredServiceNode, ResolvedCVConfigInfoBuilder resolvedCVConfigInfoBuilder,
-      String executionIdentifier) {
-    TemplateMonitoredServiceSpec templateMonitoredServiceSpec =
-        (TemplateMonitoredServiceSpec) monitoredServiceNode.getSpec();
+      TemplateMonitoredServiceSpec templateMonitoredServiceSpec,
+      ResolvedCVConfigInfoBuilder resolvedCVConfigInfoBuilder, String executionIdentifier) {
     MonitoredServiceDTO monitoredServiceDTO = monitoredServiceService.getExpandedMonitoredServiceFromYaml(
         ProjectParams.builder()
             .accountIdentifier(serviceEnvironmentParams.getAccountIdentifier())

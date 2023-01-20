@@ -23,7 +23,7 @@ import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineServiceImpl;
 import io.harness.pms.pipelinestage.PipelineStageStepParameters;
-import io.harness.pms.pipelinestage.v1.helper.PipelineStageHelperV1;
+import io.harness.pms.pipelinestage.helper.PipelineStageHelper;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
@@ -51,7 +51,7 @@ import org.mockito.junit.MockitoRule;
 
 public class PipelineStagePlanCreatorV1Test {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
-  @Mock PipelineStageHelperV1 pipelineStageHelper;
+  @Mock PipelineStageHelper pipelineStageHelper;
   @Mock KryoSerializer kryoSerializer;
   @Mock PMSPipelineServiceImpl pmsPipelineService;
   @InjectMocks PipelineStagePlanCreatorV1 pipelineStagePlanCreator;
@@ -95,10 +95,10 @@ public class PipelineStagePlanCreatorV1Test {
                                      .project(PROJ)
                                      .inputSetReferences(Collections.singletonList("ref"))
                                      .build();
-    doReturn("inputYaml").when(pipelineStageHelper).getInputSet(yamlField);
+    doReturn("inputYaml").when(pipelineStageHelper).getInputSetYaml(yamlField, PipelineVersion.V1);
 
     PipelineStageStepParameters stepParameters =
-        pipelineStagePlanCreator.getStepParameter(config, yamlField, "planNodeId");
+        pipelineStagePlanCreator.getStepParameter(config, yamlField, "planNodeId", PipelineVersion.V1);
     assertThat(stepParameters.getPipeline()).isEqualTo(PIPELINE);
     assertThat(stepParameters.getOrg()).isEqualTo(ORG);
     assertThat(stepParameters.getProject()).isEqualTo(PROJ);

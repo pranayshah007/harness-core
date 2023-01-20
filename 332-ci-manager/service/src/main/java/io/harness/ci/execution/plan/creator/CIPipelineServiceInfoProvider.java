@@ -13,7 +13,6 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.STRATEGY;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.beans.steps.StepSpecTypeConstants;
 import io.harness.ci.creator.variables.ActionStepVariableCreator;
 import io.harness.ci.creator.variables.ArtifactoryUploadStepVariableCreator;
@@ -62,8 +61,10 @@ import io.harness.ci.plancreator.S3UploadStepPlanCreator;
 import io.harness.ci.plancreator.SaveCacheGCSStepPlanCreator;
 import io.harness.ci.plancreator.SaveCacheS3StepPlanCreator;
 import io.harness.ci.plancreator.SecurityStepPlanCreator;
+import io.harness.ci.plancreator.V1.BackgroundStepPlanCreatorV1;
 import io.harness.ci.plancreator.V1.PluginStepPlanCreatorV1;
 import io.harness.ci.plancreator.V1.RunStepPlanCreatorV1;
+import io.harness.ci.plancreator.V1.TestStepPlanCreator;
 import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.filters.EmptyAnyFilterJsonCreator;
 import io.harness.filters.ExecutionPMSFilterJsonCreator;
@@ -134,6 +135,8 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
     planCreators.add(new CIStepsPlanCreator());
     planCreators.add(new RunStepPlanCreatorV1());
     planCreators.add(new PluginStepPlanCreatorV1());
+    planCreators.add(new TestStepPlanCreator());
+    planCreators.add(new BackgroundStepPlanCreatorV1());
 
     injectorUtils.injectMembers(planCreators);
     return planCreators;
@@ -244,16 +247,21 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
     StepInfo securityStepInfo = StepInfo.newBuilder()
                                     .setName("Security")
                                     .setType(StepSpecTypeConstants.SECURITY)
-                                    .setFeatureFlag(FeatureName.SECURITY.name())
                                     .setFeatureRestrictionName(FeatureRestrictionName.SECURITY.name())
                                     .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Security").build())
                                     .build();
 
     StepInfo actionStepInfo = StepInfo.newBuilder()
-                                  .setName("Action")
+                                  .setName("Github Action plugin")
                                   .setType(StepSpecTypeConstants.ACTION)
                                   .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Build").build())
                                   .build();
+
+    StepInfo bitriseStepInfo = StepInfo.newBuilder()
+                                   .setName("Bitrise plugin")
+                                   .setType(StepSpecTypeConstants.BITRISE)
+                                   .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Build").build())
+                                   .build();
 
     StepInfo ecrPushBuilds =
         StepInfo.newBuilder()
@@ -321,7 +329,8 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
     stepInfos.add(saveCacheToGCS);
     stepInfos.add(gitCloneStepInfo);
     stepInfos.add(saveCacheToS3);
-    //    stepInfos.add(actionStepInfo);
+    stepInfos.add(actionStepInfo);
+    stepInfos.add(bitriseStepInfo);
 
     return stepInfos;
   }

@@ -33,11 +33,11 @@ import software.wings.security.annotations.AuthRule;
 import software.wings.service.intfc.AppService;
 
 import com.google.inject.Inject;
+import dev.morphia.query.Query;
+import dev.morphia.query.Sort;
 import graphql.schema.DataFetchingEnvironment;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
 
 @OwnedBy(CDC)
 @Slf4j

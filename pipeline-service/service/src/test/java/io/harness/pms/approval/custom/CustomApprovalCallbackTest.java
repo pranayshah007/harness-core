@@ -42,7 +42,7 @@ import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
-import io.harness.servicenow.TicketNG;
+import io.harness.servicenow.misc.TicketNG;
 import io.harness.shell.ExecuteCommandResponse;
 import io.harness.shell.ShellExecutionData;
 import io.harness.steps.approval.step.ApprovalInstanceService;

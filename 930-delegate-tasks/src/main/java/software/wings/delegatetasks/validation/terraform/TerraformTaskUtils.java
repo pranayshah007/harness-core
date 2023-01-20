@@ -20,7 +20,9 @@ import io.harness.provision.TfVarSource;
 import io.harness.provision.TfVarSource.TfVarSourceType;
 
 import software.wings.api.terraform.TfVarGitSource;
+import software.wings.api.terraform.TfVarS3Source;
 
+import com.amazonaws.services.s3.AmazonS3URI;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
 import com.google.inject.Singleton;
@@ -67,6 +69,16 @@ public class TerraformTaskUtils {
     } else if (tfVarSource.getTfVarSourceType() == TfVarSourceType.GIT) {
       TfVarGitSource source = (TfVarGitSource) tfVarSource;
       filePathList = source.getGitFileConfig().getFilePathList();
+      directory = tfVarDirectory;
+    } else if (tfVarSource.getTfVarSourceType() == TfVarSourceType.S3) {
+      TfVarS3Source source = (TfVarS3Source) tfVarSource;
+      List<String> s3URIList = source.getS3FileConfig().getS3URIList();
+      List<String> s3FilePathList = new ArrayList<>();
+      s3URIList.forEach(uri -> {
+        AmazonS3URI s3URI = new AmazonS3URI(uri);
+        s3FilePathList.add(s3URI.getKey());
+      });
+      filePathList = s3FilePathList;
       directory = tfVarDirectory;
     } else {
       filePathList = null;
