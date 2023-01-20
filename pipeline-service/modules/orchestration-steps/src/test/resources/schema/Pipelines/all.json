@@ -525,7 +525,8 @@
       "type": "object",
       "required": [
         "key",
-        "operator"
+        "operator",
+        "value"
       ],
       "properties": {
         "key": {

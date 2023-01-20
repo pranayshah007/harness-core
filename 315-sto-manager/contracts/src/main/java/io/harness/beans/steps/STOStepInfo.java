@@ -8,6 +8,7 @@
 package io.harness.beans.steps;
 
 import static io.harness.annotations.dev.HarnessTeam.STO;
+import static io.harness.beans.steps.stepinfo.SecurityStepInfo.DEFAULT_RETRY;
 
 import io.harness.advisers.rollback.OnFailRollbackParameters;
 import io.harness.annotations.dev.OwnedBy;
@@ -75,9 +76,18 @@ public interface STOStepInfo extends StepSpecType, WithStepElementParameters, Sp
   long DEFAULT_TIMEOUT = Duration.ofHours(2).toMillis();
 
   @JsonIgnore TypeInfo getNonYamlInfo();
-  @JsonIgnore int getRetry();
-  @JsonIgnore String getName();
-  @JsonIgnore String getIdentifier();
+  @JsonIgnore
+  default int getRetry() {
+    return DEFAULT_RETRY;
+  }
+  @JsonIgnore
+  default String getName() {
+    return "";
+  }
+  @JsonIgnore
+  default String getIdentifier() {
+    return "";
+  }
   @JsonIgnore
   default long getDefaultTimeout() {
     return DEFAULT_TIMEOUT;

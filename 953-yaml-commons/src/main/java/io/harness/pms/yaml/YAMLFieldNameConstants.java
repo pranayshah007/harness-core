@@ -100,4 +100,8 @@ public class YAMLFieldNameConstants {
   public final String DEFAULT = "default";
   public final String REFERENCE = "reference";
   public final String REGISTRY = "registry";
+
+  public final String VALUES_PATHS = "valuesPaths";
+  public final String PARAMS_PATHS = "paramsPaths";
+  public final String PATCHES_PATHS = "patchesPaths";
 }

@@ -103,13 +103,13 @@ public class GitOpsInstanceSyncResource {
         List<GitOpsInstance> processedInstances =
             prepareInstanceSync(accountId, orgId, projectId, instancesPerProject.getValue());
 
-        if (processedInstances.isEmpty()) {
+        if (isEmpty(processedInstances)) {
           continue;
         }
         List<InstanceDTO> instanceDTOs =
             gitOpsRequestDTOMapper.toInstanceDTOList(accountId, orgId, projectId, processedInstances);
 
-        if (instanceDTOs.isEmpty()) {
+        if (isEmpty(instanceDTOs)) {
           continue;
         }
         response = response

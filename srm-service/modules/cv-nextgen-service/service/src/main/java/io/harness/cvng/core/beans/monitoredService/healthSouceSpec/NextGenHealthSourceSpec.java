@@ -219,23 +219,27 @@ public class NextGenHealthSourceSpec extends MetricHealthSourceSpec {
   @JsonIgnore
   @Deprecated
   public List<HealthSourceMetricDefinition> getMetricDefinitions() {
-    return queryDefinitions.stream()
-        .map(queryDefinition
-            -> HealthSourceMetricDefinition.builder()
-                   .metricName(queryDefinition.getName())
-                   .identifier(queryDefinition.getIdentifier())
-                   .riskProfile(queryDefinition.getRiskProfile())
-                   .sli(HealthSourceMetricDefinition.SLIDTO.builder().enabled(queryDefinition.getSliEnabled()).build())
-                   .analysis(HealthSourceMetricDefinition.AnalysisDTO.builder()
-                                 .liveMonitoring(HealthSourceMetricDefinition.AnalysisDTO.LiveMonitoringDTO.builder()
-                                                     .enabled(queryDefinition.getLiveMonitoringEnabled())
-                                                     .build())
-                                 .deploymentVerification(
-                                     HealthSourceMetricDefinition.AnalysisDTO.DeploymentVerificationDTO.builder()
-                                         .enabled(queryDefinition.getContinuousVerificationEnabled())
-                                         .build())
-                                 .build())
-                   .build())
-        .collect(Collectors.toList());
+    if (DataSourceType.getTimeSeriesTypes().contains(dataSourceType)) {
+      return queryDefinitions.stream()
+          .map(queryDefinition
+              -> HealthSourceMetricDefinition.builder()
+                     .metricName(queryDefinition.getName())
+                     .identifier(queryDefinition.getIdentifier())
+                     .riskProfile(queryDefinition.getRiskProfile())
+                     .sli(
+                         HealthSourceMetricDefinition.SLIDTO.builder().enabled(queryDefinition.getSliEnabled()).build())
+                     .analysis(HealthSourceMetricDefinition.AnalysisDTO.builder()
+                                   .liveMonitoring(HealthSourceMetricDefinition.AnalysisDTO.LiveMonitoringDTO.builder()
+                                                       .enabled(queryDefinition.getLiveMonitoringEnabled())
+                                                       .build())
+                                   .deploymentVerification(
+                                       HealthSourceMetricDefinition.AnalysisDTO.DeploymentVerificationDTO.builder()
+                                           .enabled(queryDefinition.getContinuousVerificationEnabled())
+                                           .build())
+                                   .build())
+                     .build())
+          .collect(Collectors.toList());
+    }
+    return Collections.emptyList();
   }
 }

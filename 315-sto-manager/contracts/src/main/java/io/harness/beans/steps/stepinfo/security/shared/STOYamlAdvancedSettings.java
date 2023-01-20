@@ -32,12 +32,12 @@ public class STOYamlAdvancedSettings {
   protected STOYamlArgs args;
 
   @YamlSchemaTypes(value = {runtime})
-  @ApiModelProperty(dataType = BOOLEAN_CLASSPATH)
+  @ApiModelProperty(dataType = BOOLEAN_CLASSPATH, name = "include_raw")
   @JsonProperty("include_raw")
   protected ParameterField<Boolean> includeRaw;
 
   @YamlSchemaTypes(value = {runtime})
-  @ApiModelProperty(dataType = "io.harness.yaml.sto.variables.STOYamlFailOnSeverity")
+  @ApiModelProperty(dataType = "io.harness.yaml.sto.variables.STOYamlFailOnSeverity", name = "fail_on_severity")
   @JsonProperty("fail_on_severity")
   protected STOYamlFailOnSeverity failOnSeverity;
 }

@@ -60,8 +60,8 @@ import software.wings.ngmigration.CgEntityNode;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -441,7 +441,7 @@ public abstract class WorkflowHandler {
     FailureStrategyConfig failureStrategyConfig =
         FailureStrategyConfig.builder()
             .onFailure(OnFailureConfig.builder()
-                           .errors(Arrays.stream(NGFailureType.values()).collect(Collectors.toList()))
+                           .errors(Lists.newArrayList(NGFailureType.ALL_ERRORS))
                            .action(AbortFailureActionConfig.builder().build())
                            .build())
             .build();

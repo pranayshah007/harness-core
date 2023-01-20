@@ -20,9 +20,11 @@ import org.codehaus.jackson.annotate.JsonProperty;
 @Data
 @OwnedBy(STO)
 public class STOYamlCheckmarxToolData {
-  @ApiModelProperty(dataType = STRING_CLASSPATH) @JsonProperty("team_name") protected ParameterField<String> teamName;
+  @ApiModelProperty(dataType = STRING_CLASSPATH, name = "team_name")
+  @JsonProperty("team_name")
+  protected ParameterField<String> teamName;
 
-  @ApiModelProperty(dataType = STRING_CLASSPATH)
+  @ApiModelProperty(dataType = STRING_CLASSPATH, name = "project_name")
   @JsonProperty("project_name")
   protected ParameterField<String> projectName;
 }
