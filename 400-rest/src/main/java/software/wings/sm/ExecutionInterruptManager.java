@@ -73,6 +73,7 @@ import io.harness.event.usagemetrics.UsageMetricsEventPublisher;
 import io.harness.exception.ExceptionLogger;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.persistence.HIterator;
 import io.harness.waiter.WaitNotifyEngine;
 
 import software.wings.beans.WorkflowExecution;
@@ -93,8 +94,10 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.mongodb.ReadPreference;
 import dev.morphia.query.FindOptions;
+import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
 import dev.morphia.query.UpdateOperations;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -423,14 +426,21 @@ public class ExecutionInterruptManager {
   }
 
   private List<ExecutionInterrupt> listActiveExecutionInterrupts(ExecutionInterrupt executionInterrupt) {
-    return wingsPersistence.createQuery(ExecutionInterrupt.class)
-        .filter(ExecutionInterruptKeys.appId, executionInterrupt.getAppId())
-        .filter(ExecutionInterruptKeys.executionUuid, executionInterrupt.getExecutionUuid())
-        .filter(ExecutionInterruptKeys.seized, false)
-        .order(Sort.descending(ExecutionInterruptKeys.createdAt))
-        .project(ExecutionInterruptKeys.uuid, true)
-        .project(ExecutionInterruptKeys.executionInterruptType, true)
-        .asList();
+    List<ExecutionInterrupt> executionInterruptList = new ArrayList<>();
+    Query<ExecutionInterrupt> query =
+        wingsPersistence.createQuery(ExecutionInterrupt.class)
+            .filter(ExecutionInterruptKeys.appId, executionInterrupt.getAppId())
+            .filter(ExecutionInterruptKeys.executionUuid, executionInterrupt.getExecutionUuid())
+            .filter(ExecutionInterruptKeys.seized, false)
+            .order(Sort.descending(ExecutionInterruptKeys.createdAt))
+            .project(ExecutionInterruptKeys.uuid, true)
+            .project(ExecutionInterruptKeys.executionInterruptType, true);
+    try (HIterator<ExecutionInterrupt> iterator = new HIterator<>(query.fetch())) {
+      while (iterator.hasNext()) {
+        executionInterruptList.add(iterator.next());
+      }
+    }
+    return executionInterruptList;
   }
 
   public List<ExecutionInterrupt> listByIdsUsingSecondary(Collection<String> ids) {
