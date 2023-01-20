@@ -87,7 +87,7 @@ public class GitClientHelper {
 
   private LoadingCache<String, File> cache = CacheBuilder.newBuilder()
                                                  .maximumSize(2000)
-                                                 .expireAfterAccess(1, TimeUnit.HOURS)
+                                                 .expireAfterAccess(10, TimeUnit.MINUTES)
                                                  .build(new CacheLoader<String, File>() {
                                                    @Override
                                                    public File load(String key) throws Exception {

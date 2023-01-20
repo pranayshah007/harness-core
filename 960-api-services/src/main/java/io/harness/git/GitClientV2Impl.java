@@ -265,6 +265,13 @@ public class GitClientV2Impl implements GitClientV2 {
                        // if set to <code>true</code> no branch will be checked out, after the clone.
                        // This enhances performance of the clone command when there is no need for a checked out branch.
                        .setNoCheckout(noCheckout)
+                       .setTransportConfigCallback(transport -> {
+                         if (transport instanceof TransportHttp) {
+                           TransportHttp http = (TransportHttp) transport;
+                           http.setTimeout(60);
+                           http.setHttpConnectionFactory(connectionFactory);
+                         }
+                       })
                        .call()) {
     } catch (GitAPIException ex) {
       log.error(GIT_YAML_LOG_PREFIX + "Error in cloning repo: " + ExceptionSanitizer.sanitizeForLogging(ex));
