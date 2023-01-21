@@ -29,6 +29,6 @@ public interface WebhookService {
   void handleCustomChangeWebhook(ProjectParams projectParams, String monitoredServiceIdentifier,
       String changeSourceIdentifier, CustomChangeWebhookPayload customChangeWebhookPayload);
 
-  void checkAuthorization(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, HttpHeaders httpHeaders);
+  void checkAuthorization(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String monitoredServiceIdentifier, HttpHeaders httpHeaders);
 }

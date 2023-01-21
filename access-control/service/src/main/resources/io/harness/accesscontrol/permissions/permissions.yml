@@ -745,14 +745,6 @@ permissions:
       - account
       - organization
       - project
-  - identifier: chi_srm_admin
-      name: SRM Admin
-      status: ACTIVE
-      includeInAllRoles: false
-      allowedScopeLevels:
-        - account
-        - organization
-        - project
   - identifier: gitops_agent_view
     name: View a Gitops Agent
     status: ACTIVE

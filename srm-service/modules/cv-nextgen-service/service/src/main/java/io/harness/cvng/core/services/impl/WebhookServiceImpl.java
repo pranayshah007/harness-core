@@ -47,7 +47,9 @@ public class WebhookServiceImpl implements WebhookService {
 
   @Inject AccessControlClient accessControlClient;
 
-  public static final String SRM_ADMIN = "chi_srm_admin";
+  public static final String MONITORED_SERVICE = "MONITOREDSERVICE";
+
+  public static final String EDIT_PERMISSION = "chi_monitoredservice_edit";
 
   @Override
   public void createPagerdutyWebhook(
@@ -126,8 +128,8 @@ public class WebhookServiceImpl implements WebhookService {
   }
 
   @Override
-  public void checkAuthorization(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, HttpHeaders httpHeaders) {
+  public void checkAuthorization(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String monitoredServiceIdentifier, HttpHeaders httpHeaders) {
     List<HeaderConfig> headerConfigs = new ArrayList<>();
     httpHeaders.getRequestHeaders().forEach(
         (k, v) -> headerConfigs.add(HeaderConfig.builder().key(k).values(v).build()));
@@ -140,8 +142,8 @@ public class WebhookServiceImpl implements WebhookService {
       }
     }
     if (hasApiKey) {
-      accessControlClient.hasAccess(
-          ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier), null, SRM_ADMIN);
+      accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+          Resource.of(MONITORED_SERVICE, monitoredServiceIdentifier), EDIT_PERMISSION);
     }
 
     throw new InvalidRequestException(

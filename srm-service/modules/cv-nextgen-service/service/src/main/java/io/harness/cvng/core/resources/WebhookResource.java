@@ -65,8 +65,8 @@ public class WebhookResource {
                                       .orgIdentifier(orgIdentifier)
                                       .accountIdentifier(accountIdentifier)
                                       .build();
-    /*webhookService.checkAuthorization(projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
-        projectParams.getProjectIdentifier(), httpHeaders);*/
+    webhookService.checkAuthorization(projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
+        projectParams.getProjectIdentifier(), monitoredServiceIdentifier, httpHeaders);
     webhookService.handleCustomChangeWebhook(
         projectParams, monitoredServiceIdentifier, changeSourceIdentifier, customChangeWebhookPayload);
   }
