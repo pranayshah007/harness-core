@@ -749,6 +749,14 @@ public class NextGenModule extends AbstractModule {
       BaseUrls getBaseUrls() {
         return appConfig.getBaseUrls();
       }
+
+      @Provides
+      @Named("ngmanagerclientconfig")
+      @Singleton
+      String ngIteratorsConfig() {
+        return appConfig.getNgManagerClientConfig().getBaseUrl();
+      }
+
     });
     install(new NGLdapModule(appConfig));
     install(new NgVariableModule(appConfig));

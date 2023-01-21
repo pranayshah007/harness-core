@@ -30,7 +30,10 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import javax.validation.executable.ValidateOnExecution;
+
+import io.harness.remote.client.ServiceHttpClientConfig;
 import lombok.extern.slf4j.Slf4j;
+import org.elasticsearch.common.inject.name.Named;
 import org.json.JSONObject;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -41,15 +44,25 @@ import org.springframework.data.mongodb.core.query.Query;
 @Singleton
 @Slf4j
 public class UpdateVersionInfoTask {
-  @Inject private MongoTemplate mongoTemplate;
+  private List<ModuleVersionInfo> allModulesFromDB;
+  private String serviceHttpClientConfig;
+  private MongoTemplate mongoTemplate;
 
-  List<ModuleVersionInfo> allModulesFromDB;
+
+  public List<ModuleVersionInfo> getAllModulesFromDB() {
+    return allModulesFromDB;
+  }
+
+
   private static final String pathToFile = "mvi/baseinfo.json";
   // Edit here for adding new module
   private static final String totalModules = "CCM_CD_CI_FF_Platform_SRM_SRT_Delegate";
 
-  public UpdateVersionInfoTask() {
+  @Inject
+  public UpdateVersionInfoTask(@Named("ngmanagerclientconfig") String serviceHttpClientConfig, MongoTemplate mongoTemplate) {
     allModulesFromDB = new ArrayList<>();
+    this.serviceHttpClientConfig = serviceHttpClientConfig;
+    this.mongoTemplate=mongoTemplate;
   }
 
   public void run() throws InterruptedException {
@@ -76,7 +89,8 @@ public class UpdateVersionInfoTask {
     allModulesFromDB.forEach(module -> {
       String currentVersion = "";
       try {
-        currentVersion = getCurrentMicroserviceVersions(module.getModuleName(), module.getVersionUrl());
+        String baseUrl = serviceHttpClientConfig + "version";
+        currentVersion = getCurrentMicroserviceVersions(module.getModuleName(), baseUrl);
       } catch (IOException e) {
         throw new UnexpectedException("Update VersionInfo Task Sync job interrupted:" + e);
       }
