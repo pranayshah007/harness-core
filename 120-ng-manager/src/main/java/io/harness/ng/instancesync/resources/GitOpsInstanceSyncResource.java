@@ -146,32 +146,35 @@ public class GitOpsInstanceSyncResource {
 
     final List<GitOpsInstance> gitOpsInstanceDTOs = gitOpsRequestDTOMapper.toGitOpsInstanceList(
         accountIdentifier, orgIdentifier, projectIdentifier, gitOpsInstanceRequestList);
-    final Map<String, List<GitOpsInstance>> gitOpsInstancesGroupedByService =
+    final Map<String, List<GitOpsInstance>> gitOpsInstancesGroupedByServiceEnvCluster =
         gitOpsInstanceDTOs.stream().collect(Collectors.groupingBy(GitOpsInstance::getServiceEnvIdentifier));
 
     final Set<String> envIdentifiers =
         gitOpsInstanceRequestList.stream().map(GitOpsInstanceRequest::getEnvIdentifier).collect(Collectors.toSet());
     final Set<String> serviceIdentifiers =
         gitOpsInstanceRequestList.stream().map(GitOpsInstanceRequest::getServiceIdentifier).collect(Collectors.toSet());
+    final Set<String> clusterIdentifiers =
+        gitOpsInstanceRequestList.stream().map(GitOpsInstanceRequest::getClusterIdentifier).collect(Collectors.toSet());
     // Get pipelines execution details
-    Map<String, String> serviceEnvIdToPipelineIdMap = cdOverviewDashboardService.getLastPipeline(
-        accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifiers, envIdentifiers);
+    Map<String, String> serviceEnvClusterIdToPipelineIdMap = cdOverviewDashboardService.getLastPipeline(
+        accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifiers, envIdentifiers, clusterIdentifiers);
 
-    List<String> pipelineExecutionIdList = serviceEnvIdToPipelineIdMap.values().stream().collect(Collectors.toList());
+    List<String> pipelineExecutionIdList =
+        serviceEnvClusterIdToPipelineIdMap.values().stream().collect(Collectors.toList());
     // Gets all the details for the pipeline execution id's in the list and stores it in a map.
     Map<String, ServicePipelineInfo> pipelineExecutionDetailsMap =
         cdOverviewDashboardService.getPipelineExecutionDetails(pipelineExecutionIdList);
 
-    for (Map.Entry<String, List<GitOpsInstance>> instanceGroup : gitOpsInstancesGroupedByService.entrySet()) {
+    for (Map.Entry<String, List<GitOpsInstance>> instanceGroup : gitOpsInstancesGroupedByServiceEnvCluster.entrySet()) {
       // Get pipeline Info
       List<GitOpsInstance> instances = instanceGroup.getValue();
-      String pipelineServiceEnvId = instanceGroup.getKey();
-      if (!serviceEnvIdToPipelineIdMap.containsKey(pipelineServiceEnvId)) {
-        log.warn("gitOps instance is not associated to a pipeline with serviceId and environmentId %s",
-            pipelineServiceEnvId);
+      String pipelineServiceEnvClusterId = instanceGroup.getKey();
+      if (!serviceEnvClusterIdToPipelineIdMap.containsKey(pipelineServiceEnvClusterId)) {
+        log.warn("gitOps instance is not associated to a pipeline with serviceId, environmentId and clusterId %s",
+            pipelineServiceEnvClusterId);
         continue;
       }
-      String pipelineId = serviceEnvIdToPipelineIdMap.get(pipelineServiceEnvId);
+      String pipelineId = serviceEnvClusterIdToPipelineIdMap.get(pipelineServiceEnvClusterId);
 
       if (!pipelineExecutionDetailsMap.containsKey(pipelineId)) {
         log.warn("gitOps instance pipeline: %s, does not have any executions yet", pipelineId);

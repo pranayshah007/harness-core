@@ -929,7 +929,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
 
   @Override
   public Map<String, String> getLastPipeline(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      Set<String> serviceIds, Set<String> envIds) {
+      Set<String> serviceIds, Set<String> envIds, Set<String> clusterIds) {
     Map<String, String> serviceIdToPipelineId = new HashMap<>();
     List<String> serviceRefs = serviceIds.stream()
                                    .map(serviceId
@@ -944,10 +944,10 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
                                .collect(Collectors.toList());
 
     String query =
-        "select distinct on(env_id, service_id) service_id, env_id, pipeline_execution_summary_cd_id, service_startts from "
-        + "service_infra_info where accountid=? and orgidentifier=? and projectidentifier=? and service_id = any (?) and env_id = any (?) "
-        + "group by service_id, env_id, pipeline_execution_summary_cd_id, service_startts "
-        + "order by env_id, service_id, service_startts desc";
+        "select distinct on(env_id, service_id, cluster_identifier) service_id, env_id, cluster_identifier, pipeline_execution_summary_cd_id, service_startts from "
+        + "service_infra_info where accountid=? and orgidentifier=? and projectidentifier=? and service_id = any (?) and env_id = any (?) and cluster_identifier = any (?) "
+        + "group by service_id, env_id, cluster_identifier, pipeline_execution_summary_cd_id, service_startts "
+        + "order by env_id, service_id, cluster_identifier, service_startts desc";
 
     int totalTries = 0;
     boolean successfulOperation = false;
@@ -960,14 +960,16 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
         statement.setString(3, projectIdentifier);
         statement.setArray(4, connection.createArrayOf("VARCHAR", serviceRefs.toArray()));
         statement.setArray(5, connection.createArrayOf("VARCHAR", envRefs.toArray()));
+        statement.setArray(6, connection.createArrayOf("VARCHAR", clusterIds.toArray()));
 
         resultSet = statement.executeQuery();
         while (resultSet != null && resultSet.next()) {
           String service_id = resultSet.getString(SERVICE_ID);
           String env_id = resultSet.getString("env_id");
-          String service_env_id = service_id + '-' + env_id;
+          String cluster_identifier = resultSet.getString("cluster_identifier");
+          String service_env_cluster_id = service_id + '-' + env_id + '-' + cluster_identifier;
           String pipeline_execution_summary_cd_id = resultSet.getString("pipeline_execution_summary_cd_id");
-          serviceIdToPipelineId.putIfAbsent(service_env_id, pipeline_execution_summary_cd_id);
+          serviceIdToPipelineId.putIfAbsent(service_env_cluster_id, pipeline_execution_summary_cd_id);
         }
         successfulOperation = true;
       } catch (SQLException ex) {

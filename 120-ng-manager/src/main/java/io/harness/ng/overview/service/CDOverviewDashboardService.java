@@ -141,7 +141,7 @@ public interface CDOverviewDashboardService {
       String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> serviceIds);
 
   Map<String, String> getLastPipeline(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      Set<String> serviceIds, Set<String> envIds);
+      Set<String> serviceIds, Set<String> envIds, Set<String> clusterIds);
 
   Map<String, ServicePipelineInfo> getPipelineExecutionDetails(List<String> pipelineExecutionIdList);
 }

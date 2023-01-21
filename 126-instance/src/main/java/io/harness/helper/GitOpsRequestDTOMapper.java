@@ -148,6 +148,7 @@ public class GitOpsRequestDTOMapper {
     final String projId = gitOpsInstanceRequest.getProjectIdentifier();
     final String envId = gitOpsInstanceRequest.getEnvIdentifier();
     final String svcId = gitOpsInstanceRequest.getServiceIdentifier();
+    final String clusterId = gitOpsInstanceRequest.getClusterIdentifier();
 
     return GitOpsInstance.builder()
         .accountIdentifier(accountId)
@@ -155,10 +156,10 @@ public class GitOpsRequestDTOMapper {
         .projectIdentifier(projId)
         .applicationIdentifier(gitOpsInstanceRequest.getApplicationIdentifier())
         .envIdentifier(envId)
-        .clusterIdentifier(gitOpsInstanceRequest.getClusterIdentifier())
+        .clusterIdentifier(clusterId)
         .agentIdentifier(gitOpsInstanceRequest.getAgentIdentifier())
         .serviceIdentifier(svcId)
-        .serviceEnvIdentifier(svcId + '-' + envId)
+        .serviceEnvIdentifier(svcId + '-' + envId + '-' + clusterId)
         .buildId(gitOpsInstanceRequest.getBuildId())
         .creationTimestamp(gitOpsInstanceRequest.getCreationTimestamp())
         .lastDeployedAt(gitOpsInstanceRequest.getLastDeployedAt())
