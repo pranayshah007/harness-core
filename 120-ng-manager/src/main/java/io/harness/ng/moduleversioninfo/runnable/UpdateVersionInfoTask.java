@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.cdng.moduleversioninfo.runnable;
+package io.harness.ng.moduleversioninfo.runnable;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
@@ -13,6 +13,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.moduleversioninfo.entity.ModuleVersionInfo;
 import io.harness.cdng.moduleversioninfo.entity.ModuleVersionInfo.ModuleVersionInfoKeys;
 import io.harness.exception.UnexpectedException;
+import io.harness.ng.NextGenConfiguration;
+import io.harness.version.VersionInfoManager;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Resources;
@@ -42,6 +44,7 @@ import org.springframework.data.mongodb.core.query.Query;
 @Slf4j
 public class UpdateVersionInfoTask {
   @Inject private MongoTemplate mongoTemplate;
+  @Inject NextGenConfiguration nextGenConfiguration;
 
   List<ModuleVersionInfo> allModulesFromDB;
   private static final String pathToFile = "mvi/baseinfo.json";
@@ -74,13 +77,16 @@ public class UpdateVersionInfoTask {
 
     // get current versions
     allModulesFromDB.forEach(module -> {
-      String currentVersion = "";
-      try {
-        currentVersion = getCurrentMicroserviceVersions(module.getModuleName(), module.getVersionUrl());
-      } catch (IOException e) {
-        throw new UnexpectedException("Update VersionInfo Task Sync job interrupted:" + e);
+      if (!module.getVersion().equals("Coming Soon")) {
+        String currentVersion = "";
+        try {
+          String BaseUrl = nextGenConfiguration.getNgManagerClientConfig().getBaseUrl() + "version";
+          currentVersion = getCurrentMicroserviceVersions(module.getModuleName(), BaseUrl);
+        } catch (IOException e) {
+          throw new UnexpectedException("Update VersionInfo Task Sync job interrupted:" + e);
+        }
+        module.setVersion(currentVersion);
       }
-      module.setVersion(currentVersion);
     });
 
     mongoTemplate.insertAll(allModulesFromDB);
@@ -106,9 +112,10 @@ public class UpdateVersionInfoTask {
       return;
     }
     Date dateTime = new Date(System.currentTimeMillis());
-    String[] dateTimeFormat = dateTime.toString().split(",");
-    if (dateTimeFormat.length >= 2) {
-      module.setLastModifiedAt(dateTimeFormat[0] + " " + dateTimeFormat[1]);
+    module.setLastModifiedAt(dateTime.toString());
+    String[] dateTimeFormat = dateTime.toString().split(" ");
+    if (dateTimeFormat.length >= 5) {
+      module.setLastModifiedAt(dateTimeFormat[1] + " " + dateTimeFormat[2] + " " + dateTimeFormat[5]);
     }
   }
 

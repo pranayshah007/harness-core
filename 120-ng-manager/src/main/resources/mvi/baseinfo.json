@@ -14,23 +14,9 @@
      "displayName": "Continuous Delivery & GitOps",
      "version": "",
      "lastModifiedAt": "",
-     "versionUrl": "http://localhost:7457/version",
+     "versionUrl": "",
      "releaseNotesLink": "https://developer.harness.io/release-notes/continuous-delivery",
-     "microservicesVersionInfo": [{
-       "name": "NG Manager",
-       "versionUrl": "http://localhost:7457/version",
-       "version": ""
-     },
-       {
-         "name": "GitOps",
-         "versionUrl": "http://localhost:7908/gateway/gitops/api/v1/version",
-         "version": ""
-       },
-       {
-         "name": "Template Service",
-         "versionUrl": "http://localhost:15001/api/version",
-         "version": ""
-       }
+     "microservicesVersionInfo": [
      ]
    },
    {
@@ -78,28 +64,9 @@
      "displayName": "Platform",
      "version": "",
      "lastModifiedAt": "",
-     "versionUrl": "http://localhost:7457/version",
+     "versionUrl": "",
      "releaseNotesLink": "https://developer.harness.io/release-notes/harness-platform",
-     "microservicesVersionInfo": [{
-       "name": "Pipeline",
-       "versionUrl": "http://localhost:12001/api/version",
-       "version": ""
-     },
-       {
-         "name": "Access Control",
-         "versionUrl": "http://localhost:9006/api/version",
-         "version": ""
-       },
-       {
-         "name": "Notifications",
-         "versionUrl": "http://localhost:9005/api/version",
-         "version": ""
-       },
-       {
-         "name": "Resource Group",
-         "versionUrl": "http://localhost:9005/api/version",
-         "version": ""
-       }
+     "microservicesVersionInfo": [
      ]
    },
    {
