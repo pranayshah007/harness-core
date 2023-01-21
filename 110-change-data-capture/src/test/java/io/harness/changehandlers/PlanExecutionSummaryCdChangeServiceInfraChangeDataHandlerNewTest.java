@@ -106,34 +106,34 @@ public class PlanExecutionSummaryCdChangeServiceInfraChangeDataHandlerNewTest ex
     handler.handleChange(changeEvent, "service_infra_info", new String[] {});
 
     ArgumentCaptor<String> queryCaptor = ArgumentCaptor.forClass(String.class);
-    verify(mockConnection, times(8)).prepareStatement(queryCaptor.capture());
+    verify(mockConnection, times(12)).prepareStatement(queryCaptor.capture());
 
     final List<String> sqls = queryCaptor.getAllValues();
 
     assertThat(sqls.get(0))
         .isEqualTo(
-            "INSERT INTO service_infra_info (env_group_name,pipeline_execution_summary_cd_id,service_name,service_startts,service_endts,deployment_type,env_name,env_id,env_group_ref,service_id,service_status,id,env_type,gitOpsEnabled) VALUES('EnvGroup-1Env','uuid','service2','1671346275772','1671346296079','Kubernetes','EnvProjectLevelAgents','env2','EnvGroup1','service2','Success','gPfCWZ9WQxWOw5miYocUfA','Production','true')");
+            "INSERT INTO service_infra_info (cluster_name,env_group_name,pipeline_execution_summary_cd_id,service_name,service_startts,cluster_identifier,service_endts,deployment_type,env_name,env_id,env_group_ref,service_id,service_status,id,env_type,gitOpsEnabled) VALUES('cluster22','EnvGroup-1Env','uuid','service2','1671346275772','ProjectLevelGitOpsCluster','1671346296079','Kubernetes','EnvProjectLevelAgents','env2','EnvGroup1','service2','Success','gPfCWZ9WQxWOw5miYocUfA','Production','true')");
     assertThat(sqls.get(1))
         .isEqualTo(
-            "INSERT INTO service_infra_info (env_group_name,pipeline_execution_summary_cd_id,service_name,service_startts,service_endts,deployment_type,env_name,env_id,env_group_ref,service_id,service_status,id,env_type,gitOpsEnabled) VALUES('EnvGroup-2Env','uuid','service5','1671346298085','1671346316016','Kubernetes','EnvProjectLevelAgents','env2','envGroup','service5','Success','vRVRcCMURs-fUu2oRxjzMA','PreProduction','true')");
+            "INSERT INTO service_infra_info (cluster_name,env_group_name,pipeline_execution_summary_cd_id,service_name,service_startts,cluster_identifier,service_endts,deployment_type,env_name,env_id,env_group_ref,service_id,service_status,id,env_type,gitOpsEnabled) VALUES('incluster','EnvGroup-1Env','uuid','service2','1671346275772','ProjectLevelInAgentGitOpsCluster','1671346296079','Kubernetes','EnvProjectLevelAgents','env2','EnvGroup1','service2','Success','gPfCWZ9WQxWOw5miYocUfA','Production','true')");
     assertThat(sqls.get(2))
         .isEqualTo(
-            "INSERT INTO service_infra_info (rollback_duration,pipeline_execution_summary_cd_id,service_name,service_startts,service_endts,deployment_type,service_id,service_status,id,gitOpsEnabled) VALUES('46','uuid','service3','1671346316187','1671346326076','Kubernetes','service3','Failed','fkNFsY9YToqnSL4wUfqg8w','true')");
+            "INSERT INTO service_infra_info (cluster_name,env_group_name,pipeline_execution_summary_cd_id,service_name,service_startts,cluster_identifier,service_endts,deployment_type,env_name,env_id,env_group_ref,service_id,service_status,id,env_type,gitOpsEnabled) VALUES('cluster22','EnvGroup-2Env','uuid','service5','1671346298085','ProjectLevelGitOpsCluster','1671346316016','Kubernetes','EnvProjectLevelAgents','env2','envGroup','service5','Success','vRVRcCMURs-fUu2oRxjzMA','PreProduction','true')");
     assertThat(sqls.get(3))
         .isEqualTo(
-            "INSERT INTO service_infra_info (env_group_name,pipeline_execution_summary_cd_id,service_name,service_startts,service_endts,deployment_type,env_name,env_id,env_group_ref,service_id,service_status,id,gitOpsEnabled) VALUES('EnvGroup-1Env','uuid','service4','1671346298094','1671346313953','Kubernetes','EnvProjectLevelAgents','env2','EnvGroup1','service4','Success','ev9_xNp0T96yPcfbFe7Mnw','true')");
+            "INSERT INTO service_infra_info (cluster_name,env_group_name,pipeline_execution_summary_cd_id,service_name,service_startts,cluster_identifier,service_endts,deployment_type,env_name,env_id,env_group_ref,service_id,service_status,id,env_type,gitOpsEnabled) VALUES('incluster','EnvGroup-2Env','uuid','service5','1671346298085','ProjectLevelInAgentGitOpsCluster','1671346316016','Kubernetes','EnvProjectLevelAgents','env2','envGroup','service5','Success','vRVRcCMURs-fUu2oRxjzMA','PreProduction','true')");
     assertThat(sqls.get(4))
         .isEqualTo(
-            "INSERT INTO service_infra_info (env_group_name,pipeline_execution_summary_cd_id,service_name,service_startts,service_endts,deployment_type,env_name,env_id,env_group_ref,service_id,service_status,id,gitOpsEnabled) VALUES('EnvGroup-1Env','uuid','service1','1671346275754','1671346296111','Kubernetes','EnvProjectLevelAgents','env2','EnvGroup1','service1','Success','FNra8NwISJ2qUWFyz9vPiA','true')");
+            "INSERT INTO service_infra_info (rollback_duration,pipeline_execution_summary_cd_id,service_name,service_startts,service_endts,deployment_type,service_id,service_status,id,gitOpsEnabled) VALUES('46','uuid','service3','1671346316187','1671346326076','Kubernetes','service3','Failed','fkNFsY9YToqnSL4wUfqg8w','true')");
     assertThat(sqls.get(5))
         .isEqualTo(
-            "INSERT INTO service_infra_info (rollback_duration,pipeline_execution_summary_cd_id,service_name,service_startts,service_endts,deployment_type,service_id,service_status,id,gitOpsEnabled) VALUES('0','uuid','service2','1671346316182','1671346318850','Kubernetes','service2','Failed','M7v0YIX9QsCD1n0S_FuFXA','true')");
+            "INSERT INTO service_infra_info (cluster_name,env_group_name,pipeline_execution_summary_cd_id,service_name,service_startts,cluster_identifier,service_endts,deployment_type,env_name,env_id,env_group_ref,service_id,service_status,id,gitOpsEnabled) VALUES('cluster22','EnvGroup-1Env','uuid','service4','1671346298094','ProjectLevelGitOpsCluster','1671346313953','Kubernetes','EnvProjectLevelAgents','env2','EnvGroup1','service4','Success','ev9_xNp0T96yPcfbFe7Mnw','true')");
     assertThat(sqls.get(6))
         .isEqualTo(
-            "INSERT INTO service_infra_info (env_group_name,pipeline_execution_summary_cd_id,service_name,service_startts,service_endts,deployment_type,env_name,env_id,env_group_ref,service_id,service_status,id,gitOpsEnabled) VALUES('EnvGroup-1Env','uuid','service3','1671346275760','1671346297916','Kubernetes','EnvProjectLevelAgents','env2','EnvGroup1','service3','Success','rA7k-ziARyO4aTxKl4THvA','true')");
+            "INSERT INTO service_infra_info (cluster_name,env_group_name,pipeline_execution_summary_cd_id,service_name,service_startts,cluster_identifier,service_endts,deployment_type,env_name,env_id,env_group_ref,service_id,service_status,id,gitOpsEnabled) VALUES('cluster22','EnvGroup-1Env','uuid','service1','1671346275754','ProjectLevelGitOpsCluster','1671346296111','Kubernetes','EnvProjectLevelAgents','env2','EnvGroup1','service1','Success','FNra8NwISJ2qUWFyz9vPiA','true')");
     assertThat(sqls.get(7))
         .isEqualTo(
-            "INSERT INTO service_infra_info (env_group_name,pipeline_execution_summary_cd_id,service_name,service_startts,service_endts,deployment_type,env_name,env_id,env_group_ref,service_id,service_status,id,gitOpsEnabled) VALUES('EnvGroup-2Env','uuid','service1','1671346316182','1671346334009','Kubernetes','EnvProjectLevelAgents','env2','envGroup','service1','Success','B9u3mW0yQwCIovStIGzGkg','true')");
+            "INSERT INTO service_infra_info (rollback_duration,pipeline_execution_summary_cd_id,service_name,service_startts,service_endts,deployment_type,service_id,service_status,id,gitOpsEnabled) VALUES('0','uuid','service2','1671346316182','1671346318850','Kubernetes','service2','Failed','M7v0YIX9QsCD1n0S_FuFXA','true')");
   }
 
   @Test
