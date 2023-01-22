@@ -386,10 +386,9 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
           MAX_ALLOWED_BATCH_FILE_REQUESTS_COUNT);
     }
 
-    if (scmGetBatchFilesByBranchRequestDTO.getScmGetFileByBranchRequestDTOMap().)
-      if (!isBatchGetFileTaskSupportedByDelegates(scmGetBatchFilesByBranchRequestDTO.getAccountIdentifier())) {
-        return processGetBatchFileTaskUsingSingleGetFileAPI(scmGetBatchFilesByBranchRequestDTO);
-      }
+    if (!isBatchGetFileTaskSupportedByDelegates(scmGetBatchFilesByBranchRequestDTO.getAccountIdentifier())) {
+      return processGetBatchFileTaskUsingSingleGetFileAPI(scmGetBatchFilesByBranchRequestDTO);
+    }
 
     Map<GetBatchFileRequestIdentifier, GitFileRequestV2> gitFileRequestMapForManager = new HashMap<>();
     Map<GetBatchFileRequestIdentifier, GitFileRequestV2> gitFileRequestMapForDelegate = new HashMap<>();
