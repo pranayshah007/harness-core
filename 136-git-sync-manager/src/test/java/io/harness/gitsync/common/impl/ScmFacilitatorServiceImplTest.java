@@ -572,6 +572,13 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
                                    .scmGetFileByBranchRequestDTOMap(scmGetFileByBranchRequestDTOMap)
                                    .build()))
         .isInstanceOf(InvalidRequestException.class);
+    assertThatThrownBy(
+        ()
+            -> scmFacilitatorService.getBatchFilesByBranch(ScmGetBatchFilesByBranchRequestDTO.builder()
+                                                               .accountIdentifier(UUID.randomUUID().toString())
+                                                               .scmGetFileByBranchRequestDTOMap(null)
+                                                               .build()))
+        .isInstanceOf(InvalidRequestException.class);
   }
 
   private Scope getDefaultScope() {
