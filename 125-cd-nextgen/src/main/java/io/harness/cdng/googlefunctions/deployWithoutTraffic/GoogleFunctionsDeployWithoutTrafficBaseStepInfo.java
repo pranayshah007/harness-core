@@ -1,4 +1,4 @@
-package io.harness.cdng.googlefunctions;
+package io.harness.cdng.googlefunctions.deployWithoutTraffic;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.harness.annotations.dev.HarnessTeam;
@@ -22,9 +22,9 @@ import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@TypeAlias("googleFunctionsDeployBaseStepInfo")
-@FieldNameConstants(innerTypeName = "GoogleFunctionsDeployBaseStepInfoKeys")
-public class GoogleFunctionsDeployBaseStepInfo {
+@TypeAlias("googleFunctionsDeployWithoutTrafficBaseStepInfo")
+@FieldNameConstants(innerTypeName = "GoogleFunctionsDeployWithoutTrafficBaseStepInfoKeys")
+public class GoogleFunctionsDeployWithoutTrafficBaseStepInfo {
     @YamlSchemaTypes({runtime})
     @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
     ParameterField<List<TaskSelectorYaml>> delegateSelectors;

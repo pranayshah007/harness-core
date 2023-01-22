@@ -24,5 +24,11 @@ public enum GoogleFunctionsCommandUnitConstants {
         public String toString() {
             return "Rollback";
         }
+    },
+    trafficShift {
+        @Override
+        public String toString() {
+            return "Traffic Shift";
+        }
     }
 }

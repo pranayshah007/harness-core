@@ -1,4 +1,4 @@
-package io.harness.cdng.googlefunctions;
+package io.harness.cdng.googlefunctions.deploy;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -6,7 +6,6 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.ecs.EcsRollingDeployStepInfo;
 import io.harness.cdng.pipeline.CdAbstractStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.yaml.core.StepSpecType;
@@ -27,7 +26,7 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 @EqualsAndHashCode(callSuper = true)
 @JsonTypeName(StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_DEPLOY)
 @TypeAlias("googleFunctionsDeployStepNode")
-@RecasterAlias("io.harness.cdng.googlefunctions.GoogleFunctionsDeployStepNode")
+@RecasterAlias("io.harness.cdng.googlefunctions.deploy.GoogleFunctionsDeployStepNode")
 public class GoogleFunctionsDeployStepNode extends CdAbstractStepNode {
     @JsonProperty("type") @NotNull GoogleFunctionsDeployStepNode.StepType type = StepType.DeployCloudFunction;
     @JsonProperty("spec")

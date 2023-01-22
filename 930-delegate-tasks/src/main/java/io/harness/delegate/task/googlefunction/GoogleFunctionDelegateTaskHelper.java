@@ -38,7 +38,7 @@ public class GoogleFunctionDelegateTaskHelper {
                 return googleFunctionCommandResponse;
             } catch (Exception e) {
                 Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
-                log.error("Exception in processing ecs task [{}]", googleFunctionCommandRequest.getCommandName() + ":" +
+                log.error("Exception in processing google function task [{}]", googleFunctionCommandRequest.getCommandName() + ":" +
                                 googleFunctionCommandRequest.getGoogleFunctionCommandType(), sanitizedException);
                 throw new TaskNGDataException(
                         UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress), sanitizedException);

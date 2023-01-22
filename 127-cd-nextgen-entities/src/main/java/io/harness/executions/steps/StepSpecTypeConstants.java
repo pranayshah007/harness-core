@@ -84,6 +84,10 @@ public interface StepSpecTypeConstants {
   String ECS_BLUE_GREEN_ROLLBACK = "EcsBlueGreenRollback";
 
   String GOOGLE_CLOUD_FUNCTIONS_DEPLOY = "DeployCloudFunction";
+  String GOOGLE_CLOUD_FUNCTIONS_DEPLOY_WITHOUT_TRAFFIC = "DeployCloudFunctionWithNoTraffic";
+  String GOOGLE_CLOUD_FUNCTIONS_TRAFFIC_SHIFT = "CloudFunctionTrafficShift";
+  String GOOGLE_CLOUD_FUNCTIONS_ROLLBACK = "CloudFunctionRollback";
+
 
   String SHELL_SCRIPT_PROVISION = "ShellScriptProvision";
 

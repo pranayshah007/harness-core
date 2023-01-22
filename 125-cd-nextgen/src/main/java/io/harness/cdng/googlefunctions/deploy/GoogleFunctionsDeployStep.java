@@ -1,27 +1,27 @@
-package io.harness.cdng.googlefunctions;
+package io.harness.cdng.googlefunctions.deploy;
 
 import com.google.inject.Inject;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.googlefunctions.GoogleFunctionsEntityHelper;
+import io.harness.cdng.googlefunctions.GoogleFunctionsHelper;
+import io.harness.cdng.googlefunctions.GoogleFunctionsStepExceptionPassThroughData;
+import io.harness.cdng.googlefunctions.GoogleFunctionsStepExecutor;
+import io.harness.cdng.googlefunctions.GoogleFunctionsStepPassThroughData;
+import io.harness.cdng.googlefunctions.beans.GoogleFunctionStepOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
-import io.harness.cdng.serverless.ServerlessStepCommonHelper;
-import io.harness.cdng.serverless.beans.ServerlessExecutionPassThroughData;
-import io.harness.cdng.serverless.beans.ServerlessGitFetchFailurePassThroughData;
-import io.harness.cdng.serverless.beans.ServerlessS3FetchFailurePassThroughData;
-import io.harness.cdng.serverless.beans.ServerlessStepExceptionPassThroughData;
-import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
+import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
-import io.harness.delegate.exception.ServerlessNGException;
 import io.harness.delegate.task.googlefunctions.GoogleFunctionCommandTypeNG;
 import io.harness.delegate.task.googlefunctions.request.GoogleFunctionDeployRequest;
+
+import static com.google.common.collect.Lists.newArrayList;
 import static io.harness.delegate.task.googlefunctions.request.GoogleFunctionDeployRequest.GoogleFunctionDeployRequestBuilder;
 
 import io.harness.delegate.task.googlefunctions.response.GoogleFunctionDeployResponse;
-import io.harness.delegate.task.serverless.response.ServerlessDeployResponse;
-import io.harness.exception.ExceptionUtils;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -31,15 +31,16 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.List;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
@@ -50,16 +51,15 @@ public class GoogleFunctionsDeployStep extends TaskChainExecutableWithRollbackAn
             .build();
 
     private final String GOOGLE_FUNCTION_DEPLOY_COMMAND_NAME = "DeployCloudFunction";
-    private final String GOOGLE_FUNCTION_PREPARE_ROLLBACK_COMMAND_NAME = "PrepareRollbackCloudFunction";
-
 
     @Inject private InstanceInfoService instanceInfoService;
     @Inject private GoogleFunctionsHelper googleFunctionsHelper;
     @Inject private GoogleFunctionsEntityHelper googleFunctionsEntityHelper;
+    @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
 
     @Override
-    public TaskChainResponse executeDeployTask(Ambiance ambiance, StepElementParameters stepParameters,
-                                               GoogleFunctionsStepPassThroughData googleFunctionsStepPassThroughData, UnitProgressData unitProgressData) {
+    public TaskChainResponse executeTask(Ambiance ambiance, StepElementParameters stepParameters,
+                                         GoogleFunctionsStepPassThroughData googleFunctionsStepPassThroughData, UnitProgressData unitProgressData) {
         InfrastructureOutcome infrastructureOutcome = googleFunctionsStepPassThroughData.getInfrastructureOutcome();
 
         GoogleFunctionsDeployStepParameters googleFunctionsDeployStepParameters =
@@ -82,13 +82,6 @@ public class GoogleFunctionsDeployStep extends TaskChainExecutableWithRollbackAn
         }
         return googleFunctionsHelper.queueTask(stepParameters, googleFunctionDeployRequestBuilder.build(), ambiance,
                 googleFunctionsStepPassThroughData, true);
-    }
-
-    @Override
-    public TaskChainResponse executePrepareRollbackTask(Ambiance ambiance, StepElementParameters stepParameters,
-                                                        GoogleFunctionsStepPassThroughData googleFunctionsStepPassThroughData,
-                                                        UnitProgressData unitProgressData) {
-        return null;
     }
 
     @Override
@@ -118,26 +111,29 @@ public class GoogleFunctionsDeployStep extends TaskChainExecutableWithRollbackAn
             return googleFunctionsHelper.handleStepExceptionFailure(
                     (GoogleFunctionsStepExceptionPassThroughData) passThroughData);
         }
-
         log.info("Finalizing execution with passThroughData: " + passThroughData.getClass().getName());
         GoogleFunctionsStepPassThroughData googleFunctionsStepPassThroughData =
                 (GoogleFunctionsStepPassThroughData) passThroughData;
-        InfrastructureOutcome infrastructureOutcome = googleFunctionsStepPassThroughData.getInfrastructureOutcome();
         GoogleFunctionDeployResponse googleFunctionDeployResponse;
         try {
             googleFunctionDeployResponse = (GoogleFunctionDeployResponse) responseDataSupplier.get();
         } catch (Exception e) {
-            log.error("Error while processing serverless task response: {}", e.getMessage(), e);
+            log.error("Error while processing google function task response: {}", e.getMessage(), e);
             return googleFunctionsHelper.handleTaskException(ambiance, googleFunctionsStepPassThroughData, e);
         }
-        StepResponse.StepResponseBuilder stepResponseBuilder =
+        StepResponseBuilder stepResponseBuilder =
                 StepResponse.builder().unitProgressList(googleFunctionDeployResponse.getUnitProgressData().getUnitProgresses());
         if (googleFunctionDeployResponse.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
-            return googleFunctionsHelper.getFailureResponseBuilder(googleFunctionDeployResponse, stepResponseBuilder)
+            return GoogleFunctionsHelper.getFailureResponseBuilder(googleFunctionDeployResponse, stepResponseBuilder)
                     .build();
         }
+        GoogleFunctionStepOutcome googleFunctionDeployOutcome = googleFunctionsHelper.getGoogleFunctionStepOutcome(
+                googleFunctionDeployResponse.getFunction());
 
-        return stepResponseBuilder.status(Status.SUCCEEDED).build();
+        return stepResponseBuilder.status(Status.SUCCEEDED).stepOutcome(StepResponse.StepOutcome.builder()
+                .name(OutcomeExpressionConstants.OUTPUT)
+                .outcome(googleFunctionDeployOutcome)
+                .build()).build();
     }
 
     @Override

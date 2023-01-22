@@ -659,9 +659,18 @@ import io.harness.delegate.task.gitpolling.github.GitHubPollingDelegateRequest;
 import io.harness.delegate.task.gitpolling.request.GitPollingTaskParameters;
 import io.harness.delegate.task.googlefunctions.GcpGoogleFunctionInfraConfig;
 import io.harness.delegate.task.googlefunctions.GoogleCloudStorageArtifactConfig;
+import io.harness.delegate.task.googlefunctions.GoogleFunction;
 import io.harness.delegate.task.googlefunctions.GoogleFunctionCommandTypeNG;
 import io.harness.delegate.task.googlefunctions.request.GoogleFunctionDeployRequest;
+import io.harness.delegate.task.googlefunctions.request.GoogleFunctionDeployWithoutTrafficRequest;
+import io.harness.delegate.task.googlefunctions.request.GoogleFunctionPrepareRollbackRequest;
+import io.harness.delegate.task.googlefunctions.request.GoogleFunctionRollbackRequest;
+import io.harness.delegate.task.googlefunctions.request.GoogleFunctionTrafficShiftRequest;
 import io.harness.delegate.task.googlefunctions.response.GoogleFunctionDeployResponse;
+import io.harness.delegate.task.googlefunctions.response.GoogleFunctionDeployWithoutTrafficResponse;
+import io.harness.delegate.task.googlefunctions.response.GoogleFunctionPrepareRollbackResponse;
+import io.harness.delegate.task.googlefunctions.response.GoogleFunctionRollbackResponse;
+import io.harness.delegate.task.googlefunctions.response.GoogleFunctionTrafficShiftResponse;
 import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.helm.HelmCmdExecResponseNG;
 import io.harness.delegate.task.helm.HelmCommandFlag;
@@ -2215,6 +2224,18 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(GcpGoogleFunctionInfraConfig.class, 673570);
     kryo.register(GoogleCloudStorageArtifactConfig.class, 673571);
     kryo.register(GoogleFunctionCommandTypeNG.class, 673572);
+    kryo.register(GoogleFunctionPrepareRollbackRequest.class, 673573);
+    kryo.register(GoogleFunctionPrepareRollbackResponse.class, 673574);
+    kryo.register(GoogleFunction.class, 673575);
+    kryo.register(GoogleFunction.GoogleCloudRunRevision.class, 673576);
+    kryo.register(GoogleFunction.GoogleCloudRunService.class, 673577);
+    kryo.register(GoogleFunctionDeployWithoutTrafficRequest.class, 673578);
+    kryo.register(GoogleFunctionDeployWithoutTrafficResponse.class, 673579);
+    kryo.register(GoogleFunctionRollbackRequest.class, 673580);
+    kryo.register(GoogleFunctionRollbackResponse.class, 673581);
+    kryo.register(GoogleFunctionTrafficShiftRequest.class, 673582);
+    kryo.register(GoogleFunctionTrafficShiftResponse.class, 673583);
+
 
   }
 }

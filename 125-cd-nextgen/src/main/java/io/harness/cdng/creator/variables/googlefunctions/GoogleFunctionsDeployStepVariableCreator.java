@@ -1,8 +1,8 @@
-package io.harness.cdng.creator.variables;
+package io.harness.cdng.creator.variables.googlefunctions;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.googlefunctions.GoogleFunctionsDeployStepNode;
+import io.harness.cdng.googlefunctions.deploy.GoogleFunctionsDeployStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.pms.sdk.core.pipeline.variables.GenericStepVariableCreator;
 

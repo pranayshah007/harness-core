@@ -503,7 +503,16 @@ public enum EntityType {
       EntityYamlRootNames.CCM_GOVERNANCE_RULE),
   @JsonProperty(EntityTypeConstants.GOOGLE_CLOUD_FUNCTIONS_DEPLOY)
   GOOGLE_CLOUD_FUNCTIONS_DEPLOY(ModuleType.CD, EntityTypeConstants.GOOGLE_CLOUD_FUNCTIONS_DEPLOY, IdentifierRef.class,
-          EntityYamlRootNames.GOOGLE_CLOUD_FUNCTIONS_DEPLOY);
+          EntityYamlRootNames.GOOGLE_CLOUD_FUNCTIONS_DEPLOY),
+  @JsonProperty(EntityTypeConstants.GOOGLE_CLOUD_FUNCTIONS_DEPLOY_WITHOUT_TRAFFIC)
+  GOOGLE_CLOUD_FUNCTIONS_DEPLOY_WITHOUT_TRAFFIC(ModuleType.CD, EntityTypeConstants.GOOGLE_CLOUD_FUNCTIONS_DEPLOY_WITHOUT_TRAFFIC,
+          IdentifierRef.class, EntityYamlRootNames.GOOGLE_CLOUD_FUNCTIONS_DEPLOY_WITHOUT_TRAFFIC),
+  @JsonProperty(EntityTypeConstants.GOOGLE_CLOUD_FUNCTIONS_TRAFFIC_SHIFT)
+  GOOGLE_CLOUD_FUNCTIONS_TRAFFIC_SHIFT(ModuleType.CD, EntityTypeConstants.GOOGLE_CLOUD_FUNCTIONS_TRAFFIC_SHIFT, IdentifierRef.class,
+          EntityYamlRootNames.GOOGLE_CLOUD_FUNCTIONS_TRAFFIC_SHIFT),
+  @JsonProperty(EntityTypeConstants.GOOGLE_CLOUD_FUNCTIONS_ROLLBACK)
+  GOOGLE_CLOUD_FUNCTIONS_ROLLBACK(ModuleType.CD, EntityTypeConstants.GOOGLE_CLOUD_FUNCTIONS_ROLLBACK, IdentifierRef.class,
+          EntityYamlRootNames.GOOGLE_CLOUD_FUNCTIONS_ROLLBACK);
 
   private final ModuleType moduleType;
   String yamlName;

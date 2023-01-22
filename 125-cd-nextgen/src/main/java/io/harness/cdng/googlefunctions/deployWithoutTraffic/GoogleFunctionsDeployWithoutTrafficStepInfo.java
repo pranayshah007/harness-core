@@ -1,16 +1,17 @@
-package io.harness.cdng.googlefunctions;
+package io.harness.cdng.googlefunctions.deployWithoutTraffic;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.ecs.EcsRollingDeployBaseStepInfo;
-import io.harness.cdng.ecs.EcsRollingDeployStep;
-import io.harness.cdng.ecs.EcsRollingDeployStepParameters;
+import io.harness.cdng.googlefunctions.deploy.GoogleFunctionsDeployBaseStepInfo;
+import io.harness.cdng.googlefunctions.deploy.GoogleFunctionsDeployStep;
+import io.harness.cdng.googlefunctions.deploy.GoogleFunctionsDeployStepParameters;
 import io.harness.cdng.pipeline.CDAbstractStepInfo;
-import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.EcsRollingDeployStepInfoVisitorHelper;
+import io.harness.cdng.visitor.helpers.cdstepinfo.googlefunctions.GoogleFunctionsDeployStepInfoVisitorHelper;
+import io.harness.cdng.visitor.helpers.cdstepinfo.googlefunctions.GoogleFunctionsDeployWithoutTrafficStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
@@ -34,11 +35,12 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@SimpleVisitorHelper(helperClass = EcsRollingDeployStepInfoVisitorHelper.class)
-@JsonTypeName(StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_DEPLOY)
-@TypeAlias("googleFunctionsDeployStepInfo")
-@RecasterAlias("io.harness.cdng.googlefunctions.GoogleFunctionsDeployStepInfo")
-public class GoogleFunctionsDeployStepInfo extends GoogleFunctionsDeployBaseStepInfo implements CDAbstractStepInfo, Visitable {
+@SimpleVisitorHelper(helperClass = GoogleFunctionsDeployWithoutTrafficStepInfoVisitorHelper.class)
+@JsonTypeName(StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_DEPLOY_WITHOUT_TRAFFIC)
+@TypeAlias("googleFunctionsDeployWithoutTrafficStepInfo")
+@RecasterAlias("io.harness.cdng.googlefunctions.deployWithoutTraffic.GoogleFunctionsDeployWithoutTrafficStepInfo")
+public class GoogleFunctionsDeployWithoutTrafficStepInfo extends GoogleFunctionsDeployWithoutTrafficBaseStepInfo
+        implements CDAbstractStepInfo, Visitable {
     @JsonProperty(YamlNode.UUID_FIELD_NAME)
     @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
     @ApiModelProperty(hidden = true)
@@ -47,13 +49,13 @@ public class GoogleFunctionsDeployStepInfo extends GoogleFunctionsDeployBaseStep
     @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
     @Builder(builderMethodName = "infoBuilder")
-    public GoogleFunctionsDeployStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-                                    ParameterField<String> updateFieldMask) {
+    public GoogleFunctionsDeployWithoutTrafficStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
+                                         ParameterField<String> updateFieldMask) {
         super(delegateSelectors, updateFieldMask);
     }
     @Override
     public StepType getStepType() {
-        return GoogleFunctionsDeployStep.STEP_TYPE;
+        return GoogleFunctionsDeployWithoutTrafficStep.STEP_TYPE;
     }
 
     @Override
@@ -63,7 +65,7 @@ public class GoogleFunctionsDeployStepInfo extends GoogleFunctionsDeployBaseStep
 
     @Override
     public SpecParameters getSpecParameters() {
-        return GoogleFunctionsDeployStepParameters.infoBuilder()
+        return GoogleFunctionsDeployWithoutTrafficStepParameters.infoBuilder()
                 .delegateSelectors(this.getDelegateSelectors())
                 .updateFieldMask(this.getUpdateFieldMask())
                 .build();
@@ -73,5 +75,4 @@ public class GoogleFunctionsDeployStepInfo extends GoogleFunctionsDeployBaseStep
     public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
         return getDelegateSelectors();
     }
-
 }

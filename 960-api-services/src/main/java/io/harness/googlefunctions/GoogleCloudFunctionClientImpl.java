@@ -35,10 +35,9 @@ public class GoogleCloudFunctionClientImpl implements GoogleCloudFunctionClient 
 
     @Override
     public Function getFunction(GetFunctionRequest getFunctionRequest, GcpInternalConfig gcpInternalConfig) {
-        try(FunctionServiceClient client = googleCloudClientHelper.getFunctionsClient(gcpInternalConfig,false)){
+        try(FunctionServiceClient client = googleCloudClientHelper.getFunctionsClient(gcpInternalConfig)){
             googleCloudClientHelper.logCall(CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName());
             return client.getFunction(getFunctionRequest);
-
         } catch (Exception e) {
             googleCloudClientHelper.logError(CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName(), e.getMessage());
             googleCloudClientHelper.handleException(e);
@@ -48,13 +47,9 @@ public class GoogleCloudFunctionClientImpl implements GoogleCloudFunctionClient 
 
     @Override
     public OperationFuture<Function, OperationMetadata> createFunction(CreateFunctionRequest createFunctionRequest, GcpInternalConfig gcpInternalConfig) {
-        try(FunctionServiceClient client = googleCloudClientHelper.getFunctionsClient(gcpInternalConfig, true)){
+        try(FunctionServiceClient client = googleCloudClientHelper.getFunctionsClient(gcpInternalConfig)){
             googleCloudClientHelper.logCall(CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName());
-//            OperationCallable<CreateFunctionRequest, Function, OperationMetadata> operationCallable =
-//                    client.createFunctionOperationCallable();
-//            Function function = operationCallable.call(createFunctionRequest);
             return client.createFunctionAsync(createFunctionRequest);
-
         } catch (Exception e) {
             googleCloudClientHelper.logError(CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName(), e.getMessage());
             googleCloudClientHelper.handleException(e);
@@ -64,12 +59,8 @@ public class GoogleCloudFunctionClientImpl implements GoogleCloudFunctionClient 
 
     @Override
     public OperationFuture<Function, OperationMetadata> updateFunction(UpdateFunctionRequest updateFunctionRequest, GcpInternalConfig gcpInternalConfig) {
-        try(FunctionServiceClient client = googleCloudClientHelper.getFunctionsClient(gcpInternalConfig, true)){
+        try(FunctionServiceClient client = googleCloudClientHelper.getFunctionsClient(gcpInternalConfig)){
             googleCloudClientHelper.logCall(CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName());
-//            GrpcCallContext grpcCallContext = GrpcCallContext.createDefault();
-//            OperationCallable<UpdateFunctionRequest, Function, OperationMetadata> operationCallable =
-//                    client.updateFunctionOperationCallable().withDefaultCallContext(grpcCallContext);
-//            Function function = operationCallable.call(updateFunctionRequest);
             return client.updateFunctionAsync(updateFunctionRequest);
         } catch (Exception e) {
             googleCloudClientHelper.logError(CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName(), e.getMessage());
@@ -80,10 +71,9 @@ public class GoogleCloudFunctionClientImpl implements GoogleCloudFunctionClient 
 
     @Override
     public OperationFuture<Empty, OperationMetadata> deleteFunction(DeleteFunctionRequest deleteFunctionRequest, GcpInternalConfig gcpInternalConfig) {
-        try(FunctionServiceClient client = googleCloudClientHelper.getFunctionsClient(gcpInternalConfig, true)){
+        try(FunctionServiceClient client = googleCloudClientHelper.getFunctionsClient(gcpInternalConfig)){
             googleCloudClientHelper.logCall(CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName());
-             client.deleteFunctionAsync(deleteFunctionRequest);
-
+             return client.deleteFunctionAsync(deleteFunctionRequest);
         } catch (Exception e) {
             googleCloudClientHelper.logError(CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName(), e.getMessage());
             googleCloudClientHelper.handleException(e);
@@ -93,7 +83,7 @@ public class GoogleCloudFunctionClientImpl implements GoogleCloudFunctionClient 
 
     @Override
     public ListFunctionsResponse listFunction(ListFunctionsRequest listFunctionsRequest, GcpInternalConfig gcpInternalConfig) {
-        try(FunctionServiceClient client = googleCloudClientHelper.getFunctionsClient(gcpInternalConfig, false)){
+        try(FunctionServiceClient client = googleCloudClientHelper.getFunctionsClient(gcpInternalConfig)){
             googleCloudClientHelper.logCall(CLIENT_NAME, Thread.currentThread().getStackTrace()[1].getMethodName());
             return client.listFunctions(listFunctionsRequest).getPage().getResponse();
         } catch (Exception e) {

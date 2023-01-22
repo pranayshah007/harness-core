@@ -4758,6 +4758,7 @@ plain_artifacts = [
     "com.google.cloud:google-cloud-storage:1.52.0",
     "com.google.cloud:google-cloud-functions:2.5.0",
     "com.google.cloud:google-cloud-run:0.6.0",
+    "com.google.api.grpc:proto-google-cloud-run-v2:0.6.0",
     "com.google.code.findbugs:annotations:3.0.0",
     "com.google.code.findbugs:jsr305:3.0.2",
     "com.google.code.gson:gson:2.8.9",

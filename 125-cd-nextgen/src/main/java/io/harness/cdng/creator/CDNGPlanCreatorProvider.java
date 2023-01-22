@@ -142,6 +142,9 @@ import io.harness.cdng.creator.plan.steps.elastigroup.ElastigroupBGStageSetupSte
 import io.harness.cdng.creator.plan.steps.elastigroup.ElastigroupSetupStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.elastigroup.ElastigroupSwapRouteStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.googlefunctions.GoogleFunctionsDeployStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.googlefunctions.GoogleFunctionsDeployWithoutTrafficStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.googlefunctions.GoogleFunctionsRollbackStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.googlefunctions.GoogleFunctionsTrafficShiftStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaDeployStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.terragrunt.TerragruntApplyStepPlanCreator;
@@ -171,7 +174,7 @@ import io.harness.cdng.creator.variables.GitOpsCreatePRStepVariableCreator;
 import io.harness.cdng.creator.variables.GitOpsFetchLinkedAppsStepVariableCreator;
 import io.harness.cdng.creator.variables.GitOpsMergePRStepVariableCreator;
 import io.harness.cdng.creator.variables.GitOpsUpdateReleaseRepoStepVariableCreator;
-import io.harness.cdng.creator.variables.GoogleFunctionsDeployStepVariableCreator;
+import io.harness.cdng.creator.variables.googlefunctions.GoogleFunctionsDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.HelmDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.HelmRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.K8sApplyStepVariableCreator;
@@ -194,6 +197,9 @@ import io.harness.cdng.creator.variables.TasCommandStepVariableCreator;
 import io.harness.cdng.creator.variables.TasRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.TasSwapRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.TasSwapRoutesStepVariableCreator;
+import io.harness.cdng.creator.variables.googlefunctions.GoogleFunctionsDeployWithoutTrafficStepVariableCreator;
+import io.harness.cdng.creator.variables.googlefunctions.GoogleFunctionsRollbackStepVariableCreator;
+import io.harness.cdng.creator.variables.googlefunctions.GoogleFunctionsTrafficShiftStepVariableCreator;
 import io.harness.cdng.customDeployment.CustomDeploymentConstants;
 import io.harness.cdng.customDeployment.variablecreator.FetchInstanceScriptStepVariableCreator;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepVariableCreator;
@@ -421,6 +427,9 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new TasRollbackStepPlanCreator());
 
     planCreators.add(new GoogleFunctionsDeployStepPlanCreator());
+    planCreators.add(new GoogleFunctionsDeployWithoutTrafficStepPlanCreator());
+    planCreators.add(new GoogleFunctionsTrafficShiftStepPlanCreator());
+    planCreators.add(new GoogleFunctionsRollbackStepPlanCreator());
 
     injectorUtils.injectMembers(planCreators);
     return planCreators;
@@ -542,6 +551,9 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new TasRollbackStepVariableCreator());
 
     variableCreators.add(new GoogleFunctionsDeployStepVariableCreator());
+    variableCreators.add(new GoogleFunctionsDeployWithoutTrafficStepVariableCreator());
+    variableCreators.add(new GoogleFunctionsTrafficShiftStepVariableCreator());
+    variableCreators.add(new GoogleFunctionsRollbackStepVariableCreator());
 
     return variableCreators;
   }
@@ -803,9 +815,32 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                     .setName("Google Function Deploy")
                     .setType(StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_DEPLOY)
                     .setStepMetaData(StepMetaData.newBuilder().addCategory("Google Functions").setFolderPath("Google Functions").build())
-                    .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
+                    .setFeatureFlag(FeatureName.CDS_GOOGLE_CLOUD_FUNCTION.name())
                     .build();
 
+    StepInfo googleFunctionDeployWithoutTraffic =
+            StepInfo.newBuilder()
+                    .setName("Google Function Deploy With No Traffic")
+                    .setType(StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_DEPLOY_WITHOUT_TRAFFIC)
+                    .setStepMetaData(StepMetaData.newBuilder().addCategory("Google Functions").setFolderPath("Google Functions").build())
+                    .setFeatureFlag(FeatureName.CDS_GOOGLE_CLOUD_FUNCTION.name())
+                    .build();
+
+    StepInfo googleFunctionTrafficShift =
+            StepInfo.newBuilder()
+                    .setName("Google Function Traffic Shift")
+                    .setType(StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_TRAFFIC_SHIFT)
+                    .setStepMetaData(StepMetaData.newBuilder().addCategory("Google Functions").setFolderPath("Google Functions").build())
+                    .setFeatureFlag(FeatureName.CDS_GOOGLE_CLOUD_FUNCTION.name())
+                    .build();
+
+    StepInfo googleFunctionRollback =
+            StepInfo.newBuilder()
+                    .setName("Google Function Rollback")
+                    .setType(StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_ROLLBACK)
+                    .setStepMetaData(StepMetaData.newBuilder().addCategory("Google Functions").setFolderPath("Google Functions").build())
+                    .setFeatureFlag(FeatureName.CDS_GOOGLE_CLOUD_FUNCTION.name())
+                    .build();
     StepInfo createStack = StepInfo.newBuilder()
                                .setName("CloudFormation Create Stack")
                                .setType(StepSpecTypeConstants.CLOUDFORMATION_CREATE_STACK)
@@ -1178,6 +1213,9 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     stepInfos.add(asgRollingDeploy);
     stepInfos.add(asgRollingRollback);
     stepInfos.add(googleFunctionDeploy);
+    stepInfos.add(googleFunctionDeployWithoutTraffic);
+    stepInfos.add(googleFunctionTrafficShift);
+    stepInfos.add(googleFunctionRollback);
     return stepInfos;
   }
 }

@@ -4,6 +4,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateMetaInfo;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
+import io.harness.delegate.task.googlefunctions.GoogleFunction;
 import io.harness.logging.CommandExecutionStatus;
 import lombok.Builder;
 import lombok.Value;
@@ -17,6 +18,7 @@ public class GoogleFunctionDeployResponse implements GoogleFunctionCommandRespon
     @NonFinal UnitProgressData unitProgressData;
     CommandExecutionStatus commandExecutionStatus;
     String errorMessage;
+    GoogleFunction function;
 
     @Override
     public void setDelegateMetaInfo(DelegateMetaInfo metaInfo) {

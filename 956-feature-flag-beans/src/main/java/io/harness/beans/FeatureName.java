@@ -558,7 +558,8 @@ public enum FeatureName {
   CDP_PUBLISH_INSTANCE_STATS_FOR_ENV_NG(
       "Publish instance stats at environment granularity in NG. PM Rohan", HarnessTeam.CDP),
   DEPLOYMENT_RECONCILIATION_LOGIC_QUERY_OPTIMIZATIONS(
-      "Used to modify logic for reconciliation queries", HarnessTeam.CDC);
+      "Used to modify logic for reconciliation queries", HarnessTeam.CDC),
+  CDS_GOOGLE_CLOUD_FUNCTION(" Google Cloud Functions Swimlane", HarnessTeam.CDP);
 
   @Deprecated
   FeatureName() {

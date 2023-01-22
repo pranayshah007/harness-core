@@ -201,4 +201,8 @@ public interface EntityTypeConstants {
   String CCM_GOVERNANCE_RULE_AWS = "GovernanceRuleAWS";
 
   String GOOGLE_CLOUD_FUNCTIONS_DEPLOY = "DeployCloudFunction";
+  String GOOGLE_CLOUD_FUNCTIONS_DEPLOY_WITHOUT_TRAFFIC = "DeployCloudFunctionWithNoTraffic";
+  String GOOGLE_CLOUD_FUNCTIONS_TRAFFIC_SHIFT = "CloudFunctionTrafficShift";
+  String GOOGLE_CLOUD_FUNCTIONS_ROLLBACK = "CloudFunctionRollback";
+
 }

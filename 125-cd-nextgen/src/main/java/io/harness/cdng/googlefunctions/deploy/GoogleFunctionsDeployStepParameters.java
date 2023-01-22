@@ -1,8 +1,11 @@
-package io.harness.cdng.googlefunctions;
+package io.harness.cdng.googlefunctions.deploy;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.googlefunctions.GoogleFunctionsSpecParameters;
+import io.harness.cdng.googlefunctions.deploy.GoogleFunctionsDeployBaseStepInfo;
+import io.harness.ecs.EcsCommandUnitConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
 import lombok.Builder;
@@ -11,6 +14,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.TypeAlias;
 
+import java.util.Arrays;
 import java.util.List;
 
 @OwnedBy(HarnessTeam.CDP)
@@ -18,7 +22,7 @@ import java.util.List;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @TypeAlias("googleFunctionsDeployStepParameters")
-@RecasterAlias("io.harness.cdng.googlefunctions.GoogleFunctionsDeployStepParameters")
+@RecasterAlias("io.harness.cdng.googlefunctions.deploy.GoogleFunctionsDeployStepParameters")
 public class GoogleFunctionsDeployStepParameters extends GoogleFunctionsDeployBaseStepInfo
   implements GoogleFunctionsSpecParameters {
     @Builder(builderMethodName = "infoBuilder")
