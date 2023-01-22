@@ -12,7 +12,6 @@ import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Value;
-import org.apache.cxf.annotations.EvaluateAllEndpoints;
 
 @Value
 @Builder
@@ -29,7 +28,7 @@ public class CustomChangeWebhookPayload {
   public static class CustomChangeWebhookEventDetail {
     @NotNull String description;
     String changeEventDetailsLink;
-    String internalLinkToEntity;
+    String externalLinkToEntity;
     @NotNull String name;
   }
 }

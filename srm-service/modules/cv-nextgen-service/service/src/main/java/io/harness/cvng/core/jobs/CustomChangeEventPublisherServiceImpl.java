@@ -36,7 +36,7 @@ public class CustomChangeEventPublisherServiceImpl implements CustomChangeEventP
             .setEventDetails(
                 CustomChangeEventDetails.newBuilder()
                     .setChangeEventDetailsLink(customChangeWebhookPayload.getEventDetail().getChangeEventDetailsLink())
-                    .setInternalLinkToEntity(customChangeWebhookPayload.getEventDetail().getInternalLinkToEntity())
+                    .setExternalLinkToEntity(customChangeWebhookPayload.getEventDetail().getExternalLinkToEntity())
                     .setDescription(customChangeWebhookPayload.getEventDetail().getDescription())
                     .setName(customChangeWebhookPayload.getEventDetail().getName())
                     .build())

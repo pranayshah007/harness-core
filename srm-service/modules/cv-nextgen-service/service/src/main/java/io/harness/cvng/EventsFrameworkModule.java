@@ -118,7 +118,7 @@ public class EventsFrameworkModule extends AbstractModule {
           .annotatedWith(Names.named(EventsFrameworkConstants.CUSTOM_CHANGE_EVENT))
           .toInstance(RedisConsumer.of(EventsFrameworkConstants.CUSTOM_CHANGE_EVENT, CV_NEXT_GEN.getServiceId(),
               redissonClient, EventsFrameworkConstants.CUSTOM_CHANGE_EVENT_MAX_PROCESSING_TIME,
-              EventsFrameworkConstants.CUSTOM_CHANGE_EVENT_FF_BATCH_SIZE, redisConfig.getEnvNamespace()));
+              EventsFrameworkConstants.CUSTOM_CHANGE_EVENT_BATCH_SIZE, redisConfig.getEnvNamespace()));
     }
   }
 }

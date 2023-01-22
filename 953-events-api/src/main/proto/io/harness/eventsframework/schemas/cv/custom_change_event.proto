@@ -26,6 +26,6 @@ message CustomChangeEventDTO {
 message CustomChangeEventDetails {
   string description = 1;
   string changeEventDetailsLink = 2;
-  string internalLinkToEntity = 3;
+  string externalLinkToEntity = 3;
   string name = 4;
 }
