@@ -25,27 +25,37 @@ public class CustomChangeEventPublisherServiceImpl implements CustomChangeEventP
   @Override
   public void registerCustomChangeEvent(ProjectParams projectParams, String monitoredServiceIdentifier,
       String changeSourceIdentifier, CustomChangeWebhookPayload customChangeWebhookPayload) {
-    CustomChangeEventDTO customChangeEventDTO =
+    CustomChangeEventDetails.Builder customChangeEventDetailsBuilder =
+        CustomChangeEventDetails.newBuilder()
+            .setDescription(customChangeWebhookPayload.getEventDetail().getDescription())
+            .setName(customChangeWebhookPayload.getEventDetail().getName());
+
+    if (customChangeWebhookPayload.getEventDetail().getChangeEventDetailsLink() != null) {
+      customChangeEventDetailsBuilder.setChangeEventDetailsLink(
+          customChangeWebhookPayload.getEventDetail().getChangeEventDetailsLink());
+    }
+    if (customChangeWebhookPayload.getEventDetail().getExternalLinkToEntity() != null) {
+      customChangeEventDetailsBuilder.setExternalLinkToEntity(
+          customChangeWebhookPayload.getEventDetail().getExternalLinkToEntity());
+    }
+
+    CustomChangeEventDTO.Builder customChangeEventDTOBuilder =
         CustomChangeEventDTO.newBuilder()
             .setAccountId(projectParams.getAccountIdentifier())
             .setOrgIdentifier(projectParams.getOrgIdentifier())
             .setProjectIdentifier(projectParams.getProjectIdentifier())
             .setMonitoredServiceIdentifier(monitoredServiceIdentifier)
             .setChangeSourceIdentifier(changeSourceIdentifier)
-            .setEventIdentifier(customChangeWebhookPayload.getEventIdentifier())
-            .setEventDetails(
-                CustomChangeEventDetails.newBuilder()
-                    .setChangeEventDetailsLink(customChangeWebhookPayload.getEventDetail().getChangeEventDetailsLink())
-                    .setExternalLinkToEntity(customChangeWebhookPayload.getEventDetail().getExternalLinkToEntity())
-                    .setDescription(customChangeWebhookPayload.getEventDetail().getDescription())
-                    .setName(customChangeWebhookPayload.getEventDetail().getName())
-                    .build())
+            .setEventDetails(customChangeEventDetailsBuilder.build())
             .setStartTime(customChangeWebhookPayload.getStartTime())
             .setEndTime(customChangeWebhookPayload.getEndTime())
-            .setUser(customChangeWebhookPayload.getUser())
-            .build();
+            .setUser(customChangeWebhookPayload.getUser());
 
-    Message message = Message.newBuilder().setData(customChangeEventDTO.toByteString()).build();
+    if (customChangeWebhookPayload.getEventIdentifier() != null) {
+      customChangeEventDTOBuilder.setEventIdentifier(customChangeWebhookPayload.getEventIdentifier());
+    }
+
+    Message message = Message.newBuilder().setData(customChangeEventDTOBuilder.build().toByteString()).build();
     eventProducer.send(message);
   }
 }

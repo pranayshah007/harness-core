@@ -144,10 +144,10 @@ public class WebhookServiceImpl implements WebhookService {
     if (hasApiKey) {
       accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
           Resource.of(MONITORED_SERVICE, monitoredServiceIdentifier), EDIT_PERMISSION);
+    } else {
+      throw new InvalidRequestException(
+          String.format("Authorization is mandatory for custom change in %s:%s:%s. Please add %s header in the request",
+              accountIdentifier, orgIdentifier, projectIdentifier, X_API_KEY));
     }
-
-    throw new InvalidRequestException(
-        String.format("Authorization is mandatory for custom change in %s:%s:%s. Please add %s header in the request",
-            accountIdentifier, orgIdentifier, projectIdentifier, X_API_KEY));
   }
 }

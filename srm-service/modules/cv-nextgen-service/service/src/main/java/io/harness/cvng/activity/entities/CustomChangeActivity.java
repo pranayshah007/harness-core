@@ -63,13 +63,25 @@ public class CustomChangeActivity extends Activity {
 
     @Override
     public String getEntityKeyLongString(CustomChangeActivity activity) {
-      return super.getKeyBuilder(activity).add(activity.getActivitySourceId()).toString();
+      if (activity.getActivitySourceId() != null) {
+        return super.getKeyBuilder(activity)
+            .add(activity.getActivitySourceId())
+            .add(activity.getChangeSourceIdentifier())
+            .toString();
+      }
+      return super.getKeyBuilder(activity).add(activity.toString()).toString();
     }
 
     public Query<CustomChangeActivity> populateKeyQuery(
         Query<CustomChangeActivity> query, CustomChangeActivity activity) {
+      if (activity.getActivitySourceId() != null && !activity.getActivitySourceId().isEmpty()) {
+        return super.populateKeyQuery(query, activity)
+            .filter(ActivityKeys.activitySourceId, activity.getActivitySourceId())
+            .filter(ActivityKeys.changeSourceIdentifier, activity.getChangeSourceIdentifier());
+      }
       return super.populateKeyQuery(query, activity)
-          .filter(ActivityKeys.activitySourceId, activity.getActivitySourceId());
+          .filter(ActivityKeys.changeSourceIdentifier, activity.getChangeSourceIdentifier())
+          .filter(ActivityKeys.type, null);
     }
 
     @Override
