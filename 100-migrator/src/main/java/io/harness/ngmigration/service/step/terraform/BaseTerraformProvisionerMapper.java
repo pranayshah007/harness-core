@@ -263,6 +263,7 @@ public abstract class BaseTerraformProvisionerMapper implements StepMapper {
     GitStore gitStore = null;
     if (EmptyPredicate.isNotEmpty(state.getTfVarFiles())) {
       gitStore = getGitStore(entities, migratedEntities, state);
+      gitStore.setFolderPath(ParameterField.ofNull());
       gitStore.setPaths(ParameterField.createValueField(state.getTfVarFiles()));
     } else if (state.getTfVarGitFileConfig() != null) {
       GitStoreBuilder storeBuilder = GitStore.builder().connectorRef(MigratorUtility.RUNTIME_INPUT);

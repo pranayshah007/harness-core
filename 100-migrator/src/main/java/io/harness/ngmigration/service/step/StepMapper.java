@@ -67,7 +67,7 @@ public interface StepMapper {
 
     TemplateStepNode templateStepNode = new TemplateStepNode();
     templateStepNode.setIdentifier(MigratorUtility.generateIdentifier(graphNode.getName()));
-    templateStepNode.setName(graphNode.getName());
+    templateStepNode.setName(MigratorUtility.generateName(graphNode.getName()));
     templateStepNode.setDescription(getDescription(graphNode));
     templateStepNode.setTemplate(templateLinkConfig);
     return templateStepNode;
@@ -105,7 +105,7 @@ public interface StepMapper {
 
   default void baseSetup(GraphNode graphNode, AbstractStepNode stepNode) {
     stepNode.setIdentifier(MigratorUtility.generateIdentifier(graphNode.getName()));
-    stepNode.setName(graphNode.getName());
+    stepNode.setName(MigratorUtility.generateName(graphNode.getName()));
     stepNode.setDescription(getDescription(graphNode));
     if (stepNode instanceof PmsAbstractStepNode) {
       PmsAbstractStepNode pmsAbstractStepNode = (PmsAbstractStepNode) stepNode;
@@ -119,7 +119,7 @@ public interface StepMapper {
 
   default void baseSetup(State state, AbstractStepNode stepNode) {
     stepNode.setIdentifier(MigratorUtility.generateIdentifier(state.getName()));
-    stepNode.setName(state.getName());
+    stepNode.setName(MigratorUtility.generateName(state.getName()));
     if (stepNode instanceof PmsAbstractStepNode) {
       PmsAbstractStepNode pmsAbstractStepNode = (PmsAbstractStepNode) stepNode;
       pmsAbstractStepNode.setTimeout(getTimeout(state));

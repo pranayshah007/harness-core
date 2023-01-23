@@ -46,6 +46,8 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
@@ -272,7 +274,8 @@ public class MigratorUtility {
     } else {
       String value = "";
       if (EmptyPredicate.isNotEmpty(serviceVariable.getValue())) {
-        value = (String) MigratorExpressionUtils.render(String.valueOf(serviceVariable.getValue()), new HashMap<>());
+        value =
+            String.valueOf(MigratorExpressionUtils.render(String.valueOf(serviceVariable.getValue()), new HashMap<>()));
       }
       return StringNGVariable.builder()
           .type(NGVariableType.STRING)
@@ -301,7 +304,7 @@ public class MigratorUtility {
   public static String generateName(
       Map<CgEntityId, BaseProvidedInput> inputs, CgEntityId entityId, String defaultName) {
     if (inputs == null || !inputs.containsKey(entityId) || StringUtils.isBlank(inputs.get(entityId).getName())) {
-      return defaultName;
+      return generateName(defaultName);
     }
     return inputs.get(entityId).getName();
   }
@@ -359,5 +362,12 @@ public class MigratorUtility {
     }
     NgEntityDetail detail = ngYamlFile.getNgEntityDetail();
     return ParameterField.createValueField(getIdentifierWithScope(detail));
+  }
+
+  public static String generateName(String str) {
+    Pattern p = Pattern.compile("[^-0-9a-zA-Z_\\s]", Pattern.CASE_INSENSITIVE);
+    Matcher m = p.matcher(str);
+    String generated = m.replaceAll("_");
+    return Character.isDigit(generated.charAt(0)) ? "_" + generated : generated;
   }
 }

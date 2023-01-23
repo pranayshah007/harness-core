@@ -127,7 +127,7 @@ public class InstanceStatsCollectorJob implements Job {
     try (AutoLogContext ignore = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
       Account account = accountService.get(accountId);
       if (account == null || account.getLicenseInfo() == null || account.getLicenseInfo().getAccountStatus() == null
-          || shouldSkipStatsCollection(account.getLicenseInfo())) {
+          || shouldSkipStatsCollection(account.getLicenseInfo(), account.getUuid())) {
         log.info("Skipping instance stats since the account is not active / not found");
       } else {
         log.info("Running instance stats collector job");
@@ -160,8 +160,10 @@ public class InstanceStatsCollectorJob implements Job {
     }
   }
 
-  private boolean shouldSkipStatsCollection(LicenseInfo licenseInfo) {
-    if (AccountStatus.ACTIVE.equals(licenseInfo.getAccountStatus())) {
+  private boolean shouldSkipStatsCollection(LicenseInfo licenseInfo, String accountId) {
+    if (featureFlagService.isEnabled(FeatureName.DISABLE_INSTANCE_STATS_JOB_CG, accountId)) {
+      return true;
+    } else if (AccountStatus.ACTIVE.equals(licenseInfo.getAccountStatus())) {
       return false;
     } else if (AccountStatus.DELETED.equals(licenseInfo.getAccountStatus())
         || AccountStatus.INACTIVE.equals(licenseInfo.getAccountStatus())
@@ -178,7 +180,7 @@ public class InstanceStatsCollectorJob implements Job {
   void createStats(@Nonnull final String accountId) {
     Objects.requireNonNull(accountId, "Account Id must be present");
 
-    try (AcquiredLock lock = persistentLocker.tryToAcquireLock(Account.class, accountId, Duration.ofSeconds(120))) {
+    try (AcquiredLock lock = persistentLocker.tryToAcquireLock(Account.class, accountId, Duration.ofSeconds(240))) {
       if (lock == null) {
         return;
       }

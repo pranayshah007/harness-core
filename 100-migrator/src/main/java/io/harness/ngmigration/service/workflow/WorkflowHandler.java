@@ -415,6 +415,9 @@ public abstract class WorkflowHandler {
 
   DeploymentStageConfig getDeploymentStageConfig(ServiceDefinitionType serviceDefinitionType,
       List<ExecutionWrapperConfig> steps, List<ExecutionWrapperConfig> rollbackSteps) {
+    if (EmptyPredicate.isEmpty(steps)) {
+      return null;
+    }
     return DeploymentStageConfig.builder()
         .deploymentType(serviceDefinitionType)
         .service(ServiceYamlV2.builder()
@@ -500,19 +503,24 @@ public abstract class WorkflowHandler {
     // Add all the steps
     List<ExecutionWrapperConfig> steps = getSteps(entities, migratedEntities, stepMapperFactory, phases);
 
+    if (EmptyPredicate.isEmpty(steps)) {
+      return null;
+    }
+
     // Add all the steps
-    List<ExecutionWrapperConfig> rollingSteps = getSteps(entities, migratedEntities, stepMapperFactory, rollbackPhases);
+    List<ExecutionWrapperConfig> rollbackSteps =
+        getSteps(entities, migratedEntities, stepMapperFactory, rollbackPhases);
 
     // Build Stage
     CustomStageConfig customStageConfig =
         CustomStageConfig.builder()
-            .execution(ExecutionElementConfig.builder().steps(steps).rollbackSteps(rollingSteps).build())
+            .execution(ExecutionElementConfig.builder().steps(steps).rollbackSteps(rollbackSteps).build())
             .build();
 
     Map<String, Object> templateSpec = ImmutableMap.<String, Object>builder()
                                            .put("type", "Custom")
                                            .put("spec", customStageConfig)
-                                           .put("failureStrategies", new ArrayList<>())
+                                           .put("failureStrategies", getDefaultFailureStrategy())
                                            .put("variables", getVariables(workflow))
                                            .build();
     return JsonPipelineUtils.asTree(templateSpec);
@@ -521,6 +529,9 @@ public abstract class WorkflowHandler {
   StageElementWrapperConfig buildCustomStage(Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, NGYamlFile> migratedEntities, StepMapperFactory stepMapperFactory, PhaseStep phaseStep) {
     ExecutionWrapperConfig wrapper = getStepGroup(entities, migratedEntities, stepMapperFactory, phaseStep);
+    if (wrapper == null) {
+      return null;
+    }
     CustomStageConfig customStageConfig =
         CustomStageConfig.builder()
             .execution(ExecutionElementConfig.builder().steps(Collections.singletonList(wrapper)).build())
@@ -529,6 +540,7 @@ public abstract class WorkflowHandler {
     customStageNode.setName(phaseStep.getName());
     customStageNode.setIdentifier(MigratorUtility.generateIdentifier(phaseStep.getName()));
     customStageNode.setCustomStageConfig(customStageConfig);
+    customStageNode.setFailureStrategies(getDefaultFailureStrategy());
     return StageElementWrapperConfig.builder().stage(JsonPipelineUtils.asTree(customStageNode)).build();
   }
 
@@ -545,6 +557,7 @@ public abstract class WorkflowHandler {
     stageNode.setName(phase.getName());
     stageNode.setIdentifier(MigratorUtility.generateIdentifier(phase.getName()));
     stageNode.setDeploymentStageConfig(stageConfig);
+    stageNode.setFailureStrategies(getDefaultFailureStrategy());
     if (EmptyPredicate.isNotEmpty(phase.getVariableOverrides())) {
       stageNode.setVariables(phase.getVariableOverrides()
                                  .stream()
@@ -571,7 +584,10 @@ public abstract class WorkflowHandler {
     List<StageElementWrapperConfig> stages = new ArrayList<>();
     if (EmptyPredicate.isNotEmpty(prePhase.getSteps())) {
       prePhase.setName("Pre Deployment");
-      stages.add(buildCustomStage(entities, migratedEntities, stepMapperFactory, prePhase));
+      StageElementWrapperConfig stage = buildCustomStage(entities, migratedEntities, stepMapperFactory, prePhase);
+      if (stage != null) {
+        stages.add(stage);
+      }
     }
 
     final Map<String, WorkflowPhase> rollbackPhaseMap = new HashMap<>();
@@ -592,7 +608,10 @@ public abstract class WorkflowHandler {
 
     if (EmptyPredicate.isNotEmpty(postPhase.getSteps())) {
       postPhase.setName("Post Deployment");
-      stages.add(buildCustomStage(entities, migratedEntities, stepMapperFactory, postPhase));
+      StageElementWrapperConfig stage = buildCustomStage(entities, migratedEntities, stepMapperFactory, postPhase);
+      if (stage != null) {
+        stages.add(stage);
+      }
     }
 
     PipelineInfoConfig pipelineInfoConfig =
