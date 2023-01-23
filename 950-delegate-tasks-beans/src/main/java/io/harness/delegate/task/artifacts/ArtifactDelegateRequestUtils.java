@@ -39,6 +39,7 @@ import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.gar.GarDelegateRequest;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.googlecloudsource.GoogleCloudSourceArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.s3.S3ArtifactDelegateRequest;
@@ -370,6 +371,20 @@ public class ArtifactDelegateRequestUtils {
         .versionRegex(versionRegex)
         .sourceType(artifactSourceType)
         .build();
+  }
+
+  public static GoogleCloudSourceArtifactDelegateRequest getGoogleCloudSourceArtifactDelegateRequest(String repository,
+                String project, String sourceDirectory, GcpConnectorDTO gcpConnectorDTO, String connectorRef,
+                List<EncryptedDataDetail> encryptedDataDetails, ArtifactSourceType sourceType) {
+    return GoogleCloudSourceArtifactDelegateRequest.builder()
+            .repository(repository)
+            .project(project)
+            .sourceDirectory(sourceDirectory)
+            .gcpConnectorDTO(gcpConnectorDTO)
+            .connectorRef(connectorRef)
+            .encryptedDataDetails(encryptedDataDetails)
+            .sourceType(sourceType)
+            .build();
   }
 
   public static AMIArtifactDelegateRequest getAMIArtifactDelegateRequest(List<AMITag> tags, List<AMIFilter> filters,
