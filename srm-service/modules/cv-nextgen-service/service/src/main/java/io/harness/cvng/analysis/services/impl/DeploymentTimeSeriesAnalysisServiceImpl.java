@@ -7,12 +7,17 @@
 
 package io.harness.cvng.analysis.services.impl;
 
-import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.getAdjustedAnalysisEndTime;
+import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.LOAD_TEST_BASELINE_NODE_IDENTIFIER;
+import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.LOAD_TEST_CURRENT_NODE_IDENTIFIER;
+import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.areMetricsFromCVConfigFilteredOut;
+import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.convertTimeSeriesRecordDtosListToMap;
 import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.getFilteredAnalysedTestDataNodes;
-import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.getMetricTypeFromCvConfigAndMetricDefinition;
-import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.getMetricValuesFromTimeSeriesRecordDtos;
+import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.getMapOfCvConfigIdAndFilteredMetrics;
 import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.isAnalysisResultExcluded;
-import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.isTransactionGroupExcluded;
+import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.parseControlNodeIdentifiersFromDeploymentTimeSeriesAnalysis;
+import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.parseTestNodeIdentifiersFromDeploymentTimeSeriesAnalysis;
+import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.populateRawMetricDataInMetricAnalysis;
+import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.removeMetricFromResult;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.persistence.HQuery.excludeAuthority;
@@ -30,26 +35,22 @@ import io.harness.cvng.analysis.entities.DeploymentTimeSeriesAnalysis;
 import io.harness.cvng.analysis.entities.DeploymentTimeSeriesAnalysis.DeploymentTimeSeriesAnalysisKeys;
 import io.harness.cvng.analysis.services.api.DeploymentTimeSeriesAnalysisService;
 import io.harness.cvng.beans.DataSourceType;
-import io.harness.cvng.cdng.beans.v2.AnalysedDeploymentTestDataNode;
 import io.harness.cvng.cdng.beans.v2.AnalysisResult;
+import io.harness.cvng.cdng.beans.v2.AppliedDeploymentAnalysisType;
 import io.harness.cvng.cdng.beans.v2.MetricsAnalysis;
 import io.harness.cvng.cdng.beans.v2.MetricsAnalysisOverview;
 import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.core.beans.TimeRange;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.filterParams.DeploymentTimeSeriesAnalysisFilter;
-import io.harness.cvng.core.entities.AnalysisInfo;
 import io.harness.cvng.core.entities.CVConfig;
-import io.harness.cvng.core.entities.MetricCVConfig;
-import io.harness.cvng.core.entities.MetricPack.MetricDefinition;
 import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.core.entities.VerificationTask.DeploymentInfo;
 import io.harness.cvng.core.entities.VerificationTask.TaskType;
 import io.harness.cvng.core.services.api.TimeSeriesRecordService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.utils.CVNGObjectUtils;
-import io.harness.cvng.models.VerificationType;
-import io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils;
+import io.harness.cvng.verificationjob.entities.TestVerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
 import io.harness.persistence.HPersistence;
@@ -80,6 +81,7 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSeriesAnalysisService {
   public static final int DEFAULT_PAGE_SIZE = 10;
@@ -354,116 +356,161 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
   @Override
   public List<MetricsAnalysis> getFilteredMetricAnalysesForVerifyStepExecutionId(String accountId,
       String verifyStepExecutionId, DeploymentTimeSeriesAnalysisFilter deploymentTimeSeriesAnalysisFilter) {
-    List<DeploymentTimeSeriesAnalysis> latestDeploymentTimeSeriesAnalyses =
-        getLatestDeploymentTimeSeriesAnalysis(accountId, verifyStepExecutionId, deploymentTimeSeriesAnalysisFilter);
-    Set<String> requestedHealthSources =
-        new HashSet<>(CollectionUtils.emptyIfNull(deploymentTimeSeriesAnalysisFilter.getHealthSourceIdentifiers()));
-    Set<String> requestedTransactionGroups =
-        new HashSet<>(CollectionUtils.emptyIfNull(deploymentTimeSeriesAnalysisFilter.getTransactionNames()));
     VerificationJobInstance verificationJobInstance =
         verificationJobInstanceService.getVerificationJobInstance(verifyStepExecutionId);
 
-    List<CVConfig> cvConfigs = verificationJobInstance.getResolvedJob().getCvConfigs();
-    Map<String, CVConfig> cvConfigMap =
-        CollectionUtils.emptyIfNull(cvConfigs)
-            .stream()
-            .filter(cvConfig -> cvConfig.getVerificationType() == VerificationType.TIME_SERIES)
-            .collect(Collectors.toMap(CVConfig::getUuid, cvConfig -> cvConfig, (u, v) -> v));
+    Map<String, Map<String, MetricsAnalysis>> mapOfCvConfigIdAndFilteredMetrics =
+        getMapOfCvConfigIdAndFilteredMetrics(verificationJobInstance, deploymentTimeSeriesAnalysisFilter);
 
-    List<MetricsAnalysis> metricsAnalyses = new ArrayList<>();
-
-    Instant analysisStartTime = verificationJobInstance.getStartTime();
-
+    List<DeploymentTimeSeriesAnalysis> latestDeploymentTimeSeriesAnalyses =
+        getLatestDeploymentTimeSeriesAnalysis(accountId, verifyStepExecutionId, deploymentTimeSeriesAnalysisFilter);
     for (DeploymentTimeSeriesAnalysis timeSeriesAnalysis : latestDeploymentTimeSeriesAnalyses) {
-      VerificationTask verificationTask = verificationTaskService.get(timeSeriesAnalysis.getVerificationTaskId());
+      String verificationTaskId = timeSeriesAnalysis.getVerificationTaskId();
+      VerificationTask verificationTask = verificationTaskService.get(verificationTaskId);
       Preconditions.checkArgument(verificationTask.getTaskInfo().getTaskType() == TaskType.DEPLOYMENT,
           "VerificationTask should be of Deployment type");
 
-      MetricCVConfig<? extends AnalysisInfo> cvConfig = (MetricCVConfig<? extends AnalysisInfo>) cvConfigMap.get(
-          ((DeploymentInfo) verificationTask.getTaskInfo()).getCvConfigId());
-      String healthSourceIdentifier = cvConfig.getFullyQualifiedIdentifier();
-      if (deploymentTimeSeriesAnalysisFilter.filterByHealthSourceIdentifiers()
-          && !requestedHealthSources.contains(healthSourceIdentifier)) {
+      String cvConfigIdForThisAnalysis = ((DeploymentInfo) verificationTask.getTaskInfo()).getCvConfigId();
+      Map<String, MetricsAnalysis> metricsForThisAnalysis =
+          mapOfCvConfigIdAndFilteredMetrics.get(cvConfigIdForThisAnalysis);
+
+      if (areMetricsFromCVConfigFilteredOut(metricsForThisAnalysis)) {
         continue;
       }
-      Set<MetricDefinition> metricDefinitions = cvConfig.getMetricPack().getMetrics();
-      Map<String, MetricDefinition> metricDefinitionMap = metricDefinitions.stream().collect(
-          Collectors.toMap(MetricDefinition::getIdentifier, metricDefinition -> metricDefinition, (u, v) -> v));
 
-      Instant analysisEndTime = timeSeriesAnalysis.getEndTime();
-      // required as the timeSeriesRecordService.getTimeSeriesRecordDTOs(...) method treats analysisEndTime as exclusive
-      analysisEndTime = getAdjustedAnalysisEndTime(analysisEndTime);
-      List<TimeSeriesRecordDTO> timeSeriesRecordDtos = timeSeriesRecordService.getTimeSeriesRecordDTOs(
-          verificationTask.getUuid(), analysisStartTime, analysisEndTime);
-      Map<String, List<TimeSeriesRecordDTO>> mapOfMetricIdentifierAndTimeSeriesRecordDtos =
-          CollectionUtils.emptyIfNull(timeSeriesRecordDtos)
-              .stream()
-              .collect(Collectors.groupingBy(TimeSeriesRecordDTO::getMetricIdentifier));
+      AppliedDeploymentAnalysisType appliedDeploymentAnalysisType =
+          getAppliedDeploymentAnalysisType(verificationJobInstance.getUuid(), verificationTaskId);
+
+      Map<String, Map<String, List<TimeSeriesRecordDTO>>> controlNodesRawData = getControlNodesRawData(
+          appliedDeploymentAnalysisType, verificationJobInstance, verificationTaskId, timeSeriesAnalysis);
+      Map<String, Map<String, List<TimeSeriesRecordDTO>>> testNodesRawData = getTestNodesRawData(
+          appliedDeploymentAnalysisType, verificationJobInstance, verificationTaskId, timeSeriesAnalysis);
+
       for (TransactionMetricHostData transactionMetricHostData : timeSeriesAnalysis.getTransactionMetricSummaries()) {
         // LE metricName is BE metricIdentifier
         String metricIdentifier = transactionMetricHostData.getMetricName();
-        MetricDefinition metricDefinition = metricDefinitionMap.get(metricIdentifier);
         AnalysisResult analysisResult = AnalysisResult.fromRisk(transactionMetricHostData.getRisk());
-        String transactionGroup = transactionMetricHostData.getTransactionName();
-        if (isAnalysisResultExcluded(deploymentTimeSeriesAnalysisFilter, analysisResult)
-            || isTransactionGroupExcluded(
-                deploymentTimeSeriesAnalysisFilter, requestedTransactionGroups, transactionGroup)) {
-          continue;
+        if (isAnalysisResultExcluded(deploymentTimeSeriesAnalysisFilter, analysisResult)) {
+          removeMetricFromResult(metricsForThisAnalysis, metricIdentifier);
+        } else {
+          MetricsAnalysis metricsAnalysis = metricsForThisAnalysis.get(metricIdentifier);
+          metricsAnalysis.setAnalysisResult(analysisResult);
+          metricsAnalysis.setTestDataNodes(
+              getFilteredAnalysedTestDataNodes(transactionMetricHostData, deploymentTimeSeriesAnalysisFilter));
+          populateRawMetricDataInMetricAnalysis(appliedDeploymentAnalysisType,
+              controlNodesRawData.get(metricIdentifier), testNodesRawData.get(metricIdentifier), metricsAnalysis);
         }
-        MetricsAnalysis metricsAnalysis =
-            MetricsAnalysis.builder()
-                .metricName(metricDefinition.getName())
-                .metricIdentifier(metricDefinition.getIdentifier())
-                .healthSourceIdentifier(healthSourceIdentifier)
-                .metricType(getMetricTypeFromCvConfigAndMetricDefinition(cvConfig, metricDefinition))
-                .transactionGroup(transactionGroup)
-                .thresholds(CollectionUtils.emptyIfNull(metricDefinition.getThresholds())
-                                .stream()
-                                .map(VerifyStepMetricsAnalysisUtils::getMetricThresholdFromTimeSeriesThreshold)
-                                .collect(Collectors.toList()))
-                .analysisResult(analysisResult)
-                .testDataNodes(
-                    getFilteredAnalysedTestDataNodes(transactionMetricHostData, deploymentTimeSeriesAnalysisFilter))
-                .build();
-        populateRawMetricData(
-            mapOfMetricIdentifierAndTimeSeriesRecordDtos, metricDefinition.getIdentifier(), metricsAnalysis);
-        metricsAnalyses.add(metricsAnalysis);
       }
+    }
+    List<MetricsAnalysis> metricsAnalyses = new ArrayList<>();
+    for (Map<String, MetricsAnalysis> map : mapOfCvConfigIdAndFilteredMetrics.values()) {
+      metricsAnalyses.addAll(map.values());
     }
     return metricsAnalyses;
   }
 
-  private void populateRawMetricData(
-      Map<String, List<TimeSeriesRecordDTO>> mapOfMetricIdentifierAndTimeSeriesRecordDtos, String metricIdentifier,
-      MetricsAnalysis metricsAnalysis) {
-    List<TimeSeriesRecordDTO> timeSeriesRecordDtosForMetric =
-        mapOfMetricIdentifierAndTimeSeriesRecordDtos.get(metricIdentifier);
-    Map<String, List<TimeSeriesRecordDTO>> mapOfHostIdentifierAndTimeSeriesRecordDtos =
-        CollectionUtils.emptyIfNull(timeSeriesRecordDtosForMetric)
-            .stream()
-            .collect(Collectors.groupingBy(TimeSeriesRecordDTO::getHost));
-    metricsAnalysis.getTestDataNodes().forEach(analysedDeploymentTestDataNode
-        -> populateRawMetricDataForAnalysedDeploymentTestDataNode(
-            analysedDeploymentTestDataNode, mapOfHostIdentifierAndTimeSeriesRecordDtos));
+  private Map<String, Map<String, List<TimeSeriesRecordDTO>>> getControlNodesRawData(
+      AppliedDeploymentAnalysisType appliedDeploymentAnalysisType, VerificationJobInstance verificationJobInstance,
+      String verificationTaskId, DeploymentTimeSeriesAnalysis timeSeriesAnalysis) {
+    if (appliedDeploymentAnalysisType == AppliedDeploymentAnalysisType.TEST) {
+      return getControlNodesRawDataForLoadTestAnalysis(verificationJobInstance, verificationTaskId);
+    } else if (appliedDeploymentAnalysisType == AppliedDeploymentAnalysisType.CANARY) {
+      return getControlNodesRawDataForCanaryAnalysis(verificationJobInstance, verificationTaskId, timeSeriesAnalysis);
+    } else if (appliedDeploymentAnalysisType == AppliedDeploymentAnalysisType.ROLLING) {
+      return getControlNodesRawDataForRollingAnalysis(verificationJobInstance, verificationTaskId, timeSeriesAnalysis);
+    } else {
+      return Collections.emptyMap();
+    }
   }
 
-  private void populateRawMetricDataForAnalysedDeploymentTestDataNode(
-      AnalysedDeploymentTestDataNode analysedDeploymentTestDataNode,
-      Map<String, List<TimeSeriesRecordDTO>> mapOfHostIdentifierAndTimeSeriesRecordDtos) {
-    populateRawTestDataForAnalysedDeploymentTestDataNode(
-        analysedDeploymentTestDataNode, mapOfHostIdentifierAndTimeSeriesRecordDtos);
-    populateRawControlDataForAnalysedDeploymentTestDataNode();
+  private Map<String, Map<String, List<TimeSeriesRecordDTO>>> getTestNodesRawData(
+      AppliedDeploymentAnalysisType appliedDeploymentAnalysisType, VerificationJobInstance verificationJobInstance,
+      String verificationTaskId, DeploymentTimeSeriesAnalysis timeSeriesAnalysis) {
+    if (appliedDeploymentAnalysisType == AppliedDeploymentAnalysisType.TEST) {
+      return getTestNodesRawDataForLoadTestAnalysis(verificationJobInstance, verificationTaskId, timeSeriesAnalysis);
+    } else {
+      return getTestNodesRawDataForCanaryAndRollingAnalysis(
+          verificationJobInstance, verificationTaskId, timeSeriesAnalysis);
+    }
   }
 
-  private void populateRawTestDataForAnalysedDeploymentTestDataNode(
-      AnalysedDeploymentTestDataNode analysedDeploymentTestDataNode,
-      Map<String, List<TimeSeriesRecordDTO>> mapOfHostIdentifierAndTimeSeriesRecordDtos) {
-    analysedDeploymentTestDataNode.setTestData(getMetricValuesFromTimeSeriesRecordDtos(
-        mapOfHostIdentifierAndTimeSeriesRecordDtos.get(analysedDeploymentTestDataNode.getNodeIdentifier())));
+  private Map<String, Map<String, List<TimeSeriesRecordDTO>>> getTestNodesRawDataForCanaryAndRollingAnalysis(
+      VerificationJobInstance verificationJobInstance, String verificationTaskId,
+      DeploymentTimeSeriesAnalysis timeSeriesAnalysis) {
+    Set<String> testNodes = parseTestNodeIdentifiersFromDeploymentTimeSeriesAnalysis(timeSeriesAnalysis);
+    List<TimeSeriesRecordDTO> timeSeriesRecordDtos = timeSeriesRecordService.getDeploymentMetricTimeSeriesRecordDTOs(
+        verificationTaskId, verificationJobInstance.getStartTime(), timeSeriesAnalysis.getEndTime(), testNodes);
+
+    return convertTimeSeriesRecordDtosListToMap(timeSeriesRecordDtos);
   }
 
-  private void populateRawControlDataForAnalysedDeploymentTestDataNode() {
-    // TODO: Add raw control data
+  private Map<String, Map<String, List<TimeSeriesRecordDTO>>> getTestNodesRawDataForLoadTestAnalysis(
+      VerificationJobInstance verificationJobInstance, String verificationTaskId,
+      DeploymentTimeSeriesAnalysis timeSeriesAnalysis) {
+    List<TimeSeriesRecordDTO> timeSeriesRecordDtos = timeSeriesRecordService.getDeploymentMetricTimeSeriesRecordDTOs(
+        verificationTaskId, verificationJobInstance.getStartTime(), timeSeriesAnalysis.getEndTime(), null);
+
+    CollectionUtils.emptyIfNull(timeSeriesRecordDtos)
+        .forEach(timeSeriesRecordDTO -> timeSeriesRecordDTO.setHost(LOAD_TEST_CURRENT_NODE_IDENTIFIER));
+
+    return convertTimeSeriesRecordDtosListToMap(timeSeriesRecordDtos);
+  }
+
+  private AppliedDeploymentAnalysisType getAppliedDeploymentAnalysisType(
+      String verificationJobInstanceId, String verificationTaskId) {
+    return verificationJobInstanceService.getAppliedDeploymentAnalysisTypeByVerificationTaskId(
+        verificationJobInstanceId, verificationTaskId);
+  }
+
+  private Map<String, Map<String, List<TimeSeriesRecordDTO>>> getControlNodesRawDataForLoadTestAnalysis(
+      VerificationJobInstance verificationJobInstance, String verificationTaskId) {
+    List<TimeSeriesRecordDTO> timeSeriesRecordDtos = null;
+    TestVerificationJob verificationJob = (TestVerificationJob) verificationJobInstance.getResolvedJob();
+    String baselineVerificationJobInstanceId = verificationJob.getBaselineVerificationJobInstanceId();
+    if (StringUtils.isNotBlank(baselineVerificationJobInstanceId)) {
+      VerificationJobInstance baselineVerificationJobInstance =
+          verificationJobInstanceService.getVerificationJobInstance(baselineVerificationJobInstanceId);
+      Optional<String> baselineVerificationTaskId =
+          verificationTaskService.findBaselineVerificationTaskId(verificationTaskId, verificationJobInstance);
+      if (baselineVerificationTaskId.isPresent()) {
+        timeSeriesRecordDtos =
+            timeSeriesRecordService.getDeploymentMetricTimeSeriesRecordDTOs(baselineVerificationTaskId.get(),
+                baselineVerificationJobInstance.getStartTime(), baselineVerificationJobInstance.getEndTime(), null);
+      }
+    }
+
+    CollectionUtils.emptyIfNull(timeSeriesRecordDtos)
+        .forEach(timeSeriesRecordDTO -> timeSeriesRecordDTO.setHost(LOAD_TEST_BASELINE_NODE_IDENTIFIER));
+
+    return convertTimeSeriesRecordDtosListToMap(timeSeriesRecordDtos);
+  }
+
+  private Map<String, Map<String, List<TimeSeriesRecordDTO>>> getControlNodesRawDataForCanaryAnalysis(
+      VerificationJobInstance verificationJobInstance, String verificationTaskId,
+      DeploymentTimeSeriesAnalysis timeSeriesAnalysis) {
+    List<TimeSeriesRecordDTO> timeSeriesRecordDtos;
+    Set<String> controlNodes = parseControlNodeIdentifiersFromDeploymentTimeSeriesAnalysis(timeSeriesAnalysis);
+    timeSeriesRecordDtos = timeSeriesRecordService.getDeploymentMetricTimeSeriesRecordDTOs(
+        verificationTaskId, verificationJobInstance.getStartTime(), timeSeriesAnalysis.getEndTime(), controlNodes);
+
+    return convertTimeSeriesRecordDtosListToMap(timeSeriesRecordDtos);
+  }
+
+  private Map<String, Map<String, List<TimeSeriesRecordDTO>>> getControlNodesRawDataForRollingAnalysis(
+      VerificationJobInstance verificationJobInstance, String verificationTaskId,
+      DeploymentTimeSeriesAnalysis timeSeriesAnalysis) {
+    List<TimeSeriesRecordDTO> timeSeriesRecordDtos = null;
+
+    Optional<TimeRange> dataCollectionTimeRange = verificationJobInstance.getResolvedJob().getPreActivityTimeRange(
+        verificationJobInstance.getDeploymentStartTime());
+
+    if (dataCollectionTimeRange.isPresent()) {
+      Set<String> controlNodes = parseControlNodeIdentifiersFromDeploymentTimeSeriesAnalysis(timeSeriesAnalysis);
+      timeSeriesRecordDtos = timeSeriesRecordService.getDeploymentMetricTimeSeriesRecordDTOs(verificationTaskId,
+          dataCollectionTimeRange.get().getStartTime(), dataCollectionTimeRange.get().getEndTime(), controlNodes);
+    }
+
+    return convertTimeSeriesRecordDtosListToMap(timeSeriesRecordDtos);
   }
 
   private NodeRiskCountDTO getNodeRiskCountDTO(Map<Risk, Integer> nodeCountByRiskStatusMap) {

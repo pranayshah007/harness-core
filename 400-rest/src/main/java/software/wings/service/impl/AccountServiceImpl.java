@@ -1251,6 +1251,8 @@ public class AccountServiceImpl implements AccountService {
     Account account = get(accountId);
     updateMigratedToClusterUrl(account, migratedToClusterUrl);
     // Also need to prevent all existing users in the migration account from logging in after completion of migration.
+    log.info("Marking users in migration account: {}, migrated to cluster: {}, to disabled", accountId,
+        migratedToClusterUrl);
     setUserStatusInAccount(accountId, false);
     return setAccountStatusInternal(account, AccountStatus.INACTIVE);
   }

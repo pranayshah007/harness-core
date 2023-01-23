@@ -54,7 +54,7 @@ public class TerraformRollbackStepMapperImpl extends BaseTerraformProvisionerMap
 
     TerraformRollbackStepInfo terraformRollbackStepInfo = new TerraformRollbackStepInfo();
     terraformRollbackStepInfo.setDelegateSelectors(getDelegateSelectors(state));
-    terraformRollbackStepInfo.setProvisionerIdentifier(getProvisionerIdentifier(entities, state));
+    terraformRollbackStepInfo.setProvisionerIdentifier("__PLEASE_FIX_ME__");
 
     terraformRollbackStepNode.setTerraformRollbackStepInfo(terraformRollbackStepInfo);
     return terraformRollbackStepNode;

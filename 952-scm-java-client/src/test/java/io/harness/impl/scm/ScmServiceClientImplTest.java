@@ -16,11 +16,14 @@ import static io.harness.delegate.beans.connector.ConnectorType.GITHUB;
 import static io.harness.rule.OwnerRule.BHAVYA;
 import static io.harness.rule.OwnerRule.DEEPAK;
 import static io.harness.rule.OwnerRule.MEET;
+import static io.harness.rule.OwnerRule.MOHIT_GARG;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -30,12 +33,21 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.GetBatchFileRequestIdentifier;
 import io.harness.beans.PageRequestDTO;
+import io.harness.beans.Scope;
 import io.harness.beans.gitsync.GitFileDetails;
 import io.harness.beans.gitsync.GitFilePathDetails;
 import io.harness.beans.gitsync.GitWebhookDetails;
+import io.harness.beans.request.GitFileBatchRequest;
+import io.harness.beans.request.GitFileRequest;
+import io.harness.beans.request.GitFileRequestV2;
+import io.harness.beans.response.GitFileBatchResponse;
+import io.harness.beans.response.GitFileResponse;
+import io.harness.beans.response.ScmGitMetadata;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorInfoDTO;
+import io.harness.constants.Constants;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
@@ -43,6 +55,7 @@ import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
 import io.harness.product.ci.scm.proto.Commit;
 import io.harness.product.ci.scm.proto.CreateBranchResponse;
@@ -67,7 +80,9 @@ import io.harness.rule.OwnerRule;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
@@ -103,11 +118,15 @@ public class ScmServiceClientImplTest extends CategoryTest {
   String userEmail = "userEmail";
   String userName = "userName";
   String target = "target";
+  String objectId = "objectId";
+  String repoName = "repoName";
+  String connectorRef = "connectorRef";
 
   String repoUrl = "https://github.com/harness/platform";
 
   @Before
   public void setup() {
+    scmServiceClient = spy(scmServiceClient);
     GithubConnectorDTO githubConnector = GithubConnectorDTO.builder()
                                              .apiAccess(GithubApiAccessDTO.builder().build())
                                              .url(repoUrl)
@@ -391,6 +410,51 @@ public class ScmServiceClientImplTest extends CategoryTest {
     assertThat(fileContent1.getContent()).isEqualTo(fileContent);
   }
 
+  @Test
+  @Owner(developers = MOHIT_GARG)
+  @Category(UnitTests.class)
+  public void testGetFile_Error() {
+    doThrow(new InvalidRequestException(error)).when(scmServiceClient).getRepoDetails(any(), any());
+    GitFileResponse gitFileResponse = scmServiceClient.getFile(
+        scmConnector, GitFileRequest.builder().branch("").commitId("").build(), scmBlockingStub);
+    assertThat(gitFileResponse).isNotNull();
+    assertThat(gitFileResponse.getError()).isEqualTo(error);
+    assertThat(gitFileResponse.getCommitId()).isEqualTo("");
+    assertThat(gitFileResponse.getBranch()).isEqualTo("");
+    assertThat(gitFileResponse.getStatusCode()).isEqualTo(Constants.SCM_INTERNAL_SERVER_ERROR_CODE);
+  }
+
+  @Test
+  @Owner(developers = MOHIT_GARG)
+  @Category(UnitTests.class)
+  public void testGetBatchFile() {
+    doReturn(getGitFileResponse(fileContent, commitId, objectId, filepath, branch,
+                 ScmGitMetadata.builder().repoName(repoName).scmConnector(scmConnector).build()))
+        .when(scmServiceClient)
+        .getFile(any(), any(), eq(scmBlockingStub));
+    String requestIdentifier = "request-1";
+    Map<GetBatchFileRequestIdentifier, GitFileRequestV2> gitFileRequestV2Map = new HashMap<>();
+    gitFileRequestV2Map.put(GetBatchFileRequestIdentifier.builder().identifier(requestIdentifier).build(),
+        getGitFileRequestV2(repoName, branch, "", filepath, Scope.builder().build(), connectorRef, scmConnector));
+    GitFileBatchRequest gitFileBatchRequest =
+        GitFileBatchRequest.builder().getBatchFileRequestIdentifierGitFileRequestV2Map(gitFileRequestV2Map).build();
+    GitFileBatchResponse gitFileBatchResponse = scmServiceClient.getBatchFile(gitFileBatchRequest, scmBlockingStub);
+    assertThat(gitFileBatchResponse).isNotNull();
+    assertThat(gitFileBatchResponse.getGetBatchFileRequestIdentifierGitFileResponseMap()).isNotNull();
+    assertThat(gitFileBatchResponse.getGetBatchFileRequestIdentifierGitFileResponseMap().size()).isEqualTo(1);
+    assertThat(gitFileBatchResponse.getGetBatchFileRequestIdentifierGitFileResponseMap().get(
+                   GetBatchFileRequestIdentifier.builder().identifier(requestIdentifier).build()))
+        .isNotNull();
+    GitFileResponse gitFileResponse = gitFileBatchResponse.getGetBatchFileRequestIdentifierGitFileResponseMap().get(
+        GetBatchFileRequestIdentifier.builder().identifier(requestIdentifier).build());
+    assertThat(gitFileResponse.getError()).isNull();
+    assertThat(gitFileResponse.getFilepath()).isEqualTo(filepath);
+    assertThat(gitFileResponse.getContent()).isEqualTo(fileContent);
+    assertThat(gitFileResponse.getBranch()).isEqualTo(branch);
+    assertThat(gitFileResponse.getObjectId()).isEqualTo(objectId);
+    assertThat(gitFileResponse.getScmGitMetadata()).isNotNull();
+  }
+
   private GitFileDetails getGitFileDetailsDefault() {
     return GitFileDetails.builder()
         .filePath(filepath)
@@ -444,6 +508,31 @@ public class ScmServiceClientImplTest extends CategoryTest {
         .addAllBranches(branchList)
         .setPagination(PageResponse.newBuilder().setNext(0).build())
         .setStatus(200)
+        .build();
+  }
+
+  private GitFileRequestV2 getGitFileRequestV2(String repo, String branch, String commitId, String filepath,
+      Scope scope, String connectorRef, ScmConnector scmConnector) {
+    return GitFileRequestV2.builder()
+        .repo(repo)
+        .scope(scope)
+        .connectorRef(connectorRef)
+        .scmConnector(scmConnector)
+        .filepath(filepath)
+        .commitId(commitId)
+        .branch(branch)
+        .build();
+  }
+
+  private GitFileResponse getGitFileResponse(
+      String content, String commitId, String objectId, String filepath, String branch, ScmGitMetadata scmGitMetadata) {
+    return GitFileResponse.builder()
+        .commitId(commitId)
+        .content(content)
+        .objectId(objectId)
+        .filepath(filepath)
+        .branch(branch)
+        .scmGitMetadata(scmGitMetadata)
         .build();
   }
 }

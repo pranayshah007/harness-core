@@ -146,7 +146,7 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
     }
 
     environmentInfraFilterHelper.processEnvInfraFiltering(accountIdentifier, orgIdentifier, projectIdentifier,
-        stepParameters.getEnvironments(), stepParameters.getEnvironmentGroup());
+        stepParameters.getEnvironments(), stepParameters.getEnvironmentGroup(), stepParameters.getDeploymentType());
     if (stepParameters.getEnvironments() != null) {
       environmentsMapList = getEnvironmentMapList(stepParameters.getEnvironments());
     } else if (stepParameters.getEnvironmentGroup() != null) {
@@ -295,8 +295,8 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
     for (String serviceRef : serviceTagsMap.keySet()) {
       EnvironmentsYaml environmentsYaml = serviceEnvYamlMap.get(serviceRef);
       EnvironmentGroupYaml environmentGroupYaml = serviceEnvGroupMap.get(serviceRef);
-      environmentInfraFilterHelper.processEnvInfraFiltering(
-          accountIdentifier, orgIdentifier, projectIdentifier, environmentsYaml, environmentGroupYaml);
+      environmentInfraFilterHelper.processEnvInfraFiltering(accountIdentifier, orgIdentifier, projectIdentifier,
+          environmentsYaml, environmentGroupYaml, stepParameters.getDeploymentType());
       List<EnvironmentMapResponse> environmentMapList;
       if (environmentsYaml != null) {
         environmentMapList = getEnvironmentMapList(environmentsYaml);

@@ -7,14 +7,13 @@
 
 package io.harness.pms.redisConsumer;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import lombok.Data;
 
 @Data
 @Builder
 public class DebeziumConsumerConfig {
-  @JsonProperty("debeziumTopicName") String topicName;
-  @JsonProperty("debeziumNumberOfThreads") int numberOfThreads;
-  @JsonProperty("debeziumBatchSize") int batchSize;
+  @Builder.Default int threads = 1;
+  String topic;
+  int batchSize;
 }

@@ -23,6 +23,7 @@ import io.harness.audit.client.api.AuditClientService;
 import io.harness.ccm.audittrails.events.RuleEnforcementCreateEvent;
 import io.harness.ccm.audittrails.events.RuleEnforcementDeleteEvent;
 import io.harness.ccm.audittrails.events.RuleEnforcementUpdateEvent;
+import io.harness.ccm.audittrails.yamlDTOs.RuleEnforcementDTO;
 import io.harness.ccm.views.dto.CreateRuleEnforcementDTO;
 import io.harness.context.GlobalContext;
 import io.harness.exception.InvalidArgumentsException;
@@ -74,9 +75,8 @@ public class RuleEnforcementEventHandler implements OutboxEventHandler {
         AuditEntry.builder()
             .action(Action.CREATE)
             .module(ModuleType.CE)
-            .newYaml(getYamlString(CreateRuleEnforcementDTO.builder()
-                                       .ruleEnforcement(ruleEnforcementCreateEvent.getRuleEnforcement())
-                                       .build()))
+            .newYaml(getYamlString(
+                RuleEnforcementDTO.builder().ruleEnforcement(ruleEnforcementCreateEvent.getRuleEnforcement()).build()))
             .timestamp(outboxEvent.getCreatedAt())
             .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
             .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
@@ -92,8 +92,10 @@ public class RuleEnforcementEventHandler implements OutboxEventHandler {
         AuditEntry.builder()
             .action(Action.UPDATE)
             .module(ModuleType.CE)
-            .newYaml(getYamlString(CreateRuleEnforcementDTO.builder()
-                                       .ruleEnforcement(ruleEnforcementUpdateEvent.getRuleEnforcement())
+            .newYaml(getYamlString(
+                RuleEnforcementDTO.builder().ruleEnforcement(ruleEnforcementUpdateEvent.getRuleEnforcement()).build()))
+            .oldYaml(getYamlString(RuleEnforcementDTO.builder()
+                                       .ruleEnforcement(ruleEnforcementUpdateEvent.getOldRuleEnforcement())
                                        .build()))
             .timestamp(outboxEvent.getCreatedAt())
             .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
@@ -110,9 +112,8 @@ public class RuleEnforcementEventHandler implements OutboxEventHandler {
         AuditEntry.builder()
             .action(Action.DELETE)
             .module(ModuleType.CE)
-            .newYaml(getYamlString(CreateRuleEnforcementDTO.builder()
-                                       .ruleEnforcement(ruleEnforcementDeleteEvent.getRuleEnforcement())
-                                       .build()))
+            .oldYaml(getYamlString(
+                RuleEnforcementDTO.builder().ruleEnforcement(ruleEnforcementDeleteEvent.getRuleEnforcement()).build()))
             .timestamp(outboxEvent.getCreatedAt())
             .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
             .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))

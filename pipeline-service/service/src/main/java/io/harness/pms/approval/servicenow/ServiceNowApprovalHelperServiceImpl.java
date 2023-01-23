@@ -84,7 +84,7 @@ public class ServiceNowApprovalHelperServiceImpl implements ServiceNowApprovalHe
   private final LogStreamingStepClientFactory logStreamingStepClientFactory;
   private final SecretNGManagerClient secretManagerClient;
   private final NgDelegate2TaskExecutor ngDelegate2TaskExecutor;
-  private final @Named("referenceFalseKryoSerializer") KryoSerializer referenceFalseKryoSerializer;
+  private final KryoSerializer referenceFalseKryoSerializer;
   private final String publisherName;
   private final WaitNotifyEngine waitNotifyEngine;
 
@@ -92,7 +92,7 @@ public class ServiceNowApprovalHelperServiceImpl implements ServiceNowApprovalHe
   public ServiceNowApprovalHelperServiceImpl(ConnectorResourceClient connectorResourceClient,
       PmsGitSyncHelper pmsGitSyncHelper, LogStreamingStepClientFactory logStreamingStepClientFactory,
       @Named("PRIVILEGED") SecretNGManagerClient secretManagerClient, NgDelegate2TaskExecutor ngDelegate2TaskExecutor,
-      KryoSerializer referenceFalseKryoSerializer,
+      @Named("referenceFalseKryoSerializer") KryoSerializer referenceFalseKryoSerializer,
       @Named(OrchestrationPublisherName.PUBLISHER_NAME) String publisherName, WaitNotifyEngine waitNotifyEngine) {
     this.connectorResourceClient = connectorResourceClient;
     this.pmsGitSyncHelper = pmsGitSyncHelper;

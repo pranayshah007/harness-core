@@ -287,6 +287,7 @@ public class FreezeTimeUtils {
       throw new InvalidRequestException("Time zone cannot be empty");
     }
     TimeZone timeZone = TimeZone.getTimeZone(freezeWindow.getTimeZone());
+    validateTimeZone(freezeWindow.getTimeZone(), timeZone);
     LocalDateTime firstWindowStartTime = LocalDateTime.parse(freezeWindow.getStartTime(), dtf);
     LocalDateTime firstWindowEndTime;
     if (freezeWindow.getEndTime() == null) {
@@ -333,6 +334,12 @@ public class FreezeTimeUtils {
       if (endTime < getCurrentTime()) {
         throw new InvalidRequestException("Freeze Window is already expired");
       }
+    }
+  }
+
+  private void validateTimeZone(String timeZoneId, TimeZone timeZone) {
+    if (timeZone.getID().equals("GMT") && !timeZoneId.equals("GMT")) {
+      throw new InvalidRequestException("Invalid TimeZone Selected");
     }
   }
 }

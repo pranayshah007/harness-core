@@ -72,7 +72,8 @@ public class ServiceNowStepHelperServiceImpl implements ServiceNowStepHelperServ
 
   @Inject
   public ServiceNowStepHelperServiceImpl(ConnectorResourceClient connectorResourceClient,
-      @Named("PRIVILEGED") SecretManagerClientService secretManagerClientService, KryoSerializer kryoSerializer) {
+      @Named("PRIVILEGED") SecretManagerClientService secretManagerClientService,
+      @Named("referenceFalseKryoSerializer") KryoSerializer kryoSerializer) {
     this.connectorResourceClient = connectorResourceClient;
     this.secretManagerClientService = secretManagerClientService;
     this.kryoSerializer = kryoSerializer;

@@ -23,6 +23,7 @@ import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
 import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.beans.summary.WorkflowSummary;
 import io.harness.ngmigration.client.NGClient;
@@ -187,6 +188,14 @@ public class WorkflowMigrationService extends NgMigrationService {
     String description = StringUtils.isBlank(workflow.getDescription()) ? "" : workflow.getDescription();
 
     WorkflowHandler workflowHandler = workflowHandlerFactory.getWorkflowHandler(workflow);
+    List<GraphNode> steps = workflowHandler.getSteps(workflow);
+    // We will skip migration if any of the steps are unsupported
+    if (EmptyPredicate.isEmpty(steps)
+        || steps.stream()
+               .map(step -> stepMapperFactory.getStepMapper(step.getType()).stepSupportStatus(step))
+               .anyMatch(WorkflowStepSupportStatus.UNSUPPORTED::equals)) {
+      return Collections.emptyList();
+    }
 
     JsonNode templateSpec = workflowHandler.getTemplateSpec(entities, migratedEntities, workflow);
     if (templateSpec == null) {

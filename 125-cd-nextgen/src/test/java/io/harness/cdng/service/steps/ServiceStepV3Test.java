@@ -18,6 +18,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.harness.CategoryTest;
 import io.harness.accesscontrol.acl.api.AccessCheckResponseDTO;
 import io.harness.accesscontrol.acl.api.Principal;
 import io.harness.accesscontrol.acl.api.Resource;
@@ -25,6 +26,7 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.beans.common.VariablesSweepingOutput;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
 import io.harness.cdng.expressions.CDExpressionResolver;
@@ -33,6 +35,7 @@ import io.harness.cdng.gitops.steps.GitOpsEnvOutCome;
 import io.harness.cdng.helpers.NgExpressionHelper;
 import io.harness.cdng.manifest.steps.ManifestsOutcome;
 import io.harness.cdng.manifest.yaml.kinds.K8sManifest;
+import io.harness.cdng.service.beans.KubernetesServiceSpec;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.UUIDGenerator;
@@ -89,6 +92,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.assertj.core.api.Assertions;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -98,7 +102,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-public class ServiceStepV3Test {
+public class ServiceStepV3Test extends CategoryTest {
   @Mock private ServiceEntityService serviceEntityService;
   @Mock private EnvironmentService environmentService;
   @Mock private ServiceStepsHelper serviceStepsHelper;
@@ -298,6 +302,11 @@ public class ServiceStepV3Test {
     String inputYaml = "  serviceDefinition:\n"
         + "    type: \"Kubernetes\"\n"
         + "    spec:\n"
+        + "      artifacts:\n"
+        + "        primary:\n"
+        + "          spec:\n"
+        + "            tag: develop-1\n"
+        + "          type: DockerRegistry\n"
         + "      manifests:\n"
         + "      - manifest:\n"
         + "          identifier: \"m1\"\n"
@@ -340,18 +349,82 @@ public class ServiceStepV3Test {
     NGServiceV2InfoConfig serviceConfig =
         YamlUtils.read(serviceSweepingOutput.getFinalServiceYaml(), NGServiceConfig.class).getNgServiceV2InfoConfig();
 
-    assertThat(((K8sManifest) serviceConfig.getServiceDefinition()
-                       .getServiceSpec()
-                       .getManifests()
-                       .get(0)
-                       .getManifest()
-                       .getSpec())
-                   .getValuesPaths()
-                   .getValue())
+    KubernetesServiceSpec spec = (KubernetesServiceSpec) serviceConfig.getServiceDefinition().getServiceSpec();
+    assertThat(((K8sManifest) spec.getManifests().get(0).getManifest().getSpec()).getValuesPaths().getValue())
         .containsExactly("v1.yaml", "v2.yaml");
+    assertThat(((DockerHubArtifactConfig) spec.getArtifacts().getPrimary().getSpec()).getTag().getValue())
+        .isEqualTo("develop-1");
     assertThat(serviceSweepingOutput.getFinalServiceYaml().contains("<+input>")).isFalse();
   }
 
+  @Test
+  @Owner(developers = OwnerRule.YOGESH)
+  @Category(UnitTests.class)
+  public void testMergeServiceInputsInputValidation() {
+    final ServiceEntity serviceEntity = testServiceEntityWithInputs();
+    final Environment environment = testEnvEntity();
+    String inputYaml = "  serviceDefinition:\n"
+        + "    type: \"Kubernetes\"\n"
+        + "    spec:\n"
+        + "      artifacts:\n"
+        + "        primary:\n"
+        + "          spec:\n"
+        + "            tag: xyz-1\n"
+        + "          type: DockerRegistry\n"
+        + "      manifests:\n"
+        + "      - manifest:\n"
+        + "          identifier: \"m1\"\n"
+        + "          type: \"K8sManifest\"\n"
+        + "          spec:\n"
+        + "            valuesPaths:\n"
+        + "               - v1.yaml\n"
+        + "               - v2.yaml";
+
+    mockService(serviceEntity);
+    mockEnv(environment);
+
+    Assertions.assertThatExceptionOfType(InvalidRequestException.class)
+        .isThrownBy(()
+                        -> step.obtainChildren(buildAmbiance(),
+                            ServiceStepV3Parameters.builder()
+                                .serviceRef(ParameterField.createValueField(serviceEntity.getIdentifier()))
+                                .envRef(ParameterField.createValueField(environment.getIdentifier()))
+                                .inputs(ParameterField.createValueField(YamlUtils.read(inputYaml, Map.class)))
+                                .childrenNodeIds(new ArrayList<>())
+                                .build(),
+                            null))
+        .withMessageContaining("The value provided xyz-1 does not match the required regex pattern");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.YOGESH)
+  @Category(UnitTests.class)
+  public void testMergeEnvInputsValidation() {
+    final ServiceEntity serviceEntity = testServiceEntity();
+    final Environment environment = testEnvEntityWithInputs();
+
+    String inputYaml = " identifier: envId\n"
+        + " type: Production\n"
+        + " variables:\n"
+        + "   - name: numbervar\n"
+        + "     type: Number\n"
+        + "     value: 7";
+
+    mockService(serviceEntity);
+    mockEnv(environment);
+
+    Assertions.assertThatExceptionOfType(InvalidRequestException.class)
+        .isThrownBy(()
+                        -> step.obtainChildren(buildAmbiance(),
+                            ServiceStepV3Parameters.builder()
+                                .serviceRef(ParameterField.createValueField(serviceEntity.getIdentifier()))
+                                .envRef(ParameterField.createValueField(environment.getIdentifier()))
+                                .envInputs(ParameterField.createValueField(YamlUtils.read(inputYaml, Map.class)))
+                                .childrenNodeIds(new ArrayList<>())
+                                .build(),
+                            null))
+        .withMessageContaining("The value provided 7 does not match any of the allowed values [5,6]");
+  }
   @Test
   @Owner(developers = OwnerRule.ROHITKARELIA)
   @Category(UnitTests.class)
@@ -673,18 +746,25 @@ public class ServiceStepV3Test {
 
   private ServiceEntity testServiceEntityWithInputs() {
     String serviceYaml = "service:\n"
-        + "  name: \"service-name\"\n"
-        + "  identifier: \"service-id\"\n"
+        + "  name: service-name\n"
+        + "  identifier: service-id\n"
         + "  serviceDefinition:\n"
-        + "    type: \"Kubernetes\"\n"
+        + "    type: Kubernetes\n"
         + "    spec:\n"
+        + "      artifacts:\n"
+        + "        primary:\n"
+        + "          spec:\n"
+        + "            connectorRef: account.docker\n"
+        + "            imagePath: library/nginx\n"
+        + "            tag: <+input>.regex(develop.*)\n"
+        + "          type: DockerRegistry\n"
         + "      manifests:\n"
         + "      - manifest:\n"
-        + "          identifier: \"m1\"\n"
-        + "          type: \"K8sManifest\"\n"
+        + "          identifier: m1\n"
+        + "          type: K8sManifest\n"
         + "          spec:\n"
         + "            store: {}\n"
-        + "            valuesPaths: \"<+input>\"";
+        + "            valuesPaths: <+input>";
     return ServiceEntity.builder()
         .accountId("accountId")
         .orgIdentifier("orgId")
@@ -710,6 +790,31 @@ public class ServiceStepV3Test {
         + "    - name: numbervar\n"
         + "      type: Number\n"
         + "      value: 5";
+    return Environment.builder()
+        .accountId("accountId")
+        .orgIdentifier("orgId")
+        .projectIdentifier("projectId")
+        .identifier("envId")
+        .name("developmentEnv")
+        .type(EnvironmentType.Production)
+        .yaml(yaml)
+        .build();
+  }
+
+  private Environment testEnvEntityWithInputs() {
+    String yaml = "environment:\n"
+        + "  name: developmentEnv\n"
+        + "  identifier: envId\n"
+        + "  type: Production\n"
+        + "  orgIdentifier: orgId\n"
+        + "  projectIdentifier: projectId\n"
+        + "  variables:\n"
+        + "    - name: stringvar\n"
+        + "      type: String\n"
+        + "      value: envvalue\n"
+        + "    - name: numbervar\n"
+        + "      type: Number\n"
+        + "      value: <+input>.allowedValues(5,6)";
     return Environment.builder()
         .accountId("accountId")
         .orgIdentifier("orgId")

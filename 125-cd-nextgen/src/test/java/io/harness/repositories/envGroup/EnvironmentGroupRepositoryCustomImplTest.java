@@ -182,7 +182,7 @@ public class EnvironmentGroupRepositoryCustomImplTest extends CDNGTestBase {
 
     EnvironmentGroupEntity entityWithDeleted = entity.withDeleted(true);
 
-    boolean b = environmentGroupRepositoryCustom.deleteEnvGroup(entityWithDeleted);
+    boolean b = environmentGroupRepositoryCustom.deleteEnvGroup(entityWithDeleted, false);
 
     assertThat(b).isTrue();
 

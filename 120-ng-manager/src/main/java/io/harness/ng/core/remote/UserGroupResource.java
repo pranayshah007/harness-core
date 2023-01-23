@@ -132,9 +132,10 @@ public class UserGroupResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(description = "Returns the successfully created User Group")
       })
+  @FeatureRestrictionCheck(FeatureRestrictionName.MULTIPLE_USER_GROUPS)
   public ResponseDTO<UserGroupDTO>
   create(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
-             NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+             NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,

@@ -193,20 +193,24 @@ public class PipelineMigrationService extends NgMigrationService {
 
     List<StageElementWrapperConfig> ngStages = new ArrayList<>();
 
-    // TODO: Handle Approval Stages
-    pipeline.getPipelineStages()
-        .stream()
-        .flatMap(stage -> stage.getPipelineStageElements().stream())
-        .forEach(stageElement -> {
-          if (StateType.ENV_STATE.name().equals(stageElement.getType())) {
-            String workflowId = (String) stageElement.getProperties().get("workflowId");
-            if (isNotEmpty(workflowId)) {
-              ngStages.add(buildWorkflowStage(pipeline.getAccountId(), stageElement, migratedEntities));
-            }
-          } else {
-            ngStages.add(buildApprovalStage(stageElement, migratedEntities));
+    for (PipelineStage pipelineStage : pipeline.getPipelineStages()) {
+      for (PipelineStageElement stageElement : pipelineStage.getPipelineStageElements()) {
+        StageElementWrapperConfig stage = null;
+        if (StateType.ENV_STATE.name().equals(stageElement.getType())) {
+          String workflowId = (String) stageElement.getProperties().get("workflowId");
+          if (isNotEmpty(workflowId)) {
+            stage = buildWorkflowStage(pipeline.getAccountId(), stageElement, migratedEntities);
           }
-        });
+        } else {
+          stage = buildApprovalStage(stageElement, migratedEntities);
+        }
+        // If the stage cannot be migrated then we skip building the pipeline.
+        if (stage == null) {
+          return new ArrayList<>();
+        }
+        ngStages.add(stage);
+      }
+    }
 
     if (EmptyPredicate.isEmpty(ngStages)) {
       return new ArrayList<>();
@@ -280,13 +284,13 @@ public class PipelineMigrationService extends NgMigrationService {
     NGYamlFile wfTemplate = migratedEntities.get(CgEntityId.builder().id(workflowId).type(WORKFLOW).build());
     if (wfTemplate == null) {
       log.error("The workflow was not migrated, aborting pipeline migration {}", workflowId);
-      throw new InvalidRequestException("Could not find migrated template for WF used in the pipeline");
+      return null;
     }
 
     NGTemplateConfig wfTemplateConfig = (NGTemplateConfig) wfTemplate.getYaml();
     if (TemplateEntityType.PIPELINE_TEMPLATE.equals(wfTemplateConfig.getTemplateInfoConfig().getType())) {
-      throw new InvalidRequestException(
-          "Cannot link a canary/multi-service WFs as they are created as pipeline templates");
+      log.warn("Cannot link a canary/multi-service WFs as they are created as pipeline templates");
+      return null;
     }
 
     TemplateLinkConfig templateLinkConfig = new TemplateLinkConfig();

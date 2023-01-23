@@ -1500,7 +1500,7 @@ public class BuilderFactory {
     String serviceIdentifier;
     String envIdentifier;
 
-    private String getMonitoredServiceIdentifier() {
+    public String getMonitoredServiceIdentifier() {
       return serviceIdentifier + "_" + envIdentifier;
     }
 
@@ -1680,10 +1680,11 @@ public class BuilderFactory {
         .analysisReason(AnalysisReason.NO_CONTROL_DATA)
         .controlDataType(ControlDataType.MINIMUM_DEVIATION)
         .controlNodeIdentifier("controlNodeIdentifier")
-        .controlData(Collections.singletonList(MetricValue.builder().value(1.0).timestamp(1L).build()))
-        .testData(Collections.singletonList(MetricValue.builder().value(1.0).timestamp(1L).build()))
-        .normalisedTestData(Collections.singletonList(MetricValue.builder().value(1.0).timestamp(1L).build()))
-        .normalisedControlData(Collections.singletonList(MetricValue.builder().value(1.0).timestamp(1L).build()))
+        .controlData(Collections.singletonList(MetricValue.builder().value(1.0).timestampInMillis(1L).build()))
+        .testData(Collections.singletonList(MetricValue.builder().value(1.0).timestampInMillis(1L).build()))
+        .normalisedTestData(Collections.singletonList(MetricValue.builder().value(1.0).timestampInMillis(1L).build()))
+        .normalisedControlData(
+            Collections.singletonList(MetricValue.builder().value(1.0).timestampInMillis(1L).build()))
         .build();
   }
 

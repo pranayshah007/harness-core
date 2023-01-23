@@ -36,3 +36,8 @@ org.hibernate.validator.constraints,@maven//:org_hibernate_validator_hibernate_v
 org.hibernate.validator.internal.engine.constraintvalidation,@maven//:org_hibernate_validator_hibernate_validator
 org.slf4j,@maven//:org_slf4j_slf4j_api
 org.w3c.dom,@maven//:xml_apis_xml_apis
+com.google.cloud.kms.v1.CryptoKeyName,@maven//:com_google_cloud_google_cloud_kms
+com.google.cloud.kms.v1.DecryptResponse,@maven//:com_google_cloud_google_cloud_kms
+com.google.cloud.kms.v1.EncryptResponse,@maven//:com_google_cloud_google_cloud_kms
+com.google.cloud.kms.v1.KeyManagementServiceClient,@maven//:com_google_cloud_google_cloud_kms
+com.google.cloud.kms.v1.KeyManagementServiceSettings,@maven//:com_google_cloud_google_cloud_kms

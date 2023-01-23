@@ -17,6 +17,7 @@ import io.harness.mappers.InstanceDetailsMapper;
 import io.harness.mappers.InstanceMapper;
 import io.harness.models.ActiveServiceInstanceInfo;
 import io.harness.models.ActiveServiceInstanceInfoV2;
+import io.harness.models.ActiveServiceInstanceInfoWithEnvType;
 import io.harness.models.ArtifactDeploymentDetailModel;
 import io.harness.models.BuildsByEnvironment;
 import io.harness.models.EnvBuildInstanceCount;
@@ -210,6 +211,20 @@ public class InstanceDashboardServiceImpl implements InstanceDashboardService {
     environmentInstanceCountAggregationResults.forEach(
         environmentInstanceCount -> { environmentInstanceCounts.add(environmentInstanceCount); });
     return environmentInstanceCounts;
+  }
+
+  @Override
+  public List<ActiveServiceInstanceInfoWithEnvType> getActiveServiceInstanceInfoWithEnvType(String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, String envIdentifier, String serviceIdentifier,
+      String displayName, boolean isGitOps) {
+    AggregationResults<ActiveServiceInstanceInfoWithEnvType> aggregationResults =
+        instanceService.getActiveServiceInstanceInfoWithEnvType(accountIdentifier, orgIdentifier, projectIdentifier,
+            envIdentifier, serviceIdentifier, displayName, isGitOps);
+    List<ActiveServiceInstanceInfoWithEnvType> activeServiceInstanceInfoWithEnvTypeList = new ArrayList<>();
+    aggregationResults.forEach(activeServiceInstanceInfoWithEnvType -> {
+      activeServiceInstanceInfoWithEnvTypeList.add(activeServiceInstanceInfoWithEnvType);
+    });
+    return activeServiceInstanceInfoWithEnvTypeList;
   }
 
   @Override

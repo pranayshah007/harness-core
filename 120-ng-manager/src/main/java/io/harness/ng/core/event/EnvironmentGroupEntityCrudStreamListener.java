@@ -62,7 +62,7 @@ public class EnvironmentGroupEntityCrudStreamListener implements MessageListener
   }
 
   private void processDeleteEvent(ProjectEntityChangeDTO entityChangeDTO) {
-    environmentGroupService.deleteAllEnvGroupInProject(
+    environmentGroupService.deleteAllInProject(
         entityChangeDTO.getAccountIdentifier(), entityChangeDTO.getOrgIdentifier(), entityChangeDTO.getIdentifier());
   }
 }

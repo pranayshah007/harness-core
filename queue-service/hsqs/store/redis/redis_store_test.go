@@ -259,7 +259,7 @@ func TestEnqueue(t *testing.T) {
 					Values: []interface{}{"payload", tt.args.req.Payload, "producer", tt.args.req.ProducerName},
 				}).SetVal("item1")
 				mock.ExpectXGroupCreate(utils.GetSubTopicStreamQueueKey(tt.args.req.Topic, tt.args.req.SubTopic),
-					utils.GetConsumerGroupKeyForTopic(tt.args.req.ProducerName),
+					utils.GetConsumerGroupKeyForTopic(tt.args.req.Topic),
 					"0").SetVal("OK")
 			}
 			response, err := r.Enqueue(tt.args.ctx, tt.args.req)

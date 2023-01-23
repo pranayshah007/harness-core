@@ -9,6 +9,7 @@ package io.harness.ngmigration.service.step;
 
 import io.harness.exception.InvalidRequestException;
 import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
 import io.harness.plancreator.steps.AbstractStepNode;
 
 import software.wings.beans.GraphNode;
@@ -40,5 +41,10 @@ public class UnsupportedStepMapperImpl implements StepMapper {
   @Override
   public boolean areSimilar(GraphNode stepYaml1, GraphNode stepYaml2) {
     return false;
+  }
+
+  @Override
+  public WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode) {
+    return WorkflowStepSupportStatus.UNSUPPORTED;
   }
 }

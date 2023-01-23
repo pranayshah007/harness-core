@@ -20,11 +20,11 @@ import org.codehaus.jackson.annotate.JsonProperty;
 @Data
 @OwnedBy(STO)
 public class STOYamlBlackduckToolData {
-  @ApiModelProperty(dataType = STRING_CLASSPATH)
+  @ApiModelProperty(dataType = STRING_CLASSPATH, name = "project_name")
   @JsonProperty("project_name")
   protected ParameterField<String> projectName;
 
-  @ApiModelProperty(dataType = STRING_CLASSPATH)
+  @ApiModelProperty(dataType = STRING_CLASSPATH, name = "project_version")
   @JsonProperty("project_version")
   protected ParameterField<String> projectVersion;
 }

@@ -432,6 +432,8 @@ instanceStats {"name": "unique_account_timestamp", "unique": true} {"accountId":
 instanceStats {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 instanceSyncPerpetualTasksInfo {"name": "accountId_1", "background": true} {"accountId": 1}
 instanceSyncPerpetualTasksInfo {"name": "infrastructureMappingId_1", "background": true} {"infrastructureMappingId": 1}
+instanceSyncPerpetualTasksInfoBackup {"name": "accountId_infrastructureMappingId_idx", "background": true} {"accountId": 1, "infrastructureMappingId": 1}
+instanceSyncPerpetualTasksInfoBackup {"name": "accountId_perpetualTaskId_idx", "unique": true} {"accountId": 1, "perpetualTaskRecordId": 1}
 instanceSyncTaskDetails {"name": "accountId_cloudProviderId_idx", "background": true} {"accountId": 1, "cloudProviderId": 1}
 instanceSyncTaskDetails {"name": "accountId_infrastructureMappingId_idx", "unique": true} {"accountId": 1, "infraMappingId": 1}
 instanceSyncTaskDetails {"name": "accountId_perpetualTaskId_idx", "background": true} {"accountId": 1, "perpetualTaskId": 1}

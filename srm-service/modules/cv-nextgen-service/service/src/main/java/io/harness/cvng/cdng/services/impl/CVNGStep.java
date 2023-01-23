@@ -122,6 +122,8 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
         verifyStepCvConfigServiceMap.get(monitoredServiceType)
             .fetchAndPersistResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode);
     String monitoredServiceIdentifier = resolvedCVConfigInfo.getMonitoredServiceIdentifier();
+    String monitoredServiceTemplateIdentifier = resolvedCVConfigInfo.getMonitoredServiceTemplateIdentifier();
+    String monitoredServiceTemplateVersionLabel = resolvedCVConfigInfo.getMonitoredServiceTemplateVersionLabel();
     List<CVConfig> cvConfigs = resolvedCVConfigInfo.getCvConfigs();
     Instant deploymentStartTime = Instant.ofEpochMilli(
         AmbianceUtils.getStageLevelFromAmbiance(ambiance)
@@ -145,7 +147,8 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
     } else {
       String verificationJobInstanceId;
       DeploymentActivity activity = getDeploymentActivity(stepParameters, serviceEnvironmentParams, ambiance,
-          deploymentStartTime, monitoredServiceIdentifier, cvConfigs);
+          deploymentStartTime, monitoredServiceIdentifier, monitoredServiceTemplateIdentifier,
+          monitoredServiceTemplateVersionLabel, cvConfigs);
       boolean isDemoEnabled = isDemoEnabled(accountId, ambiance);
       boolean shouldFailVerification = false;
       if (isDemoEnabled) {
@@ -156,14 +159,16 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
                 shouldFailVerification(ambiance, stepParameters.getSensitivity())
                     ? ActivityVerificationStatus.VERIFICATION_FAILED
                     : ActivityVerificationStatus.VERIFICATION_PASSED,
-                monitoredServiceIdentifier, cvConfigs);
+                monitoredServiceIdentifier, monitoredServiceTemplateIdentifier, monitoredServiceTemplateVersionLabel,
+                cvConfigs);
         activity.setDemoActivity(true);
         verificationJobInstanceId =
             verificationJobInstanceService.createDemoInstances(Arrays.asList(verificationJobInstance)).get(0);
       } else {
         VerificationJobInstanceBuilder verificationJobInstanceBuilder =
             getVerificationJobInstanceBuilder(AmbianceUtils.obtainCurrentLevel(ambiance).getIdentifier(),
-                stepParameters, serviceEnvironmentParams, deploymentStartTime, monitoredServiceIdentifier, cvConfigs);
+                stepParameters, serviceEnvironmentParams, deploymentStartTime, monitoredServiceIdentifier,
+                monitoredServiceTemplateIdentifier, monitoredServiceTemplateVersionLabel, cvConfigs);
         activity.fillInVerificationJobInstanceDetails(verificationJobInstanceBuilder);
         verificationJobInstanceId = verificationJobInstanceService.create(verificationJobInstanceBuilder.build());
       }
@@ -208,7 +213,8 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
 
   private VerificationJobInstanceBuilder getVerificationJobInstanceBuilder(String stepName,
       CVNGStepParameter stepParameters, ServiceEnvironmentParams serviceEnvironmentParams, Instant deploymentStartTime,
-      String monitoredServiceIdentifier, List<CVConfig> cvConfigs) {
+      String monitoredServiceIdentifier, String monitoredServiceTemplateIdentifier,
+      String monitoredServiceTemplateVersionLabel, List<CVConfig> cvConfigs) {
     Instant verificationStartTime = clock.instant();
     VerificationJob verificationJob =
         stepParameters.getVerificationJobBuilder()
@@ -219,6 +225,8 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
             .orgIdentifier(serviceEnvironmentParams.getOrgIdentifier())
             .accountId(serviceEnvironmentParams.getAccountIdentifier())
             .monitoredServiceIdentifier(monitoredServiceIdentifier)
+            .monitoredServiceTemplateIdentifier(monitoredServiceTemplateIdentifier)
+            .monitoredServiceTemplateVersionLabel(monitoredServiceTemplateVersionLabel)
             .cvConfigs(cvConfigs)
             .build();
     VerificationJobInstanceBuilder verificationJobInstanceBuilder =
@@ -232,9 +240,11 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
   private VerificationJobInstance getVerificationJobInstanceForDemo(String stepName, CVNGStepParameter stepParameters,
       ServiceEnvironmentParams serviceEnvironmentParams, Instant deploymentStartTime,
       ActivityVerificationStatus activityVerificationStatus, String monitoredServiceIdentifier,
+      String monitoredServiceTemplateIdentifier, String monitoredServiceTemplateVersionLabel,
       List<CVConfig> cvConfigs) {
-    VerificationJobInstanceBuilder verificationJobInstanceBuilder = getVerificationJobInstanceBuilder(
-        stepName, stepParameters, serviceEnvironmentParams, deploymentStartTime, monitoredServiceIdentifier, cvConfigs);
+    VerificationJobInstanceBuilder verificationJobInstanceBuilder = getVerificationJobInstanceBuilder(stepName,
+        stepParameters, serviceEnvironmentParams, deploymentStartTime, monitoredServiceIdentifier,
+        monitoredServiceTemplateIdentifier, monitoredServiceTemplateVersionLabel, cvConfigs);
     verificationJobInstanceBuilder.verificationStatus(activityVerificationStatus);
     verificationJobInstanceBuilder.startTime(clock.instant().minus(Duration.ofMinutes(15)));
     verificationJobInstanceBuilder.deploymentStartTime(clock.instant().minus(Duration.ofMinutes(16)));
@@ -253,7 +263,8 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
   @NotNull
   private DeploymentActivity getDeploymentActivity(CVNGStepParameter stepParameters,
       ServiceEnvironmentParams serviceEnvironmentParams, Ambiance ambiance, Instant activityStartTime,
-      String monitoredServiceIdentifier, List<CVConfig> cvConfigs) {
+      String monitoredServiceIdentifier, String monitoredServiceTemplateIdentifier,
+      String monitoredServiceTemplateVersionLabel, List<CVConfig> cvConfigs) {
     Instant startTime = clock.instant();
     VerificationJob verificationJob =
         stepParameters.getVerificationJobBuilder()
@@ -263,6 +274,8 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
             .orgIdentifier(serviceEnvironmentParams.getOrgIdentifier())
             .accountId(serviceEnvironmentParams.getAccountIdentifier())
             .monitoredServiceIdentifier(monitoredServiceIdentifier)
+            .monitoredServiceTemplateIdentifier(monitoredServiceTemplateIdentifier)
+            .monitoredServiceTemplateVersionLabel(monitoredServiceTemplateVersionLabel)
             .cvConfigs(cvConfigs)
             .build();
     DeploymentActivity deploymentActivity =

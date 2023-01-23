@@ -16,6 +16,7 @@ import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
@@ -23,6 +24,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
+import io.harness.accesscontrol.acl.api.AccessCheckResponseDTO;
+import io.harness.accesscontrol.acl.api.AccessControlDTO;
+import io.harness.accesscontrol.acl.api.ResourceScope;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.audit.entities.streaming.AwsS3StreamingDestination;
 import io.harness.audit.entities.streaming.StreamingDestination;
 import io.harness.audit.entities.streaming.StreamingDestination.StreamingDestinationKeys;
@@ -46,6 +51,7 @@ import io.harness.spec.server.audit.v1.model.StreamingDestinationSpecDTO;
 import io.harness.utils.PageUtils;
 
 import com.mongodb.BasicDBList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -86,6 +92,7 @@ public class StreamingServiceImplTest extends CategoryTest {
   private StreamingServiceImpl streamingService;
   @Mock OutboxService outboxService;
   @Mock TransactionTemplate transactionTemplate;
+  @Mock private AccessControlClient accessControlClient;
 
   @Rule public ExpectedException expectedException = ExpectedException.none();
   @Captor private ArgumentCaptor<StreamingDestination> streamingDestinationArgumentCaptor;
@@ -94,8 +101,8 @@ public class StreamingServiceImplTest extends CategoryTest {
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
-    this.streamingService = new StreamingServiceImpl(
-        streamingDestinationMapper, streamingDestinationRepository, outboxService, transactionTemplate);
+    this.streamingService = new StreamingServiceImpl(streamingDestinationMapper, streamingDestinationRepository,
+        outboxService, transactionTemplate, accessControlClient);
 
     accountIdentifier = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10);
     id = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10);
@@ -155,7 +162,7 @@ public class StreamingServiceImplTest extends CategoryTest {
   public void testList() {
     String searchTerm = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10);
     StreamingDestinationDTO.StatusEnum statusEnum = StreamingDestinationDTO.StatusEnum.ACTIVE;
-    int page = 1;
+    int page = 0;
     int limit = 10;
     Pageable pageable = PageUtils.getPageRequest(new PageRequest(
         page, limit, List.of(aSortOrder().withField(StreamingDestinationKeys.lastModifiedDate, DESC).build())));
@@ -163,12 +170,22 @@ public class StreamingServiceImplTest extends CategoryTest {
         StreamingDestinationFilterProperties.builder().searchTerm(searchTerm).status(statusEnum).build();
 
     when(streamingDestinationRepository.findAll(any(), any()))
-        .thenReturn(new PageImpl<StreamingDestination>(List.of(AwsS3StreamingDestination.builder().build())));
+        .thenReturn(new PageImpl<StreamingDestination>(List.of(
+            AwsS3StreamingDestination.builder().accountIdentifier(accountIdentifier).identifier("sd1").build())));
+    when(accessControlClient.checkForAccessOrThrow(anyList()))
+        .thenReturn(AccessCheckResponseDTO.builder()
+                        .accessControlList(Collections.singletonList(
+                            AccessControlDTO.builder()
+                                .resourceIdentifier("sd1")
+                                .resourceScope(ResourceScope.of(accountIdentifier, null, null))
+                                .permitted(true)
+                                .build()))
+                        .build());
 
     Page<StreamingDestination> streamingDestinationsPage =
         streamingService.list(accountIdentifier, pageable, filterProperties);
 
-    verify(streamingDestinationRepository, times(1)).findAll(criteriaArgumentCaptor.capture(), eq(pageable));
+    verify(streamingDestinationRepository, times(1)).findAll(criteriaArgumentCaptor.capture(), eq(Pageable.unpaged()));
 
     assertThat(streamingDestinationsPage).isNotEmpty();
     assertCriteria(accountIdentifier, filterProperties, criteriaArgumentCaptor.getValue());

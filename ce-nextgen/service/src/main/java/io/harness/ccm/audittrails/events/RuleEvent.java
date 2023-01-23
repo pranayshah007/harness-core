@@ -28,7 +28,7 @@ public abstract class RuleEvent implements Event {
   private Rule rule;
   private String accountIdentifier;
 
-  protected RuleEvent(String accountIdentifier, Rule rule) {
+  public RuleEvent(String accountIdentifier, Rule rule) {
     this.accountIdentifier = accountIdentifier;
     this.rule = rule;
   }

@@ -72,15 +72,6 @@ public class ResourceGroupChangeConsumerImpl implements ChangeConsumer<ResourceG
 
   @Override
   public void consumeUpdateEvent(String id, ResourceGroupDBO updatedResourceGroup) {
-    // Temporarily skipping for pre-qa
-    String accountToDisable = "/ACCOUNT/hnfcPmD8T-i0T2NlOs6_Rg";
-    log.info(String.format("ResourceGroupChangeConsumerImpl: Entity %s", updatedResourceGroup));
-    if (updatedResourceGroup != null && updatedResourceGroup.getScopeIdentifier() != null
-        && updatedResourceGroup.getScopeIdentifier().startsWith(accountToDisable)) {
-      log.info(String.format("ResourceGroupChangeConsumerImpl: Skipping ACL creation for %s id: %s",
-          updatedResourceGroup.getScopeIdentifier(), id));
-      return;
-    }
     long startTime = System.currentTimeMillis();
     if (updatedResourceGroup.getResourceSelectors() == null && updatedResourceGroup.getResourceSelectorsV2() == null
         && updatedResourceGroup.getScopeSelectors() == null) {

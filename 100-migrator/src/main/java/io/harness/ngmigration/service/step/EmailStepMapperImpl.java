@@ -8,6 +8,7 @@
 package io.harness.ngmigration.service.step;
 
 import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.plancreator.steps.email.EmailStepInfo;
 import io.harness.plancreator.steps.email.EmailStepNode;
@@ -25,6 +26,11 @@ import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 
 public class EmailStepMapperImpl implements StepMapper {
+  @Override
+  public WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode) {
+    return WorkflowStepSupportStatus.SUPPORTED;
+  }
+
   @Override
   public String getStepType(GraphNode stepYaml) {
     return StepSpecTypeConstants.EMAIL;

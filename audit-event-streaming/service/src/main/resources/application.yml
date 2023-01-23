@@ -12,3 +12,9 @@ jobCommonConfig:
     cursorBatchSize: 1000
     limit: 10000
     maxRetries: 2
+auditClientConfig:
+  baseUrl: http://localhost:9005/api/
+  connectTimeOutSeconds: 15
+  readTimeOutSeconds: 15
+serviceSecrets:
+  platformServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM

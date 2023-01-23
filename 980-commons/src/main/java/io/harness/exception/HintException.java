@@ -145,6 +145,7 @@ public class HintException extends WingsException {
       "Please check the artifact data (package name, project, package type, feed, version...)";
   public static final String HINT_AZURE_ARTIFACT_DOWNLOAD_FAILED =
       "Please check the artifact data (package name, project, package type, feed, version...) and credentials.";
+  public static final String HINT_DECRYPTED_SECRET_VALUE = "Please ensure secret with identifier %s exist.";
 
   public HintException(String message) {
     super(message, null, HINT, INFO, null, null);
