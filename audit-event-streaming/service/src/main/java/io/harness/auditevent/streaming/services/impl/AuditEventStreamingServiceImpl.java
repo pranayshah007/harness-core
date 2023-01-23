@@ -29,6 +29,7 @@ import io.harness.auditevent.streaming.services.StreamingDestinationService;
 
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.model.Sorts;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;

@@ -10,6 +10,7 @@ package io.harness.auditevent.streaming.publishers;
 import io.harness.audit.entities.streaming.StreamingDestination;
 import io.harness.auditevent.streaming.entities.outgoing.OutgoingAuditMessage;
 
+import java.io.IOException;
 import java.util.List;
 
 public interface StreamingPublisher {

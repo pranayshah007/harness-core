@@ -7,6 +7,7 @@
 
 package io.harness.auditevent.streaming.config;
 
+import io.harness.grpc.client.GrpcClientConfig;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.secret.ConfigSecret;
 
@@ -19,4 +20,6 @@ import lombok.Data;
 public class AuditEventStreamingConfig {
   @JsonProperty("auditClientConfig") private ServiceHttpClientConfig auditClientConfig;
   @JsonProperty("serviceSecrets") @ConfigSecret ServiceSecrets serviceSecrets;
+  @JsonProperty("grpcClient") private GrpcClientConfig grpcClientConfig;
+  @JsonProperty("ngManagerClientConfig") private ServiceHttpClientConfig ngManagerClientConfig;
 }
