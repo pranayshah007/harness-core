@@ -9,7 +9,6 @@ package io.harness.cvng.core.jobs;
 
 import static io.harness.eventsframework.EventsFrameworkConstants.INTERNAL_CHANGE_EVENT_FF;
 
-import io.harness.cvng.core.resources.FakeFeatureFlagSRMEventResource;
 import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.featureflag.EventDetails;
 import io.harness.eventsframework.featureflag.FeatureFlagEvent;
@@ -17,11 +16,13 @@ import io.harness.eventsframework.producer.Message;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import java.util.List;
+import lombok.Data;
 
 public class FakeFeatureFlagSRMProducer {
   @Inject @Named(INTERNAL_CHANGE_EVENT_FF) private Producer eventProducer;
 
-  public void publishEvent(FakeFeatureFlagSRMEventResource.FFEventBody ffEventBody) {
+  public void publishEvent(FFEventBody ffEventBody) {
     FeatureFlagEvent featureFlagEvent =
         FeatureFlagEvent.newBuilder()
             .setAccountID(ffEventBody.getAccId())
@@ -44,5 +45,21 @@ public class FakeFeatureFlagSRMProducer {
 
     Message message = Message.newBuilder().setData(featureFlagEvent.toByteString()).build();
     eventProducer.send(message);
+  }
+
+  @Data
+  public static class FFEventBody {
+    String accountId;
+    String orgIdentifier;
+    String projectIdentifier;
+    List<String> serviceRefs;
+    List<String> envRefs;
+    long startTime;
+    long endTime;
+    String name;
+    String user;
+    List<String> descriptions;
+    String changeEventLink;
+    String internalChangeLink;
   }
 }

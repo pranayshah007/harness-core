@@ -20,6 +20,7 @@ import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.entities.CVNGLog;
 import io.harness.cvng.core.entities.DataCollectionTask;
 import io.harness.cvng.core.entities.VerificationTask;
+import io.harness.cvng.core.jobs.FakeFeatureFlagSRMProducer;
 import io.harness.cvng.core.services.api.CVNGLogService;
 import io.harness.cvng.core.services.api.ChangeEventService;
 import io.harness.cvng.core.services.api.DataCollectionTaskService;
@@ -71,6 +72,7 @@ public class DebugServiceImpl implements DebugService {
   @Inject CVNGLogService cvngLogService;
   @Inject OrchestrationService orchestrationService;
 
+  @Inject private FakeFeatureFlagSRMProducer fakeFeatureFlagSRMProducer;
   @Inject ChangeEventService changeEventService;
   public static final Integer RECORDS_BATCH_SIZE = 100;
 
@@ -247,5 +249,10 @@ public class DebugServiceImpl implements DebugService {
   @Override
   public boolean registerInternalChangeEvent(ProjectParams projectParams, ChangeEventDTO changeEventDTO) {
     return changeEventService.register(changeEventDTO);
+  }
+
+  @Override
+  public void registerFFChangeEvent(FakeFeatureFlagSRMProducer.FFEventBody ffEventBody) {
+    fakeFeatureFlagSRMProducer.publishEvent(ffEventBody);
   }
 }
