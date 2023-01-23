@@ -1,6 +1,6 @@
 {
   "project": {
-    "slug": "example_project_slug",
+    "identifier": "example_project_identifier",
     "name": "example-project-name",
     "color": "#0063F7",
     "modules": [ "CD" ],

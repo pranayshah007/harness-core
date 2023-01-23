@@ -63,6 +63,12 @@ public class PmsExecutionSummaryReadHelper {
     return analyticsMongoTemplate.stream(query, PipelineExecutionSummaryEntity.class);
   }
 
+  public CloseableIterator<PipelineExecutionSummaryEntity> fetchExecutionSummaryEntityFromSecondary(Query query) {
+    query.cursorBatchSize(MAX_BATCH_SIZE);
+    validatePipelineExecutionSummaryStreamQuery(query);
+    return secondaryMongoTemplate.stream(query, PipelineExecutionSummaryEntity.class);
+  }
+
   private void validatePipelineExecutionSummaryStreamQuery(Query query) {
     if (query.getMeta().getCursorBatchSize() == null || query.getMeta().getCursorBatchSize() <= 0
         || query.getMeta().getCursorBatchSize() > MAX_BATCH_SIZE) {

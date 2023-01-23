@@ -59,14 +59,14 @@ public class CompositeSLOMetricAnalysisStateExecutor extends AnalysisStateExecut
     String sloId = verificationTaskService.getCompositeSLOId(verificationTaskId);
     CompositeServiceLevelObjective compositeServiceLevelObjective =
         (CompositeServiceLevelObjective) serviceLevelObjectiveV2Service.get(sloId);
-    CompositeSLORecord lastSLORecord = compositeSLORecordService.getLatestCompositeSLORecordWithVersion(
-        compositeServiceLevelObjective.getUuid(), compositeServiceLevelObjective.getVersion());
     LocalDateTime currentLocalDate =
         LocalDateTime.ofInstant(clock.instant(), compositeServiceLevelObjective.getZoneOffset());
     Instant startTimeForCurrentRange = compositeServiceLevelObjective.getCurrentTimeRange(currentLocalDate)
                                            .getStartTime(compositeServiceLevelObjective.getZoneOffset());
     Instant startedAtTime = Instant.ofEpochMilli(compositeServiceLevelObjective.getStartedAt());
     Instant startTime = (startTimeForCurrentRange.isAfter(startedAtTime)) ? startTimeForCurrentRange : startedAtTime;
+    CompositeSLORecord lastSLORecord = compositeSLORecordService.getLatestCompositeSLORecordWithVersion(
+        compositeServiceLevelObjective.getUuid(), startTime, compositeServiceLevelObjective.getVersion());
     if (lastSLORecord != null) {
       startTime = Instant.ofEpochSecond(lastSLORecord.getEpochMinute() * 60 + 60);
     }

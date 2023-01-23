@@ -16,6 +16,8 @@ import static io.harness.NGCommonEntityConstants.FILE_CONTENT_MESSAGE;
 import static io.harness.NGCommonEntityConstants.FILE_FILTER_PROPERTIES_MESSAGE;
 import static io.harness.NGCommonEntityConstants.FILE_LIST_IDENTIFIERS_PARAM_MESSAGE;
 import static io.harness.NGCommonEntityConstants.FILE_PARAM_MESSAGE;
+import static io.harness.NGCommonEntityConstants.FILE_PATH_KEY;
+import static io.harness.NGCommonEntityConstants.FILE_PATH_PARAM_MESSAGE;
 import static io.harness.NGCommonEntityConstants.FILE_SEARCH_TERM_PARAM_MESSAGE;
 import static io.harness.NGCommonEntityConstants.FILE_TAGS_MESSAGE;
 import static io.harness.NGCommonEntityConstants.FILE_YAML_DEFINITION_MESSAGE;
@@ -75,6 +77,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -297,8 +300,8 @@ public class FileStoreResource {
   @Operation(operationId = "getFolderNodes", summary = "Get folder nodes at first level, not including sub-nodes",
       responses =
       {
-        @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "Returns the list of folder nodes as children")
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "default", description = "Returns the folder populated with file store nodes as children")
       })
   public ResponseDTO<FolderNodeDTO>
   listFolderNodes(
@@ -313,6 +316,31 @@ public class FileStoreResource {
 
     return ResponseDTO.newResponse(fileStoreService.listFolderNodes(
         accountIdentifier, orgIdentifier, projectIdentifier, folderNodeDTO, filterQueryParams));
+  }
+
+  @GET
+  @Consumes({"application/json"})
+  @Path("folder")
+  @ApiOperation(value = "Get file store nodes on path", nickname = "getFileStoreNodesOnPath")
+  @Operation(operationId = "getFileStoreNodesOnPath", summary = "Get file store nodes on path",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "Returns the folder populated with file store nodes as children")
+      })
+  @Hidden
+  public ResponseDTO<FolderNodeDTO>
+  listFileStoreNodesOnPath(
+      @Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(ACCOUNT_KEY) @NotBlank String accountIdentifier,
+      @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(ORG_KEY) String orgIdentifier,
+      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(PROJECT_KEY) String projectIdentifier,
+      @NotNull @Parameter(description = FILE_PATH_PARAM_MESSAGE) @QueryParam(FILE_PATH_KEY) String path,
+      @BeanParam FileStoreNodesFilterQueryPropertiesDTO filterQueryParams) {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+        Resource.of(FILE, null), FILE_VIEW_PERMISSION);
+
+    return ResponseDTO.newResponse(fileStoreService.listFileStoreNodesOnPath(
+        accountIdentifier, orgIdentifier, projectIdentifier, path, filterQueryParams));
   }
 
   @POST

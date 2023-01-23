@@ -46,8 +46,9 @@ public class ProjectTemplateApiImpl implements ProjectTemplateApi {
   @Override
   public Response deleteTemplateProject(@ProjectIdentifier String project,
       @ResourceIdentifier String templateIdentifier, @OrgIdentifier String org, String versionLabel,
-      @AccountIdentifier String account, String comments) {
-    return templateResourceApiUtils.deleteTemplate(account, org, project, templateIdentifier, versionLabel, comments);
+      @AccountIdentifier String account, String comments, Boolean forceDelete) {
+    return templateResourceApiUtils.deleteTemplate(
+        account, org, project, templateIdentifier, versionLabel, comments, Boolean.TRUE == forceDelete);
   }
 
   @Override

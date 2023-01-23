@@ -1117,9 +1117,10 @@ def ingest_data_to_costagg(jsonData):
                INSERT INTO `%s` (day, cost, cloudProvider, accountId)
                 SELECT TIMESTAMP_TRUNC(startTime, DAY) AS day, SUM(cost) AS cost, "AZURE" AS cloudProvider, '%s' as accountId
                 FROM `%s`  
-                WHERE DATE(startTime) >= '%s' and cloudProvider = "AZURE" 
+                WHERE DATE(startTime) >= '%s' and DATE(startTime) <= '%s' and cloudProvider = "AZURE" 
                 GROUP BY day;
-     """ % (table_name, date_start, date_end, jsonData.get("accountId"), table_name, jsonData.get("accountId"), source_table, date_start)
+     """ % (table_name, date_start, date_end, jsonData.get("accountId"), table_name, jsonData.get("accountId"),
+            source_table, date_start, date_end)
 
     job_config = bigquery.QueryJobConfig(
         priority=bigquery.QueryPriority.BATCH

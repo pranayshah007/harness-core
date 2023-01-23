@@ -11,8 +11,8 @@ import static software.wings.service.impl.aws.model.AwsConstants.AWS_DEFAULT_REG
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
-import io.harness.aws.AwsCallTracker;
 import io.harness.aws.beans.AwsInternalConfig;
+import io.harness.aws.util.AwsCallTracker;
 
 import software.wings.service.impl.delegate.AwsEcrApiHelperServiceDelegateBase;
 

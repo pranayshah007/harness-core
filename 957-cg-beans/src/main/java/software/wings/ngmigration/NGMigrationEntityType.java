@@ -21,6 +21,7 @@ public enum NGMigrationEntityType {
   PIPELINE("pipelines"),
   ARTIFACT_STREAM,
   CONNECTOR("connectors"),
+  INFRA_PROVISIONER,
   SERVICE,
   ENVIRONMENT,
   SECRET("secrets"),

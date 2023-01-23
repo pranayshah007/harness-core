@@ -9,11 +9,9 @@ package io.harness.beans.steps.stepinfo.security.shared;
 
 import static io.harness.annotations.dev.HarnessTeam.STO;
 import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.yaml.YamlSchemaTypes;
 
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
@@ -22,13 +20,11 @@ import org.codehaus.jackson.annotate.JsonProperty;
 @Data
 @OwnedBy(STO)
 public class STOYamlBlackduckToolData {
-  @YamlSchemaTypes(value = {runtime})
-  @ApiModelProperty(dataType = STRING_CLASSPATH)
+  @ApiModelProperty(dataType = STRING_CLASSPATH, name = "project_name")
   @JsonProperty("project_name")
   protected ParameterField<String> projectName;
 
-  @YamlSchemaTypes(value = {runtime})
-  @ApiModelProperty(dataType = STRING_CLASSPATH)
+  @ApiModelProperty(dataType = STRING_CLASSPATH, name = "project_version")
   @JsonProperty("project_version")
   protected ParameterField<String> projectVersion;
 }

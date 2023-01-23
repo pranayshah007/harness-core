@@ -46,7 +46,6 @@ import io.harness.servicenow.ServiceNowTicketNG;
 import io.harness.servicenow.ServiceNowTicketNG.ServiceNowTicketNGBuilder;
 import io.harness.servicenow.ServiceNowTicketTypeNG;
 import io.harness.servicenow.ServiceNowUtils;
-import io.harness.utils.FieldWithPlainTextOrSecretValueHelper;
 
 import software.wings.beans.LogColor;
 import software.wings.beans.LogHelper;
@@ -66,7 +65,6 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.Credentials;
 import okhttp3.OkHttpClient;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -144,8 +142,6 @@ public class ServiceNowTaskNgHelper {
 
   private ServiceNowTaskNGResponse createTicketWithoutTemplate(ServiceNowTaskNGParameters serviceNowTaskNGParameters) {
     ServiceNowConnectorDTO serviceNowConnectorDTO = serviceNowTaskNGParameters.getServiceNowConnectorDTO();
-    String userName = getUserName(serviceNowConnectorDTO);
-    String password = new String(serviceNowConnectorDTO.getPasswordRef().getDecryptedValue());
     ServiceNowRestClient serviceNowRestClient = getServiceNowRestClient(serviceNowConnectorDTO.getServiceNowUrl());
 
     Map<String, String> body = new HashMap<>();
@@ -156,8 +152,9 @@ public class ServiceNowTaskNgHelper {
       }
     });
 
-    final Call<JsonNode> request = serviceNowRestClient.createTicket(Credentials.basic(userName, password),
-        serviceNowTaskNGParameters.getTicketType().toLowerCase(), "all", null, body);
+    final Call<JsonNode> request =
+        serviceNowRestClient.createTicket(ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO),
+            serviceNowTaskNGParameters.getTicketType().toLowerCase(), "all", null, body);
     Response<JsonNode> response = null;
 
     try {
@@ -179,7 +176,9 @@ public class ServiceNowTaskNgHelper {
       throw e;
     } catch (Exception ex) {
       log.error("Failed to create ServiceNow ticket: {}", ExceptionUtils.getMessage(ex), ex);
-      throw new ServiceNowException(ExceptionUtils.getMessage(ex), SERVICENOW_ERROR, USER, ex);
+      throw new ServiceNowException(
+          String.format("Error occurred while creating serviceNow ticket: %s", ExceptionUtils.getMessage(ex)),
+          SERVICENOW_ERROR, USER, ex);
     }
   }
 
@@ -189,12 +188,11 @@ public class ServiceNowTaskNgHelper {
       throw new ServiceNowException("templateName can not be empty", SERVICENOW_ERROR, USER);
     }
     ServiceNowConnectorDTO serviceNowConnectorDTO = serviceNowTaskNGParameters.getServiceNowConnectorDTO();
-    String userName = getUserName(serviceNowConnectorDTO);
-    String password = new String(serviceNowConnectorDTO.getPasswordRef().getDecryptedValue());
     ServiceNowRestClient serviceNowRestClient = getServiceNowRestClient(serviceNowConnectorDTO.getServiceNowUrl());
 
-    final Call<JsonNode> request = serviceNowRestClient.createUsingTemplate(Credentials.basic(userName, password),
-        serviceNowTaskNGParameters.getTicketType().toLowerCase(), serviceNowTaskNGParameters.getTemplateName());
+    final Call<JsonNode> request =
+        serviceNowRestClient.createUsingTemplate(ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO),
+            serviceNowTaskNGParameters.getTicketType().toLowerCase(), serviceNowTaskNGParameters.getTemplateName());
     Response<JsonNode> response = null;
 
     try {
@@ -221,7 +219,9 @@ public class ServiceNowTaskNgHelper {
       throw e;
     } catch (Exception ex) {
       log.error("Failed to create ServiceNow ticket: {}", ExceptionUtils.getMessage(ex), ex);
-      throw new ServiceNowException(ExceptionUtils.getMessage(ex), SERVICENOW_ERROR, USER, ex);
+      throw new ServiceNowException(
+          String.format("Error occurred while creating serviceNow ticket: %s", ExceptionUtils.getMessage(ex)),
+          SERVICENOW_ERROR, USER, ex);
     }
   }
 
@@ -240,13 +240,12 @@ public class ServiceNowTaskNgHelper {
       throw new ServiceNowException("templateName can not be empty", SERVICENOW_ERROR, USER);
     }
     ServiceNowConnectorDTO serviceNowConnectorDTO = serviceNowTaskNGParameters.getServiceNowConnectorDTO();
-    String userName = getUserName(serviceNowConnectorDTO);
-    String password = new String(serviceNowConnectorDTO.getPasswordRef().getDecryptedValue());
     ServiceNowRestClient serviceNowRestClient = getServiceNowRestClient(serviceNowConnectorDTO.getServiceNowUrl());
 
-    final Call<JsonNode> request = serviceNowRestClient.updateUsingTemplate(Credentials.basic(userName, password),
-        serviceNowTaskNGParameters.getTicketType().toLowerCase(), serviceNowTaskNGParameters.getTemplateName(),
-        serviceNowTaskNGParameters.getTicketNumber());
+    final Call<JsonNode> request =
+        serviceNowRestClient.updateUsingTemplate(ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO),
+            serviceNowTaskNGParameters.getTicketType().toLowerCase(), serviceNowTaskNGParameters.getTemplateName(),
+            serviceNowTaskNGParameters.getTicketNumber());
     Response<JsonNode> response = null;
 
     try {
@@ -273,7 +272,9 @@ public class ServiceNowTaskNgHelper {
       throw e;
     } catch (Exception ex) {
       log.error("Failed to update ServiceNow ticket: {}", ExceptionUtils.getMessage(ex), ex);
-      throw new ServiceNowException(ExceptionUtils.getMessage(ex), SERVICENOW_ERROR, USER, ex);
+      throw new ServiceNowException(
+          String.format("Error occurred while updating serviceNow ticket: %s", ExceptionUtils.getMessage(ex)),
+          SERVICENOW_ERROR, USER, ex);
     }
   }
 
@@ -289,13 +290,12 @@ public class ServiceNowTaskNgHelper {
   private String getIssueIdFromIssueNumber(ServiceNowTaskNGParameters parameters) {
     String query = "number=" + parameters.getTicketNumber();
     ServiceNowConnectorDTO serviceNowConnectorDTO = parameters.getServiceNowConnectorDTO();
-    String userName = getUserName(serviceNowConnectorDTO);
-    String password = new String(serviceNowConnectorDTO.getPasswordRef().getDecryptedValue());
 
     ServiceNowRestClient serviceNowRestClient = getServiceNowRestClient(serviceNowConnectorDTO.getServiceNowUrl());
 
-    final Call<JsonNode> request = serviceNowRestClient.getIssue(
-        Credentials.basic(userName, password), parameters.getTicketType().toString().toLowerCase(), query, "all");
+    final Call<JsonNode> request =
+        serviceNowRestClient.getIssue(ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO),
+            parameters.getTicketType().toString().toLowerCase(), query, "all");
     Response<JsonNode> response = null;
     try {
       response = request.execute();
@@ -332,13 +332,12 @@ public class ServiceNowTaskNgHelper {
       String ticketSysId, ServiceNowTaskNGParameters parameters) {
     String query = "sys_id=" + ticketSysId;
     ServiceNowConnectorDTO serviceNowConnectorDTO = parameters.getServiceNowConnectorDTO();
-    String userName = getUserName(serviceNowConnectorDTO);
-    String password = new String(serviceNowConnectorDTO.getPasswordRef().getDecryptedValue());
 
     ServiceNowRestClient serviceNowRestClient = getServiceNowRestClient(serviceNowConnectorDTO.getServiceNowUrl());
 
-    final Call<JsonNode> request = serviceNowRestClient.getIssue(
-        Credentials.basic(userName, password), parameters.getTicketType().toString().toLowerCase(), query, "all");
+    final Call<JsonNode> request =
+        serviceNowRestClient.getIssue(ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO),
+            parameters.getTicketType().toString().toLowerCase(), query, "all");
     Response<JsonNode> response = null;
     try {
       response = request.execute();
@@ -385,8 +384,6 @@ public class ServiceNowTaskNgHelper {
 
   private ServiceNowTaskNGResponse updateTicketWithoutTemplate(ServiceNowTaskNGParameters serviceNowTaskNGParameters) {
     ServiceNowConnectorDTO serviceNowConnectorDTO = serviceNowTaskNGParameters.getServiceNowConnectorDTO();
-    String userName = getUserName(serviceNowConnectorDTO);
-    String password = new String(serviceNowConnectorDTO.getPasswordRef().getDecryptedValue());
     ServiceNowRestClient serviceNowRestClient = getServiceNowRestClient(serviceNowConnectorDTO.getServiceNowUrl());
     String ticketId = null;
     if (serviceNowTaskNGParameters.getTicketNumber() != null) {
@@ -400,8 +397,9 @@ public class ServiceNowTaskNgHelper {
       }
     });
 
-    final Call<JsonNode> request = serviceNowRestClient.updateTicket(Credentials.basic(userName, password),
-        serviceNowTaskNGParameters.getTicketType().toLowerCase(), ticketId, "all", null, body);
+    final Call<JsonNode> request =
+        serviceNowRestClient.updateTicket(ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO),
+            serviceNowTaskNGParameters.getTicketType().toLowerCase(), ticketId, "all", null, body);
     Response<JsonNode> response = null;
 
     try {
@@ -422,19 +420,20 @@ public class ServiceNowTaskNgHelper {
       throw e;
     } catch (Exception ex) {
       log.error("Failed to update ServiceNow ticket: {}", ExceptionUtils.getMessage(ex), ex);
-      throw new ServiceNowException(ExceptionUtils.getMessage(ex), SERVICENOW_ERROR, USER, ex);
+      throw new ServiceNowException(
+          String.format("Error occurred while updating serviceNow ticket: %s", ExceptionUtils.getMessage(ex)),
+          SERVICENOW_ERROR, USER, ex);
     }
   }
 
   private ServiceNowTaskNGResponse getTemplateList(ServiceNowTaskNGParameters serviceNowTaskNGParameters) {
     ServiceNowConnectorDTO serviceNowConnectorDTO = serviceNowTaskNGParameters.getServiceNowConnectorDTO();
-    String userName = getUserName(serviceNowConnectorDTO);
-    String password = new String(serviceNowConnectorDTO.getPasswordRef().getDecryptedValue());
     ServiceNowRestClient serviceNowRestClient = getServiceNowRestClient(serviceNowConnectorDTO.getServiceNowUrl());
 
-    final Call<JsonNode> request = serviceNowRestClient.getTemplateList(Credentials.basic(userName, password),
-        serviceNowTaskNGParameters.getTicketType().toLowerCase(), serviceNowTaskNGParameters.getTemplateListLimit(),
-        serviceNowTaskNGParameters.getTemplateListOffset(), serviceNowTaskNGParameters.getTemplateName());
+    final Call<JsonNode> request =
+        serviceNowRestClient.getTemplateList(ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO),
+            serviceNowTaskNGParameters.getTicketType().toLowerCase(), serviceNowTaskNGParameters.getTemplateListLimit(),
+            serviceNowTaskNGParameters.getTemplateListOffset(), serviceNowTaskNGParameters.getTemplateName());
     Response<JsonNode> response = null;
     try {
       response = request.execute();
@@ -460,28 +459,29 @@ public class ServiceNowTaskNgHelper {
         }
         return ServiceNowTaskNGResponse.builder().serviceNowTemplateList(templateResponse).build();
       } else {
-        throw new ServiceNowException("Failed to fetch fields for ticket type "
+        throw new ServiceNowException("Failed to fetch templates for ticket type "
                 + serviceNowTaskNGParameters.getTicketType() + " response: " + response,
             SERVICENOW_ERROR, USER);
       }
     } catch (ServiceNowException e) {
-      log.error("Failed to get ServiceNow fields: {}", ExceptionUtils.getMessage(e), e);
+      log.error("Failed to get ServiceNow templates: {}", ExceptionUtils.getMessage(e), e);
       throw e;
     } catch (Exception ex) {
-      log.error("Failed to get ServiceNow fields: {}", ExceptionUtils.getMessage(ex), ex);
-      throw new ServiceNowException(ExceptionUtils.getMessage(ex), SERVICENOW_ERROR, USER, ex);
+      log.error("Failed to get ServiceNow templates: {}", ExceptionUtils.getMessage(ex), ex);
+      throw new ServiceNowException(
+          String.format("Error occurred while fetching serviceNow templates: %s", ExceptionUtils.getMessage(ex)),
+          SERVICENOW_ERROR, USER, ex);
     }
   }
 
   private ServiceNowTaskNGResponse getTicket(ServiceNowTaskNGParameters serviceNowTaskNGParameters) {
     ServiceNowConnectorDTO serviceNowConnectorDTO = serviceNowTaskNGParameters.getServiceNowConnectorDTO();
-    String userName = getUserName(serviceNowConnectorDTO);
-    String password = new String(serviceNowConnectorDTO.getPasswordRef().getDecryptedValue());
     ServiceNowRestClient serviceNowRestClient = getServiceNowRestClient(serviceNowConnectorDTO.getServiceNowUrl());
 
-    final Call<JsonNode> request = serviceNowRestClient.getIssue(Credentials.basic(userName, password),
-        serviceNowTaskNGParameters.getTicketType().toLowerCase(),
-        "number=" + serviceNowTaskNGParameters.getTicketNumber(), "all");
+    final Call<JsonNode> request =
+        serviceNowRestClient.getIssue(ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO),
+            serviceNowTaskNGParameters.getTicketType().toLowerCase(),
+            "number=" + serviceNowTaskNGParameters.getTicketNumber(), "all");
     Response<JsonNode> response = null;
 
     try {
@@ -513,23 +513,19 @@ public class ServiceNowTaskNgHelper {
       }
     } catch (Exception e) {
       log.error("Failed to get serviceNow ticket ");
-      throw new ServiceNowException(ExceptionUtils.getMessage(e), SERVICENOW_ERROR, USER, e);
+      throw new ServiceNowException(
+          String.format("Error occurred while fetching serviceNow ticket: %s", ExceptionUtils.getMessage(e)),
+          SERVICENOW_ERROR, USER, e);
     }
-  }
-
-  private String getUserName(ServiceNowConnectorDTO serviceNowConnectorDTO) {
-    return FieldWithPlainTextOrSecretValueHelper.getSecretAsStringFromPlainTextOrSecretRef(
-        serviceNowConnectorDTO.getUsername(), serviceNowConnectorDTO.getUsernameRef());
   }
 
   private ServiceNowTaskNGResponse getIssueCreateMetaData(ServiceNowTaskNGParameters serviceNowTaskNGParameters) {
     ServiceNowConnectorDTO serviceNowConnectorDTO = serviceNowTaskNGParameters.getServiceNowConnectorDTO();
-    String userName = getUserName(serviceNowConnectorDTO);
-    String password = new String(serviceNowConnectorDTO.getPasswordRef().getDecryptedValue());
     ServiceNowRestClient serviceNowRestClient = getServiceNowRestClient(serviceNowConnectorDTO.getServiceNowUrl());
 
-    final Call<JsonNode> request = serviceNowRestClient.getAdditionalFields(
-        Credentials.basic(userName, password), serviceNowTaskNGParameters.getTicketType().toLowerCase());
+    final Call<JsonNode> request =
+        serviceNowRestClient.getAdditionalFields(ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO),
+            serviceNowTaskNGParameters.getTicketType().toLowerCase());
     Response<JsonNode> response = null;
     try {
       response = request.execute();
@@ -552,18 +548,19 @@ public class ServiceNowTaskNgHelper {
       }
     } catch (Exception e) {
       log.error("Failed to get serviceNow fields ");
-      throw new ServiceNowException(ExceptionUtils.getMessage(e), SERVICENOW_ERROR, USER, e);
+      throw new ServiceNowException(
+          String.format("Error occurred while fetching serviceNow fields: %s", ExceptionUtils.getMessage(e)),
+          SERVICENOW_ERROR, USER, e);
     }
   }
 
   private ServiceNowTaskNGResponse getMetadata(ServiceNowTaskNGParameters serviceNowTaskNGParameters) {
     ServiceNowConnectorDTO serviceNowConnectorDTO = serviceNowTaskNGParameters.getServiceNowConnectorDTO();
-    String userName = getUserName(serviceNowConnectorDTO);
-    String password = new String(serviceNowConnectorDTO.getPasswordRef().getDecryptedValue());
     ServiceNowRestClient serviceNowRestClient = getServiceNowRestClient(serviceNowConnectorDTO.getServiceNowUrl());
 
-    final Call<JsonNode> request = serviceNowRestClient.getMetadata(
-        Credentials.basic(userName, password), serviceNowTaskNGParameters.getTicketType().toLowerCase());
+    final Call<JsonNode> request =
+        serviceNowRestClient.getMetadata(ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO),
+            serviceNowTaskNGParameters.getTicketType().toLowerCase());
     Response<JsonNode> response = null;
     try {
       response = request.execute();
@@ -602,15 +599,15 @@ public class ServiceNowTaskNgHelper {
       throw e;
     } catch (Exception ex) {
       log.error("Failed to get ServiceNow fields: {}", ExceptionUtils.getMessage(ex), ex);
-      throw new ServiceNowException(ExceptionUtils.getMessage(ex), SERVICENOW_ERROR, USER, ex);
+      throw new ServiceNowException(
+          String.format("Error occurred while getting serviceNow fields: %s", ExceptionUtils.getMessage(ex)),
+          SERVICENOW_ERROR, USER, ex);
     }
   }
 
   private ServiceNowTaskNGResponse createImportSet(
       ServiceNowTaskNGParameters serviceNowTaskNGParameters, LogCallback executionLogCallback) {
     ServiceNowConnectorDTO serviceNowConnectorDTO = serviceNowTaskNGParameters.getServiceNowConnectorDTO();
-    String userName = getUserName(serviceNowConnectorDTO);
-    String password = new String(serviceNowConnectorDTO.getPasswordRef().getDecryptedValue());
     ServiceNowRestClient serviceNowRestClient = getServiceNowRestClient(serviceNowConnectorDTO.getServiceNowUrl());
     saveLogs(executionLogCallback, "-----");
     saveLogs(executionLogCallback, "Initiating ServiceNow import set step");
@@ -632,8 +629,9 @@ public class ServiceNowTaskNgHelper {
       importDataJsonMap = new HashMap<>();
     }
     saveLogs(executionLogCallback, "Executing import set .....");
-    final Call<JsonNode> request = serviceNowRestClient.createImportSet(Credentials.basic(userName, password),
-        serviceNowTaskNGParameters.getStagingTableName(), "all", importDataJsonMap);
+    final Call<JsonNode> request =
+        serviceNowRestClient.createImportSet(ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO),
+            serviceNowTaskNGParameters.getStagingTableName(), "all", importDataJsonMap);
     Response<JsonNode> response = null;
     try {
       response = request.execute();
@@ -680,17 +678,18 @@ public class ServiceNowTaskNgHelper {
       log.error("Failed to create/execute ServiceNow import set: {}", ExceptionUtils.getMessage(ex), ex);
       saveLogs(executionLogCallback,
           String.format("Failed to create/execute import set: %s", ExceptionUtils.getMessage(ex)), LogLevel.ERROR);
-      throw new ServiceNowException(ExceptionUtils.getMessage(ex), SERVICENOW_ERROR, USER, ex);
+      throw new ServiceNowException(String.format("Error occurred while creating/executing serviceNow import set: %s",
+                                        ExceptionUtils.getMessage(ex)),
+          SERVICENOW_ERROR, USER, ex);
     }
   }
 
   private ServiceNowTaskNGResponse getStagingTableList(ServiceNowTaskNGParameters serviceNowTaskNGParameters) {
     ServiceNowConnectorDTO serviceNowConnectorDTO = serviceNowTaskNGParameters.getServiceNowConnectorDTO();
-    String userName = getUserName(serviceNowConnectorDTO);
-    String password = new String(serviceNowConnectorDTO.getPasswordRef().getDecryptedValue());
     ServiceNowRestClient serviceNowRestClient = getServiceNowRestClient(serviceNowConnectorDTO.getServiceNowUrl());
 
-    final Call<JsonNode> request = serviceNowRestClient.getStagingTableList(Credentials.basic(userName, password));
+    final Call<JsonNode> request =
+        serviceNowRestClient.getStagingTableList(ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO));
     Response<JsonNode> response = null;
     try {
       response = request.execute();
@@ -717,7 +716,9 @@ public class ServiceNowTaskNgHelper {
       throw e;
     } catch (Exception ex) {
       log.error("Failed to fetch staging tables: {}", ExceptionUtils.getMessage(ex), ex);
-      throw new ServiceNowException(ExceptionUtils.getMessage(ex), SERVICENOW_ERROR, USER, ex);
+      throw new ServiceNowException(
+          String.format("Error occurred while fetching serviceNow staging tables: %s", ExceptionUtils.getMessage(ex)),
+          SERVICENOW_ERROR, USER, ex);
     }
   }
 
@@ -763,10 +764,9 @@ public class ServiceNowTaskNgHelper {
   private ServiceNowTaskNGResponse validateCredentials(ServiceNowTaskNGParameters serviceNowTaskNGParameters) {
     ServiceNowConnectorDTO serviceNowConnectorDTO = serviceNowTaskNGParameters.getServiceNowConnectorDTO();
     String url = serviceNowConnectorDTO.getServiceNowUrl();
-    String userName = getUserName(serviceNowConnectorDTO);
-    String password = new String(serviceNowConnectorDTO.getPasswordRef().getDecryptedValue());
     ServiceNowRestClient serviceNowRestClient = getServiceNowRestClient(url);
-    final Call<JsonNode> request = serviceNowRestClient.validateConnection(Credentials.basic(userName, password));
+    final Call<JsonNode> request =
+        serviceNowRestClient.validateConnection(ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO));
     Response<JsonNode> response = null;
     try {
       response = request.execute();
@@ -811,8 +811,13 @@ public class ServiceNowTaskNgHelper {
   }
 
   private void decryptRequestDTOs(ServiceNowTaskNGParameters serviceNowTaskNGParameters) {
-    secretDecryptionService.decrypt(
-        serviceNowTaskNGParameters.getServiceNowConnectorDTO(), serviceNowTaskNGParameters.getEncryptionDetails());
+    ServiceNowConnectorDTO serviceNowConnectorDTO = serviceNowTaskNGParameters.getServiceNowConnectorDTO();
+    if (!isNull(serviceNowConnectorDTO.getAuth()) && !isNull(serviceNowConnectorDTO.getAuth().getCredentials())) {
+      secretDecryptionService.decrypt(
+          serviceNowConnectorDTO.getAuth().getCredentials(), serviceNowTaskNGParameters.getEncryptionDetails());
+    } else {
+      secretDecryptionService.decrypt(serviceNowConnectorDTO, serviceNowTaskNGParameters.getEncryptionDetails());
+    }
   }
 
   public static void handleResponse(Response<?> response, String message) throws IOException {
@@ -828,7 +833,7 @@ public class ServiceNowTaskNgHelper {
     if (response.errorBody() == null) {
       throw new ServiceNowException(message + " : " + response.message(), SERVICENOW_ERROR, USER);
     }
-    throw new ServiceNowException(response.errorBody().string(), SERVICENOW_ERROR, USER);
+    throw new ServiceNowException(message + " : " + response.errorBody().string(), SERVICENOW_ERROR, USER);
   }
 
   @NotNull

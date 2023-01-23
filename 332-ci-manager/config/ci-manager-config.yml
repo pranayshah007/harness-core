@@ -5,7 +5,7 @@
 server:
   applicationConnectors:
     - type: https
-      port: 7171
+      port: ${SERVER_APP_HTTPS_PORT:-7171}
       keyStorePath: keystore.jks
       keyStorePassword: password
       trustStorePath: ${JAVA_HOME}/lib/security/cacerts
@@ -13,11 +13,11 @@ server:
       validateCerts: false
       maxRequestHeaderSize: 100KiB
     - type: http
-      port: 4457
+      port: ${SERVER_APP_HTTP_PORT:-4457}
       maxRequestHeaderSize: 100KiB
   adminConnectors:
     - type: https
-      port: 7071
+      port: ${SERVER_ADMIN_HTTPS_PORT:-7071}
       keyStorePath: keystore.jks
       keyStorePassword: password
       trustStorePath: ${JAVA_HOME}/lib/security/cacerts
@@ -161,10 +161,12 @@ ciExecutionServiceConfig:
     enterprise:
       defaultTotalExecutionCount: 100
       defaultMacExecutionCount: 10
+    overrideConfig:
+      - "kmpySmUISimoRrJL6NL73w:1:1"
   pvcDefaultStorageSize: 25600
   delegateServiceEndpointVariableValue: "delegate-service:8080"
-  addonImage: harness/ci-addon:1.16.1
-  liteEngineImage: harness/ci-lite-engine:1.16.1
+  addonImage: harness/ci-addon:1.16.3
+  liteEngineImage: harness/ci-lite-engine:1.16.3
   isLocal: false
   remoteDebugTimeout: 3600
   cacheIntelligenceConfig:
@@ -174,6 +176,33 @@ ciExecutionServiceConfig:
     splitLinuxAmd64Pool: false
     splitLinuxArm64Pool: false
     splitWindowsAmd64Pool: false
+  stoStepConfig:
+    defaultTag: ${STO_STEP_CONFIG_DEFAULT_TAG:-latest}
+    defaultEntrypoint:
+      - /bin/start.sh
+      - "--run-strategy"
+      - single-container
+    images:
+      - product: aquatrivy_default
+        image: harness/aqua-trivy-job-runner
+      - product: bandit_default
+        image: harness/bandit-job-runner
+      - product: blackduck_default
+        image: harness/blackduckhub-job-runner
+      - product: grype_default
+        image: harness/grype-job-runner
+      - product: snyk_default
+        image: harness/snyk-job-runner
+      - product: sonarqube_default
+        image: harness/sonarqube-agent-job-runner
+      - product: prismacloud_default
+        image: harness/twistlock-job-runner
+      - product: checkmarx_default
+        image: harness/checkmarx-job-runner
+      - product: zap_default
+        image: harness/zap-job-runner
+      - product: mend_default
+        image: harness/whitesource-agent-job-runner
   stepConfig:
     # The below config is for K8 steps
     gitCloneConfig:
@@ -225,13 +254,13 @@ ciExecutionServiceConfig:
       windowsEntrypoint:
         - "C:\\bin\\drone-artifactory.exe"
     cacheGCSConfig:
-      image: plugins/cache:1.4.3
+      image: plugins/cache:1.4.4
       entrypoint:
         - /bin/drone-cache
       windowsEntrypoint:
         - "C:\\drone-cache.exe"
     cacheS3Config:
-      image: plugins/cache:1.4.3
+      image: plugins/cache:1.4.4
       entrypoint:
         - /bin/drone-cache
       windowsEntrypoint:
@@ -247,8 +276,8 @@ ciExecutionServiceConfig:
       s3Upload: plugins/s3:1.2.0
       security: harness/sto-plugin:dev
       artifactoryUpload: plugins/artifactory:1.2.0
-      cacheGCS: plugins/cache:1.4.3
-      cacheS3: plugins/cache:1.4.3
+      cacheGCS: plugins/cache:1.4.4
+      cacheS3: plugins/cache:1.4.4
 
 pmsSdkExecutionPoolConfig:
   corePoolSize: ${PMS_SDK_EXECUTION_POOL_CORE_SIZE:-50}

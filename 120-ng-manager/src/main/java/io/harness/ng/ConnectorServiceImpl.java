@@ -21,6 +21,7 @@ import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.ng.NextGenModule.SECRET_MANAGER_CONNECTOR_SERVICE;
 
 import static java.lang.String.format;
+import static java.util.Objects.isNull;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.NgAutoLogContext;
@@ -51,6 +52,8 @@ import io.harness.connector.services.ConnectorHeartbeatService;
 import io.harness.connector.services.ConnectorService;
 import io.harness.connector.stats.ConnectorStatistics;
 import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthType;
+import io.harness.delegate.beans.connector.servicenow.ServiceNowConnectorDTO;
 import io.harness.delegate.beans.connector.vaultconnector.VaultConnectorDTO;
 import io.harness.errorhandling.NGErrorHelper;
 import io.harness.eventsframework.EventsFrameworkConstants;
@@ -180,9 +183,22 @@ public class ConnectorServiceImpl implements ConnectorService {
     }
   }
 
+  private void applyAdfsAuthFFCheckForServiceNowConnector(ConnectorDTO connectorDTO, String accountIdentifier) {
+    if (connectorDTO.getConnectorInfo().getConnectorConfig() instanceof ServiceNowConnectorDTO) {
+      ConnectorInfoDTO connectorInfoDTO = connectorDTO.getConnectorInfo();
+      ServiceNowConnectorDTO serviceNowConnectorDTO = (ServiceNowConnectorDTO) connectorInfoDTO.getConnectorConfig();
+      if (!isNull(serviceNowConnectorDTO.getAuth())
+          && ServiceNowAuthType.ADFS.equals(serviceNowConnectorDTO.getAuth().getAuthType())
+          && !ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.CDS_SERVICENOW_ADFS_AUTH)) {
+        throw new InvalidRequestException("Unsupported servicenow auth type provided : ADFS");
+      }
+    }
+  }
+
   private ConnectorResponseDTO createInternal(
       ConnectorDTO connectorDTO, String accountIdentifier, ChangeType gitChangeType) {
     skipAppRoleRenewalForVaultConnector(connectorDTO, accountIdentifier);
+    applyAdfsAuthFFCheckForServiceNowConnector(connectorDTO, accountIdentifier);
     PerpetualTaskId connectorHeartbeatTaskId = null;
     try (AutoLogContext ignore1 = new NgAutoLogContext(connectorDTO.getConnectorInfo().getProjectIdentifier(),
              connectorDTO.getConnectorInfo().getOrgIdentifier(), accountIdentifier, OVERRIDE_ERROR);
@@ -287,6 +303,7 @@ public class ConnectorServiceImpl implements ConnectorService {
   @Override
   public ConnectorResponseDTO update(ConnectorDTO connectorDTO, String accountIdentifier, ChangeType gitChangeType) {
     skipAppRoleRenewalForVaultConnector(connectorDTO, accountIdentifier);
+    applyAdfsAuthFFCheckForServiceNowConnector(connectorDTO, accountIdentifier);
     try (AutoLogContext ignore1 = new NgAutoLogContext(connectorDTO.getConnectorInfo().getProjectIdentifier(),
              connectorDTO.getConnectorInfo().getOrgIdentifier(), accountIdentifier, OVERRIDE_ERROR);
          AutoLogContext ignore2 =

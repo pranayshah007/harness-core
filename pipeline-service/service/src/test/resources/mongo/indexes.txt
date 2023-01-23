@@ -68,7 +68,7 @@ outcomeInstances {"name": "unique_producedBySetupIdRuntimeIdIdx", "unique": true
 outcomeInstances {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 pipelineMetadata {"name": "account_org_project_pipeline_yaml_git_config_branch_idx", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1, "entityGitDetails.branch": 1, "entityGitDetails.repoIdentifier": 1}
 pipelineMetadataV2 {"name": "account_org_project_pipeline", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1}
-pipelineValidationEvent {"name": "fqn_action", "background": true} {"fqn": 1, "action": 1}
+pipelineValidationEvent {"name": "fqn_action_startTs_idx", "background": true} {"fqn": 1, "action": 1, "startTs": -1}
 pipelinesPMS {"name": "accountId_orgId_projectId_lastExecutedAt_repo_identifier_idx", "background": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "executionSummaryInfo.lastExecutionTs": -1, "repo": 1, "identifier": 1}
 pipelinesPMS {"name": "accountId_orgId_projectId_lastUpdatedAt_repo_identifier_idx", "background": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "lastUpdatedAt": -1, "repo": 1, "identifier": 1}
 pipelinesPMS {"name": "accountId_orgId_projectId_name_repo_identifier_idx", "background": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "name": -1, "repo": 1, "identifier": 1}

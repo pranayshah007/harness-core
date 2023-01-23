@@ -50,6 +50,7 @@ import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ng.core.event.MessageListener;
+import io.harness.ngsettings.client.remote.NGSettingsClientModule;
 import io.harness.organization.OrganizationClientModule;
 import io.harness.outbox.TransactionOutboxModule;
 import io.harness.outbox.api.OutboxEventHandler;
@@ -216,7 +217,8 @@ public class TemplateServiceModule extends AbstractModule {
     bind(TemplateRefreshService.class).to(TemplateRefreshServiceImpl.class);
     bind(TemplateMergeService.class).to(TemplateMergeServiceImpl.class).in(Singleton.class);
     bind(TemplateGitXService.class).to(TemplateGitXServiceImpl.class).in(Singleton.class);
-
+    install(new NGSettingsClientModule(this.templateServiceConfiguration.getNgManagerServiceHttpClientConfig(),
+        this.templateServiceConfiguration.getNgManagerServiceSecret(), TEMPLATE_SERVICE.getServiceId()));
     install(EnforcementClientModule.getInstance(templateServiceConfiguration.getNgManagerServiceHttpClientConfig(),
         templateServiceConfiguration.getNgManagerServiceSecret(), TEMPLATE_SERVICE.getServiceId(),
         templateServiceConfiguration.getEnforcementClientConfiguration()));

@@ -99,14 +99,14 @@ public class AwsConnectorValidatorTest extends CategoryTest {
     when(ngSecretService.getEncryptionDetails(any(), any())).thenReturn(null);
     when(encryptionHelper.getEncryptionDetail(any(), any(), any(), any())).thenReturn(null);
 
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(AwsValidateTaskResponse.builder()
                         .connectorValidationResult(
                             ConnectorValidationResult.builder().status(ConnectivityStatus.SUCCESS).build())
                         .build());
     awsConnectorValidator.validate(
         awsConnectorDTO, "accountIdentifier", "orgIdentifier", "projectIdentifier", "identifier");
-    verify(delegateGrpcClientWrapper, times(1)).executeSyncTask(any());
+    verify(delegateGrpcClientWrapper, times(1)).executeSyncTaskV2(any());
   }
 
   @Test
@@ -127,14 +127,14 @@ public class AwsConnectorValidatorTest extends CategoryTest {
             .build();
     when(ngSecretService.getEncryptionDetails(any(), any())).thenReturn(null);
     when(encryptionHelper.getEncryptionDetail(any(), any(), any(), any())).thenReturn(null);
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(AwsValidateTaskResponse.builder()
                         .connectorValidationResult(
                             ConnectorValidationResult.builder().status(ConnectivityStatus.SUCCESS).build())
                         .build());
     awsConnectorValidator.validate(
         awsConnectorDTO, "accountIdentifier", "orgIdentifier", "projectIdentifier", "identifier");
-    verify(delegateGrpcClientWrapper, times(1)).executeSyncTask(any());
+    verify(delegateGrpcClientWrapper, times(1)).executeSyncTaskV2(any());
   }
 
   @Test

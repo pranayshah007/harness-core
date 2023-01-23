@@ -294,7 +294,7 @@ public class NGSecretServiceV2ImplTest extends CategoryTest {
                                        .build())
                              .build());
     doReturn(Optional.of(secret)).when(secretServiceV2Spy).get(any(), any(), any(), any());
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(SSHConfigValidationTaskResponse.builder().connectionSuccessful(true).build());
     SecretValidationResultDTO resultDTO =
         secretServiceV2Spy.validateSecret("account", null, null, "identifier", getMetadata());
@@ -320,7 +320,7 @@ public class NGSecretServiceV2ImplTest extends CategoryTest {
                                        .build())
                              .build());
     doReturn(Optional.of(secret)).when(secretServiceV2Spy).get(any(), any(), any(), any());
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(SSHConfigValidationTaskResponse.builder().connectionSuccessful(true).build());
     SecretValidationResultDTO resultDTO =
         secretServiceV2Spy.validateSecret("account", null, null, "identifier", getMetadata());
@@ -346,7 +346,7 @@ public class NGSecretServiceV2ImplTest extends CategoryTest {
                                        .build())
                              .build());
     doReturn(Optional.of(secret)).when(secretServiceV2Spy).get(any(), any(), any(), any());
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenThrow(new DelegateServiceDriverException("No eligible delegate(s) found in the account."));
     exceptionRule.expect(HintException.class);
     exceptionRule.expectMessage(
@@ -371,7 +371,7 @@ public class NGSecretServiceV2ImplTest extends CategoryTest {
                       .build())
             .build());
     doReturn(Optional.of(secret)).when(secretServiceV2Spy).get(any(), any(), any(), any());
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(SSHConfigValidationTaskResponse.builder().connectionSuccessful(true).build());
     SecretValidationResultDTO resultDTO =
         secretServiceV2Spy.validateSecret("account", null, null, "identifier", getMetadata());
@@ -396,7 +396,7 @@ public class NGSecretServiceV2ImplTest extends CategoryTest {
                                        .build())
                              .build());
     doReturn(Optional.of(secret)).when(secretServiceV2Spy).get(any(), any(), any(), any());
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(SSHConfigValidationTaskResponse.builder().connectionSuccessful(true).build());
     SecretValidationResultDTO resultDTO =
         secretServiceV2Spy.validateSecret("account", null, null, "identifier", getMetadata());
@@ -417,7 +417,7 @@ public class NGSecretServiceV2ImplTest extends CategoryTest {
                       .build())
             .build());
     doReturn(Optional.of(secret)).when(secretServiceV2Spy).get(any(), any(), any(), any());
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(WinRmConfigValidationTaskResponse.builder().connectionSuccessful(true).build());
     SecretValidationResultDTO resultDTO =
         secretServiceV2Spy.validateSecret("account", null, null, "identifier", getWinRmMetaData());
@@ -443,7 +443,7 @@ public class NGSecretServiceV2ImplTest extends CategoryTest {
                       .build())
             .build());
     doReturn(Optional.of(secret)).when(secretServiceV2Spy).get(any(), any(), any(), any());
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(WinRmConfigValidationTaskResponse.builder().connectionSuccessful(true).build());
     SecretValidationResultDTO resultDTO =
         secretServiceV2Spy.validateSecret("account", null, null, "identifier", getWinRmMetaData());
@@ -468,7 +468,7 @@ public class NGSecretServiceV2ImplTest extends CategoryTest {
                                        .build())
                              .build());
     doReturn(Optional.of(secret)).when(secretServiceV2Spy).get(any(), any(), any(), any());
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(WinRmConfigValidationTaskResponse.builder().connectionSuccessful(true).build());
     SecretValidationResultDTO resultDTO =
         secretServiceV2Spy.validateSecret("account", null, null, "identifier", getWinRmMetaData());

@@ -14,6 +14,7 @@ import software.wings.beans.BuildWorkflow;
 import software.wings.beans.GraphNode;
 import software.wings.beans.Workflow;
 import software.wings.ngmigration.CgEntityId;
+import software.wings.ngmigration.CgEntityNode;
 import software.wings.service.impl.yaml.handler.workflow.BuildWorkflowYamlHandler;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -38,7 +39,8 @@ public class BuildWorkflowHandlerImpl extends WorkflowHandler {
   }
 
   @Override
-  public JsonNode getTemplateSpec(Map<CgEntityId, NGYamlFile> migratedEntities, Workflow workflow) {
-    return getCustomStageTemplateSpec(migratedEntities, workflow, stepMapperFactory);
+  public JsonNode getTemplateSpec(
+      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities, Workflow workflow) {
+    return getCustomStageTemplateSpec(entities, migratedEntities, workflow, stepMapperFactory);
   }
 }

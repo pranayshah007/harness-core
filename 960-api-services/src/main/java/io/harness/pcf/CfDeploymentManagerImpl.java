@@ -55,6 +55,10 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -204,6 +208,58 @@ public class CfDeploymentManagerImpl implements CfDeploymentManager {
     return applicationDetail;
   }
 
+  @Override
+  public ApplicationDetail createRollingApplicationWithSteadyStateCheck(CfCreateApplicationRequestData requestData,
+      LogCallback executionLogCallback) throws PivotalClientApiException, InterruptedException {
+    boolean steadyStateReached = false;
+    CfRequestConfig cfRequestConfig = requestData.getCfRequestConfig();
+    long timeout = cfRequestConfig.getTimeOutIntervalInMins() <= 0 ? 10 : cfRequestConfig.getTimeOutIntervalInMins();
+    long expiryTime = System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(timeout);
+
+    executionLogCallback.saveExecutionLog(color("\n# Streaming Logs From PCF -", White, Bold));
+    StartedProcess startedProcess = startTailingLogsIfNeeded(cfRequestConfig, executionLogCallback, null);
+
+    ApplicationDetail applicationDetail = null;
+    ExecutorService executorService = Executors.newFixedThreadPool(1);
+    Future<ApplicationDetail> future =
+        executorService.submit(new CreateApplicationTask(cfCliClient, cfSdkClient, requestData, executionLogCallback));
+    executorService.shutdown();
+
+    while (!steadyStateReached && System.currentTimeMillis() < expiryTime) {
+      try {
+        startedProcess = startTailingLogsIfNeeded(cfRequestConfig, executionLogCallback, startedProcess);
+        applicationDetail = cfSdkClient.getApplicationByName(cfRequestConfig);
+        if (future.isDone() || future.isCancelled()) {
+          steadyStateReached = true;
+          if (!future.isCancelled()) {
+            applicationDetail = future.get();
+          }
+          destroyProcess(startedProcess);
+        } else {
+          Thread.sleep(THREAD_SLEEP_INTERVAL_FOR_STEADY_STATE_CHECK);
+        }
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt(); // restore the flag
+        throw new PivotalClientApiException("Thread Was Interrupted, stopping execution");
+      } catch (ExecutionException executionException) {
+        throw new PivotalClientApiException(
+            PIVOTAL_CLOUD_FOUNDRY_CLIENT_EXCEPTION + ExceptionUtils.getMessage(executionException), executionException);
+      } catch (Exception e) {
+        executionLogCallback.saveExecutionLog(
+            "Error while waiting for steadyStateCheck." + e.getMessage() + ", Continuing with steadyStateCheck");
+      }
+    }
+
+    if (!steadyStateReached) {
+      future.cancel(true);
+      executionLogCallback.saveExecutionLog(color("# Steady State Check Failed", White, Bold));
+      destroyProcess(startedProcess);
+      throw new PivotalClientApiException(PIVOTAL_CLOUD_FOUNDRY_CLIENT_EXCEPTION + "Failed to reach steady state");
+    }
+
+    return applicationDetail;
+  }
+
   @VisibleForTesting
   void destroyProcess(StartedProcess startedProcess) {
     if (startedProcess != null && startedProcess.getProcess() != null) {
@@ -304,6 +360,24 @@ public class CfDeploymentManagerImpl implements CfDeploymentManager {
           .filter(
               applicationSummary -> matchesPrefix(prefix, applicationSummary) && applicationSummary.getInstances() > 0)
           .sorted(comparingInt(applicationSummary -> getRevisionFromServiceName(applicationSummary.getName())))
+          .collect(toList());
+
+    } catch (Exception e) {
+      throw new PivotalClientApiException(PIVOTAL_CLOUD_FOUNDRY_CLIENT_EXCEPTION + ExceptionUtils.getMessage(e), e);
+    }
+  }
+
+  @Override
+  public List<ApplicationSummary> getPreviousReleasesForRolling(CfRequestConfig cfRequestConfig, String prefix)
+      throws PivotalClientApiException {
+    try {
+      List<ApplicationSummary> applicationSummaries = cfSdkClient.getApplications(cfRequestConfig);
+      if (CollectionUtils.isEmpty(applicationSummaries)) {
+        return Collections.emptyList();
+      }
+
+      return applicationSummaries.stream()
+          .filter(applicationSummary -> applicationSummary.getName().toLowerCase().equals(prefix))
           .collect(toList());
 
     } catch (Exception e) {

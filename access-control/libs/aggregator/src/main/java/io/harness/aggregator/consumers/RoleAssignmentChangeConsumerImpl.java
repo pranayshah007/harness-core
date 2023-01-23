@@ -48,11 +48,11 @@ public class RoleAssignmentChangeConsumerImpl implements ChangeConsumer<RoleAssi
         || !StringUtils.isEmpty(updatedRoleAssignmentDBO.getResourceGroupIdentifier())
         || !StringUtils.isEmpty(updatedRoleAssignmentDBO.getPrincipalIdentifier())
         || updatedRoleAssignmentDBO.getDisabled() != null) {
-      log.info("Number of ACLs deleted: {}", deleteACLs(id));
+      log.info("Number of ACLs deleted: {} for roleassignment: {}", deleteACLs(id), id);
       Optional<RoleAssignmentDBO> roleAssignment = roleAssignmentRepository.findById(id);
       if (roleAssignment.isPresent()) {
         long createdCount = createACLs(roleAssignment.get());
-        log.info("Number of ACLs created: {}", createdCount);
+        log.info("Number of ACLs created: {} for roleassignment: {}", createdCount, id);
       }
     }
   }

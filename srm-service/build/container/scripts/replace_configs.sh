@@ -248,21 +248,20 @@ if [[ "$EVENTS_FRAMEWORK_USE_SENTINEL" == "true" ]]; then
 fi
 
 if [[ "" != "$TIMESCALE_PASSWORD" ]]; then
-  yq write -i $CONFIG_FILE timescaledb.timescaledbPassword "$TIMESCALE_PASSWORD"
+  export TIMESCALE_PASSWORD; yq -i '.timescaledb.timescaledbPassword=env(TIMESCALE_PASSWORD)' $CONFIG_FILE
 fi
 
 if [[ "" != "$TIMESCALE_URI" ]]; then
-  yq write -i $CONFIG_FILE timescaledb.timescaledbUrl "$TIMESCALE_URI"
+  export TIMESCALE_URI; yq -i '.timescaledb.timescaledbUrl=env(TIMESCALE_URI)' $CONFIG_FILE
 fi
 
 if [[ "" != "$TIMESCALEDB_USERNAME" ]]; then
-  yq write -i $CONFIG_FILE timescaledb.timescaledbUsername "$TIMESCALEDB_USERNAME"
+  export TIMESCALEDB_USERNAME; yq -i '.timescaledb.timescaledbUsername=env(TIMESCALEDB_USERNAME)' $CONFIG_FILE
 fi
 
 if [[ "" != "$ENABLE_DASHBOARD_TIMESCALE" ]]; then
-  yq write -i $CONFIG_FILE enableDashboardTimescale $ENABLE_DASHBOARD_TIMESCALE
+  export ENABLE_DASHBOARD_TIMESCALE; yq -i 'enableDashboardTimescale=env(ENABLE_DASHBOARD_TIMESCALE)' $CONFIG_FILE
 fi
-
 
 replace_key_value cacheConfig.cacheNamespace $CACHE_NAMESPACE
 replace_key_value cacheConfig.cacheBackend $CACHE_BACKEND

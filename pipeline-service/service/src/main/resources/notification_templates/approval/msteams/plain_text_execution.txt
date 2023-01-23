@@ -1,0 +1,46 @@
+{
+  "@type": "MessageCard",
+  "themeColor": "#FFFFFF",
+  "summary": "Approval Required",
+  "sections": [
+    {
+      "activityTitle": "Approval Required for pipeline [${pipelineName}](${pipelineExecutionLink})",
+      "activitySubtitle": "In Project ${projectName}",
+      "activityImage": "https://s3.amazonaws.com/wings-assets/slackicons/paused.png",
+      "facts": [
+             {
+                  "name": "Approval message",
+                  "value": "${approvalMessage}"
+             },
+             {
+                  "name": "Organization",
+                  "value": "${orgName}"
+             },
+             {
+                  "name": "TriggeredBy",
+                  "value": "${triggeredBy}"
+             },
+             {
+                  "name": "Timeline",
+                  "value": "Pipeline started on ${startedAt} and approval expires on ${expiresAt}"
+             },
+             {
+                  "name": "Expires in",
+                  "value": "${timeRemainingForApproval}"
+             },
+             {
+                  "name": "Upcoming stages",
+                  "value": "${upcomingStages}"
+             },
+             {
+                  "name": "Completed stages",
+                  "value": "${finishedStages}"
+             },
+             {
+                  "name": "Running stages",
+                  "value": "${runningStages}"
+             },
+      ],
+    }
+  ]
+}

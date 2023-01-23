@@ -22,8 +22,8 @@ import io.harness.perpetualtask.PerpetualTaskExecutionBundle;
 import io.harness.perpetualtask.polling.GitPollingTaskParamsNg;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
+import io.harness.polling.bean.GitPollingInfo;
 import io.harness.polling.bean.PollingDocument;
-import io.harness.polling.bean.gitpolling.GitPollingInfo;
 import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;

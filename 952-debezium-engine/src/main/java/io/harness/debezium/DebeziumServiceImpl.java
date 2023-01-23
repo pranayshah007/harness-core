@@ -17,14 +17,14 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class DebeziumServiceImpl implements DebeziumService {
   @Override
-  public DebeziumEngine<ChangeEvent<String, String>> getEngine(
-      Properties props, MongoCollectionChangeConsumer changeConsumer, String collection) {
+  public DebeziumEngine<ChangeEvent<String, String>> getEngine(Properties props,
+      MongoCollectionChangeConsumer changeConsumer, String collection, DebeziumController debeziumController) {
     return DebeziumEngine.create(Json.class)
         .using(props)
         .using(DebeziumUtils.getConnectorCallback(collection))
         .using(DebeziumUtils.getCompletionCallback(
             props.get(DebeziumConfiguration.OFFSET_STORAGE_FILE_FILENAME).toString(),
-            props.get(DebeziumConfiguration.OFFSET_STORAGE_KEY).toString()))
+            props.get(DebeziumConfiguration.OFFSET_STORAGE_KEY).toString(), debeziumController, collection))
         .notifying(changeConsumer)
         .build();
   }

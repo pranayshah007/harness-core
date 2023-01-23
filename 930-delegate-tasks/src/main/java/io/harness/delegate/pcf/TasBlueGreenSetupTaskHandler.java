@@ -422,6 +422,7 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
         logCallback.saveExecutionLog(
             "# Deleting previous deployment interim app: " + encodeColor(applicationSummary.getName()));
         deleteApplication(applicationSummary, cfRequestConfig, logCallback);
+        previousReleases.remove(applicationSummary);
         continue;
       }
 
@@ -438,6 +439,7 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
       } else {
         logCallback.saveExecutionLog("# Older application being deleted: " + encodeColor(applicationSummary.getName()));
         deleteApplication(applicationSummary, cfRequestConfig, logCallback);
+        previousReleases.remove(applicationSummary);
       }
     }
   }

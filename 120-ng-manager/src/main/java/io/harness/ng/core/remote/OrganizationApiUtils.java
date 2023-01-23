@@ -41,7 +41,7 @@ public class OrganizationApiUtils {
 
   public OrganizationDTO getOrganizationDto(CreateOrganizationRequest request) {
     OrganizationDTO organizationDto = new OrganizationDTO();
-    organizationDto.setIdentifier(request.getOrg().getSlug());
+    organizationDto.setIdentifier(request.getOrg().getIdentifier());
     organizationDto.setName(request.getOrg().getName());
     organizationDto.setDescription(request.getOrg().getDescription());
     organizationDto.setTags(request.getOrg().getTags());
@@ -55,7 +55,7 @@ public class OrganizationApiUtils {
 
   public OrganizationDTO getOrganizationDto(UpdateOrganizationRequest request) {
     OrganizationDTO organizationDto = new OrganizationDTO();
-    organizationDto.setIdentifier(request.getOrg().getSlug());
+    organizationDto.setIdentifier(request.getOrg().getIdentifier());
     organizationDto.setName(request.getOrg().getName());
     organizationDto.setDescription(request.getOrg().getDescription());
     organizationDto.setTags(request.getOrg().getTags());
@@ -70,7 +70,7 @@ public class OrganizationApiUtils {
   public OrganizationResponse getOrganizationResponse(Organization organization) {
     OrganizationResponse organizationResponse = new OrganizationResponse();
     io.harness.spec.server.ng.v1.model.Organization org = new io.harness.spec.server.ng.v1.model.Organization();
-    org.setSlug(organization.getIdentifier());
+    org.setIdentifier(organization.getIdentifier());
     org.setName(organization.getName());
     org.setDescription(organization.getDescription());
     org.setTags(ApiUtils.getTags(organization.getTags()));

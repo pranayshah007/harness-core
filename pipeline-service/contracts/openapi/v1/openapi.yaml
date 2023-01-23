@@ -630,6 +630,17 @@ components:
         status:
           type: string
           description: Status of the Pipeline Validation Event
+        policy_eval:
+          type: object
+          description: Result of Policy Evaluations on the Pipeline
+        start_ts:
+          type: integer
+          format: int64
+          description: Start time of the Evaluation
+        end_ts:
+          type: integer
+          format: int64
+          description: End time of the Evaluation
       x-internal: true
     PipelineValidationUUIDResponseBody:
       title: Pipeline Validation UUID Response Body

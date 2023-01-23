@@ -432,6 +432,8 @@ instanceStats {"name": "unique_account_timestamp", "unique": true} {"accountId":
 instanceStats {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 instanceSyncPerpetualTasksInfo {"name": "accountId_1", "background": true} {"accountId": 1}
 instanceSyncPerpetualTasksInfo {"name": "infrastructureMappingId_1", "background": true} {"infrastructureMappingId": 1}
+instanceSyncPerpetualTasksInfoBackup {"name": "accountId_infrastructureMappingId_idx", "background": true} {"accountId": 1, "infrastructureMappingId": 1}
+instanceSyncPerpetualTasksInfoBackup {"name": "accountId_perpetualTaskId_idx", "unique": true} {"accountId": 1, "perpetualTaskRecordId": 1}
 instanceSyncTaskDetails {"name": "accountId_cloudProviderId_idx", "background": true} {"accountId": 1, "cloudProviderId": 1}
 instanceSyncTaskDetails {"name": "accountId_infrastructureMappingId_idx", "unique": true} {"accountId": 1, "infraMappingId": 1}
 instanceSyncTaskDetails {"name": "accountId_perpetualTaskId_idx", "background": true} {"accountId": 1, "perpetualTaskId": 1}
@@ -883,9 +885,9 @@ workflowExecutions {"name": "appid_workflowid_status_createdat", "background": t
 workflowExecutions {"name": "appid_workflowid_status_deployedServices_createdat", "background": true} {"appId": 1, "workflowId": 1, "status": 1, "deployedServices": 1, "createdAt": -1}
 workflowExecutions {"name": "createdAt_1", "background": true} {"createdAt": 1}
 workflowExecutions {"name": "infraMappingIds_1", "background": true} {"infraMappingIds": 1}
-workflowExecutions {"name": "lastInfraMappingSearch", "background": true} {"appId": 1, "workflowType": 1, "status": 1, "infraMappingIds": 1, "createdAt": -1, "deployment": 1}
+workflowExecutions {"name": "lastInfraMappingSearch2", "background": true} {"appId": 1, "workflowType": 1, "status": 1, "infraMappingIds": 1, "createdAt": -1, "deployment": 1}
 workflowExecutions {"name": "pipelineResumeId_1", "background": true, "sparse": true} {"pipelineResumeId": 1}
-workflowExecutions {"name": "search", "background": true} {"workflowId": 1, "status": 1, "endTs": -1}
+workflowExecutions {"name": "search2", "background": true} {"workflowId": 1, "status": 1, "endTs": -1}
 workflowExecutions {"name": "searchByServiceIds", "background": true} {"appId": 1, "workflowId": 1, "status": 1, "serviceIds": 1, "createdAt": -1}
 workflowExecutions {"name": "serviceIds_1", "background": true} {"serviceIds": 1}
 workflowExecutions {"name": "service_guard", "background": true} {"appId": 1, "startTs": 1}

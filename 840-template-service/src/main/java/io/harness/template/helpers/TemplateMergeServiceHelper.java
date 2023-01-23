@@ -10,7 +10,7 @@ package io.harness.template.helpers;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
-import static io.harness.pms.merger.helpers.MergeHelper.mergeInputSetFormatYamlToOriginYaml;
+import static io.harness.pms.merger.helpers.MergeHelper.mergeRuntimeInputValuesIntoOriginalYaml;
 import static io.harness.pms.yaml.validation.RuntimeInputValuesValidator.validateStaticValues;
 import static io.harness.template.beans.NGTemplateConstants.DUMMY_NODE;
 import static io.harness.template.beans.NGTemplateConstants.SPEC;
@@ -25,7 +25,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.common.EntityReferenceHelper;
-import io.harness.common.NGExpressionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.NGTemplateException;
@@ -49,12 +48,10 @@ import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -231,7 +228,8 @@ public class TemplateMergeServiceHelper {
         resMap.put(fieldName, value);
       } else if (value.isArray()) {
         resMap.put(fieldName,
-            mergeTemplateInputsInArray(accountId, orgId, projectId, childYamlField.getNode(), templateCacheMap, depth));
+            mergeTemplateInputsInArray(
+                accountId, orgId, projectId, childYamlField.getNode(), templateCacheMap, depth, loadFromCache));
       } else {
         // If it was template key in yaml, we have replace it with the fields in template.spec in template yaml.
         // Hence, we directly put all the keys returned in map, after iterating over them.
@@ -256,16 +254,17 @@ public class TemplateMergeServiceHelper {
   }
 
   private List<Object> mergeTemplateInputsInArray(String accountId, String orgId, String projectId, YamlNode yamlNode,
-      Map<String, TemplateEntity> templateCacheMap, int depth) {
+      Map<String, TemplateEntity> templateCacheMap, int depth, boolean loadFromCache) {
     List<Object> arrayList = new ArrayList<>();
     for (YamlNode arrayElement : yamlNode.asArray()) {
       if (yamlNode.getCurrJsonNode().isValueNode()) {
         arrayList.add(arrayElement);
       } else if (arrayElement.isArray()) {
-        arrayList.add(mergeTemplateInputsInArray(accountId, orgId, projectId, arrayElement, templateCacheMap, depth));
+        arrayList.add(mergeTemplateInputsInArray(
+            accountId, orgId, projectId, arrayElement, templateCacheMap, depth, loadFromCache));
       } else {
-        arrayList.add(
-            mergeTemplateInputsInObject(accountId, orgId, projectId, arrayElement, templateCacheMap, depth, false));
+        arrayList.add(mergeTemplateInputsInObject(
+            accountId, orgId, projectId, arrayElement, templateCacheMap, depth, loadFromCache));
       }
     }
     return arrayList;
@@ -396,44 +395,15 @@ public class TemplateMergeServiceHelper {
       dummyTemplateInputsMap.put(DUMMY_NODE, templateInputs);
       dummyTemplateInputsYaml = YamlPipelineUtils.writeYamlString(dummyTemplateInputsMap);
 
-      mergedYaml = mergeInputSetFormatYamlToOriginYaml(dummyTemplateSpecYaml, dummyTemplateInputsYaml);
+      mergedYaml = mergeRuntimeInputValuesIntoOriginalYaml(dummyTemplateSpecYaml, dummyTemplateInputsYaml, true);
     }
 
     try {
-      String finalMergedYaml = removeOmittedRuntimeInputsFromMergedYaml(mergedYaml, dummyTemplateInputsYaml);
-      return YamlUtils.readTree(finalMergedYaml).getNode().getCurrJsonNode().get(DUMMY_NODE);
+      return YamlUtils.readTree(mergedYaml).getNode().getCurrJsonNode().get(DUMMY_NODE);
     } catch (IOException e) {
       log.error("Could not convert merged yaml to JsonNode. Yaml:\n" + mergedYaml, e);
       throw new NGTemplateException("Could not convert merged yaml to JsonNode: " + e.getMessage());
     }
-  }
-
-  private String removeOmittedRuntimeInputsFromMergedYaml(String mergedYaml, String templateInputsYaml)
-      throws IOException {
-    JsonNode mergedYamlNode = YamlUtils.readTree(mergedYaml).getNode().getCurrJsonNode();
-
-    YamlConfig mergedYamlConfig = new YamlConfig(mergedYaml);
-    Map<FQN, Object> mergedYamlConfigMap = mergedYamlConfig.getFqnToValueMap();
-    Map<FQN, Object> templateInputsYamlConfigMap = new HashMap<>();
-    if (isNotEmpty(templateInputsYaml)) {
-      YamlConfig templateInputsYamlConfig = new YamlConfig(templateInputsYaml);
-      templateInputsYamlConfigMap = templateInputsYamlConfig.getFqnToValueMap();
-    }
-    Map<FQN, Object> resMap = new LinkedHashMap<>();
-
-    for (FQN key : mergedYamlConfigMap.keySet()) {
-      Object value = mergedYamlConfigMap.get(key);
-      if (!templateInputsYamlConfigMap.containsKey(key) && !(value instanceof ArrayNode)) {
-        String mergedValue = ((JsonNode) value).asText();
-        if (!NGExpressionUtils.matchesInputSetPattern(mergedValue)) {
-          resMap.put(key, value);
-        }
-      } else {
-        resMap.put(key, value);
-      }
-    }
-
-    return (new YamlConfig(resMap, mergedYamlNode)).getYaml();
   }
 
   /**

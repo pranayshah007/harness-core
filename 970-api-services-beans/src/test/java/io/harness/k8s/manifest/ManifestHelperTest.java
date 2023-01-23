@@ -14,7 +14,7 @@ import static io.harness.k8s.manifest.ManifestHelper.getMapFromValuesFileContent
 import static io.harness.k8s.manifest.ManifestHelper.getValuesExpressionKeysFromMap;
 import static io.harness.k8s.manifest.ManifestHelper.processYaml;
 import static io.harness.k8s.manifest.ManifestHelper.validateValuesFileContents;
-import static io.harness.k8s.manifest.ObjectYamlUtils.toYaml;
+import static io.harness.k8s.utils.ObjectYamlUtils.toYaml;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACASIAN;

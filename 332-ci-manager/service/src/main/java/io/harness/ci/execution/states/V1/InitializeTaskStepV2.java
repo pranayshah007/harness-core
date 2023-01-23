@@ -9,7 +9,7 @@ package io.harness.ci.states.V1;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
 import static io.harness.beans.FeatureName.CIE_HOSTED_VMS;
-import static io.harness.beans.FeatureName.QUEUE_CI_EXECUTIONS;
+import static io.harness.beans.FeatureName.QUEUE_CI_EXECUTIONS_CONCURRENCY;
 import static io.harness.beans.outcomes.LiteEnginePodDetailsOutcome.POD_DETAILS_OUTCOME;
 import static io.harness.beans.outcomes.VmDetailsOutcome.VM_DETAILS_OUTCOME;
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.INITIALIZE_EXECUTION;
@@ -83,6 +83,7 @@ import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.helper.SerializedResponseDataHelper;
 import io.harness.hsqs.client.HsqsServiceClient;
 import io.harness.hsqs.client.model.EnqueueRequest;
+import io.harness.hsqs.client.model.EnqueueResponse;
 import io.harness.licensing.Edition;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
 import io.harness.logging.CommandExecutionStatus;
@@ -139,6 +140,7 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import retrofit2.Response;
 
 @Slf4j
 @OwnedBy(CI)
@@ -186,7 +188,7 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
     String logKey = getLogKey(ambiance);
     String taskId;
 
-    if (ciFeatureFlagService.isEnabled(QUEUE_CI_EXECUTIONS, AmbianceUtils.getAccountId(ambiance))) {
+    if (ciFeatureFlagService.isEnabled(QUEUE_CI_EXECUTIONS_CONCURRENCY, AmbianceUtils.getAccountId(ambiance))) {
       log.info("start executeAsyncAfterRbac for initialize step with queue");
       taskId = generateUuid();
       String topic = "ci";
@@ -199,10 +201,15 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
                                           .payload(payload)
                                           .build();
       try {
-        hsqsServiceClient.enqueue(enqueueRequest, ciExecutionServiceConfig.getQueueServiceClient().getAuthToken())
-            .execute();
+        Response<EnqueueResponse> execute = hsqsServiceClient.enqueue(enqueueRequest).execute();
+        if (execute.code() == 200) {
+          log.info("build queued. message id: {}", execute.body().getItemId());
+        } else {
+          log.info("build queue failed. response code {}", execute.code());
+        }
       } catch (IOException e) {
-        throw new RuntimeException(e);
+        throw new CIStageExecutionException(format("failed to process execution, queuing failed. runtime Id: {}",
+            AmbianceUtils.getStageRuntimeIdAmbiance(ambiance)));
       }
     } else {
       taskId = executeBuild(ambiance, stepParameters);

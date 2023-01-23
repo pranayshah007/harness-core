@@ -11,8 +11,8 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.govern.Switch.noop;
 import static io.harness.govern.Switch.unhandled;
-import static io.harness.k8s.manifest.ObjectYamlUtils.encodeDot;
-import static io.harness.k8s.manifest.ObjectYamlUtils.readYaml;
+import static io.harness.k8s.utils.ObjectYamlUtils.encodeDot;
+import static io.harness.k8s.utils.ObjectYamlUtils.readYaml;
 import static io.harness.validation.Validator.notNullCheck;
 
 import static java.lang.String.format;
@@ -21,8 +21,6 @@ import static java.util.Objects.nonNull;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.KubernetesYamlException;
-import io.harness.k8s.manifest.ObjectYamlUtils;
-import io.harness.k8s.manifest.ResourceUtils;
 import io.harness.k8s.model.harnesscrds.CustomDeploymentStrategyParams;
 import io.harness.k8s.model.harnesscrds.DeploymentConfig;
 import io.harness.k8s.model.harnesscrds.DeploymentConfigSpec;
@@ -31,6 +29,8 @@ import io.harness.k8s.model.harnesscrds.ExecNewPodHook;
 import io.harness.k8s.model.harnesscrds.LifecycleHook;
 import io.harness.k8s.model.harnesscrds.RecreateDeploymentStrategyParams;
 import io.harness.k8s.model.harnesscrds.RollingDeploymentStrategyParams;
+import io.harness.k8s.utils.ObjectYamlUtils;
+import io.harness.k8s.utils.ResourceUtils;
 import io.harness.yaml.BooleanPatchedRepresenter;
 
 import com.google.common.annotations.VisibleForTesting;

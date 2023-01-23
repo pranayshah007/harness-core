@@ -14,12 +14,14 @@ import io.harness.cdng.jenkins.jenkinsstep.JenkinsParameterFieldType;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 
 import software.wings.beans.GraphNode;
 import software.wings.ngmigration.CgEntityId;
+import software.wings.ngmigration.CgEntityNode;
 import software.wings.sm.State;
 import software.wings.sm.states.JenkinsState;
 
@@ -29,6 +31,11 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class JenkinsStepMapperImpl implements StepMapper {
+  @Override
+  public WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode) {
+    return WorkflowStepSupportStatus.SUPPORTED;
+  }
+
   @Override
   public String getStepType(GraphNode stepYaml) {
     return StepSpecTypeConstants.JENKINS_BUILD;
@@ -43,7 +50,8 @@ public class JenkinsStepMapperImpl implements StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(Map<CgEntityId, NGYamlFile> migratedEntities, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities, GraphNode graphNode) {
     JenkinsState state = (JenkinsState) getState(graphNode);
     JenkinsBuildStepNode stepNode = new JenkinsBuildStepNode();
     baseSetup(graphNode, stepNode);

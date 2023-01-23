@@ -25,6 +25,7 @@ import io.harness.aws.asg.AsgCommandUnitConstants;
 import io.harness.aws.asg.AsgContentParser;
 import io.harness.aws.asg.AsgSdkManager;
 import io.harness.aws.asg.manifest.AsgConfigurationManifestHandler;
+import io.harness.aws.asg.manifest.AsgLaunchTemplateManifestHandler;
 import io.harness.aws.asg.manifest.AsgManifestHandlerChainFactory;
 import io.harness.aws.asg.manifest.AsgManifestHandlerChainState;
 import io.harness.aws.asg.manifest.request.AsgConfigurationManifestRequest;
@@ -50,6 +51,7 @@ import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.amazonaws.services.autoscaling.model.CreateAutoScalingGroupRequest;
 import com.google.inject.Inject;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -81,8 +83,8 @@ public class AsgCanaryDeployCommandTaskHandler extends AsgCommandTaskNGHandler {
 
     try {
       AsgSdkManager asgSdkManager = asgTaskHelper.getAsgSdkManager(asgCommandRequest, logCallback);
-      AutoScalingGroupContainer autoScalingGroupContainer =
-          executeCanaryDeploy(asgSdkManager, asgStoreManifestsContent, serviceSuffix, nrOfInstances);
+      AutoScalingGroupContainer autoScalingGroupContainer = executeCanaryDeploy(asgSdkManager, asgStoreManifestsContent,
+          serviceSuffix, nrOfInstances, asgCanaryDeployRequest.getAmiImageId());
 
       AsgCanaryDeployResult asgCanaryDeployResult =
           AsgCanaryDeployResult.builder().autoScalingGroupContainer(autoScalingGroupContainer).build();
@@ -103,7 +105,8 @@ public class AsgCanaryDeployCommandTaskHandler extends AsgCommandTaskNGHandler {
   }
 
   private AutoScalingGroupContainer executeCanaryDeploy(AsgSdkManager asgSdkManager,
-      Map<String, List<String>> asgStoreManifestsContent, String serviceSuffix, Integer nrOfInstances) {
+      Map<String, List<String>> asgStoreManifestsContent, String serviceSuffix, Integer nrOfInstances,
+      String amiImageId) {
     String asgLaunchTemplateContent = asgTaskHelper.getAsgLaunchTemplateContent(asgStoreManifestsContent);
     String asgConfigurationContent = asgTaskHelper.getAsgConfigurationContent(asgStoreManifestsContent);
 
@@ -122,6 +125,9 @@ public class AsgCanaryDeployCommandTaskHandler extends AsgCommandTaskNGHandler {
       asgSdkManager.deleteAsg(canaryAsgName);
     }
 
+    Map<String, Object> asgLaunchTemplateOverrideProperties =
+        Collections.singletonMap(AsgLaunchTemplateManifestHandler.OverrideProperties.amiImageId, amiImageId);
+
     Map<String, Object> asgConfigurationOverrideProperties = new HashMap<>() {
       {
         put(AsgConfigurationManifestHandler.OverrideProperties.minSize, nrOfInstances);
@@ -136,7 +142,10 @@ public class AsgCanaryDeployCommandTaskHandler extends AsgCommandTaskNGHandler {
             .asgSdkManager(asgSdkManager)
             .build()
             .addHandler(AsgLaunchTemplate,
-                AsgLaunchTemplateManifestRequest.builder().manifests(Arrays.asList(asgLaunchTemplateContent)).build())
+                AsgLaunchTemplateManifestRequest.builder()
+                    .manifests(Arrays.asList(asgLaunchTemplateContent))
+                    .overrideProperties(asgLaunchTemplateOverrideProperties)
+                    .build())
             .addHandler(AsgConfiguration,
                 AsgConfigurationManifestRequest.builder()
                     .manifests(Arrays.asList(asgConfigurationContent))

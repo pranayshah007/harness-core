@@ -225,6 +225,9 @@ public class ServiceNowCreateUpdateState extends State implements SweepingOutput
     Map<String, String> renderedAdditionalFields = new HashMap<>();
     if (EmptyPredicate.isNotEmpty(params.fetchAdditionalFields())) {
       for (Entry<String, String> entry : params.fetchAdditionalFields().entrySet()) {
+        if (!entry.getValue().startsWith("${")) {
+          entry.setValue(entry.getValue().replace("\\n", "\n"));
+        }
         renderedAdditionalFields.put(entry.getKey(), context.renderExpression(entry.getValue()));
       }
     }

@@ -17,5 +17,6 @@ public enum SshWinRmArtifactType {
   CUSTOM_ARTIFACT,
   NEXUS,
   AWS_S3,
-  NEXUS_PACKAGE
+  NEXUS_PACKAGE,
+  AZURE
 }

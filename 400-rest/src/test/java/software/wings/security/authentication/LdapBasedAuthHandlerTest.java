@@ -8,6 +8,7 @@
 package software.wings.security.authentication;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.eraro.ErrorCode.INVALID_CREDENTIAL;
 import static io.harness.rule.OwnerRule.PRATEEK;
 
 import static junit.framework.TestCase.assertNotNull;
@@ -160,6 +161,23 @@ public class LdapBasedAuthHandlerTest extends CategoryTest {
     AuthenticationResponse response = ldapBasedAuthHandler.authenticate(userEmail, userPwd);
     assertNotNull(response);
     assertThat(response.getUser().getEmail()).isEqualTo(userEmail);
+  }
+
+  @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
+  public void testCgLDAPBasedAuthenticationNoLdapSSO() {
+    Account account = getTestAccount(true);
+    User user = getUserWithEmailAndAccount(account);
+
+    when(authenticationUtils.getUser(anyString())).thenReturn(user);
+    when(userService.getUserByEmail(userEmail)).thenReturn(user);
+    when(authenticationUtils.getDefaultAccount(any(User.class))).thenReturn(account);
+    when(ssoSettingService.getLdapSettingsByAccountId(testAccountId)).thenReturn(null);
+
+    assertThatThrownBy(() -> ldapBasedAuthHandler.authenticate(userEmail, userPwd))
+        .isInstanceOf(WingsException.class)
+        .hasMessage(INVALID_CREDENTIAL.name());
   }
 
   private Account getTestAccount(boolean isNGEnabled) {

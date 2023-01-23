@@ -18,6 +18,7 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 import io.harness.NgManagerTestBase;
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
@@ -33,6 +34,7 @@ import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.impl.ServiceEntityServiceImpl;
 import io.harness.ng.core.service.services.impl.ServiceEntitySetupUsageHelper;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.outbox.api.OutboxService;
 import io.harness.persistence.HPersistence;
 import io.harness.repositories.environment.spring.EnvironmentRepository;
@@ -80,6 +82,8 @@ public class RefreshInputsHelperTest extends NgManagerTestBase {
   EnvironmentServiceImpl environmentService;
   InfrastructureEntityServiceImpl infrastructureEntityService;
   EnvironmentRefreshHelper environmentRefreshHelper;
+  @Mock AccountClient accountClient;
+  @Mock NGSettingsClient settingsClient;
 
   @Before
   public void setup() {
@@ -89,7 +93,7 @@ public class RefreshInputsHelperTest extends NgManagerTestBase {
         outboxService, customDeploymentEntitySetupHelper, infrastructureEntitySetupUsageHelper, hPersistence));
     environmentService = spy(new EnvironmentServiceImpl(environmentRepository, entitySetupUsageService, eventProducer,
         outboxService, transactionTemplate, infrastructureEntityService, clusterService, serviceOverrideService,
-        serviceEntityService));
+        serviceEntityService, accountClient, settingsClient));
     environmentRefreshHelper =
         spy(new EnvironmentRefreshHelper(environmentService, infrastructureEntityService, serviceOverrideService));
     on(entityFetchHelper).set("serviceEntityService", serviceEntityService);

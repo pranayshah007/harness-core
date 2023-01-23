@@ -56,3 +56,6 @@ io.harness.plancreator.strategy.ExpressionAxisConfig
 io.harness.yaml.core.failurestrategy.ProceedWithDefaultValuesFailureActionConfig
 io.harness.yaml.core.failurestrategy.rollback.PipelineRollbackFailureActionConfig
 io.harness.plancreator.policy.PolicyConfig
+io.harness.steps.policy.step.outcome.PolicyStepOutcome
+io.harness.steps.policy.step.outcome.PolicySetOutcome
+io.harness.steps.policy.step.outcome.PolicyOutcome

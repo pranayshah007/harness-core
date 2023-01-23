@@ -85,4 +85,9 @@ public final class EventsFrameworkMetadataConstants {
   public static final String GITOPS_APPLICATION_ENTITY = "application";
   public static final String GITOPS_REPOSITORY_ENTITY = "repository";
   public static final String GITOPS_CLUSTER_ENTITY = "cluster";
+
+  public static final String STREAMING_DESTINATION = "streamingDestination";
+
+  // CCM
+  public static final String CCM_FOLDER = "ccmFolder";
 }

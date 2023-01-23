@@ -531,11 +531,10 @@ public class UserResource {
   @ExceptionMetered
   @AuthRule(permissionType = LOGGED_IN)
   public RestResponse<User> get() {
-    User user = UserThreadLocal.get().getPublicUser(false);
-    if (isEmpty(user.getSupportAccounts())) {
-      userService.loadSupportAccounts(user);
+    if (userService.isFFToAvoidLoadingSupportAccountsUnncessarilyDisabled()) {
+      return new RestResponse<>(UserThreadLocal.get().getPublicUser(true));
     }
-    return new RestResponse<>(user);
+    return new RestResponse<>(UserThreadLocal.get().getPublicUser(false));
   }
 
   /**

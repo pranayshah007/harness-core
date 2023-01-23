@@ -11,6 +11,7 @@ import static io.harness.ngmigration.service.MigratorUtility.RUNTIME_INPUT;
 
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.StepSpecTypeConstants;
@@ -23,6 +24,7 @@ import io.harness.steps.jira.update.beans.TransitionTo;
 
 import software.wings.beans.GraphNode;
 import software.wings.ngmigration.CgEntityId;
+import software.wings.ngmigration.CgEntityNode;
 import software.wings.sm.State;
 import software.wings.sm.states.collaboration.JiraCreateUpdate;
 
@@ -32,6 +34,11 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class JiraCreateUpdateStepMapperImpl implements StepMapper {
+  @Override
+  public WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode) {
+    return WorkflowStepSupportStatus.SUPPORTED;
+  }
+
   @Override
   public String getStepType(GraphNode stepYaml) {
     JiraCreateUpdate state = (JiraCreateUpdate) getState(stepYaml);
@@ -54,7 +61,8 @@ public class JiraCreateUpdateStepMapperImpl implements StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(Map<CgEntityId, NGYamlFile> migratedEntities, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities, GraphNode graphNode) {
     JiraCreateUpdate state = (JiraCreateUpdate) getState(graphNode);
     switch (state.getJiraAction()) {
       case UPDATE_TICKET:

@@ -73,6 +73,10 @@ public class DockerHubArtifactConfig implements ArtifactConfig, Visitable, WithC
    */
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> tagRegex;
   /**
+   * Digest refers to the SHA256 digest of the docker image file.
+   */
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> digest;
+  /**
    * Identifier for artifact.
    */
   @EntityIdentifier @VariableExpression(skipVariableExpression = true) String identifier;
@@ -108,6 +112,9 @@ public class DockerHubArtifactConfig implements ArtifactConfig, Visitable, WithC
     }
     if (!ParameterField.isNull(dockerHubArtifactConfig.getTagRegex())) {
       resultantConfig = resultantConfig.withTagRegex(dockerHubArtifactConfig.getTagRegex());
+    }
+    if (!ParameterField.isNull(dockerHubArtifactConfig.getDigest())) {
+      resultantConfig = resultantConfig.withDigest(dockerHubArtifactConfig.getDigest());
     }
     return resultantConfig;
   }

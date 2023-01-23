@@ -294,6 +294,9 @@
                 "default"
               ]
             },
+            "image": {
+              "$ref": "#/definitions/STOYamlImage"
+            },
             "imagePullPolicy": {
               "oneOf": [
                 {
@@ -940,7 +943,6 @@
         {
           "type": "object",
           "required": [
-            "auth",
             "config",
             "mode",
             "target"
@@ -1587,7 +1589,6 @@
         {
           "type": "object",
           "required": [
-            "auth",
             "config",
             "mode",
             "target"
@@ -2936,7 +2937,6 @@
         {
           "type": "object",
           "required": [
-            "auth",
             "config",
             "mode",
             "target"
@@ -3267,6 +3267,9 @@
               "enum": [
                 "default"
               ]
+            },
+            "image": {
+              "$ref": "#/definitions/STOYamlImage"
             },
             "imagePullPolicy": {
               "oneOf": [
@@ -4351,6 +4354,9 @@
             "advanced": {
               "$ref": "#/definitions/STOYamlAdvancedSettings"
             },
+            "auth": {
+              "$ref": "#/definitions/STOYamlAuth"
+            },
             "baseImageConnectorRefs": {
               "$ref": "#/definitions/ParameterFieldListString"
             },
@@ -4359,6 +4365,9 @@
               "enum": [
                 "default"
               ]
+            },
+            "image": {
+              "$ref": "#/definitions/STOYamlImage"
             },
             "imagePullPolicy": {
               "oneOf": [
@@ -4441,6 +4450,9 @@
             },
             "target": {
               "$ref": "#/definitions/STOYamlTarget"
+            },
+            "tool": {
+              "$ref": "#/definitions/STOYamlMendToolData"
             }
           }
         }
@@ -5129,7 +5141,8 @@
               "DelegateProvisioning",
               "PolicyEvaluationFailure",
               "InputTimeoutError",
-              "ApprovalRejection"
+              "ApprovalRejection",
+              "DelegateRestart"
             ]
           }
         }
@@ -5805,6 +5818,39 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ParameterFieldMatrixConfigInterface": {
+      "type": "object",
+      "properties": {
+        "defaultValue": {
+          "$ref": "#/definitions/MatrixConfigInterface"
+        },
+        "executionInput": {
+          "type": "boolean"
+        },
+        "expression": {
+          "type": "boolean"
+        },
+        "expressionValue": {
+          "type": "string"
+        },
+        "inputSetValidator": {
+          "$ref": "#/definitions/InputSetValidator"
+        },
+        "jsonResponseField": {
+          "type": "boolean"
+        },
+        "responseField": {
+          "type": "string"
+        },
+        "typeString": {
+          "type": "boolean"
+        },
+        "value": {
+          "$ref": "#/definitions/MatrixConfigInterface"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "ParameterFieldPlatform": {
       "type": "object",
       "properties": {
@@ -6306,7 +6352,6 @@
         {
           "type": "object",
           "required": [
-            "auth",
             "config",
             "mode",
             "target"
@@ -7414,7 +7459,7 @@
             }
           ]
         },
-        "failOnSeverity": {
+        "fail_on_severity": {
           "oneOf": [
             {
               "type": "string",
@@ -7433,7 +7478,7 @@
             }
           ]
         },
-        "includeRaw": {
+        "include_raw": {
           "oneOf": [
             {
               "type": "boolean"
@@ -7464,28 +7509,10 @@
       "type": "object",
       "properties": {
         "cli": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "string"
         },
         "passthrough": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "string"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -7493,44 +7520,17 @@
     "STOYamlAuth": {
       "type": "object",
       "required": [
-        "accessToken"
+        "access_token"
       ],
       "properties": {
-        "accessId": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+        "access_id": {
+          "type": "string"
         },
-        "accessToken": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+        "access_token": {
+          "type": "string"
         },
         "domain": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "string"
         },
         "ssl": {
           "oneOf": [
@@ -7561,16 +7561,7 @@
           ]
         },
         "version": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "string"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -7578,29 +7569,11 @@
     "STOYamlBlackduckToolData": {
       "type": "object",
       "properties": {
-        "projectName": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+        "project_name": {
+          "type": "string"
         },
-        "projectVersion": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+        "project_version": {
+          "type": "string"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -7608,29 +7581,11 @@
     "STOYamlCheckmarxToolData": {
       "type": "object",
       "properties": {
-        "projectName": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+        "project_name": {
+          "type": "string"
         },
-        "teamName": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+        "team_name": {
+          "type": "string"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -7638,137 +7593,38 @@
     "STOYamlFODToolData": {
       "type": "object",
       "properties": {
-        "appName": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+        "app_name": {
+          "type": "string"
         },
-        "auditType": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+        "audit_type": {
+          "type": "string"
         },
-        "dataCenter": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+        "data_center": {
+          "type": "string"
         },
         "entitlement": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "string"
         },
-        "loookupType": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+        "lookup_type": {
+          "type": "string"
         },
-        "ownerId": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+        "owner_id": {
+          "type": "string"
         },
-        "releaseName": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+        "release_name": {
+          "type": "string"
         },
-        "scanSettings": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+        "scan_settings": {
+          "type": "string"
         },
-        "scanType": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+        "scan_type": {
+          "type": "string"
         },
-        "targetLanguage": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+        "target_language": {
+          "type": "string"
         },
-        "targetLanguageVersion": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+        "target_language_version": {
+          "type": "string"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -7779,77 +7635,23 @@
         "type"
       ],
       "properties": {
-        "accessId": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+        "access_id": {
+          "type": "string"
         },
-        "accessToken": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+        "access_token": {
+          "type": "string"
         },
         "domain": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "string"
         },
         "name": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "string"
         },
         "region": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "string"
         },
         "tag": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "string"
         },
         "type": {
           "oneOf": [
@@ -7876,16 +7678,7 @@
       "type": "object",
       "properties": {
         "file": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "string"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -7893,53 +7686,17 @@
     "STOYamlInstance": {
       "type": "object",
       "properties": {
-        "accessId": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+        "access_id": {
+          "type": "string"
         },
-        "accessToken": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+        "access_token": {
+          "type": "string"
         },
         "domain": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "string"
         },
         "path": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "string"
         },
         "port": {
           "oneOf": [
@@ -7955,16 +7712,7 @@
           ]
         },
         "protocol": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "string"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -7973,28 +7721,10 @@
       "type": "object",
       "properties": {
         "binaries": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "string"
         },
         "libraries": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "string"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -8005,7 +7735,13 @@
         "level": {
           "oneOf": [
             {
-              "type": "string"
+              "type": "string",
+              "enum": [
+                "info",
+                "debug",
+                "warning",
+                "error"
+              ]
             },
             {
               "type": "string",
@@ -8017,7 +7753,14 @@
         "serializer": {
           "oneOf": [
             {
-              "type": "string"
+              "type": "string",
+              "enum": [
+                "simple",
+                "basic",
+                "bunyan",
+                "simple_onprem",
+                "onprem"
+              ]
             },
             {
               "type": "string",
@@ -8029,32 +7772,38 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "STOYamlMendToolData": {
+      "type": "object",
+      "properties": {
+        "exclude": {
+          "type": "string"
+        },
+        "include": {
+          "type": "string"
+        },
+        "product_name": {
+          "type": "string"
+        },
+        "product_token": {
+          "type": "string"
+        },
+        "project_name": {
+          "type": "string"
+        },
+        "project_token": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "STOYamlSonarqubeToolData": {
       "type": "object",
       "properties": {
         "exclude": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "string"
         },
         "include": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "string"
         },
         "java": {
           "oneOf": [
@@ -8080,16 +7829,7 @@
       ],
       "properties": {
         "name": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "string"
         },
         "type": {
           "oneOf": [
@@ -8110,28 +7850,10 @@
           ]
         },
         "variant": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "string"
         },
         "workspace": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "string"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -8139,29 +7861,11 @@
     "STOYamlVeracodeToolData": {
       "type": "object",
       "properties": {
-        "appId": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+        "app_id": {
+          "type": "string"
         },
-        "projectName": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+        "project_name": {
+          "type": "string"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -8170,16 +7874,7 @@
       "type": "object",
       "properties": {
         "context": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
-              "minLength": 1
-            }
-          ]
+          "type": "string"
         },
         "port": {
           "oneOf": [
@@ -9121,7 +8816,6 @@
         {
           "type": "object",
           "required": [
-            "auth",
             "config",
             "mode",
             "target"
@@ -9240,7 +8934,6 @@
         {
           "type": "object",
           "required": [
-            "auth",
             "config",
             "mode",
             "target"
@@ -10560,7 +10253,16 @@
       "type": "object",
       "properties": {
         "matrix": {
-          "$ref": "#/definitions/MatrixConfigInterface"
+          "oneOf": [
+            {
+              "$ref": "#/definitions/ParameterFieldMatrixConfigInterface"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
         },
         "parallelism": {
           "oneOf": [
@@ -11296,7 +10998,6 @@
         {
           "type": "object",
           "required": [
-            "auth",
             "config",
             "mode",
             "target"
@@ -11681,7 +11382,10 @@
             "config": {
               "type": "string",
               "enum": [
-                "default"
+                "default",
+                "quick",
+                "attack",
+                "standard"
               ]
             },
             "imagePullPolicy": {

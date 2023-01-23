@@ -21,6 +21,7 @@ import io.harness.ci.execution.CIExecutionConfigService;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.sto.config.STOImageConfig;
 import io.harness.sto.config.STOStepConfig;
+import io.harness.sto.utils.STOSettingsUtils;
 import io.harness.yaml.core.variables.OutputNGVariable;
 
 import java.util.Collections;
@@ -87,7 +88,7 @@ public class CIStepInfoUtils {
       STOStepConfig stoStepsConfig = ciExecutionConfigService.getCiExecutionServiceConfig().getStoStepConfig();
       STOGenericStepInfo genericStep = (STOGenericStepInfo) step;
       String stepTypeName = step.getStepType().getType().toLowerCase();
-      String stepConfigName = genericStep.getConfig().toString();
+      String stepConfigName = STOSettingsUtils.getProductConfigName(genericStep);
       String stepProductName = String.join("_", stepTypeName, stepConfigName);
 
       List<STOImageConfig> stoStepImages = stoStepsConfig.getImages();

@@ -65,7 +65,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
-import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
@@ -87,7 +87,7 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 
 @RunWith(MockitoJUnitRunner.class)
-@PrepareForTest({StepUtils.class})
+@PrepareForTest({TaskRequestsUtils.class})
 @OwnedBy(HarnessTeam.CDP)
 public class TerraformPlanStepTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
@@ -224,14 +224,14 @@ public class TerraformPlanStepTest extends CategoryTest {
     doReturn(ImmutableMap.of("KEY", ParameterField.createValueField("VAL")))
         .when(terraformStepHelper)
         .getEnvironmentVariablesMap(any());
-    Mockito.mockStatic(StepUtils.class);
-    PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
     ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
     TaskRequest taskRequest = terraformPlanStep.obtainTaskAfterRbac(ambiance, stepElementParameters, stepInputPackage);
     assertThat(taskRequest).isNotNull();
-    PowerMockito.verifyStatic(StepUtils.class, times(1));
-    StepUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any());
+    PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
+    TaskRequestsUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any());
     assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
     assertThat(taskDataArgumentCaptor.getValue().getParameters()).isNotNull();
     TerraformTaskNGParameters taskParameters =
@@ -303,14 +303,14 @@ public class TerraformPlanStepTest extends CategoryTest {
     doReturn(ImmutableMap.of("KEY", ParameterField.createValueField("VAL")))
         .when(terraformStepHelper)
         .getEnvironmentVariablesMap(any());
-    Mockito.mockStatic(StepUtils.class);
-    PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
     ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
     TaskRequest taskRequest = terraformPlanStep.obtainTaskAfterRbac(ambiance, stepElementParameters, stepInputPackage);
     assertThat(taskRequest).isNotNull();
-    PowerMockito.verifyStatic(StepUtils.class, times(1));
-    StepUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any());
+    PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
+    TaskRequestsUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any());
     assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
     assertThat(taskDataArgumentCaptor.getValue().getParameters()).isNotNull();
     TerraformTaskNGParameters taskParameters =

@@ -10,7 +10,7 @@ package io.harness.steps.approval.step.custom.beans;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.servicenow.TicketNG;
+import io.harness.servicenow.misc.TicketNG;
 import io.harness.tasks.ResponseData;
 
 import lombok.Builder;

@@ -23,7 +23,7 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.repositories.ApprovalInstanceRepository;
-import io.harness.servicenow.TicketNG;
+import io.harness.servicenow.misc.TicketNG;
 import io.harness.steps.approval.step.beans.ApprovalStatus;
 import io.harness.steps.approval.step.beans.ApprovalType;
 import io.harness.steps.approval.step.custom.beans.CustomApprovalResponseData;

@@ -19,8 +19,8 @@ public class ErrorTrackingServiceImpl implements ErrorTrackingService {
   @Override
   public ErrorTrackingNotificationData getNotificationData(String orgIdentifier, String accountId,
       String projectIdentifier, String serviceIdentifier, String environmentIdentifier,
-      List<ErrorTrackingEventType> eventTypes) {
-    return requestExecutor.execute(errorTrackingClient.getNotificationData(
-        orgIdentifier, accountId, projectIdentifier, serviceIdentifier, environmentIdentifier, eventTypes));
+      List<ErrorTrackingEventType> eventTypes, String notificationId) {
+    return requestExecutor.execute(errorTrackingClient.getNotificationData(orgIdentifier, accountId, projectIdentifier,
+        serviceIdentifier, environmentIdentifier, eventTypes, notificationId));
   }
 }

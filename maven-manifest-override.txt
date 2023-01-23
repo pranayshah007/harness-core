@@ -4,6 +4,7 @@ com.google.inject,@maven//:com_google_inject_guice
 com.google.inject.name,@maven//:com_google_inject_guice
 com.google.protobuf,@maven//:com_google_protobuf_protobuf_java
 com.mongodb,@maven//:org_mongodb_mongo_java_driver
+io.kubernetes.client.openapi.models,@maven//:io_kubernetes_client_java_api_fluent
 io.prometheus.client,@maven//:io_prometheus_simpleclient_dropwizard
 io.prometheus.client.Collector,@maven//:io_prometheus_simpleclient_dropwizard
 io.prometheus.client.dropwizard,@maven//:io_prometheus_simpleclient_dropwizard
@@ -35,3 +36,8 @@ org.hibernate.validator.constraints,@maven//:org_hibernate_validator_hibernate_v
 org.hibernate.validator.internal.engine.constraintvalidation,@maven//:org_hibernate_validator_hibernate_validator
 org.slf4j,@maven//:org_slf4j_slf4j_api
 org.w3c.dom,@maven//:xml_apis_xml_apis
+com.google.cloud.kms.v1.CryptoKeyName,@maven//:com_google_cloud_google_cloud_kms
+com.google.cloud.kms.v1.DecryptResponse,@maven//:com_google_cloud_google_cloud_kms
+com.google.cloud.kms.v1.EncryptResponse,@maven//:com_google_cloud_google_cloud_kms
+com.google.cloud.kms.v1.KeyManagementServiceClient,@maven//:com_google_cloud_google_cloud_kms
+com.google.cloud.kms.v1.KeyManagementServiceSettings,@maven//:com_google_cloud_google_cloud_kms

@@ -48,6 +48,7 @@ import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -82,6 +83,7 @@ public class DelegateSetupNgResource {
   private static final String CONTENT_DISPOSITION = "Content-Disposition";
   private static final String ATTACHMENT_FILENAME = "attachment; filename=";
   private static final String YAML = ".yaml";
+  private static final String TF = ".tf";
 
   private final DelegateNgManagerCgManagerClient delegateNgManagerCgManagerClient;
   private final AccessControlClient accessControlClient;
@@ -120,6 +122,36 @@ public class DelegateSetupNgResource {
     File yamlFile = File.createTempFile(HARNESS_DELEGATE_VALUES_YAML, YAML);
     FileUtils.writeStringToFile(yamlFile, yamlString, StandardCharsets.UTF_8);
     return Response.ok(yamlFile)
+        .header(CONTENT_TRANSFER_ENCODING, BINARY)
+        .type("text/plain; charset=UTF-8")
+        .header(CONTENT_DISPOSITION, ATTACHMENT_FILENAME + HARNESS_DELEGATE_VALUES_YAML + YAML)
+        .build();
+  }
+
+  @GET
+  @Timed
+  @Path("delegate-terraform-module-file")
+  @ExceptionMetered
+  @ApiOperation(value = "Generate delegate terraform example module file", nickname = "generateTerraformModule")
+  @Operation(operationId = "generateTerraformModule",
+      summary = "Generates delegate terraform example module file from the account",
+      responses = { @ApiResponse(responseCode = "default", description = "Generated terraform module file.") })
+  public Response
+  generateNgHelmValuesYaml(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
+                               NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) throws IOException {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+        Resource.of(DELEGATE_RESOURCE_TYPE, null), DELEGATE_EDIT_PERMISSION);
+    String fileString = CGRestUtils.getResponse(
+        delegateNgManagerCgManagerClient.getTerraformModuleFile(accountIdentifier, orgIdentifier, projectIdentifier));
+
+    // convert String to file and send as response
+    File moduleFile = File.createTempFile("main", TF);
+    FileUtils.writeStringToFile(moduleFile, fileString, StandardCharsets.UTF_8);
+    return Response.ok(moduleFile)
         .header(CONTENT_TRANSFER_ENCODING, BINARY)
         .type("text/plain; charset=UTF-8")
         .header(CONTENT_DISPOSITION, ATTACHMENT_FILENAME + HARNESS_DELEGATE_VALUES_YAML + YAML)

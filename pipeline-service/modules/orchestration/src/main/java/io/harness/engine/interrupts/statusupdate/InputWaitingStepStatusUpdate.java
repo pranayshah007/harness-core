@@ -7,39 +7,24 @@
 
 package io.harness.engine.interrupts.statusupdate;
 
-import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.pms.contracts.execution.Status.INPUT_WAITING;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.observers.NodeStatusUpdateHandler;
 import io.harness.engine.observers.NodeUpdateInfo;
-import io.harness.execution.NodeExecution;
-import io.harness.pms.contracts.execution.Status;
 
 import com.google.inject.Inject;
-import java.util.EnumSet;
 
-@OwnedBy(CDC)
+@OwnedBy(PIPELINE)
 public class InputWaitingStepStatusUpdate implements NodeStatusUpdateHandler {
-  @Inject private NodeExecutionService nodeExecutionService;
   @Inject private PlanExecutionService planExecutionService;
 
   @Override
   public void handleNodeStatusUpdate(NodeUpdateInfo nodeStatusUpdateInfo) {
-    NodeExecution nodeExecution = nodeStatusUpdateInfo.getNodeExecution();
-    if (nodeExecution.getParentId() == null) {
-      planExecutionService.updateCalculatedStatus(nodeStatusUpdateInfo.getPlanExecutionId());
-      return;
-    }
-    // flowingChildren will always be empty currently. Will see later.
-    long flowingChildrenCount =
-        nodeExecutionService.findCountByParentIdAndStatusIn(nodeExecution.getParentId(), EnumSet.noneOf(Status.class));
-    if (flowingChildrenCount == 0) {
-      nodeExecutionService.updateStatusWithOps(
-          nodeExecution.getParentId(), INPUT_WAITING, null, EnumSet.noneOf(Status.class));
-    }
-    planExecutionService.updateCalculatedStatus(nodeStatusUpdateInfo.getPlanExecutionId());
+    // Updating only planStatus and not parent nodeExecutions.
+    // Following the same structure as approval and wait-step. If needs to change then change everywhere.
+    planExecutionService.updateStatus(nodeStatusUpdateInfo.getPlanExecutionId(), INPUT_WAITING);
   }
 }

@@ -35,7 +35,7 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
 import io.harness.serializer.KryoSerializer;
-import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
 
 import software.wings.beans.LogColor;
@@ -43,6 +43,7 @@ import software.wings.beans.LogHelper;
 import software.wings.beans.LogWeight;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -57,7 +58,7 @@ public class ArtifactStep implements TaskExecutable<ArtifactStepParameters, Arti
   private static final long DEFAULT_TIMEOUT = TimeUnit.MINUTES.toMillis(3);
 
   @Inject private ArtifactStepHelper artifactStepHelper;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private ServiceStepsHelper serviceStepsHelper;
 
   @Override
@@ -106,7 +107,7 @@ public class ArtifactStep implements TaskExecutable<ArtifactStepParameters, Arti
               LogColor.Cyan, LogWeight.Bold));
     }
     List<TaskSelector> delegateSelectors = artifactStepHelper.getDelegateSelectors(finalArtifact, ambiance);
-    return StepUtils.prepareTaskRequestWithTaskSelector(ambiance, taskData, kryoSerializer,
+    return TaskRequestsUtils.prepareTaskRequestWithTaskSelector(ambiance, taskData, referenceFalseKryoSerializer,
         TaskCategory.DELEGATE_TASK_V2, Collections.emptyList(), false, taskName, delegateSelectors);
   }
 

@@ -11,6 +11,7 @@ import io.harness.beans.KeyValuePair;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.http.HttpHeaderConfig;
 import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.plancreator.steps.http.HttpStepInfo;
@@ -24,6 +25,7 @@ import io.harness.yaml.core.variables.StringNGVariable;
 
 import software.wings.beans.GraphNode;
 import software.wings.ngmigration.CgEntityId;
+import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.sm.State;
 import software.wings.sm.states.HttpState;
@@ -35,6 +37,11 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
 public class HttpStepMapperImpl implements StepMapper {
+  @Override
+  public WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode) {
+    return WorkflowStepSupportStatus.SUPPORTED;
+  }
+
   @Override
   public List<CgEntityId> getReferencedEntities(GraphNode graphNode) {
     String templateId = graphNode.getTemplateUuid();
@@ -64,7 +71,8 @@ public class HttpStepMapperImpl implements StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(Map<CgEntityId, NGYamlFile> migratedEntities, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities, GraphNode graphNode) {
     HttpState state = (HttpState) getState(graphNode);
     HttpStepNode httpStepNode = new HttpStepNode();
     baseSetup(graphNode, httpStepNode);

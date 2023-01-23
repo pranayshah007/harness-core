@@ -2390,6 +2390,11 @@ public class K8sTaskHelperBase {
 
       case HELM_CHART:
         HelmChartManifestDelegateConfig helmChartManifest = (HelmChartManifestDelegateConfig) manifestDelegateConfig;
+        int index = helmTaskHelperBase.skipDefaultHelmValuesYaml(manifestFilesDirectory, manifestOverrideFiles,
+            helmChartManifest.isSkipApplyHelmDefaultValues(), helmChartManifest.getHelmVersion());
+        if (index != -1) {
+          manifestOverrideFiles.remove(index);
+        }
         return renderTemplateForHelm(k8sDelegateTaskParams.getHelmPath(),
             getManifestDirectoryForHelmChart(manifestFilesDirectory, helmChartManifest), manifestOverrideFiles,
             releaseName, namespace, executionLogCallback, helmChartManifest.getHelmVersion(), timeoutInMillis,
@@ -2410,23 +2415,10 @@ public class K8sTaskHelperBase {
       case OPENSHIFT_TEMPLATE:
         OpenshiftManifestDelegateConfig openshiftManifestConfig =
             (OpenshiftManifestDelegateConfig) manifestDelegateConfig;
-        if (openshiftManifestConfig.getStoreDelegateConfig() instanceof GitStoreDelegateConfig) {
-          GitStoreDelegateConfig otGitStoreDelegateConfig =
-              (GitStoreDelegateConfig) openshiftManifestConfig.getStoreDelegateConfig();
-          return openShiftDelegateService.processTemplatization(manifestFilesDirectory,
-              k8sDelegateTaskParams.getOcPath(), otGitStoreDelegateConfig.getPaths().get(0), executionLogCallback,
-              manifestOverrideFiles);
-        } else if (openshiftManifestConfig.getStoreDelegateConfig() instanceof LocalFileStoreDelegateConfig) {
-          LocalFileStoreDelegateConfig localFileStoreDelegateConfig =
-              (LocalFileStoreDelegateConfig) openshiftManifestConfig.getStoreDelegateConfig();
-          return openShiftDelegateService.processTemplatization(manifestFilesDirectory,
-              k8sDelegateTaskParams.getOcPath(),
-              localFileStoreDelegateConfig.getManifestFiles().get(0).getFilePath().substring(1), executionLogCallback,
-              manifestOverrideFiles);
-        } else {
-          throw new UnsupportedOperationException(
-              String.format("Manifest delegate config type: [%s]", manifestType.name()));
-        }
+        String openshiftTemplatePath =
+            getOpenshiftTemplatePath(openshiftManifestConfig.getStoreDelegateConfig(), manifestType);
+        return openShiftDelegateService.processTemplatization(manifestFilesDirectory, k8sDelegateTaskParams.getOcPath(),
+            openshiftTemplatePath, executionLogCallback, manifestOverrideFiles);
 
       default:
         throw new UnsupportedOperationException(
@@ -2452,6 +2444,11 @@ public class K8sTaskHelperBase {
 
       case HELM_CHART:
         HelmChartManifestDelegateConfig helmChartManifest = (HelmChartManifestDelegateConfig) manifestDelegateConfig;
+        int index = helmTaskHelperBase.skipDefaultHelmValuesYaml(manifestFilesDirectory, manifestOverrideFiles,
+            helmChartManifest.isSkipApplyHelmDefaultValues(), helmChartManifest.getHelmVersion());
+        if (index != -1) {
+          manifestOverrideFiles.remove(index);
+        }
         return renderTemplateForHelmChartFiles(k8sDelegateTaskParams.getHelmPath(),
             getManifestDirectoryForHelmChart(manifestFilesDirectory, helmChartManifest), filesList,
             manifestOverrideFiles, releaseName, namespace, executionLogCallback, helmChartManifest.getHelmVersion(),
@@ -3233,5 +3230,45 @@ public class K8sTaskHelperBase {
     IK8sReleaseHistory legacyReleaseHistory =
         legacyReleaseHistoryHandler.getReleaseHistory(kubernetesConfig, releaseName);
     return legacyReleaseHistory.getAndIncrementLastReleaseNumber();
+  }
+
+  private String getOpenshiftTemplatePath(StoreDelegateConfig storeDelegateConfig, ManifestType manifestType) {
+    String openshiftTemplatePath;
+    switch (storeDelegateConfig.getType()) {
+      case GIT:
+        GitStoreDelegateConfig otGitStoreDelegateConfig = (GitStoreDelegateConfig) storeDelegateConfig;
+        openshiftTemplatePath = otGitStoreDelegateConfig.getPaths().get(0);
+        break;
+
+      case HARNESS:
+        LocalFileStoreDelegateConfig localFileStoreDelegateConfig = (LocalFileStoreDelegateConfig) storeDelegateConfig;
+        openshiftTemplatePath = localFileStoreDelegateConfig.getManifestFiles().get(0).getFilePath();
+        if (isNotEmpty(openshiftTemplatePath) && openshiftTemplatePath.charAt(0) == '/') {
+          openshiftTemplatePath = openshiftTemplatePath.substring(1);
+        }
+        break;
+
+      case CUSTOM_REMOTE:
+        CustomRemoteStoreDelegateConfig customRemoteStoreDelegateConfig =
+            (CustomRemoteStoreDelegateConfig) storeDelegateConfig;
+        openshiftTemplatePath =
+            getFileName(customRemoteStoreDelegateConfig.getCustomManifestSource().getFilePaths().get(0));
+        break;
+
+      default:
+        throw new UnsupportedOperationException(
+            String.format("Manifest delegate config type: [%s] not supported", manifestType.name()));
+    }
+
+    if (isEmpty(openshiftTemplatePath)) {
+      throw NestedExceptionUtils.hintWithExplanationException(KubernetesExceptionHints.INVALID_TEMPLATE_PATH,
+          KubernetesExceptionExplanation.INVALID_TEMPLATE_PATH,
+          new InvalidArgumentsException("Invalid path to openshift template file"));
+    }
+    return openshiftTemplatePath;
+  }
+
+  private String getFileName(String path) {
+    return path != null ? (new File(path)).getName() : null;
   }
 }
