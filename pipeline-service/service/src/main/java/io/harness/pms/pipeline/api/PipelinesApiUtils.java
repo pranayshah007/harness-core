@@ -406,7 +406,11 @@ public class PipelinesApiUtils {
   }
 
   public static PipelineValidationResponseBody buildPipelineValidationResponseBody(PipelineValidationEvent event) {
-    return new PipelineValidationResponseBody().status(event.getStatus().name());
+    return new PipelineValidationResponseBody()
+        .status(event.getStatus().name())
+        .policyEval(event.getResult().getGovernanceResponse())
+        .startTs(event.getStartTs())
+        .endTs(event.getEndTs());
   }
 
   public static GovernanceMetadata buildGovernanceMetadataFromProto(

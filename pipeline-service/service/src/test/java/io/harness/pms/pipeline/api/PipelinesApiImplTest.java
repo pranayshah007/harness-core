@@ -39,6 +39,7 @@ import io.harness.pms.pipeline.service.PipelineCRUDResult;
 import io.harness.pms.pipeline.service.PipelineMetadataService;
 import io.harness.pms.pipeline.validation.async.beans.Action;
 import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
+import io.harness.pms.pipeline.validation.async.beans.ValidationResult;
 import io.harness.pms.pipeline.validation.async.beans.ValidationStatus;
 import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationService;
 import io.harness.rule.Owner;
@@ -334,7 +335,10 @@ public class PipelinesApiImplTest extends CategoryTest {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testGetPipelineValidateResult() {
-    doReturn(Optional.of(PipelineValidationEvent.builder().status(ValidationStatus.IN_PROGRESS).build()))
+    doReturn(Optional.of(PipelineValidationEvent.builder()
+                             .status(ValidationStatus.IN_PROGRESS)
+                             .result(ValidationResult.builder().build())
+                             .build()))
         .when(pipelineAsyncValidationService)
         .getEventByUuid("uuid1");
 

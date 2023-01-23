@@ -26,6 +26,7 @@ import io.harness.cvng.migration.list.AddTaskInfoToVerificationTask;
 import io.harness.cvng.migration.list.AddTypeToServiceLevelObjectivesV2;
 import io.harness.cvng.migration.list.AppDCVConfigCompleteMetricPathMigration;
 import io.harness.cvng.migration.list.AppDCustomMetricForExistingProjects;
+import io.harness.cvng.migration.list.CVConfigPopulateUuidForThresholds;
 import io.harness.cvng.migration.list.CVNGBaseMigration;
 import io.harness.cvng.migration.list.CleanUpMonitoringSourcePerpetualTask;
 import io.harness.cvng.migration.list.CleanUpOldDocuments;
@@ -122,6 +123,7 @@ public class CVNGBackgroundMigrationList {
         .add(Pair.of(53, AddTypeToServiceLevelObjectivesV2.class))
         .add(Pair.of(54, AddStartedAtToServiceLevelObjectiveV2.class))
         .add(Pair.of(55, DeleteActivitiesNotAssociatedWithMonitoredServices.class))
+        .add(Pair.of(56, CVConfigPopulateUuidForThresholds.class))
         .build();
   }
 }

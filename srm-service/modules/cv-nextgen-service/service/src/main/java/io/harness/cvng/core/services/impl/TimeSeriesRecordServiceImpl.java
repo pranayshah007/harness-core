@@ -388,6 +388,7 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
 
     metricPackThresholds.forEach(timeSeriesThreshold
         -> timeSeriesMetricDefinitions.add(TimeSeriesMetricDefinition.builder()
+                                               .id(timeSeriesThreshold.getUuid())
                                                .metricName(timeSeriesThreshold.getMetricName())
                                                .metricIdentifier(timeSeriesThreshold.getMetricIdentifier())
                                                .metricType(timeSeriesThreshold.getMetricType())
@@ -413,6 +414,7 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
               if (!ThresholdConfigType.USER_DEFINED.equals(timeSeriesThreshold.getThresholdConfigType())) {
                 timeSeriesMetricDefinitions.add(
                     TimeSeriesMetricDefinition.builder()
+                        .id(timeSeriesThreshold.getUuid())
                         .metricName(metricDefinition.getName())
                         .metricIdentifier(metricDefinition.getIdentifier())
                         .metricType(metricDefinition.getType())

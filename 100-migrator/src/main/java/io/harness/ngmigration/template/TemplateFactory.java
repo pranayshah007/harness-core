@@ -18,6 +18,8 @@ public class TemplateFactory {
   private static final HttpTemplateService httpTemplateService = new HttpTemplateService();
 
   private static final ShellScriptTemplateService shellScriptTemplateService = new ShellScriptTemplateService();
+  private static final ServiceCommandTemplateService serviceCommandTemplateService =
+      new ServiceCommandTemplateService();
 
   private static final UnSupportedTemplateService unSupportedTemplateService = new UnSupportedTemplateService();
   public static NgTemplateService getTemplateService(Template template) {
@@ -25,6 +27,8 @@ public class TemplateFactory {
       return shellScriptTemplateService;
     } else if (TemplateType.HTTP.name().equals(template.getType())) {
       return httpTemplateService;
+    } else if (TemplateType.SSH.name().equals(template.getType())) {
+      return serviceCommandTemplateService;
     }
     return unSupportedTemplateService;
   }

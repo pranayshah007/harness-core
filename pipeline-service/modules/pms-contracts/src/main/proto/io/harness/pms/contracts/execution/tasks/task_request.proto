@@ -18,6 +18,7 @@ message TaskRequest {
     SkipTaskRequest skipTaskRequest = 3;
   }
   TaskCategory taskCategory = 2;
+  bool useReferenceFalseKryoSerializer = 4;
 }
 
 enum TaskCategory {

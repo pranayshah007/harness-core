@@ -18,8 +18,8 @@ import static io.harness.delegate.beans.azure.AzureVMAuthType.SSH_PUBLIC_KEY;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.validation.Validator.notNullCheck;
 
-import static software.wings.beans.Log.Builder.aLog;
 import static software.wings.beans.ServiceVariableType.ENCRYPTED_TEXT;
+import static software.wings.beans.dto.Log.Builder.aLog;
 import static software.wings.service.impl.artifact.ArtifactServiceImpl.metadataOnlyBehindFlag;
 import static software.wings.sm.InstanceStatusSummary.InstanceStatusSummaryBuilder.anInstanceStatusSummary;
 
@@ -72,7 +72,6 @@ import software.wings.beans.AzureWebAppInfrastructureMapping;
 import software.wings.beans.DeploymentExecutionContext;
 import software.wings.beans.Environment;
 import software.wings.beans.InfrastructureMapping;
-import software.wings.beans.Log;
 import software.wings.beans.Service;
 import software.wings.beans.ServiceVariable;
 import software.wings.beans.SettingAttribute;
@@ -86,6 +85,7 @@ import software.wings.beans.command.Command;
 import software.wings.beans.command.CommandUnit;
 import software.wings.beans.command.CommandUnitDetails;
 import software.wings.beans.container.UserDataSpecification;
+import software.wings.beans.dto.Log;
 import software.wings.persistence.artifact.Artifact;
 import software.wings.service.intfc.ActivityService;
 import software.wings.service.intfc.ArtifactService;

@@ -146,11 +146,23 @@ public class InstanceSyncServiceTest extends InstancesTestBase {
         instanceService, deploymentSummaryService, instanceSyncHelper, instanceSyncServiceUtils,
         instanceSyncMonitoringService, accountClient);
 
-    ServiceEntity serviceEntity = ServiceEntity.builder().name(TEST_SERVICE_NAME).identifier(TEST_SERVICE_ID).build();
+    ServiceEntity serviceEntity = ServiceEntity.builder()
+                                      .name(TEST_SERVICE_NAME)
+                                      .identifier(TEST_SERVICE_ID)
+                                      .accountId(TEST_ACCOUNT_ID)
+                                      .orgIdentifier(TEST_ORG_ID)
+                                      .projectIdentifier(TEST_PROJECT_ID)
+                                      .build();
     when(serviceEntityService.get(anyString(), anyString(), anyString(), anyString(), anyBoolean()))
         .thenReturn(Optional.of(serviceEntity));
-    Environment environment =
-        Environment.builder().identifier(TEST_ENV_ID).type(EnvironmentType.PreProduction).name(TEST_ENV_NAME).build();
+    Environment environment = Environment.builder()
+                                  .identifier(TEST_ENV_ID)
+                                  .type(EnvironmentType.PreProduction)
+                                  .name(TEST_ENV_NAME)
+                                  .accountId(TEST_ACCOUNT_ID)
+                                  .orgIdentifier(TEST_ORG_ID)
+                                  .projectIdentifier(TEST_PROJECT_ID)
+                                  .build();
     when(environmentService.get(anyString(), anyString(), anyString(), anyString(), anyBoolean()))
         .thenReturn(Optional.of(environment));
     doNothing().when(instanceSyncMonitoringService).recordMetrics(any(), eq(true), anyBoolean(), anyLong());

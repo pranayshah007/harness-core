@@ -205,6 +205,7 @@ import io.harness.delegate.beans.connector.scm.gitlab.GitlabSshCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabTokenSpecDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabUsernamePasswordDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabUsernameTokenDTO;
+import io.harness.delegate.beans.connector.servicenow.ServiceNowADFSDTO;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthCredentialsDTO;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthType;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthenticationDTO;
@@ -451,6 +452,7 @@ public class ConnectorBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(ServiceNowAuthType.class, 10000113);
     kryo.register(ServiceNowAuthCredentialsDTO.class, 10000114);
     kryo.register(ServiceNowUserNamePasswordDTO.class, 10000115);
+    kryo.register(ServiceNowADFSDTO.class, 10000116);
 
     kryo.register(TasConnectorDTO.class, 10000201);
     kryo.register(TasCredentialDTO.class, 10000202);

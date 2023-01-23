@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.MongoConfig;
+import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.secret.ConfigSecret;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -28,5 +29,8 @@ public class AuditServiceConfiguration {
   @JsonProperty("enableAuditService") boolean enableAuditService = true;
   @JsonProperty("hostname") String hostname;
   @JsonProperty("basePathPrefix") String basePathPrefix;
+  @JsonProperty("auditClientConfig") ServiceHttpClientConfig auditClientConfig;
+  @JsonProperty("exportMetricsToStackDriver") boolean exportMetricsToStackDriver;
+  @JsonProperty(value = "enableAudit") boolean enableAudit;
   @JsonProperty(value = "enableOpentelemetry") private Boolean enableOpentelemetry;
 }

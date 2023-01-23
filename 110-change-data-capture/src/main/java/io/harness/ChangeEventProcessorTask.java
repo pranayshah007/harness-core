@@ -106,6 +106,9 @@ public class ChangeEventProcessorTask implements Runnable {
     for (CDCEntity<?> cdcEntity : cdcEntities) {
       if (cdcEntity.getSubscriptionEntity().equals(clazz)) {
         for (ChangeDataCapture changeDataCapture : dataCaptures) {
+          if (changeEvent.getHandler() != null && !changeDataCapture.handler().equals(changeEvent.getHandler())) {
+            continue;
+          }
           ChangeHandler changeHandler = cdcEntity.getChangeHandler(changeDataCapture.handler());
           if (changeHandler != null) {
             changeHandler.handleChange(

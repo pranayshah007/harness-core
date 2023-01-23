@@ -13,7 +13,6 @@ import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.LogLevel.INFO;
-import static io.harness.steps.StepUtils.prepareCDTaskRequest;
 
 import static java.lang.String.format;
 
@@ -118,12 +117,14 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 
 import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -138,7 +139,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 public class EcsStepCommonHelper extends EcsStepUtils {
   @Inject private EngineExpressionService engineExpressionService;
   @Inject private EcsEntityHelper ecsEntityHelper;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private StepHelper stepHelper;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private CDExpressionResolver cdExpressionResolver;
@@ -635,8 +636,8 @@ public class EcsStepCommonHelper extends EcsStepUtils {
 
     EcsSpecParameters ecsSpecParameters = (EcsSpecParameters) stepElementParameters.getSpec();
 
-    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
-        ecsSpecParameters.getCommandUnits(), taskName,
+    final TaskRequest taskRequest = TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData,
+        referenceFalseKryoSerializer, ecsSpecParameters.getCommandUnits(), taskName,
         TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(ecsSpecParameters.getDelegateSelectors()))),
         stepHelper.getEnvironmentType(ambiance));
 
@@ -886,8 +887,8 @@ public class EcsStepCommonHelper extends EcsStepUtils {
 
     EcsSpecParameters ecsSpecParameters = (EcsSpecParameters) stepElementParameters.getSpec();
 
-    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
-        ecsSpecParameters.getCommandUnits(), taskName,
+    final TaskRequest taskRequest = TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData,
+        referenceFalseKryoSerializer, ecsSpecParameters.getCommandUnits(), taskName,
         TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(ecsSpecParameters.getDelegateSelectors()))),
         stepHelper.getEnvironmentType(ambiance));
 
@@ -920,8 +921,8 @@ public class EcsStepCommonHelper extends EcsStepUtils {
 
     EcsSpecParameters ecsSpecParameters = (EcsSpecParameters) stepElementParameters.getSpec();
 
-    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
-        ecsSpecParameters.getCommandUnits(), taskName,
+    final TaskRequest taskRequest = TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData,
+        referenceFalseKryoSerializer, ecsSpecParameters.getCommandUnits(), taskName,
         TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(ecsSpecParameters.getDelegateSelectors()))),
         stepHelper.getEnvironmentType(ambiance));
 
@@ -958,8 +959,8 @@ public class EcsStepCommonHelper extends EcsStepUtils {
 
     EcsSpecParameters ecsSpecParameters = (EcsSpecParameters) stepElementParameters.getSpec();
 
-    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
-        ecsSpecParameters.getCommandUnits(), taskName,
+    final TaskRequest taskRequest = TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData,
+        referenceFalseKryoSerializer, ecsSpecParameters.getCommandUnits(), taskName,
         TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(ecsSpecParameters.getDelegateSelectors()))),
         stepHelper.getEnvironmentType(ambiance));
 
@@ -1903,8 +1904,8 @@ public class EcsStepCommonHelper extends EcsStepUtils {
 
     EcsSpecParameters ecsSpecParameters = (EcsSpecParameters) stepElementParameters.getSpec();
 
-    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
-        ecsSpecParameters.getCommandUnits(), taskName,
+    final TaskRequest taskRequest = TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData,
+        referenceFalseKryoSerializer, ecsSpecParameters.getCommandUnits(), taskName,
         TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(ecsSpecParameters.getDelegateSelectors()))),
         stepHelper.getEnvironmentType(ambiance));
     return TaskChainResponse.builder()
@@ -1927,8 +1928,8 @@ public class EcsStepCommonHelper extends EcsStepUtils {
 
     EcsSpecParameters ecsSpecParameters = (EcsSpecParameters) stepElementParameters.getSpec();
 
-    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
-        ecsSpecParameters.getCommandUnits(), taskName,
+    final TaskRequest taskRequest = TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData,
+        referenceFalseKryoSerializer, ecsSpecParameters.getCommandUnits(), taskName,
         TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(ecsSpecParameters.getDelegateSelectors()))),
         stepHelper.getEnvironmentType(ambiance));
     return TaskChainResponse.builder()

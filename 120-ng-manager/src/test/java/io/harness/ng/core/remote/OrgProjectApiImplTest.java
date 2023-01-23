@@ -7,8 +7,8 @@
 
 package io.harness.ng.core.remote;
 
+import static io.harness.NGCommonEntityConstants.DIFFERENT_IDENTIFIER_IN_PAYLOAD_AND_PARAM;
 import static io.harness.NGCommonEntityConstants.DIFFERENT_ORG_IN_PAYLOAD_AND_PARAM;
-import static io.harness.NGCommonEntityConstants.DIFFERENT_SLUG_IN_PAYLOAD_AND_PARAM;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.ng.core.remote.ProjectMapper.toProject;
 import static io.harness.rule.OwnerRule.ASHISHSANODIA;
@@ -70,7 +70,7 @@ public class OrgProjectApiImplTest extends CategoryTest {
 
   String account = randomAlphabetic(10);
   String org = randomAlphabetic(10);
-  String slug = randomAlphabetic(10);
+  String identifier = randomAlphabetic(10);
   String name = randomAlphabetic(10);
   int page = 0;
   int limit = 1;
@@ -98,7 +98,7 @@ public class OrgProjectApiImplTest extends CategoryTest {
   public void testOrgScopedProjectCreate() {
     CreateProjectRequest request = new CreateProjectRequest();
     io.harness.spec.server.ng.v1.model.Project proj = new io.harness.spec.server.ng.v1.model.Project();
-    proj.setSlug(slug);
+    proj.setIdentifier(identifier);
     proj.setName(name);
     proj.setOrg(org);
     request.setProject(proj);
@@ -115,7 +115,7 @@ public class OrgProjectApiImplTest extends CategoryTest {
     assertEquals(project.getVersion().toString(), response.getEntityTag().getValue());
     ProjectResponse entity = (ProjectResponse) response.getEntity();
 
-    assertEquals(slug, entity.getProject().getSlug());
+    assertEquals(identifier, entity.getProject().getIdentifier());
     assertEquals(org, entity.getProject().getOrg());
   }
 
@@ -125,7 +125,7 @@ public class OrgProjectApiImplTest extends CategoryTest {
   public void testProjectCreateForOrgMisMatch() {
     CreateProjectRequest request = new CreateProjectRequest();
     io.harness.spec.server.ng.v1.model.Project proj = new io.harness.spec.server.ng.v1.model.Project();
-    proj.setSlug(slug);
+    proj.setIdentifier(identifier);
     proj.setName(name);
     proj.setOrg(org);
     request.setProject(proj);
@@ -140,21 +140,21 @@ public class OrgProjectApiImplTest extends CategoryTest {
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
   public void testGetOrgScopedProjectNotFoundException() {
-    orgProjectApi.getOrgScopedProject(org, slug, account);
+    orgProjectApi.getOrgScopedProject(org, identifier, account);
   }
 
   @Test
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
   public void testGetOrgScopedProject() {
-    Project project = Project.builder().identifier(slug).name(name).orgIdentifier(org).version(0L).build();
-    when(projectService.get(account, org, slug)).thenReturn(Optional.of(project));
+    Project project = Project.builder().identifier(identifier).name(name).orgIdentifier(org).version(0L).build();
+    when(projectService.get(account, org, identifier)).thenReturn(Optional.of(project));
 
-    Response response = orgProjectApi.getOrgScopedProject(org, slug, account);
+    Response response = orgProjectApi.getOrgScopedProject(org, identifier, account);
 
     ProjectResponse entity = (ProjectResponse) response.getEntity();
 
-    assertEquals(slug, entity.getProject().getSlug());
+    assertEquals(identifier, entity.getProject().getIdentifier());
     assertEquals(org, entity.getProject().getOrg());
     assertEquals(project.getVersion().toString(), response.getEntityTag().getValue());
   }
@@ -164,7 +164,7 @@ public class OrgProjectApiImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetOrgScopedProjectList() {
     String searchTerm = randomAlphabetic(10);
-    ProjectDTO projectDTO = getProjectDTO(org, slug, name);
+    ProjectDTO projectDTO = getProjectDTO(org, identifier, name);
     projectDTO.setModules(Collections.singletonList(ModuleType.CD));
     Project project = toProject(projectDTO);
     project.setVersion((long) 0);
@@ -183,7 +183,7 @@ public class OrgProjectApiImplTest extends CategoryTest {
                                                                  .build()))
                 .build());
 
-    Response response = orgProjectApi.getOrgScopedProjects(org, Collections.singletonList(slug), true,
+    Response response = orgProjectApi.getOrgScopedProjects(org, Collections.singletonList(identifier), true,
         io.harness.spec.server.ng.v1.model.ModuleType.CD.name(), searchTerm, page, limit, account, null, null);
 
     verify(projectService, times(1)).listPermittedProjects(eq(account), any(), argumentCaptor.capture());
@@ -196,7 +196,7 @@ public class OrgProjectApiImplTest extends CategoryTest {
     assertEquals(2, response.getLinks().size());
     assertEquals(1, entity.size());
     assertEquals(org, entity.get(0).getProject().getOrg());
-    assertEquals(slug, entity.get(0).getProject().getSlug());
+    assertEquals(identifier, entity.get(0).getProject().getIdentifier());
   }
 
   @Test
@@ -205,7 +205,7 @@ public class OrgProjectApiImplTest extends CategoryTest {
   public void testUpdateOrgScopedProject() {
     UpdateProjectRequest request = new UpdateProjectRequest();
     io.harness.spec.server.ng.v1.model.Project proj = new io.harness.spec.server.ng.v1.model.Project();
-    proj.setSlug(slug);
+    proj.setIdentifier(identifier);
     proj.setName("updated_name");
     proj.setOrg(org);
     request.setProject(proj);
@@ -214,15 +214,15 @@ public class OrgProjectApiImplTest extends CategoryTest {
     Project project = toProject(projectDTO);
     project.setVersion(0L);
 
-    when(projectService.update(account, org, slug, projectDTO)).thenReturn(project);
+    when(projectService.update(account, org, identifier, projectDTO)).thenReturn(project);
 
-    Response response = orgProjectApi.updateOrgScopedProject(request, org, slug, account);
+    Response response = orgProjectApi.updateOrgScopedProject(request, org, identifier, account);
 
     ProjectResponse entity = (ProjectResponse) response.getEntity();
 
     assertEquals(project.getVersion().toString(), response.getEntityTag().getValue());
     assertEquals(org, entity.getProject().getOrg());
-    assertEquals(slug, entity.getProject().getSlug());
+    assertEquals(identifier, entity.getProject().getIdentifier());
     assertEquals("updated_name", entity.getProject().getName());
   }
 
@@ -232,14 +232,14 @@ public class OrgProjectApiImplTest extends CategoryTest {
   public void testUpdateOrgScopedProjectOrgMisMatch() {
     UpdateProjectRequest request = new UpdateProjectRequest();
     io.harness.spec.server.ng.v1.model.Project proj = new io.harness.spec.server.ng.v1.model.Project();
-    proj.setSlug(slug);
+    proj.setIdentifier(identifier);
     proj.setName("updated_name");
     proj.setOrg(org);
     request.setProject(proj);
 
     Throwable thrown =
         catchThrowableOfType(()
-                                 -> orgProjectApi.updateOrgScopedProject(request, "different-org", slug, account),
+                                 -> orgProjectApi.updateOrgScopedProject(request, "different-org", identifier, account),
             InvalidRequestException.class);
 
     assertThat(thrown).hasMessage(DIFFERENT_ORG_IN_PAYLOAD_AND_PARAM);
@@ -248,60 +248,60 @@ public class OrgProjectApiImplTest extends CategoryTest {
   @Test
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
-  public void testUpdateOrgScopedProjectSlugMisMatch() {
+  public void testUpdateOrgScopedProjectIdentifierMisMatch() {
     UpdateProjectRequest request = new UpdateProjectRequest();
     io.harness.spec.server.ng.v1.model.Project proj = new io.harness.spec.server.ng.v1.model.Project();
-    proj.setSlug(slug);
+    proj.setIdentifier(identifier);
     proj.setName("updated_name");
     proj.setOrg(org);
     request.setProject(proj);
 
     Throwable thrown =
         catchThrowableOfType(()
-                                 -> orgProjectApi.updateOrgScopedProject(request, org, "different-slug", account),
+                                 -> orgProjectApi.updateOrgScopedProject(request, org, "different-identifier", account),
             InvalidRequestException.class);
 
-    assertThat(thrown).hasMessage(DIFFERENT_SLUG_IN_PAYLOAD_AND_PARAM);
+    assertThat(thrown).hasMessage(DIFFERENT_IDENTIFIER_IN_PAYLOAD_AND_PARAM);
   }
 
   @Test
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
   public void testOrgScopedProjectDelete() {
-    Project project = Project.builder().identifier(slug).name(name).build();
+    Project project = Project.builder().identifier(identifier).name(name).build();
 
-    when(projectService.delete(account, org, slug, null)).thenReturn(true);
-    when(projectService.get(account, org, slug)).thenReturn(Optional.of(project));
+    when(projectService.delete(account, org, identifier, null)).thenReturn(true);
+    when(projectService.get(account, org, identifier)).thenReturn(Optional.of(project));
 
-    Response response = orgProjectApi.deleteOrgScopedProject(org, slug, account);
+    Response response = orgProjectApi.deleteOrgScopedProject(org, identifier, account);
 
     ProjectResponse entity = (ProjectResponse) response.getEntity();
 
-    assertEquals(slug, entity.getProject().getSlug());
+    assertEquals(identifier, entity.getProject().getIdentifier());
   }
 
   @Test
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
   public void testOrgScopedProjectNotDeleted() {
-    Project project = Project.builder().identifier(slug).name(name).build();
+    Project project = Project.builder().identifier(identifier).name(name).build();
 
-    when(projectService.delete(account, org, slug, null)).thenReturn(false);
-    when(projectService.get(account, org, slug)).thenReturn(Optional.of(project));
+    when(projectService.delete(account, org, identifier, null)).thenReturn(false);
+    when(projectService.get(account, org, identifier)).thenReturn(Optional.of(project));
 
-    Throwable thrown =
-        catchThrowableOfType(() -> orgProjectApi.deleteOrgScopedProject(org, slug, account), NotFoundException.class);
+    Throwable thrown = catchThrowableOfType(
+        () -> orgProjectApi.deleteOrgScopedProject(org, identifier, account), NotFoundException.class);
 
-    assertThat(thrown).hasMessage(format("Project with slug [%s] could not be deleted", slug));
+    assertThat(thrown).hasMessage(format("Project with identifier [%s] could not be deleted", identifier));
   }
 
   @Test
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
   public void testOrgScopedProjectDeleteNotFoundException() {
-    Throwable thrown =
-        catchThrowableOfType(() -> orgProjectApi.deleteOrgScopedProject(org, slug, account), NotFoundException.class);
+    Throwable thrown = catchThrowableOfType(
+        () -> orgProjectApi.deleteOrgScopedProject(org, identifier, account), NotFoundException.class);
 
-    assertThat(thrown).hasMessage(format("Project with org [%s] and slug [%s] not found", org, slug));
+    assertThat(thrown).hasMessage(format("Project with org [%s] and identifier [%s] not found", org, identifier));
   }
 }

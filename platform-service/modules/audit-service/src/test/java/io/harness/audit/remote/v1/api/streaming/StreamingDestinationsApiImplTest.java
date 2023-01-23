@@ -21,6 +21,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.audit.api.streaming.StreamingService;
 import io.harness.audit.entities.streaming.AwsS3StreamingDestination;
 import io.harness.audit.entities.streaming.StreamingDestination;
@@ -69,11 +70,13 @@ public class StreamingDestinationsApiImplTest extends CategoryTest {
   @Mock private StreamingService streamingService;
   @Mock private StreamingDestinationsApiUtils streamingDestinationsApiUtils;
   private StreamingDestinationsApiImpl streamingDestinationsApi;
+  @Mock private AccessControlClient accessControlClient;
 
   @Before
   public void setup() throws Exception {
     MockitoAnnotations.openMocks(this).close();
-    this.streamingDestinationsApi = new StreamingDestinationsApiImpl(streamingService, streamingDestinationsApiUtils);
+    this.streamingDestinationsApi =
+        new StreamingDestinationsApiImpl(streamingService, streamingDestinationsApiUtils, accessControlClient);
 
     harnessAccount = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10);
     identifier = randomAlphabetic(RANDOM_STRING_CHAR_COUNT_10);

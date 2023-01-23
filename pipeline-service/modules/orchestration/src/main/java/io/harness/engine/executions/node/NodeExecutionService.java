@@ -176,14 +176,16 @@ public interface NodeExecutionService {
    * Returns children executions (including grandchildren) for given parentId
    * Note: nodeExecution should atleast have parentId projected fields
    * Doesn't make any DB calls
+   *
    * @param parentId
    * @param includeParent
-   * @param finalList -> it contains the result from allExecutions
+   * @param finalList                 -> it contains the result from allExecutions
    * @param allExecutions
+   * @param includeChildrenOfStrategy
    * @return
    */
-  List<NodeExecution> extractChildExecutions(
-      String parentId, boolean includeParent, List<NodeExecution> finalList, List<NodeExecution> allExecutions);
+  List<NodeExecution> extractChildExecutions(String parentId, boolean includeParent, List<NodeExecution> finalList,
+      List<NodeExecution> allExecutions, boolean includeChildrenOfStrategy);
 
   // stepType, parentId and Status are already included into projections
 
@@ -191,15 +193,18 @@ public interface NodeExecutionService {
    * Internally uses pagination to get all children of given planExecutionId
    * Apart from fieldsTobeIncluded, NodeProjectionUtils.fieldsForAllChildrenExtractor fields are already in projection
    * Uses - planExecutionId_status_idx index
+   *
    * @param planExecutionId
    * @param parentId
    * @param statuses
    * @param includeParent
    * @param fieldsToBeIncluded
+   * @param includeChildrenOfStrategy
    * @return all children(including grandchildren) in given planExecutionId and of parentId having one of the statuses
    */
   List<NodeExecution> findAllChildrenWithStatusInAndWithoutOldRetries(String planExecutionId, String parentId,
-      EnumSet<Status> statuses, boolean includeParent, Set<String> fieldsToBeIncluded);
+      EnumSet<Status> statuses, boolean includeParent, Set<String> fieldsToBeIncluded,
+      boolean includeChildrenOfStrategy);
 
   /**
    * Note: It depends upon findAllChildrenWithStatusInAndWithoutOldRetries
@@ -211,7 +216,7 @@ public interface NodeExecutionService {
    */
   default List<NodeExecution> findAllChildrenOnlyIds(String planExecutionId, String parentId, boolean includeParent) {
     return findAllChildrenWithStatusInAndWithoutOldRetries(
-        planExecutionId, parentId, EnumSet.noneOf(Status.class), includeParent, new HashSet<>());
+        planExecutionId, parentId, EnumSet.noneOf(Status.class), includeParent, new HashSet<>(), false);
   }
 
   /**
@@ -296,6 +301,12 @@ public interface NodeExecutionService {
    * @param nodeExecutionId Id of Failed Node Execution
    */
   boolean markRetried(String nodeExecutionId);
+
+  /**
+   * Deletes the nodeExecutions and its related metadata
+   * @param planExecutionId Id of to be deleted planExecution
+   */
+  void deleteAllNodeExecutionAndMetadata(String planExecutionId);
 
   /**
    * Update Nodes for which the previousId was failed node execution and replace it with the

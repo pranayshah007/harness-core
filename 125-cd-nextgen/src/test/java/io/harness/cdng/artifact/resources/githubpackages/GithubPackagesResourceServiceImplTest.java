@@ -193,7 +193,7 @@ public class GithubPackagesResourceServiceImplTest extends CategoryTest {
 
     when(secretManagerClientService.getEncryptionDetails(any(), any())).thenReturn(encryptionDetails);
 
-    when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(artifactTaskResponse);
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any())).thenReturn(artifactTaskResponse);
 
     List<BuildDetails> versions = githubPackagesResourceService.getVersionsOfPackage(
         identifierRef, packageName, packageType, versionRegex, org, ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
@@ -210,7 +210,7 @@ public class GithubPackagesResourceServiceImplTest extends CategoryTest {
 
     verify(connectorService).get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "identifier");
 
-    verify(delegateGrpcClientWrapper).executeSyncTask(delegateTaskRequestCaptor.capture());
+    verify(delegateGrpcClientWrapper).executeSyncTaskV2(delegateTaskRequestCaptor.capture());
 
     DelegateTaskRequest request = delegateTaskRequestCaptor.getValue();
 
@@ -318,7 +318,7 @@ public class GithubPackagesResourceServiceImplTest extends CategoryTest {
 
     when(secretManagerClientService.getEncryptionDetails(any(), any())).thenReturn(encryptionDetails);
 
-    when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(artifactTaskResponse);
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any())).thenReturn(artifactTaskResponse);
 
     List<BuildDetails> versions = githubPackagesResourceService.getVersionsOfPackage(
         identifierRef, packageName, packageType, versionRegex, org, ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
@@ -406,7 +406,7 @@ public class GithubPackagesResourceServiceImplTest extends CategoryTest {
 
     when(secretManagerClientService.getEncryptionDetails(any(), any())).thenReturn(encryptionDetails);
 
-    when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(artifactTaskResponse);
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any())).thenReturn(artifactTaskResponse);
 
     BuildDetails lastSuccessfulVersion = githubPackagesResourceService.getLastSuccessfulVersion(identifierRef,
         packageName, packageType, null, versionRegex, org, ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
@@ -419,7 +419,7 @@ public class GithubPackagesResourceServiceImplTest extends CategoryTest {
 
     verify(connectorService).get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "identifier");
 
-    verify(delegateGrpcClientWrapper).executeSyncTask(delegateTaskRequestCaptor.capture());
+    verify(delegateGrpcClientWrapper).executeSyncTaskV2(delegateTaskRequestCaptor.capture());
 
     DelegateTaskRequest request = delegateTaskRequestCaptor.getValue();
 
@@ -507,7 +507,7 @@ public class GithubPackagesResourceServiceImplTest extends CategoryTest {
 
     when(secretManagerClientService.getEncryptionDetails(any(), any())).thenReturn(encryptionDetails);
 
-    when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(artifactTaskResponse);
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any())).thenReturn(artifactTaskResponse);
 
     BuildDetails lastSuccessfulVersion = githubPackagesResourceService.getLastSuccessfulVersion(
         identifierRef, packageName, packageType, null, null, org, ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
@@ -520,7 +520,7 @@ public class GithubPackagesResourceServiceImplTest extends CategoryTest {
 
     verify(connectorService).get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "identifier");
 
-    verify(delegateGrpcClientWrapper).executeSyncTask(delegateTaskRequestCaptor.capture());
+    verify(delegateGrpcClientWrapper).executeSyncTaskV2(delegateTaskRequestCaptor.capture());
 
     DelegateTaskRequest request = delegateTaskRequestCaptor.getValue();
 
@@ -661,7 +661,7 @@ public class GithubPackagesResourceServiceImplTest extends CategoryTest {
 
     when(secretManagerClientService.getEncryptionDetails(any(), any())).thenReturn(encryptionDetails);
 
-    when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(artifactTaskResponse);
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any())).thenReturn(artifactTaskResponse);
 
     GithubPackagesResponseDTO packageResponse = githubPackagesResourceService.getPackageDetails(
         identifierRef, ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, packageType, org);
@@ -678,7 +678,7 @@ public class GithubPackagesResourceServiceImplTest extends CategoryTest {
 
     verify(connectorService).get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "identifier");
 
-    verify(delegateGrpcClientWrapper).executeSyncTask(delegateTaskRequestCaptor.capture());
+    verify(delegateGrpcClientWrapper).executeSyncTaskV2(delegateTaskRequestCaptor.capture());
 
     DelegateTaskRequest request = delegateTaskRequestCaptor.getValue();
 
@@ -786,7 +786,7 @@ public class GithubPackagesResourceServiceImplTest extends CategoryTest {
 
     when(secretManagerClientService.getEncryptionDetails(any(), any())).thenReturn(encryptionDetails);
 
-    when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(artifactTaskResponse);
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any())).thenReturn(artifactTaskResponse);
 
     assertThatThrownBy(()
                            -> githubPackagesResourceService.getVersionsOfPackage(identifierRef, packageName,
@@ -894,7 +894,7 @@ public class GithubPackagesResourceServiceImplTest extends CategoryTest {
 
     when(secretManagerClientService.getEncryptionDetails(any(), any())).thenReturn(encryptionDetails);
 
-    when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(artifactTaskResponse);
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any())).thenReturn(artifactTaskResponse);
 
     assertThatThrownBy(()
                            -> githubPackagesResourceService.getVersionsOfPackage(identifierRef, packageName,
@@ -1090,7 +1090,7 @@ public class GithubPackagesResourceServiceImplTest extends CategoryTest {
 
     when(secretManagerClientService.getEncryptionDetails(any(), any())).thenReturn(encryptionDetails);
 
-    when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(artifactTaskResponse);
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any())).thenReturn(artifactTaskResponse);
 
     assertThatThrownBy(()
                            -> githubPackagesResourceService.getVersionsOfPackage(identifierRef, packageName,
@@ -1197,7 +1197,7 @@ public class GithubPackagesResourceServiceImplTest extends CategoryTest {
 
     when(secretManagerClientService.getEncryptionDetails(any(), any())).thenReturn(encryptionDetails);
 
-    when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(artifactTaskResponse);
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any())).thenReturn(artifactTaskResponse);
 
     assertThatThrownBy(()
                            -> githubPackagesResourceService.getVersionsOfPackage(identifierRef, packageName,

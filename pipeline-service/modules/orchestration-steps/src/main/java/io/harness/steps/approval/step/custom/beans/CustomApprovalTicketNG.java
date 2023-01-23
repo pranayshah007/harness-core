@@ -9,7 +9,7 @@ package io.harness.steps.approval.step.custom.beans;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.servicenow.TicketNG;
+import io.harness.servicenow.misc.TicketNG;
 
 import java.util.HashMap;
 import java.util.Map;

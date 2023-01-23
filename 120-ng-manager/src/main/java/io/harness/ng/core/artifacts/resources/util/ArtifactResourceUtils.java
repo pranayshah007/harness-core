@@ -13,6 +13,7 @@ import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
 
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXTERNAL_PROPERTY;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
@@ -147,6 +148,11 @@ public class ArtifactResourceUtils {
       String pipelineIdentifier, String runtimeInputYaml, String imagePath, String fqnPath,
       GitEntityFindInfoDTO gitEntityBasicInfo, String serviceId) {
     if (EngineExpressionEvaluator.hasExpressions(imagePath)) {
+      // this check assumes ui sends -1 as pipeline identifier when pipeline is under construction
+      if ("-1".equals(pipelineIdentifier)) {
+        throw new InvalidRequestException(String.format(
+            "Couldn't resolve artifact image path expression %s, as pipeline has not been saved yet.", imagePath));
+      }
       String mergedCompleteYaml = getMergedCompleteYaml(
           accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, runtimeInputYaml, gitEntityBasicInfo);
       if (isNotEmpty(mergedCompleteYaml) && TemplateRefHelper.hasTemplateRef(mergedCompleteYaml)) {
@@ -580,23 +586,23 @@ public class ArtifactResourceUtils {
       GoogleArtifactRegistryConfig googleArtifactRegistryConfig =
           (GoogleArtifactRegistryConfig) artifactSpecFromService;
 
-      if (StringUtils.isBlank(gcpConnectorIdentifier)) {
+      if (isBlank(gcpConnectorIdentifier)) {
         gcpConnectorIdentifier = (String) googleArtifactRegistryConfig.getConnectorRef().fetchFinalValue();
       }
 
-      if (StringUtils.isBlank(region)) {
+      if (isBlank(region)) {
         region = (String) googleArtifactRegistryConfig.getRegion().fetchFinalValue();
       }
 
-      if (StringUtils.isBlank(repositoryName)) {
+      if (isBlank(repositoryName)) {
         repositoryName = (String) googleArtifactRegistryConfig.getRepositoryName().fetchFinalValue();
       }
 
-      if (StringUtils.isBlank(project)) {
+      if (isBlank(project)) {
         project = (String) googleArtifactRegistryConfig.getProject().fetchFinalValue();
       }
 
-      if (StringUtils.isBlank(pkg)) {
+      if (isBlank(pkg)) {
         pkg = (String) googleArtifactRegistryConfig.getPkg().fetchFinalValue();
       }
     }
@@ -638,12 +644,12 @@ public class ArtifactResourceUtils {
       ArtifactoryRegistryArtifactConfig artifactoryRegistryArtifactConfig =
           (ArtifactoryRegistryArtifactConfig) artifactSpecFromService;
 
-      if (StringUtils.isBlank(artifactoryConnectorIdentifier)) {
+      if (isBlank(artifactoryConnectorIdentifier)) {
         artifactoryConnectorIdentifier =
             artifactoryRegistryArtifactConfig.getConnectorRef().fetchFinalValue().toString();
       }
 
-      if (StringUtils.isBlank(repository)) {
+      if (isBlank(repository)) {
         repository = artifactoryRegistryArtifactConfig.getRepository().fetchFinalValue().toString();
       }
     }

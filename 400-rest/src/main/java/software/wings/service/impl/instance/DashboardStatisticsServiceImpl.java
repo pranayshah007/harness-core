@@ -1154,6 +1154,7 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
           WorkflowExecutionKeys.statusInstanceBreakdownMap, WorkflowExecutionKeys.tags);
       finalPageRequest.setFieldsExcluded(fieldsExcluded);
     }
+    finalPageRequest.setOptions(Collections.singletonList(PageRequest.Option.SKIPCOUNT));
 
     Optional<Integer> retentionPeriodInDays =
         ((DeploymentHistoryFeature) deploymentHistoryFeature).getRetentionPeriodInDays(accountId);

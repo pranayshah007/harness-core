@@ -24,6 +24,7 @@ io.harness.pms.sdk.core.data.StringOutcome
 io.harness.beans.steps.outcome.CIStepOutcome
 io.harness.plancreator.strategy.MatrixConfig
 io.harness.ci.beans.entities.CIExecutionConfig
+io.harness.app.beans.entities.ExecutionQueueLimit
 io.harness.beans.dependencies.CIDependencyType
 io.harness.beans.steps.nodes.BuildAndPushACRNode
 io.harness.beans.steps.stepinfo.RestoreCacheGCSStepInfo
@@ -162,8 +163,10 @@ io.harness.yaml.sto.variables.STOYamlImageType
 io.harness.yaml.sto.variables.STOYamlAuthType
 io.harness.yaml.sto.variables.STOYamlScanMode
 io.harness.yaml.sto.variables.STOYamlGenericConfig
+io.harness.yaml.sto.variables.STOYamlZapConfig
 io.harness.yaml.sto.variables.STOYamlTargetType
 io.harness.yaml.sto.variables.STOYamlLogLevel
+io.harness.yaml.sto.variables.STOYamlLogSerializer
 io.harness.yaml.sto.variables.STOYamlFailOnSeverity
 io.harness.beans.steps.stepinfo.security.NiktoStepInfo
 io.harness.beans.steps.stepinfo.security.NmapStepInfo
@@ -314,3 +317,6 @@ io.harness.beans.yaml.extended.beans.Splitting
 io.harness.beans.steps.nodes.V1.TestStepNode
 io.harness.beans.steps.nodes.V1.BackgroundStepNodeV1
 io.harness.beans.steps.stepinfo.V1.BackgroundStepInfoV1
+io.harness.steps.policy.step.outcome.PolicyStepOutcome
+io.harness.steps.policy.step.outcome.PolicySetOutcome
+io.harness.steps.policy.step.outcome.PolicyOutcome

@@ -68,7 +68,7 @@ public class CIDelegateTaskExecutor {
     // Make a call to the log service and get back the token
 
     return Failsafe.with(retryPolicy).get(() -> {
-      return delegateServiceGrpcClient.submitAsyncTask(
+      return delegateServiceGrpcClient.submitAsyncTaskV2(
           delegateTaskRequest, delegateCallbackTokenSupplier.get(), Duration.ZERO, false);
     });
   }

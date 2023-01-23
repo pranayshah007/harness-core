@@ -9,8 +9,8 @@ package io.harness.polling.mapper.gitpolling;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.polling.bean.GitHubPollingInfo;
 import io.harness.polling.bean.PollingInfo;
-import io.harness.polling.bean.gitpolling.GitHubPollingInfo;
 import io.harness.polling.contracts.PollingPayloadData;
 import io.harness.polling.mapper.PollingInfoBuilder;
 

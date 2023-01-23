@@ -9,7 +9,10 @@ package io.harness;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.authorization.AuthorizationServiceHeader.PIPELINE_SERVICE;
+import static io.harness.eventsframework.EventsFrameworkConstants.DUMMY_GROUP_NAME;
+import static io.harness.eventsframework.EventsFrameworkConstants.DUMMY_TOPIC_NAME;
 import static io.harness.eventsframework.EventsFrameworkConstants.PIPELINE_EXECUTION_SUMMARY_REDIS_EVENT_CONSUMER;
+import static io.harness.eventsframework.EventsFrameworkConstants.PIPELINE_EXECUTION_SUMMARY_SNAPSHOT_REDIS_EVENT_CONSUMER;
 import static io.harness.eventsframework.EventsFrameworkConstants.PLAN_NOTIFY_EVENT_TOPIC;
 import static io.harness.eventsframework.EventsFrameworkConstants.PMS_ORCHESTRATION_NOTIFY_EVENT;
 import static io.harness.eventsframework.EventsFrameworkConstants.WEBHOOK_REQUEST_PAYLOAD_DETAILS;
@@ -25,7 +28,7 @@ import io.harness.eventsframework.impl.noop.NoOpProducer;
 import io.harness.eventsframework.impl.redis.GitAwareRedisProducer;
 import io.harness.eventsframework.impl.redis.RedisConsumer;
 import io.harness.eventsframework.impl.redis.RedisProducer;
-import io.harness.pms.event.overviewLandingPage.DebeziumConsumerConfig;
+import io.harness.pms.event.overviewLandingPage.DebeziumConsumersConfig;
 import io.harness.redis.RedisConfig;
 import io.harness.redis.RedissonClientFactory;
 import io.harness.version.VersionInfoManager;
@@ -35,7 +38,6 @@ import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
-import java.util.List;
 import javax.cache.Cache;
 import javax.cache.expiry.AccessedExpiryPolicy;
 import javax.cache.expiry.Duration;
@@ -47,7 +49,9 @@ import org.redisson.api.RedissonClient;
 public class PipelineServiceEventsFrameworkModule extends AbstractModule {
   private final EventsFrameworkConfiguration eventsFrameworkConfiguration;
   private final PipelineRedisEventsConfig pipelineRedisEventsConfig;
-  private final List<DebeziumConsumerConfig> debeziumConsumerConfigs;
+  private final DebeziumConsumersConfig debeziumConsumersConfigs;
+  private final EventsFrameworkConfiguration eventsFrameworkSnapshotConfiguration;
+  private final boolean shouldUseEventsFrameworkSnapshotDebezium;
 
   @Provides
   @Singleton
@@ -133,9 +137,25 @@ public class PipelineServiceEventsFrameworkModule extends AbstractModule {
               EventsFrameworkConstants.PMS_ORCHESTRATION_NOTIFY_EVENT_BATCH_SIZE, redisConfig.getEnvNamespace()));
       bind(Consumer.class)
           .annotatedWith(Names.named(PIPELINE_EXECUTION_SUMMARY_REDIS_EVENT_CONSUMER))
-          .toInstance(RedisConsumer.of(debeziumConsumerConfigs.get(0).getTopicName(), PIPELINE_SERVICE.getServiceId(),
-              redissonClient, EventsFrameworkConstants.DEFAULT_MAX_PROCESSING_TIME,
-              debeziumConsumerConfigs.get(0).getBatchSize(), redisConfig.getEnvNamespace()));
+          .toInstance(RedisConsumer.of(debeziumConsumersConfigs.getPlanExecutionsSummaryStreaming().getTopic(),
+              PIPELINE_SERVICE.getServiceId(), redissonClient, EventsFrameworkConstants.DEFAULT_MAX_PROCESSING_TIME,
+              debeziumConsumersConfigs.getPlanExecutionsSummaryStreaming().getBatchSize(),
+              redisConfig.getEnvNamespace()));
+      if (shouldUseEventsFrameworkSnapshotDebezium) {
+        RedisConfig redisConfigSnapshot = this.eventsFrameworkSnapshotConfiguration.getRedisConfig();
+        RedissonClient redissonClientSnapshot = RedissonClientFactory.getClient(redisConfigSnapshot);
+        bind(Consumer.class)
+            .annotatedWith(Names.named(PIPELINE_EXECUTION_SUMMARY_SNAPSHOT_REDIS_EVENT_CONSUMER))
+            .toInstance(RedisConsumer.of(debeziumConsumersConfigs.getPlanExecutionsSummarySnapshot().getTopic(),
+                PIPELINE_SERVICE.getServiceId(), redissonClientSnapshot,
+                EventsFrameworkConstants.DEFAULT_MAX_PROCESSING_TIME,
+                debeziumConsumersConfigs.getPlanExecutionsSummarySnapshot().getBatchSize(),
+                redisConfig.getEnvNamespace()));
+      } else {
+        bind(Consumer.class)
+            .annotatedWith(Names.named(PIPELINE_EXECUTION_SUMMARY_SNAPSHOT_REDIS_EVENT_CONSUMER))
+            .toInstance(new NoOpConsumer(DUMMY_TOPIC_NAME, DUMMY_GROUP_NAME));
+      }
     }
   }
 }

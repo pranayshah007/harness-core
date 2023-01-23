@@ -482,6 +482,10 @@ if [[ "" != "$HSQS_AUTH_TOKEN" ]]; then
   export HSQS_AUTH_TOKEN; yq -i '.ciExecutionServiceConfig.queueServiceClient.authToken=env(HSQS_AUTH_TOKEN)' $CONFIG_FILE
 fi
 
+if [[ "" != "$OVERRIDE_EXEC_LIMIT_FOR_ACCOUNT" ]]; then
+  export OVERRIDE_EXEC_LIMIT_FOR_ACCOUNT; yq -i '.ciExecutionServiceConfig.executionLimits.overrideConfig[0]=env(OVERRIDE_EXEC_LIMIT_FOR_ACCOUNT)' $CONFIG_FILE
+fi
+
 replace_key_value redisLockConfig.redisUrl "$LOCK_CONFIG_REDIS_URL"
 replace_key_value redisLockConfig.envNamespace "$LOCK_CONFIG_ENV_NAMESPACE"
 replace_key_value redisLockConfig.sentinel "$LOCK_CONFIG_USE_SENTINEL"

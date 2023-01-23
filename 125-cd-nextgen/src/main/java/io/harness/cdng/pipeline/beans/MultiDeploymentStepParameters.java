@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
 import io.harness.cdng.environment.yaml.EnvironmentsYaml;
 import io.harness.cdng.environment.yaml.ServiceOverrideInputsYaml;
+import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.beans.ServiceYamlV2;
 import io.harness.cdng.service.beans.ServicesYaml;
 import io.harness.plancreator.strategy.StrategyType;
@@ -42,4 +43,5 @@ public class MultiDeploymentStepParameters implements StepParameters {
 
   List<ServiceOverrideInputsYaml> servicesOverrides;
   ServiceYamlV2 serviceYamlV2;
+  ServiceDefinitionType deploymentType;
 }

@@ -8,6 +8,7 @@
 package io.harness.pms.execution.utils;
 
 import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
+import static io.harness.exception.FailureType.DELEGATE_RESTART;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -109,6 +110,8 @@ public class EngineExceptionUtils {
         return io.harness.exception.FailureType.INPUT_TIMEOUT_FAILURE;
       case APPROVAL_REJECTION:
         return io.harness.exception.FailureType.APPROVAL_REJECTION;
+      case DELEGATE_RESTART:
+        return DELEGATE_RESTART;
       default:
         throw new InvalidRequestException("No failure mapped to " + oFailureType.name());
     }
@@ -131,6 +134,8 @@ public class EngineExceptionUtils {
         return FailureType.AUTHORIZATION_FAILURE;
       case EXPIRED:
         return FailureType.TIMEOUT_FAILURE;
+      case DELEGATE_RESTART:
+        return FailureType.DELEGATE_RESTART;
       default:
         return FailureType.UNKNOWN_FAILURE;
     }

@@ -18,6 +18,7 @@ import io.harness.gitsync.persistance.GitSyncableEntity;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
+import io.harness.ng.core.ScopeAware;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.persistence.PersistentEntity;
 
@@ -49,7 +50,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @FieldNameConstants(innerTypeName = "EnvironmentGroupKeys")
 @Document("environmentGroupNG")
 @TypeAlias("io.harness.cdng.envGroup.beans.EnvironmentGroupEntity")
-public class EnvironmentGroupEntity implements PersistentEntity, GitSyncableEntity {
+public class EnvironmentGroupEntity implements PersistentEntity, GitSyncableEntity, ScopeAware {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()

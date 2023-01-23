@@ -116,14 +116,14 @@ public class AzureConnectorValidatorTest extends CategoryTest {
     when(ngSecretService.getEncryptionDetails(any(), any())).thenReturn(null);
     when(encryptionHelper.getEncryptionDetail(any(), any(), any(), any())).thenReturn(null);
 
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(AzureValidateTaskResponse.builder()
                         .connectorValidationResult(
                             ConnectorValidationResult.builder().status(ConnectivityStatus.SUCCESS).build())
                         .build());
     azureConnectorValidator.validate(
         azureConnectorDTO, "accountIdentifier", "orgIdentifier", "projectIdentifier", "identifier");
-    verify(delegateGrpcClientWrapper, times(1)).executeSyncTask(any());
+    verify(delegateGrpcClientWrapper, times(1)).executeSyncTaskV2(any());
   }
 
   @Test
@@ -149,14 +149,14 @@ public class AzureConnectorValidatorTest extends CategoryTest {
     when(ngSecretService.getEncryptionDetails(any(), any())).thenReturn(null);
     when(encryptionHelper.getEncryptionDetail(any(), any(), any(), any())).thenReturn(null);
 
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(AzureValidateTaskResponse.builder()
                         .connectorValidationResult(
                             ConnectorValidationResult.builder().status(ConnectivityStatus.SUCCESS).build())
                         .build());
     azureConnectorValidator.validate(
         azureConnectorDTO, "accountIdentifier", "orgIdentifier", "projectIdentifier", "identifier");
-    verify(delegateGrpcClientWrapper, times(1)).executeSyncTask(any());
+    verify(delegateGrpcClientWrapper, times(1)).executeSyncTaskV2(any());
   }
 
   @Test
@@ -180,14 +180,14 @@ public class AzureConnectorValidatorTest extends CategoryTest {
     when(ngSecretService.getEncryptionDetails(any(), any())).thenReturn(null);
     when(encryptionHelper.getEncryptionDetail(any(), any(), any(), any())).thenReturn(null);
 
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(AzureValidateTaskResponse.builder()
                         .connectorValidationResult(
                             ConnectorValidationResult.builder().status(ConnectivityStatus.SUCCESS).build())
                         .build());
     azureConnectorValidator.validate(
         azureConnectorDTO, "accountIdentifier", "orgIdentifier", "projectIdentifier", "identifier");
-    verify(delegateGrpcClientWrapper, times(1)).executeSyncTask(any());
+    verify(delegateGrpcClientWrapper, times(1)).executeSyncTaskV2(any());
 
     azureConnectorDTO =
         AzureConnectorDTO.builder()
@@ -209,7 +209,7 @@ public class AzureConnectorValidatorTest extends CategoryTest {
 
     azureConnectorValidator.validate(
         azureConnectorDTO, "accountIdentifier", "orgIdentifier", "projectIdentifier", "identifier");
-    verify(delegateGrpcClientWrapper, times(2)).executeSyncTask(any());
+    verify(delegateGrpcClientWrapper, times(2)).executeSyncTaskV2(any());
   }
 
   @Test

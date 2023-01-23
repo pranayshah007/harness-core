@@ -123,6 +123,7 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
   PipelineEntity updatedPipelineEntity;
   OutboxEvent outboxEvent = OutboxEvent.builder().build();
   String PIPELINE_YAML;
+  String PIPELINE_YAML_V1;
 
   @Before
   public void setUp() throws IOException {
@@ -195,6 +196,8 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
     String pipeline_yaml_filename = "clonePipelineInput.yaml";
     PIPELINE_YAML = Resources.toString(
         Objects.requireNonNull(classLoader.getResource(pipeline_yaml_filename)), StandardCharsets.UTF_8);
+    PIPELINE_YAML_V1 =
+        Resources.toString(Objects.requireNonNull(classLoader.getResource("pipeline-v1.yaml")), StandardCharsets.UTF_8);
   }
 
   private ClonePipelineDTO buildCloneDTO() {
@@ -519,5 +522,31 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
         accountId, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, moveConfigOperation, pipelineEntity);
 
     assertEquals(movePipelineEntity.getIdentifier(), pipelineEntity.getIdentifier());
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testClonePipelineV1() throws IOException {
+    ClonePipelineDTO clonePipelineDTO = buildCloneDTO();
+    pipelineEntity.setHarnessVersion(PipelineVersion.V1);
+
+    doReturn(Optional.empty()).when(pipelineMetadataService).getMetadata(any(), any(), any(), any());
+    on(pmsPipelineService).set("pmsPipelineRepository", pmsPipelineRepository);
+    doReturn(outboxEvent).when(outboxService).save(any());
+    doReturn(updatedPipelineEntity).when(pmsPipelineServiceHelper).updatePipelineInfo(any(), any());
+    doNothing().when(pmsPipelineServiceHelper).resolveTemplatesAndValidatePipelineEntity(pipelineEntity, false);
+    doReturn(PIPELINE_YAML_V1).when(pipelineCloneHelper).updatePipelineMetadataInSourceYamlV1(any(), any());
+    doReturn(true).when(pmsFeatureFlagService).isEnabled(accountId, FeatureName.OPA_PIPELINE_GOVERNANCE);
+    doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())
+        .when(pmsPipelineServiceHelper)
+        .resolveTemplatesAndValidatePipeline(any(), anyBoolean());
+    pmsPipelineRepository.save(pipelineEntity);
+    PipelineSaveResponse pipelineSaveResponse =
+        pmsPipelineService.validateAndClonePipeline(clonePipelineDTO, accountId);
+    assertThat(pipelineSaveResponse).isNotNull();
+    assertThat(pipelineSaveResponse.getGovernanceMetadata()).isNotNull();
+    assertThat(pipelineSaveResponse.getGovernanceMetadata().getDeny()).isFalse();
+    assertThat(pipelineSaveResponse.getIdentifier()).isEqualTo(PIPELINE_IDENTIFIER);
   }
 }

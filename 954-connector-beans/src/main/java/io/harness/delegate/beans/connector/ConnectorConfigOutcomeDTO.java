@@ -11,11 +11,21 @@ import static io.harness.annotations.dev.HarnessTeam.DX;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
+import io.harness.delegate.beans.connector.artifactoryconnector.outcome.ArtifactoryConnectorOutcomeDTO;
 import io.harness.delegate.beans.connector.awsconnector.outcome.AwsConnectorOutcomeDTO;
+import io.harness.delegate.beans.connector.azureartifacts.outcome.AzureArtifactsConnectorOutcomeDTO;
 import io.harness.delegate.beans.connector.azureconnector.outcome.AzureConnectorOutcomeDTO;
+import io.harness.delegate.beans.connector.docker.outcome.DockerConnectorOutcomeDTO;
 import io.harness.delegate.beans.connector.gcpconnector.outcome.GcpConnectorOutcomeDTO;
+import io.harness.delegate.beans.connector.helm.outcome.HttpHelmConnectorOutcomeDTO;
+import io.harness.delegate.beans.connector.helm.outcome.OciHelmConnectorOutcomeDTO;
+import io.harness.delegate.beans.connector.jenkins.outcome.JenkinsConnectorOutcomeDTO;
 import io.harness.delegate.beans.connector.k8Connector.outcome.KubernetesClusterConfigOutcomeDTO;
+import io.harness.delegate.beans.connector.nexusconnector.outcome.NexusConnectorOutcomeDTO;
 import io.harness.delegate.beans.connector.pdcconnector.outcome.PhysicalDataCenterConnectorOutcomeDTO;
+import io.harness.delegate.beans.connector.scm.awscodecommit.outcome.AwsCodeCommitConnectorOutcomeDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.outcome.AzureRepoConnectorOutcomeDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.outcome.BitbucketConnectorOutcomeDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.outcome.GitConfigOutcomeDTO;
 import io.harness.delegate.beans.connector.scm.github.outcome.GithubConnectorOutcomeDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.outcome.GitlabConnectorOutcomeDTO;
@@ -38,7 +48,17 @@ import java.util.List;
       @JsonSubTypes.Type(value = GithubConnectorOutcomeDTO.class, name = "GithubOutcome"),
       @JsonSubTypes.Type(value = GitlabConnectorOutcomeDTO.class, name = "GitlabOutcome"),
       @JsonSubTypes.Type(value = PhysicalDataCenterConnectorOutcomeDTO.class, name = "PdcOutcome"),
-      @JsonSubTypes.Type(value = TasConnectorOutcomeDTO.class, name = "TasConnectorOutcome")
+      @JsonSubTypes.Type(value = TasConnectorOutcomeDTO.class, name = "TasConnectorOutcome"),
+      @JsonSubTypes.Type(value = JenkinsConnectorOutcomeDTO.class, name = "JenkinsOutcome"),
+      @JsonSubTypes.Type(value = ArtifactoryConnectorOutcomeDTO.class, name = "ArtifactoryOutcome"),
+      @JsonSubTypes.Type(value = AzureArtifactsConnectorOutcomeDTO.class, name = "AzureArtifactsOutcome"),
+      @JsonSubTypes.Type(value = DockerConnectorOutcomeDTO.class, name = "DockerRegistryOutcome"),
+      @JsonSubTypes.Type(value = NexusConnectorOutcomeDTO.class, name = "NexusOutcome"),
+      @JsonSubTypes.Type(value = OciHelmConnectorOutcomeDTO.class, name = "OciHelmRepoOutcome"),
+      @JsonSubTypes.Type(value = HttpHelmConnectorOutcomeDTO.class, name = "HttpHelmRepoOutcome"),
+      @JsonSubTypes.Type(value = AwsCodeCommitConnectorOutcomeDTO.class, name = "CodecommitOutcome"),
+      @JsonSubTypes.Type(value = BitbucketConnectorOutcomeDTO.class, name = "BitbucketOutcome"),
+      @JsonSubTypes.Type(value = AzureRepoConnectorOutcomeDTO.class, name = "AzureRepoOutcome")
 })
 @OwnedBy(DX)
 @Schema(

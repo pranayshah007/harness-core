@@ -72,7 +72,7 @@ public class OrgConnectorApiImplTest extends CategoryTest {
   ConnectorResponseDTO connectorResponseDTO;
   ConnectorInfoDTO connectorInfo;
   String account = "account";
-  String slug = "example_connector";
+  String identifier = "example_connector";
   String name = "example_connector";
   String org = "default";
   String project = "example_project";
@@ -86,7 +86,7 @@ public class OrgConnectorApiImplTest extends CategoryTest {
     MockitoAnnotations.initMocks(this);
     connectorInfo = ConnectorInfoDTO.builder()
                         .name(name)
-                        .identifier(slug)
+                        .identifier(identifier)
                         .orgIdentifier(org)
                         .connectorType(ConnectorType.GIT)
                         .connectorConfig(GitConfigDTO.builder()
@@ -124,7 +124,7 @@ public class OrgConnectorApiImplTest extends CategoryTest {
     assertThat(connectorResponse).isNotNull();
     assertThat(connectorResponse.getConnector()).isNotNull();
     assertThat(connectorResponse.getConnector().getName()).isEqualTo(name);
-    assertThat(connectorResponse.getConnector().getSlug()).isEqualTo(slug);
+    assertThat(connectorResponse.getConnector().getIdentifier()).isEqualTo(identifier);
     assertThat(connectorResponse.getConnector().getOrg()).isEqualTo(org);
     assertThat(connectorResponse.getConnector().getSpec()).isNotNull();
     GitHttpConnectorSpec gitHttpConnectorSpec = (GitHttpConnectorSpec) connectorResponse.getConnector().getSpec();
@@ -164,7 +164,7 @@ public class OrgConnectorApiImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCreateOrgScopedConnectorInvalidExceptionForHarnessSecretManagerIdentifier() {
     ConnectorRequest connectorRequest = getConnectorRequest(org);
-    connectorRequest.getConnector().setSlug(HARNESS_SECRET_MANAGER_IDENTIFIER);
+    connectorRequest.getConnector().setIdentifier(HARNESS_SECRET_MANAGER_IDENTIFIER);
     Throwable thrown = catchThrowableOfType(
         () -> orgConnectorApi.createOrgScopedConnector(connectorRequest, org, account), InvalidRequestException.class);
 
@@ -175,7 +175,7 @@ public class OrgConnectorApiImplTest extends CategoryTest {
   @Owner(developers = OwnerRule.ASHISHSANODIA)
   @Category(UnitTests.class)
   public void testGetOrgScopedConnectorNotFoundException() {
-    orgConnectorApi.getOrgScopedConnector(org, slug, account);
+    orgConnectorApi.getOrgScopedConnector(org, identifier, account);
   }
 
   @Test
@@ -183,12 +183,12 @@ public class OrgConnectorApiImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetOrgScopedConnector() {
     when(connectorService.get(any(), any(), any(), any())).thenReturn(Optional.of(connectorResponseDTO));
-    Response response = orgConnectorApi.getOrgScopedConnector(org, slug, account);
+    Response response = orgConnectorApi.getOrgScopedConnector(org, identifier, account);
 
     assertThat(response.getStatus()).isEqualTo(200);
 
     ConnectorResponse connectorResponse = (ConnectorResponse) response.getEntity();
-    assertThat(connectorResponse.getConnector().getSlug()).isEqualTo(slug);
+    assertThat(connectorResponse.getConnector().getIdentifier()).isEqualTo(identifier);
     assertThat(connectorResponse.getConnector().getName()).isEqualTo(name);
     assertThat(connectorResponse.getConnector().getOrg()).isEqualTo(org);
     assertThat(connectorResponse.getConnector().getProject()).isNull();
@@ -200,11 +200,11 @@ public class OrgConnectorApiImplTest extends CategoryTest {
   public void testOrgScopedConnectorTestConnection() {
     when(connectorService.get(any(), any(), any(), any())).thenReturn(Optional.of(connectorResponseDTO));
     when(connectorRbacHelper.checkSecretRuntimeAccessWithConnectorDTO(any(), any())).thenReturn(true);
-    when(connectorService.testConnection(account, org, null, slug))
+    when(connectorService.testConnection(account, org, null, identifier))
         .thenReturn(
             ConnectorValidationResult.builder().status(ConnectivityStatus.SUCCESS).delegateId(delegateId).build());
 
-    Response response = orgConnectorApi.testOrgScopedConnector(org, slug, account);
+    Response response = orgConnectorApi.testOrgScopedConnector(org, identifier, account);
 
     assertThat(response.getStatus()).isEqualTo(200);
 
@@ -222,9 +222,9 @@ public class OrgConnectorApiImplTest extends CategoryTest {
     when(connectorService.get(any(), any(), any(), any())).thenReturn(Optional.empty());
 
     Throwable thrown = catchThrowableOfType(
-        () -> orgConnectorApi.testOrgScopedConnector(org, slug, account), ConnectorNotFoundException.class);
+        () -> orgConnectorApi.testOrgScopedConnector(org, identifier, account), ConnectorNotFoundException.class);
 
-    assertThat(thrown).hasMessage(String.format("No connector found with identifier %s", slug));
+    assertThat(thrown).hasMessage(String.format("No connector found with identifier %s", identifier));
   }
 
   @Test
@@ -243,7 +243,7 @@ public class OrgConnectorApiImplTest extends CategoryTest {
 
     List<ConnectorResponse> connectorResponses = (List<ConnectorResponse>) response.getEntity();
     ConnectorResponse connectorResponse = connectorResponses.get(0);
-    assertThat(connectorResponse.getConnector().getSlug()).isEqualTo(slug);
+    assertThat(connectorResponse.getConnector().getIdentifier()).isEqualTo(identifier);
     assertThat(connectorResponse.getConnector().getName()).isEqualTo(name);
     assertThat(connectorResponse.getConnector().getOrg()).isEqualTo(org);
     assertThat(connectorResponse.getConnector().getProject()).isNull();
@@ -274,7 +274,7 @@ public class OrgConnectorApiImplTest extends CategoryTest {
     doReturn(connectorResponseDTO).when(connectorService).update(any(), any());
     ConnectorRequest connectorRequest = getConnectorRequest(org);
 
-    Response response = orgConnectorApi.updateOrgScopedConnector(connectorRequest, org, slug, account);
+    Response response = orgConnectorApi.updateOrgScopedConnector(connectorRequest, org, identifier, account);
 
     assertThat(response.getStatus()).isEqualTo(200);
 
@@ -285,7 +285,7 @@ public class OrgConnectorApiImplTest extends CategoryTest {
     assertThat(connectorResponse).isNotNull();
     assertThat(connectorResponse.getConnector()).isNotNull();
     assertThat(connectorResponse.getConnector().getName()).isEqualTo(name);
-    assertThat(connectorResponse.getConnector().getSlug()).isEqualTo(slug);
+    assertThat(connectorResponse.getConnector().getIdentifier()).isEqualTo(identifier);
     assertThat(connectorResponse.getConnector().getOrg()).isEqualTo(org);
     assertThat(connectorResponse.getConnector().getSpec()).isNotNull();
     GitHttpConnectorSpec gitHttpConnectorSpec = (GitHttpConnectorSpec) connectorResponse.getConnector().getSpec();
@@ -302,7 +302,7 @@ public class OrgConnectorApiImplTest extends CategoryTest {
   public void testUpdateOrgScopedConnectorInvalidExceptionForNonNullProject() {
     Throwable thrown = catchThrowableOfType(
         ()
-            -> orgConnectorApi.updateOrgScopedConnector(getConnectorRequest(org, project), org, slug, account),
+            -> orgConnectorApi.updateOrgScopedConnector(getConnectorRequest(org, project), org, identifier, account),
         InvalidRequestException.class);
 
     assertThat(thrown).hasMessage(NGCommonEntityConstants.ORG_SCOPED_REQUEST_NON_NULL_PROJECT);
@@ -314,7 +314,7 @@ public class OrgConnectorApiImplTest extends CategoryTest {
   public void testUpdateOrgScopedConnectorInvalidExceptionNonNullOrgAndProject() {
     Throwable thrown = catchThrowableOfType(
         ()
-            -> orgConnectorApi.updateOrgScopedConnector(getConnectorRequest(org), "another_org", slug, account),
+            -> orgConnectorApi.updateOrgScopedConnector(getConnectorRequest(org), "another_org", identifier, account),
         InvalidRequestException.class);
 
     assertThat(thrown).hasMessage(NGCommonEntityConstants.DIFFERENT_ORG_IN_PAYLOAD_AND_PARAM);
@@ -323,13 +323,13 @@ public class OrgConnectorApiImplTest extends CategoryTest {
   @Test
   @Owner(developers = OwnerRule.ASHISHSANODIA)
   @Category(UnitTests.class)
-  public void testUpdateOrgScopedConnectorForDifferentSlugInPathAndPayload() {
+  public void testUpdateOrgScopedConnectorForDifferentIdentifierInPathAndPayload() {
     Throwable thrown = catchThrowableOfType(
         ()
-            -> orgConnectorApi.updateOrgScopedConnector(getConnectorRequest(org), org, "another_slug", account),
+            -> orgConnectorApi.updateOrgScopedConnector(getConnectorRequest(org), org, "another_identifier", account),
         InvalidRequestException.class);
 
-    assertThat(thrown).hasMessage(NGCommonEntityConstants.DIFFERENT_SLUG_IN_PAYLOAD_AND_PARAM);
+    assertThat(thrown).hasMessage(NGCommonEntityConstants.DIFFERENT_IDENTIFIER_IN_PAYLOAD_AND_PARAM);
   }
 
   @Test
@@ -337,7 +337,7 @@ public class OrgConnectorApiImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testUpdateOrgScopedConnectorInvalidExceptionForHarnessSecretManagerIdentifier() {
     ConnectorRequest connectorRequest = getConnectorRequest(org);
-    connectorRequest.getConnector().setSlug(HARNESS_SECRET_MANAGER_IDENTIFIER);
+    connectorRequest.getConnector().setIdentifier(HARNESS_SECRET_MANAGER_IDENTIFIER);
     Throwable thrown = catchThrowableOfType(()
                                                 -> orgConnectorApi.updateOrgScopedConnector(
                                                     connectorRequest, org, HARNESS_SECRET_MANAGER_IDENTIFIER, account),
@@ -353,9 +353,9 @@ public class OrgConnectorApiImplTest extends CategoryTest {
     doReturn(Optional.of(connectorResponseDTO)).when(connectorService).get(any(), any(), any(), any());
     doReturn(true).when(connectorService).delete(any(), any(), any(), any(), eq(false));
 
-    Response response = orgConnectorApi.deleteOrgScopedConnector(org, slug, account);
+    Response response = orgConnectorApi.deleteOrgScopedConnector(org, identifier, account);
 
-    verify(connectorService, times(1)).delete(eq(account), eq(org), eq(null), eq(slug), eq(false));
+    verify(connectorService, times(1)).delete(eq(account), eq(org), eq(null), eq(identifier), eq(false));
 
     assertThat(response.getStatus()).isEqualTo(200);
 
@@ -364,7 +364,7 @@ public class OrgConnectorApiImplTest extends CategoryTest {
     assertThat(connectorResponse).isNotNull();
     assertThat(connectorResponse.getConnector()).isNotNull();
     assertThat(connectorResponse.getConnector().getName()).isEqualTo(name);
-    assertThat(connectorResponse.getConnector().getSlug()).isEqualTo(slug);
+    assertThat(connectorResponse.getConnector().getIdentifier()).isEqualTo(identifier);
     assertThat(connectorResponse.getConnector().getOrg()).isEqualTo(org);
     assertThat(connectorResponse.getConnector().getSpec()).isNotNull();
     GitHttpConnectorSpec gitHttpConnectorSpec = (GitHttpConnectorSpec) connectorResponse.getConnector().getSpec();
@@ -392,9 +392,9 @@ public class OrgConnectorApiImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testDeleteOrgScopedConnectorNotFoundException() {
     Throwable thrown = catchThrowableOfType(
-        () -> orgConnectorApi.deleteOrgScopedConnector(org, slug, account), NotFoundException.class);
+        () -> orgConnectorApi.deleteOrgScopedConnector(org, identifier, account), NotFoundException.class);
 
-    assertThat(thrown).hasMessage(String.format("Connector with identifier [%s] not found", slug));
+    assertThat(thrown).hasMessage(String.format("Connector with identifier [%s] not found", identifier));
   }
 
   @Test
@@ -405,23 +405,23 @@ public class OrgConnectorApiImplTest extends CategoryTest {
     when(connectorService.delete(any(), any(), any(), any(), eq(false))).thenReturn(false);
 
     Throwable thrown = catchThrowableOfType(
-        () -> orgConnectorApi.deleteOrgScopedConnector(org, slug, account), InvalidRequestException.class);
+        () -> orgConnectorApi.deleteOrgScopedConnector(org, identifier, account), InvalidRequestException.class);
 
-    assertThat(thrown).hasMessage(String.format("Connector with slug [%s] could not be deleted", slug));
+    assertThat(thrown).hasMessage(String.format("Connector with identifier [%s] could not be deleted", identifier));
   }
 
-  private ConnectorRequest getConnectorRequest(String orgSlug) {
-    return getConnectorRequest(orgSlug, null);
+  private ConnectorRequest getConnectorRequest(String orgIdentifier) {
+    return getConnectorRequest(orgIdentifier, null);
   }
 
-  private ConnectorRequest getConnectorRequest(String orgSlug, String projectSlug) {
+  private ConnectorRequest getConnectorRequest(String orgIdentifier, String projectIdentifier) {
     ConnectorRequest connectorRequest = new ConnectorRequest();
 
     Connector connector = new Connector();
-    connector.setSlug(slug);
+    connector.setIdentifier(identifier);
     connector.setName(name);
-    connector.setOrg(orgSlug);
-    connector.setProject(projectSlug);
+    connector.setOrg(orgIdentifier);
+    connector.setProject(projectIdentifier);
     GitHttpConnectorSpec spec = new GitHttpConnectorSpec();
     spec.setType(ConnectorSpec.TypeEnum.GITHTTP);
     spec.setConnectionType(GitHttpConnectorSpec.ConnectionTypeEnum.REPO);

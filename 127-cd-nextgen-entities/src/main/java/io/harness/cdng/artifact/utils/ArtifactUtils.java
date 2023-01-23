@@ -29,6 +29,7 @@ import io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GithubPackagesArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GoogleArtifactRegistryConfig;
 import io.harness.cdng.artifact.bean.yaml.GoogleCloudStorageArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.GoogleCloudSourceArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.JenkinsArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.Nexus2RegistryArtifactConfig;
@@ -232,6 +233,15 @@ public class ArtifactUtils {
             googleCloudStorageArtifactConfig.getProject().getValue(),
             googleCloudStorageArtifactConfig.getBucket().getValue(),
             googleCloudStorageArtifactConfig.getArtifactPath().getValue());
+      case GOOGLE_CLOUD_SOURCE_ARTIFACT:
+        GoogleCloudSourceArtifactConfig googleCloudSourceArtifactConfig =
+                (GoogleCloudSourceArtifactConfig) artifactConfig;
+        return String.format("\ntype: %s \nconnectorRef: %s \nproject: %s \nrepository: %s \nsourceDirectory: %s",
+                artifactConfig.getSourceType(), googleCloudSourceArtifactConfig.getConnectorRef().getValue(),
+                googleCloudSourceArtifactConfig.getProject().getValue(),
+                googleCloudSourceArtifactConfig.getRepository().getValue(),
+                googleCloudSourceArtifactConfig.getSourceDirectory().getValue());
+
       default:
         throw new UnsupportedOperationException(String.format("Unknown Artifact Config type: [%s]", sourceType));
     }

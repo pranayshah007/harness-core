@@ -33,6 +33,7 @@ import io.harness.pms.pipeline.PMSPipelineSummaryResponseDTO;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineFilterPropertiesDto;
 import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
+import io.harness.pms.pipeline.validation.async.beans.ValidationResult;
 import io.harness.pms.pipeline.validation.async.beans.ValidationStatus;
 import io.harness.rule.Owner;
 import io.harness.spec.server.commons.v1.model.GovernanceMetadata;
@@ -174,7 +175,10 @@ public class PipelinesApiUtilsTest extends CategoryTest {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testBuildPipelineValidationResponseBody() {
-    PipelineValidationEvent event = PipelineValidationEvent.builder().status(ValidationStatus.IN_PROGRESS).build();
+    PipelineValidationEvent event = PipelineValidationEvent.builder()
+                                        .status(ValidationStatus.IN_PROGRESS)
+                                        .result(ValidationResult.builder().build())
+                                        .build();
     PipelineValidationResponseBody responseBody = PipelinesApiUtils.buildPipelineValidationResponseBody(event);
     assertThat(responseBody.getStatus()).isEqualTo("IN_PROGRESS");
   }

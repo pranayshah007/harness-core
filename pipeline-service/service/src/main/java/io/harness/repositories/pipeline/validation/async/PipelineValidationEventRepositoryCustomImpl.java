@@ -9,15 +9,21 @@ package io.harness.repositories.pipeline.validation.async;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.pms.pipeline.validation.async.beans.Action;
 import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
+import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent.PipelineValidationEventKeys;
+import io.harness.pms.pipeline.validation.async.helper.PipelineAsyncValidationHelper;
 import io.harness.springdata.PersistenceUtils;
 
 import com.google.inject.Inject;
+import java.util.Optional;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -29,6 +35,15 @@ import org.springframework.data.mongodb.core.query.Update;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PipelineValidationEventRepositoryCustomImpl implements PipelineValidationEventRepositoryCustom {
   private final MongoTemplate mongoTemplate;
+
+  @Override
+  public Optional<PipelineValidationEvent> findLatestValidEvent(String fqn, Action action) {
+    Criteria criteria = PipelineAsyncValidationHelper.getCriteriaForFindLatest(fqn, action);
+    Query query = new Query(criteria).with(Sort.by(Direction.DESC, PipelineValidationEventKeys.startTs));
+    PipelineValidationEvent event = mongoTemplate.findOne(query, PipelineValidationEvent.class);
+    return Optional.ofNullable(event);
+  }
+
   @Override
   public PipelineValidationEvent update(Criteria criteria, Update update) {
     Query query = new Query(criteria);

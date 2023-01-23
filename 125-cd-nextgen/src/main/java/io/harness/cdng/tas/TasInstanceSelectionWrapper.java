@@ -19,6 +19,7 @@ import io.harness.pms.yaml.YamlNode;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.swagger.annotations.ApiModelProperty;
+import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -36,4 +37,9 @@ public class TasInstanceSelectionWrapper {
   @NotNull TasInstanceUnitType type;
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
   TasInstanceSelectionBase spec;
+  @Builder
+  public TasInstanceSelectionWrapper(TasInstanceUnitType type, TasInstanceSelectionBase spec) {
+    this.spec = spec;
+    this.type = type;
+  }
 }

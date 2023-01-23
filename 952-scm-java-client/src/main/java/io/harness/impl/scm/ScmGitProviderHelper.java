@@ -43,6 +43,10 @@ public class ScmGitProviderHelper {
     }
   }
 
+  public String getRepoName(ScmConnector scmConnector) {
+    return GitClientHelper.getGitRepo(scmConnector.getUrl());
+  }
+
   private String getSlugFromUrl(String url) {
     String repoName = gitClientHelper.getGitRepo(url);
     String ownerName = gitClientHelper.getGitOwner(url, false);

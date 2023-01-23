@@ -22,6 +22,7 @@ import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.artifacts.comparator.BuildDetailsInternalComparatorAscending;
 import io.harness.artifacts.comparator.BuildDetailsInternalComparatorDescending;
 import io.harness.artifacts.docker.beans.DockerImageManifestResponse;
+import io.harness.artifacts.gcr.GcrImageTagResponse;
 import io.harness.artifacts.gcr.GcrRestClient;
 import io.harness.artifacts.gcr.beans.GcrInternalConfig;
 import io.harness.context.MdcGlobalContextData;
@@ -126,7 +127,7 @@ public class GcrApiServiceImpl implements GcrApiService {
               "Image name [" + imageName + "] does not exist in Google Container Registry.");
         }
         if (globalContextData != null && globalContextData.isSupportedErrorFramework()
-            && response.body().tags.size() == 0) {
+            && response.body().getTags().size() == 0) {
           throw new GcrImageNotFoundRuntimeException(
               "Image name [" + imageName + "] does not exist in Google Container Registry.");
         }
@@ -281,67 +282,5 @@ public class GcrApiServiceImpl implements GcrApiService {
         unhandled(code);
     }
     return true;
-  }
-
-  /**
-   * The type GCR image tag response.
-   */
-  public static class GcrImageTagResponse {
-    private List<String> child;
-    private String name;
-    private List<String> tags;
-    private Map manifest;
-
-    public Map getManifest() {
-      return manifest;
-    }
-
-    public void setManifest(Map manifest) {
-      this.manifest = manifest;
-    }
-
-    public List<String> getChild() {
-      return child;
-    }
-
-    public void setChild(List<String> child) {
-      this.child = child;
-    }
-
-    /**
-     * Gets name.
-     *
-     * @return the name
-     */
-    public String getName() {
-      return name;
-    }
-
-    /**
-     * Sets name.
-     *
-     * @param name the name
-     */
-    public void setName(String name) {
-      this.name = name;
-    }
-
-    /**
-     * Gets tags.
-     *
-     * @return the tags
-     */
-    public List<String> getTags() {
-      return tags;
-    }
-
-    /**
-     * Sets tags.
-     *
-     * @param tags the tags
-     */
-    public void setTags(List<String> tags) {
-      this.tags = tags;
-    }
   }
 }

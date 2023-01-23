@@ -46,7 +46,7 @@ public class ProjectApiUtils {
   public ProjectDTO getProjectDto(CreateProjectRequest createProjectRequest) {
     ProjectDTO projectDTO = ProjectDTO.builder()
                                 .name(createProjectRequest.getProject().getName())
-                                .identifier(createProjectRequest.getProject().getSlug())
+                                .identifier(createProjectRequest.getProject().getIdentifier())
                                 .orgIdentifier(createProjectRequest.getProject().getOrg())
                                 .color(createProjectRequest.getProject().getColor())
                                 .modules(toModules(createProjectRequest.getProject().getModules()))
@@ -68,7 +68,7 @@ public class ProjectApiUtils {
   public ProjectDTO getProjectDto(UpdateProjectRequest updateProjectRequest) {
     ProjectDTO projectDTO = ProjectDTO.builder()
                                 .name(updateProjectRequest.getProject().getName())
-                                .identifier(updateProjectRequest.getProject().getSlug())
+                                .identifier(updateProjectRequest.getProject().getIdentifier())
                                 .orgIdentifier(updateProjectRequest.getProject().getOrg())
                                 .color(updateProjectRequest.getProject().getColor())
                                 .modules(toModules(updateProjectRequest.getProject().getModules()))
@@ -97,7 +97,7 @@ public class ProjectApiUtils {
     ProjectResponse projectResponse = new ProjectResponse();
     io.harness.spec.server.ng.v1.model.Project proj = new io.harness.spec.server.ng.v1.model.Project();
     proj.setOrg(project.getOrgIdentifier());
-    proj.setSlug(project.getIdentifier());
+    proj.setIdentifier(project.getIdentifier());
     proj.setName(project.getName());
     proj.setDescription(project.getDescription());
     proj.setColor(project.getColor());

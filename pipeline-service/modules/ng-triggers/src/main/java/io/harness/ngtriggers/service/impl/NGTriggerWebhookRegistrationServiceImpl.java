@@ -33,6 +33,7 @@ import io.harness.ngtriggers.beans.entity.metadata.status.WebhookAutoRegistratio
 import io.harness.ngtriggers.mapper.NGTriggerElementMapper;
 import io.harness.ngtriggers.service.NGTriggerWebhookRegistrationService;
 import io.harness.product.ci.scm.proto.WebhookResponse;
+import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.utils.ConnectorUtils;
 import io.harness.webhook.remote.WebhookEventClient;
 
@@ -48,6 +49,7 @@ import lombok.extern.slf4j.Slf4j;
 public class NGTriggerWebhookRegistrationServiceImpl implements NGTriggerWebhookRegistrationService {
   @Inject private final ConnectorUtils connectorUtils;
   @Inject private final NGTriggerElementMapper ngTriggerElementMapper;
+  @Inject private final SecretManagerClientService ngSecretService;
   private final WebhookEventClient webhookEventClient;
 
   @Override
@@ -74,6 +76,7 @@ public class NGTriggerWebhookRegistrationServiceImpl implements NGTriggerWebhook
     }
     String url = connectorUtils.retrieveURL(connectorDetails);
     String repoName = ngTriggerEntity.getMetadata().getWebhook().getGit().getRepoName();
+    String secretIdentifierRef = ngTriggerEntity.getEncryptedWebhookSecretIdentifier();
 
     if (connectorUtils.getConnectionType(connectorDetails).equals(GitConnectionType.ACCOUNT)) {
       if (isNotEmpty(repoName)) {
@@ -93,11 +96,11 @@ public class NGTriggerWebhookRegistrationServiceImpl implements NGTriggerWebhook
 
     return registerWebhookInternal(ngTriggerEntity.getProjectIdentifier(), ngTriggerEntity.getOrgIdentifier(),
         ngTriggerEntity.getAccountId(), url,
-        ngTriggerEntity.getMetadata().getWebhook().getGit().getConnectorIdentifier());
+        ngTriggerEntity.getMetadata().getWebhook().getGit().getConnectorIdentifier(), secretIdentifierRef);
   }
 
   private WebhookRegistrationStatusData registerWebhookInternal(String projectIdentifier, String orgIdentifier,
-      String accountIdentifier, String repoUrl, String connectorIdentifierRef) {
+      String accountIdentifier, String repoUrl, String connectorIdentifierRef, String secretIdentifierRef) {
     UpsertWebhookRequestDTO upsertWebhookRequestDTO = UpsertWebhookRequestDTO.builder()
                                                           .projectIdentifier(projectIdentifier)
                                                           .orgIdentifier(orgIdentifier)
@@ -105,6 +108,7 @@ public class NGTriggerWebhookRegistrationServiceImpl implements NGTriggerWebhook
                                                           .connectorIdentifierRef(connectorIdentifierRef)
                                                           .repoURL(repoUrl)
                                                           .hookEventType(HookEventType.TRIGGER_EVENTS)
+                                                          .webhookSecretIdentifierRef(secretIdentifierRef)
                                                           .build();
     UpsertWebhookResponseDTO upsertWebhookResponseDTO = null;
 

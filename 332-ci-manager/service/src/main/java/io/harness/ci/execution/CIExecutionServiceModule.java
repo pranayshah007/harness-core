@@ -35,6 +35,7 @@ import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
 import io.harness.ci.config.CIExecutionServiceConfig;
+import io.harness.ci.config.ExecutionLimits;
 import io.harness.ci.serializer.PluginCompatibleStepSerializer;
 import io.harness.ci.serializer.PluginStepProtobufSerializer;
 import io.harness.ci.serializer.ProtobufStepSerializer;
@@ -49,6 +50,7 @@ import io.harness.waiter.WaiterConfiguration;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
+import com.google.inject.Provides;
 import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Names;
@@ -92,12 +94,17 @@ public class CIExecutionServiceModule extends AbstractModule {
     this.withPMS = withPMS;
   }
 
+  @Provides
+  public ExecutionLimits ExecutionLimits(CIExecutionServiceConfig ciExecutionServiceConfig) {
+    return ciExecutionServiceConfig.getExecutionLimits();
+  }
+
   @Override
   protected void configure() {
     install(CIBeansModule.getInstance());
     install(new io.harness.hsqs.client.HsqsServiceClientModule(
         ciExecutionServiceConfig.getQueueServiceClient().getQueueServiceConfig(),
-        ciExecutionServiceConfig.getQueueServiceClient().getAuthToken(), "ci-manager"));
+        ciExecutionServiceConfig.getQueueServiceClient().getAuthToken(), "Bearer"));
     bind(ExecutorService.class)
         .annotatedWith(Names.named("ciRatelimitHandlerExecutor"))
         .toInstance(ThreadPool.create(

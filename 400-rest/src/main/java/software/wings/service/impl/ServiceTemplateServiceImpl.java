@@ -32,9 +32,9 @@ import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.ff.FeatureFlagService;
-import io.harness.security.encryption.EncryptableSettingWithEncryptionDetails;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptionConfig;
+import io.harness.security.encryption.setting.EncryptableSettingWithEncryptionDetails;
 import io.harness.validation.PersistenceValidator;
 
 import software.wings.api.DeploymentType;

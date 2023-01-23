@@ -408,7 +408,7 @@ public class AccountResource {
   public RestResponse<Boolean> disableAccount(
       @QueryParam("accountId") String accountId, @QueryParam("migratedTo") String migratedToClusterUrl) {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
-      log.info("Disabling account");
+      log.info("Disabling account: {}", accountId);
       RestResponse<Boolean> response = accountPermissionUtils.checkIfHarnessUser("User not allowed to disable account");
       if (response == null) {
         response = new RestResponse<>(accountService.disableAccount(accountId, urlDecode(migratedToClusterUrl)));

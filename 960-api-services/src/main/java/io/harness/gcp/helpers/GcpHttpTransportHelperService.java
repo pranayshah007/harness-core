@@ -15,7 +15,6 @@ import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.http.apache.v2.ApacheHttpTransport;
 import com.google.auth.http.HttpTransportFactory;
-import com.google.cloud.http.HttpTransportOptions;
 import com.google.inject.Singleton;
 import java.io.IOException;
 import java.security.GeneralSecurityException;

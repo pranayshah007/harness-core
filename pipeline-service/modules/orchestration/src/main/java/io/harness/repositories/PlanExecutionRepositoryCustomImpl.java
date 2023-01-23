@@ -10,23 +10,34 @@ package io.harness.repositories;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.InvalidRequestException;
 import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecution.PlanExecutionKeys;
+import io.harness.mongo.helper.AnalyticsMongoTemplateHolder;
 
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import java.util.List;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.data.util.CloseableIterator;
 
-@AllArgsConstructor(access = AccessLevel.PRIVATE, onConstructor = @__({ @Inject }))
 @OwnedBy(PIPELINE)
+@Singleton
 public class PlanExecutionRepositoryCustomImpl implements PlanExecutionRepositoryCustom {
+  private static final int MAX_BATCH_SIZE = 1000;
   private final MongoTemplate mongoTemplate;
+  private final MongoTemplate analyticsMongoTemplate;
+
+  @Inject
+  public PlanExecutionRepositoryCustomImpl(
+      MongoTemplate mongoTemplate, AnalyticsMongoTemplateHolder analyticsMongoTemplateHolder) {
+    this.mongoTemplate = mongoTemplate;
+    this.analyticsMongoTemplate = analyticsMongoTemplateHolder.getAnalyticsMongoTemplate();
+  }
 
   @Override
   public PlanExecution getWithProjectionsWithoutUuid(String planExecutionId, List<String> fieldNames) {
@@ -64,5 +75,26 @@ public class PlanExecutionRepositoryCustomImpl implements PlanExecutionRepositor
       query.fields().include(fieldName);
     }
     return mongoTemplate.findOne(query, PlanExecution.class);
+  }
+
+  public CloseableIterator<PlanExecution> fetchPlanExecutionsFromAnalytics(Query query) {
+    query.cursorBatchSize(MAX_BATCH_SIZE);
+    validatePlanExecutionStreamQuery(query);
+    return analyticsMongoTemplate.stream(query, PlanExecution.class);
+  }
+
+  private void validatePlanExecutionStreamQuery(Query query) {
+    if (query.getMeta().getCursorBatchSize() == null || query.getMeta().getCursorBatchSize() <= 0
+        || query.getMeta().getCursorBatchSize() > MAX_BATCH_SIZE) {
+      throw new InvalidRequestException(
+          "PlanExecution query should have cursorBatch limit within max batch size- " + MAX_BATCH_SIZE);
+    }
+    validatePlanExecutionProjection(query);
+  }
+
+  private void validatePlanExecutionProjection(Query query) {
+    if (query.getFieldsObject().isEmpty()) {
+      throw new InvalidRequestException("PlanExecution list query should have projection fields");
+    }
   }
 }

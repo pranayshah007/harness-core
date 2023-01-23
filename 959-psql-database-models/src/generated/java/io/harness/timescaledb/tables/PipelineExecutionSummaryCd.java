@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Harness Inc. All rights reserved.
+ * Copyright 2022 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Shield 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
@@ -10,6 +10,7 @@
  */
 package io.harness.timescaledb.tables;
 
+import io.harness.timescaledb.Indexes;
 import io.harness.timescaledb.Keys;
 import io.harness.timescaledb.Public;
 import io.harness.timescaledb.tables.records.PipelineExecutionSummaryCdRecord;
@@ -18,9 +19,9 @@ import java.util.Arrays;
 import java.util.List;
 import org.jooq.Field;
 import org.jooq.ForeignKey;
+import org.jooq.Index;
 import org.jooq.Name;
 import org.jooq.Record;
-import org.jooq.Row21;
 import org.jooq.Schema;
 import org.jooq.Table;
 import org.jooq.TableField;
@@ -102,13 +103,19 @@ public class PipelineExecutionSummaryCd extends TableImpl<PipelineExecutionSumma
    * The column <code>public.pipeline_execution_summary_cd.startts</code>.
    */
   public final TableField<PipelineExecutionSummaryCdRecord, Long> STARTTS =
-      createField(DSL.name("startts"), SQLDataType.BIGINT, this, "");
+      createField(DSL.name("startts"), SQLDataType.BIGINT.nullable(false), this, "");
 
   /**
    * The column <code>public.pipeline_execution_summary_cd.endts</code>.
    */
   public final TableField<PipelineExecutionSummaryCdRecord, Long> ENDTS =
       createField(DSL.name("endts"), SQLDataType.BIGINT, this, "");
+
+  /**
+   * The column <code>public.pipeline_execution_summary_cd.planexecutionid</code>.
+   */
+  public final TableField<PipelineExecutionSummaryCdRecord, String> PLANEXECUTIONID =
+      createField(DSL.name("planexecutionid"), SQLDataType.CLOB, this, "");
 
   /**
    * The column <code>public.pipeline_execution_summary_cd.trigger_type</code>.
@@ -121,6 +128,12 @@ public class PipelineExecutionSummaryCd extends TableImpl<PipelineExecutionSumma
    */
   public final TableField<PipelineExecutionSummaryCdRecord, String> AUTHOR_NAME =
       createField(DSL.name("author_name"), SQLDataType.CLOB, this, "");
+
+  /**
+   * The column <code>public.pipeline_execution_summary_cd.moduleinfo_author_id</code>.
+   */
+  public final TableField<PipelineExecutionSummaryCdRecord, String> MODULEINFO_AUTHOR_ID =
+      createField(DSL.name("moduleinfo_author_id"), SQLDataType.CLOB, this, "");
 
   /**
    * The column <code>public.pipeline_execution_summary_cd.author_avatar</code>.
@@ -165,16 +178,23 @@ public class PipelineExecutionSummaryCd extends TableImpl<PipelineExecutionSumma
       createField(DSL.name("moduleinfo_branch_commit_message"), SQLDataType.CLOB, this, "");
 
   /**
-   * The column <code>public.pipeline_execution_summary_cd.moduleinfo_author_id</code>.
+   * The column <code>public.pipeline_execution_summary_cd.original_execution_id</code>.
    */
-  public final TableField<PipelineExecutionSummaryCdRecord, String> MODULEINFO_AUTHOR_ID =
-      createField(DSL.name("moduleinfo_author_id"), SQLDataType.CLOB, this, "");
+  public final TableField<PipelineExecutionSummaryCdRecord, String> ORIGINAL_EXECUTION_ID =
+      createField(DSL.name("original_execution_id"), SQLDataType.CLOB, this, "");
 
   /**
-   * The column <code>public.pipeline_execution_summary_cd.planexecutionid</code>.
+   * The column <code>public.pipeline_execution_summary_cd.mean_time_to_restore</code>.
    */
-  public final TableField<PipelineExecutionSummaryCdRecord, String> PLANEXECUTIONID =
-      createField(DSL.name("planexecutionid"), SQLDataType.CLOB, this, "");
+  public final TableField<PipelineExecutionSummaryCdRecord, Long> MEAN_TIME_TO_RESTORE =
+      createField(DSL.name("mean_time_to_restore"), SQLDataType.BIGINT, this, "");
+
+  /**
+   * The column <code>public.pipeline_execution_summary_cd.is_revert_execution</code>.
+   */
+  public final TableField<PipelineExecutionSummaryCdRecord, Boolean> IS_REVERT_EXECUTION =
+      createField(DSL.name("is_revert_execution"),
+          SQLDataType.BOOLEAN.nullable(false).defaultValue(DSL.field("false", SQLDataType.BOOLEAN)), this, "");
 
   private PipelineExecutionSummaryCd(Name alias, Table<PipelineExecutionSummaryCdRecord> aliased) {
     this(alias, aliased, null);
@@ -227,6 +247,11 @@ public class PipelineExecutionSummaryCd extends TableImpl<PipelineExecutionSumma
   }
 
   @Override
+  public List<Index> getIndexes() {
+    return Arrays.<Index>asList(Indexes.PIPELINE_EXECUTION_SUMMARY_CD_STARTTS_IDX);
+  }
+
+  @Override
   public PipelineExecutionSummaryCd as(String alias) {
     return new PipelineExecutionSummaryCd(DSL.name(alias), this);
   }
@@ -250,16 +275,5 @@ public class PipelineExecutionSummaryCd extends TableImpl<PipelineExecutionSumma
   @Override
   public PipelineExecutionSummaryCd rename(Name name) {
     return new PipelineExecutionSummaryCd(name, null);
-  }
-
-  // -------------------------------------------------------------------------
-  // Row21 type methods
-  // -------------------------------------------------------------------------
-
-  @Override
-  public Row21<String, String, String, String, String, String, String, String, Long, Long, String, String, String,
-      String, String, String, String, String, String, String, String>
-  fieldsRow() {
-    return (Row21) super.fieldsRow();
   }
 }

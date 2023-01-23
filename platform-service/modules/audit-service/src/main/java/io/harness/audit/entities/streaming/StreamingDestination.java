@@ -27,6 +27,7 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
+import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -34,6 +35,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 @OwnedBy(HarnessTeam.PL)
 @Data
+@SuperBuilder
 @FieldNameConstants(innerTypeName = "StreamingDestinationKeys")
 @StoreIn(DbAliases.AUDITS)
 @Entity(value = "streamingDestinations", noClassnameStored = true)

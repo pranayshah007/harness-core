@@ -13,9 +13,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.HookEventType;
 
 import lombok.Builder;
-import lombok.Value;
+import lombok.Data;
 
-@Value
+@Data
 @Builder
 @OwnedBy(DX)
 public class GitWebhookDetails {

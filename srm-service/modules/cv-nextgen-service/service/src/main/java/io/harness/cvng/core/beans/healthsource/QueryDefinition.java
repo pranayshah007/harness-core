@@ -8,11 +8,13 @@
 package io.harness.cvng.core.beans.healthsource;
 
 import io.harness.beans.WithIdentifier;
+import io.harness.cvng.core.beans.RiskCategory;
 import io.harness.cvng.core.beans.RiskProfile;
 import io.harness.cvng.core.beans.monitoredService.MetricThreshold;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -32,4 +34,15 @@ public class QueryDefinition implements WithIdentifier {
   String query;
   @Builder.Default List<MetricThreshold> metricThresholds = new ArrayList<>();
   RiskProfile riskProfile;
+
+  public RiskProfile getRiskProfile() {
+    RiskProfile profile = null;
+    if (Objects.nonNull(riskProfile) && riskProfile.getCategory() != null) {
+      profile = riskProfile;
+      // SLI is being set as ERROR CV MonitoringCategory to keep it consistent with current convention.
+    } else if ((sliEnabled != null && sliEnabled)) {
+      profile = RiskProfile.builder().riskCategory(RiskCategory.ERROR).build();
+    }
+    return profile;
+  }
 }

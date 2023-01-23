@@ -116,7 +116,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.steps.StepHelper;
-import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.tasks.ResponseData;
 
 import software.wings.beans.TaskType;
@@ -142,7 +142,7 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({StepUtils.class})
+@PrepareForTest({TaskRequestsUtils.class})
 @OwnedBy(HarnessTeam.CDP)
 public class EcsStepCommonHelperTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
@@ -170,7 +170,7 @@ public class EcsStepCommonHelperTest extends CategoryTest {
   @Mock private EcsBlueGreenCreateServiceStep ecsBlueGreenCreateServiceStep;
   @Mock private EcsRollingDeployStep ecsRollingDeployStep;
   @Mock private EcsCanaryDeployStep ecsCanaryDeployStep;
-  @Mock private StepUtils stepUtils;
+  @Mock private TaskRequestsUtils TaskRequestsUtils;
   @Mock private CDExpressionResolver cdExpressionResolver;
 
   @Spy @InjectMocks private EcsStepCommonHelper ecsStepCommonHelper;
@@ -215,15 +215,15 @@ public class EcsStepCommonHelperTest extends CategoryTest {
 
     doReturn(EnvironmentType.PROD).when(stepHelper).getEnvironmentType(ambiance);
 
-    Mockito.mockStatic(StepUtils.class);
-    PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
 
     TaskChainResponse taskChainResponse =
         ecsStepCommonHelper.startChainLink(ecsStepExecutor, ambiance, stepElementParameters, ecsStepHelper);
 
-    PowerMockito.verifyStatic(StepUtils.class, times(1));
-    StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any());
+    PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
+    TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any());
 
     EcsGitFetchPassThroughData ecsGitFetchPassThroughData =
         (EcsGitFetchPassThroughData) taskChainResponse.getPassThroughData();
@@ -277,15 +277,15 @@ public class EcsStepCommonHelperTest extends CategoryTest {
 
     doReturn(EnvironmentType.PROD).when(stepHelper).getEnvironmentType(ambiance);
 
-    Mockito.mockStatic(StepUtils.class);
-    PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
 
     TaskChainResponse taskChainResponse =
         ecsStepCommonHelper.startChainLink(ecsStepExecutor, ambiance, stepElementParameters, ecsStepHelper);
 
-    PowerMockito.verifyStatic(StepUtils.class, times(1));
-    StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any());
+    PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
+    TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any());
 
     EcsS3FetchPassThroughData ecsS3FetchPassThroughData =
         (EcsS3FetchPassThroughData) taskChainResponse.getPassThroughData();
@@ -571,8 +571,8 @@ public class EcsStepCommonHelperTest extends CategoryTest {
                                     .build();
     doReturn(content).when(engineExpressionService).renderExpression(any(), eq(content));
 
-    Mockito.mockStatic(StepUtils.class);
-    PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
 
     TaskChainResponse taskChainResponse = ecsStepCommonHelper.executeNextLinkRolling(ecsStepExecutor, ambiance,
@@ -593,8 +593,8 @@ public class EcsStepCommonHelperTest extends CategoryTest {
                                   .taskType(TaskType.ECS_S3_FETCH_TASK_NG.name())
                                   .parameters(new Object[] {ecsS3FetchRequest})
                                   .build();
-    PowerMockito.verifyStatic(StepUtils.class, times(1));
-    StepUtils.prepareCDTaskRequest(any(), eq(taskData), any(), any(), any(), any(), any());
+    PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
+    TaskRequestsUtils.prepareCDTaskRequest(any(), eq(taskData), any(), any(), any(), any(), any());
 
     assertThat(((EcsS3FetchPassThroughData) taskChainResponse.getPassThroughData())
                    .getEcsOtherStoreContents()
@@ -747,8 +747,8 @@ public class EcsStepCommonHelperTest extends CategoryTest {
                                     .build();
     doReturn(content).when(engineExpressionService).renderExpression(any(), eq(content));
 
-    Mockito.mockStatic(StepUtils.class);
-    PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
 
     TaskChainResponse taskChainResponse = ecsStepCommonHelper.executeNextLinkBlueGreen(
@@ -769,8 +769,8 @@ public class EcsStepCommonHelperTest extends CategoryTest {
                                   .taskType(TaskType.ECS_S3_FETCH_TASK_NG.name())
                                   .parameters(new Object[] {ecsS3FetchRequest})
                                   .build();
-    PowerMockito.verifyStatic(StepUtils.class, times(1));
-    StepUtils.prepareCDTaskRequest(any(), eq(taskData), any(), any(), any(), any(), any());
+    PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
+    TaskRequestsUtils.prepareCDTaskRequest(any(), eq(taskData), any(), any(), any(), any(), any());
 
     assertThat(((EcsS3FetchPassThroughData) taskChainResponse.getPassThroughData())
                    .getEcsOtherStoreContents()
@@ -850,8 +850,8 @@ public class EcsStepCommonHelperTest extends CategoryTest {
                                     .build();
     doReturn(content).when(engineExpressionService).renderExpression(any(), eq(content));
 
-    Mockito.mockStatic(StepUtils.class);
-    PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
 
     TaskChainResponse taskChainResponse = ecsStepCommonHelper.executeNextLinkCanary(ecsStepExecutor, ambiance,
@@ -872,8 +872,8 @@ public class EcsStepCommonHelperTest extends CategoryTest {
                                   .taskType(TaskType.ECS_S3_FETCH_TASK_NG.name())
                                   .parameters(new Object[] {ecsS3FetchRequest})
                                   .build();
-    PowerMockito.verifyStatic(StepUtils.class, times(1));
-    StepUtils.prepareCDTaskRequest(any(), eq(taskData), any(), any(), any(), any(), any());
+    PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
+    TaskRequestsUtils.prepareCDTaskRequest(any(), eq(taskData), any(), any(), any(), any(), any());
 
     assertThat(((EcsS3FetchPassThroughData) taskChainResponse.getPassThroughData())
                    .getEcsOtherStoreContents()
@@ -1125,15 +1125,15 @@ public class EcsStepCommonHelperTest extends CategoryTest {
     EcsPrepareRollbackDataPassThroughData ecsPrepareRollbackDataPassThroughData =
         EcsPrepareRollbackDataPassThroughData.builder().build();
 
-    Mockito.mockStatic(StepUtils.class);
-    PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
 
     TaskChainResponse taskChainResponse = ecsStepCommonHelper.queueEcsTask(
         stepElementParameters, ecsCommandRequest, ambiance, ecsPrepareRollbackDataPassThroughData, false);
 
-    PowerMockito.verifyStatic(StepUtils.class, times(1));
-    StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any());
+    PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
+    TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any());
 
     assertThat(taskChainResponse.isChainEnd()).isEqualTo(false);
     assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(EcsPrepareRollbackDataPassThroughData.class);
@@ -1280,8 +1280,8 @@ public class EcsStepCommonHelperTest extends CategoryTest {
 
     doReturn(EnvironmentType.PROD).when(stepHelper).getEnvironmentType(ambiance);
 
-    Mockito.mockStatic(StepUtils.class);
-    PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
 
     EcsStepHelperImpl ecsStepHelperImpl = new EcsStepHelperImpl();
@@ -1309,8 +1309,8 @@ public class EcsStepCommonHelperTest extends CategoryTest {
                                   .taskType(TaskType.ECS_S3_FETCH_TASK_NG.name())
                                   .parameters(new Object[] {ecsS3FetchRunTaskRequest})
                                   .build();
-    PowerMockito.verifyStatic(StepUtils.class, times(1));
-    StepUtils.prepareCDTaskRequest(any(), eq(taskData), any(), any(), any(), any(), any());
+    PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
+    TaskRequestsUtils.prepareCDTaskRequest(any(), eq(taskData), any(), any(), any(), any(), any());
   }
 
   @Test
@@ -1378,8 +1378,8 @@ public class EcsStepCommonHelperTest extends CategoryTest {
                                     .ecsTaskDefinitionFetchFilesResult(fetchFilesResult)
                                     .taskStatus(TaskStatus.SUCCESS)
                                     .build();
-    Mockito.mockStatic(StepUtils.class);
-    PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
 
     TaskChainResponse taskChainResponse = ecsStepCommonHelper.executeNextLinkRunTask(ecsStepExecutor, ambiance,
@@ -1396,8 +1396,8 @@ public class EcsStepCommonHelperTest extends CategoryTest {
                                   .taskType(TaskType.ECS_S3_FETCH_TASK_NG.name())
                                   .parameters(new Object[] {ecsS3FetchRunTaskRequest})
                                   .build();
-    PowerMockito.verifyStatic(StepUtils.class, times(1));
-    StepUtils.prepareCDTaskRequest(any(), eq(taskData), any(), any(), any(), any(), any());
+    PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
+    TaskRequestsUtils.prepareCDTaskRequest(any(), eq(taskData), any(), any(), any(), any(), any());
 
     assertThat(((EcsS3FetchPassThroughData) taskChainResponse.getPassThroughData())
                    .getEcsOtherStoreRunTaskContent()
@@ -1420,8 +1420,9 @@ public class EcsStepCommonHelperTest extends CategoryTest {
   public void testGetGitFetchFileRunTaskResponse() {
     TaskRequest taskRequest = TaskRequest.getDefaultInstance();
     EcsGitFetchPassThroughData ecsGitFetchPassThroughData = EcsGitFetchPassThroughData.builder().build();
-    MockedStatic<StepUtils> stepUtilsStaticMock = mockStatic(StepUtils.class);
-    stepUtilsStaticMock.when(() -> StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+    MockedStatic<TaskRequestsUtils> stepUtilsStaticMock = mockStatic(TaskRequestsUtils.class);
+    stepUtilsStaticMock
+        .when(() -> TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(taskRequest);
     TaskChainResponse taskChainResponse = ecsStepCommonHelper.getGitFetchFileRunTaskResponse(
         ambiance, false, stepElementParameters, ecsGitFetchPassThroughData, null, null);

@@ -13,7 +13,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EncryptedData;
 import io.harness.beans.SecretManagerConfig;
-import io.harness.exception.SecretManagementException;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.dto.secrets.SecretDTOV2.SecretDTOV2Builder;
 import io.harness.ng.core.dto.secrets.SecretTextSpecDTO;
@@ -41,7 +40,7 @@ public class HarnessSecretMigrator implements SecretMigrator {
     String value = "PLACE_HOLDER_SECRET";
     try {
       value = String.valueOf(secretService.fetchSecretValue(encryptedData));
-    } catch (SecretManagementException e) {
+    } catch (Exception e) {
       log.warn("There was an error with fetching actual secret value", e);
     }
     return SecretDTOV2.builder()
@@ -60,7 +59,7 @@ public class HarnessSecretMigrator implements SecretMigrator {
     }
     try {
       return String.valueOf(secretService.fetchSecretValue(encryptedData));
-    } catch (IllegalArgumentException e) {
+    } catch (Exception e) {
       log.error(String.format("There was an error processing the secret file %s", encryptedData.getName()));
       return null;
     }

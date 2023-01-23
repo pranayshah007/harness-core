@@ -75,5 +75,10 @@ public class NotificationTemplateRegistrarTest extends PipelineServiceTestBase {
     verify(notificationClient, times(1))
         .saveNotificationTemplate(
             Team.PIPELINE, PredefinedTemplate.HARNESS_APPROVAL_EXECUTION_NOTIFICATION_EMAIL, true);
+    verify(notificationClient, times(1))
+        .saveNotificationTemplate(
+            Team.PIPELINE, PredefinedTemplate.HARNESS_APPROVAL_EXECUTION_NOTIFICATION_MSTEAMS, true);
+    verify(notificationClient, times(1))
+        .saveNotificationTemplate(Team.PIPELINE, PredefinedTemplate.HARNESS_APPROVAL_NOTIFICATION_MSTEAMS, true);
   }
 }

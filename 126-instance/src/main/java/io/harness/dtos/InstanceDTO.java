@@ -27,8 +27,8 @@ import lombok.experimental.NonFinal;
 public class InstanceDTO {
   @JsonIgnore String uuid;
   String accountIdentifier;
-  String orgIdentifier;
-  String projectIdentifier;
+  @NonFinal @Setter String orgIdentifier;
+  @NonFinal @Setter String projectIdentifier;
   String instanceKey;
   InstanceType instanceType;
   String envIdentifier;

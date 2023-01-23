@@ -16,10 +16,10 @@ import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.artifacts.comparator.BuildDetailsInternalComparatorAscending;
 import io.harness.artifacts.docker.DockerRegistryRestClient;
+import io.harness.artifacts.docker.DockerRegistryToken;
 import io.harness.artifacts.docker.beans.DockerInternalConfig;
 import io.harness.artifacts.docker.beans.DockerPublicImageTagResponse;
 import io.harness.artifacts.docker.client.DockerRestClientFactory;
-import io.harness.artifacts.docker.service.DockerRegistryServiceImpl.DockerRegistryToken;
 import io.harness.beans.ArtifactMetaInfo;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ExceptionUtils;
@@ -205,10 +205,12 @@ public class DockerPublicRegistryProcessor {
         .build();
   }
 
-  public ArtifactMetaInfo getArtifactMetaInfo(DockerInternalConfig dockerConfig, String imageName, String buildNo) {
+  public ArtifactMetaInfo getArtifactMetaInfo(
+      DockerInternalConfig dockerConfig, String imageName, String buildNo, boolean shouldFetchDockerV2DigestSHA256) {
     DockerRegistryRestClient registryRestClient = dockerRestClientFactory.getDockerRegistryRestClient(dockerConfig);
     Function<Headers, String> getToken = headers -> getToken(headers, registryRestClient);
-    return dockerRegistryUtils.getArtifactMetaInfo(dockerConfig, registryRestClient, getToken, "", imageName, buildNo);
+    return dockerRegistryUtils.getArtifactMetaInfo(
+        dockerConfig, registryRestClient, getToken, "", imageName, buildNo, shouldFetchDockerV2DigestSHA256);
   }
 
   public List<Map<String, String>> getLabels(

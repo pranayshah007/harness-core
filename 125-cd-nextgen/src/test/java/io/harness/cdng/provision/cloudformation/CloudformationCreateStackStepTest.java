@@ -63,6 +63,7 @@ import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 
 import software.wings.beans.TaskType;
 
@@ -223,8 +224,8 @@ public class CloudformationCreateStackStepTest extends CategoryTest {
     parameters.setDelegateSelectors(ParameterField.createValueField(Arrays.asList(taskSelectorYaml)));
 
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(parameters).build();
-    Mockito.mockStatic(StepUtils.class);
-    PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
     ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
 
@@ -244,8 +245,8 @@ public class CloudformationCreateStackStepTest extends CategoryTest {
         cloudformationCreateStackStep.executeCloudformationTask(getAmbiance(), stepElementParameters,
             cloudformationTaskNGParameters, CloudFormationCreateStackPassThroughData.builder().build());
     assertThat(taskChainResponse).isNotNull();
-    PowerMockito.verifyStatic(StepUtils.class, times(1));
-    StepUtils.prepareCDTaskRequest(
+    PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
+    TaskRequestsUtils.prepareCDTaskRequest(
         any(), taskDataArgumentCaptor.capture(), any(), any(), any(), taskSelectorsArgumentCaptor.capture(), any());
     assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
     assertThat(taskDataArgumentCaptor.getValue().getParameters()).isNotNull();

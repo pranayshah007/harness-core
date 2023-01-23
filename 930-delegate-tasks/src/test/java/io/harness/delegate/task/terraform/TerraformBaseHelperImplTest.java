@@ -305,40 +305,6 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
   @Test
   @Owner(developers = TMACARI)
   @Category(UnitTests.class)
-  public void testBuildCommitIdToFetchedFilesMapHasVarFiles() {
-    Map<String, String> commitIdMap = new HashMap<>();
-    doReturn("commitsha").when(spyTerraformBaseHelper).getLatestCommitSHA(new File("repoDir"));
-    doReturn("repoDir").when(gitClientHelper).getRepoDirectory(any(GitBaseRequest.class));
-    doReturn("commitsha").when(spyTerraformBaseHelper).getLatestCommitSHAFromLocalRepo(any(GitBaseRequest.class));
-
-    terraformBaseHelper.addVarFilesCommitIdsToMap("configFileIdentifier", getGitTerraformFileInfoList(), commitIdMap);
-    assertThat(commitIdMap).isNotNull();
-    assertThat(commitIdMap.size()).isEqualTo(1);
-  }
-
-  @Test
-  @Owner(developers = JELENA)
-  @Category(UnitTests.class)
-  public void testAddVarFiesCommitIdsToMapBackendConfig() {
-    GitStoreDelegateConfig gitStoreDelegateConfig = getGitStoreDelegateConfig();
-    TerraformBackendConfigFileInfo configFile =
-        RemoteTerraformBackendConfigFileInfo.builder()
-            .gitFetchFilesConfig(GitFetchFilesConfig.builder().gitStoreDelegateConfig(gitStoreDelegateConfig).build())
-            .build();
-
-    Map<String, String> commitIdMap = new HashMap<>();
-    doReturn("commitsha").when(spyTerraformBaseHelper).getLatestCommitSHA(new File("repoDir"));
-    doReturn("repoDir").when(gitClientHelper).getRepoDirectory(any(GitBaseRequest.class));
-    doReturn("commitsha").when(spyTerraformBaseHelper).getLatestCommitSHAFromLocalRepo(any(GitBaseRequest.class));
-
-    terraformBaseHelper.addBackendFileCommitIdsToMap("configFileIdentifier", configFile, commitIdMap);
-    assertThat(commitIdMap).isNotNull();
-    assertThat(commitIdMap.size()).isEqualTo(1);
-  }
-
-  @Test
-  @Owner(developers = TMACARI)
-  @Category(UnitTests.class)
   public void testFetchConfigFileAndPrepareScriptDir() throws IOException {
     ClassLoader classLoader = TerraformBaseHelperImplTest.class.getClassLoader();
 
@@ -552,23 +518,27 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
   @Owner(developers = ROHITKARELIA)
   @Category(UnitTests.class)
   public void testCheckoutRemoteGitVarFileAndConvertToVarFilePaths() throws IOException {
+    HashMap<String, String> commitIdMap = new HashMap<>();
     String scriptDirectory = "repository/testSaveAndGetTerraformPlanFile";
     FileIo.createDirectoryIfDoesNotExist(scriptDirectory);
     String tfvarDir = "repository/tfVarDir";
     FileIo.createDirectoryIfDoesNotExist(tfvarDir);
+    doReturn("varFilesCommitId").when(gitClient).downloadFiles(any());
 
     List<String> varFilePaths = terraformBaseHelper.checkoutRemoteVarFileAndConvertToVarFilePaths(
-        getGitTerraformFileInfoList(), scriptDirectory, logCallback, "accountId", tfvarDir);
+        getGitTerraformFileInfoList(), scriptDirectory, logCallback, "accountId", tfvarDir, commitIdMap);
     assertThat(varFilePaths.size()).isEqualTo(2);
     assertThat(varFilePaths.get(0))
         .isEqualTo(Paths.get(tfvarDir).toAbsolutePath() + "/"
             + "filepath1");
+    assertThat(commitIdMap.get("varFiles")).isEqualTo("varFilesCommitId");
   }
 
   @Test
   @Owner(developers = JELENA)
   @Category(UnitTests.class)
   public void testCheckoutRemoteBackendConfigFileAndConvertToFilePath() throws IOException {
+    HashMap<String, String> commitIdMap = new HashMap<>();
     String scriptDirectory = "repository/testSaveAndGetTerraformPlanFile";
     FileIo.createDirectoryIfDoesNotExist(scriptDirectory);
     String configDir = "repository/backendConfigDir";
@@ -576,14 +546,20 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
     GitStoreDelegateConfig gitStoreDelegateConfig = getGitStoreDelegateConfig();
     TerraformBackendConfigFileInfo configFile =
         RemoteTerraformBackendConfigFileInfo.builder()
-            .gitFetchFilesConfig(GitFetchFilesConfig.builder().gitStoreDelegateConfig(gitStoreDelegateConfig).build())
+            .gitFetchFilesConfig(GitFetchFilesConfig.builder()
+                                     .identifier("backendConfig")
+                                     .gitStoreDelegateConfig(gitStoreDelegateConfig)
+                                     .build())
             .build();
+    doReturn("backendConfigCommitId").when(gitClient).downloadFiles(any());
 
     String filePath = terraformBaseHelper.checkoutRemoteBackendConfigFileAndConvertToFilePath(
-        configFile, scriptDirectory, logCallback, "accountId", configDir);
+        configFile, scriptDirectory, logCallback, "accountId", configDir, commitIdMap);
+
     assertThat(filePath).isNotNull();
     assertThat(filePath).isEqualTo(Paths.get(configDir).toAbsolutePath() + "/"
         + "filepath1");
+    assertThat(commitIdMap.get("backendConfig")).isEqualTo("backendConfigCommitId");
   }
 
   @Test
@@ -623,7 +599,7 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
     List<String> varFilePaths = terraformBaseHelper.checkoutRemoteVarFileAndConvertToVarFilePaths(
         Arrays.asList(
             RemoteTerraformVarFileInfo.builder().filestoreFetchFilesConfig(artifactoryStoreDelegateConfig).build()),
-        scriptDirectory, logCallback, "accountId", tfvarDir);
+        scriptDirectory, logCallback, "accountId", tfvarDir, new HashMap<>());
 
     verify(artifactoryNgService, times(2)).downloadArtifacts(any(), any(), any(), any(), any());
     assertThat(varFilePaths.size()).isEqualTo(2);
@@ -670,7 +646,7 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
         RemoteTerraformVarFileInfo.builder().filestoreFetchFilesConfig(artifactoryStoreDelegateConfig).build());
 
     List<String> varFilePaths = terraformBaseHelper.checkoutRemoteVarFileAndConvertToVarFilePaths(
-        terraformVarFileInfos, scriptDirectory, logCallback, "accountId", tfvarDir);
+        terraformVarFileInfos, scriptDirectory, logCallback, "accountId", tfvarDir, new HashMap<>());
 
     assertThat(varFilePaths.size()).isEqualTo(3);
   }
@@ -707,7 +683,10 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
     GitStoreDelegateConfig gitStoreDelegateConfig = getGitStoreDelegateConfig();
     RemoteTerraformVarFileInfo remoteTerraformVarFileInfo =
         RemoteTerraformVarFileInfo.builder()
-            .gitFetchFilesConfig(GitFetchFilesConfig.builder().gitStoreDelegateConfig(gitStoreDelegateConfig).build())
+            .gitFetchFilesConfig(GitFetchFilesConfig.builder()
+                                     .identifier("varFiles")
+                                     .gitStoreDelegateConfig(gitStoreDelegateConfig)
+                                     .build())
             .build();
 
     varFileInfos.add(remoteTerraformVarFileInfo);

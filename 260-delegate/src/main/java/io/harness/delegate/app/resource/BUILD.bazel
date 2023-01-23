@@ -13,7 +13,8 @@ java_library(
     deps = [
         "//:lombok",
         "//970-ng-commons:module",
-        "//980-commons:module",
+        "//980-commons/src/main/java/io/harness/health:module",
+        "//980-commons/src/main/java/io/harness/security/annotations:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
         "@maven//:com_google_inject_guice",
         "@maven//:io_dropwizard_metrics_metrics_annotation",

@@ -41,4 +41,5 @@ public class BudgetSummary {
   boolean isBudgetGroup;
   CascadeType cascadeType;
   String parentId;
+  Boolean disableCurrencyWarning;
 }

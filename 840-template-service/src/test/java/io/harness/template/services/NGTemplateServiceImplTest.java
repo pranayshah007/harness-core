@@ -57,10 +57,7 @@ import io.harness.ng.core.template.TemplateListType;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.ng.core.template.TemplateReferenceSummary;
 import io.harness.ng.core.template.TemplateWithInputsResponseDTO;
-import io.harness.ng.core.template.exception.NGTemplateResolveExceptionV2;
-import io.harness.ng.core.template.refresh.ErrorNodeSummary;
 import io.harness.ng.core.template.refresh.NgManagerRefreshRequestDTO;
-import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.ng.core.template.refresh.v2.InputsValidationResponse;
 import io.harness.organization.remote.OrganizationClient;
 import io.harness.pms.yaml.ParameterField;
@@ -98,9 +95,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.Callable;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.assertj.core.api.Assertions;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -329,8 +324,8 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
 
     // delete template stable template
     assertThatThrownBy(()
-                           -> templateService.delete(
-                               ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, "version2", 1L, ""))
+                           -> templateService.delete(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER,
+                               "version2", 1L, "", false))
         .isInstanceOf(InvalidRequestException.class);
 
     boolean markEntityInvalid = templateService.markEntityInvalid(
@@ -342,7 +337,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
         .isInstanceOf(NGTemplateException.class);
 
     boolean delete = templateService.delete(
-        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, null, "");
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, null, "", false);
     assertThat(delete).isTrue();
   }
 
@@ -407,7 +402,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     when(entitySetupUsageClient.isEntityReferenced(any(), any(), any())).thenReturn(request);
     try {
       templateService.deleteSingleTemplateHelper(
-          ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, entity, (long) 1.0, true, "");
+          ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, entity, (long) 1.0, true, "", false);
     } catch (ReferencedEntityException e) {
       assertThat(e.getMessage())
           .isEqualTo("Could not delete the template template1 as it is referenced by other entities");
@@ -446,8 +441,8 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     when(entitySetupUsageClient.isEntityReferenced(any(), any(), any())).thenReturn(request);
 
     // Deleting a last updated version for a particular templateIdentifier.
-    boolean delete =
-        templateService.delete(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, "version3", null, "");
+    boolean delete = templateService.delete(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, "version3", null, "", false);
     assertThat(delete).isTrue();
 
     Criteria criteria =
@@ -460,15 +455,16 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     assertThat(templateEntities.getContent().size()).isEqualTo(2);
 
     // Deleting a non last update template version
-    delete = templateService.delete(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "template2", "version2", null, "");
+    delete =
+        templateService.delete(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "template2", "version2", null, "", false);
     assertThat(delete).isTrue();
     templateEntities = templateService.list(criteria, pageRequest, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, false);
     assertThat(templateEntities.getContent()).isNotNull();
     assertThat(templateEntities.getContent().size()).isEqualTo(2);
 
     // Deleting complete templateIdentifier
-    delete = templateService.deleteTemplates(
-        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, Sets.newHashSet("version1", "version2"), "");
+    delete = templateService.deleteTemplates(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER,
+        Sets.newHashSet("version1", "version2"), "", false);
     assertThat(delete).isTrue();
     templateEntities = templateService.list(criteria, pageRequest, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, false);
     assertThat(templateEntities.getContent()).isNotNull();
@@ -510,8 +506,8 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     when(entitySetupUsageClient.isEntityReferenced(any(), any(), any())).thenReturn(request);
 
     // Deleting a last updated version for a particular templateIdentifier.
-    boolean delete =
-        templateService.delete(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, "version1", null, "");
+    boolean delete = templateService.delete(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, "version1", null, "", false);
     assertThat(delete).isTrue();
 
     Criteria criteria =
@@ -735,11 +731,11 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
 
     // delete template stable template
     assertThatThrownBy(
-        () -> templateService.delete(ACCOUNT_ID, ORG_IDENTIFIER, null, TEMPLATE_IDENTIFIER, "version2", 1L, ""))
+        () -> templateService.delete(ACCOUNT_ID, ORG_IDENTIFIER, null, TEMPLATE_IDENTIFIER, "version2", 1L, "", false))
         .isInstanceOf(InvalidRequestException.class);
 
-    boolean delete =
-        templateService.delete(ACCOUNT_ID, ORG_IDENTIFIER, null, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, null, "");
+    boolean delete = templateService.delete(
+        ACCOUNT_ID, ORG_IDENTIFIER, null, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, null, "", false);
     assertThat(delete).isTrue();
   }
 
@@ -885,7 +881,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     // Test multiple template delete
 
     boolean deleteTemplates = templateService.deleteTemplates(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
-        TEMPLATE_IDENTIFIER, new HashSet<>(Arrays.asList(TEMPLATE_VERSION_LABEL, "version2", "version3")), "");
+        TEMPLATE_IDENTIFIER, new HashSet<>(Arrays.asList(TEMPLATE_VERSION_LABEL, "version2", "version3")), "", false);
     assertThat(deleteTemplates).isTrue();
 
     criteria =
@@ -986,7 +982,49 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     when(templateMergeServiceHelper.createTemplateInputsFromTemplate(yaml)).thenReturn(templateInputs);
 
     TemplateWithInputsResponseDTO templateWithInputsResponseDTO =
-        templateService.getTemplateWithInputs(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "zxcv", "as");
+        templateService.getTemplateWithInputs(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "zxcv", "as", false);
+    assertThat(templateInputs).isEqualTo(templateWithInputsResponseDTO.getTemplateInputs());
+    assertThat(originalTemplateYaml).isEqualTo(templateWithInputsResponseDTO.getTemplateResponseDTO().getYaml());
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testGetTemplateWithInputsWithCaching() {
+    String originalTemplateYamlFileName = "template-yaml.yaml";
+    String originalTemplateYaml = readFile(originalTemplateYamlFileName);
+
+    String templateInputs = "type: \"ShellScript\"\n"
+        + "spec:\n"
+        + "  source:\n"
+        + "    type: \"Inline\"\n"
+        + "    spec:\n"
+        + "      script: \"<+input>\"\n"
+        + "timeout: \"<+input>\"\n";
+
+    TemplateEntity templateEntity = TemplateEntity.builder()
+                                        .accountId(ACCOUNT_ID)
+                                        .orgIdentifier(ORG_IDENTIFIER)
+                                        .projectIdentifier(PROJ_IDENTIFIER)
+                                        .identifier("zxcv")
+                                        .name("zxcv")
+                                        .versionLabel("as")
+                                        .yaml(originalTemplateYaml)
+                                        .templateEntityType(TemplateEntityType.STEP_TEMPLATE)
+                                        .childType(TEMPLATE_CHILD_TYPE)
+                                        .fullyQualifiedIdentifier("account_id/orgId/projId/template1/version1/")
+                                        .templateScope(Scope.PROJECT)
+                                        .build();
+
+    templateService.create(templateEntity, false, "");
+
+    doReturn(Optional.of(templateEntity))
+        .when(templateServiceHelper)
+        .getTemplateOrThrowExceptionIfInvalid(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "zxcv", "as", false, true);
+    when(templateMergeServiceHelper.createTemplateInputsFromTemplate(yaml)).thenReturn(templateInputs);
+
+    TemplateWithInputsResponseDTO templateWithInputsResponseDTO =
+        templateService.getTemplateWithInputs(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "zxcv", "as", true);
     assertThat(templateInputs).isEqualTo(templateWithInputsResponseDTO.getTemplateInputs());
     assertThat(originalTemplateYaml).isEqualTo(templateWithInputsResponseDTO.getTemplateResponseDTO().getYaml());
   }
@@ -1028,8 +1066,6 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     String stageYamlWithMissingInputs = readFile("service/updated-stage-template-with-step-template.yaml");
     TemplateEntity stageTemplateWithMissingInputs =
         entity.withYaml(stageYamlWithMissingInputs).withIdentifier(stageTemplateIdentifier);
-    testShouldThrowExceptionWithInvalidTemplateInputs(
-        () -> templateService.create(stageTemplateWithMissingInputs, false, ""));
 
     String stageYaml = readFile("service/stage-template-with-step-template.yaml");
     TemplateEntity stageTemplate = entity.withYaml(stageYaml).withIdentifier(stageTemplateIdentifier);
@@ -1045,9 +1081,6 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     TemplateEntity updatedStepEntity =
         templateService.updateTemplateEntity(updatedStepTemplate, ChangeType.MODIFY, false, "");
     assertSavedTemplateEntity(updatedStepEntity, TEMPLATE_IDENTIFIER);
-
-    testShouldThrowExceptionWithInvalidTemplateInputs(
-        () -> templateService.updateTemplateEntity(stageTemplate, ChangeType.MODIFY, false, ""));
 
     TemplateEntity updatedStageEntityWithMissingInputs =
         templateService.updateTemplateEntity(stageTemplateWithMissingInputs, ChangeType.MODIFY, false, "");
@@ -1122,9 +1155,8 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     String stageTemplateIdentifier = "template2";
     String stageYaml = readFile("service/stage-template-regular.yaml");
     TemplateEntity stageTemplate = entity.withYaml(stageYaml).withIdentifier(stageTemplateIdentifier);
-    Assertions.assertThatExceptionOfType(NGTemplateResolveExceptionV2.class)
-        .isThrownBy(() -> templateService.create(stageTemplate, false, ""))
-        .withMessageContaining("Exception in resolving template refs in given yaml");
+    // Template creation should be allowed as we have removed inputs validations
+    templateService.create(stageTemplate, false, "");
   }
 
   private void setupGitContext(GitEntityInfo branchInfo) {
@@ -1140,23 +1172,5 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     assertThat(createdEntity.getOrgIdentifier()).isEqualTo(ORG_IDENTIFIER);
     assertThat(createdEntity.getProjectIdentifier()).isEqualTo(PROJ_IDENTIFIER);
     assertThat(createdEntity.getIdentifier()).isEqualTo(templateIdentifier);
-  }
-
-  private void testShouldThrowExceptionWithInvalidTemplateInputs(Callable callable) {
-    assertThatThrownBy(callable::call)
-        .isInstanceOf(NGTemplateResolveExceptionV2.class)
-        .hasMessage("Exception in resolving template refs in given yaml.")
-        .extracting(ex -> ((NGTemplateResolveExceptionV2) ex).getMetadata())
-        .isInstanceOf(ValidateTemplateInputsResponseDTO.class)
-        .isNotNull()
-        .hasFieldOrPropertyWithValue("validYaml", false)
-        .extracting(resp -> ((ValidateTemplateInputsResponseDTO) resp).getErrorNodeSummary())
-        .isNotNull()
-        .hasFieldOrPropertyWithValue("childrenErrorNodes", new ArrayList<>())
-        .hasFieldOrProperty("nodeInfo")
-        .extracting(ErrorNodeSummary::getTemplateResponse)
-        .isNotNull()
-        .hasFieldOrPropertyWithValue("identifier", "template2")
-        .hasFieldOrPropertyWithValue("versionLabel", "version1");
   }
 }

@@ -468,13 +468,13 @@ func (r *runTestsTask) getCmd(ctx context.Context, agentPath, outputVarFile stri
 	if err != nil {
 		return "", err
 	}
-	for _, file := range files {
+	for i, file := range files {
 		if file.Status != types.FileDeleted {
 			pkg, err := utils.ReadJavaPkg(r.log, r.fs, file.Name, make([]string, 0), -1)
 			if err != nil {
 				r.log.Errorw("something went wrong when parsing package, using file path as package", zap.Error(err))
 			}
-			file.Package = pkg
+			files[i].Package = pkg
 		}
 	}
 

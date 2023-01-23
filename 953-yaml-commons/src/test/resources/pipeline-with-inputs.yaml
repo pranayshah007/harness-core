@@ -1,0 +1,497 @@
+pipeline:
+  name: "Manager Service Deployment"
+  identifier: managerServiceDeployment
+  stages:
+    - stage:
+        identifier: qaStage
+        name: "qa stage"
+        type: Deployment
+        spec:
+          service:
+            identifier: manager
+            serviceDefinition:
+              type: Kubernetes
+              spec:
+                artifacts:
+                  primary:
+                    type: Dockerhub
+                    spec:
+                      connectorRef: "https://registry.hub.docker.com/"
+                      imagePath: "library/nginx"
+                      tag: "1.19"
+                manifests:
+                  - manifest:
+                      identifier: baseValues
+                      type: K8sManifest
+                      spec:
+                        store:
+                          type: Git
+                          spec:
+                            connectorRef: BBPSsTiCQ3OnD87_SHrSmw
+                            gitFetchType: Branch
+                            branch: master
+                            paths:
+                              - test/spec
+            stageOverrides:
+              manifests:
+                - manifest:
+                    identifier: qaOverride
+                    type: Values
+                    spec:
+                      store:
+                        type: Git
+                        spec:
+                          connectorRef: BBPSsTiCQ3OnD87_SHrSmw
+                          gitFetchType: Branch
+                          branch: master
+                          paths:
+                            - test/qa/values_1.yaml
+          infrastructure:
+            environment:
+              # Give a name to the environment where deployment is being done (Dev, QA, Production, etc). You can give any name and if an environment with this name doesn't exist, it will be created. REQUIRED
+              name:
+              identifier: stagingInfra
+              type: PreProduction
+              tags:
+                cloud: AWS
+                team: cdp
+            infrastructureDefinition:
+              type: KubernetesDirect
+              spec:
+                connectorRef: 2JrX8ESYSTWbhBTPBu7slQ
+                namespace: default
+                releaseName: vaibhav
+          execution:
+            steps:
+              - step:
+                  name: "Rollout Deployment"
+                  identifier: rolloutDeployment
+                  type: K8sRollingDeploy
+                  spec:
+                    timeout: 120000
+                    skipDryRun: false
+              - step:
+                  name: "http"
+                  identifier: http
+                  type: Http
+                  spec:
+                    socketTimeoutMillis: 1000
+                    method: GET
+                    url: wrongUrl
+              - step:
+                  identifier: shellScript
+                  type: ShellScript
+                  spec:
+                    executeOnDelegate: true
+                    connectionType: SSH
+                    scriptType: BASH
+                    scriptString: |
+                      echo 'I should not execute'
+              - parallel:
+                  - step:
+                      name: http step 13
+                      identifier: http-step-13
+                      type: http
+                      spec:
+                        socketTimeoutMillis: 1000
+                        method: GET
+                        url: http://localhost:8080/temp-13.json
+                  - step:
+                      name: http step 14
+                      identifier: http-step-14
+                      type: http
+                      spec:
+                        socketTimeoutMillis: 1000
+                        method: GET
+                        url: http://localhost:8080/temp-14.json
+            rollbackSteps:
+              - step:
+                  name: "Rollback Rollout Deployment"
+                  identifier: rollbackRolloutDeployment
+                  type: K8sRollingRollback
+                  spec:
+                    timeout: 120000
+              - step:
+                  identifier: shellScript2
+                  type: ShellScript
+                  spec:
+                    executeOnDelegate: true
+                    connectionType: SSH
+                    scriptType: BASH
+                    scriptString: |
+                      echo 'I should be executed during rollback'
+    - stage:
+        identifier: prodStage
+        name: "prod stage"
+        type: Deployment
+        spec:
+          service:
+            identifier: manager
+            serviceDefinition:
+              type: Kubernetes
+              spec:
+                artifacts:
+                  primary:
+                    type: Dockerhub
+                    spec:
+                      connectorRef: "https://registry.hub.docker.com/"
+                      imagePath: "library/nginx"
+                      tag: "1.18"
+                manifests:   # {k8Manifest |  valuesOverride | pcfManifest |  HelmSourceRepo | HelmSourceRepo | Kustomize | openShift}
+                  - manifest:
+                      identifier: baseValues
+                      type: K8sManifest
+                      spec:
+                        store:
+                          type: Git
+                          spec:
+                            connectorRef: BBPSsTiCQ3OnD87_SHrSmw
+                            gitFetchType: Branch
+                            branch: master
+                            paths:
+                              - test/spec
+            stageOverrides:
+              manifests:   # {k8Manifest |  valuesOverride | pcfManifest |  HelmSourceRepo | HelmSourceRepo | Kustomize | openShift}
+                - manifest:
+                    identifier: prodOverride
+                    type: Values
+                    spec:
+                      store:
+                        type: Git
+                        spec:
+                          connectorRef: BBPSsTiCQ3OnD87_SHrSmw
+                          gitFetchType: Branch
+                          branch: master
+                          paths:
+                            - test/prod/values.yaml
+          infrastructure:
+            environment:
+              name:
+              identifier: stagingInfra
+              type: PreProduction
+              tags:
+                - key: cloud
+                  value: AWS
+                - key: team
+                  value: cdp
+            infrastructureDefinition:
+              type: KubernetesDirect
+              spec:
+                connectorRef: 2JrX8ESYSTWbhBTPBu7slQ
+                namespace: default
+                releaseName: vaibhav
+          execution:
+            steps:
+              - step:
+                  name: "Rollout Deployment"
+                  identifier: rolloutDeployment
+                  type: K8sRollingDeploy
+                  spec:
+                    timeout: 120000
+                    skipDryRun: false
+    - parallel:
+        - stage:
+            identifier: parallelStage1
+            name: parallelStage1
+            type: Deployment
+            spec:
+              service:
+                identifier: manager
+                serviceDefinition:
+                  type: Kubernetes
+                  spec:
+                    artifacts:
+                      primary:
+                        type: Dockerhub
+                        spec:
+                          connectorRef: "https://registry.hub.docker.com/"
+                          imagePath: "library/nginx"
+                          tag: "1.19"
+                    manifests:
+                      - manifest:
+                          identifier: baseValues
+                          type: K8sManifest
+                          spec:
+                            store:
+                              type: Git
+                              spec:
+                                connectorRef: BBPSsTiCQ3OnD87_SHrSmw
+                                gitFetchType: Branch
+                                branch: master
+                                paths:
+                                  - test/spec
+                stageOverrides:
+                  manifests:
+                    - manifest:
+                        identifier: qaOverride
+                        type: Values
+                        spec:
+                          store:
+                            type: Git
+                            spec:
+                              connectorRef: BBPSsTiCQ3OnD87_SHrSmw
+                              gitFetchType: Branch
+                              branch: master
+                              paths:
+                                - test/qa/values_1.yaml
+              infrastructure:
+                environment:
+                  # Give a name to the environment where deployment is being done (Dev, QA, Production, etc). You can give any name and if an environment with this name doesn't exist, it will be created. REQUIRED
+                  name:
+                  identifier: stagingInfra
+                  type: PreProduction
+                  tags:
+                    cloud: AWS
+                    team: cdp
+                infrastructureDefinition:
+                  type: KubernetesDirect
+                  spec:
+                    connectorRef: 2JrX8ESYSTWbhBTPBu7slQ
+                    namespace: default
+                    releaseName: vaibhav
+              execution:
+                steps:
+                  - step:
+                      name: "Rollout Deployment"
+                      identifier: rolloutDeployment
+                      type: K8sRollingDeploy
+                      spec:
+                        timeout: 120000
+                        skipDryRun: false
+                  - step:
+                      name: "http"
+                      identifier: http
+                      type: Http
+                      spec:
+                        socketTimeoutMillis: 1000
+                        method: GET
+                        url: wrongUrl
+                  - step:
+                      identifier: shellScript
+                      type: ShellScript
+                      spec:
+                        executeOnDelegate: true
+                        connectionType: SSH
+                        scriptType: BASH
+                        scriptString: |
+                          echo 'I should not execute'
+                  - parallel:
+                      - step:
+                          name: http step 13
+                          identifier: http-step-13
+                          type: http
+                          spec:
+                            socketTimeoutMillis: 1000
+                            method: GET
+                            url: http://localhost:8080/temp-13.json
+                      - step:
+                          name: http step 14
+                          identifier: http-step-14
+                          type: http
+                          spec:
+                            socketTimeoutMillis: 1000
+                            method: GET
+                            url: http://localhost:8080/temp-14.json
+                rollbackSteps:
+                  - step:
+                      name: "Rollback Rollout Deployment"
+                      identifier: rollbackRolloutDeployment
+                      type: K8sRollingRollback
+                      spec:
+                        timeout: 120000
+                  - step:
+                      identifier: shellScript2
+                      type: ShellScript
+                      spec:
+                        executeOnDelegate: true
+                        connectionType: SSH
+                        scriptType: BASH
+                        scriptString: |
+                          echo 'I should be executed during rollback'
+        - stage:
+            identifier: parallelStage2
+            name: parallelStage2
+            type: Deployment
+            spec:
+              service:
+                identifier: manager
+                serviceDefinition:
+                  type: Kubernetes
+                  spec:
+                    artifacts:
+                      primary:
+                        type: Dockerhub
+                        spec:
+                          connectorRef: "https://registry.hub.docker.com/"
+                          imagePath: "library/nginx"
+                          tag: "1.19"
+                    manifests:
+                      - manifest:
+                          identifier: baseValues
+                          type: K8sManifest
+                          spec:
+                            store:
+                              type: Git
+                              spec:
+                                connectorRef: BBPSsTiCQ3OnD87_SHrSmw
+                                gitFetchType: Branch
+                                branch: master
+                                paths:
+                                  - test/spec
+                stageOverrides:
+                  manifests:
+                    - manifest:
+                        identifier: qaOverride
+                        type: Values
+                        spec:
+                          store:
+                            type: Git
+                            spec:
+                              connectorRef: BBPSsTiCQ3OnD87_SHrSmw
+                              gitFetchType: Branch
+                              branch: master
+                              paths:
+                                - test/qa/values_1.yaml
+              infrastructure:
+                environment:
+                  # Give a name to the environment where deployment is being done (Dev, QA, Production, etc). You can give any name and if an environment with this name doesn't exist, it will be created. REQUIRED
+                  name:
+                  identifier: stagingInfra
+                  type: PreProduction
+                  tags:
+                    cloud: AWS
+                    team: cdp
+                infrastructureDefinition:
+                  type: KubernetesDirect
+                  spec:
+                    connectorRef: 2JrX8ESYSTWbhBTPBu7slQ
+                    namespace: default
+                    releaseName: vaibhav
+              execution:
+                steps:
+                  - step:
+                      name: "Rollout Deployment"
+                      identifier: rolloutDeployment
+                      type: K8sRollingDeploy
+                      spec:
+                        timeout: 120000
+                        skipDryRun: false
+                  - step:
+                      name: "http"
+                      identifier: http
+                      type: Http
+                      spec:
+                        socketTimeoutMillis: 1000
+                        method: GET
+                        url: wrongUrl
+                  - step:
+                      identifier: shellScript
+                      type: ShellScript
+                      spec:
+                        executeOnDelegate: true
+                        connectionType: SSH
+                        scriptType: BASH
+                        scriptString: |
+                          echo 'I should not execute'
+                  - parallel:
+                      - step:
+                          name: http step 13
+                          identifier: http-step-13
+                          type: http
+                          spec:
+                            socketTimeoutMillis: 1000
+                            method: GET
+                            url: http://localhost:8080/temp-13.json
+                      - step:
+                          name: http step 14
+                          identifier: http-step-14
+                          type: http
+                          spec:
+                            socketTimeoutMillis: 1000
+                            method: GET
+                            url: http://localhost:8080/temp-14.json
+                rollbackSteps:
+                  - step:
+                      name: "Rollback Rollout Deployment"
+                      identifier: rollbackRolloutDeployment
+                      type: K8sRollingRollback
+                      spec:
+                        timeout: 120000
+                  - step:
+                      identifier: shellScript2
+                      type: ShellScript
+                      spec:
+                        executeOnDelegate: true
+                        connectionType: SSH
+                        scriptType: BASH
+                        scriptString: |
+                          echo 'I should be executed during rollback'
+
+    - stage:
+        identifier: prodStage2
+        name: "prod stage2"
+        type: Deployment
+        strategy:
+          repeat:
+            times: 2
+        spec:
+          service:
+            identifier: manager
+            serviceDefinition:
+              type: Kubernetes
+              spec:
+                artifacts:
+                  primary:
+                    type: Dockerhub
+                    spec:
+                      connectorRef: <+input>
+                      imagePath: "library/nginx"
+                      tag: "1.18"
+                manifests:   # {k8Manifest |  valuesOverride | pcfManifest |  HelmSourceRepo | HelmSourceRepo | Kustomize | openShift}
+                  - manifest:
+                      identifier: baseValues
+                      type: K8sManifest
+                      spec:
+                        store:
+                          type: Git
+                          spec:
+                            connectorRef: BBPSsTiCQ3OnD87_SHrSmw
+                            gitFetchType: Branch
+                            branch: master
+                            paths:
+                              - test/spec
+            stageOverrides:
+              manifests:   # {k8Manifest |  valuesOverride | pcfManifest |  HelmSourceRepo | HelmSourceRepo | Kustomize | openShift}
+                - manifest:
+                    identifier: prodOverride
+                    type: Values
+                    spec:
+                      store:
+                        type: Git
+                        spec:
+                          connectorRef: BBPSsTiCQ3OnD87_SHrSmw
+                          gitFetchType: Branch
+                          branch: master
+                          paths:
+                            - test/prod/values.yaml
+          infrastructure:
+            environment:
+              name:
+              identifier: stagingInfra
+              type: PreProduction
+              tags: <+input>
+            infrastructureDefinition:
+              type: KubernetesDirect
+              spec:
+                connectorRef: 2JrX8ESYSTWbhBTPBu7slQ
+                namespace: default
+                releaseName: vaibhav
+          execution:
+            steps:
+              - step:
+                  name: "Rollout Deployment"
+                  identifier: rolloutDeployment
+                  type: K8sRollingDeploy
+                  spec:
+                    timeout: 120000
+                    skipDryRun: false

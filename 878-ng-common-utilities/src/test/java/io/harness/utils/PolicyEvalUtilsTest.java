@@ -9,30 +9,70 @@ package io.harness.utils;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.NAMAN;
+import static io.harness.rule.OwnerRule.SHALINI;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.eraro.ErrorCode;
+import io.harness.exception.HttpResponseException;
+import io.harness.exception.InvalidRequestException;
+import io.harness.network.SafeHttpCall;
+import io.harness.opaclient.OpaServiceClient;
 import io.harness.opaclient.model.OpaEvaluationResponseHolder;
 import io.harness.opaclient.model.OpaPolicySetEvaluationResponse;
+import io.harness.plancreator.policy.PolicyConfig;
+import io.harness.plancreator.steps.common.StepElementParameters;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureData;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import retrofit2.Call;
 
 @OwnedBy(PIPELINE)
 public class PolicyEvalUtilsTest extends CategoryTest {
+  @Mock OpaServiceClient opaServiceClient;
+  Ambiance ambiance;
+  String accountId = "acc";
+  String orgId = "org";
+  String projectId = "proj";
+  String stepName = "step name";
+  List<String> projLevelPolicySet;
+  StepElementParameters stepParameters;
+  Call<OpaEvaluationResponseHolder> request;
+
+  @Before
+  public void setUp() {
+    MockitoAnnotations.openMocks(this);
+    Mockito.mockStatic(SafeHttpCall.class);
+    Mockito.mockStatic(PolicyStepOutcomeMapper.class);
+    ambiance = Ambiance.newBuilder()
+                   .putSetupAbstractions("accountId", accountId)
+                   .putSetupAbstractions("orgIdentifier", orgId)
+                   .putSetupAbstractions("projectIdentifier", projectId)
+                   .build();
+    projLevelPolicySet = Collections.singletonList("ps1");
+    request = mock(Call.class);
+  }
   @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
@@ -124,5 +164,108 @@ public class PolicyEvalUtilsTest extends CategoryTest {
             .build();
     String multipleErrors = PolicyEvalUtils.buildPolicyEvaluationFailureMessage(evaluationResponse2);
     assertThat(multipleErrors).isEqualTo("The following Policy Sets were not adhered to: myName, my name");
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testExecuteSyncWithApplicationFailure() throws IOException {
+    stepParameters =
+        StepElementParameters.builder()
+            .name(stepName)
+            .enforce(PolicyConfig.builder().policySets(ParameterField.createValueField(projLevelPolicySet)).build())
+            .build();
+
+    String urlPolicySets = "ps1";
+    when(opaServiceClient.evaluateWithCredentialsByID(accountId, orgId, projectId, urlPolicySets,
+             PolicyEvalUtils.getEntityMetadataString(stepName), Collections.emptyList()))
+        .thenReturn(request);
+    when(SafeHttpCall.executeWithErrorMessage(request)).thenThrow(new HttpResponseException(400, "My Invalid Request"));
+    StepResponse stepResponse = PolicyEvalUtils.evalPolicies(
+        ambiance, stepParameters, StepResponse.builder().status(Status.SUCCEEDED).build(), opaServiceClient);
+    assertThat(stepResponse.getStatus()).isEqualTo(Status.FAILED);
+    assertThat(stepResponse.getFailureInfo().getFailureData(0).getMessage())
+        .isEqualTo("Unexpected error occurred while evaluating Policies.");
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testExecuteSyncWithPolicyNotFoundError() throws IOException {
+    stepParameters =
+        StepElementParameters.builder()
+            .name(stepName)
+            .enforce(PolicyConfig.builder().policySets(ParameterField.createValueField(projLevelPolicySet)).build())
+            .build();
+
+    String urlPolicySets = "ps1";
+    when(opaServiceClient.evaluateWithCredentialsByID(accountId, orgId, projectId, urlPolicySets,
+             PolicyEvalUtils.getEntityMetadataString(stepName), Collections.emptyList()))
+        .thenReturn(request);
+    String errorString = "{\n"
+        + "    \"identifier\" : \"thisSet\",\n"
+        + "    \"message\" : \"policy set 'thisSet' is disabled.\"\n"
+        + "}";
+    when(SafeHttpCall.executeWithErrorMessage(request)).thenThrow(new InvalidRequestException(errorString));
+    StepResponse stepResponse = PolicyEvalUtils.evalPolicies(
+        ambiance, stepParameters, StepResponse.builder().status(Status.SUCCEEDED).build(), opaServiceClient);
+    assertThat(stepResponse.getStatus()).isEqualTo(Status.FAILED);
+    assertThat(stepResponse.getFailureInfo().getFailureData(0).getMessage())
+        .isEqualTo("Policy Set 'thisSet' is disabled.");
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testExecuteSyncWithEvaluationFailure() throws IOException {
+    stepParameters =
+        StepElementParameters.builder()
+            .name(stepName)
+            .enforce(PolicyConfig.builder().policySets(ParameterField.createValueField(projLevelPolicySet)).build())
+            .build();
+
+    String urlPolicySets = "ps1";
+    when(opaServiceClient.evaluateWithCredentialsByID(accountId, orgId, projectId, urlPolicySets,
+             PolicyEvalUtils.getEntityMetadataString(stepName), Collections.emptyList()))
+        .thenReturn(request);
+
+    OpaEvaluationResponseHolder evaluationResponse =
+        OpaEvaluationResponseHolder.builder()
+            .status("error")
+            .details(Collections.singletonList(
+                OpaPolicySetEvaluationResponse.builder().status("error").name("myName").build()))
+            .build();
+    when(SafeHttpCall.executeWithErrorMessage(request)).thenReturn(evaluationResponse);
+    when(PolicyStepOutcomeMapper.toOutcome(evaluationResponse))
+        .thenReturn(PolicyStepOutcome.builder().status("error").build());
+    StepResponse stepResponse = PolicyEvalUtils.evalPolicies(
+        ambiance, stepParameters, StepResponse.builder().status(Status.SUCCEEDED).build(), opaServiceClient);
+    assertThat(stepResponse.getStatus()).isEqualTo(Status.FAILED);
+    assertThat(stepResponse.getFailureInfo().getFailureData(0).getMessage())
+        .isEqualTo("The following Policy Set was not adhered to: myName");
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testExecuteSyncWithEvaluationSuccess() throws IOException {
+    stepParameters =
+        StepElementParameters.builder()
+            .name(stepName)
+            .enforce(PolicyConfig.builder().policySets(ParameterField.createValueField(projLevelPolicySet)).build())
+            .build();
+
+    String urlPolicySets = "ps1";
+    when(opaServiceClient.evaluateWithCredentialsByID(accountId, orgId, projectId, urlPolicySets,
+             PolicyEvalUtils.getEntityMetadataString(stepName), Collections.emptyList()))
+        .thenReturn(request);
+
+    OpaEvaluationResponseHolder evaluationResponse = OpaEvaluationResponseHolder.builder().status("pass").build();
+    when(SafeHttpCall.executeWithErrorMessage(request)).thenReturn(evaluationResponse);
+    when(PolicyStepOutcomeMapper.toOutcome(evaluationResponse))
+        .thenReturn(PolicyStepOutcome.builder().status("pass").build());
+    StepResponse stepResponse = PolicyEvalUtils.evalPolicies(
+        ambiance, stepParameters, StepResponse.builder().status(Status.SUCCEEDED).build(), opaServiceClient);
+    assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
   }
 }

@@ -48,7 +48,7 @@ public class InfrastructureMapperTest {
     InfrastructureRequestDTO dto = InfrastructureRequestDTO.builder()
                                        .identifier("id1")
                                        .orgIdentifier("orgId")
-                                       .projectIdentifier("projId")
+                                       .projectIdentifier("projectId")
                                        .description("description")
                                        .environmentRef("envRef")
                                        .name("my_infra_name")
@@ -56,7 +56,7 @@ public class InfrastructureMapperTest {
                                        .tags(Map.of("k", "v"))
                                        .yaml("infrastructureDefinition:\n"
                                            + "  name: \"my_infra_name\"\n"
-                                           + "  identifier: \"my_infra_id\"\n"
+                                           + "  identifier: \"id1\"\n"
                                            + "  description: \"description\"\n"
                                            + "  deploymentType: \"Kubernetes\"\n"
                                            + "  tags: \n"
@@ -89,7 +89,7 @@ public class InfrastructureMapperTest {
     InfrastructureRequestDTO dto = InfrastructureRequestDTO.builder()
                                        .identifier("id1")
                                        .orgIdentifier("orgId")
-                                       .projectIdentifier("projId")
+                                       .projectIdentifier("projectId")
                                        .description("description")
                                        .environmentRef("envRef")
                                        .name("my_infra_name")
@@ -97,7 +97,7 @@ public class InfrastructureMapperTest {
                                        .tags(Map.of("k", "v"))
                                        .yaml("infrastructureDefinition:\n"
                                            + "  name: \"my_infra_name\"\n"
-                                           + "  identifier: \"my_infra_id\"\n"
+                                           + "  identifier: \"id1\"\n"
                                            + "  description: \"description\"\n"
                                            + "  tags: \n"
                                            + "    k: v\n"
@@ -118,19 +118,20 @@ public class InfrastructureMapperTest {
   }
 
   @Test
-  @Owner(developers = OwnerRule.YOGESH)
+  @Owner(developers = OwnerRule.TATHAGAT)
   @Category(UnitTests.class)
   public void toInfrastructureEntityInvalid_1() {
     InfrastructureRequestDTO dto = InfrastructureRequestDTO.builder()
                                        .identifier("id1")
+                                       .name("my_infra_name")
                                        .orgIdentifier("orgId")
-                                       .projectIdentifier("projId")
+                                       .projectIdentifier("projectId")
                                        .description("description")
                                        .type(InfrastructureType.KUBERNETES_DIRECT)
                                        .tags(Map.of("k", "v"))
                                        .yaml("infrastructureDefinition:\n"
                                            + "  name: \"my_infra_name\"\n"
-                                           + "  identifier: \"my_infra_id\"\n"
+                                           + "  identifier: \"id1\"\n"
                                            + "  description: \"description\"\n"
                                            + "  tags: \n"
                                            + "    k: v\n"
@@ -148,7 +149,43 @@ public class InfrastructureMapperTest {
     assertThatExceptionOfType(InvalidRequestException.class)
         .isThrownBy(() -> InfrastructureMapper.toInfrastructureEntity("accountId", dto))
         .withMessageContaining("deploymentType must not be null")
-        .withMessageContaining("name must not be empty")
         .withMessageContaining("environmentRef must not be empty");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.TATHAGAT)
+  @Category(UnitTests.class)
+  public void toInfrastructureEntityYamlFieldsMismatch() {
+    InfrastructureRequestDTO dto = InfrastructureRequestDTO.builder()
+                                       .identifier("id1")
+                                       .orgIdentifier("orgId")
+                                       .projectIdentifier("projectId")
+                                       .description("description")
+                                       .environmentRef("envRef")
+                                       .name("name1")
+                                       .type(InfrastructureType.KUBERNETES_DIRECT)
+                                       .tags(Map.of("k", "v"))
+                                       .yaml("infrastructureDefinition:\n"
+                                           + "  name: \"my_infra_name\"\n"
+                                           + "  identifier: \"my_infra_id\"\n"
+                                           + "  description: \"description\"\n"
+                                           + "  deploymentType: \"Kubernetes\"\n"
+                                           + "  tags: \n"
+                                           + "    k: v\n"
+                                           + "  orgIdentifier: orgId\n"
+                                           + "  projectIdentifier: projectId\n"
+                                           + "  environmentRef: envId\n"
+                                           + "  type: KubernetesDirect\n"
+                                           + "  spec:\n"
+                                           + "    connectorRef: <+input>\n"
+                                           + "    namespace: default\n"
+                                           + "    releaseName: release-<+INFRA_KEY>\n"
+                                           + "  allowSimultaneousDeployments: false")
+                                       .build();
+
+    assertThatExceptionOfType(InvalidRequestException.class)
+        .isThrownBy(() -> InfrastructureMapper.toInfrastructureEntity("accountId", dto))
+        .withMessageContaining(
+            "Found mismatch in following fields between yaml and requested value respectively: {InfraStructureDefinition Name=[my_infra_name, name1], InfrastructureDefinition Identifier=[my_infra_id, id1]}");
   }
 }
