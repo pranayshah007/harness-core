@@ -162,6 +162,22 @@ import io.harness.cvng.dashboard.entities.HeatMap;
 import io.harness.cvng.dashboard.entities.HeatMap.HeatMapBuilder;
 import io.harness.cvng.dashboard.entities.HeatMap.HeatMapResolution;
 import io.harness.cvng.dashboard.entities.HeatMap.HeatMapRisk;
+import io.harness.cvng.downtime.beans.DowntimeCategory;
+import io.harness.cvng.downtime.beans.DowntimeDTO;
+import io.harness.cvng.downtime.beans.DowntimeDuration;
+import io.harness.cvng.downtime.beans.DowntimeDurationType;
+import io.harness.cvng.downtime.beans.DowntimeRecurrence;
+import io.harness.cvng.downtime.beans.DowntimeRecurrenceType;
+import io.harness.cvng.downtime.beans.DowntimeScope;
+import io.harness.cvng.downtime.beans.DowntimeSpecDTO;
+import io.harness.cvng.downtime.beans.DowntimeType;
+import io.harness.cvng.downtime.beans.EntityDetails;
+import io.harness.cvng.downtime.beans.EntityType;
+import io.harness.cvng.downtime.beans.EntityUnavailabilityStatus;
+import io.harness.cvng.downtime.beans.EntityUnavailabilityStatusesDTO;
+import io.harness.cvng.downtime.beans.OnetimeDowntimeSpec;
+import io.harness.cvng.downtime.beans.OnetimeDowntimeType;
+import io.harness.cvng.downtime.beans.RecurringDowntimeSpec;
 import io.harness.cvng.models.VerificationType;
 import io.harness.cvng.notification.beans.ErrorBudgetRemainingPercentageConditionSpec;
 import io.harness.cvng.notification.beans.HealthScoreConditionSpec;
@@ -1698,6 +1714,112 @@ public class BuilderFactory {
         .thresholds(Collections.singletonList(getMetricThreshold()))
         .analysisResult(AnalysisResult.NO_ANALYSIS)
         .testDataNodes(Collections.singletonList(getAnalysedDeploymentTestDataNode()))
+        .build();
+  }
+
+  public DowntimeDTO getOnetimeDurationBasedDowntimeDTO() {
+    long startTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().getEpochSecond();
+    return DowntimeDTO.builder()
+        .identifier("downtimeOneTimeDuration")
+        .name("downtime OneTime Duration")
+        .category(DowntimeCategory.SCHEDULED_MAINTENANCE)
+        .description("Scheduled Maintenance")
+        .orgIdentifier(context.getOrgIdentifier())
+        .projectIdentifier(context.getProjectIdentifier())
+        .enabled(true)
+        .tags(new HashMap<>())
+        .scope(DowntimeScope.PROJECT)
+        .entityRefs(Collections.singletonList(
+            EntityDetails.builder().enabled(true).entityRef(context.getMonitoredServiceIdentifier()).build()))
+        .spec(DowntimeSpecDTO.builder()
+                  .type(DowntimeType.ONE_TIME)
+                  .spec(OnetimeDowntimeSpec.builder()
+                            .startTime(startTime)
+                            .timezone("UTC")
+                            .type(OnetimeDowntimeType.DURATION)
+                            .spec(OnetimeDowntimeSpec.OnetimeDurationBasedSpec.builder()
+                                      .downtimeDuration(DowntimeDuration.builder()
+                                                            .durationValue(30)
+                                                            .durationType(DowntimeDurationType.MINUTES)
+                                                            .build())
+                                      .build())
+                            .build())
+                  .build())
+        .build();
+  }
+
+  public DowntimeDTO getOnetimeEndTimeBasedDowntimeDTO() {
+    long startTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().getEpochSecond();
+    long endTime = startTime + Duration.ofMinutes(30).toSeconds();
+    return DowntimeDTO.builder()
+        .identifier("downtimeOneTimeEndTime")
+        .name("downtime OneTime EndTime")
+        .category(DowntimeCategory.SCHEDULED_MAINTENANCE)
+        .description("Scheduled Maintenance")
+        .orgIdentifier(context.getOrgIdentifier())
+        .projectIdentifier(context.getProjectIdentifier())
+        .enabled(true)
+        .tags(new HashMap<>())
+        .scope(DowntimeScope.PROJECT)
+        .entityRefs(Collections.singletonList(
+            EntityDetails.builder().enabled(true).entityRef(context.getMonitoredServiceIdentifier()).build()))
+        .spec(DowntimeSpecDTO.builder()
+                  .type(DowntimeType.ONE_TIME)
+                  .spec(OnetimeDowntimeSpec.builder()
+                            .startTime(startTime)
+                            .timezone("UTC")
+                            .type(OnetimeDowntimeType.END_TIME)
+                            .spec(OnetimeDowntimeSpec.OnetimeEndTimeBasedSpec.builder().endTime(endTime).build())
+                            .build())
+                  .build())
+        .build();
+  }
+
+  public DowntimeDTO getRecurringDowntimeDTO() {
+    long startTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().getEpochSecond();
+    long endTime = startTime + Duration.ofDays(365).toSeconds();
+    return DowntimeDTO.builder()
+        .identifier("downtimeRecurring")
+        .name("downtime Recurring")
+        .category(DowntimeCategory.SCHEDULED_MAINTENANCE)
+        .description("Scheduled Maintenance")
+        .orgIdentifier(context.getOrgIdentifier())
+        .projectIdentifier(context.getProjectIdentifier())
+        .enabled(true)
+        .tags(new HashMap<>())
+        .scope(DowntimeScope.PROJECT)
+        .entityRefs(Collections.singletonList(
+            EntityDetails.builder().enabled(true).entityRef(context.getMonitoredServiceIdentifier()).build()))
+        .spec(DowntimeSpecDTO.builder()
+                  .type(DowntimeType.RECURRING)
+                  .spec(RecurringDowntimeSpec.builder()
+                            .startTime(startTime)
+                            .timezone("UTC")
+                            .downtimeDuration(DowntimeDuration.builder()
+                                                  .durationValue(30)
+                                                  .durationType(DowntimeDurationType.MINUTES)
+                                                  .build())
+                            .recurrenceEndTime(endTime)
+                            .downtimeRecurrence(DowntimeRecurrence.builder()
+                                                    .recurrenceValue(1)
+                                                    .recurrenceType(DowntimeRecurrenceType.WEEK)
+                                                    .build())
+                            .build())
+                  .build())
+        .build();
+  }
+
+  public EntityUnavailabilityStatusesDTO getDowntimeEntityUnavailabilityStatusesDTO() {
+    long startTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().getEpochSecond();
+    long endTime = startTime + Duration.ofMinutes(30).toSeconds();
+    return EntityUnavailabilityStatusesDTO.builder()
+        .entityType(EntityType.MAINTENANCE_WINDOW)
+        .entityId("downtimeRecurring")
+        .status(EntityUnavailabilityStatus.MAINTENANCE_WINDOW)
+        .startTime(startTime)
+        .endTime(endTime)
+        .projectIdentifier(context.getProjectIdentifier())
+        .orgIdentifier(context.getOrgIdentifier())
         .build();
   }
 }

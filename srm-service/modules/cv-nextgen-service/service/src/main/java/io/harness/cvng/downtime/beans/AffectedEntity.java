@@ -4,19 +4,15 @@
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
+
 package io.harness.cvng.downtime.beans;
 
-import javax.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.Value;
+import lombok.experimental.SuperBuilder;
 
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class EntityDetails {
-  @NotNull String entityRef;
-  boolean enabled;
+@Value
+@SuperBuilder
+public class AffectedEntity {
+  String serviceRef;
+  String envRef;
 }
