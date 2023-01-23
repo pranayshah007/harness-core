@@ -11,26 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.DX;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eventsframework.schemas.entity.EntityScopeInfo;
-import io.harness.gitsync.BranchDetails;
-import io.harness.gitsync.CreateFileRequest;
-import io.harness.gitsync.CreateFileResponse;
-import io.harness.gitsync.CreatePRRequest;
-import io.harness.gitsync.CreatePRResponse;
-import io.harness.gitsync.FileInfo;
-import io.harness.gitsync.GetBranchHeadCommitRequest;
-import io.harness.gitsync.GetBranchHeadCommitResponse;
-import io.harness.gitsync.GetFileRequest;
-import io.harness.gitsync.GetFileResponse;
-import io.harness.gitsync.GetRepoUrlRequest;
-import io.harness.gitsync.GetRepoUrlResponse;
-import io.harness.gitsync.IsGitSimplificationEnabledRequest;
-import io.harness.gitsync.ListFilesRequest;
-import io.harness.gitsync.ListFilesResponse;
-import io.harness.gitsync.PushFileResponse;
-import io.harness.gitsync.PushInfo;
-import io.harness.gitsync.RepoDetails;
-import io.harness.gitsync.UpdateFileRequest;
-import io.harness.gitsync.UpdateFileResponse;
+import io.harness.gitsync.*;
 import io.harness.security.dto.UserPrincipal;
 
 @OwnedBy(DX)
@@ -62,4 +43,6 @@ public interface HarnessToGitHelperService {
   GetBranchHeadCommitResponse getBranchHeadCommitDetails(GetBranchHeadCommitRequest getBranchHeadCommitRequest);
 
   ListFilesResponse listFiles(ListFilesRequest listFilesRequest);
+
+  GetBatchFilesResponse getBatchFilesByBranch(GetBatchFilesRequest getBatchFilesRequest);
 }

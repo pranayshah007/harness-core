@@ -17,13 +17,9 @@ import io.harness.exception.NestedExceptionUtils;
 import io.harness.gitaware.dto.GitContextRequestParams;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.scm.SCMGitSyncHelper;
-import io.harness.gitsync.scm.beans.ScmCreateFileGitRequest;
-import io.harness.gitsync.scm.beans.ScmCreateFileGitResponse;
-import io.harness.gitsync.scm.beans.ScmGetFileResponse;
-import io.harness.gitsync.scm.beans.ScmGitMetaData;
-import io.harness.gitsync.scm.beans.ScmUpdateFileGitRequest;
-import io.harness.gitsync.scm.beans.ScmUpdateFileGitResponse;
+import io.harness.gitsync.scm.beans.*;
 import io.harness.persistence.gitaware.GitAware;
+import io.harness.template.beans.FetchRemoteTemplateRequest;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
@@ -207,6 +203,14 @@ public class GitAwareEntityHelper {
         scmGitSyncHelper.updateFile(scope, scmUpdateFileGitRequest, Collections.emptyMap());
     GitAwareContextHelper.updateScmGitMetaData(scmUpdateFileGitResponse.getGitMetaData());
     return scmUpdateFileGitResponse;
+  }
+
+  public Map<String, GitAware> fetchEntitiesFromRemote(Map<String, FetchRemoteTemplateRequest> remoteTemplatesList) {
+    ScmGetBatchFilesResponse scmGetBatchFilesResponse = scmGitSyncHelper.getBatchFilesByBranch(remoteTemplatesList);
+    //    TODO: where do we set the file content and metadata?
+    //    entity.setData(scmGetFileResponse.getFileContent());
+    //    GitAwareContextHelper.updateScmGitMetaData(scmGetFileResponse.getGitMetaData());
+    return entity;
   }
 
   private boolean isNullOrDefault(String val) {

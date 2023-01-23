@@ -29,30 +29,9 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ScmException;
 import io.harness.exception.UnexpectedException;
 import io.harness.exception.WingsException;
-import io.harness.gitsync.BranchDetails;
-import io.harness.gitsync.CacheResponseParams;
-import io.harness.gitsync.CacheState;
-import io.harness.gitsync.ChangeType;
-import io.harness.gitsync.CreateFileRequest;
+import io.harness.gitsync.*;
 import io.harness.gitsync.CreatePRRequest;
 import io.harness.gitsync.CreatePRResponse;
-import io.harness.gitsync.ErrorDetails;
-import io.harness.gitsync.FileGitDetails;
-import io.harness.gitsync.FileInfo;
-import io.harness.gitsync.GetBranchHeadCommitRequest;
-import io.harness.gitsync.GetBranchHeadCommitResponse;
-import io.harness.gitsync.GetFileRequest;
-import io.harness.gitsync.GetFileResponse;
-import io.harness.gitsync.GetRepoUrlRequest;
-import io.harness.gitsync.GetRepoUrlResponse;
-import io.harness.gitsync.GitMetaData;
-import io.harness.gitsync.IsGitSimplificationEnabledRequest;
-import io.harness.gitsync.ListFilesRequest;
-import io.harness.gitsync.ListFilesResponse;
-import io.harness.gitsync.PushFileResponse;
-import io.harness.gitsync.PushInfo;
-import io.harness.gitsync.RepoDetails;
-import io.harness.gitsync.UpdateFileRequest;
 import io.harness.gitsync.beans.GitRepositoryDTO;
 import io.harness.gitsync.common.beans.BranchSyncStatus;
 import io.harness.gitsync.common.beans.GitBranch;
@@ -60,21 +39,7 @@ import io.harness.gitsync.common.beans.GitSyncDirection;
 import io.harness.gitsync.common.beans.InfoForGitPush;
 import io.harness.gitsync.common.beans.ScmCacheDetails;
 import io.harness.gitsync.common.beans.ScmCacheState;
-import io.harness.gitsync.common.dtos.GitErrorMetadata;
-import io.harness.gitsync.common.dtos.GitSyncEntityDTO;
-import io.harness.gitsync.common.dtos.ScmCommitFileResponseDTO;
-import io.harness.gitsync.common.dtos.ScmCreateFileRequestDTO;
-import io.harness.gitsync.common.dtos.ScmCreatePRRequestDTO;
-import io.harness.gitsync.common.dtos.ScmCreatePRResponseDTO;
-import io.harness.gitsync.common.dtos.ScmFileContentTypeDTO;
-import io.harness.gitsync.common.dtos.ScmFileGitDetailsDTO;
-import io.harness.gitsync.common.dtos.ScmGetBranchHeadCommitRequestDTO;
-import io.harness.gitsync.common.dtos.ScmGetBranchHeadCommitResponseDTO;
-import io.harness.gitsync.common.dtos.ScmGetFileByBranchRequestDTO;
-import io.harness.gitsync.common.dtos.ScmGetFileResponseDTO;
-import io.harness.gitsync.common.dtos.ScmListFilesRequestDTO;
-import io.harness.gitsync.common.dtos.ScmListFilesResponseDTO;
-import io.harness.gitsync.common.dtos.ScmUpdateFileRequestDTO;
+import io.harness.gitsync.common.dtos.*;
 import io.harness.gitsync.common.helper.GitFilePathHelper;
 import io.harness.gitsync.common.helper.GitSyncConnectorHelper;
 import io.harness.gitsync.common.helper.ScmExceptionUtils;
@@ -112,12 +77,7 @@ import io.harness.utils.IdentifierRefHelper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import lombok.extern.slf4j.Slf4j;
 
@@ -421,6 +381,54 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
   }
 
   @Override
+  public GetBatchFilesResponse getBatchFilesByBranch(GetBatchFilesRequest getBatchFilesRequest) {
+    try {
+      ScmGetBatchFilesResponseDTO scmGetBatchFilesResponseDTO =
+          scmFacilitatorService.getBatchFilesByBranch(buildScmGetBatchFilesByBranchRequestDTO(getBatchFilesRequest));
+      return prepareGetBatchFilesResponse(getBatchFilesRequest, scmGetBatchFilesResponseDTO);
+    } catch (WingsException ex) {
+      ScmException scmException = ScmExceptionUtils.getScmException(ex);
+      if (scmException == null) {
+        return GetBatchFilesResponse.newBuilder()
+            .setStatusCode(ex.getCode().getStatus().getCode())
+            .setError(prepareDefaultErrorDetails(ex))
+            .build();
+      }
+      return GetBatchFilesResponse.newBuilder()
+          .setStatusCode(ScmErrorCodeToHttpStatusCodeMapping.getHttpStatusCode(scmException.getCode()))
+          .setError(prepareErrorDetails(ex))
+          .build();
+    }
+  }
+
+  private ScmGetBatchFilesByBranchRequestDTO buildScmGetBatchFilesByBranchRequestDTO(
+      GetBatchFilesRequest getBatchFilesRequest) {
+    Map<ScmGetBatchFileRequestIdentifier, ScmGetFileByBranchRequestDTO> scmGetFileByBranchRequestDTOMap =
+        new HashMap<>();
+    Map<String, GetFileRequest> getFileRequestMap = getBatchFilesRequest.getGetFileRequestMap();
+    for (Map.Entry<String, GetFileRequest> getFileRequestEntrySet : getFileRequestMap.entrySet()) {
+      GetFileRequest getFileRequest = getFileRequestEntrySet.getValue();
+      Scope scope = ScopeIdentifierMapper.getScopeFromScopeIdentifiers(getFileRequest.getScopeIdentifiers());
+      gitFilePathHelper.validateFilePath(getFileRequest.getFilePath());
+      scmGetFileByBranchRequestDTOMap.put(
+          ScmGetBatchFileRequestIdentifier.builder().identifier(getFileRequestEntrySet.getKey()).build(),
+          ScmGetFileByBranchRequestDTO.builder()
+              .branchName(getFileRequest.getBranchName())
+              .connectorRef(getFileRequest.getConnectorRef())
+              .filePath(getFileRequest.getFilePath())
+              .repoName(getFileRequest.getRepoName())
+              .scope(scope)
+              .useCache(getFileRequest.getCacheRequestParams().getUseCache())
+              .build());
+    }
+
+    return ScmGetBatchFilesByBranchRequestDTO.builder()
+        .accountIdentifier(getBatchFilesRequest.getAccountIdentifier())
+        .scmGetFileByBranchRequestDTOMap(scmGetFileByBranchRequestDTOMap)
+        .build();
+  }
+
+  @Override
   public io.harness.gitsync.CreateFileResponse createFile(CreateFileRequest createFileRequest) {
     try {
       Scope scope = ScopeIdentifierMapper.getScopeFromScopeIdentifiers(createFileRequest.getScopeIdentifiers());
@@ -680,6 +688,44 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
       getFileResponseOrBuilder.setCacheResponse(getCacheResponse(scmGetFileResponseDTO.getCacheDetails()));
     }
     return getFileResponseOrBuilder.build();
+  }
+
+  private GetBatchFilesResponse prepareGetBatchFilesResponse(
+      GetBatchFilesRequest getBatchFilesRequest, ScmGetBatchFilesResponseDTO scmGetBatchFilesResponseDTO) {
+    Map<String, GetFileResponse> getFileResponseMap = new HashMap<>();
+
+    for (Map.Entry<ScmGetBatchFileRequestIdentifier, ScmGetFileResponseV2DTO> scmGetFileResponseV2DTOMap :
+        scmGetBatchFilesResponseDTO.getScmGetFileResponseV2DTOMap().entrySet()) {
+      ScmGetBatchFileRequestIdentifier scmGetBatchFileRequestIdentifier = scmGetFileResponseV2DTOMap.getKey();
+      GetFileRequest getFileRequest =
+          getBatchFilesRequest.getGetFileRequestMapMap().get(scmGetBatchFileRequestIdentifier.getIdentifier());
+      GitRepositoryDTO gitRepositoryDTO = GitRepositoryDTO.builder().name(getFileRequest.getRepoName()).build();
+      Scope scope = ScopeIdentifierMapper.getScopeFromScopeIdentifiers(getFileRequest.getScopeIdentifiers());
+
+      ScmGetFileResponseV2DTO scmGetFileResponseV2DTO = scmGetFileResponseV2DTOMap.getValue();
+      GetFileResponse.Builder getFileResponseOrBuilder =
+          GetFileResponse.newBuilder()
+              .setStatusCode(HTTP_200)
+              .setFileContent(scmGetFileResponseV2DTO.getFileContent())
+              .setGitMetaData(
+                  GitMetaData.newBuilder()
+                      .setRepoName(getFileRequest.getRepoName())
+                      .setBranchName(scmGetFileResponseV2DTO.getBranchName())
+                      .setCommitId(scmGetFileResponseV2DTO.getCommitId())
+                      .setBlobId(scmGetFileResponseV2DTO.getBlobId())
+                      .setFilePath(getFileRequest.getFilePath())
+                      .setFileUrl(getFileUrl(getFileRequest, scmGetFileResponseV2DTO, scope, gitRepositoryDTO))
+                      .build());
+      if (scmGetFileResponseV2DTO.getCacheDetails() != null) {
+        getFileResponseOrBuilder.setCacheResponse(getCacheResponse(scmGetFileResponseV2DTO.getCacheDetails()));
+      }
+
+      getFileResponseMap.put(scmGetBatchFileRequestIdentifier.getIdentifier(), getFileResponseOrBuilder.build());
+    }
+    GetBatchFilesResponse.Builder getBatchFileResponseOrBuilder =
+        GetBatchFilesResponse.newBuilder().setStatusCode(HTTP_200).putAllGetFileResponseMap(getFileResponseMap);
+
+    return getBatchFileResponseOrBuilder.build();
   }
 
   private String getFileUrl(GetFileRequest getFileRequest, ScmGetFileResponseDTO scmGetFileResponseDTO, Scope scope,

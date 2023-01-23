@@ -21,6 +21,8 @@ import io.harness.gitsync.CreatePRRequest;
 import io.harness.gitsync.CreatePRResponse;
 import io.harness.gitsync.ErrorDetails;
 import io.harness.gitsync.FileInfo;
+import io.harness.gitsync.GetBatchFilesRequest;
+import io.harness.gitsync.GetBatchFilesResponse;
 import io.harness.gitsync.GetBranchHeadCommitRequest;
 import io.harness.gitsync.GetBranchHeadCommitResponse;
 import io.harness.gitsync.GetFileRequest;
@@ -59,6 +61,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
+import java.util.HashMap;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
@@ -327,6 +330,35 @@ public class HarnessToGitPushInfoGrpcService extends HarnessToGitPushInfoService
       final String errorMessage = ExceptionUtils.getMessage(ex);
       responseObserver.onError(Status.fromThrowable(ex).withDescription(errorMessage).asRuntimeException());
     }
+    responseObserver.onCompleted();
+  }
+
+  @Override
+  public void getBatchFiles(GetBatchFilesRequest request, StreamObserver<GetBatchFilesResponse> responseObserver) {
+    GetBatchFilesResponse getBatchFilesResponse;
+    //    TODO: what all values to set here?
+    Map<String, String> contextMap = new HashMap<>(); // GitSyncLogContextHelper.setContextMap(
+    //            ScopeIdentifierMapper.getScopeFromScopeIdentifiers(request.getScopeIdentifiers()),
+    //            request.getRepoName(), request.getBranchName(), request.getFilePath(), GitOperation.GET_FILE,
+    //            request.getContextMapMap());
+    try (GlobalContextManager.GlobalContextGuard guard = GlobalContextManager.ensureGlobalContextGuard();
+         MdcContextSetter ignore1 = new MdcContextSetter(contextMap)) {
+      log.info(String.format("%s Grpc request received for getBatchFiles ops %s", GIT_SERVICE, request));
+      try {
+        //        TODO: set principal based on which file request?
+        //        setPrincipal(request.getScopeIdentifiers().getAccountIdentifier(), request.getPrincipal());
+        getBatchFilesResponse = harnessToGitHelperService.getBatchFilesByBranch(request);
+        log.info(String.format("%s getBatchFiles ops response : %s", GIT_SERVICE, getBatchFilesResponse));
+      } catch (Exception ex) {
+        final String errorMessage = getErrorMessageForRuntimeExceptions(GitOperation.GET_FILE);
+        log.error(errorMessage, ex);
+        getBatchFilesResponse = GetBatchFilesResponse.newBuilder()
+                                    .setStatusCode(HTTP_500)
+                                    .setError(ErrorDetails.newBuilder().setErrorMessage(errorMessage).build())
+                                    .build();
+      }
+    }
+    responseObserver.onNext(getBatchFilesResponse);
     responseObserver.onCompleted();
   }
 

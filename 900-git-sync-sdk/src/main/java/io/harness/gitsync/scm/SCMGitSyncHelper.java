@@ -11,32 +11,23 @@ import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
+import static io.harness.gitaware.helper.GitAwareEntityHelper.*;
 import static io.harness.gitsync.interceptor.GitSyncConstants.DEFAULT;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.WingsException;
 import io.harness.exception.ngexception.beans.ScmErrorMetadataDTO;
 import io.harness.git.model.ChangeType;
-import io.harness.gitsync.CreateFileRequest;
-import io.harness.gitsync.CreateFileResponse;
-import io.harness.gitsync.CreatePRRequest;
-import io.harness.gitsync.CreatePRResponse;
-import io.harness.gitsync.ErrorDetails;
-import io.harness.gitsync.FileInfo;
-import io.harness.gitsync.GetFileRequest;
-import io.harness.gitsync.GetFileResponse;
-import io.harness.gitsync.GetRepoUrlRequest;
-import io.harness.gitsync.GetRepoUrlResponse;
-import io.harness.gitsync.GitMetaData;
+import io.harness.gitaware.dto.GitContextRequestParams;
+import io.harness.gitsync.*;
 import io.harness.gitsync.HarnessToGitPushInfoServiceGrpc.HarnessToGitPushInfoServiceBlockingStub;
-import io.harness.gitsync.PushFileResponse;
-import io.harness.gitsync.UpdateFileRequest;
-import io.harness.gitsync.UpdateFileResponse;
 import io.harness.gitsync.common.beans.GitOperation;
 import io.harness.gitsync.common.helper.CacheRequestMapper;
 import io.harness.gitsync.common.helper.ChangeTypeMapper;
@@ -48,17 +39,7 @@ import io.harness.gitsync.common.helper.UserPrincipalMapper;
 import io.harness.gitsync.exceptions.GitSyncException;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.persistance.GitSyncSdkService;
-import io.harness.gitsync.scm.beans.SCMNoOpResponse;
-import io.harness.gitsync.scm.beans.ScmCreateFileGitRequest;
-import io.harness.gitsync.scm.beans.ScmCreateFileGitResponse;
-import io.harness.gitsync.scm.beans.ScmCreatePRResponse;
-import io.harness.gitsync.scm.beans.ScmErrorDetails;
-import io.harness.gitsync.scm.beans.ScmGetFileResponse;
-import io.harness.gitsync.scm.beans.ScmGetRepoUrlResponse;
-import io.harness.gitsync.scm.beans.ScmGitMetaData;
-import io.harness.gitsync.scm.beans.ScmPushResponse;
-import io.harness.gitsync.scm.beans.ScmUpdateFileGitRequest;
-import io.harness.gitsync.scm.beans.ScmUpdateFileGitResponse;
+import io.harness.gitsync.scm.beans.*;
 import io.harness.gitsync.scm.errorhandling.ScmErrorHandler;
 import io.harness.gitsync.sdk.CacheResponse;
 import io.harness.gitsync.sdk.CacheState;
@@ -72,12 +53,14 @@ import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.security.dto.ServiceAccountPrincipal;
 import io.harness.security.dto.ServicePrincipal;
 import io.harness.security.dto.UserPrincipal;
+import io.harness.template.beans.FetchRemoteTemplateRequest;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.protobuf.StringValue;
+import java.util.HashMap;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
@@ -273,6 +256,83 @@ public class SCMGitSyncHelper {
     }
   }
 
+  public ScmGetBatchFilesResponse getBatchFilesByBranch(Map<String, FetchRemoteTemplateRequest> remoteTemplatesList) {
+    Map<String, GetFileRequest> getFileRequestMap = new HashMap<>();
+    String accountIdentifier = "";
+    for (Map.Entry<String, FetchRemoteTemplateRequest> remoteTemplateRequestEntry : remoteTemplatesList.entrySet()) {
+      GitContextRequestParams gitContextRequestParams =
+          remoteTemplateRequestEntry.getValue().getGitContextRequestParams();
+      Scope scope = remoteTemplateRequestEntry.getValue().getScope();
+      if (isEmpty(accountIdentifier)) {
+        accountIdentifier = scope.getAccountIdentifier();
+      }
+      Map<String, String> contextMap = remoteTemplateRequestEntry.getValue().getContextMap();
+      String repoName = gitContextRequestParams.getRepoName();
+
+      String branchName =
+          isNullOrDefault(gitContextRequestParams.getBranchName()) ? "" : gitContextRequestParams.getBranchName();
+      String filePath = gitContextRequestParams.getFilePath();
+      if (isNullOrDefault(filePath)) {
+        throw new InvalidRequestException("No file path provided.");
+      }
+      validateFilePathHasCorrectExtension(filePath);
+      String connectorRef = gitContextRequestParams.getConnectorRef();
+      boolean loadFromCache = gitContextRequestParams.isLoadFromCache();
+      EntityType entityType = gitContextRequestParams.getEntityType();
+
+      GetFileRequest getFileRequest =
+          GetFileRequest.newBuilder()
+              .setRepoName(repoName)
+              .setConnectorRef(connectorRef)
+              .setBranchName(Strings.nullToEmpty(branchName))
+              .setFilePath(filePath)
+              .setCacheRequestParams(CacheRequestMapper.getCacheRequest(loadFromCache))
+              .putAllContextMap(contextMap)
+              .setEntityType(EntityTypeMapper.getEntityType(entityType))
+              .setScopeIdentifiers(ScopeIdentifierMapper.getScopeIdentifiersFromScope(scope))
+              .setPrincipal(getPrincipal())
+              .build();
+
+      getFileRequestMap.put(remoteTemplateRequestEntry.getKey(), getFileRequest);
+    }
+
+    try {
+      final GetBatchFilesRequest getBatchFilesRequest = GetBatchFilesRequest.newBuilder()
+                                                            .setAccountIdentifier(accountIdentifier)
+                                                            .putAllGetFileRequestMap(getFileRequestMap)
+                                                            .build();
+
+      final GetBatchFilesResponse getBatchFilesResponse = GitSyncGrpcClientUtils.retryAndProcessException(
+          harnessToGitPushInfoServiceBlockingStub::getBatchFiles, getBatchFilesRequest);
+
+      //      No error handling done here, we need to handle it in the serivce layer
+      ScmGitMetaData scmGitMetaData = getScmGitMetaData(getBatchFilesResponse);
+      if (isFailureResponse(getBatchFilesResponse.getStatusCode())) {
+        log.error("Git SDK getBatchFiles Failure: {}", getBatchFilesResponse);
+        if (isEmpty(scmGitMetaData.getBranchName())) {
+          scmGitMetaData.setRepoName(getBatchFilesResponse.getBranchName());
+        }
+        scmErrorHandler.processAndThrowException(getBatchFilesResponse.getStatusCode(),
+            getScmErrorDetailsFromGitProtoResponse(getBatchFilesResponse.getError()), scmGitMetaData);
+      }
+      return ScmGetBatchFilesResponse.builder()
+          .fileContent(getFileResponse.getFileContent())
+          .gitMetaData(scmGitMetaData)
+          .build();
+    }
+  }
+
+  void validateFilePathHasCorrectExtension(String filePath) {
+    if (!filePath.endsWith(".yaml") && !filePath.endsWith(".yml")) {
+      throw NestedExceptionUtils.hintWithExplanationException(FILE_PATH_INVALID_HINT,
+          FILE_PATH_INVALID_EXTENSION_EXPLANATION,
+          new InvalidRequestException(String.format(FILE_PATH_INVALID_EXTENSION_ERROR_FORMAT, filePath)));
+    }
+  }
+
+  private boolean isNullOrDefault(String val) {
+    return EmptyPredicate.isEmpty(val) || val.equals(DEFAULT);
+  }
   @VisibleForTesting
   protected void throwDifferentExceptionInCaseOfChangeTypeAdd(
       GitEntityInfo gitBranchInfo, ChangeType changeType, WingsException e) {
