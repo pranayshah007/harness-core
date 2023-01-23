@@ -57,7 +57,7 @@ pkg_tar(
 container_push(
     name = "push",
     format = "Docker",
-    image = "ng_manager",
+    image = "idp_service",
     registry = "us.gcr.io",
 #    repository = "platform-205701/harness/ng-manager",
     tag = "{STABLE_BUILD_NUMBER}",
