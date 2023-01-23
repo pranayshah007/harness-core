@@ -1,11 +1,22 @@
 server:
   applicationConnectors:
+    - type: h2
+      port: 9080
+      keyStorePath: keystore.jks
+      keyStorePassword: password
+      certAlias: localhost
+      validateCerts: false
+      maxRequestHeaderSize: 100KiB
     - type: http
       port: 3458
       maxRequestHeaderSize: 100KiB
   adminConnectors:
-    - type: http
+    - type: h2
       port: 9092
+      keyStorePath: keystore.jks
+      keyStorePassword: password
+      certAlias: localhost
+      validateCerts: false
   requestLog:
     appenders:
       - type: console
@@ -13,20 +24,10 @@ server:
         threshold: ERROR
   maxThreads: 1024
 
-auditConfig:
-  storeRequestPayload: false
-  storeResponsePayload: false
-
 logging:
   level: INFO
   loggers:
-    com.novemberain.quartz.mongodb: WARN
-    org.quartz.plugins: WARN
     org.glassfish.jersey: WARN
-    allbegray.slack: WARN
-    # the following is to suppress "Error retrieving job for trigger XYZ, setting trigger state to ERROR."
-    # TODO: remove this suppression when the mentioned issue is resolved
-    com.novemberain.quartz.mongodb.TriggerRunner: "OFF"
     org.glassfish.jersey.server.ServerRuntime.Responder: "OFF"
   appenders:
     - type: console
@@ -45,3 +46,4 @@ logging:
       maxFileSize: 150MB
       archivedLogFilenamePattern: delegate-service.%d.%i.log
       logFormat: "%date{ISO8601} %green([%thread]) %highlight(%-5level) %cyan(%logger) - %msg %yellow(%replace(%mdc){'(.+)', '[$1]'}) %n"
+

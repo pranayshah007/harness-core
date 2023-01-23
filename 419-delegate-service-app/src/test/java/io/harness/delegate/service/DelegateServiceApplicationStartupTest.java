@@ -32,42 +32,42 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 public class DelegateServiceApplicationStartupTest extends DelegateServiceApplicationTestBase {
+  public static DropwizardTestSupport<DelegateServiceConfiguration> SUPPORT;
 
-    public static DropwizardTestSupport<DelegateServiceConfiguration> SUPPORT;
+  @BeforeClass
+  public static void beforeClass() throws Exception {
+    String directoryPath = Project.moduleDirectory(DelegateServiceApplicationStartupTest.class);
 
-    @BeforeClass
-    public static void beforeClass() throws Exception {
-        String directoryPath = Project.moduleDirectory(DelegateServiceApplicationStartupTest.class);
-        String configPath = Paths.get(directoryPath, "delegate-service-config.yml").toString();
+    String configPath = Paths.get(directoryPath, "/src/test/resources/test-delegate-service-config.yml").toString();
 
-        // Handle sandboxed bazel path - remove path starting from /sandbox till execroot. This is because the source
-        // code is present outside the sandbox directory created by bazel.
-        if (!Files.exists(Paths.get(configPath)) && configPath.contains("/sandbox/")) {
-            configPath = configPath.substring(0, configPath.indexOf("/sandbox/"))
-                    + configPath.substring(configPath.indexOf("/execroot"));
-        }
-
-        SUPPORT = new DropwizardTestSupport<DelegateServiceConfiguration>(DelegateServiceApp.class,
-                String.valueOf(new File(configPath)), ConfigOverride.config("server.applicationConnectors[0].port", "0"),
-                ConfigOverride.config("server.applicationConnectors[0].type", "https"),
-                ConfigOverride.config("server.adminConnectors[0].type", "https"),
-                ConfigOverride.config("server.adminConnectors[0].port", "0"));
-        SUPPORT.before();
+    // Handle sandboxed bazel path - remove path starting from /sandbox till execroot. This is because the source
+    // code is present outside the sandbox directory created by bazel.
+    if (!Files.exists(Paths.get(configPath)) && configPath.contains("/sandbox/")) {
+      configPath = configPath.substring(0, configPath.indexOf("/sandbox/"))
+          + configPath.substring(configPath.indexOf("/execroot"));
     }
 
-    @AfterClass
-    public static void afterClass() {
-        SUPPORT.after();
-    }
+    SUPPORT = new DropwizardTestSupport<DelegateServiceConfiguration>(DelegateServiceApp.class,
+        String.valueOf(new File(configPath)), ConfigOverride.config("server.applicationConnectors[0].port", "0"),
+        ConfigOverride.config("server.applicationConnectors[0].type", "https"),
+        ConfigOverride.config("server.adminConnectors[0].type", "https"),
+        ConfigOverride.config("server.adminConnectors[0].port", "0"));
+    SUPPORT.before();
+  }
 
-    @Test
-    @Owner(developers = ANUPAM)
-    @Category(UnitTests.class)
-    public void testAppStartup() {
-        final Client client = new JerseyClientBuilder().sslContext(Http.getSslContext()).build();
-        final Response response =
-                client.target(String.format("https://localhost:%d/api/swagger.json", SUPPORT.getLocalPort())).request().get();
-        assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
-        response.close();
-    }
+  @AfterClass
+  public static void afterClass() {
+    SUPPORT.after();
+  }
+
+  @Test
+  @Owner(developers = ANUPAM)
+  @Category(UnitTests.class)
+  public void testAppStartup() {
+    final Client client = new JerseyClientBuilder().sslContext(Http.getSslContext()).build();
+    final Response response =
+        client.target(String.format("https://localhost:%d/api/swagger.json", SUPPORT.getLocalPort())).request().get();
+    assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
+    response.close();
+  }
 }

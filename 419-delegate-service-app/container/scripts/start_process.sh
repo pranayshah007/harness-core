@@ -12,7 +12,7 @@ if [[ -v "{hostname}" ]]; then
 fi
 
 if [[ -z "$MEMORY" ]]; then
-   export MEMORY=4096
+   export MEMORY=1024
 fi
 
 if [[ -z "$COMMAND" ]]; then
@@ -43,8 +43,4 @@ if [[ "${ENABLE_APPDYNAMICS}" == "true" ]]; then
     echo "Using Appdynamics java agent"
 fi
 
-if [[ "${DEPLOY_MODE}" == "KUBERNETES" ]] || [[ "${DEPLOY_MODE}" == "KUBERNETES_ONPREM" ]]; then
-    java $JAVA_OPTS -jar $CAPSULE_JAR $COMMAND /opt/harness/delegate-service-config.yml
-else
-    java $JAVA_OPTS -jar $CAPSULE_JAR $COMMAND /opt/harness/delegate-service-config.yml > /opt/harness/logs/delegate-service.log 2>&1
-fi
+java $JAVA_OPTS -jar $CAPSULE_JAR $COMMAND /opt/harness/delegate-service-config.yml
