@@ -7,7 +7,7 @@ load("@io_bazel_rules_docker//container:container.bzl", "container_image", "cont
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
 
 container_image(
-    name = "ng_manager",
+    name = "idp_service",
     base = "//dockerization/base-jdk:base_jdk",
     cmd = ["./run.sh"],
     tags = [
@@ -24,14 +24,10 @@ container_image(
 pkg_tar(
     name = "files",
     srcs = [
-        "//120-ng-manager:config.yml",
-        "//120-ng-manager:keystore.jks",
-        "//120-ng-manager/src/main/resources:enterprise-redisson-jcache.yaml",
-        "//400-rest/src/main/resources:redisson-jcache.yaml",
+        "//101-idp-service:config.yml",
     ],
     files = {
         "@alpn_boot_8.1.13.v20181017//file": "alpn-boot-8.1.13.v20181017.jar",
-        "//120-ng-manager:module_deploy.jar": "ng-manager-capsule.jar",
     },
     mode = "0600",
     owner = "65534.65534",
@@ -63,7 +59,7 @@ container_push(
     format = "Docker",
     image = "ng_manager",
     registry = "us.gcr.io",
-    repository = "platform-205701/harness/ng-manager",
+#    repository = "platform-205701/harness/ng-manager",
     tag = "{STABLE_BUILD_NUMBER}",
     tags = [
         "manual",
