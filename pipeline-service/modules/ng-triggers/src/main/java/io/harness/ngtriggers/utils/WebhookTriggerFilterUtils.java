@@ -81,8 +81,8 @@ public class WebhookTriggerFilterUtils {
           || gitEvent.equals(PR_COMMENT_EVENT_TYPE);
     }
 
-    if (eventTypeFromPayload.equals(io.harness.beans.WebhookEvent.Type.RELEASE)) {
-      return gitEvent.equals(RELEASE_EVENT_TYPE);
+    if (io.harness.beans.WebhookEvent.Type.RELEASE.equals(eventTypeFromPayload)) {
+      return RELEASE_EVENT_TYPE.equals(gitEvent);
     }
     return false;
   }
