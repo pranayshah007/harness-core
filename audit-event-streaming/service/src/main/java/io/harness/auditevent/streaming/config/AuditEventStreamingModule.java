@@ -14,6 +14,7 @@ import io.harness.auditevent.streaming.serializer.AuditEventStreamingRegistrar;
 import io.harness.callback.DelegateCallback;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.callback.MongoDatabase;
+import io.harness.connector.ConnectorResourceClientModule;
 import io.harness.delegate.beans.DelegateAsyncTaskResponse;
 import io.harness.delegate.beans.DelegateSyncTaskResponse;
 import io.harness.delegate.beans.DelegateTaskProgressResponse;
@@ -29,6 +30,8 @@ import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
 import io.harness.queue.QueueController;
+import io.harness.remote.client.ClientMode;
+import io.harness.secrets.SecretNGManagerClientModule;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.service.DelegateServiceDriverModule;
 import io.harness.waiter.AbstractWaiterModule;
@@ -122,6 +125,12 @@ public class AuditEventStreamingModule extends AbstractModule {
     install(new StreamingDestinationClientModule(auditEventStreamingConfig.getAuditClientConfig(),
         auditEventStreamingConfig.getServiceSecrets().getPlatformServiceSecret(),
         AUDIT_EVENT_STREAMING.getServiceId()));
+    install(new ConnectorResourceClientModule(auditEventStreamingConfig.getNgManagerClientConfig(),
+        auditEventStreamingConfig.getServiceSecrets().getNgManagerServiceSecret(), AUDIT_EVENT_STREAMING.getServiceId(),
+        ClientMode.PRIVILEGED));
+    install(new SecretNGManagerClientModule(auditEventStreamingConfig.getNgManagerClientConfig(),
+        auditEventStreamingConfig.getServiceSecrets().getNgManagerServiceSecret(),
+        AUDIT_EVENT_STREAMING.getServiceId()));
     install(new AuditEventBatchPersistenceModule());
   }
 
@@ -131,8 +140,7 @@ public class AuditEventStreamingModule extends AbstractModule {
       @Singleton
       Supplier<DelegateCallbackToken> getDelegateCallbackTokenSupplier(
           DelegateServiceGrpcClient delegateServiceGrpcClient) {
-        return (Supplier<DelegateCallbackToken>) Suppliers.memoize(
-            () -> getDelegateCallbackToken(delegateServiceGrpcClient));
+        return Suppliers.memoize(() -> getDelegateCallbackToken(delegateServiceGrpcClient));
       }
 
       @Provides

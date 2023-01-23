@@ -26,6 +26,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.streaming.dtos.AuditBatchDTO;
 import io.harness.audit.streaming.dtos.AuditRecordDTO;
 import io.harness.audit.streaming.dtos.PutObjectResultResponse;
+import io.harness.audit.streaming.outgoing.OutgoingAuditMessage;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.DelegateResponseData;
@@ -587,20 +588,14 @@ public class AwsS3DelegateTaskHelperTest extends CategoryTest {
             .auditBatch(AuditBatchDTO.builder()
                             .batchId("123")
                             .accountIdentifier("accID123")
-                            .policyIdentifier("polID123")
+                            .streamingDestinationIdentifier("polID123")
                             .startTime(System.currentTimeMillis())
                             .endTime(System.currentTimeMillis())
                             .numberOfRecords(10)
-                            .auditRecords(Arrays.asList(
-                                AuditRecordDTO.builder()
-                                    .auditId("audId123")
-                                    .insertId("insId123")
-                                    .httpRequestInfo(HttpRequestInfo.builder().requestMethod("PUT").build())
-                                    .requestMetadata(RequestMetadata.builder().clientIP("192.168.1.1").build())
-                                    .timestamp(Instant.EPOCH)
-                                    .module(ModuleType.CV)
-                                    .createdAt(System.currentTimeMillis())
-                                    .build()))
+                            .outgoingAuditMessages(Arrays.asList(OutgoingAuditMessage.builder()
+                                                                     .auditEventId("audId123")
+                                                                     // TODO: add other fields as well
+                                                                     .build()))
                             .status(AuditBatchDTO.BatchStatus.builder()
                                         .state(AuditBatchDTO.BatchState.SUCCESS)
                                         .message("none")

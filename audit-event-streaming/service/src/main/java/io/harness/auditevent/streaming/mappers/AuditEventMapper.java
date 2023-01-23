@@ -15,12 +15,12 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.beans.PrincipalType;
 import io.harness.audit.entities.AuditEvent;
 import io.harness.audit.entities.AuthenticationInfo;
-import io.harness.auditevent.streaming.entities.outgoing.Author;
-import io.harness.auditevent.streaming.entities.outgoing.HttpRequestInfo;
-import io.harness.auditevent.streaming.entities.outgoing.OutgoingAuditMessage;
-import io.harness.auditevent.streaming.entities.outgoing.Principal;
-import io.harness.auditevent.streaming.entities.outgoing.Resource;
-import io.harness.auditevent.streaming.entities.outgoing.ResourceScope;
+import io.harness.audit.streaming.outgoing.Author;
+import io.harness.audit.streaming.outgoing.HttpRequestInfo;
+import io.harness.audit.streaming.outgoing.OutgoingAuditMessage;
+import io.harness.audit.streaming.outgoing.Principal;
+import io.harness.audit.streaming.outgoing.Resource;
+import io.harness.audit.streaming.outgoing.ResourceScope;
 import io.harness.ng.core.common.beans.KeyValuePair;
 
 import java.util.Map;
@@ -44,7 +44,7 @@ public class AuditEventMapper {
                                 .orgIdentifier(auditEvent.getResourceScope().getOrgIdentifier())
                                 .projectIdentifier(auditEvent.getResourceScope().getProjectIdentifier())
                                 .build())
-        .auditAction(auditEvent.getAction())
+        .auditAction(auditEvent.getAction().name())
         .auditHttpRequestInfo(getHttpRequestInfo(auditEvent))
         .auditEventTime(auditEvent.getTimestamp())
         .build();
@@ -65,7 +65,8 @@ public class AuditEventMapper {
   }
 
   private Principal getPrincipal(AuthenticationInfo authenticationInfo) {
-    Principal.PrincipalBuilder principalBuilder = Principal.builder().type(authenticationInfo.getPrincipal().getType());
+    Principal.PrincipalBuilder principalBuilder =
+        Principal.builder().type(authenticationInfo.getPrincipal().getType().name());
     if (authenticationInfo.getPrincipal().getType().equals(PrincipalType.USER)) {
       principalBuilder.email(authenticationInfo.getPrincipal().getIdentifier());
     }

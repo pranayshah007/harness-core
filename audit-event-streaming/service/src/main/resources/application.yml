@@ -16,6 +16,10 @@ auditClientConfig:
   baseUrl: http://localhost:9005/api/
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
+ngManagerClientConfig:
+  baseUrl: http://localhost:7457/
+  connectTimeOutSeconds: 15
+  readTimeOutSeconds: 15
 delegateServiceGrpcConfig:
   target: localhost:9880
   authority: localhost

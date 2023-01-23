@@ -10,12 +10,17 @@ package io.harness.auditevent.streaming.serializer;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.serializer.DelegateServiceDriverRegistrars;
 import io.harness.serializer.KryoRegistrar;
+import io.harness.serializer.SMCoreRegistrars;
+import io.harness.serializer.SecretManagerClientRegistrars;
 
 import com.google.common.collect.ImmutableSet;
 
 public class AuditEventStreamingRegistrar {
   public static final ImmutableSet<Class<? extends KryoRegistrar>> kryoRegistrars =
-      ImmutableSet.<Class<? extends KryoRegistrar>>builder().build();
+      ImmutableSet.<Class<? extends KryoRegistrar>>builder()
+          .addAll(SecretManagerClientRegistrars.kryoRegistrars)
+          .addAll(SMCoreRegistrars.kryoRegistrars)
+          .build();
 
   public static final ImmutableSet<Class<? extends MorphiaRegistrar>> morphiaRegistrars =
       ImmutableSet.<Class<? extends MorphiaRegistrar>>builder()

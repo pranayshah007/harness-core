@@ -5,12 +5,8 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.auditevent.streaming.entities.outgoing;
+package io.harness.audit.streaming.outgoing;
 
-import io.harness.ModuleType;
-import io.harness.audit.Action;
-
-import java.time.Instant;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -20,14 +16,6 @@ import lombok.experimental.FieldDefaults;
 @Getter
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class OutgoingAuditMessage {
-  String auditEventId;
-  @NotNull Author auditEventAuthor;
-  @NotNull ModuleType auditModule;
-  @NotNull Resource auditResource;
-  @NotNull ResourceScope auditResourceScope;
-  @NotNull Action auditAction;
-  HttpRequestInfo auditHttpRequestInfo;
-  Instant auditEventTime;
-  Object auditEventMetadata;
+public class Author {
+  @NotNull Principal principal;
 }

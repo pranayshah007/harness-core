@@ -32,11 +32,11 @@ import io.harness.CategoryTest;
 import io.harness.audit.entities.AuditEvent;
 import io.harness.audit.entities.streaming.AwsS3StreamingDestination;
 import io.harness.audit.entities.streaming.StreamingDestination;
+import io.harness.audit.streaming.outgoing.OutgoingAuditMessage;
 import io.harness.auditevent.streaming.AuditEventRepository;
 import io.harness.auditevent.streaming.BatchConfig;
 import io.harness.auditevent.streaming.beans.BatchStatus;
 import io.harness.auditevent.streaming.entities.StreamingBatch;
-import io.harness.auditevent.streaming.entities.outgoing.OutgoingAuditMessage;
 import io.harness.auditevent.streaming.publishers.StreamingPublisher;
 import io.harness.auditevent.streaming.publishers.impl.AwsS3StreamingPublisher;
 import io.harness.auditevent.streaming.services.BatchProcessorService;
@@ -186,7 +186,7 @@ public class AuditEventStreamingServiceImplTest extends CategoryTest {
         .thenReturn(AuditEvent.builder().createdAt(streamingBatch.getStartTime() + MINUTES_15_IN_MILLS).build());
     when(auditEventRepository.loadAuditEvents(any(), any())).thenReturn(mongoCursor);
     when(batchProcessorService.processAuditEvent(any())).thenReturn(List.of(OutgoingAuditMessage.builder().build()));
-    when(awsS3StreamingPublisher.publish(any(), any())).thenReturn(true);
+    when(awsS3StreamingPublisher.publish(any(), any(), any())).thenReturn(true);
     when(streamingBatchService.update(any(), any())).thenReturn(streamingBatch);
 
     StreamingBatch streamingBatchAsReturned = auditEventStreamingService.stream(streamingDestination, jobParameters);
@@ -268,7 +268,7 @@ public class AuditEventStreamingServiceImplTest extends CategoryTest {
         .thenReturn(AuditEvent.builder().createdAt(streamingBatch.getStartTime() + MINUTES_10_IN_MILLS).build());
     when(auditEventRepository.loadAuditEvents(any(), any())).thenReturn(mongoCursor);
     when(batchProcessorService.processAuditEvent(any())).thenReturn(List.of(OutgoingAuditMessage.builder().build()));
-    when(awsS3StreamingPublisher.publish(any(), any())).thenReturn(false);
+    when(awsS3StreamingPublisher.publish(any(), any(), any())).thenReturn(false);
     when(streamingBatchService.update(any(), any())).thenReturn(streamingBatch);
   }
 

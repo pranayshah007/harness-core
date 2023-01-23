@@ -10,7 +10,7 @@ package io.harness.auditevent.streaming.services.impl;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.entities.AuditEvent;
-import io.harness.auditevent.streaming.entities.outgoing.OutgoingAuditMessage;
+import io.harness.audit.streaming.outgoing.OutgoingAuditMessage;
 import io.harness.auditevent.streaming.mappers.AuditEventMapper;
 import io.harness.auditevent.streaming.services.BatchProcessorService;
 

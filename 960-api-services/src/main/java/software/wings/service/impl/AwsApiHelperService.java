@@ -25,8 +25,8 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.streaming.dtos.AuditBatchDTO;
-import io.harness.audit.streaming.dtos.AuditRecordDTO;
 import io.harness.audit.streaming.dtos.PutObjectResultResponse;
+import io.harness.audit.streaming.outgoing.OutgoingAuditMessage;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.aws.util.AwsCallTracker;
 import io.harness.data.structure.EmptyPredicate;
@@ -235,7 +235,7 @@ public class AwsApiHelperService {
              new CloseableAmazonWebServiceClient(getAmazonS3Client(awsInternalConfig, region))) {
       tracker.trackS3Call("Put Audit Batch to S3 Bucket");
       String key = getKey(auditBatch.getStartTime(), auditBatch.getEndTime());
-      InputStream inputStream = getInputStream(auditBatch.getAuditRecords());
+      InputStream inputStream = getInputStream(auditBatch.getOutgoingAuditMessages());
       ObjectMetadata objectMetadata = getObjectMetadata(inputStream);
 
       return convertToPutObjectResultResponse(closeableAmazonS3Client.getClient().putObject(
@@ -273,8 +273,8 @@ public class AwsApiHelperService {
     return "audits from " + sdf.format(new Timestamp(startTime)) + " to " + sdf.format(new Timestamp(endTime));
   }
 
-  private InputStream getInputStream(List<AuditRecordDTO> auditRecords) throws IOException {
-    ByteString bytes = ByteString.copyFrom(kryoSerializer.asBytes(auditRecords));
+  private InputStream getInputStream(List<OutgoingAuditMessage> outgoingAuditMessages) throws IOException {
+    ByteString bytes = ByteString.copyFrom(kryoSerializer.asBytes(outgoingAuditMessages));
     ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
     ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
     objectOutputStream.writeObject(bytes);

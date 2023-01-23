@@ -16,10 +16,10 @@ import static io.harness.auditevent.streaming.beans.BatchStatus.SUCCESS;
 
 import io.harness.audit.entities.AuditEvent;
 import io.harness.audit.entities.streaming.StreamingDestination;
+import io.harness.audit.streaming.outgoing.OutgoingAuditMessage;
 import io.harness.auditevent.streaming.AuditEventRepository;
 import io.harness.auditevent.streaming.BatchConfig;
 import io.harness.auditevent.streaming.entities.StreamingBatch;
-import io.harness.auditevent.streaming.entities.outgoing.OutgoingAuditMessage;
 import io.harness.auditevent.streaming.publishers.StreamingPublisher;
 import io.harness.auditevent.streaming.publishers.StreamingPublisherUtils;
 import io.harness.auditevent.streaming.services.AuditEventStreamingService;
@@ -99,7 +99,7 @@ public class AuditEventStreamingServiceImpl implements AuditEventStreamingServic
       List<OutgoingAuditMessage> outgoingAuditMessages = batchProcessorService.processAuditEvent(auditEvents);
       StreamingPublisher streamingPublisher =
           StreamingPublisherUtils.getStreamingPublisher(streamingDestination.getType(), streamingPublisherMap);
-      successResult = streamingPublisher.publish(streamingDestination, outgoingAuditMessages);
+      successResult = streamingPublisher.publish(streamingDestination, streamingBatch, outgoingAuditMessages);
       streamingBatch = updateBatchByResult(streamingBatch, auditEvents, successResult);
       if (!successResult) {
         break;

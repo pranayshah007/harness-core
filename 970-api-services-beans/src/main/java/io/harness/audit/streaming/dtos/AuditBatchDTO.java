@@ -9,6 +9,7 @@ package io.harness.audit.streaming.dtos;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.audit.streaming.outgoing.OutgoingAuditMessage;
 
 import java.util.List;
 import lombok.Data;
@@ -20,11 +21,11 @@ import lombok.experimental.SuperBuilder;
 public class AuditBatchDTO {
   String batchId;
   String accountIdentifier;
-  String policyIdentifier;
+  String streamingDestinationIdentifier;
   Long startTime;
   Long endTime;
   Integer numberOfRecords;
-  List<AuditRecordDTO> auditRecords;
+  List<OutgoingAuditMessage> outgoingAuditMessages;
   BatchStatus status;
   Integer retryCount;
 

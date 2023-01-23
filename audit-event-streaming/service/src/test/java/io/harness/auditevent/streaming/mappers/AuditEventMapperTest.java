@@ -25,7 +25,7 @@ import io.harness.audit.entities.AuditEvent.AuditEventBuilder;
 import io.harness.audit.entities.AuthenticationInfo;
 import io.harness.audit.entities.Resource;
 import io.harness.audit.entities.ResourceScope;
-import io.harness.auditevent.streaming.entities.outgoing.OutgoingAuditMessage;
+import io.harness.audit.streaming.outgoing.OutgoingAuditMessage;
 import io.harness.category.element.UnitTests;
 import io.harness.ng.core.common.beans.KeyValuePair;
 import io.harness.request.HttpRequestInfo;

@@ -22,5 +22,6 @@ public class AuditEventStreamingConfig {
   @JsonProperty("auditDbConfig") private MongoConfig auditEventDbConfig;
   @JsonProperty("delegateServiceGrpcConfig") private GrpcClientConfig delegateServiceGrpcConfig;
   @JsonProperty("auditClientConfig") private ServiceHttpClientConfig auditClientConfig;
+  @JsonProperty("ngManagerClientConfig") private ServiceHttpClientConfig ngManagerClientConfig;
   @JsonProperty("serviceSecrets") @ConfigSecret ServiceSecrets serviceSecrets;
 }

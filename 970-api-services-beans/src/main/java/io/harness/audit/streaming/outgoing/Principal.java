@@ -5,9 +5,10 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.auditevent.streaming.entities.outgoing;
+package io.harness.audit.streaming.outgoing;
 
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -16,8 +17,8 @@ import lombok.experimental.FieldDefaults;
 @Getter
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class ResourceScope {
-  @NotBlank String accountIdentifier;
-  String orgIdentifier;
-  String projectIdentifier;
+public class Principal {
+  @NotNull String type;
+  @NotBlank String identifier;
+  String email;
 }

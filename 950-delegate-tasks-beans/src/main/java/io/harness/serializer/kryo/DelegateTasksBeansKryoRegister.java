@@ -14,6 +14,12 @@ import io.harness.audit.streaming.dtos.AuditBatchDTO;
 import io.harness.audit.streaming.dtos.AuditRecordDTO;
 import io.harness.audit.streaming.dtos.PutObjectResultResponse;
 import io.harness.aws.beans.AsgLoadBalancerConfig;
+import io.harness.audit.streaming.outgoing.Author;
+import io.harness.audit.streaming.outgoing.HttpRequestInfo;
+import io.harness.audit.streaming.outgoing.OutgoingAuditMessage;
+import io.harness.audit.streaming.outgoing.Principal;
+import io.harness.audit.streaming.outgoing.Resource;
+import io.harness.audit.streaming.outgoing.ResourceScope;
 import io.harness.capability.AwsRegionParameters;
 import io.harness.capability.CapabilityParameters;
 import io.harness.capability.CapabilitySubjectPermission.PermissionResult;
@@ -1678,6 +1684,12 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AuditBatchDTO.BatchStatus.class, 543367);
     kryo.register(AuditBatchDTO.BatchState.class, 543368);
     kryo.register(PutObjectResultResponse.class, 543369);
+    kryo.register(Author.class, 543370);
+    kryo.register(HttpRequestInfo.class, 543371);
+    kryo.register(OutgoingAuditMessage.class, 543372);
+    kryo.register(Principal.class, 543373);
+    kryo.register(Resource.class, 543374);
+    kryo.register(ResourceScope.class, 543375);
 
     kryo.register(CfDeployCommandResponse.class, 543401);
     kryo.register(CfInfraMappingDataResponse.class, 543402);

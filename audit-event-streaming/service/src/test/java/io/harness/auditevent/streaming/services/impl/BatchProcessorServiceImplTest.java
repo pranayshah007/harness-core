@@ -17,7 +17,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.audit.entities.AuditEvent;
-import io.harness.auditevent.streaming.entities.outgoing.OutgoingAuditMessage;
+import io.harness.audit.streaming.outgoing.OutgoingAuditMessage;
 import io.harness.auditevent.streaming.mappers.AuditEventMapper;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
