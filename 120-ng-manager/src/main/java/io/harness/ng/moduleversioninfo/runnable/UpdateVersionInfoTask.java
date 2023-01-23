@@ -14,7 +14,6 @@ import io.harness.cdng.moduleversioninfo.entity.ModuleVersionInfo;
 import io.harness.cdng.moduleversioninfo.entity.ModuleVersionInfo.ModuleVersionInfoKeys;
 import io.harness.exception.UnexpectedException;
 import io.harness.ng.NextGenConfiguration;
-import io.harness.version.VersionInfoManager;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Resources;
