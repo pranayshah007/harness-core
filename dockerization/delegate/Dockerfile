@@ -69,6 +69,8 @@ ENV PATH=/opt/harness-delegate/client-tools/chartmuseum/v0.15.0/:$PATH
 ENV PATH=/opt/harness-delegate/client-tools/tf-config-inspect/v1.1/:$PATH
 ENV PATH=/opt/harness-delegate/client-tools/kustomize/v4.5.4/:$PATH
 
+COPY ./delegate.jar ./delegate.jar
+
 USER 1001
 
 CMD [ "./start.sh" ]
