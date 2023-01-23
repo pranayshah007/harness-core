@@ -7,9 +7,9 @@ import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.exception.TaskNGDataException;
-import io.harness.delegate.googlefunctions.GoogleFunctionCommandTaskHandler;
-import io.harness.delegate.task.googlefunctions.request.GoogleFunctionCommandRequest;
-import io.harness.delegate.task.googlefunctions.response.GoogleFunctionCommandResponse;
+import io.harness.delegate.googlefunction.GoogleFunctionCommandTaskHandler;
+import io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionCommandRequest;
+import io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionCommandResponse;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import lombok.extern.slf4j.Slf4j;
 

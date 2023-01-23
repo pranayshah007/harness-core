@@ -8,11 +8,8 @@ import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
-import io.harness.delegate.task.ecs.EcsDelegateTaskHelper;
-import io.harness.delegate.task.ecs.request.EcsCommandRequest;
-import io.harness.delegate.task.ecs.response.EcsCommandResponse;
-import io.harness.delegate.task.googlefunctions.request.GoogleFunctionCommandRequest;
-import io.harness.delegate.task.googlefunctions.response.GoogleFunctionCommandResponse;
+import io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionCommandRequest;
+import io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionCommandResponse;
 import io.harness.secret.SecretSanitizerThreadLocal;
 import org.apache.commons.lang3.NotImplementedException;
 

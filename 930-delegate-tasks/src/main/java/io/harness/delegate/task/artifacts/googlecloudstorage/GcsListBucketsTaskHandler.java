@@ -19,7 +19,7 @@ import io.harness.delegate.task.gcp.request.GcsListBucketsRequest;
 import io.harness.delegate.task.gcp.response.GcpProjectListTaskResponse;
 import io.harness.delegate.task.gcp.response.GcpResponse;
 import io.harness.delegate.task.gcp.response.GcsBucketListResponse;
-import io.harness.delegate.task.gcp.taskHandlers.TaskHandler;
+import io.harness.delegate.task.gcp.taskhandlers.TaskHandler;
 import io.harness.errorhandling.NGErrorHelper;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.googlecloudstorage.GcsHelperService;

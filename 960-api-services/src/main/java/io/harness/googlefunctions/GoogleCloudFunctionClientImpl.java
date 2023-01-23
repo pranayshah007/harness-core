@@ -1,10 +1,6 @@
 package io.harness.googlefunctions;
 
-import com.google.api.gax.grpc.GrpcCallContext;
 import com.google.api.gax.longrunning.OperationFuture;
-import com.google.api.gax.rpc.ApiCallContext;
-import com.google.api.gax.rpc.OperationCallable;
-import com.google.api.gax.rpc.UnaryCallable;
 import com.google.cloud.functions.v2.CreateFunctionRequest;
 import com.google.cloud.functions.v2.DeleteFunctionRequest;
 import com.google.cloud.functions.v2.Function;
@@ -16,8 +12,6 @@ import com.google.cloud.functions.v2.OperationMetadata;
 import com.google.cloud.functions.v2.UpdateFunctionRequest;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.google.longrunning.Operation;
-import com.google.protobuf.Any;
 import com.google.protobuf.Empty;
 import io.harness.annotations.dev.OwnedBy;
 import lombok.extern.slf4j.Slf4j;

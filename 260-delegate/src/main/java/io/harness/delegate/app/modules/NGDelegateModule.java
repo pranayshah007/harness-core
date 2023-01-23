@@ -33,7 +33,6 @@ import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactT
 import io.harness.delegate.task.artifacts.googlecloudstorage.GoogleCloudStorageArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.s3.S3ArtifactTaskHandler;
-import io.harness.googlecloudstorage.GcsHelperService;
 import io.harness.http.HttpService;
 import io.harness.http.HttpServiceImpl;
 import io.harness.nexus.service.NexusRegistryService;

@@ -32,14 +32,13 @@ import com.google.protobuf.FieldMask;
 import com.google.protobuf.Message;
 import com.google.protobuf.util.JsonFormat;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorCredentialDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpManualDetailsDTO;
-import io.harness.delegate.task.googlefunctions.GcpGoogleFunctionInfraConfig;
-import io.harness.delegate.task.googlefunctions.GoogleCloudStorageArtifactConfig;
-import io.harness.delegate.task.googlefunctions.GoogleFunction;
-import io.harness.delegate.task.googlefunctions.GoogleFunctionArtifactConfig;
+import io.harness.delegate.task.googlefunctionbeans.GcpGoogleFunctionInfraConfig;
+import io.harness.delegate.task.googlefunctionbeans.GoogleCloudStorageArtifactConfig;
+import io.harness.delegate.task.googlefunctionbeans.GoogleFunction;
+import io.harness.delegate.task.googlefunctionbeans.GoogleFunctionArtifactConfig;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
@@ -64,7 +63,6 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.delegate.beans.connector.gcpconnector.GcpCredentialType.INHERIT_FROM_DELEGATE;
 import static java.lang.String.format;
 import static java.time.Duration.ofSeconds;
-import static jodd.util.ThreadUtil.sleep;
 
 @OwnedBy(CDP)
 @Singleton

@@ -1,12 +1,10 @@
 package io.harness.cdng.googlefunctions.rollback;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.googlefunctions.GoogleFunctionsSpecParameters;
-import io.harness.cdng.googlefunctions.deployWithoutTraffic.GoogleFunctionsDeployWithoutTrafficBaseStepInfo;
-import io.harness.googlefunctions.GoogleFunctionsCommandUnitConstants;
+import io.harness.googlefunctions.command.GoogleFunctionsCommandUnitConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
 import lombok.Builder;

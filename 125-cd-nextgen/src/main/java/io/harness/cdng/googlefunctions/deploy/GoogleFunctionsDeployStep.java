@@ -15,13 +15,12 @@ import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
-import io.harness.delegate.task.googlefunctions.GoogleFunctionCommandTypeNG;
-import io.harness.delegate.task.googlefunctions.request.GoogleFunctionDeployRequest;
+import io.harness.delegate.task.googlefunctionbeans.GoogleFunctionCommandTypeNG;
+import io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionDeployRequest;
 
-import static com.google.common.collect.Lists.newArrayList;
-import static io.harness.delegate.task.googlefunctions.request.GoogleFunctionDeployRequest.GoogleFunctionDeployRequestBuilder;
+import io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionDeployRequest.GoogleFunctionDeployRequestBuilder;
 
-import io.harness.delegate.task.googlefunctions.response.GoogleFunctionDeployResponse;
+import io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionDeployResponse;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.plancreator.steps.common.StepElementParameters;

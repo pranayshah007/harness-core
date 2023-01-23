@@ -1,6 +1,7 @@
 package io.harness.cdng.googlefunctions;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
@@ -25,23 +26,22 @@ import io.harness.delegate.task.git.TaskStatus;
 import io.harness.delegate.task.gitcommon.GitRequestFileConfig;
 import io.harness.delegate.task.gitcommon.GitTaskNGRequest;
 import io.harness.delegate.task.gitcommon.GitTaskNGResponse;
-import io.harness.delegate.task.googlefunctions.GoogleFunction;
-import io.harness.delegate.task.googlefunctions.GoogleFunctionCommandTypeNG;
-import io.harness.delegate.task.googlefunctions.GoogleFunctionInfraConfig;
-import io.harness.delegate.task.googlefunctions.request.GoogleFunctionCommandRequest;
-import io.harness.delegate.task.googlefunctions.request.GoogleFunctionPrepareRollbackRequest;
+import io.harness.delegate.task.googlefunctionbeans.GoogleFunction;
+import io.harness.delegate.task.googlefunctionbeans.GoogleFunctionCommandTypeNG;
+import io.harness.delegate.task.googlefunctionbeans.GoogleFunctionInfraConfig;
+import io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionCommandRequest;
+import io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionPrepareRollbackRequest;
 
 import static com.google.common.collect.Lists.newArrayList;
-import static io.harness.delegate.task.googlefunctions.request.GoogleFunctionPrepareRollbackRequest.GoogleFunctionPrepareRollbackRequestBuilder;
-import io.harness.delegate.task.googlefunctions.response.GoogleFunctionCommandResponse;
-import io.harness.delegate.task.googlefunctions.response.GoogleFunctionPrepareRollbackResponse;
-import io.harness.delegate.task.googlefunctions.response.GoogleFunctionTrafficShiftResponse;
+import io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionPrepareRollbackRequest.GoogleFunctionPrepareRollbackRequestBuilder;
+import io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionCommandResponse;
+import io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionPrepareRollbackResponse;
 import io.harness.ecs.EcsCommandUnitConstants;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.ExpressionEvaluatorUtils;
-import io.harness.googlefunctions.GoogleFunctionsCommandUnitConstants;
+import io.harness.googlefunctions.command.GoogleFunctionsCommandUnitConstants;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.ng.core.NGAccess;
@@ -58,7 +58,6 @@ import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
-import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
@@ -66,6 +65,8 @@ import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import static io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+
+import io.harness.serializer.KryoSerializer;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 import lombok.extern.slf4j.Slf4j;
@@ -83,7 +84,7 @@ import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 import static io.harness.exception.WingsException.USER;
-import static io.harness.steps.StepUtils.prepareCDTaskRequest;
+import io.harness.steps.TaskRequestsUtils;
 import static java.lang.String.format;
 
 @Slf4j
@@ -91,6 +92,8 @@ public class GoogleFunctionsHelper extends CDStepHelper {
     @Inject private EngineExpressionService engineExpressionService;
     @Inject private GoogleFunctionsEntityHelper googleFunctionsEntityHelper;
     @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
+    @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
+
 
     private final String GOOGLE_FUNCTION_PREPARE_ROLLBACK_COMMAND_NAME = "PrepareRollbackCloudFunction";
 
@@ -369,7 +372,7 @@ public class GoogleFunctionsHelper extends CDStepHelper {
 
         GoogleFunctionsSpecParameters googleFunctionsSpecParameters = (GoogleFunctionsSpecParameters) stepElementParameters.getSpec();
 
-        final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+        final TaskRequest taskRequest = TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
                 googleFunctionsSpecParameters.getCommandUnits(), taskName,
                 TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(googleFunctionsSpecParameters.getDelegateSelectors()))),
                 stepHelper.getEnvironmentType(ambiance));
@@ -452,7 +455,7 @@ public class GoogleFunctionsHelper extends CDStepHelper {
                 TaskType.GOOGLE_FUNCTION_COMMAND_TASK.getDisplayName() + " : " + googleFunctionCommandRequest.getCommandName();
         GoogleFunctionsSpecParameters googleFunctionsSpecParameters = (GoogleFunctionsSpecParameters) stepElementParameters.getSpec();
         final TaskRequest taskRequest =
-                prepareCDTaskRequest(ambiance, taskData, kryoSerializer, googleFunctionsSpecParameters.getCommandUnits(), taskName,
+                TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, referenceFalseKryoSerializer, googleFunctionsSpecParameters.getCommandUnits(), taskName,
                         TaskSelectorYaml.toTaskSelector(
                                 emptyIfNull(getParameterFieldValue(googleFunctionsSpecParameters.getDelegateSelectors()))),
                         stepHelper.getEnvironmentType(ambiance));

@@ -1,9 +1,0 @@
-package io.harness.delegate.task.googlefunctions;
-
-public enum GoogleFunctionCommandTypeNG {
-    GOOGLE_FUNCTION_DEPLOY,
-    GOOGLE_FUNCTION_PREPARE_ROLLBACK,
-    GOOGLE_FUNCTION_WITHOUT_TRAFFIC_DEPLOY,
-    GOOGLE_FUNCTION_TRAFFIC_SHIFT,
-    GOOGLE_FUNCTION_ROLLBACK
-}

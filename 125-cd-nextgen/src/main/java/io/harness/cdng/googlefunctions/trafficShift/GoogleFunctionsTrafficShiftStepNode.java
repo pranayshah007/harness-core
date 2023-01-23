@@ -8,7 +8,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.googlefunctions.deployWithoutTraffic.GoogleFunctionsDeployWithoutTrafficStepInfo;
 import io.harness.cdng.googlefunctions.deployWithoutTraffic.GoogleFunctionsDeployWithoutTrafficStepNode;
-import io.harness.cdng.pipeline.CdAbstractStepNode;
+import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.yaml.core.StepSpecType;
 import lombok.Data;

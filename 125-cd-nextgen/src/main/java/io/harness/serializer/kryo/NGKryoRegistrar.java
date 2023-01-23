@@ -265,6 +265,6 @@ public class NGKryoRegistrar implements KryoRegistrar {
     kryo.register(K8sDryRunManifestStepInfo.class, 12644);
     kryo.register(K8sDryRunManifestStepParameters.class, 12645);
     kryo.register(K8sDryRunManifestOutcome.class, 12646);
-    kryo.register(GoogleFunctionsInfrastructure.class, 13001);
+    kryo.register(GoogleFunctionsInfrastructure.class, 14001);
   }
 }
