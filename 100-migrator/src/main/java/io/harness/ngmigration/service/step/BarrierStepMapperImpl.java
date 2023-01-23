@@ -8,6 +8,7 @@
 package io.harness.ngmigration.service.step;
 
 import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.plancreator.steps.barrier.BarrierStepInfo;
 import io.harness.plancreator.steps.barrier.BarrierStepNode;
@@ -22,6 +23,11 @@ import software.wings.sm.states.BarrierState;
 import java.util.Map;
 
 public class BarrierStepMapperImpl implements StepMapper {
+  @Override
+  public WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode) {
+    return WorkflowStepSupportStatus.SUPPORTED;
+  }
+
   @Override
   public String getStepType(GraphNode stepYaml) {
     return StepSpecTypeConstants.BARRIER;

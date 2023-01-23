@@ -9,6 +9,7 @@ package io.harness.ng.core.infrastructure.services;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.ng.core.infrastructure.dto.InfrastructureInputsMergedResponseDto;
 import io.harness.ng.core.infrastructure.dto.InfrastructureYamlMetadata;
 import io.harness.ng.core.infrastructure.dto.NoInputMergeInputAction;
@@ -68,6 +69,9 @@ public interface InfrastructureEntityService {
 
   List<InfrastructureEntity> getAllInfrastructureFromEnvRef(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String envIdentifier);
+
+  List<InfrastructureEntity> getAllInfrastructureFromEnvRefAndDeploymentType(String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, String envIdentifier, ServiceDefinitionType deploymentType);
 
   List<InfrastructureEntity> getInfrastructures(
       String accountIdentifier, String orgIdentifier, String projectIdentifier);

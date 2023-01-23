@@ -117,6 +117,8 @@ public class AsgBlueGreenDeployStep extends TaskChainExecutableWithRollbackAndRb
     AsgBlueGreenExecutionPassThroughData asgBlueGreenExecutionPassThroughData =
         (AsgBlueGreenExecutionPassThroughData) executionPassThroughData;
 
+    String amiImageId = asgStepCommonHelper.getAmiImageId(ambiance);
+
     AsgBlueGreenDeployRequest asgBlueGreenDeployRequest =
         AsgBlueGreenDeployRequest.builder()
             .commandName(ASG_BLUE_GREEN_DEPLOY_COMMAND_NAME)
@@ -127,6 +129,7 @@ public class AsgBlueGreenDeployStep extends TaskChainExecutableWithRollbackAndRb
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
             .asgName(asgBlueGreenExecutionPassThroughData.getAsgName())
             .asgLoadBalancerConfig(asgBlueGreenExecutionPassThroughData.getLoadBalancerConfig())
+            .amiImageId(amiImageId)
             .build();
 
     return asgStepCommonHelper.queueAsgTask(stepElementParameters, asgBlueGreenDeployRequest, ambiance,

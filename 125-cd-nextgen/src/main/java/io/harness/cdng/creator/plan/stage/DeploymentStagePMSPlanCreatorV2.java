@@ -426,6 +426,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
             .serviceYamlV2(stageConfig.getService())
             .subType(subType)
             .servicesOverrides(servicesOverrides)
+            .deploymentType(stageConfig.getDeploymentType())
             .build();
 
     buildMultiDeploymentMetadata(planCreationResponseMap, stageNode, ctx, stepParameters);

@@ -11,7 +11,7 @@ import static io.harness.rule.OwnerRule.GEORGE;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 
-import io.harness.agent.sdk.HarnessHierarchy;
+import io.harness.agent.sdk.HarnessAlwaysRun;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 import io.harness.testing.TestExecution;
@@ -30,7 +30,7 @@ public class OrchestrationStepsComponentTest extends OrchestrationStepsTestBase 
   @Test
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
-  @HarnessHierarchy(TestExecution.class)
+  @HarnessAlwaysRun
   public void componentOrchestrationTests() {
     for (Entry<String, TestExecution> test : tests.entrySet()) {
       assertThatCode(() -> test.getValue().run()).as(test.getKey()).doesNotThrowAnyException();

@@ -78,6 +78,9 @@ public class EnvironmentInfraFilterUtils {
     StringBuilder tags = new StringBuilder();
     tags.append("[").append(tagsFilter.getMatchType().getValue()).append("-");
 
+    if (tagsFilter.getTags().getValue() == null) {
+      return new StringBuilder();
+    }
     List<String> tagList = new ArrayList<>();
     for (Map.Entry<String, String> tag : tagsFilter.getTags().getValue().entrySet()) {
       StringBuilder tagString = new StringBuilder();

@@ -79,6 +79,7 @@ public class HelmChartManifest implements ManifestAttributes, Visitable {
   @ApiModelProperty(dataType = STRING_LIST_CLASSPATH)
   @YamlSchemaTypes({runtime})
   @SkipAutoEvaluation
+  @JsonProperty("valuesPaths")
   ParameterField<List<String>> valuesPaths;
   @Wither
   @ApiModelProperty(dataType = BOOLEAN_CLASSPATH)

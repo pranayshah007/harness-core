@@ -20,6 +20,7 @@ import io.harness.entities.Instance;
 import io.harness.entities.Instance.InstanceKeys;
 import io.harness.models.ActiveServiceInstanceInfo;
 import io.harness.models.ActiveServiceInstanceInfoV2;
+import io.harness.models.ActiveServiceInstanceInfoWithEnvType;
 import io.harness.models.ArtifactDeploymentDetailModel;
 import io.harness.models.CountByOrgIdProjectIdAndServiceId;
 import io.harness.models.CountByServiceIdAndEnvType;
@@ -57,8 +58,10 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
   private final MongoTemplate mongoTemplate;
   private final MongoTemplate secondaryMongoTemplate;
   private final MongoTemplate analyticsMongoTemplate;
-  private final String INSTANCE_NG_COLLECTION = "instanceNG";
-  private final String DISPLAY_NAME = "displayName";
+  private static final String INSTANCE_NG_COLLECTION = "instanceNG";
+  private static final String DISPLAY_NAME = "displayName";
+  private static final String AGENT_IDENTIFIER = "agentIdentifier";
+  private static final String CLUSTER_IDENTIFIER = "clusterIdentifier";
 
   @Inject
   public InstanceRepositoryCustomImpl(MongoTemplate mongoTemplate,
@@ -286,6 +289,48 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
   }
 
   @Override
+  public AggregationResults<ActiveServiceInstanceInfoWithEnvType> getActiveServiceInstanceInfoWithEnvType(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String envIdentifier,
+      String serviceIdentifier, String displayName, boolean isGitOps) {
+    Criteria criteria = getCriteriaForActiveInstancesV2(
+        accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, null, envIdentifier);
+    addCriteriaForGitOpsCheck(criteria, isGitOps);
+
+    if (displayName != null) {
+      criteria.and(InstanceSyncConstants.PRIMARY_ARTIFACT_DISPLAY_NAME).is(displayName);
+    }
+
+    MatchOperation matchStage = Aggregation.match(criteria);
+    SortOperation sortOperation = Aggregation.sort(Sort.by(Sort.Direction.DESC, InstanceKeys.lastDeployedAt));
+    ProjectionOperation projectionOperation = Aggregation.project(InstanceKeys.envIdentifier, InstanceKeys.envName,
+        InstanceKeys.envType, InstanceSyncConstants.PRIMARY_ARTIFACT_DISPLAY_NAME, InstanceKeys.infraIdentifier,
+        InstanceKeys.infraName, InstanceKeysAdditional.instanceInfoClusterIdentifier,
+        InstanceKeysAdditional.instanceInfoAgentIdentifier, InstanceKeys.lastDeployedAt);
+    GroupOperation groupOperation;
+    if (!isGitOps) {
+      groupOperation =
+          group(InstanceKeys.envIdentifier, InstanceKeys.envType, InstanceKeys.infraIdentifier, DISPLAY_NAME)
+              .first(InstanceKeys.infraName)
+              .as(InstanceKeys.infraName);
+    } else {
+      groupOperation = group(InstanceKeys.envIdentifier, InstanceKeys.envType, CLUSTER_IDENTIFIER, DISPLAY_NAME)
+                           .first(AGENT_IDENTIFIER)
+                           .as(AGENT_IDENTIFIER);
+    }
+
+    groupOperation = groupOperation.first(InstanceKeys.lastDeployedAt)
+                         .as(InstanceKeys.lastDeployedAt)
+                         .first(InstanceKeys.envName)
+                         .as(InstanceKeys.envName)
+                         .count()
+                         .as(InstanceSyncConstants.COUNT);
+
+    return secondaryMongoTemplate.aggregate(
+        newAggregation(sortOperation, matchStage, projectionOperation, groupOperation), INSTANCE_NG_COLLECTION,
+        ActiveServiceInstanceInfoWithEnvType.class);
+  }
+
+  @Override
   public AggregationResults<ActiveServiceInstanceInfo> getActiveServiceGitOpsInstanceInfo(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId) {
     Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier)
@@ -332,7 +377,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
                                            .count()
                                            .as(InstanceSyncConstants.COUNT);
     return mongoTemplate.aggregate(
-        newAggregation(matchStage, groupClusterEnvId), "instanceNG", ActiveServiceInstanceInfoV2.class);
+        newAggregation(matchStage, groupClusterEnvId), INSTANCE_NG_COLLECTION, ActiveServiceInstanceInfoV2.class);
   }
 
   @Override

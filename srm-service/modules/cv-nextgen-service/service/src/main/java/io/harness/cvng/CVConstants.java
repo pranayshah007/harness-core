@@ -58,6 +58,8 @@ public interface CVConstants {
   String TAG_ACCOUNT_ID = "accountId";
   String TAG_ONBOARDING = "onboarding";
   String STATEMACHINE_PUBLISHER = "srm_statemachine_publisher";
+
+  String CUSTOM_CHANGE_PUBLISHER = "srm_custom_change_publisher";
   String SET_KEY = "$set";
   int BULK_OPERATION_THRESHOLD = 1000;
 

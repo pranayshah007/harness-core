@@ -68,7 +68,7 @@ import java.util.stream.Collectors;
 public class JenkinsBuildStepHelperServiceImpl implements JenkinsBuildStepHelperService {
   private final ConnectorResourceClient connectorResourceClient;
   private final SecretManagerClientService secretManagerClientService;
-  private final @Named("referenceFalseKryoSerializer") KryoSerializer referenceFalseKryoSerializer;
+  private final KryoSerializer referenceFalseKryoSerializer;
   private final LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   @VisibleForTesting static final int timeoutInSecs = 30;
@@ -76,7 +76,8 @@ public class JenkinsBuildStepHelperServiceImpl implements JenkinsBuildStepHelper
 
   @Inject
   public JenkinsBuildStepHelperServiceImpl(ConnectorResourceClient connectorResourceClient,
-      @Named("PRIVILEGED") SecretManagerClientService secretManagerClientService, KryoSerializer kryoSerializer,
+      @Named("PRIVILEGED") SecretManagerClientService secretManagerClientService,
+      @Named("referenceFalseKryoSerializer") KryoSerializer kryoSerializer,
       LogStreamingStepClientFactory logStreamingStepClientFactory) {
     this.connectorResourceClient = connectorResourceClient;
     this.secretManagerClientService = secretManagerClientService;

@@ -7,19 +7,24 @@
 
 package io.harness.cdng.envGroup.services;
 
+import static io.harness.beans.FeatureName.CDS_FORCE_DELETE_ENTITIES;
+import static io.harness.beans.FeatureName.NG_SETTINGS;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.ENVIRONMENT;
+import static io.harness.exception.WingsException.USER;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 import static io.harness.utils.IdentifierRefHelper.MAX_RESULT_THRESHOLD_FOR_SPLIT;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static java.lang.Boolean.parseBoolean;
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 
 import io.harness.EntityType;
 import io.harness.NGResourceFilterConstants;
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
@@ -38,14 +43,18 @@ import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
 import io.harness.eventsframework.schemas.entitysetupusage.EntitySetupUsageCreateV2DTO;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.ReferencedEntityException;
 import io.harness.exception.UnexpectedException;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.common.beans.NGTag.NGTagKeys;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.entitysetupusage.service.EntitySetupUsageService;
-import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
+import io.harness.ngsettings.SettingIdentifiers;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.outbox.api.OutboxService;
+import io.harness.remote.client.CGRestUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.envGroup.EnvironmentGroupRepository;
 import io.harness.utils.IdentifierRefHelper;
 
@@ -71,7 +80,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.transaction.support.TransactionTemplate;
-
 // TODO: Add transaction for outbox event and setup usages
 @OwnedBy(HarnessTeam.PIPELINE)
 @Singleton
@@ -85,13 +93,15 @@ public class EnvironmentGroupServiceImpl implements EnvironmentGroupService {
   @Inject @Named(OUTBOX_TRANSACTION_TEMPLATE) private final TransactionTemplate transactionTemplate;
   private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_RETRY_POLICY;
   private final OutboxService outboxService;
+  private final AccountClient accountClient;
+  private final NGSettingsClient settingsClient;
 
   @Inject
   public EnvironmentGroupServiceImpl(EnvironmentGroupRepository environmentRepository,
       @Named(EventsFrameworkConstants.SETUP_USAGE) Producer setupUsagesEventProducer,
       IdentifierRefProtoDTOHelper identifierRefProtoDTOHelper, EntitySetupUsageService entitySetupUsageService,
       EnvironmentGroupServiceHelper environmentGroupServiceHelper, TransactionTemplate transactionTemplate,
-      OutboxService outboxService) {
+      OutboxService outboxService, AccountClient accountClient, NGSettingsClient settingsClient) {
     this.environmentRepository = environmentRepository;
     this.setupUsagesEventProducer = setupUsagesEventProducer;
     this.identifierRefProtoDTOHelper = identifierRefProtoDTOHelper;
@@ -99,6 +109,8 @@ public class EnvironmentGroupServiceImpl implements EnvironmentGroupService {
     this.environmentGroupServiceHelper = environmentGroupServiceHelper;
     this.transactionTemplate = transactionTemplate;
     this.outboxService = outboxService;
+    this.accountClient = accountClient;
+    this.settingsClient = settingsClient;
   }
 
   @Override
@@ -138,8 +150,13 @@ public class EnvironmentGroupServiceImpl implements EnvironmentGroupService {
   }
 
   @Override
-  public EnvironmentGroupEntity delete(
-      String accountId, String orgIdentifier, String projectIdentifier, String envGroupId, Long version) {
+  public EnvironmentGroupEntity delete(String accountId, String orgIdentifier, String projectIdentifier,
+      String envGroupId, Long version, boolean forceDelete) {
+    if (forceDelete && !isForceDeleteEnabled(accountId)) {
+      throw new InvalidRequestException(
+          format("Parameter forcedDelete cannot be true. Force Delete is not enabled for account [%s]", accountId),
+          USER);
+    }
     Optional<EnvironmentGroupEntity> envGroupEntity =
         get(accountId, orgIdentifier, projectIdentifier, envGroupId, false);
     if (envGroupEntity.isEmpty()) {
@@ -149,8 +166,10 @@ public class EnvironmentGroupServiceImpl implements EnvironmentGroupService {
     }
     EnvironmentGroupEntity existingEntity = envGroupEntity.get();
 
-    // Check the usages of environment group
-    checkThatEnvironmentGroupIsNotReferredByOthers(existingEntity);
+    if (!forceDelete) {
+      // Check the usages of environment group
+      checkThatEnvironmentGroupIsNotReferredByOthers(existingEntity);
+    }
 
     if (version != null && !version.equals(existingEntity.getVersion())) {
       throw new InvalidRequestException(
@@ -159,7 +178,7 @@ public class EnvironmentGroupServiceImpl implements EnvironmentGroupService {
     }
     EnvironmentGroupEntity entityWithDelete = existingEntity.withDeleted(true);
     try {
-      boolean deleted = environmentRepository.deleteEnvGroup(entityWithDelete);
+      boolean deleted = environmentRepository.deleteEnvGroup(entityWithDelete, forceDelete);
       if (deleted) {
         setupUsagesForEnvironmentList(entityWithDelete);
         return entityWithDelete;
@@ -430,9 +449,31 @@ public class EnvironmentGroupServiceImpl implements EnvironmentGroupService {
           "Error while deleting the Environment Group as was not able to check entity reference records.");
     }
     if (EmptyPredicate.isNotEmpty(referredByEntities)) {
-      throw new InvalidRequestException(String.format(
+      throw new ReferencedEntityException(String.format(
           "Could not delete the Environment Group %s as it is referenced by other entities - " + referredByEntities,
           envGroupEntity.getIdentifier()));
     }
+  }
+  private boolean isForceDeleteEnabled(String accountIdentifier) {
+    boolean isForceDeleteFFEnabled = isForceDeleteFFEnabled(accountIdentifier);
+    boolean isForceDeleteEnabledBySettings =
+        isNgSettingsFFEnabled(accountIdentifier) && isForceDeleteFFEnabledViaSettings(accountIdentifier);
+    return isForceDeleteFFEnabled && isForceDeleteEnabledBySettings;
+  }
+
+  protected boolean isForceDeleteFFEnabledViaSettings(String accountIdentifier) {
+    return parseBoolean(NGRestUtils
+                            .getResponse(settingsClient.getSetting(
+                                SettingIdentifiers.ENABLE_FORCE_DELETE, accountIdentifier, null, null))
+                            .getValue());
+  }
+
+  protected boolean isForceDeleteFFEnabled(String accountIdentifier) {
+    return CGRestUtils.getResponse(
+        accountClient.isFeatureFlagEnabled(CDS_FORCE_DELETE_ENTITIES.name(), accountIdentifier));
+  }
+
+  protected boolean isNgSettingsFFEnabled(String accountIdentifier) {
+    return CGRestUtils.getResponse(accountClient.isFeatureFlagEnabled(NG_SETTINGS.name(), accountIdentifier));
   }
 }

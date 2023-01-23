@@ -14,6 +14,7 @@ import static java.lang.String.format;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.events.EnvironmentGroupCreateEvent;
 import io.harness.cdng.events.EnvironmentGroupDeleteEvent;
+import io.harness.cdng.events.EnvironmentGroupForceDeleteEvent;
 import io.harness.cdng.events.EnvironmentGroupUpdateEvent;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
@@ -106,16 +107,25 @@ public class EnvironmentGroupRepositoryCustomImpl implements EnvironmentGroupRep
   }
 
   @Override
-  public boolean deleteEnvGroup(EnvironmentGroupEntity entityToDelete) {
+  public boolean deleteEnvGroup(EnvironmentGroupEntity entityToDelete, boolean forceDelete) {
     final DeleteResult remove = mongoTemplate.remove(entityToDelete);
     final boolean deleteSuccess = remove.wasAcknowledged() && remove.getDeletedCount() == 1;
     if (deleteSuccess) {
-      outboxService.save(EnvironmentGroupDeleteEvent.builder()
-                             .accountIdentifier(entityToDelete.getAccountIdentifier())
-                             .orgIdentifier(entityToDelete.getOrgIdentifier())
-                             .projectIdentifier(entityToDelete.getProjectIdentifier())
-                             .environmentGroupEntity(entityToDelete)
-                             .build());
+      if (forceDelete) {
+        outboxService.save(EnvironmentGroupForceDeleteEvent.builder()
+                               .accountIdentifier(entityToDelete.getAccountIdentifier())
+                               .orgIdentifier(entityToDelete.getOrgIdentifier())
+                               .projectIdentifier(entityToDelete.getProjectIdentifier())
+                               .environmentGroupEntity(entityToDelete)
+                               .build());
+      } else {
+        outboxService.save(EnvironmentGroupDeleteEvent.builder()
+                               .accountIdentifier(entityToDelete.getAccountIdentifier())
+                               .orgIdentifier(entityToDelete.getOrgIdentifier())
+                               .projectIdentifier(entityToDelete.getProjectIdentifier())
+                               .environmentGroupEntity(entityToDelete)
+                               .build());
+      }
     }
     return deleteSuccess;
   }

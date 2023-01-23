@@ -135,7 +135,7 @@ public class AlertServiceTest extends WingsBaseTest {
     assertThat(alert.getTriggerCount()).isEqualTo(1);
     assertThat(alert.getStatus()).isEqualTo(Open);
 
-    verify(eventPublisher, times(0)).publishEvent(Mockito.any(Event.class));
+    verify(eventPublisher, times(1)).publishEvent(Mockito.any(Event.class));
   }
 
   @Test

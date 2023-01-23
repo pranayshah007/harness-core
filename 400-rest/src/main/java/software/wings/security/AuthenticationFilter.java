@@ -237,6 +237,18 @@ public class AuthenticationFilter implements ContainerRequestFilter {
 
     // Bearer token validation is needed for environments without Gateway
     if (checkIfBearerTokenAndValidate(authorization, containerRequestContext)) {
+      String accountId = null;
+      if (containerRequestContext.getUriInfo() != null) {
+        accountId = getRequestParamFromContext("accountId", containerRequestContext.getUriInfo().getPathParameters(),
+            containerRequestContext.getUriInfo().getQueryParameters());
+
+        if (isEmpty(accountId)) {
+          accountId = getRequestParamFromContext("routingId", containerRequestContext.getUriInfo().getPathParameters(),
+              containerRequestContext.getUriInfo().getQueryParameters());
+        }
+      }
+      log.info(
+          "AUTH_FILTER: Non gateway or non service-to-service bearer token validation call for account {}", accountId);
       setSourcePrincipalInContext(containerRequestContext, serviceToJWTTokenHandlerMapping, serviceToSecretMapping,
           SecurityContextBuilder.getPrincipal());
       return;

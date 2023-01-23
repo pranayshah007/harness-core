@@ -24,7 +24,7 @@ public interface EnvironmentGroupRepositoryCustom {
   Page<EnvironmentGroupEntity> list(
       Criteria criteria, Pageable pageRequest, String projectIdentifier, String orgIdentifier, String accountId);
 
-  boolean deleteEnvGroup(EnvironmentGroupEntity environmentGroupEntity);
+  boolean deleteEnvGroup(EnvironmentGroupEntity environmentGroupEntity, boolean forceDelete);
 
   DeleteResult delete(Criteria criteria);
 

@@ -29,14 +29,11 @@ import retrofit2.http.POST;
 public interface HsqsServiceClient {
   String V1_ENDPOINT = "v1/";
 
-  @POST(V1_ENDPOINT + "queue/")
-  Call<EnqueueResponse> enqueue(@Body EnqueueRequest enqueueRequest, @Header("Authorization") String auth);
+  @POST(V1_ENDPOINT + "queue/") Call<EnqueueResponse> enqueue(@Body EnqueueRequest enqueueRequest);
 
-  @POST(V1_ENDPOINT + "dequeue")
-  Call<List<DequeueResponse>> dequeue(@Body DequeueRequest dequeueRequest, @Header("Authorization") String auth);
+  @POST(V1_ENDPOINT + "dequeue") Call<List<DequeueResponse>> dequeue(@Body DequeueRequest dequeueRequest);
 
-  @POST(V1_ENDPOINT + "ack") Call<AckResponse> ack(@Body AckRequest ackRequest, @Header("Authorization") String auth);
+  @POST(V1_ENDPOINT + "ack") Call<AckResponse> ack(@Body AckRequest ackRequest);
 
-  @POST(V1_ENDPOINT + "nack")
-  Call<UnAckResponse> unack(@Body UnAckRequest unAckRequest, @Header("Authorization") String auth);
+  @POST(V1_ENDPOINT + "nack") Call<UnAckResponse> unack(@Body UnAckRequest unAckRequest);
 }

@@ -569,6 +569,18 @@ public class ArtifactCollectionState extends State {
       resolveArtifactStreamId(context);
     }
     ArtifactStream artifactStream = artifactStreamService.get(artifactStreamId);
+    if (artifactStream == null) {
+      artifactStream = artifactStreamService.fetchByArtifactSourceVariableValue(context.getAppId(), artifactStreamId);
+      if (artifactStream != null && artifactStream.isArtifactStreamParameterized()
+          && isNotEmpty(getTemplateExpressions())) {
+        log.info("Artifact Stream {} is Parameterized", artifactStreamId);
+        return ExecutionResponse.builder()
+            .executionStatus(ExecutionStatus.FAILED)
+            .errorMessage("Parameterized Artifact Source " + artifactStream.getName()
+                + " cannot be used as a value for templatized artifact variable")
+            .build();
+      }
+    }
     notNullCheck("ArtifactStream was deleted", artifactStream);
 
     String evaluatedBuildNo = getEvaluatedBuildNo(context);

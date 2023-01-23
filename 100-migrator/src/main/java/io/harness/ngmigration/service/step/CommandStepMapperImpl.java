@@ -10,6 +10,7 @@ package io.harness.ngmigration.service.step;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.steps.template.TemplateStepNode;
 
@@ -26,6 +27,15 @@ import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 
 public class CommandStepMapperImpl implements StepMapper {
+  @Override
+  public WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode) {
+    String templateId = graphNode.getTemplateUuid();
+    if (StringUtils.isBlank(templateId)) {
+      return WorkflowStepSupportStatus.UNSUPPORTED;
+    }
+    return WorkflowStepSupportStatus.SUPPORTED;
+  }
+
   @Override
   public List<CgEntityId> getReferencedEntities(GraphNode graphNode) {
     String templateId = graphNode.getTemplateUuid();

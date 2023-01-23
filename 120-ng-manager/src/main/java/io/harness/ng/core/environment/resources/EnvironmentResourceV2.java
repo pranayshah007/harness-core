@@ -253,6 +253,9 @@ public class EnvironmentResourceV2 {
         Resource.of(ENVIRONMENT, null, environmentAttributes), ENVIRONMENT_CREATE_PERMISSION);
     environmentEntityYamlSchemaHelper.validateSchema(accountId, environmentRequestDTO.getYaml());
     Environment environmentEntity = EnvironmentMapper.toEnvironmentEntity(accountId, environmentRequestDTO);
+    if (isEmpty(environmentRequestDTO.getYaml())) {
+      environmentEntityYamlSchemaHelper.validateSchema(accountId, environmentEntity.getYaml());
+    }
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(environmentEntity.getOrgIdentifier(),
         environmentEntity.getProjectIdentifier(), environmentEntity.getAccountId());
     Environment createdEnvironment = environmentService.create(environmentEntity);
@@ -312,6 +315,9 @@ public class EnvironmentResourceV2 {
         Resource.of(ENVIRONMENT, environmentRequestDTO.getIdentifier()), ENVIRONMENT_UPDATE_PERMISSION);
     environmentEntityYamlSchemaHelper.validateSchema(accountId, environmentRequestDTO.getYaml());
     Environment requestEnvironment = EnvironmentMapper.toEnvironmentEntity(accountId, environmentRequestDTO);
+    if (isEmpty(environmentRequestDTO.getYaml())) {
+      environmentEntityYamlSchemaHelper.validateSchema(accountId, requestEnvironment.getYaml());
+    }
     requestEnvironment.setVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
     Environment updatedEnvironment = environmentService.update(requestEnvironment);
     return ResponseDTO.newResponse(
@@ -341,6 +347,9 @@ public class EnvironmentResourceV2 {
         Resource.of(ENVIRONMENT, environmentRequestDTO.getIdentifier()), ENVIRONMENT_UPDATE_PERMISSION);
     environmentEntityYamlSchemaHelper.validateSchema(accountId, environmentRequestDTO.getYaml());
     Environment requestEnvironment = EnvironmentMapper.toEnvironmentEntity(accountId, environmentRequestDTO);
+    if (isEmpty(environmentRequestDTO.getYaml())) {
+      environmentEntityYamlSchemaHelper.validateSchema(accountId, requestEnvironment.getYaml());
+    }
     requestEnvironment.setVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(requestEnvironment.getOrgIdentifier(),
         requestEnvironment.getProjectIdentifier(), requestEnvironment.getAccountId());

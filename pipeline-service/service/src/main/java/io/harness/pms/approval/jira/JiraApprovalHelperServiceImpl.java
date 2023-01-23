@@ -76,7 +76,7 @@ import lombok.extern.slf4j.Slf4j;
 public class JiraApprovalHelperServiceImpl implements JiraApprovalHelperService {
   private final NgDelegate2TaskExecutor ngDelegate2TaskExecutor;
   private final ConnectorResourceClient connectorResourceClient;
-  private final @Named("referenceFalseKryoSerializer") KryoSerializer referenceFalseKryoSerializer;
+  private final KryoSerializer referenceFalseKryoSerializer;
   private final SecretNGManagerClient secretManagerClient;
   private final WaitNotifyEngine waitNotifyEngine;
   private final LogStreamingStepClientFactory logStreamingStepClientFactory;
@@ -85,7 +85,8 @@ public class JiraApprovalHelperServiceImpl implements JiraApprovalHelperService 
 
   @Inject
   public JiraApprovalHelperServiceImpl(NgDelegate2TaskExecutor ngDelegate2TaskExecutor,
-      ConnectorResourceClient connectorResourceClient, KryoSerializer referenceFalseKryoSerializer,
+      ConnectorResourceClient connectorResourceClient,
+      @Named("referenceFalseKryoSerializer") KryoSerializer referenceFalseKryoSerializer,
       @Named("PRIVILEGED") SecretNGManagerClient secretManagerClient, WaitNotifyEngine waitNotifyEngine,
       LogStreamingStepClientFactory logStreamingStepClientFactory,
       @Named(OrchestrationPublisherName.PUBLISHER_NAME) String publisherName, PmsGitSyncHelper pmsGitSyncHelper,

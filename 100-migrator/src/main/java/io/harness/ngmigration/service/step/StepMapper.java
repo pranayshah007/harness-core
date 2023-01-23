@@ -10,6 +10,7 @@ package io.harness.ngmigration.service.step;
 import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.plancreator.steps.internal.PmsAbstractStepNode;
@@ -66,7 +67,7 @@ public interface StepMapper {
 
     TemplateStepNode templateStepNode = new TemplateStepNode();
     templateStepNode.setIdentifier(MigratorUtility.generateIdentifier(graphNode.getName()));
-    templateStepNode.setName(graphNode.getName());
+    templateStepNode.setName(MigratorUtility.generateName(graphNode.getName()));
     templateStepNode.setDescription(getDescription(graphNode));
     templateStepNode.setTemplate(templateLinkConfig);
     return templateStepNode;
@@ -80,7 +81,11 @@ public interface StepMapper {
     String timeoutString = "10m";
     if (properties.containsKey("timeoutMillis")) {
       long t = Long.parseLong(properties.get("timeoutMillis").toString()) / 1000;
-      timeoutString = t + "s";
+      if (t > 60) {
+        timeoutString = (t / 60) + "m";
+      } else {
+        timeoutString = t + "s";
+      }
     }
     return ParameterField.createValueField(Timeout.builder().timeoutString(timeoutString).build());
   }
@@ -100,7 +105,7 @@ public interface StepMapper {
 
   default void baseSetup(GraphNode graphNode, AbstractStepNode stepNode) {
     stepNode.setIdentifier(MigratorUtility.generateIdentifier(graphNode.getName()));
-    stepNode.setName(graphNode.getName());
+    stepNode.setName(MigratorUtility.generateName(graphNode.getName()));
     stepNode.setDescription(getDescription(graphNode));
     if (stepNode instanceof PmsAbstractStepNode) {
       PmsAbstractStepNode pmsAbstractStepNode = (PmsAbstractStepNode) stepNode;
@@ -114,7 +119,7 @@ public interface StepMapper {
 
   default void baseSetup(State state, AbstractStepNode stepNode) {
     stepNode.setIdentifier(MigratorUtility.generateIdentifier(state.getName()));
-    stepNode.setName(state.getName());
+    stepNode.setName(MigratorUtility.generateName(state.getName()));
     if (stepNode instanceof PmsAbstractStepNode) {
       PmsAbstractStepNode pmsAbstractStepNode = (PmsAbstractStepNode) stepNode;
       pmsAbstractStepNode.setTimeout(getTimeout(state));
@@ -124,4 +129,6 @@ public interface StepMapper {
       cdAbstractStepNode.setTimeout(getTimeout(state));
     }
   }
+
+  WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode);
 }

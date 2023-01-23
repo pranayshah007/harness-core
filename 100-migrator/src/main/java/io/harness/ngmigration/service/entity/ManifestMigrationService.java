@@ -17,7 +17,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.MigratedEntityMapping;
 import io.harness.cdng.manifest.yaml.GitStore;
-import io.harness.cdng.manifest.yaml.GitStore.GitStoreBuilder;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.datacollection.utils.EmptyPredicate;
@@ -81,8 +80,6 @@ public class ManifestMigrationService extends NgMigrationService {
   @Inject private NgManifestFactory manifestFactory;
 
   @Inject private ServiceVariableMigrationService serviceVariableMigrationService;
-  private static final List<AppManifestKind> SUPPORTED_MANIFEST_KIND =
-      Lists.newArrayList(AppManifestKind.VALUES, AppManifestKind.K8S_MANIFEST);
 
   @Override
   public MigratedEntityMapping generateMappingEntity(NGYamlFile yamlFile) {
@@ -310,32 +307,38 @@ public class ManifestMigrationService extends NgMigrationService {
 
   public GitStore getGitStore(
       GitFileConfig gitFileConfig, ManifestProvidedEntitySpec manifestInput, NgEntityDetail connector) {
-    GitStoreBuilder gitStoreBuilder =
+    GitStore gitStore =
         GitStore.builder()
-            .commitId(ParameterField.createValueField(gitFileConfig.getCommitId()))
             .connectorRef(ParameterField.createValueField(MigratorUtility.getIdentifierWithScope(connector)))
-            .gitFetchType(gitFileConfig.isUseBranch() ? FetchType.BRANCH : FetchType.COMMIT)
-            .repoName(ParameterField.createValueField(gitFileConfig.getRepoName()));
+            .gitFetchType(StringUtils.isNotBlank(gitFileConfig.getBranch()) ? FetchType.BRANCH : FetchType.COMMIT)
+            .build();
+    if (StringUtils.isNotBlank(gitFileConfig.getRepoName())) {
+      gitStore.setRepoName(ParameterField.createValueField(gitFileConfig.getRepoName()));
+    }
     if (manifestInput != null) {
       if (StringUtils.isNotBlank(manifestInput.getBranch())) {
-        gitStoreBuilder.branch(ParameterField.createValueField(manifestInput.getBranch()));
+        gitStore.setBranch(ParameterField.createValueField(manifestInput.getBranch()));
       }
       if (StringUtils.isNotBlank(manifestInput.getFolderPath())) {
-        gitStoreBuilder.paths(MigratorUtility.splitWithComma(manifestInput.getFolderPath()));
+        gitStore.setPaths(MigratorUtility.splitWithComma(manifestInput.getFolderPath()));
       } else if (EmptyPredicate.isNotEmpty(manifestInput.getPaths())) {
-        gitStoreBuilder.paths(ParameterField.createValueField(manifestInput.getPaths()));
+        gitStore.setPaths(ParameterField.createValueField(manifestInput.getPaths()));
       } else {
-        gitStoreBuilder.paths(MigratorUtility.splitWithComma(gitFileConfig.getFilePath()));
+        gitStore.setPaths(MigratorUtility.splitWithComma(gitFileConfig.getFilePath()));
       }
     } else {
-      gitStoreBuilder.branch(ParameterField.createValueField(gitFileConfig.getBranch()));
-      if (StringUtils.isBlank(gitFileConfig.getFilePath())) {
-        gitStoreBuilder.folderPath(ParameterField.createValueField("/"));
+      if (StringUtils.isNotBlank(gitFileConfig.getBranch())) {
+        gitStore.setBranch(ParameterField.createValueField(gitFileConfig.getBranch()));
       } else {
-        gitStoreBuilder.paths(MigratorUtility.splitWithComma(gitFileConfig.getFilePath()));
+        gitStore.setCommitId(ParameterField.createValueField(gitFileConfig.getCommitId()));
+      }
+      if (StringUtils.isBlank(gitFileConfig.getFilePath())) {
+        gitStore.setFolderPath(ParameterField.createValueField("/"));
+      } else {
+        gitStore.setPaths(MigratorUtility.splitWithComma(gitFileConfig.getFilePath()));
       }
     }
-    return gitStoreBuilder.build();
+    return gitStore;
   }
 
   public HarnessStore getHarnessStore(List<NGYamlFile> files) {

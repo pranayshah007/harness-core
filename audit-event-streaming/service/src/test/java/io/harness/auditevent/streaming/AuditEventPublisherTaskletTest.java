@@ -24,7 +24,7 @@ import io.harness.CategoryTest;
 import io.harness.audit.entities.streaming.AwsS3StreamingDestination;
 import io.harness.audit.entities.streaming.StreamingDestinationFilterProperties;
 import io.harness.auditevent.streaming.services.AuditEventStreamingService;
-import io.harness.auditevent.streaming.services.StreamingDestinationsService;
+import io.harness.auditevent.streaming.services.StreamingDestinationService;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 
@@ -44,7 +44,7 @@ import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.repeat.RepeatStatus;
 
 public class AuditEventPublisherTaskletTest extends CategoryTest {
-  @Mock private StreamingDestinationsService streamingDestinationsService;
+  @Mock private StreamingDestinationService streamingDestinationService;
   @Mock private AuditEventStreamingService auditEventStreamingService;
   @Mock(answer = Answers.RETURNS_DEEP_STUBS) private ChunkContext chunkContext;
   ArgumentCaptor<StreamingDestinationFilterProperties> filterPropertiesArgumentCaptor =
@@ -63,7 +63,7 @@ public class AuditEventPublisherTaskletTest extends CategoryTest {
     when(chunkContext.getStepContext().getStepExecution().getJobParameters())
         .thenReturn(new JobParameters(jobParameterMap));
     this.auditEventPublisherTasklet =
-        new AuditEventPublisherTasklet(streamingDestinationsService, auditEventStreamingService);
+        new AuditEventPublisherTasklet(streamingDestinationService, auditEventStreamingService);
   }
 
   @Test
@@ -71,11 +71,11 @@ public class AuditEventPublisherTaskletTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testExecute() throws Exception {
     AwsS3StreamingDestination awsS3StreamingDestination = AwsS3StreamingDestination.builder().build();
-    when(streamingDestinationsService.list(eq(ACCOUNT_IDENTIFIER), any()))
+    when(streamingDestinationService.list(eq(ACCOUNT_IDENTIFIER), any()))
         .thenReturn(List.of(awsS3StreamingDestination));
     RepeatStatus status = auditEventPublisherTasklet.execute(null, chunkContext);
     assertThat(status).isEqualTo(RepeatStatus.FINISHED);
-    verify(streamingDestinationsService, times(1))
+    verify(streamingDestinationService, times(1))
         .list(eq(ACCOUNT_IDENTIFIER), filterPropertiesArgumentCaptor.capture());
     assertThat(filterPropertiesArgumentCaptor.getValue().getStatus()).isEqualTo(ACTIVE);
     verify(auditEventStreamingService, times(1))

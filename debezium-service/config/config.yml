@@ -44,7 +44,7 @@ debeziumConfigs:
     field.exclude.list: ${FIELD_EXCLUDE_LIST_PIPELINE:-pms-harness.planExecutionsSummary.layoutNodeMap}
     heartbeat.interval.ms: ${HEARTBEAT_INTERVAL_MS_PIPELINE:-10000}
     mongodb.connection.string: ${MONGODB_CONNECTION_STRING_PIPELINE:-mongodb://localhost:27017}
-  - isEnabled: ${IS_ENABLED_PIPELINE_SNAPSHOT:-true}
+  - isEnabled: ${IS_ENABLED_PIPELINE_SNAPSHOT:-false}
     name: ${DEBEZIUM_NAME_PIPELINE_SNAPSHOT:-pipelineSnapshot} # unique for each debezium config
     mongodb.name: ${MONGODB_NAME_PIPELINE_SNAPSHOT:-pmsMongoSnapshot} # unique for each debezium config
     mongodb.ssl.enabled: ${MONGO_DB_SSL_ENABLED_PIPELINE_SNAPSHOT:-false}

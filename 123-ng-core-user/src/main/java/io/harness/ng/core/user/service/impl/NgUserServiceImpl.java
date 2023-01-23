@@ -895,6 +895,11 @@ public class NgUserServiceImpl implements NgUserService {
   }
 
   @Override
+  public ScimUser updateUserDetails(String accountId, String userId, PatchRequest patchRequest) {
+    return CGRestUtils.getResponse(userClient.scimUserPatchUpdateDeatils(accountId, userId, patchRequest));
+  }
+
+  @Override
   public boolean updateScimUser(String accountId, String userId, ScimUser scimUser) {
     return CGRestUtils.getResponse(userClient.scimUserUpdate(accountId, userId, scimUser));
   }

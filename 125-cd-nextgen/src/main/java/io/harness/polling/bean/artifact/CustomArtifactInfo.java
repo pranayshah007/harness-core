@@ -18,6 +18,7 @@ import io.harness.cdng.artifact.bean.yaml.customartifact.CustomScriptInlineSourc
 import io.harness.cdng.artifact.bean.yaml.customartifact.FetchAllArtifacts;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.polling.bean.ArtifactInfo;
 import io.harness.steps.shellscript.ShellType;
 import io.harness.yaml.core.variables.NGVariable;
 

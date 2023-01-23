@@ -22,6 +22,7 @@ import com.offbytwo.jenkins.model.JobWithDetails;
 import java.io.IOException;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpResponseException;
+
 public class JenkinsCustomServer extends JenkinsServer {
   private JenkinsHttpClient client;
 

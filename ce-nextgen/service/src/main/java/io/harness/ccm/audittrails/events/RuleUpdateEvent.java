@@ -16,9 +16,11 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class RuleUpdateEvent extends RuleEvent {
   public static final String RULE_UPDATED = "RuleUpdated";
+  private Rule oldRule;
 
-  public RuleUpdateEvent(String accountIdentifier, Rule rules) {
-    super(accountIdentifier, rules);
+  public RuleUpdateEvent(String accountIdentifier, Rule rule, Rule oldRule) {
+    super(accountIdentifier, rule);
+    this.oldRule = oldRule;
   }
 
   @Override

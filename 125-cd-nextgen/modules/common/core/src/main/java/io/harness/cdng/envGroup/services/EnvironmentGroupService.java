@@ -24,8 +24,8 @@ public interface EnvironmentGroupService {
   Page<EnvironmentGroupEntity> list(
       Criteria criteria, Pageable pageRequest, String projectIdentifier, String orgIdentifier, String accountId);
 
-  EnvironmentGroupEntity delete(
-      String accountId, String orgIdentifier, String projectIdentifier, String envGroupId, Long version);
+  EnvironmentGroupEntity delete(String accountId, String orgIdentifier, String projectIdentifier, String envGroupId,
+      Long version, boolean forceDelete);
 
   EnvironmentGroupEntity update(EnvironmentGroupEntity requestedEntity);
 

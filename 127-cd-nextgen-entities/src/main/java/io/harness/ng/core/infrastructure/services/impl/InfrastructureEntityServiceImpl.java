@@ -23,6 +23,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.customdeployment.helper.CustomDeploymentEntitySetupHelper;
+import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.DuplicateFieldException;
@@ -526,6 +527,23 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
           envIdentifierRef.getIdentifier());
     }
   }
+
+  @Override
+  public List<InfrastructureEntity> getAllInfrastructureFromEnvRefAndDeploymentType(String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, String envRef, ServiceDefinitionType deploymentType) {
+    String[] envRefSplit = StringUtils.split(envRef, ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
+    if (envRefSplit == null || envRefSplit.length == 1) {
+      return infrastructureRepository.findAllFromEnvIdentifierAndDeploymentType(
+          accountIdentifier, orgIdentifier, projectIdentifier, envRef, deploymentType);
+    } else {
+      IdentifierRef envIdentifierRef =
+          IdentifierRefHelper.getIdentifierRef(envRef, accountIdentifier, orgIdentifier, projectIdentifier);
+      return infrastructureRepository.findAllFromEnvIdentifierAndDeploymentType(envIdentifierRef.getAccountIdentifier(),
+          envIdentifierRef.getOrgIdentifier(), envIdentifierRef.getProjectIdentifier(),
+          envIdentifierRef.getIdentifier(), deploymentType);
+    }
+  }
+
   @Override
   public List<InfrastructureEntity> getInfrastructures(
       String accountIdentifier, String orgIdentifier, String projectIdentifier) {

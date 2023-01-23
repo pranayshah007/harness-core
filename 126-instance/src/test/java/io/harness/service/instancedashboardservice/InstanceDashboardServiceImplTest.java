@@ -29,6 +29,7 @@ import io.harness.entities.instanceinfo.GitopsInstanceInfo;
 import io.harness.entities.instanceinfo.K8sInstanceInfo;
 import io.harness.mappers.InstanceDetailsMapper;
 import io.harness.models.ActiveServiceInstanceInfoV2;
+import io.harness.models.ActiveServiceInstanceInfoWithEnvType;
 import io.harness.models.ArtifactDeploymentDetailModel;
 import io.harness.models.BuildsByEnvironment;
 import io.harness.models.CountByServiceIdAndEnvType;
@@ -61,22 +62,31 @@ import org.mockito.Mock;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 
 public class InstanceDashboardServiceImplTest extends InstancesTestBase {
-  private final String ACCOUNT_IDENTIFIER = "acc";
-  private final String PROJECT_IDENTIFIER = "proj";
-  private final String ORG_IDENTIFIER = "org";
-  private final String SERVICE_IDENTIFIER = "serv";
-  private final String ENV_IDENTIFIER = "env";
-  private final String DISPLAY_NAME = "displayName";
-  private final String ENV_1 = "env1";
-  private final String ENV_2 = "env2";
-  private final List<String> BUILD_IDS = Arrays.asList("id1", "id2");
-  private final List<ArtifactDeploymentDetailModel> artifactDeploymentDetailModels =
+  private static final String ACCOUNT_IDENTIFIER = "acc";
+  private static final String PROJECT_IDENTIFIER = "proj";
+  private static final String ORG_IDENTIFIER = "org";
+  private static final String SERVICE_IDENTIFIER = "serv";
+  private static final String ENV_IDENTIFIER = "env";
+  private static final String DISPLAY_NAME = "displayName";
+  private static final String ENV_1 = "env1";
+  private static final String ENV_2 = "env2";
+  private static final String INFRASTRUCTURE_ID = "infraId";
+  private static final String CLUSTER_ID = "clusterId";
+  private static final String AGENT_ID = "agentId";
+  private static final List<String> BUILD_IDS = Arrays.asList("id1", "id2");
+  private static final List<ArtifactDeploymentDetailModel> artifactDeploymentDetailModels =
       Arrays.asList(new ArtifactDeploymentDetailModel(ENV_1, DISPLAY_NAME, 2l),
           new ArtifactDeploymentDetailModel(ENV_2, DISPLAY_NAME, 1l));
-  private final List<EnvironmentInstanceCountModel> environmentInstanceCountModels =
+  private static final List<EnvironmentInstanceCountModel> environmentInstanceCountModels =
       Arrays.asList(new EnvironmentInstanceCountModel(ENV_1, 2), new EnvironmentInstanceCountModel(ENV_2, 1));
+  private static final List<ActiveServiceInstanceInfoWithEnvType> activeServiceInstanceInfoWithEnvTypeList =
+      Arrays.asList(
+          new ActiveServiceInstanceInfoWithEnvType(ENV_IDENTIFIER, ENV_IDENTIFIER, EnvironmentType.PreProduction,
+              INFRASTRUCTURE_ID, INFRASTRUCTURE_ID, CLUSTER_ID, AGENT_ID, 1l, DISPLAY_NAME, 1));
   private AggregationResults<ArtifactDeploymentDetailModel> artifactDeploymentDetailModelAggregationResults;
   private AggregationResults<EnvironmentInstanceCountModel> environmentInstanceCountModelAggregationResults;
+  private AggregationResults<ActiveServiceInstanceInfoWithEnvType>
+      activeServiceInstanceInfoWithEnvTypeAggregationResults;
   @Mock InstanceService instanceService;
   @Mock InstanceDetailsMapper instanceDetailsMapper;
   @InjectMocks InstanceDashboardServiceImpl instanceDashboardService;
@@ -89,6 +99,8 @@ public class InstanceDashboardServiceImplTest extends InstancesTestBase {
         new AggregationResults<>(artifactDeploymentDetailModels, new Document());
     environmentInstanceCountModelAggregationResults =
         new AggregationResults<>(environmentInstanceCountModels, new Document());
+    activeServiceInstanceInfoWithEnvTypeAggregationResults =
+        new AggregationResults<>(activeServiceInstanceInfoWithEnvTypeList, new Document());
   }
 
   public static List<Instance> getInstanceList() {
@@ -701,5 +713,41 @@ public class InstanceDashboardServiceImplTest extends InstancesTestBase {
         .getInstanceCountForEnvironmentFilteredByService(
             ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, true);
     assertThat(environmentInstanceCountModels).isEqualTo(environmentInstanceCountModels1);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void test_getActiveServiceInstanceInfoWithEnvType_NonGitOps() {
+    when(instanceService.getActiveServiceInstanceInfoWithEnvType(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER,
+             ENV_IDENTIFIER, SERVICE_IDENTIFIER, DISPLAY_NAME, false))
+        .thenReturn(activeServiceInstanceInfoWithEnvTypeAggregationResults);
+
+    List<ActiveServiceInstanceInfoWithEnvType> activeServiceInstanceInfoWithEnvTypeList1 =
+        instanceDashboardService.getActiveServiceInstanceInfoWithEnvType(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER,
+            PROJECT_IDENTIFIER, ENV_IDENTIFIER, SERVICE_IDENTIFIER, DISPLAY_NAME, false);
+
+    verify(instanceService)
+        .getActiveServiceInstanceInfoWithEnvType(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, ENV_IDENTIFIER,
+            SERVICE_IDENTIFIER, DISPLAY_NAME, false);
+    assertThat(activeServiceInstanceInfoWithEnvTypeList).isEqualTo(activeServiceInstanceInfoWithEnvTypeList1);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void test_getActiveServiceInstanceInfoWithEnvType_GitOps() {
+    when(instanceService.getActiveServiceInstanceInfoWithEnvType(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER,
+             ENV_IDENTIFIER, SERVICE_IDENTIFIER, DISPLAY_NAME, true))
+        .thenReturn(activeServiceInstanceInfoWithEnvTypeAggregationResults);
+
+    List<ActiveServiceInstanceInfoWithEnvType> activeServiceInstanceInfoWithEnvTypeList1 =
+        instanceDashboardService.getActiveServiceInstanceInfoWithEnvType(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER,
+            PROJECT_IDENTIFIER, ENV_IDENTIFIER, SERVICE_IDENTIFIER, DISPLAY_NAME, true);
+
+    verify(instanceService)
+        .getActiveServiceInstanceInfoWithEnvType(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, ENV_IDENTIFIER,
+            SERVICE_IDENTIFIER, DISPLAY_NAME, true);
+    assertThat(activeServiceInstanceInfoWithEnvTypeList).isEqualTo(activeServiceInstanceInfoWithEnvTypeList1);
   }
 }

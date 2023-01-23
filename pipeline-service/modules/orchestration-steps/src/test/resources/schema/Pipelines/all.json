@@ -525,7 +525,8 @@
       "type": "object",
       "required": [
         "key",
-        "operator"
+        "operator",
+        "value"
       ],
       "properties": {
         "key": {
@@ -2110,7 +2111,8 @@
               "DelegateProvisioning",
               "PolicyEvaluationFailure",
               "InputTimeoutError",
-              "ApprovalRejection"
+              "ApprovalRejection",
+              "DelegateRestart"
             ]
           }
         }
@@ -4599,6 +4601,9 @@
         },
         {
           "type": "object",
+          "required": [
+            "duration"
+          ],
           "properties": {
             "duration": {
               "type": "string",

@@ -28,6 +28,7 @@ import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.activity.ActivityVerificationStatus;
 import io.harness.cvng.beans.job.Sensitivity;
 import io.harness.cvng.beans.job.VerificationJobType;
+import io.harness.cvng.cdng.beans.MonitoredServiceSpec.MonitoredServiceSpecType;
 import io.harness.cvng.cdng.beans.v2.AnalysedDeploymentNode;
 import io.harness.cvng.cdng.beans.v2.AnalysedNodeType;
 import io.harness.cvng.cdng.beans.v2.AnalysisReason;
@@ -97,7 +98,7 @@ public class VerifyStepResourceImplTest extends CvNextGenTestBase {
     injector.injectMembers(verifyStepResource);
     builderFactory = BuilderFactory.getDefault();
     verifyStepExecutionId = generateUuid();
-    baseUrl = "http://localhost:9998/accounts/" + builderFactory.getContext().getAccountId() + "/orgs/"
+    baseUrl = "http://localhost:9998/account/" + builderFactory.getContext().getAccountId() + "/orgs/"
         + builderFactory.getContext().getOrgIdentifier() + "/projects/"
         + builderFactory.getContext().getProjectIdentifier() + "/verifications/" + verifyStepExecutionId;
 
@@ -204,6 +205,15 @@ public class VerifyStepResourceImplTest extends CvNextGenTestBase {
     assertThat(verificationOverview.getSpec().getDurationInMinutes()).isEqualTo(10);
     assertThat(verificationOverview.getSpec().getIsFailOnNoAnalysis()).isFalse();
     assertThat(verificationOverview.getSpec().getSensitivity()).isEqualTo(Sensitivity.MEDIUM);
+    assertThat(verificationOverview.getSpec().getAnalysedServiceIdentifier())
+        .isEqualTo(builderFactory.getContext().getServiceIdentifier());
+    assertThat(verificationOverview.getSpec().getAnalysedEnvIdentifier())
+        .isEqualTo(builderFactory.getContext().getEnvIdentifier());
+    assertThat(verificationOverview.getSpec().getMonitoredServiceIdentifier())
+        .isEqualTo(builderFactory.getContext().getMonitoredServiceIdentifier());
+    assertThat(verificationOverview.getSpec().getMonitoredServiceTemplateIdentifier()).isNull();
+    assertThat(verificationOverview.getSpec().getMonitoredServiceTemplateVersionLabel()).isNull();
+    assertThat(verificationOverview.getSpec().getMonitoredServiceType()).isEqualTo(MonitoredServiceSpecType.DEFAULT);
 
     assertThat(verificationOverview.getMetricsAnalysis().getNoAnalysis()).isEqualTo(1);
     assertThat(verificationOverview.getMetricsAnalysis().getHealthy()).isEqualTo(1);
@@ -217,6 +227,32 @@ public class VerifyStepResourceImplTest extends CvNextGenTestBase {
     assertThat(verificationOverview.getErrorClusters().getKnownClustersCount()).isEqualTo(1);
     assertThat(verificationOverview.getErrorClusters().getUnknownClustersCount()).isEqualTo(1);
     assertThat(verificationOverview.getErrorClusters().getUnexpectedFrequencyClustersCount()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testGetVerificationOverviewForVerifyStepExecutionId_monitoredServiceSpecTypeIsTemplate() {
+    verificationJobInstance.getResolvedJob().setMonitoredServiceTemplateIdentifier(
+        "monitoredServiceTemplateIdentifier");
+    verificationJobInstance.getResolvedJob().setMonitoredServiceTemplateVersionLabel(
+        "monitoredServiceTemplateVersionLabel");
+
+    Response response = RESOURCES.client().target(baseUrl + "/overview").request(MediaType.APPLICATION_JSON_TYPE).get();
+    assertThat(response.getStatus()).isEqualTo(200);
+    VerificationOverview verificationOverview = response.readEntity(new GenericType<VerificationOverview>() {});
+
+    assertThat(verificationOverview.getSpec().getAnalysedServiceIdentifier())
+        .isEqualTo(builderFactory.getContext().getServiceIdentifier());
+    assertThat(verificationOverview.getSpec().getAnalysedEnvIdentifier())
+        .isEqualTo(builderFactory.getContext().getEnvIdentifier());
+    assertThat(verificationOverview.getSpec().getMonitoredServiceIdentifier())
+        .isEqualTo(builderFactory.getContext().getMonitoredServiceIdentifier());
+    assertThat(verificationOverview.getSpec().getMonitoredServiceTemplateIdentifier())
+        .isEqualTo("monitoredServiceTemplateIdentifier");
+    assertThat(verificationOverview.getSpec().getMonitoredServiceTemplateVersionLabel())
+        .isEqualTo("monitoredServiceTemplateVersionLabel");
+    assertThat(verificationOverview.getSpec().getMonitoredServiceType()).isEqualTo(MonitoredServiceSpecType.TEMPLATE);
   }
 
   @Test

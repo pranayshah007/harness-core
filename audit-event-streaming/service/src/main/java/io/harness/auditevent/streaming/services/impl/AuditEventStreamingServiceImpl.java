@@ -25,6 +25,7 @@ import io.harness.auditevent.streaming.publishers.StreamingPublisherUtils;
 import io.harness.auditevent.streaming.services.AuditEventStreamingService;
 import io.harness.auditevent.streaming.services.BatchProcessorService;
 import io.harness.auditevent.streaming.services.StreamingBatchService;
+import io.harness.auditevent.streaming.services.StreamingDestinationService;
 
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.model.Sorts;
@@ -44,6 +45,7 @@ import org.springframework.stereotype.Service;
 public class AuditEventStreamingServiceImpl implements AuditEventStreamingService {
   private final BatchProcessorService batchProcessorService;
   private final StreamingBatchService streamingBatchService;
+  private final StreamingDestinationService streamingDestinationService;
   private final AuditEventRepository auditEventRepository;
   private final BatchConfig batchConfig;
   private final MongoTemplate template;
@@ -51,10 +53,12 @@ public class AuditEventStreamingServiceImpl implements AuditEventStreamingServic
 
   @Autowired
   public AuditEventStreamingServiceImpl(BatchProcessorService batchProcessorService,
-      StreamingBatchService streamingBatchService, AuditEventRepository auditEventRepository, BatchConfig batchConfig,
-      MongoTemplate template, Map<String, StreamingPublisher> streamingPublisherMap) {
+      StreamingBatchService streamingBatchService, StreamingDestinationService streamingDestinationService,
+      AuditEventRepository auditEventRepository, BatchConfig batchConfig, MongoTemplate template,
+      Map<String, StreamingPublisher> streamingPublisherMap) {
     this.batchProcessorService = batchProcessorService;
     this.streamingBatchService = streamingBatchService;
+    this.streamingDestinationService = streamingDestinationService;
     this.auditEventRepository = auditEventRepository;
     this.batchConfig = batchConfig;
     this.template = template;
@@ -73,7 +77,7 @@ public class AuditEventStreamingServiceImpl implements AuditEventStreamingServic
       log.warn(getFullLogMessage(
           String.format("Retry [%s]. Exhausted all retries. Not publishing.", streamingBatch.getRetryCount()),
           streamingBatch));
-      // TODO: disable streaming destination
+      streamingDestinationService.disableStreamingDestination(streamingDestination);
       return streamingBatch;
     }
     MongoCursor<Document> auditEventMongoCursor = auditEventRepository.loadAuditEvents(

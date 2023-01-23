@@ -3,7 +3,7 @@ module "delegate" {
   version = "0.1.5"
 
   account_id = "1234567"
-  delegate_token = "xxxxxbbbbb"
+  delegate_token = "eHh4eHhiYmJiYgo="
   delegate_name = "terraform-delegate"
   namespace = "harness-delegate-ng"
   manager_endpoint = "https://app.harness.io"

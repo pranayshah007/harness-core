@@ -226,6 +226,7 @@ public class TerragruntPlanStepTest extends CategoryTest {
             .varFilesSourceReference(new HashMap<>() {
               { put("test-var-file-ref-key", "test-var-file-ref-value"); }
             })
+            .encryptedPlan(EncryptedRecordData.builder().build())
             .build();
 
     TerragruntPlanStepParameters parameters =

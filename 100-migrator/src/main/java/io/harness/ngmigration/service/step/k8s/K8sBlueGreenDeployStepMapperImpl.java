@@ -11,6 +11,7 @@ import io.harness.cdng.k8s.K8sBlueGreenStepInfo;
 import io.harness.cdng.k8s.K8sBlueGreenStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.step.StepMapper;
 import io.harness.plancreator.steps.AbstractStepNode;
@@ -25,6 +26,11 @@ import software.wings.sm.states.k8s.K8sBlueGreenDeploy;
 import java.util.Map;
 
 public class K8sBlueGreenDeployStepMapperImpl implements StepMapper {
+  @Override
+  public WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode) {
+    return WorkflowStepSupportStatus.SUPPORTED;
+  }
+
   @Override
   public String getStepType(GraphNode stepYaml) {
     return StepSpecTypeConstants.K8S_BLUE_GREEN_DEPLOY;

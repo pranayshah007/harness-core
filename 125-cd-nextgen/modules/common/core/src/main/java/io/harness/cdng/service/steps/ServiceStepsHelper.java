@@ -79,7 +79,8 @@ public class ServiceStepsHelper {
         io.harness.accesscontrol.acl.api.ResourceScope.of(serviceIdentifierRef.getAccountIdentifier(),
             serviceIdentifierRef.getOrgIdentifier(), serviceIdentifierRef.getProjectIdentifier()),
         io.harness.accesscontrol.acl.api.Resource.of(NGResourceType.SERVICE, serviceIdentifierRef.getIdentifier()),
-        CDNGRbacPermissions.SERVICE_RUNTIME_PERMISSION, "Validation for Service Step failed");
+        CDNGRbacPermissions.SERVICE_RUNTIME_PERMISSION,
+        String.format("Missing Access Permission for Service: [%s]", serviceRef));
 
     List<NGVariable> serviceVariables =
         serviceConfig.getNgServiceV2InfoConfig().getServiceDefinition().getServiceSpec().getVariables();
