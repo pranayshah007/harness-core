@@ -54,7 +54,6 @@ java_library(
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/manifest/mappers:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/manifest/steps:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/pipeline:module",
-        "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/pipeline/steps:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/service/beans:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/service/steps:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/ssh/output:module",

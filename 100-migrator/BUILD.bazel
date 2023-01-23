@@ -59,6 +59,7 @@ java_binary(
         "//970-rbac-core:module",
         "//980-commons:module",
         "//999-annotations:module",
+        "//cd-manager/modules/pipeline/integration/core:module",
         "//pipeline-service/contracts:module",
         "//pipeline-service/modules/orchestration-beans:module",
         "//pipeline-service/modules/orchestration-steps:module",

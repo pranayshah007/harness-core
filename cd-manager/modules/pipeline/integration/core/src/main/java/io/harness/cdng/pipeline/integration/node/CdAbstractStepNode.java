@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.cdng.pipeline.steps;
+package io.harness.cdng.pipeline.integration.node;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 

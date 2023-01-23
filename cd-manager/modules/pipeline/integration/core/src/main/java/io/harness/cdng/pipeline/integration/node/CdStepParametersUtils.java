@@ -5,28 +5,21 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.cdng.pipeline.steps;
+package io.harness.cdng.pipeline.integration.node;
 
 import io.harness.advisers.rollback.OnFailRollbackParameters;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.creator.plan.stage.DeploymentAbstractStageNode;
-import io.harness.data.structure.CollectionUtils;
-import io.harness.plancreator.steps.common.StageElementParameters;
-import io.harness.plancreator.steps.common.StageElementParameters.StageElementParametersBuilder;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.common.StepElementParameters.StepElementParametersBuilder;
-import io.harness.pms.tags.TagUtils;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.steps.SdkCoreStepUtils;
 import io.harness.utils.TimeoutUtils;
-import io.harness.yaml.utils.NGVariablesUtils;
 
 import lombok.experimental.UtilityClass;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @UtilityClass
-public class CdStepParametersUtils {
+class CdStepParametersUtils {
   public StepElementParametersBuilder getStepParameters(CdAbstractStepNode stepNode) {
     StepElementParametersBuilder stepBuilder = StepElementParameters.builder();
     stepBuilder.name(stepNode.getName());
@@ -42,25 +35,6 @@ public class CdStepParametersUtils {
     stepBuilder.enforce(stepNode.getEnforce());
 
     return stepBuilder;
-  }
-
-  public StageElementParametersBuilder getStageParameters(DeploymentAbstractStageNode stageNode) {
-    TagUtils.removeUuidFromTags(stageNode.getTags());
-
-    StageElementParametersBuilder stageBuilder = StageElementParameters.builder();
-    stageBuilder.name(stageNode.getName());
-    stageBuilder.identifier(stageNode.getIdentifier());
-    stageBuilder.description(SdkCoreStepUtils.getParameterFieldHandleValueNull(stageNode.getDescription()));
-    stageBuilder.failureStrategies(stageNode.getFailureStrategies());
-    stageBuilder.skipCondition(stageNode.getSkipCondition());
-    stageBuilder.when(stageNode.getWhen());
-    stageBuilder.type(stageNode.getType());
-    stageBuilder.uuid(stageNode.getUuid());
-    stageBuilder.variables(
-        ParameterField.createValueField(NGVariablesUtils.getMapOfVariables(stageNode.getVariables())));
-    stageBuilder.tags(CollectionUtils.emptyIfNull(stageNode.getTags()));
-
-    return stageBuilder;
   }
 
   public StepElementParametersBuilder getStepParameters(

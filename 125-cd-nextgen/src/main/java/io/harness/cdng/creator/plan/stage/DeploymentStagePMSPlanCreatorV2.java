@@ -30,12 +30,12 @@ import io.harness.cdng.environment.yaml.ServiceOverrideInputsYaml;
 import io.harness.cdng.pipeline.PipelineInfrastructure;
 import io.harness.cdng.pipeline.beans.DeploymentStageStepParameters;
 import io.harness.cdng.pipeline.beans.MultiDeploymentStepParameters;
-import io.harness.cdng.pipeline.steps.CdStepParametersUtils;
 import io.harness.cdng.pipeline.steps.DeploymentStageStep;
 import io.harness.cdng.pipeline.steps.MultiDeploymentSpawnerUtils;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.beans.ServiceYamlV2;
 import io.harness.cdng.visitor.YamlTypes;
+import io.harness.data.structure.CollectionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
@@ -49,6 +49,7 @@ import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.plancreator.stages.AbstractStagePlanCreator;
 import io.harness.plancreator.steps.GenericStepPMSPlanCreator;
 import io.harness.plancreator.steps.common.SpecParameters;
+import io.harness.plancreator.steps.common.StageElementParameters;
 import io.harness.plancreator.steps.common.StageElementParameters.StageElementParametersBuilder;
 import io.harness.plancreator.strategy.StrategyType;
 import io.harness.plancreator.strategy.StrategyUtils;
@@ -70,6 +71,7 @@ import io.harness.pms.sdk.core.plan.creation.beans.GraphLayoutResponse;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
+import io.harness.pms.tags.TagUtils;
 import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
@@ -77,10 +79,12 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.KryoSerializer;
+import io.harness.steps.SdkCoreStepUtils;
 import io.harness.strategy.StrategyValidationUtils;
 import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.when.utils.RunInfoUtils;
 import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
+import io.harness.yaml.utils.NGVariablesUtils;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
@@ -182,7 +186,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     }
     stageNode.setIdentifier(getIdentifierWithExpression(ctx, stageNode, stageNode.getIdentifier()));
     stageNode.setName(getIdentifierWithExpression(ctx, stageNode, stageNode.getName()));
-    StageElementParametersBuilder stageParameters = CdStepParametersUtils.getStageParameters(stageNode);
+    StageElementParametersBuilder stageParameters = getStageParameters(stageNode);
     YamlField specField =
         Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC));
     stageParameters.specConfig(getSpecParameters(specField.getNode().getUuid(), ctx, stageNode));
@@ -746,5 +750,24 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
 
   private boolean isGitopsEnabled(DeploymentStageConfig deploymentStageConfig) {
     return deploymentStageConfig.getGitOpsEnabled();
+  }
+
+  private StageElementParametersBuilder getStageParameters(DeploymentAbstractStageNode stageNode) {
+    TagUtils.removeUuidFromTags(stageNode.getTags());
+
+    StageElementParametersBuilder stageBuilder = StageElementParameters.builder();
+    stageBuilder.name(stageNode.getName());
+    stageBuilder.identifier(stageNode.getIdentifier());
+    stageBuilder.description(SdkCoreStepUtils.getParameterFieldHandleValueNull(stageNode.getDescription()));
+    stageBuilder.failureStrategies(stageNode.getFailureStrategies());
+    stageBuilder.skipCondition(stageNode.getSkipCondition());
+    stageBuilder.when(stageNode.getWhen());
+    stageBuilder.type(stageNode.getType());
+    stageBuilder.uuid(stageNode.getUuid());
+    stageBuilder.variables(
+        ParameterField.createValueField(NGVariablesUtils.getMapOfVariables(stageNode.getVariables())));
+    stageBuilder.tags(CollectionUtils.emptyIfNull(stageNode.getTags()));
+
+    return stageBuilder;
   }
 }

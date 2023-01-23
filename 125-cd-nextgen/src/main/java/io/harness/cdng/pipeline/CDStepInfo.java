@@ -7,7 +7,6 @@
 
 package io.harness.cdng.pipeline;
 
-import io.harness.advisers.rollback.OnFailRollbackParameters;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.aws.asg.AsgBlueGreenDeployStepInfo;
@@ -51,8 +50,6 @@ import io.harness.cdng.k8s.K8sDryRunManifestStepInfo;
 import io.harness.cdng.k8s.K8sRollingRollbackStepInfo;
 import io.harness.cdng.k8s.K8sRollingStepInfo;
 import io.harness.cdng.k8s.K8sScaleStepInfo;
-import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
-import io.harness.cdng.pipeline.steps.CdStepParametersUtils;
 import io.harness.cdng.provision.azure.AzureARMRollbackStepInfo;
 import io.harness.cdng.provision.azure.AzureCreateARMResourceStepInfo;
 import io.harness.cdng.provision.azure.AzureCreateBPStepInfo;
@@ -81,12 +78,8 @@ import io.harness.cdng.tas.TasRollingDeployStepInfo;
 import io.harness.cdng.tas.TasRollingRollbackStepInfo;
 import io.harness.cdng.tas.TasSwapRollbackStepInfo;
 import io.harness.cdng.tas.TasSwapRoutesStepInfo;
-import io.harness.plancreator.steps.common.StepElementParameters.StepElementParametersBuilder;
 import io.harness.plancreator.steps.common.WithDelegateSelector;
 import io.harness.plancreator.steps.common.WithStepElementParameters;
-import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
-import io.harness.pms.sdk.core.steps.io.StepParameters;
-import io.harness.steps.StepUtils;
 import io.harness.yaml.core.StepSpecType;
 
 import io.swagger.annotations.ApiModel;
@@ -119,13 +112,4 @@ import io.swagger.annotations.ApiModel;
 
 @OwnedBy(HarnessTeam.CDC)
 // keeping this class because of the swagger annotation and UI dependency on it
-public interface CDStepInfo extends StepSpecType, WithStepElementParameters, WithDelegateSelector {
-  default StepParameters getStepParameters(
-      CdAbstractStepNode stepElementConfig, OnFailRollbackParameters failRollbackParameters, PlanCreationContext ctx) {
-    StepElementParametersBuilder stepParametersBuilder =
-        CdStepParametersUtils.getStepParameters(stepElementConfig, failRollbackParameters);
-    StepUtils.appendDelegateSelectorsToSpecParameters(stepElementConfig.getStepSpecType(), ctx);
-    stepParametersBuilder.spec(getSpecParameters());
-    return stepParametersBuilder.build();
-  }
-}
+public interface CDStepInfo extends StepSpecType, WithStepElementParameters, WithDelegateSelector {}

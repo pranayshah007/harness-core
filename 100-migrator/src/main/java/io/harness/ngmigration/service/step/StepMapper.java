@@ -7,7 +7,7 @@
 
 package io.harness.ngmigration.service.step;
 
-import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
+import io.harness.cdng.pipeline.integration.node.CdAbstractStepNode;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.WorkflowStepSupportStatus;

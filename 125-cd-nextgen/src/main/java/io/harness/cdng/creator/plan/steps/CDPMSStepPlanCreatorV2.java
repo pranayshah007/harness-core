@@ -28,8 +28,8 @@ import io.harness.advisers.rollback.OnFailRollbackParameters.OnFailRollbackParam
 import io.harness.advisers.rollback.RollbackStrategy;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.pipeline.CDAbstractStepInfo;
-import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
+import io.harness.cdng.pipeline.integration.node.CDAbstractStepInfo;
+import io.harness.cdng.pipeline.integration.node.CdAbstractStepNode;
 import io.harness.exception.InvalidRequestException;
 import io.harness.govern.Switch;
 import io.harness.plancreator.NGCommonUtilPlanCreationConstants;

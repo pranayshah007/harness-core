@@ -12,7 +12,6 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/creator/plan/stage:module",
-        "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/pipeline/steps:module",
         "//127-cd-nextgen-entities:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
         "@maven//:com_fasterxml_jackson_core_jackson_annotations",
