@@ -59,6 +59,9 @@ public interface SecretCrudService {
   SecretValidationResultDTO validateSecret(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String identifier, SecretValidationMetaData metadata);
 
+  SecretValidationResultDTO validateSecretRef(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, SecretValidationMetaData metaData);
+
   void validateSshWinRmSecretRef(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, SecretDTOV2 secretDTO);
 }

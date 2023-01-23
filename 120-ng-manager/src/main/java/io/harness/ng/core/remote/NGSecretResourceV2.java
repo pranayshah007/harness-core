@@ -227,6 +227,28 @@ public class NGSecretResourceV2 {
   }
 
   @POST
+  @Path("/validateSecretRef")
+  @Consumes({"application/json", "application/yaml"})
+  @ApiOperation(value = "Validates a secret reference", nickname = "validateSecretRef")
+  @Operation(operationId = "validateSecretRef", summary = "Validates secret reference of another secret",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns validation response")
+      })
+  public ResponseDTO<SecretValidationResultDTO>
+  validateSecretRef(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+                        NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,
+      @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @RequestBody(
+          required = true, description = "Details of the Secret Reference") @Valid SecretValidationMetaData metadata) {
+    return ResponseDTO.newResponse(
+        ngSecretService.validateSecretRef(accountIdentifier, orgIdentifier, projectIdentifier, metadata));
+  }
+
+  @POST
   @Path("/yaml")
   @Consumes({"application/yaml"})
   @ApiOperation(value = "Create a secret via yaml", nickname = "postSecretViaYaml")

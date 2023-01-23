@@ -733,6 +733,11 @@ public class SecretCrudServiceImpl implements SecretCrudService {
     return ngSecretService.validateSecret(accountIdentifier, orgIdentifier, projectIdentifier, identifier, metadata);
   }
 
+  public SecretValidationResultDTO validateSecretRef(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, SecretValidationMetaData metaData) {
+    return ngSecretService.validateSecretRef(accountIdentifier, orgIdentifier, projectIdentifier, metaData);
+  }
+
   @Override
   public void validateSshWinRmSecretRef(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, SecretDTOV2 secretDTO) {

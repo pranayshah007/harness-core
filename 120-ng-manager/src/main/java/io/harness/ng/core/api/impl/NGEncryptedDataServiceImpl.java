@@ -62,6 +62,9 @@ import io.harness.ng.core.dto.secrets.SecretSpecDTO;
 import io.harness.ng.core.dto.secrets.SecretTextSpecDTO;
 import io.harness.ng.core.entities.NGEncryptedData;
 import io.harness.ng.core.entities.NGEncryptedData.NGEncryptedDataBuilder;
+import io.harness.ng.core.remote.SecretTextValidationMetadata;
+import io.harness.ng.core.remote.SecretValidationMetaData;
+import io.harness.ng.core.remote.SecretValidationResultDTO;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.secretmanagerclient.dto.CustomSecretManagerConfigDTO;
 import io.harness.secretmanagerclient.dto.LocalConfigDTO;
@@ -178,6 +181,20 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
         throw new RuntimeException("Secret value type is unknown");
     }
     return encryptedDataDao.save(encryptedData);
+  }
+
+  public SecretValidationResultDTO validateSecretTextReference(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, SecretValidationMetaData metadata) {
+    SecretTextValidationMetadata secretTextValidationMetadata = (SecretTextValidationMetadata) metadata;
+    SecretManagerConfigDTO secretManager = getSecretManagerOrThrow(accountIdentifier, orgIdentifier, projectIdentifier,
+        secretTextValidationMetadata.getSecretManagerIdentifer(), false);
+    boolean isValidationSuccess =
+        vaultEncryptorsRegistry.getVaultEncryptor(SecretManagerConfigMapper.fromDTO(secretManager).getEncryptionType())
+            .validateReference(accountIdentifier, secretTextValidationMetadata.getSecretRefPath(),
+                SecretManagerConfigMapper.fromDTO(secretManager));
+    String message = isValidationSuccess ? "Validation is Successful, Secret can be referenced"
+                                         : "Validation has failed, Secret reference not found";
+    return SecretValidationResultDTO.builder().success(isValidationSuccess).message(message).build();
   }
 
   private void validateAdditionalMetadata(SecretManagerConfigDTO secretManager, SecretSpecDTO secret) {

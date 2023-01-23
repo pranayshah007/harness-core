@@ -118,12 +118,15 @@ public class NGSecretServiceV2Impl implements NGSecretServiceV2 {
   private final TaskSetupAbstractionHelper taskSetupAbstractionHelper;
   private final AccessControlClient accessControlClient;
 
+  private final NGEncryptedDataServiceImpl ngEncryptedDataService;
+
   @Inject
   public NGSecretServiceV2Impl(SecretRepository secretRepository, DelegateGrpcClientWrapper delegateGrpcClientWrapper,
       SshKeySpecDTOHelper sshKeySpecDTOHelper, NGSecretActivityService ngSecretActivityService,
       OutboxService outboxService, @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate,
       TaskSetupAbstractionHelper taskSetupAbstractionHelper,
-      WinRmCredentialsSpecDTOHelper winRmCredentialsSpecDTOHelper, AccessControlClient accessControlClient) {
+      WinRmCredentialsSpecDTOHelper winRmCredentialsSpecDTOHelper, AccessControlClient accessControlClient,
+      NGEncryptedDataServiceImpl ngEncryptedDataService) {
     this.secretRepository = secretRepository;
     this.outboxService = outboxService;
     this.delegateGrpcClientWrapper = delegateGrpcClientWrapper;
@@ -133,6 +136,7 @@ public class NGSecretServiceV2Impl implements NGSecretServiceV2 {
     this.taskSetupAbstractionHelper = taskSetupAbstractionHelper;
     this.winRmCredentialsSpecDTOHelper = winRmCredentialsSpecDTOHelper;
     this.accessControlClient = accessControlClient;
+    this.ngEncryptedDataService = ngEncryptedDataService;
   }
 
   @Override
@@ -260,6 +264,13 @@ public class NGSecretServiceV2Impl implements NGSecretServiceV2 {
     } catch (Exception ex) {
       log.info("Error while creating secret update activity", ex);
     }
+  }
+
+  @Override
+  public SecretValidationResultDTO validateSecretRef(@NotNull String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, @NotNull SecretValidationMetaData metadata) {
+    return ngEncryptedDataService.validateSecretTextReference(
+        accountIdentifier, orgIdentifier, projectIdentifier, metadata);
   }
 
   @Override

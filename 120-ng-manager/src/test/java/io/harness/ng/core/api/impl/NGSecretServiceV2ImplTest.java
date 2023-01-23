@@ -98,6 +98,7 @@ public class NGSecretServiceV2ImplTest extends CategoryTest {
   private TransactionTemplate transactionTemplate;
   private AccessControlClient accessControlClient;
 
+  private NGEncryptedDataServiceImpl ngEncryptedDataService;
   @Rule public ExpectedException exceptionRule = ExpectedException.none();
 
   private ArgumentCaptor<SecretForceDeleteEvent> secretForceDeleteEventArgumentCaptor;
@@ -128,12 +129,13 @@ public class NGSecretServiceV2ImplTest extends CategoryTest {
     transactionTemplate = mock(TransactionTemplate.class);
     taskSetupAbstractionHelper = new TaskSetupAbstractionHelper();
     accessControlClient = mock(AccessControlClient.class);
+    ngEncryptedDataService = mock(NGEncryptedDataServiceImpl.class);
     SshKeySpecDTOHelper sshKeySpecDTOHelper = mock(SshKeySpecDTOHelper.class);
     WinRmCredentialsSpecDTOHelper winRmCredentialsSpecDTOHelper = mock(WinRmCredentialsSpecDTOHelper.class);
 
     secretServiceV2 = new NGSecretServiceV2Impl(secretRepository, delegateGrpcClientWrapper, sshKeySpecDTOHelper,
         ngSecretActivityService, outboxService, transactionTemplate, taskSetupAbstractionHelper,
-        winRmCredentialsSpecDTOHelper, accessControlClient);
+        winRmCredentialsSpecDTOHelper, accessControlClient, ngEncryptedDataService);
     secretServiceV2Spy = spy(secretServiceV2);
     secretForceDeleteEventArgumentCaptor = ArgumentCaptor.forClass(SecretForceDeleteEvent.class);
     secretDeleteEventArgumentCaptor = ArgumentCaptor.forClass(SecretDeleteEvent.class);
