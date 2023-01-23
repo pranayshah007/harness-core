@@ -259,7 +259,7 @@ public class ArtifactResponseToOutcomeMapper {
             .type(ArtifactSourceType.GOOGLE_CLOUD_SOURCE_ARTIFACT.getDisplayName())
             .project(googleCloudSourceArtifactConfig.getProject().getValue())
             .repository(googleCloudSourceArtifactConfig.getRepository().getValue())
-            .sourceDirectory(useDelegateResponse ? googleCloudSourceArtifactConfig.getSourceDirectory() : "")
+            .sourceDirectory(googleCloudSourceArtifactConfig.getSourceDirectory().getValue())
             .primaryArtifact(googleCloudSourceArtifactConfig.isPrimaryArtifact())
             .build();
   }
