@@ -1730,6 +1730,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
 
   @Override
   public void handleNotification(MonitoredService monitoredService) {
+    log.info("Begin handleNotification method");
     ProjectParams projectParams = ProjectParams.builder()
                                       .accountIdentifier(monitoredService.getAccountId())
                                       .orgIdentifier(monitoredService.getOrgIdentifier())
@@ -1738,10 +1739,14 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
     List<NotificationRule> notificationRules = getNotificationRules(monitoredService);
     Set<String> notificationRuleRefsWithChange = new HashSet<>();
 
+
+
     for (NotificationRule notificationRule : notificationRules) {
+      log.info("Handle Notification uuid = " + notificationRule.getUuid() + " identifier = " + notificationRule.getIdentifier() + " name = " + notificationRule.getName());
       List<MonitoredServiceNotificationRuleCondition> conditions =
           ((MonitoredServiceNotificationRule) notificationRule).getConditions();
       for (MonitoredServiceNotificationRuleCondition condition : conditions) {
+        log.info("Handle Notification Condition of type: " + condition.getType());
         NotificationData notificationData;
         switch (condition.getType()) {
           case HEALTH_SCORE:
@@ -1757,6 +1762,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
                 getChangeImpactNotificationData(monitoredService, (MonitoredServiceChangeImpactCondition) condition);
             break;
           case CODE_ERRORS:
+            log.info("CODE_ERRORS switch statement reached.");
             notificationData = getCodeErrorsNotificationData(
                 monitoredService, (MonitoredServiceCodeErrorCondition) condition, notificationRule);
             break;
@@ -1791,6 +1797,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
     }
     updateNotificationRuleRefInMonitoredService(
         projectParams, monitoredService, new ArrayList<>(notificationRuleRefsWithChange));
+    log.info("End handleNotification method");
   }
 
   @Override
@@ -2002,6 +2009,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
 
   private NotificationData getCodeErrorsNotificationData(MonitoredService monitoredService,
       MonitoredServiceCodeErrorCondition codeErrorCondition, NotificationRule notificationRule) {
+    log.info("getCodeErrorsNotificationData() begin");
     MonitoredServiceParams monitoredServiceParams = buildMonitoredServiceParams(monitoredService);
     Map<String, String> templateDataMap = new HashMap<>();
     boolean featureFlagEnabled =
@@ -2010,6 +2018,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
     boolean oneEnvironmentId = environmentIdentifierList != null && environmentIdentifierList.size() == 1;
 
     if (featureFlagEnabled && oneEnvironmentId) {
+      log.info("featureFlagEnabled && oneEnvironmentId true");
       String environmentId = environmentIdentifierList.get(0);
       ErrorTrackingNotificationData notificationData = null;
       try {
@@ -2021,6 +2030,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
         log.error("Error connecting to the ErrorTracking Event Summary API.", e);
       }
       if (notificationData != null && !notificationData.getScorecards().isEmpty()) {
+        log.info("notificationData not null and scorecards not empty.");
         final String baseLinkUrl =
             ((ErrorTrackingTemplateDataGenerator) notificationRuleConditionTypeTemplateDataGeneratorMap.get(
                  NotificationRuleConditionType.CODE_ERRORS))
@@ -2030,9 +2040,11 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
             NOTIFICATION_URL, buildMonitoredServiceConfigurationTabUrl(baseLinkUrl, monitoredServiceParams));
         templateDataMap.put(NOTIFICATION_NAME, notificationRule.getName());
         templateDataMap.put(ENVIRONMENT_NAME, environmentId);
+        log.info("getCodeErrorsNotificationData() shouldSend=true");
         return NotificationData.builder().shouldSendNotification(true).templateDataMap(templateDataMap).build();
       }
     }
+    log.info("getCodeErrorsNotificationData() shouldSend=false");
     return NotificationData.builder().shouldSendNotification(false).build();
   }
 

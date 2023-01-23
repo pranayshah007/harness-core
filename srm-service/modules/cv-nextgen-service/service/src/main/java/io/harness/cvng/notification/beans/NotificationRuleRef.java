@@ -12,7 +12,9 @@ import java.time.Instant;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Data
 @Builder
 public class NotificationRuleRef {
@@ -21,7 +23,10 @@ public class NotificationRuleRef {
   @NotNull Instant lastSuccessFullNotificationSent;
 
   public boolean isEligible(Instant currentInstant, Duration coolOffDuration) {
+    log.info("is Eligible enabled = " + enabled + " lastSuccessFullNotificationSent = " + lastSuccessFullNotificationSent + " currentInstant = " + currentInstant + " coolOffDuration = " + coolOffDuration );
     int comparator = Duration.between(lastSuccessFullNotificationSent, currentInstant).compareTo(coolOffDuration);
+    log.info("comparator = " + comparator );
+    log.info("isEligible = " + (enabled && comparator >= 0));
     return enabled && comparator >= 0;
   }
 }
