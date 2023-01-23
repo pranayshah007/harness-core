@@ -561,7 +561,8 @@ public enum FeatureName {
       "Use SHA256 digest as optional parameter for docker image artifact config", HarnessTeam.SPG),
   CDS_FORCE_DELETE_ENTITIES("Enables force delete of entities irrespective of existing references.", HarnessTeam.CDC),
   CDP_PUBLISH_INSTANCE_STATS_FOR_ENV_NG(
-      "Publish instance stats at environment granularity in NG. PM Rohan", HarnessTeam.CDP);
+      "Publish instance stats at environment granularity in NG. PM Rohan", HarnessTeam.CDP),
+  DISABLE_INSTANCE_STATS_JOB_CG("Disable Instance Stats Job from CG", HarnessTeam.CDP);
 
   @Deprecated
   FeatureName() {
