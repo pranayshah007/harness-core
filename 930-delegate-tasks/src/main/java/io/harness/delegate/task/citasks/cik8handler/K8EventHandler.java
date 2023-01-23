@@ -37,7 +37,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(CI)
 public class K8EventHandler {
   @Inject private ApiClientFactory apiClientFactory;
-
+  NGDelegateLogCallback ngDelegateLogCallback;
   private static Integer watchTimeout = 8 * 60;
 
   public Watch<CoreV1Event> startAsyncPodEventWatch(KubernetesConfig kubernetesConfig, String namespace, String pod,
@@ -106,8 +106,12 @@ public class K8EventHandler {
   private void streamLogLine(ILogStreamingTaskClient logStreamingTaskClient, LogLevel logLevel, String message,
       CommandUnitsProgress commandUnitsProgress) {
     if (commandUnitsProgress != null) {
-      new NGDelegateLogCallback(
-          logStreamingTaskClient, ContainerCommandUnitConstants.InitContainer, true, commandUnitsProgress);
+      if (ngDelegateLogCallback == null) {
+        ngDelegateLogCallback = new NGDelegateLogCallback(
+            logStreamingTaskClient, ContainerCommandUnitConstants.InitContainer, true, commandUnitsProgress);
+        ngDelegateLogCallback.saveExecutionLog("");
+      }
+      ngDelegateLogCallback.saveExecutionLog(message, logLevel);
     } else {
       LogLine logLine =
           LogLine.builder().level(logLevel).message(message).timestamp(OffsetDateTime.now().toInstant()).build();

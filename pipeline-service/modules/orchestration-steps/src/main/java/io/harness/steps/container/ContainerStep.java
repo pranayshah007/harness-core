@@ -128,7 +128,7 @@ public class ContainerStep implements TaskChainExecutableWithRbac<StepElementPar
     TaskRequest taskRequest =
         StepUtils.prepareTaskRequest(ambiance, taskData, kryoSerializer, TaskCategory.DELEGATE_TASK_V2,
             containerStepInfo.getCommandUnits(), true, TaskType.valueOf(taskData.getTaskType()).getDisplayName(),
-            taskSelectors, Scope.PROJECT, EnvironmentType.ALL, false, new ArrayList<>(), false, stageId);
+            taskSelectors, Scope.PROJECT, EnvironmentType.ALL, false, new ArrayList<>(), false, null);
 
     return TaskChainResponse.builder()
         .taskRequest(taskRequest)

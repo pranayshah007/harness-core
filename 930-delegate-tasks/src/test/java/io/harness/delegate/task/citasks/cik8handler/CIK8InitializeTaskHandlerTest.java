@@ -173,8 +173,7 @@ public class CIK8InitializeTaskHandlerTest extends CategoryTest {
     when(cik8JavaClientHandler.createOrReplacePodWithRetries(coreV1Api, podBuilder.build(), namespace))
         .thenReturn(podBuilder.build());
     when(k8EventHandler.startAsyncPodEventWatch(eq(kubernetesConfig), eq(namespace),
-             eq(cik8InitializeTaskParams.getCik8PodParams().getName()), eq(logStreamingTaskClient),
-             cik8InitializeTaskParams.getCommandName()))
+             eq(cik8InitializeTaskParams.getCik8PodParams().getName()), eq(logStreamingTaskClient), null))
         .thenReturn(watch);
     when(cik8JavaClientHandler.waitUntilPodIsReady(
              coreV1Api, cik8InitializeTaskParams.getCik8PodParams().getName(), namespace, timeout))
@@ -205,8 +204,7 @@ public class CIK8InitializeTaskHandlerTest extends CategoryTest {
     when(cik8JavaClientHandler.createOrReplacePodWithRetries(coreV1Api, podBuilder.build(), namespace))
         .thenReturn(podBuilder.build());
     when(k8EventHandler.startAsyncPodEventWatch(eq(kubernetesConfig), eq(namespace),
-             eq(cik8InitializeTaskParams.getCik8PodParams().getName()), eq(logStreamingTaskClient),
-             cik8InitializeTaskParams.getCommandName()))
+             eq(cik8InitializeTaskParams.getCik8PodParams().getName()), eq(logStreamingTaskClient), null))
         .thenReturn(watch);
     when(cik8JavaClientHandler.waitUntilPodIsReady(
              coreV1Api, cik8InitializeTaskParams.getCik8PodParams().getName(), namespace, timeout))
@@ -244,8 +242,7 @@ public class CIK8InitializeTaskHandlerTest extends CategoryTest {
     when(podSpecBuilder.createSpec((PodParams) cik8InitializeTaskParams.getCik8PodParams())).thenReturn(podBuilder);
     when(cik8JavaClientHandler.createOrReplacePodWithRetries(any(), any(), any())).thenReturn(podBuilder.build());
     when(k8EventHandler.startAsyncPodEventWatch(eq(kubernetesConfig), eq(namespace),
-             eq(cik8InitializeTaskParams.getCik8PodParams().getName()), eq(logStreamingTaskClient),
-             cik8InitializeTaskParams.getCommandName()))
+             eq(cik8InitializeTaskParams.getCik8PodParams().getName()), eq(logStreamingTaskClient), null))
         .thenReturn(watch);
     when(cik8JavaClientHandler.waitUntilPodIsReady(any(), eq("pod"), eq(namespace), eq(timeout)))
         .thenReturn(PodStatus.builder().ciContainerStatusList(new ArrayList<>()).status(RUNNING).build());
@@ -297,8 +294,7 @@ public class CIK8InitializeTaskHandlerTest extends CategoryTest {
     when(cik8JavaClientHandler.createOrReplacePodWithRetries(coreV1Api, podBuilder.build(), namespace))
         .thenReturn(podBuilder.build());
     when(k8EventHandler.startAsyncPodEventWatch(eq(kubernetesConfig), eq(namespace),
-             eq(cik8InitializeTaskParams.getCik8PodParams().getName()), eq(logStreamingTaskClient),
-             cik8InitializeTaskParams.getCommandName()))
+             eq(cik8InitializeTaskParams.getCik8PodParams().getName()), eq(logStreamingTaskClient), null))
         .thenReturn(watch);
     when(cik8JavaClientHandler.waitUntilPodIsReady(
              any(), eq(cik8InitializeTaskParams.getCik8PodParams().getName()), eq(namespace), eq(timeout)))

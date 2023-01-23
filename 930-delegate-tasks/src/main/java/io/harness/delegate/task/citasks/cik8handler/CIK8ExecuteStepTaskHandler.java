@@ -22,7 +22,6 @@ import io.harness.delegate.configuration.DelegateConfiguration;
 import io.harness.delegate.task.citasks.CIExecuteStepTaskHandler;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.product.ci.engine.proto.ExecuteStepRequest;
 import io.harness.product.ci.engine.proto.LiteEngineGrpc;
 import io.harness.steps.plugin.ContainerCommandUnitConstants;
@@ -51,7 +50,6 @@ public class CIK8ExecuteStepTaskHandler implements CIExecuteStepTaskHandler {
   @Getter(value = PACKAGE, onMethod = @__({ @VisibleForTesting }))
   private DelegateConfiguration delegateConfiguration;
 
-  @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Override
   public Type getType() {
     return type;
