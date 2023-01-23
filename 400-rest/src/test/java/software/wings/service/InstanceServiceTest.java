@@ -13,6 +13,7 @@ import static io.harness.rule.OwnerRule.ABHINAV;
 import static io.harness.rule.OwnerRule.LUCAS_SALES;
 import static io.harness.rule.OwnerRule.RAMA;
 
+// import static io.harness.rule.OwnerRule.TARUN_UBA;
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.utils.WingsTestConstants.INFRA_MAPPING_ID;
 
@@ -38,6 +39,8 @@ import software.wings.beans.infrastructure.instance.Instance.InstanceKeys;
 import software.wings.beans.infrastructure.instance.InstanceType;
 import software.wings.beans.infrastructure.instance.info.KubernetesContainerInfo;
 import software.wings.beans.infrastructure.instance.key.ContainerInstanceKey;
+import software.wings.beans.infrastructure.instance.key.PodInstanceKey;
+import software.wings.dl.WingsMongoPersistence;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.instance.InstanceService;
@@ -69,7 +72,7 @@ public class InstanceServiceTest extends WingsBaseTest {
   @Mock private AppService appService;
   @Mock private Account account;
   @Mock private FeatureFlagService featureFlagService;
-
+  @Mock private WingsMongoPersistence wingsPersistence;
   @Inject private HPersistence persistence;
   @InjectMocks @Inject private InstanceService instanceService;
 
@@ -124,6 +127,27 @@ public class InstanceServiceTest extends WingsBaseTest {
         .appId(GLOBAL_APP_ID)
         .infraMappingId(INFRA_MAPPING_ID)
         .containerInstanceKey(ContainerInstanceKey.builder().containerId(containerId).build())
+        .deletedAt(deletedAt)
+        .needRetry(needRetry)
+        .isDeleted(isDeleted)
+        .build();
+  }
+
+  private Instance buildPodInstance(String uuid, boolean isDeleted, Long deletedAt, boolean needRetry) {
+    return Instance.builder()
+        .uuid(uuid)
+        .instanceInfo(KubernetesContainerInfo.builder()
+                          .clusterName(clusterName)
+                          .controllerName(controllerName)
+                          .controllerType(controllerType)
+                          .podName(podName)
+                          .serviceName(serviceName)
+                          .build())
+        .instanceType(InstanceType.KUBERNETES_CONTAINER_INSTANCE)
+        .accountId(account.getUuid())
+        .appId(GLOBAL_APP_ID)
+        .infraMappingId(INFRA_MAPPING_ID)
+        .podInstanceKey(PodInstanceKey.builder().podName("default-pod").namespace("default").build())
         .deletedAt(deletedAt)
         .needRetry(needRetry)
         .isDeleted(isDeleted)
@@ -273,6 +297,16 @@ public class InstanceServiceTest extends WingsBaseTest {
     assertThat(rhs.getInstanceType()).isEqualTo(lhs.getInstanceType());
   }
 
+  private void comparePodInstance(Instance lhs, Instance rhs) {
+    assertThat(rhs.getPodInstanceKey().getPodName()).isEqualTo(lhs.getPodInstanceKey().getPodName());
+    assertThat(rhs.getPodInstanceKey().getNamespace()).isEqualTo(lhs.getPodInstanceKey().getNamespace());
+    assertThat(rhs.getInfraMappingId()).isEqualTo(lhs.getInfraMappingId());
+    assertThat(rhs.getAccountId()).isEqualTo(lhs.getAccountId());
+    assertThat(rhs.getAppId()).isEqualTo(lhs.getAppId());
+    assertThat(rhs.getInstanceType()).isEqualTo(lhs.getInstanceType());
+    assertThat(rhs.getInstanceType()).isEqualTo(lhs.getInstanceType());
+  }
+
   @Test
   @Owner(developers = ABHINAV)
   @Category(UnitTests.class)
@@ -376,4 +410,20 @@ public class InstanceServiceTest extends WingsBaseTest {
 
     assertThat(instanceFound).isNull();
   }
+
+  //    @Test
+  //    @Owner(developers = TARUN_UBA)
+  //    @Category(UnitTests.class)
+  //    public void testSaveAndNotUpdate() {
+  //        List<Instance> instances = new ArrayList<>();
+  //        Query<Instance> query = persistence.createQuery(Instance.class);
+  //        when(wingsPersistence.createQuery(Instance.class)).thenReturn(query);
+  //        Instance instance = buildPodInstance(instanceId, false, System.currentTimeMillis(), false);
+  //        Instance instance1 = buildPodInstance(instanceId, false, System.currentTimeMillis(), false);
+  //        instance.setInfraMappingId("infra1");
+  //        instance1.setInfraMappingId("infra1");
+  //        instances.add(instance1);
+  //        Instance savedInstance = instanceService.saveOrUpdate(instance);
+  //        comparePodInstance(instance, savedInstance);
+  //    }
 }
