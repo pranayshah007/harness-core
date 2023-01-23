@@ -44,7 +44,7 @@ public class CIExecuteStepTask extends AbstractDelegateRunnableTask {
     CIExecuteStepTaskParams ciExecuteStepTaskParams = (CIExecuteStepTaskParams) parameters;
     CIExecuteStepTaskParams.Type type = ciExecuteStepTaskParams.getType();
     if (type == CIExecuteStepTaskParams.Type.K8) {
-      CIK8ExecuteStepTaskParams cik8ExecuteStepTaskParams = ((CIK8ExecuteStepTaskParams) parameters);
+      CIK8ExecuteStepTaskParams cik8ExecuteStepTaskParams = (CIK8ExecuteStepTaskParams) parameters;
       cik8ExecuteStepTaskParams.setLogStreamingTaskClient(getLogStreamingTaskClient());
       return ciK8ExecuteStepTaskHandler.executeTaskInternal(ciExecuteStepTaskParams, getTaskId());
     } else if (type == CIExecuteStepTaskParams.Type.VM || type == CIExecuteStepTaskParams.Type.DOCKER) {
