@@ -19,6 +19,7 @@ import io.harness.delegate.beans.connector.k8Connector.K8sTaskCapabilityHelper;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDTO;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
+import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
 
@@ -40,6 +41,7 @@ public class CIK8InitializeTaskParams
   @NotNull
   private int podMaxWaitUntilReadySecs; // Max time for pod to reach running state after its creation in seconds
   @Builder.Default private static final Type type = Type.GCP_K8;
+  CommandUnitsProgress commandUnitsProgress;
 
   @Override
   public Type getType() {

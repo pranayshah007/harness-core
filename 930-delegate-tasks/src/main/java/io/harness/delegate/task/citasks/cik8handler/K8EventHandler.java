@@ -11,11 +11,14 @@ import static io.harness.annotations.dev.HarnessTeam.CI;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
+import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
 import io.harness.k8s.apiclient.ApiClientFactory;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.logging.LogLevel;
 import io.harness.logstreaming.LogLine;
+import io.harness.steps.plugin.ContainerCommandUnitConstants;
 
 import com.google.gson.reflect.TypeToken;
 import com.google.inject.Inject;
@@ -37,14 +40,14 @@ public class K8EventHandler {
 
   private static Integer watchTimeout = 8 * 60;
 
-  public Watch<CoreV1Event> startAsyncPodEventWatch(
-      KubernetesConfig kubernetesConfig, String namespace, String pod, ILogStreamingTaskClient logStreamingTaskClient) {
+  public Watch<CoreV1Event> startAsyncPodEventWatch(KubernetesConfig kubernetesConfig, String namespace, String pod,
+      ILogStreamingTaskClient logStreamingTaskClient, CommandUnitsProgress commandUnitsProgress) {
     String fieldSelector = String.format("involvedObject.name=%s,involvedObject.kind=Pod", pod);
     try {
       Watch<CoreV1Event> watch = createWatch(kubernetesConfig, namespace, fieldSelector);
       new Thread(() -> {
         try {
-          logWatchEvents(watch, logStreamingTaskClient);
+          logWatchEvents(watch, logStreamingTaskClient, commandUnitsProgress);
         } catch (IOException e) {
           log.warn("error in watching pod events", e);
         }
@@ -52,8 +55,8 @@ public class K8EventHandler {
       return watch;
 
     } catch (ApiException e) {
-      streamLogLine(
-          logStreamingTaskClient, LogLevel.ERROR, String.format("failed to watch pod event: %s", e.getMessage()));
+      streamLogLine(logStreamingTaskClient, LogLevel.ERROR,
+          String.format("failed to watch pod event: %s", e.getMessage()), commandUnitsProgress);
       log.error("failed to create watch on pod events", e);
       return null;
     }
@@ -77,12 +80,13 @@ public class K8EventHandler {
         new TypeToken<Watch.Response<CoreV1Event>>() {}.getType());
   }
 
-  private void logWatchEvents(Watch<CoreV1Event> watch, ILogStreamingTaskClient logStreamingTaskClient)
-      throws IOException {
+  private void logWatchEvents(Watch<CoreV1Event> watch, ILogStreamingTaskClient logStreamingTaskClient,
+      CommandUnitsProgress commandName) throws IOException {
     try {
       for (Watch.Response<CoreV1Event> item : watch) {
         if (item != null && item.object != null && isNotEmpty(item.object.getMessage())) {
-          streamLogLine(logStreamingTaskClient, getLogLevel(item.object.getType()), item.object.getMessage());
+          streamLogLine(
+              logStreamingTaskClient, getLogLevel(item.object.getType()), item.object.getMessage(), commandName);
           log.info(
               "{}: Event- {}, Reason - {}", item.object.getType(), item.object.getMessage(), item.object.getReason());
         }
@@ -99,9 +103,15 @@ public class K8EventHandler {
     return LogLevel.INFO;
   }
 
-  private void streamLogLine(ILogStreamingTaskClient logStreamingTaskClient, LogLevel logLevel, String message) {
-    LogLine logLine =
-        LogLine.builder().level(logLevel).message(message).timestamp(OffsetDateTime.now().toInstant()).build();
-    logStreamingTaskClient.writeLogLine(logLine, "");
+  private void streamLogLine(ILogStreamingTaskClient logStreamingTaskClient, LogLevel logLevel, String message,
+      CommandUnitsProgress commandUnitsProgress) {
+    if (commandUnitsProgress != null) {
+      new NGDelegateLogCallback(
+          logStreamingTaskClient, ContainerCommandUnitConstants.InitContainer, true, commandUnitsProgress);
+    } else {
+      LogLine logLine =
+          LogLine.builder().level(logLevel).message(message).timestamp(OffsetDateTime.now().toInstant()).build();
+      logStreamingTaskClient.writeLogLine(logLine, "");
+    }
   }
 }

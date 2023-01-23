@@ -44,6 +44,7 @@ import io.harness.delegate.beans.ci.pod.SecretVarParams;
 import io.harness.delegate.beans.ci.pod.SecretVariableDTO;
 import io.harness.delegate.beans.ci.pod.SecretVariableDetails;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
+import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.task.citasks.CIInitializeTaskHandler;
 import io.harness.delegate.task.citasks.cik8handler.helper.DelegateServiceTokenHelper;
 import io.harness.delegate.task.citasks.cik8handler.helper.ProxyVariableHelper;
@@ -170,8 +171,8 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
 
         log.info("Creating pod with spec: {}", pod);
         cik8JavaClientHandler.createOrReplacePodWithRetries(coreV1Api, pod, namespace);
-        Watch<CoreV1Event> watch =
-            k8EventHandler.startAsyncPodEventWatch(kubernetesConfig, namespace, podName, logStreamingTaskClient);
+        Watch<CoreV1Event> watch = k8EventHandler.startAsyncPodEventWatch(kubernetesConfig, namespace, podName,
+            logStreamingTaskClient, cik8InitializeTaskParams.getCommandUnitsProgress());
         PodStatus podStatus = cik8JavaClientHandler.waitUntilPodIsReady(
             coreV1Api, podName, namespace, cik8InitializeTaskParams.getPodMaxWaitUntilReadySecs());
         if (watch != null) {
@@ -215,6 +216,8 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
                      .build();
       }
     }
+    result.setCommandUnitsProgress(
+        UnitProgressDataMapper.toUnitProgressData(cik8InitializeTaskParams.getCommandUnitsProgress()));
     log.info("CI lite-engine task took: {} for pod: {} ", timer.stop(), podParams.getName());
     return result;
   }

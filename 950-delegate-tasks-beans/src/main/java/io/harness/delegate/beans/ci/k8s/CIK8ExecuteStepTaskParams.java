@@ -11,6 +11,8 @@ import io.harness.delegate.beans.ci.CIExecuteStepTaskParams;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.delegate.beans.executioncapability.LiteEngineConnectionCapability;
+import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
+import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.expression.ExpressionEvaluator;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -30,10 +32,12 @@ public class CIK8ExecuteStepTaskParams implements CIExecuteStepTaskParams, Execu
   private boolean isLocal;
   @NotNull private byte[] serializedStep;
 
-  @Builder.Default private static final CIExecuteStepTaskParams.Type type = CIExecuteStepTaskParams.Type.K8;
+  @Builder.Default private static final Type type = Type.K8;
+  CommandUnitsProgress commandUnitsProgress;
+  private ILogStreamingTaskClient logStreamingTaskClient;
 
   @Override
-  public CIExecuteStepTaskParams.Type getType() {
+  public Type getType() {
     return type;
   }
 

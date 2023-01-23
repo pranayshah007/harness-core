@@ -746,7 +746,7 @@ public class NextGenModule extends AbstractModule {
 
       @Provides
       @Singleton
-      BaseUrls getBaseUrls() {
+      io.harness.ng.BaseUrls getBaseUrls() {
         return appConfig.getBaseUrls();
       }
     });

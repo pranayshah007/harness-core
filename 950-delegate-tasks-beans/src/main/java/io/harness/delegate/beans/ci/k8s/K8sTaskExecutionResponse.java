@@ -9,6 +9,7 @@ package io.harness.delegate.beans.ci.k8s;
 
 import io.harness.delegate.beans.DelegateMetaInfo;
 import io.harness.delegate.beans.ci.CITaskExecutionResponse;
+import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.logging.CommandExecutionStatus;
 
 import lombok.Builder;
@@ -21,6 +22,7 @@ public class K8sTaskExecutionResponse implements CITaskExecutionResponse {
   private CiK8sTaskResponse k8sTaskResponse;
   private String errorMessage;
   private CommandExecutionStatus commandExecutionStatus;
+  private UnitProgressData commandUnitsProgress;
   @Builder.Default private static final CITaskExecutionResponse.Type type = Type.K8;
 
   @Override

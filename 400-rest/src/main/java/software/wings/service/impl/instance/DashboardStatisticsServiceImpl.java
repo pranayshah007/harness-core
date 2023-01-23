@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.beans.ExecutionStatus.FAILED;
 import static io.harness.beans.ExecutionStatus.SKIPPED;
 import static io.harness.beans.FeatureName.SPG_DASHBOARD_PROJECTION;
+import static io.harness.beans.FeatureName.SPG_INSTANCE_OPTIMIZE_DELETED_APPS;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.PageResponse.PageResponseBuilder.aPageResponse;
 import static io.harness.beans.SearchFilter.Operator.EQ;
@@ -33,17 +34,17 @@ import static software.wings.beans.infrastructure.instance.Instance.InstanceKeys
 import static software.wings.features.DeploymentHistoryFeature.FEATURE_NAME;
 import static software.wings.sm.StateType.PHASE;
 
-import static dev.morphia.aggregation.Accumulator.accumulator;
-import static dev.morphia.aggregation.Group.first;
-import static dev.morphia.aggregation.Group.grouping;
-import static dev.morphia.aggregation.Group.sum;
-import static dev.morphia.aggregation.Projection.projection;
-import static dev.morphia.query.Sort.ascending;
-import static dev.morphia.query.Sort.descending;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
+import static org.mongodb.morphia.aggregation.Accumulator.accumulator;
+import static org.mongodb.morphia.aggregation.Group.first;
+import static org.mongodb.morphia.aggregation.Group.grouping;
+import static org.mongodb.morphia.aggregation.Group.sum;
+import static org.mongodb.morphia.aggregation.Projection.projection;
+import static org.mongodb.morphia.query.Sort.ascending;
+import static org.mongodb.morphia.query.Sort.descending;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
@@ -63,7 +64,6 @@ import io.harness.exception.NoResultFoundException;
 import io.harness.exception.WingsException;
 import io.harness.exception.WingsException.ReportTarget;
 import io.harness.ff.FeatureFlagService;
-import io.harness.mongo.index.BasicDBUtils;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 import io.harness.time.EpochUtils;
@@ -137,11 +137,6 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.mongodb.AggregationOptions;
 import com.mongodb.TagSet;
-import dev.morphia.aggregation.AggregationPipeline;
-import dev.morphia.aggregation.Group;
-import dev.morphia.query.FindOptions;
-import dev.morphia.query.Query;
-import dev.morphia.query.Sort;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -158,8 +153,12 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
+import org.mongodb.morphia.aggregation.AggregationPipeline;
+import org.mongodb.morphia.aggregation.Group;
+import org.mongodb.morphia.query.FindOptions;
+import org.mongodb.morphia.query.Query;
+import org.mongodb.morphia.query.Sort;
 
 /**
  * @author rktummala on 8/13/17
@@ -403,28 +402,29 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
   @Override
   @Nonnull
   public List<Instance> getAppInstancesForAccount(String accountId, long timestamp) {
-    return getInstancesForAccount(accountId, timestamp, new ArrayList<>());
+    Query<Instance> query = wingsPersistence.createQuery(Instance.class);
+    return getInstancesForAccount(accountId, timestamp, query);
   }
 
-  private List<Instance> getInstancesForAccount(String accountId, long timestamp, List<String> projectedFields) {
+  private List<Instance> getInstancesForAccount(String accountId, long timestamp, Query<Instance> query) {
     Set<Instance> instanceSet = new HashSet<>();
-    Query<Instance> query = constructInstanceQueryForAccount(accountId, projectedFields);
-
+    query.field(InstanceKeys.accountId).equal(accountId);
     if (timestamp > 0) {
       query.field(Instance.CREATED_AT_KEY).lessThanOrEq(timestamp);
-
-      Query<Instance> cloneQuery = constructInstanceQueryForAccount(accountId, projectedFields);
-      cloneQuery.field(Instance.CREATED_AT_KEY)
-          .lessThanOrEq(timestamp)
-          .field(InstanceKeys.deletedAt)
-          .greaterThanOrEq(timestamp);
-      FindOptions findOptions = wingsPersistence.analyticNodePreferenceOptions();
-      findOptions.hint(BasicDBUtils.getIndexObject(Instance.mongoIndexes(), "instance_index7"));
-      instanceSet.addAll(cloneQuery.asList(findOptions));
+      Query<Instance> clonedQuery_1 = query.cloneQuery();
+      Query<Instance> clonedQuery_2 = query.cloneQuery();
+      clonedQuery_1.field(InstanceKeys.isDeleted).equal(false);
+      clonedQuery_2.field(InstanceKeys.deletedAt).greaterThanOrEq(timestamp);
+      FindOptions findOptions2 = wingsPersistence.analyticNodePreferenceOptions();
+      if (featureFlagService.isEnabled(FeatureName.SPG_INSTANCE_ENABLE_HINT_ON_GET_INSTANCES, accountId)) {
+        findOptions2.modifier("$hint", "instance_index7");
+      }
+      instanceSet.addAll(clonedQuery_1.asList(wingsPersistence.analyticNodePreferenceOptions()));
+      instanceSet.addAll(clonedQuery_2.asList(findOptions2));
+    } else {
+      instanceSet.addAll(
+          query.filter(InstanceKeys.isDeleted, false).asList(wingsPersistence.analyticNodePreferenceOptions()));
     }
-
-    instanceSet.addAll(
-        query.filter(InstanceKeys.isDeleted, false).asList(wingsPersistence.analyticNodePreferenceOptions()));
 
     int counter = instanceSet.size();
 
@@ -434,18 +434,6 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
       log.info("Instances reported {}", counter);
     }
     return new ArrayList<>(instanceSet);
-  }
-
-  private Query<Instance> constructInstanceQueryForAccount(String accountId, List<String> projectedFields) {
-    Query<Instance> query = wingsPersistence.createQuery(Instance.class);
-    if (!CollectionUtils.isEmpty(projectedFields)) {
-      for (String field : projectedFields) {
-        query.project(field, true);
-      }
-    }
-    query.field(InstanceKeys.accountId).equal(accountId);
-
-    return query;
   }
 
   private long getCreatedTimeOfInstanceAtTimestamp(
@@ -461,7 +449,7 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
     }
 
     FindOptions findOptions = wingsPersistence.analyticNodePreferenceOptions();
-    findOptions.hint(BasicDBUtils.getIndexObject(Instance.mongoIndexes(), "instance_index7"));
+    findOptions.modifier("$hint", "instance_index7");
     Instance instance = query.get(findOptions);
     if (instance == null) {
       return timestamp;
@@ -1074,8 +1062,9 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
 
   @Override
   public Set<String> getDeletedAppIds(String accountId, long timestamp) {
-    List<Instance> instancesForAccount =
-        getInstancesForAccount(accountId, timestamp, Collections.singletonList("appId"));
+    Query<Instance> query = wingsPersistence.createQuery(Instance.class);
+    query.project("appId", true);
+    List<Instance> instancesForAccount = getInstancesForAccount(accountId, timestamp, query);
     Set<String> appIdsFromInstances = instancesForAccount.stream().map(Instance::getAppId).collect(Collectors.toSet());
 
     List<Application> appsByAccountId = appService.getAppsByAccountId(accountId);
@@ -1101,7 +1090,9 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
                                         .lessThanOrEq(rhsCreatedAt)
                                         .project(InstanceKeys.appId, true);
 
-    instanceQuery.project(InstanceKeys.uuid, false);
+    if (featureFlagService.isEnabled(SPG_INSTANCE_OPTIMIZE_DELETED_APPS, accountId)) {
+      instanceQuery.project(InstanceKeys.uuid, false);
+    }
 
     Set<String> appIdsFromInstances = new HashSet<>();
     try (HIterator<Instance> iterator =
@@ -1154,6 +1145,7 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
           WorkflowExecutionKeys.statusInstanceBreakdownMap, WorkflowExecutionKeys.tags);
       finalPageRequest.setFieldsExcluded(fieldsExcluded);
     }
+
     finalPageRequest.setOptions(Collections.singletonList(PageRequest.Option.SKIPCOUNT));
 
     Optional<Integer> retentionPeriodInDays =

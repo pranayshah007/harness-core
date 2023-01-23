@@ -16,8 +16,6 @@ import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.yaml.ParameterField;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import java.util.Arrays;
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;
@@ -37,10 +35,5 @@ public class ContainerStepParameters extends ContainerBaseStepInfo implements Sp
       ParameterField<ImagePullPolicy> imagePullPolicy, ParameterField<List<TaskSelectorYaml>> delegateSelectors,
       ParameterField<List<String>> entrypoint) {
     super(image, connectorRef, imagePullPolicy, delegateSelectors, entrypoint);
-  }
-
-  @JsonIgnore
-  public List<String> getCommandUnits() {
-    return Arrays.asList(ContainerCommandUnitConstants.InitContainer, ContainerCommandUnitConstants.ContainerStep);
   }
 }

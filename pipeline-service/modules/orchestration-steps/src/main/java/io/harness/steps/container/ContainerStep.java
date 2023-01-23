@@ -45,6 +45,7 @@ import io.harness.steps.container.execution.ContainerStepCleanupHelper;
 import io.harness.steps.container.execution.ContainerStepExecutionResponseHelper;
 import io.harness.steps.container.execution.ContainerStepRbacHelper;
 import io.harness.steps.executable.TaskChainExecutableWithRbac;
+import io.harness.steps.plugin.ContainerCommandUnitConstants;
 import io.harness.steps.plugin.ContainerStepInfo;
 import io.harness.steps.plugin.ContainerStepPassThroughData;
 import io.harness.supplier.ThrowingSupplier;
@@ -124,9 +125,10 @@ public class ContainerStep implements TaskChainExecutableWithRbac<StepElementPar
     List<TaskSelector> taskSelectors = new ArrayList<>();
 
     TaskData taskData = getTaskData(stepParameters, buildSetupTaskParams);
-    TaskRequest taskRequest = StepUtils.prepareTaskRequest(ambiance, taskData, kryoSerializer,
-        TaskCategory.DELEGATE_TASK_V2, null, true, TaskType.valueOf(taskData.getTaskType()).getDisplayName(),
-        taskSelectors, Scope.PROJECT, EnvironmentType.ALL, false, new ArrayList<>(), false, stageId);
+    TaskRequest taskRequest =
+        StepUtils.prepareTaskRequest(ambiance, taskData, kryoSerializer, TaskCategory.DELEGATE_TASK_V2,
+            containerStepInfo.getCommandUnits(), true, TaskType.valueOf(taskData.getTaskType()).getDisplayName(),
+            taskSelectors, Scope.PROJECT, EnvironmentType.ALL, false, new ArrayList<>(), false, stageId);
 
     return TaskChainResponse.builder()
         .taskRequest(taskRequest)
@@ -162,13 +164,17 @@ public class ContainerStep implements TaskChainExecutableWithRbac<StepElementPar
 
     outcomeService.consume(ambiance, POD_DETAILS_OUTCOME, liteEnginePodDetailsOutcome, StepCategory.STEP.name());
 
-    TaskData runStepTaskData = containerRunStepHelper.getRunStepTask(ambiance, containerStepInfo,
-        AmbianceUtils.getAccountId(ambiance), getLogPrefix(ambiance), timeoutForDelegateTask);
+    TaskData runStepTaskData =
+        containerRunStepHelper.getRunStepTask(ambiance, containerStepInfo, AmbianceUtils.getAccountId(ambiance),
+            LogStreamingHelper.generateLogKeyGivenCommandUnit(
+                getLogPrefix(ambiance), ContainerCommandUnitConstants.ContainerStep),
+            timeoutForDelegateTask);
     String stageId = ambiance.getStageExecutionId();
 
-    TaskRequest taskRequest = StepUtils.prepareTaskRequest(ambiance, runStepTaskData, kryoSerializer,
-        TaskCategory.DELEGATE_TASK_V2, null, true, TaskType.valueOf(runStepTaskData.getTaskType()).getDisplayName(),
-        new ArrayList<>(), Scope.PROJECT, EnvironmentType.ALL, false, new ArrayList<>(), false, stageId);
+    TaskRequest taskRequest =
+        StepUtils.prepareTaskRequest(ambiance, runStepTaskData, kryoSerializer, TaskCategory.DELEGATE_TASK_V2,
+            containerStepInfo.getCommandUnits(), true, TaskType.valueOf(runStepTaskData.getTaskType()).getDisplayName(),
+            new ArrayList<>(), Scope.PROJECT, EnvironmentType.ALL, false, new ArrayList<>(), false, stageId);
     return TaskChainResponse.builder()
         .chainEnd(true)
         .taskRequest(taskRequest)

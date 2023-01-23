@@ -46,6 +46,7 @@ import io.harness.delegate.beans.ci.pod.ContainerSecurityContext;
 import io.harness.delegate.beans.ci.pod.ImageDetailsWithConnector;
 import io.harness.delegate.beans.ci.pod.PodVolume;
 import io.harness.delegate.beans.ci.pod.SecretVariableDetails;
+import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.task.citasks.cik8handler.params.CIConstants;
 import io.harness.k8s.model.ImageDetails;
 import io.harness.ng.core.NGAccess;
@@ -123,6 +124,7 @@ public class ContainerStepInitHelper {
         .k8sConnector(k8sConnector)
         .cik8PodParams(getK8DirectPodParams(containerStepInfo, k8PodDetails, infrastructure, ambiance, logPrefix))
         .podMaxWaitUntilReadySecs(k8sPodInitUtils.getPodWaitUntilReadTimeout(infrastructure))
+        .commandUnitsProgress(CommandUnitsProgress.builder().build())
         .build();
   }
 
