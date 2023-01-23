@@ -7459,7 +7459,7 @@
             }
           ]
         },
-        "failOnSeverity": {
+        "fail_on_severity": {
           "oneOf": [
             {
               "type": "string",
@@ -7478,7 +7478,7 @@
             }
           ]
         },
-        "includeRaw": {
+        "include_raw": {
           "oneOf": [
             {
               "type": "boolean"
@@ -7520,13 +7520,13 @@
     "STOYamlAuth": {
       "type": "object",
       "required": [
-        "accessToken"
+        "access_token"
       ],
       "properties": {
-        "accessId": {
+        "access_id": {
           "type": "string"
         },
-        "accessToken": {
+        "access_token": {
           "type": "string"
         },
         "domain": {
@@ -7569,10 +7569,10 @@
     "STOYamlBlackduckToolData": {
       "type": "object",
       "properties": {
-        "projectName": {
+        "project_name": {
           "type": "string"
         },
-        "projectVersion": {
+        "project_version": {
           "type": "string"
         }
       },
@@ -7581,10 +7581,10 @@
     "STOYamlCheckmarxToolData": {
       "type": "object",
       "properties": {
-        "projectName": {
+        "project_name": {
           "type": "string"
         },
-        "teamName": {
+        "team_name": {
           "type": "string"
         }
       },
@@ -7593,37 +7593,37 @@
     "STOYamlFODToolData": {
       "type": "object",
       "properties": {
-        "appName": {
+        "app_name": {
           "type": "string"
         },
-        "auditType": {
+        "audit_type": {
           "type": "string"
         },
-        "dataCenter": {
+        "data_center": {
           "type": "string"
         },
         "entitlement": {
           "type": "string"
         },
-        "loookupType": {
+        "lookup_type": {
           "type": "string"
         },
-        "ownerId": {
+        "owner_id": {
           "type": "string"
         },
-        "releaseName": {
+        "release_name": {
           "type": "string"
         },
-        "scanSettings": {
+        "scan_settings": {
           "type": "string"
         },
-        "scanType": {
+        "scan_type": {
           "type": "string"
         },
-        "targetLanguage": {
+        "target_language": {
           "type": "string"
         },
-        "targetLanguageVersion": {
+        "target_language_version": {
           "type": "string"
         }
       },
@@ -7635,10 +7635,10 @@
         "type"
       ],
       "properties": {
-        "accessId": {
+        "access_id": {
           "type": "string"
         },
-        "accessToken": {
+        "access_token": {
           "type": "string"
         },
         "domain": {
@@ -7686,10 +7686,10 @@
     "STOYamlInstance": {
       "type": "object",
       "properties": {
-        "accessId": {
+        "access_id": {
           "type": "string"
         },
-        "accessToken": {
+        "access_token": {
           "type": "string"
         },
         "domain": {
@@ -7781,16 +7781,16 @@
         "include": {
           "type": "string"
         },
-        "productName": {
+        "product_name": {
           "type": "string"
         },
-        "productToken": {
+        "product_token": {
           "type": "string"
         },
-        "projectName": {
+        "project_name": {
           "type": "string"
         },
-        "projectToken": {
+        "project_token": {
           "type": "string"
         }
       },
@@ -7861,10 +7861,10 @@
     "STOYamlVeracodeToolData": {
       "type": "object",
       "properties": {
-        "appId": {
+        "app_id": {
           "type": "string"
         },
-        "projectName": {
+        "project_name": {
           "type": "string"
         }
       },
@@ -11382,7 +11382,10 @@
             "config": {
               "type": "string",
               "enum": [
-                "default"
+                "default",
+                "quick",
+                "attack",
+                "standard"
               ]
             },
             "imagePullPolicy": {

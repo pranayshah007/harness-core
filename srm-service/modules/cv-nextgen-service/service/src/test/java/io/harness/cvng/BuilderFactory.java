@@ -1500,7 +1500,7 @@ public class BuilderFactory {
     String serviceIdentifier;
     String envIdentifier;
 
-    private String getMonitoredServiceIdentifier() {
+    public String getMonitoredServiceIdentifier() {
       return serviceIdentifier + "_" + envIdentifier;
     }
 

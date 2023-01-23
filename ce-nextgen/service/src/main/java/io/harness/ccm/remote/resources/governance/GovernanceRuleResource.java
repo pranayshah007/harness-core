@@ -67,6 +67,7 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.outbox.api.OutboxService;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.security.annotations.InternalApi;
+import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.security.annotations.PublicApi;
 import io.harness.telemetry.Category;
 import io.harness.telemetry.TelemetryReporter;
@@ -141,8 +142,8 @@ import org.springframework.transaction.support.TransactionTemplate;
       @ApiResponse(code = 400, response = FailureDTO.class, message = "Bad Request")
       , @ApiResponse(code = 500, response = ErrorDTO.class, message = "Internal server error")
     })
-@PublicApi
-// @NextGenManagerAuth
+
+@NextGenManagerAuth
 public class GovernanceRuleResource {
   private final GovernanceRuleService governanceRuleService;
   private final RuleSetService ruleSetService;
@@ -267,7 +268,7 @@ public class GovernanceRuleResource {
         Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
 
     return ResponseDTO.newResponse(Failsafe.with(transactionRetryRule).get(() -> transactionTemplate.execute(status -> {
-      outboxService.save(new RuleUpdateEvent(accountId, rule.toDTO()));
+      outboxService.save(new RuleUpdateEvent(accountId, rule.toDTO(), oldRule.toDTO()));
       return governanceRuleService.update(rule, accountId);
     })));
   }
@@ -358,12 +359,13 @@ public class GovernanceRuleResource {
           required = true, description = "Unique identifier for the rule") @NotNull @Valid String uuid) {
     // rbacHelper checkRuleDeletePermission(accountId, null, null)
     HashMap<String, Object> properties = new HashMap<>();
+    Rule rule = governanceRuleService.fetchById(accountId, uuid, false);
     properties.put(MODULE, MODULE_NAME);
-    properties.put(RULE_NAME, governanceRuleService.fetchById(accountId, uuid, false).getName());
+    properties.put(RULE_NAME, rule.getName());
     telemetryReporter.sendTrackEvent(GOVERNANCE_RULE_DELETE, null, accountId, properties,
         Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
     return ResponseDTO.newResponse(Failsafe.with(transactionRetryRule).get(() -> transactionTemplate.execute(status -> {
-      outboxService.save(new RuleDeleteEvent(accountId, governanceRuleService.fetchById(accountId, uuid, false)));
+      outboxService.save(new RuleDeleteEvent(accountId, rule.toDTO()));
       return governanceRuleService.delete(accountId, uuid);
     })));
   }

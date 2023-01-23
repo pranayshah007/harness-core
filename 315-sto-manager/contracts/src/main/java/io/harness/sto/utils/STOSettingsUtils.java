@@ -365,7 +365,7 @@ public final class STOSettingsUtils {
       map.put(getSTOKey("product_data_center"),
           resolveStringParameter("tool.data_center", stepType, identifier, toolData.getDataCenter(), false));
       map.put(getSTOKey("product_lookup_type"),
-          resolveStringParameter("tool.lookup_type", stepType, identifier, toolData.getLoookupType(), false));
+          resolveStringParameter("tool.lookup_type", stepType, identifier, toolData.getLookupType(), false));
       map.put(getSTOKey("product_release_name"),
           resolveStringParameter("tool.release_name", stepType, identifier, toolData.getReleaseName(), false));
       map.put(getSTOKey("product_entitlement"),
@@ -510,12 +510,15 @@ public final class STOSettingsUtils {
     return map;
   }
 
-  private static String getProductConfigName(STOYamlGenericConfig config) {
-    if (config != null) {
-      config.getYamlName();
-    }
+  public static String getProductConfigName(STOGenericStepInfo stepInfo) {
+    String defaultConfig = STOYamlGenericConfig.DEFAULT.getYamlName();
 
-    return STOYamlGenericConfig.DEFAULT.getYamlName();
+    switch (stepInfo.getSTOStepType()) {
+      case ZAP:
+        return ((ZapStepInfo) stepInfo).getConfig().getYamlName();
+      default:
+        return defaultConfig;
+    }
   }
 
   private static String getPolicyType(STOYamlScanMode scanMode) {
@@ -529,11 +532,10 @@ public final class STOSettingsUtils {
     Map<String, String> map = new HashMap<>();
     String stepType = stepInfo.getStepType().getType();
 
-    STOYamlGenericConfig config = stepInfo.getConfig();
     STOYamlScanMode scanMode = stepInfo.getMode();
 
     map.put(getSTOKey("product_name"), stepInfo.getProductName());
-    map.put(getSTOKey("product_config_name"), getProductConfigName(config));
+    map.put(getSTOKey("product_config_name"), getProductConfigName(stepInfo));
     map.put(getSTOKey("policy_type"), getPolicyType(scanMode));
 
     map.putAll(processSTOTargetFields(stepInfo.getTarget(), stepType, identifier));

@@ -107,8 +107,8 @@ public class GcpSecretMigrator implements SecretMigrator {
                         .name(gcpSecretFileIdentifier)
                         .description(String.format(
                             "Auto Generated Secret for Secret Manager - %s", gcpSecretsManagerConfig.getName()))
-                        .orgIdentifier(inputDTO.getOrgIdentifier())
-                        .projectIdentifier(inputDTO.getProjectIdentifier())
+                        .orgIdentifier(orgIdentifier)
+                        .projectIdentifier(projectIdentifier)
                         .type(SecretType.SecretFile)
                         .spec(SecretFileSpecDTO.builder().secretManagerIdentifier("harnessSecretManager").build())
                         .build())

@@ -13,7 +13,6 @@ import static io.harness.exception.WingsException.USER;
 
 import static java.util.Objects.isNull;
 
-import io.harness.adfs.deserializer.AdfsAccessTokenResponseDeserializer;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.AdfsAuthException;
 import io.harness.jackson.JsonNodeUtils;

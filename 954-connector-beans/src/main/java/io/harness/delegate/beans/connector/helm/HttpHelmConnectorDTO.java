@@ -12,6 +12,9 @@ import static io.harness.delegate.beans.connector.helm.HttpHelmAuthType.ANONYMOU
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
+import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
+import io.harness.delegate.beans.connector.helm.outcome.HttpHelmAuthenticationOutcomeDTO;
+import io.harness.delegate.beans.connector.helm.outcome.HttpHelmConnectorOutcomeDTO;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -49,5 +52,17 @@ public class HttpHelmConnectorDTO extends ConnectorConfigDTO implements Delegate
       return Collections.emptyList();
     }
     return Collections.singletonList(auth.getCredentials());
+  }
+
+  @Override
+  public ConnectorConfigOutcomeDTO toOutcome() {
+    return HttpHelmConnectorOutcomeDTO.builder()
+        .helmRepoUrl(this.helmRepoUrl)
+        .delegateSelectors(this.delegateSelectors)
+        .auth(HttpHelmAuthenticationOutcomeDTO.builder()
+                  .spec(this.auth.getCredentials())
+                  .type(this.auth.getAuthType())
+                  .build())
+        .build();
   }
 }

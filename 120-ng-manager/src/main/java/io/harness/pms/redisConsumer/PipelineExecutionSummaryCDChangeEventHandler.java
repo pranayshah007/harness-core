@@ -15,10 +15,13 @@ import io.harness.timescaledb.Tables;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
+import java.util.Iterator;
+import java.util.Map;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.jooq.DSLContext;
 import org.jooq.Record;
+import org.jooq.Result;
 import org.jooq.exception.DataAccessException;
 
 @Slf4j
@@ -161,6 +164,18 @@ public class PipelineExecutionSummaryCDChangeEventHandler extends DebeziumAbstra
         }
       }
     }
+    if (node.get(PipelineExecutionSummaryKeys.tags) != null
+        && node.get(PipelineExecutionSummaryKeys.status).asText().equals("SUCCESS")) {
+      JsonNode tagList = node.get(PipelineExecutionSummaryKeys.tags);
+      Iterator<Map.Entry<String, JsonNode>> fields = tagList.fields();
+      while (fields.hasNext()) {
+        Map.Entry<String, JsonNode> field = fields.next();
+        if (field.getValue() != null && field.getValue().get("key").asText().equals("reverted_execution_id")) {
+          setTimeToRestore(
+              record, field.getValue().get("value").asText(), node.get(PipelineExecutionSummaryKeys.endTs).asLong());
+        }
+      }
+    }
     return record;
   }
 
@@ -216,5 +231,25 @@ public class PipelineExecutionSummaryCDChangeEventHandler extends DebeziumAbstra
       return false;
     }
     return true;
+  }
+
+  private void setTimeToRestore(Record record, String originalExecutionId, Long currEndTime) {
+    try {
+      Result<?> result = dsl.select(Tables.PIPELINE_EXECUTION_SUMMARY_CD.ENDTS)
+                             .from(Tables.PIPELINE_EXECUTION_SUMMARY_CD)
+                             .where(Tables.PIPELINE_EXECUTION_SUMMARY_CD.PLANEXECUTIONID.eq(originalExecutionId))
+                             .and(Tables.PIPELINE_EXECUTION_SUMMARY_CD.STATUS.eq("SUCCESS"))
+                             .fetch();
+      if (result.size() == 1 && currEndTime != null) {
+        log.debug("Successfully found data for id {}", originalExecutionId);
+        Record record1 = result.get(0);
+        Long timeToRestore = currEndTime - record1.get(Tables.PIPELINE_EXECUTION_SUMMARY_CD.ENDTS);
+        record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.IS_REVERT_EXECUTION, true);
+        record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.ORIGINAL_EXECUTION_ID, originalExecutionId);
+        record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.MEAN_TIME_TO_RESTORE, timeToRestore);
+      }
+    } catch (DataAccessException ex) {
+      log.error("Caught Exception while finding execution for id {}", originalExecutionId, ex);
+    }
   }
 }

@@ -340,10 +340,10 @@ public class InstanceServiceImpl implements InstanceService {
                             .and(InstanceKeys.isDeleted)
                             .is(false);
 
-    if (!orgIdentifier.isBlank()) {
+    if (isNotEmpty(orgIdentifier)) {
       criteria.and(InstanceKeys.orgIdentifier);
     }
-    if (!projectIdentifier.isBlank()) {
+    if (isNotEmpty(projectIdentifier)) {
       criteria.and(InstanceKeys.projectIdentifier);
     }
 

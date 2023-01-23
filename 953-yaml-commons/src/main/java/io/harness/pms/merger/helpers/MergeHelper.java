@@ -93,34 +93,36 @@ public class MergeHelper {
     Map<FQN, Object> mergedYamlFQNMap = new LinkedHashMap<>(pipelineYamlFQNMap);
     pipelineYamlFQNMap.keySet().forEach(key -> {
       if (inputSetFQNMap.containsKey(key)) {
-        Object value = inputSetFQNMap.get(key);
-        Object templateValue = pipelineYamlFQNMap.get(key);
+        Object valueFromRuntimeInputYaml = inputSetFQNMap.get(key);
+        Object valueFromPipelineYaml = pipelineYamlFQNMap.get(key);
         // input sets can now have <+input> in them as we will not remove those fields anymore. So if the first input
         // set provides some value and the second does not, then the first value should and not be overriden by the
         // <+input> in the second input set
-        if (value instanceof TextNode && NGExpressionUtils.matchesInputSetPattern(((TextNode) value).asText())
-            && !NGExpressionUtils.matchesExecutionInputPattern(((TextNode) value).asText())) {
+        if (valueFromRuntimeInputYaml instanceof TextNode
+            && NGExpressionUtils.matchesInputSetPattern(((TextNode) valueFromRuntimeInputYaml).asText())
+            && !NGExpressionUtils.matchesExecutionInputPattern(((TextNode) valueFromRuntimeInputYaml).asText())) {
           return;
         }
         if (key.isType() || key.isIdentifierOrVariableName()) {
-          if (!value.toString().equals(templateValue.toString())) {
+          if (!valueFromRuntimeInputYaml.toString().equals(valueFromPipelineYaml.toString())) {
             return;
           }
         }
         if (isAtExecutionTime) {
-          String templateValueText = ((JsonNode) templateValue).asText();
+          String templateValueText = ((JsonNode) valueFromPipelineYaml).asText();
           if (NGExpressionUtils.matchesExecutionInputPattern(templateValueText)) {
             ParameterField<?> inputSetParameterField =
-                RuntimeInputValuesValidator.getInputSetParameterField(((JsonNode) value).asText());
+                RuntimeInputValuesValidator.getInputSetParameterField(((JsonNode) valueFromRuntimeInputYaml).asText());
             if (inputSetParameterField != null && inputSetParameterField.getValue() != null) {
-              value = inputSetParameterField.getValue();
+              valueFromRuntimeInputYaml = inputSetParameterField.getValue();
             }
           }
         }
         if (appendInputSetValidator) {
-          value = checkForRuntimeInputExpressions(value, pipelineYamlFQNMap.get(key));
+          valueFromRuntimeInputYaml =
+              checkForRuntimeInputExpressions(valueFromRuntimeInputYaml, pipelineYamlFQNMap.get(key));
         }
-        mergedYamlFQNMap.put(key, value);
+        mergedYamlFQNMap.put(key, valueFromRuntimeInputYaml);
       } else {
         Map<FQN, Object> subMap = YamlSubMapExtractor.getFQNToObjectSubMap(inputSetFQNMap, key);
         if (!subMap.isEmpty()) {
@@ -178,6 +180,13 @@ public class MergeHelper {
     baseFQNs.forEach(baseFQN -> {
       Map<FQN, Object> subMapFromInputSet = YamlSubMapExtractor.getFQNToObjectSubMap(inputSetFQNMap, baseFQN);
       subMapFromInputSet.keySet().forEach(inputSetKey -> {
+        if (pipelineYamlFQNMap.containsKey(inputSetKey)
+            || EmptyPredicate.isNotEmpty(YamlSubMapExtractor.getFQNToObjectSubMap(pipelineYamlFQNMap, inputSetKey))) {
+          // if some key is present in pipeline yaml, either as a leaf node or otherwise, then the value from the
+          // runtime input yaml needs to be ignored. The first if condition checks if the key is present as a leaf node,
+          // and the second one checks if the key is present otherwise
+          return;
+        }
         if (mergedYamlFQNMap.containsKey(inputSetKey)) {
           nonIgnorableKeys.put(inputSetKey, mergedYamlFQNMap.get(inputSetKey));
         } else {

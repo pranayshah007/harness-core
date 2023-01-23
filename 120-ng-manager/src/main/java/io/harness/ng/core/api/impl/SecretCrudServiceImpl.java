@@ -11,6 +11,7 @@ import static io.harness.NGConstants.HARNESS_SECRET_MANAGER_IDENTIFIER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.enforcement.constants.FeatureRestrictionName.MULTIPLE_SECRETS;
 import static io.harness.eraro.ErrorCode.INVALID_REQUEST;
 import static io.harness.eraro.ErrorCode.SECRET_MANAGEMENT_ERROR;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
@@ -28,6 +29,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.NGResourceFilterConstants;
 import io.harness.NgAutoLogContext;
+import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
@@ -38,6 +40,7 @@ import io.harness.connector.services.NGConnectorSecretManagerService;
 import io.harness.delegate.beans.FileUploadLimit;
 import io.harness.encryption.SecretRefData;
 import io.harness.encryption.SecretRefHelper;
+import io.harness.enforcement.client.annotation.FeatureRestrictionCheck;
 import io.harness.eventsframework.EventsFrameworkMetadataConstants;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.api.Producer;
@@ -222,7 +225,8 @@ public class SecretCrudServiceImpl implements SecretCrudService {
   }
 
   @Override
-  public SecretResponseWrapper create(String accountIdentifier, SecretDTOV2 dto) {
+  @FeatureRestrictionCheck(MULTIPLE_SECRETS)
+  public SecretResponseWrapper create(@AccountIdentifier String accountIdentifier, SecretDTOV2 dto) {
     if (SecretText.equals(dto.getType()) && isEmpty(((SecretTextSpecDTO) dto.getSpec()).getValue())) {
       if ((((SecretTextSpecDTO) dto.getSpec()).getValueType()).equals(CustomSecretManagerValues)) {
         log.info(format("Secret [%s] does not have any path for custom secret manager: [%s]", dto.getIdentifier(),
@@ -306,6 +310,7 @@ public class SecretCrudServiceImpl implements SecretCrudService {
   }
 
   @Override
+  @FeatureRestrictionCheck(MULTIPLE_SECRETS)
   public SecretResponseWrapper createViaYaml(@NotNull String accountIdentifier, SecretDTOV2 dto) {
     Optional<String> message = dto.getSpec().getErrorMessageForInvalidYaml();
     if (message.isPresent()) {
@@ -347,6 +352,11 @@ public class SecretCrudServiceImpl implements SecretCrudService {
     }
 
     throw new SecretManagementException(SECRET_MANAGEMENT_ERROR, "Unable to create secret remotely.", USER);
+  }
+
+  @Override
+  public Long countSecrets(String accountIdentifier) {
+    return ngSecretService.countSecrets(accountIdentifier);
   }
 
   @Override

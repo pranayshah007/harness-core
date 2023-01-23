@@ -24,19 +24,19 @@ public class STOYamlMendToolData {
 
   @ApiModelProperty(dataType = STRING_CLASSPATH) protected ParameterField<String> exclude;
 
-  @ApiModelProperty(dataType = STRING_CLASSPATH)
+  @ApiModelProperty(dataType = STRING_CLASSPATH, name = "product_name")
   @JsonProperty("product_name")
   protected ParameterField<String> productName;
 
-  @ApiModelProperty(dataType = STRING_CLASSPATH)
+  @ApiModelProperty(dataType = STRING_CLASSPATH, name = "product_token")
   @JsonProperty("product_token")
   protected ParameterField<String> productToken;
 
-  @ApiModelProperty(dataType = STRING_CLASSPATH)
+  @ApiModelProperty(dataType = STRING_CLASSPATH, name = "project_name")
   @JsonProperty("project_name")
   protected ParameterField<String> projectName;
 
-  @ApiModelProperty(dataType = STRING_CLASSPATH)
+  @ApiModelProperty(dataType = STRING_CLASSPATH, name = "project_token")
   @JsonProperty("project_token")
   protected ParameterField<String> projectToken;
 }

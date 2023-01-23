@@ -122,6 +122,7 @@ import io.harness.ng.core.migration.UserGroupMigrationProvider;
 import io.harness.ng.core.remote.licenserestriction.CloudCostK8sConnectorRestrictionsUsageImpl;
 import io.harness.ng.core.remote.licenserestriction.OrgRestrictionsUsageImpl;
 import io.harness.ng.core.remote.licenserestriction.ProjectRestrictionsUsageImpl;
+import io.harness.ng.core.remote.licenserestriction.SecretRestrictionUsageImpl;
 import io.harness.ng.core.user.exception.mapper.InvalidUserRemoveRequestExceptionMapper;
 import io.harness.ng.core.variable.expressions.functors.VariableFunctor;
 import io.harness.ng.migration.DelegateMigrationProvider;
@@ -989,6 +990,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
                     .put(FeatureRestrictionName.TEST7, ExampleStaticLimitUsageImpl.class)
                     .put(FeatureRestrictionName.MULTIPLE_PROJECTS, ProjectRestrictionsUsageImpl.class)
                     .put(FeatureRestrictionName.MULTIPLE_ORGANIZATIONS, OrgRestrictionsUsageImpl.class)
+                    .put(FeatureRestrictionName.MULTIPLE_SECRETS, SecretRestrictionUsageImpl.class)
                     .put(FeatureRestrictionName.SERVICES, ServiceRestrictionsUsageImpl.class)
                     .put(FeatureRestrictionName.CCM_K8S_CLUSTERS, CloudCostK8sConnectorRestrictionsUsageImpl.class)
                     .put(FeatureRestrictionName.DEPLOYMENTS_PER_MONTH, DeploymentsPerMonthRestrictionUsageImpl.class)

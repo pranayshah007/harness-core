@@ -31,9 +31,11 @@ public class STOYamlImage {
 
   @ApiModelProperty(dataType = STRING_CLASSPATH) protected ParameterField<String> domain;
 
-  @ApiModelProperty(dataType = STRING_CLASSPATH) @JsonProperty("access_id") protected ParameterField<String> accessId;
+  @ApiModelProperty(dataType = STRING_CLASSPATH, name = "access_id")
+  @JsonProperty("access_id")
+  protected ParameterField<String> accessId;
 
-  @ApiModelProperty(dataType = STRING_CLASSPATH)
+  @ApiModelProperty(dataType = STRING_CLASSPATH, name = "access_token")
   @JsonProperty("access_token")
   protected ParameterField<String> accessToken;
 

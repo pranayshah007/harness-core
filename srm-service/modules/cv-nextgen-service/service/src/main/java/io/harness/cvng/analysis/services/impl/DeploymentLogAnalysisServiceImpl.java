@@ -12,13 +12,19 @@ import static io.harness.cvng.beans.MonitoredServiceDataSourceType.ERROR_TRACKIN
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import static org.joda.time.DateTimeConstants.SECONDS_PER_MINUTE;
+
 import io.harness.cvng.activity.beans.DeploymentActivityResultDTO.ErrorAnalysisSummary;
 import io.harness.cvng.activity.beans.DeploymentActivityResultDTO.LogsAnalysisSummary;
-import io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO;
 import io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO.Cluster;
+import io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO.ClusterHostFrequencyData;
 import io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO.ClusterSummary;
 import io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO.ClusterType;
+import io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO.ControlClusterSummary;
+import io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO.HostFrequencyData;
+import io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO.HostSummary;
 import io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO.ResultSummary;
+import io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO.TimestampFrequencyCount;
 import io.harness.cvng.analysis.beans.LogAnalysisClusterChartDTO;
 import io.harness.cvng.analysis.beans.LogAnalysisClusterDTO;
 import io.harness.cvng.analysis.beans.LogAnalysisClusterWithCountDTO;
@@ -32,6 +38,7 @@ import io.harness.cvng.analysis.entities.DeploymentLogAnalysis;
 import io.harness.cvng.analysis.entities.DeploymentLogAnalysis.DeploymentLogAnalysisKeys;
 import io.harness.cvng.analysis.services.api.DeploymentLogAnalysisService;
 import io.harness.cvng.beans.DataSourceType;
+import io.harness.cvng.beans.job.VerificationJobType;
 import io.harness.cvng.cdng.beans.v2.ClusterAnalysisOverview;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.filterParams.DeploymentLogAnalysisFilter;
@@ -62,7 +69,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
@@ -360,7 +366,7 @@ public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisSe
             -> deploymentLogAnalysis.getHostSummaries()
                    .stream()
                    .filter(hostSummary -> hostSummary.getHost() != null)
-                   .map(DeploymentLogAnalysisDTO.HostSummary::getHost)
+                   .map(HostSummary::getHost)
                    .filter(host -> !DataSourceType.ERROR_TRACKING.getDisplayName().equals(host)))
         .collect(Collectors.toSet());
   }
@@ -495,13 +501,6 @@ public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisSe
 
     Map<ClusterType, Long> eventCountByEventTypeMap = new HashMap<>();
 
-    Long baselineCount =
-        logAnalysisResults.stream()
-            .filter(logAnalysisRadarChartListDTO -> !Objects.isNull(logAnalysisRadarChartListDTO.getBaseline()))
-            .count();
-
-    eventCountByEventTypeMap.put(ClusterType.BASELINE, baselineCount);
-
     eventCountByEventTypeMap.putAll(logAnalysisResults.stream()
                                         .map(logAnalysisClusterDTO -> logAnalysisClusterDTO.getClusterType())
                                         .collect(Collectors.groupingBy(Function.identity(), Collectors.counting())));
@@ -581,11 +580,6 @@ public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisSe
       logAnalysisRadarChartListDTO.setAngle(angle);
       logAnalysisRadarChartListDTO.setRadius(
           getRandomRadiusInExpectedRange(logAnalysisRadarChartListDTO.getClusterType(), random));
-      if (logAnalysisRadarChartListDTO.hasControlData()) {
-        logAnalysisRadarChartListDTO.getBaseline().setAngle(angle);
-        logAnalysisRadarChartListDTO.getBaseline().setRadius(
-            getRandomRadiusInExpectedRange(logAnalysisRadarChartListDTO.getBaseline().getClusterType(), random));
-      }
       angle += angleDifference;
       angle = Math.min(angle, 360);
     }
@@ -609,7 +603,7 @@ public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisSe
 
     ResultSummary resultSummary = null;
     if (deploymentLogAnalysisFilter.filterByHostNames()) {
-      for (DeploymentLogAnalysisDTO.HostSummary hostSummary : deploymentLogAnalysis.getHostSummaries()) {
+      for (HostSummary hostSummary : deploymentLogAnalysis.getHostSummaries()) {
         if (deploymentLogAnalysisFilter.getHostNames().contains(hostSummary.getHost())) {
           resultSummary = hostSummary.getResultSummary();
           break;
@@ -628,34 +622,43 @@ public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisSe
       return new ArrayList<>();
     }
 
-    Map<Integer, DeploymentLogAnalysisDTO.ControlClusterSummary> controlClusters = new HashMap<>();
+    Map<Integer, ControlClusterSummary> controlClusters = new HashMap<>();
 
     resultSummary.getControlClusterSummaries().forEach(
         controlClusterSummary -> controlClusters.put(controlClusterSummary.getLabel(), controlClusterSummary));
 
-    Map<Integer, DeploymentLogAnalysisDTO.ClusterHostFrequencyData> controlClusterFrequencyDataMap =
+    Map<Integer, ClusterHostFrequencyData> controlClusterFrequencyDataMap =
         CollectionUtils.emptyIfNull(resultSummary.getControlClusterHostFrequencies())
             .stream()
-            .collect(Collectors.toMap(clusterHostFrequencyData
-                -> clusterHostFrequencyData.getLabel(),
-                clusterHostFrequencyData -> clusterHostFrequencyData));
+            .collect(Collectors.toMap(
+                ClusterHostFrequencyData::getLabel, clusterHostFrequencyData -> clusterHostFrequencyData));
 
     for (ClusterSummary testClusterSummary : resultSummary.getTestClusterSummaries()) {
       if (!deploymentLogAnalysisFilter.filterByClusterType()
           || deploymentLogAnalysisFilter.getClusterTypes().contains(testClusterSummary.getClusterType())) {
+        List<TimestampFrequencyCount> totalTestFrequencyData =
+            getTotalTestFrequencyData(testClusterSummary, deploymentLogAnalysis.getVerificationTaskId());
+        List<TimestampFrequencyCount> averageControlFrequencyData = new ArrayList<>();
+        if (controlClusterFrequencyDataMap.get(testClusterSummary.getLabel()) != null) {
+          averageControlFrequencyData =
+              getAverageControlFrequencyData(controlClusterFrequencyDataMap.get(testClusterSummary.getLabel()),
+                  deploymentLogAnalysis.getVerificationTaskId());
+        }
+        List<HostFrequencyData> testHostFrequencyData = getTestHostFrequencyData(
+            testClusterSummary.getFrequencyData(), deploymentLogAnalysis.getVerificationTaskId());
         LogAnalysisRadarChartListDTOBuilder logAnalysisRadarChartListDTOBuilder =
             LogAnalysisRadarChartListDTO.builder()
                 .clusterId(UUID.nameUUIDFromBytes(
                                    (deploymentLogAnalysis.getVerificationTaskId() + ":" + testClusterSummary.getLabel())
                                        .getBytes(Charsets.UTF_8))
                                .toString())
-                .label(testClusterSummary.getLabel())
                 .message(labelToClusterMap.get(testClusterSummary.getLabel()).getText())
                 .clusterType(testClusterSummary.getClusterType())
                 .risk(testClusterSummary.getRiskLevel())
-                .frequencyData(testClusterSummary.getTestFrequencyData())
-                .hostFrequencyData(testClusterSummary.getFrequencyData())
-                .count(testClusterSummary.getCount());
+                .totalTestFrequencyData(totalTestFrequencyData)
+                .testHostFrequencyData(testHostFrequencyData)
+                .count(testClusterSummary.getCount())
+                .averageControlFrequencyData(averageControlFrequencyData);
         if (testClusterSummary.getClusterType().equals(ClusterType.KNOWN_EVENT)
             || testClusterSummary.getClusterType().equals(ClusterType.UNEXPECTED_FREQUENCY)) {
           LogAnalysisRadarChartListDTOBuilder controlLogAnalysisChartListDTOBuilder =
@@ -664,20 +667,6 @@ public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisSe
                   .message(labelToClusterMap.get(testClusterSummary.getLabel()).getText())
                   .clusterType(ClusterType.BASELINE)
                   .risk(Risk.NO_ANALYSIS);
-          // In some scenerio's the LE is not saving the control data for host specific data. Throwing warning in case
-          // if the control data is not present
-          if (controlClusters.containsKey(testClusterSummary.getLabel())) {
-            controlLogAnalysisChartListDTOBuilder.frequencyData(
-                controlClusters.get(testClusterSummary.getLabel()).getControlFrequencyData());
-          } else {
-            log.warn("control data is not present for verificationTaskId: %s",
-                deploymentLogAnalysis.getVerificationTaskId());
-          }
-          if (controlClusterFrequencyDataMap.containsKey(testClusterSummary.getLabel())) {
-            controlLogAnalysisChartListDTOBuilder.hostFrequencyData(
-                controlClusterFrequencyDataMap.get(testClusterSummary.getLabel()).getFrequencyData());
-          }
-          logAnalysisRadarChartListDTOBuilder.baseline(controlLogAnalysisChartListDTOBuilder.build());
         }
         logAnalysisRadarChartListDTOList.add(logAnalysisRadarChartListDTOBuilder.build());
       }
@@ -692,5 +681,128 @@ public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisSe
           logAnalysisRadarChartListDTOList.size() <= 1, "clusterId filter should result in one or zero cluster");
     }
     return logAnalysisRadarChartListDTOList;
+  }
+
+  private List<HostFrequencyData> getTestHostFrequencyData(
+      List<HostFrequencyData> frequencyData, String verificationTaskId) {
+    List<HostFrequencyData> testHostFrequencyData = new ArrayList<>();
+    if (frequencyData == null) {
+      return testHostFrequencyData;
+    }
+    String verificationJobInstanceId = verificationTaskService.getVerificationJobInstanceId(verificationTaskId);
+    VerificationJobInstance verificationJobInstance =
+        verificationJobInstanceService.getVerificationJobInstance(verificationJobInstanceId);
+    long startTimeMinutes = verificationJobInstance.getStartTime().getEpochSecond() / SECONDS_PER_MINUTE;
+    long endTimeInMinutes = startTimeMinutes + verificationJobInstance.getResolvedJob().getDuration().toMinutes();
+    for (HostFrequencyData hostFrequencyData : frequencyData) {
+      Map<Long, Double> timeStampFrequencyCountMap = new HashMap<>();
+      for (TimestampFrequencyCount timestampFrequencyCount : hostFrequencyData.getFrequencies()) {
+        timeStampFrequencyCountMap.put(timestampFrequencyCount.getTimeStamp(), timestampFrequencyCount.getCount());
+      }
+      List<TimestampFrequencyCount> timestampFrequencyCountList = new ArrayList<>();
+      for (Long time = startTimeMinutes; time < endTimeInMinutes; time++) {
+        TimestampFrequencyCount timestampFrequencyCount = TimestampFrequencyCount.builder()
+                                                              .count(timeStampFrequencyCountMap.getOrDefault(time, 0.0))
+                                                              .timeStamp(time * SECONDS_PER_MINUTE)
+                                                              .build();
+        timestampFrequencyCountList.add(timestampFrequencyCount);
+      }
+      HostFrequencyData updatedHostFrequencyData = HostFrequencyData.builder()
+                                                       .frequencies(timestampFrequencyCountList)
+                                                       .host(hostFrequencyData.getHost())
+                                                       .build();
+      testHostFrequencyData.add(updatedHostFrequencyData);
+    }
+    return testHostFrequencyData;
+  }
+
+  private List<TimestampFrequencyCount> getAverageControlFrequencyData(
+      ClusterHostFrequencyData clusterHostFrequencyData, String verificationTaskId) {
+    List<TimestampFrequencyCount> timestampFrequencyCountList = new ArrayList<>();
+    Map<Long, List<Double>> timeStampFrequencyCountMap = new HashMap<>();
+    for (HostFrequencyData hostFrequencyData : clusterHostFrequencyData.getFrequencyData()) {
+      for (TimestampFrequencyCount timestampFrequencyCount : hostFrequencyData.getFrequencies()) {
+        List<Double> countList =
+            timeStampFrequencyCountMap.getOrDefault(timestampFrequencyCount.getTimeStamp(), new ArrayList<>());
+        if (timestampFrequencyCount.getCount() != null) {
+          countList.add(timestampFrequencyCount.getCount());
+          timeStampFrequencyCountMap.put(timestampFrequencyCount.getTimeStamp(), countList);
+        }
+      }
+    }
+
+    String verificationJobInstanceId = verificationTaskService.getVerificationJobInstanceId(verificationTaskId);
+    VerificationJobInstance verificationJobInstance =
+        verificationJobInstanceService.getVerificationJobInstance(verificationJobInstanceId);
+    long startTimeMinutes;
+    long endTimeMinutes;
+    if (verificationJobInstance.getResolvedJob().getType() == VerificationJobType.CANARY) {
+      Instant startTime = verificationJobInstance.getStartTime();
+      Instant endTime = verificationJobInstance.getEndTime();
+
+      startTimeMinutes = startTime.getEpochSecond() / SECONDS_PER_MINUTE;
+      endTimeMinutes = endTime.getEpochSecond() / SECONDS_PER_MINUTE;
+    } else {
+      Instant endTime = verificationJobInstance.getDeploymentStartTime();
+      Instant startTime = endTime.minus(verificationJobInstance.getResolvedJob().getDuration());
+
+      startTimeMinutes = startTime.getEpochSecond() / SECONDS_PER_MINUTE;
+      endTimeMinutes = endTime.getEpochSecond() / SECONDS_PER_MINUTE;
+    }
+
+    for (Long time = startTimeMinutes; time < endTimeMinutes; time++) {
+      List<Double> countList = timeStampFrequencyCountMap.get(time);
+      double avg;
+      if (countList == null || countList.isEmpty()) {
+        avg = 0.0;
+      } else {
+        avg = countList.stream().mapToDouble(i -> i).sum() / countList.size();
+      }
+      TimestampFrequencyCount timestampFrequencyCount =
+          TimestampFrequencyCount.builder().count(avg).timeStamp(time * SECONDS_PER_MINUTE).build();
+      timestampFrequencyCountList.add(timestampFrequencyCount);
+    }
+    return timestampFrequencyCountList;
+  }
+
+  private List<TimestampFrequencyCount> getTotalTestFrequencyData(
+      ClusterSummary testClusterSummary, String verificationTaskId) {
+    List<TimestampFrequencyCount> timestampFrequencyCountList = new ArrayList<>();
+    // In case of old verification job, host frequency data won't be available so return empty
+    // timeStampFrequencyCountList in that case.
+    if (testClusterSummary.getFrequencyData() == null) {
+      return timestampFrequencyCountList;
+    }
+
+    Map<Long, List<Double>> timeStampFrequencyCountMap = new HashMap<>();
+    for (HostFrequencyData hostFrequencyData : testClusterSummary.getFrequencyData()) {
+      for (TimestampFrequencyCount timestampFrequencyCount : hostFrequencyData.getFrequencies()) {
+        List<Double> countList =
+            timeStampFrequencyCountMap.getOrDefault(timestampFrequencyCount.getTimeStamp(), new ArrayList<>());
+        if (timestampFrequencyCount.getCount() != null) {
+          countList.add(timestampFrequencyCount.getCount());
+          timeStampFrequencyCountMap.put(timestampFrequencyCount.getTimeStamp(), countList);
+        }
+      }
+    }
+
+    String verificationJobInstanceId = verificationTaskService.getVerificationJobInstanceId(verificationTaskId);
+    VerificationJobInstance verificationJobInstance =
+        verificationJobInstanceService.getVerificationJobInstance(verificationJobInstanceId);
+    long startTimeMinutes = verificationJobInstance.getStartTime().getEpochSecond() / SECONDS_PER_MINUTE;
+    long endTimeInMinutes = startTimeMinutes + verificationJobInstance.getResolvedJob().getDuration().toMinutes();
+    for (Long time = startTimeMinutes; time < endTimeInMinutes; time++) {
+      List<Double> countList = timeStampFrequencyCountMap.get(time);
+      double sum;
+      if (countList == null || countList.isEmpty()) {
+        sum = 0.0;
+      } else {
+        sum = countList.stream().mapToDouble(i -> i).sum();
+      }
+      TimestampFrequencyCount timestampFrequencyCount =
+          TimestampFrequencyCount.builder().count(sum).timeStamp(time * SECONDS_PER_MINUTE).build();
+      timestampFrequencyCountList.add(timestampFrequencyCount);
+    }
+    return timestampFrequencyCountList;
   }
 }

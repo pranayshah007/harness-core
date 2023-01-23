@@ -501,4 +501,24 @@ public class MergeHelperTest extends CategoryTest {
         + "    key: \"b.allowedValues(a,b,c)\"\n";
     assertThat(mergeRuntimeInputValuesIntoOriginalYaml(base, correctRuntime, true)).isEqualTo(merged);
   }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testMergeForServiceYaml() {
+    String base = "service:\n"
+        + "  field: \"leaf\"\n";
+    String runtime = "service:\n"
+        + "  field: <+input>\n";
+    String merged = MergeHelper.mergeInputSetFormatYamlToOriginYaml(base, runtime);
+    assertThat(merged).isEqualTo(base);
+
+    base = "service:\n"
+        + "  field:\n"
+        + "    leaf: \"correct\"\n";
+    runtime = "service:\n"
+        + "  field: <+input>\n";
+    merged = MergeHelper.mergeInputSetFormatYamlToOriginYaml(base, runtime);
+    assertThat(merged).isEqualTo(base);
+  }
 }
