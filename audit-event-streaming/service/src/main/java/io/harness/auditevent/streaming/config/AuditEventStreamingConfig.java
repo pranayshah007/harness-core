@@ -7,6 +7,8 @@
 
 package io.harness.auditevent.streaming.config;
 
+import io.harness.grpc.client.GrpcClientConfig;
+import io.harness.mongo.MongoConfig;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.secret.ConfigSecret;
 
@@ -17,6 +19,8 @@ import lombok.Data;
 @Data
 @Builder
 public class AuditEventStreamingConfig {
+  @JsonProperty("auditDbConfig") private MongoConfig auditEventDbConfig;
+  @JsonProperty("delegateServiceGrpcConfig") private GrpcClientConfig delegateServiceGrpcConfig;
   @JsonProperty("auditClientConfig") private ServiceHttpClientConfig auditClientConfig;
   @JsonProperty("serviceSecrets") @ConfigSecret ServiceSecrets serviceSecrets;
 }

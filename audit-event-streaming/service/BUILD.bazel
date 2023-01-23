@@ -11,6 +11,7 @@ HarnessTeam = "PL"
 
 shared_dependencies = [
     "//:lombok",
+    "//910-delegate-service-driver:module",
     "//clients/audit:module",
     "//platform-service/modules/audit-service:module",
     "//platform-service/modules/audit-service/contracts:module",

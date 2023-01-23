@@ -20,11 +20,9 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.config.AbstractMongoClientConfiguration;
 
-@Configuration
 public class AuditEventBatchPersistenceConfig extends AbstractMongoClientConfiguration {
   @Autowired private AuditEventDbMongoConfig auditDbConfig;
 
