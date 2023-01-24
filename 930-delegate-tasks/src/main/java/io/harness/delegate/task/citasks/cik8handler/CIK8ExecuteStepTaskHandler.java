@@ -18,10 +18,12 @@ import io.harness.delegate.beans.ci.CIExecuteStepTaskParams;
 import io.harness.delegate.beans.ci.k8s.CIK8ExecuteStepTaskParams;
 import io.harness.delegate.beans.ci.k8s.K8sTaskExecutionResponse;
 import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
+import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.configuration.DelegateConfiguration;
 import io.harness.delegate.task.citasks.CIExecuteStepTaskHandler;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.logging.LogLevel;
 import io.harness.product.ci.engine.proto.ExecuteStepRequest;
 import io.harness.product.ci.engine.proto.LiteEngineGrpc;
 import io.harness.steps.plugin.ContainerCommandUnitConstants;
@@ -49,7 +51,7 @@ public class CIK8ExecuteStepTaskHandler implements CIExecuteStepTaskHandler {
   @Inject
   @Getter(value = PACKAGE, onMethod = @__({ @VisibleForTesting }))
   private DelegateConfiguration delegateConfiguration;
-
+  private NGDelegateLogCallback ngDelegateLogCallback;
   @Override
   public Type getType() {
     return type;
@@ -58,7 +60,8 @@ public class CIK8ExecuteStepTaskHandler implements CIExecuteStepTaskHandler {
   @Override
   public K8sTaskExecutionResponse executeTaskInternal(CIExecuteStepTaskParams ciExecuteStepTaskParams, String taskId) {
     CIK8ExecuteStepTaskParams cik8ExecuteStepTaskParams = (CIK8ExecuteStepTaskParams) ciExecuteStepTaskParams;
-    logCommandUnitStart(cik8ExecuteStepTaskParams);
+    logCommandUnit(
+        cik8ExecuteStepTaskParams, "Starting executing container step", LogLevel.INFO, CommandExecutionStatus.RUNNING);
 
     ExecuteStepRequest executeStepRequest;
     try {
@@ -112,7 +115,13 @@ public class CIK8ExecuteStepTaskHandler implements CIExecuteStepTaskHandler {
         return Failsafe.with(retryPolicy).get(() -> {
           LiteEngineGrpc.LiteEngineBlockingStub liteEngineBlockingStub = LiteEngineGrpc.newBlockingStub(channel);
           liteEngineBlockingStub.withDeadlineAfter(30, TimeUnit.SECONDS).executeStep(finalExecuteStepRequest);
-          return K8sTaskExecutionResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build();
+          logCommandUnit(cik8ExecuteStepTaskParams, "Completed executing container step", LogLevel.INFO,
+              CommandExecutionStatus.SUCCESS);
+          return K8sTaskExecutionResponse.builder()
+              .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+              .commandUnitsProgress(
+                  UnitProgressDataMapper.toUnitProgressData(cik8ExecuteStepTaskParams.getCommandUnitsProgress()))
+              .build();
         });
 
       } finally {
@@ -123,8 +132,12 @@ public class CIK8ExecuteStepTaskHandler implements CIExecuteStepTaskHandler {
       }
     } catch (Exception e) {
       log.error("Failed to execute step on lite engine target {} with err: {}", target, e);
+      logCommandUnit(
+          cik8ExecuteStepTaskParams, "Failed executing container step", LogLevel.ERROR, CommandExecutionStatus.FAILURE);
       return K8sTaskExecutionResponse.builder()
           .commandExecutionStatus(CommandExecutionStatus.FAILURE)
+          .commandUnitsProgress(
+              UnitProgressDataMapper.toUnitProgressData(cik8ExecuteStepTaskParams.getCommandUnitsProgress()))
           .errorMessage(e.getMessage())
           .build();
     }
@@ -154,14 +167,16 @@ public class CIK8ExecuteStepTaskHandler implements CIExecuteStepTaskHandler {
         .onFailure(event -> log.error(failureMessage, event.getAttemptCount(), event.getFailure()));
   }
 
-  private void logCommandUnitStart(CIK8ExecuteStepTaskParams cik8ExecuteStepTaskParams) {
+  private void logCommandUnit(CIK8ExecuteStepTaskParams cik8ExecuteStepTaskParams, String message, LogLevel logLevel,
+      CommandExecutionStatus status) {
     if (cik8ExecuteStepTaskParams.getCommandUnitsProgress() == null
         || cik8ExecuteStepTaskParams.getLogStreamingTaskClient() == null) {
       return;
     }
-    NGDelegateLogCallback ngDelegateLogCallback =
-        new NGDelegateLogCallback(cik8ExecuteStepTaskParams.getLogStreamingTaskClient(),
-            ContainerCommandUnitConstants.ContainerStep, true, cik8ExecuteStepTaskParams.getCommandUnitsProgress());
-    ngDelegateLogCallback.saveExecutionLog("Starting executing container step");
+    if (ngDelegateLogCallback != null) {
+      ngDelegateLogCallback = new NGDelegateLogCallback(cik8ExecuteStepTaskParams.getLogStreamingTaskClient(),
+          ContainerCommandUnitConstants.ContainerStep, true, cik8ExecuteStepTaskParams.getCommandUnitsProgress());
+      ngDelegateLogCallback.saveExecutionLog(message, logLevel, status);
+    }
   }
 }

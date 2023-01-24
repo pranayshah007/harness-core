@@ -55,6 +55,7 @@ import io.harness.k8s.apiclient.ApiClientFactory;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.logging.AutoLogContext;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.logging.LogLevel;
 
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableMap;
@@ -183,11 +184,13 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
             CiK8sTaskResponse.builder().podStatus(podStatus).podName(podName).podNamespace(namespace).build();
         boolean isPodRunning = podStatus.getStatus() == RUNNING;
         if (isPodRunning) {
+          k8EventHandler.completeLogStreaming(LogLevel.INFO, "Completed pod creation", CommandExecutionStatus.SUCCESS);
           result = K8sTaskExecutionResponse.builder()
                        .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                        .k8sTaskResponse(k8sTaskResponse)
                        .build();
         } else {
+          k8EventHandler.completeLogStreaming(LogLevel.INFO, "Failed in pod creation", CommandExecutionStatus.FAILURE);
           result = K8sTaskExecutionResponse.builder()
                        .commandExecutionStatus(CommandExecutionStatus.FAILURE)
                        .errorMessage(podStatus.getErrorMessage())
@@ -202,12 +205,14 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
           message = cik8JavaClientHandler.parseApiExceptionMessage(
               ((ApiException) ex.getCause()).getResponseBody(), defaultMessage);
         }
+        k8EventHandler.completeLogStreaming(LogLevel.INFO, message, CommandExecutionStatus.FAILURE);
         result = K8sTaskExecutionResponse.builder()
                      .commandExecutionStatus(CommandExecutionStatus.FAILURE)
                      .errorMessage(message)
                      .k8sTaskResponse(k8sTaskResponse)
                      .build();
       } catch (Exception ex) {
+        k8EventHandler.completeLogStreaming(LogLevel.INFO, ex.getMessage(), CommandExecutionStatus.FAILURE);
         log.error("Exception in processing CI K8 build setup task: {}", cik8BuildTaskParamsStr, ex);
         result = K8sTaskExecutionResponse.builder()
                      .commandExecutionStatus(CommandExecutionStatus.FAILURE)

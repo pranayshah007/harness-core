@@ -19,6 +19,7 @@ import io.harness.delegate.beans.ci.CIInitializeTaskParams;
 import io.harness.delegate.beans.ci.k8s.CiK8sTaskResponse;
 import io.harness.delegate.beans.ci.k8s.K8sTaskExecutionResponse;
 import io.harness.delegate.beans.ci.k8s.PodStatus;
+import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.encryption.Scope;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logstreaming.LogStreamingHelper;
@@ -36,6 +37,7 @@ import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.StepUtils;
@@ -142,8 +144,18 @@ public class ContainerStep implements TaskChainExecutableWithRbac<StepElementPar
       PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
     containerStepCleanupHelper.sendCleanupRequest(ambiance);
     ResponseData responseData = responseDataSupplier.get();
+    K8sTaskExecutionResponse k8sTaskExecutionResponse = (K8sTaskExecutionResponse) responseData;
+    UnitProgressData commandUnitsProgress = k8sTaskExecutionResponse.getCommandUnitsProgress();
     executionResponseHelper.finalizeStepResponse(ambiance, stepParameters, responseData);
-    return StepResponse.builder().status(Status.SUCCEEDED).build();
+    StepResponseBuilder stepResponseBuilder =
+        StepResponse.builder().unitProgressList(commandUnitsProgress.getUnitProgresses());
+
+    if (k8sTaskExecutionResponse.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
+      stepResponseBuilder.status(Status.FAILED);
+    } else {
+      stepResponseBuilder.status(Status.SUCCEEDED);
+    }
+    return stepResponseBuilder.build();
   }
 
   @Override

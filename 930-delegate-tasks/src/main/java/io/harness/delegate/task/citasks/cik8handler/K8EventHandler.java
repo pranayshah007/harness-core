@@ -119,4 +119,11 @@ public class K8EventHandler {
       logStreamingTaskClient.writeLogLine(logLine, "");
     }
   }
+
+  public void completeLogStreaming(LogLevel logLevel, String message, CommandExecutionStatus commandExecutionStatus) {
+    if (ngDelegateLogCallback == null) {
+      return;
+    }
+    ngDelegateLogCallback.saveExecutionLog(message, logLevel, commandExecutionStatus);
+  }
 }
