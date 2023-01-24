@@ -52,6 +52,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -270,7 +271,7 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
     dequeue();
   }
 
-  public void addToAbortTaskEventList(String accountId, String delegateTaskId) {
+  public void addToAbortTaskEventList(@NotNull String accountId, String delegateTaskId) {
     abortTaskEvents.putIfAbsent(accountId, new ArrayList<>());
     abortTaskEvents.get(accountId).add(delegateTaskId);
   }
