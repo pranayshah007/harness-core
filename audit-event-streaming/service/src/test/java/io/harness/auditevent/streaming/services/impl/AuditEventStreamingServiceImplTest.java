@@ -111,7 +111,7 @@ public class AuditEventStreamingServiceImplTest extends CategoryTest {
         .getLastStreamingBatch(streamingDestination, jobParameters.getLong(JOB_START_TIME_PARAMETER_KEY));
     verify(auditEventRepository, times(0)).loadAuditEvents(any(), any());
     verify(streamingBatchService, times(0)).update(ACCOUNT_IDENTIFIER, streamingBatch);
-    verify(batchProcessorService, times(0)).processAuditEvent(any());
+    verify(batchProcessorService, times(0)).processAuditEvent(streamingBatch, any());
   }
 
   @Test
@@ -138,7 +138,7 @@ public class AuditEventStreamingServiceImplTest extends CategoryTest {
     assertThat(streamingDestinationArgumentCaptor.getValue()).isEqualTo(streamingDestination);
     verify(auditEventRepository, times(0)).loadAuditEvents(any(), any());
     verify(streamingBatchService, times(0)).update(ACCOUNT_IDENTIFIER, streamingBatch);
-    verify(batchProcessorService, times(0)).processAuditEvent(any());
+    verify(batchProcessorService, times(0)).processAuditEvent(streamingBatch, any());
   }
 
   @Test
@@ -185,7 +185,8 @@ public class AuditEventStreamingServiceImplTest extends CategoryTest {
     when(template.getConverter().read(AuditEvent.class, document))
         .thenReturn(AuditEvent.builder().createdAt(streamingBatch.getStartTime() + MINUTES_15_IN_MILLS).build());
     when(auditEventRepository.loadAuditEvents(any(), any())).thenReturn(mongoCursor);
-    when(batchProcessorService.processAuditEvent(any())).thenReturn(List.of(OutgoingAuditMessage.builder().build()));
+    when(batchProcessorService.processAuditEvent(streamingBatch, any()))
+        .thenReturn(List.of(OutgoingAuditMessage.builder().build()));
     when(awsS3StreamingPublisher.publish(any(), any(), any())).thenReturn(true);
     when(streamingBatchService.update(any(), any())).thenReturn(streamingBatch);
 
@@ -267,7 +268,8 @@ public class AuditEventStreamingServiceImplTest extends CategoryTest {
     when(template.getConverter().read(AuditEvent.class, document))
         .thenReturn(AuditEvent.builder().createdAt(streamingBatch.getStartTime() + MINUTES_10_IN_MILLS).build());
     when(auditEventRepository.loadAuditEvents(any(), any())).thenReturn(mongoCursor);
-    when(batchProcessorService.processAuditEvent(any())).thenReturn(List.of(OutgoingAuditMessage.builder().build()));
+    when(batchProcessorService.processAuditEvent(streamingBatch, any()))
+        .thenReturn(List.of(OutgoingAuditMessage.builder().build()));
     when(awsS3StreamingPublisher.publish(any(), any(), any())).thenReturn(false);
     when(streamingBatchService.update(any(), any())).thenReturn(streamingBatch);
   }
