@@ -13,7 +13,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.k8s.resources.gcp.GcpResponseDTO;
 import io.harness.cdng.k8s.resources.gcp.dtos.GcpProjectDetails;
-import io.harness.cdng.k8s.resources.gcp.dtos.GcpProjectResponseDTO;
 
 import java.util.List;
 

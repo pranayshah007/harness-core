@@ -44,7 +44,6 @@ import io.harness.cdng.gitops.MergePRStepNode;
 import io.harness.cdng.gitops.UpdateReleaseRepoStepNode;
 import io.harness.cdng.gitops.beans.FetchLinkedAppsStepNode;
 import io.harness.cdng.googlefunctions.deploy.GoogleFunctionsDeployStepNode;
-import io.harness.cdng.googlefunctions.deployWithoutTraffic.GoogleFunctionsDeployWithoutTrafficStep;
 import io.harness.cdng.googlefunctions.deployWithoutTraffic.GoogleFunctionsDeployWithoutTrafficStepNode;
 import io.harness.cdng.googlefunctions.rollback.GoogleFunctionsRollbackStepNode;
 import io.harness.cdng.googlefunctions.trafficShift.GoogleFunctionsTrafficShiftStepNode;

@@ -15,7 +15,6 @@ import io.harness.beans.IdentifierRef;
 import io.harness.cdng.gcp.GcpHelperService;
 import io.harness.cdng.k8s.resources.gcp.GcpResponseDTO;
 import io.harness.cdng.k8s.resources.gcp.dtos.GcpProjectDetails;
-import io.harness.cdng.k8s.resources.gcp.dtos.GcpProjectResponseDTO;
 import io.harness.cdng.k8s.resources.gcp.service.GcpResourceService;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.task.gcp.GcpTaskType;

@@ -17,8 +17,8 @@ import lombok.experimental.SuperBuilder;
 
 @OwnedBy(CDP)
 @SuperBuilder
-@EqualsAndHashCode(callSuper = true)
 @Data
+@EqualsAndHashCode(callSuper = true)
 public class GcsListBucketsRequest extends GcpRequest {
   private String project;
 }

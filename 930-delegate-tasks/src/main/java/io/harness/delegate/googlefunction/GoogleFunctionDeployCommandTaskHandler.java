@@ -1,11 +1,14 @@
+/*
+ * Copyright 2023 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.delegate.googlefunction;
 
-import static io.harness.logging.LogLevel.INFO;
-
 import static software.wings.beans.LogColor.Green;
-import static software.wings.beans.LogColor.White;
 import static software.wings.beans.LogHelper.color;
-import static software.wings.beans.LogWeight.Bold;
 
 import static java.lang.String.format;
 
@@ -30,7 +33,6 @@ import io.harness.logging.LogLevel;
 
 import com.google.cloud.functions.v2.Function;
 import com.google.inject.Inject;
-import com.google.protobuf.util.JsonFormat;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
