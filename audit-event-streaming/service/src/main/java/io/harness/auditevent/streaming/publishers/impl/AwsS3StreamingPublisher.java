@@ -166,7 +166,7 @@ public class AwsS3StreamingPublisher implements StreamingPublisher {
               .build();
       try {
         DelegateResponseData responseData = delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);
-        return getResponse(responseData);
+        return getResponse(responseData, streamingBatch);
       } catch (Exception exception) {
         log.error(getFullLogMessage("Error publishing batch.", streamingBatch), exception);
         return PublishResponse.builder()
@@ -191,7 +191,7 @@ public class AwsS3StreamingPublisher implements StreamingPublisher {
         streamingBatch.getAccountIdentifier());
   }
 
-  private PublishResponse getResponse(DelegateResponseData responseData) {
+  private PublishResponse getResponse(DelegateResponseData responseData, StreamingBatch streamingBatch) {
     PublishResponseBuilder publishResponseBuilder = PublishResponse.builder();
     if (responseData instanceof AwsPutAuditBatchToBucketTaskResponse) {
       AwsPutAuditBatchToBucketTaskResponse taskResponse = (AwsPutAuditBatchToBucketTaskResponse) responseData;
@@ -202,7 +202,13 @@ public class AwsS3StreamingPublisher implements StreamingPublisher {
         publishResponseBuilder.failureInfo(failureInfo);
       }
       publishResponseBuilder.status(publishResponseStatus);
+      return publishResponseBuilder.build();
+    } else {
+      log.error(getFullLogMessage(
+          String.format("Unknown DelegateResponseData : [%s]", responseData.getClass().getName()), streamingBatch));
+      return publishResponseBuilder.status(FAILED)
+          .failureInfo(BatchFailureInfo.builder().message("Failed publishing.").build())
+          .build();
     }
-    return publishResponseBuilder.build();
   }
 }
