@@ -28,6 +28,7 @@ import static software.wings.settings.SettingVariableTypes.OCI_HELM_REPO;
 import static software.wings.settings.SettingVariableTypes.PROMETHEUS;
 import static software.wings.settings.SettingVariableTypes.SERVICENOW;
 import static software.wings.settings.SettingVariableTypes.SPLUNK;
+import static software.wings.settings.SettingVariableTypes.SPOT_INST;
 import static software.wings.settings.SettingVariableTypes.WINRM_CONNECTION_ATTRIBUTES;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -66,6 +67,7 @@ public class ConnectorFactory {
   private static final BaseConnector prometheusConnector = new PrometheusConnectorImpl();
   private static final BaseConnector appDynamicsConnector = new AppDynamicsConnectorImpl();
   private static final BaseConnector splunkConnector = new SplunkConnectorImpl();
+  private static final BaseConnector spotConnector = new SpotConnectorImpl();
 
   public static final Map<SettingVariableTypes, BaseConnector> CONNECTOR_FACTORY_MAP =
       ImmutableMap.<SettingVariableTypes, BaseConnector>builder()
@@ -91,6 +93,7 @@ public class ConnectorFactory {
           .put(PROMETHEUS, prometheusConnector)
           .put(APP_DYNAMICS, appDynamicsConnector)
           .put(SPLUNK, splunkConnector)
+          .put(SPOT_INST, spotConnector)
           .build();
 
   public static BaseConnector getConnector(SettingAttribute settingAttribute) {

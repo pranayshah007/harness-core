@@ -9,9 +9,9 @@ import io.harness.logging.CommandExecutionStatus;
 
 @OwnedBy(HarnessTeam.CDP)
 public interface GoogleFunctionCommandResponse extends DelegateTaskNotifyResponseData {
-    CommandExecutionStatus getCommandExecutionStatus();
-    String getErrorMessage();
-    UnitProgressData getUnitProgressData();
-    void setCommandUnitsProgress(UnitProgressData unitProgressData);
-    GoogleFunction getFunction();
+  CommandExecutionStatus getCommandExecutionStatus();
+  String getErrorMessage();
+  UnitProgressData getUnitProgressData();
+  void setCommandUnitsProgress(UnitProgressData unitProgressData);
+  GoogleFunction getFunction();
 }

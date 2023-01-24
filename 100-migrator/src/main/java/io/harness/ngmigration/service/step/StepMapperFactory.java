@@ -7,6 +7,11 @@
 
 package io.harness.ngmigration.service.step;
 
+import io.harness.ngmigration.service.step.elastigroup.ElastigroupDeployStepMapperImpl;
+import io.harness.ngmigration.service.step.elastigroup.ElastigroupListenerRollbackStepMapperImpl;
+import io.harness.ngmigration.service.step.elastigroup.ElastigroupRollbackStepMapperImpl;
+import io.harness.ngmigration.service.step.elastigroup.ElastigroupSetupStepMapperImpl;
+import io.harness.ngmigration.service.step.elastigroup.ElastigroupSwapRouteStepMapperImpl;
 import io.harness.ngmigration.service.step.k8s.K8sApplyStepMapperImpl;
 import io.harness.ngmigration.service.step.k8s.K8sBlueGreenDeployStepMapperImpl;
 import io.harness.ngmigration.service.step.k8s.K8sCanaryDeployStepMapperImpl;
@@ -66,6 +71,10 @@ public class StepMapperFactory {
   @Inject TerraformProvisionStepMapperImpl terraformProvisionStepMapper;
   @Inject TerraformDestroyStepMapperImpl terraformDestroyStepMapper;
   @Inject TerraformRollbackStepMapperImpl terraformRollbackStepMapper;
+  @Inject ElastigroupSetupStepMapperImpl elastigroupSetupStepMapper;
+  @Inject ElastigroupDeployStepMapperImpl elastigroupDeployStepMapper;
+  @Inject ElastigroupListenerRollbackStepMapperImpl elastigroupListenerRollbackStepMapper;
+  @Inject ElastigroupRollbackStepMapperImpl elastigroupRollbackStepMapper;
 
   @Inject ApmVerificationStepMapperImpl apmVerificationStepMapper;
   @Inject AppDynamicsStepMapperImpl appDynamicsStepMapper;
@@ -85,8 +94,8 @@ public class StepMapperFactory {
   @Inject StackDriverLogStepMapperImpl stackDriverLogStepMapper;
   @Inject CloudWatchStepMapperImpl cloudWatchStepMapper;
   @Inject InstanaStepMapperImpl instanaStepMapper;
-
   @Inject ResourceConstraintStepMapperImpl resourceConstraintStepMapper;
+  @Inject ElastigroupSwapRouteStepMapperImpl elastigroupSwapRouteStepMapper;
   @Inject UnsupportedStepMapperImpl unsupportedStepMapper;
 
   public StepMapper getStepMapper(String stepType) {
@@ -174,6 +183,16 @@ public class StepMapperFactory {
       case "ARTIFACT_COLLECTION":
       case "ARTIFACT_CHECK":
         return emptyStepMapper;
+      case "SPOTINST_SETUP":
+        return elastigroupSetupStepMapper;
+      case "SPOTINST_DEPLOY":
+        return elastigroupDeployStepMapper;
+      case "SPOTINST_LISTENER_UPDATE":
+        return elastigroupSwapRouteStepMapper;
+      case "SPOTINST_LISTENER_UPDATE_ROLLBACK":
+        return elastigroupListenerRollbackStepMapper;
+      case "SPOTINST_ROLLBACK":
+        return elastigroupRollbackStepMapper;
       default:
         return unsupportedStepMapper;
     }

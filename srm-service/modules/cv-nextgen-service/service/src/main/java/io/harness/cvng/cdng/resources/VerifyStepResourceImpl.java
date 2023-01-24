@@ -13,6 +13,7 @@ import io.harness.cvng.analysis.beans.CanaryBlueGreenAdditionalInfo.HostSummaryI
 import io.harness.cvng.analysis.beans.Risk;
 import io.harness.cvng.analysis.services.api.DeploymentLogAnalysisService;
 import io.harness.cvng.analysis.services.api.DeploymentTimeSeriesAnalysisService;
+import io.harness.cvng.beans.MonitoredServiceDataSourceType;
 import io.harness.cvng.cdng.beans.MonitoredServiceSpec.MonitoredServiceSpecType;
 import io.harness.cvng.cdng.beans.v2.AbstractAnalysedNode;
 import io.harness.cvng.cdng.beans.v2.AnalysedDeploymentNode;
@@ -71,7 +72,8 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
             -> HealthSource.builder()
                    .healthSourceName(dto.getName())
                    .healthSourceIdentifier(dto.getIdentifier())
-                   .providerName(dto.getType())
+                   .providerName(MonitoredServiceDataSourceType.dataSourceTypeMonitoredServiceDataSourceTypeMap.get(
+                       dto.getType()))
                    .providerType(ProviderType.fromVerificationType(dto.getVerificationType()))
                    .build())
         .collect(Collectors.toList());

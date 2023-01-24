@@ -10,14 +10,15 @@ import java.util.Collections;
 import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDP)
-public class GoogleFunctionsDeployStepVariableCreator extends GenericStepVariableCreator<GoogleFunctionsDeployStepNode> {
-    @Override
-    public Set<String> getSupportedStepTypes() {
-        return Collections.singleton(StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_DEPLOY);
-    }
+public class GoogleFunctionsDeployStepVariableCreator
+    extends GenericStepVariableCreator<GoogleFunctionsDeployStepNode> {
+  @Override
+  public Set<String> getSupportedStepTypes() {
+    return Collections.singleton(StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_DEPLOY);
+  }
 
-    @Override
-    public Class<GoogleFunctionsDeployStepNode> getFieldClass() {
-        return GoogleFunctionsDeployStepNode.class;
-    }
+  @Override
+  public Class<GoogleFunctionsDeployStepNode> getFieldClass() {
+    return GoogleFunctionsDeployStepNode.class;
+  }
 }

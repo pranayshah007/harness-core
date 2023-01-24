@@ -720,3 +720,4 @@ io.harness.cdng.aws.asg.AsgBlueGreenSwapServiceStepNode
 io.harness.cdng.aws.asg.AsgBlueGreenSwapServiceStepParameters
 io.harness.cdng.aws.asg.AsgBlueGreenSwapServiceStepInfo
 io.harness.cdng.aws.asg.AsgBlueGreenSwapServiceOutcome
+io.harness.cdng.aws.asg.AsgBlueGreenSwapServiceStartOutcome

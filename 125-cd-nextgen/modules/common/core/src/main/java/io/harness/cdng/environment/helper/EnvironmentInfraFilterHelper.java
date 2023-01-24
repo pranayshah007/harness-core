@@ -517,12 +517,15 @@ public class EnvironmentInfraFilterHelper {
                                            .map(io.harness.cdng.gitops.entity.Cluster::getClusterRef)
                                            .collect(Collectors.toList());
 
-    envClusterRefs.add(EnvClusterRefs.builder()
-                           .envRef(environment.getIdentifier())
-                           .envName(environment.getName())
-                           .envType(environment.getType().name())
-                           .clusterRefs(new HashSet<>(filteredClusterRefs))
-                           .build());
+    if (isNotEmpty(filteredClusterRefs)) {
+      envClusterRefs.add(EnvClusterRefs.builder()
+                             .envRef(environment.getIdentifier())
+                             .envName(environment.getName())
+                             .envType(environment.getType().name())
+                             .clusterRefs(new HashSet<>(filteredClusterRefs))
+                             .build());
+    }
+
     return envClusterRefs;
   }
 
@@ -556,16 +559,20 @@ public class EnvironmentInfraFilterHelper {
     List<EnvClusterRefs> envClusterRefs = new ArrayList<>();
     for (Environment env : filteredEnvs) {
       List<io.harness.cdng.gitops.entity.Cluster> clustersInEnv =
-          filteredClusters.stream().filter(e -> e.getEnvRef().equals(env.getIdentifier())).collect(Collectors.toList());
+          filteredClusters.stream()
+              .filter(e -> e.getEnvRef() != null && e.getEnvRef().equals(env.getIdentifier()))
+              .collect(Collectors.toList());
       List<String> filteredClusterRefs =
           clustersInEnv.stream().map(io.harness.cdng.gitops.entity.Cluster::getClusterRef).collect(Collectors.toList());
 
-      envClusterRefs.add(EnvClusterRefs.builder()
-                             .envRef(env.getIdentifier())
-                             .envName(env.getName())
-                             .envType(env.getType().name())
-                             .clusterRefs(new HashSet<>(filteredClusterRefs))
-                             .build());
+      if (isNotEmpty(filteredClusterRefs)) {
+        envClusterRefs.add(EnvClusterRefs.builder()
+                               .envRef(env.getIdentifier())
+                               .envName(env.getName())
+                               .envType(env.getType().name())
+                               .clusterRefs(new HashSet<>(filteredClusterRefs))
+                               .build());
+      }
     }
     if (isEmpty(envClusterRefs)) {
       throw new InvalidRequestException("No Clusters found after applying filtering.");

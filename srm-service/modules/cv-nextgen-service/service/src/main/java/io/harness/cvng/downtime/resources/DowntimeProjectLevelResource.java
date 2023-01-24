@@ -11,15 +11,16 @@ import static io.harness.cvng.core.beans.params.ProjectParams.fromResourcePathPa
 import static io.harness.cvng.core.services.CVNextGenConstants.DOWNTIME_PROJECT_PATH;
 import static io.harness.cvng.core.services.CVNextGenConstants.RESOURCE_IDENTIFIER_PATH;
 
-import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.annotations.ExposeInternalException;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.ProjectPathParams;
 import io.harness.cvng.core.beans.params.ResourcePathParams;
 import io.harness.cvng.downtime.beans.DowntimeDTO;
+import io.harness.cvng.downtime.beans.DowntimeDashboardFilter;
 import io.harness.cvng.downtime.beans.DowntimeHistoryView;
 import io.harness.cvng.downtime.beans.DowntimeListView;
 import io.harness.cvng.downtime.beans.DowntimeResponse;
@@ -45,7 +46,6 @@ import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
 import retrofit2.http.Body;
 
 @Api(value = DOWNTIME_PROJECT_PATH, tags = "Downtime")
@@ -152,13 +152,10 @@ public class DowntimeProjectLevelResource {
      })*/
   @NGAccessControlCheck(resourceType = DOWNTIME, permission = VIEW_PERMISSION)
   public ResponseDTO<PageResponse<DowntimeListView>> listDowntimes(
-      @Valid @BeanParam ProjectPathParams projectPathParams,
-      @Parameter(description = NGCommonEntityConstants.PAGE_PARAM_MESSAGE) @QueryParam(
-          "offset") @NotNull Integer offset,
-      @Parameter(description = NGCommonEntityConstants.SIZE_PARAM_MESSAGE) @QueryParam(
-          "pageSize") @NotNull Integer pageSize) {
+      @Valid @BeanParam ProjectPathParams projectPathParams, @BeanParam PageParams pageParams,
+      @BeanParam DowntimeDashboardFilter filter) {
     ProjectParams projectParams = fromProjectPathParams(projectPathParams);
-    return ResponseDTO.newResponse(downtimeService.list(projectParams, offset, pageSize));
+    return ResponseDTO.newResponse(downtimeService.list(projectParams, pageParams, filter));
   }
 
   @GET
@@ -170,13 +167,9 @@ public class DowntimeProjectLevelResource {
         responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Get downtime history data")
      })*/
   @NGAccessControlCheck(resourceType = DOWNTIME, permission = VIEW_PERMISSION)
-  public ResponseDTO<PageResponse<DowntimeHistoryView>> getHistory(
-      @Valid @BeanParam ProjectPathParams projectPathParams,
-      @Parameter(description = NGCommonEntityConstants.PAGE_PARAM_MESSAGE) @QueryParam(
-          "offset") @NotNull Integer offset,
-      @Parameter(description = NGCommonEntityConstants.SIZE_PARAM_MESSAGE) @QueryParam(
-          "pageSize") @NotNull Integer pageSize) {
+  public ResponseDTO<PageResponse<DowntimeHistoryView>> getHistory(@BeanParam ProjectPathParams projectPathParams,
+      @BeanParam PageParams pageParams, @BeanParam DowntimeDashboardFilter filter) {
     ProjectParams projectParams = fromProjectPathParams(projectPathParams);
-    return ResponseDTO.newResponse(downtimeService.history(projectParams, offset, pageSize));
+    return ResponseDTO.newResponse(downtimeService.history(projectParams, pageParams, filter));
   }
 }

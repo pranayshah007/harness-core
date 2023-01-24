@@ -9,6 +9,7 @@ package io.harness.delegate.task.aws.asg;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.aws.asg.AsgBlueGreenSwapServiceCommandTaskHandler;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
@@ -24,7 +25,7 @@ import org.apache.commons.lang3.NotImplementedException;
 @OwnedBy(HarnessTeam.CDP)
 public class AsgBlueGreenSwapServiceTaskNG extends AbstractDelegateRunnableTask {
   @Inject private AsgDelegateTaskHelper asgDelegateTaskHelper;
-  //@Inject private AsgBlueGreenSwapServiceCommandTaskHandler asgBlueGreenSwapServiceCommandTaskHandler;
+  @Inject private AsgBlueGreenSwapServiceCommandTaskHandler asgBlueGreenSwapServiceCommandTaskHandler;
   public AsgBlueGreenSwapServiceTaskNG(DelegateTaskPackage delegateTaskPackage,
       ILogStreamingTaskClient logStreamingTaskClient, Consumer<DelegateTaskResponse> consumer,
       BooleanSupplier preExecute) {
@@ -40,13 +41,9 @@ public class AsgBlueGreenSwapServiceTaskNG extends AbstractDelegateRunnableTask 
 
   @Override
   public AsgCommandResponse run(TaskParameters parameters) {
-    return null;
-    /*
     AsgCommandRequest asgCommandRequest = (AsgCommandRequest) parameters;
     return asgDelegateTaskHelper.getAsgCommandResponse(
-        asgBlueGreenSwapServiceTaskHandler, asgCommandRequest, getLogStreamingTaskClient());
-
-     */
+        asgBlueGreenSwapServiceCommandTaskHandler, asgCommandRequest, getLogStreamingTaskClient());
   }
 
   @Override

@@ -14,6 +14,7 @@ import static software.wings.beans.TaskType.AWS_ASG_BLUE_GREEN_SWAP_SERVICE_TASK
 import io.harness.account.services.AccountService;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.aws.beans.AsgLoadBalancerConfig;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
@@ -32,7 +33,6 @@ import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
-import io.harness.pms.contracts.execution.tasks.SkipTaskRequest;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
@@ -113,13 +113,7 @@ public class AsgBlueGreenSwapServiceStep extends CdTaskExecutable<AsgCommandResp
 
       AsgBlueGreenSwapServiceOutcome asgBlueGreenSwapServiceOutcome =
           AsgBlueGreenSwapServiceOutcome.builder()
-              .loadBalancer(asgBlueGreenSwapServiceResult.getLoadBalancer())
-              .prodListenerArn(asgBlueGreenSwapServiceResult.getProdListenerArn())
-              .prodListenerRuleArn(asgBlueGreenSwapServiceResult.getProdListenerRuleArn())
-              .prodTargetGroupArnList(asgBlueGreenSwapServiceResult.getProdTargetGroupArnList())
-              .stageListenerArn(asgBlueGreenSwapServiceResult.getStageListenerArn())
-              .stageListenerRuleArn(asgBlueGreenSwapServiceResult.getStageListenerRuleArn())
-              .stageTargetGroupArnList(asgBlueGreenSwapServiceResult.getStageTargetGroupArnList())
+              .trafficShifted(asgBlueGreenSwapServiceResult.isTrafficShifted())
               .build();
 
       executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.ASG_BLUE_GREEN_SWAP_SERVICE_OUTCOME,
@@ -159,27 +153,27 @@ public class AsgBlueGreenSwapServiceStep extends CdTaskExecutable<AsgCommandResp
     if (!asgBlueGreenPrepareRollbackDataOptional.isFound() || !asgBlueGreenDeployDataOptional.isFound()) {
       throw new InvalidRequestException(ASG_BLUE_GREEN_DEPLOY_STEP_MISSING, USER);
     }
-    /*
-        AsgBlueGreenPrepareRollbackDataOutcome asgBlueGreenPrepareRollbackDataOutcome =
-            (AsgBlueGreenPrepareRollbackDataOutcome) asgBlueGreenPrepareRollbackDataOptional.getOutput();
 
-        AsgBlueGreenDeployDataOutcome asgBlueGreenDeployDataOutcome =
-            (AsgBlueGreenDeployDataOutcome) asgBlueGreenDeployDataOptional.getOutput();
-    */
+    AsgBlueGreenPrepareRollbackDataOutcome asgBlueGreenPrepareRollbackDataOutcome =
+        (AsgBlueGreenPrepareRollbackDataOutcome) asgBlueGreenPrepareRollbackDataOptional.getOutput();
+
+    AsgBlueGreenDeployOutcome asgBlueGreenDeployDataOutcome =
+        (AsgBlueGreenDeployOutcome) asgBlueGreenDeployDataOptional.getOutput();
+
     InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
-    /*
-        AsgLoadBalancerConfig asgLoadBalancerConfig =
-            AsgLoadBalancerConfig.builder()
-                .loadBalancer(asgBlueGreenPrepareRollbackDataOutcome.getLoadBalancer())
-                .prodListenerArn(asgBlueGreenPrepareRollbackDataOutcome.getProdListenerArn())
-                .prodListenerRuleArn(asgBlueGreenPrepareRollbackDataOutcome.getProdListenerRuleArn())
-                .prodTargetGroupArn(asgBlueGreenPrepareRollbackDataOutcome.getProdTargetGroupArn())
-                .stageListenerArn(asgBlueGreenPrepareRollbackDataOutcome.getStageListenerArn())
-                .stageListenerRuleArn(asgBlueGreenPrepareRollbackDataOutcome.getStageListenerRuleArn())
-                .stageTargetGroupArn(asgBlueGreenPrepareRollbackDataOutcome.getStageTargetGroupArn())
-                .build();
-    */
+
+    AsgLoadBalancerConfig asgLoadBalancerConfig =
+        AsgLoadBalancerConfig.builder()
+            .loadBalancer(asgBlueGreenPrepareRollbackDataOutcome.getLoadBalancer())
+            .prodListenerArn(asgBlueGreenPrepareRollbackDataOutcome.getProdListenerArn())
+            .prodListenerRuleArn(asgBlueGreenPrepareRollbackDataOutcome.getProdListenerRuleArn())
+            .prodTargetGroupArnsList(asgBlueGreenPrepareRollbackDataOutcome.getProdTargetGroupArnsList())
+            .stageListenerArn(asgBlueGreenPrepareRollbackDataOutcome.getStageListenerArn())
+            .stageListenerRuleArn(asgBlueGreenPrepareRollbackDataOutcome.getStageListenerRuleArn())
+            .stageTargetGroupArnsList(asgBlueGreenPrepareRollbackDataOutcome.getStageTargetGroupArnsList())
+            .build();
+
     AsgBlueGreenSwapServiceRequest asgBlueGreenSwapServiceRequest =
         AsgBlueGreenSwapServiceRequest.builder()
             .accountId(accountId)
@@ -187,23 +181,24 @@ public class AsgBlueGreenSwapServiceStep extends CdTaskExecutable<AsgCommandResp
             .commandUnitsProgress(CommandUnitsProgress.builder().build())
             .asgInfraConfig(asgStepCommonHelper.getAsgInfraConfig(infrastructureOutcome, ambiance))
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
-            //.asgLoadBalancerConfig(asgLoadBalancerConfig)
-            //.oldServiceName(asgBlueGreenPrepareRollbackDataOutcome.getServiceName())
-            //.newServiceName(asgBlueGreenDeployDataOutcome.getServiceName())
+            .asgLoadBalancerConfig(asgLoadBalancerConfig)
+            .oldAsgName(asgBlueGreenPrepareRollbackDataOutcome.getProdAsgName())
+            .newAsgName(asgBlueGreenDeployDataOutcome.getAsgName())
             .downsizeOldAsg(asgBlueGreenSwapServiceStepParameters.getDownsizeOldAsg().getValue() != null
                 && asgBlueGreenSwapServiceStepParameters.getDownsizeOldAsg().getValue())
             .build();
+
+    AsgBlueGreenSwapServiceStartOutcome asgBlueGreenSwapServiceStartOutcome =
+        AsgBlueGreenSwapServiceStartOutcome.builder().isTrafficShiftStarted(true).build();
+
+    executionSweepingOutputService.consume(ambiance,
+        OutcomeExpressionConstants.ASG_BLUE_GREEN_SWAP_SERVICE_START_OUTCOME, asgBlueGreenSwapServiceStartOutcome,
+        StepOutcomeGroup.STEP.name());
 
     return asgStepCommonHelper
         .queueAsgTask(stepParameters, asgBlueGreenSwapServiceRequest, ambiance,
             AsgExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build(), true,
             AWS_ASG_BLUE_GREEN_SWAP_SERVICE_TASK_NG)
         .getTaskRequest();
-  }
-
-  private TaskRequest skipTaskRequest(Ambiance ambiance, String message) {
-    return TaskRequest.newBuilder()
-        .setSkipTaskRequest(SkipTaskRequest.newBuilder().setMessage(message).build())
-        .build();
   }
 }

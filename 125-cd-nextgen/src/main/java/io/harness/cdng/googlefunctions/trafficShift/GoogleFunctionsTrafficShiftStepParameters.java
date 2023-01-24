@@ -7,14 +7,14 @@ import io.harness.cdng.googlefunctions.GoogleFunctionsSpecParameters;
 import io.harness.googlefunctions.command.GoogleFunctionsCommandUnitConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
+
+import java.util.Arrays;
+import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.TypeAlias;
-
-import java.util.Arrays;
-import java.util.List;
 
 @OwnedBy(HarnessTeam.CDP)
 @Data
@@ -22,17 +22,15 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 @TypeAlias("googleFunctionsTrafficShiftStepParameters")
 @RecasterAlias("io.harness.cdng.googlefunctions.trafficShift.GoogleFunctionsTrafficShiftStepParameters")
-public class GoogleFunctionsTrafficShiftStepParameters extends GoogleFunctionsTrafficShiftBaseStepInfo
-        implements GoogleFunctionsSpecParameters {
-    @Builder(builderMethodName = "infoBuilder")
-    public GoogleFunctionsTrafficShiftStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-                                                             ParameterField<Integer> trafficPercent,
-                                                     String googleFunctionDeployWithoutTrafficStepFnq) {
-        super(delegateSelectors, trafficPercent, googleFunctionDeployWithoutTrafficStepFnq);
-    }
+public class GoogleFunctionsTrafficShiftStepParameters
+    extends GoogleFunctionsTrafficShiftBaseStepInfo implements GoogleFunctionsSpecParameters {
+  @Builder(builderMethodName = "infoBuilder")
+  public GoogleFunctionsTrafficShiftStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
+      ParameterField<Integer> trafficPercent, String googleFunctionDeployWithoutTrafficStepFnq) {
+    super(delegateSelectors, trafficPercent, googleFunctionDeployWithoutTrafficStepFnq);
+  }
 
-    public List<String> getCommandUnits() {
-        return Arrays.asList(GoogleFunctionsCommandUnitConstants.trafficShift.toString());
-    }
-
+  public List<String> getCommandUnits() {
+    return Arrays.asList(GoogleFunctionsCommandUnitConstants.trafficShift.toString());
+  }
 }

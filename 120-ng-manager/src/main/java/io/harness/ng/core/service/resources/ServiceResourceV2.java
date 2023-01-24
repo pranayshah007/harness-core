@@ -245,9 +245,13 @@ public class ServiceResourceV2 {
         Resource.of(NGResourceType.SERVICE, null), SERVICE_CREATE_PERMISSION);
     serviceSchemaHelper.validateSchema(accountId, serviceRequestDTO.getYaml());
     ServiceEntity serviceEntity = ServiceElementMapper.toServiceEntity(accountId, serviceRequestDTO);
+    if (isEmpty(serviceRequestDTO.getYaml())) {
+      serviceSchemaHelper.validateSchema(accountId, serviceEntity.getYaml());
+    }
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
         serviceEntity.getOrgIdentifier(), serviceEntity.getProjectIdentifier(), serviceEntity.getAccountId());
     ServiceEntity createdService = serviceEntityService.create(serviceEntity);
+
     return ResponseDTO.newResponse(
         createdService.getVersion().toString(), ServiceElementMapper.toResponseWrapper(createdService));
   }
@@ -278,6 +282,12 @@ public class ServiceResourceV2 {
         serviceRequestDTOs.stream()
             .map(serviceRequestDTO -> ServiceElementMapper.toServiceEntity(accountId, serviceRequestDTO))
             .collect(Collectors.toList());
+
+    for (int i = 0; i < serviceRequestDTOs.size(); i++) {
+      if (isEmpty(serviceRequestDTOs.get(i).getYaml())) {
+        serviceSchemaHelper.validateSchema(accountId, serviceEntities.get(i).getYaml());
+      }
+    }
     serviceEntities.forEach(serviceEntity
         -> orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
             serviceEntity.getOrgIdentifier(), serviceEntity.getProjectIdentifier(), serviceEntity.getAccountId()));
@@ -323,6 +333,9 @@ public class ServiceResourceV2 {
         Resource.of(NGResourceType.SERVICE, serviceRequestDTO.getIdentifier()), SERVICE_UPDATE_PERMISSION);
     serviceSchemaHelper.validateSchema(accountId, serviceRequestDTO.getYaml());
     ServiceEntity requestService = ServiceElementMapper.toServiceEntity(accountId, serviceRequestDTO);
+    if (isEmpty(serviceRequestDTO.getYaml())) {
+      serviceSchemaHelper.validateSchema(accountId, requestService.getYaml());
+    }
     requestService.setVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
     ServiceEntity updatedService = serviceEntityService.update(requestService);
     return ResponseDTO.newResponse(
@@ -345,6 +358,9 @@ public class ServiceResourceV2 {
         Resource.of(NGResourceType.SERVICE, serviceRequestDTO.getIdentifier()), SERVICE_UPDATE_PERMISSION);
     serviceSchemaHelper.validateSchema(accountId, serviceRequestDTO.getYaml());
     ServiceEntity requestService = ServiceElementMapper.toServiceEntity(accountId, serviceRequestDTO);
+    if (isEmpty(serviceRequestDTO.getYaml())) {
+      serviceSchemaHelper.validateSchema(accountId, requestService.getYaml());
+    }
     requestService.setVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
         requestService.getOrgIdentifier(), requestService.getProjectIdentifier(), requestService.getAccountId());

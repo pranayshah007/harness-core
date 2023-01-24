@@ -22,6 +22,7 @@ import io.harness.plancreator.customDeployment.StepTemplateRef;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.stages.stage.StageInfoConfig;
 import io.harness.pms.yaml.YamlNode;
+import io.harness.validation.OneOfField;
 import io.harness.walktree.beans.VisitableChild;
 import io.harness.walktree.beans.VisitableChildren;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
@@ -51,6 +52,8 @@ import org.springframework.data.annotation.TypeAlias;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonTypeName("Deployment")
 @TypeAlias("deploymentStageConfig")
+@OneOfField(fields = {"service", "services", "serviceConfig"})
+@OneOfField(fields = {"environment", "environments", "environmentGroup", "infrastructure"})
 @SimpleVisitorHelper(helperClass = DeploymentStageVisitorHelper.class)
 public class DeploymentStageConfig implements StageInfoConfig, Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)

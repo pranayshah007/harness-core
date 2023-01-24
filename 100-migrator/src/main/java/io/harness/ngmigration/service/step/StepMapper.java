@@ -10,6 +10,7 @@ package io.harness.ngmigration.service.step;
 import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
@@ -22,7 +23,6 @@ import io.harness.yaml.core.timeout.Timeout;
 
 import software.wings.beans.GraphNode;
 import software.wings.ngmigration.CgEntityId;
-import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.sm.State;
 
@@ -41,14 +41,13 @@ public interface StepMapper {
 
   State getState(GraphNode stepYaml);
 
-  AbstractStepNode getSpec(
-      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities, GraphNode graphNode);
+  AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode);
 
   default Set<String> getExpressions(GraphNode graphNode) {
     return Collections.emptySet();
   }
 
-  default TemplateStepNode getTemplateSpec(Map<CgEntityId, NGYamlFile> migratedEntities, GraphNode graphNode) {
+  default TemplateStepNode getTemplateSpec(WorkflowMigrationContext context, GraphNode graphNode) {
     return null;
   }
 
@@ -67,7 +66,7 @@ public interface StepMapper {
 
     TemplateStepNode templateStepNode = new TemplateStepNode();
     templateStepNode.setIdentifier(MigratorUtility.generateIdentifier(graphNode.getName()));
-    templateStepNode.setName(graphNode.getName());
+    templateStepNode.setName(MigratorUtility.generateName(graphNode.getName()));
     templateStepNode.setDescription(getDescription(graphNode));
     templateStepNode.setTemplate(templateLinkConfig);
     return templateStepNode;
@@ -105,7 +104,7 @@ public interface StepMapper {
 
   default void baseSetup(GraphNode graphNode, AbstractStepNode stepNode) {
     stepNode.setIdentifier(MigratorUtility.generateIdentifier(graphNode.getName()));
-    stepNode.setName(graphNode.getName());
+    stepNode.setName(MigratorUtility.generateName(graphNode.getName()));
     stepNode.setDescription(getDescription(graphNode));
     if (stepNode instanceof PmsAbstractStepNode) {
       PmsAbstractStepNode pmsAbstractStepNode = (PmsAbstractStepNode) stepNode;
@@ -119,7 +118,7 @@ public interface StepMapper {
 
   default void baseSetup(State state, AbstractStepNode stepNode) {
     stepNode.setIdentifier(MigratorUtility.generateIdentifier(state.getName()));
-    stepNode.setName(state.getName());
+    stepNode.setName(MigratorUtility.generateName(state.getName()));
     if (stepNode instanceof PmsAbstractStepNode) {
       PmsAbstractStepNode pmsAbstractStepNode = (PmsAbstractStepNode) stepNode;
       pmsAbstractStepNode.setTimeout(getTimeout(state));

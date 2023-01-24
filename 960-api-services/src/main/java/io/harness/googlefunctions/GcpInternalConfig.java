@@ -10,8 +10,8 @@ import lombok.Data;
 @Builder
 @OwnedBy(HarnessTeam.CDC)
 public class GcpInternalConfig {
-    char[] serviceAccountKeyFileContent;
-    boolean isUseDelegate;
-    String project;
-    String region;
+  char[] serviceAccountKeyFileContent;
+  boolean isUseDelegate;
+  String project;
+  String region;
 }

@@ -7,7 +7,7 @@
 
 package io.harness.ngmigration.service.step;
 
-import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
@@ -17,8 +17,6 @@ import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.resourcerestraint.beans.QueueHoldingScope;
 
 import software.wings.beans.GraphNode;
-import software.wings.ngmigration.CgEntityId;
-import software.wings.ngmigration.CgEntityNode;
 import software.wings.sm.State;
 import software.wings.sm.states.HoldingScope;
 import software.wings.sm.states.ResourceConstraintState;
@@ -45,8 +43,7 @@ public class ResourceConstraintStepMapperImpl implements StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(
-      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities, GraphNode graphNode) {
+  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
     ResourceConstraintState state = (ResourceConstraintState) getState(graphNode);
     QueueStepNode queueStepNode = new QueueStepNode();
     baseSetup(graphNode, queueStepNode);

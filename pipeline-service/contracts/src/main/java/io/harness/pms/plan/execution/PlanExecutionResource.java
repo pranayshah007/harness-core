@@ -654,7 +654,7 @@ public interface PlanExecutionResource {
   @GET
   @Path("retryHistory/{planExecutionId}")
   @ApiOperation(value = "Retry History for a given execution", nickname = "retryHistory")
-  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
   @Operation(operationId = "retryHistory", summary = "Retry History for a given execution",
       responses =
       {
@@ -680,7 +680,7 @@ public interface PlanExecutionResource {
   @GET
   @Path("latestExecutionId/{planExecutionId}")
   @ApiOperation(value = "Latest ExecutionId from Retry Executions", nickname = "latestExecutionId")
-  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
   @Operation(operationId = "latestExecutionId", summary = "Latest ExecutionId from Retry Executions",
       responses =
       {

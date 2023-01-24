@@ -3678,7 +3678,52 @@
           "$ref": "#/definitions/ServicesYaml"
         }
       },
-      "$schema": "http://json-schema.org/draft-07/schema#"
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "oneOf": [
+            {
+              "required": [
+                "serviceConfig"
+              ]
+            },
+            {
+              "required": [
+                "service"
+              ]
+            },
+            {
+              "required": [
+                "services"
+              ]
+            }
+          ]
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "environment"
+              ]
+            },
+            {
+              "required": [
+                "environmentGroup"
+              ]
+            },
+            {
+              "required": [
+                "environments"
+              ]
+            },
+            {
+              "required": [
+                "infrastructure"
+              ]
+            }
+          ]
+        }
+      ]
     },
     "DeploymentStageNode": {
       "type": "object",

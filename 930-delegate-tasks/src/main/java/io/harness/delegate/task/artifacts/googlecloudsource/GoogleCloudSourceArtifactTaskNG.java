@@ -1,6 +1,5 @@
 package io.harness.delegate.task.artifacts.googlecloudsource;
 
-
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateResponseData;
@@ -22,26 +21,26 @@ import org.jose4j.lang.JoseException;
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
 public class GoogleCloudSourceArtifactTaskNG extends AbstractDelegateRunnableTask {
-    @Inject private GoogleCloudSourceArtifactTaskHelper googleCloudSourceArtifactTaskHelper;
+  @Inject private GoogleCloudSourceArtifactTaskHelper googleCloudSourceArtifactTaskHelper;
 
-    public GoogleCloudSourceArtifactTaskNG(DelegateTaskPackage delegateTaskPackage,
-                                            ILogStreamingTaskClient logStreamingTaskClient, Consumer<DelegateTaskResponse> consumer,
-                                            BooleanSupplier preExecute) {
-        super(delegateTaskPackage, logStreamingTaskClient, consumer, preExecute);
-    }
-    @Override
-    public DelegateResponseData run(Object[] parameters) {
-        throw new NotImplementedException("not implemented");
-    }
+  public GoogleCloudSourceArtifactTaskNG(DelegateTaskPackage delegateTaskPackage,
+      ILogStreamingTaskClient logStreamingTaskClient, Consumer<DelegateTaskResponse> consumer,
+      BooleanSupplier preExecute) {
+    super(delegateTaskPackage, logStreamingTaskClient, consumer, preExecute);
+  }
+  @Override
+  public DelegateResponseData run(Object[] parameters) {
+    throw new NotImplementedException("not implemented");
+  }
 
-    @Override
-    public DelegateResponseData run(TaskParameters parameters) throws IOException, JoseException {
-        ArtifactTaskParameters taskParameters = (ArtifactTaskParameters) parameters;
-        return googleCloudSourceArtifactTaskHelper.getArtifactCollectResponse(taskParameters, null);
-    }
+  @Override
+  public DelegateResponseData run(TaskParameters parameters) throws IOException, JoseException {
+    ArtifactTaskParameters taskParameters = (ArtifactTaskParameters) parameters;
+    return googleCloudSourceArtifactTaskHelper.getArtifactCollectResponse(taskParameters, null);
+  }
 
-    @Override
-    public boolean isSupportingErrorFramework() {
-        return true;
-    }
+  @Override
+  public boolean isSupportingErrorFramework() {
+    return true;
+  }
 }

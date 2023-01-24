@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.streaming.dtos.AuditBatchDTO;
 import io.harness.audit.streaming.dtos.AuditRecordDTO;
 import io.harness.audit.streaming.dtos.PutObjectResultResponse;
+import io.harness.aws.beans.AsgLoadBalancerConfig;
 import io.harness.capability.AwsRegionParameters;
 import io.harness.capability.CapabilityParameters;
 import io.harness.capability.CapabilitySubjectPermission.PermissionResult;
@@ -417,10 +418,10 @@ import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactDelegateResponse;
-import io.harness.delegate.task.artifacts.googlecloudstorage.GoogleCloudStorageArtifactDelegateRequest;
-import io.harness.delegate.task.artifacts.googlecloudstorage.GoogleCloudStorageArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.googlecloudsource.GoogleCloudSourceArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.googlecloudsource.GoogleCloudSourceArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.googlecloudstorage.GoogleCloudStorageArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.googlecloudstorage.GoogleCloudStorageArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateRequest;
@@ -458,7 +459,6 @@ import io.harness.delegate.task.aws.asg.AsgCanaryDeployResult;
 import io.harness.delegate.task.aws.asg.AsgCommandRequest;
 import io.harness.delegate.task.aws.asg.AsgCommandResponse;
 import io.harness.delegate.task.aws.asg.AsgInfraConfig;
-import io.harness.delegate.task.aws.asg.AsgLoadBalancerConfig;
 import io.harness.delegate.task.aws.asg.AsgPrepareRollbackDataRequest;
 import io.harness.delegate.task.aws.asg.AsgPrepareRollbackDataResponse;
 import io.harness.delegate.task.aws.asg.AsgPrepareRollbackDataResult;
@@ -2050,7 +2050,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(EncryptedAppSettingsFile.class, 55408);
     kryo.register(AzureWebAppSlotDeploymentExceptionData.class, 55409);
 
-    //GIT
+    // GIT
     kryo.register(GitTaskNGRequest.class, 573401);
     kryo.register(GitTaskNGResponse.class, 573402);
     kryo.register(io.harness.delegate.task.gitcommon.GitFetchFilesResult.class, 573403);
@@ -2283,7 +2283,6 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(GoogleFunctionRollbackResponse.class, 673581);
     kryo.register(GoogleFunctionTrafficShiftRequest.class, 673582);
     kryo.register(GoogleFunctionTrafficShiftResponse.class, 673583);
-
 
     kryo.register(K8sDryRunManifestRequest.class, 573594);
     kryo.register(K8sDryRunManifestResponse.class, 573595);

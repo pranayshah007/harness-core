@@ -1,8 +1,14 @@
 package io.harness.delegate.googlefunction;
 
-import com.google.cloud.functions.v2.Function;
-import com.google.inject.Inject;
-import com.google.protobuf.util.JsonFormat;
+import static io.harness.logging.LogLevel.INFO;
+
+import static software.wings.beans.LogColor.Green;
+import static software.wings.beans.LogColor.White;
+import static software.wings.beans.LogHelper.color;
+import static software.wings.beans.LogWeight.Bold;
+
+import static java.lang.String.format;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
@@ -20,53 +26,45 @@ import io.harness.googlefunctions.command.GoogleFunctionsCommandUnitConstants;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
+
+import com.google.cloud.functions.v2.Function;
+import com.google.inject.Inject;
+import com.google.protobuf.util.JsonFormat;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
-import static io.harness.logging.LogLevel.INFO;
-import static java.lang.String.format;
-import static software.wings.beans.LogColor.Green;
-import static software.wings.beans.LogColor.White;
-import static software.wings.beans.LogHelper.color;
-import static software.wings.beans.LogWeight.Bold;
 
 @OwnedBy(HarnessTeam.CDP)
 @NoArgsConstructor
 @Slf4j
 public class GoogleFunctionDeployWithoutTrafficCommandTaskHandler extends GoogleFunctionCommandTaskHandler {
-    @Inject private GoogleFunctionCommandTaskHelper googleFunctionCommandTaskHelper;
+  @Inject private GoogleFunctionCommandTaskHelper googleFunctionCommandTaskHelper;
 
-    @Override
-    protected GoogleFunctionCommandResponse executeTaskInternal(GoogleFunctionCommandRequest
-                                                                            googleFunctionCommandRequest,
-                                                                ILogStreamingTaskClient iLogStreamingTaskClient,
-                                                                CommandUnitsProgress commandUnitsProgress) throws Exception {
-        GoogleFunctionDeployWithoutTrafficRequest googleFunctionDeployWithoutTrafficRequest =
-                (GoogleFunctionDeployWithoutTrafficRequest) googleFunctionCommandRequest;
-        GcpGoogleFunctionInfraConfig googleFunctionInfraConfig =
-                (GcpGoogleFunctionInfraConfig) googleFunctionDeployWithoutTrafficRequest.getGoogleFunctionInfraConfig();
-        try{
-            LogCallback executionLogCallback = new NGDelegateLogCallback(iLogStreamingTaskClient,
-                    GoogleFunctionsCommandUnitConstants.deploy.toString(),
-                    true, commandUnitsProgress);
-            executionLogCallback.saveExecutionLog(format("Deploying..%n%n"), LogLevel.INFO);
-            Function function = googleFunctionCommandTaskHelper.deployFunction(googleFunctionInfraConfig,
-                    googleFunctionDeployWithoutTrafficRequest.getGoogleFunctionDeployManifestContent(),
-                    googleFunctionDeployWithoutTrafficRequest.getUpdateFieldMaskContent(),
-                    googleFunctionDeployWithoutTrafficRequest.getGoogleFunctionArtifactConfig(), false,
-                    executionLogCallback);
+  @Override
+  protected GoogleFunctionCommandResponse executeTaskInternal(GoogleFunctionCommandRequest googleFunctionCommandRequest,
+      ILogStreamingTaskClient iLogStreamingTaskClient, CommandUnitsProgress commandUnitsProgress) throws Exception {
+    GoogleFunctionDeployWithoutTrafficRequest googleFunctionDeployWithoutTrafficRequest =
+        (GoogleFunctionDeployWithoutTrafficRequest) googleFunctionCommandRequest;
+    GcpGoogleFunctionInfraConfig googleFunctionInfraConfig =
+        (GcpGoogleFunctionInfraConfig) googleFunctionDeployWithoutTrafficRequest.getGoogleFunctionInfraConfig();
+    try {
+      LogCallback executionLogCallback = new NGDelegateLogCallback(
+          iLogStreamingTaskClient, GoogleFunctionsCommandUnitConstants.deploy.toString(), true, commandUnitsProgress);
+      executionLogCallback.saveExecutionLog(format("Deploying..%n%n"), LogLevel.INFO);
+      Function function = googleFunctionCommandTaskHelper.deployFunction(googleFunctionInfraConfig,
+          googleFunctionDeployWithoutTrafficRequest.getGoogleFunctionDeployManifestContent(),
+          googleFunctionDeployWithoutTrafficRequest.getUpdateFieldMaskContent(),
+          googleFunctionDeployWithoutTrafficRequest.getGoogleFunctionArtifactConfig(), false, executionLogCallback);
 
-            GoogleFunction googleFunction = googleFunctionCommandTaskHelper.getGoogleFunction(function,
-                    googleFunctionInfraConfig, executionLogCallback);
+      GoogleFunction googleFunction =
+          googleFunctionCommandTaskHelper.getGoogleFunction(function, googleFunctionInfraConfig, executionLogCallback);
 
-            executionLogCallback.saveExecutionLog(color("Done",Green), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
-            return GoogleFunctionDeployWithoutTrafficResponse.builder()
-                    .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
-                    .function(googleFunction)
-                    .build();
-        }
-        catch (Exception exception) {
-            throw new GoogleFunctionException(exception);
-        }
+      executionLogCallback.saveExecutionLog(color("Done", Green), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+      return GoogleFunctionDeployWithoutTrafficResponse.builder()
+          .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+          .function(googleFunction)
+          .build();
+    } catch (Exception exception) {
+      throw new GoogleFunctionException(exception);
     }
+  }
 }

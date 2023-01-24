@@ -115,7 +115,7 @@ public class CIExecutionServiceModule extends AbstractModule {
             20, 300, 5, TimeUnit.SECONDS, new ThreadFactoryBuilder().setNameFormat("Event-Handler-%d").build()));
     bind(ExecutorService.class)
         .annotatedWith(Names.named("ciBackgroundTaskExecutor"))
-        .toInstance(ThreadPool.create(10, 30, 5, TimeUnit.SECONDS,
+        .toInstance(ThreadPool.create(20, 50, 5, TimeUnit.SECONDS,
             new ThreadFactoryBuilder().setNameFormat("Background-Task-Handler-%d").build()));
     this.bind(CIExecutionServiceConfig.class).toInstance(this.ciExecutionServiceConfig);
     bind(new TypeLiteral<ProtobufStepSerializer<RunStepInfo>>() {}).toInstance(new RunStepProtobufSerializer());

@@ -10,7 +10,6 @@ package io.harness.delegate.task.aws.asg;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
-import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 
@@ -18,12 +17,5 @@ import lombok.Data;
 @Builder
 @OwnedBy(HarnessTeam.CDP)
 public class AsgBlueGreenSwapServiceResult {
-  private String infrastructureKey;
-  private String loadBalancer;
-  private String prodListenerArn;
-  private String prodListenerRuleArn;
-  private List<String> prodTargetGroupArnList;
-  private String stageListenerArn;
-  private String stageListenerRuleArn;
-  private List<String> stageTargetGroupArnList;
+  private boolean trafficShifted;
 }

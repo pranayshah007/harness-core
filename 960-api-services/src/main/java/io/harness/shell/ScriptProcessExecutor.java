@@ -381,7 +381,7 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
 
   private void saveExecutionLog(String line, LogLevel level, CommandExecutionStatus commandExecutionStatus) {
     if (shouldSaveExecutionLogs) {
-      logCallback.saveExecutionLog(line, level, commandExecutionStatus);
+      logCallback.saveExecutionLog(line, level, commandExecutionStatus, false);
     }
   }
 

@@ -268,7 +268,7 @@ public final class STOSettingsUtils {
 
         map.put(getSTOKey("log_level"), logLevel != null ? logLevel.getYamlName() : STOYamlLogLevel.INFO.getYamlName());
         map.put(getSTOKey("log_serializer"),
-            logSerializer != null ? logSerializer.getYamlName() : STOYamlLogSerializer.BUNYAN.getYamlName());
+            logSerializer != null ? logSerializer.getYamlName() : STOYamlLogSerializer.SIMPLE_ONPREM.getYamlName());
       }
 
       STOYamlArgs argsData = advancedSettings.getArgs();

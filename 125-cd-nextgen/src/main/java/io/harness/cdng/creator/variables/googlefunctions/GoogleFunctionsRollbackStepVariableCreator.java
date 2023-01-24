@@ -10,15 +10,15 @@ import java.util.Collections;
 import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDP)
-public class GoogleFunctionsRollbackStepVariableCreator extends
-        GenericStepVariableCreator<GoogleFunctionsRollbackStepNode> {
-    @Override
-    public Set<String> getSupportedStepTypes() {
-        return Collections.singleton(StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_ROLLBACK);
-    }
+public class GoogleFunctionsRollbackStepVariableCreator
+    extends GenericStepVariableCreator<GoogleFunctionsRollbackStepNode> {
+  @Override
+  public Set<String> getSupportedStepTypes() {
+    return Collections.singleton(StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_ROLLBACK);
+  }
 
-    @Override
-    public Class<GoogleFunctionsRollbackStepNode> getFieldClass() {
-        return GoogleFunctionsRollbackStepNode.class;
-    }
+  @Override
+  public Class<GoogleFunctionsRollbackStepNode> getFieldClass() {
+    return GoogleFunctionsRollbackStepNode.class;
+  }
 }

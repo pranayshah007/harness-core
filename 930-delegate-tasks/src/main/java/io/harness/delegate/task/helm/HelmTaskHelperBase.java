@@ -93,6 +93,7 @@ import software.wings.helpers.ext.helm.request.HelmChartConfigParams;
 import software.wings.helpers.ext.helm.response.ReleaseInfo;
 
 import com.esotericsoftware.yamlbeans.YamlException;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -102,6 +103,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
@@ -137,6 +140,7 @@ public class HelmTaskHelperBase {
   public static final String NAME_KEY = "name:";
   public static final String REGISTRY_URL = "${REGISTRY_URL}";
   private static final String CHMOD = "chmod go-r ";
+  private static final int DEFAULT_PORT = 443;
 
   @Inject private K8sGlobalConfigService k8sGlobalConfigService;
   @Inject private NgChartmuseumClientFactory ngChartmuseumClientFactory;
@@ -684,7 +688,7 @@ public class HelmTaskHelperBase {
   }
 
   public void downloadChartFilesFromOciRepo(
-      HelmChartManifestDelegateConfig manifest, String destinationDirectory, long timeoutInMillis) {
+      HelmChartManifestDelegateConfig manifest, String destinationDirectory, long timeoutInMillis) throws Exception {
     if (!(manifest.getStoreDelegateConfig() instanceof OciHelmStoreDelegateConfig)) {
       throw new InvalidArgumentsException(
           Pair.of("storeDelegateConfig", "Must be instance of OciHelmStoreDelegateConfig"));
@@ -696,10 +700,8 @@ public class HelmTaskHelperBase {
     String cacheDir = getCacheDir(manifest, storeDelegateConfig.getRepoName(), HelmVersion.V380);
 
     try {
-      loginOciRegistry(ociHelmConnector.getHelmRepoUrl(), getOciHelmUsername(ociHelmConnector),
-          getOciHelmPassword(ociHelmConnector), HelmVersion.V380, timeoutInMillis, destinationDirectory);
-      String repoName = String.format(REGISTRY_URL_PREFIX,
-          Paths.get(ociHelmConnector.getHelmRepoUrl(), storeDelegateConfig.getBasePath()).normalize());
+      String repoName =
+          getRepoName(ociHelmConnector, storeDelegateConfig.getBasePath(), timeoutInMillis, destinationDirectory);
       fetchChartFromRepo(repoName, storeDelegateConfig.getRepoDisplayName(), manifest.getChartName(),
           manifest.getChartVersion(), destinationDirectory, HelmVersion.V380, manifest.getHelmCommandFlag(),
           timeoutInMillis, cacheDir);
@@ -713,6 +715,24 @@ public class HelmTaskHelperBase {
         }
       }
     }
+  }
+
+  private String getRepoName(OciHelmConnectorDTO ociHelmConnectorDTO, String basePath, long timeoutInMillis,
+      String destinationDirectory) throws Exception {
+    String repoName;
+    if (OciHelmAuthType.USER_PASSWORD.equals(ociHelmConnectorDTO.getAuth().getAuthType())) {
+      loginOciRegistry(ociHelmConnectorDTO.getHelmRepoUrl(), getOciHelmUsername(ociHelmConnectorDTO),
+          getOciHelmPassword(ociHelmConnectorDTO), HelmVersion.V380, timeoutInMillis, destinationDirectory);
+      repoName =
+          String.format(REGISTRY_URL_PREFIX, Paths.get(ociHelmConnectorDTO.getHelmRepoUrl(), basePath).normalize());
+    } else if (OciHelmAuthType.ANONYMOUS.equals(ociHelmConnectorDTO.getAuth().getAuthType())) {
+      String ociUrl = getParsedURI(ociHelmConnectorDTO.getHelmRepoUrl()).toString();
+      repoName = addBasePathToOciUrl(ociUrl, basePath);
+    } else {
+      throw new InvalidArgumentsException(
+          format("Invalid oci auth type  %s", ociHelmConnectorDTO.getAuth().getAuthType()));
+    }
+    return repoName;
   }
 
   private String getCacheDir(HelmChartManifestDelegateConfig manifest, String repoName, HelmVersion version) {
@@ -1520,5 +1540,27 @@ public class HelmTaskHelperBase {
       return -1;
     }
     return -1;
+  }
+
+  @VisibleForTesting
+  URI getParsedURI(String ociUrl) throws URISyntaxException {
+    URI uri = new URI(ociUrl);
+    if (isEmpty(uri.getScheme())) {
+      uri = URI.create(format(REGISTRY_URL_PREFIX, ociUrl));
+    }
+    if (uri.getPort() < 0) {
+      uri = URI.create(uri + ":" + DEFAULT_PORT);
+    }
+    return uri;
+  }
+
+  private String addBasePathToOciUrl(String ociUrl, String basePath) {
+    if (isNotEmpty(basePath) && basePath.charAt(0) == '/') {
+      return ociUrl + basePath;
+    } else if (isNotEmpty(basePath) && basePath.charAt(0) != '/') {
+      return ociUrl + "/" + basePath;
+    } else {
+      throw new InvalidArgumentsException("Invalid oci base path cannot be empty");
+    }
   }
 }

@@ -111,7 +111,11 @@ public class AsgConfigurationManifestHandler extends AsgManifestHandler<CreateAu
       String operationName = format("Update Asg %s", asgName);
       asgSdkManager.info("Operation `%s` has started", operationName);
       asgSdkManager.updateASG(asgName, chainState.getLaunchTemplateVersion(), createAutoScalingGroupRequest);
-      asgSdkManager.waitReadyState(asgName, asgSdkManager::checkAllInstancesInReadyState, operationName);
+      if (createAutoScalingGroupRequest.getDesiredCapacity() == 0) {
+        asgSdkManager.waitReadyState(asgName, asgSdkManager::checkAsgDownsizedToZero, operationName);
+      } else {
+        asgSdkManager.waitReadyState(asgName, asgSdkManager::checkAllInstancesInReadyState, operationName);
+      }
       asgSdkManager.infoBold("Operation `%s` ended successfully", operationName);
     }
 

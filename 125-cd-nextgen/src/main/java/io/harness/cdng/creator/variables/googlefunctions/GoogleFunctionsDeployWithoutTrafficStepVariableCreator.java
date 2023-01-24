@@ -10,15 +10,15 @@ import java.util.Collections;
 import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDP)
-public class GoogleFunctionsDeployWithoutTrafficStepVariableCreator extends
-        GenericStepVariableCreator<GoogleFunctionsDeployWithoutTrafficStepNode> {
-    @Override
-    public Set<String> getSupportedStepTypes() {
-        return Collections.singleton(StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_DEPLOY_WITHOUT_TRAFFIC);
-    }
+public class GoogleFunctionsDeployWithoutTrafficStepVariableCreator
+    extends GenericStepVariableCreator<GoogleFunctionsDeployWithoutTrafficStepNode> {
+  @Override
+  public Set<String> getSupportedStepTypes() {
+    return Collections.singleton(StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_DEPLOY_WITHOUT_TRAFFIC);
+  }
 
-    @Override
-    public Class<GoogleFunctionsDeployWithoutTrafficStepNode> getFieldClass() {
-        return GoogleFunctionsDeployWithoutTrafficStepNode.class;
-    }
+  @Override
+  public Class<GoogleFunctionsDeployWithoutTrafficStepNode> getFieldClass() {
+    return GoogleFunctionsDeployWithoutTrafficStepNode.class;
+  }
 }

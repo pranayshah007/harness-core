@@ -15,7 +15,7 @@ import io.harness.cdng.k8s.K8sCanaryStepNode;
 import io.harness.cdng.k8s.K8sInstanceUnitType;
 import io.harness.cdng.k8s.PercentageInstanceSelection;
 import io.harness.executions.steps.StepSpecTypeConstants;
-import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.step.StepMapper;
@@ -24,8 +24,6 @@ import io.harness.pms.yaml.ParameterField;
 
 import software.wings.beans.GraphNode;
 import software.wings.beans.InstanceUnitType;
-import software.wings.ngmigration.CgEntityId;
-import software.wings.ngmigration.CgEntityNode;
 import software.wings.sm.State;
 import software.wings.sm.states.k8s.K8sCanaryDeploy;
 
@@ -51,8 +49,7 @@ public class K8sCanaryDeployStepMapperImpl implements StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(
-      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities, GraphNode graphNode) {
+  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
     K8sCanaryDeploy state = (K8sCanaryDeploy) getState(graphNode);
     K8sCanaryStepNode k8sCanaryStepNode = new K8sCanaryStepNode();
     baseSetup(state, k8sCanaryStepNode);

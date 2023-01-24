@@ -21,38 +21,38 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(CDC)
 @RecasterAlias("io.harness.ngpipeline.artifact.bean.GoogleCloudSourceArtifactOutcome")
 public class GoogleCloudSourceArtifactOutcome implements ArtifactOutcome {
-    /** Google Cloud Storage connector. */
-    String connectorRef;
+  /** Google Cloud Storage connector. */
+  String connectorRef;
 
-    /** project */
-    String project;
+  /** project */
+  String project;
 
-    /** sourceDirectory */
-    String sourceDirectory;
+  /** sourceDirectory */
+  String sourceDirectory;
 
-    /** Repository */
-    String repository;
+  /** Repository */
+  String repository;
 
-    /** Identifier for artifact. */
-    String identifier;
+  /** Identifier for artifact. */
+  String identifier;
 
-    /** Artifact type. */
-    String type;
+  /** Artifact type. */
+  String type;
 
-    /** Whether this config corresponds to primary artifact.*/
-    boolean primaryArtifact;
-    @Override
-    public ArtifactSummary getArtifactSummary() {
-        return GoogleCloudSourceArtifactSummary.builder().repository(repository).sourceDirectory(sourceDirectory).build();
-    }
+  /** Whether this config corresponds to primary artifact.*/
+  boolean primaryArtifact;
+  @Override
+  public ArtifactSummary getArtifactSummary() {
+    return GoogleCloudSourceArtifactSummary.builder().repository(repository).sourceDirectory(sourceDirectory).build();
+  }
 
-    @Override
-    public String getArtifactType() {
-        return type;
-    }
+  @Override
+  public String getArtifactType() {
+    return type;
+  }
 
-    @Override
-    public String getTag() {
-        return sourceDirectory;
-    }
+  @Override
+  public String getTag() {
+    return sourceDirectory;
+  }
 }

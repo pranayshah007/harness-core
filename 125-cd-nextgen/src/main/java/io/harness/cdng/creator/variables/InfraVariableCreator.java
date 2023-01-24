@@ -270,7 +270,8 @@ public class InfraVariableCreator {
     addVariableForYamlType(YamlTypes.CLUSTER, infraSpecNode, yamlPropertiesMap);
   }
 
-  private void addVariablesForGoogleCloudFunctionsInfra(YamlField infraDefNode, Map<String, YamlProperties> yamlPropertiesMap) {
+  private void addVariablesForGoogleCloudFunctionsInfra(
+      YamlField infraDefNode, Map<String, YamlProperties> yamlPropertiesMap) {
     YamlField infraSpecNode = infraDefNode.getNode().getField(YamlTypes.SPEC);
     if (infraSpecNode == null) {
       return;

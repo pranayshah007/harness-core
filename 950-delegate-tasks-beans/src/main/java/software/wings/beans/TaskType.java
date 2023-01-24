@@ -441,9 +441,11 @@ public enum TaskType {
   TERRAFORM_PROVISION_TASK_V2(TaskGroup.TERRAFORM, "Terraform Provision Task V2"),
   TERRAFORM_INPUT_VARIABLES_OBTAIN_TASK_V2(TaskGroup.TERRAFORM, "Terraform Fetch Input variables Task V2"),
   TERRAFORM_FETCH_TARGETS_TASK_V2(TaskGroup.TERRAFORM, "Terraform Fetch Targets Task V2"),
+
   TAS_ROLLING_DEPLOY(TaskGroup.TAS, "Tas Rolling Deploy task"),
   TAS_ROLLING_ROLLBACK(TaskGroup.TAS, "Tas Rolling Rollback task"),
   K8S_DRY_RUN_MANIFEST_TASK_NG(TaskGroup.K8S_NG, "K8s Dry Run Manifest Task"),
+
   COMMAND_TASK_NG_WITH_AZURE_ARTIFACT(TaskGroup.COMMAND_TASK_NG, "Command Task"),
   AWS_ASG_BLUE_GREEN_SWAP_SERVICE_TASK_NG(TaskGroup.ASG, "AWS Asg Blue Green Swap Service"),
 

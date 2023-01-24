@@ -14,15 +14,15 @@ import com.google.cloud.run.v2.Service;
 import com.google.cloud.run.v2.UpdateServiceRequest;
 
 public interface GoogleCloudRunClient {
+  ListRevisionsResponse listRevisions(ListRevisionsRequest listRevisionsRequest, GcpInternalConfig gcpInternalConfig);
 
-    ListRevisionsResponse listRevisions(ListRevisionsRequest listRevisionsRequest, GcpInternalConfig gcpInternalConfig);
+  Service getService(GetServiceRequest getServiceRequest, GcpInternalConfig gcpInternalConfig);
 
-    Service getService(GetServiceRequest getServiceRequest, GcpInternalConfig gcpInternalConfig);
+  OperationFuture<Service, Service> updateService(
+      UpdateServiceRequest updateServiceRequest, GcpInternalConfig gcpInternalConfig);
 
-    OperationFuture<Service, Service> updateService(UpdateServiceRequest updateServiceRequest, GcpInternalConfig gcpInternalConfig);
+  OperationFuture<Revision, Revision> deleteRevision(
+      DeleteRevisionRequest deleteRevisionRequest, GcpInternalConfig gcpInternalConfig);
 
-    OperationFuture<Revision, Revision> deleteRevision(DeleteRevisionRequest deleteRevisionRequest, GcpInternalConfig gcpInternalConfig);
-
-    Revision getRevision(GetRevisionRequest getRevisionRequest, GcpInternalConfig gcpInternalConfig);
-
+  Revision getRevision(GetRevisionRequest getRevisionRequest, GcpInternalConfig gcpInternalConfig);
 }

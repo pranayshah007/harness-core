@@ -27,34 +27,34 @@ import lombok.Value;
 @EqualsAndHashCode(callSuper = false)
 @OwnedBy(HarnessTeam.PIPELINE)
 public class GoogleCloudSourceArtifactDelegateRequest implements ArtifactSourceDelegateRequest {
-    /** refers to GCP Project*/
-    String project;
-    /** refers to GCS repository*/
-    String repository;
-    /** refers to sourceDirectory in GCS repository*/
-    String sourceDirectory;
-    /** Gcp Connector*/
-    GcpConnectorDTO gcpConnectorDTO;
-    /** Encrypted details for decrypting.*/
-    List<EncryptedDataDetail> encryptedDataDetails;
-    /** Artifact Source type.*/
-    ArtifactSourceType sourceType;
-    String connectorRef;
+  /** refers to GCP Project*/
+  String project;
+  /** refers to GCS repository*/
+  String repository;
+  /** refers to sourceDirectory in GCS repository*/
+  String sourceDirectory;
+  /** Gcp Connector*/
+  GcpConnectorDTO gcpConnectorDTO;
+  /** Encrypted details for decrypting.*/
+  List<EncryptedDataDetail> encryptedDataDetails;
+  /** Artifact Source type.*/
+  ArtifactSourceType sourceType;
+  String connectorRef;
 
-    @Override
-    public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
-        List<ExecutionCapability> capabilities =
-                new ArrayList<>(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
-                        encryptedDataDetails, maskingEvaluator));
-        capabilities.addAll(GcpCapabilityHelper.fetchRequiredExecutionCapabilities(gcpConnectorDTO, maskingEvaluator));
-        if (gcpConnectorDTO.getCredential() != null) {
-            if (gcpConnectorDTO.getCredential().getGcpCredentialType() != GcpCredentialType.INHERIT_FROM_DELEGATE
-                    && gcpConnectorDTO.getCredential().getGcpCredentialType() != GcpCredentialType.MANUAL_CREDENTIALS) {
-                throw new UnknownEnumTypeException(
-                        "Gcr Credential Type", String.valueOf(gcpConnectorDTO.getCredential().getGcpCredentialType()));
-            }
-            populateDelegateSelectorCapability(capabilities, gcpConnectorDTO.getDelegateSelectors());
-        }
-        return capabilities;
+  @Override
+  public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
+    List<ExecutionCapability> capabilities =
+        new ArrayList<>(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
+            encryptedDataDetails, maskingEvaluator));
+    capabilities.addAll(GcpCapabilityHelper.fetchRequiredExecutionCapabilities(gcpConnectorDTO, maskingEvaluator));
+    if (gcpConnectorDTO.getCredential() != null) {
+      if (gcpConnectorDTO.getCredential().getGcpCredentialType() != GcpCredentialType.INHERIT_FROM_DELEGATE
+          && gcpConnectorDTO.getCredential().getGcpCredentialType() != GcpCredentialType.MANUAL_CREDENTIALS) {
+        throw new UnknownEnumTypeException(
+            "Gcr Credential Type", String.valueOf(gcpConnectorDTO.getCredential().getGcpCredentialType()));
+      }
+      populateDelegateSelectorCapability(capabilities, gcpConnectorDTO.getDelegateSelectors());
     }
+    return capabilities;
+  }
 }

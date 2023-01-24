@@ -12,11 +12,9 @@ import static io.harness.delegate.beans.connector.gcpconnector.GcpCredentialType
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.resources.googlecloudstorage.dtos.GoogleCloudStorageBucketDetails;
 import io.harness.cdng.gcp.GcpHelperService;
-import io.harness.cdng.k8s.resources.gcp.dtos.GcpProjectDetails;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.task.gcp.GcpTaskType;
 import io.harness.delegate.task.gcp.request.GcsListBucketsRequest;
-import io.harness.delegate.task.gcp.response.GcpProjectListTaskResponse;
 import io.harness.delegate.task.gcp.response.GcsBucketListResponse;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.security.encryption.EncryptedDataDetail;

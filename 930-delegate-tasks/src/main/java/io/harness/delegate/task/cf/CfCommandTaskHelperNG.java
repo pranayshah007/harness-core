@@ -289,7 +289,6 @@ public class CfCommandTaskHelperNG {
         (JenkinsTasArtifactRequestDetails) artifactConfig.getArtifactDetails();
     validateJenkinsArtifact(artifactConfig, jenkinsTasArtifactRequestDetails, logCallback);
     Pair<String, InputStream> pair = null;
-    Jenkins jenkins = configureJenkins(artifactConfig);
 
     try {
       JenkinsConnectorDTO jenkinsConnectorDto = (JenkinsConnectorDTO) artifactConfig.getConnectorConfig();
@@ -301,6 +300,7 @@ public class CfCommandTaskHelperNG {
                     jenkinsTasArtifactRequestDetails.getJobName(), jenkinsTasArtifactRequestDetails.getBuild(),
                     jenkinsTasArtifactRequestDetails.getArtifactPath()),
               White, Bold));
+      Jenkins jenkins = configureJenkins(artifactConfig);
       if (!isNull(jenkins)) {
         pair = jenkins.downloadArtifact(jenkinsTasArtifactRequestDetails.getJobName(),
             jenkinsTasArtifactRequestDetails.getBuild(), jenkinsTasArtifactRequestDetails.getArtifactPath());

@@ -7,9 +7,9 @@
 
 package io.harness.cdng.manifest.steps;
 
-import static io.harness.cdng.service.steps.ServiceStepOverrideHelper.ENVIRONMENT_GLOBAL_OVERRIDES;
-import static io.harness.cdng.service.steps.ServiceStepOverrideHelper.SERVICE;
-import static io.harness.cdng.service.steps.ServiceStepOverrideHelper.SERVICE_OVERRIDES;
+import static io.harness.cdng.service.steps.constants.ServiceStepConstants.ENVIRONMENT_GLOBAL_OVERRIDES;
+import static io.harness.cdng.service.steps.constants.ServiceStepConstants.SERVICE;
+import static io.harness.cdng.service.steps.constants.ServiceStepConstants.SERVICE_OVERRIDES;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
@@ -27,6 +27,8 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.manifest.ManifestConfigType;
+import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
+import io.harness.cdng.manifest.steps.output.NgManifestsMetadataSweepingOutput;
 import io.harness.cdng.manifest.yaml.GitStore;
 import io.harness.cdng.manifest.yaml.ManifestAttributes;
 import io.harness.cdng.manifest.yaml.ManifestConfig;

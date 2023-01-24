@@ -17,7 +17,7 @@ import static io.harness.ng.core.template.TemplateEntityType.STAGE_TEMPLATE;
 import io.harness.beans.OrchestrationWorkflowType;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ngmigration.beans.NGYamlFile;
-import io.harness.ngmigration.service.step.StepMapperFactory;
+import io.harness.ngmigration.beans.WorkflowMigrationContext;
 
 import software.wings.beans.CanaryOrchestrationWorkflow;
 import software.wings.beans.GraphNode;
@@ -39,7 +39,6 @@ public class CanaryWorkflowHandlerImpl extends WorkflowHandler {
       Sets.newHashSet(BASIC, BLUE_GREEN, ROLLING);
 
   @Inject CanaryWorkflowYamlHandler canaryWorkflowYamlHandler;
-  @Inject private StepMapperFactory stepMapperFactory;
 
   @Override
   public List<GraphNode> getSteps(Workflow workflow) {
@@ -58,11 +57,6 @@ public class CanaryWorkflowHandlerImpl extends WorkflowHandler {
     return PIPELINE_TEMPLATE;
   }
 
-  @Override
-  public boolean areSimilar(Workflow workflow1, Workflow workflow2) {
-    return areSimilar(stepMapperFactory, workflow1, workflow2);
-  }
-
   PhaseStep getPreDeploymentPhase(Workflow workflow) {
     CanaryOrchestrationWorkflow orchestrationWorkflow =
         (CanaryOrchestrationWorkflow) workflow.getOrchestrationWorkflow();
@@ -79,12 +73,13 @@ public class CanaryWorkflowHandlerImpl extends WorkflowHandler {
   public JsonNode getTemplateSpec(
       Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities, Workflow workflow) {
     OrchestrationWorkflowType workflowType = workflow.getOrchestration().getOrchestrationWorkflowType();
+    WorkflowMigrationContext context = WorkflowMigrationContext.newInstance(entities, migratedEntities, workflow);
     if (ROLLING_WORKFLOW_TYPES.contains(workflowType)) {
-      return getDeploymentStageTemplateSpec(entities, migratedEntities, workflow, stepMapperFactory);
+      return getDeploymentStageTemplateSpec(context);
     }
     if (workflowType == BUILD) {
-      return getCustomStageTemplateSpec(entities, migratedEntities, workflow, stepMapperFactory);
+      return getCustomStageTemplateSpec(context);
     }
-    return buildMultiStagePipelineTemplate(entities, migratedEntities, stepMapperFactory, workflow);
+    return buildMultiStagePipelineTemplate(context);
   }
 }

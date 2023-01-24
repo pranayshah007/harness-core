@@ -26,67 +26,67 @@ import org.apache.commons.io.IOUtils;
 @Singleton
 @Slf4j
 public class GcpCredentialsHelper {
-    public static HttpTransportOptions getHttpTransportOptionsForProxy() throws IOException, GeneralSecurityException {
-        HttpTransportFactory httpTransportFactory = GcpHttpTransportHelperService.getHttpTransportFactory();
-        return HttpTransportOptions.newBuilder().setHttpTransportFactory(httpTransportFactory).build();
-    }
+  public static HttpTransportOptions getHttpTransportOptionsForProxy() throws IOException, GeneralSecurityException {
+    HttpTransportFactory httpTransportFactory = GcpHttpTransportHelperService.getHttpTransportFactory();
+    return HttpTransportOptions.newBuilder().setHttpTransportFactory(httpTransportFactory).build();
+  }
 
-    public GoogleCredentials getGoogleCredentials(char[] serviceAccountKeyFileContent, boolean isUseDelegate)
-            throws IOException {
-        if (isUseDelegate) {
-            return getApplicationDefaultCredentials();
-        }
-        validateServiceAccountKey(serviceAccountKeyFileContent);
-        return checkIfUseProxyAndGetGoogleCredentials(serviceAccountKeyFileContent);
+  public GoogleCredentials getGoogleCredentials(char[] serviceAccountKeyFileContent, boolean isUseDelegate)
+      throws IOException {
+    if (isUseDelegate) {
+      return getApplicationDefaultCredentials();
     }
+    validateServiceAccountKey(serviceAccountKeyFileContent);
+    return checkIfUseProxyAndGetGoogleCredentials(serviceAccountKeyFileContent);
+  }
 
-    private static GoogleCredentials getApplicationDefaultCredentials() throws IOException {
-        return Http.getProxyHostName() != null && !Http.shouldUseNonProxy(OAuth2Utils.getMetadataServerUrl())
-                ? GoogleCredentials.getApplicationDefault(GcpHttpTransportHelperService.getHttpTransportFactory())
-                : GoogleCredentials.getApplicationDefault();
-    }
+  private static GoogleCredentials getApplicationDefaultCredentials() throws IOException {
+    return Http.getProxyHostName() != null && !Http.shouldUseNonProxy(OAuth2Utils.getMetadataServerUrl())
+        ? GoogleCredentials.getApplicationDefault(GcpHttpTransportHelperService.getHttpTransportFactory())
+        : GoogleCredentials.getApplicationDefault();
+  }
 
-    private void validateServiceAccountKey(char[] serviceAccountKeyFileContent) {
-        if (isEmpty(serviceAccountKeyFileContent)) {
-            throw new InvalidRequestException("Empty service key found. Unable to validate", USER);
-        }
-        try {
-            GoogleCredentials.fromStream(
-                    IOUtils.toInputStream(String.valueOf(serviceAccountKeyFileContent), Charset.defaultCharset()));
-        } catch (Exception e) {
-            if (e instanceof JsonParseException) {
-                throw new InvalidRequestException("Provided Service account key is not in JSON format ", USER);
-            }
-            throw new InvalidRequestException("Invalid Google Cloud Platform credentials: " + e.getMessage(), e, USER);
-        }
+  private void validateServiceAccountKey(char[] serviceAccountKeyFileContent) {
+    if (isEmpty(serviceAccountKeyFileContent)) {
+      throw new InvalidRequestException("Empty service key found. Unable to validate", USER);
     }
+    try {
+      GoogleCredentials.fromStream(
+          IOUtils.toInputStream(String.valueOf(serviceAccountKeyFileContent), Charset.defaultCharset()));
+    } catch (Exception e) {
+      if (e instanceof JsonParseException) {
+        throw new InvalidRequestException("Provided Service account key is not in JSON format ", USER);
+      }
+      throw new InvalidRequestException("Invalid Google Cloud Platform credentials: " + e.getMessage(), e, USER);
+    }
+  }
 
-    private GoogleCredentials checkIfUseProxyAndGetGoogleCredentials(char[] serviceAccountKeyFileContent)
-            throws IOException {
-        String tokenUri =
-                (String) (JsonUtils.asObject(new String(serviceAccountKeyFileContent), HashMap.class)).get("token_uri");
-        return Http.getProxyHostName() != null && !Http.shouldUseNonProxy(tokenUri)
-                ? getGoogleCredentialWithProxyConfiguredHttpTransport(serviceAccountKeyFileContent)
-                : getGoogleCredentialWithDefaultHttpTransport(serviceAccountKeyFileContent);
-    }
+  private GoogleCredentials checkIfUseProxyAndGetGoogleCredentials(char[] serviceAccountKeyFileContent)
+      throws IOException {
+    String tokenUri =
+        (String) (JsonUtils.asObject(new String(serviceAccountKeyFileContent), HashMap.class)).get("token_uri");
+    return Http.getProxyHostName() != null && !Http.shouldUseNonProxy(tokenUri)
+        ? getGoogleCredentialWithProxyConfiguredHttpTransport(serviceAccountKeyFileContent)
+        : getGoogleCredentialWithDefaultHttpTransport(serviceAccountKeyFileContent);
+  }
 
-    public GoogleCredentials getGoogleCredentialWithDefaultHttpTransport(char[] serviceAccountKeyFileContent)
-            throws IOException {
-        return appendScopesIfRequired(GoogleCredentials.fromStream(
-                IOUtils.toInputStream(String.valueOf(serviceAccountKeyFileContent), Charset.defaultCharset())));
-    }
+  public GoogleCredentials getGoogleCredentialWithDefaultHttpTransport(char[] serviceAccountKeyFileContent)
+      throws IOException {
+    return appendScopesIfRequired(GoogleCredentials.fromStream(
+        IOUtils.toInputStream(String.valueOf(serviceAccountKeyFileContent), Charset.defaultCharset())));
+  }
 
-    public GoogleCredentials getGoogleCredentialWithProxyConfiguredHttpTransport(char[] serviceAccountKeyFileContent)
-            throws IOException {
-        return appendScopesIfRequired(GoogleCredentials.fromStream(
-                IOUtils.toInputStream(String.valueOf(serviceAccountKeyFileContent), Charset.defaultCharset()),
-                GcpHttpTransportHelperService.getHttpTransportFactory()));
-    }
+  public GoogleCredentials getGoogleCredentialWithProxyConfiguredHttpTransport(char[] serviceAccountKeyFileContent)
+      throws IOException {
+    return appendScopesIfRequired(GoogleCredentials.fromStream(
+        IOUtils.toInputStream(String.valueOf(serviceAccountKeyFileContent), Charset.defaultCharset()),
+        GcpHttpTransportHelperService.getHttpTransportFactory()));
+  }
 
-    private static GoogleCredentials appendScopesIfRequired(GoogleCredentials googleCredential) {
-        if (googleCredential.createScopedRequired()) {
-            return googleCredential.createScoped(Collections.singletonList(ContainerScopes.CLOUD_PLATFORM));
-        }
-        return googleCredential;
+  private static GoogleCredentials appendScopesIfRequired(GoogleCredentials googleCredential) {
+    if (googleCredential.createScopedRequired()) {
+      return googleCredential.createScoped(Collections.singletonList(ContainerScopes.CLOUD_PLATFORM));
     }
+    return googleCredential;
+  }
 }

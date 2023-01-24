@@ -32,7 +32,9 @@ public enum NGMigrationEntityType {
   CONFIG_FILE,
   ECS_SERVICE_SPEC,
   CONTAINER_TASK,
-  MANIFEST;
+  MANIFEST,
+  AMI_STARTUP_SCRIPT,
+  ELASTIGROUP_CONFIGURATION;
 
   private String yamlFolderName;
 

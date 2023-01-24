@@ -97,7 +97,7 @@ public class ServiceCommandTemplateService implements NgTemplateService {
         variables.add(StringNGVariable.builder()
                           .name(variable.getName())
                           .type(NGVariableType.STRING)
-                          .value(valueOrDefaultEmpty(variable.getValue()))
+                          .value(valueOrDefaultRuntime(variable.getValue()))
                           .build());
       });
     }
@@ -254,5 +254,9 @@ public class ServiceCommandTemplateService implements NgTemplateService {
 
   static ParameterField<String> valueOrDefaultEmpty(String val) {
     return ParameterField.createValueField(StringUtils.isNotBlank(val) ? val : "");
+  }
+
+  static ParameterField<String> valueOrDefaultRuntime(String val) {
+    return ParameterField.createValueField(StringUtils.isNotBlank(val) ? val : "<+input>");
   }
 }

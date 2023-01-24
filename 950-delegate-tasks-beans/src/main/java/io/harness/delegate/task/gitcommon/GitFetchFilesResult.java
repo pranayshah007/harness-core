@@ -2,16 +2,16 @@ package io.harness.delegate.task.gitcommon;
 
 import io.harness.git.model.CommitResult;
 import io.harness.git.model.GitFile;
-import lombok.Builder;
-import lombok.Value;
 
 import java.util.List;
+import lombok.Builder;
+import lombok.Value;
 
 @Value
 @Builder
 public class GitFetchFilesResult {
-    CommitResult commitResult;
-    List<GitFile> files;
-    String manifestType;
-    String identifier;
+  CommitResult commitResult;
+  List<GitFile> files;
+  String manifestType;
+  String identifier;
 }

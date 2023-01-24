@@ -1,6 +1,5 @@
 package io.harness.cdng.googlefunctions.trafficShift;
 
-import com.google.inject.Inject;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
@@ -33,108 +32,115 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.supplier.ThrowingSupplier;
+
+import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
 public class GoogleFunctionsTrafficShiftStep extends CdTaskExecutable<GoogleFunctionCommandResponse> {
-    public static final StepType STEP_TYPE = StepType.newBuilder()
-            .setType(ExecutionNodeType.GOOGLE_CLOUD_FUNCTIONS_TRAFFIC_SHIFT.getYamlType())
-            .setStepCategory(StepCategory.STEP)
+  public static final StepType STEP_TYPE =
+      StepType.newBuilder()
+          .setType(ExecutionNodeType.GOOGLE_CLOUD_FUNCTIONS_TRAFFIC_SHIFT.getYamlType())
+          .setStepCategory(StepCategory.STEP)
+          .build();
+
+  public static final String GOOGLE_CLOUD_FUNCTIONS_TRAFFIC_SHIFT_COMMAND_NAME = "CloudFunctionTrafficShift";
+  public static final String GOOGLE_CLOUD_FUNCTIONS_DEPLOY_WITHOUT_TRAFFIC_STEP_MISSING =
+      "Google Function Deploy Without Traffic step is not configured.";
+
+  @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
+  @Inject private OutcomeService outcomeService;
+  @Inject private GoogleFunctionsHelper googleFunctionsHelper;
+
+  @Override
+  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
+    // nothing
+  }
+
+  @Override
+  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
+      ThrowingSupplier<GoogleFunctionCommandResponse> responseDataSupplier) throws Exception {
+    StepResponse stepResponse = null;
+    try {
+      GoogleFunctionTrafficShiftResponse googleFunctionTrafficShiftResponse =
+          (GoogleFunctionTrafficShiftResponse) responseDataSupplier.get();
+
+      StepResponseBuilder stepResponseBuilder = StepResponse.builder().unitProgressList(
+          googleFunctionTrafficShiftResponse.getUnitProgressData().getUnitProgresses());
+
+      stepResponse =
+          googleFunctionsHelper.generateStepResponse(googleFunctionTrafficShiftResponse, stepResponseBuilder);
+    } catch (Exception e) {
+      log.error("Error while processing google function traffic shift response: {}", ExceptionUtils.getMessage(e), e);
+      throw e;
+    }
+    return stepResponse;
+  }
+
+  @Override
+  public TaskRequest obtainTaskAfterRbac(
+      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
+    GoogleFunctionsTrafficShiftStepParameters googleFunctionsTrafficShiftStepParameters =
+        (GoogleFunctionsTrafficShiftStepParameters) stepParameters.getSpec();
+    if (EmptyPredicate.isEmpty(
+            googleFunctionsTrafficShiftStepParameters.getGoogleFunctionDeployWithoutTrafficStepFnq())) {
+      return skipTaskRequest(GOOGLE_CLOUD_FUNCTIONS_DEPLOY_WITHOUT_TRAFFIC_STEP_MISSING);
+    }
+
+    OptionalSweepingOutput googleFunctionPrepareRollbackDataOptional =
+        executionSweepingOutputService.resolveOptional(ambiance,
+            RefObjectUtils.getSweepingOutputRefObject(
+                googleFunctionsTrafficShiftStepParameters.getGoogleFunctionDeployWithoutTrafficStepFnq() + "."
+                + OutcomeExpressionConstants.GOOGLE_FUNCTION_PREPARE_ROLLBACK_OUTCOME));
+
+    OptionalSweepingOutput googleFunctionDeployWithoutTrafficDataOptional =
+        executionSweepingOutputService.resolveOptional(ambiance,
+            RefObjectUtils.getSweepingOutputRefObject(
+                googleFunctionsTrafficShiftStepParameters.getGoogleFunctionDeployWithoutTrafficStepFnq() + "."
+                + OutcomeExpressionConstants.GOOGLE_FUNCTION_DEPLOY_WITHOUT_TRAFFIC_OUTCOME));
+
+    if (!googleFunctionPrepareRollbackDataOptional.isFound()
+        || !googleFunctionDeployWithoutTrafficDataOptional.isFound()) {
+      return skipTaskRequest(GOOGLE_CLOUD_FUNCTIONS_DEPLOY_WITHOUT_TRAFFIC_STEP_MISSING);
+    }
+    GoogleFunctionPrepareRollbackOutcome googleFunctionPrepareRollbackOutcome =
+        (GoogleFunctionPrepareRollbackOutcome) googleFunctionPrepareRollbackDataOptional.getOutput();
+
+    GoogleFunctionStepOutcome googleFunctionDeployWithoutTrafficOutcome =
+        (GoogleFunctionStepOutcome) googleFunctionDeployWithoutTrafficDataOptional.getOutput();
+
+    InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
+        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
+
+    GoogleFunctionTrafficShiftRequest googleFunctionTrafficShiftRequest =
+        GoogleFunctionTrafficShiftRequest.builder()
+            .googleFunctionCommandType(GoogleFunctionCommandTypeNG.GOOGLE_FUNCTION_TRAFFIC_SHIFT)
+            .commandName(GOOGLE_CLOUD_FUNCTIONS_TRAFFIC_SHIFT_COMMAND_NAME)
+            .googleFunctionInfraConfig(googleFunctionsHelper.getInfraConfig(infrastructureOutcome, ambiance))
+            .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
+            .googleCloudRunServiceAsString(googleFunctionPrepareRollbackOutcome.getCloudRunServiceAsString())
+            .isFirstDeployment(googleFunctionPrepareRollbackOutcome.isFirstDeployment())
+            .googleFunctionAsString(googleFunctionPrepareRollbackOutcome.getCloudFunctionAsString())
+            .targetRevision(googleFunctionDeployWithoutTrafficOutcome.getCloudRunService().getRevision())
+            .targetTrafficPercent(googleFunctionsTrafficShiftStepParameters.getTrafficPercent().getValue())
+            .commandUnitsProgress(CommandUnitsProgress.builder().build())
             .build();
 
-    public static final String GOOGLE_CLOUD_FUNCTIONS_TRAFFIC_SHIFT_COMMAND_NAME = "CloudFunctionTrafficShift";
-    public static final String GOOGLE_CLOUD_FUNCTIONS_DEPLOY_WITHOUT_TRAFFIC_STEP_MISSING =
-            "Google Function Deploy Without Traffic step is not configured.";
+    return googleFunctionsHelper
+        .queueTask(stepParameters, googleFunctionTrafficShiftRequest, ambiance,
+            GoogleFunctionsStepPassThroughData.builder().infrastructureOutcome(infrastructureOutcome).build(), true)
+        .getTaskRequest();
+  }
 
-    @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
-    @Inject private OutcomeService outcomeService;
-    @Inject private GoogleFunctionsHelper googleFunctionsHelper;
+  @Override
+  public Class<StepElementParameters> getStepParametersClass() {
+    return StepElementParameters.class;
+  }
 
-    @Override
-    public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
-        // nothing
-    }
-
-    @Override
-    public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters, ThrowingSupplier<GoogleFunctionCommandResponse> responseDataSupplier) throws Exception {
-        StepResponse stepResponse = null;
-        try {
-            GoogleFunctionTrafficShiftResponse googleFunctionTrafficShiftResponse =
-                    (GoogleFunctionTrafficShiftResponse) responseDataSupplier.get();
-
-            StepResponseBuilder stepResponseBuilder = StepResponse.builder().unitProgressList(
-                    googleFunctionTrafficShiftResponse.getUnitProgressData().getUnitProgresses());
-
-            stepResponse = googleFunctionsHelper.generateStepResponse(googleFunctionTrafficShiftResponse, stepResponseBuilder);
-        } catch (Exception e) {
-            log.error(
-                    "Error while processing google function traffic shift response: {}", ExceptionUtils.getMessage(e), e);
-            throw e;
-        }
-        return stepResponse;
-    }
-
-    @Override
-    public TaskRequest obtainTaskAfterRbac(Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
-        GoogleFunctionsTrafficShiftStepParameters googleFunctionsTrafficShiftStepParameters =
-                (GoogleFunctionsTrafficShiftStepParameters) stepParameters.getSpec();
-        if (EmptyPredicate.isEmpty(googleFunctionsTrafficShiftStepParameters.getGoogleFunctionDeployWithoutTrafficStepFnq())) {
-            return skipTaskRequest(GOOGLE_CLOUD_FUNCTIONS_DEPLOY_WITHOUT_TRAFFIC_STEP_MISSING);
-        }
-
-        OptionalSweepingOutput googleFunctionPrepareRollbackDataOptional = executionSweepingOutputService.resolveOptional(
-                ambiance,
-                RefObjectUtils.getSweepingOutputRefObject(googleFunctionsTrafficShiftStepParameters.
-                        getGoogleFunctionDeployWithoutTrafficStepFnq()
-                        + "." + OutcomeExpressionConstants.GOOGLE_FUNCTION_PREPARE_ROLLBACK_OUTCOME));
-
-        OptionalSweepingOutput googleFunctionDeployWithoutTrafficDataOptional = executionSweepingOutputService.resolveOptional(
-                ambiance,
-                RefObjectUtils.getSweepingOutputRefObject(googleFunctionsTrafficShiftStepParameters
-                        .getGoogleFunctionDeployWithoutTrafficStepFnq()
-                        + "." + OutcomeExpressionConstants.GOOGLE_FUNCTION_DEPLOY_WITHOUT_TRAFFIC_OUTCOME));
-
-        if (!googleFunctionPrepareRollbackDataOptional.isFound() || !googleFunctionDeployWithoutTrafficDataOptional.isFound()) {
-            return skipTaskRequest(GOOGLE_CLOUD_FUNCTIONS_DEPLOY_WITHOUT_TRAFFIC_STEP_MISSING);
-        }
-        GoogleFunctionPrepareRollbackOutcome googleFunctionPrepareRollbackOutcome =
-                (GoogleFunctionPrepareRollbackOutcome) googleFunctionPrepareRollbackDataOptional.getOutput();
-
-        GoogleFunctionStepOutcome googleFunctionDeployWithoutTrafficOutcome =
-                (GoogleFunctionStepOutcome) googleFunctionDeployWithoutTrafficDataOptional.getOutput();
-
-        InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
-                ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
-
-        GoogleFunctionTrafficShiftRequest googleFunctionTrafficShiftRequest =
-                GoogleFunctionTrafficShiftRequest.builder()
-                        .googleFunctionCommandType(GoogleFunctionCommandTypeNG.GOOGLE_FUNCTION_TRAFFIC_SHIFT)
-                        .commandName(GOOGLE_CLOUD_FUNCTIONS_TRAFFIC_SHIFT_COMMAND_NAME)
-                        .googleFunctionInfraConfig(googleFunctionsHelper.getInfraConfig(infrastructureOutcome, ambiance))
-                        .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
-                        .googleCloudRunServiceAsString(googleFunctionPrepareRollbackOutcome.getCloudRunServiceAsString())
-                        .isFirstDeployment(googleFunctionPrepareRollbackOutcome.isFirstDeployment())
-                        .googleFunctionAsString(googleFunctionPrepareRollbackOutcome.getCloudFunctionAsString())
-                        .targetRevision(googleFunctionDeployWithoutTrafficOutcome.getCloudRunService().getRevision())
-                        .targetTrafficPercent(googleFunctionsTrafficShiftStepParameters.getTrafficPercent().getValue())
-                        .commandUnitsProgress(CommandUnitsProgress.builder().build())
-                        .build();
-
-        return googleFunctionsHelper
-                .queueTask(stepParameters, googleFunctionTrafficShiftRequest, ambiance,
-                        GoogleFunctionsStepPassThroughData.builder().infrastructureOutcome(infrastructureOutcome).build(),
-                        true).getTaskRequest();
-    }
-
-    @Override
-    public Class<StepElementParameters> getStepParametersClass() {
-        return StepElementParameters.class;
-    }
-
-    private TaskRequest skipTaskRequest(String message) {
-        return TaskRequest.newBuilder()
-                .setSkipTaskRequest(SkipTaskRequest.newBuilder().setMessage(message).build())
-                .build();
-    }
+  private TaskRequest skipTaskRequest(String message) {
+    return TaskRequest.newBuilder()
+        .setSkipTaskRequest(SkipTaskRequest.newBuilder().setMessage(message).build())
+        .build();
+  }
 }

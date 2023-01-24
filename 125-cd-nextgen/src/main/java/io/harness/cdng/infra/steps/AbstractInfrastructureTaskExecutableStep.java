@@ -628,8 +628,8 @@ abstract class AbstractInfrastructureTaskExecutableStep {
     if (InfrastructureKind.GOOGLE_CLOUD_FUNCTIONS.equals(infrastructure.getKind())) {
       if (!(connectorInfo.get(0).getConnectorConfig() instanceof GcpConnectorDTO)) {
         throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
-                connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
-                ConnectorType.GCP.name()));
+            connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
+            ConnectorType.GCP.name()));
       }
     }
 
@@ -776,9 +776,8 @@ abstract class AbstractInfrastructureTaskExecutableStep {
         break;
       case InfrastructureKind.GOOGLE_CLOUD_FUNCTIONS:
         GoogleFunctionsInfrastructure googleFunctionsInfrastructure = (GoogleFunctionsInfrastructure) infrastructure;
-        infrastructureStepHelper.validateExpression(
-                googleFunctionsInfrastructure.getConnectorRef(), googleFunctionsInfrastructure.getRegion(),
-                googleFunctionsInfrastructure.getProject());
+        infrastructureStepHelper.validateExpression(googleFunctionsInfrastructure.getConnectorRef(),
+            googleFunctionsInfrastructure.getRegion(), googleFunctionsInfrastructure.getProject());
         break;
       case InfrastructureKind.TAS:
         TanzuApplicationServiceInfrastructure tasInfrastructure =

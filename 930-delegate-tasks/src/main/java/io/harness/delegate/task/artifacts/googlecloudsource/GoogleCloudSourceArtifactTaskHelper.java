@@ -25,62 +25,63 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Singleton
 public class GoogleCloudSourceArtifactTaskHelper {
-    private final GoogleCloudSourceArtifactTaskHandler googleCloudSourceArtifactTaskHandler;
+  private final GoogleCloudSourceArtifactTaskHandler googleCloudSourceArtifactTaskHandler;
 
-    public ArtifactTaskResponse getArtifactCollectResponse(
-        ArtifactTaskParameters artifactTaskParameters, LogCallback executionLogCallback) {
+  public ArtifactTaskResponse getArtifactCollectResponse(
+      ArtifactTaskParameters artifactTaskParameters, LogCallback executionLogCallback) {
     GoogleCloudSourceArtifactDelegateRequest attributes =
-            (GoogleCloudSourceArtifactDelegateRequest) artifactTaskParameters.getAttributes();
+        (GoogleCloudSourceArtifactDelegateRequest) artifactTaskParameters.getAttributes();
     ArtifactTaskResponse artifactTaskResponse;
     try {
-        switch (artifactTaskParameters.getArtifactTaskType()) {
-            case GET_LAST_SUCCESSFUL_BUILD:
-                saveLogs(executionLogCallback, "Google Cloud Source Artifact details");
-                artifactTaskResponse =
-                        getSuccessTaskResponse(googleCloudSourceArtifactTaskHandler.getLastSuccessfulBuild(attributes));
-                GoogleCloudSourceArtifactDelegateResponse artifactDelegateResponse =
-                        (GoogleCloudSourceArtifactDelegateResponse) artifactTaskResponse.getArtifactTaskExecutionResponse()
-                                .getArtifactDelegateResponses()
-                                .get(0);
-                saveLogs(executionLogCallback,
-                        "Google Cloud Source Artifact details \n  type: GoogleCloudSource\n  projectId: "
-                                + artifactDelegateResponse.getProject() + "\n  repositoryName: " + artifactDelegateResponse.getRepository()
-                                + "\n  sourceDirectory: " + artifactDelegateResponse.getSourceDirectory());
-                break;
-            default:
-                saveLogs(executionLogCallback,
-                        "No corresponding GCS artifact task type [{}]: " + artifactTaskParameters.toString());
-                log.error("No corresponding GCS artifact task type [{}]", artifactTaskParameters.toString());
-                return ArtifactTaskResponse.builder()
-                        .commandExecutionStatus(CommandExecutionStatus.FAILURE)
-                        .errorMessage("There is no GCS artifact task type impl defined for - "
-                                + artifactTaskParameters.getArtifactTaskType().name())
-                        .errorCode(ErrorCode.INVALID_ARGUMENT)
-                        .build();
-        }
+      switch (artifactTaskParameters.getArtifactTaskType()) {
+        case GET_LAST_SUCCESSFUL_BUILD:
+          saveLogs(executionLogCallback, "Google Cloud Source Artifact details");
+          artifactTaskResponse =
+              getSuccessTaskResponse(googleCloudSourceArtifactTaskHandler.getLastSuccessfulBuild(attributes));
+          GoogleCloudSourceArtifactDelegateResponse artifactDelegateResponse =
+              (GoogleCloudSourceArtifactDelegateResponse) artifactTaskResponse.getArtifactTaskExecutionResponse()
+                  .getArtifactDelegateResponses()
+                  .get(0);
+          saveLogs(executionLogCallback,
+              "Google Cloud Source Artifact details \n  type: GoogleCloudSource\n  projectId: "
+                  + artifactDelegateResponse.getProject()
+                  + "\n  repositoryName: " + artifactDelegateResponse.getRepository()
+                  + "\n  sourceDirectory: " + artifactDelegateResponse.getSourceDirectory());
+          break;
+        default:
+          saveLogs(executionLogCallback,
+              "No corresponding GCS artifact task type [{}]: " + artifactTaskParameters.toString());
+          log.error("No corresponding GCS artifact task type [{}]", artifactTaskParameters.toString());
+          return ArtifactTaskResponse.builder()
+              .commandExecutionStatus(CommandExecutionStatus.FAILURE)
+              .errorMessage("There is no GCS artifact task type impl defined for - "
+                  + artifactTaskParameters.getArtifactTaskType().name())
+              .errorCode(ErrorCode.INVALID_ARGUMENT)
+              .build();
+      }
     } catch (WingsException ex) {
-        if (GlobalContextManager.get(MdcGlobalContextData.MDC_ID) == null) {
-            MdcGlobalContextData mdcGlobalContextData = MdcGlobalContextData.builder().map(new HashMap<>()).build();
-            GlobalContextManager.upsertGlobalContextRecord(mdcGlobalContextData);
-        }
-        ((MdcGlobalContextData) GlobalContextManager.get(MdcGlobalContextData.MDC_ID))
-                .getMap()
-                .put(ExceptionMetadataKeys.CONNECTOR.name(), attributes.getConnectorRef());
-        throw ex;
+      if (GlobalContextManager.get(MdcGlobalContextData.MDC_ID) == null) {
+        MdcGlobalContextData mdcGlobalContextData = MdcGlobalContextData.builder().map(new HashMap<>()).build();
+        GlobalContextManager.upsertGlobalContextRecord(mdcGlobalContextData);
+      }
+      ((MdcGlobalContextData) GlobalContextManager.get(MdcGlobalContextData.MDC_ID))
+          .getMap()
+          .put(ExceptionMetadataKeys.CONNECTOR.name(), attributes.getConnectorRef());
+      throw ex;
     }
     return artifactTaskResponse;
-}
+  }
 
-        private void saveLogs(LogCallback executionLogCallback, String message) {
-            if (executionLogCallback != null) {
-                executionLogCallback.saveExecutionLog(message);
-            }
-        }
+  private void saveLogs(LogCallback executionLogCallback, String message) {
+    if (executionLogCallback != null) {
+      executionLogCallback.saveExecutionLog(message);
+    }
+  }
 
-        private ArtifactTaskResponse getSuccessTaskResponse(ArtifactTaskExecutionResponse taskExecutionResponse) {
-            return ArtifactTaskResponse.builder()
-                    .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
-                    .artifactTaskExecutionResponse(taskExecutionResponse)
-                    .build();
-        }
+  private ArtifactTaskResponse getSuccessTaskResponse(ArtifactTaskExecutionResponse taskExecutionResponse) {
+    return ArtifactTaskResponse.builder()
+        .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+        .artifactTaskExecutionResponse(taskExecutionResponse)
+        .build();
+  }
 }

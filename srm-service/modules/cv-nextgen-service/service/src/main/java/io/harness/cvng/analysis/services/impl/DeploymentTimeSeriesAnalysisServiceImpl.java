@@ -395,8 +395,8 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
         } else {
           MetricsAnalysis metricsAnalysis = metricsForThisAnalysis.get(metricIdentifier);
           metricsAnalysis.setAnalysisResult(analysisResult);
-          metricsAnalysis.setTestDataNodes(
-              getFilteredAnalysedTestDataNodes(transactionMetricHostData, deploymentTimeSeriesAnalysisFilter));
+          metricsAnalysis.setTestDataNodes(getFilteredAnalysedTestDataNodes(
+              transactionMetricHostData, deploymentTimeSeriesAnalysisFilter, metricsAnalysis.getThresholds()));
           populateRawMetricDataInMetricAnalysis(appliedDeploymentAnalysisType,
               controlNodesRawData.get(metricIdentifier), testNodesRawData.get(metricIdentifier), metricsAnalysis);
         }

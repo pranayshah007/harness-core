@@ -299,7 +299,7 @@ public class NextGenConfiguration extends Configuration {
                 NextGenConfiguration.MODULEVERSION_RESOURCE_PACKAGE, NextGenConfiguration.REFRESH_RESOURCE_PACKAGE,
                 DEPLOYMENT_STAGE_PACKAGE, NextGenConfiguration.MANIFEST_RESOURCE_PACKAGE,
                 NextGenConfiguration.TAS_PACKAGE, NextGenConfiguration.SERVICE_ENV_MIGRATION_RESOURCE_PACKAGE,
-                        NextGenConfiguration.GCP_PACKAGE))
+                NextGenConfiguration.GCP_PACKAGE))
         .collect(Collectors.toSet());
   }
 

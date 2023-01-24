@@ -246,17 +246,16 @@ public class InfrastructureMapper {
       case InfrastructureKind.GOOGLE_CLOUD_FUNCTIONS:
         GoogleFunctionsInfrastructure googleFunctionsInfrastructure = (GoogleFunctionsInfrastructure) infrastructure;
         GoogleFunctionsInfrastructureOutcome googleFunctionsInfrastructureOutcome =
-                GoogleFunctionsInfrastructureOutcome.builder()
-                        .connectorRef(googleFunctionsInfrastructure.getConnectorRef().getValue())
-                        .environment(environmentOutcome)
-                        .region(googleFunctionsInfrastructure.getRegion().getValue())
-                        .project(googleFunctionsInfrastructure.getProject().getValue())
-                        .infrastructureKey(InfrastructureKey.generate(
-                                service, environmentOutcome, googleFunctionsInfrastructure.getInfrastructureKeyValues()))
-                        .build();
-        setInfraIdentifierAndName(
-                googleFunctionsInfrastructureOutcome, googleFunctionsInfrastructure.getInfraIdentifier(),
-                googleFunctionsInfrastructure.getInfraName());
+            GoogleFunctionsInfrastructureOutcome.builder()
+                .connectorRef(googleFunctionsInfrastructure.getConnectorRef().getValue())
+                .environment(environmentOutcome)
+                .region(googleFunctionsInfrastructure.getRegion().getValue())
+                .project(googleFunctionsInfrastructure.getProject().getValue())
+                .infrastructureKey(InfrastructureKey.generate(
+                    service, environmentOutcome, googleFunctionsInfrastructure.getInfrastructureKeyValues()))
+                .build();
+        setInfraIdentifierAndName(googleFunctionsInfrastructureOutcome,
+            googleFunctionsInfrastructure.getInfraIdentifier(), googleFunctionsInfrastructure.getInfraName());
         infrastructureOutcome = googleFunctionsInfrastructureOutcome;
         break;
 

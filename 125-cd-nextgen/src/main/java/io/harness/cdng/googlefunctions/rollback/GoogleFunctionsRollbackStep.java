@@ -1,6 +1,7 @@
 package io.harness.cdng.googlefunctions.rollback;
 
-import com.google.inject.Inject;
+import static io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
@@ -30,102 +31,102 @@ import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
-import static io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.supplier.ThrowingSupplier;
+
+import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
 public class GoogleFunctionsRollbackStep extends CdTaskExecutable<GoogleFunctionCommandResponse> {
-    public static final StepType STEP_TYPE = StepType.newBuilder()
-            .setType(ExecutionNodeType.GOOGLE_CLOUD_FUNCTIONS_ROLLBACK.getYamlType())
-            .setStepCategory(StepCategory.STEP)
+  public static final StepType STEP_TYPE = StepType.newBuilder()
+                                               .setType(ExecutionNodeType.GOOGLE_CLOUD_FUNCTIONS_ROLLBACK.getYamlType())
+                                               .setStepCategory(StepCategory.STEP)
+                                               .build();
+
+  public static final String GOOGLE_CLOUD_FUNCTIONS_ROLLBACK_COMMAND_NAME = "CloudFunctionRollback";
+  public static final String GOOGLE_CLOUD_FUNCTIONS_DEPLOYMENT_STEP_MISSING =
+      "Google Function Deployment Step was not executed. Skipping Rollback...";
+
+  @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
+  @Inject private OutcomeService outcomeService;
+  @Inject private GoogleFunctionsHelper googleFunctionsHelper;
+
+  @Override
+  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
+    // nothing
+  }
+
+  @Override
+  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
+      ThrowingSupplier<GoogleFunctionCommandResponse> responseDataSupplier) throws Exception {
+    StepResponse stepResponse = null;
+    try {
+      GoogleFunctionRollbackResponse googleFunctionRollbackResponse =
+          (GoogleFunctionRollbackResponse) responseDataSupplier.get();
+
+      StepResponseBuilder stepResponseBuilder = StepResponse.builder().unitProgressList(
+          googleFunctionRollbackResponse.getUnitProgressData().getUnitProgresses());
+
+      stepResponse = googleFunctionsHelper.generateStepResponse(googleFunctionRollbackResponse, stepResponseBuilder);
+    } catch (Exception e) {
+      log.error("Error while processing google function rollback response: {}", ExceptionUtils.getMessage(e), e);
+      throw e;
+    }
+    return stepResponse;
+  }
+
+  @Override
+  public TaskRequest obtainTaskAfterRbac(
+      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
+    GoogleFunctionsRollbackStepParameters googleFunctionsRollbackStepParameters =
+        (GoogleFunctionsRollbackStepParameters) stepParameters.getSpec();
+    if (EmptyPredicate.isEmpty(googleFunctionsRollbackStepParameters.getGoogleFunctionDeployWithoutTrafficStepFnq())
+        && EmptyPredicate.isEmpty(googleFunctionsRollbackStepParameters.getGoogleFunctionDeployStepFnq())) {
+      return skipTaskRequest(GOOGLE_CLOUD_FUNCTIONS_DEPLOYMENT_STEP_MISSING);
+    }
+
+    String stepFnq = googleFunctionsRollbackStepParameters.getGoogleFunctionDeployWithoutTrafficStepFnq();
+    if (EmptyPredicate.isEmpty(stepFnq)) {
+      stepFnq = googleFunctionsRollbackStepParameters.getGoogleFunctionDeployStepFnq();
+    }
+    OptionalSweepingOutput googleFunctionPrepareRollbackDataOptional =
+        executionSweepingOutputService.resolveOptional(ambiance,
+            RefObjectUtils.getSweepingOutputRefObject(
+                stepFnq + "." + OutcomeExpressionConstants.GOOGLE_FUNCTION_PREPARE_ROLLBACK_OUTCOME));
+
+    GoogleFunctionPrepareRollbackOutcome googleFunctionPrepareRollbackOutcome =
+        (GoogleFunctionPrepareRollbackOutcome) googleFunctionPrepareRollbackDataOptional.getOutput();
+
+    InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
+        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
+
+    GoogleFunctionRollbackRequest googleFunctionRollbackRequest =
+        GoogleFunctionRollbackRequest.builder()
+            .googleFunctionCommandType(GoogleFunctionCommandTypeNG.GOOGLE_FUNCTION_ROLLBACK)
+            .commandName(GOOGLE_CLOUD_FUNCTIONS_ROLLBACK_COMMAND_NAME)
+            .googleFunctionInfraConfig(googleFunctionsHelper.getInfraConfig(infrastructureOutcome, ambiance))
+            .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
+            .googleCloudRunServiceAsString(googleFunctionPrepareRollbackOutcome.getCloudRunServiceAsString())
+            .googleFunctionAsString(googleFunctionPrepareRollbackOutcome.getCloudFunctionAsString())
+            .isFirstDeployment(googleFunctionPrepareRollbackOutcome.isFirstDeployment())
+            .commandUnitsProgress(CommandUnitsProgress.builder().build())
             .build();
 
-    public static final String GOOGLE_CLOUD_FUNCTIONS_ROLLBACK_COMMAND_NAME = "CloudFunctionRollback";
-    public static final String GOOGLE_CLOUD_FUNCTIONS_DEPLOYMENT_STEP_MISSING =
-            "Google Function Deployment Step was not executed. Skipping Rollback...";
+    return googleFunctionsHelper
+        .queueTask(stepParameters, googleFunctionRollbackRequest, ambiance,
+            GoogleFunctionsStepPassThroughData.builder().infrastructureOutcome(infrastructureOutcome).build(), true)
+        .getTaskRequest();
+  }
 
-    @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
-    @Inject private OutcomeService outcomeService;
-    @Inject private GoogleFunctionsHelper googleFunctionsHelper;
+  @Override
+  public Class<StepElementParameters> getStepParametersClass() {
+    return StepElementParameters.class;
+  }
 
-    @Override
-    public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
-        // nothing
-    }
-
-    @Override
-    public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-                                                            ThrowingSupplier<GoogleFunctionCommandResponse> responseDataSupplier) throws Exception {
-        StepResponse stepResponse = null;
-        try {
-            GoogleFunctionRollbackResponse googleFunctionRollbackResponse =
-                    (GoogleFunctionRollbackResponse) responseDataSupplier.get();
-
-            StepResponseBuilder stepResponseBuilder = StepResponse.builder().unitProgressList(
-                    googleFunctionRollbackResponse.getUnitProgressData().getUnitProgresses());
-
-            stepResponse = googleFunctionsHelper.generateStepResponse(googleFunctionRollbackResponse, stepResponseBuilder);
-        } catch (Exception e) {
-            log.error(
-                    "Error while processing google function rollback response: {}", ExceptionUtils.getMessage(e), e);
-            throw e;
-        }
-        return stepResponse;
-    }
-
-    @Override
-    public TaskRequest obtainTaskAfterRbac(Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
-        GoogleFunctionsRollbackStepParameters googleFunctionsRollbackStepParameters =
-                (GoogleFunctionsRollbackStepParameters) stepParameters.getSpec();
-        if (EmptyPredicate.isEmpty(googleFunctionsRollbackStepParameters.getGoogleFunctionDeployWithoutTrafficStepFnq()) &&
-                EmptyPredicate.isEmpty(googleFunctionsRollbackStepParameters.getGoogleFunctionDeployStepFnq())) {
-            return skipTaskRequest(GOOGLE_CLOUD_FUNCTIONS_DEPLOYMENT_STEP_MISSING);
-        }
-
-        String stepFnq = googleFunctionsRollbackStepParameters.getGoogleFunctionDeployWithoutTrafficStepFnq();
-        if(EmptyPredicate.isEmpty(stepFnq)) {
-            stepFnq = googleFunctionsRollbackStepParameters.getGoogleFunctionDeployStepFnq();
-        }
-        OptionalSweepingOutput googleFunctionPrepareRollbackDataOptional = executionSweepingOutputService.resolveOptional(
-                ambiance,
-                RefObjectUtils.getSweepingOutputRefObject(stepFnq
-                        + "." + OutcomeExpressionConstants.GOOGLE_FUNCTION_PREPARE_ROLLBACK_OUTCOME));
-
-
-        GoogleFunctionPrepareRollbackOutcome googleFunctionPrepareRollbackOutcome =
-                (GoogleFunctionPrepareRollbackOutcome) googleFunctionPrepareRollbackDataOptional.getOutput();
-
-        InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
-                ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
-
-        GoogleFunctionRollbackRequest googleFunctionRollbackRequest =
-                GoogleFunctionRollbackRequest.builder()
-                        .googleFunctionCommandType(GoogleFunctionCommandTypeNG.GOOGLE_FUNCTION_ROLLBACK)
-                        .commandName(GOOGLE_CLOUD_FUNCTIONS_ROLLBACK_COMMAND_NAME)
-                        .googleFunctionInfraConfig(googleFunctionsHelper.getInfraConfig(infrastructureOutcome, ambiance))
-                        .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
-                        .googleCloudRunServiceAsString(googleFunctionPrepareRollbackOutcome.getCloudRunServiceAsString())
-                        .googleFunctionAsString(googleFunctionPrepareRollbackOutcome.getCloudFunctionAsString())
-                        .isFirstDeployment(googleFunctionPrepareRollbackOutcome.isFirstDeployment())
-                        .commandUnitsProgress(CommandUnitsProgress.builder().build())
-                        .build();
-
-        return googleFunctionsHelper
-                .queueTask(stepParameters, googleFunctionRollbackRequest, ambiance,
-                        GoogleFunctionsStepPassThroughData.builder().infrastructureOutcome(infrastructureOutcome).build(),
-                        true).getTaskRequest();
-    }
-
-    @Override
-    public Class<StepElementParameters> getStepParametersClass() {
-        return StepElementParameters.class;
-    }
-
-    private TaskRequest skipTaskRequest(String message) {
-        return TaskRequest.newBuilder()
-                .setSkipTaskRequest(SkipTaskRequest.newBuilder().setMessage(message).build())
-                .build();
-    }
+  private TaskRequest skipTaskRequest(String message) {
+    return TaskRequest.newBuilder()
+        .setSkipTaskRequest(SkipTaskRequest.newBuilder().setMessage(message).build())
+        .build();
+  }
 }

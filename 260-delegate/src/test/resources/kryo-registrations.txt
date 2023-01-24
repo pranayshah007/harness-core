@@ -2393,6 +2393,7 @@
 573596:io.harness.delegate.task.aws.asg.AsgBlueGreenSwapServiceRequest
 573597:io.harness.delegate.task.aws.asg.AsgBlueGreenSwapServiceResponse
 573598:io.harness.delegate.task.aws.asg.AsgBlueGreenSwapServiceResult
+
 573600:io.harness.delegate.exception.ElastigroupNGException
 573601:io.harness.delegate.task.elastigroup.response.SpotInstConfig
 573602:io.harness.delegate.task.elastigroup.response.ElastigroupParametersFetchResponse
@@ -2524,7 +2525,7 @@
 980101:software.wings.beans.infrastructure.instance.info.K8sContainerInfo
 1010101:io.harness.delegate.beans.connector.awsconnector.S3BuildsResponse
 
-5731600:io.harness.delegate.task.aws.asg.AsgLoadBalancerConfig
+5731600:io.harness.aws.beans.AsgLoadBalancerConfig
 5731601:io.harness.delegate.task.aws.asg.AsgBlueGreenRollbackRequest
 5731602:io.harness.delegate.task.aws.asg.AsgBlueGreenRollbackResponse
 5731603:io.harness.delegate.task.aws.asg.AsgBlueGreenRollbackResult

@@ -303,8 +303,8 @@ public class ExecutionHelper {
     } else {
       YamlConfig pipelineEntityYamlConfig = new YamlConfig(pipelineEntity.getYaml());
       YamlConfig runtimeInputYamlConfig = new YamlConfig(mergedRuntimeInputYaml);
-      pipelineYamlConfig =
-          MergeHelper.mergeRuntimeInputValuesIntoOriginalYaml(pipelineEntityYamlConfig, runtimeInputYamlConfig, true);
+      pipelineYamlConfig = MergeHelper.mergeRuntimeInputValuesAndCheckForRuntimeInOriginalYaml(
+          pipelineEntityYamlConfig, runtimeInputYamlConfig, true, true);
 
       /*
       For schema validations, we don't want input set validators to be appended. For example, if some timeout field in

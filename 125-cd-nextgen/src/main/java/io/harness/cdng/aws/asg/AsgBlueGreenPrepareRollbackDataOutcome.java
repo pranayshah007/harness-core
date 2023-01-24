@@ -33,8 +33,8 @@ public class AsgBlueGreenPrepareRollbackDataOutcome implements Outcome, Executio
   String loadBalancer;
   String prodListenerArn;
   String prodListenerRuleArn;
-  List<String> prodTargetGroupArns;
+  List<String> prodTargetGroupArnsList;
   String stageListenerArn;
   String stageListenerRuleArn;
-  List<String> stageTargetGroupArns;
+  List<String> stageTargetGroupArnsList;
 }

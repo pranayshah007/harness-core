@@ -7,7 +7,7 @@
 
 package io.harness.ngmigration.service.step;
 
-import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.plancreator.steps.email.EmailStepInfo;
@@ -16,8 +16,6 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.StepSpecTypeConstants;
 
 import software.wings.beans.GraphNode;
-import software.wings.ngmigration.CgEntityId;
-import software.wings.ngmigration.CgEntityNode;
 import software.wings.sm.State;
 import software.wings.sm.states.EmailState;
 
@@ -45,8 +43,7 @@ public class EmailStepMapperImpl implements StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(
-      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities, GraphNode graphNode) {
+  public AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode) {
     EmailState state = (EmailState) getState(graphNode);
     EmailStepNode emailStepNode = new EmailStepNode();
     baseSetup(graphNode, emailStepNode);

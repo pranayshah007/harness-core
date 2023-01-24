@@ -29,7 +29,7 @@ import lombok.experimental.SuperBuilder;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = DOWNTIME_SPEC_TYPE, include = JsonTypeInfo.As.EXTERNAL_PROPERTY)
 public abstract class DowntimeSpec {
   @ApiModelProperty(required = true) @NotNull String timezone;
-  @ApiModelProperty(required = true) long startTime;
+  @ApiModelProperty(required = true) @NotNull long startTime;
 
   @JsonIgnore public abstract DowntimeType getType();
 }

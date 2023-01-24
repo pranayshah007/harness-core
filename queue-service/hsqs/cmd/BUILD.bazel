@@ -18,6 +18,7 @@ go_library(
         "//queue-service/hsqs/docs",
         "//queue-service/hsqs/handler",
         "//queue-service/hsqs/instrumentation/metrics",
+        "//queue-service/hsqs/middleware",
         "//queue-service/hsqs/profiler",
         "//queue-service/hsqs/router",
         "//queue-service/hsqs/store/redis",

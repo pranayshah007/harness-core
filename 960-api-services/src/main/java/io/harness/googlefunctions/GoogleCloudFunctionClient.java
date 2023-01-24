@@ -12,14 +12,16 @@ import com.google.cloud.functions.v2.UpdateFunctionRequest;
 import com.google.protobuf.Empty;
 
 public interface GoogleCloudFunctionClient {
+  Function getFunction(GetFunctionRequest getFunctionRequest, GcpInternalConfig gcpInternalConfig);
 
-    Function getFunction(GetFunctionRequest getFunctionRequest, GcpInternalConfig gcpInternalConfig);
+  OperationFuture<Function, OperationMetadata> createFunction(
+      CreateFunctionRequest createFunctionRequest, GcpInternalConfig gcpInternalConfig);
 
-    OperationFuture<Function, OperationMetadata> createFunction(CreateFunctionRequest createFunctionRequest, GcpInternalConfig gcpInternalConfig);
+  OperationFuture<Function, OperationMetadata> updateFunction(
+      UpdateFunctionRequest updateFunctionRequest, GcpInternalConfig gcpInternalConfig);
 
-    OperationFuture<Function, OperationMetadata> updateFunction(UpdateFunctionRequest updateFunctionRequest, GcpInternalConfig gcpInternalConfig);
+  OperationFuture<Empty, OperationMetadata> deleteFunction(
+      DeleteFunctionRequest deleteFunctionRequest, GcpInternalConfig gcpInternalConfig);
 
-    OperationFuture<Empty, OperationMetadata> deleteFunction(DeleteFunctionRequest deleteFunctionRequest, GcpInternalConfig gcpInternalConfig);
-
-    ListFunctionsResponse listFunction(ListFunctionsRequest listFunctionsRequest, GcpInternalConfig gcpInternalConfig);
+  ListFunctionsResponse listFunction(ListFunctionsRequest listFunctionsRequest, GcpInternalConfig gcpInternalConfig);
 }

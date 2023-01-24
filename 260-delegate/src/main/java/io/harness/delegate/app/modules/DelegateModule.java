@@ -202,12 +202,12 @@ import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactD
 import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactTaskNG;
 import io.harness.delegate.task.artifacts.googleartifactregistry.GARArtifactTaskNG;
-import io.harness.delegate.task.artifacts.googlecloudstorage.GoogleCloudStorageArtifactDelegateRequest;
-import io.harness.delegate.task.artifacts.googlecloudstorage.GoogleCloudStorageArtifactTaskHandler;
-import io.harness.delegate.task.artifacts.googlecloudstorage.GoogleCloudStorageArtifactTaskNG;
 import io.harness.delegate.task.artifacts.googlecloudsource.GoogleCloudSourceArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.googlecloudsource.GoogleCloudSourceArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.googlecloudsource.GoogleCloudSourceArtifactTaskNG;
+import io.harness.delegate.task.artifacts.googlecloudstorage.GoogleCloudStorageArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.googlecloudstorage.GoogleCloudStorageArtifactTaskHandler;
+import io.harness.delegate.task.artifacts.googlecloudstorage.GoogleCloudStorageArtifactTaskNG;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactTaskNG;
@@ -294,9 +294,9 @@ import io.harness.delegate.task.elastigroup.ElastigroupSwapRouteCommandTaskNG;
 import io.harness.delegate.task.executioncapability.BatchCapabilityCheckTask;
 import io.harness.delegate.task.gcp.GcpTask;
 import io.harness.delegate.task.gcp.GcpTaskType;
-import io.harness.delegate.task.gcp.taskhandlers.GcpListProjectsTaskHandler;
 import io.harness.delegate.task.gcp.taskhandlers.GcpListBucketsTaskHandler;
 import io.harness.delegate.task.gcp.taskhandlers.GcpListClustersTaskHandler;
+import io.harness.delegate.task.gcp.taskhandlers.GcpListProjectsTaskHandler;
 import io.harness.delegate.task.gcp.taskhandlers.TaskHandler;
 import io.harness.delegate.task.git.GitFetchTaskNG;
 import io.harness.delegate.task.git.NGGitCommandTask;
@@ -1417,12 +1417,12 @@ public class DelegateModule extends AbstractModule {
                 new TypeLiteral<Class<? extends DelegateArtifactTaskHandler>>() {});
     s3ArtifactServiceMapBinder.addBinding(S3ArtifactDelegateRequest.class).toInstance(S3ArtifactTaskHandler.class);
 
-      MapBinder<Class<? extends ArtifactSourceDelegateRequest>, Class<? extends DelegateArtifactTaskHandler>>
-              googleCloudSourceArtifactServiceMapBinder =
-              MapBinder.newMapBinder(binder(), new TypeLiteral<Class<? extends ArtifactSourceDelegateRequest>>() {},
-                      new TypeLiteral<Class<? extends DelegateArtifactTaskHandler>>() {});
-      googleCloudSourceArtifactServiceMapBinder.addBinding(GoogleCloudSourceArtifactDelegateRequest.class)
-              .toInstance(GoogleCloudSourceArtifactTaskHandler.class);
+    MapBinder<Class<? extends ArtifactSourceDelegateRequest>, Class<? extends DelegateArtifactTaskHandler>>
+        googleCloudSourceArtifactServiceMapBinder =
+            MapBinder.newMapBinder(binder(), new TypeLiteral<Class<? extends ArtifactSourceDelegateRequest>>() {},
+                new TypeLiteral<Class<? extends DelegateArtifactTaskHandler>>() {});
+    googleCloudSourceArtifactServiceMapBinder.addBinding(GoogleCloudSourceArtifactDelegateRequest.class)
+        .toInstance(GoogleCloudSourceArtifactTaskHandler.class);
 
     MapBinder<Class<? extends ArtifactSourceDelegateRequest>, Class<? extends DelegateArtifactTaskHandler>>
         googleCloudStorageArtifactServiceMapBinder =
@@ -1910,7 +1910,8 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.AMAZON_S3_ARTIFACT_TASK_NG).toInstance(S3ArtifactTaskNG.class);
     mapBinder.addBinding(TaskType.GOOGLE_CLOUD_STORAGE_ARTIFACT_TASK_NG)
         .toInstance(GoogleCloudStorageArtifactTaskNG.class);
-    mapBinder.addBinding(TaskType.GOOGLE_CLOUD_SOURCE_ARTIFACT_TASK_NG).toInstance(GoogleCloudSourceArtifactTaskNG.class);
+    mapBinder.addBinding(TaskType.GOOGLE_CLOUD_SOURCE_ARTIFACT_TASK_NG)
+        .toInstance(GoogleCloudSourceArtifactTaskNG.class);
     mapBinder.addBinding(TaskType.JENKINS_ARTIFACT_TASK_NG).toInstance(JenkinsArtifactTaskNG.class);
     mapBinder.addBinding(TaskType.AZURE_ARTIFACT_TASK_NG).toInstance(AzureArtifactsTaskNG.class);
     mapBinder.addBinding(TaskType.AMI_ARTIFACT_TASK_NG).toInstance(AMIArtifactTaskNG.class);
@@ -2042,21 +2043,24 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.ECS_S3_FETCH_TASK_NG).toInstance(EcsS3FetchTask.class);
     mapBinder.addBinding(TaskType.ECS_RUN_TASK_ARN).toInstance(EcsRunTaskArnTask.class);
 
-    //GIT
+    // GIT
     mapBinder.addBinding(TaskType.GIT_TASK_NG).toInstance(GitTaskNG.class);
 
-      MapBinder<String, GoogleFunctionCommandTaskHandler> googleFunctionCommandTaskHandlerMapBinder =
-              MapBinder.newMapBinder(binder(), String.class, GoogleFunctionCommandTaskHandler.class);
-      googleFunctionCommandTaskHandlerMapBinder.addBinding(GoogleFunctionCommandTypeNG.GOOGLE_FUNCTION_DEPLOY.name())
-              .to(GoogleFunctionDeployCommandTaskHandler.class);
-      googleFunctionCommandTaskHandlerMapBinder.addBinding(GoogleFunctionCommandTypeNG.GOOGLE_FUNCTION_PREPARE_ROLLBACK.name())
-              .to(GoogleFunctionPrepareRollbackCommandTaskHandler.class);
-      googleFunctionCommandTaskHandlerMapBinder.addBinding(GoogleFunctionCommandTypeNG.GOOGLE_FUNCTION_WITHOUT_TRAFFIC_DEPLOY.name())
-              .to(GoogleFunctionDeployWithoutTrafficCommandTaskHandler.class);
-      googleFunctionCommandTaskHandlerMapBinder.addBinding(GoogleFunctionCommandTypeNG.GOOGLE_FUNCTION_TRAFFIC_SHIFT.name())
-              .to(GoogleFunctionTrafficShiftCommandTaskHandler.class);
-      googleFunctionCommandTaskHandlerMapBinder.addBinding(GoogleFunctionCommandTypeNG.GOOGLE_FUNCTION_ROLLBACK.name())
-              .to(GoogleFunctionRollbackCommandTaskHandler.class);
+    MapBinder<String, GoogleFunctionCommandTaskHandler> googleFunctionCommandTaskHandlerMapBinder =
+        MapBinder.newMapBinder(binder(), String.class, GoogleFunctionCommandTaskHandler.class);
+    googleFunctionCommandTaskHandlerMapBinder.addBinding(GoogleFunctionCommandTypeNG.GOOGLE_FUNCTION_DEPLOY.name())
+        .to(GoogleFunctionDeployCommandTaskHandler.class);
+    googleFunctionCommandTaskHandlerMapBinder
+        .addBinding(GoogleFunctionCommandTypeNG.GOOGLE_FUNCTION_PREPARE_ROLLBACK.name())
+        .to(GoogleFunctionPrepareRollbackCommandTaskHandler.class);
+    googleFunctionCommandTaskHandlerMapBinder
+        .addBinding(GoogleFunctionCommandTypeNG.GOOGLE_FUNCTION_WITHOUT_TRAFFIC_DEPLOY.name())
+        .to(GoogleFunctionDeployWithoutTrafficCommandTaskHandler.class);
+    googleFunctionCommandTaskHandlerMapBinder
+        .addBinding(GoogleFunctionCommandTypeNG.GOOGLE_FUNCTION_TRAFFIC_SHIFT.name())
+        .to(GoogleFunctionTrafficShiftCommandTaskHandler.class);
+    googleFunctionCommandTaskHandlerMapBinder.addBinding(GoogleFunctionCommandTypeNG.GOOGLE_FUNCTION_ROLLBACK.name())
+        .to(GoogleFunctionRollbackCommandTaskHandler.class);
 
     // ASG NG
     mapBinder.addBinding(TaskType.AWS_ASG_CANARY_DEPLOY_TASK_NG).toInstance(AsgCanaryDeployTaskNG.class);
@@ -2111,8 +2115,7 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.TAS_DATA_FETCH).toInstance(TasDataFetchTask.class);
     mapBinder.addBinding(TaskType.TAS_ROLLING_DEPLOY).toInstance(TasRollingDeploymentTask.class);
     mapBinder.addBinding(TaskType.TAS_ROLLING_ROLLBACK).toInstance(TasRollingRollbackTask.class);
-      mapBinder.addBinding(TaskType.GOOGLE_FUNCTION_COMMAND_TASK).toInstance(GoogleFunctionCommandTask.class);
-
+    mapBinder.addBinding(TaskType.GOOGLE_FUNCTION_COMMAND_TASK).toInstance(GoogleFunctionCommandTask.class);
   }
 
   private void registerSecretManagementBindings() {

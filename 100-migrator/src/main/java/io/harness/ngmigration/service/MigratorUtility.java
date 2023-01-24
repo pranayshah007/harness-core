@@ -46,6 +46,8 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
@@ -68,6 +70,8 @@ public class MigratorUtility {
   private static final int ECS_SERVICE_SPEC = 14;
   private static final int MANIFEST = 15;
   private static final int CONFIG_FILE = 16;
+  private static final int AMI_STARTUP_SCRIPT = 17;
+  private static final int ELASTIGROUP_CONFIGURATION = 18;
   private static final int SERVICE = 20;
   private static final int INFRA_PROVISIONER = 23;
   private static final int ENVIRONMENT = 25;
@@ -84,6 +88,8 @@ public class MigratorUtility {
           .put(NGMigrationEntityType.CONNECTOR, CONNECTOR)
           .put(NGMigrationEntityType.CONTAINER_TASK, CONTAINER_TASK)
           .put(NGMigrationEntityType.ECS_SERVICE_SPEC, ECS_SERVICE_SPEC)
+          .put(NGMigrationEntityType.AMI_STARTUP_SCRIPT, AMI_STARTUP_SCRIPT)
+          .put(NGMigrationEntityType.ELASTIGROUP_CONFIGURATION, ELASTIGROUP_CONFIGURATION)
           .put(NGMigrationEntityType.MANIFEST, MANIFEST)
           .put(NGMigrationEntityType.CONFIG_FILE, CONFIG_FILE)
           .put(NGMigrationEntityType.SERVICE, SERVICE)
@@ -272,7 +278,8 @@ public class MigratorUtility {
     } else {
       String value = "";
       if (EmptyPredicate.isNotEmpty(serviceVariable.getValue())) {
-        value = (String) MigratorExpressionUtils.render(String.valueOf(serviceVariable.getValue()), new HashMap<>());
+        value =
+            String.valueOf(MigratorExpressionUtils.render(String.valueOf(serviceVariable.getValue()), new HashMap<>()));
       }
       return StringNGVariable.builder()
           .type(NGVariableType.STRING)
@@ -301,7 +308,7 @@ public class MigratorUtility {
   public static String generateName(
       Map<CgEntityId, BaseProvidedInput> inputs, CgEntityId entityId, String defaultName) {
     if (inputs == null || !inputs.containsKey(entityId) || StringUtils.isBlank(inputs.get(entityId).getName())) {
-      return defaultName;
+      return generateName(defaultName);
     }
     return inputs.get(entityId).getName();
   }
@@ -359,5 +366,15 @@ public class MigratorUtility {
     }
     NgEntityDetail detail = ngYamlFile.getNgEntityDetail();
     return ParameterField.createValueField(getIdentifierWithScope(detail));
+  }
+
+  public static String generateName(String str) {
+    if (StringUtils.isBlank(str)) {
+      return str;
+    }
+    Pattern p = Pattern.compile("[^-0-9a-zA-Z_\\s]", Pattern.CASE_INSENSITIVE);
+    Matcher m = p.matcher(str);
+    String generated = m.replaceAll("_");
+    return Character.isDigit(generated.charAt(0)) ? "_" + generated : generated;
   }
 }

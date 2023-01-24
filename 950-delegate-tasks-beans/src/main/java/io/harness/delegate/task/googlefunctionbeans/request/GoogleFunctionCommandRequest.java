@@ -12,30 +12,30 @@ import io.harness.delegate.task.googlefunctionbeans.GoogleFunctionInfraConfig;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.security.encryption.EncryptedDataDetail;
 
-import javax.validation.constraints.NotEmpty;
 import java.util.ArrayList;
 import java.util.List;
+import javax.validation.constraints.NotEmpty;
 
 public interface GoogleFunctionCommandRequest extends TaskParameters, ExecutionCapabilityDemander {
-    @NotEmpty GoogleFunctionCommandTypeNG getGoogleFunctionCommandType();
-    String getCommandName();
-    CommandUnitsProgress getCommandUnitsProgress();
-    GoogleFunctionInfraConfig getGoogleFunctionInfraConfig();
-    Integer getTimeoutIntervalInMin();
+  @NotEmpty GoogleFunctionCommandTypeNG getGoogleFunctionCommandType();
+  String getCommandName();
+  CommandUnitsProgress getCommandUnitsProgress();
+  GoogleFunctionInfraConfig getGoogleFunctionInfraConfig();
+  Integer getTimeoutIntervalInMin();
 
-    @Override
-    default List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
-        GoogleFunctionInfraConfig googleFunctionInfraConfig = getGoogleFunctionInfraConfig();
-        List<EncryptedDataDetail> infraConfigEncryptionDataDetails = googleFunctionInfraConfig.getEncryptionDataDetails();
-        List<ExecutionCapability> capabilities =
-                new ArrayList<>(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
-                        infraConfigEncryptionDataDetails, maskingEvaluator));
-        if(googleFunctionInfraConfig instanceof GcpGoogleFunctionInfraConfig) {
-            GcpGoogleFunctionInfraConfig gcpGoogleFunctionInfraConfig =
-                    (GcpGoogleFunctionInfraConfig) googleFunctionInfraConfig;
-            capabilities.addAll(GcpCapabilityHelper.fetchRequiredExecutionCapabilities(
-                    gcpGoogleFunctionInfraConfig.getGcpConnectorDTO(), maskingEvaluator));
-        }
-        return capabilities;
+  @Override
+  default List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
+    GoogleFunctionInfraConfig googleFunctionInfraConfig = getGoogleFunctionInfraConfig();
+    List<EncryptedDataDetail> infraConfigEncryptionDataDetails = googleFunctionInfraConfig.getEncryptionDataDetails();
+    List<ExecutionCapability> capabilities =
+        new ArrayList<>(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
+            infraConfigEncryptionDataDetails, maskingEvaluator));
+    if (googleFunctionInfraConfig instanceof GcpGoogleFunctionInfraConfig) {
+      GcpGoogleFunctionInfraConfig gcpGoogleFunctionInfraConfig =
+          (GcpGoogleFunctionInfraConfig) googleFunctionInfraConfig;
+      capabilities.addAll(GcpCapabilityHelper.fetchRequiredExecutionCapabilities(
+          gcpGoogleFunctionInfraConfig.getGcpConnectorDTO(), maskingEvaluator));
     }
+    return capabilities;
+  }
 }

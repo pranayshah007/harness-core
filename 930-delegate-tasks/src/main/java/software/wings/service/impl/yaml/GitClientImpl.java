@@ -46,6 +46,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.delegate.task.git.metadata.GitFetchMetadataLocalThread;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.GitClientException;
 import io.harness.exception.InvalidRequestException;
@@ -819,6 +820,7 @@ public class GitClientImpl implements GitClient {
         log.info("Successfully acquired lock on {}", lockFile);
         saveInfoExecutionLogs(logCallback, "Started synchronized fetch files operation from git");
         String latestCommitSHA = checkoutFiles(gitConfig, gitRequest, shouldExportCommitSha, logCallback);
+        GitFetchMetadataLocalThread.putCommitId(gitRequest.getIdentifier(), latestCommitSHA);
 
         String repoPath = gitClientHelper.getRepoPathForFileDownload(gitConfig, gitRequest.getGitConnectorId());
         List<GitFile> gitFiles = getFilteredGitFiles(gitConfig, gitRequest, repoPath);

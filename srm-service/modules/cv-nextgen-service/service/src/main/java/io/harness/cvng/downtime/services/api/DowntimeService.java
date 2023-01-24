@@ -6,9 +6,11 @@
  */
 package io.harness.cvng.downtime.services.api;
 
+import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.services.api.DeleteEntityByHandler;
 import io.harness.cvng.downtime.beans.DowntimeDTO;
+import io.harness.cvng.downtime.beans.DowntimeDashboardFilter;
 import io.harness.cvng.downtime.beans.DowntimeHistoryView;
 import io.harness.cvng.downtime.beans.DowntimeListView;
 import io.harness.cvng.downtime.beans.DowntimeResponse;
@@ -20,11 +22,14 @@ public interface DowntimeService extends DeleteEntityByHandler<Downtime> {
 
   DowntimeResponse get(ProjectParams projectParams, String identifier);
 
+  Downtime getEntity(ProjectParams projectParams, String identifier);
   DowntimeResponse update(ProjectParams projectParams, String identifier, DowntimeDTO downtimeDTO);
 
   boolean delete(ProjectParams projectParams, String identifier);
 
-  PageResponse<DowntimeListView> list(ProjectParams projectParams, Integer offset, Integer pageSize);
+  PageResponse<DowntimeListView> list(
+      ProjectParams projectParams, PageParams pageParams, DowntimeDashboardFilter filter);
 
-  PageResponse<DowntimeHistoryView> history(ProjectParams projectParams, Integer offset, Integer pageSize);
+  PageResponse<DowntimeHistoryView> history(
+      ProjectParams projectParams, PageParams pageParams, DowntimeDashboardFilter filter);
 }

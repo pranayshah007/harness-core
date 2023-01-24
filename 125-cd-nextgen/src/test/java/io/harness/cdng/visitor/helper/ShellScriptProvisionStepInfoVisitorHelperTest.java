@@ -16,7 +16,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.provision.shellscript.ShellScriptProvisionStepInfo;
-import io.harness.cdng.visitor.helpers.cdstepinfo.ShellScriptProvisionStepInfoVisitorHelper;
+import io.harness.cdng.provision.shellscript.ShellScriptProvisionStepInfoVisitorHelper;
 import io.harness.rule.Owner;
 
 import org.junit.Test;

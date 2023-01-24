@@ -168,7 +168,7 @@ public class SCMGitSyncHelperTest extends GitSdkTestBase {
              harnessToGitPushInfoServiceBlockingStub::pushFile, any(FileInfo.class)))
         .thenReturn(pushFileResponse1);
     assertThatThrownBy(() -> scmGitSyncHelper.pushToGit(gitEntityInfo2, yaml, ChangeType.ADD, entityDetail))
-        .hasMessage("Please check your credentials.");
+        .hasMessage("Invalid Repository or wrong credentials.");
     when(GitSyncGrpcClientUtils.retryAndProcessException(
              harnessToGitPushInfoServiceBlockingStub::pushFile, any(FileInfo.class)))
         .thenReturn(pushFileResponse2);

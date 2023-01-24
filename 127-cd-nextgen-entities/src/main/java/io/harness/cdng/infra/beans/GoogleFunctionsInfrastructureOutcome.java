@@ -1,13 +1,13 @@
 package io.harness.cdng.infra.beans;
 
-
-import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.yaml.core.VariableExpression;
+
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import lombok.Builder;
 import lombok.Value;
 import org.springframework.data.annotation.TypeAlias;
@@ -19,15 +19,14 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("cdng.infra.beans.GoogleFunctionsInfrastructureOutcome")
 @RecasterAlias("io.harness.cdng.infra.beans.GoogleFunctionsInfrastructureOutcome")
 public class GoogleFunctionsInfrastructureOutcome extends InfrastructureOutcomeAbstract {
-    @VariableExpression(skipVariableExpression = true)
-    EnvironmentOutcome environment;
-    String infrastructureKey;
-    String connectorRef;
-    String project;
-    String region;
+  @VariableExpression(skipVariableExpression = true) EnvironmentOutcome environment;
+  String infrastructureKey;
+  String connectorRef;
+  String project;
+  String region;
 
-    @Override
-    public String getKind() {
-        return InfrastructureKind.GOOGLE_CLOUD_FUNCTIONS;
-    }
+  @Override
+  public String getKind() {
+    return InfrastructureKind.GOOGLE_CLOUD_FUNCTIONS;
+  }
 }

@@ -1,6 +1,5 @@
 package io.harness.cdng.artifact;
 
-
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotation.RecasterAlias;
@@ -17,16 +16,16 @@ import lombok.Data;
 @JsonTypeName(ArtifactSourceConstants.GOOGLE_CLOUD_SOURCE_ARTIFACT_NAME)
 @RecasterAlias("io.harness.ngpipeline.pipeline.executions.beans.GoogleCloudSourceArtifactSummary")
 public class GoogleCloudSourceArtifactSummary implements ArtifactSummary {
-    String repository;
-    String sourceDirectory;
+  String repository;
+  String sourceDirectory;
 
-    @Override
-    public String getDisplayName() {
-        return repository + ":" + sourceDirectory;
-    }
+  @Override
+  public String getDisplayName() {
+    return repository + ":" + sourceDirectory;
+  }
 
-    @Override
-    public String getType() {
-        return ArtifactSourceConstants.GOOGLE_CLOUD_SOURCE_ARTIFACT_NAME;
-    }
+  @Override
+  public String getType() {
+    return ArtifactSourceConstants.GOOGLE_CLOUD_SOURCE_ARTIFACT_NAME;
+  }
 }

@@ -10,6 +10,7 @@ package io.harness.ngmigration.service;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ngmigration.service.entity.AccountMigrationService;
+import io.harness.ngmigration.service.entity.AmiStartupScriptMigrationService;
 import io.harness.ngmigration.service.entity.AppMigrationService;
 import io.harness.ngmigration.service.entity.ArtifactStreamMigrationService;
 import io.harness.ngmigration.service.entity.ConfigFileMigrationService;
@@ -17,6 +18,7 @@ import io.harness.ngmigration.service.entity.ConnectorMigrationService;
 import io.harness.ngmigration.service.entity.ContainerTaskMigrationService;
 import io.harness.ngmigration.service.entity.DummyMigrationService;
 import io.harness.ngmigration.service.entity.EcsServiceSpecMigrationService;
+import io.harness.ngmigration.service.entity.ElastigroupConfigurationMigrationService;
 import io.harness.ngmigration.service.entity.EnvironmentMigrationService;
 import io.harness.ngmigration.service.entity.InfraMigrationService;
 import io.harness.ngmigration.service.entity.InfraProvisionerMigrationService;
@@ -52,6 +54,8 @@ public class NgMigrationFactory {
   @Inject ServiceVariableMigrationService serviceVariableMigrationService;
   @Inject ConfigFileMigrationService configFileMigrationService;
   @Inject EcsServiceSpecMigrationService ecsServiceSpecMigrationService;
+  @Inject AmiStartupScriptMigrationService amiServiceSpecMigrationService;
+  @Inject ElastigroupConfigurationMigrationService elastigroupConfigurationMigrationService;
   @Inject ContainerTaskMigrationService containerTaskMigrationService;
 
   @Inject InfraProvisionerMigrationService infraProvisionerMigrationService;
@@ -92,6 +96,10 @@ public class NgMigrationFactory {
         return configFileMigrationService;
       case ECS_SERVICE_SPEC:
         return ecsServiceSpecMigrationService;
+      case AMI_STARTUP_SCRIPT:
+        return amiServiceSpecMigrationService;
+      case ELASTIGROUP_CONFIGURATION:
+        return elastigroupConfigurationMigrationService;
       case CONTAINER_TASK:
         return containerTaskMigrationService;
       case INFRA_PROVISIONER:

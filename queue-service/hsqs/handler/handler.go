@@ -46,13 +46,13 @@ func (h *Handler) handleEnqueue() echo.HandlerFunc {
 		p := &store.EnqueueRequest{}
 
 		if err := c.Bind(p); err != nil {
-			return c.JSON(http.StatusBadRequest, err.Error())
+			return c.JSON(http.StatusBadRequest, &store.EnqueueErrorResponse{ErrorMessage: err.Error()})
 		}
 
 		enqueue, err := h.s.Enqueue(c.Request().Context(), *p)
 		if err != nil {
 			h.m.CountMetric(c.Request().Context(), false, "queue", p.Topic, p.SubTopic)
-			return c.JSON(http.StatusBadRequest, err.Error())
+			return c.JSON(http.StatusInternalServerError, &store.EnqueueErrorResponse{ErrorMessage: err.Error()})
 		}
 		h.m.CountMetric(c.Request().Context(), true, "queue", p.Topic, p.SubTopic)
 		return c.JSON(http.StatusOK, enqueue)

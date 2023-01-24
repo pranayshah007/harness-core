@@ -96,7 +96,12 @@ public class InfraProvisionerMigrationService extends NgMigrationService {
 
   @Override
   public DiscoveryNode discover(String accountId, String appId, String entityId) {
-    return discover(infrastructureProvisionerService.get(appId, entityId));
+    try {
+      return discover(infrastructureProvisionerService.get(appId, entityId));
+    } catch (Exception e) {
+      log.error("There was an error fetching infra provisioners", e);
+      return null;
+    }
   }
 
   @Override
