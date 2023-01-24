@@ -33,7 +33,6 @@ else
   done
 fi
 
-
 export VERSION=`cat ${VERSION_FILE} | grep 'build.number=' | sed -e 's: *build.number=::g'`
 echo "INFO: VERSION=$VERSION"
 
