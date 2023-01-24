@@ -111,30 +111,6 @@ public class IDPModule extends AbstractModule {
     bind(HPersistence.class).to(MongoPersistence.class).in(Singleton.class);
   }
 
-//  @Provides
-//  @Singleton
-//  public Set<Class<? extends TypeConverter>> morphiaConverters() {
-//    return ImmutableSet.<Class<? extends TypeConverter>>builder()
-//            .addAll(IDPServiceModuleRegistrars.morphiaConverters)
-//            .build();
-//  }
-
-//  @Provides
-//  @Singleton
-//  List<YamlSchemaRootClass> yamlSchemaRootClasses() {
-//    return ImmutableList.<YamlSchemaRootClass>builder()
-//            .addAll(IDPServiceModuleRegistrars.yamlSchemaRegistrars)
-//            .build();
-//  }
-
-//  @Provides
-//  @Singleton
-//  List<Class<? extends Converter<?, ?>>> springConverters() {
-//    return ImmutableList.<Class<? extends Converter<?, ?>>>builder()
-//            .addAll(IDPServiceModuleRegistrars.springConverters)
-//            .build();
-//  }
-
   @Provides
   @Singleton
   public MongoConfig mongoConfig() {
