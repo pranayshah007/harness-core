@@ -12,6 +12,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.streaming.outgoing.OutgoingAuditMessage;
 
 import java.util.List;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.experimental.SuperBuilder;
 
@@ -19,13 +22,13 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @OwnedBy(HarnessTeam.PL)
 public class AuditBatchDTO {
-  String batchId;
-  String accountIdentifier;
-  String streamingDestinationIdentifier;
-  Long startTime;
-  Long endTime;
-  Integer numberOfRecords;
-  List<OutgoingAuditMessage> outgoingAuditMessages;
+  @NotBlank String batchId;
+  @NotBlank String accountIdentifier;
+  @NotBlank String streamingDestinationIdentifier;
+  @NotNull Long startTime;
+  @NotNull Long endTime;
+  @NotNull Integer numberOfRecords;
+  @NotEmpty List<OutgoingAuditMessage> outgoingAuditMessages;
   BatchStatus status;
   Integer retryCount;
 

@@ -8,6 +8,7 @@
 package io.harness.auditevent.streaming.publishers.impl;
 
 import static io.harness.auditevent.streaming.AuditEventStreamingConstants.AWS_S3_STREAMING_PUBLISHER;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.NgSetupFields.NG;
 import static io.harness.delegate.beans.NgSetupFields.OWNER;
@@ -54,8 +55,10 @@ import java.util.Optional;
 import javax.annotation.Nonnull;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+@Slf4j
 @Component(AWS_S3_STREAMING_PUBLISHER)
 public class AwsS3StreamingPublisher implements StreamingPublisher {
   private final ConnectorResourceClient connectorResourceClient;
@@ -103,9 +106,7 @@ public class AwsS3StreamingPublisher implements StreamingPublisher {
   public Map<String, String> buildAbstractions(
       String accountIdIdentifier, String orgIdentifier, String projectIdentifier) {
     Map<String, String> abstractions = new HashMap<>(2);
-    String owner = null;
-    // Verify if its a Task from NG
-    owner = taskSetupAbstractionHelper.getOwner(accountIdIdentifier, orgIdentifier, projectIdentifier);
+    String owner = taskSetupAbstractionHelper.getOwner(accountIdIdentifier, orgIdentifier, projectIdentifier);
     if (isNotEmpty(owner)) {
       abstractions.put(OWNER, owner);
     }
@@ -116,6 +117,9 @@ public class AwsS3StreamingPublisher implements StreamingPublisher {
   @Override
   public boolean publish(StreamingDestination streamingDestination, StreamingBatch streamingBatch,
       List<OutgoingAuditMessage> outgoingAuditMessages) {
+    if (isEmpty(outgoingAuditMessages)) {
+      return true;
+    }
     AwsConnectorDTO connector =
         getAwsConnector(streamingDestination.getAccountIdentifier(), streamingDestination.getConnectorRef());
 
@@ -157,6 +161,7 @@ public class AwsS3StreamingPublisher implements StreamingPublisher {
         delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);
       } catch (DelegateServiceDriverException ex) {
         // Handle Exception
+        return false;
       }
     } else {
       return false;

@@ -96,7 +96,8 @@ public class AuditEventStreamingServiceImpl implements AuditEventStreamingServic
     boolean successResult = false;
     while (auditEventMongoCursor.hasNext()) {
       List<AuditEvent> auditEvents = getAuditEventsChunk(auditEventMongoCursor);
-      List<OutgoingAuditMessage> outgoingAuditMessages = batchProcessorService.processAuditEvent(auditEvents);
+      List<OutgoingAuditMessage> outgoingAuditMessages =
+          batchProcessorService.processAuditEvent(streamingBatch, auditEvents);
       StreamingPublisher streamingPublisher =
           StreamingPublisherUtils.getStreamingPublisher(streamingDestination.getType(), streamingPublisherMap);
       successResult = streamingPublisher.publish(streamingDestination, streamingBatch, outgoingAuditMessages);

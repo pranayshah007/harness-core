@@ -27,6 +27,6 @@ public class OutgoingAuditMessage {
   @NotNull ResourceScope auditResourceScope;
   @NotNull String auditAction;
   HttpRequestInfo auditHttpRequestInfo;
-  Instant auditEventTime;
+  @NotNull Instant auditEventTime;
   Object auditEventMetadata;
 }

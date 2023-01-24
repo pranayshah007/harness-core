@@ -8,6 +8,7 @@
 package io.harness.auditevent.streaming.mappers;
 
 import static io.harness.audit.AuditCommonConstants.USER_ID;
+import static io.harness.auditevent.streaming.AuditEventStreamingConstants.METADATA_KEY_BATCH_ID;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -21,8 +22,10 @@ import io.harness.audit.streaming.outgoing.OutgoingAuditMessage;
 import io.harness.audit.streaming.outgoing.Principal;
 import io.harness.audit.streaming.outgoing.Resource;
 import io.harness.audit.streaming.outgoing.ResourceScope;
+import io.harness.auditevent.streaming.entities.StreamingBatch;
 import io.harness.ng.core.common.beans.KeyValuePair;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Component;
@@ -30,7 +33,7 @@ import org.springframework.stereotype.Component;
 @OwnedBy(HarnessTeam.PL)
 @Component
 public class AuditEventMapper {
-  public OutgoingAuditMessage toOutgoingAuditMessage(AuditEvent auditEvent) {
+  public OutgoingAuditMessage toOutgoingAuditMessage(AuditEvent auditEvent, StreamingBatch streamingBatch) {
     return OutgoingAuditMessage.builder()
         .auditEventId(auditEvent.getId())
         .auditEventAuthor(Author.builder().principal(getPrincipal(auditEvent.getAuthenticationInfo())).build())
@@ -47,7 +50,14 @@ public class AuditEventMapper {
         .auditAction(auditEvent.getAction().name())
         .auditHttpRequestInfo(getHttpRequestInfo(auditEvent))
         .auditEventTime(auditEvent.getTimestamp())
+        .auditEventMetadata(getAuditEventMetadata(streamingBatch))
         .build();
+  }
+
+  private Object getAuditEventMetadata(StreamingBatch streamingBatch) {
+    Map<String, String> metadata = new HashMap<>();
+    metadata.put(METADATA_KEY_BATCH_ID, streamingBatch.getId());
+    return metadata;
   }
 
   private HttpRequestInfo getHttpRequestInfo(AuditEvent auditEvent) {
