@@ -28,6 +28,7 @@ public class GitBaseRequest {
   @NotEmpty private String accountId;
   private GitRepositoryType repoType;
   private Boolean disableUserGitConfig;
+  private boolean disableSynchronizedClient;
 
   public boolean useBranch() {
     return isNotEmpty(branch);

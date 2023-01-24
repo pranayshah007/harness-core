@@ -71,6 +71,7 @@ public class GitFetchTaskHelper {
             .connectorId(gitStoreDelegateConfig.getConnectorName())
             .repoType(YAML)
             .repoUrl(gitConfigDTO.getUrl())
+            .disableSynchronizedClient(gitStoreDelegateConfig.isDisableJgitSynchronizedClient())
             .build();
     return gitClientV2.fetchFilesByPath(fetchFilesByPathRequest);
   }

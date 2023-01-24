@@ -589,7 +589,11 @@ public enum FeatureName {
   CG_K8S_MANIFEST_COMMIT_VAR(
       "Enables users to pass commit id as sweeping output and use later in subsequent steps. PM Rohan",
       HarnessTeam.CDP),
-  SPG_SIDENAV_COLLAPSE("FF for enabling collapse and expand of side nav", HarnessTeam.SPG);
+  SPG_SIDENAV_COLLAPSE("FF for enabling collapse and expand of side nav", HarnessTeam.SPG),
+  CDS_DISABLE_JGIT_SYNCHRONIZED_METHODS("Use non-synchronized methods for jgit client. "
+          + "This will decrease execution time for git operations in parallel environment using different connectors"
+          + " using jgit implementation and prevent one connector to block execution of another",
+      HarnessTeam.CDP);
 
   @Deprecated
   FeatureName() {

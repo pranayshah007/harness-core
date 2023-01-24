@@ -248,7 +248,19 @@ public class GitClientV2Impl implements GitClientV2 {
   }
 
   @VisibleForTesting
-  synchronized void clone(GitBaseRequest request, String gitRepoDirectory, boolean noCheckout) {
+  void clone(GitBaseRequest request, String gitRepoDirectory, boolean noCheckout) {
+    if (request.isDisableSynchronizedClient()) {
+      cloneInternal(request, gitRepoDirectory, noCheckout);
+    } else {
+      cloneSync(request, gitRepoDirectory, noCheckout);
+    }
+  }
+
+  private synchronized void cloneSync(GitBaseRequest request, String gitRepoDirectory, boolean noCheckout) {
+    cloneInternal(request, gitRepoDirectory, noCheckout);
+  }
+
+  private void cloneInternal(GitBaseRequest request, String gitRepoDirectory, boolean noCheckout) {
     try {
       if (new File(gitRepoDirectory).exists()) {
         deleteDirectoryAndItsContentIfExists(gitRepoDirectory);
@@ -273,7 +285,19 @@ public class GitClientV2Impl implements GitClientV2 {
     }
   }
 
-  private synchronized void checkout(GitBaseRequest request) throws IOException, GitAPIException {
+  private void checkout(GitBaseRequest request) throws IOException, GitAPIException {
+    if (request.isDisableSynchronizedClient()) {
+      checkoutInternal(request);
+    } else {
+      checkoutSync(request);
+    }
+  }
+
+  private synchronized void checkoutSync(GitBaseRequest request) throws IOException, GitAPIException {
+    checkoutInternal(request);
+  }
+
+  private void checkoutInternal(GitBaseRequest request) throws IOException, GitAPIException {
     Git git = openGit(new File(gitClientHelper.getRepoDirectory(request)), request.getDisableUserGitConfig());
     try {
       if (isNotEmpty(request.getBranch())) {
@@ -1336,12 +1360,24 @@ public class GitClientV2Impl implements GitClientV2 {
     }
   }
 
+  private void cloneRepoForFilePathCheckout(GitBaseRequest request) {
+    if (request.isDisableSynchronizedClient()) {
+      cloneRepoForFilePathCheckoutInternal(request);
+    } else {
+      cloneRepoForFilePathCheckoutSync(request);
+    }
+  }
+
+  private synchronized void cloneRepoForFilePathCheckoutSync(GitBaseRequest request) {
+    cloneRepoForFilePathCheckoutInternal(request);
+  }
+
   /**
    * Ensure repo locally cloned. This is called before performing any git operation with remote
    *
    * @param request
    */
-  private synchronized void cloneRepoForFilePathCheckout(GitBaseRequest request) {
+  private void cloneRepoForFilePathCheckoutInternal(GitBaseRequest request) {
     log.info(new StringBuilder(64)
                  .append(gitClientHelper.getGitLogMessagePrefix(request.getRepoType()))
                  .append("Cloning repo without checkout for file fetch op, for GitConfig: ")

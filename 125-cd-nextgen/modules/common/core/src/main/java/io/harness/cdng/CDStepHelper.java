@@ -464,6 +464,8 @@ public class CDStepHelper {
         .manifestType(manifestType)
         .manifestId(manifestIdentifier)
         .optimizedFilesFetch(optimizedFilesFetch)
+        .disableJgitSynchronizedClient(cdFeatureFlagHelper.isEnabled(
+            AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_DISABLE_JGIT_SYNCHRONIZED_METHODS))
         .build();
   }
 

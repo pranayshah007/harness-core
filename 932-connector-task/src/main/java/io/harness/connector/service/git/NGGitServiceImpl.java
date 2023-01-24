@@ -125,6 +125,7 @@ public class NGGitServiceImpl implements NGGitService {
             .commitId(gitStoreDelegateConfig.getCommitId())
             .connectorId(gitStoreDelegateConfig.getConnectorId() == null ? gitStoreDelegateConfig.getConnectorName()
                                                                          : gitStoreDelegateConfig.getConnectorId())
+            .disableSynchronizedClient(gitStoreDelegateConfig.isDisableJgitSynchronizedClient())
             .repoType(YAML)
             .repoUrl(gitConfigDTO.getUrl())
             .build();
@@ -147,6 +148,7 @@ public class NGGitServiceImpl implements NGGitService {
             .repoType(YAML)
             .repoUrl(gitConfigDTO.getUrl())
             .destinationDirectory(destinationDirectory)
+            .disableSynchronizedClient(gitStoreDelegateConfig.isDisableJgitSynchronizedClient())
             .build();
     gitClientV2.downloadFiles(downloadFilesRequest);
   }
