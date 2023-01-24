@@ -16,6 +16,7 @@ import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
 import io.harness.k8s.apiclient.ApiClientFactory;
 import io.harness.k8s.model.KubernetesConfig;
+import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogLevel;
 import io.harness.logstreaming.LogLine;
 import io.harness.steps.plugin.ContainerCommandUnitConstants;
@@ -109,7 +110,7 @@ public class K8EventHandler {
       if (ngDelegateLogCallback == null) {
         ngDelegateLogCallback = new NGDelegateLogCallback(
             logStreamingTaskClient, ContainerCommandUnitConstants.InitContainer, true, commandUnitsProgress);
-        ngDelegateLogCallback.saveExecutionLog("");
+        ngDelegateLogCallback.saveExecutionLog("Starting pod creation", LogLevel.INFO, CommandExecutionStatus.QUEUED);
       }
       ngDelegateLogCallback.saveExecutionLog(message, logLevel);
     } else {
