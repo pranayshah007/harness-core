@@ -150,49 +150,61 @@ public class ClusterDataToBigQueryTasklet implements Tasklet {
       clusterDataAggregatedTableName = "clusterDataHourlyAggregated";
     }
 
-    List<InstanceBillingData> instanceBillingDataList;
     if (!onPrem) {
-      boolean avroFileWithSchemaExists = false;
-      do {
-        instanceBillingDataList = billingDataReader.getNext();
-        List<ClusterBillingData> clusterBillingDataList =
-            getClusterBillingDataForBatch(jobConstants.getAccountId(), batchJobType, instanceBillingDataList);
-        log.debug("clusterBillingDataList size: {}", clusterBillingDataList.size());
-        writeDataToAvro(
-            jobConstants.getAccountId(), clusterBillingDataList, billingDataFileName, avroFileWithSchemaExists);
-        avroFileWithSchemaExists = true;
-      } while (instanceBillingDataList.size() == batchSize);
-
-      final String gcsObjectName = String.format(gcsObjectNameFormat, jobConstants.getAccountId(), billingDataFileName);
-      googleCloudStorageService.uploadObject(gcsObjectName, defaultParentWorkingDirectory + gcsObjectName);
-
-      // Delete file once upload is complete
-      File workingDirectory = new File(defaultParentWorkingDirectory + jobConstants.getAccountId());
-      File billingDataFile = new File(workingDirectory, billingDataFileName);
-      Files.delete(billingDataFile.toPath());
-
+      handleDataForBigQuery(batchJobType, jobConstants, batchSize, billingDataReader, billingDataFileName);
     } else {
-      clusterDataService.deleteExistingDataFromClusterDataTable(jobConstants, clusterDataTableName);
-      do {
-        instanceBillingDataList = billingDataReader.getNext();
-        List<ClusterBillingData> clusterBillingDataList =
-            getClusterBillingDataForBatch(jobConstants.getAccountId(), batchJobType, instanceBillingDataList);
-
-        log.info("clusterBillingDataList size: {}", clusterBillingDataList.size());
-        ingestClusterDataTable(clusterDataTableName, clusterBillingDataList);
-        log.info("Ingestion Completed for ClusterDataTable");
-      } while (instanceBillingDataList.size() == batchSize);
-
-      deleteExistingAndIngestToClickHouse(
-          jobConstants, zdt, clusterDataTableName, clusterDataAggregatedTableName, batchJobType);
+      handleDataForClickHouse(batchJobType, jobConstants, batchSize, billingDataReader, zdt, clusterDataTableName,
+          clusterDataAggregatedTableName);
     }
     return null;
+  }
+
+  private void handleDataForBigQuery(BatchJobType batchJobType, JobConstants jobConstants, int batchSize,
+      BillingDataReader billingDataReader, String billingDataFileName) throws IOException {
+    List<InstanceBillingData> instanceBillingDataList;
+    boolean avroFileWithSchemaExists = false;
+    do {
+      instanceBillingDataList = billingDataReader.getNext();
+      List<ClusterBillingData> clusterBillingDataList =
+          getClusterBillingDataForBatch(jobConstants.getAccountId(), batchJobType, instanceBillingDataList);
+      log.debug("clusterBillingDataList size: {}", clusterBillingDataList.size());
+      writeDataToAvro(
+          jobConstants.getAccountId(), clusterBillingDataList, billingDataFileName, avroFileWithSchemaExists);
+      avroFileWithSchemaExists = true;
+    } while (instanceBillingDataList.size() == batchSize);
+
+    final String gcsObjectName = String.format(gcsObjectNameFormat, jobConstants.getAccountId(), billingDataFileName);
+    googleCloudStorageService.uploadObject(gcsObjectName, defaultParentWorkingDirectory + gcsObjectName);
+
+    // Delete file once upload is complete
+    File workingDirectory = new File(defaultParentWorkingDirectory + jobConstants.getAccountId());
+    File billingDataFile = new File(workingDirectory, billingDataFileName);
+    Files.delete(billingDataFile.toPath());
+  }
+
+  private void handleDataForClickHouse(BatchJobType batchJobType, JobConstants jobConstants, int batchSize,
+      BillingDataReader billingDataReader, ZonedDateTime zdt, String clusterDataTableName,
+      String clusterDataAggregatedTableName) throws Exception {
+    List<InstanceBillingData> instanceBillingDataList;
+    clusterDataService.createTableAndDeleteExistingDataFromClickHouse(jobConstants, clusterDataTableName);
+    do {
+      instanceBillingDataList = billingDataReader.getNext();
+      List<ClusterBillingData> clusterBillingDataList =
+          getClusterBillingDataForBatch(jobConstants.getAccountId(), batchJobType, instanceBillingDataList);
+
+      log.info("clusterBillingDataList size: {}", clusterBillingDataList.size());
+      ingestClusterDataTable(clusterDataTableName, clusterBillingDataList);
+      log.info("Ingestion Completed for ClusterDataTable");
+    } while (instanceBillingDataList.size() == batchSize);
+
+    deleteExistingAndIngestToClickHouse(
+        jobConstants, zdt, clusterDataTableName, clusterDataAggregatedTableName, batchJobType);
   }
 
   private void deleteExistingAndIngestToClickHouse(JobConstants jobConstants, ZonedDateTime zdt,
       String clusterDataTableName, String clusterDataAggregatedTableName, BatchJobType batchJobType) throws Exception {
     if (batchJobType != BatchJobType.CLUSTER_DATA_HOURLY_TO_BIG_QUERY) {
-      clusterDataService.procesUnifiedTable(zdt, clusterDataTableName);
+      clusterDataService.processUnifiedTableToCLickHouse(zdt, clusterDataTableName);
       ingestUnifiedTable(zdt, clusterDataTableName);
       log.info("Ingestion Completed for UnifiedTable");
     }
@@ -202,7 +214,7 @@ public class ClusterDataToBigQueryTasklet implements Tasklet {
     log.info("Ingestion Completed for AggregatedTable");
 
     if (batchJobType != BatchJobType.CLUSTER_DATA_HOURLY_TO_BIG_QUERY) {
-      clusterDataService.processCostAggregaredData(jobConstants, zdt);
+      clusterDataService.processCostAggregatedData(jobConstants, zdt);
       ingestCostAggregatedTable(zdt);
       log.info("Ingestion Completed for CostAggregatedTable");
     }
