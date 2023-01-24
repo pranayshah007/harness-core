@@ -19,7 +19,10 @@ import io.harness.pms.yaml.YamlUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -31,6 +34,7 @@ public class YamlConfig {
   private String yaml;
   private JsonNode yamlMap;
   private Map<FQN, Object> fqnToValueMap;
+  private Map<String, String> inputValuesWithValidatorToInputValues;
 
   public YamlConfig(String yaml) {
     this.yaml = yaml;
@@ -41,6 +45,7 @@ public class YamlConfig {
       throw new InvalidRequestException("Could not convert yaml to JsonNode: " + e.getMessage());
     }
     fqnToValueMap = FQNMapGenerator.generateFQNMap(yamlMap);
+    inputValuesWithValidatorToInputValues = new HashMap<>();
   }
 
   public YamlConfig(JsonNode jsonNode) {
@@ -62,6 +67,19 @@ public class YamlConfig {
     } else {
       this.fqnToValueMap = new LinkedHashMap<>();
     }
+  }
+
+  public YamlConfig(
+      Map<FQN, Object> fqnToValueMap, JsonNode originalYaml, Map<String, String> inputValuesWithValidator) {
+    yamlMap = YamlMapGenerator.generateYamlMap(fqnToValueMap, originalYaml, false);
+    // fqnToValueMap can be missing some values which need to be taken from originalYaml. These values are there in
+    // yamlMap generated in the above line, hence the fqn map needs to be regenerated
+    if (!yamlMap.isEmpty()) {
+      this.fqnToValueMap = FQNMapGenerator.generateFQNMap(yamlMap);
+    } else {
+      this.fqnToValueMap = new LinkedHashMap<>();
+    }
+    this.inputValuesWithValidatorToInputValues = inputValuesWithValidator;
   }
 
   public YamlConfig(

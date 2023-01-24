@@ -41,9 +41,11 @@ import io.serializer.jackson.NGHarnessJacksonModule;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import lombok.experimental.UtilityClass;
 
@@ -594,27 +596,38 @@ public class YamlUtils {
   public String getYamlWithoutInputs(String yaml) throws IOException {
     YamlField yamlField = YamlUtils.readTree(yaml);
     JsonNode pipelineJsonNode = yamlField.getNode().getCurrJsonNode();
-    YamlUtils.removeInputs(pipelineJsonNode);
+    YamlUtils.removeInputs(pipelineJsonNode, new HashMap<>());
     return YamlPipelineUtils.writeYamlString(pipelineJsonNode);
   }
 
-  public void removeInputs(JsonNode node) {
+  public String getYamlWithoutInputs(String yaml, Map<String, String> inputValueWithValidators) throws IOException {
+    YamlField yamlField = YamlUtils.readTree(yaml);
+    JsonNode pipelineJsonNode = yamlField.getNode().getCurrJsonNode();
+    YamlUtils.removeInputs(pipelineJsonNode, inputValueWithValidators);
+    return YamlPipelineUtils.writeYamlString(pipelineJsonNode);
+  }
+
+  public void removeInputs(JsonNode node, Map<String, String> inputValueWithValidatorsToValue) {
     if (node.isObject()) {
-      removeInputInObject(node);
+      removeInputInObject(node, inputValueWithValidatorsToValue);
     } else if (node.isArray()) {
-      removeInputInArray(node);
+      removeInputInArray(node, inputValueWithValidatorsToValue);
     }
   }
 
-  private void removeInputInObject(JsonNode node) {
+  private void removeInputInObject(JsonNode node, Map<String, String> inputValueWithValidatorsToValue) {
     ObjectNode objectNode = (ObjectNode) node;
     List<String> keysToRemove = new ArrayList<>();
     for (Iterator<Entry<String, JsonNode>> it = objectNode.fields(); it.hasNext();) {
       Entry<String, JsonNode> field = it.next();
-      if (NGExpressionUtils.matchesRawInputSetPattern(field.getValue().toString())) {
+      String value = field.getValue().toString();
+      if (inputValueWithValidatorsToValue.containsKey(value)) {
+        value = inputValueWithValidatorsToValue.get(value);
+      }
+      if (NGExpressionUtils.matchesRawInputSetPattern(value)) {
         keysToRemove.add(field.getKey());
       } else {
-        removeInputs(field.getValue());
+        removeInputs(field.getValue(), inputValueWithValidatorsToValue);
       }
     }
     for (String key : keysToRemove) {
@@ -622,10 +635,10 @@ public class YamlUtils {
     }
   }
 
-  private void removeInputInArray(JsonNode node) {
+  private void removeInputInArray(JsonNode node, Map<String, String> inputValueWithValidators) {
     ArrayNode arrayNode = (ArrayNode) node;
     for (Iterator<JsonNode> it = arrayNode.elements(); it.hasNext();) {
-      removeInputs(it.next());
+      removeInputs(it.next(), inputValueWithValidators);
     }
   }
 

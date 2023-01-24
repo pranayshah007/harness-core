@@ -88,6 +88,6 @@ public class InputSetSanitizer {
         fqnToValueMap.put(fqn, new TextNode(trimValue));
       }
     }
-    return new YamlConfig(fqnToValueMap, config.getYamlMap());
+    return new YamlConfig(fqnToValueMap, config.getYamlMap(), config.getInputValuesWithValidatorToInputValues());
   }
 }

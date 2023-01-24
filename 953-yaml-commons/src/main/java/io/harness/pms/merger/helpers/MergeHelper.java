@@ -35,6 +35,7 @@ import com.fasterxml.jackson.databind.node.TextNode;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -91,6 +92,9 @@ public class MergeHelper {
 
     Map<FQN, Object> pipelineYamlFQNMap = originalYamlConfig.getFqnToValueMap();
     Map<FQN, Object> mergedYamlFQNMap = new LinkedHashMap<>(pipelineYamlFQNMap);
+    // inputValueWithValidatorToValue is used to store a map of value with validators appended to value with without
+    // appending validators.
+    Map<String, String> inputValueWithValidatorToValue = new HashMap<>();
     pipelineYamlFQNMap.keySet().forEach(key -> {
       if (inputSetFQNMap.containsKey(key)) {
         Object value = inputSetFQNMap.get(key);
@@ -117,8 +121,20 @@ public class MergeHelper {
             }
           }
         }
+        // This object wraps the value inside parameterField
+        Object valueWithRuntimeInputExpressions = checkForRuntimeInputExpressions(value, pipelineYamlFQNMap.get(key));
+        String textValueWithRuntimeInputExpressions = ((JsonNode) value).asText();
+        if (valueWithRuntimeInputExpressions instanceof ParameterField) {
+          // We convert the parameterField to its string value so that we can convert to "a".allowedValues()
+          textValueWithRuntimeInputExpressions =
+              ((ParameterField<?>) valueWithRuntimeInputExpressions).getJsonFieldValue().toString();
+        }
+        String textValue = ((JsonNode) value).asText();
+        if (value instanceof TextNode && !textValue.equals(textValueWithRuntimeInputExpressions)) {
+          inputValueWithValidatorToValue.put(textValueWithRuntimeInputExpressions, textValue);
+        }
         if (appendInputSetValidator) {
-          value = checkForRuntimeInputExpressions(value, pipelineYamlFQNMap.get(key));
+          value = valueWithRuntimeInputExpressions;
         }
         mergedYamlFQNMap.put(key, value);
       } else {
@@ -133,7 +149,7 @@ public class MergeHelper {
     JsonNode yamlMap = originalYamlConfig.getYamlMap();
     JsonNode modifiedOriginalMap =
         addNonIgnorableBaseKeys(yamlMap, mergedYamlFQNMap, nonIgnorableKeys, inputSetConfig.getYamlMap());
-    return new YamlConfig(mergedYamlFQNMap, modifiedOriginalMap);
+    return new YamlConfig(mergedYamlFQNMap, modifiedOriginalMap, inputValueWithValidatorToValue);
   }
 
   private JsonNode addNonIgnorableBaseKeys(JsonNode yamlMap, Map<FQN, Object> mergedYamlFQNMap,
