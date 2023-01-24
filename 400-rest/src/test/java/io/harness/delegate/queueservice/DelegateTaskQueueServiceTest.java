@@ -57,6 +57,7 @@ public class DelegateTaskQueueServiceTest extends WingsBaseTest {
   @Inject @InjectMocks private OrderByTotalNumberOfTaskAssignedCriteria orderByTotalNumberOfTaskAssignedCriteria;
   @Inject @InjectMocks private DelegateTaskServiceClassicImpl delegateTaskServiceClassicImpl;
   @Inject @InjectMocks private FilterByDelegateCapacity filterByDelegateCapacity;
+  @InjectMocks @Inject private DelegateTaskServiceClassicImpl delegateTaskServiceClassic;
   @Inject private DelegateCapacityManagementService delegateCapacityManagementService;
   @Mock private DelegateCache delegateCache;
   @Mock private HsqsServiceClient hsqsServiceClient;
@@ -118,6 +119,19 @@ public class DelegateTaskQueueServiceTest extends WingsBaseTest {
     DelegateTask task = persistence.get(DelegateTask.class, delegateTask.getUuid());
     assertThat(task).isNotNull();
   }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testAbortQueuedDelegateTask() {
+    String accountId = generateUuid();
+    String delegateTaskId = generateUuid();
+    delegateTaskServiceClassic.abortTaskV2(accountId, delegateTaskId);
+    assertThat(delegateTaskQueueService.getAbortedDelegateTasks()).size().isEqualTo(1);
+    delegateTaskServiceClassic.abortTaskV2(accountId, delegateTaskId);
+    assertThat(delegateTaskQueueService.getAbortedDelegateTasks()).size().isEqualTo(1);
+  }
+
   private Delegate createDelegate(String accountId, int maxBuild) {
     Delegate delegate = createDelegateBuilder(accountId, maxBuild).build();
     persistence.save(delegate);

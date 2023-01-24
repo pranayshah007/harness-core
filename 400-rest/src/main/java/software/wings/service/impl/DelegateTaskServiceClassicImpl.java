@@ -1715,7 +1715,13 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
                                ErrorNotifyResponseData.builder().errorMessage("Delegate task was aborted").build()))
                            .build());
 
-      return endTaskV2(accountId, delegateTaskId, getRunningTaskQueryV2(accountId, delegateTaskId), ABORTED);
+      DelegateTask abortedDelegateTask =
+          endTaskV2(accountId, delegateTaskId, getRunningTaskQueryV2(accountId, delegateTaskId), ABORTED);
+      // if task is not in DB then check if task is in the queue
+      if (abortedDelegateTask == null) {
+        delegateTaskQueueService.addToAbortTaskEventList(accountId, delegateTaskId);
+      }
+      return abortedDelegateTask;
     }
   }
 
@@ -1742,10 +1748,9 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
         delegateTaskQuery.asList().stream().filter(task -> task.getTaskDataV2().isAsync()).findFirst().orElse(null);
     if (oldTask != null) {
       persistence.update(oldTask, updateOperations);
+      broadcasterFactory.lookup(STREAM_DELEGATE + accountId, true)
+          .broadcast(aDelegateTaskAbortEvent().withAccountId(accountId).withDelegateTaskId(delegateTaskId).build());
     }
-    broadcasterFactory.lookup(STREAM_DELEGATE + accountId, true)
-        .broadcast(aDelegateTaskAbortEvent().withAccountId(accountId).withDelegateTaskId(delegateTaskId).build());
-
     return oldTask;
   }
 

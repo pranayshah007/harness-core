@@ -26,7 +26,9 @@ import io.harness.hsqs.client.model.DequeueRequest;
 import io.harness.hsqs.client.model.DequeueResponse;
 import io.harness.hsqs.client.model.EnqueueRequest;
 import io.harness.hsqs.client.model.EnqueueResponse;
+import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
+import io.harness.persistence.HPersistence;
 import io.harness.queueservice.DelegateTaskDequeue;
 import io.harness.queueservice.ResourceBasedDelegateSelectionCheckForTask;
 import io.harness.queueservice.config.DelegateQueueServiceConfig;
@@ -41,10 +43,14 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
@@ -57,6 +63,9 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
   @Inject private ResourceBasedDelegateSelectionCheckForTask delegateSelectionCheckForTask;
   @Inject private DelegateCache delegateCache;
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
+  @Inject private HPersistence persistence;
+
+  private static final Map<String, List<String>> abortTaskEvents = new ConcurrentHashMap<>();
 
   @Inject
   public DelegateTaskQueueService(HsqsServiceClient hsqsServiceClient) {
@@ -111,7 +120,7 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
                          .delegateTask(convertToDelegateTask(dequeueResponse.getPayload(), dequeueResponse.getItemId())
                                            .orElse(null))
                          .build())
-              .filter(this::isResourceAvailableToAssignTask)
+              .filter(this::shouldDequeueDelegateTask)
               .collect(toList());
       delegateTasksDequeueList.forEach(this::acknowledgeAndProcessDelegateTask);
       return true;
@@ -142,7 +151,10 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
       return null;
     }
   }
-  private boolean isResourceAvailableToAssignTask(DelegateTaskDequeue delegateTaskDequeue) {
+  private boolean shouldDequeueDelegateTask(DelegateTaskDequeue delegateTaskDequeue) {
+    if (isDelegateTaskAborted(delegateTaskDequeue)) {
+      return true;
+    }
     return isResourceAvailableToAssignTask(delegateTaskDequeue.getDelegateTask());
   }
 
@@ -175,6 +187,22 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
     }
     delegateTask.setEligibleToExecuteDelegateIds(new LinkedList<>(filteredDelegateList.get()));
     return true;
+  }
+
+  private boolean isDelegateTaskAborted(DelegateTaskDequeue delegateTaskDequeue) {
+    // check if it's in the list of aborted task event list
+    String accountId = delegateTaskDequeue.getDelegateTask().getAccountId();
+    String delegateTaskId = delegateTaskDequeue.getDelegateTask().getUuid();
+    try (AutoLogContext ignore1 = new TaskLogContext(delegateTaskId, OVERRIDE_ERROR);
+         AutoLogContext ignore2 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
+      Map<String, List<String>> delegateTaskAborted = getAbortedDelegateTasks();
+      if (delegateTaskAborted.containsKey(accountId)
+          && delegateTaskAborted.get(delegateTaskDequeue.getDelegateTask().getAccountId()).contains(delegateTaskId)) {
+        log.info("Aborting delegate task from queue {}", delegateTaskDequeue.getDelegateTask().getUuid());
+        return true;
+      }
+    }
+    return false;
   }
 
   @VisibleForTesting
@@ -240,5 +268,20 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
       return;
     }
     dequeue();
+  }
+
+  public void addToAbortTaskEventList(String accountId, String delegateTaskId) {
+    abortTaskEvents.putIfAbsent(accountId, new ArrayList<>());
+    abortTaskEvents.get(accountId).add(delegateTaskId);
+  }
+
+  @VisibleForTesting
+  protected Map<String, List<String>> getAbortedDelegateTasks() {
+    Map<String, List<String>> abortTaskEventList;
+    synchronized (abortTaskEvents) {
+      abortTaskEventList = new HashMap<>(abortTaskEvents);
+      abortTaskEvents.clear();
+    }
+    return abortTaskEventList;
   }
 }
