@@ -23,6 +23,8 @@ import io.harness.beans.yaml.extended.CIShellType;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.ci.k8s.CIK8ExecuteStepTaskParams;
+import io.harness.delegate.beans.logstreaming.UnitProgressData;
+import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.expression.ExpressionResolverUtils;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
@@ -54,8 +56,8 @@ public class ContainerRunStepHelper {
   @Inject OutcomeService outcomeService;
   @Inject ContainerExecutionConfig containerExecutionConfig;
 
-  public TaskData getRunStepTask(
-      Ambiance ambiance, ContainerStepInfo containerStepInfo, String accountId, String logKey, long timeout) {
+  public TaskData getRunStepTask(Ambiance ambiance, ContainerStepInfo containerStepInfo, String accountId,
+      String logKey, long timeout, UnitProgressData commandUnitsProgress) {
     String identifier = containerStepInfo.getIdentifier();
 
     String parkedTaskId = containerDelegateTaskHelper.queueParkedDelegateTask(ambiance, timeout, accountId);
@@ -77,6 +79,7 @@ public class ContainerRunStepHelper {
             .serializedStep(executeStepRequest.toByteArray())
             .isLocal(containerExecutionConfig.isLocal())
             .delegateSvcEndpoint(containerExecutionConfig.getDelegateServiceEndpointVariableValue())
+            .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(commandUnitsProgress))
             .build();
     TaskData liteEngineTask = containerDelegateTaskHelper.getDelegateTaskDataForExecuteStep(ambiance, timeout, params);
     log.info("Created parked task {} and lite engine task for  step {}", parkedTaskId, identifier);

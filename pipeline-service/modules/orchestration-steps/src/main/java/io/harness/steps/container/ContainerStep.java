@@ -168,7 +168,7 @@ public class ContainerStep implements TaskChainExecutableWithRbac<StepElementPar
         containerRunStepHelper.getRunStepTask(ambiance, containerStepInfo, AmbianceUtils.getAccountId(ambiance),
             LogStreamingHelper.generateLogKeyGivenCommandUnit(
                 getLogPrefix(ambiance), ContainerCommandUnitConstants.ContainerStep),
-            timeoutForDelegateTask);
+            timeoutForDelegateTask, k8sTaskExecutionResponse.getCommandUnitsProgress());
     String stageId = ambiance.getStageExecutionId();
 
     TaskRequest taskRequest =
