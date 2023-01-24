@@ -16,6 +16,7 @@ import io.harness.ng.core.ProjectScope;
 import io.harness.ng.core.Resource;
 import io.harness.ng.core.ResourceConstants;
 import io.harness.ng.core.ResourceScope;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.plan.TriggerType;
 import io.harness.pms.contracts.plan.TriggeredBy;
 
@@ -28,7 +29,7 @@ import lombok.NoArgsConstructor;
 @OwnedBy(PIPELINE)
 @Getter
 @NoArgsConstructor
-public class PipelineStartEvent implements Event {
+public class PipelineEndEvent implements Event {
   private String orgIdentifier;
   private String accountIdentifier;
   private String projectIdentifier;
@@ -36,10 +37,13 @@ public class PipelineStartEvent implements Event {
   private String executionUuid;
   private TriggerType triggerType;
   private TriggeredBy triggeredBy;
+  private Status status;
   private Long startTs;
+  private Long endTs;
 
-  public PipelineStartEvent(String orgIdentifier, String accountIdentifier, String projectIdentifier,
-      String pipelineIdentifier, String executionUuid, TriggerType triggerType, TriggeredBy triggeredBy, Long startTs) {
+  public PipelineEndEvent(String orgIdentifier, String accountIdentifier, String projectIdentifier,
+      String pipelineIdentifier, String executionUuid, TriggerType triggerType, TriggeredBy triggeredBy, Status status,
+      Long startTs, Long endTs) {
     this.orgIdentifier = orgIdentifier;
     this.accountIdentifier = accountIdentifier;
     this.projectIdentifier = projectIdentifier;
@@ -47,7 +51,9 @@ public class PipelineStartEvent implements Event {
     this.executionUuid = executionUuid;
     this.triggerType = triggerType;
     this.triggeredBy = triggeredBy;
+    this.status = status;
     this.startTs = startTs;
+    this.endTs = endTs;
   }
 
   @JsonIgnore
@@ -71,6 +77,6 @@ public class PipelineStartEvent implements Event {
   @JsonIgnore
   @Override
   public String getEventType() {
-    return PipelineOutboxEvents.PIPELINE_START;
+    return PipelineOutboxEvents.PIPELINE_END;
   }
 }
