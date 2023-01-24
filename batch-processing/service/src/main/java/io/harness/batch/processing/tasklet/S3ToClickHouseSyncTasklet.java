@@ -325,12 +325,17 @@ public class S3ToClickHouseSyncTasklet implements Tasklet {
         clickHouseService.executeClickHouseQuery(configuration.getClickHouseConfig(), tagColumnsQuery, Boolean.TRUE);
     String tagsQueryStatement1 = "";
     String tagsQueryStatement2 = "";
+    String tagsQueryStatement3 = " array() ";
     for (String tagColumn : tagColumns) {
       tagsQueryStatement1 += (tagsQueryStatement1.isEmpty() ? "" : ", ");
       tagsQueryStatement1 += ("'" + tagColumn.replaceFirst("TAG_", "") + "'");
 
       tagsQueryStatement2 += (tagsQueryStatement2.isEmpty() ? "" : ", ");
       tagsQueryStatement2 += ("ifNull(" + tagColumn + ", toString(NULL))");
+    }
+    if (!tagColumns.isEmpty()) {
+      tagsQueryStatement3 =
+          " arrayMap(i -> if((tagsPresent[i]) = 0, toString(NULL), tagsAllKey[i]), arrayEnumerate(tagsPresent)) ";
     }
 
     String deleteQuery =
@@ -369,7 +374,7 @@ public class S3ToClickHouseSyncTasklet implements Tasklet {
         + "        blendedrate, "
         + "        multiIf(lineitemtype = 'SavingsPlanNegation', 0, lineitemtype = 'SavingsPlanUpfrontFee', 0, lineitemtype = 'SavingsPlanCoveredUsage', savingsplaneffectivecost, lineitemtype = 'SavingsPlanRecurringFee', totalcommitmenttodate - usedcommitment, lineitemtype = 'DiscountedUsage', effectivecost, lineitemtype = 'RIFee', unusedamortizedupfrontfeeforbillingperiod + unusedrecurringfee, unblendedcost) AS amortisedCost, "
         + "        multiIf(lineitemtype = 'SavingsPlanNegation', 0, lineitemtype = 'SavingsPlanUpfrontFee', 0, lineitemtype = 'SavingsPlanRecurringFee', totalcommitmenttodate - usedcommitment, 0) AS netAmortisedCost, "
-        + "        arrayFilter(x -> isNotNull(x), arrayMap(i -> if((tagsPresent[i]) = 0, toString(NULL), tagsAllKey[i]), arrayEnumerate(tagsPresent))) AS tagsKey, "
+        + "        arrayFilter(x -> isNotNull(x)," + tagsQueryStatement3 + " ) AS tagsKey, "
         + "        array(" + tagsQueryStatement1 + ") AS tagsAllKey, "
         + "        arrayFilter(x -> isNotNull(x), array(" + tagsQueryStatement2 + ") ) AS tagsValue, "
         + "        arrayMap(x -> isNotNull(x), array(" + tagsQueryStatement2 + ") ) AS tagsPresent, "
