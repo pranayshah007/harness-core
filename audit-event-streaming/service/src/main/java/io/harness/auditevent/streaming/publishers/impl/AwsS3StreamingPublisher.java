@@ -8,6 +8,8 @@
 package io.harness.auditevent.streaming.publishers.impl;
 
 import static io.harness.auditevent.streaming.AuditEventStreamingConstants.AWS_S3_STREAMING_PUBLISHER;
+import static io.harness.auditevent.streaming.beans.PublishResponseStatus.FAILED;
+import static io.harness.auditevent.streaming.beans.PublishResponseStatus.SUCCESS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.NgSetupFields.NG;
@@ -20,6 +22,10 @@ import io.harness.audit.entities.streaming.AwsS3StreamingDestination;
 import io.harness.audit.entities.streaming.StreamingDestination;
 import io.harness.audit.streaming.dtos.AuditBatchDTO;
 import io.harness.audit.streaming.outgoing.OutgoingAuditMessage;
+import io.harness.auditevent.streaming.beans.PublishResponse;
+import io.harness.auditevent.streaming.beans.PublishResponse.PublishResponseBuilder;
+import io.harness.auditevent.streaming.beans.PublishResponseStatus;
+import io.harness.auditevent.streaming.entities.BatchFailureInfo;
 import io.harness.auditevent.streaming.entities.StreamingBatch;
 import io.harness.auditevent.streaming.publishers.StreamingPublisher;
 import io.harness.beans.DelegateTaskRequest;
@@ -27,15 +33,17 @@ import io.harness.beans.IdentifierRef;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResourceClient;
+import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsPutAuditBatchToBucketTaskParamsRequest;
+import io.harness.delegate.beans.connector.awsconnector.AwsPutAuditBatchToBucketTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsTaskType;
 import io.harness.delegate.utils.TaskSetupAbstractionHelper;
 import io.harness.encryption.Scope;
-import io.harness.exception.DelegateServiceDriverException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.logging.CommandExecutionStatus;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
 import io.harness.remote.client.NGRestUtils;
@@ -115,22 +123,21 @@ public class AwsS3StreamingPublisher implements StreamingPublisher {
   }
 
   @Override
-  public boolean publish(StreamingDestination streamingDestination, StreamingBatch streamingBatch,
+  public PublishResponse publish(StreamingDestination streamingDestination, StreamingBatch streamingBatch,
       List<OutgoingAuditMessage> outgoingAuditMessages) {
     if (isEmpty(outgoingAuditMessages)) {
-      return true;
+      return PublishResponse.builder().status(SUCCESS).build();
     }
-    AwsConnectorDTO connector =
-        getAwsConnector(streamingDestination.getAccountIdentifier(), streamingDestination.getConnectorRef());
+    if (AWS_S3 == streamingDestination.getType()) {
+      AwsConnectorDTO connector =
+          getAwsConnector(streamingDestination.getAccountIdentifier(), streamingDestination.getConnectorRef());
 
-    BaseNGAccess baseNGAccess = BaseNGAccess.builder()
-                                    .accountIdentifier(streamingDestination.getAccountIdentifier())
-                                    .identifier(streamingDestination.getConnectorRef())
-                                    .build();
+      BaseNGAccess baseNGAccess = BaseNGAccess.builder()
+                                      .accountIdentifier(streamingDestination.getAccountIdentifier())
+                                      .identifier(streamingDestination.getConnectorRef())
+                                      .build();
 
-    List<EncryptedDataDetail> encryptionDetails = getAwsEncryptionDetails(connector, baseNGAccess);
-
-    if (AWS_S3.equals(streamingDestination.getType())) {
+      List<EncryptedDataDetail> encryptionDetails = getAwsEncryptionDetails(connector, baseNGAccess);
       AwsPutAuditBatchToBucketTaskParamsRequest awsTaskRequestParam =
           AwsPutAuditBatchToBucketTaskParamsRequest.builder()
               .awsTaskType(AwsTaskType.PUT_AUDIT_BATCH_TO_BUCKET)
@@ -158,15 +165,44 @@ public class AwsS3StreamingPublisher implements StreamingPublisher {
               .taskSelectors(awsTaskRequestParam.getAwsConnector().getDelegateSelectors())
               .build();
       try {
-        delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);
-      } catch (DelegateServiceDriverException ex) {
-        // Handle Exception
-        return false;
+        DelegateResponseData responseData = delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);
+        return getResponse(responseData);
+      } catch (Exception exception) {
+        log.error(getFullLogMessage("Error publishing batch.", streamingBatch), exception);
+        return PublishResponse.builder()
+            .status(FAILED)
+            .failureInfo(BatchFailureInfo.builder().message(exception.getMessage()).build())
+            .build();
       }
     } else {
-      return false;
+      return PublishResponse.builder()
+          .status(FAILED)
+          .failureInfo(
+              BatchFailureInfo.builder()
+                  .message(String.format("Unsupported streaming destination [%s].", streamingDestination.getType()))
+                  .build())
+          .build();
     }
+  }
 
-    return true;
+  private String getFullLogMessage(String message, StreamingBatch streamingBatch) {
+    return String.format("%s [streamingBatchId = %s] [streamingDestination = %s] [accountIdentifier = %s]", message,
+        streamingBatch.getId(), streamingBatch.getStreamingDestinationIdentifier(),
+        streamingBatch.getAccountIdentifier());
+  }
+
+  private PublishResponse getResponse(DelegateResponseData responseData) {
+    PublishResponseBuilder publishResponseBuilder = PublishResponse.builder();
+    if (responseData instanceof AwsPutAuditBatchToBucketTaskResponse) {
+      AwsPutAuditBatchToBucketTaskResponse taskResponse = (AwsPutAuditBatchToBucketTaskResponse) responseData;
+      PublishResponseStatus publishResponseStatus =
+          taskResponse.getCommandExecutionStatus() == CommandExecutionStatus.SUCCESS ? SUCCESS : FAILED;
+      if (publishResponseStatus == FAILED) {
+        BatchFailureInfo failureInfo = BatchFailureInfo.builder().message(taskResponse.getErrorMessage()).build();
+        publishResponseBuilder.failureInfo(failureInfo);
+      }
+      publishResponseBuilder.status(publishResponseStatus);
+    }
+    return publishResponseBuilder.build();
   }
 }

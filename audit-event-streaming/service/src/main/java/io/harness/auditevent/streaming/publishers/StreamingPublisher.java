@@ -9,11 +9,12 @@ package io.harness.auditevent.streaming.publishers;
 
 import io.harness.audit.entities.streaming.StreamingDestination;
 import io.harness.audit.streaming.outgoing.OutgoingAuditMessage;
+import io.harness.auditevent.streaming.beans.PublishResponse;
 import io.harness.auditevent.streaming.entities.StreamingBatch;
 
 import java.util.List;
 
 public interface StreamingPublisher {
-  boolean publish(StreamingDestination streamingDestination, StreamingBatch streamingBatch,
+  PublishResponse publish(StreamingDestination streamingDestination, StreamingBatch streamingBatch,
       List<OutgoingAuditMessage> outgoingAuditMessages);
 }

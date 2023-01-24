@@ -162,7 +162,7 @@ public class AuditEventStreamingModule extends AbstractModule {
       }
     });
 
-    install(DelegateServiceDriverModule.getInstance(false, false));
+    install(DelegateServiceDriverModule.getInstance(true, false));
     install(new DelegateServiceDriverGrpcClientModule(
         auditEventStreamingConfig.getServiceSecrets().getNgManagerServiceSecret(),
         auditEventStreamingConfig.getDelegateServiceGrpcConfig().getTarget(),
