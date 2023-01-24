@@ -6,6 +6,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
+import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
 import io.harness.delegate.exception.GoogleFunctionException;
 import io.harness.delegate.task.googlefunction.GoogleFunctionCommandTaskHelper;
 import io.harness.delegate.task.googlefunctionbeans.GcpGoogleFunctionInfraConfig;
@@ -15,10 +16,15 @@ import io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionDeploy
 import io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionCommandResponse;
 import io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionDeployResponse;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.googlefunctions.command.GoogleFunctionsCommandUnitConstants;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.logging.LogCallback;
+import io.harness.logging.LogLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
+
+import static java.lang.String.format;
 
 
 @OwnedBy(HarnessTeam.CDP)
@@ -41,13 +47,18 @@ public class GoogleFunctionDeployCommandTaskHandler extends GoogleFunctionComman
                 googleFunctionDeployRequest.getGoogleFunctionInfraConfig();
 
         try{
+            LogCallback executionLogCallback = new NGDelegateLogCallback(iLogStreamingTaskClient,
+                    GoogleFunctionsCommandUnitConstants.deploy.toString(),
+            true, commandUnitsProgress);
+            executionLogCallback.saveExecutionLog(format("Deploying..%n%n"), LogLevel.INFO);
             Function function = googleFunctionCommandTaskHelper.deployFunction(googleFunctionInfraConfig,
                     googleFunctionDeployRequest.getGoogleFunctionDeployManifestContent(),
                     googleFunctionDeployRequest.getUpdateFieldMaskContent(),
-                    googleFunctionDeployRequest.getGoogleFunctionArtifactConfig(), true);
+                    googleFunctionDeployRequest.getGoogleFunctionArtifactConfig(), true, executionLogCallback);
 
             GoogleFunction googleFunction = googleFunctionCommandTaskHelper.getGoogleFunction(function,
                     googleFunctionInfraConfig);
+            executionLogCallback.saveExecutionLog("Done", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
 
             return GoogleFunctionDeployResponse.builder()
                     .commandExecutionStatus(CommandExecutionStatus.SUCCESS)

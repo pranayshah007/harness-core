@@ -9,6 +9,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
+import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
 import io.harness.delegate.exception.GoogleFunctionException;
 import io.harness.delegate.task.googlefunction.GoogleFunctionCommandTaskHelper;
 import io.harness.delegate.task.googlefunctionbeans.GcpGoogleFunctionInfraConfig;
@@ -16,10 +17,14 @@ import io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionComman
 import io.harness.delegate.task.googlefunctionbeans.request.GoogleFunctionPrepareRollbackRequest;
 import io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionCommandResponse;
 import io.harness.delegate.task.googlefunctionbeans.response.GoogleFunctionPrepareRollbackResponse;
+import io.harness.ecs.EcsCommandUnitConstants;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
+import io.harness.googlefunctions.command.GoogleFunctionsCommandUnitConstants;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.logging.LogCallback;
+import io.harness.logging.LogLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
@@ -48,7 +53,10 @@ public class GoogleFunctionPrepareRollbackCommandTaskHandler extends GoogleFunct
         GcpGoogleFunctionInfraConfig googleFunctionInfraConfig =
                 (GcpGoogleFunctionInfraConfig) googleFunctionPrepareRollbackRequest.getGoogleFunctionInfraConfig();
         try {
+            LogCallback executionLogCallback = new NGDelegateLogCallback(iLogStreamingTaskClient, GoogleFunctionsCommandUnitConstants.prepareRollbackData.toString(),
+                    true, commandUnitsProgress);
 
+            executionLogCallback.saveExecutionLog(format("Preparing Rollback Data..%n%n"), LogLevel.INFO);
             CreateFunctionRequest.Builder createFunctionRequestBuilder = CreateFunctionRequest.newBuilder();
             googleFunctionCommandTaskHelper.parseStringContentAsClassBuilder(
                     googleFunctionPrepareRollbackRequest.getGoogleFunctionDeployManifestContent(),
@@ -58,12 +66,19 @@ public class GoogleFunctionPrepareRollbackCommandTaskHandler extends GoogleFunct
             String functionName = googleFunctionCommandTaskHelper.getFunctionName(googleFunctionInfraConfig.getProject(),
                     googleFunctionInfraConfig.getRegion(), createFunctionRequestBuilder.getFunction().getName());
 
+            executionLogCallback.saveExecutionLog(
+                    format("Fetching Function Details for function: %s in project: %s and region: %s ..",
+                            createFunctionRequestBuilder.getFunction().getName(), googleFunctionInfraConfig.getProject(),
+                            googleFunctionInfraConfig.getRegion()), LogLevel.INFO);
+
             Optional<Function> existingFunctionOptional = googleFunctionCommandTaskHelper.getFunction(functionName,
                     googleFunctionInfraConfig.getGcpConnectorDTO(), googleFunctionInfraConfig.getProject(),
                     googleFunctionInfraConfig.getRegion());
             if(existingFunctionOptional.isPresent()) {
                 // if function exist
-
+                executionLogCallback.saveExecutionLog(
+                        format("Fetched Function Details for function %s %n%n", createFunctionRequestBuilder.getFunction().getName()), LogLevel.INFO);
+                executionLogCallback.saveExecutionLog(JsonFormat.printer().print(existingFunctionOptional.get()));
                 Function existingFunction = existingFunctionOptional.get();
                 Optional<String> cloudRunServiceNameOptional = googleFunctionCommandTaskHelper.getCloudRunServiceName(existingFunction);
                 if(cloudRunServiceNameOptional.isEmpty()){
@@ -73,18 +88,30 @@ public class GoogleFunctionPrepareRollbackCommandTaskHandler extends GoogleFunct
                                     "are integrated with cloud run",
                             new InvalidRequestException("Cloud Run Service doesn't exist with Cloud Function."));
                 }
+                executionLogCallback.saveExecutionLog(
+                        format("Fetching Service Details for Cloud-Run service: %s in project: %s and region: %s ..",
+                                googleFunctionCommandTaskHelper.getResourceName(cloudRunServiceNameOptional.get()),
+                                googleFunctionInfraConfig.getProject(), googleFunctionInfraConfig.getRegion()), LogLevel.INFO);
                 Service existingService = googleFunctionCommandTaskHelper.getCloudRunService(cloudRunServiceNameOptional.get(),
                         googleFunctionInfraConfig.getGcpConnectorDTO(), googleFunctionInfraConfig.getProject(),
                         googleFunctionInfraConfig.getRegion());
 
+                executionLogCallback.saveExecutionLog(format("Fetched Service Details for Cloud-Run service %s ..%n%n",
+                                googleFunctionCommandTaskHelper.getResourceName(cloudRunServiceNameOptional.get())), LogLevel.INFO);
+                executionLogCallback.saveExecutionLog(JsonFormat.printer().print(existingService));
+
                 if(!googleFunctionCommandTaskHelper.validateTrafficInExistingRevisions(existingService.getTrafficStatusesList())) {
-                    //todo: show traffic percents in log
+                    googleFunctionCommandTaskHelper.printExistingRevisionsTraffic(existingService.getTrafficStatusesList(),
+                            executionLogCallback, cloudRunServiceNameOptional.get());
+                    executionLogCallback.saveExecutionLog("Only one revision of Cloud-Run service should have 100% traffic" +
+                            " before deployment", LogLevel.WARN);
                     throw NestedExceptionUtils.hintWithExplanationException(
-                            format("Please make sure that one revision cloud run service is serving full traffic. Please check execution logs" +
-                                    "to see present traffic split among revisions."),
-                            format("Only one revision of cloud run service is expected to serve full traffic before new deployment."),
+                            "Please make sure that one revision cloud run service is serving full traffic. Please check execution logs" +
+                                    "to see present traffic split among revisions.",
+                            "Only one revision of cloud run service is expected to serve full traffic before new deployment.",
                             new InvalidRequestException("More than one Revision of cloud run service is serving traffic."));
                 }
+                executionLogCallback.saveExecutionLog("Done", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
                 return GoogleFunctionPrepareRollbackResponse.builder()
                         .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                         .isFirstDeployment(false)
@@ -94,6 +121,11 @@ public class GoogleFunctionPrepareRollbackCommandTaskHandler extends GoogleFunct
             }
             else {
                 // if function doesn't exist
+                executionLogCallback.saveExecutionLog(
+                        format("Function %s doesn't exist in project: %s and region: %s. " +
+                                "Skipping Prepare Rollback Data..", createFunctionRequestBuilder.getFunction().getName(),
+                                googleFunctionInfraConfig.getProject(), googleFunctionInfraConfig.getRegion()), LogLevel.INFO,
+                        CommandExecutionStatus.SUCCESS);
                 return GoogleFunctionPrepareRollbackResponse.builder()
                         .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                         .isFirstDeployment(true)

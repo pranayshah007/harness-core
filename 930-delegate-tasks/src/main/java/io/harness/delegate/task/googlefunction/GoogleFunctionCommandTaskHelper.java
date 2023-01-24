@@ -48,9 +48,12 @@ import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.googlefunctions.GcpInternalConfig;
 import io.harness.googlefunctions.GoogleCloudFunctionClient;
 import io.harness.googlefunctions.GoogleCloudRunClient;
+import io.harness.logging.LogCallback;
+import io.harness.logging.LogLevel;
 import io.harness.threading.Morpheus;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import software.wings.beans.LogColor;
 
 import java.io.IOException;
 import java.util.List;
@@ -60,9 +63,13 @@ import java.util.concurrent.ExecutionException;
 import static com.google.cloud.run.v2.TrafficTargetAllocationType.TRAFFIC_TARGET_ALLOCATION_TYPE_LATEST;
 import static com.google.common.collect.Lists.newArrayList;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.connector.gcpconnector.GcpCredentialType.INHERIT_FROM_DELEGATE;
 import static java.lang.String.format;
 import static java.time.Duration.ofSeconds;
+import static software.wings.beans.LogColor.White;
+import static software.wings.beans.LogHelper.color;
+import static software.wings.beans.LogWeight.Bold;
 
 @OwnedBy(CDP)
 @Singleton
@@ -76,7 +83,7 @@ public class GoogleFunctionCommandTaskHelper {
     public Function deployFunction(GcpGoogleFunctionInfraConfig googleFunctionInfraConfig,
                                    String googleFunctionDeployManifestContent, String updateFieldMaskContent,
                                    GoogleFunctionArtifactConfig googleFunctionArtifactConfig,
-                                   boolean latestTrafficFlag) throws IOException,
+                                   boolean latestTrafficFlag, LogCallback logCallback) throws IOException,
             ExecutionException, InterruptedException {
 
         CreateFunctionRequest.Builder createFunctionRequestBuilder = CreateFunctionRequest.newBuilder();
@@ -108,15 +115,22 @@ public class GoogleFunctionCommandTaskHelper {
         //check if function already exists
         Optional<Function> existingFunctionOptional = getFunction(functionName, googleFunctionInfraConfig.getGcpConnectorDTO(),
                 googleFunctionInfraConfig.getProject(), googleFunctionInfraConfig.getRegion());
+        printManifestContent(googleFunctionDeployManifestContent,logCallback);
 
         if(existingFunctionOptional.isEmpty()) {
             //create new function
+            logCallback.saveExecutionLog(
+                    format("Creating Function: %s in project: %s and region: %s %n",functionName,
+                            googleFunctionInfraConfig.getProject(), googleFunctionInfraConfig.getRegion()), LogLevel.INFO);
             Function function = createFunction(createFunctionRequestBuilder.build(), googleFunctionInfraConfig.getGcpConnectorDTO(),
-                    googleFunctionInfraConfig.getProject(), googleFunctionInfraConfig.getRegion());
+                    googleFunctionInfraConfig.getProject(), googleFunctionInfraConfig.getRegion(),logCallback);
+            logCallback.saveExecutionLog(
+                    format("Created Function: %s in project: %s and region: %s %n",functionName,
+                            googleFunctionInfraConfig.getProject(), googleFunctionInfraConfig.getRegion()), LogLevel.INFO);
             if(!latestTrafficFlag) {
                 updateFullTrafficToSingleRevision(function.getServiceConfig().getService(),
                         function.getServiceConfig().getRevision(),googleFunctionInfraConfig.getGcpConnectorDTO(),
-                        googleFunctionInfraConfig.getProject(), googleFunctionInfraConfig.getRegion());
+                        googleFunctionInfraConfig.getProject(), googleFunctionInfraConfig.getRegion(), logCallback);
             }
             return function;
         }
@@ -130,11 +144,20 @@ public class GoogleFunctionCommandTaskHelper {
                 parseStringContentAsClassBuilder(updateFieldMaskContent, fieldMaskBuilder, "updateFieldMask");
                 updateFunctionRequestBuilder.setUpdateMask(fieldMaskBuilder.build());
             }
+            logCallback.saveExecutionLog(
+                    format("Updating Function: %s in project: %s and region: %s %n",functionName,
+                            googleFunctionInfraConfig.getProject(), googleFunctionInfraConfig.getRegion()), LogLevel.INFO);
             Function function = updateFunction(updateFunctionRequestBuilder.build(), googleFunctionInfraConfig.getGcpConnectorDTO(),
-                    googleFunctionInfraConfig.getProject(), googleFunctionInfraConfig.getRegion());
+                    googleFunctionInfraConfig.getProject(), googleFunctionInfraConfig.getRegion(),logCallback);
+            logCallback.saveExecutionLog(
+                    format("Updated Function: %s in project: %s and region: %s %n",functionName,
+                            googleFunctionInfraConfig.getProject(), googleFunctionInfraConfig.getRegion()), LogLevel.INFO);
+            logCallback.saveExecutionLog(format("Deleting temporary revision: %s present in Cloud-Run service: %s",
+                    getResourceName(getTemporaryRevisionName(function.getServiceConfig().getService())),
+                    getResourceName(function.getServiceConfig().getService())));
             deleteRevision(getTemporaryRevisionName(function.getServiceConfig().getService()),
                     googleFunctionInfraConfig.getGcpConnectorDTO(), googleFunctionInfraConfig.getProject(),
-                    googleFunctionInfraConfig.getRegion());
+                    googleFunctionInfraConfig.getRegion(),logCallback);
             return function;
         }
     }
@@ -155,21 +178,23 @@ public class GoogleFunctionCommandTaskHelper {
     }
 
     public Function createFunction(CreateFunctionRequest createFunctionRequest, GcpConnectorDTO gcpConnectorDTO,
-                                   String project, String region) throws ExecutionException, InterruptedException {
+                                   String project, String region, LogCallback logCallback) throws ExecutionException, InterruptedException {
         OperationFuture<Function, OperationMetadata> operationFuture = googleCloudFunctionClient.createFunction(
                 createFunctionRequest, getGcpInternalConfig(gcpConnectorDTO, region,
                 project));
         validateOperationSnapshot(operationFuture.getInitialFuture(), "createFunction");
-        return checkFunctionDeploymentSteadyState(createFunctionRequest.getFunction().getName(), gcpConnectorDTO, project, region);
+        return checkFunctionDeploymentSteadyState(createFunctionRequest.getFunction().getName(), gcpConnectorDTO, project, region,
+                logCallback);
     }
 
     public Function updateFunction(UpdateFunctionRequest updateFunctionRequest, GcpConnectorDTO gcpConnectorDTO,
-                                   String project, String region) {
+                                   String project, String region, LogCallback logCallback) {
         OperationFuture<Function, OperationMetadata> operationFuture = googleCloudFunctionClient.updateFunction(
                 updateFunctionRequest, getGcpInternalConfig(gcpConnectorDTO, region,
                         project));
         validateOperationSnapshot(operationFuture.getInitialFuture(), "updateFunction");
-        return checkFunctionDeploymentSteadyState(updateFunctionRequest.getFunction().getName(), gcpConnectorDTO, project, region);
+        return checkFunctionDeploymentSteadyState(updateFunctionRequest.getFunction().getName(), gcpConnectorDTO, project, region,
+                logCallback);
     }
 
     private void validateOperationSnapshot(ApiFuture<OperationSnapshot> operationSnapshot,
@@ -197,7 +222,7 @@ public class GoogleFunctionCommandTaskHelper {
     }
 
     private Function checkFunctionDeploymentSteadyState(String functionName, GcpConnectorDTO gcpConnectorDTO,
-                                              String project, String region) {
+                                              String project, String region, LogCallback logCallback) {
         Function function = null;
         int currentApiCall = 0;
         do {
@@ -210,22 +235,22 @@ public class GoogleFunctionCommandTaskHelper {
             if (function.getState() == Function.State.ACTIVE || function.getState() == Function.State.FAILED) {
                 break;
             } else if (function.getState() == Function.State.DEPLOYING) {
-                System.out.println("Deploying Function...");
+                logCallback.saveExecutionLog(format("Function deployment in progress: %s",color(function.getName(),LogColor.Yellow)));
             }
             Morpheus.sleep(ofSeconds(10));
         }
         while (currentApiCall<MAXIMUM_STEADY_STATE_CHECK_API_CALL);
 
         if (function.getState() == Function.State.ACTIVE) {
-            System.out.println("Deployed Function Successfully...");
+            logCallback.saveExecutionLog(color("Deployed Function successfully...", LogColor.Green));
         } else {
-            System.out.println("Deployed Failed" + function.getStateMessagesList());
+            logCallback.saveExecutionLog(color("Function Deployment failed...", LogColor.Red));
         }
         return function;
     }
 
     private void checkFunctionDeletionSteadyState(String functionName, GcpConnectorDTO gcpConnectorDTO,
-                                                        String project, String region) {
+                                                        String project, String region, LogCallback logCallback) {
         Function function;
         int currentApiCall = 0;
         do {
@@ -237,12 +262,12 @@ public class GoogleFunctionCommandTaskHelper {
                 function = googleCloudFunctionClient.getFunction(getFunctionRequest, getGcpInternalConfig(gcpConnectorDTO,
                         region, project));
                 if (function.getState() == Function.State.DELETING) {
-                    System.out.println("Deleting Function...");
+                    logCallback.saveExecutionLog(format("Function deletion in progress: %s",color(function.getName(),LogColor.Yellow)));
                 }
                 Morpheus.sleep(ofSeconds(10));
             }
             catch (NotFoundException e) {
-                System.out.println("Deleted Function Successfully...");
+                logCallback.saveExecutionLog(color("Deleted Function successfully...", LogColor.Green));
                 return;
             }
         }
@@ -250,8 +275,8 @@ public class GoogleFunctionCommandTaskHelper {
     }
 
     private void checkRevisionDeletionSteadyState(String revisionName, GcpConnectorDTO gcpConnectorDTO,
-                                                  String project, String region) {
-        Revision revision;
+                                                  String project, String region, LogCallback logCallback) {
+        Revision revision=null;
         int currentApiCall = 0;
         do {
             currentApiCall++;
@@ -261,12 +286,12 @@ public class GoogleFunctionCommandTaskHelper {
             try {
                 revision = googleCloudRunClient.getRevision(getRevisionRequest, getGcpInternalConfig(gcpConnectorDTO,
                         region, project));
-                System.out.println("Deleting Revision...");
+                logCallback.saveExecutionLog(format("Revision deletion in progress: %s",color(revision.getName(),LogColor.Yellow)));
                 Morpheus.sleep(ofSeconds(10));
             }
             catch (Exception e) {
                 if(e.getCause() instanceof NotFoundException) {
-                    System.out.println("Deleted Revision Successfully...");
+                    logCallback.saveExecutionLog(color("Deleted Revision successfully...", LogColor.Green));
                     return;
                 }
                 throw e;
@@ -276,7 +301,8 @@ public class GoogleFunctionCommandTaskHelper {
     }
 
     private void checkTrafficShiftSteadyState(Integer targetTrafficPercent, String targetRevision, String existingRevision,
-                                              String serviceName, GcpConnectorDTO gcpConnectorDTO, String project, String region) {
+                                              String serviceName, GcpConnectorDTO gcpConnectorDTO, String project, String region,
+                                              LogCallback logCallback) {
         Service service;
         int currentApiCall = 0;
         do {
@@ -287,15 +313,15 @@ public class GoogleFunctionCommandTaskHelper {
                 service = googleCloudRunClient.getService(getServiceRequest, getGcpInternalConfig(gcpConnectorDTO,
                         region, project));
                 if(existingRevision==null && matchRevisionTraffic(service.getTrafficStatuses(0),targetTrafficPercent, targetRevision)) {
-                    System.out.println("Updated traffic Successfully...");
+                    logCallback.saveExecutionLog(color("Updated traffic Successfully..", LogColor.Green));
                     return;
                 }
                 else if(validateTrafficStatus(service.getTrafficStatusesList(), targetTrafficPercent, targetRevision,
                         existingRevision)) {
-                    System.out.println("Updated traffic Successfully...");
+                    logCallback.saveExecutionLog(color("Updated traffic Successfully...", LogColor.Green));
                     return;
                 }
-                System.out.println("Updating traffic...");
+                logCallback.saveExecutionLog(color("Updating traffic...", LogColor.Yellow));
                 Morpheus.sleep(ofSeconds(10));
         }
         while (currentApiCall<MAXIMUM_STEADY_STATE_CHECK_API_CALL);
@@ -316,7 +342,7 @@ public class GoogleFunctionCommandTaskHelper {
     }
 
     private void deleteRevision(String revisionName, GcpConnectorDTO gcpConnectorDTO,
-                                    String project, String region) {
+                                    String project, String region, LogCallback logCallback) {
         GetRevisionRequest getRevisionRequest = GetRevisionRequest.newBuilder()
                 .setName(revisionName)
                 .build();
@@ -326,6 +352,8 @@ public class GoogleFunctionCommandTaskHelper {
         }
         catch (Exception e) {
             if(e.getCause() instanceof NotFoundException) {
+                logCallback.saveExecutionLog(format("Skipping revision: %s deletion as it doesn't exist",
+                        getResourceName(revisionName)));
                 return;
             }
             throw e;
@@ -333,14 +361,15 @@ public class GoogleFunctionCommandTaskHelper {
         DeleteRevisionRequest deleteRevisionRequest = DeleteRevisionRequest.newBuilder()
                 .setName(revisionName)
                 .build();
+        logCallback.saveExecutionLog(format("Deleting revision: %s", getResourceName(revisionName)));
         OperationFuture<Revision, Revision> operationFuture = googleCloudRunClient.deleteRevision(deleteRevisionRequest,
                 getGcpInternalConfig(gcpConnectorDTO, region, project));
         validateOperationSnapshot(operationFuture.getInitialFuture(), "deleteRevision");
-        checkRevisionDeletionSteadyState(revisionName, gcpConnectorDTO, project, region);
+        checkRevisionDeletionSteadyState(revisionName, gcpConnectorDTO, project, region, logCallback);
     }
 
     public void deleteFunction(String functionName, GcpConnectorDTO gcpConnectorDTO,
-                                   String project, String region) throws ExecutionException, InterruptedException {
+                                   String project, String region, LogCallback logCallback) throws ExecutionException, InterruptedException {
         GetFunctionRequest getFunctionRequest = GetFunctionRequest.newBuilder()
                 .setName(functionName)
                 .build();
@@ -349,20 +378,23 @@ public class GoogleFunctionCommandTaskHelper {
                     region, project));
         }
         catch (NotFoundException e) {
+            logCallback.saveExecutionLog(format("Skipping function: %s deletion as it doesn't exist",
+                    getResourceName(functionName)));
             return;
         }
         DeleteFunctionRequest deleteFunctionRequest = DeleteFunctionRequest.newBuilder()
                 .setName(functionName)
                 .build();
+        logCallback.saveExecutionLog(format("Deleting function: %s", getResourceName(functionName)));
         OperationFuture<Empty, OperationMetadata> operationFuture = googleCloudFunctionClient.deleteFunction(
                 deleteFunctionRequest, getGcpInternalConfig(gcpConnectorDTO, region,
                         project));
         validateOperationSnapshot(operationFuture.getInitialFuture(), "deleteFunction");
-        checkFunctionDeletionSteadyState(functionName, gcpConnectorDTO, project, region);
+        checkFunctionDeletionSteadyState(functionName, gcpConnectorDTO, project, region, logCallback );
     }
 
     public void updateTraffic(String serviceName, Integer targetTrafficPercent, String targetRevision, String existingRevision,
-                               GcpConnectorDTO gcpConnectorDTO, String project, String region) {
+                               GcpConnectorDTO gcpConnectorDTO, String project, String region, LogCallback logCallback) {
         if(targetTrafficPercent<=0) {
             throw NestedExceptionUtils.hintWithExplanationException(
                     "Please make sure trafficPercent parameter should be greater than zero",
@@ -381,6 +413,8 @@ public class GoogleFunctionCommandTaskHelper {
         Service existingService = googleCloudRunClient.getService(getServiceRequest,
                 getGcpInternalConfig(gcpConnectorDTO, region, project));
 
+        printExistingRevisionsTraffic(existingService.getTrafficStatusesList(), logCallback, existingService.getName());
+
         RevisionTemplate.Builder revisionTemplateBuilder = existingService.getTemplate().toBuilder();
         revisionTemplateBuilder.setRevision(format(CLOUD_RUN_SERVICE_TEMP_HARNESS_VERSION,getResourceName(serviceName)));
 
@@ -394,16 +428,19 @@ public class GoogleFunctionCommandTaskHelper {
         UpdateServiceRequest updateServiceRequest = UpdateServiceRequest.newBuilder()
                 .setService(newService)
                 .build();
+        logCallback.saveExecutionLog(format("Updating %s percent traffic to Revision: %s in Cloud-Run Service: %s",
+                targetTrafficPercent,getResourceName(targetRevision), getResourceName(serviceName)));
 
         OperationFuture<Service, Service> operationFuture =
          googleCloudRunClient.updateService(updateServiceRequest, getGcpInternalConfig(gcpConnectorDTO, region, project));
         validateOperationSnapshot(operationFuture.getInitialFuture(), "updateTraffic");
         checkTrafficShiftSteadyState(targetTrafficPercent, targetRevision, existingRevision, serviceName, gcpConnectorDTO,
-                 project, region);
+                 project, region, logCallback);
     }
 
     public void updateFullTrafficToSingleRevision(String serviceName, String revision,
-                                                   GcpConnectorDTO gcpConnectorDTO, String project, String region) {
+                                                   GcpConnectorDTO gcpConnectorDTO, String project, String region,
+                                                  LogCallback logCallback) {
         GetServiceRequest getServiceRequest = GetServiceRequest.newBuilder()
                 .setName(serviceName)
                 .build();
@@ -422,12 +459,21 @@ public class GoogleFunctionCommandTaskHelper {
         UpdateServiceRequest updateServiceRequest = UpdateServiceRequest.newBuilder()
                 .setService(newService)
                 .build();
+        printExistingRevisionsTraffic(existingService.getTrafficStatusesList(), logCallback, existingService.getName());
+
+        logCallback.saveExecutionLog(format("Updating full traffic to Revision: %s in Cloud-Run Service: %s",
+                getResourceName(revision), getResourceName(serviceName)));
 
         OperationFuture<Service, Service> operationFuture =
                 googleCloudRunClient.updateService(updateServiceRequest, getGcpInternalConfig(gcpConnectorDTO, region, project));
         validateOperationSnapshot(operationFuture.getInitialFuture(), "updateTraffic");
         checkTrafficShiftSteadyState(100, revision, null, serviceName, gcpConnectorDTO,
-                project, region);
+                project, region, logCallback);
+    }
+
+    public void printManifestContent(String manifestContent, LogCallback logCallback) {
+        logCallback.saveExecutionLog(color(format("Google Function Manifest Content %n"), White, Bold));
+        logCallback.saveExecutionLog(manifestContent);
     }
 
     private boolean validateTrafficStatus(List<TrafficTargetStatus> trafficTargetStatuses, Integer targetTrafficPercent,
@@ -453,7 +499,7 @@ public class GoogleFunctionCommandTaskHelper {
                 .build();
     }
 
-    private String getResourceName(String name) {
+    public String getResourceName(String name) {
         String[] values = name.split("/");
         if(values.length == 0){
             return "";
@@ -516,6 +562,19 @@ public class GoogleFunctionCommandTaskHelper {
             return getResourceName(service.getLatestReadyRevision());
         }
         return trafficTargetStatus.getRevision();
+    }
+
+    public void printExistingRevisionsTraffic(List<TrafficTargetStatus> trafficTargetStatuses,
+                                              LogCallback logCallback, String service) {
+        logCallback.saveExecutionLog(
+                format("Current active revisions in Cloud-Run service: %s", getResourceName(service)), LogLevel.INFO);
+        for(TrafficTargetStatus trafficTargetStatus: trafficTargetStatuses) {
+            if(trafficTargetStatus.getPercent()>0) {
+                logCallback.saveExecutionLog(
+                        color(format("Revision: %s in Cloud-Run service is serving: %s percent traffic..",
+                                trafficTargetStatus.getRevision(), trafficTargetStatus.getPercent()),LogColor.Yellow), LogLevel.INFO);
+            }
+        }
     }
 
     public Service getCloudRunService(String serviceName, GcpConnectorDTO gcpConnectorDTO,
