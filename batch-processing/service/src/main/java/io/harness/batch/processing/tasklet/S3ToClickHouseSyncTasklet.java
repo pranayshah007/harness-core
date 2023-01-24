@@ -28,6 +28,8 @@ import java.io.InputStreamReader;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -239,9 +241,12 @@ public class S3ToClickHouseSyncTasklet implements Tasklet {
   }
 
   public void updateConnectorDataSyncStatus(String connectorId) throws Exception {
+    final String PATTERN_FORMAT = "yyyy-MM-dd HH:mm:ss";
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern(PATTERN_FORMAT).withZone(ZoneOffset.UTC);
+    String currentInstant = formatter.format(Instant.now());
     String insertQuery =
         "INSERT INTO ccm.connectorDataSyncStatus (connectorId, lastSuccessfullExecutionAt, jobType, cloudProviderId)  "
-        + "  VALUES ('" + connectorId + "', '" + Instant.now().toString() + "', 'cloudfunction', 'AWS');";
+        + "  VALUES ('" + connectorId + "', '" + currentInstant + "', 'cloudfunction', 'AWS');";
     clickHouseService.executeClickHouseQuery(configuration.getClickHouseConfig(), insertQuery, Boolean.FALSE);
   }
 
