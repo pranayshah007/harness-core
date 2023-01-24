@@ -47,7 +47,7 @@ public class ConnectorInfoDTO {
   String name;
   @NotNull
   @NotBlank
-  @EntityIdentifier(maxLength = 128)
+  @EntityIdentifier
   @Schema(description = ConnectorConstants.CONNECTOR_IDENTIFIER_MSG)
   String identifier;
   @Schema(description = NGCommonEntityConstants.DESCRIPTION) String description;

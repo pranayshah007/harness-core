@@ -65,7 +65,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @OwnedBy(HarnessTeam.DX)
 public abstract class Connector implements PersistentEntity, NGAccountAccess, GitSyncableEntity {
   @Id @dev.morphia.annotations.Id String id;
-  @NotEmpty @EntityIdentifier(maxLength = 128) String identifier;
+  @NotEmpty @EntityIdentifier String identifier;
   @NotEmpty @NGEntityName(maxLength = 128) String name;
   @NotEmpty io.harness.encryption.Scope scope;
   String description;
