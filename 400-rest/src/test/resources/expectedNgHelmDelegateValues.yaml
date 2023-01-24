@@ -13,7 +13,7 @@
 accountId: ACCOUNT_ID
 
 # Secret identifier associated with the account
-delegateToken: ACCOUNT_KEY
+delegateToken: QUNDT1VOVF9LRVkK
 
 delegateName: harness-delegate
 delegateDockerImage: harness/delegate:latest

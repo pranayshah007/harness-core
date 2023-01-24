@@ -13,7 +13,7 @@
 accountId: ${accountId}
 
 # Secret identifier associated with the account
-delegateToken: ${delegateToken}
+delegateToken: ${base64Secret}
 
 delegateName: ${delegateName}
 delegateDockerImage: ${delegateDockerImage}
