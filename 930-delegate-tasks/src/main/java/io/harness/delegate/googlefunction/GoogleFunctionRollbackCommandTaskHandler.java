@@ -3,6 +3,7 @@ package io.harness.delegate.googlefunction;
 import com.google.cloud.functions.v2.Function;
 import com.google.cloud.run.v2.Service;
 import com.google.inject.Inject;
+import com.google.protobuf.util.JsonFormat;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
@@ -24,6 +25,8 @@ import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import static java.lang.String.format;
+import static software.wings.beans.LogColor.Green;
+import static software.wings.beans.LogHelper.color;
 
 @OwnedBy(HarnessTeam.CDP)
 @NoArgsConstructor
@@ -53,8 +56,7 @@ public class GoogleFunctionRollbackCommandTaskHandler extends GoogleFunctionComm
                 googleFunctionCommandTaskHelper.deleteFunction(functionBuilder.getName(),
                         googleFunctionInfraConfig.getGcpConnectorDTO(),
                         googleFunctionInfraConfig.getProject(), googleFunctionInfraConfig.getRegion(),executionLogCallback);
-                executionLogCallback.saveExecutionLog(
-                        format("Done"), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+                executionLogCallback.saveExecutionLog(color("Done",Green), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
                 return GoogleFunctionRollbackResponse.builder()
                         .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                         .build();
@@ -72,8 +74,8 @@ public class GoogleFunctionRollbackCommandTaskHandler extends GoogleFunctionComm
                         googleFunctionInfraConfig.getGcpConnectorDTO(),
                         googleFunctionInfraConfig.getProject(), googleFunctionInfraConfig.getRegion()).get();
                 GoogleFunction googleFunction = googleFunctionCommandTaskHelper.getGoogleFunction(function,
-                        googleFunctionInfraConfig);
-                executionLogCallback.saveExecutionLog("Done", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+                        googleFunctionInfraConfig, executionLogCallback);
+                executionLogCallback.saveExecutionLog(color("Done",Green), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
                 return GoogleFunctionRollbackResponse.builder()
                         .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                         .function(googleFunction)

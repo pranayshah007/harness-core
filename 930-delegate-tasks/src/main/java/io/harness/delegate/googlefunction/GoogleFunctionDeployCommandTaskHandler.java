@@ -2,6 +2,7 @@ package io.harness.delegate.googlefunction;
 
 import com.google.cloud.functions.v2.Function;
 import com.google.inject.Inject;
+import com.google.protobuf.util.JsonFormat;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
@@ -24,7 +25,12 @@ import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 
+import static io.harness.logging.LogLevel.INFO;
 import static java.lang.String.format;
+import static software.wings.beans.LogColor.Green;
+import static software.wings.beans.LogColor.White;
+import static software.wings.beans.LogHelper.color;
+import static software.wings.beans.LogWeight.Bold;
 
 
 @OwnedBy(HarnessTeam.CDP)
@@ -57,8 +63,8 @@ public class GoogleFunctionDeployCommandTaskHandler extends GoogleFunctionComman
                     googleFunctionDeployRequest.getGoogleFunctionArtifactConfig(), true, executionLogCallback);
 
             GoogleFunction googleFunction = googleFunctionCommandTaskHelper.getGoogleFunction(function,
-                    googleFunctionInfraConfig);
-            executionLogCallback.saveExecutionLog("Done", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+                    googleFunctionInfraConfig, executionLogCallback);
+            executionLogCallback.saveExecutionLog(color("Done",Green), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
 
             return GoogleFunctionDeployResponse.builder()
                     .commandExecutionStatus(CommandExecutionStatus.SUCCESS)

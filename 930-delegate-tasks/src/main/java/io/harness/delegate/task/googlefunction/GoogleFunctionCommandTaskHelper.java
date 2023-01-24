@@ -29,6 +29,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.protobuf.Empty;
 import com.google.protobuf.FieldMask;
+import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Message;
 import com.google.protobuf.util.JsonFormat;
 import io.harness.annotations.dev.OwnedBy;
@@ -65,9 +66,12 @@ import static com.google.common.collect.Lists.newArrayList;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.connector.gcpconnector.GcpCredentialType.INHERIT_FROM_DELEGATE;
+import static io.harness.logging.LogLevel.INFO;
 import static java.lang.String.format;
 import static java.time.Duration.ofSeconds;
+import static software.wings.beans.LogColor.Blue;
 import static software.wings.beans.LogColor.White;
+import static software.wings.beans.LogColor.Yellow;
 import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
 
@@ -125,7 +129,7 @@ public class GoogleFunctionCommandTaskHelper {
             Function function = createFunction(createFunctionRequestBuilder.build(), googleFunctionInfraConfig.getGcpConnectorDTO(),
                     googleFunctionInfraConfig.getProject(), googleFunctionInfraConfig.getRegion(),logCallback);
             logCallback.saveExecutionLog(
-                    format("Created Function: %s in project: %s and region: %s %n",functionName,
+                    format("Created Function: %s in project: %s and region: %s %n&n",functionName,
                             googleFunctionInfraConfig.getProject(), googleFunctionInfraConfig.getRegion()), LogLevel.INFO);
             if(!latestTrafficFlag) {
                 updateFullTrafficToSingleRevision(function.getServiceConfig().getService(),
@@ -267,7 +271,7 @@ public class GoogleFunctionCommandTaskHelper {
                 Morpheus.sleep(ofSeconds(10));
             }
             catch (NotFoundException e) {
-                logCallback.saveExecutionLog(color("Deleted Function successfully...", LogColor.Green));
+                logCallback.saveExecutionLog(color(format("Deleted Function successfully...%n%n"), LogColor.Green));
                 return;
             }
         }
@@ -291,7 +295,7 @@ public class GoogleFunctionCommandTaskHelper {
             }
             catch (Exception e) {
                 if(e.getCause() instanceof NotFoundException) {
-                    logCallback.saveExecutionLog(color("Deleted Revision successfully...", LogColor.Green));
+                    logCallback.saveExecutionLog(color(format("Deleted Revision successfully...%n%n"), LogColor.Green));
                     return;
                 }
                 throw e;
@@ -313,12 +317,12 @@ public class GoogleFunctionCommandTaskHelper {
                 service = googleCloudRunClient.getService(getServiceRequest, getGcpInternalConfig(gcpConnectorDTO,
                         region, project));
                 if(existingRevision==null && matchRevisionTraffic(service.getTrafficStatuses(0),targetTrafficPercent, targetRevision)) {
-                    logCallback.saveExecutionLog(color("Updated traffic Successfully..", LogColor.Green));
+                    logCallback.saveExecutionLog(color(format("Updated traffic Successfully...%n%n"), LogColor.Green));
                     return;
                 }
                 else if(validateTrafficStatus(service.getTrafficStatusesList(), targetTrafficPercent, targetRevision,
                         existingRevision)) {
-                    logCallback.saveExecutionLog(color("Updated traffic Successfully...", LogColor.Green));
+                    logCallback.saveExecutionLog(color(format("Updated traffic Successfully...%n%n"), LogColor.Green));
                     return;
                 }
                 logCallback.saveExecutionLog(color("Updating traffic...", LogColor.Yellow));
@@ -585,7 +589,10 @@ public class GoogleFunctionCommandTaskHelper {
         return googleCloudRunClient.getService(getServiceRequest, getGcpInternalConfig(gcpConnectorDTO, region, project));
     }
 
-    public GoogleFunction getGoogleFunction(Function function, GcpGoogleFunctionInfraConfig googleFunctionInfraConfig){
+    public GoogleFunction getGoogleFunction(Function function, GcpGoogleFunctionInfraConfig googleFunctionInfraConfig,
+                                            LogCallback logCallback) throws InvalidProtocolBufferException {
+        logCallback.saveExecutionLog(color("Updated Functions details: ", Blue, Bold), INFO);
+        logCallback.saveExecutionLog(JsonFormat.printer().print(function));
         GoogleFunction.GoogleCloudRunService googleCloudRunService = GoogleFunction.GoogleCloudRunService.builder()
                 .serviceName(function.getServiceConfig().getService())
                 .memory(function.getServiceConfig().getAvailableMemory())
@@ -595,6 +602,8 @@ public class GoogleFunctionCommandTaskHelper {
         Service cloudRunService = getCloudRunService(function.getServiceConfig().getService(),
                 googleFunctionInfraConfig.getGcpConnectorDTO(), googleFunctionInfraConfig.getProject(),
                 googleFunctionInfraConfig.getRegion());
+        logCallback.saveExecutionLog(color("Updated Cloud-Run Service details: ", Blue, Bold), INFO);
+        logCallback.saveExecutionLog(JsonFormat.printer().print(cloudRunService));
 
         return GoogleFunction.builder()
                 .functionName(function.getName())

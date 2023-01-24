@@ -2,6 +2,7 @@ package io.harness.delegate.googlefunction;
 
 import com.google.cloud.functions.v2.Function;
 import com.google.inject.Inject;
+import com.google.protobuf.util.JsonFormat;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
@@ -22,7 +23,12 @@ import io.harness.logging.LogLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import static io.harness.logging.LogLevel.INFO;
 import static java.lang.String.format;
+import static software.wings.beans.LogColor.Green;
+import static software.wings.beans.LogColor.White;
+import static software.wings.beans.LogHelper.color;
+import static software.wings.beans.LogWeight.Bold;
 
 @OwnedBy(HarnessTeam.CDP)
 @NoArgsConstructor
@@ -51,10 +57,9 @@ public class GoogleFunctionDeployWithoutTrafficCommandTaskHandler extends Google
                     executionLogCallback);
 
             GoogleFunction googleFunction = googleFunctionCommandTaskHelper.getGoogleFunction(function,
-                    googleFunctionInfraConfig);
+                    googleFunctionInfraConfig, executionLogCallback);
 
-            executionLogCallback.saveExecutionLog(
-                    format("Done"), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+            executionLogCallback.saveExecutionLog(color("Done",Green), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
             return GoogleFunctionDeployWithoutTrafficResponse.builder()
                     .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                     .function(googleFunction)

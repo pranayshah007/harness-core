@@ -24,6 +24,8 @@ import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import static java.lang.String.format;
+import static software.wings.beans.LogColor.Green;
+import static software.wings.beans.LogHelper.color;
 
 @OwnedBy(HarnessTeam.CDP)
 @NoArgsConstructor
@@ -64,9 +66,8 @@ public class GoogleFunctionTrafficShiftCommandTaskHandler extends GoogleFunction
                         googleFunctionInfraConfig.getGcpConnectorDTO(),
                         googleFunctionInfraConfig.getProject(), googleFunctionInfraConfig.getRegion()).get();
                 GoogleFunction googleFunction = googleFunctionCommandTaskHelper.getGoogleFunction(function,
-                        googleFunctionInfraConfig);
-                executionLogCallback.saveExecutionLog(
-                        "Done", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+                        googleFunctionInfraConfig, executionLogCallback);
+                executionLogCallback.saveExecutionLog(color("Done",Green), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
                 return GoogleFunctionTrafficShiftResponse.builder()
                         .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                         .function(googleFunction)

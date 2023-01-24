@@ -32,6 +32,8 @@ import org.apache.commons.lang3.tuple.Pair;
 import java.util.Optional;
 
 import static java.lang.String.format;
+import static software.wings.beans.LogColor.Green;
+import static software.wings.beans.LogHelper.color;
 
 @OwnedBy(HarnessTeam.CDP)
 @NoArgsConstructor
@@ -111,7 +113,7 @@ public class GoogleFunctionPrepareRollbackCommandTaskHandler extends GoogleFunct
                             "Only one revision of cloud run service is expected to serve full traffic before new deployment.",
                             new InvalidRequestException("More than one Revision of cloud run service is serving traffic."));
                 }
-                executionLogCallback.saveExecutionLog("Done", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+                executionLogCallback.saveExecutionLog(color("Done",Green), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
                 return GoogleFunctionPrepareRollbackResponse.builder()
                         .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                         .isFirstDeployment(false)
