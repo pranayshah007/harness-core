@@ -16,8 +16,7 @@ import io.harness.ng.core.ProjectScope;
 import io.harness.ng.core.Resource;
 import io.harness.ng.core.ResourceConstants;
 import io.harness.ng.core.ResourceScope;
-import io.harness.pms.contracts.plan.TriggerType;
-import io.harness.pms.contracts.plan.TriggeredBy;
+import io.harness.steps.barriers.beans.StageDetail;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.HashMap;
@@ -28,40 +27,43 @@ import lombok.NoArgsConstructor;
 @OwnedBy(PIPELINE)
 @Getter
 @NoArgsConstructor
-public class PipelineStartEvent implements Event {
+public class StageEndEvent implements Event {
   private String orgIdentifier;
   private String accountIdentifier;
   private String projectIdentifier;
   private String pipelineIdentifier;
   private String pipelineExecutionUuid;
-  private TriggerType triggerType;
-  private TriggeredBy triggeredBy;
-  private Long startTs;
+  private StageDetail stageDetail;
 
-  public PipelineStartEvent(String orgIdentifier, String accountIdentifier, String projectIdentifier,
-      String pipelineIdentifier, String pipelineExecutionUuid, TriggerType triggerType, TriggeredBy triggeredBy,
-      Long startTs) {
+  public StageEndEvent(String orgIdentifier, String accountIdentifier, String projectIdentifier,
+      String pipelineIdentifier, String pipelineExecutionUuid, StageDetail stageDetail, String nodeExecutionId,
+      Long startTs, Long endTs) {
     this.orgIdentifier = orgIdentifier;
     this.accountIdentifier = accountIdentifier;
     this.projectIdentifier = projectIdentifier;
     this.pipelineIdentifier = pipelineIdentifier;
     this.pipelineExecutionUuid = pipelineExecutionUuid;
-    this.triggerType = triggerType;
-    this.triggeredBy = triggeredBy;
+    this.stageDetail = stageDetail;
+    this.nodeExecutionId = nodeExecutionId;
     this.startTs = startTs;
+    this.endTs = endTs;
   }
+
+  private String nodeExecutionId;
+  private Long startTs;
+  private Long endTs;
 
   @JsonIgnore
   @Override
   public ResourceScope getResourceScope() {
-    return new ProjectScope(accountIdentifier, orgIdentifier, projectIdentifier);
+    return new ProjectScope(accountIdentifier, orgIdentifier, stageDetail.getIdentifier());
   }
 
   @JsonIgnore
   @Override
   public Resource getResource() {
     Map<String, String> labels = new HashMap<>();
-    labels.put(ResourceConstants.LABEL_KEY_RESOURCE_NAME, pipelineIdentifier);
+    labels.put(ResourceConstants.LABEL_KEY_RESOURCE_NAME, stageDetail.getIdentifier());
     return Resource.builder()
         .identifier(pipelineIdentifier)
         .type(ResourceTypeConstants.PIPELINE)
@@ -72,6 +74,6 @@ public class PipelineStartEvent implements Event {
   @JsonIgnore
   @Override
   public String getEventType() {
-    return PipelineOutboxEvents.PIPELINE_START;
+    return PipelineOutboxEvents.STAGE_END;
   }
 }

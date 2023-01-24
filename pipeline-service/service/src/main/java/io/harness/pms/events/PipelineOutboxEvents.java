@@ -20,4 +20,6 @@ public class PipelineOutboxEvents {
   public static final String PIPELINE_DELETED = "PipelineDeleted";
   public static final String PIPELINE_START = "PipelineStart";
   public static final String PIPELINE_END = "PipelineEnd";
+  public static final String STAGE_START = "StageStart";
+  public static final String STAGE_END = "StageEnd";
 }
