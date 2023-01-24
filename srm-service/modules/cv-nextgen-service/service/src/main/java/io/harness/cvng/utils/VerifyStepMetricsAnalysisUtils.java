@@ -20,23 +20,27 @@ import io.harness.cvng.analysis.beans.TimeSeriesRecordDTO;
 import io.harness.cvng.analysis.entities.DeploymentTimeSeriesAnalysis;
 import io.harness.cvng.analysis.entities.LearningEngineTask.LearningEngineTaskType;
 import io.harness.cvng.beans.CVMonitoringCategory;
+import io.harness.cvng.beans.MonitoredServiceDataSourceType;
 import io.harness.cvng.beans.ThresholdConfigType;
 import io.harness.cvng.beans.TimeSeriesCustomThresholdActions;
 import io.harness.cvng.beans.TimeSeriesMetricType;
 import io.harness.cvng.beans.TimeSeriesThresholdActionType;
-import io.harness.cvng.beans.TimeSeriesThresholdCriteria;
+import io.harness.cvng.beans.TimeSeriesThresholdComparisonType;
+import io.harness.cvng.beans.TimeSeriesThresholdType;
 import io.harness.cvng.cdng.beans.v2.AnalysedDeploymentTestDataNode;
 import io.harness.cvng.cdng.beans.v2.AnalysisReason;
 import io.harness.cvng.cdng.beans.v2.AnalysisResult;
 import io.harness.cvng.cdng.beans.v2.AppliedDeploymentAnalysisType;
 import io.harness.cvng.cdng.beans.v2.ControlDataType;
+import io.harness.cvng.cdng.beans.v2.HealthSource;
 import io.harness.cvng.cdng.beans.v2.MetricThreshold;
 import io.harness.cvng.cdng.beans.v2.MetricThresholdCriteria;
+import io.harness.cvng.cdng.beans.v2.MetricThresholdType;
 import io.harness.cvng.cdng.beans.v2.MetricType;
 import io.harness.cvng.cdng.beans.v2.MetricValue;
 import io.harness.cvng.cdng.beans.v2.MetricsAnalysis;
+import io.harness.cvng.cdng.beans.v2.ProviderType;
 import io.harness.cvng.core.beans.monitoredService.metricThresholdSpec.MetricCustomThresholdActions;
-import io.harness.cvng.core.beans.monitoredService.metricThresholdSpec.MetricThresholdActionType;
 import io.harness.cvng.core.beans.params.filterParams.DeploymentTimeSeriesAnalysisFilter;
 import io.harness.cvng.core.entities.AnalysisInfo;
 import io.harness.cvng.core.entities.CVConfig;
@@ -64,9 +68,7 @@ public class VerifyStepMetricsAnalysisUtils {
     return deploymentTimeSeriesAnalysisFilter.isAnomalousMetricsOnly() && AnalysisResult.UNHEALTHY != analysisResult;
   }
 
-  private static AnalysisReason getAnalysisReason(HostData hostData) {
-    // TODO: As of now LE doesnt provide any info if a threshold was used. When that info is available, use is to refine
-    // below logic.
+  private static AnalysisReason getAnalysisReason(HostData hostData, Map<String, MetricThreshold> metricThresholdMap) {
     switch (hostData.getRisk()) {
       case NO_DATA:
         return AnalysisReason.NO_TEST_DATA;
@@ -75,11 +77,26 @@ public class VerifyStepMetricsAnalysisUtils {
       case HEALTHY:
       case OBSERVE:
       case NEED_ATTENTION:
-      case UNHEALTHY:
         return AnalysisReason.ML_ANALYSIS;
+      case UNHEALTHY:
+        return getReasonForFailure(hostData, metricThresholdMap);
       default:
         throw new IllegalArgumentException("Unhanded Risk " + hostData.getRisk());
     }
+  }
+
+  private static AnalysisReason getReasonForFailure(
+      HostData hostData, Map<String, MetricThreshold> metricThresholdMap) {
+    if (CollectionUtils.isEmpty(hostData.getAppliedThresholdIds())) {
+      return AnalysisReason.ML_ANALYSIS;
+    }
+    List<String> appliedThresholds = hostData.getAppliedThresholdIds();
+    for (String appliedThreshold : appliedThresholds) {
+      if (metricThresholdMap.get(appliedThreshold).getThresholdType() == MetricThresholdType.FAIL_FAST) {
+        return AnalysisReason.CUSTOM_FAIL_FAST_THRESHOLD;
+      }
+    }
+    return AnalysisReason.ML_ANALYSIS;
   }
 
   private static MetricType getMetricTypeFromMetricDefinition(MetricDefinition metricDefinition) {
@@ -101,27 +118,46 @@ public class VerifyStepMetricsAnalysisUtils {
 
   private static MetricThreshold getMetricThresholdFromTimeSeriesThreshold(TimeSeriesThreshold timeSeriesThreshold) {
     return MetricThreshold.builder()
-        .thresholdType(MetricThresholdActionType.getMetricThresholdActionType(timeSeriesThreshold.getAction()))
+        .thresholdType(MetricThresholdType.fromTimeSeriesThresholdActionType(timeSeriesThreshold.getAction()))
         .action(MetricCustomThresholdActions.getMetricCustomThresholdActions(
             timeSeriesThreshold.getAction().equals(TimeSeriesThresholdActionType.IGNORE)
                 ? TimeSeriesCustomThresholdActions.IGNORE
                 : timeSeriesThreshold.getCriteria().getAction()))
-        .criteria(getMetricThresholdCriteriafromTimeSeriesThresholdCriteria(timeSeriesThreshold.getCriteria()))
+        .criteria(getMetricThresholdCriteriafromTimeSeriesThresholdCriteria(timeSeriesThreshold))
         .isUserDefined(ThresholdConfigType.USER_DEFINED == timeSeriesThreshold.getThresholdConfigType())
         .id(timeSeriesThreshold.getUuid())
         .build();
   }
 
   private static MetricThresholdCriteria getMetricThresholdCriteriafromTimeSeriesThresholdCriteria(
-      TimeSeriesThresholdCriteria timeSeriesThresholdCriteria) {
-    // TODO: Add less than and more than values.
-    return MetricThresholdCriteria.builder()
-        .actionableCount(timeSeriesThresholdCriteria.getOccurrenceCount())
-        .measurementType(timeSeriesThresholdCriteria.getType())
-        .build();
+      TimeSeriesThreshold timeSeriesThreshold) {
+    MetricThresholdCriteria metricThresholdCriteria =
+        MetricThresholdCriteria.builder()
+            .actionableCount(timeSeriesThreshold.getCriteria().getOccurrenceCount())
+            .measurementType(timeSeriesThreshold.getCriteria().getType())
+            .build();
+    Double thresholdValue = timeSeriesThreshold.getCriteria().getValue();
+    if (timeSeriesThreshold.getCriteria().getType() == TimeSeriesThresholdComparisonType.RATIO) {
+      thresholdValue *= 100;
+    }
+    if (timeSeriesThreshold.getAction() == TimeSeriesThresholdActionType.IGNORE) {
+      if (timeSeriesThreshold.getCriteria().getThresholdType() == TimeSeriesThresholdType.ACT_WHEN_LOWER) {
+        metricThresholdCriteria.setGreaterThanThreshold(thresholdValue);
+      } else {
+        metricThresholdCriteria.setLessThanThreshold(thresholdValue);
+      }
+    } else {
+      if (timeSeriesThreshold.getCriteria().getThresholdType() == TimeSeriesThresholdType.ACT_WHEN_LOWER) {
+        metricThresholdCriteria.setLessThanThreshold(thresholdValue);
+      } else {
+        metricThresholdCriteria.setGreaterThanThreshold(thresholdValue);
+      }
+    }
+    return metricThresholdCriteria;
   }
 
-  private static AnalysedDeploymentTestDataNode getAnalysedTestDataNodeFromHostData(HostData hostData) {
+  private static AnalysedDeploymentTestDataNode getAnalysedTestDataNodeFromHostData(
+      HostData hostData, Map<String, MetricThreshold> metricThresholdMap) {
     AnalysisResult analysisResult = AnalysisResult.fromRisk(hostData.getRisk());
     ControlDataType controlDataType = null;
     if (analysisResult != AnalysisResult.NO_ANALYSIS) {
@@ -133,7 +169,7 @@ public class VerifyStepMetricsAnalysisUtils {
     return AnalysedDeploymentTestDataNode.builder()
         .nodeIdentifier(hostData.getHostName().orElse(null))
         .analysisResult(analysisResult)
-        .analysisReason(getAnalysisReason(hostData))
+        .analysisReason(getAnalysisReason(hostData, metricThresholdMap))
         .controlDataType(controlDataType)
         .controlNodeIdentifier(hostData.getNearestControlHost())
         .normalisedControlData(getMetricValuesFromRawValues(hostData.getControlData()))
@@ -151,9 +187,13 @@ public class VerifyStepMetricsAnalysisUtils {
 
   public static List<AnalysedDeploymentTestDataNode> getFilteredAnalysedTestDataNodes(
       TransactionMetricHostData transactionMetricHostData,
-      DeploymentTimeSeriesAnalysisFilter deploymentTimeSeriesAnalysisFilter) {
+      DeploymentTimeSeriesAnalysisFilter deploymentTimeSeriesAnalysisFilter, List<MetricThreshold> thresholds) {
     Set<String> requestedTestNodes =
         new HashSet<>(CollectionUtils.emptyIfNull(deploymentTimeSeriesAnalysisFilter.getHostNames()));
+    Map<String, MetricThreshold> metricThresholdMap =
+        CollectionUtils.emptyIfNull(thresholds)
+            .stream()
+            .collect(Collectors.toMap(MetricThreshold::getId, threshold -> threshold, (existing, current) -> current));
     return transactionMetricHostData.getHostData()
         .stream()
         .filter((HostData host) -> {
@@ -170,7 +210,7 @@ public class VerifyStepMetricsAnalysisUtils {
             return true;
           }
         })
-        .map(VerifyStepMetricsAnalysisUtils::getAnalysedTestDataNodeFromHostData)
+        .map(hostData -> getAnalysedTestDataNodeFromHostData(hostData, metricThresholdMap))
         .collect(Collectors.toList());
   }
 
@@ -327,7 +367,7 @@ public class VerifyStepMetricsAnalysisUtils {
     for (MetricCVConfig<? extends AnalysisInfo> metricCVConfig : filteredMetricCVConfigs) {
       Map<String, MetricDefinition> metricDefinitions = metricCVConfig.getMetricPack().getMetrics().stream().collect(
           Collectors.toMap(MetricDefinition::getIdentifier, metricDefinition -> metricDefinition, (u, v) -> v));
-      String healthSourceIdentifier = metricCVConfig.getFullyQualifiedIdentifier();
+      HealthSource healthSource = getHealthSourceFromCVConfig(metricCVConfig);
       String transactionGroup = getTransactionGroupFromCVConfig(metricCVConfig);
       Map<String, MetricsAnalysis> metricsAnalyses =
           metricCVConfig.getMetricInfos()
@@ -337,7 +377,7 @@ public class VerifyStepMetricsAnalysisUtils {
                   -> MetricsAnalysis.builder()
                          .metricName(metric.getMetricName())
                          .metricIdentifier(metric.getIdentifier())
-                         .healthSourceIdentifier(healthSourceIdentifier)
+                         .healthSource(healthSource)
                          .transactionGroup(transactionGroup)
                          .metricType(getMetricTypeFromCvConfigAndMetricDefinition(
                              metricCVConfig, metricDefinitions.get(metric.getIdentifier())))
@@ -348,6 +388,16 @@ public class VerifyStepMetricsAnalysisUtils {
       mapOfCvConfigIdAndFilteredMetrics.put(metricCVConfig.getUuid(), metricsAnalyses);
     }
     return mapOfCvConfigIdAndFilteredMetrics;
+  }
+
+  private static HealthSource getHealthSourceFromCVConfig(MetricCVConfig<? extends AnalysisInfo> metricCVConfig) {
+    return HealthSource.builder()
+        .healthSourceIdentifier(metricCVConfig.getFullyQualifiedIdentifier())
+        .healthSourceName(metricCVConfig.getMonitoringSourceName())
+        .providerName(MonitoredServiceDataSourceType.dataSourceTypeMonitoredServiceDataSourceTypeMap.get(
+            metricCVConfig.getType()))
+        .providerType(ProviderType.METRICS)
+        .build();
   }
 
   private static String getTransactionGroupFromCVConfig(MetricCVConfig<? extends AnalysisInfo> metricCVConfig) {

@@ -1029,7 +1029,8 @@ public class DeploymentTimeSeriesAnalysisServiceImplTest extends CvNextGenTestBa
     assertThat(metricsAnalyses.get(0).getMetricName()).isEqualTo("name");
     assertThat(metricsAnalyses.get(0).getMetricIdentifier()).isEqualTo("identifier");
     assertThat(metricsAnalyses.get(0).getTransactionGroup()).isEqualTo("txn");
-    assertThat(metricsAnalyses.get(0).getHealthSourceIdentifier()).isEqualTo(cvConfig.getFullyQualifiedIdentifier());
+    assertThat(metricsAnalyses.get(0).getHealthSource().getHealthSourceIdentifier())
+        .isEqualTo(cvConfig.getFullyQualifiedIdentifier());
     assertThat(metricsAnalyses.get(0).getAnalysisResult()).isEqualTo(AnalysisResult.UNHEALTHY);
     assertThat(metricsAnalyses.get(0).getMetricType()).isEqualTo(MetricType.PERFORMANCE_OTHER);
     assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getAnalysisResult())
@@ -1106,7 +1107,8 @@ public class DeploymentTimeSeriesAnalysisServiceImplTest extends CvNextGenTestBa
     assertThat(metricsAnalyses.get(0).getMetricName()).isEqualTo("name");
     assertThat(metricsAnalyses.get(0).getMetricIdentifier()).isNotBlank();
     assertThat(metricsAnalyses.get(0).getTransactionGroup()).isEqualTo("txn");
-    assertThat(metricsAnalyses.get(0).getHealthSourceIdentifier()).isEqualTo(cvConfig.getFullyQualifiedIdentifier());
+    assertThat(metricsAnalyses.get(0).getHealthSource().getHealthSourceIdentifier())
+        .isEqualTo(cvConfig.getFullyQualifiedIdentifier());
     assertThat(metricsAnalyses.get(0).getAnalysisResult()).isEqualTo(AnalysisResult.UNHEALTHY);
     assertThat(metricsAnalyses.get(0).getMetricType()).isEqualTo(MetricType.PERFORMANCE_OTHER);
     assertThat(metricsAnalyses.get(0).getTestDataNodes()).hasSize(1);
@@ -1145,7 +1147,8 @@ public class DeploymentTimeSeriesAnalysisServiceImplTest extends CvNextGenTestBa
     assertThat(metricsAnalyses.get(0).getMetricName()).isEqualTo("name");
     assertThat(metricsAnalyses.get(0).getMetricIdentifier()).isNotBlank();
     assertThat(metricsAnalyses.get(0).getTransactionGroup()).isEqualTo("txn");
-    assertThat(metricsAnalyses.get(0).getHealthSourceIdentifier()).isEqualTo(cvConfig.getFullyQualifiedIdentifier());
+    assertThat(metricsAnalyses.get(0).getHealthSource().getHealthSourceIdentifier())
+        .isEqualTo(cvConfig.getFullyQualifiedIdentifier());
     assertThat(metricsAnalyses.get(0).getAnalysisResult()).isEqualTo(AnalysisResult.UNHEALTHY);
     assertThat(metricsAnalyses.get(0).getMetricType()).isEqualTo(MetricType.PERFORMANCE_OTHER);
     assertThat(metricsAnalyses.get(0).getTestDataNodes()).hasSize(1);

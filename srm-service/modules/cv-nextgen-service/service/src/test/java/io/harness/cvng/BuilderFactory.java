@@ -72,6 +72,7 @@ import io.harness.cvng.cdng.beans.v2.AnalysisResult;
 import io.harness.cvng.cdng.beans.v2.ControlDataType;
 import io.harness.cvng.cdng.beans.v2.MetricThreshold;
 import io.harness.cvng.cdng.beans.v2.MetricThresholdCriteria;
+import io.harness.cvng.cdng.beans.v2.MetricThresholdType;
 import io.harness.cvng.cdng.beans.v2.MetricType;
 import io.harness.cvng.cdng.beans.v2.MetricValue;
 import io.harness.cvng.cdng.beans.v2.MetricsAnalysis;
@@ -102,7 +103,6 @@ import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.CustomHealthS
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.HealthSourceSpec;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.MetricResponseMapping;
 import io.harness.cvng.core.beans.monitoredService.metricThresholdSpec.MetricCustomThresholdActions;
-import io.harness.cvng.core.beans.monitoredService.metricThresholdSpec.MetricThresholdActionType;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
@@ -1666,7 +1666,7 @@ public class BuilderFactory {
 
   public MetricThreshold getMetricThreshold() {
     return MetricThreshold.builder()
-        .thresholdType(MetricThresholdActionType.IGNORE)
+        .thresholdType(MetricThresholdType.IGNORE)
         .isUserDefined(true)
         .action(MetricCustomThresholdActions.IGNORE)
         .criteria(MetricThresholdCriteria.builder().lessThanThreshold(1.0).build())
@@ -1693,7 +1693,9 @@ public class BuilderFactory {
         .metricName("metricName")
         .metricType(MetricType.ERROR)
         .metricIdentifier("metricIdentifier")
-        .healthSourceIdentifier("healthSourceIdentifier")
+        .healthSource(io.harness.cvng.cdng.beans.v2.HealthSource.builder()
+                          .healthSourceIdentifier("healthSourceIdentifier")
+                          .build())
         .transactionGroup("transactionGroup")
         .thresholds(Collections.singletonList(getMetricThreshold()))
         .analysisResult(AnalysisResult.NO_ANALYSIS)

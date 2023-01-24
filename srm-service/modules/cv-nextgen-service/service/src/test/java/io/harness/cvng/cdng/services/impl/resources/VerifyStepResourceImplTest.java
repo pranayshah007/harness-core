@@ -25,6 +25,7 @@ import io.harness.cvng.analysis.beans.Risk;
 import io.harness.cvng.analysis.services.api.DeploymentLogAnalysisService;
 import io.harness.cvng.analysis.services.api.DeploymentTimeSeriesAnalysisService;
 import io.harness.cvng.beans.DataSourceType;
+import io.harness.cvng.beans.MonitoredServiceDataSourceType;
 import io.harness.cvng.beans.activity.ActivityVerificationStatus;
 import io.harness.cvng.beans.job.Sensitivity;
 import io.harness.cvng.beans.job.VerificationJobType;
@@ -170,7 +171,7 @@ public class VerifyStepResourceImplTest extends CvNextGenTestBase {
     assertThat(healthSources).hasSize(1);
     assertThat(healthSources.get(0).getHealthSourceName()).isEqualTo("healthSourceName");
     assertThat(healthSources.get(0).getHealthSourceIdentifier()).isEqualTo("healthSourceIdentifier");
-    assertThat(healthSources.get(0).getProviderName()).isEqualTo(DataSourceType.CLOUDWATCH_METRICS);
+    assertThat(healthSources.get(0).getProviderName()).isEqualTo(MonitoredServiceDataSourceType.CLOUDWATCH_METRICS);
     assertThat(healthSources.get(0).getProviderType()).isEqualTo(ProviderType.METRICS);
   }
 
@@ -270,7 +271,8 @@ public class VerifyStepResourceImplTest extends CvNextGenTestBase {
     assertThat(metricsAnalyses.get(0).getMetricName()).isEqualTo("metricName");
     assertThat(metricsAnalyses.get(0).getMetricIdentifier()).isEqualTo("metricIdentifier");
     assertThat(metricsAnalyses.get(0).getThresholds()).hasSize(1);
-    assertThat(metricsAnalyses.get(0).getHealthSourceIdentifier()).isEqualTo("healthSourceIdentifier");
+    assertThat(metricsAnalyses.get(0).getHealthSource().getHealthSourceIdentifier())
+        .isEqualTo("healthSourceIdentifier");
     assertThat(metricsAnalyses.get(0).getTransactionGroup()).isEqualTo("transactionGroup");
     assertThat(metricsAnalyses.get(0).getTestDataNodes()).hasSize(1);
     assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getAnalysisResult())
