@@ -7,8 +7,11 @@
 
 package software.wings.resources;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.eraro.ErrorCode.USER_DOES_NOT_EXIST;
 import static io.harness.exception.WingsException.USER;
+
+import static software.wings.beans.Account.AccountKeys;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
@@ -36,6 +39,7 @@ import software.wings.service.intfc.UserService;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import java.io.UnsupportedEncodingException;
@@ -85,7 +89,11 @@ public class IdentityServiceResource {
   @Timed
   @ExceptionMetered
   public RestResponse<User> loginUser(@QueryParam("email") String email) {
-    return new RestResponse<>(authenticationManager.loginUserForIdentityService(urlDecode(email)));
+    User user = authenticationManager.loginUserForIdentityService(urlDecode(email));
+    if (user != null && isEmpty(user.getSupportAccounts())) {
+      userService.loadSupportAccounts(user, Sets.newHashSet(AccountKeys.uuid));
+    }
+    return new RestResponse<>(user);
   }
 
   private String urlDecode(String encoded) {
