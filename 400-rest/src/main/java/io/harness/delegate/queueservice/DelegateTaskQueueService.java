@@ -197,8 +197,7 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
     try (AutoLogContext ignore1 = new TaskLogContext(delegateTaskId, OVERRIDE_ERROR);
          AutoLogContext ignore2 = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
       Map<String, List<String>> delegateTaskAborted = getAbortedDelegateTasks();
-      if (delegateTaskAborted.containsKey(accountId)
-          && delegateTaskAborted.get(delegateTaskDequeue.getDelegateTask().getAccountId()).contains(delegateTaskId)) {
+      if (delegateTaskAborted.containsKey(accountId) && delegateTaskAborted.get(accountId).contains(delegateTaskId)) {
         log.info("Aborting delegate task from queue {}", delegateTaskDequeue.getDelegateTask().getUuid());
         return true;
       }
