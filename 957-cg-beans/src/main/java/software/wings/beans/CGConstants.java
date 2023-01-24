@@ -14,4 +14,5 @@ public interface CGConstants {
   String ACCOUNT_ID_KEY = "accountId";
   String LAST_UPDATED_AT_KEY = "lastUpdatedAt";
   String ID_KEY = "_id";
+  String DOT = ".";
 }

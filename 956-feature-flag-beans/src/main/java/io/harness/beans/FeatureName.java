@@ -29,6 +29,8 @@ public enum FeatureName {
       HarnessTeam.SPG),
 
   SPG_ENABLE_NOTIFICATION_RULES("Enables notification rules and approvals notifications by usergroup", HarnessTeam.SPG),
+  SPG_ENABLE_VALIDATION_WORKFLOW_PIPELINE_STAGE(
+      "Enables validation of dot on pipeline and workflow name", HarnessTeam.SPG),
   SPG_NG_GITHUB_WEBHOOK_AUTHENTICATION("Enables authentication for GitHub webhook triggers in NG", HarnessTeam.SPG),
   SPG_ALLOW_DISABLE_TRIGGERS("Allow disabling triggers at application level for CG", HarnessTeam.SPG),
   SPG_ALLOW_UI_JIRA_CUSTOM_DATETIME_FIELD("Enables backend parse custom field time of jira as the UI", HarnessTeam.SPG),
@@ -590,7 +592,10 @@ public enum FeatureName {
       "Enables users to pass commit id as sweeping output and use later in subsequent steps. PM Rohan",
       HarnessTeam.CDP),
   SPG_SIDENAV_COLLAPSE("FF for enabling collapse and expand of side nav", HarnessTeam.SPG),
-  CDS_GOOGLE_CLOUD_FUNCTION("For Enabling CD Google Cloud Functions Swimlane", HarnessTeam.CDP);
+  PL_REMOVE_USER_VIEWER_ROLE_ASSIGNMENTS("Enable removal of user level viewer role assignments", HarnessTeam.PL),
+  CDS_GOOGLE_CLOUD_FUNCTION("This flag is to enable the Google Functions Deployment Swimlane for users. "
+          + "This flag only works with Service and Environments v2",
+      HarnessTeam.CDP);
 
   @Deprecated
   FeatureName() {

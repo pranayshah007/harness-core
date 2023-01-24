@@ -124,4 +124,27 @@ public interface Constants {
   String PIPELINE_INPUTS_VALIDATION_ERROR = "PipelineInputsErrorMetadataV2";
   String MANDATE_CUSTOM_WEBHOOK_AUTHORIZATION = "mandate_custom_webhook_authorization";
   String MANDATE_CUSTOM_WEBHOOK_TRUE_VALUE = "true";
+  String API_SAMPLE_TRIGGER_YAML = "trigger:\n"
+      + "  name: Trigger\n"
+      + "  identifier: Trigger\n"
+      + "  enabled: true\n"
+      + "  orgIdentifier: default\n"
+      + "  projectIdentifier: Terraform_Provider\n"
+      + "  pipelineIdentifier: Terraform_NG_Acc_Tests_With_Notifications\n"
+      + "  source:\n"
+      + "    type: Scheduled\n"
+      + "    spec:\n"
+      + "      type: Cron\n"
+      + "      spec:\n"
+      + "        expression: 0 8,20 * * *\n"
+      + "  inputYaml: |\n"
+      + "    pipeline:\n"
+      + "      identifier: Terraform_NG_Acc_Tests_With_Notifications\n"
+      + "      properties:\n"
+      + "        ci:\n"
+      + "          codebase:\n"
+      + "            build:\n"
+      + "              type: branch\n"
+      + "              spec:\n"
+      + "                branch: main";
 }

@@ -29,6 +29,7 @@ import io.harness.ngmigration.service.entity.SecretMigrationService;
 import io.harness.ngmigration.service.entity.ServiceMigrationService;
 import io.harness.ngmigration.service.entity.ServiceVariableMigrationService;
 import io.harness.ngmigration.service.entity.TemplateMigrationService;
+import io.harness.ngmigration.service.entity.TriggerMigrationService;
 import io.harness.ngmigration.service.entity.WorkflowMigrationService;
 
 import software.wings.ngmigration.NGMigrationEntityType;
@@ -59,6 +60,7 @@ public class NgMigrationFactory {
   @Inject ContainerTaskMigrationService containerTaskMigrationService;
 
   @Inject InfraProvisionerMigrationService infraProvisionerMigrationService;
+  @Inject TriggerMigrationService triggerMigrationService;
 
   public NgMigrationService getMethod(NGMigrationEntityType type) {
     switch (type) {
@@ -104,6 +106,8 @@ public class NgMigrationFactory {
         return containerTaskMigrationService;
       case INFRA_PROVISIONER:
         return infraProvisionerMigrationService;
+      case TRIGGER:
+        return triggerMigrationService;
       default:
         throw new IllegalStateException();
     }

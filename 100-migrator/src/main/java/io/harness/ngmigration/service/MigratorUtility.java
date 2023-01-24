@@ -80,6 +80,8 @@ public class MigratorUtility {
   private static final int WORKFLOW = 70;
   private static final int PIPELINE = 100;
 
+  private static final int TRIGGER = 150;
+
   private static final Map<NGMigrationEntityType, Integer> MIGRATION_ORDER =
       ImmutableMap.<NGMigrationEntityType, Integer>builder()
           .put(NGMigrationEntityType.APPLICATION, APPLICATION)
@@ -99,6 +101,7 @@ public class MigratorUtility {
           .put(NGMigrationEntityType.SERVICE_VARIABLE, SERVICE_VARIABLE)
           .put(NGMigrationEntityType.WORKFLOW, WORKFLOW)
           .put(NGMigrationEntityType.PIPELINE, PIPELINE)
+          .put(NGMigrationEntityType.TRIGGER, TRIGGER)
           .build();
 
   private MigratorUtility() {}

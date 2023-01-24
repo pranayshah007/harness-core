@@ -12,6 +12,7 @@ import io.harness.data.structure.CollectionUtils;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
+import io.harness.ngmigration.expressions.step.StepExpressionFunctor;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.plancreator.steps.internal.PmsAbstractStepNode;
@@ -22,6 +23,8 @@ import io.harness.template.yaml.TemplateLinkConfig;
 import io.harness.yaml.core.timeout.Timeout;
 
 import software.wings.beans.GraphNode;
+import software.wings.beans.PhaseStep;
+import software.wings.beans.WorkflowPhase;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.sm.State;
@@ -40,6 +43,11 @@ public interface StepMapper {
   String getStepType(GraphNode stepYaml);
 
   State getState(GraphNode stepYaml);
+
+  default List<StepExpressionFunctor> getExpressionFunctor(
+      WorkflowMigrationContext context, WorkflowPhase phase, PhaseStep phaseStep, GraphNode graphNode) {
+    return Collections.emptyList();
+  }
 
   AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode);
 
