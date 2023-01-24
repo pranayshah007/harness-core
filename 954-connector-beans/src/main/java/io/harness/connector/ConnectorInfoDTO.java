@@ -42,7 +42,7 @@ import org.hibernate.validator.constraints.NotBlank;
 public class ConnectorInfoDTO {
   @NotNull
   @NotBlank
-  @NGEntityName(maxLength = 128)
+  @NGEntityName
   @Schema(description = ConnectorConstants.CONNECTOR_NAME)
   String name;
   @NotNull

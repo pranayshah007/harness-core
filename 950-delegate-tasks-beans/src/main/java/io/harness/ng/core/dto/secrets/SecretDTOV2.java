@@ -38,7 +38,7 @@ import lombok.NoArgsConstructor;
 @Schema(name = "Secret", description = "This is details of the secret entity defined in Harness.")
 public class SecretDTOV2 {
   @NotNull @Schema(description = "This specifies the type of secret") private SecretType type;
-  @NotNull @NGEntityName(maxLength = 128) @Schema(description = "Name of the Secret") private String name;
+  @NotNull @NGEntityName @Schema(description = "Name of the Secret") private String name;
   @NotNull @EntityIdentifier @Schema(description = "Identifier of the Secret") private String identifier;
   @EntityIdentifier(allowBlank = true)
   @Schema(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE)

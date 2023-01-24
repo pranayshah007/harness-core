@@ -16,11 +16,11 @@ import org.apache.commons.lang3.StringUtils;
 public class NGEntityNameValidator implements ConstraintValidator<NGEntityName, String> {
   private static final String ALLOWED_CHARS_STRING =
       "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_. /";
-  private int maxAllowedLength;
+  private static final int MAX_ALLOWED_LENGTH = 64;
 
   @Override
   public void initialize(NGEntityName constraintAnnotation) {
-    maxAllowedLength = constraintAnnotation.maxLength();
+
   }
 
   @Override
@@ -30,11 +30,10 @@ public class NGEntityNameValidator implements ConstraintValidator<NGEntityName, 
       context.buildConstraintViolationWithTemplate("cannot be empty.").addConstraintViolation();
       return false;
     }
-    if (value.length() > maxAllowedLength) {
+    if (value.length() > MAX_ALLOWED_LENGTH) {
       context.disableDefaultConstraintViolation();
       context
-          .buildConstraintViolationWithTemplate(
-              String.format("cannot be more than %s characters long.", maxAllowedLength))
+          .buildConstraintViolationWithTemplate("cannot be more than 128 characters long.")
           .addConstraintViolation();
       return false;
     }
