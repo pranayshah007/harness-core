@@ -7,23 +7,137 @@
 
 package io.harness.idp;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
+import com.google.inject.Singleton;
+import com.google.inject.name.Named;
+import dev.morphia.converters.TypeConverter;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.idp.secretmanager.SecretManager;
-import io.harness.idp.secretmanager.SecretManagerImpl;
+import io.harness.app.PrimaryVersionManagerModule;
+import io.harness.mongo.AbstractMongoModule;
+import io.harness.mongo.MongoConfig;
+import io.harness.mongo.MongoPersistence;
+import io.harness.morphia.MorphiaRegistrar;
+import io.harness.persistence.HPersistence;
+import io.harness.persistence.NoopUserProvider;
+import io.harness.persistence.UserProvider;
+import io.harness.serializer.KryoRegistrar;
+import io.harness.threading.ThreadPool;
+import io.harness.version.VersionModule;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.convert.converter.Converter;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @OwnedBy(HarnessTeam.IDP)
 public class IDPModule extends AbstractModule {
-  private final io.harness.idp.IDPConfiguration appConfig;
-  public IDPModule(io.harness.idp.IDPConfiguration appConfig) {
+  private final IDPConfiguration appConfig;
+  public IDPModule(IDPConfiguration appConfig) {
     this.appConfig = appConfig;
   }
 
   @Override
   protected void configure() {
-    bind(SecretManager.class).to(SecretManagerImpl.class);
+    install(VersionModule.getInstance());
+    install(PrimaryVersionManagerModule.getInstance());
+    bind(IDPConfiguration.class).toInstance(appConfig);
+    install(new IDPPersistenceModule());
+    install(new AbstractMongoModule() {
+      @Provides
+      @Singleton
+      Set<Class<? extends KryoRegistrar>> kryoRegistrars() {
+        return new HashSet<>();
+      }
+
+      @Provides
+      @Singleton
+      Set<Class<? extends MorphiaRegistrar>> morphiaRegistrars() {
+        return ImmutableSet.<Class<? extends MorphiaRegistrar>>builder().build();
+      }
+
+      @Provides
+      @Singleton
+      Set<Class<? extends TypeConverter>> morphiaConverters() {
+        return ImmutableSet.<Class<? extends TypeConverter>>builder().build();
+      }
+
+      @Provides
+      @Singleton
+      List<Class<? extends Converter<?, ?>>> springConverters() {
+        return ImmutableList.<Class<? extends Converter<?, ?>>>builder()
+                .build();
+      }
+
+      @Override
+      public UserProvider userProvider() {
+        return new NoopUserProvider();
+      }
+
+      @Provides
+      @Singleton
+      @Named("dbAliases")
+      public List<String> getDbAliases() {
+        return appConfig.getDbAliases();
+      }
+
+      @Provides
+      @Singleton
+      @Named("morphiaClasses")
+      Map<Class, String> morphiaCustomCollectionNames() {
+        return ImmutableMap.<Class, String>builder()
+                .build();
+      }
+
+    });
+    // Keeping it to 1 thread to start with. Assuming executor service is used only to
+    // serve health checks. If it's being used for other tasks also, max pool size should be increased.
+    bind(ExecutorService.class)
+            .toInstance(ThreadPool.create(1, 2, 5, TimeUnit.SECONDS,
+                    new ThreadFactoryBuilder()
+                            .setNameFormat("default-idp-service-executor-%d")
+                            .setPriority(Thread.MIN_PRIORITY)
+                            .build()));
+    bind(HPersistence.class).to(MongoPersistence.class).in(Singleton.class);
+  }
+
+//  @Provides
+//  @Singleton
+//  public Set<Class<? extends TypeConverter>> morphiaConverters() {
+//    return ImmutableSet.<Class<? extends TypeConverter>>builder()
+//            .addAll(IDPServiceModuleRegistrars.morphiaConverters)
+//            .build();
+//  }
+
+//  @Provides
+//  @Singleton
+//  List<YamlSchemaRootClass> yamlSchemaRootClasses() {
+//    return ImmutableList.<YamlSchemaRootClass>builder()
+//            .addAll(IDPServiceModuleRegistrars.yamlSchemaRegistrars)
+//            .build();
+//  }
+
+//  @Provides
+//  @Singleton
+//  List<Class<? extends Converter<?, ?>>> springConverters() {
+//    return ImmutableList.<Class<? extends Converter<?, ?>>>builder()
+//            .addAll(IDPServiceModuleRegistrars.springConverters)
+//            .build();
+//  }
+
+  @Provides
+  @Singleton
+  public MongoConfig mongoConfig() {
+    return appConfig.getMongoConfig();
   }
 }
