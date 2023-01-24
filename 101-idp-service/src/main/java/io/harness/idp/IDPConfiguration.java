@@ -7,15 +7,29 @@
 
 package io.harness.idp;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.dropwizard.Configuration;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.mongo.MongoConfig;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @OwnedBy(HarnessTeam.IDP)
 @Slf4j
 public class IDPConfiguration extends Configuration {
     private IDPConfiguration cg;
+    @JsonProperty("mongo") private MongoConfig mongoConfig;
+
+    public List<String> getDbAliases() {
+        List<String> dbAliases = new ArrayList<>();
+        if (mongoConfig != null) {
+            dbAliases.add(mongoConfig.getAliasDBName());
+        }
+        return dbAliases;
+    }
 }
