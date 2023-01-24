@@ -83,6 +83,7 @@ import com.amazonaws.services.ecs.model.ClusterNotFoundException;
 import com.amazonaws.services.ecs.model.ServiceNotFoundException;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.Bucket;
 import com.amazonaws.services.s3.model.BucketVersioningConfiguration;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
@@ -232,9 +233,8 @@ public class AwsApiHelperService {
           closeableAmazonS3Client.getClient().putObject(bucketName, key, messageJson));
     } catch (AmazonServiceException amazonServiceException) {
       if (amazonServiceException.getStatusCode() == 403) {
-        throw new InvalidRequestException("Please provide the correct region corresponding to the AWS access key.");
+        throw new InvalidRequestException(amazonServiceException.getErrorMessage(), AWS_ACCESS_DENIED, USER);
       }
-
       handleAmazonServiceException(amazonServiceException);
     } catch (AmazonClientException amazonClientException) {
       handleAmazonClientException(amazonClientException);
@@ -610,6 +610,8 @@ public class AwsApiHelperService {
       } else {
         throw new InvalidRequestException(sanitizeException.getMessage(), sanitizeException);
       }
+    } else if (amazonServiceException instanceof AmazonS3Exception) {
+      throw amazonServiceException;
     } else {
       log.error("Unhandled aws exception");
       throw new WingsException(ErrorCode.AWS_ACCESS_DENIED).addParam("message", sanitizeException.getMessage());

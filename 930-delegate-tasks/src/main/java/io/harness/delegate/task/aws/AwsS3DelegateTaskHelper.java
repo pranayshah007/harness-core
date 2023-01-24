@@ -134,21 +134,11 @@ public class AwsS3DelegateTaskHelper {
   public DelegateResponseData putAuditBatchToBucket(AwsPutAuditBatchToBucketTaskParamsRequest awsTaskParams) {
     decryptRequestDTOs(awsTaskParams.getAwsConnector(), awsTaskParams.getEncryptionDetails());
     AwsInternalConfig awsInternalConfig = getAwsInternalConfig(awsTaskParams);
-    try {
-      PutObjectResultResponse putObjectResultResponse = awsApiHelperService.putAuditBatchToBucket(
-          awsInternalConfig, awsTaskParams.getRegion(), awsTaskParams.getBucketName(), awsTaskParams.getAuditBatch());
-
-      return AwsPutAuditBatchToBucketTaskResponse.builder()
-          .commandExecutionStatus(SUCCESS)
-          .putObjectResultResponse(putObjectResultResponse)
-          .build();
-    } catch (Exception ex) {
-      log.error("Exception while writing to S3 bucket: ", ex);
-
-      return AwsPutAuditBatchToBucketTaskResponse.builder()
-          .commandExecutionStatus(FAILURE)
-          .errorMessage("Exception while writing to S3 bucket " + (ex.getMessage() != null ? ex.getMessage() : ""))
-          .build();
-    }
+    PutObjectResultResponse putObjectResultResponse = awsApiHelperService.putAuditBatchToBucket(
+        awsInternalConfig, awsTaskParams.getRegion(), awsTaskParams.getBucketName(), awsTaskParams.getAuditBatch());
+    return AwsPutAuditBatchToBucketTaskResponse.builder()
+        .commandExecutionStatus(SUCCESS)
+        .putObjectResultResponse(putObjectResultResponse)
+        .build();
   }
 }
