@@ -260,6 +260,13 @@ public class GitClientV2Impl implements GitClientV2 {
 
     CloneCommand cloneCommand = (CloneCommand) getAuthConfiguredCommand(Git.cloneRepository(), request);
     try (Git git = cloneCommand.setURI(request.getRepoUrl())
+                       .setTransportConfigCallback(transport -> {
+                         if (transport instanceof TransportHttp) {
+                           TransportHttp http = (TransportHttp) transport;
+                           http.setTimeout(90);
+                           http.setHttpConnectionFactory(connectionFactory);
+                         }
+                       })
                        .setDirectory(new File(gitRepoDirectory))
                        .setBranch(isEmpty(request.getBranch()) ? null : request.getBranch())
                        // if set to <code>true</code> no branch will be checked out, after the clone.

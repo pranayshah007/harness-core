@@ -27,7 +27,7 @@ public enum FeatureName {
   SPG_ALLOW_WFLOW_VARIABLES_TO_CONDITION_SKIP_PIPELINE_STAGE("Enables the use of workflow variables to skip"
           + " pipeline stage",
       HarnessTeam.SPG),
-
+  SPG_WFE_PROJECTIONS_DEPLOYMENTS_PAGE("Enable projection on deployments page and executions", HarnessTeam.SPG),
   SPG_ENABLE_NOTIFICATION_RULES("Enables notification rules and approvals notifications by usergroup", HarnessTeam.SPG),
   SPG_ENABLE_VALIDATION_WORKFLOW_PIPELINE_STAGE(
       "Enables validation of dot on pipeline and workflow name", HarnessTeam.SPG),
