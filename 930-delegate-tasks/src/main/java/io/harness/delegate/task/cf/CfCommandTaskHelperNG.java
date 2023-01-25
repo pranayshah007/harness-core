@@ -189,6 +189,7 @@ public class CfCommandTaskHelperNG {
           artifactStream = downloadFromAwsS3(artifactConfig, artifactResponseBuilder, logCallback);
           break;
         case NEXUS3_REGISTRY:
+        case NEXUS2_REGISTRY:
           artifactStream = downloadFromNexus(artifactConfig, artifactResponseBuilder, logCallback);
           break;
         case JENKINS:
