@@ -33,7 +33,7 @@ public class CIK8ExecuteStepTaskParams implements CIExecuteStepTaskParams, Execu
   @NotNull private byte[] serializedStep;
 
   @Builder.Default private static final Type type = Type.K8;
-  CommandUnitsProgress commandUnitsProgress;
+  final CommandUnitsProgress commandUnitsProgress;
   private ILogStreamingTaskClient logStreamingTaskClient;
 
   @Override
