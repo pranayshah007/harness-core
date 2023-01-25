@@ -39,6 +39,7 @@ import io.harness.connector.entities.embedded.azurerepoconnector.AzureRepoHttpAu
 import io.harness.connector.entities.embedded.azurerepoconnector.AzureRepoSshAuthentication;
 import io.harness.connector.entities.embedded.azurerepoconnector.AzureRepoTokenApiAccess;
 import io.harness.connector.entities.embedded.azurerepoconnector.AzureRepoUsernameToken;
+import io.harness.connector.entities.embedded.bamboo.BambooConnector;
 import io.harness.connector.entities.embedded.bitbucketconnector.BitbucketConnector;
 import io.harness.connector.entities.embedded.bitbucketconnector.BitbucketHttpAuthentication;
 import io.harness.connector.entities.embedded.bitbucketconnector.BitbucketSshAuthentication;
@@ -164,6 +165,7 @@ public class ConnectorMorphiaClassesRegistrar implements MorphiaRegistrar {
     set.add(ELKConnector.class);
     set.add(GcpSecretManagerConnector.class);
     set.add(AzureArtifactsConnector.class);
+    set.add(BambooConnector.class);
   }
 
   @Override

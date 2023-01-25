@@ -245,6 +245,7 @@ import io.harness.delegate.task.azure.exception.AzureClientExceptionHandler;
 import io.harness.delegate.task.azure.resource.operation.AzureResourceProvider;
 import io.harness.delegate.task.azureartifacts.AzureArtifactsTestConnectionDelegateTask;
 import io.harness.delegate.task.azureartifacts.AzureArtifactsValidationHandler;
+import io.harness.delegate.task.bamboo.BambooTestConnectionDelegateTask;
 import io.harness.delegate.task.buildsource.BuildSourceTask;
 import io.harness.delegate.task.cek8s.CEKubernetesTestConnectionDelegateTask;
 import io.harness.delegate.task.cek8s.CEKubernetesValidationHandler;
@@ -1917,6 +1918,7 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.NG_HOST_CONNECTIVITY_TASK).toInstance(HostConnectivityValidationDelegateTask.class);
     mapBinder.addBinding(TaskType.DOCKER_CONNECTIVITY_TEST_TASK).toInstance(DockerTestConnectionDelegateTask.class);
     mapBinder.addBinding(TaskType.JENKINS_CONNECTIVITY_TEST_TASK).toInstance(JenkinsTestConnectionDelegateTask.class);
+    mapBinder.addBinding(TaskType.BAMBOO_CONNECTIVITY_TEST_TASK).toInstance(BambooTestConnectionDelegateTask.class);
     mapBinder.addBinding(TaskType.AZURE_ARTIFACTS_CONNECTIVITY_TEST_TASK)
         .toInstance(AzureArtifactsTestConnectionDelegateTask.class);
     mapBinder.addBinding(TaskType.NG_AWS_TASK).toInstance(AwsDelegateTask.class);

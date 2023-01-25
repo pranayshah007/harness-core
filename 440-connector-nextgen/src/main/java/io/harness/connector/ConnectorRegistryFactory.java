@@ -53,6 +53,8 @@ import io.harness.connector.mappers.azuremapper.AzureDTOToEntity;
 import io.harness.connector.mappers.azuremapper.AzureEntityToDTO;
 import io.harness.connector.mappers.azurerepomapper.AzureRepoDTOToEntity;
 import io.harness.connector.mappers.azurerepomapper.AzureRepoEntityToDTO;
+import io.harness.connector.mappers.bamboo.BambooDTOToEntity;
+import io.harness.connector.mappers.bamboo.BambooEntityToDTO;
 import io.harness.connector.mappers.bitbucketconnectormapper.BitbucketDTOToEntity;
 import io.harness.connector.mappers.bitbucketconnectormapper.BitbucketEntityToDTO;
 import io.harness.connector.mappers.ceawsmapper.CEAwsDTOToEntity;
@@ -139,35 +141,8 @@ import io.harness.connector.task.gcp.GcpValidationTaskHandler;
 import io.harness.connector.task.git.GitValidationHandler;
 import io.harness.connector.task.spot.SpotValidationHandler;
 import io.harness.connector.task.tas.TasValidationHandler;
-import io.harness.connector.validator.ArtifactoryConnectionValidator;
-import io.harness.connector.validator.AwsConnectorValidator;
-import io.harness.connector.validator.AzureArtifactsConnectorValidator;
-import io.harness.connector.validator.AzureConnectorValidator;
-import io.harness.connector.validator.CCMConnectorValidator;
-import io.harness.connector.validator.CEKubernetesConnectionValidator;
-import io.harness.connector.validator.CVConnectorValidator;
-import io.harness.connector.validator.ConnectionValidator;
-import io.harness.connector.validator.DockerConnectionValidator;
-import io.harness.connector.validator.ErrorTrackingConnectorValidator;
-import io.harness.connector.validator.GcpConnectorValidator;
-import io.harness.connector.validator.HttpHelmRepoConnectionValidator;
-import io.harness.connector.validator.JenkinsConnectionValidator;
-import io.harness.connector.validator.JiraConnectorValidator;
-import io.harness.connector.validator.KubernetesConnectionValidator;
-import io.harness.connector.validator.NexusConnectorValidator;
-import io.harness.connector.validator.OciHelmRepoConnectionValidator;
-import io.harness.connector.validator.PhysicalDataCenterConnectorValidator;
-import io.harness.connector.validator.SecretManagerConnectorValidator;
-import io.harness.connector.validator.ServiceNowConnectorValidator;
-import io.harness.connector.validator.SpotConnectorValidator;
-import io.harness.connector.validator.scmValidators.AwsCodeCommitValidator;
-import io.harness.connector.validator.scmValidators.AzureRepoConnectorValidator;
-import io.harness.connector.validator.scmValidators.BitbucketConnectorValidator;
-import io.harness.connector.validator.scmValidators.GitConnectorValidator;
-import io.harness.connector.validator.scmValidators.GithubConnectorValidator;
-import io.harness.connector.validator.scmValidators.GitlabConnectorValidator;
-import io.harness.connector.validator.scmValidators.JenkinsConnectorValidationsParamsProvider;
-import io.harness.connector.validator.scmValidators.TasConnectorValidator;
+import io.harness.connector.validator.*;
+import io.harness.connector.validator.scmValidators.*;
 import io.harness.delegate.beans.connector.ConnectorType;
 
 import java.util.HashMap;
@@ -340,6 +315,10 @@ public class ConnectorRegistryFactory {
     registrar.put(ConnectorType.JENKINS,
         new ConnectorRegistrar(ConnectorCategory.ARTIFACTORY, JenkinsConnectionValidator.class,
             JenkinsConnectorValidationsParamsProvider.class, JenkinsDTOToEntity.class, JenkinsEntityToDTO.class,
+            NotSupportedValidationHandler.class));
+    registrar.put(ConnectorType.BAMBOO,
+        new ConnectorRegistrar(ConnectorCategory.ARTIFACTORY, BambooConnectionValidator.class,
+            BambooConnectorValidationsParamsProvider.class, BambooDTOToEntity.class, BambooEntityToDTO.class,
             NotSupportedValidationHandler.class));
     registrar.put(ConnectorType.CUSTOM_SECRET_MANAGER,
         new ConnectorRegistrar(ConnectorCategory.SECRET_MANAGER, SecretManagerConnectorValidator.class,

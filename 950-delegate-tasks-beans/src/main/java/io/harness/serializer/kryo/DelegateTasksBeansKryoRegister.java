@@ -205,6 +205,10 @@ import io.harness.delegate.beans.connector.azureconnector.AzureTaskParams;
 import io.harness.delegate.beans.connector.azureconnector.AzureTaskType;
 import io.harness.delegate.beans.connector.azureconnector.AzureValidationParams;
 import io.harness.delegate.beans.connector.azurekeyvaultconnector.AzureKeyVaultValidationParams;
+import io.harness.delegate.beans.connector.bamboo.BambooCapabilityHelper;
+import io.harness.delegate.beans.connector.bamboo.BambooConnectionTaskResponse;
+import io.harness.delegate.beans.connector.bamboo.BambooTestConnectionTaskParams;
+import io.harness.delegate.beans.connector.bamboo.BambooValidationParams;
 import io.harness.delegate.beans.connector.customsecretmanager.CustomSecretManagerValidationParams;
 import io.harness.delegate.beans.connector.cvconnector.CVConnectorTaskParams;
 import io.harness.delegate.beans.connector.cvconnector.CVConnectorTaskResponse;
@@ -405,6 +409,7 @@ import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsDelegateRequest;
 import io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsDelegateResponse;
+import io.harness.delegate.task.artifacts.bamboo.BambooArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateRequest;
@@ -2235,5 +2240,11 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(ConnectorDecryptionParams.class, 673570);
     kryo.register(GitFileLocationDetails.class, 673571);
     kryo.register(ScmBatchGetFileTaskResponseData.class, 673572);
+
+    kryo.register(BambooTestConnectionTaskParams.class, 873572);
+    kryo.register(BambooConnectionTaskResponse.class, 873573);
+    kryo.register(BambooCapabilityHelper.class, 873574);
+    kryo.register(BambooValidationParams.class, 873575);
+    kryo.register(BambooArtifactDelegateRequest.class, 873576);
   }
 }

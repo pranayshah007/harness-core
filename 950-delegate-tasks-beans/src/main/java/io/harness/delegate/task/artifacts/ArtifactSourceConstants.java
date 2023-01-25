@@ -23,4 +23,5 @@ public interface ArtifactSourceConstants {
   String GOOGLE_ARTIFACT_REGISTRY_NAME = "GoogleArtifactRegistry";
   String AZURE_ARTIFACTS_NAME = "AzureArtifacts";
   String AMI_ARTIFACTS_NAME = "AmazonMachineImage";
+  String BAMBOO_ARTIFACTS_NAME = "Bamboo";
 }
