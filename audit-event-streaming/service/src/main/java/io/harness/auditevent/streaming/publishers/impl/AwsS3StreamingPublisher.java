@@ -64,6 +64,7 @@ import javax.annotation.Nonnull;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 @Slf4j
@@ -76,8 +77,8 @@ public class AwsS3StreamingPublisher implements StreamingPublisher {
   @VisibleForTesting static final int TIMEOUT_IN_SECS = 30;
 
   public AwsS3StreamingPublisher(ConnectorResourceClient connectorResourceClient,
-      SecretManagerClientService secretManagerClientService, TaskSetupAbstractionHelper taskSetupAbstractionHelper,
-      DelegateGrpcClientWrapper delegateGrpcClientWrapper) {
+      @Qualifier("PRIVILEGED") SecretManagerClientService secretManagerClientService,
+      TaskSetupAbstractionHelper taskSetupAbstractionHelper, DelegateGrpcClientWrapper delegateGrpcClientWrapper) {
     this.connectorResourceClient = connectorResourceClient;
     this.secretManagerClientService = secretManagerClientService;
     this.taskSetupAbstractionHelper = taskSetupAbstractionHelper;
