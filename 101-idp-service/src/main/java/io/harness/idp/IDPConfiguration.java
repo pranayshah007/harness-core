@@ -13,6 +13,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.MongoConfig;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
@@ -23,7 +24,7 @@ import java.util.List;
 @Slf4j
 public class IDPConfiguration extends Configuration {
     private IDPConfiguration cg;
-    @JsonProperty("mongo") private MongoConfig mongoConfig;
+    @Setter @JsonProperty("mongo") private MongoConfig mongoConfig;
 
     public List<String> getDbAliases() {
         List<String> dbAliases = new ArrayList<>();
