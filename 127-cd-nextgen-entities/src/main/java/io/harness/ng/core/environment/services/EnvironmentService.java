@@ -54,6 +54,9 @@ public interface EnvironmentService {
   List<Environment> fetchesNonDeletedEnvironmentFromListOfIdentifiers(
       String accountId, String orgIdentifier, String projectIdentifier, List<String> envIdentifierList);
 
+  List<Environment> fetchesEnvironmentFromListOfIdentifiers(
+      String accountId, String orgIdentifier, String projectIdentifier, List<String> envIdentifierList);
+
   String createEnvironmentInputsYaml(
       String accountId, String orgIdentifier, String projectIdentifier, String envIdentifier);
 
