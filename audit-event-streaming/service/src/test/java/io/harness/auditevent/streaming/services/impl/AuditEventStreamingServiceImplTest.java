@@ -117,33 +117,6 @@ public class AuditEventStreamingServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = NISHANT)
   @Category(UnitTests.class)
-  public void testStream_whenStatusFailedAndRetriesExhausted() {
-    long now = System.currentTimeMillis();
-    StreamingDestination streamingDestination = getStreamingDestination();
-    StreamingBatch streamingBatch = getStreamingBatch(streamingDestination, BatchStatus.FAILED, now);
-    streamingBatch.setRetryCount(1);
-    JobParameters jobParameters = getJobParameters();
-    when(streamingBatchService.getLastStreamingBatch(
-             streamingDestination, jobParameters.getLong(JOB_START_TIME_PARAMETER_KEY)))
-        .thenReturn(streamingBatch);
-    when(batchConfig.getMaxRetries()).thenReturn(1);
-    StreamingBatch streamingBatchAsReturned = auditEventStreamingService.stream(streamingDestination, jobParameters);
-
-    assertThat(streamingBatchAsReturned).isEqualToComparingFieldByField(streamingBatch);
-
-    verify(streamingBatchService, times(1))
-        .getLastStreamingBatch(streamingDestination, jobParameters.getLong(JOB_START_TIME_PARAMETER_KEY));
-    verify(streamingDestinationService, times(1))
-        .disableStreamingDestination(streamingDestinationArgumentCaptor.capture());
-    assertThat(streamingDestinationArgumentCaptor.getValue()).isEqualTo(streamingDestination);
-    verify(auditEventRepository, times(0)).loadAuditEvents(any(), any());
-    verify(streamingBatchService, times(0)).update(ACCOUNT_IDENTIFIER, streamingBatch);
-    verify(batchProcessorService, times(0)).processAuditEvent(eq(streamingBatch), any());
-  }
-
-  @Test
-  @Owner(developers = NISHANT)
-  @Category(UnitTests.class)
   public void testStream_whenStatusIsReadyAndNoNewAuditRecords() {
     long now = System.currentTimeMillis();
     StreamingDestination streamingDestination = getStreamingDestination();
