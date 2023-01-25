@@ -22,6 +22,8 @@ import io.harness.delegate.task.stepstatus.StepStatusTaskResponseData;
 import io.harness.eraro.Level;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.exceptionmanager.ExceptionManager;
+import io.harness.logging.CommandExecutionStatus;
+import io.harness.logging.UnitStatus;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -77,19 +79,25 @@ public class ContainerStepExecutionResponseHelper {
     if (responseData instanceof K8sTaskExecutionResponse) {
       K8sTaskExecutionResponse k8sTaskExecutionResponse = (K8sTaskExecutionResponse) responseData;
       UnitProgressData commandUnitsProgress = k8sTaskExecutionResponse.getCommandUnitsProgress();
-      StepResponse.StepOutcome stepOutcome =
-          StepResponse.StepOutcome
-              .builder()
-              //                      .outcome(ContainerStepOutcome.builder()
-              //                              .outputVariables(((StepMapOutput) stepStatus.getOutput()).getMap())
-              //                              .build())
-              //                      .name("output")
-              .build();
+      //      StepResponse.StepOutcome stepOutcome =
+      //          StepResponse.StepOutcome
+      //              .builder()
+      //              //                      .outcome(ContainerStepOutcome.builder()
+      //              //                              .outputVariables(((StepMapOutput)
+      //              stepStatus.getOutput()).getMap())
+      //              //                              .build())
+      //                                    .name("output")
+      //              .build();
       //      stepResponseBuilder.stepOutcome(stepOutcome);
       StepResponseBuilder stepResponseBuilder = StepResponse.builder();
 
       stepResponseBuilder.unitProgressList(
           commandUnitsProgress != null ? commandUnitsProgress.getUnitProgresses() : null);
+      if (k8sTaskExecutionResponse.getCommandExecutionStatus().getUnitStatus() == UnitStatus.SUCCESS) {
+        stepResponseBuilder.status(Status.SUCCEEDED);
+      } else if (k8sTaskExecutionResponse.getCommandExecutionStatus() == CommandExecutionStatus.FAILURE) {
+        stepResponseBuilder.status(Status.FAILED);
+      }
       return stepResponseBuilder.build();
     }
     log.error("Reached unkown place");
