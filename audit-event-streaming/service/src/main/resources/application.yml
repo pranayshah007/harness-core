@@ -8,6 +8,8 @@ auditDbConfig:
   indexManagerMode: AUTO
   aliasDBName: ng-audits
 jobCommonConfig:
+  eventCollectionBatchJob:
+    cron: 0 */30 * * * *
   batchConfig:
     cursorBatchSize: 1000
     limit: 10000
