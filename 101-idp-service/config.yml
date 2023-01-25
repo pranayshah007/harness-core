@@ -24,7 +24,7 @@ server:
   maxThreads: 1024
 
 mongo:
-  uri: mongodb://localhost:27017/ng-harness
+  uri: mongodb://localhost:27017/idp
   connectTimeout: 30000
   serverSelectionTimeout: 90000
   socketTimeout: 360000
@@ -32,6 +32,6 @@ mongo:
   connectionsPerHost: 300
   indexManagerMode: AUTO
   transactionsEnabled: false
-  aliasDBName: ng-harness
+  aliasDBName: idp
   traceMode: DISABLED
   maxOperationTimeInMillis: 300000

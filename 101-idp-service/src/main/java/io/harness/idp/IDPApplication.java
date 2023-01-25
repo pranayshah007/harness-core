@@ -73,7 +73,7 @@ public class IDPApplication extends Application<IDPConfiguration> {
 
   @Override
   public String getName() {
-    return "Wings Application";
+    return "IDP Service";
   }
 
   @Override
