@@ -13,6 +13,7 @@ import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
+import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.task.stepstatus.StepExecutionStatus;
 import io.harness.delegate.task.stepstatus.StepMapOutput;
 import io.harness.delegate.task.stepstatus.StepStatus;
@@ -44,8 +45,8 @@ import lombok.extern.slf4j.Slf4j;
 public class ContainerStepExecutionResponseHelper {
   @Inject private ExceptionManager exceptionManager;
 
-  public StepResponse finalizeStepResponse(
-      Ambiance ambiance, StepElementParameters stepParameters, ResponseData responseData) {
+  public StepResponse finalizeStepResponse(Ambiance ambiance, StepElementParameters stepParameters,
+      ResponseData responseData, UnitProgressData commandUnitsProgress) {
     String stepIdentifier = AmbianceUtils.obtainStepIdentifier(ambiance);
     log.info("Received response for step {}", stepIdentifier);
 
@@ -65,6 +66,7 @@ public class ContainerStepExecutionResponseHelper {
                            .setErrorMessage("Delegate is not able to connect to created build farm")
                            .addFailureData(failureData)
                            .build())
+          .unitProgressList(commandUnitsProgress != null ? commandUnitsProgress.getUnitProgresses() : null)
           .build();
     }
 
@@ -75,12 +77,15 @@ public class ContainerStepExecutionResponseHelper {
       return StepResponse.builder()
           .status(Status.FAILED)
           .failureInfo(FailureInfo.newBuilder().addAllFailureTypes(EnumSet.of(FailureType.APPLICATION_FAILURE)).build())
+          .unitProgressList(commandUnitsProgress != null ? commandUnitsProgress.getUnitProgresses() : null)
           .build();
     }
-    return buildAndReturnStepResponse(stepStatusTaskResponseData, ambiance, stepParameters, stepIdentifier);
+    return buildAndReturnStepResponse(
+        stepStatusTaskResponseData, ambiance, stepParameters, stepIdentifier, commandUnitsProgress);
   }
   private StepResponse buildAndReturnStepResponse(StepStatusTaskResponseData stepStatusTaskResponseData,
-      Ambiance ambiance, StepElementParameters stepParameters, String stepIdentifier) {
+      Ambiance ambiance, StepElementParameters stepParameters, String stepIdentifier,
+      UnitProgressData commandUnitsProgress) {
     long startTime = AmbianceUtils.getCurrentLevelStartTs(ambiance);
     long currentTime = System.currentTimeMillis();
 
@@ -101,6 +106,8 @@ public class ContainerStepExecutionResponseHelper {
                 .build();
         stepResponseBuilder.stepOutcome(stepOutcome);
       }
+      stepResponseBuilder.unitProgressList(
+          commandUnitsProgress != null ? commandUnitsProgress.getUnitProgresses() : null);
 
       return stepResponseBuilder.status(Status.SUCCEEDED).build();
     } else if (stepStatus.getStepExecutionStatus() == StepExecutionStatus.SKIPPED) {

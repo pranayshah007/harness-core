@@ -25,7 +25,6 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.logstreaming.LogStreamingHelper;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
-import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.TaskChainExecutableResponse;
 import io.harness.pms.contracts.execution.tasks.TaskCategory;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
@@ -37,7 +36,6 @@ import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
-import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.StepUtils;
@@ -146,18 +144,7 @@ public class ContainerStep implements TaskChainExecutableWithRbac<StepElementPar
     ResponseData responseData = responseDataSupplier.get();
     K8sTaskExecutionResponse k8sTaskExecutionResponse = (K8sTaskExecutionResponse) responseData;
     UnitProgressData commandUnitsProgress = k8sTaskExecutionResponse.getCommandUnitsProgress();
-    executionResponseHelper.finalizeStepResponse(ambiance, stepParameters, responseData);
-    StepResponseBuilder stepResponseBuilder = StepResponse.builder();
-    // will be null for old delegate version.
-    if (commandUnitsProgress != null) {
-      stepResponseBuilder.unitProgressList(commandUnitsProgress.getUnitProgresses());
-    }
-    if (k8sTaskExecutionResponse.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
-      stepResponseBuilder.status(Status.FAILED);
-    } else {
-      stepResponseBuilder.status(Status.SUCCEEDED);
-    }
-    return stepResponseBuilder.build();
+    return executionResponseHelper.finalizeStepResponse(ambiance, stepParameters, responseData, commandUnitsProgress);
   }
 
   @Override
