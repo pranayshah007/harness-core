@@ -69,78 +69,85 @@ public class CIK8ExecuteStepTaskHandler implements CIExecuteStepTaskHandler {
       log.info("parsed call for execute step with id {} is successful ", executeStepRequest.getStep().getId());
     } catch (InvalidProtocolBufferException e) {
       log.error("Failed to parse serialized step with err: {}", e.getMessage());
-      return K8sTaskExecutionResponse.builder()
-          .errorMessage(e.getMessage())
-          .commandExecutionStatus(CommandExecutionStatus.FAILURE)
-          .build();
-    }
-
-    String namespacedDelegateSvcEndpoint =
-        getNamespacedDelegateSvcEndpoint(cik8ExecuteStepTaskParams.getDelegateSvcEndpoint());
-    log.info("Delegate service endpoint for step {}: {}", executeStepRequest.getStep().getId(),
-        namespacedDelegateSvcEndpoint);
-    if (isNotEmpty(namespacedDelegateSvcEndpoint)) {
-      executeStepRequest = executeStepRequest.toBuilder().setDelegateSvcEndpoint(namespacedDelegateSvcEndpoint).build();
-    }
-
-    String accountKey = delegateConfiguration.getDelegateToken();
-    String managerUrl = delegateConfiguration.getManagerUrl();
-    String delegateID = DelegateAgentCommonVariables.getDelegateId();
-    if (isNotEmpty(managerUrl)) {
-      managerUrl = managerUrl.replace("/api/", "");
-      executeStepRequest = executeStepRequest.toBuilder().setManagerSvcEndpoint(managerUrl).build();
-    }
-    if (isNotEmpty(accountKey)) {
-      executeStepRequest = executeStepRequest.toBuilder().setAccountKey(accountKey).build();
-    }
-    if (isNotEmpty(delegateID)) {
-      executeStepRequest = executeStepRequest.toBuilder().setDelegateId(delegateID).build();
-    }
-
-    final ExecuteStepRequest finalExecuteStepRequest = executeStepRequest;
-    String target = format("%s:%d", cik8ExecuteStepTaskParams.getIp(), cik8ExecuteStepTaskParams.getPort());
-    ManagedChannelBuilder managedChannelBuilder = ManagedChannelBuilder.forTarget(target).usePlaintext();
-    if (!cik8ExecuteStepTaskParams.isLocal()) {
-      managedChannelBuilder.proxyDetector(GrpcUtil.NOOP_PROXY_DETECTOR);
-    }
-    ManagedChannel channel = managedChannelBuilder.build();
-    try {
-      try {
-        RetryPolicy<Object> retryPolicy =
-            getRetryPolicy(format("[Retrying failed call to send execution call to pod %s: {}",
-                               ((CIK8ExecuteStepTaskParams) ciExecuteStepTaskParams).getIp()),
-                format("Failed to send execution to pod %s after retrying {} times",
-                    ((CIK8ExecuteStepTaskParams) ciExecuteStepTaskParams).getIp()));
-
-        return Failsafe.with(retryPolicy).get(() -> {
-          LiteEngineGrpc.LiteEngineBlockingStub liteEngineBlockingStub = LiteEngineGrpc.newBlockingStub(channel);
-          liteEngineBlockingStub.withDeadlineAfter(30, TimeUnit.SECONDS).executeStep(finalExecuteStepRequest);
-          logCommandUnit(cik8ExecuteStepTaskParams, "Completed executing container step", LogLevel.INFO,
-              CommandExecutionStatus.SUCCESS);
-          return K8sTaskExecutionResponse.builder()
-              .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
-              .commandUnitsProgress(
-                  UnitProgressDataMapper.toUnitProgressData(cik8ExecuteStepTaskParams.getCommandUnitsProgress()))
-              .build();
-        });
-
-      } finally {
-        // ManagedChannels use resources like threads and TCP connections. To prevent leaking these
-        // resources the channel should be shut down when it will no longer be used. If it may be used
-        // again leave it running.
-        channel.shutdownNow();
-      }
-    } catch (Exception e) {
-      log.error("Failed to execute step on lite engine target {} with err: {}", target, e);
       logCommandUnit(
           cik8ExecuteStepTaskParams, "Failed executing container step", LogLevel.ERROR, CommandExecutionStatus.FAILURE);
       return K8sTaskExecutionResponse.builder()
-          .commandExecutionStatus(CommandExecutionStatus.FAILURE)
-          .commandUnitsProgress(
-              UnitProgressDataMapper.toUnitProgressData(cik8ExecuteStepTaskParams.getCommandUnitsProgress()))
           .errorMessage(e.getMessage())
+          .commandExecutionStatus(CommandExecutionStatus.FAILURE)
           .build();
     }
+    try {
+      String namespacedDelegateSvcEndpoint =
+          getNamespacedDelegateSvcEndpoint(cik8ExecuteStepTaskParams.getDelegateSvcEndpoint());
+      log.info("Delegate service endpoint for step {}: {}", executeStepRequest.getStep().getId(),
+          namespacedDelegateSvcEndpoint);
+      if (isNotEmpty(namespacedDelegateSvcEndpoint)) {
+        executeStepRequest =
+            executeStepRequest.toBuilder().setDelegateSvcEndpoint(namespacedDelegateSvcEndpoint).build();
+      }
+
+      String accountKey = delegateConfiguration.getDelegateToken();
+      String managerUrl = delegateConfiguration.getManagerUrl();
+      String delegateID = DelegateAgentCommonVariables.getDelegateId();
+      if (isNotEmpty(managerUrl)) {
+        managerUrl = managerUrl.replace("/api/", "");
+        executeStepRequest = executeStepRequest.toBuilder().setManagerSvcEndpoint(managerUrl).build();
+      }
+      if (isNotEmpty(accountKey)) {
+        executeStepRequest = executeStepRequest.toBuilder().setAccountKey(accountKey).build();
+      }
+      if (isNotEmpty(delegateID)) {
+        executeStepRequest = executeStepRequest.toBuilder().setDelegateId(delegateID).build();
+      }
+
+      final ExecuteStepRequest finalExecuteStepRequest = executeStepRequest;
+      String target = format("%s:%d", cik8ExecuteStepTaskParams.getIp(), cik8ExecuteStepTaskParams.getPort());
+      ManagedChannelBuilder managedChannelBuilder = ManagedChannelBuilder.forTarget(target).usePlaintext();
+      if (!cik8ExecuteStepTaskParams.isLocal()) {
+        managedChannelBuilder.proxyDetector(GrpcUtil.NOOP_PROXY_DETECTOR);
+      }
+      ManagedChannel channel = managedChannelBuilder.build();
+      try {
+        try {
+          RetryPolicy<Object> retryPolicy =
+              getRetryPolicy(format("[Retrying failed call to send execution call to pod %s: {}",
+                                 ((CIK8ExecuteStepTaskParams) ciExecuteStepTaskParams).getIp()),
+                  format("Failed to send execution to pod %s after retrying {} times",
+                      ((CIK8ExecuteStepTaskParams) ciExecuteStepTaskParams).getIp()));
+
+          return Failsafe.with(retryPolicy).get(() -> {
+            LiteEngineGrpc.LiteEngineBlockingStub liteEngineBlockingStub = LiteEngineGrpc.newBlockingStub(channel);
+            liteEngineBlockingStub.withDeadlineAfter(30, TimeUnit.SECONDS).executeStep(finalExecuteStepRequest);
+            logCommandUnit(cik8ExecuteStepTaskParams, "Completed executing container step", LogLevel.INFO,
+                CommandExecutionStatus.SUCCESS);
+            return K8sTaskExecutionResponse.builder()
+                .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                .commandUnitsProgress(
+                    UnitProgressDataMapper.toUnitProgressData(cik8ExecuteStepTaskParams.getCommandUnitsProgress()))
+                .build();
+          });
+
+        } finally {
+          // ManagedChannels use resources like threads and TCP connections. To prevent leaking these
+          // resources the channel should be shut down when it will no longer be used. If it may be used
+          // again leave it running.
+          channel.shutdownNow();
+        }
+      } catch (Exception e) {
+        log.error("Failed to execute step on lite engine target {} with err: {}", target, e);
+        logCommandUnit(cik8ExecuteStepTaskParams, "Failed executing container step", LogLevel.ERROR,
+            CommandExecutionStatus.FAILURE);
+        return K8sTaskExecutionResponse.builder()
+            .commandExecutionStatus(CommandExecutionStatus.FAILURE)
+            .commandUnitsProgress(
+                UnitProgressDataMapper.toUnitProgressData(cik8ExecuteStepTaskParams.getCommandUnitsProgress()))
+            .errorMessage(e.getMessage())
+            .build();
+      }
+    } catch (Exception e) {
+      log.error("some error in ci step", e);
+    }
+    return null;
   }
 
   private String getNamespacedDelegateSvcEndpoint(String delegateSvcEndpoint) {

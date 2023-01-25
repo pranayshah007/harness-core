@@ -147,9 +147,11 @@ public class ContainerStep implements TaskChainExecutableWithRbac<StepElementPar
     K8sTaskExecutionResponse k8sTaskExecutionResponse = (K8sTaskExecutionResponse) responseData;
     UnitProgressData commandUnitsProgress = k8sTaskExecutionResponse.getCommandUnitsProgress();
     executionResponseHelper.finalizeStepResponse(ambiance, stepParameters, responseData);
-    StepResponseBuilder stepResponseBuilder =
-        StepResponse.builder().unitProgressList(commandUnitsProgress.getUnitProgresses());
-
+    StepResponseBuilder stepResponseBuilder = StepResponse.builder();
+    // will be null for old delegate version.
+    if (commandUnitsProgress != null) {
+      stepResponseBuilder.unitProgressList(commandUnitsProgress.getUnitProgresses());
+    }
     if (k8sTaskExecutionResponse.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
       stepResponseBuilder.status(Status.FAILED);
     } else {
