@@ -16,7 +16,7 @@ import org.apache.commons.lang3.StringUtils;
 public class NGEntityNameValidator implements ConstraintValidator<NGEntityName, String> {
   private static final String ALLOWED_CHARS_STRING =
       "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_. /";
-  private static final int MAX_ALLOWED_LENGTH = 64;
+  private static final int MAX_ALLOWED_LENGTH = 128;
 
   @Override
   public void initialize(NGEntityName constraintAnnotation) {
