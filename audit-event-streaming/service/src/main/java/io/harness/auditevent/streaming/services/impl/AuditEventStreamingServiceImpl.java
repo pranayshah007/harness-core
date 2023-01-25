@@ -75,13 +75,6 @@ public class AuditEventStreamingServiceImpl implements AuditEventStreamingServic
       log.warn(getFullLogMessage("The batch is still in progress. Skipping.", streamingBatch));
       return streamingBatch;
     }
-    if (streamingBatch.getStatus().equals(FAILED) && streamingBatch.getRetryCount() >= batchConfig.getMaxRetries()) {
-      log.warn(getFullLogMessage(
-          String.format("Retry [%s]. Exhausted all retries. Not publishing.", streamingBatch.getRetryCount()),
-          streamingBatch));
-      streamingDestinationService.disableStreamingDestination(streamingDestination);
-      return streamingBatch;
-    }
     MongoCursor<Document> auditEventMongoCursor = auditEventRepository.loadAuditEvents(
         getCriteriaToFetchAuditEvents(streamingBatch, streamingDestination), Sorts.ascending(createdAt));
     if (!auditEventMongoCursor.hasNext()) {
