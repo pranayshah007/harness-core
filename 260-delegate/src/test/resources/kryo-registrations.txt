@@ -2128,6 +2128,12 @@
 543367:io.harness.audit.streaming.dtos.AuditBatchDTO.BatchStatus
 543368:io.harness.audit.streaming.dtos.AuditBatchDTO.BatchState
 543369:io.harness.audit.streaming.dtos.PutObjectResultResponse
+543370:io.harness.audit.streaming.outgoing.Author
+543371:io.harness.audit.streaming.outgoing.HttpRequestInfo
+543372:io.harness.audit.streaming.outgoing.OutgoingAuditMessage
+543373:io.harness.audit.streaming.outgoing.Principal
+543374:io.harness.audit.streaming.outgoing.Resource
+543375:io.harness.audit.streaming.outgoing.ResourceScope
 543401:io.harness.delegate.task.pcf.response.CfDeployCommandResponse
 543402:io.harness.delegate.task.pcf.response.CfInfraMappingDataResponse
 543403:io.harness.delegate.task.pcf.response.CfInstanceSyncResponse
