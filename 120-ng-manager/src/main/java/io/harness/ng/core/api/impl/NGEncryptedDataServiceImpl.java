@@ -188,12 +188,19 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
     SecretTextValidationMetadata secretTextValidationMetadata = (SecretTextValidationMetadata) metadata;
     SecretManagerConfigDTO secretManager = getSecretManagerOrThrow(accountIdentifier, orgIdentifier, projectIdentifier,
         secretTextValidationMetadata.getSecretManagerIdentifer(), false);
-    boolean isValidationSuccess =
-        vaultEncryptorsRegistry.getVaultEncryptor(SecretManagerConfigMapper.fromDTO(secretManager).getEncryptionType())
-            .validateReference(accountIdentifier, secretTextValidationMetadata.getSecretRefPath(),
-                SecretManagerConfigMapper.fromDTO(secretManager));
-    String message = isValidationSuccess ? "Validation is Successful, Secret can be referenced"
-                                         : "Validation has failed, Secret reference not found";
+    boolean isValidationSuccess = false;
+    try {
+      isValidationSuccess = vaultEncryptorsRegistry
+                                .getVaultEncryptor(SecretManagerConfigMapper.fromDTO(secretManager).getEncryptionType())
+                                .validateReference(accountIdentifier, secretTextValidationMetadata.getSecretRefPath(),
+                                    SecretManagerConfigMapper.fromDTO(secretManager));
+    } catch (Exception e) {
+      log.warn("Secret  reference validation failed for secretManager: {}", secretManager.getIdentifier());
+    }
+
+    String message = isValidationSuccess
+        ? "Validation is Successful, Secret can be referenced"
+        : "Validation has failed, Secret reference not found. Please check the reference path or make sure the delegate has secret manager access";
     return SecretValidationResultDTO.builder().success(isValidationSuccess).message(message).build();
   }
 
