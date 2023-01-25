@@ -13,6 +13,7 @@ import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
+import io.harness.delegate.beans.ci.k8s.K8sTaskExecutionResponse;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.task.stepstatus.StepExecutionStatus;
 import io.harness.delegate.task.stepstatus.StepMapOutput;
@@ -45,10 +46,10 @@ import lombok.extern.slf4j.Slf4j;
 public class ContainerStepExecutionResponseHelper {
   @Inject private ExceptionManager exceptionManager;
 
-  public StepResponse finalizeStepResponse(Ambiance ambiance, StepElementParameters stepParameters,
-      ResponseData responseData, UnitProgressData commandUnitsProgress) {
+  public StepResponse finalizeStepResponse(
+      Ambiance ambiance, StepElementParameters stepParameters, ResponseData responseData) {
     String stepIdentifier = AmbianceUtils.obtainStepIdentifier(ambiance);
-    log.info("Received response for step {}", stepIdentifier);
+    log.info("Received response for step {}, response {}", stepIdentifier, responseData);
 
     if (responseData instanceof ErrorNotifyResponseData) {
       FailureData failureData =
@@ -66,26 +67,41 @@ public class ContainerStepExecutionResponseHelper {
                            .setErrorMessage("Delegate is not able to connect to created build farm")
                            .addFailureData(failureData)
                            .build())
-          .unitProgressList(commandUnitsProgress != null ? commandUnitsProgress.getUnitProgresses() : null)
           .build();
     }
 
-    StepStatusTaskResponseData stepStatusTaskResponseData = filterK8StepResponse(responseData);
-
-    if (stepStatusTaskResponseData == null) {
-      log.error("stepStatusTaskResponseData should not be null for step {}", stepIdentifier);
-      return StepResponse.builder()
-          .status(Status.FAILED)
-          .failureInfo(FailureInfo.newBuilder().addAllFailureTypes(EnumSet.of(FailureType.APPLICATION_FAILURE)).build())
-          .unitProgressList(commandUnitsProgress != null ? commandUnitsProgress.getUnitProgresses() : null)
-          .build();
+    if (responseData instanceof StepStatusTaskResponseData) {
+      return buildAndReturnStepResponse(
+          ((StepStatusTaskResponseData) responseData), ambiance, stepParameters, stepIdentifier);
     }
-    return buildAndReturnStepResponse(
-        stepStatusTaskResponseData, ambiance, stepParameters, stepIdentifier, commandUnitsProgress);
+    if (responseData instanceof K8sTaskExecutionResponse) {
+      K8sTaskExecutionResponse k8sTaskExecutionResponse = (K8sTaskExecutionResponse) responseData;
+      UnitProgressData commandUnitsProgress = k8sTaskExecutionResponse.getCommandUnitsProgress();
+      StepResponse.StepOutcome stepOutcome =
+          StepResponse.StepOutcome
+              .builder()
+              //                      .outcome(ContainerStepOutcome.builder()
+              //                              .outputVariables(((StepMapOutput) stepStatus.getOutput()).getMap())
+              //                              .build())
+              //                      .name("output")
+              .build();
+      //      stepResponseBuilder.stepOutcome(stepOutcome);
+      StepResponseBuilder stepResponseBuilder = StepResponse.builder();
+
+      stepResponseBuilder.unitProgressList(
+          commandUnitsProgress != null ? commandUnitsProgress.getUnitProgresses() : null);
+      return stepResponseBuilder.build();
+    }
+    log.error("Reached unkown place");
+    log.error("stepStatusTaskResponseData should not be null for step {}", stepIdentifier);
+    return StepResponse.builder()
+        .status(Status.FAILED)
+        .failureInfo(FailureInfo.newBuilder().addAllFailureTypes(EnumSet.of(FailureType.APPLICATION_FAILURE)).build())
+        .build();
   }
+
   private StepResponse buildAndReturnStepResponse(StepStatusTaskResponseData stepStatusTaskResponseData,
-      Ambiance ambiance, StepElementParameters stepParameters, String stepIdentifier,
-      UnitProgressData commandUnitsProgress) {
+      Ambiance ambiance, StepElementParameters stepParameters, String stepIdentifier) {
     long startTime = AmbianceUtils.getCurrentLevelStartTs(ambiance);
     long currentTime = System.currentTimeMillis();
 
@@ -106,8 +122,6 @@ public class ContainerStepExecutionResponseHelper {
                 .build();
         stepResponseBuilder.stepOutcome(stepOutcome);
       }
-      stepResponseBuilder.unitProgressList(
-          commandUnitsProgress != null ? commandUnitsProgress.getUnitProgresses() : null);
 
       return stepResponseBuilder.status(Status.SUCCEEDED).build();
     } else if (stepStatus.getStepExecutionStatus() == StepExecutionStatus.SKIPPED) {
@@ -134,8 +148,5 @@ public class ContainerStepExecutionResponseHelper {
     } else {
       return errorMessage;
     }
-  }
-  private StepStatusTaskResponseData filterK8StepResponse(ResponseData responseData) {
-    return responseData instanceof StepStatusTaskResponseData ? ((StepStatusTaskResponseData) responseData) : null;
   }
 }

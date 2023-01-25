@@ -19,7 +19,6 @@ import io.harness.delegate.beans.ci.CIInitializeTaskParams;
 import io.harness.delegate.beans.ci.k8s.CiK8sTaskResponse;
 import io.harness.delegate.beans.ci.k8s.K8sTaskExecutionResponse;
 import io.harness.delegate.beans.ci.k8s.PodStatus;
-import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.encryption.Scope;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logstreaming.LogStreamingHelper;
@@ -143,9 +142,7 @@ public class ContainerStep implements TaskChainExecutableWithRbac<StepElementPar
     log.info("Finalizing container step response");
     containerStepCleanupHelper.sendCleanupRequest(ambiance);
     ResponseData responseData = responseDataSupplier.get();
-    K8sTaskExecutionResponse k8sTaskExecutionResponse = (K8sTaskExecutionResponse) responseData;
-    UnitProgressData commandUnitsProgress = k8sTaskExecutionResponse.getCommandUnitsProgress();
-    return executionResponseHelper.finalizeStepResponse(ambiance, stepParameters, responseData, commandUnitsProgress);
+    return executionResponseHelper.finalizeStepResponse(ambiance, stepParameters, responseData);
   }
 
   @Override
