@@ -42,6 +42,10 @@ if [[ "" != "$MONGO_URI" ]]; then
   export MONGO_URI; yq -i '.auditDbConfig.uri=env(MONGO_URI)' $CONFIG_FILE
 fi
 
+if [[ "" != "$EVENT_COLLECTION_BATCH_JOB_CRON" ]]; then
+  export EVENT_COLLECTION_BATCH_JOB_CRON; yq -i '.jobCommonConfig.eventCollectionBatchJob.cron=env(EVENT_COLLECTION_BATCH_JOB_CRON)' $CONFIG_FILE
+fi
+
 if [[ "" != "$BATCH_CURSOR_SIZE" ]]; then
   export BATCH_CURSOR_SIZE; yq -i '.jobCommonConfig.batchConfig.cursorBatchSize=env(BATCH_CURSOR_SIZE)' $CONFIG_FILE
 fi
