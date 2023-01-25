@@ -25,6 +25,7 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 @OwnedBy(CDP)
 public class GoogleFunctionDeploymentInfoDTO extends DeploymentInfoDTO {
+  @NotNull private String revision;
   @NotNull private String functionName;
   @NotNull private String project;
   @NotNull private String region;
@@ -37,6 +38,6 @@ public class GoogleFunctionDeploymentInfoDTO extends DeploymentInfoDTO {
 
   @Override
   public String prepareInstanceSyncHandlerKey() {
-    return InstanceSyncKey.builder().part(infraStructureKey).build().toString();
+    return InstanceSyncKey.builder().part(infraStructureKey).part(functionName).build().toString();
   }
 }

@@ -534,8 +534,12 @@ public class GoogleFunctionsHelper extends CDStepHelper {
   public ServerInstanceInfo getServerInstanceInfo(
       GoogleFunctionCommandResponse googleFunctionCommandResponse, String infrastructureKey) {
     if (googleFunctionCommandResponse instanceof GoogleFunctionDeployResponse) {
-      return GoogleFunctionToServerInstanceInfoMapper.toServerInstanceInfo(googleFunctionCommandResponse.getFunction(),
-          googleFunctionCommandResponse.getProject(), googleFunctionCommandResponse.getRegion(), infrastructureKey);
+      GoogleFunction googleFunction = googleFunctionCommandResponse.getFunction();
+      if (googleFunction != null && googleFunction.getCloudRunService() != null) {
+        return GoogleFunctionToServerInstanceInfoMapper.toServerInstanceInfo(googleFunction,
+            googleFunction.getCloudRunService().getRevision(), googleFunctionCommandResponse.getProject(),
+            googleFunctionCommandResponse.getRegion(), infrastructureKey);
+      }
     }
     throw new GeneralException("Invalid ecs command response instance");
   }

@@ -19,10 +19,10 @@ import lombok.experimental.UtilityClass;
 public class GoogleFunctionInstanceInfoMapper {
   public GoogleFunctionInstanceInfoDTO toDTO(GoogleFunctionInstanceInfo googleFunctionInstanceInfo) {
     return GoogleFunctionInstanceInfoDTO.builder()
+        .revision(googleFunctionInstanceInfo.getRevision())
         .functionName(googleFunctionInstanceInfo.getFunctionName())
         .project(googleFunctionInstanceInfo.getProject())
         .region(googleFunctionInstanceInfo.getRegion())
-        .revision(googleFunctionInstanceInfo.getRevision())
         .source(googleFunctionInstanceInfo.getSource())
         .updatedTime(googleFunctionInstanceInfo.getUpdatedTime())
         .memorySize(googleFunctionInstanceInfo.getMemorySize())

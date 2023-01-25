@@ -14,18 +14,39 @@ import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.GoogleFunctionServerInstanceInfo;
 import io.harness.delegate.task.googlefunctionbeans.GoogleFunction;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
+import org.apache.commons.collections.CollectionUtils;
 
 @UtilityClass
 @OwnedBy(HarnessTeam.CDP)
 public class GoogleFunctionToServerInstanceInfoMapper {
-  public ServerInstanceInfo toServerInstanceInfo(
+  public List<ServerInstanceInfo> toServerInstanceInfoList(
       GoogleFunction googleFunction, String project, String region, String infraStructureKey) {
+    List<ServerInstanceInfo> serverInstanceInfoList = new ArrayList<>();
+
+    if (CollectionUtils.isNotEmpty(googleFunction.getActiveCloudRunRevisions())) {
+      serverInstanceInfoList = googleFunction.getActiveCloudRunRevisions()
+                                   .stream()
+                                   .map(googleCloudRunRevision
+                                       -> toServerInstanceInfo(googleFunction, googleCloudRunRevision.getRevision(),
+                                           project, region, infraStructureKey))
+                                   .collect(Collectors.toList());
+    }
+
+    return serverInstanceInfoList;
+  }
+
+  public ServerInstanceInfo toServerInstanceInfo(
+      GoogleFunction googleFunction, String revision, String project, String region, String infraStructureKey) {
     return GoogleFunctionServerInstanceInfo.builder()
         .functionName(googleFunction.getFunctionName())
         .project(project)
         .region(region)
-        .revision(googleFunction.getCloudRunService().getRevision())
+        .revision(revision)
         .source(googleFunction.getSource())
         .updatedTime(googleFunction.getUpdatedTime())
         .memorySize(googleFunction.getCloudRunService().getMemory())

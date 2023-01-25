@@ -75,6 +75,7 @@ public class GoogleFunctionInstanceSyncHandler extends AbstractInstanceSyncHandl
         (GoogleFunctionServerInstanceInfo) serverInstanceInfoList.get(0);
 
     return GoogleFunctionDeploymentInfoDTO.builder()
+        .revision(googleFunctionServerInstanceInfo.getRevision())
         .functionName(googleFunctionServerInstanceInfo.getFunctionName())
         .project(googleFunctionServerInstanceInfo.getProject())
         .region(googleFunctionServerInstanceInfo.getRegion())

@@ -46,9 +46,9 @@ public class GoogleFunctionTaskHelperBase {
       Function function = optionalFunction.get();
       GoogleFunction googleFunction =
           googleFunctionCommandTaskHelper.getGoogleFunction(function, gcpGoogleFunctionInfraConfig, logCallback);
-      return Collections.singletonList(GoogleFunctionToServerInstanceInfoMapper.toServerInstanceInfo(googleFunction,
+      return GoogleFunctionToServerInstanceInfoMapper.toServerInstanceInfoList(googleFunction,
           gcpGoogleFunctionInfraConfig.getProject(), gcpGoogleFunctionInfraConfig.getRegion(),
-          gcpGoogleFunctionInfraConfig.getInfraStructureKey()));
+          gcpGoogleFunctionInfraConfig.getInfraStructureKey());
     }
     return new ArrayList<>();
   }

@@ -21,11 +21,11 @@ import lombok.EqualsAndHashCode;
 @Builder
 @EqualsAndHashCode(callSuper = true)
 public class GoogleFunctionInstanceInfoDTO extends InstanceInfoDTO {
+  @NotNull private String revision;
   @NotNull private String functionName;
   @NotNull private String project;
   @NotNull private String region;
 
-  private String revision;
   private String source;
   private long updatedTime;
   private String memorySize;
@@ -39,13 +39,14 @@ public class GoogleFunctionInstanceInfoDTO extends InstanceInfoDTO {
         .clazz(GoogleFunctionInstanceInfoDTO.class)
         .part(infraStructureKey)
         .part(functionName)
+        .part(revision)
         .build()
         .toString();
   }
 
   @Override
   public String prepareInstanceSyncHandlerKey() {
-    return InstanceSyncKey.builder().part(infraStructureKey).build().toString();
+    return InstanceSyncKey.builder().part(infraStructureKey).part(functionName).build().toString();
   }
 
   @Override

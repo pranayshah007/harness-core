@@ -19,6 +19,7 @@ import lombok.experimental.UtilityClass;
 public class GoogleFunctionDeploymentInfoMapper {
   public GoogleFunctionDeploymentInfoDTO toDTO(GoogleFunctionDeploymentInfo googleFunctionDeploymentInfo) {
     return GoogleFunctionDeploymentInfoDTO.builder()
+        .revision(googleFunctionDeploymentInfo.getRevision())
         .functionName(googleFunctionDeploymentInfo.getFunctionName())
         .project(googleFunctionDeploymentInfo.getProject())
         .region(googleFunctionDeploymentInfo.getRegion())
@@ -28,6 +29,7 @@ public class GoogleFunctionDeploymentInfoMapper {
 
   public GoogleFunctionDeploymentInfo toEntity(GoogleFunctionDeploymentInfoDTO googleFunctionDeploymentInfoDTO) {
     return GoogleFunctionDeploymentInfo.builder()
+        .revision(googleFunctionDeploymentInfoDTO.getRevision())
         .functionName(googleFunctionDeploymentInfoDTO.getFunctionName())
         .project(googleFunctionDeploymentInfoDTO.getProject())
         .region(googleFunctionDeploymentInfoDTO.getRegion())
