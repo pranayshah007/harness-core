@@ -41,7 +41,7 @@ public class CIK8InitializeTaskParams
   @NotNull
   private int podMaxWaitUntilReadySecs; // Max time for pod to reach running state after its creation in seconds
   @Builder.Default private static final Type type = Type.GCP_K8;
-  CommandUnitsProgress commandUnitsProgress;
+  final CommandUnitsProgress commandUnitsProgress;
 
   @Override
   public Type getType() {

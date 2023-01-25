@@ -140,6 +140,7 @@ public class ContainerStep implements TaskChainExecutableWithRbac<StepElementPar
   @Override
   public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
       PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
+    log.info("Finalizing container step response");
     containerStepCleanupHelper.sendCleanupRequest(ambiance);
     ResponseData responseData = responseDataSupplier.get();
     K8sTaskExecutionResponse k8sTaskExecutionResponse = (K8sTaskExecutionResponse) responseData;
@@ -151,6 +152,7 @@ public class ContainerStep implements TaskChainExecutableWithRbac<StepElementPar
   public TaskChainResponse executeNextLinkWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
       StepInputPackage inputPackage, PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseSupplier)
       throws Exception {
+    log.info("Starting run in container step");
     ContainerStepInfo containerStepInfo = (ContainerStepInfo) stepParameters.getSpec();
     ResponseData response = responseSupplier.get();
     K8sTaskExecutionResponse k8sTaskExecutionResponse = (K8sTaskExecutionResponse) response;

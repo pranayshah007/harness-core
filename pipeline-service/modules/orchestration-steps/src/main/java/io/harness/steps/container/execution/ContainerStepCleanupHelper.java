@@ -11,7 +11,6 @@ import static io.harness.steps.StepUtils.buildAbstractions;
 import static io.harness.steps.container.constants.ContainerStepExecutionConstants.CLEANUP_DETAILS;
 
 import static java.lang.String.format;
-import static java.util.Collections.emptyList;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -32,6 +31,7 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.steps.StepUtils;
 import io.harness.steps.container.utils.ConnectorUtils;
+import io.harness.steps.plugin.ContainerCommandUnitConstants;
 import io.harness.steps.plugin.infrastructure.ContainerCleanupDetails;
 import io.harness.steps.plugin.infrastructure.ContainerInfraYamlSpec;
 import io.harness.steps.plugin.infrastructure.ContainerK8sInfra;
@@ -44,6 +44,7 @@ import com.google.inject.Singleton;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
@@ -142,6 +143,9 @@ public class ContainerStepCleanupHelper {
 
   public void closeLogStream(Ambiance ambiance) {
     ILogStreamingStepClient logStreamingStepClient = logStreamingClient.getLogStreamingStepClient(ambiance);
-    logStreamingStepClient.closeAllOpenStreamsWithPrefix(StepUtils.generateLogKeys(ambiance, emptyList()).get(0));
+    StepUtils
+        .generateLogKeys(ambiance,
+            Arrays.asList(ContainerCommandUnitConstants.InitContainer, ContainerCommandUnitConstants.ContainerStep))
+        .forEach(key -> logStreamingStepClient.closeAllOpenStreamsWithPrefix(key));
   }
 }
