@@ -180,4 +180,5 @@ clickHouseConfig:
   username: "default"
   password: ""
 
-isDeploymentOnPrem: false
+# change it. should default to false
+isDeploymentOnPrem: true
