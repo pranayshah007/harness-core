@@ -12,10 +12,7 @@ import com.github.dirkraft.dropwizard.fileassets.FileAssetsBundle;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.google.inject.Key;
 import com.google.inject.Module;
-import com.google.inject.name.Names;
-import dev.morphia.AdvancedDatastore;
 import io.dropwizard.Application;
 import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
 import io.dropwizard.configuration.SubstitutingSourceProvider;
@@ -23,15 +20,11 @@ import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.StartupMode;
-import io.harness.ff.FeatureFlagService;
-import io.harness.health.HealthMonitor;
 import io.harness.health.HealthService;
-import io.harness.lock.PersistentLocker;
 import io.harness.maintenance.MaintenanceController;
 import io.harness.persistence.HPersistence;
 import io.harness.threading.ExecutorModule;
 import io.harness.threading.ThreadPool;
-import io.harness.timescaledb.TimeScaleDBService;
 import lombok.extern.slf4j.Slf4j;
 import software.wings.app.InspectCommand;
 
@@ -40,7 +33,6 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static io.harness.annotations.dev.HarnessTeam.IDP;
-import static io.harness.beans.FeatureName.GLOBAL_DISABLE_HEALTH_CHECK;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 
 /**
