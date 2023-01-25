@@ -42,7 +42,10 @@ public class ChangeSourceDTODeserializer extends JsonDeserializer<ChangeSourceDT
     String name = tree.has(ChangeSourceDTO.Fields.name) ? tree.get(ChangeSourceDTO.Fields.name).asText() : null;
     String identifier =
         tree.has(ChangeSourceDTO.Fields.identifier) ? tree.get(ChangeSourceDTO.Fields.identifier).asText() : null;
-    ChangeSourceDTO changeSourceDTO = ChangeSourceDTO.builder().name(name).identifier(identifier).type(type).build();
+    boolean enabled =
+        tree.has(ChangeSourceDTO.Fields.enabled) ? tree.get(ChangeSourceDTO.Fields.enabled).asBoolean() : false;
+    ChangeSourceDTO changeSourceDTO =
+        ChangeSourceDTO.builder().name(name).identifier(identifier).type(type).enabled(enabled).build();
     JsonNode spec = tree.get(ChangeSourceDTO.Fields.spec);
     if (spec == null) {
       throw new BadRequestException("Spec is not serializable.");

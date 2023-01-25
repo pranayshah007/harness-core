@@ -75,14 +75,15 @@ public class ChangeEventDTODeserializer extends JsonDeserializer<ChangeEventDTO>
                                         .accountId(accountId)
                                         .projectIdentifier(projectIdentifier)
                                         .orgIdentifier(orgIdentifier)
-                                        .monitoredServiceIdentifier(monitoredServiceIdentifier)
-                                        .changeSourceIdentifier(changeSourceIdentifier)
                                         .serviceIdentifier(serviceIdentifier)
                                         .serviceName(serviceName)
                                         .envIdentifier(envIdentifier)
                                         .environmentName(envName)
                                         .name(name)
+                                        .monitoredServiceIdentifier(monitoredServiceIdentifier)
+                                        .changeSourceIdentifier(changeSourceIdentifier)
                                         .eventTime(eventTime)
+                                        .type(type)
                                         .build();
 
     JsonNode metadata = tree.get(ChangeEventDTO.Fields.metadata);
