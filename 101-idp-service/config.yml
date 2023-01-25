@@ -1,30 +1,5 @@
-server:
-  applicationConnectors:
-    - type: https
-      port: 7090
-      keyStorePath: keystore.jks
-      keyStorePassword: password
-      trustStorePath: ${JAVA_HOME}/lib/security/cacerts
-      certAlias: localhost
-      validateCerts: false
-      maxRequestHeaderSize: 100KiB
-    - type: http
-      port: 7457
-      maxRequestHeaderSize: 100KiB
-  adminConnectors:
-    - type: https
-      port: 7091
-      keyStorePath: keystore.jks
-      keyStorePassword: password
-      trustStorePath: ${JAVA_HOME}/lib/security/cacerts
-      certAlias: localhost
-      validateCerts: false
-  requestLog:
-    appenders: []
-  maxThreads: 1024
-
 mongo:
-  uri: mongodb://localhost:27017/idp
+  uri: mongodb://localhost:27017/idp-harness
   connectTimeout: 30000
   serverSelectionTimeout: 90000
   socketTimeout: 360000
@@ -32,6 +7,6 @@ mongo:
   connectionsPerHost: 300
   indexManagerMode: AUTO
   transactionsEnabled: false
-  aliasDBName: idp
+  aliasDBName: idp-harness
   traceMode: DISABLED
   maxOperationTimeInMillis: 300000
