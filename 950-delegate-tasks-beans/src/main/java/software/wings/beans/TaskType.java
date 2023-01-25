@@ -14,6 +14,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.TaskGroup;
+import io.harness.delegate.beans.ci.vm.CIVmCleanupTaskParams;
+import io.harness.delegate.beans.ci.vm.CIVmExecuteStepTaskParams;
+import io.harness.delegate.beans.ci.vm.CIVmInitializeTaskParams;
 import io.harness.delegate.beans.ci.vm.VmTaskExecutionResponse;
 import io.harness.delegate.beans.ci.vm.dlite.DliteVmCleanupTaskParams;
 import io.harness.delegate.beans.ci.vm.dlite.DliteVmExecuteStepTaskParams;
@@ -383,6 +386,9 @@ public enum TaskType {
   DLITE_CI_VM_INITIALIZE_TASK(TaskGroup.CI, DliteVmInitializeTaskParams.class, VmTaskExecutionResponse.class, true),
   DLITE_CI_VM_EXECUTE_TASK(TaskGroup.CI, DliteVmExecuteStepTaskParams.class, VmTaskExecutionResponse.class, true),
   DLITE_CI_VM_CLEANUP_TASK(TaskGroup.CI, DliteVmCleanupTaskParams.class, VmTaskExecutionResponse.class, true),
+  DOCKER_CI_VM_INITIALIZE_TASK(TaskGroup.CI, CIVmInitializeTaskParams.class, VmTaskExecutionResponse.class, true),
+  DOCKER_CI_VM_EXECUTE_TASK(TaskGroup.CI, CIVmExecuteStepTaskParams.class, VmTaskExecutionResponse.class, true),
+  DOCKER_CI_VM_CLEANUP_TASK(TaskGroup.CI, CIVmCleanupTaskParams.class, VmTaskExecutionResponse.class, true),
   NG_LDAP_GROUPS_SYNC(TaskGroup.LDAP),
   AZURE_NG_ARM(TaskGroup.AZURE_NG_ARM_BLUEPRINT, "Azure ARM"),
   NG_LDAP_TEST_AUTHENTICATION(TaskGroup.LDAP),

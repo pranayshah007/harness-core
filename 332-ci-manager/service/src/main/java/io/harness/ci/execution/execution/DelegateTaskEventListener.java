@@ -8,6 +8,7 @@
 package io.harness.ci.execution;
 
 import static software.wings.beans.TaskType.DLITE_CI_VM_INITIALIZE_TASK;
+import static software.wings.beans.TaskType.DOCKER_CI_VM_INITIALIZE_TASK;
 
 import io.harness.app.beans.dto.CITaskDetails;
 import io.harness.eventsframework.consumer.Message;
@@ -58,7 +59,9 @@ public class DelegateTaskEventListener implements MessageListener {
           String stageId = (String) kryoSerializer.asObject(stageIdEncrypted.toByteArray());
           String taskType = (String) kryoSerializer.asObject(taskTypeEncrypted.toByteArray());
 
-          if (Strings.isNotBlank(stageId) && DLITE_CI_VM_INITIALIZE_TASK.toString().equals(taskType)) {
+          if (Strings.isNotBlank(stageId)
+              && (DLITE_CI_VM_INITIALIZE_TASK.toString().equals(taskType)
+                  || DOCKER_CI_VM_INITIALIZE_TASK.toString().equals(taskType))) {
             CITaskDetails ciTaskDetails = CITaskDetails.builder()
                                               .stageExecutionId(stageId)
                                               .delegateId(delegateId)

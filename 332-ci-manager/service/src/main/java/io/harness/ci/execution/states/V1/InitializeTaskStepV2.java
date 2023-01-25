@@ -21,6 +21,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.delegate.beans.ci.CIInitializeTaskParams.Type.DLITE_VM;
+import static io.harness.delegate.beans.ci.CIInitializeTaskParams.Type.VM;
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 import static io.harness.steps.StepUtils.buildAbstractions;
 import static io.harness.steps.StepUtils.generateLogAbstractions;
@@ -72,6 +73,7 @@ import io.harness.delegate.beans.ci.k8s.CIContainerStatus;
 import io.harness.delegate.beans.ci.k8s.CiK8sTaskResponse;
 import io.harness.delegate.beans.ci.k8s.K8sTaskExecutionResponse;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
+import io.harness.delegate.beans.ci.vm.CIVmInitializeTaskParams;
 import io.harness.delegate.beans.ci.vm.VmServiceStatus;
 import io.harness.delegate.beans.ci.vm.VmTaskExecutionResponse;
 import io.harness.delegate.beans.ci.vm.dlite.DliteVmInitializeTaskParams;
@@ -283,8 +285,7 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
           dockerInitializeTaskParamsBuilder.getHostedPoolId(dockerInfraYaml.getSpec().getPlatform());
       TaskSelector taskSelector = TaskSelector.newBuilder().setSelector(platformSelector).build();
       taskSelectors.add(taskSelector);
-      // TODO: start emitting & processing event for Docker as well
-      // emitEvent = true;
+      emitEvent = true;
     }
 
     TaskData taskData = getTaskData(stepParameters, buildSetupTaskParams);
@@ -439,9 +440,14 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
         Timeout.fromString((String) stepElementParameters.getTimeout().fetchFinalValue()).getTimeoutInMillis();
     SerializationFormat serializationFormat = SerializationFormat.KRYO;
     String taskType = TaskType.INITIALIZATION_PHASE.getDisplayName();
-    if (buildSetupTaskParams.getType() == DLITE_VM) {
+    CIInitializeTaskParams.Type type = buildSetupTaskParams.getType();
+    if (type == DLITE_VM) {
       serializationFormat = SerializationFormat.JSON;
       taskType = TaskType.DLITE_CI_VM_INITIALIZE_TASK.getDisplayName();
+    } else if (type == VM
+        && ((CIVmInitializeTaskParams) buildSetupTaskParams).getInfraInfo() == CIInitializeTaskParams.Type.DOCKER) {
+      serializationFormat = SerializationFormat.JSON;
+      taskType = TaskType.DOCKER_CI_VM_INITIALIZE_TASK.getDisplayName();
     }
 
     return TaskData.builder()

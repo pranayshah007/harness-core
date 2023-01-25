@@ -218,12 +218,10 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
     // needs additional step to add matching docker delegate id into the eligible to execute delegate id list.
     else if (type == CICleanupTaskParams.Type.VM) {
       if (((CIVmCleanupTaskParams) ciCleanupTaskParams).getInfraInfo() == CIInitializeTaskParams.Type.DOCKER) {
-        // TODO: Start using fetchDelegateId once we start emitting & processing the event for Docker as well
-        OptionalOutcome optionalOutput = outcomeService.resolveOptional(
-            ambiance, RefObjectUtils.getOutcomeRefObject(VmDetailsOutcome.VM_DETAILS_OUTCOME));
-        VmDetailsOutcome vmDetailsOutcome = (VmDetailsOutcome) optionalOutput.getOutcome();
-        if (vmDetailsOutcome != null && Strings.isNotBlank(vmDetailsOutcome.getDelegateId())) {
-          eligibleToExecuteDelegateIds.add(vmDetailsOutcome.getDelegateId());
+        String delegateId = fetchDelegateId(ambiance);
+        if (Strings.isNotBlank(delegateId)) {
+          eligibleToExecuteDelegateIds.add(delegateId);
+          ciTaskDetailsRepository.deleteFirstByStageExecutionId(stageId);
         }
       }
     }
