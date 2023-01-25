@@ -15,6 +15,7 @@ import io.harness.dtos.deploymentinfo.AzureWebAppDeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.CustomDeploymentNGDeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.EcsDeploymentInfoDTO;
+import io.harness.dtos.deploymentinfo.GoogleFunctionDeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.K8sDeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.NativeHelmDeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.PdcDeploymentInfoDTO;
@@ -28,6 +29,7 @@ import io.harness.entities.deploymentinfo.AzureWebAppNGDeploymentInfo;
 import io.harness.entities.deploymentinfo.CustomDeploymentNGDeploymentInfo;
 import io.harness.entities.deploymentinfo.DeploymentInfo;
 import io.harness.entities.deploymentinfo.EcsDeploymentInfo;
+import io.harness.entities.deploymentinfo.GoogleFunctionDeploymentInfo;
 import io.harness.entities.deploymentinfo.K8sDeploymentInfo;
 import io.harness.entities.deploymentinfo.NativeHelmDeploymentInfo;
 import io.harness.entities.deploymentinfo.PdcDeploymentInfo;
@@ -67,6 +69,8 @@ public class DeploymentInfoMapper {
       return TasDeploymentInfoMapper.toDTO((TasDeploymentInfo) deploymentInfo);
     } else if (deploymentInfo instanceof SpotDeploymentInfo) {
       return SpotDeploymentInfoMapper.toDTO((SpotDeploymentInfo) deploymentInfo);
+    } else if (deploymentInfo instanceof GoogleFunctionDeploymentInfo) {
+      return GoogleFunctionDeploymentInfoMapper.toDTO((GoogleFunctionDeploymentInfo) deploymentInfo);
     }
     throw new InvalidRequestException("No DeploymentInfoMapper toDTO found for deploymentInfo : {}" + deploymentInfo);
   }
@@ -96,6 +100,8 @@ public class DeploymentInfoMapper {
       return TasDeploymentInfoMapper.toEntity((TasDeploymentInfoDTO) deploymentInfoDTO);
     } else if (deploymentInfoDTO instanceof SpotDeploymentInfoDTO) {
       return SpotDeploymentInfoMapper.toEntity((SpotDeploymentInfoDTO) deploymentInfoDTO);
+    } else if (deploymentInfoDTO instanceof GoogleFunctionDeploymentInfoDTO) {
+      return GoogleFunctionDeploymentInfoMapper.toEntity((GoogleFunctionDeploymentInfoDTO) deploymentInfoDTO);
     }
     throw new InvalidRequestException(
         "No DeploymentInfoMapper toEntity found for deploymentInfo : {}" + deploymentInfoDTO);

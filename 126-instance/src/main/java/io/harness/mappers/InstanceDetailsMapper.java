@@ -16,6 +16,7 @@ import io.harness.dtos.instanceinfo.AzureWebAppInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.CustomDeploymentInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.EcsInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.GitOpsInstanceInfoDTO;
+import io.harness.dtos.instanceinfo.GoogleFunctionInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.K8sInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.NativeHelmInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.PdcInstanceInfoDTO;
@@ -94,6 +95,8 @@ public class InstanceDetailsMapper {
       return ServiceSpecType.TAS;
     } else if (instanceDTO.getInstanceInfoDTO() instanceof SpotInstanceInfoDTO) {
       return ServiceSpecType.ELASTIGROUP;
+    } else if (instanceDTO.getInstanceInfoDTO() instanceof GoogleFunctionInstanceInfoDTO) {
+      return ServiceSpecType.GOOGLE_CLOUD_FUNCTIONS;
     }
     return null;
   }

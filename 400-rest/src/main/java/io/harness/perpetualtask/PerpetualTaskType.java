@@ -47,6 +47,7 @@ public final class PerpetualTaskType {
   public static final String CUSTOM_DEPLOYMENT_INSTANCE_SYNC_NG = "CUSTOM_DEPLOYMENT_INSTANCE_SYNC_NG";
   public static final String TAS_INSTANCE_SYNC_NG = "TAS_INSTANCE_SYNC_NG";
   public static final String SPOT_INSTANCE_SYNC_NG = "SPOT_INSTANCE_SYNC_NG";
+  public static final String GOOGLE_CLOUD_FUNCTIONS = "GOOGLE_CLOUD_FUNCTIONS_INSTANCE_SYNC";
 
   private PerpetualTaskType() {}
 }
