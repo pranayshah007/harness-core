@@ -142,6 +142,7 @@ public class ContainerStep implements TaskChainExecutableWithRbac<StepElementPar
     log.info("Finalizing container step response");
     containerStepCleanupHelper.sendCleanupRequest(ambiance);
     ResponseData responseData = responseDataSupplier.get();
+    log.info("{}", responseData);
     return executionResponseHelper.finalizeStepResponse(ambiance, stepParameters, responseData);
   }
 
@@ -152,6 +153,7 @@ public class ContainerStep implements TaskChainExecutableWithRbac<StepElementPar
     log.info("Starting run in container step");
     ContainerStepInfo containerStepInfo = (ContainerStepInfo) stepParameters.getSpec();
     ResponseData response = responseSupplier.get();
+    log.info("{}", response);
     K8sTaskExecutionResponse k8sTaskExecutionResponse = (K8sTaskExecutionResponse) response;
 
     checkIfEverythingIsHealthy(k8sTaskExecutionResponse);
