@@ -12,12 +12,17 @@ import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.LOAD_TEST_CUR
 import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.areMetricsFromCVConfigFilteredOut;
 import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.convertTimeSeriesRecordDtosListToMap;
 import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.getFilteredAnalysedTestDataNodes;
-import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.getMapOfCvConfigIdAndFilteredMetrics;
+import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.getFilteredMetricCVConfigs;
+import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.getHealthSourceFromCVConfig;
+import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.getMetricTypeFromCvConfigAndMetricDefinition;
+import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.getThresholdsFromDefinition;
+import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.getTransactionGroupFromCVConfig;
 import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.isAnalysisResultExcluded;
 import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.parseControlNodeIdentifiersFromDeploymentTimeSeriesAnalysis;
 import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.parseTestNodeIdentifiersFromDeploymentTimeSeriesAnalysis;
 import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.populateRawMetricDataInMetricAnalysis;
 import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.removeMetricFromResult;
+import static io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils.setDeeplinkURLWithRange;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.persistence.HQuery.excludeAuthority;
@@ -37,22 +42,29 @@ import io.harness.cvng.analysis.services.api.DeploymentTimeSeriesAnalysisService
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.cdng.beans.v2.AnalysisResult;
 import io.harness.cvng.cdng.beans.v2.AppliedDeploymentAnalysisType;
+import io.harness.cvng.cdng.beans.v2.HealthSource;
 import io.harness.cvng.cdng.beans.v2.MetricsAnalysis;
 import io.harness.cvng.cdng.beans.v2.MetricsAnalysisOverview;
 import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.core.beans.TimeRange;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.filterParams.DeploymentTimeSeriesAnalysisFilter;
+import io.harness.cvng.core.entities.AnalysisInfo;
 import io.harness.cvng.core.entities.CVConfig;
+import io.harness.cvng.core.entities.MetricCVConfig;
+import io.harness.cvng.core.entities.MetricPack.MetricDefinition;
+import io.harness.cvng.core.entities.PrometheusCVConfig;
 import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.core.entities.VerificationTask.DeploymentInfo;
 import io.harness.cvng.core.entities.VerificationTask.TaskType;
 import io.harness.cvng.core.services.api.TimeSeriesRecordService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.utils.CVNGObjectUtils;
+import io.harness.cvng.utils.VerifyStepMetricsAnalysisUtils;
 import io.harness.cvng.verificationjob.entities.TestVerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
+import io.harness.delegate.beans.connector.prometheusconnector.PrometheusConnectorDTO;
 import io.harness.persistence.HPersistence;
 import io.harness.serializer.JsonUtils;
 import io.harness.utils.PageUtils;
@@ -64,6 +76,7 @@ import com.google.common.io.Resources;
 import com.google.inject.Inject;
 import dev.morphia.query.Sort;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -82,9 +95,11 @@ import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.client.utils.URIBuilder;
 
 public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSeriesAnalysisService {
   public static final int DEFAULT_PAGE_SIZE = 10;
+  private static final String STEP_INPUT_IN_SECONDS = "60";
   @Inject private HPersistence hPersistence;
   @Inject private VerificationTaskService verificationTaskService;
   @Inject private VerificationJobInstanceService verificationJobInstanceService;
@@ -132,7 +147,6 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
                                               transactionMetricInfo.getTransactionMetric().getTransactionName()))
                                       .collect(Collectors.toList());
     }
-
     return TransactionMetricInfoSummaryPageDTO.builder()
         .pageResponse(PageUtils.offsetAndLimit(transactionMetricInfoList, pageParams.getPage(), pageParams.getSize()))
         .deploymentTimeRange(deploymentTimeRange)
@@ -394,6 +408,11 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
           removeMetricFromResult(metricsForThisAnalysis, metricIdentifier);
         } else {
           MetricsAnalysis metricsAnalysis = metricsForThisAnalysis.get(metricIdentifier);
+          // Setting timeranges for the deeplink URL
+          if (StringUtils.isNotEmpty(metricsAnalysis.getDeeplinkURL())) {
+            String deeplinkURLWithRange = setDeeplinkURLWithRange(timeSeriesAnalysis, metricsAnalysis.getDeeplinkURL());
+            metricsAnalysis.setDeeplinkURL(deeplinkURLWithRange);
+          }
           metricsAnalysis.setAnalysisResult(analysisResult);
           metricsAnalysis.setTestDataNodes(getFilteredAnalysedTestDataNodes(
               transactionMetricHostData, deploymentTimeSeriesAnalysisFilter, metricsAnalysis.getThresholds()));
@@ -407,6 +426,68 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
       metricsAnalyses.addAll(map.values());
     }
     return metricsAnalyses;
+  }
+  public Map<String, Map<String, MetricsAnalysis>> getMapOfCvConfigIdAndFilteredMetrics(
+      VerificationJobInstance verificationJobInstance,
+      DeploymentTimeSeriesAnalysisFilter deploymentTimeSeriesAnalysisFilter) {
+    List<MetricCVConfig<? extends AnalysisInfo>> filteredMetricCVConfigs =
+        getFilteredMetricCVConfigs(verificationJobInstance, deploymentTimeSeriesAnalysisFilter);
+    Map<String, Map<String, MetricsAnalysis>> mapOfCvConfigIdAndFilteredMetrics = new HashMap<>();
+    for (MetricCVConfig<? extends AnalysisInfo> metricCVConfig : filteredMetricCVConfigs) {
+      Map<String, MetricDefinition> metricDefinitions = metricCVConfig.getMetricPack().getMetrics().stream().collect(
+          Collectors.toMap(MetricDefinition::getIdentifier, metricDefinition -> metricDefinition, (u, v) -> v));
+      HealthSource healthSource = getHealthSourceFromCVConfig(metricCVConfig);
+      String transactionGroup = getTransactionGroupFromCVConfig(metricCVConfig);
+      Map<String, MetricsAnalysis> metricsAnalyses =
+          metricCVConfig.getMetricInfos()
+              .stream()
+              .filter(VerifyStepMetricsAnalysisUtils::isDeploymentVerificationEnabledForThisMetric)
+              .map(metric -> {
+                MetricsAnalysis metricsAnalysis =
+                    MetricsAnalysis.builder()
+                        .metricName(metric.getMetricName())
+                        .metricIdentifier(metric.getIdentifier())
+                        .healthSource(healthSource)
+                        .transactionGroup(transactionGroup)
+                        .metricType(getMetricTypeFromCvConfigAndMetricDefinition(
+                            metricCVConfig, metricDefinitions.get(metric.getIdentifier())))
+                        .thresholds(getThresholdsFromDefinition(metricDefinitions.get(metric.getIdentifier())))
+                        .build();
+
+                Optional<String> deeplinkURL = buildDeepLinkURL(metricCVConfig, metric);
+                deeplinkURL.ifPresent(metricsAnalysis::setDeeplinkURL);
+                return metricsAnalysis;
+              })
+              .collect(Collectors.toMap(MetricsAnalysis::getMetricIdentifier,
+                  metricsAnalysis -> metricsAnalysis, (existing, current) -> current));
+      mapOfCvConfigIdAndFilteredMetrics.put(metricCVConfig.getUuid(), metricsAnalyses);
+    }
+    return mapOfCvConfigIdAndFilteredMetrics;
+  }
+
+  private Optional<String> buildDeepLinkURL(MetricCVConfig metricCVConfig, AnalysisInfo metric) {
+    Optional<String> deeplinkURL = Optional.empty();
+    if (metric instanceof PrometheusCVConfig.MetricInfo) {
+      PrometheusCVConfig prometheusCVConfig = (PrometheusCVConfig) metricCVConfig;
+      PrometheusCVConfig.MetricInfo metricInfo = (PrometheusCVConfig.MetricInfo) metric;
+      Optional<ConnectorInfoDTO> connectorInfoDTO =
+          nextGenService.get(prometheusCVConfig.getAccountId(), prometheusCVConfig.getConnectorIdentifier(),
+              prometheusCVConfig.getOrgIdentifier(), prometheusCVConfig.getProjectIdentifier());
+      if (connectorInfoDTO.isPresent()) {
+        PrometheusConnectorDTO connectorConfigDTO =
+            (PrometheusConnectorDTO) connectorInfoDTO.get().getConnectorConfig();
+
+        try {
+          URIBuilder uriBuilder;
+          uriBuilder = new URIBuilder(connectorConfigDTO.getUrl() + "/graph");
+          uriBuilder.addParameter("g0.step_input", STEP_INPUT_IN_SECONDS);
+          uriBuilder.addParameter("g0.expr", metricInfo.getQuery());
+          deeplinkURL = Optional.ofNullable(uriBuilder.build().toString());
+        } catch (URISyntaxException ignored) {
+        }
+      }
+    }
+    return deeplinkURL;
   }
 
   private Map<String, Map<String, List<TimeSeriesRecordDTO>>> getControlNodesRawData(

@@ -49,7 +49,11 @@ import io.harness.cvng.core.entities.MetricPack.MetricDefinition;
 import io.harness.cvng.core.entities.TimeSeriesThreshold;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 
-import java.util.HashMap;
+import java.net.URISyntaxException;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -57,9 +61,11 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.http.client.utils.URIBuilder;
 
 public class VerifyStepMetricsAnalysisUtils {
   private static final long MILLIS_IN_MINUTE = 60000;
+  private static final String DATE_FORMAT_STRING = "yyyy-MM-dd HH:mm";
   public static final String LOAD_TEST_CURRENT_NODE_IDENTIFIER = "Current-test";
   public static final String LOAD_TEST_BASELINE_NODE_IDENTIFIER = "Baseline-test";
 
@@ -214,7 +220,7 @@ public class VerifyStepMetricsAnalysisUtils {
         .collect(Collectors.toList());
   }
 
-  private static MetricType getMetricTypeFromCvConfigAndMetricDefinition(
+  public static MetricType getMetricTypeFromCvConfigAndMetricDefinition(
       MetricCVConfig<? extends AnalysisInfo> cvConfig, MetricDefinition metricDefinition) {
     CVMonitoringCategory cvMonitoringCategory = cvConfig.getCategory();
     switch (cvMonitoringCategory) {
@@ -345,7 +351,7 @@ public class VerifyStepMetricsAnalysisUtils {
     return MILLIS_IN_MINUTE * epochMinute;
   }
 
-  public static Map<String, Map<String, MetricsAnalysis>> getMapOfCvConfigIdAndFilteredMetrics(
+  public static List<MetricCVConfig<? extends AnalysisInfo>> getFilteredMetricCVConfigs(
       VerificationJobInstance verificationJobInstance,
       DeploymentTimeSeriesAnalysisFilter deploymentTimeSeriesAnalysisFilter) {
     Set<String> requestedHealthSources =
@@ -355,42 +361,32 @@ public class VerifyStepMetricsAnalysisUtils {
 
     List<CVConfig> cvConfigs = verificationJobInstance.getResolvedJob().getCvConfigs();
 
-    List<MetricCVConfig<? extends AnalysisInfo>> filteredMetricCVConfigs =
-        cvConfigs.stream()
-            .filter(VerifyStepMetricsAnalysisUtils::isMetricCVConfig)
-            .map(cvConfig -> (MetricCVConfig<? extends AnalysisInfo>) cvConfig)
-            .filter(cvConfig -> isHealthSourceIncluded(requestedHealthSources, cvConfig))
-            .filter(cvConfig -> isTransactionGroupIncluded(requestedTransactionGroups, cvConfig))
-            .collect(Collectors.toList());
-
-    Map<String, Map<String, MetricsAnalysis>> mapOfCvConfigIdAndFilteredMetrics = new HashMap<>();
-    for (MetricCVConfig<? extends AnalysisInfo> metricCVConfig : filteredMetricCVConfigs) {
-      Map<String, MetricDefinition> metricDefinitions = metricCVConfig.getMetricPack().getMetrics().stream().collect(
-          Collectors.toMap(MetricDefinition::getIdentifier, metricDefinition -> metricDefinition, (u, v) -> v));
-      HealthSource healthSource = getHealthSourceFromCVConfig(metricCVConfig);
-      String transactionGroup = getTransactionGroupFromCVConfig(metricCVConfig);
-      Map<String, MetricsAnalysis> metricsAnalyses =
-          metricCVConfig.getMetricInfos()
-              .stream()
-              .filter(VerifyStepMetricsAnalysisUtils::isDeploymentVerificationEnabledForThisMetric)
-              .map(metric
-                  -> MetricsAnalysis.builder()
-                         .metricName(metric.getMetricName())
-                         .metricIdentifier(metric.getIdentifier())
-                         .healthSource(healthSource)
-                         .transactionGroup(transactionGroup)
-                         .metricType(getMetricTypeFromCvConfigAndMetricDefinition(
-                             metricCVConfig, metricDefinitions.get(metric.getIdentifier())))
-                         .thresholds(getThresholdsFromDefinition(metricDefinitions.get(metric.getIdentifier())))
-                         .build())
-              .collect(Collectors.toMap(MetricsAnalysis::getMetricIdentifier,
-                  metricsAnalysis -> metricsAnalysis, (existing, current) -> current));
-      mapOfCvConfigIdAndFilteredMetrics.put(metricCVConfig.getUuid(), metricsAnalyses);
-    }
-    return mapOfCvConfigIdAndFilteredMetrics;
+    return cvConfigs.stream()
+        .filter(VerifyStepMetricsAnalysisUtils::isMetricCVConfig)
+        .map(cvConfig -> (MetricCVConfig<? extends AnalysisInfo>) cvConfig)
+        .filter(cvConfig -> isHealthSourceIncluded(requestedHealthSources, cvConfig))
+        .filter(cvConfig -> isTransactionGroupIncluded(requestedTransactionGroups, cvConfig))
+        .collect(Collectors.toList());
   }
 
-  private static HealthSource getHealthSourceFromCVConfig(MetricCVConfig<? extends AnalysisInfo> metricCVConfig) {
+  public static String setDeeplinkURLWithRange(DeploymentTimeSeriesAnalysis timeSeriesAnalysis, String deepLinkURL) {
+    LocalDateTime endTime = timeSeriesAnalysis.getEndTime().atZone(ZoneId.systemDefault()).toLocalDateTime();
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern(DATE_FORMAT_STRING);
+    long diffMinutes = timeSeriesAnalysis.getStartTime().until(
+        timeSeriesAnalysis.getEndTime(), ChronoUnit.MINUTES); // this is a diff in min
+    String rangeInput = Math.max(diffMinutes, 1) + "m";
+    URIBuilder uriBuilder;
+    try {
+      uriBuilder = new URIBuilder(deepLinkURL);
+      uriBuilder.addParameter("g0.range_input", rangeInput); // eg. 10s or 10m or 1h
+      uriBuilder.addParameter("g0.g0.end_input", endTime.format(formatter)); // eg. YYYY-MM-DD HH:MM
+      return uriBuilder.build().toString();
+    } catch (URISyntaxException ignored) {
+    }
+    return null;
+  }
+
+  public static HealthSource getHealthSourceFromCVConfig(MetricCVConfig<? extends AnalysisInfo> metricCVConfig) {
     return HealthSource.builder()
         .healthSourceIdentifier(metricCVConfig.getFullyQualifiedIdentifier())
         .healthSourceName(metricCVConfig.getMonitoringSourceName())
@@ -400,7 +396,7 @@ public class VerifyStepMetricsAnalysisUtils {
         .build();
   }
 
-  private static String getTransactionGroupFromCVConfig(MetricCVConfig<? extends AnalysisInfo> metricCVConfig) {
+  public static String getTransactionGroupFromCVConfig(MetricCVConfig<? extends AnalysisInfo> metricCVConfig) {
     String transactionGroup;
     if (metricCVConfig.maybeGetGroupName().isPresent()) {
       transactionGroup = metricCVConfig.maybeGetGroupName().get();
@@ -410,28 +406,28 @@ public class VerifyStepMetricsAnalysisUtils {
     return transactionGroup;
   }
 
-  private static boolean isDeploymentVerificationEnabledForThisMetric(AnalysisInfo analysisInfo) {
+  public static boolean isDeploymentVerificationEnabledForThisMetric(AnalysisInfo analysisInfo) {
     return analysisInfo.getDeploymentVerification().isEnabled();
   }
 
-  private static boolean isMetricCVConfig(CVConfig cvConfig) {
+  public static boolean isMetricCVConfig(CVConfig cvConfig) {
     return cvConfig instanceof MetricCVConfig;
   }
 
-  private static boolean isTransactionGroupIncluded(
+  public static boolean isTransactionGroupIncluded(
       Set<String> requestedTransactionGroups, MetricCVConfig<? extends AnalysisInfo> cvConfig) {
     return CollectionUtils.isEmpty(requestedTransactionGroups)
         || (cvConfig.maybeGetGroupName().isPresent()
             && requestedTransactionGroups.contains(cvConfig.maybeGetGroupName().get()));
   }
 
-  private static boolean isHealthSourceIncluded(
+  public static boolean isHealthSourceIncluded(
       Set<String> requestedHealthSources, MetricCVConfig<? extends AnalysisInfo> cvConfig) {
     return CollectionUtils.isEmpty(requestedHealthSources)
         || requestedHealthSources.contains(cvConfig.getFullyQualifiedIdentifier());
   }
 
-  private static List<MetricThreshold> getThresholdsFromDefinition(MetricDefinition metricDefinition) {
+  public static List<MetricThreshold> getThresholdsFromDefinition(MetricDefinition metricDefinition) {
     return CollectionUtils.emptyIfNull(metricDefinition.getThresholds())
         .stream()
         .map(VerifyStepMetricsAnalysisUtils::getMetricThresholdFromTimeSeriesThreshold)
