@@ -350,7 +350,7 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
     assertThat(changeSummaryDTO.getCategoryCountMap().get(ChangeCategory.ALERTS).getCountInPrecedingWindow())
         .isEqualTo(0);
     assertThat(changeSummaryDTO.getCategoryCountMap().get(ChangeCategory.ALERTS).getPercentageChange())
-        .isCloseTo(100.0, offset(0.1));
+        .isCloseTo(0.0, offset(0.1));
     assertThat(changeSummaryDTO.getCategoryCountMap().get(ChangeCategory.INFRASTRUCTURE).getCount()).isEqualTo(1);
     assertThat(changeSummaryDTO.getCategoryCountMap().get(ChangeCategory.INFRASTRUCTURE).getCountInPrecedingWindow())
         .isEqualTo(1);
@@ -409,7 +409,7 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
     assertThat(changeSummaryDTO.getCategoryCountMap().get(ChangeCategory.ALERTS).getCountInPrecedingWindow())
         .isEqualTo(0);
     assertThat(changeSummaryDTO.getCategoryCountMap().get(ChangeCategory.ALERTS).getPercentageChange())
-        .isCloseTo(100.0, offset(0.1));
+        .isCloseTo(0.0, offset(0.1));
 
     assertThat(changeSummaryDTO.getCategoryCountMap().get(ChangeCategory.INFRASTRUCTURE).getCount()).isEqualTo(1);
     assertThat(changeSummaryDTO.getCategoryCountMap().get(ChangeCategory.INFRASTRUCTURE).getCountInPrecedingWindow())

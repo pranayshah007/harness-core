@@ -13,6 +13,7 @@ import static io.harness.pms.merger.helpers.InputSetMergeHelper.mergeInputSetInt
 import static io.harness.pms.merger.helpers.InputSetMergeHelper.mergeInputSets;
 import static io.harness.pms.merger.helpers.InputSetTemplateHelper.createTemplateFromPipeline;
 import static io.harness.pms.merger.helpers.InputSetTemplateHelper.createTemplateFromPipelineForGivenStages;
+import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.GARVIT;
 import static io.harness.rule.OwnerRule.NAMAN;
 
@@ -32,6 +33,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -357,5 +359,68 @@ public class InputSetMergeHelperTest extends CategoryTest {
         + "  projectIdentifier: \"Plain_Old_Project\"\n"
         + "  orgIdentifier: \"default\"\n";
     assertThat(mergedYaml).isEqualTo(expectedMergedYaml);
+  }
+
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testMergeInputSetsV1() {
+    List<String> inputSetYamlList = new ArrayList<>();
+    inputSetYamlList.add("version: 1\n"
+        + "name: partialset1\n"
+        + "inputs:\n"
+        + "  image: alpine\n"
+        + "  repo: harness-core\n"
+        + "  count: 0\n"
+        + "repository:\n"
+        + "  reference:\n"
+        + "    type: commit\n"
+        + "    value: asdf");
+
+    inputSetYamlList.add("version: 1\n"
+        + "name: partialset2\n"
+        + "inputs:\n"
+        + "  count: 1\n"
+        + "  tag: latest\n"
+        + "repository:\n"
+        + "  reference:\n"
+        + "    type: tag\n"
+        + "    value: main");
+
+    Set<String> possibleResponses = Set.of("repository:\n"
+            + "  reference:\n"
+            + "    type: \"tag\"\n"
+            + "    value: \"main\"\n"
+            + "inputs:\n"
+            + "  image: \"alpine\"\n"
+            + "  repo: \"harness-core\"\n"
+            + "  count: 1\n"
+            + "  tag: \"latest\"\n",
+        "inputs:\n"
+            + "  image: \"alpine\"\n"
+            + "  repo: \"harness-core\"\n"
+            + "  count: 1\n"
+            + "  tag: \"latest\"\n"
+            + "repository:\n"
+            + "  reference:\n"
+            + "    type: \"tag\"\n"
+            + "    value: \"main\"\n");
+    String mergedInputSetYaml = InputSetMergeHelper.mergeInputSetsV1(inputSetYamlList);
+    assertThat(possibleResponses.contains(mergedInputSetYaml)).isTrue();
+
+    inputSetYamlList = Arrays.asList("inputs:\n  a: a", "inputs:\n  b: b", "inputs:\n  c: c");
+    assertThat(InputSetMergeHelper.mergeInputSetsV1(inputSetYamlList))
+        .isEqualTo("inputs:\n"
+            + "  a: \"a\"\n"
+            + "  b: \"b\"\n"
+            + "  c: \"c\"\n");
+
+    inputSetYamlList = Arrays.asList("repository:\n  references:\n    type: branch\n    value: harness-core",
+        "repository:\n  references:\n    type: tag");
+    assertThat(InputSetMergeHelper.mergeInputSetsV1(inputSetYamlList))
+        .isEqualTo("repository:\n"
+            + "  references:\n"
+            + "    type: \"tag\"\n"
+            + "    value: \"harness-core\"\n");
   }
 }

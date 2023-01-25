@@ -13,7 +13,7 @@ import io.harness.cdng.creator.plan.PlanCreatorConstants;
 import io.harness.cdng.creator.plan.environment.EnvironmentPlanCreatorHelper;
 import io.harness.cdng.creator.plan.stage.DeploymentStageConfig;
 import io.harness.cdng.creator.plan.stage.DeploymentStageNode;
-import io.harness.cdng.infra.steps.InfraSectionStepParameters;
+import io.harness.cdng.infra.InfraSectionStepParameters;
 import io.harness.cdng.licenserestriction.EnforcementValidator;
 import io.harness.cdng.service.beans.ServiceConfig;
 import io.harness.cdng.service.beans.ServiceUseFromStage;

@@ -69,6 +69,7 @@ public class DelegateTaskBroadcastHelper {
                                                       .taskId(delegateTask.getUuid())
                                                       .async(delegateTask.getData().isAsync())
                                                       .broadcastToDelegatesIds(delegateTask.getBroadcastToDelegateIds())
+                                                      .taskType(delegateTask.getData().getTaskType())
                                                       .build();
 
     Broadcaster broadcaster = broadcasterFactory.lookup(STREAM_DELEGATE_PATH + delegateTask.getAccountId(), true);
@@ -86,6 +87,7 @@ public class DelegateTaskBroadcastHelper {
                                                       .taskId(delegateTask.getUuid())
                                                       .async(delegateTask.getTaskDataV2().isAsync())
                                                       .broadcastToDelegatesIds(delegateTask.getBroadcastToDelegateIds())
+                                                      .taskType(delegateTask.getTaskDataV2().getTaskType())
                                                       .build();
 
     Broadcaster broadcaster = broadcasterFactory.lookup(STREAM_DELEGATE_PATH + delegateTask.getAccountId(), true);

@@ -41,7 +41,6 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.Level;
 import io.harness.plancreator.steps.common.StepElementParameters;
-import io.harness.plancreator.steps.common.rollback.AsyncExecutableWithRollback;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
@@ -52,11 +51,11 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.Outcome;
-import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.steps.executable.AsyncExecutableWithCapabilities;
 import io.harness.tasks.ProgressData;
 import io.harness.tasks.ResponseData;
 
@@ -81,7 +80,7 @@ import org.springframework.data.annotation.TypeAlias;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CV)
-public class CVNGStep extends AsyncExecutableWithRollback {
+public class CVNGStep extends AsyncExecutableWithCapabilities {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(CVNGStepType.CVNG_VERIFY.getDisplayName())
                                                .setStepCategory(StepCategory.STEP)
@@ -97,8 +96,8 @@ public class CVNGStep extends AsyncExecutableWithRollback {
   private Map<MonitoredServiceSpecType, VerifyStepMonitoredServiceResolutionService> verifyStepCvConfigServiceMap;
 
   @Override
-  public AsyncExecutableResponse executeAsync(Ambiance ambiance, StepElementParameters stepElementParameters,
-      StepInputPackage inputPackage, PassThroughData passThroughData) {
+  public AsyncExecutableResponse executeAsyncAfterRbac(
+      Ambiance ambiance, StepElementParameters stepElementParameters, StepInputPackage inputPackage) {
     log.info("ExecuteAsync called for CVNGStep");
     CVNGStepParameter stepParameters = (CVNGStepParameter) stepElementParameters.getSpec();
     String accountId = AmbianceUtils.getAccountId(ambiance);
@@ -123,6 +122,8 @@ public class CVNGStep extends AsyncExecutableWithRollback {
         verifyStepCvConfigServiceMap.get(monitoredServiceType)
             .fetchAndPersistResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode);
     String monitoredServiceIdentifier = resolvedCVConfigInfo.getMonitoredServiceIdentifier();
+    String monitoredServiceTemplateIdentifier = resolvedCVConfigInfo.getMonitoredServiceTemplateIdentifier();
+    String monitoredServiceTemplateVersionLabel = resolvedCVConfigInfo.getMonitoredServiceTemplateVersionLabel();
     List<CVConfig> cvConfigs = resolvedCVConfigInfo.getCvConfigs();
     Instant deploymentStartTime = Instant.ofEpochMilli(
         AmbianceUtils.getStageLevelFromAmbiance(ambiance)
@@ -146,7 +147,8 @@ public class CVNGStep extends AsyncExecutableWithRollback {
     } else {
       String verificationJobInstanceId;
       DeploymentActivity activity = getDeploymentActivity(stepParameters, serviceEnvironmentParams, ambiance,
-          deploymentStartTime, monitoredServiceIdentifier, cvConfigs);
+          deploymentStartTime, monitoredServiceIdentifier, monitoredServiceTemplateIdentifier,
+          monitoredServiceTemplateVersionLabel, cvConfigs);
       boolean isDemoEnabled = isDemoEnabled(accountId, ambiance);
       boolean shouldFailVerification = false;
       if (isDemoEnabled) {
@@ -157,14 +159,16 @@ public class CVNGStep extends AsyncExecutableWithRollback {
                 shouldFailVerification(ambiance, stepParameters.getSensitivity())
                     ? ActivityVerificationStatus.VERIFICATION_FAILED
                     : ActivityVerificationStatus.VERIFICATION_PASSED,
-                monitoredServiceIdentifier, cvConfigs);
+                monitoredServiceIdentifier, monitoredServiceTemplateIdentifier, monitoredServiceTemplateVersionLabel,
+                cvConfigs);
         activity.setDemoActivity(true);
         verificationJobInstanceId =
             verificationJobInstanceService.createDemoInstances(Arrays.asList(verificationJobInstance)).get(0);
       } else {
         VerificationJobInstanceBuilder verificationJobInstanceBuilder =
             getVerificationJobInstanceBuilder(AmbianceUtils.obtainCurrentLevel(ambiance).getIdentifier(),
-                stepParameters, serviceEnvironmentParams, deploymentStartTime, monitoredServiceIdentifier, cvConfigs);
+                stepParameters, serviceEnvironmentParams, deploymentStartTime, monitoredServiceIdentifier,
+                monitoredServiceTemplateIdentifier, monitoredServiceTemplateVersionLabel, cvConfigs);
         activity.fillInVerificationJobInstanceDetails(verificationJobInstanceBuilder);
         verificationJobInstanceId = verificationJobInstanceService.create(verificationJobInstanceBuilder.build());
       }
@@ -209,7 +213,8 @@ public class CVNGStep extends AsyncExecutableWithRollback {
 
   private VerificationJobInstanceBuilder getVerificationJobInstanceBuilder(String stepName,
       CVNGStepParameter stepParameters, ServiceEnvironmentParams serviceEnvironmentParams, Instant deploymentStartTime,
-      String monitoredServiceIdentifier, List<CVConfig> cvConfigs) {
+      String monitoredServiceIdentifier, String monitoredServiceTemplateIdentifier,
+      String monitoredServiceTemplateVersionLabel, List<CVConfig> cvConfigs) {
     Instant verificationStartTime = clock.instant();
     VerificationJob verificationJob =
         stepParameters.getVerificationJobBuilder()
@@ -220,6 +225,8 @@ public class CVNGStep extends AsyncExecutableWithRollback {
             .orgIdentifier(serviceEnvironmentParams.getOrgIdentifier())
             .accountId(serviceEnvironmentParams.getAccountIdentifier())
             .monitoredServiceIdentifier(monitoredServiceIdentifier)
+            .monitoredServiceTemplateIdentifier(monitoredServiceTemplateIdentifier)
+            .monitoredServiceTemplateVersionLabel(monitoredServiceTemplateVersionLabel)
             .cvConfigs(cvConfigs)
             .build();
     VerificationJobInstanceBuilder verificationJobInstanceBuilder =
@@ -233,9 +240,11 @@ public class CVNGStep extends AsyncExecutableWithRollback {
   private VerificationJobInstance getVerificationJobInstanceForDemo(String stepName, CVNGStepParameter stepParameters,
       ServiceEnvironmentParams serviceEnvironmentParams, Instant deploymentStartTime,
       ActivityVerificationStatus activityVerificationStatus, String monitoredServiceIdentifier,
+      String monitoredServiceTemplateIdentifier, String monitoredServiceTemplateVersionLabel,
       List<CVConfig> cvConfigs) {
-    VerificationJobInstanceBuilder verificationJobInstanceBuilder = getVerificationJobInstanceBuilder(
-        stepName, stepParameters, serviceEnvironmentParams, deploymentStartTime, monitoredServiceIdentifier, cvConfigs);
+    VerificationJobInstanceBuilder verificationJobInstanceBuilder = getVerificationJobInstanceBuilder(stepName,
+        stepParameters, serviceEnvironmentParams, deploymentStartTime, monitoredServiceIdentifier,
+        monitoredServiceTemplateIdentifier, monitoredServiceTemplateVersionLabel, cvConfigs);
     verificationJobInstanceBuilder.verificationStatus(activityVerificationStatus);
     verificationJobInstanceBuilder.startTime(clock.instant().minus(Duration.ofMinutes(15)));
     verificationJobInstanceBuilder.deploymentStartTime(clock.instant().minus(Duration.ofMinutes(16)));
@@ -254,7 +263,8 @@ public class CVNGStep extends AsyncExecutableWithRollback {
   @NotNull
   private DeploymentActivity getDeploymentActivity(CVNGStepParameter stepParameters,
       ServiceEnvironmentParams serviceEnvironmentParams, Ambiance ambiance, Instant activityStartTime,
-      String monitoredServiceIdentifier, List<CVConfig> cvConfigs) {
+      String monitoredServiceIdentifier, String monitoredServiceTemplateIdentifier,
+      String monitoredServiceTemplateVersionLabel, List<CVConfig> cvConfigs) {
     Instant startTime = clock.instant();
     VerificationJob verificationJob =
         stepParameters.getVerificationJobBuilder()
@@ -264,6 +274,8 @@ public class CVNGStep extends AsyncExecutableWithRollback {
             .orgIdentifier(serviceEnvironmentParams.getOrgIdentifier())
             .accountId(serviceEnvironmentParams.getAccountIdentifier())
             .monitoredServiceIdentifier(monitoredServiceIdentifier)
+            .monitoredServiceTemplateIdentifier(monitoredServiceTemplateIdentifier)
+            .monitoredServiceTemplateVersionLabel(monitoredServiceTemplateVersionLabel)
             .cvConfigs(cvConfigs)
             .build();
     DeploymentActivity deploymentActivity =
@@ -305,6 +317,7 @@ public class CVNGStep extends AsyncExecutableWithRollback {
     String verifyStepExecutionId;
     ActivityStatusDTO activityStatusDTO;
   }
+
   @Value
   @Builder
   @JsonTypeName("verifyStepOutcome")
@@ -318,7 +331,7 @@ public class CVNGStep extends AsyncExecutableWithRollback {
   }
 
   @Override
-  public StepResponse handleAsyncResponse(
+  public StepResponse handleAsyncResponseInternal(
       Ambiance ambiance, StepElementParameters stepElementParameters, Map<String, ResponseData> responseDataMap) {
     log.info("handleAsyncResponse async response");
     CVNGStepParameter stepParameters = (CVNGStepParameter) stepElementParameters.getSpec();
@@ -422,4 +435,7 @@ public class CVNGStep extends AsyncExecutableWithRollback {
         .startTime(verficationStartTime)
         .resolvedJob(verificationJob);
   }
+
+  @Override
+  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {}
 }

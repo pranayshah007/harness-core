@@ -128,9 +128,14 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
 
   @Override
   public DelegateTokenDetails getDelegateToken(String accountId, String name) {
+    return getDelegateToken(accountId, name, false);
+  }
+
+  @Override
+  public DelegateTokenDetails getDelegateToken(String accountId, String name, boolean includeValue) {
     DelegateToken delegateToken = matchNameTokenQuery(accountId, name).get();
     if (delegateToken != null) {
-      return getDelegateTokenDetails(delegateToken, false);
+      return getDelegateTokenDetails(delegateToken, includeValue);
     }
     return null;
   }
@@ -244,7 +249,7 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
                                                                   .status(delegateToken.getStatus());
 
     if (includeTokenValue) {
-      delegateTokenDetailsBuilder.value(decodeBase64ToString(delegateToken.getValue()));
+      delegateTokenDetailsBuilder.value(delegateToken.getValue());
     }
 
     if (delegateToken.getOwner() != null) {

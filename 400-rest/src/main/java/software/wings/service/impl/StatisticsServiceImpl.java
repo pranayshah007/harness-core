@@ -26,6 +26,7 @@ import io.harness.beans.EnvironmentType;
 import io.harness.beans.ExecutionStatus;
 import io.harness.beans.FeatureName;
 import io.harness.ff.FeatureFlagService;
+import io.harness.mongo.index.BasicDBUtils;
 import io.harness.time.EpochUtils;
 
 import software.wings.beans.ElementExecutionSummary;
@@ -191,7 +192,8 @@ public class StatisticsServiceImpl implements StatisticsService {
     }
 
     FindOptions findOptions = new FindOptions();
-    findOptions.hint(WorkflowExecution.getHint("accountId_pipExecutionId_createdAt"));
+    findOptions.hint(
+        BasicDBUtils.getIndexObject(WorkflowExecution.mongoIndexes(), "accountId_pipExecutionId_createdAt"));
 
     List<WorkflowExecution> workflowExecutions = query.asList(findOptions);
 

@@ -17,6 +17,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.services.EnvironmentService;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.utils.IdentifierRefHelper;
 
 import com.google.inject.Inject;
@@ -40,8 +41,8 @@ public class EnvironmentValidationHelper {
       environment = environmentService.get(accountIdentifier, orgIdentifier, projectIdentifier, environmentRef, false);
     } else {
       // env ref for org/account level entity
-      IdentifierRef envIdentifierRef =
-          IdentifierRefHelper.getIdentifierRef(environmentRef, accountIdentifier, orgIdentifier, projectIdentifier);
+      IdentifierRef envIdentifierRef = IdentifierRefHelper.getIdentifierRefOrThrowException(
+          environmentRef, accountIdentifier, orgIdentifier, projectIdentifier, YAMLFieldNameConstants.ENVIRONMENT);
       environment = environmentService.get(envIdentifierRef.getAccountIdentifier(), envIdentifierRef.getOrgIdentifier(),
           envIdentifierRef.getProjectIdentifier(), envIdentifierRef.getIdentifier(), false);
     }

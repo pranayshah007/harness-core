@@ -64,8 +64,8 @@ public class K8sManifestHelmSourceRepoStoreService implements NgManifestService 
     HelmChartManifest helmChartManifest =
         HelmChartManifest.builder()
             .identifier(MigratorUtility.generateIdentifier(applicationManifest.getUuid()))
-            .skipResourceVersioning(
-                ParameterField.createValueField(applicationManifest.getSkipVersioningForAllK8sObjects()))
+            .skipResourceVersioning(ParameterField.createValueField(
+                Boolean.TRUE.equals(applicationManifest.getSkipVersioningForAllK8sObjects())))
             .helmVersion(service.getHelmVersion())
             .store(ParameterField.createValueField(
                 StoreConfigWrapper.builder().type(StoreConfigType.GIT).spec(gitStore).build()))

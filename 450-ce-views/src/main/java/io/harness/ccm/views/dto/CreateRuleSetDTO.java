@@ -8,7 +8,6 @@
 package io.harness.ccm.views.dto;
 
 import io.harness.ccm.views.entities.RuleSet;
-import io.harness.gitsync.beans.YamlDTO;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import javax.validation.Valid;
@@ -20,6 +19,6 @@ import lombok.experimental.FieldDefaults;
 @Value
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class CreateRuleSetDTO implements YamlDTO {
+public class CreateRuleSetDTO {
   @JsonProperty("ruleSet") @Valid RuleSet ruleSet;
 }

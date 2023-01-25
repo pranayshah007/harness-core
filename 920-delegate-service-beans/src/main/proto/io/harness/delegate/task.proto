@@ -64,11 +64,6 @@ message TaskDetails {
   // NOTE: this time does not include the time the task was in the queue. This is determined independently.
   google.protobuf.Duration execution_timeout = 4;
 
-  // Expressions a map between arbitrary keys and expression. Expression can contain secrets that the delegate system
-  // will resolve. The consumer is responsible to apply the finalized expression values to their internal model before
-  // task execution.
-  map<string, string> expressions = 5;
-
   // The delegate system offers JIT secret decryption. This token allows for making sure that the expressions for
   // obtaining secrets are system generated, and not a hack from customers input.
   int64 expression_functor_token = 6;

@@ -8,6 +8,8 @@
 package io.harness.ngmigration.service.step;
 
 import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
+import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
@@ -26,6 +28,7 @@ import io.harness.yaml.core.variables.StringNGVariable;
 
 import software.wings.beans.GraphNode;
 import software.wings.ngmigration.CgEntityId;
+import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.sm.State;
 import software.wings.sm.states.ShellScriptState;
@@ -35,10 +38,25 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
 public class ShellScriptStepMapperImpl implements StepMapper {
+  @Override
+  public WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode) {
+    return WorkflowStepSupportStatus.SUPPORTED;
+  }
+
+  @Override
+  public Set<String> getExpressions(GraphNode graphNode) {
+    ShellScriptState state = (ShellScriptState) getState(graphNode);
+    if (StringUtils.isBlank(state.getScriptString())) {
+      return Collections.emptySet();
+    }
+    return MigratorExpressionUtils.extractAll(state.getScriptString());
+  }
+
   @Override
   public List<CgEntityId> getReferencedEntities(GraphNode graphNode) {
     String templateId = graphNode.getTemplateUuid();
@@ -68,7 +86,8 @@ public class ShellScriptStepMapperImpl implements StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(Map<CgEntityId, NGYamlFile> migratedEntities, GraphNode graphNode) {
+  public AbstractStepNode getSpec(
+      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities, GraphNode graphNode) {
     ShellScriptState state = (ShellScriptState) getState(graphNode);
     ShellScriptStepNode shellScriptStepNode = new ShellScriptStepNode();
     baseSetup(graphNode, shellScriptStepNode);

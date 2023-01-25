@@ -9,6 +9,7 @@ package io.harness.service.deploymentevent;
 
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.ROLLBACK_STEPS;
+import static io.harness.utils.IdentifierRefHelper.MAX_RESULT_THRESHOLD_FOR_SPLIT;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -22,6 +23,7 @@ import io.harness.dtos.DeploymentSummaryDTO;
 import io.harness.dtos.InfrastructureMappingDTO;
 import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.SshWinrmDeploymentInfoDTO;
+import io.harness.encryption.Scope;
 import io.harness.entities.ArtifactDetails;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.AccountLogContext;
@@ -44,12 +46,15 @@ import io.harness.service.instancesync.InstanceSyncService;
 import io.harness.service.instancesynchandler.AbstractInstanceSyncHandler;
 import io.harness.service.instancesynchandlerfactory.InstanceSyncHandlerFactoryService;
 import io.harness.util.logging.InstanceSyncLogContext;
+import io.harness.utils.IdentifierRefHelper;
 
 import com.google.inject.Inject;
 import java.util.List;
 import java.util.Optional;
+import javax.validation.constraints.NotEmpty;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
@@ -98,11 +103,15 @@ public class DeploymentEventListener implements OrchestrationEventHandler {
 
   private InfrastructureMappingDTO createInfrastructureMappingIfNotExists(
       Ambiance ambiance, ServiceStepOutcome serviceOutcome, InfrastructureOutcome infrastructureOutcome) {
+    String serviceRef = serviceOutcome.getIdentifier();
+    String environmentRef = infrastructureOutcome.getEnvironment().getIdentifier();
+
+    Scope minScope = getLowerScopedEntityScope(serviceRef, environmentRef);
     InfrastructureMappingDTO infrastructureMappingDTO =
         InfrastructureMappingDTO.builder()
             .accountIdentifier(getAccountIdentifier(ambiance))
-            .orgIdentifier(AmbianceUtils.getOrgIdentifier(ambiance))
-            .projectIdentifier(AmbianceUtils.getProjectIdentifier(ambiance))
+            .orgIdentifier(minScope == Scope.ACCOUNT ? null : AmbianceUtils.getOrgIdentifier(ambiance))
+            .projectIdentifier(minScope == Scope.PROJECT ? AmbianceUtils.getProjectIdentifier(ambiance) : null)
             .serviceIdentifier(serviceOutcome.getIdentifier())
             .envIdentifier(infrastructureOutcome.getEnvironment().getIdentifier())
             .infrastructureKey(infrastructureOutcome.getInfrastructureKey())
@@ -118,6 +127,27 @@ public class DeploymentEventListener implements OrchestrationEventHandler {
       throw new InvalidRequestException("Failed to create infrastructure mapping for infrastructure key : "
           + infrastructureOutcome.getInfrastructureKey());
     }
+  }
+
+  private Scope getLowerScopedEntityScope(@NotEmpty String serviceRef, @NotEmpty String environmentRef) {
+    String[] serviceRefSplit = StringUtils.split(serviceRef, ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
+    Scope serviceScope;
+    if (serviceRefSplit.length == 1) {
+      serviceScope = Scope.PROJECT;
+    } else {
+      serviceScope = IdentifierRefHelper.getScope(serviceRefSplit[0]);
+    }
+
+    Scope environmentScope;
+    String[] envRefSplit = StringUtils.split(environmentRef, ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
+    if (envRefSplit.length == 1) {
+      environmentScope = Scope.PROJECT;
+    } else {
+      environmentScope = IdentifierRefHelper.getScope(envRefSplit[0]);
+    }
+
+    int minScope = Math.max(serviceScope.ordinal(), environmentScope.ordinal());
+    return Scope.values()[minScope];
   }
 
   private DeploymentSummaryDTO createDeploymentSummary(Ambiance ambiance, ServiceStepOutcome serviceOutcome,

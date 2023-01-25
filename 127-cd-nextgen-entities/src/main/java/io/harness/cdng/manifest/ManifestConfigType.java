@@ -18,6 +18,7 @@ import java.util.Arrays;
 @OwnedBy(HarnessTeam.CDP)
 public enum ManifestConfigType {
   @JsonProperty(ManifestType.HelmChart) HELM_CHART(ManifestType.HelmChart),
+  @JsonProperty(ManifestType.HelmRepoOverride) HELM_REPO_OVERRIDE(ManifestType.HelmRepoOverride),
   @JsonProperty(ManifestType.K8Manifest) K8_MANIFEST(ManifestType.K8Manifest),
   @JsonProperty(ManifestType.Kustomize) KUSTOMIZE(ManifestType.Kustomize),
   @JsonProperty(ManifestType.KustomizePatches) KUSTOMIZE_PATCHES(ManifestType.KustomizePatches),
@@ -40,7 +41,9 @@ public enum ManifestConfigType {
   @JsonProperty(ManifestType.AsgConfiguration) ASG_CONFIGURATION(ManifestType.AsgConfiguration),
   @JsonProperty(ManifestType.AsgScalingPolicy) ASG_SCALING_POLICY(ManifestType.AsgScalingPolicy),
   @JsonProperty(ManifestType.AsgScheduledUpdateGroupAction)
-  ASG_SCHEDULED_UPDATE_GROUP_ACTION(ManifestType.AsgScheduledUpdateGroupAction);
+  ASG_SCHEDULED_UPDATE_GROUP_ACTION(ManifestType.AsgScheduledUpdateGroupAction),
+  @JsonProperty(ManifestType.GoogleCloudFunctionDefinition)
+  CLOUD_FUNCTION_DEFINITION(ManifestType.GoogleCloudFunctionDefinition);
   private final String displayName;
 
   ManifestConfigType(String displayName) {

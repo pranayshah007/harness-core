@@ -84,14 +84,13 @@ public class AsgPrepareRollbackDataCommandTaskHandler extends AsgCommandTaskNGHa
           AsgContentParser.parseJson(asgConfigurationContent, CreateAutoScalingGroupRequest.class, true);
       String asgName = createAutoScalingGroupRequest.getAutoScalingGroupName();
 
-      Map<String, List<String>> prepareRollbackDataAsgStoreManifestsContent =
+      Map<String, List<String>> asgManifestsDataForRollback =
           executePrepareRollbackData(asgSdkManager, logCallback, asgName);
 
       AsgPrepareRollbackDataResult asgPrepareRollbackDataResult =
-          AsgPrepareRollbackDataResult
-              .builder()
-              //      .asgName(asgName)
-              //.asgStoreManifestsContent(prepareRollbackDataAsgStoreManifestsContent)
+          AsgPrepareRollbackDataResult.builder()
+              .asgName(asgName)
+              .asgManifestsDataForRollback(asgManifestsDataForRollback)
               .build();
 
       return AsgPrepareRollbackDataResponse.builder()

@@ -1,0 +1,115 @@
+ [
+   {
+     "moduleName": "CI",
+     "displayName": "Continuous Integration",
+     "version": "Coming Soon",
+     "lastModifiedAt": "",
+     "versionUrl": "",
+     "releaseNotesLink": "https://developer.harness.io/release-notes/continuous-integration",
+     "microservicesVersionInfo": [
+     ]
+   },
+   {
+     "moduleName": "CD",
+     "displayName": "Continuous Delivery & GitOps",
+     "version": "",
+     "lastModifiedAt": "",
+     "versionUrl": "http://localhost:7457/version",
+     "releaseNotesLink": "https://developer.harness.io/release-notes/continuous-delivery",
+     "microservicesVersionInfo": [{
+       "name": "NG Manager",
+       "versionUrl": "http://localhost:7457/version",
+       "version": ""
+     },
+       {
+         "name": "GitOps",
+         "versionUrl": "http://localhost:7908/gateway/gitops/api/v1/version",
+         "version": ""
+       },
+       {
+         "name": "Template Service",
+         "versionUrl": "http://localhost:15001/api/version",
+         "version": ""
+       }
+     ]
+   },
+   {
+     "moduleName": "CCM",
+     "displayName": "Cloud Cost Management",
+     "version": "Coming Soon",
+     "lastModifiedAt": "",
+     "versionUrl": "",
+     "releaseNotesLink": "https://developer.harness.io/release-notes/cloud-cost-management",
+     "microservicesVersionInfo": [
+     ]
+   },
+   {
+     "moduleName": "FF",
+     "displayName": "Feature Flags",
+     "version": "Coming Soon",
+     "lastModifiedAt": "",
+     "versionUrl": "",
+     "releaseNotesLink": "https://developer.harness.io/release-notes/feature-flags",
+     "microservicesVersionInfo": [
+     ]
+   },
+   {
+     "moduleName": "SRM",
+     "displayName": "Service Reliability Management",
+     "version": "Coming Soon",
+     "lastModifiedAt": "",
+     "versionUrl": "",
+     "releaseNotesLink": "https://developer.harness.io/release-notes/service-reliability-management",
+     "microservicesVersionInfo": [
+     ]
+   },
+   {
+     "moduleName": "SRT",
+     "displayName": "Security Testing Orchestration",
+     "version": "Coming Soon",
+     "lastModifiedAt": "",
+     "versionUrl": "",
+     "releaseNotesLink": "https://developer.harness.io/docs/security-testing-orchestration",
+     "microservicesVersionInfo": [
+     ]
+   },
+   {
+     "moduleName": "Platform",
+     "displayName": "Platform",
+     "version": "",
+     "lastModifiedAt": "",
+     "versionUrl": "http://localhost:7457/version",
+     "releaseNotesLink": "https://developer.harness.io/release-notes/harness-platform",
+     "microservicesVersionInfo": [{
+       "name": "Pipeline",
+       "versionUrl": "http://localhost:12001/api/version",
+       "version": ""
+     },
+       {
+         "name": "Access Control",
+         "versionUrl": "http://localhost:9006/api/version",
+         "version": ""
+       },
+       {
+         "name": "Notifications",
+         "versionUrl": "http://localhost:9005/api/version",
+         "version": ""
+       },
+       {
+         "name": "Resource Group",
+         "versionUrl": "http://localhost:9005/api/version",
+         "version": ""
+       }
+     ]
+   },
+   {
+     "moduleName": "Delegate",
+     "displayName": "Delegate (if set to auto-upgrade)",
+     "version": "Coming Soon",
+     "lastModifiedAt": "",
+     "releaseNotesLink": "",
+     "versionUrl": "",
+     "microservicesVersionInfo": [
+     ]
+   }
+ ]

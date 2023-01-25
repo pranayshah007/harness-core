@@ -65,6 +65,8 @@ import software.wings.sm.ExecutionContextImpl;
 import software.wings.sm.ExecutionResponse;
 
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -218,7 +220,7 @@ public class ServiceNowCreateUpdateStateTest extends CategoryTest {
     params.setTicketType(INCIDENT.name());
     params.setUpdateMultiple(true);
     params.setFields(Collections.singletonMap(ServiceNowFields.DESCRIPTION, DESCRIPTION_VALUE));
-    params.setAdditionalFields(Collections.singletonMap("key", "value"));
+    params.setAdditionalFields(new HashMap<>(Map.of("key", "value")));
     params.setImportSetTableName(VARIABLE_NAME);
     params.setJsonBody("{\"key\": \"value\"}");
     return params;

@@ -14,7 +14,9 @@ import io.harness.mongo.IndexCreator.IndexCreatorBuilder;
 import io.harness.serializer.JsonUtils;
 
 import com.mongodb.BasicDBObject;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import lombok.Builder;
 import lombok.Singular;
@@ -46,5 +48,14 @@ public class CompoundMongoIndex implements MongoIndex {
       options.put("collation", basicDBObject);
     }
     return IndexCreator.builder().keys(keys).options(options);
+  }
+
+  @Override
+  public BasicDBObject getHint() {
+    Map<String, Object> options = new LinkedHashMap<>();
+    for (String field : getFields()) {
+      options.put(field.replace("-", ""), field.charAt(0) == '-' ? -1 : 1);
+    }
+    return new BasicDBObject(options);
   }
 }

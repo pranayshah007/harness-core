@@ -50,6 +50,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -130,8 +131,8 @@ public class CloudformationDeleteStackStepTest extends CategoryTest {
     doReturn(connectorInfoDTO).when(cloudformationStepHelper).getConnectorDTO(any(), any());
     doReturn(ROLE_ARN).when(cloudformationStepHelper).renderValue(any(), any());
     doReturn(new ArrayList<>()).when(awsHelper).getAwsEncryptionDetails(any(), any());
-    Mockito.mockStatic(StepUtils.class);
-    PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenAnswer(invocation -> TaskRequest.newBuilder().build());
     ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
     StepInputPackage stepInputPackage = StepInputPackage.builder().build();
@@ -140,8 +141,8 @@ public class CloudformationDeleteStackStepTest extends CategoryTest {
         cloudformationDeleteStackStep.obtainTaskAfterRbac(ambiance, stepElementParameters, stepInputPackage);
 
     assertThat(taskRequest).isNotNull();
-    PowerMockito.verifyStatic(StepUtils.class, times(1));
-    StepUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any());
+    PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
+    TaskRequestsUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any());
     assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
     assertThat(taskDataArgumentCaptor.getValue().getParameters()).isNotNull();
     CloudformationTaskNGParameters taskParameters =
@@ -174,8 +175,8 @@ public class CloudformationDeleteStackStepTest extends CategoryTest {
                  .build())
         .when(cloudformationStepHelper)
         .getSavedCloudFormationInheritOutput(any(), any());
-    Mockito.mockStatic(StepUtils.class);
-    PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
     ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
     StepInputPackage stepInputPackage = StepInputPackage.builder().build();
@@ -185,8 +186,8 @@ public class CloudformationDeleteStackStepTest extends CategoryTest {
 
     verify(cloudformationStepHelper, times(1)).getSavedCloudFormationInheritOutput(any(), any());
     assertThat(taskRequest).isNotNull();
-    PowerMockito.verifyStatic(StepUtils.class, times(1));
-    StepUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any());
+    PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
+    TaskRequestsUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any());
     assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
     assertThat(taskDataArgumentCaptor.getValue().getParameters()).isNotNull();
     CloudformationTaskNGParameters taskParameters =

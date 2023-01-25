@@ -206,6 +206,15 @@ public class FreezeTimeUtils {
         && currentWindowIsActive(currentOrUpcomingWindow.getStartTime(), currentOrUpcomingWindow.getEndTime());
   }
 
+  public boolean globalFreezeIsActive(FreezeWindow freezeWindow) {
+    TimeZone timeZone = TimeZone.getTimeZone(freezeWindow.getTimeZone());
+    LocalDateTime startTime = LocalDateTime.parse(freezeWindow.getStartTime(), dtf);
+    LocalDateTime endTime = getLocalDateTime(freezeWindow, timeZone, startTime);
+    Long startTs = getEpochValue(null, startTime, timeZone, 0);
+    Long endTs = getEpochValue(null, endTime, timeZone, 0);
+    return currentWindowIsActive(startTs, endTs);
+  }
+
   public Pair<LocalDateTime, LocalDateTime> setCurrWindowStartAndEndTime(LocalDateTime firstWindowStartTime,
       LocalDateTime firstWindowEndTime, RecurrenceType recurrenceType, TimeZone timeZone) {
     Long startTime = getEpochValue(recurrenceType, firstWindowStartTime, timeZone, 0);
@@ -278,6 +287,7 @@ public class FreezeTimeUtils {
       throw new InvalidRequestException("Time zone cannot be empty");
     }
     TimeZone timeZone = TimeZone.getTimeZone(freezeWindow.getTimeZone());
+    validateTimeZone(freezeWindow.getTimeZone(), timeZone);
     LocalDateTime firstWindowStartTime = LocalDateTime.parse(freezeWindow.getStartTime(), dtf);
     LocalDateTime firstWindowEndTime;
     if (freezeWindow.getEndTime() == null) {
@@ -312,11 +322,24 @@ public class FreezeTimeUtils {
       if (recurrence.getRecurrenceType() == null) {
         throw new InvalidRequestException("Recurrence Type cannot be empty");
       }
+      if (recurrence.getSpec() != null && recurrence.getSpec().getUntil() != null) {
+        LocalDateTime until = LocalDateTime.parse(freezeWindow.getRecurrence().getSpec().getUntil(), dtf);
+        Long untilMs = getEpochValue(recurrence.getRecurrenceType(), until, timeZone, 0);
+        if (untilMs < getCurrentTime()) {
+          throw new InvalidRequestException("End time for recurrence cannot be less than current time");
+        }
+      }
     } else {
       Long endTime = getEpochValue(null, firstWindowEndTime, timeZone, 0);
       if (endTime < getCurrentTime()) {
         throw new InvalidRequestException("Freeze Window is already expired");
       }
+    }
+  }
+
+  private void validateTimeZone(String timeZoneId, TimeZone timeZone) {
+    if (timeZone.getID().equals("GMT") && !timeZoneId.equals("GMT")) {
+      throw new InvalidRequestException("Invalid TimeZone Selected");
     }
   }
 }

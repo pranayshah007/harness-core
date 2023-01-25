@@ -29,7 +29,7 @@ import io.harness.advisers.rollback.RollbackStrategy;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.pipeline.CDAbstractStepInfo;
-import io.harness.cdng.pipeline.CdAbstractStepNode;
+import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
 import io.harness.exception.InvalidRequestException;
 import io.harness.govern.Switch;
 import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
@@ -502,7 +502,11 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
   private String getFqnFromStepNode(YamlNode stepsNode, String stepNodeType) {
     YamlNode stepNode = stepsNode.getField(STEP).getNode();
     if (stepNodeType.equals(stepNode.getType())) {
-      return YamlUtils.getFullyQualifiedName(stepNode, true);
+      // We are getting the fqn till stage rather than pipeline because with matrix and multi-service/infra, one stage
+      // spawns into multiple stages.
+      List<String> qualifiedNameList = YamlUtils.getQualifiedNameList(stepNode, STAGE, true);
+      qualifiedNameList.set(0, STAGE);
+      return qualifiedNameList.stream().collect(Collectors.joining("."));
     }
 
     return null;

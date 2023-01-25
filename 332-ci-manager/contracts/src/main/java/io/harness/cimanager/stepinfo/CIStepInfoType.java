@@ -15,7 +15,7 @@ import lombok.Getter;
 
 public enum CIStepInfoType {
   BUILD(CI_LITE_ENGINE, "Build"),
-  TEST(CI_LITE_ENGINE, "Test"),
+  TEST(CI_LITE_ENGINE, "test"),
   SETUP_ENV(CI_MANAGER, "SetupEnv"),
   CLEANUP(CI_MANAGER, "Cleanup"),
   RUN(CI_LITE_ENGINE, "Run"),
@@ -75,7 +75,8 @@ public enum CIStepInfoType {
   SCRIPT(CI_LITE_ENGINE, "script"),
   PLUGIN_V1(CI_LITE_ENGINE, "plugin"),
   IACM(CI_LITE_ENGINE, "IACM"),
-  IACM_TERRAFORM_PLAN(CI_LITE_ENGINE, "IACMTerraformPlan");
+  IACM_TERRAFORM_PLAN(CI_LITE_ENGINE, "IACMTerraformPlan"),
+  BACKGROUND_V1(CI_LITE_ENGINE, "background");
 
   @Getter private final CIStepExecEnvironment ciStepExecEnvironment;
   private final String displayName;

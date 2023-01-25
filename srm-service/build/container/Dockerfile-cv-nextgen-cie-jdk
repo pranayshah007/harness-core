@@ -15,6 +15,8 @@ COPY --chown=65534:65534 redisson-jcache.yaml /opt/harness/
 COPY --chown=65534:65534 enterprise-redisson-jcache.yaml /opt/harness/
 COPY --chown=65534:65534 classpath_metadata.json /opt/harness/
 COPY --chown=65534:65534 protocol.info /opt/harness/
+COPY --chown=65534:65534 default.jfc /opt/harness/
+COPY --chown=65534:65534 profile.jfc /opt/harness/
 
 COPY --chown=65534:65534 scripts /opt/harness
 

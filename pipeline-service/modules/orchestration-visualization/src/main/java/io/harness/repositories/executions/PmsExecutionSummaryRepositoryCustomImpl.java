@@ -14,6 +14,7 @@ import static org.springframework.data.mongodb.core.query.Criteria.where;
 import static org.springframework.data.mongodb.core.query.Query.query;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
@@ -23,6 +24,7 @@ import io.harness.springdata.PersistenceUtils;
 import com.google.inject.Inject;
 import com.mongodb.client.result.UpdateResult;
 import java.util.List;
+import java.util.Set;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,6 +39,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.repository.support.PageableExecutionUtils;
+import org.springframework.data.util.CloseableIterator;
 
 @AllArgsConstructor(access = AccessLevel.PRIVATE, onConstructor = @__({ @Inject }))
 @Slf4j
@@ -82,7 +85,7 @@ public class PmsExecutionSummaryRepositoryCustomImpl implements PmsExecutionSumm
 
   // Required in a migration . May be removed in the future.
   @Override
-  public List<PipelineExecutionSummaryEntity> findAllWithRequiredProjection(
+  public CloseableIterator<PipelineExecutionSummaryEntity> findAllWithRequiredProjectionUsingAnalyticsNode(
       Criteria criteria, Pageable pageable, List<String> projections) {
     try {
       Query query = new Query(criteria).with(pageable);
@@ -90,7 +93,7 @@ public class PmsExecutionSummaryRepositoryCustomImpl implements PmsExecutionSumm
       for (String key : projections) {
         query.fields().include(key);
       }
-      return pmsExecutionSummaryReadHelper.find(query);
+      return pmsExecutionSummaryReadHelper.fetchExecutionSummaryEntityFromAnalytics(query);
     } catch (IllegalArgumentException ex) {
       log.error(ex.getMessage(), ex);
       throw new InvalidRequestException("Execution Status not found", ex);
@@ -145,7 +148,8 @@ public class PmsExecutionSummaryRepositoryCustomImpl implements PmsExecutionSumm
   }
 
   @Override
-  public List<PipelineExecutionSummaryEntity> fetchPipelineSummaryEntityFromRootParentId(String rootParentId) {
+  public CloseableIterator<PipelineExecutionSummaryEntity>
+  fetchPipelineSummaryEntityFromRootParentIdUsingSecondaryMongo(String rootParentId) {
     Query query = query(where(PlanExecutionSummaryKeys.rootExecutionId).is(rootParentId));
 
     queryFieldsForPipelineExecutionSummaryEntity(query);
@@ -156,7 +160,7 @@ public class PmsExecutionSummaryRepositoryCustomImpl implements PmsExecutionSumm
     query.fields().include(PlanExecutionSummaryKeys.status);
 
     query.with(by(Sort.Direction.DESC, PlanExecutionSummaryKeys.createdAt));
-    return mongoTemplate.find(query, PipelineExecutionSummaryEntity.class);
+    return pmsExecutionSummaryReadHelper.fetchExecutionSummaryEntityFromSecondary(query);
   }
 
   @Override
@@ -173,5 +177,24 @@ public class PmsExecutionSummaryRepositoryCustomImpl implements PmsExecutionSumm
 
   private RetryPolicy<Object> getRetryPolicy(String failedAttemptMessage, String failureMessage) {
     return PersistenceUtils.getRetryPolicy(failedAttemptMessage, failureMessage);
+  }
+
+  public CloseableIterator<PipelineExecutionSummaryEntity> fetchExecutionSummaryEntityFromAnalytics(Query query) {
+    return pmsExecutionSummaryReadHelper.fetchExecutionSummaryEntityFromAnalytics(query);
+  }
+
+  public PipelineExecutionSummaryEntity getPipelineExecutionSummaryWithProjections(
+      Criteria criteria, Set<String> fieldsToInclude) {
+    Query query = query(criteria);
+    if (EmptyPredicate.isEmpty(fieldsToInclude)) {
+      throw new InvalidRequestException("Provided empty field names for projection");
+    }
+
+    for (String field : fieldsToInclude) {
+      if (EmptyPredicate.isNotEmpty(field)) {
+        query.fields().include(field);
+      }
+    }
+    return mongoTemplate.findOne(query, PipelineExecutionSummaryEntity.class);
   }
 }

@@ -39,9 +39,9 @@ public class TemplateInputsValidator {
   }
 
   public ValidateTemplateInputsResponseDTO validateNestedTemplateInputsForGivenYaml(
-      String accountId, String orgId, String projectId, String yaml) {
+      String accountId, String orgId, String projectId, String yaml, boolean loadFromCache) {
     ValidateInputsResponseDTO validateInputsResponseDTO =
-        inputsValidator.validateInputsForYaml(accountId, orgId, projectId, yaml);
+        inputsValidator.validateInputsForYaml(accountId, orgId, projectId, yaml, loadFromCache);
     return toValidateTemplateInputsResponseDTO(validateInputsResponseDTO);
   }
 

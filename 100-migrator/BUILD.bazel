@@ -64,6 +64,7 @@ java_binary(
         "//pipeline-service/modules/orchestration-steps:module",
         "//pipeline-service/modules/orchestration-steps/contracts:module",
         "//srm-service/modules/cv-nextgen-service/contracts/commons:module",
+        "//srm-service/modules/cv-nextgen-service/service:module",
         "@maven//:com_fasterxml_jackson_core_jackson_databind",
         "@maven//:com_github_dirkraft_dropwizard_file_assets_dropwizard_file_assets",
         "@maven//:com_google_code_findbugs_annotations",

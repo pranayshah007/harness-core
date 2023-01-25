@@ -9,7 +9,6 @@ package io.harness.template.services;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.exception.WingsException.USER;
 import static io.harness.template.beans.NGTemplateConstants.TEMPLATE;
 import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_REF;
 import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_VERSION_LABEL;
@@ -19,13 +18,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.NGTemplateException;
-import io.harness.exception.ngexception.beans.templateservice.TemplateInputsErrorMetadataDTO;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.ng.core.template.TemplateReferenceSummary;
 import io.harness.ng.core.template.TemplateRetainVariablesResponse;
-import io.harness.ng.core.template.exception.NGTemplateResolveException;
-import io.harness.ng.core.template.exception.NGTemplateResolveExceptionV2;
-import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.fqn.FQNNode;
@@ -62,13 +57,27 @@ public class TemplateMergeServiceImpl implements TemplateMergeService {
 
   @Override
   public String getTemplateInputs(String accountId, String orgIdentifier, String projectIdentifier,
-      String templateIdentifier, String versionLabel) {
+      String templateIdentifier, String versionLabel, boolean loadFromCache) {
     Optional<TemplateEntity> optionalTemplateEntity = templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
-        accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, false, false);
+        accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, false, loadFromCache);
     if (!optionalTemplateEntity.isPresent()) {
       throw new NGTemplateException("Template to fetch template inputs does not exist.");
     }
     return templateMergeServiceHelper.createTemplateInputsFromTemplate(optionalTemplateEntity.get().getYaml());
+  }
+
+  @Override
+  /**
+   * Same as applyTemplatesToYamlV2 since we removed all the validations
+   * will deprecate this soon
+   */
+  public TemplateMergeResponseDTO applyTemplatesToYaml(String accountId, String orgId, String projectId, String yaml,
+      boolean getMergedYamlWithTemplateField, boolean loadFromCache) {
+    YamlNode yamlNode = validateAndGetYamlNode(yaml);
+    TemplateUtils.setupGitParentEntityDetails(accountId, orgId, projectId, null, null);
+    Map<String, TemplateEntity> templateCacheMap = new HashMap<>();
+    return getTemplateMergeResponseDTO(
+        accountId, orgId, projectId, yaml, getMergedYamlWithTemplateField, yamlNode, templateCacheMap, loadFromCache);
   }
 
   @Override
@@ -83,37 +92,11 @@ public class TemplateMergeServiceImpl implements TemplateMergeService {
    * @param getMergedYamlWithTemplateField - Returns merged Yaml with templates Fields as well OPA policies If set
    * @return final yaml with all template occurrences replaced with actual template information.
    */
-  public TemplateMergeResponseDTO applyTemplatesToYaml(String accountId, String orgId, String projectId, String yaml,
-      boolean getMergedYamlWithTemplateField, boolean loadFromCache) {
-    YamlNode yamlNode = validateAndGetYamlNode(yaml);
-    TemplateUtils.setupGitParentEntityDetails(accountId, orgId, projectId, null, null);
-    Map<String, TemplateEntity> templateCacheMap = new HashMap<>();
-    TemplateInputsErrorMetadataDTO errorResponse = templateMergeServiceHelper.validateLinkedTemplateInputsInYaml(
-        accountId, orgId, projectId, yamlNode, templateCacheMap, loadFromCache);
-    if (errorResponse != null) {
-      throw new NGTemplateResolveException(
-          "Exception in resolving template refs in given yaml.", USER, errorResponse, null);
-    }
-    return getTemplateMergeResponseDTO(
-        accountId, orgId, projectId, yaml, getMergedYamlWithTemplateField, yamlNode, templateCacheMap, loadFromCache);
-  }
-
-  @Override
-  /**
-   * Only validations are different in V2 call.
-   */
   public TemplateMergeResponseDTO applyTemplatesToYamlV2(String accountId, String orgId, String projectId, String yaml,
       boolean getMergedYamlWithTemplateField, boolean loadFromCache) {
     YamlNode yamlNode = validateAndGetYamlNode(yaml);
     TemplateUtils.setupGitParentEntityDetails(accountId, orgId, projectId, null, null);
     Map<String, TemplateEntity> templateCacheMap = new HashMap<>();
-    ValidateTemplateInputsResponseDTO validateTemplateInputsResponse =
-        templateInputsValidator.validateNestedTemplateInputsForGivenYaml(
-            accountId, orgId, projectId, yaml, templateCacheMap, loadFromCache);
-    if (!validateTemplateInputsResponse.isValidYaml()) {
-      throw new NGTemplateResolveExceptionV2(
-          "Exception in resolving template refs in given yaml.", USER, validateTemplateInputsResponse, null);
-    }
     return getTemplateMergeResponseDTO(
         accountId, orgId, projectId, yaml, getMergedYamlWithTemplateField, yamlNode, templateCacheMap, loadFromCache);
   }

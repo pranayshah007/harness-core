@@ -37,10 +37,8 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
-import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.utils.IdentifierRefHelper;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
@@ -55,13 +53,10 @@ import org.apache.commons.lang3.tuple.Pair;
 public class ElastigroupHelperService {
   @Inject @Named(DEFAULT_CONNECTOR_SERVICE) private ConnectorService connectorService;
   @Inject @Named("PRIVILEGED") private SecretManagerClientService secretManagerClientService;
-  @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   @Inject private FileStoreService fileStoreService;
   @Inject private CDExpressionResolver cdExpressionResolver;
   @Inject private NGEncryptedDataService ngEncryptedDataService;
   @Inject ExceptionManager exceptionManager;
-  @VisibleForTesting static final int defaultTimeoutInSecs = 30;
-
   public void validateSettingsStoreReferences(
       StoreConfigWrapper storeConfigWrapper, Ambiance ambiance, String entityType) {
     cdExpressionResolver.updateStoreConfigExpressions(ambiance, storeConfigWrapper);

@@ -8,12 +8,13 @@
 package io.harness.k8s.manifest;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.k8s.manifest.ObjectYamlUtils.YAML_DOCUMENT_DELIMITER;
-import static io.harness.k8s.manifest.ObjectYamlUtils.newLineRegex;
-import static io.harness.k8s.manifest.ObjectYamlUtils.splitYamlFile;
 import static io.harness.k8s.model.Kind.Secret;
 import static io.harness.k8s.model.KubernetesResource.redactSecretValues;
+import static io.harness.k8s.utils.ObjectYamlUtils.YAML_DOCUMENT_DELIMITER;
+import static io.harness.k8s.utils.ObjectYamlUtils.newLineRegex;
+import static io.harness.k8s.utils.ObjectYamlUtils.splitYamlFile;
 
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
@@ -242,6 +243,9 @@ public class ManifestHelper {
       ImmutableSet.of("Deployment", "StatefulSet", "DaemonSet", "DeploymentConfig", "Job");
 
   public static List<KubernetesResource> getWorkloads(List<KubernetesResource> resources) {
+    if (isEmpty(resources)) {
+      return emptyList();
+    }
     return resources.stream()
         .filter(resource -> managedWorkloadKinds.contains(resource.getResourceId().getKind()))
         .filter(resource -> !resource.isDirectApply())
@@ -280,6 +284,9 @@ public class ManifestHelper {
   }
 
   public static List<KubernetesResource> getCustomResourceDefinitionWorkloads(List<KubernetesResource> resources) {
+    if (isEmpty(resources)) {
+      return emptyList();
+    }
     return resources.stream()
         .filter(resource -> !allManagedWorkloadKinds.contains(resource.getResourceId().getKind()))
         .filter(resource -> resource.isManagedWorkload())

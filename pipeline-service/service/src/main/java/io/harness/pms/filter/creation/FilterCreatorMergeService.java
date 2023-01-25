@@ -109,7 +109,10 @@ public class FilterCreatorMergeService {
       setupMetadataBuilder.setGitSyncBranchContext(gitSyncBranchContext);
     }
     setupMetadataBuilder.setPrincipalInfo(principalInfoHelper.getPrincipalInfoFromSecurityContext());
-    setupMetadataBuilder.setTriggeredInfo(triggeredByHelper.getFromSecurityContext());
+    if (!gitSyncSdkService.isGitSyncEnabled(
+            pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier())) {
+      setupMetadataBuilder.setTriggeredInfo(triggeredByHelper.getFromSecurityContext());
+    }
     FilterCreationBlobResponse response =
         obtainFiltersRecursively(services, dependencies, filters, setupMetadataBuilder.build());
     validateFilterCreationBlobResponse(response);

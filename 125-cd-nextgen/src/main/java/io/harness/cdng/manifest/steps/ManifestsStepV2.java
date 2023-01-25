@@ -16,6 +16,7 @@ import static io.harness.cdng.service.steps.ServiceStepOverrideHelper.validateOv
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.ng.core.environment.validator.EnvironmentV2ManifestValidator.validateNoMoreThanOneHelmOverridePresent;
 
 import static java.lang.String.format;
 
@@ -23,6 +24,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.expressions.CDExpressionResolver;
+import io.harness.cdng.manifest.ManifestConfigType;
 import io.harness.cdng.manifest.mappers.ManifestOutcomeMapper;
 import io.harness.cdng.manifest.yaml.ManifestAttributes;
 import io.harness.cdng.manifest.yaml.ManifestConfig;
@@ -146,7 +148,54 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters> {
     if (isNotEmpty(finalSvcManifestsMap.get(SERVICE_OVERRIDES))) {
       manifests.addAll(finalSvcManifestsMap.get(SERVICE_OVERRIDES));
     }
+
+    overrideHelmRepoConnectorIfHelmChartExists(finalSvcManifestsMap, manifests);
     return manifests;
+  }
+
+  private void overrideHelmRepoConnectorIfHelmChartExists(
+      Map<String, List<ManifestConfigWrapper>> finalSvcManifestsMap, List<ManifestConfigWrapper> manifests) {
+    Optional<ManifestConfigWrapper> helmChartOptional =
+        manifests.stream()
+            .filter(manifest -> ManifestConfigType.HELM_CHART == manifest.getManifest().getType())
+            .findFirst();
+    helmChartOptional.ifPresent((ManifestConfigWrapper manifestConfigWrapper) -> {
+      overrideHelmRepoConnector(manifestConfigWrapper, finalSvcManifestsMap);
+      manifests.removeIf(manifest -> ManifestConfigType.HELM_REPO_OVERRIDE == manifest.getManifest().getType());
+    });
+  }
+
+  private void overrideHelmRepoConnector(
+      ManifestConfigWrapper svcHelmChart, Map<String, List<ManifestConfigWrapper>> finalSvcManifestsMap) {
+    useHelmRepoOverrideIfExists(ENVIRONMENT_GLOBAL_OVERRIDES, svcHelmChart, finalSvcManifestsMap);
+    useHelmRepoOverrideIfExists(SERVICE_OVERRIDES, svcHelmChart, finalSvcManifestsMap);
+  }
+
+  private void useHelmRepoOverrideIfExists(String overrideType, ManifestConfigWrapper svcHelmChart,
+      Map<String, List<ManifestConfigWrapper>> finalSvcManifestsMap) {
+    List<ManifestConfigWrapper> overrides = finalSvcManifestsMap.get(overrideType);
+
+    if (isNotEmpty(overrides)) {
+      List<ManifestConfigWrapper> helmOverrides = extractHelmRepoOverrides(overrides);
+      if (!helmOverrides.isEmpty()) {
+        useHelmRepoOverride(svcHelmChart, helmOverrides.get(0));
+      }
+    }
+  }
+
+  private List<ManifestConfigWrapper> extractHelmRepoOverrides(List<ManifestConfigWrapper> overrides) {
+    // Can not contain more than one helm override
+    validateNoMoreThanOneHelmOverridePresent(overrides);
+
+    return overrides.stream()
+        .filter(manifest -> ManifestConfigType.HELM_REPO_OVERRIDE == manifest.getManifest().getType())
+        .collect(Collectors.toList());
+  }
+
+  private void useHelmRepoOverride(ManifestConfigWrapper helmChart, ManifestConfigWrapper repoOverride) {
+    ManifestAttributes overriddenRepoConfig =
+        helmChart.getManifest().getSpec().applyOverrides(repoOverride.getManifest().getSpec());
+    helmChart.getManifest().setSpec(overriddenRepoConfig);
   }
 
   private NgManifestsMetadataSweepingOutput fetchManifestsMetadataFromSweepingOutput(Ambiance ambiance) {

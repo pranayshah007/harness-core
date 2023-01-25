@@ -52,12 +52,15 @@ public class JexlRuntimeExceptionHandler implements ExceptionHandler {
     }
   }
 
-  public static String getHintMessage(Exception ex) {
+  public static String getHintMessage(Exception ex, String expression) {
     String message = ExceptionUtils.getMessage(ex);
     if (message.contains("parsing")) {
-      return "Please re-check the expressions are written in correct format of <+...> as well as for embedded expressions.";
+      return String.format(
+          "Please re-check the expression %s are written in correct format of <+...> as well as for embedded expressions.",
+          expression);
     } else {
-      return "Expression might contain some unresolved expressions which could not be evaluated.";
+      return String.format(
+          "Expression %s might contain some unresolved expressions which could not be evaluated.", expression);
     }
   }
 }

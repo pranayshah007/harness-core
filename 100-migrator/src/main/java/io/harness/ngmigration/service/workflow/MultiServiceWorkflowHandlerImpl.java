@@ -17,6 +17,7 @@ import software.wings.beans.MultiServiceOrchestrationWorkflow;
 import software.wings.beans.PhaseStep;
 import software.wings.beans.Workflow;
 import software.wings.ngmigration.CgEntityId;
+import software.wings.ngmigration.CgEntityNode;
 import software.wings.service.impl.yaml.handler.workflow.MultiServiceWorkflowYamlHandler;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -47,17 +48,20 @@ public class MultiServiceWorkflowHandlerImpl extends WorkflowHandler {
   }
 
   PhaseStep getPreDeploymentPhase(Workflow workflow) {
-    CanaryOrchestrationWorkflow orchestrationWorkflow = (CanaryOrchestrationWorkflow) workflow.getOrchestration();
+    CanaryOrchestrationWorkflow orchestrationWorkflow =
+        (CanaryOrchestrationWorkflow) workflow.getOrchestrationWorkflow();
     return orchestrationWorkflow.getPreDeploymentSteps();
   }
 
   PhaseStep getPostDeploymentPhase(Workflow workflow) {
-    CanaryOrchestrationWorkflow orchestrationWorkflow = (CanaryOrchestrationWorkflow) workflow.getOrchestration();
+    CanaryOrchestrationWorkflow orchestrationWorkflow =
+        (CanaryOrchestrationWorkflow) workflow.getOrchestrationWorkflow();
     return orchestrationWorkflow.getPostDeploymentSteps();
   }
 
   @Override
-  public JsonNode getTemplateSpec(Map<CgEntityId, NGYamlFile> migratedEntities, Workflow workflow) {
-    return buildMultiStagePipelineTemplate(migratedEntities, stepMapperFactory, workflow);
+  public JsonNode getTemplateSpec(
+      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities, Workflow workflow) {
+    return buildMultiStagePipelineTemplate(entities, migratedEntities, stepMapperFactory, workflow);
   }
 }

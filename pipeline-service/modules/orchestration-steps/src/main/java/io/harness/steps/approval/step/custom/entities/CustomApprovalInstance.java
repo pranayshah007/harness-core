@@ -18,7 +18,7 @@ import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.servicenow.TicketNG;
+import io.harness.servicenow.misc.TicketNG;
 import io.harness.steps.approval.step.beans.CriteriaSpecWrapperDTO;
 import io.harness.steps.approval.step.custom.CustomApprovalOutcome;
 import io.harness.steps.approval.step.custom.CustomApprovalSpecParameters;

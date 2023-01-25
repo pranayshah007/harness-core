@@ -158,6 +158,16 @@ func TestBazelAutoDetectTests(t *testing.T) {
 	cmdFactory.EXPECT().CmdContextWithSleep(ctx, time.Duration(0), "sh", cmdArgs...).Return(cmd)
 	cmd.EXPECT().Output().Return([]byte(bazelRuleStrings), nil)
 
+	c = fmt.Sprintf("%s query 'kind(scala.*, tests(//...))'", bazelCmd)
+	cmdArgs = append(make([]interface{}, 0), "-c", c)
+	cmdFactory.EXPECT().CmdContextWithSleep(ctx, time.Duration(0), "sh", cmdArgs...).Return(cmd)
+	cmd.EXPECT().Output().Return([]byte(""), nil)
+
+	c = fmt.Sprintf("%s query 'kind(kt.*, tests(//...))'", bazelCmd)
+	cmdArgs = append(make([]interface{}, 0), "-c", c)
+	cmdFactory.EXPECT().CmdContextWithSleep(ctx, time.Duration(0), "sh", cmdArgs...).Return(cmd)
+	cmd.EXPECT().Output().Return([]byte(""), nil)
+
 	tests, _ := runner.AutoDetectTests(ctx, []string{})
 	assert.Equal(t, testsExpected, tests)
 }

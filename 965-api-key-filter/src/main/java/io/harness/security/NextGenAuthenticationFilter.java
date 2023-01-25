@@ -9,8 +9,6 @@ package io.harness.security;
 
 import static io.harness.NGCommonEntityConstants.ACCOUNT_HEADER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.eraro.ErrorCode.INVALID_INPUT_SET;
-import static io.harness.eraro.ErrorCode.INVALID_REQUEST;
 import static io.harness.eraro.ErrorCode.INVALID_TOKEN;
 import static io.harness.exception.WingsException.USER;
 
@@ -88,10 +86,12 @@ public class NextGenAuthenticationFilter extends JWTAuthenticationFilter {
             accountIdentifier, RequestBody.create(MediaType.get("text/plain"), apiKeyOptional.get())));
       } catch (InvalidRequestException ire) {
         logAndThrowTokenException(
-            String.format("Invalid API call. Account id for API called: %s", accountIdentifier), INVALID_REQUEST, ire);
+            String.format(
+                "Invalid call: Invalid token or token expired. Account id for API called: %s", accountIdentifier),
+            INVALID_TOKEN, ire);
       } catch (Exception exc) {
         logAndThrowTokenException(
-            String.format("Error fetching ApiKey token details for account: %s", accountIdentifier), INVALID_INPUT_SET,
+            String.format("Error fetching ApiKey token details for account: %s", accountIdentifier), INVALID_TOKEN,
             exc);
       }
       if (tokenDTO != null) {
@@ -164,7 +164,7 @@ public class NextGenAuthenticationFilter extends JWTAuthenticationFilter {
   }
 
   private void logAndThrowTokenException(String errorMessage, ErrorCode errorCode, Throwable th) {
-    log.error(errorMessage);
-    throw new InvalidRequestException(errorMessage, th, errorCode, USER);
+    log.error(errorMessage, th);
+    throw new InvalidRequestException(errorMessage, errorCode, USER);
   }
 }

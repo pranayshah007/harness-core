@@ -12,9 +12,16 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
+import io.harness.jackson.JsonNodeUtils;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
+import io.harness.pms.yaml.YamlUtils;
+import io.harness.utils.YamlPipelineUtils;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -61,6 +68,34 @@ public class InputSetMergeHelper {
       res = MergeHelper.mergeRuntimeInputValuesIntoOriginalYaml(res, yamlWithRequiredStages, appendInputSetValidator);
     }
     return res;
+  }
+
+  public String mergeInputSetsV1(List<String> inputSetYamlList) {
+    if (EmptyPredicate.isEmpty(inputSetYamlList)) {
+      return "";
+    }
+    JsonNode mergedInputSetNode = null;
+    for (String inputSetYaml : inputSetYamlList) {
+      JsonNode inputSetNode;
+      try {
+        inputSetNode = YamlUtils.readTreeWithDefaultObjectMapper(inputSetYaml).getNode().getCurrJsonNode();
+      } catch (IOException e) {
+        throw new InvalidRequestException(String.format("Input set is invalid: %s", inputSetYaml));
+      }
+      if (mergedInputSetNode == null) {
+        mergedInputSetNode = inputSetNode;
+      } else {
+        JsonNodeUtils.merge(mergedInputSetNode, inputSetNode);
+      }
+    }
+    Map<String, Object> inputsMap = new HashMap<>();
+    if (mergedInputSetNode.get(YAMLFieldNameConstants.INPUTS) != null) {
+      inputsMap.put(YAMLFieldNameConstants.INPUTS, mergedInputSetNode.get(YAMLFieldNameConstants.INPUTS));
+    }
+    if (mergedInputSetNode.get(YAMLFieldNameConstants.REPOSITORY) != null) {
+      inputsMap.put(YAMLFieldNameConstants.REPOSITORY, mergedInputSetNode.get(YAMLFieldNameConstants.REPOSITORY));
+    }
+    return YamlPipelineUtils.writeYamlString(inputsMap);
   }
 
   public String removeNonRequiredStages(String inputSetPipelineCompYaml, List<String> stageIdentifiers) {

@@ -29,6 +29,7 @@ import io.harness.persistence.HPersistence;
 import io.harness.persistence.HQuery;
 import io.harness.persistence.HQuery.QueryChecks;
 import io.harness.persistence.PersistentEntity;
+import io.harness.persistence.QueryFactory;
 import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UpdatedByAware;
 import io.harness.persistence.UserProvider;

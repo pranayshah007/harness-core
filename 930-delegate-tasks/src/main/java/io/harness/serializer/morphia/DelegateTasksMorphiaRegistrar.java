@@ -9,7 +9,6 @@ package io.harness.serializer.morphia;
 
 import io.harness.beans.EncryptedData;
 import io.harness.beans.SecretChangeLog;
-import io.harness.beans.SecretManagerConfig;
 import io.harness.beans.SecretUsageLog;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrarHelperPut;
@@ -60,30 +59,21 @@ import software.wings.api.terragrunt.TerragruntExecutionData;
 import software.wings.api.terragrunt.TerragruntProvisionInheritPlanElement;
 import software.wings.beans.APMVerificationConfig;
 import software.wings.beans.AppDynamicsConfig;
-import software.wings.beans.AwsSecretsManagerConfig;
 import software.wings.beans.AzureConfig;
-import software.wings.beans.AzureVaultConfig;
 import software.wings.beans.BambooConfig;
-import software.wings.beans.BaseVaultConfig;
 import software.wings.beans.BastionConnectionAttributes;
 import software.wings.beans.BugsnagConfig;
-import software.wings.beans.CustomSecretNGManagerConfig;
 import software.wings.beans.DatadogConfig;
 import software.wings.beans.DockerConfig;
 import software.wings.beans.DynaTraceConfig;
 import software.wings.beans.ElkConfig;
-import software.wings.beans.GcpKmsConfig;
-import software.wings.beans.GcpSecretsManagerConfig;
 import software.wings.beans.HostConnectionAttributes;
 import software.wings.beans.InstanaConfig;
 import software.wings.beans.JiraConfig;
-import software.wings.beans.KmsConfig;
 import software.wings.beans.KubernetesClusterConfig;
-import software.wings.beans.LocalEncryptionConfig;
 import software.wings.beans.NewRelicConfig;
 import software.wings.beans.PcfConfig;
 import software.wings.beans.SSHExecutionCredential;
-import software.wings.beans.SSHVaultConfig;
 import software.wings.beans.ScalyrConfig;
 import software.wings.beans.ServiceNowConfig;
 import software.wings.beans.ServiceVariable;
@@ -91,7 +81,6 @@ import software.wings.beans.SftpConfig;
 import software.wings.beans.SmbConfig;
 import software.wings.beans.SplunkConfig;
 import software.wings.beans.SumoConfig;
-import software.wings.beans.VaultConfig;
 import software.wings.beans.command.AmiCommandUnit;
 import software.wings.beans.command.AwsLambdaCommandUnit;
 import software.wings.beans.command.AzureARMCommandUnit;
@@ -183,23 +172,12 @@ public class DelegateTasksMorphiaRegistrar implements MorphiaRegistrar {
   @Override
   public void registerClasses(Set<Class> set) {
     set.add(NewRelicMetricDataRecord.class);
-    set.add(AwsSecretsManagerConfig.class);
-    set.add(AzureVaultConfig.class);
-    set.add(GcpKmsConfig.class);
-    set.add(GcpSecretsManagerConfig.class);
-    set.add(KmsConfig.class);
-    set.add(LocalEncryptionConfig.class);
-    set.add(VaultConfig.class);
-    set.add(BaseVaultConfig.class);
-    set.add(SecretManagerConfig.class);
-    set.add(SSHVaultConfig.class);
     set.add(SecretChangeLog.class);
     set.add(EncryptedData.class);
     set.add(SecretUsageLog.class);
     set.add(CommandUnit.class);
     set.add(CustomSecretsManagerConfig.class);
     set.add(ServiceVariable.class);
-    set.add(CustomSecretNGManagerConfig.class);
   }
 
   @Override
@@ -258,15 +236,7 @@ public class DelegateTasksMorphiaRegistrar implements MorphiaRegistrar {
     w.put("beans.ElkConfig", ElkConfig.class);
     w.put("service.impl.elk.ElkDataCollectionInfo", ElkDataCollectionInfo.class);
     w.put("service.impl.logz.LogzDataCollectionInfo", LogzDataCollectionInfo.class);
-    w.put("beans.AwsSecretsManagerConfig", AwsSecretsManagerConfig.class);
-    w.put("beans.AzureVaultConfig", AzureVaultConfig.class);
-    w.put("beans.GcpKmsConfig", GcpKmsConfig.class);
-    w.put("beans.GcpSecretsManagerConfig", GcpSecretsManagerConfig.class);
-    w.put("beans.KmsConfig", KmsConfig.class);
     w.put("beans.ScalyrConfig", ScalyrConfig.class);
-    w.put("beans.LocalEncryptionConfig", LocalEncryptionConfig.class);
-    w.put("beans.SecretManagerConfig", SecretManagerConfig.class);
-    w.put("beans.VaultConfig", VaultConfig.class);
     w.put("beans.BastionConnectionAttributes", BastionConnectionAttributes.class);
     w.put("beans.HostConnectionAttributes", HostConnectionAttributes.class);
     w.put("beans.SSHExecutionCredential", SSHExecutionCredential.class);
@@ -275,8 +245,6 @@ public class DelegateTasksMorphiaRegistrar implements MorphiaRegistrar {
     w.put("beans.yaml.GitFetchFilesFromMultipleRepoResult", GitFetchFilesFromMultipleRepoResult.class);
     w.put("beans.KubernetesClusterConfig", KubernetesClusterConfig.class);
     w.put("delegatetasks.validation.capabilities.GitConnectionCapability", GitConnectionCapability.class);
-    w.put("beans.SSHVaultConfig", SSHVaultConfig.class);
-    w.put("beans.BaseVaultConfig", BaseVaultConfig.class);
     w.put("beans.ServiceNowConfig", ServiceNowConfig.class);
     w.put("beans.DockerConfig", DockerConfig.class);
     w.put("beans.config.NexusConfig", NexusConfig.class);

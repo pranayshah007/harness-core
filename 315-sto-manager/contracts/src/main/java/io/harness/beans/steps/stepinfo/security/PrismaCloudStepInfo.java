@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.stepinfo.security.shared.STOGenericStepInfo;
 import io.harness.beans.steps.stepinfo.security.shared.STOYamlAuth;
 import io.harness.beans.steps.stepinfo.security.shared.STOYamlImage;
+import io.harness.yaml.sto.variables.STOYamlGenericConfig;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -33,11 +34,16 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.beans.steps.stepinfo.security.PrismaCloudStepInfo")
 public class PrismaCloudStepInfo extends STOGenericStepInfo {
   private static final String PRODUCT_NAME = "twistlock";
+
+  @JsonProperty protected STOYamlAuth auth;
+
+  @JsonProperty protected STOYamlImage image;
+
+  @NotNull
+  @ApiModelProperty(dataType = "io.harness.yaml.sto.variables.STOYamlGenericConfig")
+  protected STOYamlGenericConfig config;
   @ApiModelProperty(hidden = true)
   public String getProductName() {
     return PRODUCT_NAME;
   }
-  @NotNull @JsonProperty protected STOYamlAuth auth;
-
-  @JsonProperty protected STOYamlImage image;
 }

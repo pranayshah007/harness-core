@@ -43,5 +43,6 @@ public class K8sBGDeployRequest implements K8sDeployRequest {
   boolean useNewKubectlVersion;
   boolean pruningEnabled;
   boolean useK8sApiForSteadyStateCheck;
+  boolean useDeclarativeRollback;
   @Expression(ALLOW_SECRETS) Map<String, String> k8sCommandFlags;
 }

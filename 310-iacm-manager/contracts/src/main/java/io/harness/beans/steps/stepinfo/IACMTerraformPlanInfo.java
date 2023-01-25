@@ -17,13 +17,11 @@ import io.harness.beans.steps.TypeInfo;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.YamlSchemaTypes;
 import io.harness.yaml.core.VariableExpression;
-import io.harness.yaml.core.variables.OutputNGVariable;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
 import java.beans.ConstructorProperties;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import lombok.Builder;

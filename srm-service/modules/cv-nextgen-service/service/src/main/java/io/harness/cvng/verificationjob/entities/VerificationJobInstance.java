@@ -14,6 +14,7 @@ import io.harness.annotations.StoreIn;
 import io.harness.cvng.CVConstants;
 import io.harness.cvng.beans.DataCollectionExecutionStatus;
 import io.harness.cvng.beans.activity.ActivityVerificationStatus;
+import io.harness.cvng.cdng.beans.v2.AppliedDeploymentAnalysisType;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.utils.DateTimeUtils;
 import io.harness.cvng.statemachine.beans.AnalysisStatus;
@@ -121,6 +122,7 @@ public final class VerificationJobInstance
 
   private VerificationJob resolvedJob;
   private Map<String, CVConfig> cvConfigMap;
+  private Map<String, AppliedDeploymentAnalysisType> appliedDeploymentAnalysisTypeMap;
 
   @Builder.Default
   @FdTtlIndex

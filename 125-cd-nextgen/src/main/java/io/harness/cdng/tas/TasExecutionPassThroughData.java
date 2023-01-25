@@ -12,7 +12,6 @@ import static io.harness.expression.Expression.ALLOW_SECRETS;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.task.pcf.request.TasManifestsPackage;
 import io.harness.expression.Expression;
@@ -32,14 +31,15 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.tas.TasExecutionPassThroughData")
 public class TasExecutionPassThroughData implements PassThroughData {
   String applicationName;
-  InfrastructureOutcome infrastructure;
   UnitProgressData lastActiveUnitProgressData;
   String zippedManifestId;
   @Expression(ALLOW_SECRETS) TasManifestsPackage tasManifestsPackage;
+  @Expression(ALLOW_SECRETS) TasManifestsPackage unresolvedTasManifestsPackage;
   Map<String, String> allFilesFetched;
   String repoRoot;
   CfCliVersionNG cfCliVersion;
   String rawScript;
   List<String> commandUnits;
   List<String> pathsFromScript;
+  int desiredCountInFinalYaml;
 }

@@ -27,7 +27,7 @@ import io.harness.cdng.customdeploymentng.CustomDeploymentInfrastructureHelper;
 import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.execution.helper.ExecutionInfoKeyMapper;
 import io.harness.cdng.execution.helper.StageExecutionHelper;
-import io.harness.cdng.infra.InfrastructureMapper;
+import io.harness.cdng.infra.InfrastructureOutcomeProvider;
 import io.harness.cdng.infra.InfrastructureValidator;
 import io.harness.cdng.infra.beans.InfraMapping;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
@@ -126,10 +126,10 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
   @Inject private CDStepHelper cdStepHelper;
   @Inject ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private StageExecutionHelper stageExecutionHelper;
-  @Inject private InfrastructureMapper infrastructureMapper;
   @Inject private InfrastructureValidator infrastructureValidator;
   @Inject private CustomDeploymentInfrastructureHelper customDeploymentInfrastructureHelper;
   @Inject private InstanceOutcomeHelper instanceOutcomeHelper;
+  @Inject private InfrastructureOutcomeProvider infrastructureOutcomeProvider;
 
   @Override
   public Class<Infrastructure> getStepParametersClass() {
@@ -161,8 +161,10 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
 
     infrastructureValidator.validate(infrastructure);
 
-    InfrastructureOutcome infrastructureOutcome = infrastructureMapper.toOutcome(infrastructure, environmentOutcome,
-        serviceOutcome, ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
+    final InfrastructureOutcome infrastructureOutcome =
+        infrastructureOutcomeProvider.getOutcome(infrastructure, environmentOutcome, serviceOutcome,
+            ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
+
     if (environmentOutcome != null) {
       if (isNotEmpty(environmentOutcome.getName())) {
         saveExecutionLogSafely(

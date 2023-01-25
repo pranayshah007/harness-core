@@ -19,8 +19,8 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.ami.AMITagsResponse;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.aws.AwsCallTracker;
 import io.harness.aws.beans.AwsInternalConfig;
+import io.harness.aws.util.AwsCallTracker;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;

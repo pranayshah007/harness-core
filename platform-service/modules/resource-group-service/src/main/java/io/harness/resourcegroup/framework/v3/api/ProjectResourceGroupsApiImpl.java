@@ -112,7 +112,7 @@ public class ProjectResourceGroupsApiImpl implements ProjectResourceGroupsApi {
   @NGAccessControlCheck(resourceType = RESOURCE_GROUP, permission = EDIT_RESOURCEGROUP_PERMISSION)
   public Response updateResourceGroupProject(CreateResourceGroupRequest body, @OrgIdentifier String org,
       @ProjectIdentifier String project, @ResourceIdentifier String resourceGroup, @AccountIdentifier String account) {
-    if (!resourceGroup.equals(body.getSlug())) {
+    if (!resourceGroup.equals(body.getIdentifier())) {
       throw new InvalidRequestException("Resource Group identifier in the request body and the URL do not match.");
     }
     ResourceGroupRequest resourceGroupRequest =

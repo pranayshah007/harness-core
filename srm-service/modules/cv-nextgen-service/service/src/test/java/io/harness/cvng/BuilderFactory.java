@@ -29,6 +29,7 @@ import io.harness.cvng.analysis.entities.CanaryLogAnalysisLearningEngineTask.Can
 import io.harness.cvng.analysis.entities.LearningEngineTask.LearningEngineTaskType;
 import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
+import io.harness.cvng.beans.DeviationType;
 import io.harness.cvng.beans.MonitoredServiceDataSourceType;
 import io.harness.cvng.beans.MonitoredServiceType;
 import io.harness.cvng.beans.ThresholdConfigType;
@@ -65,6 +66,15 @@ import io.harness.cvng.cdng.beans.DefaultMonitoredServiceSpec.DefaultMonitoredSe
 import io.harness.cvng.cdng.beans.TemplateMonitoredServiceSpec;
 import io.harness.cvng.cdng.beans.TemplateMonitoredServiceSpec.TemplateMonitoredServiceSpecBuilder;
 import io.harness.cvng.cdng.beans.TestVerificationJobSpec;
+import io.harness.cvng.cdng.beans.v2.AnalysedDeploymentTestDataNode;
+import io.harness.cvng.cdng.beans.v2.AnalysisReason;
+import io.harness.cvng.cdng.beans.v2.AnalysisResult;
+import io.harness.cvng.cdng.beans.v2.ControlDataType;
+import io.harness.cvng.cdng.beans.v2.MetricThreshold;
+import io.harness.cvng.cdng.beans.v2.MetricThresholdCriteria;
+import io.harness.cvng.cdng.beans.v2.MetricType;
+import io.harness.cvng.cdng.beans.v2.MetricValue;
+import io.harness.cvng.cdng.beans.v2.MetricsAnalysis;
 import io.harness.cvng.cdng.entities.CVNGStepTask;
 import io.harness.cvng.cdng.entities.CVNGStepTask.CVNGStepTaskBuilder;
 import io.harness.cvng.cdng.entities.CVNGStepTask.Status;
@@ -91,6 +101,8 @@ import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.CustomHealthS
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.CustomHealthSourceMetricSpec;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.HealthSourceSpec;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.MetricResponseMapping;
+import io.harness.cvng.core.beans.monitoredService.metricThresholdSpec.MetricCustomThresholdActions;
+import io.harness.cvng.core.beans.monitoredService.metricThresholdSpec.MetricThresholdActionType;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
@@ -308,13 +320,16 @@ public class BuilderFactory {
     Map<String, CVConfig> cvConfigMap = new HashMap<>();
     cvConfigMap.put(cvConfig.getUuid(), cvConfig);
     cvConfigMap.put(cvConfig2.getUuid(), cvConfig2);
+    List<CVConfig> cvConfigs = new ArrayList<>();
+    cvConfigs.add(cvConfig);
+    cvConfigs.add(cvConfig2);
     return VerificationJobInstance.builder()
         .accountId(context.getAccountId())
         .deploymentStartTime(clock.instant().minus(Duration.ofMinutes(2)))
         .startTime(clock.instant())
         .cvConfigMap(cvConfigMap)
         .dataCollectionDelay(Duration.ofMinutes(2))
-        .resolvedJob(getVerificationJob());
+        .resolvedJob(getVerificationJob(cvConfigs));
   }
 
   public SLOHealthIndicatorBuilder sLOHealthIndicatorBuilder() {
@@ -421,7 +436,27 @@ public class BuilderFactory {
         .identifier(context.getMonitoredServiceIdentifier() + "/" + generateUuid())
         .monitoringSourceName(generateUuid())
         .metricPack(
-            MetricPack.builder().identifier(CVNextGenConstants.CUSTOM_PACK_IDENTIFIER).dataCollectionDsl("dsl").build())
+            MetricPack.builder()
+                .identifier(CVNextGenConstants.CUSTOM_PACK_IDENTIFIER)
+                .metrics(Collections.singleton(
+                    MetricPack.MetricDefinition.builder()
+                        .identifier("identifier")
+                        .type(TimeSeriesMetricType.OTHER)
+                        .name("name")
+                        .thresholds(Arrays.asList(TimeSeriesThreshold.builder()
+                                                      .uuid("thresholdId")
+                                                      .metricPackIdentifier(CVNextGenConstants.CUSTOM_PACK_IDENTIFIER)
+                                                      .metricType(TimeSeriesMetricType.OTHER)
+                                                      .metricGroupName("*")
+                                                      .metricType(TimeSeriesMetricType.OTHER)
+                                                      .metricIdentifier("identifier")
+                                                      .deviationType(DeviationType.HIGHER_IS_RISKY)
+                                                      .criteria(TimeSeriesThresholdCriteria.builder().build())
+                                                      .action(IGNORE)
+                                                      .build()))
+                        .build()))
+                .dataCollectionDsl("dsl")
+                .build())
         .metricInfos(
             Arrays.asList(AppDynamicsCVConfig.MetricInfo.builder().identifier("identifier").metricName("name").build()))
         .applicationName(generateUuid())
@@ -1355,7 +1390,7 @@ public class BuilderFactory {
         .metric2("metric2");
   }
 
-  private VerificationJob getVerificationJob() {
+  private VerificationJob getVerificationJob(List<CVConfig> cvConfigs) {
     TestVerificationJob testVerificationJob = new TestVerificationJob();
     testVerificationJob.setAccountId(context.getAccountId());
     testVerificationJob.setIdentifier("identifier");
@@ -1368,6 +1403,7 @@ public class BuilderFactory {
     testVerificationJob.setMonitoredServiceIdentifier(context.getMonitoredServiceIdentifier());
     testVerificationJob.setProjectIdentifier(context.getProjectIdentifier());
     testVerificationJob.setOrgIdentifier(context.getOrgIdentifier());
+    testVerificationJob.setCvConfigs(cvConfigs);
     return testVerificationJob;
   }
 
@@ -1464,7 +1500,7 @@ public class BuilderFactory {
     String serviceIdentifier;
     String envIdentifier;
 
-    private String getMonitoredServiceIdentifier() {
+    public String getMonitoredServiceIdentifier() {
       return serviceIdentifier + "_" + envIdentifier;
     }
 
@@ -1492,6 +1528,12 @@ public class BuilderFactory {
       return projectParams.getProjectIdentifier();
     }
 
+    public void setOrgIdentifier(String orgIdentifier) {
+      projectParams.setOrgIdentifier(orgIdentifier);
+    }
+    public void setProjectIdentifier(String projectIdentifier) {
+      projectParams.setProjectIdentifier(projectIdentifier);
+    }
     public ServiceEnvironmentParams getServiceEnvironmentParams() {
       return ServiceEnvironmentParams.builder()
           .accountIdentifier(projectParams.getAccountIdentifier())
@@ -1620,5 +1662,42 @@ public class BuilderFactory {
                                                      .timeSeriesMetricType(TimeSeriesMetricType.INFRA)
                                                      .build();
     return Arrays.asList(performanceThroughputRiskCategory, infrastructureRiskCategory);
+  }
+
+  public MetricThreshold getMetricThreshold() {
+    return MetricThreshold.builder()
+        .thresholdType(MetricThresholdActionType.IGNORE)
+        .isUserDefined(true)
+        .action(MetricCustomThresholdActions.IGNORE)
+        .criteria(MetricThresholdCriteria.builder().lessThanThreshold(1.0).build())
+        .build();
+  }
+
+  public AnalysedDeploymentTestDataNode getAnalysedDeploymentTestDataNode() {
+    return AnalysedDeploymentTestDataNode.builder()
+        .nodeIdentifier("nodeIdentifier")
+        .analysisResult(AnalysisResult.NO_ANALYSIS)
+        .analysisReason(AnalysisReason.NO_CONTROL_DATA)
+        .controlDataType(ControlDataType.MINIMUM_DEVIATION)
+        .controlNodeIdentifier("controlNodeIdentifier")
+        .controlData(Collections.singletonList(MetricValue.builder().value(1.0).timestampInMillis(1L).build()))
+        .testData(Collections.singletonList(MetricValue.builder().value(1.0).timestampInMillis(1L).build()))
+        .normalisedTestData(Collections.singletonList(MetricValue.builder().value(1.0).timestampInMillis(1L).build()))
+        .normalisedControlData(
+            Collections.singletonList(MetricValue.builder().value(1.0).timestampInMillis(1L).build()))
+        .build();
+  }
+
+  public MetricsAnalysis getMetricsAnalysis() {
+    return MetricsAnalysis.builder()
+        .metricName("metricName")
+        .metricType(MetricType.ERROR)
+        .metricIdentifier("metricIdentifier")
+        .healthSourceIdentifier("healthSourceIdentifier")
+        .transactionGroup("transactionGroup")
+        .thresholds(Collections.singletonList(getMetricThreshold()))
+        .analysisResult(AnalysisResult.NO_ANALYSIS)
+        .testDataNodes(Collections.singletonList(getAnalysedDeploymentTestDataNode()))
+        .build();
   }
 }

@@ -163,13 +163,13 @@ public class AccountRoleAssignmentsApiImplTest extends AccessControlTestBase {
       Principal.TypeEnum principalType) {
     io.harness.spec.server.accesscontrol.v1.model.RoleAssignment request =
         new io.harness.spec.server.accesscontrol.v1.model.RoleAssignment();
-    request.setSlug(randomAlphabetic(10));
+    request.setIdentifier(randomAlphabetic(10));
     request.setRole(randomAlphabetic(10));
     request.setResourceGroup(randomAlphabetic(10));
     request.setManaged(true);
     request.setDisabled(true);
     Principal principal = new Principal();
-    principal.setSlug(randomAlphabetic(10));
+    principal.setIdentifier(randomAlphabetic(10));
     principal.setScopeLevel("ACCOUNT");
     principal.setType(principalType);
     request.setPrincipal(principal);
@@ -361,7 +361,7 @@ public class AccountRoleAssignmentsApiImplTest extends AccessControlTestBase {
 
     try {
       accountRoleAssignmentsApi.getAccountScopedRoleAssignments(
-          account, pageRequest.getPageIndex(), pageRequest.getPageSize(), "slug", "DESC");
+          account, pageRequest.getPageIndex(), pageRequest.getPageSize(), "identifier", "DESC");
       fail();
     } catch (UnauthorizedException unauthorizedException) {
       verify(accessControlClient, times(3)).hasAccess(any(ResourceScope.class), any(), any());
@@ -389,7 +389,7 @@ public class AccountRoleAssignmentsApiImplTest extends AccessControlTestBase {
     verify(roleAssignmentService, times(1)).get(any(), any());
     RoleAssignmentResponse entity = (RoleAssignmentResponse) accountScopedRoleAssignments.getEntity();
     assertNotNull(entity.getRoleAssignment());
-    assertEquals(entity.getRoleAssignment().getSlug(), roleAssignment.getIdentifier());
+    assertEquals(entity.getRoleAssignment().getIdentifier(), roleAssignment.getIdentifier());
   }
 
   @Test
@@ -416,7 +416,7 @@ public class AccountRoleAssignmentsApiImplTest extends AccessControlTestBase {
             .build();
     when(transactionTemplate.execute(any())).thenReturn(roleAssignmentResponseDTO);
 
-    accountRoleAssignmentsApi.deleteAccountScopedRoleAssignment(request.getSlug(), account);
+    accountRoleAssignmentsApi.deleteAccountScopedRoleAssignment(request.getIdentifier(), account);
 
     verify(roleAssignmentService, times(1)).get(any(), any());
     assertCheckUpdatePermission(roleAssignmentDTO);
@@ -436,7 +436,7 @@ public class AccountRoleAssignmentsApiImplTest extends AccessControlTestBase {
     when(roleAssignmentService.get(roleAssignment.getIdentifier(), roleAssignment.getScopeIdentifier()))
         .thenReturn(Optional.empty());
     try {
-      accountRoleAssignmentsApi.deleteAccountScopedRoleAssignment(request.getSlug(), account);
+      accountRoleAssignmentsApi.deleteAccountScopedRoleAssignment(request.getIdentifier(), account);
       fail();
     } catch (NotFoundException notFoundException) {
       verify(roleAssignmentService, times(1)).get(any(), any());
@@ -456,7 +456,7 @@ public class AccountRoleAssignmentsApiImplTest extends AccessControlTestBase {
         .thenReturn(Optional.of(roleAssignment));
     preCheckUpdatePermission(roleAssignmentDTO);
     try {
-      accountRoleAssignmentsApi.deleteAccountScopedRoleAssignment(request.getSlug(), account);
+      accountRoleAssignmentsApi.deleteAccountScopedRoleAssignment(request.getIdentifier(), account);
       fail();
     } catch (InvalidRequestException invalidRequestException) {
       verify(roleAssignmentService, times(1)).get(any(), any());
@@ -480,7 +480,7 @@ public class AccountRoleAssignmentsApiImplTest extends AccessControlTestBase {
     ValidationResult invalidResult = ValidationResult.builder().valid(false).errorMessage("").build();
     when(actionValidator.canDelete(roleAssignment)).thenReturn(invalidResult);
     try {
-      accountRoleAssignmentsApi.deleteAccountScopedRoleAssignment(request.getSlug(), account);
+      accountRoleAssignmentsApi.deleteAccountScopedRoleAssignment(request.getIdentifier(), account);
       fail();
     } catch (InvalidRequestException invalidRequestException) {
       verify(roleAssignmentService, times(1)).get(any(), any());

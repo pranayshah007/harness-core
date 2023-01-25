@@ -92,9 +92,10 @@ import lombok.extern.slf4j.Slf4j;
 @TargetModule(HarnessModule._955_ALERT_BEANS)
 public class AlertServiceImpl implements AlertService {
   // TODO: check if ARTIFACT_COLLECTION_FAILED alert type needs to be added here
-  private static final List<AlertType> ALERT_TYPES_TO_NOTIFY_ON = ImmutableList.of(DelegatesDown,
-      DEPLOYMENT_RATE_APPROACHING_LIMIT, INSTANCE_USAGE_APPROACHING_LIMIT, USAGE_LIMIT_EXCEEDED, USERGROUP_SYNC_FAILED,
-      RESOURCE_USAGE_APPROACHING_LIMIT, GitSyncError, GitConnectionError, InvalidKMS, CONTINUOUS_VERIFICATION_ALERT);
+  private static final List<AlertType> ALERT_TYPES_TO_NOTIFY_ON =
+      ImmutableList.of(DelegatesDown, DEPLOYMENT_RATE_APPROACHING_LIMIT, INSTANCE_USAGE_APPROACHING_LIMIT,
+          USAGE_LIMIT_EXCEEDED, USERGROUP_SYNC_FAILED, RESOURCE_USAGE_APPROACHING_LIMIT, GitSyncError,
+          GitConnectionError, InvalidKMS, CONTINUOUS_VERIFICATION_ALERT, ApprovalNeeded, ManualInterventionNeeded);
   private static final List<AlertType> CLOSED_ALERT_TYPES_TO_NOTIFY_ON =
       ImmutableList.of(CONTINUOUS_VERIFICATION_ALERT, InvalidKMS);
   private static final Iterable<AlertStatus> STATUS_ACTIVE = ImmutableSet.of(Open, Pending);

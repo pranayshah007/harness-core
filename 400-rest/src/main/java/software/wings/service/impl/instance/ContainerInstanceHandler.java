@@ -1186,7 +1186,6 @@ public class ContainerInstanceHandler extends InstanceHandler implements Instanc
         .helmChartInfo(k8sExecutionSummary.getHelmChartInfo())
         .blueGreenStageColor(k8sExecutionSummary.getBlueGreenStageColor())
         .clusterName(k8sExecutionSummary.getClusterName())
-        .k8sPods(k8sExecutionSummary.getPods())
         .build();
   }
 

@@ -109,6 +109,8 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
   @Before
   public void setup() {
     builderFactory = BuilderFactory.getDefault();
+    builderFactory.getContext().setProjectIdentifier("project");
+    builderFactory.getContext().setOrgIdentifier("orgIdentifier");
     metricPackService.createDefaultMetricPackAndThresholds(builderFactory.getContext().getAccountId(),
         builderFactory.getContext().getOrgIdentifier(), builderFactory.getContext().getProjectIdentifier());
 

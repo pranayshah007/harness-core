@@ -11,10 +11,12 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.exception.InvalidRequestException;
 import io.harness.freeze.beans.FreezeWindow;
 import io.harness.freeze.beans.Recurrence;
 import io.harness.freeze.beans.RecurrenceType;
@@ -45,5 +47,21 @@ public class FreezeTimeUtilsTest extends CategoryTest {
     assertThat(nextIterations.size()).isEqualTo(10);
     long currTime = new Date().getTime();
     assertThat(currTime).isLessThanOrEqualTo(nextIterations.get(0));
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void test_validateFreezeYaml_1() {
+    Recurrence recurrence = new Recurrence();
+    recurrence.setRecurrenceType(RecurrenceType.DAILY);
+    FreezeWindow freezeWindow = new FreezeWindow();
+    freezeWindow.setEndTime("2022-12-19 05:00 PM");
+    freezeWindow.setStartTime("2022-12-19 04:30 PM");
+    freezeWindow.setTimeZone("Asia/Calcutt");
+    freezeWindow.setRecurrence(recurrence);
+    assertThatThrownBy(() -> FreezeTimeUtils.validateTimeRange(freezeWindow))
+        .isInstanceOf(InvalidRequestException.class)
+        .matches(ex -> ex.getMessage().equals("Invalid TimeZone Selected"));
   }
 }

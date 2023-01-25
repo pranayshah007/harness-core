@@ -27,6 +27,7 @@ public interface MongoIndex {
   boolean isUnique();
   boolean isSparse();
   List<String> getFields();
+  BasicDBObject getHint();
 
   default void checks(Logger log) {
     getFields().forEach(a -> {

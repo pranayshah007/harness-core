@@ -7,6 +7,8 @@
 
 package io.harness.delegate.task.artifacts.gar;
 
+import io.harness.artifact.ArtifactMetadataKeys;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.response.ArtifactBuildDetailsNG;
 import io.harness.delegate.task.artifacts.response.ArtifactDelegateResponse;
@@ -23,5 +25,20 @@ public class GarDelegateResponse extends ArtifactDelegateResponse {
   public GarDelegateResponse(ArtifactBuildDetailsNG buildDetails, ArtifactSourceType sourceType, String version) {
     super(buildDetails, sourceType);
     this.version = version;
+  }
+
+  @Override
+  public String describe() {
+    String dockerPullCommand = (getBuildDetails() != null && getBuildDetails().getMetadata() != null)
+        ? "\nImage pull command: docker pull " + getBuildDetails().getMetadata().get(ArtifactMetadataKeys.IMAGE)
+        : null;
+
+    String metadataKeys = (getBuildDetails() != null && getBuildDetails().getMetadata() != null)
+        ? String.valueOf(getBuildDetails().getMetadata().keySet())
+        : null;
+
+    return "type: " + (getSourceType() != null ? getSourceType().getDisplayName() : null) + "\nVersion: " + version
+        + "\nMetadata keys: " + (EmptyPredicate.isNotEmpty(metadataKeys) ? metadataKeys : "")
+        + (EmptyPredicate.isNotEmpty(dockerPullCommand) ? dockerPullCommand : "");
   }
 }

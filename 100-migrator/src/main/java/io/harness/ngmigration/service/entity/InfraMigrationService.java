@@ -60,7 +60,6 @@ import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.DiscoveryNode;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.ngmigration.NGMigrationEntityType;
-import software.wings.ngmigration.NGMigrationStatus;
 import software.wings.service.intfc.InfrastructureDefinitionService;
 
 import com.google.inject.Inject;
@@ -154,27 +153,6 @@ public class InfraMigrationService extends NgMigrationService {
   }
 
   @Override
-  public NGMigrationStatus canMigrate(NGMigrationEntity entity) {
-    InfrastructureDefinition infra = (InfrastructureDefinition) entity;
-    if (infra.getCloudProviderType() != KUBERNETES_CLUSTER) {
-      return NGMigrationStatus.builder()
-          .status(false)
-          .reasons(
-              Collections.singletonList(String.format("%s infra with cloud provider %s is not supported with migration",
-                  infra.getName(), infra.getCloudProviderType())))
-          .build();
-    }
-    if (!(infra.getInfrastructure() instanceof DirectKubernetesInfrastructure)) {
-      return NGMigrationStatus.builder()
-          .status(false)
-          .reasons(Collections.singletonList(String.format(
-              "Issue With %s infra. We currently support only Direct Infra with migration", infra.getName())))
-          .build();
-    }
-    return NGMigrationStatus.builder().status(true).build();
-  }
-
-  @Override
   public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,
       TemplateClient templateClient, MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
     if (yamlFile.isExists()) {
@@ -220,6 +198,7 @@ public class InfraMigrationService extends NgMigrationService {
         migratedEntities.get(CgEntityId.builder().id(infra.getEnvId()).type(ENVIRONMENT).build());
     Infrastructure infraSpec = infraDefMapper.getSpec(infra, migratedEntities);
     if (infraSpec == null) {
+      log.error(String.format("We could not migrate the infra %s", infra.getUuid()));
       return Collections.emptyList();
     }
     InfrastructureConfig infrastructureConfig =

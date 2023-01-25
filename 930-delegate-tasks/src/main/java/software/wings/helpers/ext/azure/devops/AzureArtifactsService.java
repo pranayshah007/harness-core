@@ -17,6 +17,7 @@ import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.beans.settings.azureartifacts.AzureArtifactsConfig;
 import software.wings.helpers.ext.jenkins.BuildDetails;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
@@ -53,4 +54,6 @@ public interface AzureArtifactsService {
   Pair<String, InputStream> downloadArtifact(AzureArtifactsConfig azureArtifactsConfig,
       List<EncryptedDataDetail> encryptionDetails, ArtifactStreamAttributes artifactStreamAttributes,
       Map<String, String> artifactMetadata);
+
+  InputStream downloadArtifactByUrl(String artifactDownloadUrl, String authHeader) throws IOException;
 }

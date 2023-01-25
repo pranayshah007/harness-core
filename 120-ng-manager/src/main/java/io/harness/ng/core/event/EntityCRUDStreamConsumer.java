@@ -25,14 +25,18 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.GIT_TO
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.INVITE;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.POLLING_DOCUMENT;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.PROJECT_ENTITY;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.SCM;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.SECRET_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.SETTINGS;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.SETUP_USAGE_ENTITY;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.SIGNUP_TOKEN;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.STAGE_EXEC_INFO;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.TEMPLATE_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.USER_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.USER_GROUP;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.USER_SCOPE_RECONCILIATION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.VARIABLE_ENTITY;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.YAML_CHANGE_SET;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eventsframework.api.Consumer;
@@ -88,6 +92,10 @@ public class EntityCRUDStreamConsumer extends RedisTraceConsumer {
       @Named(GIT_SYNC_ENTITY_STREAM + ENTITY_CRUD) MessageListener gitSyncProjectCleanup,
       @Named(GITOPS_CLUSTER_ENTITY + ENTITY_CRUD) MessageListener gitopsClusterCleanupProcessor,
       @Named(TEMPLATE_ENTITY + ENTITY_CRUD) MessageListener customDeploymentEntityCRUDStreamEventListener,
+      @Named(SIGNUP_TOKEN + ENTITY_CRUD) MessageListener signupTokenEventListener,
+      @Named(SCM + ENTITY_CRUD) MessageListener sourceCodeManagerEventListener,
+      @Named(STAGE_EXEC_INFO + ENTITY_CRUD) MessageListener stageExecutionInfoEventListener,
+      @Named(YAML_CHANGE_SET + ENTITY_CRUD) MessageListener yamlChangeSetEventListener,
       @Named(FILE_ENTITY + ENTITY_CRUD) MessageListener fileEntityCRUDStreamListener, QueueController queueController) {
     this.redisConsumer = redisConsumer;
     this.queueController = queueController;
@@ -103,6 +111,10 @@ public class EntityCRUDStreamConsumer extends RedisTraceConsumer {
     messageListenersList.add(filterEventListener);
     messageListenersList.add(freezeEventListener);
     messageListenersList.add(gitCommitEventListener);
+    messageListenersList.add(signupTokenEventListener);
+    messageListenersList.add(sourceCodeManagerEventListener);
+    messageListenersList.add(stageExecutionInfoEventListener);
+    messageListenersList.add(yamlChangeSetEventListener);
     messageListenersList.add(gitProcessRequestEventListener);
     messageListenersList.add(gitToHarnessEventListener);
     messageListenersList.add(inviteEventListener);

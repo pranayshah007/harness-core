@@ -20,13 +20,17 @@ import io.harness.entities.Instance;
 import io.harness.entities.Instance.InstanceKeys;
 import io.harness.models.ActiveServiceInstanceInfo;
 import io.harness.models.ActiveServiceInstanceInfoV2;
+import io.harness.models.ActiveServiceInstanceInfoWithEnvType;
+import io.harness.models.ArtifactDeploymentDetailModel;
 import io.harness.models.CountByOrgIdProjectIdAndServiceId;
 import io.harness.models.CountByServiceIdAndEnvType;
 import io.harness.models.EnvBuildInstanceCount;
+import io.harness.models.EnvironmentInstanceCountModel;
 import io.harness.models.InstancesByBuildId;
 import io.harness.models.constants.InstanceSyncConstants;
 import io.harness.mongo.helper.AnalyticsMongoTemplateHolder;
 import io.harness.mongo.helper.SecondaryMongoTemplateHolder;
+import io.harness.utils.FullyQualifiedIdentifierHelper;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -43,6 +47,7 @@ import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.aggregation.GroupOperation;
 import org.springframework.data.mongodb.core.aggregation.MatchOperation;
 import org.springframework.data.mongodb.core.aggregation.ProjectionOperation;
+import org.springframework.data.mongodb.core.aggregation.SortOperation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
@@ -53,7 +58,10 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
   private final MongoTemplate mongoTemplate;
   private final MongoTemplate secondaryMongoTemplate;
   private final MongoTemplate analyticsMongoTemplate;
-  private final String INSTANCE_NG_COLLECTION = "instanceNG";
+  private static final String INSTANCE_NG_COLLECTION = "instanceNG";
+  private static final String DISPLAY_NAME = "displayName";
+  private static final String AGENT_IDENTIFIER = "agentIdentifier";
+  private static final String CLUSTER_IDENTIFIER = "clusterIdentifier";
 
   @Inject
   public InstanceRepositoryCustomImpl(MongoTemplate mongoTemplate,
@@ -78,17 +86,20 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
   @Override
   public List<Instance> getActiveInstancesByAccountOrgProjectAndService(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String serviceIdentifier, long timestamp) {
+    String serviceRef = FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(
+        accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier);
+
     if (timestamp <= 0) {
-      Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier)
-                              .is(accountIdentifier)
-                              .and(InstanceKeys.orgIdentifier)
-                              .is(orgIdentifier)
-                              .and(InstanceKeys.projectIdentifier)
-                              .is(projectIdentifier)
-                              .and(InstanceKeys.serviceIdentifier)
-                              .is(serviceIdentifier)
-                              .and(InstanceKeys.isDeleted)
-                              .is(false);
+      Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier).is(accountIdentifier);
+
+      if (EmptyPredicate.isNotEmpty(orgIdentifier)) {
+        criteria.and(InstanceKeys.orgIdentifier).is(orgIdentifier);
+      }
+      if (EmptyPredicate.isNotEmpty(projectIdentifier)) {
+        criteria.and(InstanceKeys.projectIdentifier).is(projectIdentifier);
+      }
+
+      criteria.and(InstanceKeys.serviceIdentifier).is(serviceRef).and(InstanceKeys.isDeleted).is(false);
       Query query = new Query().addCriteria(criteria);
       return analyticsMongoTemplate.find(query, Instance.class);
     }
@@ -197,16 +208,20 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
   @Override
   public List<Instance> getActiveInstancesByInfrastructureMappingId(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String infrastructureMappingId) {
-    Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier)
-                            .is(accountIdentifier)
-                            .and(InstanceKeys.orgIdentifier)
-                            .is(orgIdentifier)
-                            .and(InstanceKeys.projectIdentifier)
-                            .is(projectIdentifier)
-                            .and(InstanceKeys.infrastructureMappingId)
-                            .is(infrastructureMappingId)
-                            .and(InstanceKeys.isDeleted)
-                            .is(false);
+    Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier).is(accountIdentifier);
+
+    if (EmptyPredicate.isNotEmpty(orgIdentifier)) {
+      criteria.and(InstanceKeys.orgIdentifier).is(orgIdentifier);
+    }
+    if (EmptyPredicate.isNotEmpty(projectIdentifier)) {
+      criteria.and(InstanceKeys.projectIdentifier).is(projectIdentifier);
+    }
+
+    criteria.and(InstanceKeys.infrastructureMappingId)
+        .is(infrastructureMappingId)
+        .and(InstanceKeys.isDeleted)
+        .is(false);
+
     Query query = new Query().addCriteria(criteria);
     return secondaryMongoTemplate.find(query, Instance.class);
   }
@@ -257,19 +272,10 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
   public AggregationResults<ActiveServiceInstanceInfoV2> getActiveServiceInstanceInfo(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String envIdentifier, String serviceIdentifier,
       String buildIdentifier) {
-    Criteria criteria = getCriteriaForActiveInstancesV2(accountIdentifier, orgIdentifier, projectIdentifier);
+    Criteria criteria = getCriteriaForActiveInstancesV2(
+        accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, buildIdentifier, envIdentifier);
 
     criteria.and(InstanceKeysAdditional.instanceInfoClusterIdentifier).is(null);
-
-    if (envIdentifier != null) {
-      criteria.and(InstanceKeys.envIdentifier).is(envIdentifier);
-    }
-    if (serviceIdentifier != null) {
-      criteria.and(InstanceKeys.serviceIdentifier).is(serviceIdentifier);
-    }
-    if (buildIdentifier != null) {
-      criteria.and(InstanceSyncConstants.PRIMARY_ARTIFACT_TAG).is(buildIdentifier);
-    }
 
     MatchOperation matchStage = Aggregation.match(criteria);
     GroupOperation groupEnvId = group(InstanceKeys.serviceIdentifier, InstanceKeys.serviceName,
@@ -280,6 +286,48 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
                                     .as(InstanceSyncConstants.COUNT);
     return secondaryMongoTemplate.aggregate(
         newAggregation(matchStage, groupEnvId), Instance.class, ActiveServiceInstanceInfoV2.class);
+  }
+
+  @Override
+  public AggregationResults<ActiveServiceInstanceInfoWithEnvType> getActiveServiceInstanceInfoWithEnvType(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String envIdentifier,
+      String serviceIdentifier, String displayName, boolean isGitOps) {
+    Criteria criteria = getCriteriaForActiveInstancesV2(
+        accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, null, envIdentifier);
+    addCriteriaForGitOpsCheck(criteria, isGitOps);
+
+    if (displayName != null) {
+      criteria.and(InstanceSyncConstants.PRIMARY_ARTIFACT_DISPLAY_NAME).is(displayName);
+    }
+
+    MatchOperation matchStage = Aggregation.match(criteria);
+    SortOperation sortOperation = Aggregation.sort(Sort.by(Sort.Direction.DESC, InstanceKeys.lastDeployedAt));
+    ProjectionOperation projectionOperation = Aggregation.project(InstanceKeys.envIdentifier, InstanceKeys.envName,
+        InstanceKeys.envType, InstanceSyncConstants.PRIMARY_ARTIFACT_DISPLAY_NAME, InstanceKeys.infraIdentifier,
+        InstanceKeys.infraName, InstanceKeysAdditional.instanceInfoClusterIdentifier,
+        InstanceKeysAdditional.instanceInfoAgentIdentifier, InstanceKeys.lastDeployedAt);
+    GroupOperation groupOperation;
+    if (!isGitOps) {
+      groupOperation =
+          group(InstanceKeys.envIdentifier, InstanceKeys.envType, InstanceKeys.infraIdentifier, DISPLAY_NAME)
+              .first(InstanceKeys.infraName)
+              .as(InstanceKeys.infraName);
+    } else {
+      groupOperation = group(InstanceKeys.envIdentifier, InstanceKeys.envType, CLUSTER_IDENTIFIER, DISPLAY_NAME)
+                           .first(AGENT_IDENTIFIER)
+                           .as(AGENT_IDENTIFIER);
+    }
+
+    groupOperation = groupOperation.first(InstanceKeys.lastDeployedAt)
+                         .as(InstanceKeys.lastDeployedAt)
+                         .first(InstanceKeys.envName)
+                         .as(InstanceKeys.envName)
+                         .count()
+                         .as(InstanceSyncConstants.COUNT);
+
+    return secondaryMongoTemplate.aggregate(
+        newAggregation(sortOperation, matchStage, projectionOperation, groupOperation), INSTANCE_NG_COLLECTION,
+        ActiveServiceInstanceInfoWithEnvType.class);
   }
 
   @Override
@@ -314,17 +362,8 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
   public AggregationResults<ActiveServiceInstanceInfoV2> getActiveServiceGitOpsInstanceInfo(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String envIdentifier, String serviceIdentifier,
       String buildIdentifier) {
-    Criteria criteria = getCriteriaForActiveInstancesV2(accountIdentifier, orgIdentifier, projectIdentifier);
-
-    if (envIdentifier != null) {
-      criteria.and(InstanceKeys.envIdentifier).is(envIdentifier);
-    }
-    if (serviceIdentifier != null) {
-      criteria.and(InstanceKeys.serviceIdentifier).is(serviceIdentifier);
-    }
-    if (buildIdentifier != null) {
-      criteria.and(InstanceSyncConstants.PRIMARY_ARTIFACT_TAG).is(buildIdentifier);
-    }
+    Criteria criteria = getCriteriaForActiveInstancesV2(
+        accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, buildIdentifier, envIdentifier);
 
     criteria.and(InstanceKeysAdditional.instanceInfoClusterIdentifier).ne(null);
 
@@ -338,8 +377,58 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
                                            .count()
                                            .as(InstanceSyncConstants.COUNT);
     return mongoTemplate.aggregate(
-        newAggregation(matchStage, groupClusterEnvId), "instanceNG", ActiveServiceInstanceInfoV2.class);
+        newAggregation(matchStage, groupClusterEnvId), INSTANCE_NG_COLLECTION, ActiveServiceInstanceInfoV2.class);
   }
+
+  @Override
+  public AggregationResults<EnvironmentInstanceCountModel> getInstanceCountForEnvironmentFilteredByService(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceIdentifier,
+      boolean isGitOps) {
+    Criteria criteria =
+        getCriteriaForActiveInstancesV2(accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier);
+
+    addCriteriaForGitOpsCheck(criteria, isGitOps);
+
+    MatchOperation matchStage = Aggregation.match(criteria);
+
+    GroupOperation groupOperation = group(InstanceKeys.envIdentifier)
+                                        .first(InstanceKeys.envIdentifier)
+                                        .as(InstanceKeys.envIdentifier)
+                                        .count()
+                                        .as(InstanceSyncConstants.COUNT);
+    return mongoTemplate.aggregate(
+        newAggregation(matchStage, groupOperation), INSTANCE_NG_COLLECTION, EnvironmentInstanceCountModel.class);
+  }
+
+  @Override
+  public AggregationResults<ArtifactDeploymentDetailModel> getLastDeployedInstance(String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, String serviceIdentifier, boolean isEnvironmentCard,
+      boolean isGitOps) {
+    Criteria criteria =
+        getCriteriaForActiveInstancesV2(accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier);
+    addCriteriaForGitOpsCheck(criteria, isGitOps);
+    MatchOperation matchOperation = Aggregation.match(criteria);
+    SortOperation sortOperation = Aggregation.sort(Sort.by(Sort.Direction.DESC, InstanceKeys.lastDeployedAt));
+    ProjectionOperation projectionOperation = Aggregation.project(
+        InstanceKeys.envIdentifier, InstanceSyncConstants.PRIMARY_ARTIFACT_DISPLAY_NAME, InstanceKeys.lastDeployedAt);
+    GroupOperation groupOperation;
+
+    if (isEnvironmentCard) {
+      groupOperation = group(InstanceKeys.envIdentifier);
+    } else {
+      groupOperation = group(InstanceKeys.envIdentifier, DISPLAY_NAME);
+    }
+
+    groupOperation = groupOperation.first(InstanceKeys.envIdentifier)
+                         .as(InstanceKeys.envIdentifier)
+                         .first(DISPLAY_NAME)
+                         .as(DISPLAY_NAME)
+                         .first(InstanceKeys.lastDeployedAt)
+                         .as(InstanceKeys.lastDeployedAt);
+    return mongoTemplate.aggregate(newAggregation(sortOperation, matchOperation, projectionOperation, groupOperation),
+        INSTANCE_NG_COLLECTION, ArtifactDeploymentDetailModel.class);
+  }
+
   /*
     Return instances that are active at a given timestamp for specified accountIdentifier, projectIdentifier,
     orgIdentifier, serviceId, envId and list of buildIds
@@ -452,45 +541,29 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
   */
   private Criteria getCriteriaForActiveInstances(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, long timestampInMs) {
-    Criteria filterNotDeleted = Criteria.where(InstanceKeys.accountIdentifier)
-                                    .is(accountIdentifier)
-                                    .and(InstanceKeys.orgIdentifier)
-                                    .is(orgIdentifier)
-                                    .and(InstanceKeys.projectIdentifier)
-                                    .is(projectIdentifier)
-                                    .and(InstanceKeys.isDeleted)
-                                    .is(false)
-                                    .and(InstanceKeys.createdAt)
-                                    .lte(timestampInMs);
-
-    Criteria filterDeletedAfter = Criteria.where(InstanceKeys.accountIdentifier)
-                                      .is(accountIdentifier)
-                                      .and(InstanceKeys.orgIdentifier)
-                                      .is(orgIdentifier)
-                                      .and(InstanceKeys.projectIdentifier)
-                                      .is(projectIdentifier)
-                                      .and(InstanceKeys.isDeleted)
-                                      .is(true)
-                                      .and(InstanceKeys.createdAt)
-                                      .lte(timestampInMs)
-                                      .and(InstanceKeys.deletedAt)
-                                      .gte(timestampInMs);
-
+    Criteria filterNotDeleted =
+        getCriteriaForActiveInstancesV2(accountIdentifier, orgIdentifier, projectIdentifier, null);
+    filterNotDeleted.and(InstanceKeys.createdAt).lte(timestampInMs);
+    Criteria filterDeletedAfter = getCriteriaForDeletedInstances(accountIdentifier, orgIdentifier, projectIdentifier);
+    filterDeletedAfter.and(InstanceKeys.createdAt).lte(timestampInMs).and(InstanceKeys.deletedAt).gte(timestampInMs);
     return new Criteria().orOperator(filterNotDeleted, filterDeletedAfter);
   }
 
-  private Criteria getCriteriaForActiveInstances(
+  private Criteria getCriteriaForDeletedInstances(
       String accountIdentifier, String orgIdentifier, String projectIdentifier) {
-    return Criteria.where(InstanceKeys.accountIdentifier)
-        .is(accountIdentifier)
-        .and(InstanceKeys.orgIdentifier)
-        .is(orgIdentifier)
-        .and(InstanceKeys.projectIdentifier)
-        .is(projectIdentifier)
-        .and(InstanceKeys.isDeleted)
-        .is(false);
+    Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier).is(accountIdentifier);
+    if (EmptyPredicate.isNotEmpty(orgIdentifier)) {
+      criteria.and(InstanceKeys.orgIdentifier).is(orgIdentifier);
+    }
+    if (EmptyPredicate.isNotEmpty(projectIdentifier)) {
+      criteria.and(InstanceKeys.projectIdentifier).is(projectIdentifier);
+    }
+    criteria.and(InstanceKeys.isDeleted).is(true);
+
+    return criteria;
   }
-  private Criteria getCriteriaForActiveInstancesV2(
+
+  private Criteria getCriteriaForActiveInstances(
       String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier).is(accountIdentifier);
 
@@ -504,6 +577,50 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
     criteria.and(InstanceKeys.isDeleted).is(false);
 
     return criteria;
+  }
+
+  private Criteria getCriteriaForActiveInstancesV2(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId) {
+    return getCriteriaForActiveInstancesV2(accountIdentifier, orgIdentifier, projectIdentifier, serviceId, null, null);
+  }
+
+  private Criteria getCriteriaForActiveInstancesV2(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String serviceId, String buildId, String envId) {
+    Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier).is(accountIdentifier);
+
+    if (orgIdentifier != null) {
+      criteria.and(InstanceKeys.orgIdentifier).is(orgIdentifier);
+    }
+    if (projectIdentifier != null) {
+      criteria.and(InstanceKeys.projectIdentifier).is(projectIdentifier);
+    }
+
+    if (serviceId != null) {
+      criteria.and(InstanceKeys.serviceIdentifier)
+          .is(FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(
+              accountIdentifier, orgIdentifier, projectIdentifier, serviceId));
+    }
+    if (buildId != null) {
+      criteria.and(InstanceSyncConstants.PRIMARY_ARTIFACT_TAG).is(buildId);
+    }
+
+    if (envId != null) {
+      criteria.and(InstanceKeys.envIdentifier)
+          .is(FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(
+              accountIdentifier, orgIdentifier, projectIdentifier, envId));
+    }
+
+    criteria.and(InstanceKeys.isDeleted).is(false);
+
+    return criteria;
+  }
+
+  private void addCriteriaForGitOpsCheck(Criteria criteria, boolean isGitOps) {
+    if (isGitOps) {
+      criteria.and(InstanceKeysAdditional.instanceInfoClusterIdentifier).ne(null);
+    } else {
+      criteria.and(InstanceKeysAdditional.instanceInfoClusterIdentifier).is(null);
+    }
   }
 
   @Override

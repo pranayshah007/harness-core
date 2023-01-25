@@ -93,11 +93,11 @@ public class AsgCanaryDeleteCommandTaskHandler extends AsgCommandTaskNGHandler {
 
     AutoScalingGroup autoScalingGroup = asgSdkManager.getASG(canaryAsgName);
     if (autoScalingGroup == null) {
-      String msg = format("Service with name `%s` does not exist", canaryAsgName);
+      String msg = format("Asg with name `%s` does not exist", canaryAsgName);
       asgSdkManager.info(msg);
       throw new InvalidArgumentsException(msg);
     }
 
-    asgSdkManager.deleteAsgService(autoScalingGroup);
+    asgSdkManager.deleteAsg(canaryAsgName);
   }
 }

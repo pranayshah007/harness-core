@@ -38,9 +38,11 @@ import io.harness.ng.overview.dto.DashboardWorkloadDeploymentV2;
 import io.harness.ng.overview.dto.EnvBuildIdAndInstanceCountInfoList;
 import io.harness.ng.overview.dto.EnvIdCountPair;
 import io.harness.ng.overview.dto.EnvironmentDeploymentInfo;
+import io.harness.ng.overview.dto.EnvironmentInstanceDetails;
 import io.harness.ng.overview.dto.ExecutionDeploymentInfo;
 import io.harness.ng.overview.dto.HealthDeploymentDashboard;
 import io.harness.ng.overview.dto.HealthDeploymentDashboardV2;
+import io.harness.ng.overview.dto.InstanceGroupedByEnvironmentList;
 import io.harness.ng.overview.dto.InstanceGroupedByServiceList;
 import io.harness.ng.overview.dto.InstancesByBuildIdList;
 import io.harness.ng.overview.dto.ServiceDeploymentInfoDTO;
@@ -150,8 +152,8 @@ public class CDDashboardOverviewResource {
   @ApiOperation(value = "Get service deployments info", nickname = "getServiceDeploymentsInfo")
   public ResponseDTO<ServiceDeploymentListInfo> getDeploymentExecutionInfo(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
-      @NotNull @OrgIdentifier @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @ProjectIdentifier @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @OrgIdentifier @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @ProjectIdentifier @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotNull @QueryParam(NGServiceConstants.START_TIME) long startTime,
       @NotNull @QueryParam(NGServiceConstants.END_TIME) long endTime,
       @QueryParam(NGServiceConstants.SERVICE_IDENTIFIER) String serviceIdentifier,
@@ -251,8 +253,8 @@ public class CDDashboardOverviewResource {
   @ApiOperation(value = "Get service details list", nickname = "getServiceDetails")
   public ResponseDTO<ServiceDetailsInfoDTO> getServiceDeployments(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotNull @QueryParam(NGResourceFilterConstants.START_TIME) long startTime,
       @NotNull @QueryParam(NGResourceFilterConstants.END_TIME) long endTime,
       @Parameter(description = "Specifies the sorting criteria of the list") @QueryParam("sort") List<String> sort)
@@ -282,8 +284,8 @@ public class CDDashboardOverviewResource {
   @ApiOperation(value = "Get service growth trend", nickname = "getServicesGrowthTrend")
   public ResponseDTO<io.harness.ng.overview.dto.TimeValuePairListDTO<Integer>> getServicesGrowthTrend(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotNull @QueryParam(NGResourceFilterConstants.START_TIME) long startInterval,
       @NotNull @QueryParam(NGResourceFilterConstants.END_TIME) long endInterval,
       @NotNull @QueryParam(NGResourceFilterConstants.TIME_GROUP_BY_TYPE) TimeGroupType timeGroupType) {
@@ -310,8 +312,8 @@ public class CDDashboardOverviewResource {
   @ApiOperation(value = "Get active service instance summary", nickname = "getActiveServiceInstanceSummary")
   public ResponseDTO<ActiveServiceInstanceSummary> getActiveServiceInstanceSummary(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId,
       @NotNull @QueryParam(NGCommonEntityConstants.TIMESTAMP) long timestampInMs) {
     return ResponseDTO.newResponse(cdOverviewDashboardService.getActiveServiceInstanceSummary(
@@ -338,8 +340,8 @@ public class CDDashboardOverviewResource {
       value = "Get list of unique environment and build ids with instance count", nickname = "getEnvBuildInstanceCount")
   public ResponseDTO<EnvBuildIdAndInstanceCountInfoList>
   getEnvBuildInstanceCount(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId) {
     return ResponseDTO.newResponse(cdOverviewDashboardService.getEnvBuildInstanceCountByServiceId(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceId));
@@ -352,11 +354,26 @@ public class CDDashboardOverviewResource {
       nickname = "getActiveServiceInstances")
   public ResponseDTO<InstanceGroupedByServiceList.InstanceGroupedByService>
   getEnvBuildInstanceCountV2(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId) {
     return ResponseDTO.newResponse(cdOverviewDashboardService.getInstanceGroupedByArtifactList(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceId));
+  }
+
+  @GET
+  @Path("/getActiveInstanceGroupedByEnvironment")
+  @ApiOperation(value = "Get active instance count for a service grouped on environment, infrastructure, artifact",
+      nickname = "getActiveInstanceGroupedByEnvironment")
+  public ResponseDTO<InstanceGroupedByEnvironmentList>
+  getActiveInstanceGroupedByEnvironment(
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId,
+      @QueryParam(NGCommonEntityConstants.ENVIRONMENT_IDENTIFIER_KEY) String environmentId) {
+    return ResponseDTO.newResponse(cdOverviewDashboardService.getInstanceGroupedByEnvironmentList(
+        accountIdentifier, orgIdentifier, projectIdentifier, serviceId, environmentId));
   }
 
   @GET
@@ -364,8 +381,8 @@ public class CDDashboardOverviewResource {
   @ApiOperation(value = "Get list of buildId and instances", nickname = "getActiveInstancesByServiceIdEnvIdAndBuildIds")
   public ResponseDTO<InstancesByBuildIdList> getActiveInstancesByServiceIdEnvIdAndBuildIds(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId,
       @NotNull @QueryParam(NGCommonEntityConstants.ENVIRONMENT_KEY) String envId,
       @NotNull @QueryParam(NGCommonEntityConstants.BUILDS_KEY) List<String> buildIds,
@@ -385,8 +402,8 @@ public class CDDashboardOverviewResource {
   @Hidden
   public ResponseDTO<InstanceDetailsByBuildId>
   getActiveInstancesDetails(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId,
       @NotNull @QueryParam(NGCommonEntityConstants.ENVIRONMENT_KEY) String envId,
       @QueryParam(NGCommonEntityConstants.INFRA_IDENTIFIER) String infraId,
@@ -421,8 +438,8 @@ public class CDDashboardOverviewResource {
   @ApiOperation(value = "Get instance count history", nickname = "getInstanceCountHistory")
   public ResponseDTO<TimeValuePairListDTO<EnvIdCountPair>> getInstanceCountHistory(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId,
       @NotNull @QueryParam(NGResourceFilterConstants.START_TIME) long startInterval,
       @NotNull @QueryParam(NGResourceFilterConstants.END_TIME) long endInterval) {
@@ -435,8 +452,8 @@ public class CDDashboardOverviewResource {
   @ApiOperation(value = "Get deployments by serviceId", nickname = "getDeploymentsByServiceId")
   public ResponseDTO<DeploymentsInfo> getDeploymentsByServiceId(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId,
       @NotNull @QueryParam(NGResourceFilterConstants.START_TIME) long startInterval,
       @NotNull @QueryParam(NGResourceFilterConstants.END_TIME) long endInterval) {
@@ -462,8 +479,8 @@ public class CDDashboardOverviewResource {
       nickname = "getEnvArtifactDetailsByServiceId")
   public ResponseDTO<EnvironmentDeploymentInfo>
   getEnvArtifactDetailsByServiceId(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId) {
     return ResponseDTO.newResponse(cdOverviewDashboardService.getEnvironmentDeploymentDetailsByServiceId(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceId));
@@ -475,10 +492,25 @@ public class CDDashboardOverviewResource {
       nickname = "getActiveServiceDeployments")
   public ResponseDTO<InstanceGroupedByServiceList.InstanceGroupedByService>
   getActiveServiceDeployments(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId) {
+    return ResponseDTO.newResponse(cdOverviewDashboardService.getActiveServiceDeploymentsList(
+        accountIdentifier, orgIdentifier, projectIdentifier, serviceId));
+  }
+
+  @GET
+  @Path("/getEnvironmentInstanceDetails")
+  @ApiOperation(
+      value = "Get instance count and last artifact deployment detail in each environment for a particular service",
+      nickname = "getEnvironmentInstanceDetails")
+  @Hidden
+  public ResponseDTO<EnvironmentInstanceDetails>
+  getEnvironmentInstanceDetails(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId) {
-    return ResponseDTO.newResponse(cdOverviewDashboardService.getActiveServiceDeploymentsList(
+    return ResponseDTO.newResponse(cdOverviewDashboardService.getEnvironmentInstanceDetails(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceId));
   }
 }

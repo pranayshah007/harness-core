@@ -19,7 +19,7 @@ import io.harness.plancreator.strategy.StrategyConfig;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.template.yaml.TemplateLinkConfig;
-import io.harness.validation.OneOfSet;
+import io.harness.validation.OneOfField;
 import io.harness.validator.NGRegexValidatorConstants;
 import io.harness.when.beans.StepWhenCondition;
 import io.harness.yaml.YamlSchemaTypes;
@@ -48,7 +48,7 @@ import org.springframework.data.annotation.TypeAlias;
 @AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@OneOfSet(fields = {"steps", "template"}, requiredFieldNames = {"template", "steps"})
+@OneOfField(fields = {"steps", "template"})
 @TypeAlias("stepGroupElementConfig")
 @OwnedBy(PIPELINE)
 public class StepGroupElementConfig {

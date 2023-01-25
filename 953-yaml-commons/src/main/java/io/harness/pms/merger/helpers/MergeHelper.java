@@ -18,6 +18,8 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.YamlException;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
+import io.harness.pms.merger.fqn.FQNNode;
+import io.harness.pms.merger.fqn.FQNNode.NodeType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
@@ -28,11 +30,16 @@ import io.harness.serializer.JsonUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
@@ -41,6 +48,9 @@ import lombok.extern.slf4j.Slf4j;
 @UtilityClass
 @Slf4j
 public class MergeHelper {
+  public final Set<String> acceptAllChildrenKeys = new HashSet<>(
+      Arrays.asList("service", "environment", "template", "services", "environments", "environmentGroup"));
+
   public String mergeInputSetFormatYamlToOriginYaml(String originYaml, String inputSetFormatYaml) {
     return mergeRuntimeInputValuesIntoOriginalYaml(originYaml, inputSetFormatYaml, false);
   }
@@ -79,30 +89,40 @@ public class MergeHelper {
       YamlConfig inputSetConfig, boolean appendInputSetValidator, boolean isAtExecutionTime) {
     Map<FQN, Object> inputSetFQNMap = inputSetConfig.getFqnToValueMap();
 
-    Map<FQN, Object> mergedYamlFQNMap = new LinkedHashMap<>(originalYamlConfig.getFqnToValueMap());
-    originalYamlConfig.getFqnToValueMap().keySet().forEach(key -> {
+    Map<FQN, Object> pipelineYamlFQNMap = originalYamlConfig.getFqnToValueMap();
+    Map<FQN, Object> mergedYamlFQNMap = new LinkedHashMap<>(pipelineYamlFQNMap);
+    pipelineYamlFQNMap.keySet().forEach(key -> {
       if (inputSetFQNMap.containsKey(key)) {
-        Object value = inputSetFQNMap.get(key);
-        Object templateValue = originalYamlConfig.getFqnToValueMap().get(key);
+        Object valueFromRuntimeInputYaml = inputSetFQNMap.get(key);
+        Object valueFromPipelineYaml = pipelineYamlFQNMap.get(key);
+        // input sets can now have <+input> in them as we will not remove those fields anymore. So if the first input
+        // set provides some value and the second does not, then the first value should and not be overriden by the
+        // <+input> in the second input set
+        if (valueFromRuntimeInputYaml instanceof TextNode
+            && NGExpressionUtils.matchesInputSetPattern(((TextNode) valueFromRuntimeInputYaml).asText())
+            && !NGExpressionUtils.matchesExecutionInputPattern(((TextNode) valueFromRuntimeInputYaml).asText())) {
+          return;
+        }
         if (key.isType() || key.isIdentifierOrVariableName()) {
-          if (!value.toString().equals(templateValue.toString())) {
-            throwUpdatedKeyException(key, templateValue, value);
+          if (!valueFromRuntimeInputYaml.toString().equals(valueFromPipelineYaml.toString())) {
+            return;
           }
         }
         if (isAtExecutionTime) {
-          String templateValueText = ((JsonNode) templateValue).asText();
+          String templateValueText = ((JsonNode) valueFromPipelineYaml).asText();
           if (NGExpressionUtils.matchesExecutionInputPattern(templateValueText)) {
             ParameterField<?> inputSetParameterField =
-                RuntimeInputValuesValidator.getInputSetParameterField(((JsonNode) value).asText());
+                RuntimeInputValuesValidator.getInputSetParameterField(((JsonNode) valueFromRuntimeInputYaml).asText());
             if (inputSetParameterField != null && inputSetParameterField.getValue() != null) {
-              value = inputSetParameterField.getValue();
+              valueFromRuntimeInputYaml = inputSetParameterField.getValue();
             }
           }
         }
         if (appendInputSetValidator) {
-          value = checkForRuntimeInputExpressions(value, originalYamlConfig.getFqnToValueMap().get(key));
+          valueFromRuntimeInputYaml =
+              checkForRuntimeInputExpressions(valueFromRuntimeInputYaml, pipelineYamlFQNMap.get(key));
         }
-        mergedYamlFQNMap.put(key, value);
+        mergedYamlFQNMap.put(key, valueFromRuntimeInputYaml);
       } else {
         Map<FQN, Object> subMap = YamlSubMapExtractor.getFQNToObjectSubMap(inputSetFQNMap, key);
         if (!subMap.isEmpty()) {
@@ -110,15 +130,78 @@ public class MergeHelper {
         }
       }
     });
-    return new YamlConfig(mergedYamlFQNMap, originalYamlConfig.getYamlMap());
+    Map<FQN, Object> nonIgnorableKeys = getNonIgnorableKeys(pipelineYamlFQNMap, inputSetFQNMap, mergedYamlFQNMap);
+    mergedYamlFQNMap.putAll(nonIgnorableKeys);
+    JsonNode yamlMap = originalYamlConfig.getYamlMap();
+    JsonNode modifiedOriginalMap =
+        addNonIgnorableBaseKeys(yamlMap, mergedYamlFQNMap, nonIgnorableKeys, inputSetConfig.getYamlMap());
+    return new YamlConfig(mergedYamlFQNMap, modifiedOriginalMap);
   }
 
-  private void throwUpdatedKeyException(FQN key, Object templateValue, Object value) {
-    throw new InvalidRequestException("The value for " + key.getExpressionFqn() + " is " + templateValue.toString()
-        + "in the pipeline yaml, but the input set has it as " + value.toString());
+  private JsonNode addNonIgnorableBaseKeys(JsonNode yamlMap, Map<FQN, Object> mergedYamlFQNMap,
+      Map<FQN, Object> nonIgnorableKeys, JsonNode runtimeInputYamlMap) {
+    Set<FQN> newKeys = new HashSet<>();
+    for (FQN nonIgnorableKey : nonIgnorableKeys.keySet()) {
+      List<FQNNode> fqnList = nonIgnorableKey.getFqnList();
+      for (int i = 0; i < fqnList.size() - 1; i++) {
+        FQNNode fqnNode = fqnList.get(i);
+        if (fqnNode.getNodeType() == NodeType.KEY && acceptAllChildrenKeys.contains(fqnNode.getKey())) {
+          newKeys.add(FQN.builder().fqnList(fqnList.subList(0, i + 2)).build());
+          // if the nonIgnorableKey is environmentGroup.environments.values, then once environmentGroup.environments is
+          // added as a new key, we should break as environmentGroup.environments.values is not needed anymore
+          break;
+        }
+      }
+    }
+    for (FQN key : newKeys) {
+      FQN parent = key.getParent();
+      ObjectNode nodeForFQN = (ObjectNode) YamlSubMapExtractor.getNodeForFQN(yamlMap, parent);
+      if (!nodeForFQN.has(key.getFieldName())) {
+        nodeForFQN.putIfAbsent(key.getFieldName(), new TextNode("<+input>"));
+        mergedYamlFQNMap.put(key, YamlSubMapExtractor.getNodeForFQN(runtimeInputYamlMap, key));
+      }
+    }
+    return yamlMap;
+  }
+
+  // mergedYamlFQNMap can have the validator from pipelineYamlFQNMap merged into the value from inputSetFQNMap, and
+  // hence if some key is present in mergedYamlFQNMap, then that key's value should be taken. If some key is not
+  // present in the merged map, then the key value pair from the input set fqn map should be taken
+  private Map<FQN, Object> getNonIgnorableKeys(
+      Map<FQN, Object> pipelineYamlFQNMap, Map<FQN, Object> inputSetFQNMap, Map<FQN, Object> mergedYamlFQNMap) {
+    Map<FQN, Object> nonIgnorableKeys = new LinkedHashMap<>();
+    Set<FQN> baseFQNs = new HashSet<>();
+    pipelineYamlFQNMap.keySet().forEach(key -> {
+      FQN baseFQN = key.getBaseFQNTillOneOfGivenFields(acceptAllChildrenKeys);
+      if (baseFQN != null) {
+        baseFQNs.add(baseFQN);
+      }
+    });
+    baseFQNs.forEach(baseFQN -> {
+      Map<FQN, Object> subMapFromInputSet = YamlSubMapExtractor.getFQNToObjectSubMap(inputSetFQNMap, baseFQN);
+      subMapFromInputSet.keySet().forEach(inputSetKey -> {
+        if (pipelineYamlFQNMap.containsKey(inputSetKey)
+            || EmptyPredicate.isNotEmpty(YamlSubMapExtractor.getFQNToObjectSubMap(pipelineYamlFQNMap, inputSetKey))) {
+          // if some key is present in pipeline yaml, either as a leaf node or otherwise, then the value from the
+          // runtime input yaml needs to be ignored. The first if condition checks if the key is present as a leaf node,
+          // and the second one checks if the key is present otherwise
+          return;
+        }
+        if (mergedYamlFQNMap.containsKey(inputSetKey)) {
+          nonIgnorableKeys.put(inputSetKey, mergedYamlFQNMap.get(inputSetKey));
+        } else {
+          nonIgnorableKeys.put(inputSetKey, subMapFromInputSet.get(inputSetKey));
+        }
+      });
+    });
+    return nonIgnorableKeys;
   }
 
   private Object checkForRuntimeInputExpressions(Object inputSetValue, Object pipelineValue) {
+    String validationMsg = RuntimeInputValuesValidator.validateStaticValues(pipelineValue, inputSetValue);
+    if (EmptyPredicate.isNotEmpty(validationMsg)) {
+      throw new InvalidRequestException(validationMsg);
+    }
     String pipelineValText = ((JsonNode) pipelineValue).asText();
     String inputSetValueText = ((JsonNode) inputSetValue).asText();
     if (!NGExpressionUtils.matchesInputSetPattern(pipelineValText)) {
@@ -152,7 +235,7 @@ public class MergeHelper {
         }
         return appendedValidator;
       }
-      ParameterField<?> inputSetParameterField =
+      ParameterField<String> inputSetParameterField =
           RuntimeInputValuesValidator.getInputSetParameterField(inputSetValueText);
       if (inputSetParameterField != null && inputSetParameterField.isExecutionInput()) {
         if (NGExpressionUtils.matchesExecutionInputPattern(inputSetValueText)
@@ -166,8 +249,12 @@ public class MergeHelper {
         }
       }
 
+      // pipelineValue can be <+input>.allowedValues(a,b), while inputSetValue can be b.allowedValued(a,b) if
+      // inputSetValue is from a merged Yaml with appendValidators true. In this, we only need to append the validator
+      // once, hence the value "b" is extracted from inputSetValueText
       return ParameterField.createExpressionField(true,
-          HarnessStringUtils.removeLeadingAndTrailingQuotesBothOrNone(((JsonNode) inputSetValue).asText()),
+          HarnessStringUtils.removeLeadingAndTrailingQuotesBothOrNone(
+              inputSetParameterField == null ? inputSetValueText : inputSetParameterField.fetchFinalValue().toString()),
           parameterField.getInputSetValidator(), ((JsonNode) inputSetValue).getNodeType() != JsonNodeType.STRING);
     } catch (IOException e) {
       log.error("", e);

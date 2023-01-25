@@ -12,7 +12,7 @@ import io.harness.cvng.analysis.beans.LiveMonitoringLogAnalysisClusterDTO;
 import io.harness.cvng.analysis.entities.LogAnalysisResult;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.beans.params.PageParams;
-import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.core.beans.params.ProjectScopedProjectParams;
 import io.harness.cvng.core.beans.params.TimeRangeParams;
 import io.harness.cvng.core.beans.params.filterParams.LiveMonitoringLogAnalysisFilter;
 import io.harness.cvng.dashboard.beans.AnalyzedLogDataDTO;
@@ -50,7 +50,7 @@ public class ErrorTrackingDashboardResource {
   @ExceptionMetered
   @ApiOperation(value = "get all error tracking data for a time range", nickname = "getAllErrorTrackingData")
   public RestResponse<PageResponse<AnalyzedLogDataDTO>> getAllErrorTrackingData(
-      @NotNull @BeanParam ProjectParams projectParams,
+      @NotNull @BeanParam ProjectScopedProjectParams projectParams,
       @QueryParam("monitoredServiceIdentifier") String monitoredServiceIdentifier,
       @QueryParam("clusterTypes") List<LogAnalysisResult.LogAnalysisTag> clusterTypes,
       @NotNull @QueryParam("startTime") Long startTimeMillis, @NotNull @QueryParam("endTime") Long endTimeMillis,
@@ -83,7 +83,7 @@ public class ErrorTrackingDashboardResource {
   @ExceptionMetered
   @ApiOperation(value = "get all log cluster data for a time range", nickname = "getAllErrorTrackingClusterData")
   public RestResponse<List<LiveMonitoringLogAnalysisClusterDTO>> getAllErrorTrackingClusterData(
-      @NotNull @BeanParam ProjectParams projectParams,
+      @NotNull @BeanParam ProjectScopedProjectParams projectParams,
       @QueryParam("monitoredServiceIdentifier") String monitoredServiceIdentifier,
       @QueryParam("clusterTypes") List<LogAnalysisResult.LogAnalysisTag> clusterTypes,
       @NotNull @QueryParam("startTime") Long startTimeMillis, @NotNull @QueryParam("endTime") Long endTimeMillis,

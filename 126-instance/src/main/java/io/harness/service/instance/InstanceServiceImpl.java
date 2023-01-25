@@ -20,8 +20,11 @@ import io.harness.entities.Instance.InstanceKeysAdditional;
 import io.harness.mappers.InstanceMapper;
 import io.harness.models.ActiveServiceInstanceInfo;
 import io.harness.models.ActiveServiceInstanceInfoV2;
+import io.harness.models.ActiveServiceInstanceInfoWithEnvType;
+import io.harness.models.ArtifactDeploymentDetailModel;
 import io.harness.models.CountByServiceIdAndEnvType;
 import io.harness.models.EnvBuildInstanceCount;
+import io.harness.models.EnvironmentInstanceCountModel;
 import io.harness.models.InstancesByBuildId;
 import io.harness.repositories.instance.InstanceRepository;
 
@@ -218,6 +221,13 @@ public class InstanceServiceImpl implements InstanceService {
   }
 
   @Override
+  public AggregationResults<ActiveServiceInstanceInfoWithEnvType> getActiveServiceInstanceInfoWithEnvType(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String envIdentifier,
+      String serviceIdentifier, String displayName, boolean isGitOps) {
+    return instanceRepository.getActiveServiceInstanceInfoWithEnvType(
+        accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier, serviceIdentifier, displayName, isGitOps);
+  }
+  @Override
   public AggregationResults<ActiveServiceInstanceInfo> getActiveServiceGitOpsInstanceInfo(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId) {
     return instanceRepository.getActiveServiceGitOpsInstanceInfo(
@@ -231,6 +241,13 @@ public class InstanceServiceImpl implements InstanceService {
         accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier, serviceIdentifier, buildIdentifier);
   }
 
+  public AggregationResults<EnvironmentInstanceCountModel> getInstanceCountForEnvironmentFilteredByService(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceIdentifier,
+      boolean isGitOps) {
+    return instanceRepository.getInstanceCountForEnvironmentFilteredByService(
+        accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, isGitOps);
+  }
+
   /*
     Returns aggregated result containing total {limit} instances for given buildIds
    */
@@ -241,6 +258,14 @@ public class InstanceServiceImpl implements InstanceService {
       long timestampInMs, int limit, String infraId, String clusterId, String pipelineExecutionId) {
     return instanceRepository.getActiveInstancesByServiceIdEnvIdAndBuildIds(accountIdentifier, orgIdentifier,
         projectIdentifier, serviceId, envId, buildIds, timestampInMs, limit, infraId, clusterId, pipelineExecutionId);
+  }
+
+  @Override
+  public AggregationResults<ArtifactDeploymentDetailModel> getLastDeployedInstance(String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, String serviceIdentifier, boolean isEnvironmentCard,
+      boolean isGitOps) {
+    return instanceRepository.getLastDeployedInstance(
+        accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, isEnvironmentCard, isGitOps);
   }
 
   @Override
@@ -318,14 +343,18 @@ public class InstanceServiceImpl implements InstanceService {
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String agentIdentifier) {
     Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier)
                             .is(accountIdentifier)
-                            .and(InstanceKeys.orgIdentifier)
-                            .is(orgIdentifier)
-                            .and(InstanceKeys.projectIdentifier)
-                            .is(projectIdentifier)
                             .and(InstanceKeysAdditional.instanceInfoAgentIdentifier)
                             .is(agentIdentifier)
                             .and(InstanceKeys.isDeleted)
                             .is(false);
+
+    if (isNotEmpty(orgIdentifier)) {
+      criteria.and(InstanceKeys.orgIdentifier);
+    }
+    if (isNotEmpty(projectIdentifier)) {
+      criteria.and(InstanceKeys.projectIdentifier);
+    }
+
     Update update =
         new Update().set(InstanceKeys.isDeleted, true).set(InstanceKeys.deletedAt, System.currentTimeMillis());
     UpdateResult updateResult = instanceRepository.updateMany(criteria, update);

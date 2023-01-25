@@ -21,6 +21,7 @@ import io.harness.mongo.index.migrator.Migrator;
 import io.harness.mongo.metrics.HarnessConnectionPoolListener;
 import io.harness.mongo.tracing.TracerModule;
 import io.harness.morphia.MorphiaModule;
+import io.harness.persistence.QueryFactory;
 import io.harness.persistence.store.Store;
 import io.harness.serializer.KryoModule;
 
@@ -133,7 +134,7 @@ public class MongoModule extends AbstractModule {
     MongoClient mongoClient = new MongoClient(clientUri);
 
     AdvancedDatastore datastore = (AdvancedDatastore) morphia.createDatastore(mongoClient, clientUri.getDatabase());
-    datastore.setQueryFactory(new QueryFactory(mongoConfig));
+    datastore.setQueryFactory(new QueryFactory(mongoConfig.getTraceMode(), mongoConfig.getMaxOperationTimeInMillis()));
 
     return datastore;
   }
@@ -203,7 +204,8 @@ public class MongoModule extends AbstractModule {
 
     AdvancedDatastore primaryDatastore = (AdvancedDatastore) morphia.createDatastore(
         mongoClient, new MongoClientURI(mongoConfig.getUri()).getDatabase());
-    primaryDatastore.setQueryFactory(new QueryFactory(mongoConfig));
+    primaryDatastore.setQueryFactory(
+        new QueryFactory(mongoConfig.getTraceMode(), mongoConfig.getMaxOperationTimeInMillis()));
 
     Store store = null;
     if (Objects.nonNull(mongoConfig.getAliasDBName())) {
@@ -246,7 +248,8 @@ public class MongoModule extends AbstractModule {
 
     MongoClient mongoClient = new MongoClient(uri);
     AdvancedDatastore analyticalDataStore = (AdvancedDatastore) morphia.createDatastore(mongoClient, uri.getDatabase());
-    analyticalDataStore.setQueryFactory(new QueryFactory(mongoConfig));
+    analyticalDataStore.setQueryFactory(
+        new QueryFactory(mongoConfig.getTraceMode(), mongoConfig.getMaxOperationTimeInMillis()));
     return analyticalDataStore;
   }
 

@@ -318,7 +318,7 @@ public class AzureArtifactsResourceServiceImpl implements AzureArtifactsResource
             .taskSelectors(azureArtifactsDelegateRequest.getAzureArtifactsConnectorDTO().getDelegateSelectors())
             .build();
 
-    return delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
+    return delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);
   }
 
   private ArtifactTaskExecutionResponse getTaskExecutionResponse(

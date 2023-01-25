@@ -7,12 +7,16 @@
 
 package io.harness.engine.interrupts.statusupdate;
 
+import static io.harness.pms.contracts.execution.Status.DISCONTINUING;
 import static io.harness.pms.contracts.execution.Status.INPUT_WAITING;
 import static io.harness.pms.contracts.execution.Status.PAUSED;
+import static io.harness.pms.contracts.execution.Status.PAUSING;
+import static io.harness.pms.contracts.execution.Status.QUEUED;
 import static io.harness.pms.contracts.execution.Status.RUNNING;
 import static io.harness.pms.contracts.execution.Status.SUCCEEDED;
 import static io.harness.rule.OwnerRule.SHALINI;
 
+import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -38,6 +42,7 @@ import java.util.EnumSet;
 import java.util.function.Consumer;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
@@ -67,46 +72,58 @@ public class ResumeStepStatusUpdateTest extends OrchestrationTestBase {
         .updateStatusForceful(anyString(), any(), nullable(Consumer.class), anyBoolean(), any());
     doReturn(PAUSED).when(planExecutionService).calculateStatusExcluding("planExecutionId", "nodeExecutionId");
     resumeStepStatusUpdate.handleNodeStatusUpdate(NodeUpdateInfo.builder().nodeExecution(nodeExecution).build());
+    ArgumentCaptor<EnumSet> argumentCaptor = ArgumentCaptor.forClass(EnumSet.class);
     verify(planExecutionService, times(1))
-        .updateStatusForceful(anyString(), any(), nullable(Consumer.class), anyBoolean(), any());
+        .updateStatusForceful(anyString(), any(), nullable(Consumer.class), anyBoolean(), argumentCaptor.capture());
+
+    assertEquals(argumentCaptor.getValue(), EnumSet.of(RUNNING, DISCONTINUING, PAUSING, QUEUED, PAUSED, INPUT_WAITING));
   }
 
   @Test
   @Owner(developers = SHALINI)
   @Category(UnitTests.class)
   public void testResumeParents() {
+    String planExecutionId = "planExecutionId";
     boolean res = resumeStepStatusUpdate.resumeParents(
         NodeExecution.builder()
             .uuid("nodeExecutionId")
-            .ambiance(Ambiance.newBuilder().setPlanExecutionId("planExecutionId").build())
+            .ambiance(Ambiance.newBuilder().setPlanExecutionId(planExecutionId).build())
             .build());
-    verify(nodeExecutionService, times(0))
-        .updateStatusWithOps("parentId", RUNNING, null, EnumSet.of(INPUT_WAITING, PAUSED));
+    verify(nodeExecutionService, times(0)).updateStatusWithOps("parentId", RUNNING, null, EnumSet.of(PAUSED));
     assertTrue(res);
-    doReturn(null)
-        .when(nodeExecutionService)
-        .updateStatusWithOps("parentId", RUNNING, null, EnumSet.of(INPUT_WAITING, PAUSED));
+
+    // Since current planStatus is InputWaiting, return true and do not resume parents.
+    doReturn(INPUT_WAITING).when(planExecutionService).getStatus(planExecutionId);
+    res = resumeStepStatusUpdate.resumeParents(
+        NodeExecution.builder()
+            .uuid("nodeExecutionId")
+            .ambiance(Ambiance.newBuilder().setPlanExecutionId(planExecutionId).build())
+            .build());
+    assertTrue(res);
+    // Already returned true. No interactions to resume parent nodeExecution status.
+    verify(nodeExecutionService, times(0)).updateStatusWithOps(any(), any(), any(), any());
+
+    doReturn(QUEUED).when(planExecutionService).getStatus(planExecutionId);
+    doReturn(null).when(nodeExecutionService).updateStatusWithOps("parentId", RUNNING, null, EnumSet.of(PAUSED));
     res = resumeStepStatusUpdate.resumeParents(
         NodeExecution.builder()
             .uuid("nodeExecutionId")
             .parentId("parentId")
-            .ambiance(Ambiance.newBuilder().setPlanExecutionId("planExecutionId").build())
+            .ambiance(Ambiance.newBuilder().setPlanExecutionId(planExecutionId).build())
             .build());
-    verify(nodeExecutionService, times(1))
-        .updateStatusWithOps("parentId", RUNNING, null, EnumSet.of(INPUT_WAITING, PAUSED));
+    verify(nodeExecutionService, times(1)).updateStatusWithOps("parentId", RUNNING, null, EnumSet.of(PAUSED));
     assertFalse(res);
 
     doReturn(NodeExecution.builder().build())
         .when(nodeExecutionService)
-        .updateStatusWithOps("parentId", RUNNING, null, EnumSet.of(INPUT_WAITING, PAUSED));
+        .updateStatusWithOps("parentId", RUNNING, null, EnumSet.of(PAUSED));
     res = resumeStepStatusUpdate.resumeParents(
         NodeExecution.builder()
             .uuid("nodeExecutionId")
             .parentId("parentId")
-            .ambiance(Ambiance.newBuilder().setPlanExecutionId("planExecutionId").build())
+            .ambiance(Ambiance.newBuilder().setPlanExecutionId(planExecutionId).build())
             .build());
-    verify(nodeExecutionService, times(2))
-        .updateStatusWithOps("parentId", RUNNING, null, EnumSet.of(INPUT_WAITING, PAUSED));
+    verify(nodeExecutionService, times(2)).updateStatusWithOps("parentId", RUNNING, null, EnumSet.of(PAUSED));
     assertTrue(res);
   }
 }

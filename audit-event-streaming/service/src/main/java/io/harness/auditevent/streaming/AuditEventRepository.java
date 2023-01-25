@@ -7,12 +7,14 @@
 
 package io.harness.auditevent.streaming;
 
-import io.harness.audit.entities.AuditEvent;
-
-import java.util.List;
+import com.mongodb.client.MongoCursor;
+import org.bson.Document;
+import org.bson.conversions.Bson;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.stereotype.Repository;
 
 @Repository
 public interface AuditEventRepository {
-  List<AuditEvent> loadAuditEvents();
+  MongoCursor<Document> loadAuditEvents(Criteria criteria, Bson sort);
+  long countAuditEvents(Criteria criteria);
 }

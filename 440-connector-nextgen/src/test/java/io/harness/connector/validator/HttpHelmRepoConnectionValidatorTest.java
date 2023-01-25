@@ -71,12 +71,12 @@ public class HttpHelmRepoConnectionValidatorTest extends CategoryTest {
 
     doReturn(Collections.emptyList()).when(encryptionHelper).getEncryptionDetail(any(), any(), any(), any());
     doReturn(Collections.emptyList()).when(ngSecretService).getEncryptionDetails(any(), any());
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(HttpHelmConnectivityTaskResponse.builder()
                         .connectorValidationResult(ConnectorValidationResult.builder().status(SUCCESS).build())
                         .build());
     validator.validate(connectorDTO, "acc", "org", "prj", "identifier");
-    verify(delegateGrpcClientWrapper, times(1)).executeSyncTask(any());
+    verify(delegateGrpcClientWrapper, times(1)).executeSyncTaskV2(any());
   }
 
   @Test

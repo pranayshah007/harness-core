@@ -55,13 +55,16 @@ public class K8sInfraDefMapper implements InfraDefMapper {
   public Infrastructure getSpec(
       InfrastructureDefinition infrastructureDefinition, Map<CgEntityId, NGYamlFile> migratedEntities) {
     NgEntityDetail connectorDetail;
+    CgEntityId cgEntityId;
     switch (infrastructureDefinition.getCloudProviderType()) {
       case KUBERNETES_CLUSTER:
         DirectKubernetesInfrastructure k8s =
             (DirectKubernetesInfrastructure) infrastructureDefinition.getInfrastructure();
-        connectorDetail =
-            migratedEntities.get(CgEntityId.builder().type(CONNECTOR).id(k8s.getCloudProviderId()).build())
-                .getNgEntityDetail();
+        cgEntityId = CgEntityId.builder().type(CONNECTOR).id(k8s.getCloudProviderId()).build();
+        if (!migratedEntities.containsKey(cgEntityId)) {
+          return null;
+        }
+        connectorDetail = migratedEntities.get(cgEntityId).getNgEntityDetail();
         return K8SDirectInfrastructure.builder()
             .namespace(ParameterField.createValueField(k8s.getNamespace()))
             .releaseName(ParameterField.createValueField(k8s.getReleaseName()))
@@ -69,9 +72,11 @@ public class K8sInfraDefMapper implements InfraDefMapper {
             .build();
       case GCP:
         GoogleKubernetesEngine gcpK8s = (GoogleKubernetesEngine) infrastructureDefinition.getInfrastructure();
-        connectorDetail =
-            migratedEntities.get(CgEntityId.builder().type(CONNECTOR).id(gcpK8s.getCloudProviderId()).build())
-                .getNgEntityDetail();
+        cgEntityId = CgEntityId.builder().type(CONNECTOR).id(gcpK8s.getCloudProviderId()).build();
+        if (!migratedEntities.containsKey(cgEntityId)) {
+          return null;
+        }
+        connectorDetail = migratedEntities.get(cgEntityId).getNgEntityDetail();
         return K8sGcpInfrastructure.builder()
             .connectorRef(ParameterField.createValueField(MigratorUtility.getIdentifierWithScope(connectorDetail)))
             .namespace(ParameterField.createValueField(gcpK8s.getNamespace()))
@@ -79,9 +84,11 @@ public class K8sInfraDefMapper implements InfraDefMapper {
             .build();
       case AZURE:
         AzureKubernetesService aks = (AzureKubernetesService) infrastructureDefinition.getInfrastructure();
-        connectorDetail =
-            migratedEntities.get(CgEntityId.builder().type(CONNECTOR).id(aks.getCloudProviderId()).build())
-                .getNgEntityDetail();
+        cgEntityId = CgEntityId.builder().type(CONNECTOR).id(aks.getCloudProviderId()).build();
+        if (!migratedEntities.containsKey(cgEntityId)) {
+          return null;
+        }
+        connectorDetail = migratedEntities.get(cgEntityId).getNgEntityDetail();
         return InfraDefMapperUtils.buildK8sAzureInfrastructure(aks, connectorDetail);
       default:
         throw new InvalidRequestException("Unsupported Infra for K8s deployment");

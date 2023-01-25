@@ -7,7 +7,7 @@
 
 package software.wings.beans.command;
 
-import static software.wings.beans.Log.Builder.aLog;
+import static software.wings.beans.dto.Log.Builder.aLog;
 
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.logging.CommandExecutionStatus;

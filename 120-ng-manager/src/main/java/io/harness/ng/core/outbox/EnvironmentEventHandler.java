@@ -45,7 +45,7 @@ import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@OwnedBy(HarnessTeam.PIPELINE)
+@OwnedBy(HarnessTeam.CDC)
 public class EnvironmentEventHandler implements OutboxEventHandler {
   private final ObjectMapper objectMapper;
   private final AuditClientService auditClientService;

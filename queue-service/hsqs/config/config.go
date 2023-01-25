@@ -17,7 +17,7 @@ type Config struct {
 
 	ServiceName string `envconfig:"HSQS_SERVICE_NAME" default:"queue_service"`
 
-	DisableAuth bool `envconfig:"HSQS_DISABLE_AUTH"`
+	DisableAuth bool `envconfig:"HSQS_DISABLE_AUTH" default:"true"`
 
 	EnableProfiler bool `envconfig:"HSQS_ENABLE_PROFILER"`
 
@@ -34,6 +34,9 @@ type Config struct {
 	}
 
 	Secret string `envconfig:"JWT_SECRET" default:"vhtftr5486786764563452fhtfthffuygiogyuyryr543432453"`
+
+	PendingTimeout int `envconfig:"REDIS_PENDING_TIMEOUT" default:"10000"`
+	ClaimTimeout   int `envconfig:"REDIS_CLAIM_TIMEOUT" default:"10000"`
 }
 
 // Load loads the configuration from the environment.

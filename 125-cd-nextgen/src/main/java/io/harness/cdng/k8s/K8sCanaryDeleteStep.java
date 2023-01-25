@@ -12,6 +12,7 @@ import static io.harness.exception.WingsException.USER;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.executables.CdTaskExecutable;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.k8s.beans.K8sCanaryExecutionOutput;
 import io.harness.cdng.k8s.beans.K8sExecutionPassThroughData;
@@ -24,7 +25,6 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.plancreator.steps.common.StepElementParameters;
-import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.SkipTaskRequest;
@@ -45,7 +45,7 @@ import io.harness.supplier.ThrowingSupplier;
 import com.google.inject.Inject;
 
 @OwnedBy(HarnessTeam.CDP)
-public class K8sCanaryDeleteStep extends TaskExecutableWithRollbackAndRbac<K8sDeployResponse> {
+public class K8sCanaryDeleteStep extends CdTaskExecutable<K8sDeployResponse> {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.K8S_CANARY_DELETE.getYamlType())
                                                .setStepCategory(StepCategory.STEP)

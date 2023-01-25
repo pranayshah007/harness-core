@@ -281,7 +281,7 @@ public class ServiceLevelIndicatorServiceImplTest extends CvNextGenTestBase {
   public void testUpdate_queueAnalysis_success() throws IllegalAccessException {
     OrchestrationService orchestrationService = mock(OrchestrationService.class);
     FieldUtils.writeField(serviceLevelIndicatorService, "orchestrationService", orchestrationService, true);
-    ServiceLevelIndicatorDTO serviceLevelIndicatorDTO = createServiceLevelIndicator(SLIMetricType.THRESHOLD);
+    ServiceLevelIndicatorDTO serviceLevelIndicatorDTO = createServiceLevelIndicator(SLIMetricType.RATIO);
     ProjectParams projectParams = builderFactory.getProjectParams();
     String serviceLevelObjectiveIdentifier = generateUuid();
     String healthSourceIdentifier = generateUuid();
@@ -295,6 +295,18 @@ public class ServiceLevelIndicatorServiceImplTest extends CvNextGenTestBase {
             .getServiceLevelIndicator(builderFactory.getProjectParams(), serviceLevelIndicatorIdentifiers.get(0))
             .getUuid();
     createSLIRecords(sliId, sliStateList);
+    updateSLI(projectParams, serviceLevelIndicatorDTO, serviceLevelObjectiveIdentifier,
+        serviceLevelIndicatorIdentifiers, healthSourceIdentifier);
+    verify(orchestrationService, times(1)).queueAnalysis(sliId, startTime, endTime);
+    ((RatioSLIMetricSpec) serviceLevelIndicatorDTO.getSpec().getSpec()).setEventType(RatioSLIMetricEventType.BAD);
+    updateSLI(projectParams, serviceLevelIndicatorDTO, serviceLevelObjectiveIdentifier,
+        serviceLevelIndicatorIdentifiers, healthSourceIdentifier);
+    verify(orchestrationService, times(2)).queueAnalysis(sliId, startTime, endTime);
+  }
+
+  private void updateSLI(ProjectParams projectParams, ServiceLevelIndicatorDTO serviceLevelIndicatorDTO,
+      String serviceLevelObjectiveIdentifier, List<String> serviceLevelIndicatorIdentifiers,
+      String healthSourceIdentifier) {
     serviceLevelIndicatorService.update(projectParams, Collections.singletonList(serviceLevelIndicatorDTO),
         serviceLevelObjectiveIdentifier, serviceLevelIndicatorIdentifiers, monitoredServiceIdentifier,
         healthSourceIdentifier,
@@ -306,7 +318,6 @@ public class ServiceLevelIndicatorServiceImplTest extends CvNextGenTestBase {
             .startDate(LocalDate.ofInstant(clock.instant().minus(7, ChronoUnit.DAYS), ZoneOffset.UTC))
             .endDate(LocalDate.ofInstant(clock.instant(), ZoneOffset.UTC))
             .build());
-    verify(orchestrationService, times(1)).queueAnalysis(sliId, startTime, endTime);
   }
 
   private void createMonitoredService() {
@@ -329,10 +340,13 @@ public class ServiceLevelIndicatorServiceImplTest extends CvNextGenTestBase {
         .identifier("sliIndicator")
         .name("sliName")
         .type(ServiceLevelIndicatorType.LATENCY)
+        .sliMissingDataType(SLIMissingDataType.GOOD)
         .spec(ServiceLevelIndicatorSpec.builder()
                   .type(SLIMetricType.RATIO)
                   .spec(RatioSLIMetricSpec.builder()
                             .eventType(RatioSLIMetricEventType.GOOD)
+                            .thresholdValue(50.0)
+                            .thresholdType(ThresholdType.GREATER_THAN)
                             .metric1("metric1")
                             .metric2("metric2")
                             .build())

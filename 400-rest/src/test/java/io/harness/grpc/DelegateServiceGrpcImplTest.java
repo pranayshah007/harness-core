@@ -183,8 +183,7 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
                                       .setType(TaskType.newBuilder().setType("TYPE").build())
                                       .setKryoParameters(kryoParams)
                                       .setExecutionTimeout(Duration.newBuilder().setSeconds(3).setNanos(100).build())
-                                      .setExpressionFunctorToken(200)
-                                      .putAllExpressions(expressions);
+                                      .setExpressionFunctorToken(200);
 
     List<String> taskSelectors = Arrays.asList("testSelector");
 

@@ -12,6 +12,7 @@ import io.harness.execution.PlanExecution;
 import java.util.List;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.data.util.CloseableIterator;
 
 public interface PlanExecutionRepositoryCustom {
   PlanExecution getWithProjectionsWithoutUuid(String planExecutionId, List<String> fieldNames);
@@ -28,4 +29,12 @@ public interface PlanExecutionRepositoryCustom {
   PlanExecution getPlanExecutionWithProjections(String planExecutionId, List<String> excludedFieldNames);
 
   PlanExecution getPlanExecutionWithIncludedProjections(String planExecutionId, List<String> includedFieldNames);
+
+  /**
+   * Fetch plan executions from analytics node
+   * Query should contain projection fields else it will throw exception and max batch size of iterator is 1k
+   * @param query
+   * @return
+   */
+  CloseableIterator<PlanExecution> fetchPlanExecutionsFromAnalytics(Query query);
 }

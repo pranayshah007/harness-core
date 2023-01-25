@@ -20,7 +20,10 @@ java_binary(
     resources = [
         "//332-ci-manager/app/src/resources:resource",
     ],
-    visibility = ["//200-functional-test:__subpackages__"],
+    visibility = [
+        "//200-functional-test:__subpackages__",
+        "//315-sto-manager:__subpackages__",
+    ],
     runtime_deps = [
         "//332-ci-manager/app/src/resources",
     ],

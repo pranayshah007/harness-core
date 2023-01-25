@@ -21,6 +21,7 @@ import io.harness.gitsync.beans.StoreType;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
+import io.harness.ng.core.ScopeAware;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.service.mappers.NGServiceEntityMapper;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
@@ -58,7 +59,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @ChangeDataCapture(table = "services", dataStore = "ng-harness", fields = {}, handler = "Services")
 @ChangeDataCapture(table = "tags_info", dataStore = "ng-harness", fields = {}, handler = "TagsInfoCD")
 @ChangeDataCapture(table = "tags_info_ng", dataStore = "ng-harness", fields = {}, handler = "TagsInfoNGCD")
-public class ServiceEntity implements PersistentEntity, GitAware {
+public class ServiceEntity implements PersistentEntity, GitAware, ScopeAware {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()

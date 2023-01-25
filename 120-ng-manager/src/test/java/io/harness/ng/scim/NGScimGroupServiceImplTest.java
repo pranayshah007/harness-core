@@ -212,6 +212,72 @@ public class NGScimGroupServiceImplTest extends NgManagerTestBase {
   }
 
   @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
+  public void testNoSearchQueryNoSkipNoCountReturnsDefaultResult() {
+    String accountId = "accountId";
+
+    ScimGroup scimGroup = new ScimGroup();
+    scimGroup.setDisplayName("testDisplayName");
+    scimGroup.setId("id");
+
+    UserGroup userGroup1 = UserGroup.builder().name(scimGroup.getDisplayName()).identifier(scimGroup.getId()).build();
+
+    when(userGroupService.list(any(), any(), any())).thenReturn(new ArrayList<>() {
+      { add(userGroup1); }
+    });
+
+    ScimListResponse<ScimGroup> response = scimGroupService.searchGroup(null, accountId, null, null);
+
+    assertThat(response.getTotalResults()).isEqualTo(1);
+    assertThat(response.getStartIndex()).isEqualTo(0);
+    assertThat(response.getItemsPerPage()).isEqualTo(20);
+  }
+
+  @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
+  public void testNoSearchQueryNoSkipWithCountReturnsDefaultResult() {
+    String accountId = "accountId";
+
+    ScimGroup scimGroup = new ScimGroup();
+    scimGroup.setDisplayName("testDisplayName");
+    scimGroup.setId("id");
+
+    UserGroup userGroup1 = UserGroup.builder().name(scimGroup.getDisplayName()).identifier(scimGroup.getId()).build();
+
+    when(userGroupService.list(any(), any(), any())).thenReturn(new ArrayList<>() {
+      { add(userGroup1); }
+    });
+
+    int startIdx = 5;
+    ScimListResponse<ScimGroup> response = scimGroupService.searchGroup(null, accountId, startIdx, 0);
+
+    assertThat(response.getTotalResults()).isEqualTo(1);
+    assertThat(response.getStartIndex()).isEqualTo(0);
+    assertThat(response.getItemsPerPage()).isEqualTo(startIdx);
+  }
+
+  @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
+  public void testNoSkipNoCountNoSearchQueryReturnsDefaultResult() {
+    String accountId = "accountId";
+
+    UserGroup userGroup1 =
+        UserGroup.builder().name("testDisplayName").identifier("testId").externallyManaged(false).build();
+
+    when(userGroupService.list(any(), any(), any()))
+        .thenReturn(
+            new ArrayList<>()); // the above user group 'usergroup1' wont be returned as it is not externallyManaged
+
+    ScimListResponse<ScimGroup> response = scimGroupService.searchGroup(null, accountId, null, null);
+
+    assertThat(response.getTotalResults()).isEqualTo(0);
+    assertThat(response.getStartIndex()).isEqualTo(0);
+  }
+
+  @Test
   @Owner(developers = YUVRAJ)
   @Category(UnitTests.class)
   public void test_createUserGroupForDash1() {
