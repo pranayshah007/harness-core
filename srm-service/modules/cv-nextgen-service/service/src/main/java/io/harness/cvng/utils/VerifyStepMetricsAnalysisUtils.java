@@ -388,9 +388,9 @@ public class VerifyStepMetricsAnalysisUtils {
 
   public static HealthSource getHealthSourceFromCVConfig(MetricCVConfig<? extends AnalysisInfo> metricCVConfig) {
     return HealthSource.builder()
-        .healthSourceIdentifier(metricCVConfig.getFullyQualifiedIdentifier())
-        .healthSourceName(metricCVConfig.getMonitoringSourceName())
-        .providerName(MonitoredServiceDataSourceType.dataSourceTypeMonitoredServiceDataSourceTypeMap.get(
+        .identifier(metricCVConfig.getFullyQualifiedIdentifier())
+        .name(metricCVConfig.getMonitoringSourceName())
+        .type(MonitoredServiceDataSourceType.dataSourceTypeMonitoredServiceDataSourceTypeMap.get(
             metricCVConfig.getType()))
         .providerType(ProviderType.METRICS)
         .build();

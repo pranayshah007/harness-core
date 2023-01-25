@@ -22,8 +22,8 @@ import lombok.experimental.SuperBuilder;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @ApiModel(value = "HealthSourceV2")
 public class HealthSource {
-  String healthSourceIdentifier;
-  String healthSourceName;
-  MonitoredServiceDataSourceType providerName;
+  String identifier;
+  String name;
+  MonitoredServiceDataSourceType type;
   ProviderType providerType;
 }

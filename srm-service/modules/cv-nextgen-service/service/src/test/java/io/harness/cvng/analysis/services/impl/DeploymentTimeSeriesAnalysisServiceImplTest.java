@@ -1029,7 +1029,7 @@ public class DeploymentTimeSeriesAnalysisServiceImplTest extends CvNextGenTestBa
     assertThat(metricsAnalyses.get(0).getMetricName()).isEqualTo("name");
     assertThat(metricsAnalyses.get(0).getMetricIdentifier()).isEqualTo("identifier");
     assertThat(metricsAnalyses.get(0).getTransactionGroup()).isEqualTo("txn");
-    assertThat(metricsAnalyses.get(0).getHealthSource().getHealthSourceIdentifier())
+    assertThat(metricsAnalyses.get(0).getHealthSource().getIdentifier())
         .isEqualTo(cvConfig.getFullyQualifiedIdentifier());
     assertThat(metricsAnalyses.get(0).getAnalysisResult()).isEqualTo(AnalysisResult.UNHEALTHY);
     assertThat(metricsAnalyses.get(0).getMetricType()).isEqualTo(MetricType.PERFORMANCE_OTHER);
@@ -1107,7 +1107,7 @@ public class DeploymentTimeSeriesAnalysisServiceImplTest extends CvNextGenTestBa
     assertThat(metricsAnalyses.get(0).getMetricName()).isEqualTo("name");
     assertThat(metricsAnalyses.get(0).getMetricIdentifier()).isNotBlank();
     assertThat(metricsAnalyses.get(0).getTransactionGroup()).isEqualTo("txn");
-    assertThat(metricsAnalyses.get(0).getHealthSource().getHealthSourceIdentifier())
+    assertThat(metricsAnalyses.get(0).getHealthSource().getIdentifier())
         .isEqualTo(cvConfig.getFullyQualifiedIdentifier());
     assertThat(metricsAnalyses.get(0).getAnalysisResult()).isEqualTo(AnalysisResult.UNHEALTHY);
     assertThat(metricsAnalyses.get(0).getMetricType()).isEqualTo(MetricType.PERFORMANCE_OTHER);
@@ -1147,7 +1147,7 @@ public class DeploymentTimeSeriesAnalysisServiceImplTest extends CvNextGenTestBa
     assertThat(metricsAnalyses.get(0).getMetricName()).isEqualTo("name");
     assertThat(metricsAnalyses.get(0).getMetricIdentifier()).isNotBlank();
     assertThat(metricsAnalyses.get(0).getTransactionGroup()).isEqualTo("txn");
-    assertThat(metricsAnalyses.get(0).getHealthSource().getHealthSourceIdentifier())
+    assertThat(metricsAnalyses.get(0).getHealthSource().getIdentifier())
         .isEqualTo(cvConfig.getFullyQualifiedIdentifier());
     assertThat(metricsAnalyses.get(0).getAnalysisResult()).isEqualTo(AnalysisResult.UNHEALTHY);
     assertThat(metricsAnalyses.get(0).getMetricType()).isEqualTo(MetricType.PERFORMANCE_OTHER);

@@ -70,9 +70,9 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
         .stream()
         .map(dto
             -> HealthSource.builder()
-                   .healthSourceName(dto.getName())
-                   .healthSourceIdentifier(dto.getIdentifier())
-                   .providerName(MonitoredServiceDataSourceType.dataSourceTypeMonitoredServiceDataSourceTypeMap.get(
+                   .name(dto.getName())
+                   .identifier(dto.getIdentifier())
+                   .type(MonitoredServiceDataSourceType.dataSourceTypeMonitoredServiceDataSourceTypeMap.get(
                        dto.getType()))
                    .providerType(ProviderType.fromVerificationType(dto.getVerificationType()))
                    .build())
