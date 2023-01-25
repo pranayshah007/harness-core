@@ -15,6 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.grpc.server.GrpcServerConfig;
 import io.harness.reflection.HarnessReflections;
 import io.harness.swagger.SwaggerBundleConfigurationFactory;
+import io.harness.threading.ThreadPoolConfig;
 
 import software.wings.beans.HttpMethod;
 
@@ -52,6 +53,7 @@ import org.apache.commons.lang3.StringUtils;
 @OwnedBy(DEL)
 public class DelegateServiceConfiguration extends Configuration {
   @JsonProperty("swagger") private SwaggerBundleConfiguration swaggerBundleConfiguration;
+  @JsonProperty("commonPoolConfig") private ThreadPoolConfig commonPoolConfig;
 
   public DelegateServiceConfiguration() {
     DefaultServerFactory defaultServerFactory = new DefaultServerFactory();

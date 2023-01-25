@@ -12,7 +12,7 @@ server:
       maxRequestHeaderSize: 100KiB
   adminConnectors:
     - type: h2
-      port: 9092
+      port: 9081
       keyStorePath: keystore.jks
       keyStorePassword: password
       certAlias: localhost
