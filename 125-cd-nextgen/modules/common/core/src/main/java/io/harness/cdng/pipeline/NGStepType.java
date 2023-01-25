@@ -182,10 +182,10 @@ public enum NGStepType {
   @JsonProperty(StepSpecTypeConstants.ELASTIGROUP_SETUP)
   ELASTIGROUP_SETUP("Elastigroup Setup", Arrays.asList(ServiceDefinitionType.ELASTIGROUP), "Elastigroup",
       StepSpecTypeConstants.ELASTIGROUP_SETUP),
-  @JsonProperty(StepSpecTypeConstants.TERRAFORM_PLAN)
+  @JsonProperty(StepSpecTypeConstants.TERRAGRUNT_PLAN)
   TERRAGRUNT_PLAN("Terragrunt Plan", Arrays.asList(ServiceDefinitionType.values()),
       "Infrastructure Provisioners/Terragrunt", StepSpecTypeConstants.TERRAGRUNT_PLAN),
-  @JsonProperty(StepSpecTypeConstants.TERRAFORM_APPLY)
+  @JsonProperty(StepSpecTypeConstants.TERRAGRUNT_APPLY)
   TERRAGRUNT_APPLY("Terragrunt Apply", Arrays.asList(ServiceDefinitionType.values()),
       "Infrastructure Provisioners/Terragrunt", StepSpecTypeConstants.TERRAGRUNT_APPLY),
   @JsonProperty(StepSpecTypeConstants.TERRAGRUNT_DESTROY)
