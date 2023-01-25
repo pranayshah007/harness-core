@@ -21,10 +21,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
-import io.harness.ModuleType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.streaming.dtos.AuditBatchDTO;
-import io.harness.audit.streaming.dtos.AuditRecordDTO;
 import io.harness.audit.streaming.dtos.PutObjectResultResponse;
 import io.harness.audit.streaming.outgoing.OutgoingAuditMessage;
 import io.harness.aws.beans.AwsInternalConfig;
@@ -44,8 +42,6 @@ import io.harness.delegate.beans.connector.awsconnector.S3BuildsResponse;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.request.HttpRequestInfo;
-import io.harness.request.RequestMetadata;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.SecretDecryptionService;
 
@@ -53,7 +49,6 @@ import software.wings.helpers.ext.jenkins.BuildDetails;
 import software.wings.service.impl.AwsApiHelperService;
 
 import com.amazonaws.AmazonServiceException;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
