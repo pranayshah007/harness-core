@@ -18,9 +18,13 @@ import io.harness.network.Http;
 import io.harness.resource.Project;
 import io.harness.rule.Owner;
 
+import com.mongodb.ServerAddress;
+import de.bwaldvogel.mongo.MongoServer;
+import de.bwaldvogel.mongo.backend.memory.MemoryBackend;
 import io.dropwizard.testing.ConfigOverride;
 import io.dropwizard.testing.DropwizardTestSupport;
 import java.io.File;
+import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import javax.ws.rs.client.Client;
@@ -32,10 +36,13 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 public class DelegateServiceApplicationStartupTest extends DelegateServiceApplicationTestBase {
+  public static MongoServer MONGO_SERVER;
+
   public static DropwizardTestSupport<DelegateServiceConfiguration> SUPPORT;
 
   @BeforeClass
   public static void beforeClass() throws Exception {
+    MONGO_SERVER = startMongoServer();
     String directoryPath = Project.moduleDirectory(DelegateServiceApplicationStartupTest.class);
 
     String configPath = Paths.get(directoryPath, "/src/test/resources/test-delegate-service-config.yml").toString();
@@ -51,13 +58,33 @@ public class DelegateServiceApplicationStartupTest extends DelegateServiceApplic
         String.valueOf(new File(configPath)), ConfigOverride.config("server.applicationConnectors[0].port", "0"),
         ConfigOverride.config("server.applicationConnectors[0].type", "https"),
         ConfigOverride.config("server.adminConnectors[0].type", "https"),
-        ConfigOverride.config("server.adminConnectors[0].port", "0"));
+        ConfigOverride.config("server.adminConnectors[0].port", "0"),
+        ConfigOverride.config("mongo.uri", getMongoUri()));
     SUPPORT.before();
   }
 
   @AfterClass
   public static void afterClass() {
     SUPPORT.after();
+    stopMongoServer();
+  }
+
+  private static MongoServer startMongoServer() {
+    final MongoServer mongoServer = new MongoServer(new MemoryBackend());
+    mongoServer.bind("localhost", 0);
+    return mongoServer;
+  }
+
+  private static void stopMongoServer() {
+    if (MONGO_SERVER != null) {
+      MONGO_SERVER.shutdownNow();
+    }
+  }
+
+  private static String getMongoUri() {
+    InetSocketAddress serverAddress = MONGO_SERVER.getLocalAddress();
+    final ServerAddress addr = new ServerAddress(serverAddress);
+    return String.format("mongodb://%s:%s/ng-harness", addr.getHost(), addr.getPort());
   }
 
   @Test

@@ -47,3 +47,22 @@ logging:
       archivedLogFilenamePattern: delegate-service.%d.%i.log
       logFormat: "%date{ISO8601} %green([%thread]) %highlight(%-5level) %cyan(%logger) - %msg %yellow(%replace(%mdc){'(.+)', '[$1]'}) %n"
 
+mongo:
+  uri: mongodb://localhost:27017/harness
+  connectTimeout: 30000
+  serverSelectionTimeout: 90000
+  socketTimeout: 360000
+  maxConnectionIdleTime: 600000
+  connectionsPerHost: 300
+  indexManagerMode: AUTO
+  traceMode: DISABLED
+  mongoSSLConfig:
+    mongoSSLEnabled: false
+    mongoTrustStorePath:
+    mongoTrustStorePassword:
+  aliasDBName: harness
+
+cacheConfig:
+  cacheBackend: HAZELCAST
+  cacheNamespace: ""
+  disabledCaches: []
