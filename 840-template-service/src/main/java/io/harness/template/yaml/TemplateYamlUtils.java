@@ -7,6 +7,7 @@
 
 package io.harness.template.yaml;
 
+import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import io.harness.exception.InvalidRequestException;
 import io.harness.serializer.AnnotationAwareJsonSubtypeResolver;
 
@@ -30,7 +31,7 @@ public class TemplateYamlUtils {
   private final ObjectMapper mapper;
 
   static {
-    mapper = new ObjectMapper(new YAMLFactory());
+    mapper = new ObjectMapper(new YAMLFactory().enable(YAMLGenerator.Feature.MINIMIZE_QUOTES));
     mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     mapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
     mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
