@@ -179,3 +179,5 @@ clickHouseConfig:
   url: "jdbc:ch://clickhouse.harness.svc.cluster.local:8123"
   username: "default"
   password: ""
+
+isDeploymentOnPrem: false

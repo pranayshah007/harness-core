@@ -63,6 +63,7 @@ public class BatchMainConfig {
   @JsonProperty("notificationClient") private NotificationClientConfiguration notificationClientConfiguration;
   @JsonProperty("currencyPreferences") private CurrencyPreferencesConfig currencyPreferencesConfig;
   @JsonProperty("clickHouseConfig") private ClickHouseConfig clickHouseConfig;
+  @JsonProperty("isDeploymentOnPrem") private Boolean isDeploymentOnPrem;
 
   public List<String> getDbAliases() {
     List<String> dbAliases = new ArrayList<>();

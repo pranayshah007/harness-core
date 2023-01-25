@@ -67,8 +67,13 @@ public class S3ToClickHouseSyncTasklet implements Tasklet {
 
   @Override
   public RepeatStatus execute(StepContribution stepContribution, ChunkContext chunkContext) throws Exception {
+    log.info("isDeploymentOnPrem: " + configuration.getIsDeploymentOnPrem());
+    if (!configuration.getIsDeploymentOnPrem()) {
+      return null;
+    }
     log.info("Running the S3ToClickHouseSync job");
     final JobConstants jobConstants = CCMJobConstants.fromContext(chunkContext);
+    log.info("Running s3ToCH for account: " + jobConstants.getAccountId());
     //    String accountId = jobConstants.getAccountId();
     //    Instant startTime = Instant.ofEpochMilli(jobConstants.getJobStartTime());
     //    Instant endTime = Instant.ofEpochMilli(jobConstants.getJobEndTime());
@@ -232,7 +237,6 @@ public class S3ToClickHouseSyncTasklet implements Tasklet {
       ingestDataIntoUnified(usageAccountIds, "" + reportYear + "-" + reportMonth + "-01");
       ingestDataIntoPreAgg(usageAccountIds, "" + reportYear + "-" + reportMonth + "-01");
 
-      // todo: update connector data sync status in CH table. ensure that table is created first.
       updateConnectorDataSyncStatus(connectorId);
       ingestDataIntoCostAgg(usageAccountIds, "" + reportYear + "-" + reportMonth + "-01");
     }
@@ -324,8 +328,9 @@ public class S3ToClickHouseSyncTasklet implements Tasklet {
 
   public void ingestDataIntoAwsCur(String awsBillingTableId, List<String> usageAccountIds, String month)
       throws Exception {
+    String awsBillingTableName = awsBillingTableId.split("\\.")[1];
     String tagColumnsQuery = "SELECT column_name FROM INFORMATION_SCHEMA.COLUMNS "
-        + "WHERE (column_name LIKE 'TAG_%') AND (table_schema = 'ccm') AND (table_name = '" + awsBillingTableId + "');";
+        + "WHERE (column_name LIKE 'TAG_%') AND (table_schema = 'ccm') AND (table_name = '" + awsBillingTableName + "');";
     List<String> tagColumns =
         clickHouseService.executeClickHouseQuery(configuration.getClickHouseConfig(), tagColumnsQuery, Boolean.TRUE);
     String tagsQueryStatement1 = "";
