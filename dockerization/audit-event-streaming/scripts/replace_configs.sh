@@ -51,7 +51,7 @@ if [[ "" != "$BATCH_CURSOR_SIZE" ]]; then
 fi
 
 if [[ "" != "$BATCH_LIMIT" ]]; then
-  export BATCH_LIMIT; yq -i '.jobCommonConfig.batchConfig.cursorBatchSize=env(BATCH_LIMIT)' $CONFIG_FILE
+  export BATCH_LIMIT; yq -i '.jobCommonConfig.batchConfig.limit=env(BATCH_LIMIT)' $CONFIG_FILE
 fi
 
 if [[ "" != "$BATCH_MAX_RETRIES" ]]; then
