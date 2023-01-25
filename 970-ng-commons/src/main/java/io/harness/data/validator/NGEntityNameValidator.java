@@ -19,9 +19,7 @@ public class NGEntityNameValidator implements ConstraintValidator<NGEntityName, 
   private static final int MAX_ALLOWED_LENGTH = 128;
 
   @Override
-  public void initialize(NGEntityName constraintAnnotation) {
-
-  }
+  public void initialize(NGEntityName constraintAnnotation) {}
 
   @Override
   public boolean isValid(String value, ConstraintValidatorContext context) {
@@ -32,9 +30,7 @@ public class NGEntityNameValidator implements ConstraintValidator<NGEntityName, 
     }
     if (value.length() > MAX_ALLOWED_LENGTH) {
       context.disableDefaultConstraintViolation();
-      context
-          .buildConstraintViolationWithTemplate("cannot be more than 128 characters long.")
-          .addConstraintViolation();
+      context.buildConstraintViolationWithTemplate("cannot be more than 128 characters long.").addConstraintViolation();
       return false;
     }
     if (!Sets.newHashSet(Lists.charactersOf(ALLOWED_CHARS_STRING)).containsAll(Lists.charactersOf(value))) {
