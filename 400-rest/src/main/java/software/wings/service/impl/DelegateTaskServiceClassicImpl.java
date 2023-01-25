@@ -1748,9 +1748,9 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
         delegateTaskQuery.asList().stream().filter(task -> task.getTaskDataV2().isAsync()).findFirst().orElse(null);
     if (oldTask != null) {
       persistence.update(oldTask, updateOperations);
+      broadcasterFactory.lookup(STREAM_DELEGATE + accountId, true)
+          .broadcast(aDelegateTaskAbortEvent().withAccountId(accountId).withDelegateTaskId(delegateTaskId).build());
     }
-    broadcasterFactory.lookup(STREAM_DELEGATE + accountId, true)
-        .broadcast(aDelegateTaskAbortEvent().withAccountId(accountId).withDelegateTaskId(delegateTaskId).build());
     return oldTask;
   }
 
