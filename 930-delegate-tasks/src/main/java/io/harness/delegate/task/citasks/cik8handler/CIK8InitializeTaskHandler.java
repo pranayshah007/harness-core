@@ -127,6 +127,7 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
   public K8sTaskExecutionResponse executeTaskInternal(
       CIInitializeTaskParams ciInitializeTaskParams, ILogStreamingTaskClient logStreamingTaskClient, String taskId) {
     Stopwatch timer = Stopwatch.createStarted();
+    log.info("new del");
     CIK8InitializeTaskParams cik8InitializeTaskParams = (CIK8InitializeTaskParams) ciInitializeTaskParams;
     String cik8BuildTaskParamsStr = cik8InitializeTaskParams.toString();
     ConnectorDetails gitConnectorDetails = cik8InitializeTaskParams.getCik8PodParams().getGitConnector();
