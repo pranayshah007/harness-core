@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.NISHANT;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -47,14 +48,13 @@ public class BatchProcessorServiceImplTest extends CategoryTest {
   public void testProcessAuditEvent() {
     List<AuditEvent> auditEvents = List.of(AuditEvent.builder().build());
     StreamingBatch streamingBatch = StreamingBatch.builder().id(randomAlphabetic(10)).build();
-    when(auditEventMapper.toOutgoingAuditMessage(any(), streamingBatch))
-        .thenReturn(OutgoingAuditMessage.builder().build());
+    when(auditEventMapper.toOutgoingAuditMessage(any(), any())).thenReturn(OutgoingAuditMessage.builder().build());
 
     List<OutgoingAuditMessage> outgoingMessageList =
         batchProcessorService.processAuditEvent(streamingBatch, auditEvents);
 
     assertThat(outgoingMessageList).isNotEmpty();
     assertThat(outgoingMessageList).hasSize(auditEvents.size());
-    verify(auditEventMapper, times(auditEvents.size())).toOutgoingAuditMessage(any(), streamingBatch);
+    verify(auditEventMapper, times(auditEvents.size())).toOutgoingAuditMessage(any(), eq(streamingBatch));
   }
 }

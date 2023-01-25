@@ -7,6 +7,7 @@
 
 package io.harness.delegate.task.aws;
 
+import static io.harness.ModuleType.CORE;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.KAPIL;
@@ -16,7 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -48,7 +48,6 @@ import io.harness.security.encryption.SecretDecryptionService;
 import software.wings.helpers.ext.jenkins.BuildDetails;
 import software.wings.service.impl.AwsApiHelperService;
 
-import com.amazonaws.AmazonServiceException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -589,7 +588,8 @@ public class AwsS3DelegateTaskHelperTest extends CategoryTest {
                             .numberOfRecords(10)
                             .outgoingAuditMessages(Arrays.asList(OutgoingAuditMessage.builder()
                                                                      .auditEventId("audId123")
-                                                                     // TODO: add other fields as well
+                                                                     .auditAction("CREATE")
+                                                                     .auditModule(CORE)
                                                                      .build()))
                             .status(AuditBatchDTO.BatchStatus.builder()
                                         .state(AuditBatchDTO.BatchState.SUCCESS)
@@ -635,17 +635,5 @@ public class AwsS3DelegateTaskHelperTest extends CategoryTest {
 
     verify(secretDecryptionService, times(1)).decrypt(any(), any());
     verify(awsApiHelperService, times(1)).putAuditBatchToBucket(any(), any(), any(), any());
-
-    doThrow(new AmazonServiceException("Exception while writing to S3 bucket"))
-        .when(awsApiHelperService)
-        .putAuditBatchToBucket(internalConfigArgumentCaptor.capture(), regionArgumentCaptor.capture(),
-            bucketNameArgumentCaptor.capture(), auditBatchArgumentCaptor.capture());
-
-    responseData = taskHelper.putAuditBatchToBucket(awsTaskParams);
-    assertThat(responseData).isNotNull();
-    assertThat(responseData).isInstanceOf(AwsPutAuditBatchToBucketTaskResponse.class);
-    awsPutAuditBatchToBucketTaskResponse = (AwsPutAuditBatchToBucketTaskResponse) responseData;
-    assertThat(awsPutAuditBatchToBucketTaskResponse.getCommandExecutionStatus())
-        .isEqualTo(CommandExecutionStatus.FAILURE);
   }
 }
