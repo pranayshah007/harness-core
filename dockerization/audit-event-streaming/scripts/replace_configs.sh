@@ -58,6 +58,22 @@ if [[ "" != "$AUDIT_CLIENT_BASEURL" ]]; then
   export AUDIT_CLIENT_BASEURL; yq -i '.auditClientConfig.baseUrl=env(AUDIT_CLIENT_BASEURL)' $CONFIG_FILE
 fi
 
+if [[ "" != "$NG_MANAGER_CLIENT_BASEURL" ]]; then
+  export NG_MANAGER_CLIENT_BASEURL; yq -i '.ngManagerClientConfig.baseUrl=env(NG_MANAGER_CLIENT_BASEURL)' $CONFIG_FILE
+fi
+
+if [[ "" != "$GRPC_MANAGER_TARGET" ]]; then
+  export GRPC_MANAGER_TARGET; yq -i '.delegateServiceGrpcConfig.target=env(GRPC_MANAGER_TARGET)' $CONFIG_FILE
+fi
+
+if [[ "" != "$GRPC_MANAGER_AUTHORITY" ]]; then
+  export GRPC_MANAGER_AUTHORITY; yq -i '.delegateServiceGrpcConfig.authority=env(GRPC_MANAGER_AUTHORITY)' $CONFIG_FILE
+fi
+
 if [[ "" != "$PLATFORM_SECRET" ]]; then
   export PLATFORM_SECRET; yq -i '.serviceSecrets.platformServiceSecret=env(PLATFORM_SECRET)' $CONFIG_FILE
+fi
+
+if [[ "" != "$NEXT_GEN_MANAGER_SECRET" ]]; then
+  export NEXT_GEN_MANAGER_SECRET; yq -i '.serviceSecrets.ngManagerServiceSecret=env(NEXT_GEN_MANAGER_SECRET)' $CONFIG_FILE
 fi
