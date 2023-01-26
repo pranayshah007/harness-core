@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.template.yaml;
+package io.harness.ng.core.yaml;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -19,16 +19,15 @@ import java.util.Map;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-public class TemplateYamlUtilsTest extends CategoryTest {
+public class CDYamlUtilsTest extends CategoryTest {
   @Test
   @Owner(developers = OwnerRule.YOGESH)
   @Category(UnitTests.class)
   public void testWriteString() throws JsonProcessingException {
-    assertThat(TemplateYamlUtils.writeString(Map.of("k", "Some Name")).replaceFirst("---\n", ""))
-        .isEqualTo("k: Some Name\n");
-    assertThat(TemplateYamlUtils.writeString(Map.of("k", "42")).replaceFirst("---\n", "")).isEqualTo("k: 42\n");
-    assertThat(TemplateYamlUtils.writeString(Map.of("k", "true")).replaceFirst("---\n", "")).isEqualTo("k: \"true\"\n");
-    assertThat(TemplateYamlUtils.writeString(Map.of("k", "Some \n Name")).replaceFirst("---\n", ""))
+    assertThat(CDYamlUtils.writeString(Map.of("k", "Some Name")).replaceFirst("---\n", "")).isEqualTo("k: Some Name\n");
+    assertThat(CDYamlUtils.writeString(Map.of("k", "42")).replaceFirst("---\n", "")).isEqualTo("k: 42\n");
+    assertThat(CDYamlUtils.writeString(Map.of("k", "true")).replaceFirst("---\n", "")).isEqualTo("k: \"true\"\n");
+    assertThat(CDYamlUtils.writeString(Map.of("k", "Some \n Name")).replaceFirst("---\n", ""))
         .isEqualTo("k: \"Some \\n Name\"\n");
   }
 
@@ -37,13 +36,13 @@ public class TemplateYamlUtilsTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testWriteYamlString() {
     // should not quote a simple string
-    assertThat(TemplateYamlUtils.writeYamlString(Map.of("k", "foobar"))).isEqualTo("k: foobar\n");
-    assertThat(TemplateYamlUtils.writeYamlString(Map.of("k", "Some Name"))).isEqualTo("k: Some Name\n");
-    assertThat(TemplateYamlUtils.writeYamlString(Map.of("k", "42"))).isEqualTo("k: 42\n");
+    assertThat(CDYamlUtils.writeYamlString(Map.of("k", "foobar"))).isEqualTo("k: foobar\n");
+    assertThat(CDYamlUtils.writeYamlString(Map.of("k", "Some Name"))).isEqualTo("k: Some Name\n");
+    assertThat(CDYamlUtils.writeYamlString(Map.of("k", "42"))).isEqualTo("k: 42\n");
     // should quote a boolean
-    assertThat(TemplateYamlUtils.writeYamlString(Map.of("k", "true"))).isEqualTo("k: \"true\"\n");
-    assertThat(TemplateYamlUtils.writeYamlString(Map.of("k", "Some \n Name"))).isEqualTo("k: \"Some \\n Name\"\n");
-    assertThat(TemplateYamlUtils.writeYamlString(Map.of("k",
+    assertThat(CDYamlUtils.writeYamlString(Map.of("k", "true"))).isEqualTo("k: \"true\"\n");
+    assertThat(CDYamlUtils.writeYamlString(Map.of("k", "Some \n Name"))).isEqualTo("k: \"Some \\n Name\"\n");
+    assertThat(CDYamlUtils.writeYamlString(Map.of("k",
                    "abc\n"
                        + "foo\n"
                        + "bar")))
