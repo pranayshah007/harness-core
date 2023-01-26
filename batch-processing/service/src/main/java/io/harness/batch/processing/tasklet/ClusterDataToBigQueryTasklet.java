@@ -81,7 +81,7 @@ public class ClusterDataToBigQueryTasklet implements Tasklet {
   @Autowired private FeatureFlagService featureFlagService;
   @Autowired private ClickHouseService clickHouseService;
   @Autowired private ClickHouseClusterDataService clusterDataService;
-  private ClickHouseConfig clickHouseConfig;
+  @Autowired private ClickHouseConfig clickHouseConfig;
   private static final String defaultParentWorkingDirectory = "./avro/";
   private static final String defaultBillingDataFileNameDaily = "billing_data_%s_%s_%s.avro";
   private static final String defaultBillingDataFileNameHourly = "billing_data_hourly_%s_%s_%s_%s.avro";
@@ -122,9 +122,6 @@ public class ClusterDataToBigQueryTasklet implements Tasklet {
 
   @Override
   public RepeatStatus execute(StepContribution stepContribution, ChunkContext chunkContext) throws Exception {
-    clickHouseConfig =
-        ClickHouseConfig.builder().url("jdbc:ch:http://localhost:8123").username("default").password("").build();
-
     JobParameters parameters = chunkContext.getStepContext().getStepExecution().getJobParameters();
     BatchJobType batchJobType = CCMJobConstants.getBatchJobTypeFromJobParams(parameters);
     final JobConstants jobConstants = new CCMJobConstants(chunkContext);
@@ -186,6 +183,7 @@ public class ClusterDataToBigQueryTasklet implements Tasklet {
       BillingDataReader billingDataReader, ZonedDateTime zdt, String clusterDataTableName,
       String clusterDataAggregatedTableName) throws Exception {
     List<InstanceBillingData> instanceBillingDataList;
+    clusterDataService.createClickHouseDataBaseIfNotExist();
     clusterDataService.createTableAndDeleteExistingDataFromClickHouse(jobConstants, clusterDataTableName);
     do {
       instanceBillingDataList = billingDataReader.getNext();

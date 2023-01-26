@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 @OwnedBy(HarnessTeam.CE)
 @Slf4j
 public class ClickHouseClusterDataService {
+  private static final String CREATE_CCM_DB_QUERY = "create database if not exists ccm;";
   public static final String COST_AGGREGATED_CREATION_QUERY =
       "CREATE TABLE IF NOT EXISTS ccm.costAggregated (`accountId` String NOT NULL, `cloudProvider` String NOT NULL, `cost` Float NOT NULL, `day` DateTime('UTC') NOT NULL) ENGINE = MergeTree PARTITION BY toYYYYMMDD(day) ORDER BY tuple()";
   public static final String UNIFIED_TABLE_CREATION_QUERY =
@@ -54,6 +55,10 @@ public class ClickHouseClusterDataService {
 
   @Autowired private ClickHouseService clickHouseService;
   @Autowired ClickHouseConfig clickHouseConfig;
+
+  public void createClickHouseDataBaseIfNotExist() throws Exception {
+    clickHouseService.getQueryResult(clickHouseConfig, CREATE_CCM_DB_QUERY);
+  }
 
   public void createTableAndDeleteExistingDataFromClickHouse(JobConstants jobConstants, String tableName)
       throws Exception {
