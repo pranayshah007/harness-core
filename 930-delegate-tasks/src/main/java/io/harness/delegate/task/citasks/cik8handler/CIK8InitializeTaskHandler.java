@@ -43,6 +43,7 @@ import io.harness.delegate.beans.ci.pod.SecretParams;
 import io.harness.delegate.beans.ci.pod.SecretVarParams;
 import io.harness.delegate.beans.ci.pod.SecretVariableDTO;
 import io.harness.delegate.beans.ci.pod.SecretVariableDetails;
+import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.task.citasks.CIInitializeTaskHandler;
@@ -149,6 +150,7 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
 
     K8sTaskExecutionResponse result;
     CiK8sTaskResponse k8sTaskResponse = null;
+    CommandUnitsProgress commandUnitsProgress = cik8InitializeTaskParams.getCommandUnitsProgress();
     try (AutoLogContext ignore1 = new K8LogContext(podParams.getName(), null, OVERRIDE_ERROR)) {
       try {
         KubernetesConfig kubernetesConfig =
@@ -173,12 +175,16 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
 
         log.info("Creating pod with spec: {}", pod);
         cik8JavaClientHandler.createOrReplacePodWithRetries(coreV1Api, pod, namespace);
-        Watch<CoreV1Event> watch = k8EventHandler.startAsyncPodEventWatch(kubernetesConfig, namespace, podName,
-            logStreamingTaskClient, cik8InitializeTaskParams.getCommandUnitsProgress());
+        Watch<CoreV1Event> watch = k8EventHandler.startAsyncPodEventWatch(
+            kubernetesConfig, namespace, podName, logStreamingTaskClient, commandUnitsProgress);
         PodStatus podStatus = cik8JavaClientHandler.waitUntilPodIsReady(
             coreV1Api, podName, namespace, cik8InitializeTaskParams.getPodMaxWaitUntilReadySecs());
         if (watch != null) {
-          k8EventHandler.stopEventWatch(watch);
+          new Thread(() -> {
+            if (watch != null) {
+              k8EventHandler.stopEventWatch(watch);
+            }
+          }).start();
         }
 
         k8sTaskResponse =
@@ -222,8 +228,7 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
                      .build();
       }
     }
-    result.setCommandUnitsProgress(
-        UnitProgressDataMapper.toUnitProgressData(cik8InitializeTaskParams.getCommandUnitsProgress()));
+    result.setCommandUnitsProgress(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress));
     log.info("CI lite-engine task took: {} for pod: {} ", timer.stop(), podParams.getName());
     return result;
   }
