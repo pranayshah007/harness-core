@@ -1,7 +1,7 @@
 ---
 # This file is populated at build time.
 # Used for baking in build version with artifacts.
-version   : 7800
+version   : ${build.fullVersion}
 buildNo   : ${build.number}
 gitCommit : ${gitCommitId}
 gitBranch : ${gitBranch}
