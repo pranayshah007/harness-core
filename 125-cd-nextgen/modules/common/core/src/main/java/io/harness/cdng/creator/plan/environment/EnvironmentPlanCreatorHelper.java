@@ -32,6 +32,7 @@ import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverride.mapper.ServiceOverridesMapper;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
+import io.harness.ng.core.yaml.CDYamlUtils;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
@@ -116,7 +117,7 @@ public class EnvironmentPlanCreatorHelper {
     // TODO: need to remove this once we have the migration for old env
     if (EmptyPredicate.isEmpty(originalEnvYaml)) {
       try {
-        originalEnvYaml = YamlPipelineUtils.getYamlString(EnvironmentMapper.toNGEnvironmentConfig(environment.get()));
+        originalEnvYaml = CDYamlUtils.getYamlString(EnvironmentMapper.toNGEnvironmentConfig(environment.get()));
       } catch (JsonProcessingException e) {
         throw new InvalidRequestException("Unable to convert environment to yaml");
       }
@@ -173,14 +174,14 @@ public class EnvironmentPlanCreatorHelper {
     Map<String, Object> serviceOverrideInputYaml = new HashMap<>();
     serviceOverrideInputYaml.put(YamlTypes.SERVICE_OVERRIDE, serviceOverrideInputs);
     return MergeHelper.mergeRuntimeInputValuesIntoOriginalYaml(
-        originalServiceOverrideYaml, YamlPipelineUtils.writeYamlString(serviceOverrideInputYaml), true);
+        originalServiceOverrideYaml, CDYamlUtils.writeYamlString(serviceOverrideInputYaml), true);
   }
 
   public String mergeEnvironmentInputs(String originalEnvYaml, Map<String, Object> environmentInputs) {
     Map<String, Object> environmentInputYaml = new HashMap<>();
     environmentInputYaml.put(YamlTypes.ENVIRONMENT_YAML, environmentInputs);
     return MergeHelper.mergeRuntimeInputValuesIntoOriginalYaml(
-        originalEnvYaml, YamlPipelineUtils.writeYamlString(environmentInputYaml), true);
+        originalEnvYaml, CDYamlUtils.writeYamlString(environmentInputYaml), true);
   }
 
   private List<InfrastructureConfig> getInfraStructureConfigList(String accountIdentifier, String orgIdentifier,
@@ -226,7 +227,7 @@ public class EnvironmentPlanCreatorHelper {
   public YamlField fetchEnvironmentPlanCreatorConfigYaml(
       EnvironmentPlanCreatorConfig environmentPlanCreatorConfig, YamlField originalEnvironmentField) {
     try {
-      String yamlString = YamlPipelineUtils.getYamlString(environmentPlanCreatorConfig);
+      String yamlString = CDYamlUtils.getYamlString(environmentPlanCreatorConfig);
       YamlField yamlField = YamlUtils.injectUuidInYamlField(yamlString);
       return new YamlField(YamlTypes.ENVIRONMENT_YAML,
           new YamlNode(YamlTypes.ENVIRONMENT_YAML, yamlField.getNode().getCurrJsonNode(),

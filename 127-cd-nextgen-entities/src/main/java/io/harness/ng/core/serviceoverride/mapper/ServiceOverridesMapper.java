@@ -14,6 +14,7 @@ import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverride.beans.ServiceOverrideRequestDTO;
 import io.harness.ng.core.serviceoverride.beans.ServiceOverrideResponseDTO;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
+import io.harness.ng.core.yaml.CDYamlUtils;
 import io.harness.utils.YamlPipelineUtils;
 import io.harness.yaml.core.variables.NGServiceOverrides;
 
@@ -53,7 +54,7 @@ public class ServiceOverridesMapper {
 
   public NGServiceOverrides toServiceOverrides(String entityYaml) {
     try {
-      NGServiceOverrideConfig serviceOverrideConfig = YamlPipelineUtils.read(entityYaml, NGServiceOverrideConfig.class);
+      NGServiceOverrideConfig serviceOverrideConfig = CDYamlUtils.read(entityYaml, NGServiceOverrideConfig.class);
       return NGServiceOverrides.builder()
           .serviceRef(serviceOverrideConfig.getServiceOverrideInfoConfig().getServiceRef())
           .variables(serviceOverrideConfig.getServiceOverrideInfoConfig().getVariables())
@@ -65,7 +66,7 @@ public class ServiceOverridesMapper {
 
   public NGServiceOverrideConfig toNGServiceOverrideConfig(String entityYaml) {
     try {
-      return YamlPipelineUtils.read(entityYaml, NGServiceOverrideConfig.class);
+      return CDYamlUtils.read(entityYaml, NGServiceOverrideConfig.class);
     } catch (IOException e) {
       throw new InvalidRequestException(String.format("Cannot read serviceOverride yaml %s ", entityYaml));
     }

@@ -21,6 +21,7 @@ import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
 import io.harness.changestreamsframework.ChangeEvent;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity.InfrastructureEntityKeys;
+import io.harness.ng.core.yaml.CDYamlUtils;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.mongodb.DBObject;
@@ -82,7 +83,7 @@ public class InfrastructureChangeDataHandler extends AbstractChangeDataHandler {
     InfrastructureConfig config = null;
     Infrastructure infrastructure;
     try {
-      config = YamlPipelineUtils.read(yaml, InfrastructureConfig.class);
+      config = CDYamlUtils.read(yaml, InfrastructureConfig.class);
       infrastructure = config.getInfrastructureDefinitionConfig().getSpec();
     } catch (IOException e) {
       throw new InvalidRequestException("Cannot create infrastructure config due to " + e.getMessage());

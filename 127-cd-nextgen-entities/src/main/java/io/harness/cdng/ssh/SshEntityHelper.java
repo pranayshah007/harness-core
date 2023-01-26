@@ -68,6 +68,7 @@ import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
 import io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
+import io.harness.ng.core.yaml.CDYamlUtils;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.remote.client.NGRestUtils;
@@ -265,7 +266,7 @@ public class SshEntityHelper {
     }
 
     try {
-      InfrastructureConfig config = YamlPipelineUtils.read(yaml, InfrastructureConfig.class);
+      InfrastructureConfig config = CDYamlUtils.read(yaml, InfrastructureConfig.class);
       Infrastructure infrastructure = config.getInfrastructureDefinitionConfig().getSpec();
       String credentialRef = getInfrastructureCredentialRef(infrastructure);
 

@@ -76,6 +76,7 @@ import io.harness.ng.core.service.mappers.ServiceFilterHelper;
 import io.harness.ng.core.service.services.ServiceEntityManagementService;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
+import io.harness.ng.core.yaml.CDYamlUtils;
 import io.harness.pms.rbac.NGResourceType;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
@@ -86,7 +87,6 @@ import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.PageUtils;
-import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
@@ -802,7 +802,7 @@ public class ServiceResourceV2 {
     serviceResMap.replace("serviceDefinition", serviceDefinitionResMap);
     yamlResMap.replace("service", serviceResMap);
 
-    serviceEntity.setYaml(YamlPipelineUtils.writeYamlString(yamlResMap));
+    serviceEntity.setYaml(CDYamlUtils.writeYamlString(yamlResMap));
     return serviceEntity;
   }
 

@@ -63,6 +63,7 @@ import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverride.mapper.ServiceOverridesMapper;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
+import io.harness.ng.core.yaml.CDYamlUtils;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
@@ -93,7 +94,6 @@ import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.tasks.ResponseData;
 import io.harness.utils.FullyQualifiedIdentifierHelper;
 import io.harness.utils.NGFeatureFlagHelperService;
-import io.harness.utils.YamlPipelineUtils;
 import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.core.variables.SecretNGVariable;
 import io.harness.yaml.utils.NGVariablesUtils;
@@ -631,7 +631,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
     Map<String, Object> serviceInputsYaml = new HashMap<>();
     serviceInputsYaml.put(YamlTypes.SERVICE_ENTITY, serviceInputs);
     return MergeHelper.mergeRuntimeInputValuesIntoOriginalYaml(
-        originalServiceYaml, YamlPipelineUtils.writeYamlString(serviceInputsYaml), true);
+        originalServiceYaml, CDYamlUtils.writeYamlString(serviceInputsYaml), true);
   }
 
   private NGEnvironmentConfig mergeEnvironmentInputs(
@@ -642,7 +642,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
     Map<String, Object> environmentInputYaml = new HashMap<>();
     environmentInputYaml.put(YamlTypes.ENVIRONMENT_YAML, environmentInputs);
     String resolvedYaml = MergeHelper.mergeRuntimeInputValuesIntoOriginalYaml(
-        originalEnvYaml, YamlPipelineUtils.writeYamlString(environmentInputYaml), true);
+        originalEnvYaml, CDYamlUtils.writeYamlString(environmentInputYaml), true);
     return YamlUtils.read(resolvedYaml, NGEnvironmentConfig.class);
   }
 

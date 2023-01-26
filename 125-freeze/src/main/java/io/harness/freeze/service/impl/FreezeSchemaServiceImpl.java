@@ -18,6 +18,7 @@ import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperD
 import io.harness.freeze.entity.FreezeConfigEntity;
 import io.harness.freeze.mappers.NGFreezeDtoMapper;
 import io.harness.freeze.service.FreezeSchemaService;
+import io.harness.ng.core.yaml.CDYamlUtils;
 import io.harness.utils.YamlPipelineUtils;
 import io.harness.yaml.schema.YamlSchemaProvider;
 import io.harness.yaml.validator.YamlSchemaValidator;
@@ -68,7 +69,7 @@ public class FreezeSchemaServiceImpl implements FreezeSchemaService {
   public void validateYamlSchema(String freezeConfigYaml) throws IOException {
     long start = System.currentTimeMillis();
     try {
-      JsonNode yamlNode = YamlPipelineUtils.getMapper().readTree(freezeConfigYaml);
+      JsonNode yamlNode = CDYamlUtils.getMapper().readTree(freezeConfigYaml);
       Set<ValidationMessage> validationMessages =
           yamlSchemaValidator.validateWithDetailedMessage(freezeConfigYaml, EntityType.FREEZE);
       yamlSchemaValidator.processAndHandleValidationMessage(yamlNode, validationMessages, freezeConfigYaml);

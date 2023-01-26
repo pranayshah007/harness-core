@@ -13,6 +13,7 @@ import io.harness.cdng.pipeline.PipelineInfrastructure;
 import io.harness.cdng.service.beans.ServiceConfig;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.yaml.CDYamlUtils;
 import io.harness.pms.contracts.plan.Dependencies;
 import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.yaml.DependenciesUtils;
@@ -77,7 +78,7 @@ public class ServicePlanCreatorHelper {
         return serviceField;
       } else {
         ServiceConfig actualServiceConfig = servicePlanCreator.getActualServiceConfig(serviceConfig, serviceField);
-        String serviceConfigYaml = YamlPipelineUtils.getYamlString(actualServiceConfig);
+        String serviceConfigYaml = CDYamlUtils.getYamlString(actualServiceConfig);
         YamlField updatedServiceField = YamlUtils.injectUuidInYamlField(serviceConfigYaml);
         return new YamlField(YamlTypes.SERVICE_CONFIG,
             new YamlNode(YamlTypes.SERVICE_CONFIG, updatedServiceField.getNode().getCurrJsonNode(),

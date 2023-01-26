@@ -29,6 +29,7 @@ import io.harness.ng.core.environment.mappers.EnvironmentMapper;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
+import io.harness.ng.core.yaml.CDYamlUtils;
 import io.harness.pms.contracts.governance.ExpansionPlacementStrategy;
 import io.harness.pms.contracts.governance.ExpansionRequestMetadata;
 import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
@@ -39,7 +40,6 @@ import io.harness.pms.sdk.core.governance.JsonExpansionHandler;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.KryoSerializer;
 import io.harness.utils.IdentifierRefHelper;
-import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -208,7 +208,7 @@ public class EnvironmentExpansionHandler implements JsonExpansionHandler {
     }
     Map<String, Object> inputMap = new HashMap<>();
     inputMap.put(YamlTypes.INFRASTRUCTURE_DEF, objectMapper.treeToValue(inputsNode, Map.class));
-    return MergeHelper.mergeInputSetFormatYamlToOriginYaml(originalYaml, YamlPipelineUtils.writeYamlString(inputMap));
+    return MergeHelper.mergeInputSetFormatYamlToOriginYaml(originalYaml, CDYamlUtils.writeYamlString(inputMap));
   }
 
   private Optional<String> getEnvId(JsonNode fieldValue) {

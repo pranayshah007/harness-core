@@ -15,6 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorDTO;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperDTO;
+import io.harness.ng.core.yaml.CDYamlUtils;
 import io.harness.utils.YamlPipelineUtils;
 import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 import io.harness.yaml.validator.InvalidYamlException;
@@ -44,7 +45,7 @@ public class ServiceEntityYamlSchemaHelper {
         && isNotEmpty(yaml)) {
       long start = System.currentTimeMillis();
       try {
-        JsonNode yamlNode = YamlPipelineUtils.getMapper().readTree(yaml);
+        JsonNode yamlNode = CDYamlUtils.getMapper().readTree(yaml);
         Set<ValidationMessage> validationMessages =
             yamlSchemaValidator.validateWithDetailedMessage(yaml, EntityType.SERVICE);
         yamlSchemaValidator.processAndHandleValidationMessage(yamlNode, validationMessages, yaml);

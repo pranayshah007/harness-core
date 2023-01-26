@@ -17,6 +17,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
+import io.harness.ng.core.yaml.CDYamlUtils;
 import io.harness.utils.YamlPipelineUtils;
 
 import java.io.IOException;
@@ -28,7 +29,7 @@ import org.apache.commons.lang3.StringUtils;
 public class NGServiceEntityMapper {
   public String toYaml(NGServiceConfig ngServiceConfig) {
     try {
-      return YamlPipelineUtils.getYamlString(ngServiceConfig);
+      return CDYamlUtils.getYamlString(ngServiceConfig);
     } catch (IOException e) {
       throw new InvalidRequestException("Cannot create service entity due to " + e.getMessage());
     }
@@ -39,7 +40,7 @@ public class NGServiceEntityMapper {
     Boolean gitOpsEnabled = null;
     if (isNotEmpty(serviceEntity.getYaml())) {
       try {
-        final NGServiceConfig config = YamlPipelineUtils.read(serviceEntity.getYaml(), NGServiceConfig.class);
+        final NGServiceConfig config = CDYamlUtils.read(serviceEntity.getYaml(), NGServiceConfig.class);
         validateFieldsOrThrow(config.getNgServiceV2InfoConfig(), serviceEntity);
         sDef = config.getNgServiceV2InfoConfig().getServiceDefinition();
         gitOpsEnabled = config.getNgServiceV2InfoConfig().getGitOpsEnabled();

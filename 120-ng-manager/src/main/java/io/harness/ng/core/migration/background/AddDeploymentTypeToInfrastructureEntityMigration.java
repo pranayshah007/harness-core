@@ -17,6 +17,7 @@ import io.harness.migration.NGMigration;
 import io.harness.ng.core.infrastructure.InfrastructureType;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
+import io.harness.ng.core.yaml.CDYamlUtils;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.yaml.YamlField;
@@ -93,7 +94,7 @@ public class AddDeploymentTypeToInfrastructureEntityMigration implements NGMigra
 
   private boolean validateYaml(InfrastructureEntity infrastructureEntity) {
     try {
-      YamlPipelineUtils.read(infrastructureEntity.getYaml(), InfrastructureConfig.class);
+      CDYamlUtils.read(infrastructureEntity.getYaml(), InfrastructureConfig.class);
     } catch (IOException e) {
       log.error(
           String.format(
@@ -143,7 +144,7 @@ public class AddDeploymentTypeToInfrastructureEntityMigration implements NGMigra
           infraEntityYamlField.getNode().getField(YamlTypes.INFRASTRUCTURE_DEF);
       ObjectNode infraDefinitionNode = (ObjectNode) infrastructureDefinitionYamlField.getNode().getCurrJsonNode();
       infraDefinitionNode.put(YamlTypes.DEPLOYMENT_TYPE, serviceDefinitionType.getYamlName());
-      return YamlPipelineUtils.writeYamlString(infraEntityYamlField.getNode().getCurrJsonNode());
+      return CDYamlUtils.writeYamlString(infraEntityYamlField.getNode().getCurrJsonNode());
     } catch (Exception exception) {
       log.error(
           String.format(

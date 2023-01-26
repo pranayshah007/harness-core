@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.yaml.CDYamlUtils;
 import io.harness.pms.merger.helpers.MergeHelper;
 import io.harness.pms.merger.helpers.YamlRefreshHelper;
 import io.harness.pms.yaml.YamlField;
@@ -37,7 +38,7 @@ public class InputSetMergeUtility {
     if (isEmpty(oldInputsYaml)) {
       return newInputsYaml;
     }
-    return YamlPipelineUtils.writeYamlString(YamlRefreshHelper.refreshYamlFromSourceYaml(oldInputsYaml, newInputsYaml));
+    return CDYamlUtils.writeYamlString(YamlRefreshHelper.refreshYamlFromSourceYaml(oldInputsYaml, newInputsYaml));
   }
 
   public String mergeArrayNodeInputs(String oldInputsYaml, String newInputsYaml) throws IOException {
@@ -53,9 +54,9 @@ public class InputSetMergeUtility {
     JsonNode newInputJsonNode = addDummyRootToJsonNode(readTree(newInputsYaml), mapper);
 
     JsonNode refreshedJsonNode = YamlRefreshHelper.refreshYamlFromSourceYaml(
-        YamlPipelineUtils.writeYamlString(oldInputJsonNode), YamlPipelineUtils.writeYamlString(newInputJsonNode));
+        CDYamlUtils.writeYamlString(oldInputJsonNode), YamlPipelineUtils.writeYamlString(newInputJsonNode));
 
-    return refreshedJsonNode == null ? null : YamlPipelineUtils.writeYamlString(refreshedJsonNode.get(DUMMY_NODE));
+    return refreshedJsonNode == null ? null : CDYamlUtils.writeYamlString(refreshedJsonNode.get(DUMMY_NODE));
   }
 
   /**
@@ -78,11 +79,10 @@ public class InputSetMergeUtility {
     JsonNode oldInputJsonNode = addDummyRootToJsonNode(readTree(oldInputsYaml), mapper);
     JsonNode newInputJsonNode = addDummyRootToJsonNode(readTree(newInputsYaml), mapper);
 
-    String mergedYaml =
-        MergeHelper.mergeRuntimeInputValuesIntoOriginalYaml(YamlPipelineUtils.writeYamlString(oldInputJsonNode),
-            YamlPipelineUtils.writeYamlString(newInputJsonNode), false);
+    String mergedYaml = MergeHelper.mergeRuntimeInputValuesIntoOriginalYaml(
+        CDYamlUtils.writeYamlString(oldInputJsonNode), CDYamlUtils.writeYamlString(newInputJsonNode), false);
     JsonNode mergedYamlNode = readTree(mergedYaml);
-    return mergedYamlNode == null ? null : YamlPipelineUtils.writeYamlString(mergedYamlNode.get(DUMMY_NODE));
+    return mergedYamlNode == null ? null : CDYamlUtils.writeYamlString(mergedYamlNode.get(DUMMY_NODE));
   }
 
   private JsonNode addDummyRootToJsonNode(JsonNode node, ObjectMapper mapper) {

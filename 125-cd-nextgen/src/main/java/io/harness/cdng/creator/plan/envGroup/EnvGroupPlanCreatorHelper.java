@@ -30,6 +30,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.mappers.EnvironmentMapper;
 import io.harness.ng.core.environment.services.EnvironmentService;
+import io.harness.ng.core.yaml.CDYamlUtils;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.utils.YamlPipelineUtils;
 
@@ -129,7 +130,7 @@ public class EnvGroupPlanCreatorHelper {
     // TODO: need to remove this once we have the migration for old env
     if (EmptyPredicate.isEmpty(originalEnvYaml)) {
       try {
-        originalEnvYaml = YamlPipelineUtils.getYamlString(EnvironmentMapper.toNGEnvironmentConfig(environment));
+        originalEnvYaml = CDYamlUtils.getYamlString(EnvironmentMapper.toNGEnvironmentConfig(environment));
       } catch (JsonProcessingException e) {
         throw new InvalidRequestException("Unable to convert environment to yaml", e);
       }
@@ -155,7 +156,7 @@ public class EnvGroupPlanCreatorHelper {
     // TODO: need to remove this once we have the migration for old env
     if (EmptyPredicate.isEmpty(originalEnvYaml)) {
       try {
-        originalEnvYaml = YamlPipelineUtils.getYamlString(EnvironmentMapper.toNGEnvironmentConfig(environment));
+        originalEnvYaml = CDYamlUtils.getYamlString(EnvironmentMapper.toNGEnvironmentConfig(environment));
       } catch (JsonProcessingException e) {
         throw new InvalidRequestException("Unable to convert environment to yaml");
       }

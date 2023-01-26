@@ -35,6 +35,7 @@ import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ng.core.template.TemplateResponseDTO;
+import io.harness.ng.core.yaml.CDYamlUtils;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
@@ -43,7 +44,6 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.template.remote.TemplateResourceClient;
 import io.harness.utils.PageUtils;
-import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -149,7 +149,7 @@ public class CustomDeploymentYamlHelper {
     if (isNull(templateVariables) || isEmpty(templateVariables.toString())) {
       throw new InvalidRequestException("Template yaml provided does not have variables in it.");
     }
-    return YamlPipelineUtils.writeYamlString(templateVariables);
+    return CDYamlUtils.writeYamlString(templateVariables);
   }
 
   public CustomDeploymentVariableResponseDTO getVariablesFromYaml(

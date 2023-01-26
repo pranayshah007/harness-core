@@ -28,6 +28,7 @@ import io.harness.ng.core.environment.dto.EnvironmentResponse;
 import io.harness.ng.core.environment.dto.EnvironmentResponseDTO;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
 import io.harness.ng.core.environment.yaml.NGEnvironmentInfoConfig;
+import io.harness.ng.core.yaml.CDYamlUtils;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.utils.YamlPipelineUtils;
 
@@ -226,7 +227,7 @@ public class EnvironmentMapper {
 
   public static String toYaml(@Valid NGEnvironmentConfig ngEnvironmentConfig) {
     try {
-      return YamlPipelineUtils.getYamlString(ngEnvironmentConfig);
+      return CDYamlUtils.getYamlString(ngEnvironmentConfig);
     } catch (IOException e) {
       throw new InvalidRequestException("Cannot create environment entity due to " + e.getMessage());
     }

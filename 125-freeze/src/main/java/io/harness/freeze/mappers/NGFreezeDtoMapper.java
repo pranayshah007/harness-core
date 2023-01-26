@@ -26,6 +26,7 @@ import io.harness.freeze.entity.FreezeConfigEntity;
 import io.harness.freeze.helpers.FreezeTimeUtils;
 import io.harness.ng.core.mapper.TagMapper;
 import io.harness.ng.core.utils.NGYamlUtils;
+import io.harness.ng.core.yaml.CDYamlUtils;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.google.common.collect.Sets;
@@ -60,7 +61,7 @@ public class NGFreezeDtoMapper {
 
   public FreezeConfig toFreezeConfig(String freezeConfigYaml) {
     try {
-      return YamlPipelineUtils.read(freezeConfigYaml, FreezeConfig.class);
+      return CDYamlUtils.read(freezeConfigYaml, FreezeConfig.class);
     } catch (IOException e) {
       throw new InvalidRequestException("Cannot create template entity due to " + e.getMessage());
     }

@@ -19,6 +19,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideInfoConfig;
+import io.harness.ng.core.yaml.CDYamlUtils;
 import io.harness.utils.YamlPipelineUtils;
 import io.harness.yaml.core.variables.NGVariable;
 
@@ -31,7 +32,7 @@ import lombok.experimental.UtilityClass;
 public class NGServiceOverrideEntityConfigMapper {
   public String toYaml(NGServiceOverrideConfig serviceOverrideConfig) {
     try {
-      return YamlPipelineUtils.getYamlString(serviceOverrideConfig);
+      return CDYamlUtils.getYamlString(serviceOverrideConfig);
     } catch (IOException e) {
       throw new InvalidRequestException("Cannot create Service Override entity due to " + e.getMessage());
     }
@@ -47,7 +48,7 @@ public class NGServiceOverrideEntityConfigMapper {
     if (isNotEmpty(serviceOverridesEntity.getYaml())) {
       try {
         final NGServiceOverrideConfig config =
-            YamlPipelineUtils.read(serviceOverridesEntity.getYaml(), NGServiceOverrideConfig.class);
+            CDYamlUtils.read(serviceOverridesEntity.getYaml(), NGServiceOverrideConfig.class);
         final NGServiceOverrideInfoConfig serviceOverrideInfoConfig = config.getServiceOverrideInfoConfig();
         variableOverride = serviceOverrideInfoConfig.getVariables();
         manifestsList = serviceOverrideInfoConfig.getManifests();

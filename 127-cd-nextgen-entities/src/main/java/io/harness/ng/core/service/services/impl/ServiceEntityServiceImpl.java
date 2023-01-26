@@ -58,6 +58,7 @@ import io.harness.ng.core.service.services.validators.ServiceEntityValidator;
 import io.harness.ng.core.service.services.validators.ServiceEntityValidatorFactory;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
+import io.harness.ng.core.yaml.CDYamlUtils;
 import io.harness.outbox.api.OutboxService;
 import io.harness.pms.merger.helpers.RuntimeInputFormHelper;
 import io.harness.pms.yaml.YamlField;
@@ -68,7 +69,6 @@ import io.harness.repositories.UpsertOptions;
 import io.harness.repositories.service.spring.ServiceRepository;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.PageUtils;
-import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -625,7 +625,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       }
       JsonNode serviceDefinitionInputNode = YamlUtils.readTree(serviceDefinitionInputs).getNode().getCurrJsonNode();
       serviceInputs.put(YamlTypes.SERVICE_INPUTS, serviceDefinitionInputNode);
-      return YamlPipelineUtils.writeYamlString(serviceInputs);
+      return CDYamlUtils.writeYamlString(serviceInputs);
     } catch (IOException e) {
       throw new InvalidRequestException(
           String.format("Error occurred while creating service inputs for service %s", serviceIdentifier), e);
@@ -666,8 +666,8 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
         if (EmptyPredicate.isNotEmpty(runtimeInputFormWithSourcesRootNode)) {
           JsonNode runtimeInputFormNode =
               YamlUtils.readTree(runtimeInputFormWithSourcesRootNode).getNode().getCurrJsonNode();
-          sourceIdentifierToSourceInputMap.put(sourceIdentifier,
-              YamlPipelineUtils.writeYamlString(runtimeInputFormNode.get(YamlTypes.ARTIFACT_SOURCES)));
+          sourceIdentifierToSourceInputMap.put(
+              sourceIdentifier, CDYamlUtils.writeYamlString(runtimeInputFormNode.get(YamlTypes.ARTIFACT_SOURCES)));
         }
       }
 

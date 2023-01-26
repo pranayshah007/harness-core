@@ -39,6 +39,7 @@ import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity.InfrastructureEntityKeys;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.service.services.impl.InputSetMergeUtility;
+import io.harness.ng.core.yaml.CDYamlUtils;
 import io.harness.outbox.api.OutboxService;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
@@ -49,7 +50,6 @@ import io.harness.repositories.UpsertOptions;
 import io.harness.repositories.infrastructure.spring.InfrastructureRepository;
 import io.harness.setupusage.InfrastructureEntitySetupUsageHelper;
 import io.harness.utils.IdentifierRefHelper;
-import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -559,7 +559,7 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
     if (isEmpty(yamlInputs)) {
       return null;
     }
-    return YamlPipelineUtils.writeYamlString(yamlInputs);
+    return CDYamlUtils.writeYamlString(yamlInputs);
   }
 
   @Override
@@ -790,7 +790,7 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
     if (isEmpty(yamlInputs)) {
       return null;
     }
-    return YamlPipelineUtils.writeYamlString(yamlInputs);
+    return CDYamlUtils.writeYamlString(yamlInputs);
   }
 
   @Override
@@ -821,8 +821,7 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
       infraDefinitionNodeWithInputs.ifPresent(
           jsonNodes -> yamlInputs.put(YamlTypes.INPUTS, jsonNodes.get(YamlTypes.INPUTS)));
 
-      String newInfraInputsYaml =
-          isNotEmpty(yamlInputs) ? YamlPipelineUtils.writeYamlString(yamlInputs) : StringUtils.EMPTY;
+      String newInfraInputsYaml = isNotEmpty(yamlInputs) ? CDYamlUtils.writeYamlString(yamlInputs) : StringUtils.EMPTY;
 
       return InfrastructureInputsMergedResponseDto.builder()
           .mergedInfrastructureInputsYaml(

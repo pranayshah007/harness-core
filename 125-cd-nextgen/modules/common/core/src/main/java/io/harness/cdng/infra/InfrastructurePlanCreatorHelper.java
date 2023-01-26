@@ -31,9 +31,9 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
+import io.harness.ng.core.yaml.CDYamlUtils;
 import io.harness.pms.merger.helpers.MergeHelper;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.utils.YamlPipelineUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -55,7 +55,7 @@ public class InfrastructurePlanCreatorHelper {
         Map<String, Object> infraInputYaml = new HashMap<>();
         infraInputYaml.put(YamlTypes.INFRASTRUCTURE_DEF, refToInputMap.get(entity.getIdentifier()));
         mergedInfraYaml = MergeHelper.mergeRuntimeInputValuesIntoOriginalYaml(
-            entity.getYaml(), YamlPipelineUtils.writeYamlString(infraInputYaml), true);
+            entity.getYaml(), CDYamlUtils.writeYamlString(infraInputYaml), true);
       }
 
       try {

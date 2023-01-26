@@ -29,6 +29,7 @@ import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity.NGServiceOverridesEntityKeys;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
+import io.harness.ng.core.yaml.CDYamlUtils;
 import io.harness.outbox.api.OutboxService;
 import io.harness.pms.merger.helpers.RuntimeInputFormHelper;
 import io.harness.pms.yaml.YamlField;
@@ -160,7 +161,7 @@ public class ServiceOverrideServiceImpl implements ServiceOverrideService {
     if (EmptyPredicate.isNotEmpty(requestServiceOverride.getYaml())) {
       try {
         final NGServiceOverrideConfig config =
-            YamlPipelineUtils.read(requestServiceOverride.getYaml(), NGServiceOverrideConfig.class);
+            CDYamlUtils.read(requestServiceOverride.getYaml(), NGServiceOverrideConfig.class);
         variableOverrides = config.getServiceOverrideInfoConfig().getVariables();
       } catch (IOException e) {
         throw new InvalidRequestException("Cannot create Service Overrides config due to " + e.getMessage());
@@ -311,7 +312,7 @@ public class ServiceOverrideServiceImpl implements ServiceOverrideService {
     if (isEmpty(yamlInputs)) {
       return null;
     }
-    return YamlPipelineUtils.writeYamlString(yamlInputs);
+    return CDYamlUtils.writeYamlString(yamlInputs);
   }
 
   public Map<String, Object> createServiceOverrideInputsYamlInternal(

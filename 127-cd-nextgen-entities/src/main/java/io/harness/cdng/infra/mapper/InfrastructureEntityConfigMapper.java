@@ -19,6 +19,7 @@ import io.harness.cdng.infra.yaml.InfrastructurePlanCreatorConfig;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
+import io.harness.ng.core.yaml.CDYamlUtils;
 import io.harness.utils.YamlPipelineUtils;
 
 import java.io.IOException;
@@ -37,7 +38,7 @@ public class InfrastructureEntityConfigMapper {
   @NotNull
   public String toYaml(InfrastructureConfig infrastructureConfig) {
     try {
-      return YamlPipelineUtils.getYamlString(infrastructureConfig);
+      return CDYamlUtils.getYamlString(infrastructureConfig);
     } catch (IOException e) {
       throw new InvalidRequestException("Cannot create infrastructure entity due to " + e.getMessage());
     }
@@ -51,7 +52,7 @@ public class InfrastructureEntityConfigMapper {
     if (isNotEmpty(infrastructureEntity.getYaml())) {
       try {
         final InfrastructureConfig config =
-            YamlPipelineUtils.read(infrastructureEntity.getYaml(), InfrastructureConfig.class);
+            CDYamlUtils.read(infrastructureEntity.getYaml(), InfrastructureConfig.class);
         validateFieldsOrThrow(config, infrastructureEntity);
         infrastructure = config.getInfrastructureDefinitionConfig().getSpec();
         allowSimultaneousDeployments = config.getInfrastructureDefinitionConfig().isAllowSimultaneousDeployments();

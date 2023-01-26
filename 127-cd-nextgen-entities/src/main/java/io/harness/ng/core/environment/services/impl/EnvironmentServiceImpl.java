@@ -61,6 +61,7 @@ import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.service.services.impl.InputSetMergeUtility;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
+import io.harness.ng.core.yaml.CDYamlUtils;
 import io.harness.ngsettings.SettingIdentifiers;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.outbox.api.OutboxService;
@@ -72,7 +73,6 @@ import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.UpsertOptions;
 import io.harness.repositories.environment.spring.EnvironmentRepository;
 import io.harness.utils.IdentifierRefHelper;
-import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.ImmutableMap;
@@ -488,7 +488,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
     if (isEmpty(yamlInputs)) {
       return null;
     }
-    return YamlPipelineUtils.writeYamlString(yamlInputs);
+    return CDYamlUtils.writeYamlString(yamlInputs);
   }
 
   @Override
@@ -722,7 +722,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
       Map<String, Object> yamlInputs = createEnvironmentInputsYamlInternal(environmentYaml);
 
       String newEnvironmentInputsYaml =
-          isEmpty(yamlInputs) ? StringUtils.EMPTY : YamlPipelineUtils.writeYamlString(yamlInputs);
+          isEmpty(yamlInputs) ? StringUtils.EMPTY : CDYamlUtils.writeYamlString(yamlInputs);
       return EnvironmentInputsMergedResponseDto.builder()
           .mergedEnvironmentInputsYaml(
               InputSetMergeUtility.mergeInputs(oldEnvironmentInputsYaml, newEnvironmentInputsYaml))

@@ -71,6 +71,7 @@ import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.k8s.ServiceSpecType;
+import io.harness.ng.core.yaml.CDYamlUtils;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
@@ -97,7 +98,6 @@ import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.steps.executable.AsyncExecutableWithRbac;
 import io.harness.steps.shellscript.K8sInfraDelegateConfigOutput;
 import io.harness.tasks.ResponseData;
-import io.harness.utils.YamlPipelineUtils;
 
 import com.google.inject.Inject;
 import java.time.Duration;
@@ -496,7 +496,7 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
     Map<String, Object> inputMap = new HashMap<>();
     inputMap.put(YamlTypes.INFRASTRUCTURE_DEF, inputs);
     return MergeHelper.mergeRuntimeInputValuesIntoOriginalYaml(
-        originalYaml, YamlPipelineUtils.writeYamlString(inputMap), true);
+        originalYaml, CDYamlUtils.writeYamlString(inputMap), true);
   }
 
   @Override

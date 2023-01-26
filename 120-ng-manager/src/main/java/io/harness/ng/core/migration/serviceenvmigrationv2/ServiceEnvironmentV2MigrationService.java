@@ -52,6 +52,7 @@ import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.ng.core.template.TemplateApplyRequestDTO;
 import io.harness.ng.core.template.TemplateResponseDTO;
+import io.harness.ng.core.yaml.CDYamlUtils;
 import io.harness.pipeline.remote.PipelineServiceClient;
 import io.harness.pms.pipeline.PMSPipelineResponseDTO;
 import io.harness.pms.pipeline.PMSPipelineSummaryResponseDTO;
@@ -63,7 +64,6 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.template.remote.TemplateResourceClient;
-import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -115,7 +115,7 @@ public class ServiceEnvironmentV2MigrationService {
       throw new InvalidRequestException("stage yaml can't be empty");
     }
     try {
-      return YamlPipelineUtils.read(stageYaml, StageSchema.class).getStageNode().getDeploymentStageConfig();
+      return CDYamlUtils.read(stageYaml, StageSchema.class).getStageNode().getDeploymentStageConfig();
     } catch (IOException ex) {
       throw new InvalidRequestException("not able to parse stage yaml due to " + ex.getMessage());
     }
@@ -250,7 +250,7 @@ public class ServiceEnvironmentV2MigrationService {
 
     ObjectNode pipelineParentNode = objectMapper.createObjectNode();
     pipelineParentNode.set("pipeline", pipelineYamlField.getNode().getCurrJsonNode());
-    String migratedPipelineYaml = YamlPipelineUtils.writeYamlString(pipelineParentNode);
+    String migratedPipelineYaml = CDYamlUtils.writeYamlString(pipelineParentNode);
     if (isPipelineContainPipelineTemplate) {
       migratedPipelineYaml = migratePipelineYamlWithPipelineTemplate(requestDto, actualPipelineYaml, accountId);
       migratedPipelineYaml = entityRefreshService.refreshLinkedInputs(
@@ -287,7 +287,7 @@ public class ServiceEnvironmentV2MigrationService {
     templateJsonNode.put("versionLabel", targetTemplateObject.getVersionLabel());
     if (templateNode.getField("templateInputs") == null
         || templateNode.getField("templateInputs").getNode().getField("stages") == null) {
-      return YamlPipelineUtils.writeYamlString(pipelineParentNode);
+      return CDYamlUtils.writeYamlString(pipelineParentNode);
     }
     ArrayNode stageArrayNode =
         (ArrayNode) templateNode.getField("templateInputs").getNode().getField("stages").getNode().getCurrJsonNode();
@@ -310,7 +310,7 @@ public class ServiceEnvironmentV2MigrationService {
         migrateStageYamlInPipelineTemplateInput(stageYamlNode);
       }
     }
-    return YamlPipelineUtils.writeYamlString(pipelineParentNode);
+    return CDYamlUtils.writeYamlString(pipelineParentNode);
   }
 
   private void migrateStageYamlInPipelineTemplateInput(YamlNode stageYamlNode) {
@@ -404,7 +404,7 @@ public class ServiceEnvironmentV2MigrationService {
 
   private JsonNode refreshInputsInStageYaml(
       String accountId, SvcEnvMigrationRequestDto requestDto, ObjectNode stageNode) {
-    String migratedStageYaml = YamlPipelineUtils.writeYamlString(stageNode);
+    String migratedStageYaml = CDYamlUtils.writeYamlString(stageNode);
     migratedStageYaml = entityRefreshService.refreshLinkedInputs(
         accountId, requestDto.getOrgIdentifier(), requestDto.getProjectIdentifier(), migratedStageYaml, null);
     YamlField migratedStageYamlField = getYamlField(migratedStageYaml, "stage");
@@ -415,7 +415,7 @@ public class ServiceEnvironmentV2MigrationService {
 
   private JsonNode migrateStageWithTemplate(
       YamlNode stageNode, String accountId, SvcEnvMigrationRequestDto requestDto) {
-    String stageYaml = YamlPipelineUtils.writeYamlString(stageNode.getCurrJsonNode());
+    String stageYaml = CDYamlUtils.writeYamlString(stageNode.getCurrJsonNode());
     String resolvedStageYaml =
         NGRestUtils
             .getResponse(templateResourceClient.applyTemplatesOnGivenYamlV2(accountId, requestDto.getOrgIdentifier(),
@@ -454,7 +454,7 @@ public class ServiceEnvironmentV2MigrationService {
   }
 
   public JsonNode migrateStage(YamlNode stageNode, String accountId, SvcEnvMigrationRequestDto requestDto) {
-    String stageYaml = YamlPipelineUtils.writeYamlString(stageNode.getCurrJsonNode());
+    String stageYaml = CDYamlUtils.writeYamlString(stageNode.getCurrJsonNode());
     DeploymentStageConfig deploymentStageConfig = getDeploymentStageConfig(stageYaml);
     YamlField stageField = getYamlField(stageYaml, "stage");
     ObjectNode specNode = (ObjectNode) stageField.getNode().getField("spec").getNode().getCurrJsonNode();
@@ -812,7 +812,7 @@ public class ServiceEnvironmentV2MigrationService {
             .projectIdentifier(projectIdentifier)
             .environmentRef(envIdentifier)
             .type(infrastructure.getInfrastructureDefinition().getType())
-            .yaml(YamlPipelineUtils.writeYamlString(parentInfraNode))
+            .yaml(CDYamlUtils.writeYamlString(parentInfraNode))
             .build();
     return InfrastructureMapper.toInfrastructureEntity(accountId, infrastructureRequestDTO);
   }
@@ -831,7 +831,7 @@ public class ServiceEnvironmentV2MigrationService {
     serviceNode.putPOJO("tags", TagMapper.convertToMap(existedServiceEntity.getTags()));
     serviceNode.set("serviceDefinition", serviceDefinitionField.getNode().getCurrJsonNode());
 
-    existedServiceEntity.setYaml(YamlPipelineUtils.writeYamlString(parentServiceNode));
+    existedServiceEntity.setYaml(CDYamlUtils.writeYamlString(parentServiceNode));
     existedServiceEntity.setType(serviceConfig.getServiceDefinition().getType());
     // gitops is not considered here as of now
 

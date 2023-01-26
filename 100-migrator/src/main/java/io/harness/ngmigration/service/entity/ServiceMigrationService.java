@@ -40,6 +40,7 @@ import io.harness.ng.core.service.dto.ServiceResponse;
 import io.harness.ng.core.service.dto.ServiceResponseDTO;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
+import io.harness.ng.core.yaml.CDYamlUtils;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
@@ -362,7 +363,7 @@ public class ServiceMigrationService extends NgMigrationService {
         return null;
       }
       ServiceResponseDTO responseDTO = response.getService();
-      return YamlPipelineUtils.read(responseDTO.getYaml(), NGServiceConfig.class);
+      return CDYamlUtils.read(responseDTO.getYaml(), NGServiceConfig.class);
     } catch (Exception ex) {
       log.error("Error when getting service - ", ex);
       return null;
