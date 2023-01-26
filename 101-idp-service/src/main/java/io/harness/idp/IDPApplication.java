@@ -21,6 +21,7 @@ import io.dropwizard.setup.Environment;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.StartupMode;
 import io.harness.health.HealthService;
+import io.harness.idp.service.secretmanager.SecretManager;
 import io.harness.maintenance.MaintenanceController;
 import io.harness.persistence.HPersistence;
 import io.harness.threading.ExecutorModule;
@@ -99,6 +100,7 @@ public class IDPApplication extends Application<IDPConfiguration> {
     }
     log.info("Starting app done");
     log.info("IDP Service is running on JRE: {}", System.getProperty("java.version"));
+    injector.getInstance(SecretManager.class).getSecretIdByEnvName("PAGERDUTY_TOKEN", "px7xd_BFRCi-pfWPYXVjvw");
   }
 
   public boolean isManager() {
