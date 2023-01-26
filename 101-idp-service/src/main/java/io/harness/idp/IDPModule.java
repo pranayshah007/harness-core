@@ -21,6 +21,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.PrimaryVersionManagerModule;
 import io.harness.idp.repositories.environmentvariable.EnvironmentVariableRepositoryCustom;
 import io.harness.idp.repositories.environmentvariable.EnvironmentVariableRepositoryCustomImpl;
+import io.harness.idp.serializer.IDPServiceRegistrars;
 import io.harness.idp.service.environmentvariable.EnvironmentVariableService;
 import io.harness.idp.service.environmentvariable.EnvironmentVariableServiceImpl;
 import io.harness.idp.service.secretmanager.SecretManager;
@@ -69,7 +70,9 @@ public class IDPModule extends AbstractModule {
       @Provides
       @Singleton
       Set<Class<? extends MorphiaRegistrar>> morphiaRegistrars() {
-        return ImmutableSet.<Class<? extends MorphiaRegistrar>>builder().build();
+        return ImmutableSet.<Class<? extends MorphiaRegistrar>>builder()
+                .addAll(IDPServiceRegistrars.morphiaRegistrars)
+                .build();
       }
 
       @Provides
