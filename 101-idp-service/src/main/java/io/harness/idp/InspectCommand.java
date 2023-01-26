@@ -82,6 +82,7 @@ public class InspectCommand<T extends io.dropwizard.Configuration> extends Confi
       @Singleton
       public Set<Class<? extends KryoRegistrar>> kryoRegistrars() {
         return ImmutableSet.<Class<? extends KryoRegistrar>>builder()
+                .addAll(IDPServiceRegistrars.kryoRegistrars)
                 .build();
       }
       @Provides
