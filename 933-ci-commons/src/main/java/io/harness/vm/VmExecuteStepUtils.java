@@ -250,6 +250,7 @@ public class VmExecuteStepUtils {
                            .parallelizeTests(runTestStep.isParallelizeTests())
                            .testSplitStrategy(runTestStep.getTestSplitStrategy())
                            .testGlobs(runTestStep.getTestGlobs())
+                           .enableAutoAlwaysRun(runTestStep.isEnableAutoAlwaysRun())
                            .build())
         .image(runTestStep.getImage())
         .pull(runTestStep.getPullPolicy())

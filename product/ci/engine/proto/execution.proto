@@ -61,6 +61,7 @@ message RunTestsStep {
   string test_split_strategy = 18;
   bool parallelize_tests = 19;
   string test_globs = 20;  // Comma separated strings which are test globs
+  bool enable_auto_always_run = 21; // Enable automatically detect always run test
 }
 
 message RunStep {

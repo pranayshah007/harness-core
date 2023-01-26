@@ -96,6 +96,7 @@ type runTestsTask struct {
 	testSplitStrategy    string
 	parallelizeTests     bool
 	testGlobs            string
+	enableAutoAlwaysRun  bool  // Flag used to toggle alway run detections
 }
 
 func NewRunTestsTask(step *pb.UnitStep, tmpFilePath string, log *zap.SugaredLogger,
@@ -145,6 +146,7 @@ func NewRunTestsTask(step *pb.UnitStep, tmpFilePath string, log *zap.SugaredLogg
 		testSplitStrategy:    testSplitStrategy,
 		parallelizeTests:     r.GetParallelizeTests(),
 		testGlobs:            r.GetTestGlobs(),
+		enableAutoAlwaysRun:  r.GetEnableAutoAlwaysRun(),
 	}
 }
 
@@ -202,7 +204,8 @@ func (r *runTestsTask) createJavaAgentConfigFile(runner testintelligence.TestRun
 logLevel: 0
 logConsole: false
 writeTo: COVERAGE_JSON
-instrPackages: %s`, dir, r.packages)
+instrPackages: %s
+alwaysRunDetection: %v`, dir, r.packages, r.enableAutoAlwaysRun)
 	// Add test annotations if they were provided
 	if r.annotations != "" {
 		data = data + "\n" + fmt.Sprintf("testAnnotations: %s", r.annotations)

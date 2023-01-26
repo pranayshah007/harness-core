@@ -136,6 +136,9 @@ public class VmRunTestStepSerializer {
     runTestStepBuilder.testGlobs(RunTimeInputHandler.resolveStringParameter(
         "testGlobs", stepName, identifier, runTestsStepInfo.getTestGlobs(), false));
 
+    boolean enableAlwaysRunDetection = resolveBooleanParameter(runTestsStepInfo.getEnableAutoAlwaysRun(), true);
+    runTestStepBuilder.enableAutoAlwaysRun(enableAlwaysRunDetection);
+
     if (runTestsStepInfo.getReports().getValue() != null) {
       if (runTestsStepInfo.getReports().getValue().getType() == UnitTestReportType.JUNIT) {
         JUnitTestReport junitTestReport = (JUnitTestReport) runTestsStepInfo.getReports().getValue().getSpec();

@@ -131,12 +131,15 @@ public class RunTestsStepInfo implements CIStepInfo {
   private ParameterField<TISplitStrategy> testSplitStrategy;
   @ApiModelProperty(dataType = BOOLEAN_CLASSPATH) private ParameterField<Boolean> enableTestSplitting;
   @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> testGlobs;
+  @YamlSchemaTypes({runtime})
+  @ApiModelProperty(dataType = BOOLEAN_CLASSPATH)
+  private ParameterField<Boolean> enableAutoAlwaysRun;
 
   @Builder
   @ConstructorProperties({"identifier", "name", "retry", "args", "language", "buildTool", "image", "connectorRef",
       "resources", "reports", "testAnnotations", "packages", "namespaces", "runOnlySelectedTests", "preCommand",
       "postCommand", "outputVariables", "envVariables", "buildEnvironment", "frameworkVersion", "privileged",
-      "runAsUser", "imagePullPolicy", "shell", "testSplitStrategy", "enableTestSplitting", "testGlobs"})
+      "runAsUser", "imagePullPolicy", "shell", "testSplitStrategy", "enableTestSplitting", "testGlobs", "enableAutoAlwaysRun"})
   public RunTestsStepInfo(String identifier, String name, Integer retry, ParameterField<String> args,
       ParameterField<TILanguage> language, ParameterField<TIBuildTool> buildTool, ParameterField<String> image,
       ParameterField<String> connectorRef, ContainerResource resources, ParameterField<UnitTestReport> reports,
@@ -147,7 +150,7 @@ public class RunTestsStepInfo implements CIStepInfo {
       ParameterField<TIDotNetVersion> frameworkVersion, ParameterField<Boolean> privileged,
       ParameterField<Integer> runAsUser, ParameterField<ImagePullPolicy> imagePullPolicy,
       ParameterField<CIShellType> shell, ParameterField<TISplitStrategy> testSplitStrategy,
-      ParameterField<Boolean> enableTestSplitting, ParameterField<String> testGlobs) {
+      ParameterField<Boolean> enableTestSplitting, ParameterField<String> testGlobs, ParameterField<Boolean> enableAutoAlwaysRun) {
     this.identifier = identifier;
     this.name = name;
     this.retry = Optional.ofNullable(retry).orElse(DEFAULT_RETRY);
@@ -175,6 +178,7 @@ public class RunTestsStepInfo implements CIStepInfo {
     this.testSplitStrategy = testSplitStrategy;
     this.enableTestSplitting = enableTestSplitting;
     this.testGlobs = testGlobs;
+    this.enableAutoAlwaysRun = enableAutoAlwaysRun;
   }
 
   @Override

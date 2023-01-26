@@ -78,6 +78,7 @@ public class TestStepPlanCreator extends CIPMSStepPlanCreatorV2<TestStepNode> {
                 .testAnnotations(SerializerUtils.getListAsStringFromJsonNodeMap(testStepInfo.getWith(), "annotations"))
                 .namespaces(SerializerUtils.getListAsStringFromJsonNodeMap(testStepInfo.getWith(), "namespaces"))
                 .testGlobs(SerializerUtils.getListAsStringFromJsonNodeMap(testStepInfo.getWith(), "globs"))
+                .enableAutoAlwaysRun(SerializerUtils.getBooleanFieldFromJsonNodeMap(testStepInfo.getWith(), "enableAutoAlwaysRun"))
                 .runAsUser(testStepInfo.getUser())
                 .privileged(testStepInfo.getPrivileged())
                 .enableTestSplitting(testStepInfo.getSplitting().getEnabled())

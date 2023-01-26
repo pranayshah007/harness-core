@@ -111,5 +111,6 @@ public class ExecuteStepRequest {
     @JsonProperty("test_split_strategy") String testSplitStrategy;
     @JsonProperty("parallelize_tests") boolean parallelizeTests;
     @JsonProperty("test_globs") String testGlobs;
+    @JsonProperty("enable_auto_always_run") boolean enableAutoAlwaysRun;
   }
 }

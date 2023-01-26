@@ -155,6 +155,9 @@ public class RunTestsStepProtobufSerializer implements ProtobufStepSerializer<Ru
       runTestsStepBuilder.setTestGlobs(testGlobs);
     }
 
+    runTestsStepBuilder.setEnableAutoAlwaysRun(
+            resolveBooleanParameter(runTestsStepInfo.getEnableAutoAlwaysRun(), true));
+
     runTestsStepBuilder.setContext(StepContext.newBuilder().setExecutionTimeoutSecs(timeout).build());
 
     return UnitStep.newBuilder()

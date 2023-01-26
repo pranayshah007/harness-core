@@ -45,6 +45,7 @@ public class VmRunTestStep implements VmStepInfo {
   private String testSplitStrategy;
   private boolean parallelizeTests;
   private String testGlobs;
+  private boolean enableAutoAlwaysRun;
 
   @Override
   public VmStepInfo.Type getType() {
