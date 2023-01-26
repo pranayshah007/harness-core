@@ -70,8 +70,7 @@ public class EnvironmentRefreshHelper {
       envRefValue = envRefJsonNode.asText();
       JsonNode envInputsNode = envJsonNode.get(YamlTypes.ENVIRONMENT_INPUTS);
       if (NGExpressionUtils.isRuntimeField(envRefValue)) {
-        if (isNodeNotNullAndNotHaveRuntimeValue(envInputsNode)
-            || (isNodeNotNullAndNotHaveRuntimeValue(infraDefsNode))
+        if (isNodeNotNullAndNotHaveRuntimeValue(envInputsNode) || (isNodeNotNullAndNotHaveRuntimeValue(infraDefsNode))
             || (isNodeNotNullAndNotHaveRuntimeValue(serviceOverrideInputs))) {
           errorNodeSummary.setValid(false);
         }
