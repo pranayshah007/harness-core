@@ -229,6 +229,7 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
       }
     }
     result.setCommandUnitsProgress(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress));
+    log.info("commandUnitsProgress: {}", commandUnitsProgress);
     log.info("CI lite-engine task took: {} for pod: {} ", timer.stop(), podParams.getName());
     return result;
   }
