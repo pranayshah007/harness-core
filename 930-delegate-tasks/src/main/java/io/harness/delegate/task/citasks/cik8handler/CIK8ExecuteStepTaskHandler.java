@@ -63,7 +63,7 @@ public class CIK8ExecuteStepTaskHandler implements CIExecuteStepTaskHandler {
   public K8sTaskExecutionResponse executeTaskInternal(CIExecuteStepTaskParams ciExecuteStepTaskParams, String taskId) {
     CIK8ExecuteStepTaskParams cik8ExecuteStepTaskParams = (CIK8ExecuteStepTaskParams) ciExecuteStepTaskParams;
     CommandUnitsProgress commandUnitsProgress = cik8ExecuteStepTaskParams.getCommandUnitsProgress();
-
+    log.info("commandUnitsProgress: {}", commandUnitsProgress);
     ILogStreamingTaskClient logStreamingTaskClient = cik8ExecuteStepTaskParams.getLogStreamingTaskClient();
     logCommandUnit(logStreamingTaskClient, "Starting executing container step", LogLevel.INFO,
         CommandExecutionStatus.RUNNING, commandUnitsProgress);
@@ -125,6 +125,7 @@ public class CIK8ExecuteStepTaskHandler implements CIExecuteStepTaskHandler {
             liteEngineBlockingStub.withDeadlineAfter(30, TimeUnit.SECONDS).executeStep(finalExecuteStepRequest);
             logCommandUnit(logStreamingTaskClient, "Completed executing container step", LogLevel.INFO,
                 CommandExecutionStatus.SUCCESS, commandUnitsProgress);
+            log.info("commandUnitsProgress: {}", commandUnitsProgress);
             return K8sTaskExecutionResponse.builder()
                 .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                 .commandUnitsProgress(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
@@ -141,6 +142,8 @@ public class CIK8ExecuteStepTaskHandler implements CIExecuteStepTaskHandler {
         log.error("Failed to execute step on lite engine target {} with err: {}", target, e);
         logCommandUnit(logStreamingTaskClient, "Failed executing container step", LogLevel.ERROR,
             CommandExecutionStatus.FAILURE, commandUnitsProgress);
+        log.info("commandUnitsProgress: {}", commandUnitsProgress);
+
         return K8sTaskExecutionResponse.builder()
             .commandExecutionStatus(CommandExecutionStatus.FAILURE)
             .commandUnitsProgress(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
