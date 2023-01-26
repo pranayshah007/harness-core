@@ -141,4 +141,8 @@ public class NGDelegateLogCallback implements LogCallback {
       this.iLogStreamingTaskClient.dispatchLogs();
     }
   }
+
+  public CommandUnitsProgress getCommandUnitsProgress() {
+    return commandUnitsProgress;
+  }
 }

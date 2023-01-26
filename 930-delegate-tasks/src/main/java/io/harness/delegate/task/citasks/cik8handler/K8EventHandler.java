@@ -126,4 +126,11 @@ public class K8EventHandler {
     }
     ngDelegateLogCallback.saveExecutionLog(message, logLevel, commandExecutionStatus);
   }
+
+  public CommandUnitsProgress getCommandUnitProgress() {
+    if (ngDelegateLogCallback == null) {
+      return null;
+    }
+    return ngDelegateLogCallback.getCommandUnitsProgress();
+  }
 }

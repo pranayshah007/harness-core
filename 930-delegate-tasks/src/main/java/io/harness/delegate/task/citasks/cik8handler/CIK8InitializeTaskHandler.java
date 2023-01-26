@@ -151,6 +151,7 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
     K8sTaskExecutionResponse result;
     CiK8sTaskResponse k8sTaskResponse = null;
     CommandUnitsProgress commandUnitsProgress = cik8InitializeTaskParams.getCommandUnitsProgress();
+
     try (AutoLogContext ignore1 = new K8LogContext(podParams.getName(), null, OVERRIDE_ERROR)) {
       try {
         KubernetesConfig kubernetesConfig =
@@ -228,8 +229,7 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
                      .build();
       }
     }
-    result.setCommandUnitsProgress(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress));
-    log.info("commandUnitsProgress: {}", commandUnitsProgress);
+    result.setCommandUnitsProgress(UnitProgressDataMapper.toUnitProgressData(k8EventHandler.getCommandUnitProgress()));
     log.info("CI lite-engine task took: {} for pod: {} ", timer.stop(), podParams.getName());
     return result;
   }

@@ -74,6 +74,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -124,7 +125,7 @@ public class ContainerStepInitHelper {
         .k8sConnector(k8sConnector)
         .cik8PodParams(getK8DirectPodParams(containerStepInfo, k8PodDetails, infrastructure, ambiance, logPrefix))
         .podMaxWaitUntilReadySecs(k8sPodInitUtils.getPodWaitUntilReadTimeout(infrastructure))
-        .commandUnitsProgress(CommandUnitsProgress.builder().build())
+        .commandUnitsProgress(CommandUnitsProgress.builder().commandUnitProgressMap(new LinkedHashMap<>()).build())
         .build();
   }
 
