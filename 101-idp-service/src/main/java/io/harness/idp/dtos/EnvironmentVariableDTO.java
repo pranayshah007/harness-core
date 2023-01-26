@@ -9,4 +9,7 @@ import lombok.Getter;
 @Getter
 @Builder
 public class EnvironmentVariableDTO {
+    private String envName;
+    private String secretIdentifier;
+    private String accountIdentifier;
 }

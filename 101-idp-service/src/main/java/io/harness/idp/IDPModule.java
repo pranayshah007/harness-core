@@ -19,6 +19,12 @@ import dev.morphia.converters.TypeConverter;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.PrimaryVersionManagerModule;
+import io.harness.idp.repositories.environmentvariable.EnvironmentVariableRepositoryCustom;
+import io.harness.idp.repositories.environmentvariable.EnvironmentVariableRepositoryCustomImpl;
+import io.harness.idp.service.environmentvariable.EnvironmentVariableService;
+import io.harness.idp.service.environmentvariable.EnvironmentVariableServiceImpl;
+import io.harness.idp.service.secretmanager.SecretManager;
+import io.harness.idp.service.secretmanager.SecretManagerImpl;
 import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
@@ -49,9 +55,9 @@ public class IDPModule extends AbstractModule {
 
   @Override
   protected void configure() {
+    registerRequiredBindings();
     install(VersionModule.getInstance());
     install(PrimaryVersionManagerModule.getInstance());
-    bind(IDPConfiguration.class).toInstance(appConfig);
     install(new IDPPersistenceModule());
     install(new AbstractMongoModule() {
       @Provides
@@ -100,6 +106,8 @@ public class IDPModule extends AbstractModule {
       }
 
     });
+
+    bind(IDPConfiguration.class).toInstance(appConfig);
     // Keeping it to 1 thread to start with. Assuming executor service is used only to
     // serve health checks. If it's being used for other tasks also, max pool size should be increased.
     bind(ExecutorService.class)
@@ -109,11 +117,18 @@ public class IDPModule extends AbstractModule {
                             .setPriority(Thread.MIN_PRIORITY)
                             .build()));
     bind(HPersistence.class).to(MongoPersistence.class).in(Singleton.class);
+    bind(EnvironmentVariableRepositoryCustom.class).to(EnvironmentVariableRepositoryCustomImpl.class);
+    bind(EnvironmentVariableService.class).to(EnvironmentVariableServiceImpl.class);
+    bind(SecretManager.class).to(SecretManagerImpl.class);
   }
 
   @Provides
   @Singleton
   public MongoConfig mongoConfig() {
     return appConfig.getMongoConfig();
+  }
+
+  private void registerRequiredBindings() {
+    requireBinding(HPersistence.class);
   }
 }
