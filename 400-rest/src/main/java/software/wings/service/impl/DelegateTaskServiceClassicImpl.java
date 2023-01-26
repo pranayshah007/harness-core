@@ -259,7 +259,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   @Inject private SubdomainUrlHelperIntfc subdomainUrlHelper;
   @Inject private ConfigurationController configurationController;
   @Inject private DelegateSelectionLogsService delegateSelectionLogsService;
-  @Inject private DelegateConnectionDao delegateConnectionDao;
+  @Inject private DelegateDao delegateDao;
   @Inject private SystemEnvironment sysenv;
   @Inject private DelegateSyncService delegateSyncService;
   @Inject private DelegateTaskService delegateTaskService;
@@ -1524,7 +1524,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
       return;
     }
     delegateCallbackService.publishTaskProgressResponse(
-        delegateTaskId, generateUuid(), kryoSerializer.asDeflatedBytes(responseData));
+        delegateTaskId, generateUuid(), referenceFalseKryoSerializer.asDeflatedBytes(responseData));
   }
 
   @VisibleForTesting
@@ -1879,11 +1879,11 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
       if (delegateTask.getData().isAsync()) {
         log.debug("Publishing async task response...");
         delegateCallbackService.publishAsyncTaskResponse(
-            delegateTask.getUuid(), kryoSerializer.asDeflatedBytes(response.getResponse()));
+            delegateTask.getUuid(), referenceFalseKryoSerializer.asDeflatedBytes(response.getResponse()));
       } else {
         log.debug("Publishing sync task response...");
         delegateCallbackService.publishSyncTaskResponse(
-            delegateTask.getUuid(), kryoSerializer.asDeflatedBytes(response.getResponse()));
+            delegateTask.getUuid(), referenceFalseKryoSerializer.asDeflatedBytes(response.getResponse()));
       }
     } catch (Exception ex) {
       log.error("Failed publishing task response for task", ex);
@@ -1892,8 +1892,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
 
   @Override
   public boolean checkDelegateConnected(String accountId, String delegateId) {
-    return delegateConnectionDao.checkDelegateConnected(
-        accountId, delegateId, versionInfoManager.getVersionInfo().getVersion());
+    return delegateDao.checkDelegateConnected(accountId, delegateId, versionInfoManager.getVersionInfo().getVersion());
   }
 
   @Override

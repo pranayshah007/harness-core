@@ -50,26 +50,9 @@ public class HarnessStoreVisitorHelper implements EntityReferenceExtractor {
     }
 
     HarnessStore harnessStore = (HarnessStore) object;
-    Set<EntityDetailProtoDTO> result = new HashSet<>();
-
-    List<String> files = ParameterFieldHelper.getParameterFieldListValue(harnessStore.getFiles(), false);
-    files.forEach(scopedFilePath -> {
-      FileReference fileReference =
-          FileReference.of(scopedFilePath, accountIdentifier, orgIdentifier, projectIdentifier);
-      Optional<FileDTO> fileDTO = fileStoreService.getByPath(fileReference.getAccountIdentifier(),
-          fileReference.getOrgIdentifier(), fileReference.getProjectIdentifier(), fileReference.getPath());
-
-      if (fileDTO.isPresent()) {
-        String fullQualifiedDomainName = VisitorParentPathUtils.getFullQualifiedDomainName(contextMap) + PATH_CONNECTOR
-            + YAMLFieldNameConstants.FILES;
-        String fileScopedIdentifier =
-            FileReference.getScopedFileIdentifier(fileReference.getScope(), fileDTO.get().getIdentifier());
-
-        result.add(FilterCreatorHelper.convertToEntityDetailProtoDTO(accountIdentifier, orgIdentifier,
-            projectIdentifier, fullQualifiedDomainName, ParameterField.createValueField(fileScopedIdentifier),
-            EntityTypeProtoEnum.FILES));
-      }
-    });
+    Set<EntityDetailProtoDTO> result;
+    result = getEntityDetailsProtoDTO(harnessStore.getFiles(), accountIdentifier, orgIdentifier, projectIdentifier,
+        contextMap, YAMLFieldNameConstants.FILES);
 
     List<String> secretFiles = ParameterFieldHelper.getParameterFieldListValue(harnessStore.getSecretFiles(), false);
     secretFiles.forEach(secretFile -> {
@@ -77,6 +60,32 @@ public class HarnessStoreVisitorHelper implements EntityReferenceExtractor {
           + YAMLFieldNameConstants.SECRET_FILES;
       result.add(FilterCreatorHelper.convertToEntityDetailProtoDTO(accountIdentifier, orgIdentifier, projectIdentifier,
           fullQualifiedDomainName, ParameterField.createValueField(secretFile), EntityTypeProtoEnum.SECRETS));
+    });
+
+    return result;
+  }
+
+  public Set<EntityDetailProtoDTO> getEntityDetailsProtoDTO(ParameterField<List<String>> valuesFiles,
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, Map<String, Object> contextMap,
+      String overridePathFieldName) {
+    List<String> files = ParameterFieldHelper.getParameterFieldListValue(valuesFiles, false);
+    Set<EntityDetailProtoDTO> result = new HashSet<>(files.size());
+    files.forEach(scopedFilePath -> {
+      FileReference fileReference =
+          FileReference.of(scopedFilePath, accountIdentifier, orgIdentifier, projectIdentifier);
+      Optional<FileDTO> fileDTO = fileStoreService.getByPath(fileReference.getAccountIdentifier(),
+          fileReference.getOrgIdentifier(), fileReference.getProjectIdentifier(), fileReference.getPath());
+
+      if (fileDTO.isPresent()) {
+        String fullQualifiedDomainName =
+            VisitorParentPathUtils.getFullQualifiedDomainName(contextMap) + PATH_CONNECTOR + overridePathFieldName;
+        String fileScopedIdentifier =
+            FileReference.getScopedFileIdentifier(fileReference.getScope(), fileDTO.get().getIdentifier());
+
+        result.add(FilterCreatorHelper.convertToEntityDetailProtoDTO(accountIdentifier, orgIdentifier,
+            projectIdentifier, fullQualifiedDomainName, ParameterField.createValueField(fileScopedIdentifier),
+            EntityTypeProtoEnum.FILES));
+      }
     });
 
     return result;

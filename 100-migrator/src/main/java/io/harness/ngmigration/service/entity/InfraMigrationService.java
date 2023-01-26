@@ -7,8 +7,12 @@
 
 package io.harness.ngmigration.service.entity;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
+import static software.wings.api.CloudProviderType.AWS;
 import static software.wings.api.CloudProviderType.KUBERNETES_CLUSTER;
 import static software.wings.ngmigration.NGMigrationEntityType.CONNECTOR;
+import static software.wings.ngmigration.NGMigrationEntityType.ELASTIGROUP_CONFIGURATION;
 import static software.wings.ngmigration.NGMigrationEntityType.ENVIRONMENT;
 
 import static java.util.stream.Collectors.counting;
@@ -17,6 +21,7 @@ import static java.util.stream.Collectors.groupingBy;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.MigratedEntityMapping;
+import io.harness.cdng.elastigroup.ElastigroupConfiguration;
 import io.harness.cdng.infra.InfrastructureDef;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.InfrastructureConfig;
@@ -52,6 +57,7 @@ import io.harness.serializer.JsonUtils;
 
 import software.wings.api.CloudProviderType;
 import software.wings.api.DeploymentType;
+import software.wings.infra.AwsAmiInfrastructure;
 import software.wings.infra.DirectKubernetesInfrastructure;
 import software.wings.infra.InfrastructureDefinition;
 import software.wings.ngmigration.CgBasicInfo;
@@ -79,6 +85,7 @@ import retrofit2.Response;
 @Slf4j
 public class InfraMigrationService extends NgMigrationService {
   @Inject private InfrastructureDefinitionService infrastructureDefinitionService;
+  @Inject private ElastigroupConfigurationMigrationService elastigroupConfigurationMigrationService;
 
   @Override
   public MigratedEntityMapping generateMappingEntity(NGYamlFile yamlFile) {
@@ -144,6 +151,13 @@ public class InfraMigrationService extends NgMigrationService {
                           .map(connectorId -> CgEntityId.builder().id(connectorId).type(CONNECTOR).build())
                           .collect(Collectors.toList()));
     }
+
+    if (infra.getCloudProviderType() == AWS) {
+      AwsAmiInfrastructure awsInfra = (AwsAmiInfrastructure) infra.getInfrastructure();
+      if (isNotEmpty(awsInfra.getSpotinstCloudProvider())) {
+        children.add(CgEntityId.builder().id(infra.getUuid()).type(ELASTIGROUP_CONFIGURATION).build());
+      }
+    }
     return DiscoveryNode.builder().children(children).entityNode(infraNode).build();
   }
 
@@ -196,7 +210,14 @@ public class InfraMigrationService extends NgMigrationService {
     InfraDefMapper infraDefMapper = InfraMapperFactory.getInfraDefMapper(infra);
     NGYamlFile envNgYamlFile =
         migratedEntities.get(CgEntityId.builder().id(infra.getEnvId()).type(ENVIRONMENT).build());
-    Infrastructure infraSpec = infraDefMapper.getSpec(infra, migratedEntities);
+    Set<CgEntityId> infraSpecIds = graph.get(entityId)
+                                       .stream()
+                                       .filter(cgEntityId -> cgEntityId.getType() == ELASTIGROUP_CONFIGURATION)
+                                       .collect(Collectors.toSet());
+    List<ElastigroupConfiguration> elastigroupConfigurations =
+        elastigroupConfigurationMigrationService.getElastigroupConfigurations(infraSpecIds, inputDTO, entities);
+
+    Infrastructure infraSpec = infraDefMapper.getSpec(inputDTO, infra, migratedEntities, elastigroupConfigurations);
     if (infraSpec == null) {
       log.error(String.format("We could not migrate the infra %s", infra.getUuid()));
       return Collections.emptyList();

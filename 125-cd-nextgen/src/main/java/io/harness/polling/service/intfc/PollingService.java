@@ -15,13 +15,17 @@ import io.harness.polling.bean.PolledResponse;
 import io.harness.polling.bean.PollingDocument;
 import io.harness.polling.contracts.PollingItem;
 
+import java.util.List;
 import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 
 @OwnedBy(HarnessTeam.CDC)
 public interface PollingService {
   String save(@Valid PollingDocument pollingDocument);
 
   PollingDocument get(String accountId, String pollingDocId);
+
+  List<PollingDocument> getByConnectorRef(String accountId, String connectorRef);
 
   void delete(PollingDocument pollingDocument);
 
@@ -36,4 +40,8 @@ public interface PollingService {
   boolean unsubscribe(PollingItem pollingItem);
 
   void deleteAtAllScopes(Scope scope);
+
+  void resetPerpetualTask(@NotNull PollingDocument pollingDocument);
+
+  void resetPerpetualTasksForConnector(String accountId, String connectorRef);
 }

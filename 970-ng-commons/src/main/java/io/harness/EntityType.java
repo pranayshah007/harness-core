@@ -512,7 +512,13 @@ public enum EntityType {
       EntityYamlRootNames.K8S_DRY_RUN_MANIFEST),
   @JsonProperty(EntityTypeConstants.ASG_BLUE_GREEN_SWAP_SERVICE_STEP)
   ASG_BLUE_GREEN_SWAP_SERVICE_STEP(ModuleType.CD, EntityTypeConstants.ASG_BLUE_GREEN_SWAP_SERVICE_STEP,
-      IdentifierRef.class, EntityYamlRootNames.ASG_BLUE_GREEN_SWAP_SERVICE_STEP);
+      IdentifierRef.class, EntityYamlRootNames.ASG_BLUE_GREEN_SWAP_SERVICE_STEP),
+  @JsonProperty(EntityTypeConstants.ASG_BLUE_GREEN_DEPLOY)
+  ASG_BLUE_GREEN_DEPLOY_STEP(ModuleType.CD, EntityTypeConstants.ASG_BLUE_GREEN_DEPLOY, IdentifierRef.class,
+      EntityYamlRootNames.ASG_BLUE_GREEN_DEPLOY),
+  @JsonProperty(EntityTypeConstants.ASG_BLUE_GREEN_ROLLBACK)
+  ASG_BLUE_GREEN_ROLLBACK_STEP(ModuleType.CD, EntityTypeConstants.ASG_BLUE_GREEN_ROLLBACK, IdentifierRef.class,
+      EntityYamlRootNames.ASG_BLUE_GREEN_ROLLBACK);
 
   private final ModuleType moduleType;
   String yamlName;

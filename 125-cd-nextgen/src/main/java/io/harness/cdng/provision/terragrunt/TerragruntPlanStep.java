@@ -213,7 +213,7 @@ public class TerragruntPlanStep extends CdTaskExecutable<TerragruntPlanTaskRespo
     boolean exportTgPlanJson = !ParameterField.isNull(exportTgPlanJsonField)
         && ParameterFieldHelper.getBooleanParameterFieldValue(exportTgPlanJsonField);
 
-    if (exportTgPlanJson) {
+    if (exportTgPlanJson && terragruntTaskNGResponse.getEncryptedPlan() != null) {
       helper.saveTerragruntPlanExecutionDetails(
           ambiance, terragruntTaskNGResponse, provisionerIdentifier, planStepParameters);
 

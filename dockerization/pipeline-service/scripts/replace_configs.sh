@@ -186,6 +186,22 @@ if [[ "" != "$CV_MANAGER_SERVICE_SECRET" ]]; then
   export CV_MANAGER_SERVICE_SECRET; yq -i '.yamlSchemaClientConfig.yamlSchemaHttpClientMap.cv.secret=env(CV_MANAGER_SERVICE_SECRET)' $CONFIG_FILE
 fi
 
+if [[ "" != "$CV_MANAGER_BASE_URL" ]]; then
+  export CV_MANAGER_BASE_URL; yq -i '.yamlSchemaClientConfig.yamlSchemaHttpClientMap.srm.serviceHttpClientConfig.baseUrl=env(CV_MANAGER_BASE_URL)' $CONFIG_FILE
+fi
+
+if [[ "" != "$CV_MANAGER_SERVICE_CONNECT_TIMEOUT_IN_SECONDS" ]]; then
+  export CV_MANAGER_SERVICE_CONNECT_TIMEOUT_IN_SECONDS; yq -i '.yamlSchemaClientConfig.yamlSchemaHttpClientMap.srm.serviceHttpClientConfig.connectTimeOutSeconds=env(CV_MANAGER_SERVICE_CONNECT_TIMEOUT_IN_SECONDS)' $CONFIG_FILE
+fi
+
+if [[ "" != "$CV_MANAGER_SERVICE_READ_TIMEOUT_IN_SECONDS" ]]; then
+  export CV_MANAGER_SERVICE_READ_TIMEOUT_IN_SECONDS; yq -i '.yamlSchemaClientConfig.yamlSchemaHttpClientMap.srm.serviceHttpClientConfig.readTimeOutSeconds=env(CV_MANAGER_SERVICE_READ_TIMEOUT_IN_SECONDS)' $CONFIG_FILE
+fi
+
+if [[ "" != "$CV_MANAGER_SERVICE_SECRET" ]]; then
+  export CV_MANAGER_SERVICE_SECRET; yq -i '.yamlSchemaClientConfig.yamlSchemaHttpClientMap.srm.secret=env(CV_MANAGER_SERVICE_SECRET)' $CONFIG_FILE
+fi
+
 if [[ "" != "$NG_MANAGER_TARGET" ]]; then
   export NG_MANAGER_TARGET; yq -i '.grpcClientConfigs.cd.target=env(NG_MANAGER_TARGET)' $CONFIG_FILE
 fi
@@ -200,6 +216,14 @@ fi
 
 if [[ "" != "$CVNG_MANAGER_AUTHORITY" ]]; then
   export CVNG_MANAGER_AUTHORITY; yq -i '.grpcClientConfigs.cv.authority=env(CVNG_MANAGER_AUTHORITY)' $CONFIG_FILE
+fi
+
+if [[ "" != "$CVNG_MANAGER_TARGET" ]]; then
+  export CVNG_MANAGER_TARGET; yq -i '.grpcClientConfigs.srm.target=env(CVNG_MANAGER_TARGET)' $CONFIG_FILE
+fi
+
+if [[ "" != "$CVNG_MANAGER_AUTHORITY" ]]; then
+  export CVNG_MANAGER_AUTHORITY; yq -i '.grpcClientConfigs.srm.authority=env(CVNG_MANAGER_AUTHORITY)' $CONFIG_FILE
 fi
 
 if [[ "" != "$CI_MANAGER_TARGET" ]]; then

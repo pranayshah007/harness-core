@@ -29,6 +29,7 @@ import static io.harness.eventsframework.webhookpayloads.webhookdata.WebhookEven
 import static io.harness.eventsframework.webhookpayloads.webhookdata.WebhookEventType.ISSUE_COMMENT;
 import static io.harness.eventsframework.webhookpayloads.webhookdata.WebhookEventType.PR;
 import static io.harness.eventsframework.webhookpayloads.webhookdata.WebhookEventType.PUSH;
+import static io.harness.eventsframework.webhookpayloads.webhookdata.WebhookEventType.RELEASE;
 import static io.harness.eventsframework.webhookpayloads.webhookdata.WebhookTriggerType.CUSTOM;
 import static io.harness.eventsframework.webhookpayloads.webhookdata.WebhookTriggerType.GIT;
 
@@ -132,6 +133,8 @@ public class WebhookHelper {
       } else if (parseWebhookResponse.getBranch().getAction() == Action.DELETE) {
         builder.setEvent(DELETE_BRANCH);
       }
+    } else if (parseWebhookResponse.hasRelease()) {
+      builder.setEvent(RELEASE);
     }
 
     return builder.build();

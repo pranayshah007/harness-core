@@ -253,6 +253,16 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
   }
 
   @Override
+  public CloseableIterator<PlanExecution> fetchPlanExecutionsByStatus(Set<Status> statuses, Set<String> fieldNames) {
+    // Uses status_idx index
+    Query query = query(where(PlanExecutionKeys.status).in(statuses));
+    for (String fieldName : fieldNames) {
+      query.fields().include(fieldName);
+    }
+    return planExecutionRepository.fetchPlanExecutionsFromAnalytics(query);
+  }
+
+  @Override
   public List<PlanExecution> findAllByAccountIdAndOrgIdAndProjectIdAndLastUpdatedAtInBetweenTimestamps(
       String accountId, String orgId, String projectId, long fromTS, long toTS) {
     Map<String, String> setupAbstractionSubFields = new HashMap<>();

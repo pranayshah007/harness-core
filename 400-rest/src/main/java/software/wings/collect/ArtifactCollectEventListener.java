@@ -117,7 +117,7 @@ public class ArtifactCollectEventListener extends QueueListener<CollectEvent> {
       log.info("Registering callback for the artifact with waitId {}", waitId);
       waitNotifyEngine.waitForAllOn(GENERAL, new ArtifactCollectionCallback(uuid), waitId);
       log.info("Queuing delegate task of artifactSourceName {} ", artifact.getArtifactSourceName());
-      delegateService.queueTask(delegateTask);
+      delegateService.queueTaskV2(delegateTask);
     } catch (Exception ex) {
       log.error("Failed to collect artifact. Reason {}", ExceptionUtils.getMessage(ex), ex);
       artifactService.updateStatus(uuid, accountId, Status.APPROVED, ContentStatus.FAILED);

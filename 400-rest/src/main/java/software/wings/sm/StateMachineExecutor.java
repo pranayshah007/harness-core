@@ -1724,7 +1724,7 @@ public class StateMachineExecutor implements StateInspectionListener {
         notNullCheck("context.getApp()", context.getApp());
         if (finalStatus == ABORTED) {
           try {
-            delegateService.abortTask(context.getApp().getAccountId(), delegateTaskId);
+            delegateService.abortTaskV2(context.getApp().getAccountId(), delegateTaskId);
           } catch (Exception e) {
             log.error(
                 "[AbortInstance] Error in ABORTING WorkflowExecution {}. Error in aborting delegate task : {}. Reason : {}",
@@ -1732,7 +1732,7 @@ public class StateMachineExecutor implements StateInspectionListener {
           }
         } else {
           try {
-            String errorMsg = delegateService.expireTask(context.getApp().getAccountId(), delegateTaskId);
+            String errorMsg = delegateService.expireTaskV2(context.getApp().getAccountId(), delegateTaskId);
             if (isNotBlank(errorMsg)) {
               errorMsgBuilder.append(errorMsg);
             }

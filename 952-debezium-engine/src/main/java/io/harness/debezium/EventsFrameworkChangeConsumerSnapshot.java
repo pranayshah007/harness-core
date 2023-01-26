@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -67,10 +66,6 @@ public class EventsFrameworkChangeConsumerSnapshot extends EventsFrameworkChange
         recordCommitter.markProcessed(record);
       } catch (InterruptedException e) {
         log.error("Exception Occurred while marking record as committed", e);
-      }
-      if (cnt >= producingCountPerBatch) {
-        TimeUnit.SECONDS.sleep(sleepInterval);
-        cnt = 0;
       }
     }
     recordCommitter.markBatchFinished();

@@ -22,10 +22,14 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.beans.FeatureName;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ff.FeatureFlagService;
 
+import software.wings.beans.CGConstants;
 import software.wings.beans.EntityType;
 import software.wings.beans.Pipeline;
 import software.wings.beans.PipelineStage;
@@ -131,6 +135,20 @@ public class PipelineServiceValidator {
                   "Non entity var %s is marked Runtime, the value should be a new variable expression", variableName));
             }
           }
+        }
+      }
+    }
+  }
+
+  public static void validateStageName(Pipeline pipeline, FeatureFlagService featureFlagService) {
+    if (featureFlagService.isEnabled(
+            FeatureName.SPG_ENABLE_VALIDATION_WORKFLOW_PIPELINE_STAGE, pipeline.getAccountId())) {
+      if (pipeline.getName().contains(CGConstants.DOT)) {
+        throw new InvalidArgumentsException("Pipeline name can only have a-z, A-Z, 0-9, -, (, ) and _", USER);
+      }
+      for (PipelineStage stage : pipeline.getPipelineStages()) {
+        if (stage.getName().contains(CGConstants.DOT)) {
+          throw new InvalidArgumentsException("Pipeline stage name can only have a-z, A-Z, 0-9, -, (, ) and _", USER);
         }
       }
     }

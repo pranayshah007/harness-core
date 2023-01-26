@@ -142,7 +142,7 @@ public class UpdateReleaseRepoStep extends CdTaskExecutable<NGGitOpsResponse> {
       ManifestOutcome releaseRepoOutcome = gitOpsStepHelper.getReleaseRepoOutcome(ambiance);
       // Fetch files from releaseRepoOutcome and replace expressions if present with cluster name and environment
       Map<String, Map<String, String>> filesToVariablesMap =
-          buildFilePathsToVariablesMap(releaseRepoOutcome, ambiance, gitOpsSpecParams.getVariables().getValue());
+          buildFilePathsToVariablesMap(releaseRepoOutcome, ambiance, gitOpsSpecParams.getVariables());
 
       List<GitFetchFilesConfig> gitFetchFilesConfig = new ArrayList<>();
       gitFetchFilesConfig.add(getGitFetchFilesConfig(ambiance, releaseRepoOutcome, filesToVariablesMap.keySet()));

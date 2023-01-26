@@ -38,7 +38,6 @@ public class ACRArtifactStreamMapper implements ArtifactStreamMapper {
     return PrimaryArtifact.builder()
         .sourceType(ArtifactSourceType.ACR)
         .spec(AcrArtifactConfig.builder()
-                  .primaryArtifact(true)
                   .connectorRef(ParameterField.createValueField(MigratorUtility.getIdentifierWithScope(connector)))
                   .subscriptionId(ParameterField.createValueField(acrArtifactStream.getSubscriptionId()))
                   .registry(ParameterField.createValueField(acrArtifactStream.getRegistryName()))

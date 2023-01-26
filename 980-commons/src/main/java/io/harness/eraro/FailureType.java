@@ -24,8 +24,8 @@ public enum FailureType {
   TIMEOUT_ERROR(""),
   POLICY_EVALUATION_FAILURE(""),
   INPUT_TIMEOUT_FAILURE(""),
-  APPROVAL_REJECTION("");
-
+  APPROVAL_REJECTION(""),
+  DELEGATE_RESTART("");
   String errorMessage;
 
   public static final EnumSet<FailureType> TIMEOUT = EnumSet.of(TIMEOUT_ERROR);

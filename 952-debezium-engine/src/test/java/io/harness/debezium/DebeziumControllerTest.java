@@ -41,8 +41,6 @@ public class DebeziumControllerTest extends CategoryTest {
   Properties props = new Properties();
   EventsFrameworkChangeConsumerStreaming eventsFrameworkChangeConsumerStreaming =
       new EventsFrameworkChangeConsumerStreaming(ChangeConsumerConfig.builder()
-                                                     .sleepInterval(10)
-                                                     .producingCountPerBatch(10)
                                                      .redisStreamSize(10)
                                                      .consumerType(ConsumerType.EVENTS_FRAMEWORK)
                                                      .eventsFrameworkConfiguration(null)

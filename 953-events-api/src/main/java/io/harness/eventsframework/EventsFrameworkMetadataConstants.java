@@ -88,6 +88,6 @@ public final class EventsFrameworkMetadataConstants {
 
   public static final String STREAMING_DESTINATION = "streamingDestination";
 
-  // CE
-  public static final String CCM_FOLDER = "CCM_FOLDER";
+  // CCM
+  public static final String CCM_FOLDER = "ccmFolder";
 }

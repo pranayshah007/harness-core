@@ -8,7 +8,6 @@
 package io.harness.jira;
 
 import io.harness.jackson.JsonNodeUtils;
-import io.harness.jira.deserializer.JiraInstanceDataDeserializer;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.JsonNode;

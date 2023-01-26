@@ -28,6 +28,7 @@ import io.harness.CategoryTest;
 import io.harness.PipelineServiceTestHelper;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.interrupts.InterruptService;
 import io.harness.engine.pms.data.PmsOutcomeService;
 import io.harness.engine.pms.data.PmsSweepingOutputService;
@@ -42,6 +43,7 @@ import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.service.PmsExecutionSummaryService;
 import io.harness.pms.preflight.service.PreflightService;
 import io.harness.rule.Owner;
+import io.harness.service.GraphGenerationService;
 import io.harness.steps.barriers.service.BarrierService;
 
 import com.google.protobuf.ByteString;
@@ -67,6 +69,8 @@ public class PipelineEntityCRUDStreamListenerTest extends CategoryTest {
   @Mock private PmsSweepingOutputService pmsSweepingOutputService;
   @Mock private PmsOutcomeService pmsOutcomeService;
   @Mock private InterruptService interruptService;
+  @Mock private GraphGenerationService graphGenerationService;
+  @Mock private NodeExecutionService nodeExecutionService;
   @InjectMocks PipelineEntityCRUDStreamListener pipelineEntityCRUDStreamListener;
 
   @Before
@@ -226,6 +230,10 @@ public class PipelineEntityCRUDStreamListenerTest extends CategoryTest {
     verify(pmsOutcomeService, times(2)).deleteAllOutcomesInstances(any());
     // Verify Delete all interrupts
     verify(interruptService, times(2)).deleteAllInterrupts(any());
+    // Verify graph metadata delete
+    verify(graphGenerationService, times(2)).deleteAllGraphMetadataForGivenExecutionIds(any());
+    // Verify nodeExecutions and its metadata delete
+    verify(nodeExecutionService, times(100)).deleteAllNodeExecutionAndMetadata(any());
   }
 
   @Test
@@ -281,5 +289,9 @@ public class PipelineEntityCRUDStreamListenerTest extends CategoryTest {
     verify(pmsOutcomeService, times(1)).deleteAllOutcomesInstances(any());
     // Verify Delete all interrupts
     verify(interruptService, times(1)).deleteAllInterrupts(any());
+    // Verify graph metadata delete
+    verify(graphGenerationService, times(1)).deleteAllGraphMetadataForGivenExecutionIds(any());
+    // Verify nodeExecutions and its metadata delete
+    verify(nodeExecutionService, times(40)).deleteAllNodeExecutionAndMetadata(any());
   }
 }

@@ -8,8 +8,7 @@
 package io.harness;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-import static io.harness.authorization.AuthorizationServiceHeader.MANAGER;
-import static io.harness.authorization.AuthorizationServiceHeader.PIPELINE_SERVICE;
+import static io.harness.authorization.AuthorizationServiceHeader.*;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACCOUNT_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.PIPELINE_ENTITY;
@@ -44,6 +43,7 @@ import io.harness.filter.mapper.FilterPropertiesMapper;
 import io.harness.grpc.DelegateServiceDriverGrpcClientModule;
 import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.grpc.server.PipelineServiceGrpcModule;
+import io.harness.hsqs.client.HsqsServiceClientModule;
 import io.harness.licensing.remote.NgLicenseHttpClientModule;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
@@ -347,7 +347,9 @@ public class PipelineServiceModule extends AbstractModule {
     install(new DelegateSelectionLogHttpClientModule(configuration.getManagerClientConfig(),
         configuration.getManagerServiceSecret(), PIPELINE_SERVICE.getServiceId()));
     install(new PipelineServiceEventsFrameworkModule(configuration.getEventsFrameworkConfiguration(),
-        configuration.getPipelineRedisEventsConfig(), configuration.getDebeziumConsumerConfigs()));
+        configuration.getPipelineRedisEventsConfig(), configuration.getDebeziumConsumersConfigs(),
+        configuration.getEventsFrameworkSnapshotConfiguration(),
+        configuration.isShouldUseEventsFrameworkSnapshotDebezium()));
     install(new EntitySetupUsageClientModule(this.configuration.getNgManagerServiceHttpClientConfig(),
         this.configuration.getManagerServiceSecret(), PIPELINE_SERVICE.getServiceId()));
     install(new LogStreamingModule(configuration.getLogStreamingServiceConfig().getBaseUrl()));
@@ -369,6 +371,9 @@ public class PipelineServiceModule extends AbstractModule {
     });
     install(new VariableClientModule(configuration.getNgManagerServiceHttpClientConfig(),
         configuration.getNgManagerServiceSecret(), PIPELINE_SERVICE.getServiceId()));
+    install(new HsqsServiceClientModule(this.configuration.getQueueServiceClientConfig(),
+        this.configuration.getQueueServiceSecret(), BEARER.getServiceId()));
+
     registerOutboxEventHandlers();
     bind(OutboxEventHandler.class).to(PMSOutboxEventHandler.class);
     bind(HPersistence.class).to(MongoPersistence.class);

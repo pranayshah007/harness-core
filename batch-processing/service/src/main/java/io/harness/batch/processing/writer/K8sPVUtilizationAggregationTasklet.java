@@ -18,16 +18,25 @@ import io.harness.batch.processing.billing.timeseries.service.impl.K8sUtilizatio
 import io.harness.batch.processing.billing.timeseries.service.impl.UtilizationDataServiceImpl;
 import io.harness.batch.processing.ccm.CCMJobConstants;
 import io.harness.batch.processing.dao.intfc.InstanceDataDao;
+import io.harness.beans.FeatureName;
+import io.harness.ccm.cluster.entities.ClusterRecord;
 import io.harness.ccm.commons.beans.JobConstants;
 import io.harness.ccm.commons.constants.InstanceMetaDataConstants;
 import io.harness.ccm.commons.entities.batch.InstanceData;
+import io.harness.ccm.commons.service.intf.ClusterRecordService;
+import io.harness.ff.FeatureFlagService;
+
+import software.wings.service.intfc.instance.CloudToHarnessMappingService;
 
 import com.google.inject.Singleton;
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.tasklet.Tasklet;
@@ -40,6 +49,9 @@ public class K8sPVUtilizationAggregationTasklet implements Tasklet {
   @Autowired protected InstanceDataDao instanceDataDao;
   @Autowired private UtilizationDataServiceImpl utilizationDataService;
   @Autowired private K8sUtilizationGranularDataServiceImpl k8sUtilizationGranularDataService;
+  @Autowired private FeatureFlagService featureFlagService;
+  @Autowired private CloudToHarnessMappingService cloudToHarnessMappingService;
+  @Autowired private ClusterRecordService eventsClusterRecordService;
 
   @Override
   public RepeatStatus execute(StepContribution stepContribution, ChunkContext chunkContext) throws Exception {
@@ -48,7 +60,13 @@ public class K8sPVUtilizationAggregationTasklet implements Tasklet {
     Map<String, InstanceUtilizationData> instanceUtilizationDataMap =
         k8sUtilizationGranularDataService.getAggregatedUtilizationDataOfType(
             jobConstants.getAccountId(), K8S_PVC, jobConstants.getJobStartTime(), jobConstants.getJobEndTime());
-    List<InstanceData> instanceDataList = instanceDataDao.fetchActivePVList(jobConstants.getAccountId(),
+
+    Set<String> clusterIds = null;
+    if (isClusterIdFilterQueryEnabled(jobConstants.getAccountId())) {
+      clusterIds = getClusterIdsFromClusterRecords(jobConstants.getAccountId());
+    }
+
+    List<InstanceData> instanceDataList = instanceDataDao.fetchActivePVList(jobConstants.getAccountId(), clusterIds,
         Instant.ofEpochMilli(jobConstants.getJobStartTime()), Instant.ofEpochMilli(jobConstants.getJobEndTime()));
 
     List<InstanceUtilizationData> instanceUtilizationDataList =
@@ -96,5 +114,23 @@ public class K8sPVUtilizationAggregationTasklet implements Tasklet {
     utilizationDataService.create(instanceUtilizationDataList);
 
     return null;
+  }
+
+  private boolean isClusterIdFilterQueryEnabled(String accountId) {
+    return featureFlagService.isEnabled(FeatureName.CCM_INSTANCE_DATA_CLUSTERID_FILTER, accountId);
+  }
+
+  @NotNull
+  private Set<String> getClusterIdsFromClusterRecords(String accountId) {
+    List<ClusterRecord> clusterRecords = cloudToHarnessMappingService.listCeEnabledClusters(accountId);
+    Set<String> clusterIds = new HashSet<>();
+    List<io.harness.ccm.commons.entities.ClusterRecord> eventsClusterRecords =
+        eventsClusterRecordService.getByAccountId(accountId);
+    clusterIds.addAll(clusterRecords.stream().map(ClusterRecord::getUuid).collect(Collectors.toSet()));
+    clusterIds.addAll(eventsClusterRecords.stream()
+                          .map(io.harness.ccm.commons.entities.ClusterRecord::getUuid)
+                          .collect(Collectors.toSet()));
+    log.info("Total clusterIds: {} for accountId: {}", clusterIds.size(), accountId);
+    return clusterIds;
   }
 }

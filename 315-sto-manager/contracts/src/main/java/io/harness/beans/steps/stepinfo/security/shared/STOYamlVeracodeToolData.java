@@ -22,9 +22,11 @@ import org.codehaus.jackson.annotate.JsonProperty;
 @Data
 @OwnedBy(STO)
 public class STOYamlVeracodeToolData {
-  @ApiModelProperty(dataType = STRING_CLASSPATH) @JsonProperty("app_id") protected ParameterField<String> appId;
+  @ApiModelProperty(dataType = STRING_CLASSPATH, name = "app_id")
+  @JsonProperty("app_id")
+  protected ParameterField<String> appId;
 
-  @ApiModelProperty(dataType = STRING_CLASSPATH)
+  @ApiModelProperty(dataType = STRING_CLASSPATH, name = "project_name")
   @JsonProperty("project_name")
   protected ParameterField<String> projectName;
 }

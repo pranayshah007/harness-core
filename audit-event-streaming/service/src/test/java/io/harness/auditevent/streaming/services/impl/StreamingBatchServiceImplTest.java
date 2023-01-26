@@ -9,6 +9,7 @@ package io.harness.auditevent.streaming.services.impl;
 
 import static io.harness.audit.entities.AuditEvent.AuditEventKeys.ACCOUNT_IDENTIFIER_KEY;
 import static io.harness.audit.entities.AuditEvent.AuditEventKeys.createdAt;
+import static io.harness.auditevent.streaming.entities.BatchStatus.FAILED;
 import static io.harness.auditevent.streaming.entities.BatchStatus.IN_PROGRESS;
 import static io.harness.auditevent.streaming.entities.BatchStatus.READY;
 import static io.harness.auditevent.streaming.entities.BatchStatus.SUCCESS;
@@ -188,6 +189,19 @@ public class StreamingBatchServiceImplTest extends CategoryTest {
     long now = System.currentTimeMillis();
     StreamingDestination streamingDestination = getStreamingDestination(now);
     StreamingBatch streamingBatch = getStreamingBatch(now, streamingDestination, READY);
+    when(streamingBatchRepository.findOne(any(), any())).thenReturn(streamingBatch);
+    StreamingBatch streamingBatchReturned = streamingBatchService.getLastStreamingBatch(streamingDestination, now);
+    verify(streamingBatchRepository, times(0)).save(streamingBatchArgumentCaptor.capture());
+    assertThat(streamingBatchReturned).isEqualTo(streamingBatch);
+  }
+
+  @Test
+  @Owner(developers = NISHANT)
+  @Category(UnitTests.class)
+  public void testGetLastStreamingBatch_whenStatusFailed() {
+    long now = System.currentTimeMillis();
+    StreamingDestination streamingDestination = getStreamingDestination(now);
+    StreamingBatch streamingBatch = getStreamingBatch(now, streamingDestination, FAILED);
     when(streamingBatchRepository.findOne(any(), any())).thenReturn(streamingBatch);
     StreamingBatch streamingBatchReturned = streamingBatchService.getLastStreamingBatch(streamingDestination, now);
     verify(streamingBatchRepository, times(0)).save(streamingBatchArgumentCaptor.capture());

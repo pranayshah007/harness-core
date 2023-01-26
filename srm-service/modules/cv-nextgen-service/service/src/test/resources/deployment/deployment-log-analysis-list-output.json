@@ -1,5 +1,5 @@
 {
-  "totalClusters": 4,
+  "totalClusters": 3,
   "eventCounts": [
     {
       "clusterType": "KNOWN_EVENT",
@@ -13,7 +13,7 @@
     },
     {
       "clusterType": "UNKNOWN_EVENT",
-      "count": 2,
+      "count": 1,
       "displayName": "Unknown"
     },
     {
@@ -24,49 +24,57 @@
   ],
   "logAnalysisRadarCharts": {
     "totalPages": 1,
-    "totalItems": 4,
-    "pageItemCount": 4,
+    "totalItems": 3,
+    "pageItemCount": 3,
     "pageSize": 20,
     "content": [
       {
-        "message": "clusterTwo",
-        "clusterId": "7360bb51-fb72-372f-bc2c-f57adb2f881a",
-        "label": 2,
-        "risk": "UNHEALTHY",
+        "message": "test data - host1 - log1",
+        "clusterId": "6be57479-ac65-346a-a8e8-7146cf444377",
+        "label": 0,
+        "risk": "HEALTHY",
+        "radius": null,
+        "angle": null,
         "clusterType": "UNKNOWN_EVENT",
-        "count": 25,
+        "count": 8,
         "frequencyData": [
-          12.0,
-          13.0
+          4.0,
+          4.0
         ],
         "hostFrequencyData": [
           {
             "frequencies": [
               {
-                "timeStamp": 100,
-                "count": 12.0
+                "timeStamp": 27880760,
+                "count": 4.0
+              }, {
+                "timeStamp": 27880761,
+                "count": 4.0
               }
             ],
-            "host": "host1"
-          },
-          {
-            "frequencies": [
-              {
-                "timeStamp": 200,
-                "count": 13.0
-              }
-            ],
-            "host": "host2"
+            "host": "host4"
           }
         ],
         "averageFrequencyData": [
           {
-            "timeStamp": 100,
-            "count": 12.0
+            "timeStamp": 26459162,
+            "count": 0
           },
           {
-            "timeStamp": 200,
-            "count": 13.0
+            "timeStamp": 26459163,
+            "count": 0.0
+          },
+          {
+            "timeStamp": 26459164,
+            "count": 0.0
+          },
+          {
+            "timeStamp": 26459165,
+            "count": 0.0
+          },
+          {
+            "timeStamp": 26459166,
+            "count": 0.0
           }
         ],
         "hasControlData": false

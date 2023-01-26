@@ -14,8 +14,11 @@ import static software.wings.security.PermissionAttribute.ResourceType.DELEGATE;
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.DelegateEntityOwner;
 import io.harness.delegate.beans.DelegateSetupDetails;
+import io.harness.delegate.service.intfc.DelegateInstallationCommandService;
 import io.harness.delegate.utilities.DelegateGroupDeleteResponse;
+import io.harness.delegate.utils.DelegateEntityOwnerHelper;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
 import io.harness.rest.RestResponse;
@@ -39,6 +42,7 @@ import java.nio.file.Paths;
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -57,11 +61,14 @@ import lombok.extern.slf4j.Slf4j;
 public class DelegateNgSetupInternalResource {
   private final DelegateService delegateService;
   private final SubdomainUrlHelperIntfc subdomainUrlHelper;
+  private final DelegateInstallationCommandService delegateInstallationCommandService;
 
   @Inject
-  public DelegateNgSetupInternalResource(DelegateService delegateService, SubdomainUrlHelperIntfc subdomainUrlHelper) {
+  public DelegateNgSetupInternalResource(DelegateService delegateService, SubdomainUrlHelperIntfc subdomainUrlHelper,
+      DelegateInstallationCommandService delegateInstallationCommandService) {
     this.delegateService = delegateService;
     this.subdomainUrlHelper = subdomainUrlHelper;
+    this.delegateInstallationCommandService = delegateInstallationCommandService;
   }
 
   @POST
@@ -86,6 +93,25 @@ public class DelegateNgSetupInternalResource {
 
   private String getVerificationUrl(HttpServletRequest request) {
     return request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
+  }
+
+  @GET
+  @Path("delegate-terraform-module-file")
+  @Timed
+  @ExceptionMetered
+  @InternalApi
+  public RestResponse<String> generateTerraformExampleModuleFile(@Context HttpServletRequest request,
+      @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) throws IOException {
+    final String managerUrl = subdomainUrlHelper.getManagerUrl(request, accountIdentifier);
+    final DelegateEntityOwner owner = DelegateEntityOwnerHelper.buildOwner(orgIdentifier, projectIdentifier);
+    String terraformExampleModuleFile =
+        delegateInstallationCommandService.getTerraformExampleModuleFile(managerUrl, accountIdentifier, owner);
+    return new RestResponse<>(terraformExampleModuleFile);
   }
 
   @DELETE

@@ -28,6 +28,9 @@ import lombok.experimental.UtilityClass;
 public class IdentifierRefHelper {
   public final String IDENTIFIER_REF_DELIMITER = "\\."; // check if this is the correct delimiter
   public static final int MAX_RESULT_THRESHOLD_FOR_SPLIT = 2;
+  private static final String GENERIC_IDENTIFIER_REFERENCE_HELP =
+      "Valid references must be one of the following formats { id, org.id, account.id }  for scope { project, organisation, account } respectively";
+
   public IdentifierRef createIdentifierRefWithUnknownScope(String accountId, String orgIdentifier,
       String projectIdentifier, String unknownIdentifier, Map<String, String> metadata) {
     return IdentifierRef.builder()
@@ -46,7 +49,6 @@ public class IdentifierRefHelper {
    * 0 -> AccLevelParentEntity
    * 1 -> OrgLevelParentEntity
    * 2 -> ProjectLevelParentEntity
-   *
    * entityIdentifier :- Identifier for the child entity.
    * Account Scope -> account.Identifier
    * Org Scope -> org.Identifier
@@ -159,7 +161,8 @@ public class IdentifierRefHelper {
       scope = getScope(identifierConfigStringSplit[0]);
       identifierRefBuilder = identifierRefBuilder.identifier(identifier).scope(scope);
       if (scope == Scope.PROJECT || scope == null) {
-        throw new InvalidIdentifierRefException("Invalid Identifier Reference, Scope.PROJECT invalid.");
+        throw new InvalidIdentifierRefException(String.format(
+            "Invalid Identifier Reference %s. " + GENERIC_IDENTIFIER_REFERENCE_HELP, scopedIdentifierConfig));
       } else if (scope == Scope.ORG) {
         verifyFieldExistence(scope, accountId, orgIdentifier);
         return identifierRefBuilder.orgIdentifier(orgIdentifier).build();
@@ -167,7 +170,8 @@ public class IdentifierRefHelper {
       verifyFieldExistence(scope, accountId);
       return identifierRefBuilder.build();
     } else {
-      throw new InvalidIdentifierRefException("Invalid Identifier Reference.");
+      throw new InvalidIdentifierRefException(String.format(
+          "Invalid Identifier Reference %s. " + GENERIC_IDENTIFIER_REFERENCE_HELP, scopedIdentifierConfig));
     }
   }
 
@@ -191,7 +195,8 @@ public class IdentifierRefHelper {
       verifyFieldExistence(scope, accountId, orgIdentifier, projectIdentifier);
       return identifierRefBuilder.orgIdentifier(orgIdentifier).projectIdentifier(projectIdentifier).build();
     } else {
-      throw new InvalidIdentifierRefException("Invalid Identifier Reference.");
+      throw new InvalidIdentifierRefException(
+          String.format("Invalid Identifier Reference %s. " + GENERIC_IDENTIFIER_REFERENCE_HELP, identifier));
     }
   }
 
@@ -246,10 +251,12 @@ public class IdentifierRefHelper {
       identifier = identifierConfigStringSplit[1];
       Scope scope = getScope(identifierConfigStringSplit[0]);
       if (scope == Scope.PROJECT || scope == null) {
-        throw new InvalidIdentifierRefException("Invalid Identifier Reference, Scope.PROJECT invalid.");
+        throw new InvalidIdentifierRefException(
+            "Invalid Identifier Reference, Scope.PROJECT invalid." + GENERIC_IDENTIFIER_REFERENCE_HELP);
       }
     } else {
-      throw new InvalidIdentifierRefException("Invalid Identifier Reference.");
+      throw new InvalidIdentifierRefException(String.format(
+          "Invalid Identifier Reference %s. " + GENERIC_IDENTIFIER_REFERENCE_HELP, scopedIdentifierConfig));
     }
     return identifier;
   }

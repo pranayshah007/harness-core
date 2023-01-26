@@ -9,13 +9,16 @@ package io.harness.ci.serializer.vm;
 
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameter;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.beans.serializer.RunTimeInputHandler;
+import io.harness.beans.steps.CIRegistry;
 import io.harness.beans.steps.stepinfo.BackgroundStepInfo;
 import io.harness.beans.yaml.extended.reports.JUnitTestReport;
 import io.harness.beans.yaml.extended.reports.UnitTestReportType;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.serializer.SerializerUtils;
+import io.harness.ci.utils.CIStepInfoUtils;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.vm.steps.VmBackgroundStep;
 import io.harness.delegate.beans.ci.vm.steps.VmBackgroundStep.VmBackgroundStepBuilder;
@@ -34,14 +37,21 @@ import org.apache.commons.lang3.StringUtils;
 @Singleton
 public class VmBackgroundStepSerializer {
   @Inject ConnectorUtils connectorUtils;
+  @Inject CIStepInfoUtils ciStepInfoUtils;
 
-  public VmBackgroundStep serialize(BackgroundStepInfo backgroundStepInfo, Ambiance ambiance, String identifier) {
+  public VmBackgroundStep serialize(
+      BackgroundStepInfo backgroundStepInfo, Ambiance ambiance, String identifier, List<CIRegistry> registries) {
     String command = RunTimeInputHandler.resolveStringParameter(
         "Command", "Background", identifier, backgroundStepInfo.getCommand(), false);
     String image = RunTimeInputHandler.resolveStringParameter(
         "Image", "Background", identifier, backgroundStepInfo.getImage(), false);
-    String connectorIdentifier = RunTimeInputHandler.resolveStringParameter(
-        "connectorRef", "Background", identifier, backgroundStepInfo.getConnectorRef(), false);
+    String connectorIdentifier;
+    if (isNotEmpty(registries)) {
+      connectorIdentifier = ciStepInfoUtils.resolveConnectorFromRegistries(registries, image).orElse(null);
+    } else {
+      connectorIdentifier = RunTimeInputHandler.resolveStringParameter(
+          "connectorRef", "Background", identifier, backgroundStepInfo.getConnectorRef(), false);
+    }
     Map<String, String> portBindings;
     if (ParameterField.isNotNull(backgroundStepInfo.getPorts())) {
       portBindings = SerializerUtils.getPortBindingMap(backgroundStepInfo.getPorts().getValue());

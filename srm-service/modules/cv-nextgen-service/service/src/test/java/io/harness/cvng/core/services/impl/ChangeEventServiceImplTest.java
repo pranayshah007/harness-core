@@ -317,7 +317,7 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
         Instant.ofEpochSecond(100), Instant.ofEpochSecond(400), "searchText", null, null);
     assertThat(activityQuery.toString())
         .isEqualTo(
-            "{ {\"$and\": [{\"$text\": {\"$search\": \"searchText\"}}, {\"eventTime\": {\"$lt\": {\"$date\": 400000}}}, {\"eventTime\": {\"$gte\": {\"$date\": 100000}}}, {\"type\": {\"$in\": [\"DEPLOYMENT\", \"PAGER_DUTY\", \"KUBERNETES\", \"HARNESS_CD_CURRENT_GEN\", \"FEATURE_FLAG\"]}}]}  }");
+            "{ {\"$and\": [{\"$text\": {\"$search\": \"searchText\"}}, {\"eventTime\": {\"$lt\": {\"$date\": 400000}}}, {\"eventTime\": {\"$gte\": {\"$date\": 100000}}}, {\"type\": {\"$in\": [\"DEPLOYMENT\", \"PAGER_DUTY\", \"KUBERNETES\", \"HARNESS_CD_CURRENT_GEN\", \"FEATURE_FLAG\", \"CUSTOM_DEPLOY\", \"CUSTOM_INCIDENT\", \"CUSTOM_INFRA\", \"CUSTOM_FF\"]}}]}  }");
   }
 
   @Test

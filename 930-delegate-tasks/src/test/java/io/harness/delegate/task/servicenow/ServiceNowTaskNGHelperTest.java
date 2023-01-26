@@ -462,12 +462,21 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
     serviceNowTaskNgHelper.handleResponse(jsonNodeResponse, "Success Message");
     ResponseBody body = mock(ResponseBody.class);
     Response<JsonNode> jsonNodeResponse1 = Response.error(401, body);
-    assertThatThrownBy(() -> serviceNowTaskNgHelper.handleResponse(jsonNodeResponse1, any()))
-        .isInstanceOf(ServiceNowException.class);
+    assertThatThrownBy(() -> serviceNowTaskNgHelper.handleResponse(jsonNodeResponse1, ""))
+        .isInstanceOf(ServiceNowException.class)
+        .hasMessage(ServiceNowTaskNgHelper.INVALID_SERVICE_NOW_CREDENTIALS);
 
     Response<JsonNode> jsonNodeResponse2 = Response.error(404, body);
-    assertThatThrownBy(() -> serviceNowTaskNgHelper.handleResponse(jsonNodeResponse2, any()))
-        .isInstanceOf(ServiceNowException.class);
+    assertThatThrownBy(() -> serviceNowTaskNgHelper.handleResponse(jsonNodeResponse2, ""))
+        .isInstanceOf(ServiceNowException.class)
+        .hasMessage(ServiceNowTaskNgHelper.NOT_FOUND);
+
+    when(body.string()).thenReturn("dummy error message");
+    Response<JsonNode> jsonNodeResponse3 = Response.error(400, body);
+    assertThatThrownBy(
+        () -> serviceNowTaskNgHelper.handleResponse(jsonNodeResponse3, "Error occurred while x operation"))
+        .isInstanceOf(ServiceNowException.class)
+        .hasMessage("Error occurred while x operation : dummy error message");
   }
 
   @Test
@@ -760,7 +769,9 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
       fail("Expected failure as import set is missing from response");
     } catch (ServiceNowException ex) {
       assertThat(ex.getParams().get("message"))
-          .isEqualTo(String.format("InvalidArgumentsException: Field not found: %s", "import_set"));
+          .isEqualTo(String.format(
+              "Error occurred while creating/executing serviceNow import set: InvalidArgumentsException: Field not found: %s",
+              "import_set"));
     }
 
     // case 2 when transform map is empty array in response
@@ -796,7 +807,9 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
       fail("Expected failure as import set is missing from response");
     } catch (ServiceNowException ex) {
       assertThat(ex.getParams().get("message"))
-          .isEqualTo(String.format("InvalidArgumentsException: Field not found: %s", "staging_table"));
+          .isEqualTo(String.format(
+              "Error occurred while creating/executing serviceNow import set: InvalidArgumentsException: Field not found: %s",
+              "staging_table"));
     }
     verify(logCallback, times(9)).saveExecutionLog(any());
     verify(logCallback, times(3)).saveExecutionLog(any(), any());

@@ -40,8 +40,6 @@ public class ChangeConsumerFactoryTest extends CategoryTest {
     String collectionName = "coll";
     EventsFrameworkChangeConsumerStreaming eventsFrameworkChangeConsumerStreaming =
         changeConsumerFactory.get(ChangeConsumerConfig.builder()
-                                      .sleepInterval(10)
-                                      .producingCountPerBatch(10)
                                       .redisStreamSize(10)
                                       .consumerType(ConsumerType.EVENTS_FRAMEWORK)
                                       .eventsFrameworkConfiguration(null)
@@ -51,8 +49,6 @@ public class ChangeConsumerFactoryTest extends CategoryTest {
     assertThat(eventsFrameworkChangeConsumerStreaming).isInstanceOf(EventsFrameworkChangeConsumerStreaming.class);
     assertThatThrownBy(()
                            -> changeConsumerFactory.get(ChangeConsumerConfig.builder()
-                                                            .sleepInterval(10)
-                                                            .producingCountPerBatch(10)
                                                             .redisStreamSize(10)
                                                             .consumerType(null)
                                                             .eventsFrameworkConfiguration(null)

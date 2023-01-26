@@ -32,6 +32,7 @@ import io.harness.cvng.beans.DataCollectionTaskDTO;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.activity.ActivityVerificationStatus;
 import io.harness.cvng.beans.job.VerificationJobType;
+import io.harness.cvng.cdng.beans.v2.AppliedDeploymentAnalysisType;
 import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.core.beans.TimeRange;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
@@ -77,6 +78,7 @@ import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -328,6 +330,42 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
   @Override
   public List<ProgressLog> getProgressLogs(String verificationJobInstanceId) {
     return getVerificationJobInstance(verificationJobInstanceId).getProgressLogs();
+  }
+
+  @Override
+  public void updateAppliedDeploymentAnalysisTypeForVerificationTaskId(String verificationJobInstanceId,
+      String verificationTaskId, AppliedDeploymentAnalysisType appliedDeploymentAnalysisType) {
+    log.info("Saving AppliedDeploymentAnalysisType " + appliedDeploymentAnalysisType + " for verificationTaskId "
+        + verificationTaskId);
+    VerificationJobInstance verificationJobInstance = getVerificationJobInstance(verificationJobInstanceId);
+    Map<String, AppliedDeploymentAnalysisType> appliedDeploymentAnalysisTypeMap =
+        verificationJobInstance.getAppliedDeploymentAnalysisTypeMap();
+    if (Objects.isNull(appliedDeploymentAnalysisTypeMap)) {
+      appliedDeploymentAnalysisTypeMap = new HashMap<>();
+    }
+    appliedDeploymentAnalysisTypeMap.put(verificationTaskId, appliedDeploymentAnalysisType);
+    UpdateOperations<VerificationJobInstance> updateOperations =
+        hPersistence.createUpdateOperations(VerificationJobInstance.class)
+            .set(VerificationJobInstanceKeys.appliedDeploymentAnalysisTypeMap, appliedDeploymentAnalysisTypeMap);
+    Query<VerificationJobInstance> query = hPersistence.createQuery(VerificationJobInstance.class)
+                                               .filter(VerificationJobInstanceKeys.uuid, verificationJobInstanceId);
+    hPersistence.update(query, updateOperations);
+  }
+
+  @Override
+  public AppliedDeploymentAnalysisType getAppliedDeploymentAnalysisTypeByVerificationTaskId(
+      String verificationJobInstanceId, String verificationTaskId) {
+    AppliedDeploymentAnalysisType appliedDeploymentAnalysisType;
+    VerificationJobInstance verificationJobInstance = getVerificationJobInstance(verificationJobInstanceId);
+    if (Objects.nonNull(verificationJobInstance.getAppliedDeploymentAnalysisTypeMap())
+        && verificationJobInstance.getAppliedDeploymentAnalysisTypeMap().containsKey(verificationTaskId)) {
+      appliedDeploymentAnalysisType =
+          verificationJobInstance.getAppliedDeploymentAnalysisTypeMap().get(verificationTaskId);
+    } else {
+      appliedDeploymentAnalysisType =
+          AppliedDeploymentAnalysisType.fromVerificationJobType(verificationJobInstance.getResolvedJob().getType());
+    }
+    return appliedDeploymentAnalysisType;
   }
 
   @Override

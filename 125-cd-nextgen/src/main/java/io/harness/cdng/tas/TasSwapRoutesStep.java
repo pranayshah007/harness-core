@@ -196,7 +196,7 @@ public class TasSwapRoutesStep extends CdTaskExecutable<CfCommandResponseNG> {
     if (!tasSetupDataOptional.isFound()) {
       return TaskRequest.newBuilder()
           .setSkipTaskRequest(
-              SkipTaskRequest.newBuilder().setMessage("Tas App Swap Route Step was not executed. Skipping.").build())
+              SkipTaskRequest.newBuilder().setMessage("Tas Swap Route Step was not executed. Skipping.").build())
           .build();
     }
     TasSetupDataOutcome tasSetupDataOutcome = (TasSetupDataOutcome) tasSetupDataOptional.getOutput();

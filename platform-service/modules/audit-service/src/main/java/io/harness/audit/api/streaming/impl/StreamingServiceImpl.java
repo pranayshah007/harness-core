@@ -8,10 +8,18 @@
 package io.harness.audit.api.streaming.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.audit.remote.v1.api.streaming.StreamingDestinationPermissions.VIEW_STREAMING_DESTINATION_PERMISSION;
+import static io.harness.audit.remote.v1.api.streaming.StreamingDestinationResourceTypes.STREAMING_DESTINATION;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import io.harness.NGResourceFilterConstants;
+import io.harness.accesscontrol.acl.api.AccessCheckResponseDTO;
+import io.harness.accesscontrol.acl.api.AccessControlDTO;
+import io.harness.accesscontrol.acl.api.PermissionCheckDTO;
+import io.harness.accesscontrol.acl.api.Resource;
+import io.harness.accesscontrol.acl.api.ResourceScope;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.api.streaming.StreamingService;
 import io.harness.audit.entities.streaming.StreamingDestination;
@@ -27,13 +35,23 @@ import io.harness.eraro.Level;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NoResultFoundException;
+import io.harness.ng.core.dto.EntityScopeInfo;
 import io.harness.outbox.api.OutboxService;
 import io.harness.spec.server.audit.v1.model.StreamingDestinationDTO;
 import io.harness.spec.server.audit.v1.model.StreamingDestinationDTO.StatusEnum;
+import io.harness.utils.PageUtils;
 
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Streams;
 import com.google.inject.Inject;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
@@ -51,15 +69,17 @@ public class StreamingServiceImpl implements StreamingService {
   private final StreamingDestinationRepository streamingDestinationRepository;
   OutboxService outboxService;
   TransactionTemplate transactionTemplate;
+  private final AccessControlClient accessControlClient;
 
   @Inject
   public StreamingServiceImpl(StreamingDestinationMapper streamingDestinationMapper,
       StreamingDestinationRepository streamingDestinationRepository, OutboxService outboxService,
-      TransactionTemplate transactionTemplate) {
+      TransactionTemplate transactionTemplate, AccessControlClient accessControlClient) {
     this.streamingDestinationMapper = streamingDestinationMapper;
     this.streamingDestinationRepository = streamingDestinationRepository;
     this.outboxService = outboxService;
     this.transactionTemplate = transactionTemplate;
+    this.accessControlClient = accessControlClient;
   }
 
   @Override
@@ -81,11 +101,65 @@ public class StreamingServiceImpl implements StreamingService {
     }
   }
 
+  private EntityScopeInfo getEntityScopeInfoFromStreamingDestination(StreamingDestination streamingDestination) {
+    return EntityScopeInfo.builder()
+        .accountIdentifier(streamingDestination.getAccountIdentifier())
+        .identifier(streamingDestination.getIdentifier())
+        .build();
+  }
+  private EntityScopeInfo getEntityScopeInfoFromAccessControlDTO(AccessControlDTO accessControlDTO) {
+    return EntityScopeInfo.builder()
+        .accountIdentifier(accessControlDTO.getResourceScope().getAccountIdentifier())
+        .identifier(accessControlDTO.getResourceIdentifier())
+        .build();
+  }
+
+  private List<StreamingDestination> getPermitted(List<StreamingDestination> streamingDestinations) {
+    Map<EntityScopeInfo, List<StreamingDestination>> allstreamingDestinationsMap =
+        streamingDestinations.stream().collect(Collectors.groupingBy(this::getEntityScopeInfoFromStreamingDestination));
+    List<PermissionCheckDTO> permissionChecks =
+        streamingDestinations.stream()
+            .map(streamingDestination
+                -> PermissionCheckDTO.builder()
+                       .permission(VIEW_STREAMING_DESTINATION_PERMISSION)
+                       .resourceIdentifier(streamingDestination.getIdentifier())
+                       .resourceScope(ResourceScope.of(streamingDestination.getAccountIdentifier(), null, null))
+                       .resourceType(STREAMING_DESTINATION)
+                       .build())
+            .collect(Collectors.toList());
+    AccessCheckResponseDTO accessCheckResponse = accessControlClient.checkForAccessOrThrow(permissionChecks);
+
+    List<StreamingDestination> permittedStreamingDestinations = new ArrayList<>();
+    for (AccessControlDTO accessControlDTO : accessCheckResponse.getAccessControlList()) {
+      if (accessControlDTO.isPermitted()) {
+        permittedStreamingDestinations.add(
+            allstreamingDestinationsMap.get(getEntityScopeInfoFromAccessControlDTO(accessControlDTO)).get(0));
+      }
+    }
+
+    return permittedStreamingDestinations;
+  }
+
+  public Page<StreamingDestination> getPaginatedResult(
+      List<StreamingDestination> unpagedStreamingDestinations, int page, int size) {
+    if (unpagedStreamingDestinations.isEmpty()) {
+      return Page.empty();
+    }
+    List<StreamingDestination> streamingDestinations = new ArrayList<>(unpagedStreamingDestinations);
+    streamingDestinations.sort(Comparator.comparing(StreamingDestination::getCreatedAt).reversed());
+    return PageUtils.getPage(streamingDestinations, page, size);
+  }
+
   @Override
   public Page<StreamingDestination> list(
       String accountIdentifier, Pageable pageable, StreamingDestinationFilterProperties filterProperties) {
     Criteria criteria = getCriteriaForStreamingDestinationList(accountIdentifier, filterProperties);
-
+    if (!accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, null, null),
+            Resource.of(STREAMING_DESTINATION, null), VIEW_STREAMING_DESTINATION_PERMISSION)) {
+      List<StreamingDestination> streamingDestinations =
+          streamingDestinationRepository.findAll(criteria, Pageable.unpaged()).getContent();
+      return getPaginatedResult(getPermitted(streamingDestinations), pageable.getPageNumber(), pageable.getPageSize());
+    }
     return streamingDestinationRepository.findAll(criteria, pageable);
   }
 

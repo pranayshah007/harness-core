@@ -32,6 +32,7 @@ java_library(
         "//970-ng-commons/src/main/java/io/harness/metrics/modules:module",
         "//970-ng-commons/src/main/java/io/harness/metrics/service/api:module",
         "//970-ng-commons/src/main/java/io/harness/metrics/service/impl:module",
+        "//970-ng-commons/src/main/java/io/harness/yaml/infra:module",
         "//970-ng-commons/src/main/proto:970_ng_java_contract_proto",
         "//979-recaster:module",
         "//980-commons/src/main/java/io/harness/data/structure:module",

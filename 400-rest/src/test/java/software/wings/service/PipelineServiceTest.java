@@ -18,6 +18,7 @@ import static io.harness.rule.OwnerRule.GARVIT;
 import static io.harness.rule.OwnerRule.GEORGE;
 import static io.harness.rule.OwnerRule.MILOS;
 import static io.harness.rule.OwnerRule.PRABU;
+import static io.harness.rule.OwnerRule.RAFAEL;
 import static io.harness.rule.OwnerRule.RAMA;
 import static io.harness.rule.OwnerRule.SRINIVAS;
 import static io.harness.rule.OwnerRule.UJJAWAL;
@@ -78,14 +79,17 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EnvironmentType;
+import io.harness.beans.FeatureName;
 import io.harness.beans.OrchestrationWorkflowType;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.beans.RepairActionCode;
 import io.harness.beans.WorkflowType;
 import io.harness.category.element.UnitTests;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.limits.Action;
 import io.harness.limits.ActionType;
 import io.harness.limits.LimitCheckerFactory;
@@ -181,6 +185,8 @@ public class PipelineServiceTest extends WingsBaseTest {
 
   @Mock Query<Pipeline> pquery;
   @Mock private FieldEnd end;
+
+  @Mock private FeatureFlagService featureFlagService;
 
   @Inject @InjectMocks private PipelineService pipelineService;
   @Inject @InjectMocks ResourceLookupService resourceLookupService;
@@ -337,6 +343,22 @@ public class PipelineServiceTest extends WingsBaseTest {
     assertThat(capturedUserGroupIds).isEqualTo(Arrays.asList("userGroup2", "userGroup3", "userGroup1"));
     verify(userGroupService, times(0))
         .removeParentsReference(any(), any(), any(), any(), eq(EntityType.PIPELINE.name()));
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void shouldUpdatePipelineWithFF() {
+    FailureStrategy failureStrategy =
+        FailureStrategy.builder().repairActionCode(RepairActionCode.MANUAL_INTERVENTION).build();
+    Pipeline pipeline = getPipelineSimple(failureStrategy, prepareStageSimple());
+    pipeline.getPipelineStages().get(0).setName("Stage name contains dot.");
+
+    when(featureFlagService.isEnabled(eq(FeatureName.SPG_ENABLE_VALIDATION_WORKFLOW_PIPELINE_STAGE), any()))
+        .thenReturn(true);
+
+    assertThatExceptionOfType(InvalidArgumentsException.class)
+        .isThrownBy(() -> pipelineService.update(pipeline, false, false));
   }
 
   @Test

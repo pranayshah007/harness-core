@@ -176,7 +176,9 @@ public class ServiceNowTaskNgHelper {
       throw e;
     } catch (Exception ex) {
       log.error("Failed to create ServiceNow ticket: {}", ExceptionUtils.getMessage(ex), ex);
-      throw new ServiceNowException(ExceptionUtils.getMessage(ex), SERVICENOW_ERROR, USER, ex);
+      throw new ServiceNowException(
+          String.format("Error occurred while creating serviceNow ticket: %s", ExceptionUtils.getMessage(ex)),
+          SERVICENOW_ERROR, USER, ex);
     }
   }
 
@@ -217,7 +219,9 @@ public class ServiceNowTaskNgHelper {
       throw e;
     } catch (Exception ex) {
       log.error("Failed to create ServiceNow ticket: {}", ExceptionUtils.getMessage(ex), ex);
-      throw new ServiceNowException(ExceptionUtils.getMessage(ex), SERVICENOW_ERROR, USER, ex);
+      throw new ServiceNowException(
+          String.format("Error occurred while creating serviceNow ticket: %s", ExceptionUtils.getMessage(ex)),
+          SERVICENOW_ERROR, USER, ex);
     }
   }
 
@@ -268,7 +272,9 @@ public class ServiceNowTaskNgHelper {
       throw e;
     } catch (Exception ex) {
       log.error("Failed to update ServiceNow ticket: {}", ExceptionUtils.getMessage(ex), ex);
-      throw new ServiceNowException(ExceptionUtils.getMessage(ex), SERVICENOW_ERROR, USER, ex);
+      throw new ServiceNowException(
+          String.format("Error occurred while updating serviceNow ticket: %s", ExceptionUtils.getMessage(ex)),
+          SERVICENOW_ERROR, USER, ex);
     }
   }
 
@@ -414,7 +420,9 @@ public class ServiceNowTaskNgHelper {
       throw e;
     } catch (Exception ex) {
       log.error("Failed to update ServiceNow ticket: {}", ExceptionUtils.getMessage(ex), ex);
-      throw new ServiceNowException(ExceptionUtils.getMessage(ex), SERVICENOW_ERROR, USER, ex);
+      throw new ServiceNowException(
+          String.format("Error occurred while updating serviceNow ticket: %s", ExceptionUtils.getMessage(ex)),
+          SERVICENOW_ERROR, USER, ex);
     }
   }
 
@@ -451,16 +459,18 @@ public class ServiceNowTaskNgHelper {
         }
         return ServiceNowTaskNGResponse.builder().serviceNowTemplateList(templateResponse).build();
       } else {
-        throw new ServiceNowException("Failed to fetch fields for ticket type "
+        throw new ServiceNowException("Failed to fetch templates for ticket type "
                 + serviceNowTaskNGParameters.getTicketType() + " response: " + response,
             SERVICENOW_ERROR, USER);
       }
     } catch (ServiceNowException e) {
-      log.error("Failed to get ServiceNow fields: {}", ExceptionUtils.getMessage(e), e);
+      log.error("Failed to get ServiceNow templates: {}", ExceptionUtils.getMessage(e), e);
       throw e;
     } catch (Exception ex) {
-      log.error("Failed to get ServiceNow fields: {}", ExceptionUtils.getMessage(ex), ex);
-      throw new ServiceNowException(ExceptionUtils.getMessage(ex), SERVICENOW_ERROR, USER, ex);
+      log.error("Failed to get ServiceNow templates: {}", ExceptionUtils.getMessage(ex), ex);
+      throw new ServiceNowException(
+          String.format("Error occurred while fetching serviceNow templates: %s", ExceptionUtils.getMessage(ex)),
+          SERVICENOW_ERROR, USER, ex);
     }
   }
 
@@ -503,7 +513,9 @@ public class ServiceNowTaskNgHelper {
       }
     } catch (Exception e) {
       log.error("Failed to get serviceNow ticket ");
-      throw new ServiceNowException(ExceptionUtils.getMessage(e), SERVICENOW_ERROR, USER, e);
+      throw new ServiceNowException(
+          String.format("Error occurred while fetching serviceNow ticket: %s", ExceptionUtils.getMessage(e)),
+          SERVICENOW_ERROR, USER, e);
     }
   }
 
@@ -536,7 +548,9 @@ public class ServiceNowTaskNgHelper {
       }
     } catch (Exception e) {
       log.error("Failed to get serviceNow fields ");
-      throw new ServiceNowException(ExceptionUtils.getMessage(e), SERVICENOW_ERROR, USER, e);
+      throw new ServiceNowException(
+          String.format("Error occurred while fetching serviceNow fields: %s", ExceptionUtils.getMessage(e)),
+          SERVICENOW_ERROR, USER, e);
     }
   }
 
@@ -585,7 +599,9 @@ public class ServiceNowTaskNgHelper {
       throw e;
     } catch (Exception ex) {
       log.error("Failed to get ServiceNow fields: {}", ExceptionUtils.getMessage(ex), ex);
-      throw new ServiceNowException(ExceptionUtils.getMessage(ex), SERVICENOW_ERROR, USER, ex);
+      throw new ServiceNowException(
+          String.format("Error occurred while getting serviceNow fields: %s", ExceptionUtils.getMessage(ex)),
+          SERVICENOW_ERROR, USER, ex);
     }
   }
 
@@ -662,7 +678,9 @@ public class ServiceNowTaskNgHelper {
       log.error("Failed to create/execute ServiceNow import set: {}", ExceptionUtils.getMessage(ex), ex);
       saveLogs(executionLogCallback,
           String.format("Failed to create/execute import set: %s", ExceptionUtils.getMessage(ex)), LogLevel.ERROR);
-      throw new ServiceNowException(ExceptionUtils.getMessage(ex), SERVICENOW_ERROR, USER, ex);
+      throw new ServiceNowException(String.format("Error occurred while creating/executing serviceNow import set: %s",
+                                        ExceptionUtils.getMessage(ex)),
+          SERVICENOW_ERROR, USER, ex);
     }
   }
 
@@ -698,7 +716,9 @@ public class ServiceNowTaskNgHelper {
       throw e;
     } catch (Exception ex) {
       log.error("Failed to fetch staging tables: {}", ExceptionUtils.getMessage(ex), ex);
-      throw new ServiceNowException(ExceptionUtils.getMessage(ex), SERVICENOW_ERROR, USER, ex);
+      throw new ServiceNowException(
+          String.format("Error occurred while fetching serviceNow staging tables: %s", ExceptionUtils.getMessage(ex)),
+          SERVICENOW_ERROR, USER, ex);
     }
   }
 
@@ -813,7 +833,7 @@ public class ServiceNowTaskNgHelper {
     if (response.errorBody() == null) {
       throw new ServiceNowException(message + " : " + response.message(), SERVICENOW_ERROR, USER);
     }
-    throw new ServiceNowException(response.errorBody().string(), SERVICENOW_ERROR, USER);
+    throw new ServiceNowException(message + " : " + response.errorBody().string(), SERVICENOW_ERROR, USER);
   }
 
   @NotNull

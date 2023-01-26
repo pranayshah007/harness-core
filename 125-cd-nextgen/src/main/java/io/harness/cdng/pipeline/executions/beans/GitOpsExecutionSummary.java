@@ -64,5 +64,7 @@ public class GitOpsExecutionSummary {
     String envName;
     String clusterId;
     String clusterName;
+    String agentId;
+    String scope;
   }
 }

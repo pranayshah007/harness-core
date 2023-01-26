@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Harness Inc. All rights reserved.
+ * Copyright 2023 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
@@ -25,6 +25,13 @@ import java.util.stream.Collectors;
 import lombok.Builder;
 
 public class ErrorTrackingNotificationRuleUtils {
+  public static final String EVENT_VERSION_LABEL = "Events appeared on the deployment version ";
+  public static final String NEW_EVENT_LABEL = "New Events ";
+
+  private ErrorTrackingNotificationRuleUtils() {
+    throw new IllegalStateException("Utility classes cannot be instantiated.");
+  }
+
   public static Map<String, String> getCodeErrorTemplateData(
       ErrorTrackingNotificationData errorTrackingNotificationData, String baseLinkUrl) {
     Map<String, String> notificationDataMap = new HashMap<>();
@@ -37,9 +44,9 @@ public class ErrorTrackingNotificationRuleUtils {
       List<ErrorTrackingEvent> errorTrackingEvents = getErrorTrackingEventsRecursive(scorecards, baseLinkUrl, from, to);
 
       final String slackVersionList =
-          errorTrackingEvents.stream().map(ErrorTrackingEvent::toSlackString).collect(Collectors.joining(" "));
+          errorTrackingEvents.stream().map(ErrorTrackingEvent::toSlackString).collect(Collectors.joining("\n"));
       final String emailVersionList =
-          errorTrackingEvents.stream().map(ErrorTrackingEvent::toEmailString).collect(Collectors.joining(" "));
+          errorTrackingEvents.stream().map(ErrorTrackingEvent::toEmailString).collect(Collectors.joining());
 
       notificationDataMap.put(SLACK_FORMATTED_VERSION_LIST, slackVersionList);
       notificationDataMap.put(EMAIL_FORMATTED_VERSION_LIST, emailVersionList);
@@ -91,11 +98,16 @@ public class ErrorTrackingNotificationRuleUtils {
     private String newCount;
 
     public String toSlackString() {
-      return "<" + url + "|" + version + "(" + newCount + ")"
-          + ">";
+      return EVENT_VERSION_LABEL + "*" + version + "*\n<" + url + "|" + NEW_EVENT_LABEL + "(" + newCount + ")>";
     }
     public String toEmailString() {
-      return EMAIL_LINK_BEGIN + url + EMAIL_LINK_MIDDLE + version + "(" + newCount + ")" + EMAIL_LINK_END;
+      return "<div style=\"margin-bottom: 16px\">"
+          + "<span>" + EVENT_VERSION_LABEL + "<span style=\"font-weight: bold;\">" + version + "</span></span>"
+          + "<div style =\"margin-top: 4px;\">"
+          + "<span>" + EMAIL_LINK_BEGIN + url + EMAIL_LINK_MIDDLE + NEW_EVENT_LABEL + "(" + newCount + ")"
+          + EMAIL_LINK_END + "</span>"
+          + "</div>"
+          + "</div>";
     }
   }
 }

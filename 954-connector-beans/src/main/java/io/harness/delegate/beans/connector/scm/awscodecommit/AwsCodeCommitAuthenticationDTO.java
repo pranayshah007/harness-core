@@ -10,6 +10,7 @@ package io.harness.delegate.beans.connector.scm.awscodecommit;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.SourceCodeManagerAuthentication;
+import io.harness.delegate.beans.connector.scm.awscodecommit.outcome.AwsCodeCommitAuthenticationOutcomeDTO;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -44,5 +45,12 @@ public class AwsCodeCommitAuthenticationDTO implements SourceCodeManagerAuthenti
   public AwsCodeCommitAuthenticationDTO(AwsCodeCommitAuthType authType, AwsCodeCommitCredentialsDTO credentials) {
     this.authType = authType;
     this.credentials = credentials;
+  }
+
+  public AwsCodeCommitAuthenticationOutcomeDTO toOutcome() {
+    return AwsCodeCommitAuthenticationOutcomeDTO.builder()
+        .type(this.authType)
+        .spec(this.credentials.toOutcome())
+        .build();
   }
 }

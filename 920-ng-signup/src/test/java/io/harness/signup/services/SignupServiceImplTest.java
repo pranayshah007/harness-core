@@ -194,7 +194,7 @@ public class SignupServiceImplTest extends CategoryTest {
     when(verificationTokenRepository.findByToken(TOKEN)).thenReturn(Optional.of(verificationToken));
     when(accessControlClient.hasAccess(any(), any(), any(), any())).thenReturn(true);
     when(featureFlagService.isGlobalEnabled(any())).thenReturn(true);
-    UserInfo userInfo = signupServiceImpl.completeSignupInvite(TOKEN, null, null);
+    UserInfo userInfo = signupServiceImpl.completeSignupInvite(TOKEN, null, null, null);
 
     verify(telemetryReporter, times(1)).sendIdentifyEvent(eq(EMAIL), any(), any());
     verify(telemetryReporter, times(1))
@@ -216,7 +216,7 @@ public class SignupServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCompleteSignupInviteWithInvalidToken() throws IOException {
     when(verificationTokenRepository.findByToken(TOKEN)).thenReturn(Optional.ofNullable(null));
-    signupServiceImpl.completeSignupInvite(TOKEN, null, null);
+    signupServiceImpl.completeSignupInvite(TOKEN, null, null, null);
   }
 
   @Test

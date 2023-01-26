@@ -66,6 +66,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -237,6 +240,7 @@ public class JiraCreateUpdateTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testParseDateTimeValueWhenFFEnables() {
     when(featureFlagService.isEnabled(eq(FeatureName.SPG_ALLOW_UI_JIRA_CUSTOM_DATETIME_FIELD), any())).thenReturn(true);
+    Instant.now(Clock.fixed(Instant.parse("2023-01-23T10:00:00Z"), ZoneOffset.UTC));
 
     String fieldValue = "1234567891011";
     String parsedVal = jiraCreateUpdateState.parseDateTimeValue(fieldValue, context);
@@ -288,6 +292,11 @@ public class JiraCreateUpdateTest extends WingsBaseTest {
     expectedVal = "1671876000000";
     assertThat(parsedVal).isEqualTo(expectedVal);
 
+    fieldValue = "01/23/2023 10:00";
+    parsedVal = jiraCreateUpdateState.parseDateTimeValue(fieldValue, context);
+    expectedVal = "1674468000000";
+    assertThat(parsedVal).isEqualTo(expectedVal);
+
     fieldValue = "2014-12-03T10:05:59.5646+09:00";
     parsedVal = jiraCreateUpdateState.parseDateTimeValue(fieldValue, context);
     expectedVal = "1417568759000";
@@ -298,6 +307,7 @@ public class JiraCreateUpdateTest extends WingsBaseTest {
   @Owner(developers = POOJA, intermittent = true)
   @Category(UnitTests.class)
   public void testParseDateValue() {
+    Instant.now(Clock.fixed(Instant.parse("2023-01-23T10:00:00Z"), ZoneOffset.UTC));
     String fieldValue = "1234567891011";
     String parsedVal = jiraCreateUpdateState.parseDateTimeValue(fieldValue, context);
     assertThat(parsedVal).isEqualTo(fieldValue);
@@ -354,10 +364,17 @@ public class JiraCreateUpdateTest extends WingsBaseTest {
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Cannot parse date time value from current() *2d");
 
-    fieldValue = "2014-12-03T10:05:59.5646+09:00";
+    fieldValue = "01/23/2023 10:00";
     String finalFieldValue5 = fieldValue;
     jiraCreateUpdateState.parseDateTimeValue(fieldValue, context);
     assertThatThrownBy(() -> jiraCreateUpdateState.parseDateTimeValue(finalFieldValue5, context))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Cannot parse date time value from current() *2d");
+
+    fieldValue = "2014-12-03T10:05:59.5646+09:00";
+    String finalFieldValue6 = fieldValue;
+    jiraCreateUpdateState.parseDateTimeValue(fieldValue, context);
+    assertThatThrownBy(() -> jiraCreateUpdateState.parseDateTimeValue(finalFieldValue6, context))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Cannot parse date time value from current() *2d");
   }
@@ -780,7 +797,7 @@ public class JiraCreateUpdateTest extends WingsBaseTest {
             .build();
     ExecutionResponse executionResponse = jiraCreateUpdateState.execute(context);
     ArgumentCaptor<DelegateTask> delegateTaskArgumentCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(delegateTaskArgumentCaptor.capture());
+    verify(delegateService).queueTaskV2(delegateTaskArgumentCaptor.capture());
     assertThat(delegateTaskArgumentCaptor.getValue())
         .isNotNull()
         .hasFieldOrPropertyWithValue("data.taskType", JIRA.name());
@@ -807,7 +824,7 @@ public class JiraCreateUpdateTest extends WingsBaseTest {
             .build();
     ExecutionResponse executionResponse = jiraCreateUpdateState.execute(context);
     ArgumentCaptor<DelegateTask> delegateTaskArgumentCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(delegateTaskArgumentCaptor.capture());
+    verify(delegateService).queueTaskV2(delegateTaskArgumentCaptor.capture());
     assertThat(delegateTaskArgumentCaptor.getValue())
         .isNotNull()
         .hasFieldOrPropertyWithValue("data.taskType", JIRA.name());
@@ -835,7 +852,7 @@ public class JiraCreateUpdateTest extends WingsBaseTest {
             .build();
     ExecutionResponse executionResponse = jiraCreateUpdateState.execute(context);
     ArgumentCaptor<DelegateTask> delegateTaskArgumentCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(delegateService).queueTask(delegateTaskArgumentCaptor.capture());
+    verify(delegateService).queueTaskV2(delegateTaskArgumentCaptor.capture());
     assertThat(delegateTaskArgumentCaptor.getValue())
         .isNotNull()
         .hasFieldOrPropertyWithValue("data.taskType", JIRA.name());
@@ -907,6 +924,6 @@ public class JiraCreateUpdateTest extends WingsBaseTest {
     when(jiraHelperService.getCreateMetadata(
              JIRA_CONNECTOR_ID, null, jiraCreateUpdateState.getProject(), ACCOUNT_ID, APP_ID, 0, ISSUE_TYPE))
         .thenReturn(createMetaResponse);
-    when(delegateService.queueTask(any())).thenReturn(UUID);
+    when(delegateService.queueTaskV2(any())).thenReturn(UUID);
   }
 }

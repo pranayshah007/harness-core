@@ -9,8 +9,8 @@ package io.harness.pms.event.overviewLandingPage;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.eventHandler.DebeziumAbstractRedisEventHandler;
 import io.harness.pms.plan.execution.PipelineExecutionSummaryKeys;
-import io.harness.redisHandler.RedisAbstractHandler;
 import io.harness.timescaledb.Tables;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -23,7 +23,7 @@ import org.jooq.exception.DataAccessException;
 
 @Slf4j
 @OwnedBy(HarnessTeam.SPG)
-public class PipelineExecutionSummaryChangeEventHandler extends RedisAbstractHandler {
+public class PipelineExecutionSummaryChangeEventHandler extends DebeziumAbstractRedisEventHandler {
   @Inject private DSLContext dsl;
 
   @SneakyThrows

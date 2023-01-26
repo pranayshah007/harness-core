@@ -646,6 +646,15 @@ io.harness.cdng.aws.asg.AsgPrepareRollbackDataPassThroughData
 io.harness.cdng.aws.asg.AsgCanaryDeployStepNode
 io.harness.cdng.aws.asg.AsgCanaryDeployStepParameters
 io.harness.cdng.aws.asg.AsgCanaryDeployStepInfo
+io.harness.cdng.aws.asg.AsgBlueGreenExecutionPassThroughData
+io.harness.cdng.aws.asg.AsgBlueGreenDeployStepNode
+io.harness.cdng.aws.asg.AsgBlueGreenDeployStepParameters
+io.harness.cdng.aws.asg.AsgBlueGreenDeployStepInfo
+io.harness.cdng.aws.asg.AsgBlueGreenRollbackStepNode
+io.harness.cdng.aws.asg.AsgBlueGreenDeployOutcome
+io.harness.cdng.aws.asg.AsgBlueGreenPrepareRollbackDataOutcome
+io.harness.cdng.aws.asg.AsgBlueGreenRollbackStepParameters
+io.harness.cdng.aws.asg.AsgBlueGreenRollbackStepInfo
 io.harness.cdng.tas.outcome.TasSetupDataOutcome
 io.harness.cdng.tas.TasSwapRollbackStepParameters
 io.harness.cdng.tas.TasSwapRollbackStepInfo
@@ -711,3 +720,4 @@ io.harness.cdng.aws.asg.AsgBlueGreenSwapServiceStepNode
 io.harness.cdng.aws.asg.AsgBlueGreenSwapServiceStepParameters
 io.harness.cdng.aws.asg.AsgBlueGreenSwapServiceStepInfo
 io.harness.cdng.aws.asg.AsgBlueGreenSwapServiceOutcome
+io.harness.cdng.aws.asg.AsgBlueGreenSwapServiceStartOutcome

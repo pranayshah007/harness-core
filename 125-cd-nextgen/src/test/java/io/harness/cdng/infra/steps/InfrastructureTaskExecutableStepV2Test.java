@@ -114,6 +114,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.serializer.KryoSerializer;
@@ -127,6 +128,7 @@ import io.harness.yaml.infra.HostConnectionTypeKind;
 
 import software.wings.service.impl.aws.model.AwsEC2Instance;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -139,6 +141,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.assertj.core.api.Assertions;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -176,6 +179,7 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
   private final InfrastructureConfig awsInfra = testAwsInfra();
   private final InfrastructureConfig azureInfra = testAzureInfra();
   private final InfrastructureConfig pdcInfra = testPdcInfra();
+  private final InfrastructureConfig pdcInfraWithInputs = testPdcInfraWithInputs();
 
   @Before
   public void setUp() throws Exception {
@@ -347,12 +351,17 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
   @Test
   @Owner(developers = OwnerRule.YOGESH)
   @Category({UnitTests.class})
-  public void executeAsyncNonTaskTypeInfra() {
-    mockInfra(pdcInfra);
+  public void executeAsyncNonTaskTypeInfra() throws IOException {
+    mockInfra(pdcInfraWithInputs);
+    String inputYaml = "identifier: \"infra-id\"\n"
+        + "type: \"Pdc\"\n"
+        + "spec:\n"
+        + "  credentialsRef: \"qa\"";
     AsyncExecutableResponse asyncExecutableResponse = step.executeAsyncAfterRbac(ambiance,
         InfrastructureTaskExecutableStepV2Params.builder()
             .envRef(ParameterField.createValueField("env-id"))
             .infraRef(ParameterField.createValueField("infra-id"))
+            .infraInputs(ParameterField.createValueField(YamlUtils.read(inputYaml, Map.class)))
             .build(),
         null);
     assertThat(asyncExecutableResponse.getLogKeysCount()).isEqualTo(1);
@@ -361,6 +370,26 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
             "accountId:ACCOUNT_ID/orgId:ORG_ID/projectId:PROJECT_ID/pipelineId:/runSequence:0/level0:infrastructure-commandUnit:Execute");
 
     verify(resolver, times(1)).updateExpressions(any(Ambiance.class), any(Infrastructure.class));
+  }
+  @Test
+  @Owner(developers = OwnerRule.YOGESH)
+  @Category({UnitTests.class})
+  public void testInfraInputsMerge() {
+    mockInfra(pdcInfraWithInputs);
+    String inputYaml = "identifier: \"infra-id\"\n"
+        + "type: \"Pdc\"\n"
+        + "spec:\n"
+        + "  credentialsRef: \"prod\"";
+    Assertions.assertThatExceptionOfType(InvalidRequestException.class)
+        .isThrownBy(()
+                        -> step.executeAsyncAfterRbac(ambiance,
+                            InfrastructureTaskExecutableStepV2Params.builder()
+                                .envRef(ParameterField.createValueField("env-id"))
+                                .infraRef(ParameterField.createValueField("infra-id"))
+                                .infraInputs(ParameterField.createValueField(YamlUtils.read(inputYaml, Map.class)))
+                                .build(),
+                            null))
+        .withMessageContaining("The value provided prod does not match any of the allowed values [dev,qa]");
   }
 
   @Test
@@ -869,6 +898,24 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
                 .spec(PdcInfrastructure.builder()
                           .connectorRef(ParameterField.createValueField("awsconnector"))
                           .credentialsRef(ParameterField.createValueField("sshkey"))
+                          .hosts(ParameterField.createValueField(Arrays.asList("host1", "host2")))
+                          .build())
+                .build())
+        .build();
+  }
+
+  private InfrastructureConfig testPdcInfraWithInputs() {
+    return InfrastructureConfig.builder()
+        .infrastructureDefinitionConfig(
+            InfrastructureDefinitionConfig.builder()
+                .orgIdentifier("orgId")
+                .projectIdentifier("projectId")
+                .identifier("infra-id")
+                .type(InfrastructureType.PDC)
+                .spec(PdcInfrastructure.builder()
+                          .connectorRef(ParameterField.createValueField("awsconnector"))
+                          .credentialsRef(
+                              ParameterField.createExpressionField(true, "<+input>.allowedValues(dev, qa)", null, true))
                           .hosts(ParameterField.createValueField(Arrays.asList("host1", "host2")))
                           .build())
                 .build())

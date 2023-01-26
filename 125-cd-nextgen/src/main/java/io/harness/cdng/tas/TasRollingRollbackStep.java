@@ -66,12 +66,13 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
-import io.harness.steps.StepUtils;
+import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
 
 import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -91,7 +92,7 @@ public class TasRollingRollbackStep extends CdTaskExecutable<CfCommandResponseNG
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private OutcomeService outcomeService;
   @Inject private TasEntityHelper tasEntityHelper;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer kryoSerializer;
   @Inject private StepHelper stepHelper;
   @Inject private TasStepHelper tasStepHelper;
   @Inject private InstanceInfoService instanceInfoService;
@@ -188,7 +189,7 @@ public class TasRollingRollbackStep extends CdTaskExecutable<CfCommandResponseNG
                                   .taskType(TaskType.TAS_ROLLING_ROLLBACK.name())
                                   .parameters(new Object[] {cfRollingRollbackRequestNG})
                                   .build();
-    return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+    return TaskRequestsUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
         Arrays.asList(CfCommandUnitConstants.Rollback, CfCommandUnitConstants.Wrapup),
         TaskType.TAS_ROLLING_ROLLBACK.getDisplayName(),
         TaskSelectorYaml.toTaskSelector(tasRollingRollbackStepParameters.getDelegateSelectors()),

@@ -7,6 +7,8 @@
 
 package io.harness.ccm.views.dao;
 
+import io.harness.ccm.commons.entities.CCMSort;
+import io.harness.ccm.commons.entities.CCMSortOrder;
 import io.harness.ccm.views.entities.RuleSet;
 import io.harness.ccm.views.entities.RuleSet.RuleSetId;
 import io.harness.ccm.views.helper.RuleSetFilter;
@@ -143,36 +145,55 @@ public class RuleSetDAO {
     return ruleSets;
   }
 
-  public RuleSetList list(String accountId, RuleSetFilter ruleSet) {
+  public RuleSetList list(String accountId, RuleSetFilter ruleSetFilter) {
     RuleSetList ruleSetList = RuleSetList.builder().build();
     Query<RuleSet> ruleSets = hPersistence.createQuery(RuleSet.class)
                                   .field(RuleSetId.accountId)
-                                  .in(Arrays.asList(accountId, GLOBAL_ACCOUNT_ID))
-                                  .order(Sort.ascending(RuleSetId.name));
+                                  .in(Arrays.asList(accountId, GLOBAL_ACCOUNT_ID));
 
-    if (ruleSet.getRuleSetIds() != null) {
-      ruleSets.field(RuleSetId.uuid).in(ruleSet.getRuleSetIds());
+    if (ruleSetFilter.getRuleSetIds() != null) {
+      ruleSets.field(RuleSetId.uuid).in(ruleSetFilter.getRuleSetIds());
     }
-    if (ruleSet.getCloudProvider() != null) {
-      ruleSets.field(RuleSetId.cloudProvider).equal(ruleSet.getCloudProvider());
+    if (ruleSetFilter.getCloudProvider() != null) {
+      ruleSets.field(RuleSetId.cloudProvider).equal(ruleSetFilter.getCloudProvider());
     }
-    if (ruleSet.getRuleSetIds() != null) {
-      ruleSets.field(RuleSetId.rulesIdentifier).in(ruleSet.getRuleSetIds());
+    if (ruleSetFilter.getRuleSetIds() != null) {
+      ruleSets.field(RuleSetId.rulesIdentifier).in(ruleSetFilter.getRuleSetIds());
     }
-    if (ruleSet.getIsOOTB() != null) {
-      if (ruleSet.getIsOOTB()) {
+    if (ruleSetFilter.getIsOOTB() != null) {
+      if (ruleSetFilter.getIsOOTB()) {
         log.info("Adding all OOTB rules");
         ruleSets.field(RuleSetId.accountId).equal(GLOBAL_ACCOUNT_ID);
       } else {
         ruleSets.field(RuleSetId.accountId).equal(accountId);
       }
     }
-    if (ruleSet.getSearch() != null) {
-      ruleSets.field(RuleSetId.name).containsIgnoreCase(ruleSet.getSearch());
+    if (ruleSetFilter.getOrderBy() != null) {
+      for (CCMSort sort : ruleSetFilter.getOrderBy()) {
+        switch (sort.getField()) {
+          case RULE_SET_NAME:
+            sortByRuleSetName(ruleSets, sort.getOrder());
+            break;
+          default:
+            throw new InvalidRequestException("Sort field " + sort.getField() + " is not supported");
+        }
+      }
+    }
+    if (ruleSetFilter.getSearch() != null) {
+      ruleSets.field(RuleSetId.name).containsIgnoreCase(ruleSetFilter.getSearch());
     }
     ruleSetList.setTotalItems(ruleSets.asList().size());
-    ruleSetList.setRuleSet(
-        ruleSets.limit(ruleSet.getLimit()).offset(ruleSet.getOffset()).order(Sort.descending(RuleSetId.name)).asList());
+    ruleSetList.setRuleSet(ruleSets.limit(ruleSetFilter.getLimit()).offset(ruleSetFilter.getOffset()).asList());
     return ruleSetList;
+  }
+  public Query<RuleSet> sortByRuleSetName(Query<RuleSet> rules, CCMSortOrder order) {
+    switch (order) {
+      case ASCENDING:
+        return rules.order(Sort.ascending(RuleSetId.name));
+      case DESCENDING:
+        return rules.order(Sort.descending(RuleSetId.name));
+      default:
+        throw new InvalidRequestException("Operator not supported not supported for time fields");
+    }
   }
 }

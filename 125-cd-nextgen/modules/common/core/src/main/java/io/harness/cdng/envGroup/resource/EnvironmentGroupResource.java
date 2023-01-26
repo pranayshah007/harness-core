@@ -7,6 +7,7 @@
 
 package io.harness.cdng.envGroup.resource;
 
+import static io.harness.NGCommonEntityConstants.FORCE_DELETE_MESSAGE;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.utils.PageUtils.getNGPageResponse;
 
@@ -77,6 +78,7 @@ import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -168,9 +170,11 @@ public class EnvironmentGroupResource {
       List<EnvironmentResponse> envResponseList = getEnvironmentResponses(environmentGroupEntity.get());
       return ResponseDTO.newResponse(
           EnvironmentGroupMapper.toResponseWrapper(environmentGroupEntity.get(), envResponseList));
+    } else {
+      throw new NotFoundException(
+          String.format("Environment Group with identifier [%s] in project [%s], org [%s] not found", envGroupId,
+              projectIdentifier, orgIdentifier));
     }
-
-    return null;
   }
 
   @POST
@@ -281,13 +285,15 @@ public class EnvironmentGroupResource {
           NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
-      @BeanParam GitEntityDeleteInfoDTO entityDeleteInfo) {
+      @BeanParam GitEntityDeleteInfoDTO entityDeleteInfo,
+      @Parameter(description = FORCE_DELETE_MESSAGE) @QueryParam(NGCommonEntityConstants.FORCE_DELETE) @DefaultValue(
+          "false") boolean forceDelete) {
     checkFForThrow(accountId);
 
     // TODO: set up usages of env group as well as env linked with it
     log.info(String.format("Delete Environment group Api %s", envGroupId));
-    EnvironmentGroupEntity deletedEntity = environmentGroupService.delete(
-        accountId, orgIdentifier, projectIdentifier, envGroupId, isNumeric(ifMatch) ? parseLong(ifMatch) : null);
+    EnvironmentGroupEntity deletedEntity = environmentGroupService.delete(accountId, orgIdentifier, projectIdentifier,
+        envGroupId, isNumeric(ifMatch) ? parseLong(ifMatch) : null, forceDelete);
     return ResponseDTO.newResponse(EnvironmentGroupMapper.toDeleteResponseWrapper(deletedEntity));
   }
 

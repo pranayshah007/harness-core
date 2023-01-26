@@ -11,12 +11,14 @@ import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParamete
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.beans.serializer.RunTimeInputHandler;
+import io.harness.beans.steps.CIRegistry;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.yaml.extended.reports.JUnitTestReport;
 import io.harness.beans.yaml.extended.reports.UnitTestReportType;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.serializer.SerializerUtils;
+import io.harness.ci.utils.CIStepInfoUtils;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.vm.steps.VmJunitTestReport;
 import io.harness.delegate.beans.ci.vm.steps.VmRunStep;
@@ -39,16 +41,23 @@ import org.apache.commons.lang3.StringUtils;
 
 @Singleton
 public class VmRunStepSerializer {
+  @Inject CIStepInfoUtils ciStepInfoUtils;
   @Inject ConnectorUtils connectorUtils;
   @Inject CIExecutionServiceConfig ciExecutionServiceConfig;
   public VmRunStep serialize(RunStepInfo runStepInfo, Ambiance ambiance, String identifier,
-      ParameterField<Timeout> parameterFieldTimeout, String stepName) {
+      ParameterField<Timeout> parameterFieldTimeout, String stepName, List<CIRegistry> registries) {
     String command =
         RunTimeInputHandler.resolveStringParameter("Command", "Run", identifier, runStepInfo.getCommand(), true);
     String image =
         RunTimeInputHandler.resolveStringParameter("Image", "Run", identifier, runStepInfo.getImage(), false);
-    String connectorIdentifier = RunTimeInputHandler.resolveStringParameter(
-        "connectorRef", "Run", identifier, runStepInfo.getConnectorRef(), false);
+    String connectorIdentifier;
+
+    if (isNotEmpty(registries)) {
+      connectorIdentifier = ciStepInfoUtils.resolveConnectorFromRegistries(registries, image).orElse(null);
+    } else {
+      connectorIdentifier = RunTimeInputHandler.resolveStringParameter(
+          "connectorRef", "Run", identifier, runStepInfo.getConnectorRef(), false);
+    }
 
     long timeout = TimeoutUtils.getTimeoutInSeconds(parameterFieldTimeout, runStepInfo.getDefaultTimeout());
     Map<String, String> envVars =

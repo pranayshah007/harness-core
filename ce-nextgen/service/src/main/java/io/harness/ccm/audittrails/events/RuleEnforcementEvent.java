@@ -29,7 +29,7 @@ public abstract class RuleEnforcementEvent implements Event {
   private RuleEnforcement ruleEnforcement;
   private String accountIdentifier;
 
-  protected RuleEnforcementEvent(String accountIdentifier, RuleEnforcement ruleEnforcement) {
+  public RuleEnforcementEvent(String accountIdentifier, RuleEnforcement ruleEnforcement) {
     this.accountIdentifier = accountIdentifier;
     this.ruleEnforcement = ruleEnforcement;
   }

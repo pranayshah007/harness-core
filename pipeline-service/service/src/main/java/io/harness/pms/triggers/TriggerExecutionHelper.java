@@ -86,6 +86,7 @@ import io.harness.pms.pipeline.service.PipelineMetadataService;
 import io.harness.pms.pipeline.yaml.BasicPipeline;
 import io.harness.pms.plan.execution.ExecutionHelper;
 import io.harness.pms.plan.execution.StoreTypeMapper;
+import io.harness.pms.plan.execution.helpers.InputSetMergeHelperV1;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
@@ -267,14 +268,22 @@ public class TriggerExecutionHelper {
         pipelineYaml = pipelineEntity.getYaml();
       } else {
         String pipelineYamlBeforeMerge = pipelineEntity.getYaml();
-        String sanitizedRuntimeInputYaml =
-            InputSetSanitizer.sanitizeRuntimeInput(pipelineYamlBeforeMerge, runtimeInputYaml);
-        if (isBlank(sanitizedRuntimeInputYaml)) {
-          pipelineYaml = pipelineYamlBeforeMerge;
-        } else {
-          planExecutionMetadataBuilder.inputSetYaml(sanitizedRuntimeInputYaml);
-          pipelineYaml =
-              InputSetMergeHelper.mergeInputSetIntoPipeline(pipelineYamlBeforeMerge, sanitizedRuntimeInputYaml, true);
+        switch (pipelineEntity.getHarnessVersion()) {
+          case PipelineVersion.V1:
+            planExecutionMetadataBuilder.inputSetYaml(runtimeInputYaml);
+            pipelineYaml =
+                InputSetMergeHelperV1.mergeInputSetIntoPipelineYaml(runtimeInputYaml, pipelineYamlBeforeMerge);
+            break;
+          default:
+            String sanitizedRuntimeInputYaml =
+                InputSetSanitizer.sanitizeRuntimeInput(pipelineYamlBeforeMerge, runtimeInputYaml);
+            if (isBlank(sanitizedRuntimeInputYaml)) {
+              pipelineYaml = pipelineYamlBeforeMerge;
+            } else {
+              planExecutionMetadataBuilder.inputSetYaml(sanitizedRuntimeInputYaml);
+              pipelineYaml = InputSetMergeHelper.mergeInputSetIntoPipeline(
+                  pipelineYamlBeforeMerge, sanitizedRuntimeInputYaml, true);
+            }
         }
       }
 
@@ -334,8 +343,9 @@ public class TriggerExecutionHelper {
         executionMetaDataBuilder.setIsNotificationConfigured(EmptyPredicate.isNotEmpty(notificationRules));
         // Set Principle user as pipeline service.
         SecurityContextBuilder.setContext(new ServicePrincipal(PIPELINE_SERVICE.getServiceId()));
+        String yamlWithoutInputs = YamlUtils.getYamlWithoutInputs(pipelineYaml);
         pmsYamlSchemaService.validateYamlSchema(ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(),
-            ngTriggerEntity.getProjectIdentifier(), pipelineYaml);
+            ngTriggerEntity.getProjectIdentifier(), yamlWithoutInputs);
 
         executionMetaDataBuilder.setPrincipalInfo(
             ExecutionPrincipalInfo.newBuilder().setShouldValidateRbac(false).build());

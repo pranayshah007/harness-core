@@ -614,7 +614,7 @@ public class ShellScriptState extends State implements SweepingOutputStateMixin 
           (secretMode, value) -> context.renderExpression(value, stateExecutionContext));
     }
 
-    return delegateService.queueTask(task);
+    return delegateService.queueTaskV2(task);
   }
 
   @Override

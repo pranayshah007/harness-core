@@ -7,6 +7,7 @@
 
 package io.harness.ccm.service.impl;
 
+import static io.harness.ccm.service.impl.ConnectorEntityChangeEventUtils.lightwingAutocudDc;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CREATE_ACTION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DELETE_ACTION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.UPDATE_ACTION;
@@ -16,6 +17,7 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.CENextGenConfiguration;
+import io.harness.ccm.LightwingClient;
 import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.service.intf.GCPEntityChangeEventService;
 import io.harness.connector.ConnectorDTO;
@@ -46,6 +48,7 @@ public class GCPEntityChangeEventServiceImpl implements GCPEntityChangeEventServ
   @Inject ConnectorResourceClient connectorResourceClient;
   @Inject CENextGenConfiguration configuration;
   @Inject BigQueryService bigQueryService;
+  @Inject LightwingClient lightwingClient;
 
   @Override
   public boolean processGCPEntityCreateEvent(EntityChangeDTO entityChangeDTO) {
@@ -55,6 +58,7 @@ public class GCPEntityChangeEventServiceImpl implements GCPEntityChangeEventServ
 
     GcpCloudCostConnectorDTO gcpCloudCostConnectorDTO =
         (GcpCloudCostConnectorDTO) getConnectorConfigDTO(accountIdentifier, identifier).getConnectorConfig();
+    lightwingAutocudDc(CREATE_ACTION, accountIdentifier, gcpCloudCostConnectorDTO, lightwingClient, configuration);
     if (isVisibilityFeatureEnabled(gcpCloudCostConnectorDTO)) {
       updateEventData(CREATE_ACTION, identifier, accountIdentifier, gcpCloudCostConnectorDTO.getProjectId(),
           gcpCloudCostConnectorDTO.getServiceAccountEmail(), entityChangeEvents);
@@ -75,6 +79,7 @@ public class GCPEntityChangeEventServiceImpl implements GCPEntityChangeEventServ
 
     GcpCloudCostConnectorDTO gcpCloudCostConnectorDTO =
         (GcpCloudCostConnectorDTO) getConnectorConfigDTO(accountIdentifier, identifier).getConnectorConfig();
+    lightwingAutocudDc(UPDATE_ACTION, accountIdentifier, gcpCloudCostConnectorDTO, lightwingClient, configuration);
     if (isVisibilityFeatureEnabled(gcpCloudCostConnectorDTO)) {
       updateEventData(UPDATE_ACTION, identifier, accountIdentifier, gcpCloudCostConnectorDTO.getProjectId(),
           gcpCloudCostConnectorDTO.getServiceAccountEmail(), entityChangeEvents);

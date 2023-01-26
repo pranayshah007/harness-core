@@ -108,7 +108,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.google.common.annotations.VisibleForTesting;
@@ -120,6 +119,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -585,54 +585,76 @@ public class NGTriggerElementMapper {
   }
 
   private NGTriggerEntity getTriggerEntityWithArtifactoryRepositoryUrl(NGTriggerEntity ngTriggerEntity) {
+    if (ngTriggerEntity == null) {
+      return null;
+    }
+
     String triggerYaml = ngTriggerEntity.getYaml();
+
     YamlNode node = validateAndGetYamlNode(triggerYaml);
-    Map<String, Object> resMap = getResMap(node, ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(),
-        ngTriggerEntity.getProjectIdentifier());
+
+    Map<String, Object> resMap = new HashMap<>();
+    if (node != null) {
+      resMap = getResMap(node);
+    }
+
+    LinkedHashMap<String, Object> triggerResMap = (LinkedHashMap<String, Object>) resMap.get("trigger");
+    LinkedHashMap<String, Object> sourceResMap = (LinkedHashMap<String, Object>) triggerResMap.get("source");
+    LinkedHashMap<String, Object> specResMap = (LinkedHashMap<String, Object>) sourceResMap.get("spec");
+
+    String type = String.valueOf(specResMap.get("type"));
+    type = type.substring(1, type.length() - 1);
+    LinkedHashMap<String, Object> configResMap = (LinkedHashMap<String, Object>) specResMap.get("spec");
+
+    if (type.equals("ArtifactoryRegistry")) {
+      if (!configResMap.containsKey("repositoryUrl")) {
+        String finalUrl = null;
+        String connectorRef = String.valueOf(configResMap.get("connectorRef"));
+        connectorRef = connectorRef.substring(1, connectorRef.length() - 1);
+        String repository = String.valueOf(configResMap.get("repository"));
+        repository = repository.substring(1, repository.length() - 1);
+        String repositoryFormat = String.valueOf(configResMap.get("repositoryFormat"));
+        repositoryFormat = repositoryFormat.substring(1, repositoryFormat.length() - 1);
+
+        if (repositoryFormat.equals("docker")) {
+          IdentifierRef connectorIdentifier =
+              IdentifierRefHelper.getIdentifierRef(connectorRef, ngTriggerEntity.getAccountId(),
+                  ngTriggerEntity.getOrgIdentifier(), ngTriggerEntity.getProjectIdentifier());
+          ArtifactoryConnectorDTO connector = getConnector(connectorIdentifier);
+          finalUrl = getArtifactoryRegistryUrl(connector.getArtifactoryServerUrl(), null, repository);
+
+          configResMap.put("repositoryUrl", finalUrl);
+        }
+      }
+    }
+
+    specResMap.replace("spec", configResMap);
+    sourceResMap.replace("spec", specResMap);
+    triggerResMap.replace("source", sourceResMap);
+    resMap.replace("trigger", triggerResMap);
+
     ngTriggerEntity.setYaml(YamlPipelineUtils.writeYamlString(resMap));
+
     return ngTriggerEntity;
   }
 
-  private Map<String, Object> getResMap(
-      YamlNode yamlNode, String accountId, String orgIdentifier, String projectIdentifier) {
+  private Map<String, Object> getResMap(YamlNode yamlNode) {
     Map<String, Object> resMap = new LinkedHashMap<>();
     List<YamlField> childFields = yamlNode.fields();
-    boolean connectorRefFlag = false;
-    String repo = "";
-    String artifactoryConnectorRef = "";
-    String repoFormat = "";
-    // Iterating over the YAML
+
     for (YamlField childYamlField : childFields) {
       String fieldName = childYamlField.getName();
       JsonNode value = childYamlField.getNode().getCurrJsonNode();
-      if (fieldName.equals("connectorRef")) {
-        connectorRefFlag = true;
-        artifactoryConnectorRef = value.asText();
-      }
-      if (fieldName.equals("repository")) {
-        repo = value.asText();
-      }
-      if (fieldName.equals("repositoryFormat")) {
-        repoFormat = value.asText();
-      }
+
       if (value.isValueNode() || YamlUtils.checkIfNodeIsArrayWithPrimitiveTypes(value)) {
         // Value -> ValueNode
         resMap.put(fieldName, value);
       } else if (value.isArray()) {
         // Value -> ArrayNode
-        resMap.put(fieldName, getResMapInArray(childYamlField.getNode(), accountId, orgIdentifier, projectIdentifier));
+        resMap.put(fieldName, getResMapInArray(childYamlField.getNode()));
       } else {
         // Value -> ObjectNode
-        resMap.put(fieldName, getResMap(childYamlField.getNode(), accountId, orgIdentifier, projectIdentifier));
-      }
-    }
-    if (connectorRefFlag == true && repoFormat.equals("docker")) {
-      IdentifierRef connectorRef =
-          IdentifierRefHelper.getIdentifierRef(artifactoryConnectorRef, accountId, orgIdentifier, projectIdentifier);
-      ArtifactoryConnectorDTO artifactoryConnectorDTO = getConnector(connectorRef);
-      String url = getArtifactoryRegistryUrl(artifactoryConnectorDTO.getArtifactoryServerUrl(), null, repo);
-      if (!resMap.containsKey("repositoryUrl") || !resMap.get("repositoryUrl").toString().isBlank()) {
-        resMap.put("repositoryUrl", new TextNode(url));
+        resMap.put(fieldName, getResMap(childYamlField.getNode()));
       }
     }
     return resMap;
@@ -656,8 +678,7 @@ public class NGTriggerElementMapper {
   }
 
   // Gets the ResMap if the yamlNode is of the type Array
-  private List<Object> getResMapInArray(
-      YamlNode yamlNode, String accountId, String orgIdentifier, String projectIdentifier) {
+  private List<Object> getResMapInArray(YamlNode yamlNode) {
     List<Object> arrayList = new ArrayList<>();
     // Iterate over the array
     for (YamlNode arrayElement : yamlNode.asArray()) {
@@ -666,10 +687,10 @@ public class NGTriggerElementMapper {
         arrayList.add(arrayElement);
       } else if (arrayElement.isArray()) {
         // Value -> Array
-        arrayList.add(getResMapInArray(arrayElement, accountId, orgIdentifier, projectIdentifier));
+        arrayList.add(getResMapInArray(arrayElement));
       } else {
         // Value -> Object
-        arrayList.add(getResMap(arrayElement, accountId, orgIdentifier, projectIdentifier));
+        arrayList.add(getResMap(arrayElement));
       }
     }
     return arrayList;

@@ -7,10 +7,14 @@
 
 package software.wings.service.impl;
 
+import static io.harness.beans.SearchFilter.Operator.EQ;
 import static io.harness.beans.SearchFilter.Operator.IN;
 
 import static software.wings.beans.Environment.EnvironmentKeys;
 import static software.wings.beans.Service.ServiceKeys;
+import static software.wings.beans.WorkflowExecution.WFE_EXECUTIONS_SEARCH_ENVIDS;
+import static software.wings.beans.WorkflowExecution.WFE_EXECUTIONS_SEARCH_SERVICEIDS;
+import static software.wings.beans.WorkflowExecution.WFE_EXECUTIONS_SEARCH_WORKFLOWID;
 
 import static java.util.Arrays.asList;
 
@@ -18,7 +22,9 @@ import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
 import io.harness.beans.SearchFilter;
 import io.harness.beans.SearchFilter.SearchFilterBuilder;
+import io.harness.beans.WorkflowType;
 import io.harness.ff.FeatureFlagService;
+import io.harness.mongo.index.BasicDBUtils;
 import io.harness.persistence.HPersistence;
 
 import software.wings.beans.Environment;
@@ -61,6 +67,8 @@ public class WorkflowExecutionOptimizationHelper {
                                              .in(asList(filter.getFieldValues()))
                                              .asList();
         environments.forEach(environment -> appIds.add(environment.getAppId()));
+        pageRequest.setIndexHint(
+            BasicDBUtils.getIndexObject(WorkflowExecution.mongoIndexes(), WFE_EXECUTIONS_SEARCH_ENVIDS));
       } else if (WorkflowExecutionKeys.serviceIds.equals(filter.getFieldName())) {
         List<Service> services = hPersistence.createQuery(Service.class)
                                      .filter(ServiceKeys.accountId, accountId)
@@ -68,6 +76,8 @@ public class WorkflowExecutionOptimizationHelper {
                                      .in(asList(filter.getFieldValues()))
                                      .asList();
         services.forEach(service -> appIds.add(service.getAppId()));
+        pageRequest.setIndexHint(
+            BasicDBUtils.getIndexObject(WorkflowExecution.mongoIndexes(), WFE_EXECUTIONS_SEARCH_SERVICEIDS));
       } else if (WorkflowExecutionKeys.pipelineSummary_pipelineId.equals(filter.getFieldName())) {
         List<Pipeline> pipelines = hPersistence.createQuery(Pipeline.class)
                                        .filter(PipelineKeys.accountId, accountId)
@@ -75,6 +85,14 @@ public class WorkflowExecutionOptimizationHelper {
                                        .in(asList(filter.getFieldValues()))
                                        .asList();
         pipelines.forEach(pipeline -> appIds.add(pipeline.getAppId()));
+        pageRequest.addFilter(WorkflowExecutionKeys.workflowType, EQ, WorkflowType.PIPELINE);
+        pageRequest.addFilter(SearchFilter.builder()
+                                  .fieldValues(filter.getFieldValues())
+                                  .fieldName(WorkflowExecutionKeys.workflowId)
+                                  .op(filter.getOp())
+                                  .build());
+        pageRequest.setIndexHint(
+            BasicDBUtils.getIndexObject(WorkflowExecution.mongoIndexes(), WFE_EXECUTIONS_SEARCH_WORKFLOWID));
       } else if (WorkflowExecutionKeys.workflowId.equals(filter.getFieldName())) {
         List<Workflow> workflows = hPersistence.createQuery(Workflow.class)
                                        .filter(WorkflowKeys.accountId, accountId)
@@ -82,6 +100,8 @@ public class WorkflowExecutionOptimizationHelper {
                                        .in(asList(filter.getFieldValues()))
                                        .asList();
         workflows.forEach(workflow -> appIds.add(workflow.getAppId()));
+        pageRequest.setIndexHint(
+            BasicDBUtils.getIndexObject(WorkflowExecution.mongoIndexes(), WFE_EXECUTIONS_SEARCH_WORKFLOWID));
       }
     });
 

@@ -51,6 +51,7 @@ import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PMSPipelineServiceHelper;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.pipeline.service.PipelineCRUDResult;
+import io.harness.pms.pipeline.service.PipelineGetResult;
 import io.harness.pms.pipeline.service.PipelineMetadataService;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.pms.variables.VariableCreatorMergeService;
@@ -186,14 +187,22 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
   public ResponseDTO<PMSPipelineResponseDTO> getPipelineByIdentifier(@NotNull @AccountIdentifier String accountId,
       @NotNull @OrgIdentifier String orgId, @NotNull @ProjectIdentifier String projectId,
       @ResourceIdentifier String pipelineId, GitEntityFindInfoDTO gitEntityBasicInfo,
-      boolean getTemplatesResolvedPipeline, boolean loadFromFallbackBranch, String loadFromCache) {
+      boolean getTemplatesResolvedPipeline, boolean loadFromFallbackBranch, boolean validateAsync,
+      String loadFromCache) {
     log.info(String.format("Retrieving pipeline with identifier %s in project %s, org %s, account %s", pipelineId,
         projectId, orgId, accountId));
 
     Optional<PipelineEntity> pipelineEntity;
+    // if validateAsync is true, then this ID wil be of the event started for the async validation process, which can be
+    // queried on using another API to get the result of the async validation. If validateAsync is false, then this ID
+    // is not needed and will be null
+    String validationUUID;
     try {
-      pipelineEntity = pmsPipelineService.getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false,
-          loadFromFallbackBranch, PMSPipelineDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache));
+      PipelineGetResult pipelineGetResult = pmsPipelineService.getAndValidatePipeline(accountId, orgId, projectId,
+          pipelineId, false, false, Boolean.TRUE.equals(loadFromFallbackBranch),
+          PMSPipelineDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache), validateAsync);
+      pipelineEntity = pipelineGetResult.getPipelineEntity();
+      validationUUID = pipelineGetResult.getAsyncValidationUUID();
     } catch (PolicyEvaluationFailureException pe) {
       return ResponseDTO.newResponse(
           PMSPipelineResponseDTO.builder()
@@ -241,6 +250,9 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
       } catch (Exception e) {
         log.info("Cannot get resolved templates pipeline YAML");
       }
+    }
+    if (validateAsync) {
+      pipeline.setValidationUuid(validationUUID);
     }
     return ResponseDTO.newResponse(version, pipeline);
   }

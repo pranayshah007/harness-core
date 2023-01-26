@@ -9,6 +9,7 @@ package io.harness.cvng.downtime.beans;
 import java.util.List;
 import lombok.Builder;
 import lombok.Value;
+import lombok.experimental.SuperBuilder;
 
 @Value
 @Builder
@@ -22,14 +23,12 @@ public class DowntimeListView {
   DowntimeStatus status;
   boolean enabled;
   LastModified lastModified;
+  DowntimeSpecDTO spec;
 
-  private static class AffectedEntity {
-    String name;
-    String env;
-  }
-
-  private static class LastModified {
+  @Value
+  @SuperBuilder
+  public static class LastModified {
     String lastModifiedBy;
-    String lastModifiedAt;
+    long lastModifiedAt;
   }
 }

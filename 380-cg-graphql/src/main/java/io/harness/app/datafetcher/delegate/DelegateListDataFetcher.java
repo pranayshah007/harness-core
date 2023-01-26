@@ -19,15 +19,12 @@ import io.harness.app.schema.type.delegate.QLDelegateList.QLDelegateListBuilder;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.Delegate.DelegateKeys;
 
-import software.wings.beans.DelegateConnection;
 import software.wings.graphql.datafetcher.AbstractConnectionV2DataFetcher;
 import software.wings.graphql.schema.query.QLPageQueryParameters;
 import software.wings.graphql.schema.type.aggregation.QLNoOpSortCriteria;
 import software.wings.security.PermissionAttribute;
 import software.wings.security.annotations.AuthRule;
-import software.wings.service.impl.DelegateConnectionDao;
 
-import com.google.inject.Inject;
 import dev.morphia.query.FieldEnd;
 import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
@@ -37,8 +34,6 @@ import java.util.List;
 @OwnedBy(DEL)
 public class DelegateListDataFetcher
     extends AbstractConnectionV2DataFetcher<QLDelegateFilter, QLNoOpSortCriteria, QLDelegateList> {
-  @Inject private DelegateConnectionDao delegateConnectionDao;
-
   @Override
   @AuthRule(permissionType = PermissionAttribute.PermissionType.MANAGE_DELEGATES)
   protected QLDelegateList fetchConnection(List<QLDelegateFilter> qlDelegateFilters,
@@ -49,9 +44,7 @@ public class DelegateListDataFetcher
     QLDelegateListBuilder delegateListBuilder = QLDelegateList.builder();
     delegateListBuilder.pageInfo(utils.populate(pageQueryParameters, delegateQuery, delegate -> {
       QLDelegateBuilder qlBuilder = QLDelegate.builder();
-      List<DelegateConnection> delegateConnections =
-          delegateConnectionDao.list(delegate.getAccountId(), delegate.getUuid());
-      DelegateController.populateQLDelegate(delegate, qlBuilder, delegateConnections);
+      DelegateController.populateQLDelegate(delegate, qlBuilder);
       delegateListBuilder.node(qlBuilder.build());
     }));
     return delegateListBuilder.build();

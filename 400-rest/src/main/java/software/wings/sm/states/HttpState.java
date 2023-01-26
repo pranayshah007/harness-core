@@ -632,7 +632,7 @@ public class HttpState extends State implements SweepingOutputStateMixin {
   }
 
   private String scheduleDelegateTask(DelegateTask task) {
-    return delegateService.queueTask(task);
+    return delegateService.queueTaskV2(task);
   }
 
   private void appendFailureType(ExecutionResponseBuilder executionResponseBuilder, ExecutionContext context,
