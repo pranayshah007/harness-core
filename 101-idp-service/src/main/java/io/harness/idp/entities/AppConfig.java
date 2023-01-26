@@ -10,6 +10,7 @@ import io.harness.persistence.PersistentEntity;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
+import org.springframework.data.annotation.Persistent;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Data
@@ -17,8 +18,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @FieldNameConstants(innerTypeName = "AppConfigKeys")
 @StoreIn(DbAliases.IDP)
 @Entity(value = "appConfig", noClassnameStored = true)
-@JsonIgnoreProperties(ignoreUnknown = true)
 @Document("appConfig")
+@Persistent
 @OwnedBy(HarnessTeam.IDP)
 public class AppConfig implements PersistentEntity {
 }
