@@ -146,7 +146,8 @@ public class CIK8ExecuteStepTaskHandler implements CIExecuteStepTaskHandler {
 
         return K8sTaskExecutionResponse.builder()
             .commandExecutionStatus(CommandExecutionStatus.FAILURE)
-            .commandUnitsProgress(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
+            .commandUnitsProgress(UnitProgressDataMapper.toUnitProgressData(
+                ngDelegateLogCallback == null ? null : ngDelegateLogCallback.getCommandUnitsProgress()))
             .errorMessage(e.getMessage())
             .build();
       }
