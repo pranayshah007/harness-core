@@ -64,7 +64,9 @@ public class IDPModule extends AbstractModule {
       @Provides
       @Singleton
       Set<Class<? extends KryoRegistrar>> kryoRegistrars() {
-        return new HashSet<>();
+        return ImmutableSet.<Class<? extends KryoRegistrar>>builder()
+                .addAll(IDPServiceRegistrars.kryoRegistrars)
+                .build();
       }
 
       @Provides
