@@ -25,6 +25,7 @@ public interface DowntimeService extends DeleteEntityByHandler<Downtime> {
   Downtime getEntity(ProjectParams projectParams, String identifier);
   DowntimeResponse update(ProjectParams projectParams, String identifier, DowntimeDTO downtimeDTO);
 
+  DowntimeResponse enableOrDisable(ProjectParams projectParams, String identifier, boolean enable);
   boolean delete(ProjectParams projectParams, String identifier);
 
   PageResponse<DowntimeListView> list(

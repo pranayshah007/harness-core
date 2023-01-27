@@ -289,7 +289,7 @@ public class PipelineMigrationService extends NgMigrationService {
 
     NGTemplateConfig wfTemplateConfig = (NGTemplateConfig) wfTemplate.getYaml();
     if (TemplateEntityType.PIPELINE_TEMPLATE.equals(wfTemplateConfig.getTemplateInfoConfig().getType())) {
-      log.warn("Cannot link a canary/multi-service WFs as they are created as pipeline templates");
+      log.warn("Cannot link a multi-service WFs as they are created as pipeline templates");
       return null;
     }
 

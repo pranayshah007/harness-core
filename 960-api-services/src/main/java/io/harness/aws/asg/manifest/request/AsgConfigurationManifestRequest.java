@@ -16,7 +16,7 @@ import lombok.Getter;
 
 @Getter
 public class AsgConfigurationManifestRequest extends ManifestRequest {
-  public boolean useAlreadyRunningInstances;
+  private boolean useAlreadyRunningInstances;
   Map<String, Object> overrideProperties;
   @Builder
   public AsgConfigurationManifestRequest(

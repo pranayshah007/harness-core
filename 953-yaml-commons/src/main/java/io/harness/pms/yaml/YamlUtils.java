@@ -14,11 +14,12 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.serializer.HObjectMapper.configureObjectMapperForNG;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.common.NGExpressionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
+import io.harness.pms.merger.YamlConfig;
+import io.harness.pms.merger.fqn.FQN;
 import io.harness.serializer.AnnotationAwareJsonSubtypeResolver;
-import io.harness.utils.YamlPipelineUtils;
+import io.harness.yaml.utils.YamlConstants;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -37,13 +38,16 @@ import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
 import io.serializer.jackson.NGHarnessJacksonModule;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import lombok.experimental.UtilityClass;
 
@@ -51,6 +55,7 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(PIPELINE)
 public class YamlUtils {
   public final String STRATEGY_IDENTIFIER_POSTFIX = "<+strategy.identifierPostFix>";
+  private final List<String> VALIDATORS = Lists.newArrayList("allowedValues", "regex", "default");
 
   private static final List<String> ignorableStringForQualifiedName = Arrays.asList("step", "parallel");
 
@@ -591,42 +596,29 @@ public class YamlUtils {
     }
   }
 
-  public String getYamlWithoutInputs(String yaml) throws IOException {
-    YamlField yamlField = YamlUtils.readTree(yaml);
-    JsonNode pipelineJsonNode = yamlField.getNode().getCurrJsonNode();
-    YamlUtils.removeInputs(pipelineJsonNode);
-    return YamlPipelineUtils.writeYamlString(pipelineJsonNode);
-  }
-
-  public void removeInputs(JsonNode node) {
-    if (node.isObject()) {
-      removeInputInObject(node);
-    } else if (node.isArray()) {
-      removeInputInArray(node);
-    }
-  }
-
-  private void removeInputInObject(JsonNode node) {
-    ObjectNode objectNode = (ObjectNode) node;
-    List<String> keysToRemove = new ArrayList<>();
-    for (Iterator<Entry<String, JsonNode>> it = objectNode.fields(); it.hasNext();) {
-      Entry<String, JsonNode> field = it.next();
-      if (NGExpressionUtils.matchesRawInputSetPattern(field.getValue().toString())) {
-        keysToRemove.add(field.getKey());
+  public String getYamlWithoutInputs(YamlConfig config) throws IOException {
+    Map<FQN, Object> fqnToValueMap = config.getFqnToValueMap();
+    Map<FQN, Object> fqnObjectMap = new HashMap<>();
+    for (FQN fqn : fqnToValueMap.keySet()) {
+      Object value = fqnToValueMap.get(fqn);
+      if (value instanceof TextNode) {
+        String trimValue = ((TextNode) value).textValue().trim();
+        String valueWithoutValidators = trimValue;
+        for (String validator : VALIDATORS) {
+          if (trimValue.contains(validator)) {
+            ParameterField<?> parameterField = YamlUtils.read(trimValue, ParameterField.class);
+            valueWithoutValidators = parameterField.fetchFinalValue().toString();
+            break;
+          }
+        }
+        if (!valueWithoutValidators.equals(YamlConstants.INPUT)) {
+          fqnObjectMap.put(fqn, new TextNode(valueWithoutValidators));
+        }
       } else {
-        removeInputs(field.getValue());
+        fqnObjectMap.put(fqn, value);
       }
     }
-    for (String key : keysToRemove) {
-      objectNode.remove(key);
-    }
-  }
-
-  private void removeInputInArray(JsonNode node) {
-    ArrayNode arrayNode = (ArrayNode) node;
-    for (Iterator<JsonNode> it = arrayNode.elements(); it.hasNext();) {
-      removeInputs(it.next());
-    }
+    return new YamlConfig(fqnObjectMap, config.getYamlMap()).getYaml();
   }
 
   private void removeUuidInObject(JsonNode node) {

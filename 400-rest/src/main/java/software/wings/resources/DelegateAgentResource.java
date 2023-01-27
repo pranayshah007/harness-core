@@ -25,7 +25,6 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.artifact.ArtifactCollectionResponseHandler;
 import io.harness.beans.DelegateHeartbeatResponse;
 import io.harness.beans.DelegateTaskEventsResponse;
-import io.harness.delegate.beans.ConnectionMode;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateCapacity;
 import io.harness.delegate.beans.DelegateConfiguration;
@@ -294,10 +293,7 @@ public class DelegateAgentResource {
   @ExceptionMetered
   public void connectionHeartbeat(@QueryParam("accountId") @NotEmpty String accountId,
       @PathParam("delegateId") String delegateId, DelegateConnectionHeartbeat connectionHeartbeat) {
-    try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
-         AutoLogContext ignore2 = new DelegateLogContext(delegateId, OVERRIDE_ERROR)) {
-      delegateService.registerHeartbeat(accountId, delegateId, connectionHeartbeat, ConnectionMode.POLLING);
-    }
+    // do nothing : remove this 3 months after release, keeping for older version compatibility
   }
 
   @POST

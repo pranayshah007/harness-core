@@ -201,6 +201,12 @@ ciExecutionServiceConfig:
         image: harness/checkmarx-job-runner
       - product: zap_default
         image: harness/zap-job-runner
+      - product: zap_quick
+        image: harness/zap-job-runner
+      - product: zap_attack
+        image: harness/zap-job-runner
+      - product: zap_standard
+        image: harness/zap-job-runner
       - product: mend_default
         image: harness/whitesource-agent-job-runner
   stepConfig:
@@ -214,19 +220,19 @@ ciExecutionServiceConfig:
         - "pwsh"
         - "C:\\bin\\clone.ps1"
     buildAndPushDockerRegistryConfig:
-      image: plugins/kaniko:1.6.6
+      image: plugins/kaniko:1.7.0
       entrypoint:
         - /kaniko/kaniko-docker
     buildAndPushECRConfig:
-      image: plugins/kaniko-ecr:1.6.11
+      image: plugins/kaniko-ecr:1.7.0
       entrypoint:
         - /kaniko/kaniko-ecr
     buildAndPushGCRConfig:
-      image: plugins/kaniko-gcr:1.6.6
+      image: plugins/kaniko-gcr:1.7.0
       entrypoint:
         - /kaniko/kaniko-gcr
     buildAndPushACRConfig:
-      image: plugins/kaniko-acr:1.6.7
+      image: plugins/kaniko-acr:1.7.0
       entrypoint:
         - /kaniko/kaniko-acr
     gcsUploadConfig:
@@ -254,13 +260,13 @@ ciExecutionServiceConfig:
       windowsEntrypoint:
         - "C:\\bin\\drone-artifactory.exe"
     cacheGCSConfig:
-      image: plugins/cache:1.4.4
+      image: plugins/cache:1.4.6
       entrypoint:
         - /bin/drone-cache
       windowsEntrypoint:
         - "C:\\drone-cache.exe"
     cacheS3Config:
-      image: plugins/cache:1.4.4
+      image: plugins/cache:1.4.6
       entrypoint:
         - /bin/drone-cache
       windowsEntrypoint:
@@ -276,8 +282,8 @@ ciExecutionServiceConfig:
       s3Upload: plugins/s3:1.2.0
       security: harness/sto-plugin:dev
       artifactoryUpload: plugins/artifactory:1.2.0
-      cacheGCS: plugins/cache:1.4.4
-      cacheS3: plugins/cache:1.4.4
+      cacheGCS: plugins/cache:1.4.6
+      cacheS3: plugins/cache:1.4.6
 
 pmsSdkExecutionPoolConfig:
   corePoolSize: ${PMS_SDK_EXECUTION_POOL_CORE_SIZE:-50}
@@ -296,11 +302,11 @@ asyncDelegateResponseConsumption:
 
 pmsSdkGrpcServerConfig:
   connectors:
-    - port: 12301
+    - port: ${PMS_SDK_SERVER_CONFIG_SECURE_PORT:-12301}
       secure: true
       keyFilePath: key.pem
       certFilePath: cert.pem
-    - port: 12302
+    - port: ${PMS_SDK_SERVER_CONFIG_PORT:-12302}
 
 pmsGrpcClientConfig:
   target: localhost:12011

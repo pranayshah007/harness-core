@@ -382,7 +382,7 @@ public class ArtifactCollectionState extends State {
                                           .build());
     }
 
-    String delegateTaskId = delegateService.queueTask(delegateTaskBuilder.build());
+    String delegateTaskId = delegateService.queueTaskV2(delegateTaskBuilder.build());
 
     ArtifactCollectionExecutionData artifactCollectionExecutionData =
         ArtifactCollectionExecutionData.builder()
@@ -523,7 +523,7 @@ public class ArtifactCollectionState extends State {
                       .timeout(timeout)
                       .build());
 
-    String delegateTaskId = delegateService.queueTask(delegateTaskBuilder.build());
+    String delegateTaskId = delegateService.queueTaskV2(delegateTaskBuilder.build());
 
     AppManifestCollectionExecutionData appManifestCollectionExecutionData =
         AppManifestCollectionExecutionData.builder()

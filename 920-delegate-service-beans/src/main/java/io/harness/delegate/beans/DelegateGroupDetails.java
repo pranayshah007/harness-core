@@ -37,7 +37,7 @@ public class DelegateGroupDetails {
   private long lastHeartBeat;
   private String connectivityStatus;
   private boolean activelyConnected;
-  private boolean grpcActive;
+  @Deprecated private boolean grpcActive;
   private List<DelegateGroupListing.DelegateInner> delegateInstanceDetails;
   private boolean tokenActive;
   private AutoUpgrade autoUpgrade;

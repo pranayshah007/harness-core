@@ -17,6 +17,8 @@ import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.manifest.ManifestConfigType;
 import io.harness.cdng.manifest.yaml.ManifestConfig;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
+import io.harness.cdng.manifest.yaml.kinds.HelmChartManifest;
+import io.harness.cdng.manifest.yaml.kinds.HelmRepoOverrideManifest;
 import io.harness.exception.InvalidRequestException;
 
 import java.util.HashSet;
@@ -29,8 +31,6 @@ import org.jetbrains.annotations.NotNull;
 
 @UtilityClass
 public class EnvironmentV2ManifestValidator {
-  public static final String TOO_MANY_HELM_OVERRIDES_PRESENT_ERROR_MESSAGE =
-      "Manifests cannot contain more than one helm repo override. Found following overrides with identifiers: [%s]";
   public static void checkDuplicateManifestIdentifiersWithIn(List<ManifestConfigWrapper> manifests) {
     if (isEmpty(manifests)) {
       return;
@@ -44,7 +44,23 @@ public class EnvironmentV2ManifestValidator {
     }
   }
 
-  public static void validateNoMoreThanOneHelmOverridePresent(List<ManifestConfigWrapper> manifests) {
+  public static void validateHelmRepoOverrideContainsSameManifestType(
+      HelmChartManifest serviceManifest, HelmRepoOverrideManifest overrideManifest) {
+    if (serviceManifest.getStore() != null) {
+      String overrideManifestKind = overrideManifest.getType();
+      String serviceManifestKind = serviceManifest.getStoreConfig().getKind();
+
+      if (isNotEmpty(overrideManifestKind) && isNotEmpty(serviceManifestKind)
+          && !overrideManifestKind.equals(serviceManifestKind)) {
+        throw new InvalidRequestException(format(
+            "The kind of helm repo override manifest provided [%s] is different than the kind of service manifest [%s].",
+            overrideManifestKind, serviceManifestKind));
+      }
+    }
+  }
+
+  public static void validateNoMoreThanOneHelmOverridePresent(
+      List<ManifestConfigWrapper> manifests, String exceptionMessage) {
     if (isEmpty(manifests)) {
       return;
     }
@@ -56,7 +72,7 @@ public class EnvironmentV2ManifestValidator {
       String helmOverrideIds = helmRepoOverrides.stream()
                                    .map(helmOverride -> helmOverride.getManifest().getIdentifier())
                                    .collect(Collectors.joining(","));
-      throw new InvalidRequestException(format(TOO_MANY_HELM_OVERRIDES_PRESENT_ERROR_MESSAGE, helmOverrideIds));
+      throw new InvalidRequestException(format(exceptionMessage, helmOverrideIds));
     }
   }
 

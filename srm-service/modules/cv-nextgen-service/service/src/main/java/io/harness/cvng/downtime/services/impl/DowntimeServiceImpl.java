@@ -133,32 +133,64 @@ public class DowntimeServiceImpl implements DowntimeService {
     }
     DowntimeDTO existingDowntimeDTO = getDowntimeDTOFromDowntime(downtimeOptional.get());
     validateNotAllowedFieldsChanges(existingDowntimeDTO, downtimeDTO);
-    Downtime updatedDowntime = updateDowntimeEntity(projectParams, downtimeDTO, downtimeOptional.get());
+    return update(projectParams, identifier, downtimeOptional.get(), downtimeDTO);
+  }
+
+  @Override
+  public DowntimeResponse enableOrDisable(ProjectParams projectParams, String identifier, boolean enable) {
+    Optional<Downtime> downtimeOptional = getOptionalDowntime(projectParams, identifier);
+    if (downtimeOptional.isEmpty()) {
+      throw new InvalidRequestException(String.format(
+          "Downtime with identifier %s, accountId %s, orgIdentifier %s, and projectIdentifier %s is not present.",
+          identifier, projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
+          projectParams.getProjectIdentifier()));
+    }
+    DowntimeDTO existingDowntimeDTO = getDowntimeDTOFromDowntime(downtimeOptional.get());
+    if (existingDowntimeDTO.isEnabled() == enable) {
+      log.info(String.format("Downtime with identifier %s was already in %s state", identifier, enable));
+      return DowntimeResponse.builder()
+          .createdAt(downtimeOptional.get().getCreatedAt())
+          .lastModifiedAt(downtimeOptional.get().getLastUpdatedAt())
+          .downtimeDTO(existingDowntimeDTO)
+          .build();
+    }
+    DowntimeDTO updatedDowntimeDTO = existingDowntimeDTO;
+    updatedDowntimeDTO.setEnabled(enable);
+    return update(projectParams, identifier, downtimeOptional.get(), updatedDowntimeDTO);
+  }
+
+  private DowntimeResponse update(
+      ProjectParams projectParams, String identifier, Downtime existingDowntime, DowntimeDTO updatedDowntimeDTO) {
+    DowntimeDTO existingDowntimeDTO = getDowntimeDTOFromDowntime(existingDowntime);
+    validateNotAllowedFieldsChanges(existingDowntimeDTO, updatedDowntimeDTO);
+    Downtime updatedDowntime = updateDowntimeEntity(projectParams, updatedDowntimeDTO, existingDowntime);
+    updatedDowntimeDTO = getDowntimeDTOFromDowntime(updatedDowntime);
+    if ((!updatedDowntimeDTO.getSpec().equals(existingDowntimeDTO.getSpec()) || !existingDowntimeDTO.isEnabled())
+        && updatedDowntimeDTO.isEnabled()) {
+      List<Pair<Long, Long>> futureInstances =
+          downtimeTransformerMap.get(updatedDowntimeDTO.getSpec().getType())
+              .getStartAndEndTimesForFutureInstances(updatedDowntimeDTO.getSpec().getSpec());
+      List<EntityUnavailabilityStatusesDTO> entityUnavailabilityStatusesDTOS =
+          entityUnavailabilityStatusesService.getEntityUnavaialabilityStatusesDTOs(
+              projectParams, updatedDowntimeDTO, futureInstances);
+      entityUnavailabilityStatusesService.update(
+          projectParams, updatedDowntimeDTO.getIdentifier(), entityUnavailabilityStatusesDTOS);
+    } else if (!updatedDowntimeDTO.isEnabled()) {
+      entityUnavailabilityStatusesService.deleteFutureDowntimeInstances(projectParams, identifier);
+    }
     outboxService.save(DowntimeUpdateEvent.builder()
                            .accountIdentifier(projectParams.getAccountIdentifier())
                            .orgIdentifier(projectParams.getOrgIdentifier())
                            .projectIdentifier(projectParams.getProjectIdentifier())
-                           .downtimeIdentifier(downtimeDTO.getIdentifier())
-                           .resourceName(downtimeDTO.getName())
-                           .newDowntimeDTO(downtimeDTO)
+                           .downtimeIdentifier(updatedDowntimeDTO.getIdentifier())
+                           .resourceName(updatedDowntimeDTO.getName())
+                           .newDowntimeDTO(updatedDowntimeDTO)
                            .oldDowntimeDTO(existingDowntimeDTO)
                            .build());
-    if (!downtimeDTO.getSpec().equals(existingDowntimeDTO.getSpec()) && updatedDowntime.isEnabled()) {
-      List<Pair<Long, Long>> futureInstances =
-          downtimeTransformerMap.get(downtimeDTO.getSpec().getType())
-              .getStartAndEndTimesForFutureInstances(downtimeDTO.getSpec().getSpec());
-      List<EntityUnavailabilityStatusesDTO> entityUnavailabilityStatusesDTOS =
-          entityUnavailabilityStatusesService.getEntityUnavaialabilityStatusesDTOs(
-              projectParams, downtimeDTO, futureInstances);
-      entityUnavailabilityStatusesService.update(
-          projectParams, downtimeDTO.getIdentifier(), entityUnavailabilityStatusesDTOS);
-    } else if (!updatedDowntime.isEnabled()) {
-      entityUnavailabilityStatusesService.deleteFutureDowntimeInstances(projectParams, identifier);
-    }
     return DowntimeResponse.builder()
         .createdAt(updatedDowntime.getCreatedAt())
         .lastModifiedAt(updatedDowntime.getLastUpdatedAt())
-        .downtimeDTO(downtimeDTO)
+        .downtimeDTO(updatedDowntimeDTO)
         .build();
   }
 

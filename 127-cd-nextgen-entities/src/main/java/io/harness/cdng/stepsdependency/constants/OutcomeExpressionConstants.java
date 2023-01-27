@@ -64,8 +64,6 @@ public class OutcomeExpressionConstants {
   public final String ASG_CANARY_DELETE_OUTCOME = "asgCanaryDeleteOutcome";
   public final String ASG_CANARY_DEPLOY_OUTCOME = "asgCanaryDeployOutcome";
   public final String ASG_ROLLING_PREPARE_ROLLBACK_DATA_OUTCOME = "asgRollingPrepareRollbackDataOutcome";
-  public final String ASG_BLUE_GREEN_PREPARE_ROLLBACK_DATA_OUTCOME = "asgBlueGreenPrepareRollbackDataOutcome";
-  public final String ASG_BLUE_GREEN_DEPLOY_OUTCOME = "asgBlueGreenDeployOutcome";
   public final String TAS_APP_SETUP_OUTCOME = "TasAppSetupOutcome";
   public final String TAS_APP_RESIZE_OUTCOME = "TasAppResizeOutcome";
   public final String TAS_SWAP_ROUTES_OUTCOME = "TasSwapRoutesOutcome";
@@ -73,4 +71,7 @@ public class OutcomeExpressionConstants {
   public final String ASG_ROLLING_DEPLOY_OUTCOME = "asgRollingDeployOutcome";
   public final String TAS_ROLLING_DEPLOY_OUTCOME = "TasRollingDeployOutcome";
   public final String ASG_BLUE_GREEN_SWAP_SERVICE_OUTCOME = "asgBlueGreenSwapServiceOutcome";
+  public final String ASG_BLUE_GREEN_PREPARE_ROLLBACK_DATA_OUTCOME = "asgBlueGreenPrepareRollbackDataOutcome";
+  public final String ASG_BLUE_GREEN_DEPLOY_OUTCOME = "asgBlueGreenDeployOutcome";
+  public final String ASG_BLUE_GREEN_SWAP_SERVICE_START_OUTCOME = "asgBlueGreenSwapServiceStartOutcome";
 }

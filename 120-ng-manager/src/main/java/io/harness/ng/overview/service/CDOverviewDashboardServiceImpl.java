@@ -30,6 +30,7 @@ import io.harness.models.ActiveServiceInstanceInfoWithEnvType;
 import io.harness.models.ArtifactDeploymentDetailModel;
 import io.harness.models.EnvBuildInstanceCount;
 import io.harness.models.EnvironmentInstanceCountModel;
+import io.harness.models.InstanceDetailGroupedByPipelineExecutionList;
 import io.harness.models.InstanceDetailsByBuildId;
 import io.harness.models.constants.TimescaleConstants;
 import io.harness.models.dashboard.InstanceCountDetailsByEnvTypeAndServiceId;
@@ -2766,6 +2767,9 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
       final String envName = envIdToEnvNameMap.get(envId);
       final Integer count = entry.getValue();
       final ArtifactDeploymentDetail artifactDeploymentDetail = artifactDeploymentDetailsMap.get(envId);
+      if (artifactDeploymentDetail == null) {
+        continue;
+      }
       environmentInstanceDetails.add(EnvironmentInstanceDetails.EnvironmentInstanceDetail.builder()
                                          .environmentType(envType)
                                          .envId(envId)
@@ -2774,6 +2778,8 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
                                          .count(count)
                                          .build());
     }
+
+    DashboardServiceHelper.sortEnvironmentInstanceDetailList(environmentInstanceDetails);
 
     return EnvironmentInstanceDetails.builder().environmentInstanceDetails(environmentInstanceDetails).build();
   }
@@ -2889,6 +2895,33 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     return instanceDashboardService.getActiveInstanceDetails(accountIdentifier, orgIdentifier, projectIdentifier,
         serviceIdentifier, envIdentifier, infraIdentifier, clusterIdentifier, pipelineExecutionId, buildId,
         isGitopsEnabled(accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier));
+  }
+
+  @Override
+  public InstanceDetailGroupedByPipelineExecutionList getInstanceDetailGroupedByPipelineExecution(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceIdentifier,
+      String envIdentifier, EnvironmentType environmentType, String infraIdentifier, String clusterIdentifier,
+      String displayName) {
+    boolean isGitOps = isGitopsEnabled(accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier);
+    List<InstanceDetailGroupedByPipelineExecutionList.InstanceDetailGroupedByPipelineExecution>
+        instanceDetailGroupedByPipelineExecutionList =
+            instanceDashboardService.getActiveInstanceDetailGroupedByPipelineExecution(accountIdentifier, orgIdentifier,
+                projectIdentifier, serviceIdentifier, envIdentifier, environmentType, infraIdentifier,
+                clusterIdentifier, displayName, isGitOps);
+
+    // sort based on last deployed time
+
+    Collections.sort(instanceDetailGroupedByPipelineExecutionList,
+        new Comparator<InstanceDetailGroupedByPipelineExecutionList.InstanceDetailGroupedByPipelineExecution>() {
+          public int compare(InstanceDetailGroupedByPipelineExecutionList.InstanceDetailGroupedByPipelineExecution o1,
+              InstanceDetailGroupedByPipelineExecutionList.InstanceDetailGroupedByPipelineExecution o2) {
+            return (int) (o2.getLastDeployedAt() - o1.getLastDeployedAt());
+          }
+        });
+
+    return InstanceDetailGroupedByPipelineExecutionList.builder()
+        .instanceDetailGroupedByPipelineExecutionList(instanceDetailGroupedByPipelineExecutionList)
+        .build();
   }
 
   /*

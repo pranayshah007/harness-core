@@ -21,6 +21,7 @@ import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
+import io.harness.ngmigration.expressions.step.StepExpressionFunctor;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.step.StepMapper;
 import io.harness.ngmigration.service.step.StepMapperFactory;
@@ -54,6 +55,7 @@ import software.wings.beans.Variable;
 import software.wings.beans.VariableType;
 import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowPhase;
+import software.wings.beans.WorkflowPhase.WorkflowPhaseBuilder;
 import software.wings.beans.workflow.StepSkipStrategy;
 import software.wings.beans.workflow.StepSkipStrategy.Scope;
 import software.wings.ngmigration.CgEntityId;
@@ -239,7 +241,7 @@ public abstract class WorkflowHandler {
     if (EmptyPredicate.isNotEmpty(phaseSteps)) {
       stepGroups = phaseSteps.stream()
                        .filter(phaseStep -> EmptyPredicate.isNotEmpty(phaseStep.getSteps()))
-                       .map(phaseStep -> getStepGroup(context, phaseStep))
+                       .map(phaseStep -> getStepGroup(context, phase, phaseStep))
                        .filter(Objects::nonNull)
                        .collect(Collectors.toList());
     }
@@ -291,10 +293,10 @@ public abstract class WorkflowHandler {
     return true;
   }
 
-  ExecutionWrapperConfig getStepGroup(WorkflowMigrationContext context, PhaseStep phaseStep) {
+  ExecutionWrapperConfig getStepGroup(WorkflowMigrationContext context, WorkflowPhase phase, PhaseStep phaseStep) {
     List<GraphNode> stepYamls = phaseStep.getSteps();
 
-    List<ExecutionWrapperConfig> steps = getStepWrappers(context, phaseStep, stepYamls);
+    List<ExecutionWrapperConfig> steps = getStepWrappers(context, phase, phaseStep, stepYamls);
     if (EmptyPredicate.isEmpty(steps)) {
       return null;
     }
@@ -343,7 +345,7 @@ public abstract class WorkflowHandler {
   }
 
   List<ExecutionWrapperConfig> getStepWrappers(
-      WorkflowMigrationContext context, PhaseStep phaseStep, List<GraphNode> stepYamls) {
+      WorkflowMigrationContext context, WorkflowPhase phase, PhaseStep phaseStep, List<GraphNode> stepYamls) {
     if (EmptyPredicate.isEmpty(stepYamls)) {
       return Collections.emptyList();
     }
@@ -357,15 +359,22 @@ public abstract class WorkflowHandler {
           .forEach(skip -> skip.getStepIds().forEach(step -> skipStrategies.put(step, skip.getAssertionExpression())));
     }
     return stepYamls.stream()
-        .map(stepYaml -> getStepElementConfig(context, stepYaml, skipStrategies.getOrDefault(stepYaml.getId(), null)))
+        .map(stepYaml
+            -> getStepElementConfig(
+                context, phase, phaseStep, stepYaml, skipStrategies.getOrDefault(stepYaml.getId(), null)))
         .filter(Objects::nonNull)
         .map(stepNodeJson -> ExecutionWrapperConfig.builder().step(stepNodeJson).build())
         .collect(Collectors.toList());
   }
 
-  JsonNode getStepElementConfig(WorkflowMigrationContext context, GraphNode step, String skipCondition) {
+  JsonNode getStepElementConfig(WorkflowMigrationContext context, WorkflowPhase phase, PhaseStep phaseStep,
+      GraphNode step, String skipCondition) {
     StepMapper stepMapper = stepMapperFactory.getStepMapper(step.getType());
-    MigratorExpressionUtils.render(step, new HashMap<>());
+    MigratorExpressionUtils.render(step, getExpressions(phase, context.getStepExpressionFunctors()));
+    List<StepExpressionFunctor> expressionFunctors = stepMapper.getExpressionFunctor(context, phase, phaseStep, step);
+    if (isNotEmpty(expressionFunctors)) {
+      context.getStepExpressionFunctors().addAll(expressionFunctors);
+    }
     TemplateStepNode templateStepNode = stepMapper.getTemplateSpec(context, step);
     if (templateStepNode != null) {
       return JsonPipelineUtils.asTree(templateStepNode);
@@ -378,6 +387,16 @@ public abstract class WorkflowHandler {
       stepNode.setWhen(StepWhenCondition.builder().condition(wrapNot(skipCondition)).stageStatus(SUCCESS).build());
     }
     return JsonPipelineUtils.asTree(stepNode);
+  }
+
+  private Map<String, Object> getExpressions(WorkflowPhase phase, List<StepExpressionFunctor> functors) {
+    Map<String, Object> expressions = new HashMap<>();
+
+    for (StepExpressionFunctor functor : functors) {
+      functor.setCurrentStageIdentifier(MigratorUtility.generateIdentifier(phase.getName()));
+      expressions.put(functor.getCgExpression(), functor);
+    }
+    return expressions;
   }
 
   private ParameterField<String> wrapNot(String condition) {
@@ -516,8 +535,10 @@ public abstract class WorkflowHandler {
     return JsonPipelineUtils.asTree(templateSpec);
   }
 
-  StageElementWrapperConfig buildCustomStage(WorkflowMigrationContext context, PhaseStep phaseStep) {
-    ExecutionWrapperConfig wrapper = getStepGroup(context, phaseStep);
+  // This is for multi-service only
+  StageElementWrapperConfig buildCustomStage(
+      WorkflowMigrationContext context, WorkflowPhase phase, PhaseStep phaseStep) {
+    ExecutionWrapperConfig wrapper = getStepGroup(context, phase, phaseStep);
     if (wrapper == null) {
       return null;
     }
@@ -526,8 +547,8 @@ public abstract class WorkflowHandler {
             .execution(ExecutionElementConfig.builder().steps(Collections.singletonList(wrapper)).build())
             .build();
     CustomStageNode customStageNode = new CustomStageNode();
-    customStageNode.setName(phaseStep.getName());
-    customStageNode.setIdentifier(MigratorUtility.generateIdentifier(phaseStep.getName()));
+    customStageNode.setName(phase.getName());
+    customStageNode.setIdentifier(MigratorUtility.generateIdentifier(phase.getName()));
     customStageNode.setCustomStageConfig(customStageConfig);
     customStageNode.setFailureStrategies(getDefaultFailureStrategy());
     return StageElementWrapperConfig.builder().stage(JsonPipelineUtils.asTree(customStageNode)).build();
@@ -561,17 +582,89 @@ public abstract class WorkflowHandler {
     return StageElementWrapperConfig.builder().stage(JsonPipelineUtils.asTree(stageNode)).build();
   }
 
+  JsonNode buildCanaryStageTemplate(WorkflowMigrationContext context) {
+    Workflow workflow = context.getWorkflow();
+    PhaseStep prePhaseStep = getPreDeploymentPhase(workflow);
+    List<WorkflowPhase> phases = getPhases(workflow);
+    PhaseStep postPhaseStep = getPostDeploymentPhase(workflow);
+    List<WorkflowPhase> rollbackPhases = getRollbackPhases(workflow);
+
+    final String PHASE_NAME = "DUMMY";
+    List<ExecutionWrapperConfig> stepGroupWrappers = new ArrayList<>();
+    if (EmptyPredicate.isNotEmpty(prePhaseStep.getSteps())) {
+      prePhaseStep.setName("Pre Deployment");
+      WorkflowPhase prePhase = WorkflowPhaseBuilder.aWorkflowPhase()
+                                   .name(PHASE_NAME)
+                                   .phaseSteps(Collections.singletonList(prePhaseStep))
+                                   .build();
+      List<ExecutionWrapperConfig> stage = getStepGroups(context, prePhase);
+      if (EmptyPredicate.isNotEmpty(stage)) {
+        stepGroupWrappers.addAll(stage);
+      }
+    }
+
+    if (EmptyPredicate.isNotEmpty(phases)) {
+      for (WorkflowPhase phase : phases) {
+        String prefix = phase.getName();
+        phase.setName(PHASE_NAME);
+        stepGroupWrappers.addAll(phase.getPhaseSteps()
+                                     .stream()
+                                     .peek(phaseStep -> phaseStep.setName(prefix + "-" + phaseStep.getName()))
+                                     .map(phaseStep -> getStepGroup(context, phase, phaseStep))
+                                     .filter(Objects::nonNull)
+                                     .collect(Collectors.toList()));
+      }
+    }
+
+    if (EmptyPredicate.isNotEmpty(postPhaseStep.getSteps())) {
+      postPhaseStep.setName("Post Deployment");
+      WorkflowPhase postPhase = WorkflowPhaseBuilder.aWorkflowPhase()
+                                    .name(PHASE_NAME)
+                                    .phaseSteps(Collections.singletonList(postPhaseStep))
+                                    .build();
+      List<ExecutionWrapperConfig> stage = getStepGroups(context, postPhase);
+      if (EmptyPredicate.isNotEmpty(stage)) {
+        stepGroupWrappers.addAll(stage);
+      }
+    }
+
+    List<ExecutionWrapperConfig> rollbackStepGroupWrappers = new ArrayList<>();
+    if (EmptyPredicate.isNotEmpty(rollbackPhases)) {
+      Collections.reverse(rollbackPhases);
+      for (WorkflowPhase phase : rollbackPhases) {
+        String prefix = phase.getName();
+        phase.setName(PHASE_NAME);
+        rollbackStepGroupWrappers.addAll(phase.getPhaseSteps()
+                                             .stream()
+                                             .peek(phaseStep -> phaseStep.setName(prefix + "-" + phaseStep.getName()))
+                                             .map(phaseStep -> getStepGroup(context, phase, phaseStep))
+                                             .filter(Objects::nonNull)
+                                             .collect(Collectors.toList()));
+      }
+    }
+
+    Map<String, Object> templateSpec =
+        ImmutableMap.<String, Object>builder()
+            .put("type", "Deployment")
+            .put("spec", getDeploymentStageConfig(context.getWorkflow(), stepGroupWrappers, rollbackStepGroupWrappers))
+            .put("failureStrategies", getDefaultFailureStrategy())
+            .put("variables", getVariables(context.getWorkflow()))
+            .build();
+    return JsonPipelineUtils.asTree(templateSpec);
+  }
+
   JsonNode buildMultiStagePipelineTemplate(WorkflowMigrationContext context) {
     Workflow workflow = context.getWorkflow();
-    PhaseStep prePhase = getPreDeploymentPhase(workflow);
+    PhaseStep prePhaseStep = getPreDeploymentPhase(workflow);
     List<WorkflowPhase> phases = getPhases(workflow);
-    PhaseStep postPhase = getPostDeploymentPhase(workflow);
+    PhaseStep postPhaseStep = getPostDeploymentPhase(workflow);
     List<WorkflowPhase> rollbackPhases = getRollbackPhases(workflow);
 
     List<StageElementWrapperConfig> stages = new ArrayList<>();
-    if (EmptyPredicate.isNotEmpty(prePhase.getSteps())) {
-      prePhase.setName("Pre Deployment");
-      StageElementWrapperConfig stage = buildCustomStage(context, prePhase);
+    if (EmptyPredicate.isNotEmpty(prePhaseStep.getSteps())) {
+      WorkflowPhase prePhase = WorkflowPhaseBuilder.aWorkflowPhase().name("Pre Deployment").build();
+      prePhaseStep.setName("Pre Deployment");
+      StageElementWrapperConfig stage = buildCustomStage(context, prePhase, prePhaseStep);
       if (stage != null) {
         stages.add(stage);
       }
@@ -592,9 +685,10 @@ public abstract class WorkflowHandler {
                         .collect(Collectors.toList()));
     }
 
-    if (EmptyPredicate.isNotEmpty(postPhase.getSteps())) {
-      postPhase.setName("Post Deployment");
-      StageElementWrapperConfig stage = buildCustomStage(context, postPhase);
+    if (EmptyPredicate.isNotEmpty(postPhaseStep.getSteps())) {
+      WorkflowPhase postPhase = WorkflowPhaseBuilder.aWorkflowPhase().name("Post Deployment").build();
+      postPhaseStep.setName("Post Deployment");
+      StageElementWrapperConfig stage = buildCustomStage(context, postPhase, postPhaseStep);
       if (stage != null) {
         stages.add(stage);
       }

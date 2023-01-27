@@ -445,6 +445,7 @@ public class TaskTypeTest extends CategoryTest {
     taskTypeOrdinalMapping.put(405, "AWS_ASG_BLUE_GREEN_DEPLOY_TASK_NG");
     taskTypeOrdinalMapping.put(406, "AWS_ASG_BLUE_GREEN_ROLLBACK_TASK_NG");
     taskTypeOrdinalMapping.put(407, "SCM_BATCH_GET_FILE_TASK");
+    taskTypeOrdinalMapping.put(408, "TERRAFORM_CLOUD_TASK_NG");
 
     taskTypeConstantMapping =
         taskTypeOrdinalMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));

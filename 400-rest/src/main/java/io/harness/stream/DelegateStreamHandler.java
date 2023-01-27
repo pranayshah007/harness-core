@@ -14,9 +14,7 @@ import static io.harness.eraro.ErrorCode.UNKNOWN_ERROR;
 import static io.harness.govern.Switch.unhandled;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
-import io.harness.delegate.beans.ConnectionMode;
 import io.harness.delegate.beans.Delegate;
-import io.harness.delegate.beans.DelegateConnectionHeartbeat;
 import io.harness.delegate.beans.DelegateParams;
 import io.harness.delegate.heartbeat.stream.DelegateStreamHeartbeatService;
 import io.harness.delegate.task.DelegateLogContext;
@@ -142,8 +140,6 @@ public class DelegateStreamHandler extends AtmosphereHandlerAdapter {
            AutoLogContext ignore2 = new DelegateLogContext(delegateId, OVERRIDE_ERROR);
            AutoLogContext ignore3 = new WebsocketLogContext(websocketId, OVERRIDE_ERROR)) {
         DelegateParams delegateParams = JsonUtils.asObject(CharStreams.toString(req.getReader()), DelegateParams.class);
-        String delegateVersion = delegateParams.getVersion();
-
         if (isNotEmpty(delegateParams.getToken())) {
           authService.validateDelegateToken(accountId, delegateParams.getToken(), delegateId,
               delegateParams.getTokenName(), agentMtlsAuthority, false);
@@ -155,13 +151,6 @@ public class DelegateStreamHandler extends AtmosphereHandlerAdapter {
         } else {
           delegateStreamHeartbeatService.process(delegateParams.toBuilder().delegateId(delegateId).build());
         }
-        delegateService.registerHeartbeat(accountId, delegateId,
-            DelegateConnectionHeartbeat.builder()
-                .delegateConnectionId(delegateConnectionId)
-                .version(delegateVersion)
-                .location(delegateParams.getLocation())
-                .build(),
-            ConnectionMode.STREAMING);
       }
     }
   }

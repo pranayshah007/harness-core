@@ -12,6 +12,7 @@ import static software.wings.beans.TaskType.AWS_ASG_BLUE_GREEN_PREPARE_ROLLBACK_
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.aws.beans.AsgLoadBalancerConfig;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
@@ -24,7 +25,6 @@ import io.harness.delegate.task.aws.asg.AsgBlueGreenDeployResult;
 import io.harness.delegate.task.aws.asg.AsgBlueGreenPrepareRollbackDataRequest;
 import io.harness.delegate.task.aws.asg.AsgBlueGreenPrepareRollbackDataResponse;
 import io.harness.delegate.task.aws.asg.AsgBlueGreenPrepareRollbackDataResult;
-import io.harness.delegate.task.aws.asg.AsgLoadBalancerConfig;
 import io.harness.delegate.task.git.GitFetchResponse;
 import io.harness.exception.ExceptionUtils;
 import io.harness.executions.steps.ExecutionNodeType;
@@ -244,10 +244,10 @@ public class AsgBlueGreenDeployStep extends TaskChainExecutableWithRollbackAndRb
               .loadBalancer(loadBalancerConfig.getLoadBalancer())
               .stageListenerArn(loadBalancerConfig.getStageListenerArn())
               .stageListenerRuleArn(loadBalancerConfig.getStageListenerRuleArn())
-              .stageTargetGroupArns(loadBalancerConfig.getStageTargetGroupArns())
+              .stageTargetGroupArnsList(loadBalancerConfig.getStageTargetGroupArnsList())
               .prodListenerArn(loadBalancerConfig.getProdListenerArn())
               .prodListenerRuleArn(loadBalancerConfig.getProdListenerRuleArn())
-              .prodTargetGroupArns(loadBalancerConfig.getProdTargetGroupArns())
+              .prodTargetGroupArnsList(loadBalancerConfig.getProdTargetGroupArnsList())
               .build();
 
       executionSweepingOutputService.consume(ambiance,

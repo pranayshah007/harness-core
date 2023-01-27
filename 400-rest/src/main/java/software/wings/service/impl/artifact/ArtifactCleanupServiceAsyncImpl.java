@@ -96,7 +96,7 @@ public class ArtifactCleanupServiceAsyncImpl implements ArtifactCleanupService {
 
     waitNotifyEngine.waitForAllOn(GENERAL, new BuildSourceCleanupCallback(accountId, artifactStream.getUuid()), waitId);
     log.info("Queuing delegate task with waitId {}", waitId);
-    final String taskId = delegateService.queueTask(delegateTaskBuilder.build());
+    final String taskId = delegateService.queueTaskV2(delegateTaskBuilder.build());
     log.info("Queued delegate taskId {}", taskId);
   }
 }

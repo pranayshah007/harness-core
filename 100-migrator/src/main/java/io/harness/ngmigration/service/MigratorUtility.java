@@ -70,6 +70,8 @@ public class MigratorUtility {
   private static final int ECS_SERVICE_SPEC = 14;
   private static final int MANIFEST = 15;
   private static final int CONFIG_FILE = 16;
+  private static final int AMI_STARTUP_SCRIPT = 17;
+  private static final int ELASTIGROUP_CONFIGURATION = 18;
   private static final int SERVICE = 20;
   private static final int INFRA_PROVISIONER = 23;
   private static final int ENVIRONMENT = 25;
@@ -77,6 +79,8 @@ public class MigratorUtility {
   private static final int SERVICE_VARIABLE = 40;
   private static final int WORKFLOW = 70;
   private static final int PIPELINE = 100;
+
+  private static final int TRIGGER = 150;
 
   private static final Map<NGMigrationEntityType, Integer> MIGRATION_ORDER =
       ImmutableMap.<NGMigrationEntityType, Integer>builder()
@@ -86,6 +90,8 @@ public class MigratorUtility {
           .put(NGMigrationEntityType.CONNECTOR, CONNECTOR)
           .put(NGMigrationEntityType.CONTAINER_TASK, CONTAINER_TASK)
           .put(NGMigrationEntityType.ECS_SERVICE_SPEC, ECS_SERVICE_SPEC)
+          .put(NGMigrationEntityType.AMI_STARTUP_SCRIPT, AMI_STARTUP_SCRIPT)
+          .put(NGMigrationEntityType.ELASTIGROUP_CONFIGURATION, ELASTIGROUP_CONFIGURATION)
           .put(NGMigrationEntityType.MANIFEST, MANIFEST)
           .put(NGMigrationEntityType.CONFIG_FILE, CONFIG_FILE)
           .put(NGMigrationEntityType.SERVICE, SERVICE)
@@ -95,6 +101,7 @@ public class MigratorUtility {
           .put(NGMigrationEntityType.SERVICE_VARIABLE, SERVICE_VARIABLE)
           .put(NGMigrationEntityType.WORKFLOW, WORKFLOW)
           .put(NGMigrationEntityType.PIPELINE, PIPELINE)
+          .put(NGMigrationEntityType.TRIGGER, TRIGGER)
           .build();
 
   private MigratorUtility() {}

@@ -13,6 +13,7 @@ import static io.harness.encryption.Scope.PROJECT;
 import static software.wings.ngmigration.NGMigrationEntityType.APPLICATION;
 import static software.wings.ngmigration.NGMigrationEntityType.INFRA_PROVISIONER;
 import static software.wings.ngmigration.NGMigrationEntityType.MANIFEST;
+import static software.wings.ngmigration.NGMigrationEntityType.TRIGGER;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -52,6 +53,8 @@ import software.wings.beans.Workflow.WorkflowKeys;
 import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.beans.appmanifest.ApplicationManifest.ApplicationManifestKeys;
 import software.wings.beans.template.Template;
+import software.wings.beans.trigger.Trigger;
+import software.wings.beans.trigger.Trigger.TriggerKeys;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.DiscoveryNode;
@@ -195,6 +198,17 @@ public class AppMigrationService extends NgMigrationService {
               .distinct()
               .map(provisioner -> CgEntityId.builder().id(provisioner.getUuid()).type(INFRA_PROVISIONER).build())
               .collect(Collectors.toList()));
+    }
+
+    List<Trigger> triggers = hPersistence.createQuery(Trigger.class)
+                                 .filter(TriggerKeys.appId, appId)
+                                 .filter(TriggerKeys.accountId, application.getAccountId())
+                                 .asList();
+    if (EmptyPredicate.isNotEmpty(triggers)) {
+      children.addAll(triggers.stream()
+                          .distinct()
+                          .map(trigger -> CgEntityId.builder().id(trigger.getUuid()).type(TRIGGER).build())
+                          .collect(Collectors.toList()));
     }
 
     return DiscoveryNode.builder()

@@ -7,11 +7,14 @@
 
 package io.harness.ngmigration.beans;
 
+import io.harness.ngmigration.expressions.step.StepExpressionFunctor;
+
 import software.wings.beans.Workflow;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -23,7 +26,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class WorkflowMigrationContext {
-  private Map<String, String> expressions;
+  private List<StepExpressionFunctor> stepExpressionFunctors;
   private Map<CgEntityId, CgEntityNode> entities;
   private Map<CgEntityId, NGYamlFile> migratedEntities;
   private Workflow workflow;
@@ -34,7 +37,7 @@ public class WorkflowMigrationContext {
         .workflow(workflow)
         .entities(entities)
         .migratedEntities(migratedEntities)
-        .expressions(new HashMap<>())
+        .stepExpressionFunctors(new ArrayList<>())
         .build();
   }
 }

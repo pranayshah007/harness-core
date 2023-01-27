@@ -692,7 +692,7 @@ public class YamlGitServiceImpl implements YamlGitService {
           new GitCommandCallback(accountId, yamlChangeSetId, GitCommandType.COMMIT_AND_PUSH,
               yamlGitConfig.getGitConnectorId(), yamlGitConfig.getRepositoryName(), yamlGitConfig.getBranchName()),
           waitId);
-      final String taskId = delegateService.queueTask(delegateTask);
+      final String taskId = delegateService.queueTaskV2(delegateTask);
       try (ProcessTimeLogContext ignore4 = new ProcessTimeLogContext(stopwatch.elapsed(MILLISECONDS), OVERRIDE_ERROR)) {
         log.info(GIT_YAML_LOG_PREFIX
                 + "Successfully queued harness->git change set for processing with delegate taskId=[{}]",
@@ -1024,7 +1024,7 @@ public class YamlGitServiceImpl implements YamlGitService {
           new GitCommandCallback(accountId, yamlChangeSet.getUuid(), GitCommandType.DIFF,
               yamlGitConfig.getGitConnectorId(), yamlGitConfig.getRepositoryName(), yamlGitConfig.getBranchName()),
           waitId);
-      final String taskId = delegateService.queueTask(delegateTask);
+      final String taskId = delegateService.queueTaskV2(delegateTask);
       try (ProcessTimeLogContext ignore2 = new ProcessTimeLogContext(stopwatch.elapsed(MILLISECONDS), OVERRIDE_ERROR)) {
         log.info(GIT_YAML_LOG_PREFIX
                 + "Successfully queued git->harness change set for processing with delegate taskId=[{}]",

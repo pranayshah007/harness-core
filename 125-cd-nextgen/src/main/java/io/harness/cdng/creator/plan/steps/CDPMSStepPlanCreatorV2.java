@@ -28,7 +28,7 @@ import io.harness.advisers.rollback.OnFailRollbackParameters.OnFailRollbackParam
 import io.harness.advisers.rollback.RollbackStrategy;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.pipeline.CDAbstractStepInfo;
+import io.harness.cdng.pipeline.steps.CDAbstractStepInfo;
 import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
 import io.harness.exception.InvalidRequestException;
 import io.harness.govern.Switch;

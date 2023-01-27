@@ -34,8 +34,7 @@ public class NGExpressionUtils {
 
   // We can remove validator as well, but current regex will remove for default as well, which we should not as if not
   // given default would be used.
-  private static final Pattern RawInputSetPattern =
-      Pattern.compile("\"" + EXPR_START_ESC + "input" + EXPR_END_ESC + "\"");
+  private static final Pattern RawInputSetPattern = Pattern.compile(EXPR_START_ESC + "input" + EXPR_END_ESC);
 
   public static final String EXPRESSION_INPUT_CONSTANT = "executionInput";
 

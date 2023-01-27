@@ -20,7 +20,7 @@ import io.harness.grpc.utils.HTimestamps;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
 
-import software.wings.service.impl.DelegateConnectionDao;
+import software.wings.service.impl.DelegateDao;
 
 import com.google.inject.Inject;
 import io.grpc.stub.StreamObserver;
@@ -29,11 +29,11 @@ import lombok.extern.slf4j.Slf4j;
 @TargetModule(HarnessModule._420_DELEGATE_SERVICE)
 @Slf4j
 public class PingPongService extends PingPongServiceImplBase {
-  private final DelegateConnectionDao delegateConnectionDao;
+  private final DelegateDao delegateDao;
 
   @Inject
-  public PingPongService(DelegateConnectionDao delegateConnectionDao) {
-    this.delegateConnectionDao = delegateConnectionDao;
+  public PingPongService(DelegateDao delegateDao) {
+    this.delegateDao = delegateDao;
   }
 
   @Override
@@ -42,7 +42,6 @@ public class PingPongService extends PingPongServiceImplBase {
          AutoLogContext ignore2 = new DelegateLogContext(ping.getDelegateId(), OVERRIDE_ERROR)) {
       log.info("Ping at {} received from delegateId {} with processId: {}, version: {}",
           HTimestamps.toInstant(ping.getPingTimestamp()), ping.getDelegateId(), ping.getProcessId(), ping.getVersion());
-      delegateConnectionDao.updateLastGrpcHeartbeat(ACCOUNT_ID_CTX_KEY.get(), ping.getDelegateId(), ping.getVersion());
       responseObserver.onNext(Pong.newBuilder().build());
       responseObserver.onCompleted();
     }

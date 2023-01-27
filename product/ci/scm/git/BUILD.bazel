@@ -36,6 +36,7 @@ go_test(
         "testdata/branches.json",
         "testdata/branches_with_default.json",
         "testdata/commit.json",
+        "testdata/commit_bb_onprem.json",
         "testdata/commits.json",
         "testdata/compare.json",
         "testdata/find_pr.json",

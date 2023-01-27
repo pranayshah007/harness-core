@@ -20,6 +20,6 @@ import lombok.experimental.SuperBuilder;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @ApiModel("MetricValueV2")
 public class MetricValue {
-  long timestampInMillis;
+  Long timestampInMillis;
   Double value;
 }

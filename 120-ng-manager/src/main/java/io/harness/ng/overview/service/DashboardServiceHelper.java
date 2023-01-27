@@ -10,6 +10,7 @@ package io.harness.ng.overview.service;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.models.ActiveServiceInstanceInfoWithEnvType;
 import io.harness.ng.core.environment.beans.EnvironmentType;
+import io.harness.ng.overview.dto.EnvironmentInstanceDetails;
 import io.harness.ng.overview.dto.InstanceGroupedByEnvironmentList;
 
 import java.util.ArrayList;
@@ -38,7 +39,7 @@ public class DashboardServiceHelper {
       final EnvironmentType envType = activeServiceInstanceInfo.getEnvType();
       final Long lastDeployedAt = activeServiceInstanceInfo.getLastDeployedAt();
 
-      if (envId == null || envType == null || lastDeployedAt == null) {
+      if (envId == null || lastDeployedAt == null) {
         return;
       }
 
@@ -211,5 +212,35 @@ public class DashboardServiceHelper {
         });
 
     return instanceGroupedByArtifactList;
+  }
+
+  public void sortEnvironmentInstanceDetailList(
+      List<EnvironmentInstanceDetails.EnvironmentInstanceDetail> environmentInstanceDetailList) {
+    Collections.sort(
+        environmentInstanceDetailList, new Comparator<EnvironmentInstanceDetails.EnvironmentInstanceDetail>() {
+          public int compare(EnvironmentInstanceDetails.EnvironmentInstanceDetail o1,
+              EnvironmentInstanceDetails.EnvironmentInstanceDetail o2) {
+            int c;
+            if (o1.getEnvironmentType() == null && o2.getEnvironmentType() == null) {
+              c = 0;
+            } else if (o1.getEnvironmentType() == null) {
+              c = -1;
+            } else if (o2.getEnvironmentType() == null) {
+              c = 1;
+            } else {
+              c = o1.getEnvironmentType().compareTo(o2.getEnvironmentType());
+            }
+            if (c == 0) {
+              if (o1.getEnvName() == null && o2.getEnvName() != null) {
+                c = -1;
+              } else if (o2.getEnvName() == null && o1.getEnvName() != null) {
+                c = 1;
+              } else {
+                c = o1.getEnvName().compareTo(o2.getEnvName());
+              }
+            }
+            return c;
+          }
+        });
   }
 }

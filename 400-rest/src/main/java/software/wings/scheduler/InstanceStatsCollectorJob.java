@@ -61,6 +61,9 @@ public class InstanceStatsCollectorJob implements Job {
   private static final int SYNC_INTERVAL = 10;
   private static final int DATA_MIGRATION_INTERVAL_IN_HOURS = 24;
 
+  private static final int ACQUIRE_LOCK_TIME_MINUTES = 90;
+  private static final int ACQUIRE_LOCK_WAIT_TIMEOUT_MINUTES = 10;
+
   // instance data migration cron
   private static final long DATA_MIGRATION_CRON_LOCK_EXPIRY_IN_SECONDS = 660; // 60 * 11
   private static final String DATA_MIGRATION_CRON_LOCK_PREFIX = "INSTANCE_DATA_MIGRATION_CRON:";
@@ -180,8 +183,21 @@ public class InstanceStatsCollectorJob implements Job {
   void createStats(@Nonnull final String accountId) {
     Objects.requireNonNull(accountId, "Account Id must be present");
 
-    try (AcquiredLock lock = persistentLocker.tryToAcquireLock(Account.class, accountId, Duration.ofSeconds(240))) {
+    /**
+     * Redis lock is automatically released based on lease-time even if the current job is still in progress.
+     * To prevent redis lock to be released before job is completed lock time was increased to
+     * {@value ACQUIRE_LOCK_TIME_MINUTES}. In most cases lock should be released in short period of time, only in case
+     * if a huge account has to catch up multiple data points we do require a long-running lock to prevent other jobs
+     * from the same account to acquire lock and run in parallel with unfinished jobs. Setting wait timeout
+     * {@value ACQUIRE_LOCK_WAIT_TIMEOUT_MINUTES} to not queue multiple jobs. It is expected if the app crashes then
+     * it will still be able to continue after lock timeout and should be able to catch up with missing entries
+     * One jobs shouldn't wait more than {@value ACQUIRE_LOCK_WAIT_TIMEOUT_MINUTES} otherwise we will end up in
+     * queueing multiple blocked threads for the same account.
+     **/
+    try (AcquiredLock lock = persistentLocker.waitToAcquireLock(Account.class, accountId,
+             Duration.ofMinutes(ACQUIRE_LOCK_TIME_MINUTES), Duration.ofMinutes(ACQUIRE_LOCK_WAIT_TIMEOUT_MINUTES))) {
       if (lock == null) {
+        log.warn("Unable to acquire lock for account {}", accountId);
         return;
       }
 

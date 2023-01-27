@@ -3698,6 +3698,30 @@
               ]
             }
           ]
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "environment"
+              ]
+            },
+            {
+              "required": [
+                "environmentGroup"
+              ]
+            },
+            {
+              "required": [
+                "environments"
+              ]
+            },
+            {
+              "required": [
+                "infrastructure"
+              ]
+            }
+          ]
         }
       ]
     },
@@ -5991,12 +6015,19 @@
         },
         {
           "type": "object",
+          "required": [
+            "connectorRef",
+            "type"
+          ],
           "properties": {
+            "connectorRef": {
+              "type": "string"
+            },
             "metadata": {
               "type": "string"
             },
-            "store": {
-              "$ref": "#/definitions/StoreConfigWrapper"
+            "type": {
+              "type": "string"
             }
           }
         }
