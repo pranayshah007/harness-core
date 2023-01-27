@@ -311,7 +311,7 @@ public class SecretCrudServiceImpl implements SecretCrudService {
 
   @Override
   @FeatureRestrictionCheck(MULTIPLE_SECRETS)
-  public SecretResponseWrapper createViaYaml(@NotNull String accountIdentifier, SecretDTOV2 dto) {
+  public SecretResponseWrapper createViaYaml(@AccountIdentifier @NotNull String accountIdentifier, SecretDTOV2 dto) {
     Optional<String> message = dto.getSpec().getErrorMessageForInvalidYaml();
     if (message.isPresent()) {
       throw new InvalidRequestException(message.get(), USER);

@@ -7,6 +7,8 @@
 
 package io.harness.cvng.core.transformer.changeSource;
 
+import static org.apache.commons.lang3.StringUtils.isBlank;
+
 import io.harness.cvng.core.beans.monitoredService.ChangeSourceDTO;
 import io.harness.cvng.core.beans.monitoredService.changeSourceSpec.CustomChangeSourceSpec;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
@@ -18,6 +20,9 @@ import com.google.inject.Inject;
 public class CustomChangeSourceSpecTransformer
     extends ChangeSourceSpecTransformer<CustomChangeSource, CustomChangeSourceSpec> {
   @Inject WebhookConfigService webhookConfigService;
+
+  private final static String webhookSamplePayload =
+      "{ \"eventIdentifier\": \"<string>\" (optional), \"name\": \"demo\", \"user\": \"demo@harness.io\", \"startTime\": timeInMs, \"endTime\": timeInMs, \"eventDetails\": { \"description\": \"<String>\", \"changeEventDetailsLink\": \"urlString\" (optional), \"externalLinkToEntity\": \"urlString\" (optional) } }";
 
   @Override
   public CustomChangeSource getEntity(MonitoredServiceParams monitoredServiceParams, ChangeSourceDTO changeSourceDTO) {
@@ -44,27 +49,35 @@ public class CustomChangeSourceSpecTransformer
   }
 
   private String getWebhookUrl(CustomChangeSource changeSource) {
-    return webhookConfigService.getWebhookApiBaseUrl() + "webhook/custom-change?"
-        + "accountIdentifier=" + changeSource.getAccountId() + "orgIdentifier" + changeSource.getOrgIdentifier()
-        + "projectIdentifier" + changeSource.getProjectIdentifier() + "monitoredServiceIdentifier"
-        + changeSource.getMonitoredServiceIdentifier() + "changeSourceIdentifier" + changeSource.getIdentifier();
+    String webhookUrl = webhookConfigService.getWebhookApiBaseUrl();
+    if (isBlank(webhookUrl)) {
+      return null;
+    }
+
+    StringBuilder urlBuilder = new StringBuilder(128);
+    urlBuilder.append(webhookUrl);
+
+    if (!urlBuilder.toString().endsWith("/")) {
+      urlBuilder.append('/');
+    }
+
+    urlBuilder.append("webhook/custom-change?accountIdentifier=")
+        .append(changeSource.getAccountId())
+        .append("&orgIdentifier=")
+        .append(changeSource.getOrgIdentifier())
+        .append("&projectIdentifier=")
+        .append(changeSource.getProjectIdentifier())
+        .append("&monitoredServiceIdentifier=")
+        .append(changeSource.getMonitoredServiceIdentifier())
+        .append("&changeSourceIdentifier=")
+        .append(changeSource.getIdentifier());
+
+    return urlBuilder.toString();
   }
 
   private String getWebhookCurlCommand(CustomChangeSource changeSource) {
-    return "curl -X POST -H 'content-type: application/json' \n"
-        + "-H 'X-Api-Key: sample_api_key'\n"
-        + " --url " + getWebhookUrl(changeSource) + " -d \n"
-        + "'{\n"
-        + "   \"eventIdentifier\": \"<string>\" (optional)\n"
-        + "   \"name\": \"sampleName\"\n"
-        + "   \"user\": \"sampleUser\",\n"
-        + "   \"startTime\": timeInMs,\n"
-        + "   \"endTime\": timeInMs,\n"
-        + "   \"eventDetails\": {\n"
-        + "     \"description\": \"<String>\",\n"
-        + "     \"changeEventDetailsLink\": \"urlString\" (optional),\n"
-        + "     \"internalLinkToEntity\": \"urlString\" (optional)\n"
-        + "    },\n"
-        + " }'";
+    return String.format(
+        "curl -X POST -H 'content-type: application/json' -H 'X-Api-Key: sample_api_key' --url '%s' -d '%s'",
+        getWebhookUrl(changeSource), webhookSamplePayload);
   }
 }

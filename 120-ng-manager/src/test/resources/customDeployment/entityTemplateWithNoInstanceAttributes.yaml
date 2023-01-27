@@ -1,0 +1,21 @@
+customDeployment:
+  infrastructure:
+    variables:
+      - name: clusterUrl
+        type: String
+        value: <+input>
+      - name: image
+        type: Connector
+        value: account.harnessImage
+        description: "Connector"
+    fetchInstancesScript:
+      store:
+        type: Harness
+        spec:
+          files:
+            - account:/manifest.yml
+    instancesListPath: instances
+  execution:
+    stepTemplateRefs:
+      - templateRef: org.OpenStackSetup
+        versionLabel: v1

@@ -7,6 +7,10 @@
 
 package io.harness.ngmigration.service.entity;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.ngmigration.service.MigratorUtility.generateFileIdentifier;
+import static io.harness.ngmigration.service.MigratorUtility.getYamlConfigFile;
+
 import static software.wings.ngmigration.NGMigrationEntityType.CONNECTOR;
 import static software.wings.ngmigration.NGMigrationEntityType.INFRA_PROVISIONER;
 import static software.wings.ngmigration.NGMigrationEntityType.SECRET_MANAGER;
@@ -30,6 +34,8 @@ import io.harness.ngmigration.client.TemplateClient;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.service.NgMigrationService;
 
+import software.wings.beans.ARMInfrastructureProvisioner;
+import software.wings.beans.ARMSourceType;
 import software.wings.beans.InfrastructureProvisioner;
 import software.wings.beans.TerraformInfrastructureProvisioner;
 import software.wings.ngmigration.CgEntityId;
@@ -40,6 +46,7 @@ import software.wings.service.intfc.InfrastructureProvisionerService;
 
 import com.google.inject.Inject;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -90,6 +97,16 @@ public class InfraProvisionerMigrationService extends NgMigrationService {
       if (StringUtils.isNotBlank(terraformProvisioner.getKmsId())) {
         children.add(CgEntityId.builder().type(SECRET_MANAGER).id(terraformProvisioner.getKmsId()).build());
       }
+    } else if (provisioner instanceof ARMInfrastructureProvisioner) {
+      ARMInfrastructureProvisioner armInfrastructureProvisioner = (ARMInfrastructureProvisioner) provisioner;
+      if (null != armInfrastructureProvisioner.getSourceType()) {
+        if (armInfrastructureProvisioner.getSourceType() == ARMSourceType.GIT) {
+          children.add(CgEntityId.builder()
+                           .type(CONNECTOR)
+                           .id(armInfrastructureProvisioner.getGitFileConfig().getConnectorId())
+                           .build());
+        }
+      }
     }
     return DiscoveryNode.builder().children(children).entityNode(entityNode).build();
   }
@@ -113,7 +130,21 @@ public class InfraProvisionerMigrationService extends NgMigrationService {
   @Override
   public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
-    return new ArrayList<>();
+    List<NGYamlFile> result = new ArrayList<>();
+    InfrastructureProvisioner provisioner = (InfrastructureProvisioner) entities.get(entityId).getEntity();
+    if (provisioner instanceof ARMInfrastructureProvisioner) {
+      ARMInfrastructureProvisioner armInfrastructureProvisioner = (ARMInfrastructureProvisioner) provisioner;
+      if (isNotEmpty(armInfrastructureProvisioner.getTemplateBody())) {
+        byte[] fileContent = armInfrastructureProvisioner.getTemplateBody().getBytes(StandardCharsets.UTF_8);
+        NGYamlFile yamlConfigFile = getYamlConfigFile(inputDTO, fileContent,
+            generateFileIdentifier("infraProvisioners/" + armInfrastructureProvisioner.getName()));
+        if (null != yamlConfigFile) {
+          result.add(yamlConfigFile);
+        }
+      }
+    }
+
+    return result;
   }
 
   @Override
@@ -123,6 +154,6 @@ public class InfraProvisionerMigrationService extends NgMigrationService {
 
   @Override
   protected boolean isNGEntityExists() {
-    return false;
+    return true;
   }
 }

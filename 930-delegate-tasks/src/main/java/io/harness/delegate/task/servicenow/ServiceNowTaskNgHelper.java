@@ -29,6 +29,7 @@ import io.harness.jackson.JsonNodeUtils;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
 import io.harness.network.Http;
+import io.harness.retry.RetryHelper;
 import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.serializer.JsonUtils;
 import io.harness.servicenow.ServiceNowFieldAllowedValueNG;
@@ -55,7 +56,10 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import io.github.resilience4j.retry.Retry;
 import java.io.IOException;
+import java.net.ConnectException;
+import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -63,9 +67,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
+import okhttp3.internal.http2.ConnectionShutdownException;
+import okhttp3.internal.http2.StreamResetException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.jetbrains.annotations.NotNull;
@@ -82,6 +89,7 @@ public class ServiceNowTaskNgHelper {
   public static final String NOT_FOUND = "404 Not found";
   private final SecretDecryptionService secretDecryptionService;
   static final long TIME_OUT = 60;
+  private final Retry retry = buildRetryAndRegisterListeners();
 
   @Inject
   public ServiceNowTaskNgHelper(SecretDecryptionService secretDecryptionService) {
@@ -159,7 +167,7 @@ public class ServiceNowTaskNgHelper {
 
     try {
       log.info("Body of the create issue request made to the ServiceNow server: {}", body);
-      response = request.execute();
+      response = Retry.decorateCallable(retry, request::execute).call();
       log.info("Response received from serviceNow: {}", response);
       handleResponse(response, "Failed to create ServiceNow ticket");
       JsonNode responseObj = response.body().get("result");
@@ -198,7 +206,7 @@ public class ServiceNowTaskNgHelper {
     try {
       log.info("createUsingTemplate called for ticketType: {}, templateName: {}",
           serviceNowTaskNGParameters.getTicketType(), serviceNowTaskNGParameters.getTemplateName());
-      response = request.execute();
+      response = Retry.decorateCallable(retry, request::execute).call();
       log.info("Response received for createUsingTemplate: {}", response);
       handleResponse(response, "Failed to create ServiceNow ticket");
       JsonNode responseObj = response.body().get("result");
@@ -251,7 +259,7 @@ public class ServiceNowTaskNgHelper {
     try {
       log.info("updateUsingTemplate called for ticketType: {}, templateName: {}",
           serviceNowTaskNGParameters.getTicketType(), serviceNowTaskNGParameters.getTemplateName());
-      response = request.execute();
+      response = Retry.decorateCallable(retry, request::execute).call();
       log.info("Response received for updateUsingTemplate: {}", response);
       handleResponse(response, "Failed to update ServiceNow ticket");
       JsonNode responseObj = response.body().get("result");
@@ -298,7 +306,8 @@ public class ServiceNowTaskNgHelper {
             parameters.getTicketType().toString().toLowerCase(), query, "all");
     Response<JsonNode> response = null;
     try {
-      response = request.execute();
+      log.info("getIssueIdFromIssueNumber called for ticketNumber: {}", parameters.getTicketNumber());
+      response = Retry.decorateCallable(retry, request::execute).call();
       log.info("Response received from serviceNow: {}", response);
       handleResponse(response, "Failed to fetch ticketId : " + parameters.getTicketNumber() + " from serviceNow");
       JsonNode responseObj = response.body().get("result");
@@ -340,7 +349,8 @@ public class ServiceNowTaskNgHelper {
             parameters.getTicketType().toString().toLowerCase(), query, "all");
     Response<JsonNode> response = null;
     try {
-      response = request.execute();
+      log.info("fetchServiceNowTicketUsingSysId called for sys_id: {}", ticketSysId);
+      response = Retry.decorateCallable(retry, request::execute).call();
       log.info("Response received from serviceNow: {}", response);
       handleResponse(response, "Failed to fetch ticket with sys_id : " + ticketSysId + " from serviceNow");
       JsonNode responseObj = response.body().get("result");
@@ -403,8 +413,8 @@ public class ServiceNowTaskNgHelper {
     Response<JsonNode> response = null;
 
     try {
-      log.info("Body of the create issue request made to the ServiceNow server: {}", body);
-      response = request.execute();
+      log.info("Body of the update issue request made to the ServiceNow server: {}", body);
+      response = Retry.decorateCallable(retry, request::execute).call();
       log.info("Response received from serviceNow: {}", response);
       handleResponse(response, "Failed to update ServiceNow ticket");
       JsonNode responseObj = response.body().get("result");
@@ -436,7 +446,8 @@ public class ServiceNowTaskNgHelper {
             serviceNowTaskNGParameters.getTemplateListOffset(), serviceNowTaskNGParameters.getTemplateName());
     Response<JsonNode> response = null;
     try {
-      response = request.execute();
+      log.info("getTemplateList called for ticketType: {}", serviceNowTaskNGParameters.getTicketType().toLowerCase());
+      response = Retry.decorateCallable(retry, request::execute).call();
       log.info("Response received from serviceNow: {}", response);
       handleResponse(response, "Failed to get ServiceNow templates");
       JsonNode responseObj = response.body().get("result");
@@ -485,7 +496,9 @@ public class ServiceNowTaskNgHelper {
     Response<JsonNode> response = null;
 
     try {
-      response = request.execute();
+      log.info("getTicket called for ticketType:{}, ticketNumber:{}",
+          serviceNowTaskNGParameters.getTicketType().toLowerCase(), serviceNowTaskNGParameters.getTicketNumber());
+      response = Retry.decorateCallable(retry, request::execute).call();
       handleResponse(response, "Failed to get serviceNow ticket");
       JsonNode responseObj = response.body().get("result");
       if (responseObj.isArray()) {
@@ -528,7 +541,9 @@ public class ServiceNowTaskNgHelper {
             serviceNowTaskNGParameters.getTicketType().toLowerCase());
     Response<JsonNode> response = null;
     try {
-      response = request.execute();
+      log.info(
+          "getIssueCreateMetaData called for ticketType:{}", serviceNowTaskNGParameters.getTicketType().toLowerCase());
+      response = Retry.decorateCallable(retry, request::execute).call();
       handleResponse(response, "Failed to get serviceNow fields");
       JsonNode responseObj = response.body().get("result");
       if (responseObj.isArray()) {
@@ -563,7 +578,8 @@ public class ServiceNowTaskNgHelper {
             serviceNowTaskNGParameters.getTicketType().toLowerCase());
     Response<JsonNode> response = null;
     try {
-      response = request.execute();
+      log.info("getMetadata called for ticketType:{}", serviceNowTaskNGParameters.getTicketType().toLowerCase());
+      response = Retry.decorateCallable(retry, request::execute).call();
       log.info("Response received from serviceNow for GET_METADATA: {}", response);
       handleResponse(response, "Failed to get serviceNow fields");
       JsonNode responseObj = response.body().get("result");
@@ -692,7 +708,8 @@ public class ServiceNowTaskNgHelper {
         serviceNowRestClient.getStagingTableList(ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO));
     Response<JsonNode> response = null;
     try {
-      response = request.execute();
+      log.info("getStagingTableList called");
+      response = Retry.decorateCallable(retry, request::execute).call();
       log.info("Response received from serviceNow: {}", response);
       handleResponse(response, "Failed to get ServiceNow staging tables");
       JsonNode responseObj = response.body().get("result");
@@ -769,7 +786,8 @@ public class ServiceNowTaskNgHelper {
         serviceNowRestClient.validateConnection(ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO));
     Response<JsonNode> response = null;
     try {
-      response = request.execute();
+      log.info("validateCredentials called");
+      response = Retry.decorateCallable(retry, request::execute).call();
       handleResponse(response, "Failed to validate ServiceNow credentials");
       return ServiceNowTaskNGResponse.builder().build();
     } catch (ServiceNowException se) {
@@ -853,5 +871,13 @@ public class ServiceNowTaskNgHelper {
     if (executionLogCallback != null) {
       executionLogCallback.saveExecutionLog(message, logLevel);
     }
+  }
+
+  private Retry buildRetryAndRegisterListeners() {
+    final Retry exponentialRetry = RetryHelper.getExponentialRetry(this.getClass().getSimpleName(),
+        new Class[] {ConnectException.class, TimeoutException.class, ConnectionShutdownException.class,
+            StreamResetException.class, SocketTimeoutException.class});
+    RetryHelper.registerEventListeners(exponentialRetry);
+    return exponentialRetry;
   }
 }

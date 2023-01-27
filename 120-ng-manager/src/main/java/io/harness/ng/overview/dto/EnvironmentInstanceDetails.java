@@ -24,7 +24,7 @@ public class EnvironmentInstanceDetails {
   public static class EnvironmentInstanceDetail {
     @NotNull String envId;
     String envName;
-    @NotNull EnvironmentType environmentType;
+    EnvironmentType environmentType;
     int count;
     @NotNull ArtifactDeploymentDetail artifactDeploymentDetail;
   }

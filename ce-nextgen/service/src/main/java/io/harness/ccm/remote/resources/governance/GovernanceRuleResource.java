@@ -536,6 +536,7 @@ public class GovernanceRuleResource {
                                                 .targetRegions(Arrays.asList(region))
                                                 .executionLogBucketType("")
                                                 .ruleName(rule.getName())
+                                                .OOTB(rule.getIsOOTB())
                                                 .executionStatus(RuleExecutionStatusType.ENQUEUED)
                                                 .build();
               enqueuedRuleExecutionIds.add(ruleExecutionService.save(ruleExecution));
@@ -595,6 +596,7 @@ public class GovernanceRuleResource {
                                           .executionLogBucketType("")
                                           .resourceCount(0)
                                           .ruleName(rulesList.get(0).getName())
+                                          .OOTB(rulesList.get(0).getIsOOTB())
                                           .executionStatus(RuleExecutionStatusType.ENQUEUED)
                                           .build();
         enqueuedRuleExecutionIds.add(ruleExecutionService.save(ruleExecution));

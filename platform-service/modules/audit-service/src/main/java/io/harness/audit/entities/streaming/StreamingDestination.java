@@ -16,6 +16,7 @@ import io.harness.data.validator.Trimmed;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
+import io.harness.ng.core.common.beans.NGTag;
 import io.harness.spec.server.audit.v1.model.StreamingDestinationDTO.StatusEnum;
 import io.harness.spec.server.audit.v1.model.StreamingDestinationSpecDTO;
 
@@ -25,7 +26,9 @@ import dev.morphia.annotations.Entity;
 import java.util.List;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import lombok.Data;
+import lombok.Singular;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.CreatedDate;
@@ -62,6 +65,9 @@ public abstract class StreamingDestination {
   @NotBlank @EntityIdentifier String identifier;
   @Trimmed @NotBlank String accountIdentifier;
   @Trimmed @NotBlank @NGEntityName String name;
+  @Size(max = 1024) String description;
+  @Singular @Size(max = 128) List<NGTag> tags;
+
   @NotNull StatusEnum status;
   Long lastStatusChangedAt;
   @NotBlank String connectorRef;

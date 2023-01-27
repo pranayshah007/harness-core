@@ -484,7 +484,7 @@ pipeline:
               type: KubernetesDirect
               spec:
                 connectorRef: 2JrX8ESYSTWbhBTPBu7slQ
-                namespace: default
+                namespace: a.allowedValues(a, b)
                 releaseName: vaibhav
           execution:
             steps:

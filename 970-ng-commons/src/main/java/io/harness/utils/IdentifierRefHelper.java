@@ -113,8 +113,8 @@ public class IdentifierRefHelper {
 
     // As child entity can exist in lower scopes but not the vica versa.
     if (parentEntityScope < childEntityScope) {
-      throw new InvalidRequestException(
-          String.format("The %s level %s cannot be used at %s level", childScope, fieldName, parentScope));
+      throw new InvalidRequestException(String.format("The %s level %s cannot be used at %s level. Ref: [%s]",
+          childScope, fieldName, parentScope, entityIdentifierRef));
     }
   }
 

@@ -26,4 +26,5 @@ public class AsgManifestHandlerChainState {
   private String launchTemplateVersion;
   private AutoScalingGroup autoScalingGroup;
   private Map<String, List<String>> asgManifestsDataForRollback = new HashMap<>();
+  private String newAsgName;
 }

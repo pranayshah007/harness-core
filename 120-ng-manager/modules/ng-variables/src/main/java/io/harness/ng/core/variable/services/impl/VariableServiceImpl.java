@@ -19,6 +19,7 @@ import static io.harness.utils.PageUtils.getPageRequest;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.NGResourceFilterConstants;
+import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SortOrder;
 import io.harness.enforcement.client.annotation.FeatureRestrictionCheck;
@@ -85,7 +86,7 @@ public class VariableServiceImpl implements VariableService {
 
   @Override
   @FeatureRestrictionCheck(MULTIPLE_VARIABLES)
-  public Variable create(String accountIdentifier, VariableDTO variableDTO) {
+  public Variable create(@AccountIdentifier String accountIdentifier, VariableDTO variableDTO) {
     if (null == variableDTO.getVariableConfig()) {
       throw new InvalidRequestException("Variable config cannot be null");
     }

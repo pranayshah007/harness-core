@@ -232,7 +232,7 @@ public class ConfigFileMigrationService extends NgMigrationService {
 
   private ConfigFileWrapper getConfigFileWrapper(
       ConfigFile configFile, Map<CgEntityId, NGYamlFile> migratedEntities, NGYamlFile file) {
-    ParameterField<List<String>> files = ParameterField.ofNull();
+    ParameterField<List<String>> files = ParameterField.createValueField(Collections.emptyList());
     List<String> secretFiles = new ArrayList<>();
     if (configFile.isEncrypted()) {
       SecretRefData secretRefData = MigratorUtility.getSecretRef(migratedEntities, configFile.getEncryptedFileId());

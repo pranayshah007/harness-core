@@ -265,6 +265,9 @@ public class ValidateAndMergeHelper {
 
   private void checkAndThrowExceptionWhenPipelineAndInputSetStoreTypesAreDifferent(
       PipelineEntity pipelineEntity, InputSetEntity inputSetEntity) {
+    if (pipelineEntity.getStoreType() == null || inputSetEntity.getStoreType() == null) {
+      return;
+    }
     if (!pipelineEntity.getStoreType().equals(inputSetEntity.getStoreType())) {
       throw NestedExceptionUtils.hintWithExplanationException("Please move the input-set from inline to remote.",
           "The pipeline is remote and input-set is inline",

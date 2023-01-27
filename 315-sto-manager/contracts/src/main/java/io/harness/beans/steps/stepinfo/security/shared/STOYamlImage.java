@@ -16,13 +16,15 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.YamlSchemaTypes;
 import io.harness.yaml.sto.variables.STOYamlImageType;
 
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import io.swagger.annotations.ApiModelProperty;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
-import org.codehaus.jackson.annotate.JsonProperty;
 
 @Data
 @OwnedBy(STO)
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class STOYamlImage {
   @NotNull
   @YamlSchemaTypes(value = {runtime})
@@ -31,13 +33,9 @@ public class STOYamlImage {
 
   @ApiModelProperty(dataType = STRING_CLASSPATH) protected ParameterField<String> domain;
 
-  @ApiModelProperty(dataType = STRING_CLASSPATH, name = "access_id")
-  @JsonProperty("access_id")
-  protected ParameterField<String> accessId;
+  @ApiModelProperty(dataType = STRING_CLASSPATH, name = "access_id") protected ParameterField<String> accessId;
 
-  @ApiModelProperty(dataType = STRING_CLASSPATH, name = "access_token")
-  @JsonProperty("access_token")
-  protected ParameterField<String> accessToken;
+  @ApiModelProperty(dataType = STRING_CLASSPATH, name = "access_token") protected ParameterField<String> accessToken;
 
   @ApiModelProperty(dataType = STRING_CLASSPATH) protected ParameterField<String> region;
 

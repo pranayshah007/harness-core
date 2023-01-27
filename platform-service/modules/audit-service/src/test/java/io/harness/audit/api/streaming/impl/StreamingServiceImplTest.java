@@ -11,6 +11,7 @@ import static io.harness.beans.SortOrder.Builder.aSortOrder;
 import static io.harness.beans.SortOrder.OrderType.DESC;
 import static io.harness.rule.OwnerRule.KAPIL;
 import static io.harness.rule.OwnerRule.NISHANT;
+import static io.harness.rule.OwnerRule.REETIKA;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -207,6 +208,32 @@ public class StreamingServiceImplTest extends CategoryTest {
 
     assertThat(savedStreamingDestination).isEqualTo(streamingDestination);
     assertThat(savedStreamingDestination).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = REETIKA)
+  @Category(UnitTests.class)
+  public void validateUniquenessOfValidStreamingDestination() {
+    StreamingDestination streamingDestination = getStreamingDestination();
+
+    when(streamingDestinationRepository.findByAccountIdentifierAndIdentifier(anyString(), anyString()))
+        .thenReturn(Optional.of(streamingDestination));
+
+    boolean valid = streamingService.validateUniqueness(accountIdentifier, identifier);
+    verify(streamingDestinationRepository, times(1)).findByAccountIdentifierAndIdentifier(anyString(), anyString());
+    assertThat(valid).isFalse();
+  }
+
+  @Test
+  @Owner(developers = REETIKA)
+  @Category(UnitTests.class)
+  public void validateUniquenessOfInvalidStreamingDestination() {
+    when(streamingDestinationRepository.findByAccountIdentifierAndIdentifier(anyString(), anyString()))
+        .thenReturn(Optional.empty());
+
+    boolean valid = streamingService.validateUniqueness(accountIdentifier, identifier);
+    verify(streamingDestinationRepository, times(1)).findByAccountIdentifierAndIdentifier(anyString(), anyString());
+    assertThat(valid).isTrue();
   }
 
   @Test

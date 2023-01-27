@@ -8,6 +8,7 @@ package io.harness.cvng.downtime.resources;
 
 import static io.harness.cvng.core.beans.params.ProjectParams.fromProjectPathParams;
 import static io.harness.cvng.core.beans.params.ProjectParams.fromResourcePathParams;
+import static io.harness.cvng.core.resources.MonitoredServiceResource.TOGGLE_PERMISSION;
 import static io.harness.cvng.core.services.CVNextGenConstants.DOWNTIME_PROJECT_PATH;
 import static io.harness.cvng.core.services.CVNextGenConstants.RESOURCE_IDENTIFIER_PATH;
 
@@ -46,6 +47,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import retrofit2.http.Body;
 
 @Api(value = DOWNTIME_PROJECT_PATH, tags = "Downtime")
@@ -171,5 +173,21 @@ public class DowntimeProjectLevelResource {
       @BeanParam PageParams pageParams, @BeanParam DowntimeDashboardFilter filter) {
     ProjectParams projectParams = fromProjectPathParams(projectPathParams);
     return ResponseDTO.newResponse(downtimeService.history(projectParams, pageParams, filter));
+  }
+
+  @PUT
+  @Timed
+  @ExceptionMetered
+  @Path("{identifier}/flag")
+  @ApiOperation(value = "Enables disables downtime", nickname = "enablesDisablesDowntime")
+  /*  @Operation(operationId = "enableDisableDowntime", summary = "Enables or Disables Downtime",
+        responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Enables or Disables Downtime")
+     })*/
+  @NGAccessControlCheck(resourceType = DOWNTIME, permission = TOGGLE_PERMISSION)
+  public RestResponse<DowntimeResponse> updateDowntimeEnabled(
+      @Valid @BeanParam ResourcePathParams resourcePathParams, @NotNull @QueryParam("enable") Boolean enable) {
+    ProjectParams projectParams = fromResourcePathParams(resourcePathParams);
+    return new RestResponse<>(
+        downtimeService.enableOrDisable(projectParams, resourcePathParams.getIdentifier(), enable));
   }
 }

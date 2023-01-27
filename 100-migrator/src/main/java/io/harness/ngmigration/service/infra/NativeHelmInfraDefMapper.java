@@ -11,12 +11,14 @@ import static software.wings.ngmigration.NGMigrationEntityType.CONNECTOR;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.elastigroup.ElastigroupConfiguration;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.cdng.infra.yaml.K8sGcpInfrastructure;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.infrastructure.InfrastructureType;
+import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.service.MigratorUtility;
@@ -28,6 +30,7 @@ import software.wings.infra.GoogleKubernetesEngine;
 import software.wings.infra.InfrastructureDefinition;
 import software.wings.ngmigration.CgEntityId;
 
+import java.util.List;
 import java.util.Map;
 
 @OwnedBy(HarnessTeam.CDC)
@@ -52,8 +55,8 @@ public class NativeHelmInfraDefMapper implements InfraDefMapper {
   }
 
   @Override
-  public Infrastructure getSpec(
-      InfrastructureDefinition infrastructureDefinition, Map<CgEntityId, NGYamlFile> migratedEntities) {
+  public Infrastructure getSpec(MigrationInputDTO inputDTO, InfrastructureDefinition infrastructureDefinition,
+      Map<CgEntityId, NGYamlFile> migratedEntities, List<ElastigroupConfiguration> elastigroupConfiguration) {
     NgEntityDetail connectorDetail;
     switch (infrastructureDefinition.getCloudProviderType()) {
       case KUBERNETES_CLUSTER:

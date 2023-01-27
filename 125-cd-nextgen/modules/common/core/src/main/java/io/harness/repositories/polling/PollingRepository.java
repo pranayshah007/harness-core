@@ -13,6 +13,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.polling.bean.PollingDocument;
 import io.harness.polling.bean.PollingInfo;
 
+import java.util.List;
+import org.springframework.data.mongodb.repository.Query;
 import org.springframework.data.repository.PagingAndSortingRepository;
 
 @HarnessRepo
@@ -22,4 +24,6 @@ public interface PollingRepository
   PollingDocument findByUuidAndAccountId(String uuid, String accountId);
   PollingDocument findByAccountIdAndOrgIdentifierAndProjectIdentifierAndPollingInfo(
       String accountId, String orgIdentifier, String projectIdentifier, PollingInfo pollingInfo);
+  @Query("{ 'accountId' : ?0, 'pollingInfo.connectorRef' : ?1 }")
+  List<PollingDocument> findByAccountIdAndConnectorRef(String accountId, String connectorRef);
 }

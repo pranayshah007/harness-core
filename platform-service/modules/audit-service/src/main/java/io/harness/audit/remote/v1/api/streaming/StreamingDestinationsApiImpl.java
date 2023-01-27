@@ -29,6 +29,7 @@ import com.google.inject.Inject;
 import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.Max;
+import javax.validation.constraints.NotNull;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import lombok.AllArgsConstructor;
@@ -115,5 +116,12 @@ public class StreamingDestinationsApiImpl implements StreamingDestinationsApi {
     return Response.status(Response.Status.OK)
         .entity(streamingDestinationsApiUtils.getStreamingDestinationResponse(streamingDestination))
         .build();
+  }
+
+  @Override
+  public Response validateUniqueIdentifier(String streamingDestination, String harnessAccount) {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(harnessAccount, null, null),
+        Resource.of(STREAMING_DESTINATION, null), EDIT_STREAMING_DESTINATION_PERMISSION);
+    return Response.ok().entity(streamingService.validateUniqueness(harnessAccount, streamingDestination)).build();
   }
 }

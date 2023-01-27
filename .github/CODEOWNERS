@@ -1,3 +1,4 @@
+.gitleaksignore pranay.shah@harness.io jyoti.raval@harness.io shaun.murphy@harness.io
 DockerFile* diptiman.adak@harness.io udham.singh@harness.io
 .bazel* diptiman.adak@harness.io udham.singh@harness.io
 bazel* diptiman.adak@harness.io udham.singh@harness.io

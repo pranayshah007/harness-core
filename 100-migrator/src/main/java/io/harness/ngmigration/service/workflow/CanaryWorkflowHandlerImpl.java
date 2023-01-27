@@ -10,11 +10,13 @@ package io.harness.ngmigration.service.workflow;
 import static io.harness.beans.OrchestrationWorkflowType.BASIC;
 import static io.harness.beans.OrchestrationWorkflowType.BLUE_GREEN;
 import static io.harness.beans.OrchestrationWorkflowType.BUILD;
+import static io.harness.beans.OrchestrationWorkflowType.MULTI_SERVICE;
 import static io.harness.beans.OrchestrationWorkflowType.ROLLING;
 import static io.harness.ng.core.template.TemplateEntityType.PIPELINE_TEMPLATE;
 import static io.harness.ng.core.template.TemplateEntityType.STAGE_TEMPLATE;
 
 import io.harness.beans.OrchestrationWorkflowType;
+import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
@@ -51,7 +53,7 @@ public class CanaryWorkflowHandlerImpl extends WorkflowHandler {
   @Override
   public TemplateEntityType getTemplateType(Workflow workflow) {
     OrchestrationWorkflowType workflowType = workflow.getOrchestration().getOrchestrationWorkflowType();
-    if (ROLLING_WORKFLOW_TYPES.contains(workflowType) || BUILD == workflowType) {
+    if (workflowType != OrchestrationWorkflowType.MULTI_SERVICE) {
       return STAGE_TEMPLATE;
     }
     return PIPELINE_TEMPLATE;
@@ -80,6 +82,16 @@ public class CanaryWorkflowHandlerImpl extends WorkflowHandler {
     if (workflowType == BUILD) {
       return getCustomStageTemplateSpec(context);
     }
-    return buildMultiStagePipelineTemplate(context);
+    if (workflowType == MULTI_SERVICE) {
+      return buildMultiStagePipelineTemplate(context);
+    }
+    return buildCanaryStageTemplate(context);
+  }
+
+  @Override
+  public ServiceDefinitionType inferServiceDefinitionType(Workflow workflow) {
+    // We can infer the type based on the service, infra & sometimes based on the steps used.
+    // TODO: Deepak Puthraya
+    return ServiceDefinitionType.KUBERNETES;
   }
 }

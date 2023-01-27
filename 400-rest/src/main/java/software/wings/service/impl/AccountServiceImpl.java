@@ -234,7 +234,6 @@ import org.apache.commons.validator.routines.UrlValidator;
 @Slf4j
 @TargetModule(_955_ACCOUNT_MGMT)
 @BreakDependencyOn("io.harness.delegate.beans.Delegate")
-@BreakDependencyOn("software.wings.service.impl.DelegateConnectionDao")
 public class AccountServiceImpl implements AccountService {
   private static final SecureRandom random = new SecureRandom();
   private static final int SIZE_PER_SERVICES_REQUEST = 25;

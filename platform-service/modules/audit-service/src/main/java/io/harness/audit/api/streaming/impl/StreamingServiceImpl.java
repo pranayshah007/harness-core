@@ -211,6 +211,13 @@ public class StreamingServiceImpl implements StreamingService {
     return updateAndReturnStreamingDestination(streamingDestinationDTO, currentStreamingDestination, accountIdentifier);
   }
 
+  @Override
+  public boolean validateUniqueness(String accountIdentifier, String identifier) {
+    Optional<StreamingDestination> optionalStreamingDestination =
+        streamingDestinationRepository.findByAccountIdentifierAndIdentifier(accountIdentifier, identifier);
+    return optionalStreamingDestination.isEmpty();
+  }
+
   private Criteria getCriteriaForStreamingDestinationList(
       String accountIdentifier, StreamingDestinationFilterProperties filterProperties) {
     Criteria criteria = Criteria.where(StreamingDestinationKeys.accountIdentifier).is(accountIdentifier);

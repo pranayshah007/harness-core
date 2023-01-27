@@ -151,6 +151,25 @@ public class TemplateOutboxEventHandler implements OutboxEventHandler {
                                 .build();
     return publishedToRedis && publishAudit(auditEntry, outboxEvent);
   }
+  private boolean handleTemplateForceDeleteEvent(OutboxEvent outboxEvent) throws IOException {
+    TemplateForceDeleteEvent templateForceDeleteEvent =
+        objectMapper.readValue(outboxEvent.getEventData(), TemplateForceDeleteEvent.class);
+    boolean publishedToRedis = publishEvent(
+        outboxEvent, EventsFrameworkMetadataConstants.DELETE_ACTION, templateForceDeleteEvent.getTemplateEntity());
+    templateReferenceHelper.deleteTemplateReferences(templateForceDeleteEvent.getTemplateEntity());
+    TemplateEventData templateEventData = new TemplateEventData(templateForceDeleteEvent.getComments(), null);
+    AuditEntry auditEntry = AuditEntry.builder()
+                                .action(Action.FORCE_DELETE)
+                                .module(ModuleType.TEMPLATESERVICE)
+                                .oldYaml(templateForceDeleteEvent.getTemplateEntity().getYaml())
+                                .timestamp(outboxEvent.getCreatedAt())
+                                .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
+                                .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
+                                .auditEventData(templateEventData)
+                                .insertId(outboxEvent.getId())
+                                .build();
+    return publishedToRedis && publishAudit(auditEntry, outboxEvent);
+  }
 
   private boolean publishAudit(AuditEntry auditEntry, OutboxEvent outboxEvent) {
     GlobalContext globalContext = outboxEvent.getGlobalContext();
@@ -173,6 +192,8 @@ public class TemplateOutboxEventHandler implements OutboxEventHandler {
           return handleTemplateUpdateEvent(outboxEvent);
         case TemplateOutboxEvents.TEMPLATE_VERSION_DELETED:
           return handleTemplateDeleteEvent(outboxEvent);
+        case TemplateOutboxEvents.TEMPLATE_VERSION_FORCE_DELETED:
+          return handleTemplateForceDeleteEvent(outboxEvent);
         default:
           return false;
       }

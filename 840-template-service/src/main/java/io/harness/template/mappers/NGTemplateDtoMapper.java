@@ -40,7 +40,7 @@ import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.beans.yaml.NGTemplateInfoConfig;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntityGetResponse;
-import io.harness.utils.YamlPipelineUtils;
+import io.harness.template.yaml.TemplateYamlUtils;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
@@ -262,7 +262,7 @@ public class NGTemplateDtoMapper {
       }
       return toTemplateEntityResponse(accountId, templateConfig.getTemplateInfoConfig().getOrgIdentifier(),
           templateConfig.getTemplateInfoConfig().getProjectIdentifier(), templateConfig,
-          YamlPipelineUtils.getYamlString(templateConfig));
+          TemplateYamlUtils.getYamlString(templateConfig));
     } catch (Exception e) {
       throw new InvalidRequestException("Cannot create template entity due to " + e.getMessage());
     }
@@ -299,7 +299,7 @@ public class NGTemplateDtoMapper {
   }
 
   private NGTemplateConfig getTemplateConfigOrThrow(String templateYaml) throws IOException {
-    NGTemplateConfig config = YamlPipelineUtils.read(templateYaml, NGTemplateConfig.class);
+    NGTemplateConfig config = TemplateYamlUtils.read(templateYaml, NGTemplateConfig.class);
     if (config.getTemplateInfoConfig() == null) {
       throw new InvalidRequestException(
           "The provided template yaml does not contain the \"template\" keyword at the root level");
@@ -317,7 +317,7 @@ public class NGTemplateDtoMapper {
 
   public NGTemplateConfig toDTO(TemplateEntity templateEntity) {
     try {
-      return YamlPipelineUtils.read(templateEntity.getYaml(), NGTemplateConfig.class);
+      return TemplateYamlUtils.read(templateEntity.getYaml(), NGTemplateConfig.class);
     } catch (IOException ex) {
       throw new InvalidRequestException("Cannot create template yaml: " + ex.getMessage(), ex);
     }

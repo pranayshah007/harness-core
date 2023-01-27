@@ -9,9 +9,11 @@ package io.harness.ngmigration.service.step;
 
 import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
 import io.harness.data.structure.CollectionUtils;
+import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.beans.WorkflowStepSupportStatus;
+import io.harness.ngmigration.expressions.step.StepExpressionFunctor;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.plancreator.steps.internal.PmsAbstractStepNode;
@@ -22,10 +24,13 @@ import io.harness.template.yaml.TemplateLinkConfig;
 import io.harness.yaml.core.timeout.Timeout;
 
 import software.wings.beans.GraphNode;
+import software.wings.beans.PhaseStep;
+import software.wings.beans.WorkflowPhase;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.sm.State;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +45,11 @@ public interface StepMapper {
   String getStepType(GraphNode stepYaml);
 
   State getState(GraphNode stepYaml);
+
+  default List<StepExpressionFunctor> getExpressionFunctor(
+      WorkflowMigrationContext context, WorkflowPhase phase, PhaseStep phaseStep, GraphNode graphNode) {
+    return Collections.emptyList();
+  }
 
   AbstractStepNode getSpec(WorkflowMigrationContext context, GraphNode graphNode);
 
@@ -78,7 +88,7 @@ public interface StepMapper {
     Map<String, Object> properties = getProperties(stepYaml);
 
     String timeoutString = "10m";
-    if (properties.containsKey("timeoutMillis")) {
+    if (properties.containsKey("timeoutMillis") && properties.get("timeoutMillis") != null) {
       long t = Long.parseLong(properties.get("timeoutMillis").toString()) / 1000;
       if (t > 60) {
         timeoutString = (t / 60) + "m";
@@ -130,4 +140,8 @@ public interface StepMapper {
   }
 
   WorkflowStepSupportStatus stepSupportStatus(GraphNode graphNode);
+
+  default List<NGYamlFile> getChildNGYamlFiles(MigrationInputDTO inputDTO, GraphNode graphNode, String name) {
+    return new ArrayList<>();
+  }
 }

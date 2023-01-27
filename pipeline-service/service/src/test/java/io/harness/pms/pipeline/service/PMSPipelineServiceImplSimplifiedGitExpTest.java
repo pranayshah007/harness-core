@@ -69,9 +69,9 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
-    pipelineService =
-        new PMSPipelineServiceImpl(pipelineRepository, null, pipelineServiceHelper, pmsPipelineTemplateHelper, null,
-            null, gitSyncSdkService, null, null, null, new NoopPipelineSettingServiceImpl(), entitySetupUsageClient);
+    pipelineService = new PMSPipelineServiceImpl(pipelineRepository, null, pipelineServiceHelper,
+        pmsPipelineTemplateHelper, null, null, gitSyncSdkService, null, null, null,
+        new NoopPipelineSettingServiceImpl(), entitySetupUsageClient, null);
     doReturn(false).when(gitSyncSdkService).isGitSyncEnabled(accountIdentifier, orgIdentifier, projectIdentifier);
     doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())
         .when(pipelineServiceHelper)

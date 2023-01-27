@@ -11,9 +11,9 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.aws.beans.AsgLoadBalancerConfig;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
-import io.harness.delegate.task.aws.asg.AsgLoadBalancerConfig;
 
 import lombok.Builder;
 import lombok.Getter;

@@ -48,6 +48,7 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.mongodb.BasicDBObject;
 import dev.morphia.query.CriteriaContainer;
 import dev.morphia.query.FieldEnd;
 import dev.morphia.query.FindOptions;
@@ -414,12 +415,16 @@ public class DataFetcherUtils {
     }
   }
 
-  public <M> QLPageInfo populate(QLPageQueryParameters page, Query<M> query, Controller<M> controller) {
+  public <M> QLPageInfo populate(
+      QLPageQueryParameters page, Query<M> query, BasicDBObject hint, Controller<M> controller) {
     QLPageInfoBuilder builder = QLPageInfo.builder().limit(page.getLimit()).offset(page.getOffset());
 
     // A full count of all items that match particular filter could be expensive. This is why using has more feature is
     // recommended over obtaining total. To determine if we have more, we fetch 1 more than the requested.
     final FindOptions options = new FindOptions().limit(page.getLimit() + 1).skip(page.getOffset());
+    if (hint != null) {
+      options.hint(hint);
+    }
 
     try (HIterator<M> iterator = new HIterator<>(query.fetch(options))) {
       int count = 0;
@@ -445,6 +450,10 @@ public class DataFetcherUtils {
       }
     }
     return builder.build();
+  }
+
+  public <M> QLPageInfo populate(QLPageQueryParameters page, Query<M> query, Controller<M> controller) {
+    return populate(page, query, null, controller);
   }
 
   public Calendar getDefaultCalendar() {

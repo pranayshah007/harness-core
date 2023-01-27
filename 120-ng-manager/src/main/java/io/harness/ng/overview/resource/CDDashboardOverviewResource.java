@@ -21,6 +21,7 @@ import io.harness.accesscontrol.ResourceIdentifier;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cd.NGServiceConstants;
+import io.harness.models.InstanceDetailGroupedByPipelineExecutionList;
 import io.harness.models.InstanceDetailsByBuildId;
 import io.harness.models.dashboard.InstanceCountDetailsByEnvTypeAndServiceId;
 import io.harness.ng.core.ProjectIdentifier;
@@ -410,13 +411,29 @@ public class CDDashboardOverviewResource {
       @QueryParam(NGCommonEntityConstants.CLUSTER_IDENTIFIER) String clusterId,
       @NotNull @QueryParam(NGCommonEntityConstants.PIPELINE_EXECUTION_ID) String pipelineExecutionId,
       @NotNull @QueryParam(NGCommonEntityConstants.BUILD_KEY) String buildId) {
-    /*
-    if (clusterId != null && infraId != null) {
-
-    }
-     */
     return ResponseDTO.newResponse(cdOverviewDashboardService.getActiveInstanceDetails(accountIdentifier, orgIdentifier,
         projectIdentifier, serviceId, envId, infraId, clusterId, pipelineExecutionId, buildId));
+  }
+
+  @GET
+  @Path("/getActiveServiceInstanceDetailsGroupedByPipelineExecution")
+  @ApiOperation(value = "Get list of active instance metadata grouped by pipeline execution for a service",
+      nickname = "getActiveServiceInstanceDetailsGroupedByPipelineExecution")
+  @Hidden
+  public ResponseDTO<InstanceDetailGroupedByPipelineExecutionList>
+  getInstanceDetailGroupedByPipelineExecutionList(
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId,
+      @NotNull @QueryParam(NGCommonEntityConstants.ENVIRONMENT_KEY) String envId,
+      @NotNull @QueryParam(NGCommonEntityConstants.ENVIRONMENT_TYPE_KEY) EnvironmentType environmentType,
+      @QueryParam(NGCommonEntityConstants.INFRA_IDENTIFIER) String infraId,
+      @QueryParam(NGCommonEntityConstants.CLUSTER_IDENTIFIER) String clusterId,
+      @NotNull @QueryParam(NGCommonEntityConstants.ARTIFACT) String displayName) {
+    return ResponseDTO.newResponse(
+        cdOverviewDashboardService.getInstanceDetailGroupedByPipelineExecution(accountIdentifier, orgIdentifier,
+            projectIdentifier, serviceId, envId, environmentType, infraId, clusterId, displayName));
   }
 
   @GET

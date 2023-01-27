@@ -1,0 +1,62 @@
+{
+  "id": "b97570e5fb0a96209f79fe279492070028a55bf0",
+  "displayId": "b97570e5fb0",
+  "author": {
+    "name": "harnessadmin",
+    "emailAddress": "guna@harness.io",
+    "id": 1,
+    "displayName": "Harness Admin",
+    "active": true,
+    "slug": "harnessadmin",
+    "type": "NORMAL",
+    "links": {
+      "self": [
+        {
+          "href": "https://bitbucket.dev.harness.io/users/harnessadmin"
+        }
+      ]
+    }
+  },
+  "authorTimestamp": 1659109458000,
+  "committer": {
+    "name": "harnessadmin",
+    "emailAddress": "guna@harness.io",
+    "id": 1,
+    "displayName": "Harness Admin",
+    "active": true,
+    "slug": "harnessadmin",
+    "type": "NORMAL",
+    "links": {
+      "self": [
+        {
+          "href": "https://bitbucket.dev.harness.io/users/harnessadmin"
+        }
+      ]
+    }
+  },
+  "committerTimestamp": 1659109458000,
+  "message": "deployment.yaml edited online with Bitbucket",
+  "parents": [
+    {
+      "id": "fe5e5d23f233082b329db9b7a42dd9b53821a693",
+      "displayId": "fe5e5d23f23",
+      "author": {
+        "name": "Harness Admin",
+        "emailAddress": "guna@harness.io"
+      },
+      "authorTimestamp": 1659109437000,
+      "committer": {
+        "name": "Harness Admin",
+        "emailAddress": "guna@harness.io"
+      },
+      "committerTimestamp": 1659109437000,
+      "message": "deployment.yaml edited online with Bitbucket",
+      "parents": [
+        {
+          "id": "be7654f9f0d7afcfd77b877271d30ab873ac349d",
+          "displayId": "be7654f9f0d"
+        }
+      ]
+    }
+  ]
+}

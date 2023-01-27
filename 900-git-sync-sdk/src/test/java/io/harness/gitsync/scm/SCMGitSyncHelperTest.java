@@ -7,9 +7,12 @@
 
 package io.harness.gitsync.scm;
 
+import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.MEET;
 import static io.harness.rule.OwnerRule.MOHIT_GARG;
 
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
@@ -40,6 +43,8 @@ import io.harness.gitsync.CreatePRRequest;
 import io.harness.gitsync.CreatePRResponse;
 import io.harness.gitsync.ErrorDetails;
 import io.harness.gitsync.FileInfo;
+import io.harness.gitsync.GetBatchFilesRequest;
+import io.harness.gitsync.GetBatchFilesResponse;
 import io.harness.gitsync.GetFileRequest;
 import io.harness.gitsync.GetFileResponse;
 import io.harness.gitsync.GetRepoUrlRequest;
@@ -56,6 +61,9 @@ import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.scm.beans.ScmCreateFileGitRequest;
 import io.harness.gitsync.scm.beans.ScmCreateFileGitResponse;
 import io.harness.gitsync.scm.beans.ScmCreatePRResponse;
+import io.harness.gitsync.scm.beans.ScmGetBatchFileRequest;
+import io.harness.gitsync.scm.beans.ScmGetBatchFilesResponse;
+import io.harness.gitsync.scm.beans.ScmGetFileRequest;
 import io.harness.gitsync.scm.beans.ScmGetFileResponse;
 import io.harness.gitsync.scm.beans.ScmGetRepoUrlResponse;
 import io.harness.gitsync.scm.beans.ScmPushResponse;
@@ -93,6 +101,7 @@ public class SCMGitSyncHelperTest extends GitSdkTestBase {
   private final String repo = "repo";
   private final String baseBranch = "baseBranch";
   private final String filePath = "filePath";
+  private final String filePath2 = "filePath2";
   private final String folderPath = "folderPath";
   private final String lastObjectId = "lastObjectId";
   private final String yamlGitConfigId = "yamlGitConfigId";
@@ -100,6 +109,7 @@ public class SCMGitSyncHelperTest extends GitSdkTestBase {
   private final String name = "name";
   private final String yaml = "yaml";
   private final String fileContent = "fileContent";
+  private final String fileContent2 = "fileContent2";
   private final String connectorRef = "connectorRef";
   private final String sourceBranch = "sourceBranch";
   private final String targetBranch = "targetBranch";
@@ -410,6 +420,75 @@ public class SCMGitSyncHelperTest extends GitSdkTestBase {
     assertThatThrownBy(() -> scmGitSyncHelper.getRepoUrl(getDefaultScope(), repo, connectorRef, contextMap))
         .isInstanceOf(ScmInternalServerErrorException.class)
         .hasMessage(error);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testGetBatchFilesByBranch() {
+    String uniqueKey1 = "uniqueKey1";
+    String uniqueKey2 = "uniqueKey2";
+
+    Map<String, ScmGetFileRequest> scmGetBatchFilesRequestMap = new HashMap<>();
+    ScmGetFileRequest scmGetFileRequest1 = ScmGetFileRequest.builder()
+                                               .scope(getDefaultScope())
+                                               .filePath(filePath)
+                                               .repoName(repo)
+                                               .branchName(branch)
+                                               .connectorRef(connectorRef)
+                                               .entityType(entityType)
+                                               .contextMap(contextMap)
+                                               .loadFromCache(false)
+                                               .build();
+    ScmGetFileRequest scmGetFileRequest2 = ScmGetFileRequest.builder()
+                                               .scope(getDefaultScope())
+                                               .filePath(filePath2)
+                                               .repoName(repo)
+                                               .branchName(branch)
+                                               .connectorRef(connectorRef)
+                                               .entityType(entityType)
+                                               .contextMap(contextMap)
+                                               .loadFromCache(false)
+                                               .build();
+
+    scmGetBatchFilesRequestMap.put(uniqueKey1, scmGetFileRequest1);
+    scmGetBatchFilesRequestMap.put(uniqueKey2, scmGetFileRequest2);
+
+    ScmGetBatchFileRequest scmGetBatchFileRequest =
+        ScmGetBatchFileRequest.builder().scmGetBatchFilesRequestMap(scmGetBatchFilesRequestMap).build();
+
+    GetFileResponse successfulGetFileResponse1 = GetFileResponse.newBuilder()
+                                                     .setStatusCode(200)
+                                                     .setFileContent(fileContent)
+                                                     .setGitMetaData(getDefaultGitMetaData())
+                                                     .build();
+
+    GetFileResponse successfulGetFileResponse2 = GetFileResponse.newBuilder()
+                                                     .setStatusCode(200)
+                                                     .setFileContent(fileContent2)
+                                                     .setGitMetaData(getDefaultGitMetaData())
+                                                     .build();
+
+    Map<String, GetFileResponse> getFileResponseMap = new HashMap<>();
+    getFileResponseMap.put(uniqueKey1, successfulGetFileResponse1);
+    getFileResponseMap.put(uniqueKey2, successfulGetFileResponse2);
+
+    GetBatchFilesResponse getBatchFilesResponse =
+        GetBatchFilesResponse.newBuilder().putAllGetFileResponseMap(getFileResponseMap).build();
+    when(GitSyncGrpcClientUtils.retryAndProcessException(
+             harnessToGitPushInfoServiceBlockingStub::getBatchFiles, any(GetBatchFilesRequest.class)))
+        .thenReturn(getBatchFilesResponse);
+
+    ScmGetBatchFilesResponse scmGetBatchFilesResponse =
+        scmGitSyncHelper.getBatchFilesByBranch(accountId, scmGetBatchFileRequest);
+    Map<String, ScmGetFileResponse> batchFilesResponse = scmGetBatchFilesResponse.getBatchFilesResponse();
+    assertTrue(batchFilesResponse.containsKey(uniqueKey1));
+    ScmGetFileResponse scmGetFileResponse1 = batchFilesResponse.get(uniqueKey1);
+    assertEquals(scmGetFileResponse1.getFileContent(), fileContent);
+
+    assertTrue(batchFilesResponse.containsKey(uniqueKey2));
+    ScmGetFileResponse scmGetFileResponse2 = batchFilesResponse.get(uniqueKey2);
+    assertEquals(scmGetFileResponse2.getFileContent(), fileContent2);
   }
 
   private GitEntityInfo buildGitEntityInfo(String branch, String baseBranch, String commitId, String commitMsg,

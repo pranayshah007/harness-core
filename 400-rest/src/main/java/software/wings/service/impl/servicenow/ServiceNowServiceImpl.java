@@ -80,7 +80,7 @@ public class ServiceNowServiceImpl implements ServiceNowService {
             .serviceNowConfig(serviceNowConfig)
             .encryptionDetails(secretManager.getEncryptionDetails(serviceNowConfig, APP_ID, WORKFLOW_EXECUTION_ID))
             .build();
-    delegateProxyFactory.get(ServiceNowDelegateService.class, snowTaskContext).validateConnector(taskParameters);
+    delegateProxyFactory.getV2(ServiceNowDelegateService.class, snowTaskContext).validateConnector(taskParameters);
   }
 
   @Override
@@ -97,7 +97,7 @@ public class ServiceNowServiceImpl implements ServiceNowService {
                                           .timeout(DEFAULT_SYNC_CALL_TIMEOUT)
                                           .build();
 
-    return delegateProxyFactory.get(ServiceNowDelegateService.class, snowTaskContext).getStates(taskParameters);
+    return delegateProxyFactory.getV2(ServiceNowDelegateService.class, snowTaskContext).getStates(taskParameters);
   }
 
   public List<ServiceNowMetaDTO> getApprovalValues(
@@ -113,7 +113,8 @@ public class ServiceNowServiceImpl implements ServiceNowService {
                                           .timeout(DEFAULT_SYNC_CALL_TIMEOUT)
                                           .build();
 
-    return delegateProxyFactory.get(ServiceNowDelegateService.class, snowTaskContext).getApprovalStates(taskParameters);
+    return delegateProxyFactory.getV2(ServiceNowDelegateService.class, snowTaskContext)
+        .getApprovalStates(taskParameters);
   }
 
   private ServiceNowTaskParameters getServiceNowTaskParameters(
@@ -144,7 +145,7 @@ public class ServiceNowServiceImpl implements ServiceNowService {
                                           .timeout(DEFAULT_SYNC_CALL_TIMEOUT)
                                           .build();
 
-    return delegateProxyFactory.get(ServiceNowDelegateService.class, snowTaskContext).getCreateMeta(taskParameters);
+    return delegateProxyFactory.getV2(ServiceNowDelegateService.class, snowTaskContext).getCreateMeta(taskParameters);
   }
 
   @Override
@@ -166,7 +167,7 @@ public class ServiceNowServiceImpl implements ServiceNowService {
                                           .timeout(DEFAULT_SYNC_CALL_TIMEOUT)
                                           .build();
 
-    return delegateProxyFactory.get(ServiceNowDelegateService.class, snowTaskContext)
+    return delegateProxyFactory.getV2(ServiceNowDelegateService.class, snowTaskContext)
         .getAdditionalFields(taskParameters);
   }
 
@@ -189,7 +190,7 @@ public class ServiceNowServiceImpl implements ServiceNowService {
                                           .timeout(DEFAULT_SYNC_CALL_TIMEOUT)
                                           .build();
 
-    return delegateProxyFactory.get(ServiceNowDelegateService.class, snowTaskContext)
+    return delegateProxyFactory.getV2(ServiceNowDelegateService.class, snowTaskContext)
         .getIssueUrl(taskParameters, approvalParams);
   }
 
@@ -230,7 +231,7 @@ public class ServiceNowServiceImpl implements ServiceNowService {
       // Considering only approval field on the assumption that both approval and rejection fields are equal.
       // Would need to pass rejection field too if we decide to support different fields in the future.
       ServiceNowDelegateService serviceNowDelegateService =
-          delegateProxyFactory.get(ServiceNowDelegateService.class, snowTaskContext);
+          delegateProxyFactory.getV2(ServiceNowDelegateService.class, snowTaskContext);
 
       return checkApprovalStatus(approvalPollingJobEntity, taskParameters, serviceNowDelegateService);
 

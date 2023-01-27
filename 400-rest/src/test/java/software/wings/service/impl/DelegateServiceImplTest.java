@@ -120,8 +120,6 @@ import io.harness.version.VersionInfoManager;
 import software.wings.WingsBaseTest;
 import software.wings.beans.Account;
 import software.wings.beans.CEDelegateStatus;
-import software.wings.beans.DelegateConnection;
-import software.wings.beans.DelegateConnection.DelegateConnectionKeys;
 import software.wings.beans.HttpStateExecutionResponse;
 import software.wings.beans.KmsConfig;
 import software.wings.beans.TaskType;
@@ -556,17 +554,13 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testValidateCEDelegate() {
     long lastHeartBeat = DateTime.now().getMillis();
-    Delegate delegate =
-        createDelegateBuilder().accountId(ACCOUNT_ID).delegateName(DELEGATE_NAME).uuid(generateUuid()).build();
+    Delegate delegate = createDelegateBuilder()
+                            .accountId(ACCOUNT_ID)
+                            .delegateName(DELEGATE_NAME)
+                            .lastHeartBeat(lastHeartBeat)
+                            .uuid(generateUuid())
+                            .build();
     persistence.save(delegate);
-
-    DelegateConnection delegateConnection = DelegateConnection.builder()
-                                                .accountId(ACCOUNT_ID)
-                                                .delegateId(delegate.getUuid())
-                                                .lastHeartbeat(lastHeartBeat)
-                                                .disconnected(false)
-                                                .build();
-    persistence.save(delegateConnection);
 
     when(settingsService.validateCEDelegateSetting(any(), any()))
         .thenReturn(CEK8sDelegatePrerequisite.builder().build());
@@ -679,31 +673,12 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   public void testDelegateDisconnected() {
     DelegateObserver delegateObserver = mock(DelegateObserver.class);
     delegateService.getSubject().register(delegateObserver);
-
-    String delegateId = generateUuid();
     String delegateConnectionId = generateUuid();
-    String accountId = generateUuid();
-
-    DelegateConnection delegateConnection = DelegateConnection.builder()
-                                                .accountId(accountId)
-                                                .uuid(delegateConnectionId)
-                                                .delegateId(delegateId)
-                                                .disconnected(false)
-                                                .build();
-
-    persistence.save(delegateConnection);
-
-    delegateService.delegateDisconnected(accountId, delegateId, delegateConnectionId);
-
-    DelegateConnection retrievedDelegateConnection =
-        persistence.createQuery(DelegateConnection.class)
-            .filter(DelegateConnectionKeys.uuid, delegateConnection.getUuid())
-            .get();
-
-    assertThat(retrievedDelegateConnection).isNotNull();
-    assertThat(retrievedDelegateConnection.getDelegateId()).isEqualTo(delegateId);
-    assertThat(retrievedDelegateConnection.getAccountId()).isEqualTo(accountId);
-    assertThat(retrievedDelegateConnection.isDisconnected()).isTrue();
+    String delegateId = persistence.save(createDelegateBuilder().delegateConnectionId(delegateConnectionId).build());
+    delegateService.delegateDisconnected(ACCOUNT_ID, delegateId, delegateConnectionId);
+    Delegate delegate = persistence.get(Delegate.class, delegateId);
+    assertThat(delegate).isNotNull();
+    assertThat(delegate.isDisconnected()).isTrue();
   }
 
   @Test
@@ -712,18 +687,8 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   public void testDelegateObserverEventOnDelegateDisconnected() {
     DelegateObserver delegateObserver = mock(DelegateObserver.class);
     delegateService.getSubject().register(delegateObserver);
-
     String delegateId = generateUuid();
-    String delegateConnectionId = generateUuid();
     String accountId = generateUuid();
-
-    DelegateConnection delegateConnection = DelegateConnection.builder()
-                                                .accountId(accountId)
-                                                .uuid(delegateConnectionId)
-                                                .delegateId(delegateId)
-                                                .disconnected(false)
-                                                .build();
-    persistence.save(delegateConnection);
     delegateService.onDelegateDisconnected(accountId, delegateId);
     verify(delegateObserver).onDisconnected(accountId, delegateId);
   }
@@ -737,6 +702,7 @@ public class DelegateServiceImplTest extends WingsBaseTest {
                              .ip("127.0.0.1")
                              .hostName("localhost")
                              .version(VERSION)
+                             .disconnected(true)
                              .lastHeartBeat(System.currentTimeMillis())
                              .build();
 
@@ -774,6 +740,7 @@ public class DelegateServiceImplTest extends WingsBaseTest {
                              .hostName("localhost")
                              .version(VERSION)
                              .lastHeartBeat(System.currentTimeMillis())
+                             .disconnected(true)
                              .build();
 
     Delegate delegate2 = Delegate.builder()
@@ -843,34 +810,22 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   public void testGetConnectedDelegates() {
     List<Delegate> delegates = new ArrayList<>();
 
-    Delegate delegate1 = createDelegateBuilder().accountId(ACCOUNT_ID).build();
+    Delegate delegate1 = createDelegateBuilder()
+                             .accountId(ACCOUNT_ID)
+                             .version(versionInfoManager.getVersionInfo().getVersion())
+                             .disconnected(false)
+                             .lastHeartBeat(System.currentTimeMillis())
+                             .build();
     String delegateId1 = persistence.save(delegate1);
-
-    DelegateConnection delegateConnection1 = DelegateConnection.builder()
-                                                 .accountId(ACCOUNT_ID)
-                                                 .delegateId(delegateId1)
-                                                 .version(versionInfoManager.getVersionInfo().getVersion())
-                                                 .disconnected(false)
-                                                 .lastHeartbeat(System.currentTimeMillis())
-                                                 .build();
-
-    persistence.save(delegateConnection1);
-
     delegates.add(delegate1);
 
-    Delegate delegate2 = createDelegateBuilder().accountId(ACCOUNT_ID).build();
+    Delegate delegate2 = createDelegateBuilder()
+                             .accountId(ACCOUNT_ID)
+                             .version(versionInfoManager.getVersionInfo().getVersion())
+                             .disconnected(true)
+                             .lastHeartBeat(System.currentTimeMillis())
+                             .build();
     String delegateId2 = persistence.save(delegate2);
-
-    DelegateConnection delegateConnection2 = DelegateConnection.builder()
-                                                 .accountId(ACCOUNT_ID)
-                                                 .delegateId(delegateId2)
-                                                 .version(versionInfoManager.getVersionInfo().getVersion())
-                                                 .disconnected(true)
-                                                 .lastHeartbeat(System.currentTimeMillis())
-                                                 .build();
-
-    persistence.save(delegateConnection2);
-
     delegates.add(delegate2);
 
     when(accountService.getAccountPrimaryDelegateVersion(any())).thenReturn(versionInfoManager.getFullVersion());
@@ -1505,18 +1460,8 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   @Owner(developers = ANUPAM)
   @Category(UnitTests.class)
   public void testGetConnectedRatioWithPrimary() {
-    String delegateId = generateUuid();
-
-    DelegateConnection delegateConnection = DelegateConnection.builder()
-                                                .accountId(ACCOUNT_ID)
-                                                .delegateId(delegateId)
-                                                .version(VERSION)
-                                                .disconnected(false)
-                                                .lastHeartbeat(System.currentTimeMillis())
-                                                .build();
-
-    persistence.save(delegateConnection);
-
+    Delegate delegate = createDelegateBuilder().build();
+    persistence.save(delegate);
     DelegateConfiguration delegateConfiguration =
         DelegateConfiguration.builder().delegateVersions(singletonList(VERSION)).build();
     when(accountService.getDelegateConfiguration(ACCOUNT_ID)).thenReturn(delegateConfiguration);
@@ -1529,17 +1474,8 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   @Owner(developers = ANUPAM)
   @Category(UnitTests.class)
   public void testGetConnectedRatioWithPrimaryWithNoAccountID() {
-    String delegateId = generateUuid();
-
-    DelegateConnection delegateConnection = DelegateConnection.builder()
-                                                .accountId(Account.GLOBAL_ACCOUNT_ID)
-                                                .delegateId(delegateId)
-                                                .version(VERSION)
-                                                .disconnected(false)
-                                                .lastHeartbeat(System.currentTimeMillis())
-                                                .build();
-
-    persistence.save(delegateConnection);
+    Delegate delegate = createDelegateBuilder().build();
+    persistence.save(delegate);
 
     DelegateConfiguration delegateConfiguration =
         DelegateConfiguration.builder().delegateVersions(singletonList(VERSION)).build();
@@ -1553,17 +1489,8 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   @Owner(developers = GAURAV)
   @Category(UnitTests.class)
   public void testGetConnectedRatioWithPrimaryWithRing() {
-    String delegateId = generateUuid();
-
-    DelegateConnection delegateConnection = DelegateConnection.builder()
-                                                .accountId(ACCOUNT_ID)
-                                                .delegateId(delegateId)
-                                                .version(VERSION)
-                                                .disconnected(false)
-                                                .lastHeartbeat(System.currentTimeMillis())
-                                                .build();
-
-    persistence.save(delegateConnection);
+    Delegate delegate = createDelegateBuilder().build();
+    persistence.save(delegate);
 
     DelegateConfiguration delegateConfiguration =
         DelegateConfiguration.builder().delegateVersions(singletonList(VERSION)).build();
@@ -1580,25 +1507,18 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   @Owner(developers = ANUPAM)
   @Category(UnitTests.class)
   public void testGetConnectedDelegatesRatio() {
-    DelegateConnection delegateConnection1 = DelegateConnection.builder()
-                                                 .accountId(ACCOUNT_ID)
-                                                 .delegateId(generateUuid())
-                                                 .version(VERSION)
-                                                 .disconnected(false)
-                                                 .lastHeartbeat(System.currentTimeMillis())
-                                                 .build();
-
-    DelegateConnection delegateConnection2 = DelegateConnection.builder()
-                                                 .accountId(ACCOUNT_ID)
-                                                 .delegateId(generateUuid())
-                                                 .version(VERSION)
-                                                 .disconnected(true)
-                                                 .lastHeartbeat(System.currentTimeMillis())
-                                                 .build();
-
-    persistence.save(delegateConnection1);
-    persistence.save(delegateConnection2);
-
+    persistence.save(createDelegateBuilder()
+                         .delegateConnectionId(generateUuid())
+                         .version(VERSION)
+                         .disconnected(false)
+                         .lastHeartBeat(System.currentTimeMillis())
+                         .build());
+    persistence.save(createDelegateBuilder()
+                         .delegateConnectionId(generateUuid())
+                         .version(VERSION)
+                         .disconnected(true)
+                         .lastHeartBeat(System.currentTimeMillis())
+                         .build());
     Double ratio = delegateService.getConnectedDelegatesRatio(VERSION, ACCOUNT_ID);
     assertThat(ratio).isEqualTo(0.5);
   }
@@ -1789,36 +1709,19 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   public void testGetConnectedDelegatesForGlobalDelegateAccount() {
     List<Delegate> delegates = new ArrayList<>();
 
-    Delegate delegate1 = createDelegateBuilder().accountId(GLOBAL_DELEGATE_ACCOUNT_ID).build();
+    Delegate delegate1 = createDelegateBuilder()
+                             .accountId(GLOBAL_DELEGATE_ACCOUNT_ID)
+                             .version(versionInfoManager.getVersionInfo().getVersion())
+                             .lastHeartBeat(System.currentTimeMillis())
+                             .build();
     String delegateId1 = persistence.save(delegate1);
-
-    DelegateConnection delegateConnection1 = DelegateConnection.builder()
-                                                 .accountId(GLOBAL_DELEGATE_ACCOUNT_ID)
-                                                 .delegateId(delegateId1)
-                                                 .version(versionInfoManager.getVersionInfo().getVersion())
-                                                 .disconnected(false)
-                                                 .lastHeartbeat(System.currentTimeMillis())
-                                                 .build();
-
-    persistence.save(delegateConnection1);
-
     delegates.add(delegate1);
-
-    Delegate delegate2 = createDelegateBuilder().accountId(GLOBAL_DELEGATE_ACCOUNT_ID).build();
+    Delegate delegate2 = createDelegateBuilder()
+                             .accountId(GLOBAL_DELEGATE_ACCOUNT_ID)
+                             .version(versionInfoManager.getVersionInfo().getVersion())
+                             .build();
     String delegateId2 = persistence.save(delegate2);
-
-    DelegateConnection delegateConnection2 = DelegateConnection.builder()
-                                                 .accountId(GLOBAL_DELEGATE_ACCOUNT_ID)
-                                                 .delegateId(delegateId2)
-                                                 .version(versionInfoManager.getVersionInfo().getVersion())
-                                                 .disconnected(false)
-                                                 .lastHeartbeat(System.currentTimeMillis())
-                                                 .build();
-
-    persistence.save(delegateConnection2);
-
     delegates.add(delegate2);
-
     when(accountService.getAccountPrimaryDelegateVersion(any())).thenReturn(versionInfoManager.getFullVersion());
     List<Delegate> connectedDelegates = delegateService.getConnectedDelegates(GLOBAL_DELEGATE_ACCOUNT_ID, delegates);
 

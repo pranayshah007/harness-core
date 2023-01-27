@@ -77,7 +77,9 @@ public class VaultSecretMigrator implements SecretMigrator {
             .namespace(StringUtils.isNotBlank(vaultConfig.getNamespace()) ? vaultConfig.getNamespace() : "/")
             .basePath(vaultConfig.getBasePath())
             .vaultUrl(vaultConfig.getVaultUrl())
-            .renewalIntervalMinutes(vaultConfig.getRenewalInterval())
+            // Setting renewal interval to `0` as per PL team's recommendation instead of
+            // vaultConfig.getRenewalInterval()
+            .renewalIntervalMinutes(0)
             .secretEngineManuallyConfigured(vaultConfig.isEngineManuallyEntered())
             .secretEngineName(vaultConfig.getSecretEngineName())
             .secretEngineVersion(vaultConfig.getSecretEngineVersion())

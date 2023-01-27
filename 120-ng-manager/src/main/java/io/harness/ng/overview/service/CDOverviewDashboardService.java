@@ -9,6 +9,7 @@ package io.harness.ng.overview.service;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.models.InstanceDetailGroupedByPipelineExecutionList;
 import io.harness.models.InstanceDetailsByBuildId;
 import io.harness.models.dashboard.InstanceCountDetailsByEnvTypeAndServiceId;
 import io.harness.ng.core.activityhistory.dto.TimeGroupType;
@@ -124,6 +125,10 @@ public interface CDOverviewDashboardService {
   InstanceDetailsByBuildId getActiveInstanceDetails(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String serviceIdentifier, String envIdentifier, String infraIdentifier,
       String clusterIdentifier, String pipelineExecutionId, String buildId);
+
+  InstanceDetailGroupedByPipelineExecutionList getInstanceDetailGroupedByPipelineExecution(String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, String serviceIdentifier, String envIdentifier,
+      EnvironmentType environmentType, String infraIdentifier, String clusterIdentifier, String displayName);
 
   io.harness.ng.overview.dto.TimeValuePairListDTO<Integer> getInstanceGrowthTrend(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String serviceId, long startTimeInMs, long endTimeInMs);

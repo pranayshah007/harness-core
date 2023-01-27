@@ -70,7 +70,7 @@ public class RerunJobTasklet implements Tasklet {
             BatchJobType.ACTUAL_IDLE_COST_BILLING_HOURLY.toString(),
             BatchJobType.INSTANCE_BILLING_HOURLY_AGGREGATION.toString(),
             BatchJobType.CLUSTER_DATA_HOURLY_TO_BIG_QUERY.toString());
-        Instant hourlyStartInstant = Instant.ofEpochMilli(jobConstants.getJobStartTime()).minus(2, ChronoUnit.DAYS);
+        Instant hourlyStartInstant = Instant.ofEpochMilli(jobConstants.getJobStartTime()).minus(1, ChronoUnit.DAYS);
 
         batchJobScheduledDataService.invalidateJobs(accountId, hourlyBatchJobs, hourlyStartInstant);
         boolean cleanHourlyBillingData = billingDataService.cleanBillingData(accountId, hourlyStartInstant,

@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.streaming.dtos.AuditBatchDTO;
 import io.harness.audit.streaming.dtos.AuditRecordDTO;
 import io.harness.audit.streaming.dtos.PutObjectResultResponse;
+import io.harness.aws.beans.AsgLoadBalancerConfig;
 import io.harness.capability.AwsRegionParameters;
 import io.harness.capability.CapabilityParameters;
 import io.harness.capability.CapabilitySubjectPermission.PermissionResult;
@@ -252,6 +253,9 @@ import io.harness.delegate.beans.connector.spotconnector.SpotValidationParams;
 import io.harness.delegate.beans.connector.tasconnector.TasTaskParams;
 import io.harness.delegate.beans.connector.tasconnector.TasTaskType;
 import io.harness.delegate.beans.connector.tasconnector.TasValidationParams;
+import io.harness.delegate.beans.connector.terraformcloud.TerraformCloudTaskParams;
+import io.harness.delegate.beans.connector.terraformcloud.TerraformCloudTaskType;
+import io.harness.delegate.beans.connector.terraformcloud.TerraformCloudValidationParams;
 import io.harness.delegate.beans.connector.vaultconnector.VaultValidationParams;
 import io.harness.delegate.beans.ecs.EcsBlueGreenCreateServiceResult;
 import io.harness.delegate.beans.ecs.EcsBlueGreenPrepareRollbackDataResult;
@@ -271,6 +275,7 @@ import io.harness.delegate.beans.elastigroup.ElastigroupSwapRouteResult;
 import io.harness.delegate.beans.executioncapability.AlwaysFalseValidationCapability;
 import io.harness.delegate.beans.executioncapability.AwsCliInstallationCapability;
 import io.harness.delegate.beans.executioncapability.AwsRegionCapability;
+import io.harness.delegate.beans.executioncapability.AwsSamInstallationCapability;
 import io.harness.delegate.beans.executioncapability.CIVmConnectionCapability;
 import io.harness.delegate.beans.executioncapability.CapabilityType;
 import io.harness.delegate.beans.executioncapability.ChartMuseumCapability;
@@ -454,7 +459,6 @@ import io.harness.delegate.task.aws.asg.AsgCanaryDeployResult;
 import io.harness.delegate.task.aws.asg.AsgCommandRequest;
 import io.harness.delegate.task.aws.asg.AsgCommandResponse;
 import io.harness.delegate.task.aws.asg.AsgInfraConfig;
-import io.harness.delegate.task.aws.asg.AsgLoadBalancerConfig;
 import io.harness.delegate.task.aws.asg.AsgPrepareRollbackDataRequest;
 import io.harness.delegate.task.aws.asg.AsgPrepareRollbackDataResponse;
 import io.harness.delegate.task.aws.asg.AsgPrepareRollbackDataResult;
@@ -911,6 +915,8 @@ import io.harness.delegate.task.terraform.TerraformCommandUnit;
 import io.harness.delegate.task.terraform.TerraformTaskNGParameters;
 import io.harness.delegate.task.terraform.TerraformTaskNGResponse;
 import io.harness.delegate.task.terraform.TerraformVarFileInfo;
+import io.harness.delegate.task.terraformcloud.response.TerraformCloudDelegateTaskResponse;
+import io.harness.delegate.task.terraformcloud.response.TerraformCloudValidateTaskResponse;
 import io.harness.ng.core.dto.secrets.KerberosConfigDTO;
 import io.harness.ng.core.dto.secrets.KerberosWinRmConfigDTO;
 import io.harness.ng.core.dto.secrets.NTLMConfigDTO;
@@ -2235,5 +2241,13 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(ConnectorDecryptionParams.class, 673570);
     kryo.register(GitFileLocationDetails.class, 673571);
     kryo.register(ScmBatchGetFileTaskResponseData.class, 673572);
+
+    kryo.register(TerraformCloudTaskParams.class, 680000);
+    kryo.register(TerraformCloudTaskType.class, 680001);
+    kryo.register(TerraformCloudDelegateTaskResponse.class, 680002);
+    kryo.register(TerraformCloudValidateTaskResponse.class, 680003);
+    kryo.register(TerraformCloudValidationParams.class, 680004);
+
+    kryo.register(AwsSamInstallationCapability.class, 10000401);
   }
 }

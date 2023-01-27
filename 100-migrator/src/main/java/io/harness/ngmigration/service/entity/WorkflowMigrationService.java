@@ -7,6 +7,8 @@
 
 package io.harness.ngmigration.service.entity;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import static software.wings.ngmigration.NGMigrationEntityType.WORKFLOW;
 
 import static java.util.stream.Collectors.counting;
@@ -64,6 +66,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -161,7 +164,7 @@ public class WorkflowMigrationService extends NgMigrationService {
     Set<CgEntityId> children = new HashSet<>();
     List<CgEntityId> referencedEntities =
         workflowHandlerFactory.getWorkflowHandler(workflow).getReferencedEntities(stepMapperFactory, workflow);
-    if (EmptyPredicate.isNotEmpty(referencedEntities)) {
+    if (isNotEmpty(referencedEntities)) {
       children.addAll(referencedEntities);
     }
     return DiscoveryNode.builder().children(children).entityNode(workflowNode).build();
@@ -175,7 +178,7 @@ public class WorkflowMigrationService extends NgMigrationService {
   @Override
   public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
-    if (EmptyPredicate.isNotEmpty(inputDTO.getDefaults()) && inputDTO.getDefaults().containsKey(WORKFLOW)
+    if (isNotEmpty(inputDTO.getDefaults()) && inputDTO.getDefaults().containsKey(WORKFLOW)
         && inputDTO.getDefaults().get(WORKFLOW).isSkipMigration()) {
       return Collections.emptyList();
     }
@@ -203,6 +206,17 @@ public class WorkflowMigrationService extends NgMigrationService {
     }
 
     List<NGYamlFile> files = new ArrayList<>();
+
+    if (isNotEmpty(steps)) {
+      List<NGYamlFile> additionalYamlFiles =
+          steps.stream()
+              .map(step -> stepMapperFactory.getStepMapper(step.getType()).getChildNGYamlFiles(inputDTO, step, name))
+              .flatMap(List::stream)
+              .filter(Objects::nonNull)
+              .collect(Collectors.toList());
+      files.addAll(additionalYamlFiles);
+    }
+
     NGYamlFile ngYamlFile =
         NGYamlFile.builder()
             .type(WORKFLOW)

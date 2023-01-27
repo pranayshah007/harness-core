@@ -57,7 +57,6 @@ RUN mkdir -m 777 -p client-tools/kubectl/v1.24.3 \
   && mkdir -m 777 -p client-tools/scm/1658d03e \
   && curl -s -L -o client-tools/scm/1658d03e/scm https://app.harness.io/public/shared/tools/scm/release/1658d03e/bin/linux/$TARGETARCH/scm
 
-
 RUN chmod -R 755 /opt/harness-delegate \
     && chgrp -R 0 /opt/harness-delegate  \
     && chmod -R g=u /opt/harness-delegate \
