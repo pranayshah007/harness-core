@@ -28,9 +28,11 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureData;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.failure.FailureType;
+import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.JsonUtils;
@@ -165,11 +167,19 @@ public class PolicyEvalUtils {
       return buildFailureStepResponse(ErrorCode.HTTP_RESPONSE_EXCEPTION,
           PolicyConstants.POLICY_EVALUATION_UNEXPECTED_ERROR_MSG, FailureType.APPLICATION_FAILURE, stepResponse);
     }
+    PolicyStepOutcome outcome = PolicyStepOutcomeMapper.toOutcome(opaEvaluationResponseHolder);
+    StepOutcome policyOutcome = StepOutcome.builder()
+                                    .group(StepCategory.STEP.name())
+                                    .name(YAMLFieldNameConstants.POLICY_OUTPUT)
+                                    .outcome(outcome)
+                                    .build();
     if (OpaConstants.OPA_STATUS_ERROR.equals(opaEvaluationResponseHolder.getStatus())) {
       String errorMessage = PolicyEvalUtils.buildPolicyEvaluationFailureMessage(opaEvaluationResponseHolder);
-      stepResponse = PolicyEvalUtils.buildFailureStepResponse(
-          ErrorCode.POLICY_EVALUATION_FAILURE, errorMessage, FailureType.POLICY_EVALUATION_FAILURE, stepResponse);
+      stepResponse = PolicyEvalUtils.buildFailureStepResponse(ErrorCode.POLICY_EVALUATION_FAILURE, errorMessage,
+          FailureType.POLICY_EVALUATION_FAILURE, policyOutcome, stepResponse);
       stepResponse = stepResponse.toBuilder().status(Status.FAILED).build();
+    } else {
+      stepResponse = stepResponse.toBuilder().stepOutcome(policyOutcome).build();
     }
     return stepResponse;
   }

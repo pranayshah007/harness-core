@@ -24,6 +24,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static java.lang.String.format;
 
 import io.harness.beans.serializer.RunTimeInputHandler;
+import io.harness.beans.steps.CIRegistry;
 import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.beans.yaml.extended.reports.JUnitTestReport;
@@ -33,6 +34,7 @@ import io.harness.ci.config.CICacheIntelligenceConfig;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
 import io.harness.ci.serializer.SerializerUtils;
+import io.harness.ci.utils.CIStepInfoUtils;
 import io.harness.ci.utils.HarnessImageUtils;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.vm.steps.VmJunitTestReport;
@@ -68,9 +70,10 @@ public class VmPluginStepSerializer {
   @Inject CIExecutionServiceConfig ciExecutionServiceConfig;
   @Inject ConnectorUtils connectorUtils;
   @Inject HarnessImageUtils harnessImageUtils;
+  @Inject CIStepInfoUtils ciStepInfoUtils;
 
   public VmStepInfo serialize(PluginStepInfo pluginStepInfo, StageInfraDetails stageInfraDetails, String identifier,
-      ParameterField<Timeout> parameterFieldTimeout, String stepName, Ambiance ambiance) {
+      ParameterField<Timeout> parameterFieldTimeout, String stepName, Ambiance ambiance, List<CIRegistry> registries) {
     Map<String, JsonNode> settings =
         resolveJsonNodeMapParameter("settings", "Plugin", identifier, pluginStepInfo.getSettings(), false);
     Map<String, String> envVars = new HashMap<>();
@@ -84,10 +87,15 @@ public class VmPluginStepSerializer {
       envVars.putAll(pluginStepInfo.getEnvVariables());
     }
 
-    String connectorIdentifier = RunTimeInputHandler.resolveStringParameter(
-        "connectorRef", stepName, identifier, pluginStepInfo.getConnectorRef(), false);
     String image =
         RunTimeInputHandler.resolveStringParameter("Image", stepName, identifier, pluginStepInfo.getImage(), false);
+    String connectorIdentifier;
+    if (isNotEmpty(registries)) {
+      connectorIdentifier = ciStepInfoUtils.resolveConnectorFromRegistries(registries, image).orElse(null);
+    } else {
+      connectorIdentifier = RunTimeInputHandler.resolveStringParameter(
+          "connectorRef", stepName, identifier, pluginStepInfo.getConnectorRef(), false);
+    }
     String uses =
         RunTimeInputHandler.resolveStringParameter("uses", stepName, identifier, pluginStepInfo.getUses(), false);
     long timeout = TimeoutUtils.getTimeoutInSeconds(parameterFieldTimeout, pluginStepInfo.getDefaultTimeout());

@@ -172,7 +172,7 @@ public class AzureArtifactsResourceServiceImplTest extends CategoryTest {
 
     when(secretManagerClientService.getEncryptionDetails(any(), any())).thenReturn(encryptionDetails);
 
-    when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(artifactTaskResponse);
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any())).thenReturn(artifactTaskResponse);
 
     List<BuildDetails> versions = azureArtifactsResourceService.listVersionsOfAzureArtifactsPackage(identifierRef,
         ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, project, feed, packageType, packageName, versionRegex);
@@ -189,7 +189,7 @@ public class AzureArtifactsResourceServiceImplTest extends CategoryTest {
 
     verify(connectorService).get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "identifier");
 
-    verify(delegateGrpcClientWrapper).executeSyncTask(delegateTaskRequestCaptor.capture());
+    verify(delegateGrpcClientWrapper).executeSyncTaskV2(delegateTaskRequestCaptor.capture());
 
     DelegateTaskRequest request = delegateTaskRequestCaptor.getValue();
 
@@ -271,7 +271,7 @@ public class AzureArtifactsResourceServiceImplTest extends CategoryTest {
 
     when(secretManagerClientService.getEncryptionDetails(any(), any())).thenReturn(encryptionDetails);
 
-    when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(artifactTaskResponse);
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any())).thenReturn(artifactTaskResponse);
 
     BuildDetails lastSuccessfulVersion = azureArtifactsResourceService.getLastSuccessfulVersion(identifierRef,
         ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, project, feed, packageType, packageName, version, versionRegex);
@@ -284,7 +284,7 @@ public class AzureArtifactsResourceServiceImplTest extends CategoryTest {
 
     verify(connectorService).get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "identifier");
 
-    verify(delegateGrpcClientWrapper).executeSyncTask(delegateTaskRequestCaptor.capture());
+    verify(delegateGrpcClientWrapper).executeSyncTaskV2(delegateTaskRequestCaptor.capture());
 
     DelegateTaskRequest request = delegateTaskRequestCaptor.getValue();
 
@@ -392,7 +392,7 @@ public class AzureArtifactsResourceServiceImplTest extends CategoryTest {
 
     when(secretManagerClientService.getEncryptionDetails(any(), any())).thenReturn(encryptionDetails);
 
-    when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(artifactTaskResponse);
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any())).thenReturn(artifactTaskResponse);
 
     List<AzureArtifactsPackage> packageResponse = azureArtifactsResourceService.listAzureArtifactsPackages(
         identifierRef, ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, project, feed, packageType);
@@ -409,7 +409,7 @@ public class AzureArtifactsResourceServiceImplTest extends CategoryTest {
 
     verify(connectorService).get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "identifier");
 
-    verify(delegateGrpcClientWrapper).executeSyncTask(delegateTaskRequestCaptor.capture());
+    verify(delegateGrpcClientWrapper).executeSyncTaskV2(delegateTaskRequestCaptor.capture());
 
     DelegateTaskRequest request = delegateTaskRequestCaptor.getValue();
 
@@ -522,7 +522,7 @@ public class AzureArtifactsResourceServiceImplTest extends CategoryTest {
 
     when(secretManagerClientService.getEncryptionDetails(any(), any())).thenReturn(encryptionDetails);
 
-    when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(artifactTaskResponse);
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any())).thenReturn(artifactTaskResponse);
 
     List<AzureArtifactsFeed> feedsResponse = azureArtifactsResourceService.listAzureArtifactsFeeds(
         identifierRef, ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, project);
@@ -539,7 +539,7 @@ public class AzureArtifactsResourceServiceImplTest extends CategoryTest {
 
     verify(connectorService).get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "identifier");
 
-    verify(delegateGrpcClientWrapper).executeSyncTask(delegateTaskRequestCaptor.capture());
+    verify(delegateGrpcClientWrapper).executeSyncTaskV2(delegateTaskRequestCaptor.capture());
 
     DelegateTaskRequest request = delegateTaskRequestCaptor.getValue();
 
@@ -642,7 +642,7 @@ public class AzureArtifactsResourceServiceImplTest extends CategoryTest {
 
     when(secretManagerClientService.getEncryptionDetails(any(), any())).thenReturn(encryptionDetails);
 
-    when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(artifactTaskResponse);
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any())).thenReturn(artifactTaskResponse);
 
     List<AzureDevopsProject> projectsResponse = azureArtifactsResourceService.listAzureArtifactsProjects(
         identifierRef, ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
@@ -659,7 +659,7 @@ public class AzureArtifactsResourceServiceImplTest extends CategoryTest {
 
     verify(connectorService).get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "identifier");
 
-    verify(delegateGrpcClientWrapper).executeSyncTask(delegateTaskRequestCaptor.capture());
+    verify(delegateGrpcClientWrapper).executeSyncTaskV2(delegateTaskRequestCaptor.capture());
 
     DelegateTaskRequest request = delegateTaskRequestCaptor.getValue();
 

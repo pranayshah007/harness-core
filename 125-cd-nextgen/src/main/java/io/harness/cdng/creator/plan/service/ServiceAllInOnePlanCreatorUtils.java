@@ -19,7 +19,7 @@ import io.harness.cdng.creator.plan.stage.DeploymentStageConfig;
 import io.harness.cdng.creator.plan.stage.DeploymentStageNode;
 import io.harness.cdng.elastigroup.ElastigroupServiceSettingsStep;
 import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
-import io.harness.cdng.environment.helper.EnvironmentInfraFilterHelper;
+import io.harness.cdng.environment.helper.EnvironmentInfraFilterUtils;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.environment.yaml.EnvironmentsYaml;
 import io.harness.cdng.manifest.steps.ManifestsStepV2;
@@ -124,7 +124,7 @@ public class ServiceAllInOnePlanCreatorUtils {
             .gitOpsMultiSvcEnvEnabled(ParameterField.<Boolean>builder().value(true).build())
             .envGroupRef(environmentGroupYaml.getEnvGroupRef());
 
-    if (EnvironmentInfraFilterHelper.areFiltersPresent(environmentGroupYaml)) {
+    if (EnvironmentInfraFilterUtils.areFiltersPresent(environmentGroupYaml)) {
       stepParameters.environmentGroupYaml(environmentGroupYaml)
           .envToEnvInputs(new HashMap<>())
           .envToSvcOverrideInputs(new HashMap<>());
@@ -161,7 +161,7 @@ public class ServiceAllInOnePlanCreatorUtils {
             .deploymentType(serviceType)
             .gitOpsMultiSvcEnvEnabled(ParameterField.<Boolean>builder().value(true).build());
 
-    if (EnvironmentInfraFilterHelper.areFiltersPresent(environmentsYaml)) {
+    if (EnvironmentInfraFilterUtils.areFiltersPresent(environmentsYaml)) {
       stepParameters.environmentsYaml(environmentsYaml)
           .envToEnvInputs(new HashMap<>())
           .envToSvcOverrideInputs(new HashMap<>());

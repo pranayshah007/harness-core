@@ -13,6 +13,7 @@ shared_dependencies = [
     "//315-sto-manager/contracts:module",
     "//323-sto-utilities:module",
     "//332-ci-manager/service:module",
+    "//332-ci-manager/app:module",
     "//:lombok",
 ]
 
@@ -61,5 +62,4 @@ run_analysis()
 
 exports_files([
     "keystore.jks",
-    "sto-manager-config.yml",
 ])

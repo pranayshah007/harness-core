@@ -122,9 +122,9 @@ public class NgMigrationResource {
   @Timed
   @ExceptionMetered
   @ApiKeyAuthorized(permissionType = LOGGED_IN)
-  public RestResponse<Map<String, String>> queueAccountLevelSummary(
-      @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId) {
-    String requestId = asyncDiscoveryHandler.queue(accountId);
+  public RestResponse<Map<String, String>> queueSummary(
+      @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId, @QueryParam("appId") String appId) {
+    String requestId = asyncDiscoveryHandler.queue(accountId, appId);
     return new RestResponse<>(ImmutableMap.of("requestId", requestId));
   }
 
@@ -241,8 +241,8 @@ public class NgMigrationResource {
   @ExceptionMetered
   @ApiKeyAuthorized(permissionType = LOGGED_IN)
   public RestResponse<Map<String, String>> queueSimilarWorkflows(
-      @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId) {
-    String requestId = asyncSimilarWorkflowHandler.queue(accountId);
+      @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId, @QueryParam("appId") String appId) {
+    String requestId = asyncSimilarWorkflowHandler.queue(accountId, appId);
     return new RestResponse<>(ImmutableMap.of("requestId", requestId));
   }
 

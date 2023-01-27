@@ -52,6 +52,7 @@ public final class RuleExecution implements PersistentEntity, UuidAware, Created
   @Schema(description = "ruleEnforcementName") String ruleEnforcementName;
   @Schema(description = "ruleIdentifier") String ruleIdentifier;
   @Schema(description = "ruleName") String ruleName;
+  @Schema(description = "IsOOTB") Boolean OOTB;
   @Schema(description = "rulePackIdentifier") String rulePackIdentifier;
   @Schema(description = "cloudProvider") RuleCloudProviderType cloudProvider;
   @Schema(description = "isDryRun") Boolean isDryRun;
@@ -118,6 +119,7 @@ public final class RuleExecution implements PersistentEntity, UuidAware, Created
         .executionStatus(getExecutionStatus())
         .ruleEnforcementName(getRuleEnforcementName())
         .ruleName(getRuleName())
+        .OOTB(getOOTB())
         .build();
   }
 }

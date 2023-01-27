@@ -33,7 +33,7 @@ public class AsyncSimilarWorkflowHandler extends AsyncTaskHandler {
   }
 
   @Override
-  MigrationTrackRespPayload processTask(String accountId, String requestId) {
+  MigrationTrackRespPayload processTask(String accountId, String appId, String requestId) {
     List<Set<SimilarWorkflowDetail>> similarWorkflows = migrationResourceService.listSimilarWorkflow(accountId);
     return SimilarWorkflowResult.builder().similarWorkflows(similarWorkflows).build();
   }

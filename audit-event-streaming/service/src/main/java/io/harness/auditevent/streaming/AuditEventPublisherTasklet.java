@@ -9,7 +9,8 @@ package io.harness.auditevent.streaming;
 
 import io.harness.audit.entities.streaming.StreamingDestination;
 import io.harness.audit.entities.streaming.StreamingDestinationFilterProperties;
-import io.harness.auditevent.streaming.services.StreamingDestinationsService;
+import io.harness.auditevent.streaming.services.AuditEventStreamingService;
+import io.harness.auditevent.streaming.services.StreamingDestinationService;
 import io.harness.spec.server.audit.v1.model.StreamingDestinationDTO;
 
 import java.util.List;
@@ -19,21 +20,34 @@ import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.repeat.RepeatStatus;
-import org.springframework.beans.factory.annotation.Autowired;
 
 @Slf4j
 public class AuditEventPublisherTasklet implements Tasklet {
-  @Autowired private StreamingDestinationsService streamingDestinationsService;
+  private final StreamingDestinationService streamingDestinationService;
+  private final AuditEventStreamingService auditEventStreamingService;
+
+  public AuditEventPublisherTasklet(
+      StreamingDestinationService streamingDestinationService, AuditEventStreamingService auditEventStreamingService) {
+    this.streamingDestinationService = streamingDestinationService;
+    this.auditEventStreamingService = auditEventStreamingService;
+  }
 
   @Override
   public RepeatStatus execute(StepContribution stepContribution, ChunkContext chunkContext) throws Exception {
     JobParameters jobParameters = chunkContext.getStepContext().getStepExecution().getJobParameters();
     String accountIdentifier = jobParameters.getString("accountIdentifier");
-    List<StreamingDestination> streamingDestinations = streamingDestinationsService.list(accountIdentifier,
+    List<StreamingDestination> streamingDestinations = streamingDestinationService.list(accountIdentifier,
         StreamingDestinationFilterProperties.builder().status(StreamingDestinationDTO.StatusEnum.ACTIVE).build());
     streamingDestinations.forEach((StreamingDestination streamingDestination) -> {
-      log.info("Streaming destination: {}", streamingDestination.getIdentifier());
+      log.info(getFullLogMessage("Started for", streamingDestination));
+      auditEventStreamingService.stream(streamingDestination, jobParameters);
+      log.info(getFullLogMessage("Completed for", streamingDestination));
     });
-    return null;
+    return RepeatStatus.FINISHED;
+  }
+
+  private String getFullLogMessage(String message, StreamingDestination streamingDestination) {
+    return String.format("%s [streamingDestination=%s] [accountIdentifier=%s]", message,
+        streamingDestination.getIdentifier(), streamingDestination.getAccountIdentifier());
   }
 }

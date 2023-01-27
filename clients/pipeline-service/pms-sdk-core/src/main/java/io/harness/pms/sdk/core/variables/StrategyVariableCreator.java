@@ -38,9 +38,9 @@ public class StrategyVariableCreator implements VariableCreator<StrategyConfig> 
   @Override
   public VariableCreationResponse createVariablesForFieldV2(VariableCreationContext ctx, StrategyConfig config) {
     Map<String, YamlProperties> yamlPropertiesMap = new HashMap<>();
-    if (config.getMatrixConfig() != null) {
-      Set<String> axisKeys = ((MatrixConfig) config.getMatrixConfig()).getAxes().keySet();
-      axisKeys.addAll(((MatrixConfig) config.getMatrixConfig()).getExpressionAxes().keySet());
+    if (ParameterField.isNotNull(config.getMatrixConfig()) && config.getMatrixConfig().getValue() != null) {
+      Set<String> axisKeys = ((MatrixConfig) config.getMatrixConfig().getValue()).getAxes().keySet();
+      axisKeys.addAll(((MatrixConfig) config.getMatrixConfig().getValue()).getExpressionAxes().keySet());
       String placeHolder = "matrix.%s";
       for (String axis : axisKeys) {
         String qualifiedName = String.format(placeHolder, axis);

@@ -42,7 +42,9 @@ import io.harness.outbox.api.OutboxService;
 import io.harness.outbox.api.impl.OutboxDaoImpl;
 import io.harness.outbox.api.impl.OutboxServiceImpl;
 import io.harness.persistence.HPersistence;
+import io.harness.pms.pipeline.governance.service.PipelineGovernanceService;
 import io.harness.pms.pipeline.service.PMSPipelineService;
+import io.harness.pms.pipeline.service.PipelineEnforcementService;
 import io.harness.pms.pipeline.service.PipelineMetadataService;
 import io.harness.pms.sdk.PmsSdkConfiguration;
 import io.harness.pms.sdk.PmsSdkModule;
@@ -57,6 +59,7 @@ import io.harness.serializer.PrimaryVersionManagerRegistrars;
 import io.harness.service.intfc.DelegateAsyncService;
 import io.harness.service.intfc.DelegateSyncService;
 import io.harness.springdata.HTransactionTemplate;
+import io.harness.template.remote.TemplateResourceClient;
 import io.harness.testlib.module.MongoRuleMixin;
 import io.harness.testlib.module.TestMongoModule;
 import io.harness.threading.CurrentThreadExecutor;
@@ -197,6 +200,9 @@ public class PipelineServiceTestRule implements InjectorRuleMixin, MethodRule, M
                 InProcessChannelBuilder.forName(generateUuid()).build()));
         bind(PMSPipelineService.class).toInstance(mock(PMSPipelineService.class));
         bind(AccountClient.class).toInstance(mock(AccountClient.class));
+        bind(PipelineGovernanceService.class).toInstance(mock(PipelineGovernanceService.class));
+        bind(PipelineEnforcementService.class).toInstance(mock(PipelineEnforcementService.class));
+        bind(TemplateResourceClient.class).toInstance(mock(TemplateResourceClient.class));
       }
     });
 

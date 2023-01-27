@@ -10,7 +10,6 @@ package io.harness.engine.interrupts.statusupdate;
 import static io.harness.pms.contracts.execution.Status.INPUT_WAITING;
 import static io.harness.rule.OwnerRule.BRIJESH;
 
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -18,15 +17,12 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.observers.NodeUpdateInfo;
 import io.harness.execution.NodeExecution;
 import io.harness.pms.contracts.ambiance.Ambiance;
-import io.harness.pms.contracts.execution.Status;
 import io.harness.rule.Owner;
 
-import java.util.EnumSet;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -37,7 +33,6 @@ import org.mockito.MockitoAnnotations;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class InputWaitingStepStatusUpdateTest extends CategoryTest {
   @Mock private PlanExecutionService planExecutionService;
-  @Mock private NodeExecutionService nodeExecutionService;
   @InjectMocks InputWaitingStepStatusUpdate inputWaitingStepStatusUpdate;
 
   @Before
@@ -50,7 +45,6 @@ public class InputWaitingStepStatusUpdateTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testHandleNodeStatusUpdate() {
     String planExecutionId = "planExecutionId";
-    String parentId = "parentId";
     NodeUpdateInfo nodeUpdateInfo =
         NodeUpdateInfo.builder()
             .nodeExecution(NodeExecution.builder()
@@ -60,19 +54,6 @@ public class InputWaitingStepStatusUpdateTest extends CategoryTest {
 
     inputWaitingStepStatusUpdate.handleNodeStatusUpdate(nodeUpdateInfo);
 
-    verify(planExecutionService, times(1)).updateCalculatedStatus(planExecutionId);
-
-    nodeUpdateInfo = NodeUpdateInfo.builder()
-                         .nodeExecution(NodeExecution.builder()
-                                            .parentId(parentId)
-                                            .ambiance(Ambiance.newBuilder().setPlanExecutionId(planExecutionId).build())
-                                            .build())
-                         .build();
-
-    doReturn(0L).when(nodeExecutionService).findCountByParentIdAndStatusIn(parentId, EnumSet.noneOf(Status.class));
-    inputWaitingStepStatusUpdate.handleNodeStatusUpdate(nodeUpdateInfo);
-
-    verify(nodeExecutionService, times(1))
-        .updateStatusWithOps(parentId, INPUT_WAITING, null, EnumSet.noneOf(Status.class));
+    verify(planExecutionService, times(1)).updateStatus(planExecutionId, INPUT_WAITING);
   }
 }

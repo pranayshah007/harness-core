@@ -21,6 +21,7 @@ import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.plancreator.strategy.StrategyConfig;
 import io.harness.pms.filter.creation.FilterCreationResponse;
 import io.harness.pms.sdk.core.filter.creation.beans.FilterCreationContext;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 
 import software.wings.api.DeploymentType;
@@ -47,7 +48,7 @@ public class CDPMSCommandStepFilterJsonCreator extends CDPMSStepFilterJsonCreato
 
   private void validateStrategy(StrategyConfig strategy) {
     if (strategy != null
-        && (strategy.getMatrixConfig() != null
+        && ((ParameterField.isNotNull(strategy.getMatrixConfig()) && strategy.getMatrixConfig().getValue() != null)
             || (strategy.getParallelism() != null
                 && (strategy.getParallelism().getValue() != null
                     || strategy.getParallelism().getExpressionValue() != null)))) {

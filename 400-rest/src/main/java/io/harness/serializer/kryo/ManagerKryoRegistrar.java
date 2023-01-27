@@ -87,6 +87,8 @@ import software.wings.api.k8s.K8sCanaryDeleteServiceElement;
 import software.wings.api.k8s.K8sElement;
 import software.wings.api.k8s.K8sExecutionSummary;
 import software.wings.api.k8s.K8sGitConfigMapInfo;
+import software.wings.api.k8s.K8sGitFetchInfo;
+import software.wings.api.k8s.K8sGitInfo;
 import software.wings.api.k8s.K8sHelmDeploymentElement;
 import software.wings.api.k8s.K8sStateExecutionData;
 import software.wings.api.k8s.K8sSwapServiceElement;
@@ -530,6 +532,8 @@ public class ManagerKryoRegistrar implements KryoRegistrar {
     kryo.register(K8sResourcesSweepingOutput.class, 40019);
     kryo.register(K8sGitConfigMapInfo.class, 40023);
     kryo.register(K8sApplicationManifestSourceInfo.class, 40024);
+    kryo.register(K8sGitFetchInfo.class, 40026);
+    kryo.register(K8sGitInfo.class, 40027);
     kryo.register(DirectKubernetesCluster.class, 40051);
     kryo.register(EcsCluster.class, 40052);
     kryo.register(io.harness.ccm.cluster.entities.GcpKubernetesCluster.class, 40053);

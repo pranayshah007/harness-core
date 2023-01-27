@@ -114,7 +114,7 @@ public class GitlabConnectorValidatorTest extends CategoryTest {
   public void validateTestViaDelegate() {
     GitlabConnectorDTO gitlabConnectorDTO = getConnector(true);
 
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(GitCommandExecutionResponse.builder()
                         .connectorValidationResult(
                             ConnectorValidationResult.builder().status(ConnectivityStatus.SUCCESS).build())

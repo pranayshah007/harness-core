@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: resourceTypeConfiguration
-version: 23
+version: 25
 resourceTypes:
   - identifier: ACCOUNT
     permissionKey: account
@@ -78,6 +78,8 @@ resourceTypes:
     permissionKey: issue
   - identifier: STO_SCAN
     permissionKey: scan
+  - identifier: TICKET
+    permissionKey: ticket
   - identifier: FILE
     permissionKey: file
   - identifier: VARIABLE
@@ -120,3 +122,5 @@ resourceTypes:
     permissionKey: deploymentfreeze
   - identifier: IAC_STACK
     permissionKey: stack
+  - identifier: STREAMING_DESTINATION
+    permissionKey: streamingDestination

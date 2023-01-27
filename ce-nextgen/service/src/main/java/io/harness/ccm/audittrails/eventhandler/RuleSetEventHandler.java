@@ -23,7 +23,7 @@ import io.harness.audit.client.api.AuditClientService;
 import io.harness.ccm.audittrails.events.RuleSetCreateEvent;
 import io.harness.ccm.audittrails.events.RuleSetDeleteEvent;
 import io.harness.ccm.audittrails.events.RuleSetUpdateEvent;
-import io.harness.ccm.views.dto.CreateRuleSetDTO;
+import io.harness.ccm.audittrails.yamlDTOs.RuleSetDTO;
 import io.harness.context.GlobalContext;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.outbox.OutboxEvent;
@@ -74,7 +74,7 @@ public class RuleSetEventHandler implements OutboxEventHandler {
         AuditEntry.builder()
             .action(Action.CREATE)
             .module(ModuleType.CE)
-            .newYaml(getYamlString(CreateRuleSetDTO.builder().ruleSet(ruleSetCreateEvent.getRuleSet()).build()))
+            .newYaml(getYamlString(RuleSetDTO.builder().ruleSet(ruleSetCreateEvent.getRuleSet()).build()))
             .timestamp(outboxEvent.getCreatedAt())
             .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
             .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
@@ -90,7 +90,8 @@ public class RuleSetEventHandler implements OutboxEventHandler {
         AuditEntry.builder()
             .action(Action.UPDATE)
             .module(ModuleType.CE)
-            .newYaml(getYamlString(CreateRuleSetDTO.builder().ruleSet(ruleSetUpdateEvent.getRuleSet()).build()))
+            .newYaml(getYamlString(RuleSetDTO.builder().ruleSet(ruleSetUpdateEvent.getRuleSet()).build()))
+            .oldYaml(getYamlString(RuleSetDTO.builder().ruleSet(ruleSetUpdateEvent.getOldRuleSet()).build()))
             .timestamp(outboxEvent.getCreatedAt())
             .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
             .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
@@ -106,7 +107,7 @@ public class RuleSetEventHandler implements OutboxEventHandler {
         AuditEntry.builder()
             .action(Action.DELETE)
             .module(ModuleType.CE)
-            .newYaml(getYamlString(CreateRuleSetDTO.builder().ruleSet(ruleSetDeleteEvent.getRuleSet()).build()))
+            .oldYaml(getYamlString(RuleSetDTO.builder().ruleSet(ruleSetDeleteEvent.getRuleSet()).build()))
             .timestamp(outboxEvent.getCreatedAt())
             .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
             .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))

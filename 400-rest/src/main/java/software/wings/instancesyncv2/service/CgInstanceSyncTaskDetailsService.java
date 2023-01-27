@@ -43,6 +43,10 @@ public class CgInstanceSyncTaskDetailsService {
     mongoPersistence.save(taskDetails);
   }
 
+  public boolean delete(String taskDetailsId) {
+    return mongoPersistence.delete(InstanceSyncTaskDetails.class, taskDetailsId);
+  }
+
   public InstanceSyncTaskDetails getForId(String taskDetailsId) {
     return mongoPersistence.get(InstanceSyncTaskDetails.class, taskDetailsId);
   }
@@ -68,6 +72,22 @@ public class CgInstanceSyncTaskDetailsService {
                                                .filter(InstanceSyncTaskDetailsKeys.perpetualTaskId, perpetualTaskId);
 
     return query.asList();
+  }
+
+  public boolean isInstanceSyncTaskDetailsExist(String accountId, String perpetualTaskId) {
+    Query<InstanceSyncTaskDetails> query = mongoPersistence.createQuery(InstanceSyncTaskDetails.class)
+                                               .filter(InstanceSyncTaskDetailsKeys.accountId, accountId)
+                                               .filter(InstanceSyncTaskDetailsKeys.perpetualTaskId, perpetualTaskId);
+
+    return query.count() > 0;
+  }
+
+  public InstanceSyncTaskDetails getInstanceSyncTaskDetails(String accountId, String instanceSyncTaskDetailId) {
+    Query<InstanceSyncTaskDetails> query = mongoPersistence.createQuery(InstanceSyncTaskDetails.class)
+                                               .filter(InstanceSyncTaskDetailsKeys.accountId, accountId)
+                                               .filter(InstanceSyncTaskDetailsKeys.uuid, instanceSyncTaskDetailId);
+
+    return query.get();
   }
 
   public void updateLastRun(

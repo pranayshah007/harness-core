@@ -13,6 +13,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
+import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
+import io.harness.delegate.beans.connector.nexusconnector.outcome.NexusAuthenticationOutcomeDTO;
+import io.harness.delegate.beans.connector.nexusconnector.outcome.NexusConnectorOutcomeDTO;
 import io.harness.exception.InvalidRequestException;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -54,5 +57,18 @@ public class NexusConnectorDTO extends ConnectorConfigDTO implements DelegateSel
       return null;
     }
     return Collections.singletonList(auth.getCredentials());
+  }
+
+  @Override
+  public ConnectorConfigOutcomeDTO toOutcome() {
+    return NexusConnectorOutcomeDTO.builder()
+        .nexusServerUrl(this.nexusServerUrl)
+        .version(this.version)
+        .delegateSelectors(this.delegateSelectors)
+        .auth(NexusAuthenticationOutcomeDTO.builder()
+                  .type(this.auth.getAuthType())
+                  .spec(this.auth.getCredentials())
+                  .build())
+        .build();
   }
 }

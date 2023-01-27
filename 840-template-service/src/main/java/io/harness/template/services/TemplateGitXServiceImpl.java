@@ -9,7 +9,6 @@ package io.harness.template.services;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
 import io.harness.beans.Scope.ScopeBuilder;
 import io.harness.data.structure.EmptyPredicate;
@@ -29,7 +28,6 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.repositories.NGTemplateRepository;
 import io.harness.template.beans.TemplateImportRequestDTO;
 import io.harness.template.entity.TemplateEntity;
-import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
 import io.harness.template.utils.TemplateUtils;
 
 import com.google.inject.Inject;
@@ -47,7 +45,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class TemplateGitXServiceImpl implements TemplateGitXService {
   SCMGitSyncHelper scmGitSyncHelper;
-  NGTemplateFeatureFlagHelperService ngTemplateFeatureFlagHelperService;
   GitSyncSdkService gitSyncSdkService;
 
   NGTemplateRepository templateRepository;
@@ -116,14 +113,11 @@ public class TemplateGitXServiceImpl implements TemplateGitXService {
 
   @Override
   public boolean isNewGitXEnabled(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
-    if (ngTemplateFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.NG_TEMPLATE_GITX)) {
-      if (projectIdentifier != null) {
-        return isGitSimplificationEnabledForAProject(accountIdentifier, orgIdentifier, projectIdentifier);
-      } else {
-        return true;
-      }
+    if (projectIdentifier != null) {
+      return isGitSimplificationEnabledForAProject(accountIdentifier, orgIdentifier, projectIdentifier);
+    } else {
+      return true;
     }
-    return false;
   }
 
   public String checkForFileUniquenessAndGetRepoURL(String accountIdentifier, String orgIdentifier,

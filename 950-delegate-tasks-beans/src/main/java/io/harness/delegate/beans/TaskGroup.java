@@ -106,5 +106,6 @@ public enum TaskGroup {
   ELASTIGROUP,
   GITOPS,
   TAS,
-  CONTAINER_PMS;
+  CONTAINER_PMS,
+  TERRAFORM_CLOUD;
 }

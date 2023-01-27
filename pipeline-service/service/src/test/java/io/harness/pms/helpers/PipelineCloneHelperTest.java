@@ -7,6 +7,7 @@
 
 package io.harness.pms.helpers;
 
+import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.SOUMYAJIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -62,6 +63,7 @@ public class PipelineCloneHelperTest {
   private final String DEST_PIPELINE_IDENTIFIER = "myPipeline_d";
   private final String DEST_PIPELINE_DESCRIPTION = "test description_d";
   private String SOURCE_PIPELINE_YAML;
+  private String SOURCE_PIPELINE_YAML_V1;
 
   @Before
   public void setUp() throws IOException {
@@ -88,6 +90,8 @@ public class PipelineCloneHelperTest {
     String pipeline_yaml_filename = "clonePipelineInput.yaml";
     SOURCE_PIPELINE_YAML = Resources.toString(
         Objects.requireNonNull(classLoader.getResource(pipeline_yaml_filename)), StandardCharsets.UTF_8);
+    SOURCE_PIPELINE_YAML_V1 =
+        Resources.toString(Objects.requireNonNull(classLoader.getResource("pipeline-v1.yaml")), StandardCharsets.UTF_8);
   }
 
   @Test
@@ -195,5 +199,42 @@ public class PipelineCloneHelperTest {
     String yaml =
         pipelineCloneHelper.updatePipelineMetadataInSourceYaml(clonePipelineDTO, SOURCE_PIPELINE_YAML, accountId);
     assertThat(yaml).isNotEqualTo(null);
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testUpdateSourceV1Yaml() throws IOException {
+    String updatedYaml =
+        pipelineCloneHelper.updatePipelineMetadataInSourceYamlV1(clonePipelineDTO, SOURCE_PIPELINE_YAML_V1);
+    ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
+    JsonNode jsonNode = objectMapper.readTree(updatedYaml);
+    assertThat(updatedYaml).isNotNull();
+    assertThat(jsonNode.get("name").asText()).isEqualTo(clonePipelineDTO.getDestinationConfig().getPipelineName());
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testUpdateSourceV1YamlWithoutName() {
+    clonePipelineDTO.getDestinationConfig().setPipelineName(null);
+    assertThatThrownBy(
+        () -> pipelineCloneHelper.updatePipelineMetadataInSourceYamlV1(clonePipelineDTO, SOURCE_PIPELINE_YAML_V1))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(String.format("Destination pipeline name should not be null for pipeline [%s]",
+            clonePipelineDTO.getDestinationConfig().getPipelineIdentifier()));
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testCheckInvalidYamlV1() {
+    String invalidYaml = ":";
+    assertThatThrownBy(() -> pipelineCloneHelper.updatePipelineMetadataInSourceYamlV1(clonePipelineDTO, invalidYaml))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(String.format("Generic Backend Error occurred for pipeline [%s] org [%s] project [%s]",
+            clonePipelineDTO.getSourceConfig().getPipelineIdentifier(),
+            clonePipelineDTO.getSourceConfig().getOrgIdentifier(),
+            clonePipelineDTO.getSourceConfig().getProjectIdentifier()));
   }
 }

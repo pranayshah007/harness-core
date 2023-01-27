@@ -65,7 +65,7 @@ public class ManagerKmsEncryptor implements KmsEncryptor {
                                     .setupAbstractions(managerEncryptorHelper.buildAbstractions(encryptionConfig))
                                     .build();
     try {
-      DelegateResponseData delegateResponseData = delegateService.executeTask(delegateTask);
+      DelegateResponseData delegateResponseData = delegateService.executeTaskV2(delegateTask);
       DelegateTaskUtils.validateDelegateTaskResponse(delegateResponseData);
       if (!(delegateResponseData instanceof EncryptSecretTaskResponse)) {
         throw new SecretManagementException(SECRET_MANAGEMENT_ERROR, "Unknown Response from delegate", USER);

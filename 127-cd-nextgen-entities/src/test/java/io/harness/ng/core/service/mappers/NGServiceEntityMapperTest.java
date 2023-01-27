@@ -51,7 +51,7 @@ public class NGServiceEntityMapperTest {
   @Category(UnitTests.class)
   public void testToNGServiceConfigWithServiceDefinition() {
     String yaml = "service:\n"
-        + "  name: \"sample-service\"\n"
+        + "  name: \"se\"\n"
         + "  identifier: \"serviceId\"\n"
         + "  orgIdentifier: \"orgId\"\n"
         + "  projectIdentifier: \"projectId\"\n"

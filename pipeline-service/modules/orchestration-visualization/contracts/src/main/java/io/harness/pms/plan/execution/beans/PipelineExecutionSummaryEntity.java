@@ -91,7 +91,7 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
 
   @Setter @NonFinal @Id @dev.morphia.annotations.Id String uuid;
 
-  @NotEmpty Integer runSequence;
+  @NotEmpty @Builder.Default Integer runSequence = 0;
   @NotEmpty String accountId;
   @NotEmpty String orgIdentifier;
   @Trimmed @NotEmpty String projectIdentifier;
@@ -162,8 +162,8 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
   PipelineStageInfo parentStageInfo;
   Boolean isLatestExecution;
   // Required Index for PipelineTelemetryPublisher
-  @Setter @NonFinal @SchemaIgnore @FdIndex @CreatedDate Long createdAt;
-  @Setter @NonFinal @SchemaIgnore @NotNull @LastModifiedDate Long lastUpdatedAt;
+  @Setter @NonFinal @SchemaIgnore @FdIndex @CreatedDate @Builder.Default Long createdAt = 0L;
+  @Setter @NonFinal @SchemaIgnore @NotNull @LastModifiedDate @Builder.Default Long lastUpdatedAt = 0L;
   @Setter @NonFinal @Version Long version;
 
   public ExecutionStatus getStatus() {

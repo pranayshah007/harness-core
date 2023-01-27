@@ -69,8 +69,13 @@ import io.harness.pms.pipeline.StepPalleteModuleInfo;
 import io.harness.pms.pipeline.filters.PMSPipelineFilterHelper;
 import io.harness.pms.pipeline.governance.service.PipelineGovernanceService;
 import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
+import io.harness.pms.pipeline.validation.async.beans.Action;
+import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
+import io.harness.pms.pipeline.validation.async.helper.PipelineAsyncValidationHelper;
+import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationService;
 import io.harness.pms.sdk.PmsSdkInstanceService;
 import io.harness.pms.utils.PipelineYamlHelper;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.pipeline.PMSPipelineRepository;
@@ -122,6 +127,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Inject private final PmsFeatureFlagHelper pmsFeatureFlagHelper;
   @Inject private final PipelineSettingsService pipelineSettingsService;
   @Inject private final EntitySetupUsageClient entitySetupUsageClient;
+  @Inject private final PipelineAsyncValidationService pipelineAsyncValidationService;
 
   public static final String CREATING_PIPELINE = "creating new pipeline";
   public static final String UPDATING_PIPELINE = "updating existing pipeline";
@@ -197,11 +203,19 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
 
     String sourcePipelineEntityYaml = sourcePipelineEntity.getYaml();
 
-    String destYaml =
-        pipelineCloneHelper.updatePipelineMetadataInSourceYaml(clonePipelineDTO, sourcePipelineEntityYaml, accountId);
+    String destYaml;
+    String sourcePipelineVersion = sourcePipelineEntity.getHarnessVersion();
+    switch (sourcePipelineVersion) {
+      case PipelineVersion.V1:
+        destYaml = pipelineCloneHelper.updatePipelineMetadataInSourceYamlV1(clonePipelineDTO, sourcePipelineEntityYaml);
+        break;
+      default:
+        destYaml = pipelineCloneHelper.updatePipelineMetadataInSourceYaml(
+            clonePipelineDTO, sourcePipelineEntityYaml, accountId);
+    }
     PipelineEntity destPipelineEntity =
         PMSPipelineDtoMapper.toPipelineEntity(accountId, clonePipelineDTO.getDestinationConfig().getOrgIdentifier(),
-            clonePipelineDTO.getDestinationConfig().getProjectIdentifier(), destYaml);
+            clonePipelineDTO.getDestinationConfig().getProjectIdentifier(), destYaml, false, sourcePipelineVersion);
 
     PipelineCRUDResult pipelineCRUDResult = validateAndCreatePipeline(destPipelineEntity, false);
     GovernanceMetadata destGovernanceMetadata = pipelineCRUDResult.getGovernanceMetadata();
@@ -241,6 +255,27 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   public Optional<PipelineEntity> getAndValidatePipeline(
       String accountId, String orgIdentifier, String projectIdentifier, String identifier, boolean deleted) {
     return getAndValidatePipeline(accountId, orgIdentifier, projectIdentifier, identifier, deleted, false, false);
+  }
+
+  @Override
+  public PipelineGetResult getAndValidatePipeline(String accountId, String orgIdentifier, String projectIdentifier,
+      String pipelineId, boolean deleted, boolean getMetadataOnly, boolean loadFromFallbackBranch,
+      boolean loadFromCache, boolean validateAsync) {
+    Optional<PipelineEntity> pipelineEntity;
+    // if validateAsync is true, then this ID wil be of the event started for the async validation process, which can be
+    // queried on using another API to get the result of the async validation. If validateAsync is false, then this ID
+    // is not needed and will be null
+    String validationUUID = null;
+    if (validateAsync) {
+      PipelineGetResult pipelineEventPair = getPipelineAndAsyncValidationId(
+          accountId, orgIdentifier, projectIdentifier, pipelineId, false, false, loadFromFallbackBranch, loadFromCache);
+      pipelineEntity = pipelineEventPair.getPipelineEntity();
+      validationUUID = pipelineEventPair.getAsyncValidationUUID();
+    } else {
+      pipelineEntity = getAndValidatePipeline(
+          accountId, orgIdentifier, projectIdentifier, pipelineId, false, loadFromFallbackBranch, loadFromCache);
+    }
+    return PipelineGetResult.builder().pipelineEntity(pipelineEntity).asyncValidationUUID(validationUUID).build();
   }
 
   @Override
@@ -308,6 +343,34 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
           PipelineCRUDErrorResponse.errorMessageForPipelineNotFound(orgIdentifier, projectIdentifier, identifier));
     }
     return optionalPipelineEntity;
+  }
+
+  PipelineGetResult getPipelineAndAsyncValidationId(String accountId, String orgIdentifier, String projectIdentifier,
+      String identifier, boolean deleted, boolean getMetadataOnly, boolean loadFromFallbackBranch,
+      boolean loadFromCache) {
+    Optional<PipelineEntity> pipelineEntity;
+    // todo: add schema validations
+    pipelineEntity = getPipeline(accountId, orgIdentifier, projectIdentifier, identifier, deleted, getMetadataOnly,
+        loadFromFallbackBranch, loadFromCache);
+    if (pipelineEntity.isEmpty()) {
+      throw new EntityNotFoundException(
+          String.format("Pipeline with the given ID: %s does not exist or has been deleted.", identifier));
+    }
+    // if the branch in the request is null, then the branch from where the remote pipeline is taken from is set
+    // inside the scm git metadata. Hence, the branch from there is the actual branch we need
+    String branchFromScm = GitAwareContextHelper.getBranchInSCMGitMetadata();
+    String fqn = PipelineAsyncValidationHelper.buildFQN(pipelineEntity.get(), branchFromScm);
+    Optional<PipelineValidationEvent> optionalEvent =
+        pipelineAsyncValidationService.getLatestEventByFQNAndAction(fqn, Action.CRUD);
+    String validationUUID;
+    if (optionalEvent.isPresent()) {
+      validationUUID = optionalEvent.get().getUuid();
+    } else {
+      PipelineValidationEvent newEvent =
+          pipelineAsyncValidationService.startEvent(pipelineEntity.get(), branchFromScm, Action.CRUD);
+      validationUUID = newEvent.getUuid();
+    }
+    return PipelineGetResult.builder().pipelineEntity(pipelineEntity).asyncValidationUUID(validationUUID).build();
   }
 
   @Override

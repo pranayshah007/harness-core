@@ -5,4 +5,5 @@
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
 bash ./replace_configs.sh
+bash ./set_manager_env.sh
 exec ./start_process.sh

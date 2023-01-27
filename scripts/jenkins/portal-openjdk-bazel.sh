@@ -63,6 +63,8 @@ cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh 
 cp -R ../../srm-service/build/container/scripts/ .
 
 cp ../../protocol.info .
+cp ../../srm-service/config/jfr/default.jfc .
+cp ../../srm-service/config/jfr/profile.jfc .
 echo ${JDK} > jdk.txt
 echo ${VERSION} > version.txt
 if [ ! -z ${PURPOSE} ]

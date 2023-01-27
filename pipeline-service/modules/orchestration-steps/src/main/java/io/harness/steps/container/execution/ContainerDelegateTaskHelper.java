@@ -97,7 +97,7 @@ public class ContainerDelegateTaskHelper {
 
     return Failsafe.with(retryPolicy)
         .get(()
-                 -> delegateServiceGrpcClient.submitAsyncTask(
+                 -> delegateServiceGrpcClient.submitAsyncTaskV2(
                      delegateTaskRequest, delegateCallbackTokenSupplier.get(), Duration.ZERO, false));
   }
 

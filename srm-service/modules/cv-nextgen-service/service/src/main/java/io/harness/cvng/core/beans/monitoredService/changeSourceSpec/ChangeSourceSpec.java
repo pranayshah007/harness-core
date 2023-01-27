@@ -15,6 +15,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import io.swagger.annotations.ApiModel;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
@@ -23,13 +24,9 @@ import lombok.experimental.SuperBuilder;
 @Data
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-@JsonSubTypes({
-  @JsonSubTypes.Type(value = HarnessCDChangeSourceSpec.class, name = "HarnessCDNextGen")
-  , @JsonSubTypes.Type(value = PagerDutyChangeSourceSpec.class, name = "PagerDuty"),
-      @JsonSubTypes.Type(value = KubernetesChangeSourceSpec.class, name = "K8sCluster"),
-      @JsonSubTypes.Type(value = HarnessCDCurrentGenChangeSourceSpec.class, name = "HarnessCD")
-})
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = DATA_SOURCE_TYPE, include = JsonTypeInfo.As.EXTERNAL_PROPERTY)
+@ApiModel(description = "This is the change Source entity defined in Harness",
+    subTypes = {HarnessCDCurrentGenChangeSourceSpec.class, HarnessCDChangeSourceSpec.class,
+        PagerDutyChangeSourceSpec.class, KubernetesChangeSourceSpec.class, CustomChangeSourceSpec.class})
 public abstract class ChangeSourceSpec {
   @JsonIgnore public abstract ChangeSourceType getType();
   @JsonIgnore public abstract boolean connectorPresent();

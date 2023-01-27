@@ -17,6 +17,7 @@ import static io.harness.rule.OwnerRule.SOWMYA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.when;
 
@@ -27,12 +28,14 @@ import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.activity.beans.DeploymentActivityResultDTO.TimeSeriesAnalysisSummary;
 import io.harness.cvng.analysis.beans.DeploymentTimeSeriesAnalysisDTO;
 import io.harness.cvng.analysis.beans.Risk;
+import io.harness.cvng.analysis.beans.TimeSeriesRecordDTO;
 import io.harness.cvng.analysis.beans.TransactionMetricInfo;
 import io.harness.cvng.analysis.beans.TransactionMetricInfoSummaryPageDTO;
 import io.harness.cvng.analysis.entities.DeploymentTimeSeriesAnalysis;
 import io.harness.cvng.analysis.services.api.DeploymentTimeSeriesAnalysisService;
 import io.harness.cvng.cdng.beans.v2.AnalysisReason;
 import io.harness.cvng.cdng.beans.v2.AnalysisResult;
+import io.harness.cvng.cdng.beans.v2.AppliedDeploymentAnalysisType;
 import io.harness.cvng.cdng.beans.v2.ControlDataType;
 import io.harness.cvng.cdng.beans.v2.MetricType;
 import io.harness.cvng.cdng.beans.v2.MetricsAnalysis;
@@ -40,8 +43,10 @@ import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.filterParams.DeploymentTimeSeriesAnalysisFilter;
+import io.harness.cvng.core.entities.AppDynamicsCVConfig;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.services.api.CVConfigService;
+import io.harness.cvng.core.services.api.TimeSeriesRecordService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.models.VerificationType;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
@@ -55,6 +60,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -71,6 +77,7 @@ public class DeploymentTimeSeriesAnalysisServiceImplTest extends CvNextGenTestBa
   @Inject private DeploymentTimeSeriesAnalysisService deploymentTimeSeriesAnalysisService;
   @Inject private CVConfigService cvConfigService;
   @Mock private NextGenService nextGenService;
+  @Mock private TimeSeriesRecordService mockedTimeSeriesRecordService;
 
   private String accountId;
   private String identifier;
@@ -79,6 +86,7 @@ public class DeploymentTimeSeriesAnalysisServiceImplTest extends CvNextGenTestBa
   private String orgIdentifier;
   private String envIdentifier;
   private BuilderFactory builderFactory;
+  private List<TimeSeriesRecordDTO> timeSeriesRecordDtos;
 
   @Before
   public void setUp() throws IllegalAccessException {
@@ -100,6 +108,8 @@ public class DeploymentTimeSeriesAnalysisServiceImplTest extends CvNextGenTestBa
                                       .build())
                          .build();
 
+    FieldUtils.writeField(
+        deploymentTimeSeriesAnalysisService, "timeSeriesRecordService", mockedTimeSeriesRecordService, true);
     FieldUtils.writeField(deploymentTimeSeriesAnalysisService, "nextGenService", nextGenService, true);
     when(nextGenService.get(anyString(), anyString(), anyString(), anyString()))
         .thenReturn(Optional.of(ConnectorInfoDTO.builder().name("AppDynamics Connector").build()));
@@ -990,6 +1000,10 @@ public class DeploymentTimeSeriesAnalysisServiceImplTest extends CvNextGenTestBa
   @Owner(developers = DHRUVX)
   @Category(UnitTests.class)
   public void testGetFilteredMetricAnalysesForVerifyStepExecutionId() {
+    timeSeriesRecordDtos = getTimeSeriesRecordDtos();
+    when(mockedTimeSeriesRecordService.getDeploymentMetricTimeSeriesRecordDTOs(any(), any(), any(), any()))
+        .thenReturn(timeSeriesRecordDtos);
+
     VerificationJobInstance verificationJobInstance = createVerificationJobInstance();
     CVConfig cvConfig = verificationJobInstance.getResolvedJob()
                             .getCvConfigs()
@@ -997,12 +1011,15 @@ public class DeploymentTimeSeriesAnalysisServiceImplTest extends CvNextGenTestBa
                             .filter(cvConfig1 -> cvConfig1.getVerificationType() == VerificationType.TIME_SERIES)
                             .collect(Collectors.toList())
                             .get(0);
+    AppDynamicsCVConfig metricCVConfig = (AppDynamicsCVConfig) cvConfig;
+    metricCVConfig.setGroupName("txn");
     String verificationJobInstanceId = verificationJobInstanceService.create(verificationJobInstance);
     String verificationTaskId = verificationTaskService.createDeploymentVerificationTask(
         accountId, cvConfig.getUuid(), verificationJobInstanceId, cvConfig.getType());
 
     deploymentTimeSeriesAnalysisService.save(createDeploymentMetricAnalysis(verificationTaskId));
-
+    verificationJobInstanceService.updateAppliedDeploymentAnalysisTypeForVerificationTaskId(
+        verificationJobInstance.getUuid(), verificationTaskId, AppliedDeploymentAnalysisType.CANARY);
     DeploymentTimeSeriesAnalysisFilter deploymentTimeSeriesAnalysisFilter =
         DeploymentTimeSeriesAnalysisFilter.builder().build();
     List<MetricsAnalysis> metricsAnalyses =
@@ -1010,38 +1027,61 @@ public class DeploymentTimeSeriesAnalysisServiceImplTest extends CvNextGenTestBa
             accountId, verificationJobInstanceId, deploymentTimeSeriesAnalysisFilter);
     assertThat(metricsAnalyses).hasSize(1);
     assertThat(metricsAnalyses.get(0).getMetricName()).isEqualTo("name");
-    assertThat(metricsAnalyses.get(0).getMetricIdentifier()).isNotBlank();
+    assertThat(metricsAnalyses.get(0).getMetricIdentifier()).isEqualTo("identifier");
     assertThat(metricsAnalyses.get(0).getTransactionGroup()).isEqualTo("txn");
-    assertThat(metricsAnalyses.get(0).getHealthSourceIdentifier()).isEqualTo(cvConfig.getFullyQualifiedIdentifier());
+    assertThat(metricsAnalyses.get(0).getHealthSource().getIdentifier())
+        .isEqualTo(cvConfig.getFullyQualifiedIdentifier());
     assertThat(metricsAnalyses.get(0).getAnalysisResult()).isEqualTo(AnalysisResult.UNHEALTHY);
     assertThat(metricsAnalyses.get(0).getMetricType()).isEqualTo(MetricType.PERFORMANCE_OTHER);
     assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getAnalysisResult())
         .isEqualTo(AnalysisResult.NO_ANALYSIS);
     assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getAnalysisReason())
         .isEqualTo(AnalysisReason.NO_CONTROL_DATA);
-    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getAppliedThresholds()).isNull();
-    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getControlNodeIdentifier()).isNull();
-    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getControlDataType())
-        .isEqualTo(ControlDataType.AVERAGE);
-    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getControlData()).hasSize(1);
+    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getAppliedThresholds()).contains("thresholdId");
+    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getControlNodeIdentifier()).isEqualTo("node3");
+    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getControlDataType()).isNull();
+    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getNormalisedControlData()).hasSize(1);
+    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getNormalisedTestData()).hasSize(1);
+
     assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getTestData()).hasSize(1);
+    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getTestData().get(0).getValue()).isEqualTo(22.0);
+    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getTestData().get(0).getTimestampInMillis())
+        .isEqualTo(1980000);
+
+    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getControlData()).hasSize(1);
+    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getControlData().get(0).getValue()).isEqualTo(9.0);
+    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getControlData().get(0).getTimestampInMillis())
+        .isEqualTo(14040000);
 
     assertThat(metricsAnalyses.get(0).getTestDataNodes().get(1).getAnalysisResult())
         .isEqualTo(AnalysisResult.UNHEALTHY);
     assertThat(metricsAnalyses.get(0).getTestDataNodes().get(1).getAnalysisReason())
         .isEqualTo(AnalysisReason.ML_ANALYSIS);
     assertThat(metricsAnalyses.get(0).getTestDataNodes().get(1).getAppliedThresholds()).isNull();
-    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(1).getControlNodeIdentifier()).isNull();
+    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(1).getControlNodeIdentifier()).isEqualTo("node3");
     assertThat(metricsAnalyses.get(0).getTestDataNodes().get(1).getControlDataType())
-        .isEqualTo(ControlDataType.AVERAGE);
-    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(1).getControlData()).hasSize(1);
+        .isEqualTo(ControlDataType.MINIMUM_DEVIATION);
+    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(1).getNormalisedControlData()).hasSize(1);
+    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(1).getNormalisedTestData()).hasSize(1);
+
     assertThat(metricsAnalyses.get(0).getTestDataNodes().get(1).getTestData()).hasSize(1);
+    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(1).getTestData().get(0).getValue()).isEqualTo(2332.0);
+    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(1).getTestData().get(0).getTimestampInMillis())
+        .isEqualTo(265980000);
+
+    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(1).getControlData()).hasSize(1);
+    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(1).getControlData().get(0).getValue()).isEqualTo(9.0);
+    assertThat(metricsAnalyses.get(0).getTestDataNodes().get(1).getControlData().get(0).getTimestampInMillis())
+        .isEqualTo(14040000);
   }
 
   @Test
   @Owner(developers = DHRUVX)
   @Category(UnitTests.class)
   public void testGetFilteredMetricAnalysesForVerifyStepExecutionId_filteredNodeNames() {
+    timeSeriesRecordDtos = getTimeSeriesRecordDtos();
+    when(mockedTimeSeriesRecordService.getDeploymentMetricTimeSeriesRecordDTOs(any(), any(), any(), any()))
+        .thenReturn(timeSeriesRecordDtos);
     VerificationJobInstance verificationJobInstance = createVerificationJobInstance();
     CVConfig cvConfig = verificationJobInstance.getResolvedJob()
                             .getCvConfigs()
@@ -1049,12 +1089,15 @@ public class DeploymentTimeSeriesAnalysisServiceImplTest extends CvNextGenTestBa
                             .filter(cvConfig1 -> cvConfig1.getVerificationType() == VerificationType.TIME_SERIES)
                             .collect(Collectors.toList())
                             .get(0);
+    AppDynamicsCVConfig metricCVConfig = (AppDynamicsCVConfig) cvConfig;
+    metricCVConfig.setGroupName("txn");
     String verificationJobInstanceId = verificationJobInstanceService.create(verificationJobInstance);
     String verificationTaskId = verificationTaskService.createDeploymentVerificationTask(
         accountId, cvConfig.getUuid(), verificationJobInstanceId, cvConfig.getType());
 
     deploymentTimeSeriesAnalysisService.save(createDeploymentMetricAnalysis(verificationTaskId));
-
+    verificationJobInstanceService.updateAppliedDeploymentAnalysisTypeForVerificationTaskId(
+        verificationJobInstance.getUuid(), verificationTaskId, AppliedDeploymentAnalysisType.CANARY);
     DeploymentTimeSeriesAnalysisFilter deploymentTimeSeriesAnalysisFilter =
         DeploymentTimeSeriesAnalysisFilter.builder().hostNames(List.of("node1")).build();
     List<MetricsAnalysis> metricsAnalyses =
@@ -1064,7 +1107,8 @@ public class DeploymentTimeSeriesAnalysisServiceImplTest extends CvNextGenTestBa
     assertThat(metricsAnalyses.get(0).getMetricName()).isEqualTo("name");
     assertThat(metricsAnalyses.get(0).getMetricIdentifier()).isNotBlank();
     assertThat(metricsAnalyses.get(0).getTransactionGroup()).isEqualTo("txn");
-    assertThat(metricsAnalyses.get(0).getHealthSourceIdentifier()).isEqualTo(cvConfig.getFullyQualifiedIdentifier());
+    assertThat(metricsAnalyses.get(0).getHealthSource().getIdentifier())
+        .isEqualTo(cvConfig.getFullyQualifiedIdentifier());
     assertThat(metricsAnalyses.get(0).getAnalysisResult()).isEqualTo(AnalysisResult.UNHEALTHY);
     assertThat(metricsAnalyses.get(0).getMetricType()).isEqualTo(MetricType.PERFORMANCE_OTHER);
     assertThat(metricsAnalyses.get(0).getTestDataNodes()).hasSize(1);
@@ -1075,6 +1119,9 @@ public class DeploymentTimeSeriesAnalysisServiceImplTest extends CvNextGenTestBa
   @Owner(developers = DHRUVX)
   @Category(UnitTests.class)
   public void testGetFilteredMetricAnalysesForVerifyStepExecutionId_filteredAnalysisResult() {
+    timeSeriesRecordDtos = getTimeSeriesRecordDtos();
+    when(mockedTimeSeriesRecordService.getDeploymentMetricTimeSeriesRecordDTOs(any(), any(), any(), any()))
+        .thenReturn(timeSeriesRecordDtos);
     VerificationJobInstance verificationJobInstance = createVerificationJobInstance();
     CVConfig cvConfig = verificationJobInstance.getResolvedJob()
                             .getCvConfigs()
@@ -1082,12 +1129,15 @@ public class DeploymentTimeSeriesAnalysisServiceImplTest extends CvNextGenTestBa
                             .filter(cvConfig1 -> cvConfig1.getVerificationType() == VerificationType.TIME_SERIES)
                             .collect(Collectors.toList())
                             .get(0);
+    AppDynamicsCVConfig metricCVConfig = (AppDynamicsCVConfig) cvConfig;
+    metricCVConfig.setGroupName("txn");
     String verificationJobInstanceId = verificationJobInstanceService.create(verificationJobInstance);
     String verificationTaskId = verificationTaskService.createDeploymentVerificationTask(
         accountId, cvConfig.getUuid(), verificationJobInstanceId, cvConfig.getType());
 
     deploymentTimeSeriesAnalysisService.save(createDeploymentMetricAnalysis(verificationTaskId));
-
+    verificationJobInstanceService.updateAppliedDeploymentAnalysisTypeForVerificationTaskId(
+        verificationJobInstance.getUuid(), verificationTaskId, AppliedDeploymentAnalysisType.CANARY);
     DeploymentTimeSeriesAnalysisFilter deploymentTimeSeriesAnalysisFilter =
         DeploymentTimeSeriesAnalysisFilter.builder().anomalousNodesOnly(true).anomalousMetricsOnly(true).build();
     List<MetricsAnalysis> metricsAnalyses =
@@ -1097,7 +1147,8 @@ public class DeploymentTimeSeriesAnalysisServiceImplTest extends CvNextGenTestBa
     assertThat(metricsAnalyses.get(0).getMetricName()).isEqualTo("name");
     assertThat(metricsAnalyses.get(0).getMetricIdentifier()).isNotBlank();
     assertThat(metricsAnalyses.get(0).getTransactionGroup()).isEqualTo("txn");
-    assertThat(metricsAnalyses.get(0).getHealthSourceIdentifier()).isEqualTo(cvConfig.getFullyQualifiedIdentifier());
+    assertThat(metricsAnalyses.get(0).getHealthSource().getIdentifier())
+        .isEqualTo(cvConfig.getFullyQualifiedIdentifier());
     assertThat(metricsAnalyses.get(0).getAnalysisResult()).isEqualTo(AnalysisResult.UNHEALTHY);
     assertThat(metricsAnalyses.get(0).getMetricType()).isEqualTo(MetricType.PERFORMANCE_OTHER);
     assertThat(metricsAnalyses.get(0).getTestDataNodes()).hasSize(1);
@@ -1115,12 +1166,15 @@ public class DeploymentTimeSeriesAnalysisServiceImplTest extends CvNextGenTestBa
                             .filter(cvConfig1 -> cvConfig1.getVerificationType() == VerificationType.TIME_SERIES)
                             .collect(Collectors.toList())
                             .get(0);
+    AppDynamicsCVConfig metricCVConfig = (AppDynamicsCVConfig) cvConfig;
+    metricCVConfig.setGroupName("node2");
     String verificationJobInstanceId = verificationJobInstanceService.create(verificationJobInstance);
     String verificationTaskId = verificationTaskService.createDeploymentVerificationTask(
         accountId, cvConfig.getUuid(), verificationJobInstanceId, cvConfig.getType());
 
     deploymentTimeSeriesAnalysisService.save(createDeploymentMetricAnalysis(verificationTaskId));
-
+    verificationJobInstanceService.updateAppliedDeploymentAnalysisTypeForVerificationTaskId(
+        verificationJobInstance.getUuid(), verificationTaskId, AppliedDeploymentAnalysisType.CANARY);
     DeploymentTimeSeriesAnalysisFilter deploymentTimeSeriesAnalysisFilter =
         DeploymentTimeSeriesAnalysisFilter.builder().transactionNames(List.of("node1")).build();
     List<MetricsAnalysis> metricsAnalyses =
@@ -1148,12 +1202,24 @@ public class DeploymentTimeSeriesAnalysisServiceImplTest extends CvNextGenTestBa
 
   private DeploymentTimeSeriesAnalysisDTO.HostData createHostData(
       String hostName, int risk, Double score, List<Double> controlData, List<Double> testData) {
+    return createHostData(hostName, risk, score, controlData, testData, Collections.EMPTY_LIST);
+  }
+
+  private DeploymentTimeSeriesAnalysisDTO.HostData createHostData(String hostName, int risk, Double score,
+      List<Double> controlData, List<Double> testData, List<String> appliedThresholdIds) {
+    return createHostData(hostName, risk, score, controlData, testData, appliedThresholdIds, null);
+  }
+
+  private DeploymentTimeSeriesAnalysisDTO.HostData createHostData(String hostName, int risk, Double score,
+      List<Double> controlData, List<Double> testData, List<String> appliedThresholdIds, String controlNode) {
     return DeploymentTimeSeriesAnalysisDTO.HostData.builder()
         .hostName(hostName)
         .risk(risk)
         .score(score)
         .controlData(controlData)
         .testData(testData)
+        .appliedThresholdIds(appliedThresholdIds)
+        .nearestControlHost(controlNode)
         .build();
   }
 
@@ -1227,11 +1293,14 @@ public class DeploymentTimeSeriesAnalysisServiceImplTest extends CvNextGenTestBa
   private DeploymentTimeSeriesAnalysis createDeploymentMetricAnalysis(String verificationTaskId) {
     DeploymentTimeSeriesAnalysisDTO.HostInfo hostInfo1 = createHostInfo("node1", -1, 0.0, false, true);
     DeploymentTimeSeriesAnalysisDTO.HostInfo hostInfo2 = createHostInfo("node2", 2, 2.2, false, true);
-    DeploymentTimeSeriesAnalysisDTO.HostData hostData1 = createHostData("node1", -1, 0.0, List.of(1D), List.of(1D));
-    DeploymentTimeSeriesAnalysisDTO.HostData hostData2 = createHostData("node2", 2, 2.0, List.of(1D), List.of(1D));
+    DeploymentTimeSeriesAnalysisDTO.HostInfo hostInfo3 = createHostInfo("node3", 2, 2.2, true, false);
 
+    DeploymentTimeSeriesAnalysisDTO.HostData hostData1 =
+        createHostData("node1", -1, 0.0, List.of(1D), List.of(1D), List.of("thresholdId"), "node3");
+    DeploymentTimeSeriesAnalysisDTO.HostData hostData2 =
+        createHostData("node2", 2, 2.0, List.of(1D), List.of(1D), Collections.emptyList(), "node3");
     DeploymentTimeSeriesAnalysisDTO.TransactionMetricHostData transactionMetricHostData1 =
-        createTransactionMetricHostData("txn", "name", 2, 0.5, Arrays.asList(hostData1, hostData2));
+        createTransactionMetricHostData("txn", "identifier", 2, 0.5, Arrays.asList(hostData1, hostData2));
 
     return DeploymentTimeSeriesAnalysis.builder()
         .accountId(accountId)
@@ -1239,7 +1308,7 @@ public class DeploymentTimeSeriesAnalysisServiceImplTest extends CvNextGenTestBa
         .risk(Risk.UNHEALTHY)
         .verificationTaskId(verificationTaskId)
         .transactionMetricSummaries(List.of(transactionMetricHostData1))
-        .hostSummaries(Arrays.asList(hostInfo1, hostInfo2))
+        .hostSummaries(Arrays.asList(hostInfo1, hostInfo2, hostInfo3))
         .startTime(Instant.now())
         .endTime(Instant.now().plus(1, ChronoUnit.MINUTES))
         .build();
@@ -1248,5 +1317,28 @@ public class DeploymentTimeSeriesAnalysisServiceImplTest extends CvNextGenTestBa
   private CVConfig createCVConfig() {
     CVConfig cvConfig = builderFactory.appDynamicsCVConfigBuilder().build();
     return cvConfigService.save(cvConfig);
+  }
+
+  private List<TimeSeriesRecordDTO> getTimeSeriesRecordDtos() {
+    List<TimeSeriesRecordDTO> timeSeriesRecordDtos = new ArrayList<>();
+    timeSeriesRecordDtos.add(TimeSeriesRecordDTO.builder()
+                                 .metricIdentifier("identifier")
+                                 .metricValue(22.0)
+                                 .epochMinute(33L)
+                                 .host("node1")
+                                 .build());
+    timeSeriesRecordDtos.add(TimeSeriesRecordDTO.builder()
+                                 .metricIdentifier("identifier")
+                                 .metricValue(2332.0)
+                                 .epochMinute(4433L)
+                                 .host("node2")
+                                 .build());
+    timeSeriesRecordDtos.add(TimeSeriesRecordDTO.builder()
+                                 .metricIdentifier("identifier")
+                                 .metricValue(9.0)
+                                 .epochMinute(234L)
+                                 .host("node3")
+                                 .build());
+    return timeSeriesRecordDtos;
   }
 }

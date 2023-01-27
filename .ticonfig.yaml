@@ -20,3 +20,4 @@ config:
     - "**/*.hash"
     - "toolset/git-hooks/**/*"
     - "**/build.properties"
+    - "332-ci-manager/config/ci-manager-config.yml"

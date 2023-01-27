@@ -7,6 +7,7 @@
 
 package io.harness.template.resources;
 
+import static io.harness.NGCommonEntityConstants.FORCE_DELETE_MESSAGE;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
@@ -28,7 +29,6 @@ import io.harness.customDeployment.remote.CustomDeploymentResourceClient;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
-import io.harness.exception.InvalidRequestException;
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.helper.GitImportInfoDTO;
 import io.harness.gitsync.beans.StoreType;
@@ -107,6 +107,7 @@ import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -215,7 +216,7 @@ public class NGTemplateResource {
     }
     TemplateResponseDTO templateResponseDTO = NGTemplateDtoMapper.writeTemplateResponseDto(templateEntity.orElseThrow(
         ()
-            -> new InvalidRequestException(String.format(
+            -> new NotFoundException(String.format(
                 "Template with the given Identifier: %s and %s does not exist or has been deleted", templateIdentifier,
                 EmptyPredicate.isEmpty(versionLabel) ? "stable versionLabel" : "versionLabel: " + versionLabel))));
     return ResponseDTO.newResponse(version, templateResponseDTO);
@@ -367,13 +368,15 @@ public class NGTemplateResource {
       @Parameter(description = "Version Label") @NotNull @PathParam(
           NGCommonEntityConstants.VERSION_LABEL_KEY) String versionLabel,
       @Parameter(description = "This contains details of Git Entity like Git Branch information to be deleted")
-      @BeanParam GitEntityDeleteInfoDTO entityDeleteInfo, @QueryParam("comments") String comments) {
+      @BeanParam GitEntityDeleteInfoDTO entityDeleteInfo, @QueryParam("comments") String comments,
+      @Parameter(description = FORCE_DELETE_MESSAGE) @QueryParam(NGCommonEntityConstants.FORCE_DELETE) @DefaultValue(
+          "false") boolean forceDelete) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
         Resource.of(TEMPLATE, templateIdentifier), PermissionTypes.TEMPLATE_DELETE_PERMISSION);
     log.info(String.format("Deleting Template with identifier %s and versionLabel %s in project %s, org %s, account %s",
         templateIdentifier, versionLabel, projectId, orgId, accountId));
     return ResponseDTO.newResponse(templateService.delete(accountId, orgId, projectId, templateIdentifier, versionLabel,
-        isNumeric(ifMatch) ? parseLong(ifMatch) : null, comments));
+        isNumeric(ifMatch) ? parseLong(ifMatch) : null, comments, forceDelete));
   }
 
   @DELETE
@@ -400,14 +403,16 @@ public class NGTemplateResource {
       @Body TemplateDeleteListRequestDTO templateDeleteListRequestDTO,
       @Parameter(description = "This contains details of Git Entity like Git Branch information to be deleted")
       @BeanParam GitEntityDeleteInfoDTO entityDeleteInfo,
-      @Parameter(description = "Comments") @QueryParam("comments") String comments) {
+      @Parameter(description = "Comments") @QueryParam("comments") String comments,
+      @Parameter(description = FORCE_DELETE_MESSAGE) @QueryParam(NGCommonEntityConstants.FORCE_DELETE) @DefaultValue(
+          "false") boolean forceDelete) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
         Resource.of(TEMPLATE, templateIdentifier), PermissionTypes.TEMPLATE_DELETE_PERMISSION);
     log.info(
         String.format("Deleting Template with identifier %s and versionLabel list %s in project %s, org %s, account %s",
             templateIdentifier, templateDeleteListRequestDTO.toString(), projectId, orgId, accountId));
     return ResponseDTO.newResponse(templateService.deleteTemplates(accountId, orgId, projectId, templateIdentifier,
-        new HashSet<>(templateDeleteListRequestDTO.getTemplateVersionLabels()), comments));
+        new HashSet<>(templateDeleteListRequestDTO.getTemplateVersionLabels()), comments, forceDelete));
   }
 
   @POST

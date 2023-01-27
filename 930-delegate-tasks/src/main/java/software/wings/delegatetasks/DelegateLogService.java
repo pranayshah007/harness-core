@@ -11,7 +11,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.cvng.beans.cvnglog.CVNGLogDTO;
 
-import software.wings.beans.Log;
+import software.wings.beans.dto.Log;
 import software.wings.service.impl.ThirdPartyApiCallLog;
 import software.wings.verification.CVActivityLog;
 

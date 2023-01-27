@@ -54,7 +54,6 @@ public class CommonStepInfo {
           .setName("Email")
           .setType("Email")
           .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Utilities/Non-Scripted").build())
-          .setFeatureFlag(FeatureName.NG_EMAIL_STEP.name())
           .build();
   StepInfo harnessApprovalStepInfo =
       StepInfo.newBuilder()

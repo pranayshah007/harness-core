@@ -289,7 +289,6 @@ public class CfCommandTaskHelperNG {
         (JenkinsTasArtifactRequestDetails) artifactConfig.getArtifactDetails();
     validateJenkinsArtifact(artifactConfig, jenkinsTasArtifactRequestDetails, logCallback);
     Pair<String, InputStream> pair = null;
-    Jenkins jenkins = configureJenkins(artifactConfig);
 
     try {
       JenkinsConnectorDTO jenkinsConnectorDto = (JenkinsConnectorDTO) artifactConfig.getConnectorConfig();
@@ -301,6 +300,7 @@ public class CfCommandTaskHelperNG {
                     jenkinsTasArtifactRequestDetails.getJobName(), jenkinsTasArtifactRequestDetails.getBuild(),
                     jenkinsTasArtifactRequestDetails.getArtifactPath()),
               White, Bold));
+      Jenkins jenkins = configureJenkins(artifactConfig);
       if (!isNull(jenkins)) {
         pair = jenkins.downloadArtifact(jenkinsTasArtifactRequestDetails.getJobName(),
             jenkinsTasArtifactRequestDetails.getBuild(), jenkinsTasArtifactRequestDetails.getArtifactPath());
@@ -648,6 +648,11 @@ public class CfCommandTaskHelperNG {
       throws PivotalClientApiException {
     cfRequestConfig.setApplicationName(cfDeployCommandRequestNG.getNewReleaseName());
     cfRequestConfig.setDesiredCount(cfDeployCommandRequestNG.getUpsizeCount());
+    return cfDeploymentManager.getApplicationByName(cfRequestConfig);
+  }
+
+  public ApplicationDetail getApplicationDetails(
+      CfRequestConfig cfRequestConfig, CfDeploymentManager cfDeploymentManager) throws PivotalClientApiException {
     return cfDeploymentManager.getApplicationByName(cfRequestConfig);
   }
 
@@ -1002,6 +1007,14 @@ public class CfCommandTaskHelperNG {
       LogCallback logCallback) throws PivotalClientApiException {
     autoscalarRequestData.setApplicationName(oldAppInfo.getApplicationName());
     autoscalarRequestData.setApplicationGuid(oldAppInfo.getApplicationGuid());
+    autoscalarRequestData.setExpectedEnabled(false);
+    cfDeploymentManager.changeAutoscalarState(autoscalarRequestData, logCallback, true);
+  }
+
+  public void enableAutoscalerIfNeeded(ApplicationDetail applicationDetail,
+      CfAppAutoscalarRequestData autoscalarRequestData, LogCallback logCallback) throws PivotalClientApiException {
+    autoscalarRequestData.setApplicationName(applicationDetail.getName());
+    autoscalarRequestData.setApplicationGuid(applicationDetail.getId());
     autoscalarRequestData.setExpectedEnabled(false);
     cfDeploymentManager.changeAutoscalarState(autoscalarRequestData, logCallback, true);
   }

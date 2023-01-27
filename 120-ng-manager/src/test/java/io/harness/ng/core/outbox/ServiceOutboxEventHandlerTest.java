@@ -75,6 +75,7 @@ public class ServiceOutboxEventHandlerTest extends CategoryTest {
     String identifier = randomAlphabetic(10);
     ServiceEntity service = ServiceEntity.builder()
                                 .identifier(identifier)
+                                .accountId(accountIdentifier)
                                 .orgIdentifier(orgIdentifier)
                                 .projectIdentifier(projectIdentifier)
                                 .build();
@@ -124,6 +125,7 @@ public class ServiceOutboxEventHandlerTest extends CategoryTest {
     String identifier = randomAlphabetic(10);
     ServiceEntity service = ServiceEntity.builder()
                                 .identifier(identifier)
+                                .accountId(accountIdentifier)
                                 .orgIdentifier(orgIdentifier)
                                 .projectIdentifier(projectIdentifier)
                                 .build();
@@ -173,6 +175,7 @@ public class ServiceOutboxEventHandlerTest extends CategoryTest {
     String identifier = randomAlphabetic(10);
     ServiceEntity newService = ServiceEntity.builder()
                                    .identifier(identifier)
+                                   .accountId(accountIdentifier)
                                    .orgIdentifier(orgIdentifier)
                                    .projectIdentifier(projectIdentifier)
                                    .build();
@@ -229,6 +232,7 @@ public class ServiceOutboxEventHandlerTest extends CategoryTest {
     String identifier = randomAlphabetic(10);
     ServiceEntity service = ServiceEntity.builder()
                                 .identifier(identifier)
+                                .accountId(accountIdentifier)
                                 .orgIdentifier(orgIdentifier)
                                 .projectIdentifier(projectIdentifier)
                                 .build();

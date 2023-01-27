@@ -25,6 +25,7 @@ import io.harness.pms.yaml.ParameterField;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import lombok.experimental.UtilityClass;
 
 @OwnedBy(CDP)
@@ -76,8 +77,10 @@ public class TerragruntTestStepUtils {
     RemoteTerragruntVarFileSpec remoteTerragruntVarFileSpec = new RemoteTerragruntVarFileSpec();
 
     storeVarFiles = GithubStore.builder()
+                        .repoName(ParameterField.createValueField("test-repo-name-var-file"))
                         .branch(ParameterField.createValueField(gitStoreVarFiles.getBranch()))
                         .gitFetchType(gitStoreVarFiles.getFetchType())
+                        .paths(ParameterField.createValueField(List.of("path/to")))
                         .folderPath(ParameterField.createValueField(gitStoreVarFiles.getFolderPath().getValue()))
                         .connectorRef(ParameterField.createValueField(gitStoreVarFiles.getConnectoref().getValue()))
                         .build();
@@ -102,6 +105,7 @@ public class TerragruntTestStepUtils {
 
     StoreConfig storeBackend;
     storeBackend = GithubStore.builder()
+                       .repoName(ParameterField.createValueField("test-repo-name-be-file"))
                        .branch(ParameterField.createValueField(gitStoreBackend.getBranch()))
                        .gitFetchType(gitStoreBackend.getFetchType())
                        .folderPath(ParameterField.createValueField(gitStoreBackend.getFolderPath().getValue()))
@@ -135,7 +139,7 @@ public class TerragruntTestStepUtils {
 
   public LinkedHashMap<String, TerragruntVarFile> createVarFilesInline() {
     InlineTerragruntVarFileSpec inlineTerragruntVarFileSpec = new InlineTerragruntVarFileSpec();
-    inlineTerragruntVarFileSpec.setContent(ParameterField.createValueField("test-backendContent"));
+    inlineTerragruntVarFileSpec.setContent(ParameterField.createValueField("test-varFile-Content"));
     LinkedHashMap<String, TerragruntVarFile> varFilesMap = new LinkedHashMap<>();
     varFilesMap.put("var-file-01",
         TerragruntVarFile.builder().identifier("var-file-01").type("Inline").spec(inlineTerragruntVarFileSpec).build());

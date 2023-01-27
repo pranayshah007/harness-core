@@ -11,16 +11,19 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EncryptedData;
 import io.harness.beans.SecretManagerConfig;
+import io.harness.encryption.Scope;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.dto.secrets.SecretDTOV2.SecretDTOV2Builder;
 import io.harness.ng.core.dto.secrets.SecretTextSpecDTO;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.dto.SecretManagerCreatedDTO;
+import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.secretmanagerclient.SecretType;
 import io.harness.secretmanagerclient.ValueType;
 
 import software.wings.ngmigration.CgEntityId;
+import software.wings.ngmigration.NGMigrationEntityType;
 
 import java.util.Map;
 
@@ -38,12 +41,17 @@ public interface SecretMigrator {
 
   default SecretDTOV2 getSecretDTO(SecretManagerConfig secretsManagerConfig, MigrationInputDTO inputDTO,
       String secretIdentifier, String actualSecret) {
+    Scope scope = MigratorUtility.getDefaultScope(inputDTO,
+        CgEntityId.builder().type(NGMigrationEntityType.SECRET_MANAGER).id(secretsManagerConfig.getUuid()).build(),
+        Scope.PROJECT);
+    String projectIdentifier = MigratorUtility.getProjectIdentifier(scope, inputDTO);
+    String orgIdentifier = MigratorUtility.getOrgIdentifier(scope, inputDTO);
     return SecretDTOV2.builder()
         .identifier(secretIdentifier)
         .name(secretIdentifier)
         .description(String.format("Auto Generated Secret for Secret Manager - %s", secretsManagerConfig.getName()))
-        .orgIdentifier(inputDTO.getOrgIdentifier())
-        .projectIdentifier(inputDTO.getProjectIdentifier())
+        .orgIdentifier(orgIdentifier)
+        .projectIdentifier(projectIdentifier)
         .type(SecretType.SecretText)
         .spec(SecretTextSpecDTO.builder()
                   .secretManagerIdentifier("harnessSecretManager")

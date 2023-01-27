@@ -2,30 +2,35 @@
   {
     "txnName": "default",
     "metricName": "Mem_UsedPercent",
+    "metricIdentifier": "Mem_UsedPercent",
     "metricValue": 11.932826052802167,
     "timestamp": 1671103020000
   },
   {
     "txnName": "default",
     "metricName": "Mem_UsedPercent",
+    "metricIdentifier": "Mem_UsedPercent",
     "metricValue": 11.894973040846411,
     "timestamp": 1671103200000
   },
   {
     "txnName": "default",
     "metricName": "Mem_UsedPercent",
+    "metricIdentifier": "Mem_UsedPercent",
     "metricValue": 11.947571916935459,
     "timestamp": 1671102960000
   },
   {
     "txnName": "default",
     "metricName": "Mem_UsedPercent",
+    "metricIdentifier": "Mem_UsedPercent",
     "metricValue": 11.898629575341108,
     "timestamp": 1671103080000
   },
   {
     "txnName": "default",
     "metricName": "Mem_UsedPercent",
+    "metricIdentifier": "Mem_UsedPercent",
     "metricValue": 11.887580561652495,
     "timestamp": 1671103140000
   }

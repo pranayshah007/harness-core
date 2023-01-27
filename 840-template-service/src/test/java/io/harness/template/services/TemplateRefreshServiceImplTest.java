@@ -7,6 +7,7 @@
 
 package io.harness.template.services;
 
+import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.template.resources.NGTemplateResource.TEMPLATE;
 
@@ -87,8 +88,9 @@ public class TemplateRefreshServiceImplTest extends TemplateServiceTestBase {
     when(templateService.get(anyString(), anyString(), anyString(), anyString(), anyString(), eq(false), eq(false)))
         .thenReturn(Optional.empty());
 
-    assertThatThrownBy(
-        () -> templateRefreshService.refreshAndUpdateTemplate(ACCOUNT_ID, ORG_ID, PROJECT_ID, TEMPLATE_IDENTIFIER, "1"))
+    assertThatThrownBy(()
+                           -> templateRefreshService.refreshAndUpdateTemplate(
+                               ACCOUNT_ID, ORG_ID, PROJECT_ID, TEMPLATE_IDENTIFIER, "1", false))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(
             String.format("Template with the Identifier %s and versionLabel %s does not exist or has been deleted",
@@ -104,9 +106,34 @@ public class TemplateRefreshServiceImplTest extends TemplateServiceTestBase {
     String stageTemplateIdentifier = "stageTemplate";
     when(templateService.get(anyString(), anyString(), anyString(), anyString(), anyString(), eq(false), eq(false)))
         .thenReturn(Optional.of(TemplateEntity.builder().yaml(yaml).build()));
-    when(templateInputsRefreshHelper.refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, yaml)).thenReturn(updatedYaml);
+    when(templateInputsRefreshHelper.refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, yaml, false))
+        .thenReturn(updatedYaml);
 
-    templateRefreshService.refreshAndUpdateTemplate(ACCOUNT_ID, ORG_ID, PROJECT_ID, stageTemplateIdentifier, "1");
+    templateRefreshService.refreshAndUpdateTemplate(
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, stageTemplateIdentifier, "1", false);
+
+    ArgumentCaptor<TemplateEntity> templateEntityArgumentCaptor = ArgumentCaptor.forClass(TemplateEntity.class);
+    verify(templateService)
+        .updateTemplateEntity(
+            templateEntityArgumentCaptor.capture(), eq(ChangeType.MODIFY), eq(false), eq("Refreshed template inputs"));
+    TemplateEntity templateEntity = templateEntityArgumentCaptor.getValue();
+    assertThat(templateEntity).isNotNull();
+    assertThat(templateEntity.getYaml()).isEqualTo(updatedYaml);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void shouldRefreshAndUpdateTemplateWithCaching() {
+    String yaml = "Some yaml, as actual yaml not required for test";
+    String updatedYaml = readFile("stage-template.yaml");
+    String stageTemplateIdentifier = "stageTemplate";
+    when(templateService.get(anyString(), anyString(), anyString(), anyString(), anyString(), eq(false), eq(true)))
+        .thenReturn(Optional.of(TemplateEntity.builder().yaml(yaml).build()));
+    when(templateInputsRefreshHelper.refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, yaml, true))
+        .thenReturn(updatedYaml);
+
+    templateRefreshService.refreshAndUpdateTemplate(ACCOUNT_ID, ORG_ID, PROJECT_ID, stageTemplateIdentifier, "1", true);
 
     ArgumentCaptor<TemplateEntity> templateEntityArgumentCaptor = ArgumentCaptor.forClass(TemplateEntity.class);
     verify(templateService)
@@ -134,7 +161,30 @@ public class TemplateRefreshServiceImplTest extends TemplateServiceTestBase {
                         .build());
 
     ValidateTemplateInputsResponseDTO responseDTO = templateRefreshService.validateTemplateInputsInTemplate(
-        ACCOUNT_ID, ORG_ID, PROJECT_ID, stageTemplateIdentifier, "1");
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, stageTemplateIdentifier, "1", false);
+
+    assertThat(responseDTO).isNotNull();
+    assertThat(responseDTO.isValidYaml()).isTrue();
+    assertThat(responseDTO.getErrorNodeSummary()).isNull();
+  }
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void shouldValidateTemplateInputsForCorrectYamlWithCaching() {
+    String yaml = "Some yaml, as actual yaml not required for test";
+    String stageTemplateIdentifier = "stageTemplate";
+    TemplateEntity templateEntity = TemplateEntity.builder().yaml(yaml).build();
+    when(templateService.get(anyString(), anyString(), anyString(), anyString(), anyString(), eq(false), eq(true)))
+        .thenReturn(Optional.of(templateEntity));
+    when(templateInputsValidator.validateNestedTemplateInputsForTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID,
+             new TemplateEntityGetResponse(templateEntity, EntityGitDetails.builder().build())))
+        .thenReturn(ValidateTemplateInputsResponseDTO.builder()
+                        .validYaml(true)
+                        .errorNodeSummary(ErrorNodeSummary.builder().build())
+                        .build());
+
+    ValidateTemplateInputsResponseDTO responseDTO = templateRefreshService.validateTemplateInputsInTemplate(
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, stageTemplateIdentifier, "1", true);
 
     assertThat(responseDTO).isNotNull();
     assertThat(responseDTO.isValidYaml()).isTrue();
@@ -162,7 +212,7 @@ public class TemplateRefreshServiceImplTest extends TemplateServiceTestBase {
             ValidateTemplateInputsResponseDTO.builder().validYaml(false).errorNodeSummary(errorNodeSummary).build());
 
     ValidateTemplateInputsResponseDTO responseDTO = templateRefreshService.validateTemplateInputsInTemplate(
-        ACCOUNT_ID, ORG_ID, PROJECT_ID, stageTemplateIdentifier, "1");
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, stageTemplateIdentifier, "1", false);
 
     assertThat(responseDTO).isNotNull();
     assertThat(responseDTO.isValidYaml()).isFalse();
@@ -179,10 +229,32 @@ public class TemplateRefreshServiceImplTest extends TemplateServiceTestBase {
     TemplateEntity templateEntity = TemplateEntity.builder().yaml(yaml).build();
     when(templateService.get(anyString(), anyString(), anyString(), anyString(), anyString(), eq(false), eq(false)))
         .thenReturn(Optional.of(templateEntity));
-    when(templateInputsRefreshHelper.refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, yaml)).thenReturn(updatedYaml);
+    when(templateInputsRefreshHelper.refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, yaml, false))
+        .thenReturn(updatedYaml);
 
     YamlDiffResponseDTO responseDTO = templateRefreshService.getYamlDiffOnRefreshingTemplate(
-        ACCOUNT_ID, ORG_ID, PROJECT_ID, stageTemplateIdentifier, "1");
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, stageTemplateIdentifier, "1", false);
+
+    assertThat(responseDTO).isNotNull();
+    assertThat(responseDTO.getOriginalYaml()).isEqualTo(yaml);
+    assertThat(responseDTO.getRefreshedYaml()).isEqualTo(updatedYaml);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testGetYamlDiffOnRefreshingTemplateWithCaching() {
+    String yaml = "Some yaml, as actual yaml not required for test";
+    String updatedYaml = "updatedYaml";
+    String stageTemplateIdentifier = "stageTemplate";
+    TemplateEntity templateEntity = TemplateEntity.builder().yaml(yaml).build();
+    when(templateService.get(anyString(), anyString(), anyString(), anyString(), anyString(), eq(false), eq(true)))
+        .thenReturn(Optional.of(templateEntity));
+    when(templateInputsRefreshHelper.refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, yaml, true))
+        .thenReturn(updatedYaml);
+
+    YamlDiffResponseDTO responseDTO = templateRefreshService.getYamlDiffOnRefreshingTemplate(
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, stageTemplateIdentifier, "1", true);
 
     assertThat(responseDTO).isNotNull();
     assertThat(responseDTO.getOriginalYaml()).isEqualTo(yaml);
@@ -209,8 +281,37 @@ public class TemplateRefreshServiceImplTest extends TemplateServiceTestBase {
         .thenReturn(
             ValidateTemplateInputsResponseDTO.builder().validYaml(true).errorNodeSummary(errorNodeSummary).build());
 
-    templateRefreshService.recursivelyRefreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, stageTemplateIdentifier, "1");
+    templateRefreshService.recursivelyRefreshTemplates(
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, stageTemplateIdentifier, "1", false);
     verify(templateService, times(1)).get(ACCOUNT_ID, ORG_ID, PROJECT_ID, stageTemplateIdentifier, "1", false, false);
+    verify(templateInputsValidator)
+        .validateNestedTemplateInputsForTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID,
+            new TemplateEntityGetResponse(templateEntity, EntityGitDetails.builder().build()));
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testRecursivelyRefreshTemplatesForValidYamlWithCaching() {
+    String yaml = "Some yaml, as actual yaml not required for test";
+    String stageTemplateIdentifier = "stageTemplate";
+    TemplateEntity templateEntity = TemplateEntity.builder().yaml(yaml).build();
+    ErrorNodeSummary errorNodeSummary =
+        ErrorNodeSummary.builder()
+            .nodeInfo(NodeInfo.builder().identifier(stageTemplateIdentifier).build())
+            .templateInfo(TemplateInfo.builder().templateIdentifier(stageTemplateIdentifier).build())
+            .childrenErrorNodes(new ArrayList<>())
+            .build();
+    when(templateService.get(anyString(), anyString(), anyString(), anyString(), anyString(), eq(false), eq(true)))
+        .thenReturn(Optional.of(templateEntity));
+    when(templateInputsValidator.validateNestedTemplateInputsForTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID,
+             new TemplateEntityGetResponse(templateEntity, EntityGitDetails.builder().build())))
+        .thenReturn(
+            ValidateTemplateInputsResponseDTO.builder().validYaml(true).errorNodeSummary(errorNodeSummary).build());
+
+    templateRefreshService.recursivelyRefreshTemplates(
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, stageTemplateIdentifier, "1", true);
+    verify(templateService, times(1)).get(ACCOUNT_ID, ORG_ID, PROJECT_ID, stageTemplateIdentifier, "1", false, true);
     verify(templateInputsValidator)
         .validateNestedTemplateInputsForTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID,
             new TemplateEntityGetResponse(templateEntity, EntityGitDetails.builder().build()));
@@ -259,9 +360,9 @@ public class TemplateRefreshServiceImplTest extends TemplateServiceTestBase {
     when(templateService.get(
              anyString(), anyString(), anyString(), eq(stageTemplateIdentifier), anyString(), eq(false), eq(false)))
         .thenReturn(Optional.of(stageTemplateEntity));
-    when(templateInputsRefreshHelper.refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml))
+    when(templateInputsRefreshHelper.refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false))
         .thenReturn(updatedPipelineTemplateYaml);
-    when(templateInputsRefreshHelper.refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, stageYaml))
+    when(templateInputsRefreshHelper.refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, stageYaml, false))
         .thenReturn(updatedStageYaml);
     when(templateInputsValidator.validateNestedTemplateInputsForTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID,
              new TemplateEntityGetResponse(pipelineTemplateEntity, EntityGitDetails.builder().build())))
@@ -271,7 +372,8 @@ public class TemplateRefreshServiceImplTest extends TemplateServiceTestBase {
                         .build());
 
     InOrder inOrder = inOrder(templateInputsRefreshHelper);
-    templateRefreshService.recursivelyRefreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineTemplateIdentifier, "1");
+    templateRefreshService.recursivelyRefreshTemplates(
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineTemplateIdentifier, "1", false);
     verify(accessControlClient, times(1))
         .checkForAccessOrThrow(ResourceScope.of(ACCOUNT_ID, ORG_ID, PROJECT_ID),
             Resource.of(TEMPLATE, pipelineTemplateIdentifier), PermissionTypes.TEMPLATE_EDIT_PERMISSION);
@@ -281,9 +383,10 @@ public class TemplateRefreshServiceImplTest extends TemplateServiceTestBase {
     verify(templateInputsValidator)
         .validateNestedTemplateInputsForTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID,
             new TemplateEntityGetResponse(pipelineTemplateEntity, EntityGitDetails.builder().build()));
-    inOrder.verify(templateInputsRefreshHelper, times(1)).refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, stageYaml);
     inOrder.verify(templateInputsRefreshHelper, times(1))
-        .refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml);
+        .refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, stageYaml, false);
+    inOrder.verify(templateInputsRefreshHelper, times(1))
+        .refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false);
   }
 
   @Test
@@ -348,15 +451,16 @@ public class TemplateRefreshServiceImplTest extends TemplateServiceTestBase {
     when(templateService.get(
              anyString(), eq(null), eq(null), eq(stageTemplateIdentifier), anyString(), eq(false), eq(false)))
         .thenReturn(Optional.of(stageTemplateEntity));
-    when(templateInputsRefreshHelper.refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineTemplateYaml))
+    when(templateInputsRefreshHelper.refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineTemplateYaml, false))
         .thenReturn(updatedPipelineTemplateYaml);
-    when(templateInputsRefreshHelper.refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, stageYaml))
+    when(templateInputsRefreshHelper.refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, stageYaml, false))
         .thenReturn(updatedStageYaml);
-    when(templateInputsRefreshHelper.refreshTemplates(ACCOUNT_ID, null, null, stageYaml))
+    when(templateInputsRefreshHelper.refreshTemplates(ACCOUNT_ID, null, null, stageYaml, false))
         .thenReturn(updatedAccountLevelStageYaml);
-    when(templateInputsRefreshHelper.refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml))
+    when(templateInputsRefreshHelper.refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false))
         .thenReturn(refreshedPipelineYaml);
-    when(templateInputsValidator.validateNestedTemplateInputsForGivenYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml))
+    when(templateInputsValidator.validateNestedTemplateInputsForGivenYaml(
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false))
         .thenReturn(ValidateTemplateInputsResponseDTO.builder()
                         .validYaml(false)
                         .errorNodeSummary(ErrorNodeSummary.builder()
@@ -366,7 +470,7 @@ public class TemplateRefreshServiceImplTest extends TemplateServiceTestBase {
 
     InOrder inOrder = inOrder(templateInputsRefreshHelper);
     YamlFullRefreshResponseDTO refreshResponse =
-        templateRefreshService.recursivelyRefreshTemplatesForYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml);
+        templateRefreshService.recursivelyRefreshTemplatesForYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false);
     verify(accessControlClient, times(1))
         .checkForAccessOrThrow(ResourceScope.of(ACCOUNT_ID, ORG_ID, PROJECT_ID),
             Resource.of(TEMPLATE, pipelineTemplateIdentifier), PermissionTypes.TEMPLATE_EDIT_PERMISSION);
@@ -378,13 +482,14 @@ public class TemplateRefreshServiceImplTest extends TemplateServiceTestBase {
             PermissionTypes.TEMPLATE_EDIT_PERMISSION);
 
     verify(templateInputsValidator)
-        .validateNestedTemplateInputsForGivenYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml);
-    inOrder.verify(templateInputsRefreshHelper, times(1)).refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, stageYaml);
-    inOrder.verify(templateInputsRefreshHelper, times(1)).refreshTemplates(ACCOUNT_ID, null, null, stageYaml);
+        .validateNestedTemplateInputsForGivenYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false);
     inOrder.verify(templateInputsRefreshHelper, times(1))
-        .refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineTemplateYaml);
+        .refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, stageYaml, false);
+    inOrder.verify(templateInputsRefreshHelper, times(1)).refreshTemplates(ACCOUNT_ID, null, null, stageYaml, false);
     inOrder.verify(templateInputsRefreshHelper, times(1))
-        .refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml);
+        .refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineTemplateYaml, false);
+    inOrder.verify(templateInputsRefreshHelper, times(1))
+        .refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false);
     verify(accessControlClient)
         .checkForAccessOrThrow(ResourceScope.of(ACCOUNT_ID, ORG_ID, PROJECT_ID),
             Resource.of(TEMPLATE, stageTemplateIdentifier), PermissionTypes.TEMPLATE_EDIT_PERMISSION);
@@ -406,18 +511,44 @@ public class TemplateRefreshServiceImplTest extends TemplateServiceTestBase {
     String pipelineYaml = "pipeline yaml";
     String refreshedPipelineYaml = "Refreshed yaml";
 
-    when(templateInputsRefreshHelper.refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml))
+    when(templateInputsRefreshHelper.refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false))
         .thenReturn(refreshedPipelineYaml);
-    when(templateInputsValidator.validateNestedTemplateInputsForGivenYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml))
+    when(templateInputsValidator.validateNestedTemplateInputsForGivenYaml(
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false))
         .thenReturn(ValidateTemplateInputsResponseDTO.builder()
                         .validYaml(true)
                         .errorNodeSummary(ErrorNodeSummary.builder().build())
                         .build());
 
     YamlFullRefreshResponseDTO refreshResponse =
-        templateRefreshService.recursivelyRefreshTemplatesForYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml);
+        templateRefreshService.recursivelyRefreshTemplatesForYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false);
     verify(templateInputsValidator)
-        .validateNestedTemplateInputsForGivenYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml);
+        .validateNestedTemplateInputsForGivenYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false);
+
+    assertThat(refreshResponse.isShouldRefreshYaml()).isFalse();
+    assertThat(refreshResponse.getRefreshedYaml()).isNull();
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testRecursivelyRefreshTemplatesForYaml_ValidYamlWithCaching() {
+    String pipelineYaml = "pipeline yaml";
+    String refreshedPipelineYaml = "Refreshed yaml";
+
+    when(templateInputsRefreshHelper.refreshTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, true))
+        .thenReturn(refreshedPipelineYaml);
+    when(templateInputsValidator.validateNestedTemplateInputsForGivenYaml(
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, true))
+        .thenReturn(ValidateTemplateInputsResponseDTO.builder()
+                        .validYaml(true)
+                        .errorNodeSummary(ErrorNodeSummary.builder().build())
+                        .build());
+
+    YamlFullRefreshResponseDTO refreshResponse =
+        templateRefreshService.recursivelyRefreshTemplatesForYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, true);
+    verify(templateInputsValidator)
+        .validateNestedTemplateInputsForGivenYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, true);
 
     assertThat(refreshResponse.isShouldRefreshYaml()).isFalse();
     assertThat(refreshResponse.getRefreshedYaml()).isNull();

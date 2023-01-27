@@ -27,9 +27,15 @@ public enum FeatureName {
   SPG_ALLOW_WFLOW_VARIABLES_TO_CONDITION_SKIP_PIPELINE_STAGE("Enables the use of workflow variables to skip"
           + " pipeline stage",
       HarnessTeam.SPG),
+  SPG_WFE_PROJECTIONS_DEPLOYMENTS_PAGE("Enable projection on deployments page and executions", HarnessTeam.SPG),
+  SPG_ENABLE_NOTIFICATION_RULES("Enables notification rules and approvals notifications by usergroup", HarnessTeam.SPG),
+  SPG_ENABLE_VALIDATION_WORKFLOW_PIPELINE_STAGE(
+      "Enables validation of dot on pipeline and workflow name", HarnessTeam.SPG),
   SPG_NG_GITHUB_WEBHOOK_AUTHENTICATION("Enables authentication for GitHub webhook triggers in NG", HarnessTeam.SPG),
   SPG_ALLOW_DISABLE_TRIGGERS("Allow disabling triggers at application level for CG", HarnessTeam.SPG),
   SPG_ALLOW_UI_JIRA_CUSTOM_DATETIME_FIELD("Enables backend parse custom field time of jira as the UI", HarnessTeam.SPG),
+  SPG_ALLOW_TEMPLATE_ON_NEXUS_ARTIFACT(
+      "Enables UI to use artifactID and groupID as template or static value", HarnessTeam.SPG),
   SPG_ALLOW_DISABLE_USER_GITCONFIG(
       "Allow disabling local delegate user's .gitconfig when running git commands", HarnessTeam.SPG),
   SPG_NEW_DEPLOYMENT_FREEZE_EXCLUSIONS(
@@ -83,7 +89,6 @@ public enum FeatureName {
   ENABLE_WINRM_ENV_VARIABLES,
   FF_PIPELINE,
   FF_GITSYNC,
-  NG_TEMPLATE_GITX,
   FFM_1513,
   FFM_1512,
   FFM_1827,
@@ -93,6 +98,7 @@ public enum FeatureName {
   FFM_4117_INTEGRATE_SRM("Enable Feature Flags to send events to the SRM module", HarnessTeam.CF),
   FFM_3959_FF_MFE_Environment_Detail("Enable Feature Flag MFE Environment page", HarnessTeam.CF),
   FFM_3961_ENHANCED_ONBOARDING("Enable new onboarding experience for FeatureFlags", HarnessTeam.CF),
+  FFM_6610_ENABLE_METRICS_ENDPOINT("Enable fetching feature flag metrics from new metrics endpoint", HarnessTeam.CF),
   WINRM_COPY_CONFIG_OPTIMIZE,
   ECS_MULTI_LBS,
   ENTITY_AUDIT_RECORD,
@@ -320,6 +326,7 @@ public enum FeatureName {
   SERVICE_DASHBOARD_V2,
   CDC_ENVIRONMENT_DASHBOARD_NG("New environment details dashboard is behind this", HarnessTeam.CDC),
   CDC_DASHBOARD_ENHANCEMENT_NG("New APIs added to send trend object in response for change rates", HarnessTeam.CDC),
+  CDC_SERVICE_DASHBOARD_REVAMP_NG("Service Dashboard Revamp is behind this FF", HarnessTeam.CDC),
   DEBEZIUM_ENABLED,
   TEMPLATE_SCHEMA_VALIDATION,
   YAML_APIS_GRANULAR_PERMISSION,
@@ -332,7 +339,6 @@ public enum FeatureName {
   ENABLE_DEFAULT_NG_EXPERIENCE_FOR_ONPREM,
   NG_SETTINGS("Enable Settings at various scopes in NG", HarnessTeam.PL),
   QUEUED_COUNT_FOR_QUEUEKEY("Used to display the count of the queue in CG git sync", HarnessTeam.SPG),
-  NG_EMAIL_STEP,
   NG_GOOGLE_ARTIFACT_REGISTRY,
   USE_OLD_GIT_SYNC("Used for enabling old Git Experience on projects", HarnessTeam.PL),
   DISABLE_PIPELINE_SCHEMA_VALIDATION(
@@ -399,6 +405,7 @@ public enum FeatureName {
   UPDATE_EMAILS_VIA_SCIM("Will enable updating emails in Harness via SCIM", HarnessTeam.PL),
   ELK_HEALTH_SOURCE("Will enable ELK health source in SRM", HarnessTeam.CV),
   SRM_COMPOSITE_SLO("Flag to start creating composite SLOs", HarnessTeam.CV),
+  SRM_DOWNTIME("Flag to start creating downtime", HarnessTeam.CV),
   CDP_USE_K8S_DECLARATIVE_ROLLBACK(
       "CG: Enable declarative rollback instead of imperative rollback for K8s, along with a new release history implementation. Release history is stored in individual secrets, instead of being consolidated and stored in a single configmap/secret. Old manifests are re-applied using `kubectl apply` (declarative rollback) instead of performing `kubectl rollout undo` (imperative rollback). See Jira ticket for more details: https://harness.atlassian.net/browse/CDS-2993",
       HarnessTeam.CDP),
@@ -433,9 +440,6 @@ public enum FeatureName {
       "Enables the new UX for Executions list view for Pipelines and Projects", HarnessTeam.PIPELINE),
   SPG_FIX_APPROVAL_WAITING_FOR_INPUTS(
       "Fixes a bug where approval step is going to waiting for inputs state", HarnessTeam.SPG),
-  PL_ACCESS_SECRET_DYNAMICALLY_BY_PATH(
-      "For NG, it enables to read secrets from HashiCorp Vault directly using an fully qualified path expression without the need of creating secret in Harness.",
-      HarnessTeam.PL),
   PL_NO_EMAIL_FOR_SAML_ACCOUNT_INVITES("No email for users in account where SAML auth is enabled", HarnessTeam.PL),
   PL_ENABLE_GOOGLE_SECRET_MANAGER_IN_NG("Enable Google Secret Manager in NG", HarnessTeam.PL),
   SPG_2K_DEFAULT_PAGE_SIZE("Increase the default page size to 2000 elements in CG", HarnessTeam.SPG),
@@ -477,6 +481,7 @@ public enum FeatureName {
   CI_YAML_VERSIONING("Feature flag for yaml simplification", HarnessTeam.CI),
   SRM_ET_EXPERIMENTAL("Feature flag for SRM only Error Tracking development", HarnessTeam.CV),
   SRM_ET_RESOLVED_EVENTS("Feature flag for Error Tracking resolved events", HarnessTeam.CV),
+  SRM_ET_CRITICAL_EVENTS("Enable code errors critical events configuration", HarnessTeam.CV),
   SRM_CODE_ERROR_NOTIFICATIONS("Feature flag for Code Error notification condition", HarnessTeam.CV),
   SRM_ENABLE_HEALTHSOURCE_AWS_PROMETHEUS("UI FF to enable AWS Managed Prometheus healthsource", HarnessTeam.CV),
   DEL_SECRET_EVALUATION_VERBOSE_LOGGING(
@@ -529,6 +534,10 @@ public enum FeatureName {
       "Enable support for AWS S3 bucket and URIs for Terraform Source, tfVars and Backend Config", HarnessTeam.CDP),
   CCM_BUDGET_CASCADES("Enable to allow nested budgets for Financial Management", HarnessTeam.CE),
   PIE_NG_GITX_CACHING("FF to enable caching on new git experience", HarnessTeam.PIPELINE),
+
+  PIE_NG_BATCH_GET_TEMPLATES(
+      "FF to enable batching of templates to improve loading time of pipeline and template studio",
+      HarnessTeam.PIPELINE),
   INSTANT_DELEGATE_DOWN_ALERT("FF to instantly alert when delegates are down", HarnessTeam.SPG),
   QUEUE_CI_EXECUTIONS("FF to enable queueing in CI builds", HarnessTeam.CI),
   QUEUE_CI_EXECUTIONS_CONCURRENCY("FF to enable queueing in CI builds", HarnessTeam.CI),
@@ -549,7 +558,7 @@ public enum FeatureName {
       "Avoid loading unnecessary support accounts unnecessarily. Enabling it will reduce memory pressure",
       HarnessTeam.PL),
   PL_SIMPLIFY_ACL_CHECK("Evaluate access using role assignments instead of ACL's.", HarnessTeam.PL),
-  ASG_NG("Supports Amazon ASG in NG", HarnessTeam.CDP),
+  CDS_ASG_NG("Supports Amazon ASG in NG", HarnessTeam.CDP),
   CDP_UPDATE_INSTANCE_DETAILS_WITH_IMAGE_SUFFIX("Update instance details if image suffix matches", HarnessTeam.CDP),
   SRM_INTERNAL_CHANGE_SOURCE_FF("Control Feature Flag Internal Change Source On UI", HarnessTeam.CV),
   CD_NG_DYNAMIC_PROVISIONING_ENV_V2(
@@ -558,11 +567,38 @@ public enum FeatureName {
       "FF to make the Artifactory Repository Url as mandatory in case of docker repositoryFormat", HarnessTeam.CDC),
   VALIDATE_SERVICE_NAME_IN_FILE_PATH("Validate the service name in yaml file path", HarnessTeam.SPG),
   NG_K8_COMMAND_FLAGS("Added Support for adding Command flags to K8s commands. PM Rohan", HarnessTeam.CDP),
+  CD_NG_DOCKER_ARTIFACT_DIGEST(
+      "Use SHA256 digest as optional parameter for docker image artifact config", HarnessTeam.SPG),
   CDS_FORCE_DELETE_ENTITIES("Enables force delete of entities irrespective of existing references.", HarnessTeam.CDC),
   CDP_PUBLISH_INSTANCE_STATS_FOR_ENV_NG(
       "Publish instance stats at environment granularity in NG. PM Rohan", HarnessTeam.CDP),
   DEPLOYMENT_RECONCILIATION_LOGIC_QUERY_OPTIMIZATIONS(
-      "Used to modify logic for reconciliation queries", HarnessTeam.CDC);
+      "Used to modify logic for reconciliation queries", HarnessTeam.CDC),
+  NOTIFY_GIT_SYNC_ERRORS_PER_APP(
+      "Notifies git sync errors per application to the user, general behaviour is at the account level",
+      HarnessTeam.SPG),
+  SPG_MODULE_VERSION_INFO("Enable version information on module level", HarnessTeam.SPG),
+  CIE_HOSTED_VMS_WINDOWS("FF for enabling hosted builds for windows amd64", HarnessTeam.CI),
+  CD_TRIGGER_CATALOG_API_ENABLED("Enable support for pipeline/api/triggers/catalog API in UI", HarnessTeam.CDC),
+  K8S_DRY_RUN_NG("Enable K8s Dry Run Step in NG", HarnessTeam.CDP),
+  CDS_SERVICENOW_ADFS_AUTH("ADFS auth support for servicenow connector", HarnessTeam.CDC),
+  CDP_SKIP_DEFAULT_VALUES_YAML_NG(
+      "Skip adding the default values file as an override if it doesn't contain any expressions in case of helm chart manifest for NG",
+      HarnessTeam.CDP),
+  CDP_SKIP_DEFAULT_VALUES_YAML_CG(
+      "Skip adding the default values file as an override if it doesn't contain any expressions in case of helm chart manifest for CG",
+      HarnessTeam.CDP),
+  PIE_PIPELINE_SETTINGS_ENFORCEMENT_LIMIT(
+      "To enable pipeline-settings and limits in Project Default Settings in UI", HarnessTeam.PIPELINE),
+  ENABLE_K8_BUILDS("FF for enabling kubernetes builds as an option", HarnessTeam.CI),
+  PL_USER_DELETION_V2("Modularising user deletion flows separately for CG and NG ", HarnessTeam.PL),
+  DISABLE_INSTANCE_STATS_JOB_CG("Disable Instance Stats Job from CG", HarnessTeam.CDP),
+  CG_K8S_MANIFEST_COMMIT_VAR(
+      "Enables users to pass commit id as sweeping output and use later in subsequent steps. PM Rohan",
+      HarnessTeam.CDP),
+  SPG_SIDENAV_COLLAPSE("FF for enabling collapse and expand of side nav", HarnessTeam.SPG),
+  PL_REMOVE_USER_VIEWER_ROLE_ASSIGNMENTS("Enable removal of user level viewer role assignments", HarnessTeam.PL),
+  TERRAFORM_CLOUD("Enable support of Terraform Cloud in the NG", HarnessTeam.CDP);
 
   @Deprecated
   FeatureName() {

@@ -545,6 +545,14 @@ public abstract class TerraformProvisionState extends State {
           .findFirst()
           .map(TerraformProvisionInheritPlanElement::getTfPlanJsonFileId)
           .ifPresent(tfPlanJsonFileId -> fileService.deleteFile(tfPlanJsonFileId, FileBucket.TERRAFORM_PLAN_JSON));
+
+      // remove tfPlanJsonFileId from sweeping output as file is deleted
+      String variableName = command() == TerraformCommand.APPLY ? TF_APPLY_VAR_NAME : TF_DESTROY_VAR_NAME;
+      Scope scope =
+          featureFlagService.isEnabled(SAVE_TERRAFORM_APPLY_SWEEPING_OUTPUT_TO_WORKFLOW, context.getAccountId())
+          ? Scope.WORKFLOW
+          : Scope.PIPELINE;
+      terraformPlanHelper.removeTfPlanJsonFileIdFromSweepingOutput(context, variableName, scope);
     }
 
     if (terraformExecutionData.getExecutionStatus() == FAILED) {

@@ -57,6 +57,7 @@ import software.wings.annotation.EncryptableSetting;
 import software.wings.beans.AWSTemporaryCredentials;
 import software.wings.beans.AwsConfig;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
+import software.wings.service.impl.aws.manager.AwsHelperServiceManager;
 import software.wings.service.intfc.security.EncryptionService;
 import software.wings.sm.states.ManagerExecutionLogCallback;
 
@@ -251,20 +252,24 @@ public class AwsHelperServiceTest extends WingsBaseTest {
     EncryptableSetting encryptableSetting = mock(EncryptableSetting.class);
     doReturn(encryptableSetting).when(mockEncryptionService).decrypt(any(), any(), eq(false));
 
-    AwsHelperService service = spy(new AwsHelperService());
-    doReturn(mockClient).when(service).getAmazonAutoScalingClient(any(), any());
-    FieldUtils.writeField(service, "encryptionService", mockEncryptionService, true);
-
+    AwsHelperServiceManager awsHelperServiceManager = new AwsHelperServiceManager();
+    AwsHelperService awsHelperService = spy(new AwsHelperService());
+    doReturn(mockClient).when(awsHelperService).getAmazonAutoScalingClient(any(), any());
     AwsCallTracker mockTracker = mock(AwsCallTracker.class);
     doNothing().when(mockTracker).trackCFCall(anyString());
-    on(service).set("tracker", mockTracker);
-    on(service).set("awsApiHelperService", awsApiHelperService);
+    on(awsHelperService).set("tracker", mockTracker);
+    on(awsHelperService).set("awsApiHelperService", awsApiHelperService);
+    FieldUtils.writeField(awsHelperService, "encryptionService", mockEncryptionService, true);
+    FieldUtils.writeField(awsHelperServiceManager, "awsHelperService", awsHelperService, true);
+    FieldUtils.writeField(awsHelperServiceManager, "tracker", mockTracker, true);
+    FieldUtils.writeField(awsHelperServiceManager, "encryptionService", mockEncryptionService, true);
+    FieldUtils.writeField(awsHelperServiceManager, "awsApiHelperService", awsApiHelperService, true);
 
     doCallRealMethod().when(awsApiHelperService).handleAmazonClientException(any());
     doCallRealMethod().when(awsApiHelperService).handleAmazonServiceException(any());
 
     try {
-      service.setAutoScalingGroupCapacityAndWaitForInstancesReadyState(
+      awsHelperServiceManager.setAutoScalingGroupCapacityAndWaitForInstancesReadyState(
           AwsConfig.builder().accessKey(accessKey).secretKey(secretKey).build(), Collections.emptyList(), region,
           autoScalingGroupName, Integer.valueOf(1), new ManagerExecutionLogCallback(), 30);
     } catch (AwsAutoScaleException autoScaleException) {

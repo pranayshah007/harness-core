@@ -18,4 +18,8 @@ public class LevelUtils {
   public static boolean isStageLevel(Level level) {
     return level.getStepType().getStepCategory() == StepCategory.STAGE;
   }
+
+  public static boolean isStepLevel(Level level) {
+    return level.getStepType().getStepCategory() == StepCategory.STEP;
+  }
 }

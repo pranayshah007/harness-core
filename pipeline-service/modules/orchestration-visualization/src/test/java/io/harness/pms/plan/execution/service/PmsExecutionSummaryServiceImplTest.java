@@ -13,6 +13,7 @@ import static io.harness.rule.OwnerRule.SHALINI;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -44,6 +45,7 @@ import io.harness.repositories.executions.PmsExecutionSummaryRepository;
 import io.harness.rule.Owner;
 import io.harness.utils.OrchestrationVisualisationTestHelper;
 
+import com.google.common.collect.Sets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -86,12 +88,19 @@ public class PmsExecutionSummaryServiceImplTest extends OrchestrationVisualizati
                                                                         .orgIdentifier(orgId)
                                                                         .projectIdentifier(projectId)
                                                                         .build();
-    doReturn(Optional.of(pipelineExecutionSummaryEntity))
+    doReturn(pipelineExecutionSummaryEntity)
         .when(pmsExecutionSummaryRepository)
-        .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndPlanExecutionId(
-            accountId, orgId, projectId, planExecutionId);
-    assertEquals(pmsExecutionSummaryService.getPipelineExecutionSummary(accountId, orgId, projectId, planExecutionId),
-        Optional.of(pipelineExecutionSummaryEntity));
+        .getPipelineExecutionSummaryWithProjections(any(),
+            eq(Sets.newHashSet(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.accountId,
+                PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.planExecutionId,
+                PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.orgIdentifier,
+                PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.projectIdentifier)));
+    assertEquals(pmsExecutionSummaryService.getPipelineExecutionSummaryWithProjections(planExecutionId,
+                     Sets.newHashSet(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.accountId,
+                         PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.planExecutionId,
+                         PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.orgIdentifier,
+                         PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.projectIdentifier)),
+        pipelineExecutionSummaryEntity);
   }
 
   @Test

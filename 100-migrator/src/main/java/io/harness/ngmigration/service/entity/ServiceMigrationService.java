@@ -10,8 +10,10 @@ package io.harness.ngmigration.service.entity;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.encryption.Scope.PROJECT;
 
+import static software.wings.api.DeploymentType.AMI;
 import static software.wings.api.DeploymentType.ECS;
 import static software.wings.beans.ConfigFile.DEFAULT_TEMPLATE_ID;
+import static software.wings.ngmigration.NGMigrationEntityType.AMI_STARTUP_SCRIPT;
 import static software.wings.ngmigration.NGMigrationEntityType.ARTIFACT_STREAM;
 import static software.wings.ngmigration.NGMigrationEntityType.CONFIG_FILE;
 import static software.wings.ngmigration.NGMigrationEntityType.CONTAINER_TASK;
@@ -27,6 +29,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.MigratedEntityMapping;
 import io.harness.cdng.configfile.ConfigFileWrapper;
+import io.harness.cdng.elastigroup.config.yaml.StartupScriptConfiguration;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.cdng.service.beans.ServiceDefinition;
 import io.harness.data.structure.EmptyPredicate;
@@ -66,6 +69,7 @@ import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.container.ContainerTask;
 import software.wings.beans.container.EcsServiceSpecification;
+import software.wings.beans.container.UserDataSpecification;
 import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
@@ -101,6 +105,7 @@ public class ServiceMigrationService extends NgMigrationService {
   @Inject private ContainerTaskMigrationService containerTaskMigrationService;
   @Inject private ApplicationManifestService applicationManifestService;
   @Inject private ServiceResourceClient serviceResourceClient;
+  @Inject private AmiStartupScriptMigrationService amiStartupScriptMigrationService;
   @Inject ConfigService configService;
   @Inject ConfigFileMigrationService configFileMigrationService;
 
@@ -197,6 +202,7 @@ public class ServiceMigrationService extends NgMigrationService {
         children.add(CgEntityId.builder().id(ecsServiceSpecification.getUuid()).type(ECS_SERVICE_SPEC).build());
       }
     }
+
     if (ECS == service.getDeploymentType() && processTaskDefs(applicationManifests)) {
       ContainerTask containerTask =
           serviceResourceService.getContainerTaskByDeploymentType(service.getAppId(), serviceId, ECS.name());
@@ -204,6 +210,15 @@ public class ServiceMigrationService extends NgMigrationService {
         children.add(CgEntityId.builder().id(containerTask.getUuid()).type(CONTAINER_TASK).build());
       }
     }
+
+    if (AMI == service.getDeploymentType()) {
+      UserDataSpecification userDataSpecification =
+          serviceResourceService.getUserDataSpecification(service.getAppId(), serviceId);
+      if (null != userDataSpecification) {
+        children.add(CgEntityId.builder().id(userDataSpecification.getUuid()).type(AMI_STARTUP_SCRIPT).build());
+      }
+    }
+
     return DiscoveryNode.builder().entityNode(serviceEntityNode).children(children).build();
   }
 
@@ -277,6 +292,10 @@ public class ServiceMigrationService extends NgMigrationService {
                                    .stream()
                                    .filter(cgEntityId -> cgEntityId.getType() == CONTAINER_TASK)
                                    .collect(Collectors.toSet());
+    Set<CgEntityId> startupScriptDefs = graph.get(entityId)
+                                            .stream()
+                                            .filter(cgEntityId -> cgEntityId.getType() == AMI_STARTUP_SCRIPT)
+                                            .collect(Collectors.toSet());
     Set<CgEntityId> configFileIds =
         entities.values()
             .stream()
@@ -292,14 +311,17 @@ public class ServiceMigrationService extends NgMigrationService {
     List<ManifestConfigWrapper> ecsServiceSpecs =
         ecsServiceSpecMigrationService.getServiceSpec(serviceDefs, inputDTO, entities);
     List<ManifestConfigWrapper> taskDefSpecs = containerTaskMigrationService.getTaskSpecs(taskDefs, inputDTO, entities);
+    List<StartupScriptConfiguration> startupScriptConfigurations =
+        amiStartupScriptMigrationService.getStartupScriptConfiguration(startupScriptDefs, inputDTO, entities);
     manifestConfigWrapperList.addAll(taskDefSpecs);
     manifestConfigWrapperList.addAll(ecsServiceSpecs);
 
     List<ConfigFileWrapper> configFileWrapperList =
         configFileMigrationService.getConfigFiles(configFileIds, inputDTO, entities, migratedEntities);
 
-    ServiceDefinition serviceDefinition = ServiceV2Factory.getService2Mapper(service).getServiceDefinition(
-        inputDTO, entities, graph, service, migratedEntities, manifestConfigWrapperList, configFileWrapperList);
+    ServiceDefinition serviceDefinition =
+        ServiceV2Factory.getService2Mapper(service).getServiceDefinition(inputDTO, entities, graph, service,
+            migratedEntities, manifestConfigWrapperList, configFileWrapperList, startupScriptConfigurations);
     if (serviceDefinition == null) {
       return Collections.emptyList();
     }

@@ -16,9 +16,11 @@ import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.connector.ManagerExecutable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
+import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
+import io.harness.delegate.beans.connector.scm.azurerepo.outcome.AzureRepoConnectorOutcomeDTO;
 import io.harness.delegate.beans.connector.scm.utils.ScmConnectorHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.GitClientHelper;
@@ -173,5 +175,18 @@ public class AzureRepoConnectorDTO
   @Override
   public void validate() {
     GitClientHelper.validateURL(url);
+  }
+
+  @Override
+  public ConnectorConfigOutcomeDTO toOutcome() {
+    return AzureRepoConnectorOutcomeDTO.builder()
+        .type(this.connectionType)
+        .url(this.url)
+        .validationRepo(this.validationRepo)
+        .authentication(this.authentication.toOutcome())
+        .apiAccess(this.apiAccess)
+        .delegateSelectors(this.delegateSelectors)
+        .executeOnDelegate(this.executeOnDelegate)
+        .build();
   }
 }

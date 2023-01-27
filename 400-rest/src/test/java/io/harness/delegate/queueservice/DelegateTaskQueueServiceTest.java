@@ -11,7 +11,6 @@ import static io.harness.rule.OwnerRule.JENNY;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 import io.harness.beans.DelegateTask;
@@ -137,7 +136,7 @@ public class DelegateTaskQueueServiceTest extends WingsBaseTest {
   }
   @Before
   public void setUp() throws IllegalAccessException, ExecutionException {
-    when(hsqsServiceClient.ack(any(), anyString())).thenReturn(new Call<>() {
+    when(hsqsServiceClient.ack(any())).thenReturn(new Call<>() {
       @Override
       public Response<AckResponse> execute() throws IOException {
         return Response.success(AckResponse.builder().itemID("itemId").build());

@@ -64,7 +64,7 @@ public class ManagerEncryptorHelperTest extends CategoryTest {
     ArgumentCaptor<DelegateTask> delegateTaskArgumentCaptor = ArgumentCaptor.forClass(DelegateTask.class);
     doReturn(FetchSecretTaskResponse.builder().build())
         .when(delegateService)
-        .executeTask(delegateTaskArgumentCaptor.capture());
+        .executeTaskV2(delegateTaskArgumentCaptor.capture());
 
     managerEncryptorHelper.fetchSecretValue(accountId, null, vaultConfig);
     DelegateTask task = delegateTaskArgumentCaptor.getValue();
@@ -83,7 +83,7 @@ public class ManagerEncryptorHelperTest extends CategoryTest {
     ArgumentCaptor<DelegateTask> delegateTaskArgumentCaptor = ArgumentCaptor.forClass(DelegateTask.class);
     doReturn(ValidateSecretReferenceTaskResponse.builder().build())
         .when(delegateService)
-        .executeTask(delegateTaskArgumentCaptor.capture());
+        .executeTaskV2(delegateTaskArgumentCaptor.capture());
 
     managerEncryptorHelper.validateReference(
         accountId, ValidateSecretReferenceTaskParameters.builder().encryptionConfig(vaultConfig).build());
@@ -103,7 +103,7 @@ public class ManagerEncryptorHelperTest extends CategoryTest {
     ArgumentCaptor<DelegateTask> delegateTaskArgumentCaptor = ArgumentCaptor.forClass(DelegateTask.class);
     doReturn(ValidateSecretManagerConfigurationTaskResponse.builder().build())
         .when(delegateService)
-        .executeTask(delegateTaskArgumentCaptor.capture());
+        .executeTaskV2(delegateTaskArgumentCaptor.capture());
 
     managerEncryptorHelper.validateConfiguration(
         accountId, ValidateSecretManagerConfigurationTaskParameters.builder().encryptionConfig(vaultConfig).build());
