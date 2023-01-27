@@ -26,7 +26,7 @@ import io.dropwizard.setup.Bootstrap;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.govern.ProviderModule;
-import io.harness.idp.serializer.IDPServiceRegistrars;
+import io.harness.serializer.IDPServiceRegistrars;
 import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.IndexManager;
 import io.harness.mongo.MongoConfig;

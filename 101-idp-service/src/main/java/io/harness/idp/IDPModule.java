@@ -19,13 +19,13 @@ import dev.morphia.converters.TypeConverter;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.PrimaryVersionManagerModule;
-import io.harness.idp.repositories.environmentvariable.EnvironmentVariableRepositoryCustom;
-import io.harness.idp.repositories.environmentvariable.EnvironmentVariableRepositoryCustomImpl;
-import io.harness.idp.serializer.IDPServiceRegistrars;
-import io.harness.idp.service.environmentvariable.EnvironmentVariableService;
-import io.harness.idp.service.environmentvariable.EnvironmentVariableServiceImpl;
-import io.harness.idp.service.secretmanager.SecretManager;
-import io.harness.idp.service.secretmanager.SecretManagerImpl;
+import io.harness.repositories.environmentvariable.EnvironmentVariableRepositoryCustom;
+import io.harness.repositories.environmentvariable.EnvironmentVariableRepositoryCustomImpl;
+import io.harness.serializer.IDPServiceRegistrars;
+import io.harness.service.environmentvariable.EnvironmentVariableService;
+import io.harness.service.environmentvariable.EnvironmentVariableServiceImpl;
+import io.harness.service.secretmanager.SecretManager;
+import io.harness.service.secretmanager.SecretManagerImpl;
 import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
@@ -39,7 +39,6 @@ import io.harness.version.VersionModule;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.convert.converter.Converter;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -122,7 +121,6 @@ public class IDPModule extends AbstractModule {
                             .setPriority(Thread.MIN_PRIORITY)
                             .build()));
     bind(HPersistence.class).to(MongoPersistence.class).in(Singleton.class);
-    bind(EnvironmentVariableRepositoryCustom.class).to(EnvironmentVariableRepositoryCustomImpl.class);
     bind(EnvironmentVariableService.class).to(EnvironmentVariableServiceImpl.class);
     bind(SecretManager.class).to(SecretManagerImpl.class);
   }
