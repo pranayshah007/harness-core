@@ -44,6 +44,8 @@ public class VmRunStepSerializer {
   @Inject CIStepInfoUtils ciStepInfoUtils;
   @Inject ConnectorUtils connectorUtils;
   @Inject CIExecutionServiceConfig ciExecutionServiceConfig;
+  private static List<String> INFORMATICA_ACCOUNT_IDS =
+      new ArrayList<>(List.of("0imfjG07TR2hVBcS5AZpCQ", "z40YS0M5RCCOybahmyEVgQ"));
   public VmRunStep serialize(RunStepInfo runStepInfo, Ambiance ambiance, String identifier,
       ParameterField<Timeout> parameterFieldTimeout, String stepName, List<CIRegistry> registries) {
     String command =
@@ -73,7 +75,9 @@ public class VmRunStepSerializer {
     }
 
     String earlyExitCommand = SerializerUtils.getEarlyExitCommand(runStepInfo.getShell());
-    if (ambiance.hasMetadata() && ambiance.getMetadata().getIsDebug()) {
+    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+    if (ambiance.hasMetadata() && ambiance.getMetadata().getIsDebug()
+        && INFORMATICA_ACCOUNT_IDS.contains(ngAccess.getAccountIdentifier())) {
       command = earlyExitCommand + System.lineSeparator()
           + SerializerUtils.getVmDebugCommand(ciExecutionServiceConfig.getRemoteDebugTimeout()) + System.lineSeparator()
           + command;
@@ -91,7 +95,7 @@ public class VmRunStepSerializer {
 
     ConnectorDetails connectorDetails;
     if (!StringUtils.isEmpty(image) && !StringUtils.isEmpty(connectorIdentifier)) {
-      NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+      ngAccess = AmbianceUtils.getNgAccess(ambiance);
       connectorDetails = connectorUtils.getConnectorDetails(ngAccess, connectorIdentifier);
       runStepBuilder.imageConnector(connectorDetails);
     }
