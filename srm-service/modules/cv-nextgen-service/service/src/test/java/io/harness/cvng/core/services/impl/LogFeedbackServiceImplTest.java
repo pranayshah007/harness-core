@@ -55,7 +55,7 @@ public class LogFeedbackServiceImplTest extends CvNextGenTestBase {
     assertThat(logFeedbackHistoryList.size()).isEqualTo(1);
     LogFeedbackHistory logFeedbackHistory = logFeedbackHistoryList.get(0);
     assertThat(logFeedbackHistory.getCreatedBy()).isEqualTo("user.id@harness.io");
-    assertThat(logFeedbackHistory.getUpdatedBy()).isEqualTo(null);
+    assertThat(logFeedbackHistory.getUpdatedBy()).isNull();
     assertThat(getLogFeedback.getFeedbackId()).isEqualTo(createLogFeedback.getFeedbackId());
     assertThat(getLogFeedback.getFeedbackScore()).isEqualTo(logFeedback.getFeedbackScore());
     assertThat(getLogFeedback.getDescription()).isEqualTo(logFeedback.getDescription());
