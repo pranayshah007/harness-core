@@ -562,7 +562,8 @@ public enum FeatureName {
   CDS_FORCE_DELETE_ENTITIES("Enables force delete of entities irrespective of existing references.", HarnessTeam.CDC),
   CDP_PUBLISH_INSTANCE_STATS_FOR_ENV_NG(
       "Publish instance stats at environment granularity in NG. PM Rohan", HarnessTeam.CDP),
-  DISABLE_INSTANCE_STATS_JOB_CG("Disable Instance Stats Job from CG", HarnessTeam.CDP);
+  DISABLE_INSTANCE_STATS_JOB_CG("Disable Instance Stats Job from CG", HarnessTeam.CDP),
+  SPG_DISABLE_SECRET_DETAILS("Disable secret management logs show in CG", HarnessTeam.SPG);
 
   @Deprecated
   FeatureName() {
