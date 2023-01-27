@@ -11,6 +11,7 @@ import io.harness.ccm.commons.beans.config.ClickHouseConfig;
 import io.harness.ccm.commons.beans.config.GcpConfig;
 import io.harness.ccm.config.CurrencyPreferencesConfig;
 import io.harness.cf.CfClientConfig;
+import io.harness.configuration.DeployMode;
 import io.harness.event.handler.segment.SegmentConfig;
 import io.harness.ff.FeatureFlagConfig;
 import io.harness.mongo.MongoConfig;
@@ -63,7 +64,7 @@ public class BatchMainConfig {
   @JsonProperty("notificationClient") private NotificationClientConfiguration notificationClientConfiguration;
   @JsonProperty("currencyPreferences") private CurrencyPreferencesConfig currencyPreferencesConfig;
   @JsonProperty("clickHouseConfig") private ClickHouseConfig clickHouseConfig;
-  @JsonProperty("isDeploymentOnPrem") private Boolean isDeploymentOnPrem;
+  @JsonProperty(defaultValue = "KUBERNETES") private DeployMode deployMode = DeployMode.KUBERNETES;
 
   public List<String> getDbAliases() {
     List<String> dbAliases = new ArrayList<>();

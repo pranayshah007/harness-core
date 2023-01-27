@@ -192,6 +192,9 @@ public class AwsEntityChangeEventServiceImpl implements AwsEntityChangeEventServ
   }
 
   private String getDestinationBucketName(AwsConfig awsConfig) {
+//    if(configuration) {
+//      return awsConfig.getDestinationBucket();
+//    }
     return String.format("%s-%s", awsConfig.getDestinationBucket(), awsConfig.getDestinationBucketsCount());
   }
 

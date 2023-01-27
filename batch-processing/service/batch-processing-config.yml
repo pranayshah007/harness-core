@@ -180,5 +180,4 @@ clickHouseConfig:
   username: "default"
   password: ""
 
-# change it. should default to false
-isDeploymentOnPrem: true
+deployMode: KUBERNETES

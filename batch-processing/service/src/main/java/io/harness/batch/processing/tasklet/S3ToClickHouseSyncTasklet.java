@@ -10,8 +10,10 @@ package io.harness.batch.processing.tasklet;
 import io.harness.aws.AwsClientImpl;
 import io.harness.batch.processing.ccm.CCMJobConstants;
 import io.harness.batch.processing.config.BatchMainConfig;
+import io.harness.batch.processing.tasklet.util.ClickHouseConstants;
 import io.harness.ccm.clickHouse.ClickHouseServiceImpl;
 import io.harness.ccm.commons.beans.JobConstants;
+import io.harness.configuration.DeployMode;
 
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.services.s3.AmazonS3Client;
@@ -19,14 +21,12 @@ import com.amazonaws.services.s3.iterable.S3Objects;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
-import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.text.SimpleDateFormat;
-import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
@@ -67,14 +67,14 @@ public class S3ToClickHouseSyncTasklet implements Tasklet {
 
   @Override
   public RepeatStatus execute(StepContribution stepContribution, ChunkContext chunkContext) throws Exception {
-    log.info("isDeploymentOnPrem: " + configuration.getIsDeploymentOnPrem());
-    if (!configuration.getIsDeploymentOnPrem()) {
+    log.info("isDeploymentOnPrem: " + configuration.getDeployMode());
+    if (!DeployMode.isOnPrem(configuration.getDeployMode().name())) {
       return null;
     }
     log.info("Running the S3ToClickHouseSync job");
     final JobConstants jobConstants = CCMJobConstants.fromContext(chunkContext);
     log.info("Running s3ToCH for account: " + jobConstants.getAccountId());
-    //    String accountId = jobConstants.getAccountId();
+    String accountId = jobConstants.getAccountId();
     //    Instant startTime = Instant.ofEpochMilli(jobConstants.getJobStartTime());
     //    Instant endTime = Instant.ofEpochMilli(jobConstants.getJobEndTime());
     Instant endTime = Instant.now();
@@ -237,33 +237,34 @@ public class S3ToClickHouseSyncTasklet implements Tasklet {
       ingestDataIntoUnified(usageAccountIds, "" + reportYear + "-" + reportMonth + "-01");
       ingestDataIntoPreAgg(usageAccountIds, "" + reportYear + "-" + reportMonth + "-01");
 
-      updateConnectorDataSyncStatus(connectorId);
-      ingestDataIntoCostAgg(usageAccountIds, "" + reportYear + "-" + reportMonth + "-01");
+      updateConnectorDataSyncStatus(accountId, connectorId);
+      ingestDataIntoCostAgg(accountId, "" + reportYear + "-" + reportMonth + "-01");
     }
 
     return null;
   }
 
-  public void updateConnectorDataSyncStatus(String connectorId) throws Exception {
+  public void updateConnectorDataSyncStatus(String accountId, String connectorId) throws Exception {
     final String PATTERN_FORMAT = "yyyy-MM-dd HH:mm:ss";
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern(PATTERN_FORMAT).withZone(ZoneOffset.UTC);
     String currentInstant = formatter.format(Instant.now());
     String insertQuery =
-        "INSERT INTO ccm.connectorDataSyncStatus (connectorId, lastSuccessfullExecutionAt, jobType, cloudProviderId)  "
-        + "  VALUES ('" + connectorId + "', '" + currentInstant + "', 'cloudfunction', 'AWS');";
+        "INSERT INTO ccm.connectorDataSyncStatus (accountId, connectorId, lastSuccessfullExecutionAt, jobType, cloudProviderId)  "
+        + "  VALUES ('" + accountId + "', '" + connectorId + "', '" + currentInstant + "', 'cloudfunction', 'AWS');";
     clickHouseService.executeClickHouseQuery(configuration.getClickHouseConfig(), insertQuery, Boolean.FALSE);
   }
 
-  public void ingestDataIntoCostAgg(List<String> usageAccountIds, String month) throws Exception {
+  public void ingestDataIntoCostAgg(String accountId, String month) throws Exception {
     // not added accountId condition since on-prem customer will have a single accountId anyway
     // todo: should we add accountId field in costAgg for on-prem?
     String deleteQuery =
         "DELETE from ccm.costAggregated WHERE DATE_TRUNC('month', day) = DATE_TRUNC('month', toDateTime('" + month
-        + " 00:00:00')) AND cloudProvider = 'AWS';";
+        + " 00:00:00')) AND cloudProvider = 'AWS' AND accountId='" + accountId + "';";
     clickHouseService.executeClickHouseQuery(configuration.getClickHouseConfig(), deleteQuery, Boolean.FALSE);
 
-    String insertQuery = "INSERT INTO ccm.costAggregated (day, cost, cloudProvider)  "
-        + "  SELECT date_trunc('day', startTime) AS day, SUM(cost) AS cost, 'AWS' AS cloudProvider  "
+    String insertQuery = "INSERT INTO ccm.costAggregated (day, cost, cloudProvider, accountId)  "
+        + "  SELECT date_trunc('day', startTime) AS day, SUM(cost) AS cost, 'AWS' AS cloudProvider, '" + accountId
+        + "', as accountId "
         + "  FROM ccm.unifiedTable "
         + "  WHERE DATE_TRUNC('month', day) = DATE_TRUNC('month', toDateTime('" + month
         + " 00:00:00')) AND cloudProvider = 'AWS'"
@@ -311,12 +312,12 @@ public class S3ToClickHouseSyncTasklet implements Tasklet {
         + "      awsBlendedRate, awsBlendedCost,awsUnblendedRate,  "
         + "      awsUnblendedCost, cost, awsServicecode, region,  "
         + "      awsAvailabilityzone, awsUsageaccountid,  "
-        + "      cloudProvider, awsBillingEntity, awsInstancetype, awsUsagetype) "
+        + "      cloudProvider, awsBillingEntity, labels, awsInstancetype, awsUsagetype) "
         + "  SELECT productname AS product, date_trunc('day', usagestartdate) as startTime,  "
         + "      blendedrate AS awsBlendedRate, blendedcost AS awsBlendedCost, unblendedrate AS awsUnblendedRate,  "
         + "      unblendedcost AS awsUnblendedCost, unblendedcost AS cost, servicename AS awsServicecode, region,  "
         + "      availabilityzone AS awsAvailabilityzone, usageaccountid AS awsUsageaccountid,  "
-        + "      'AWS' AS cloudProvider, billingentity as awsBillingEntity, instancetype as awsInstancetype, usagetype as awsUsagetype  "
+        + "      'AWS' AS cloudProvider, billingentity as awsBillingEntity, tags AS labels, instancetype as awsInstancetype, usagetype as awsUsagetype  "
         + "  FROM ccm.awscur  "
         + "  WHERE DATE_TRUNC('month', usagestartdate) = DATE_TRUNC('month', toDateTime('" + month
         + " 00:00:00')) AND usageaccountid IN ("
@@ -330,7 +331,8 @@ public class S3ToClickHouseSyncTasklet implements Tasklet {
       throws Exception {
     String awsBillingTableName = awsBillingTableId.split("\\.")[1];
     String tagColumnsQuery = "SELECT column_name FROM INFORMATION_SCHEMA.COLUMNS "
-        + "WHERE (column_name LIKE 'TAG_%') AND (table_schema = 'ccm') AND (table_name = '" + awsBillingTableName + "');";
+        + "WHERE (column_name LIKE 'TAG_%') AND (table_schema = 'ccm') AND (table_name = '" + awsBillingTableName
+        + "');";
     List<String> tagColumns =
         clickHouseService.executeClickHouseQuery(configuration.getClickHouseConfig(), tagColumnsQuery, Boolean.TRUE);
     String tagsQueryStatement1 = "";
@@ -492,16 +494,17 @@ public class S3ToClickHouseSyncTasklet implements Tasklet {
   }
 
   public void createDBAndTables() throws Exception {
-    clickHouseService.executeClickHouseQuery(configuration.getClickHouseConfig(), createCCMDBQuery, Boolean.FALSE);
     clickHouseService.executeClickHouseQuery(
-        configuration.getClickHouseConfig(), createAwsCurTableQuery, Boolean.FALSE);
+        configuration.getClickHouseConfig(), ClickHouseConstants.createCCMDBQuery, Boolean.FALSE);
     clickHouseService.executeClickHouseQuery(
-        configuration.getClickHouseConfig(), createUnifiedTableTableQuery, Boolean.FALSE);
+        configuration.getClickHouseConfig(), ClickHouseConstants.createAwsCurTableQuery, Boolean.FALSE);
     clickHouseService.executeClickHouseQuery(
-        configuration.getClickHouseConfig(), createPreAggregatedTableQuery, Boolean.FALSE);
+        configuration.getClickHouseConfig(), ClickHouseConstants.createUnifiedTableTableQuery, Boolean.FALSE);
     clickHouseService.executeClickHouseQuery(
-        configuration.getClickHouseConfig(), createCostAggregatedTableQuery, Boolean.FALSE);
+        configuration.getClickHouseConfig(), ClickHouseConstants.createPreAggregatedTableQuery, Boolean.FALSE);
     clickHouseService.executeClickHouseQuery(
-        configuration.getClickHouseConfig(), createConnectorDataSyncStatusTableQuery, Boolean.FALSE);
+        configuration.getClickHouseConfig(), ClickHouseConstants.createCostAggregatedTableQuery, Boolean.FALSE);
+    clickHouseService.executeClickHouseQuery(configuration.getClickHouseConfig(),
+        ClickHouseConstants.createConnectorDataSyncStatusTableQuery, Boolean.FALSE);
   }
 }
