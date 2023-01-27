@@ -32,6 +32,7 @@ import io.harness.ccm.commons.beans.JobConstants;
 import io.harness.ccm.commons.beans.config.ClickHouseConfig;
 import io.harness.ccm.commons.entities.k8s.K8sWorkload;
 import io.harness.ccm.commons.service.intf.InstanceDataService;
+import io.harness.configuration.DeployMode;
 import io.harness.ff.FeatureFlagService;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -87,7 +88,6 @@ public class ClusterDataToBigQueryTasklet implements Tasklet {
   private static final String defaultBillingDataFileNameHourly = "billing_data_hourly_%s_%s_%s_%s.avro";
   private static final String gcsObjectNameFormat = "%s/%s";
   public static final long CACHE_SIZE = 10000;
-  private boolean onPrem = true;
 
   LoadingCache<HarnessEntitiesService.CacheKey, String> entityIdToNameCache =
       Caffeine.newBuilder()
@@ -147,7 +147,9 @@ public class ClusterDataToBigQueryTasklet implements Tasklet {
       clusterDataAggregatedTableName = "clusterDataHourlyAggregated";
     }
 
-    if (!onPrem) {
+    log.info("ClusterDataToBigQuery Job- isDeploymentOnPrem: " + config.getDeployMode());
+
+    if (!DeployMode.isOnPrem(config.getDeployMode().name())) {
       handleDataForBigQuery(batchJobType, jobConstants, batchSize, billingDataReader, billingDataFileName);
     } else {
       handleDataForClickHouse(batchJobType, jobConstants, batchSize, billingDataReader, zdt, clusterDataTableName,
