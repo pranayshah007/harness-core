@@ -14,6 +14,10 @@ public class EnvironmentVariableMapper {
                 .envName(environmentVariable.getEnvName())
                 .secretIdentifier(environmentVariable.getSecretIdentifier())
                 .accountIdentifier(environmentVariable.getAccountIdentifier())
+                .createdAt(environmentVariable.getCreatedAt())
+                .lastModifiedAt(environmentVariable.getLastModifiedAt())
+                .isDeleted(environmentVariable.isDeleted())
+                .deletedAt(environmentVariable.getDeletedAt())
                 .build();
     }
 
@@ -22,6 +26,10 @@ public class EnvironmentVariableMapper {
                 .envName(environmentVariableDTO.getEnvName())
                 .secretIdentifier(environmentVariableDTO.getSecretIdentifier())
                 .accountIdentifier(environmentVariableDTO.getAccountIdentifier())
+                .createdAt(environmentVariableDTO.getCreatedAt())
+                .lastModifiedAt(environmentVariableDTO.getLastModifiedAt())
+                .isDeleted(environmentVariableDTO.isDeleted())
+                .deletedAt(environmentVariableDTO.getDeletedAt())
                 .build();
     }
 }
