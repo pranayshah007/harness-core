@@ -7,6 +7,9 @@
 
 package io.harness.ccm.service.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import io.harness.aws.AwsClientImpl;
 import io.harness.aws.CloseableAmazonWebServiceClient;
 import io.harness.ccm.commons.beans.billing.CEBucketPolicyJson;
@@ -41,6 +44,10 @@ public class AWSBucketPolicyHelperServiceImpl implements AWSBucketPolicyHelperSe
              new CloseableAmazonWebServiceClient(awsClient.getAmazonS3Client(credentialsProvider))) {
       BucketPolicy bucketPolicy = closeableAmazonS3Client.getClient().getBucketPolicy(awsS3Bucket);
       String policyText = bucketPolicy.getPolicyText();
+      if (policyText.isEmpty()) {
+        // It's a new bucket. Initialize bucket policy with default json
+        policyText = initializeBucketPolicy(awsS3Bucket, crossAccountRoleArn);
+      }
       CEBucketPolicyJson policyJson = new Gson().fromJson(policyText, CEBucketPolicyJson.class);
       List<CEBucketPolicyStatement> listStatements = new ArrayList<>();
       for (CEBucketPolicyStatement statement : policyJson.getStatement()) {
@@ -63,5 +70,29 @@ public class AWSBucketPolicyHelperServiceImpl implements AWSBucketPolicyHelperSe
       throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
     }
     return true;
+  }
+
+  public String initializeBucketPolicy(String awsS3BucketName, String crossAccountRoleArn) throws JsonProcessingException {
+    CEBucketPolicyJson ceBucketPolicyJson = CEBucketPolicyJson.builder()
+            .Statement(List.of(
+                    CEBucketPolicyStatement.builder()
+                            .Sid("DelegateS3Access")
+                            .Effect("Allow")
+                            .Principal(Map.of("AWS", List.of(String.format("%s-DUMMY_NON_EXISTENT_ROLE", crossAccountRoleArn))))
+                            .Action(List.of("s3:PutObject", "s3:PutObjectAcl"))
+                            .Resource(List.of(String.format("arn:aws:s3:::%s/${aws:userid}", awsS3BucketName),
+                                    String.format("arn:aws:s3:::%s/${aws:userid}/*", awsS3BucketName)))
+                            .build(),
+                    CEBucketPolicyStatement.builder()
+                            .Sid("AllowStatement3")
+                            .Effect("Allow")
+                            .Principal(Map.of("AWS", List.of(String.format("%s-DUMMY_NON_EXISTENT_ROLE", crossAccountRoleArn))))
+                            .Action("s3:ListBucket")
+                            .Resource(String.format("arn:aws:s3:::%s", awsS3BucketName))
+                            .build()))
+            .Version("2012-10-17")
+            .build();
+    ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
+    return ow.writeValueAsString(ceBucketPolicyJson);
   }
 }
