@@ -12,4 +12,8 @@ public class EnvironmentVariableDTO {
     private String envName;
     private String secretIdentifier;
     private String accountIdentifier;
+    private Long createdAt;
+    private Long lastModifiedAt;
+    private boolean isDeleted;
+    private long deletedAt;
 }

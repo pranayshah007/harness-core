@@ -10,10 +10,22 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class AppConfigMapper {
     public AppConfigDTO toDTO(AppConfig appConfig) {
-        return AppConfigDTO.builder().build();
+        return AppConfigDTO.builder()
+                .accountIdentifier(appConfig.getAccountIdentifier())
+                .createdAt(appConfig.getCreatedAt())
+                .lastModifiedAt(appConfig.getLastModifiedAt())
+                .isDeleted(appConfig.isDeleted())
+                .deletedAt(appConfig.getDeletedAt())
+                .build();
     }
 
     public AppConfig fromDTO(AppConfigDTO appConfigDTO) {
-        return AppConfig.builder().build();
+        return AppConfig.builder()
+                .accountIdentifier(appConfigDTO.getAccountIdentifier())
+                .createdAt(appConfigDTO.getCreatedAt())
+                .lastModifiedAt(appConfigDTO.getLastModifiedAt())
+                .isDeleted(appConfigDTO.isDeleted())
+                .deletedAt(appConfigDTO.getDeletedAt())
+                .build();
     }
 }
