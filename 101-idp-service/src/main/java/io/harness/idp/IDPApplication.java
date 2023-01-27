@@ -21,7 +21,7 @@ import io.dropwizard.setup.Environment;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.StartupMode;
 import io.harness.health.HealthService;
-import io.harness.idp.service.secretmanager.SecretManager;
+import io.harness.service.secretmanager.SecretManager;
 import io.harness.maintenance.MaintenanceController;
 import io.harness.persistence.HPersistence;
 import io.harness.threading.ExecutorModule;
