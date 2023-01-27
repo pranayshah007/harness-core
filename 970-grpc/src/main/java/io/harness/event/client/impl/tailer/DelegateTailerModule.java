@@ -7,6 +7,9 @@
 
 package io.harness.event.client.impl.tailer;
 
+import static io.harness.configuration.DeployMode.DEPLOY_MODE;
+import static io.harness.configuration.DeployMode.isOnPrem;
+
 import io.harness.event.EventPublisherGrpc;
 import io.harness.event.EventPublisherGrpc.EventPublisherBlockingStub;
 import io.harness.event.client.impl.EventPublisherConstants;
@@ -26,17 +29,20 @@ import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.netty.handler.ssl.SslContext;
 import io.grpc.netty.shaded.io.netty.handler.ssl.SslContextBuilder;
 import java.time.Duration;
+import javax.annotation.Nullable;
 import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
 import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.Value;
+import lombok.extern.slf4j.Slf4j;
 import net.openhft.chronicle.queue.ChronicleQueue;
 import net.openhft.chronicle.queue.impl.RollingChronicleQueue;
 import org.apache.commons.lang3.StringUtils;
 
 @RequiredArgsConstructor
+@Slf4j
 public class DelegateTailerModule extends ProviderModule {
   private final Config config;
 
@@ -62,6 +68,12 @@ public class DelegateTailerModule extends ProviderModule {
   @Singleton
   @SneakyThrows
   Channel channel() {
+    String deployMode = System.getenv(DEPLOY_MODE);
+    if (isOnPrem(deployMode)) {
+      log.info("::::::: Not Providing Channel: DeployMode {}", deployMode);
+      return null;
+    }
+
     X509TrustManager trustManager = new X509TrustManagerBuilder().trustAllCertificates().build();
     SslContextBuilder sslContextBuilder = GrpcSslContexts.forClient().trustManager(trustManager);
 
@@ -85,7 +97,12 @@ public class DelegateTailerModule extends ProviderModule {
   @Provides
   @Singleton
   EventPublisherBlockingStub eventPublisherBlockingStub(
-      @Named("event-server-channel") Channel channel, CallCredentials callCredentials) {
+      @Nullable @Named("event-server-channel") Channel channel, CallCredentials callCredentials) {
+    final String deployMode = System.getenv(DEPLOY_MODE);
+    if (isOnPrem(deployMode)) {
+      log.info("::::::: Not Providing EventPublisherBlockingStub : DeployMode {}", deployMode);
+      return null;
+    }
     return EventPublisherGrpc.newBlockingStub(channel).withCallCredentials(callCredentials);
   }
 
