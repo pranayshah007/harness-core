@@ -29,8 +29,8 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 public class PipelineStartEvent implements Event {
-  private String orgIdentifier;
   private String accountIdentifier;
+  private String orgIdentifier;
   private String projectIdentifier;
   private String pipelineIdentifier;
   private String pipelineExecutionUuid;
