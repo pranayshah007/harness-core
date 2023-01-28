@@ -25,9 +25,10 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import javax.validation.executable.ValidateOnExecution;
@@ -79,8 +80,14 @@ public class UpdateVersionInfoTask {
       if (!module.getVersion().equals("Coming Soon")) {
         String currentVersion = "";
         try {
-          String BaseUrl = nextGenConfiguration.getNgManagerClientConfig().getBaseUrl() + "version";
-          currentVersion = getCurrentMicroserviceVersions(module.getModuleName(), BaseUrl);
+          String baseUrl = nextGenConfiguration.getNgManagerClientConfig().getBaseUrl();
+          StringBuilder baseUrlBuilder = new StringBuilder();
+          baseUrlBuilder.append(baseUrl);
+          if(!baseUrl.endsWith("/")){
+            baseUrlBuilder.append("/");
+          }
+          baseUrlBuilder.append("version");
+          currentVersion = getCurrentMicroserviceVersions(module.getModuleName(), baseUrlBuilder.toString());
         } catch (IOException e) {
           throw new UnexpectedException("Update VersionInfo Task Sync job interrupted:" + e);
         }
@@ -110,12 +117,12 @@ public class UpdateVersionInfoTask {
     if (module.getVersion().equals("Coming Soon")) {
       return;
     }
-    Date dateTime = new Date(System.currentTimeMillis());
-    module.setLastModifiedAt(dateTime.toString());
-    String[] dateTimeFormat = dateTime.toString().split(" ");
-    if (dateTimeFormat.length >= 5) {
-      module.setLastModifiedAt(dateTimeFormat[1] + " " + dateTimeFormat[2] + " " + dateTimeFormat[5]);
-    }
+
+    //TODO: move this logic to UI in future.
+    LocalDateTime dateTime =LocalDateTime.now();
+    DateTimeFormatter myFormatObj = DateTimeFormatter.ofPattern("MMM-dd-yyyy");
+    String formattedDate = dateTime.format(myFormatObj);
+    module.setLastModifiedAt(formattedDate);
   }
 
   private String getCurrentMicroserviceVersions(String serviceName, String serviceVersionUrl) throws IOException {
