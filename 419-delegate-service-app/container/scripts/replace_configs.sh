@@ -16,23 +16,9 @@ replace_key_value () {
 }
 
 yq -i 'del(.server.applicationConnectors[0])' $CONFIG_FILE
-yq -i 'del(.grpcServerConfig.connectors[0])' $CONFIG_FILE
-yq -i 'del(.grpcServerClassicConfig.connectors[0])' $CONFIG_FILE
-
-
-yq -i '.server.adminConnectors=[]' $CONFIG_FILE
 
 if [[ "" != "$LOGGING_LEVEL" ]]; then
     export LOGGING_LEVEL; yq -i '.logging.level=env(LOGGING_LEVEL)' $CONFIG_FILE
-fi
-
-if [[ "" != "$LOGGERS" ]]; then
-  IFS=',' read -ra LOGGER_ITEMS <<< "$LOGGERS"
-  for ITEM in "${LOGGER_ITEMS[@]}"; do
-    LOGGER=`echo $ITEM | awk -F= '{print $1}'`
-    LOGGER_LEVEL=`echo $ITEM | awk -F= '{print $2}'`
-    export LOGGER_LEVEL; export LOGGER; yq -i '.logging.loggers.[env(LOGGER)]=env(LOGGER_LEVEL)' $CONFIG_FILE
-  done
 fi
 
 if [[ "" != "$SERVER_PORT" ]]; then
@@ -43,21 +29,4 @@ fi
 
 if [[ "" != "$SERVER_MAX_THREADS" ]]; then
   export SERVER_MAX_THREADS; yq -i '.server.maxThreads=env(SERVER_MAX_THREADS)' $CONFIG_FILE
-fi
-
-yq -i '.server.requestLog.appenders[0].threshold="TRACE"' $CONFIG_FILE
-
-if [[ "$STACK_DRIVER_LOGGING_ENABLED" == "true" ]]; then
-  yq -i 'del(.logging.appenders[2])' $CONFIG_FILE
-  yq -i 'del(.logging.appenders[0])' $CONFIG_FILE
-  yq -i '.logging.appenders[0].stackdriverLogEnabled=true' $CONFIG_FILE
-else
-  if [[ "$ROLLING_FILE_LOGGING_ENABLED" == "true" ]]; then
-    yq -i 'del(.logging.appenders[1])' $CONFIG_FILE
-    yq -i '.logging.appenders[1].currentLogFilename="/opt/harness/logs/delegate-service.log"' $CONFIG_FILE
-    yq -i '.logging.appenders[1].archivedLogFilenamePattern="/opt/harness/logs/delegate-service.%d.%i.log"' $CONFIG_FILE
-  else
-    yq -i 'del(.logging.appenders[2])' $CONFIG_FILE
-    yq -i 'del(.logging.appenders[1])' $CONFIG_FILE
-  fi
 fi

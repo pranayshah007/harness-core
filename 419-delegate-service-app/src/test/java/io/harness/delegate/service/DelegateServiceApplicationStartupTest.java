@@ -18,7 +18,6 @@ import io.harness.network.Http;
 import io.harness.resource.Project;
 import io.harness.rule.Owner;
 
-import io.dropwizard.testing.ConfigOverride;
 import io.dropwizard.testing.DropwizardTestSupport;
 import java.io.File;
 import java.nio.file.Files;
@@ -31,14 +30,14 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-public class DelegateServiceApplicationStartupTest extends DelegateServiceApplicationTestBase {
+public class DelegateServiceApplicationStartupTest {
   public static DropwizardTestSupport<DelegateServiceConfiguration> SUPPORT;
 
   @BeforeClass
   public static void beforeClass() throws Exception {
     String directoryPath = Project.moduleDirectory(DelegateServiceApplicationStartupTest.class);
 
-    String configPath = Paths.get(directoryPath, "/src/test/resources/test-delegate-service-config.yml").toString();
+    String configPath = Paths.get(directoryPath, "/src/test/resources/test-config.yml").toString();
 
     // Handle sandboxed bazel path - remove path starting from /sandbox till execroot. This is because the source
     // code is present outside the sandbox directory created by bazel.
@@ -47,11 +46,8 @@ public class DelegateServiceApplicationStartupTest extends DelegateServiceApplic
           + configPath.substring(configPath.indexOf("/execroot"));
     }
 
-    SUPPORT = new DropwizardTestSupport<DelegateServiceConfiguration>(DelegateServiceApp.class,
-        String.valueOf(new File(configPath)), ConfigOverride.config("server.applicationConnectors[0].port", "0"),
-        ConfigOverride.config("server.applicationConnectors[0].type", "https"),
-        ConfigOverride.config("server.adminConnectors[0].type", "https"),
-        ConfigOverride.config("server.adminConnectors[0].port", "0"));
+    SUPPORT = new DropwizardTestSupport<DelegateServiceConfiguration>(
+        DelegateServiceApp.class, String.valueOf(new File(configPath)));
     SUPPORT.before();
   }
 

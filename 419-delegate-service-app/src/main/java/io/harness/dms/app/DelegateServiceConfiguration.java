@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.DEL;
 import static java.util.Collections.singletonList;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.resources.DelegateSetupResource;
 import io.harness.grpc.server.GrpcServerConfig;
 import io.harness.reflection.HarnessReflections;
 import io.harness.swagger.SwaggerBundleConfigurationFactory;
@@ -36,6 +37,7 @@ import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -52,16 +54,12 @@ import org.apache.commons.lang3.StringUtils;
 @Singleton
 @OwnedBy(DEL)
 public class DelegateServiceConfiguration extends Configuration {
-  @JsonProperty("swagger") private SwaggerBundleConfiguration swaggerBundleConfiguration;
   @JsonProperty("commonPoolConfig") private ThreadPoolConfig commonPoolConfig;
 
   public DelegateServiceConfiguration() {
     DefaultServerFactory defaultServerFactory = new DefaultServerFactory();
     defaultServerFactory.setJerseyRootPath("/api");
     defaultServerFactory.setRegisterDefaultExceptionMappers(false);
-    defaultServerFactory.setAdminContextPath("/admin");
-    defaultServerFactory.setAdminConnectors(singletonList(getDefaultAdminConnectorFactory()));
-    defaultServerFactory.setApplicationConnectors(singletonList(getDefaultApplicationConnectorFactory()));
     defaultServerFactory.setRequestLogFactory(getDefaultlogbackAccessRequestLogFactory());
     super.setServerFactory(defaultServerFactory);
   }
@@ -74,18 +72,6 @@ public class DelegateServiceConfiguration extends Configuration {
     ((DefaultServerFactory) getServerFactory()).setAdminConnectors(defaultServerFactory.getAdminConnectors());
     ((DefaultServerFactory) getServerFactory()).setRequestLogFactory(defaultServerFactory.getRequestLogFactory());
     ((DefaultServerFactory) getServerFactory()).setMaxThreads(defaultServerFactory.getMaxThreads());
-  }
-
-  protected ConnectorFactory getDefaultAdminConnectorFactory() {
-    final HttpConnectorFactory factory = new HttpConnectorFactory();
-    factory.setPort(9081);
-    return factory;
-  }
-
-  protected ConnectorFactory getDefaultApplicationConnectorFactory() {
-    final HttpConnectorFactory factory = new HttpConnectorFactory();
-    factory.setPort(9080);
-    return factory;
   }
 
   private RequestLogFactory getDefaultlogbackAccessRequestLogFactory() {
@@ -113,7 +99,7 @@ public class DelegateServiceConfiguration extends Configuration {
     defaultSwaggerBundleConfiguration.setSchemes(new String[] {"https", "http"});
     defaultSwaggerBundleConfiguration.setHost("{{host}}");
     defaultSwaggerBundleConfiguration.setTitle("Delegate Service API Reference");
-    return Optional.ofNullable(swaggerBundleConfiguration).orElse(defaultSwaggerBundleConfiguration);
+    return defaultSwaggerBundleConfiguration;
   }
 
   public static Collection<Class<?>> getResourceClasses() {

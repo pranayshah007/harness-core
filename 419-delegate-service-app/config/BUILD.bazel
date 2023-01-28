@@ -6,7 +6,6 @@
 exports_files(
     [
         "keystore.jks",
-        "delegate-service-config.yml",
-    ],
-    visibility = ["//419-delegate-service-app/build:__subpackages__"],
+        "config.yml",
+    ]
 )

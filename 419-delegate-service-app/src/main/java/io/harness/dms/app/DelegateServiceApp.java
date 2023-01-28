@@ -7,8 +7,6 @@
 
 package io.harness.dms.app;
 
-import static io.harness.data.structure.CollectionUtils.emptyIfNull;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -63,6 +61,7 @@ public class DelegateServiceApp extends Application<DelegateServiceConfiguration
   @Override
   public void initialize(Bootstrap<DelegateServiceConfiguration> bootstrap) {
     initializeLogging();
+
     log.info("bootstrapping ...");
     // Enable variable substitution with environment variables
     bootstrap.setConfigurationSourceProvider(new SubstitutingSourceProvider(

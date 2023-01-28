@@ -11,28 +11,7 @@ if [[ -v "{hostname}" ]]; then
    export HOSTNAME=$(hostname)
 fi
 
-if [[ -z "$MEMORY" ]]; then
-   export MEMORY=1024
-fi
-
-if [[ -z "$COMMAND" ]]; then
-   export COMMAND=server
-fi
-
-echo "Using memory " $MEMORY
-
-if [[ -z "$CAPSULE_JAR" ]]; then
-   export CAPSULE_JAR=/opt/harness/delegate-service-capsule.jar
-fi
-
-
-if [[ "${ENABLE_G1GC}" == "true" ]]; then
-    export GC_PARAMS=" -XX:+UseG1GC -XX:InitiatingHeapOccupancyPercent=40 -XX:MaxGCPauseMillis=1000 -Dfile.encoding=UTF-8"
-else
-    export GC_PARAMS=" -XX:+UseParallelGC -XX:MaxGCPauseMillis=500 -Dfile.encoding=UTF-8"
-fi
-
-export JAVA_OPTS="-Xms${MEMORY}m -Xmx${MEMORY}m -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/heapdump -Xloggc:mygclogfilename.gc $GC_PARAMS $JAVA_ADVANCED_FLAGS"
+export JAVA_OPTS="-XX:MaxRAMPercentage=70.0 -XX:MinRAMPercentage=40.0 -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/heapdump -Xloggc:mygclogfilename.gc $GC_PARAMS $JAVA_ADVANCED_FLAGS"
 
 
 if [[ "${ENABLE_APPDYNAMICS}" == "true" ]]; then
@@ -43,4 +22,4 @@ if [[ "${ENABLE_APPDYNAMICS}" == "true" ]]; then
     echo "Using Appdynamics java agent"
 fi
 
-java $JAVA_OPTS -jar $CAPSULE_JAR $COMMAND /opt/harness/delegate-service-config.yml
+java $JAVA_OPTS -jar /opt/harness/delegate-service-capsule.jar server /opt/harness/delegate-service-config.yml

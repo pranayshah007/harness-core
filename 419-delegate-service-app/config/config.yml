@@ -10,18 +10,11 @@ server:
     - type: http
       port: 3458
       maxRequestHeaderSize: 100KiB
-  adminConnectors:
-    - type: h2
-      port: 9081
-      keyStorePath: keystore.jks
-      keyStorePassword: password
-      certAlias: localhost
-      validateCerts: false
   requestLog:
     appenders:
       - type: console
         target: STDOUT
-        threshold: ERROR
+        threshold: TRACE
   maxThreads: 1024
 
 logging:

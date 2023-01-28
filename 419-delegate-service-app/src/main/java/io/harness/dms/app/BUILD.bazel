@@ -3,7 +3,7 @@ load("@rules_java//java:defs.bzl", "java_binary")
 load("//:tools/bazel/macros.bzl", "run_analysis_per_module")
 
 java_library(
-    name = "module",
+    name = "library",
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     resources = [
@@ -45,11 +45,11 @@ java_library(
 )
 
 java_binary(
-    name = "DelegateServiceApp",
+    name = "module",
     main_class = "io.harness.dms.app.DelegateServiceApp",
     visibility = ["//visibility:public"],
     data = ["//:resource"],
-    runtime_deps = [":module"],
+    runtime_deps = [":library"],
     deps = [],
 )
 

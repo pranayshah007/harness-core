@@ -24,11 +24,10 @@ container_image(
 pkg_tar(
     name = "files",
     srcs = [
-        "//419-delegate-service-app/config:delegate-service-config.yml",
+        "//419-delegate-service-app/config:config.yml",
         "//419-delegate-service-app/config:keystore.jks"
     ],
     files = {
-        "@alpn_boot_8.1.13.v20181017//file": "alpn-boot-8.1.13.v20181017.jar",
         "//419-delegate-service-app/src/main/java/io/harness/dms/app:module_deploy.jar": "delegate-service-capsule.jar",
     },
     mode = "0600",
