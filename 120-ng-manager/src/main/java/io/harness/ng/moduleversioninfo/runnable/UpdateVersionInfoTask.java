@@ -83,8 +83,8 @@ public class UpdateVersionInfoTask {
           String baseUrl = nextGenConfiguration.getNgManagerClientConfig().getBaseUrl();
           StringBuilder baseUrlBuilder = new StringBuilder();
           baseUrlBuilder.append(baseUrl);
-          if(!baseUrl.endsWith("/")){
-            baseUrlBuilder.append("/");
+          if (!baseUrl.endsWith("/")) {
+            baseUrlBuilder.append('/');
           }
           baseUrlBuilder.append("version");
           currentVersion = getCurrentMicroserviceVersions(module.getModuleName(), baseUrlBuilder.toString());
@@ -118,8 +118,8 @@ public class UpdateVersionInfoTask {
       return;
     }
 
-    //TODO: move this logic to UI in future.
-    LocalDateTime dateTime =LocalDateTime.now();
+    // TODO: move this logic to UI in future.
+    LocalDateTime dateTime = LocalDateTime.now();
     DateTimeFormatter myFormatObj = DateTimeFormatter.ofPattern("MMM-dd-yyyy");
     String formattedDate = dateTime.format(myFormatObj);
     module.setLastModifiedAt(formattedDate);
