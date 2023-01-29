@@ -10,19 +10,26 @@ package io.harness.ng.core.gcp.resources;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import static java.lang.String.format;
+
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GoogleCloudStorageArtifactConfig;
+import io.harness.cdng.infra.mapper.InfrastructureEntityConfigMapper;
+import io.harness.cdng.infra.yaml.InfrastructureDefinitionConfig;
 import io.harness.cdng.k8s.resources.gcp.dtos.GcpProjectDetails;
 import io.harness.cdng.k8s.resources.gcp.dtos.GcpProjectResponseDTO;
 import io.harness.cdng.k8s.resources.gcp.service.GcpResourceService;
+import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.ng.core.artifacts.resources.util.ArtifactResourceUtils;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
+import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.utils.IdentifierRefHelper;
 
 import com.google.inject.Inject;
@@ -34,7 +41,8 @@ import java.util.List;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
@@ -58,8 +66,9 @@ import org.apache.commons.lang3.StringUtils;
 public class GcpResource {
   private final ArtifactResourceUtils artifactResourceUtils;
   private final GcpResourceService gcpResourceService;
+  private final InfrastructureEntityService infrastructureEntityService;
 
-  @GET
+  @POST
   @Path("project")
   @ApiOperation(value = "Get list of projects from gcp", nickname = "getProjects")
   public ResponseDTO<GcpProjectResponseDTO> getProjects(@QueryParam("connectorRef") String gcpConnectorRef,
@@ -67,8 +76,11 @@ public class GcpResource {
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
-      @NotNull @QueryParam("fqnPath") String fqnPath, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
-      @NotNull String runtimeInputYaml, @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef) {
+      @QueryParam("fqnPath") String fqnPath, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
+      String runtimeInputYaml, @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef,
+      @QueryParam(NGCommonEntityConstants.ENVIRONMENT_KEY) String envId,
+      @QueryParam(NGCommonEntityConstants.INFRA_DEFINITION_KEY) String infraDefinitionId) {
+    String resolvedGcpConnectorRef = gcpConnectorRef;
     if (isNotEmpty(serviceRef)) {
       final ArtifactConfig artifactSpecFromService = artifactResourceUtils.locateArtifactInService(
           accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
@@ -77,13 +89,22 @@ public class GcpResource {
           (GoogleCloudStorageArtifactConfig) artifactSpecFromService;
 
       if (StringUtils.isBlank(gcpConnectorRef)) {
-        gcpConnectorRef = (String) googleCloudStorageArtifactConfig.getConnectorRef().fetchFinalValue();
+        resolvedGcpConnectorRef = (String) googleCloudStorageArtifactConfig.getConnectorRef().fetchFinalValue();
+      }
+      // Getting the resolved connectorRef in case of expressions
+      resolvedGcpConnectorRef = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
+          pipelineIdentifier, runtimeInputYaml, resolvedGcpConnectorRef, fqnPath, gitEntityBasicInfo, serviceRef);
+    } else if (isNotEmpty(envId) && isNotEmpty(infraDefinitionId)) {
+      InfrastructureDefinitionConfig infrastructureDefinitionConfig =
+          getInfrastructureDefinitionConfig(accountId, orgIdentifier, projectIdentifier, envId, infraDefinitionId);
+      if (StringUtils.isBlank(gcpConnectorRef)) {
+        resolvedGcpConnectorRef = infrastructureDefinitionConfig.getSpec().getConnectorReference().getValue();
       }
     }
-    // Getting the resolved connectorRef in case of expressions
-    String resolvedGcpConnectorRef =
-        artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
-            runtimeInputYaml, gcpConnectorRef, fqnPath, gitEntityBasicInfo, serviceRef);
+    if (StringUtils.isBlank(resolvedGcpConnectorRef)) {
+      throw new InvalidRequestException(
+          String.valueOf(format("%s must be provided", NGCommonEntityConstants.CONNECTOR_IDENTIFIER_REF)));
+    }
 
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(resolvedGcpConnectorRef, accountId, orgIdentifier, projectIdentifier);
@@ -91,5 +112,19 @@ public class GcpResource {
     List<GcpProjectDetails> projects =
         gcpResourceService.getProjectNames(connectorRef, accountId, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(GcpProjectResponseDTO.builder().projects(projects).build());
+  }
+
+  private InfrastructureDefinitionConfig getInfrastructureDefinitionConfig(
+      String accountId, String orgIdentifier, String projectIdentifier, String envId, String infraDefinitionId) {
+    InfrastructureEntity infrastructureEntity =
+        infrastructureEntityService.get(accountId, orgIdentifier, projectIdentifier, envId, infraDefinitionId)
+            .orElseThrow(() -> {
+              throw new NotFoundException(String.format(
+                  "Infrastructure with identifier [%s] in project [%s], org [%s], environment [%s] not found",
+                  infraDefinitionId, projectIdentifier, orgIdentifier, envId));
+            });
+
+    return InfrastructureEntityConfigMapper.toInfrastructureConfig(infrastructureEntity)
+        .getInfrastructureDefinitionConfig();
   }
 }
